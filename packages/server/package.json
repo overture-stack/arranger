@@ -1,0 +1,27 @@
+{
+  "name": "@arranger/server",
+  "version": "0.1.0",
+  "description": "GraphQL Server",
+  "main": "src/~/index.js",
+  "scripts": {
+    "start": "NODE_PATH=src node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overture-stack/arranger.git"
+  },
+  "author": "OICR",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/overture-stack/arranger/issues"
+  },
+  "homepage": "https://github.com/overture-stack/arranger#readme",
+  "dependencies": {
+    "@babel/core": "^7.0.0-beta.35",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
+    "@babel/preset-env": "^7.0.0-beta.35",
+    "@babel/register": "^7.0.0-beta.35",
+    "express": "^4.16.2"
+  }
+}
