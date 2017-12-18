@@ -2,11 +2,12 @@
   "name": "@arranger/server",
   "version": "0.0.1-0.0.3.0",
   "description": "GraphQL Server",
-  "main": "src/~/index.js",
+  "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build": "rm -rf dist&&mkdir dist&&babel --output-file dist/index.js",
     "start": "NODE_PATH=src node index",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -26,5 +27,8 @@
     "@babel/preset-env": "^7.0.0-beta.35",
     "@babel/register": "^7.0.0-beta.35",
     "express": "^4.16.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.35"
   }
 }
