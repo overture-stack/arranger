@@ -1,0 +1,24 @@
+{
+  "name": "@arranger/mapping-utils",
+  "version": "0.1.0",
+  "description": "Transform Elasticsearch mappings",
+  "main": "dist/index.js",
+  "scripts": {
+    "build":
+      "rm -rf dist&&mkdir dist&&babel src/~/index.js --output-file dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overture-stack/arranger.git"
+  },
+  "author": "OICR",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/overture-stack/arranger/issues"
+  },
+  "homepage": "https://github.com/overture-stack/arranger#readme",
+  "dependencies": {
+    "lodash": "^4.17.4"
+  }
+}

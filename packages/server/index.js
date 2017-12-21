@@ -3,5 +3,4 @@ require('@babel/register')({
   plugins: ['@babel/plugin-proposal-optional-chaining'],
 })
 
-require('~')
-
+require('~').default()
