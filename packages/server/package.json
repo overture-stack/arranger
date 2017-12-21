@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.0.1-0.0.5.0",
+  "version": "0.0.1-0.0.6.0",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "publishConfig": {

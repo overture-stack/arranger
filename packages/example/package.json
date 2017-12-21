@@ -1,0 +1,16 @@
+{
+  "name": "example",
+  "version": "0.0.1-0.0.6.0",
+  "description": "``` npm i @arranger/server ```",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@arranger/server": "^0.0.1-0.0.6.0"
+  }
+}
