@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "0.0.1-0.0.6.0",
+  "version": "0.0.1-0.0.7.0",
   "description": "``` npm i @arranger/server ```",
   "private": true,
   "main": "index.js",
@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@arranger/server": "^0.0.1-0.0.6.0"
+    "@arranger/server": "^0.0.1-0.0.7.0"
   }
 }

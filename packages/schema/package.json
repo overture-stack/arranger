@@ -1,6 +1,6 @@
 {
   "name": "@arranger/schema",
-  "version": "0.0.1-0.0.6.0",
+  "version": "0.0.1-0.0.7.0",
   "description": "GraphQL Schema for Data Portals",
   "main": "dist/index.js",
   "publishConfig": {
