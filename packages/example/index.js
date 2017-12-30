@@ -1,3 +1,6 @@
+let makeSchema = require('@arranger/schema')
 let server = require('@arranger/server')
 
-server()
+let schema = makeSchema()
+
+server({ schema })

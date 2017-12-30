@@ -3,7 +3,7 @@ import bodyParser from 'body-parser'
 import { graphqlExpress } from 'apollo-server-express'
 import { rainbow } from 'chalk-animation'
 
-export default ({ port = 5050, context = {}, schema } = {}) => {
+module.exports = ({ port = 5050, context = {}, schema } = {}) => {
   const app = express()
 
   app.use(

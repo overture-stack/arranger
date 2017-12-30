@@ -1,7 +1,11 @@
 {
-	"devDependencies": {
-		"lerna": "^2.5.1",
-		"prettier": "^1.9.2"
-	},
-	"dependencies": {}
+  "scripts": {
+    "bootstrap": "lerna bootstrap --hoist",
+    "publish": "lerna publish"
+  },
+  "devDependencies": {
+    "lerna": "^2.5.1",
+    "prettier": "^1.9.2"
+  },
+  "dependencies": {}
 }

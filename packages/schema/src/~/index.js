@@ -4,7 +4,7 @@ import {
   resolvers as generateResolvers,
 } from './Root'
 
-export default ({
+module.exports = ({
   types = [[]],
   rootTypes = [[]],
   scalarTypes = [[]],
