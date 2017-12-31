@@ -1,13 +1,20 @@
 import express from 'express'
 import bodyParser from 'body-parser'
+import cors from 'cors'
 import { graphqlExpress } from 'apollo-server-express'
 import { rainbow } from 'chalk-animation'
 
-module.exports = ({ port = 5050, context = {}, schema } = {}) => {
+module.exports = ({
+  port = 5050,
+  context = {},
+  schema,
+  endpoints = ['/', '/graphql', '/graphql/:query'],
+} = {}) => {
   const app = express()
+  app.use(cors())
 
   app.use(
-    ['/', '/graphql', '/graphql/:query'],
+    endpoints,
     bodyParser.json(),
     schema
       ? graphqlExpress({ schema, context })

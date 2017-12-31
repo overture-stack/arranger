@@ -7,8 +7,7 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist&&mkdir dist&&babel src/~ --out-dir dist",
-    "start": "NODE_PATH=src node index.js",
+    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,6 +22,7 @@
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
     "@arranger/mapping-utils": "^0.0.1-0.0.9.0",
+    "elasticsearch": "^14.0.0",
     "graphql-tools": "^2.14.1",
     "graphql-type-json": "^0.1.4",
     "lodash": "^4.17.4"

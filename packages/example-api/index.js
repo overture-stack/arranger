@@ -1,3 +1,5 @@
+require('dotenv').config()
+require('babel-polyfill')
 require('@babel/register')({
   presets: ['@babel/env'],
   plugins: [
@@ -6,6 +8,6 @@ require('@babel/register')({
   ],
 })
 
-let makeSchema = require('~')
+// global.config = require(`./${process.env.CONFIG}.config`)
 
-console.log(makeSchema())
+require('./src/index')
