@@ -4,11 +4,7 @@ import {
   resolvers as generateResolvers,
 } from './Root'
 
-module.exports = ({
-  types = [[]],
-  rootTypes = [[]],
-  scalarTypes = [[]],
-} = {}) => {
+module.exports = ({ types = [], rootTypes = [], scalarTypes = [] } = {}) => {
   let typeDefs = generateTypeDefs({ types, rootTypes, scalarTypes })
   let resolvers = generateResolvers({ types, rootTypes, scalarTypes })
 
