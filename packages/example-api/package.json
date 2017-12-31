@@ -1,6 +1,6 @@
 {
   "name": "example-api",
-  "version": "0.0.1-0.0.9.0",
+  "version": "0.0.1-0.0.10.0",
   "description": "``` npm i @arranger/server ```",
   "private": true,
   "main": "index.js",
@@ -11,8 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@arranger/schema": "^0.0.1-0.0.9.0",
-    "@arranger/server": "^0.0.1-0.0.9.0",
+    "@arranger/schema": "^0.0.1-0.0.10.0",
+    "@arranger/server": "^0.0.1-0.0.10.0",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0"
   },
