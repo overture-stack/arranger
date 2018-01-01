@@ -7,7 +7,7 @@ export default ({ type, fields = '' }) => `
       query: String
       offset: Int
       sort: [Sort]
-      filters: ${global.config.JSONScalar}
+      filters: JSON
       before: String
       after: String
       first: Int
@@ -15,7 +15,7 @@ export default ({ type, fields = '' }) => `
     ): ${type.name}Connection
 
     aggregations(
-      filters: ${global.config.JSONScalar}
+      filters: JSON
 
       # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
       aggregations_filter_themselves: Boolean
