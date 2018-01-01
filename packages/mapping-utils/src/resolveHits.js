@@ -38,14 +38,14 @@ export default type => async (
   let fields = getFields(info)
   let nested_fields = type.nested_fields
 
-  let query = filters || {}
+  let query = filters
 
   if (filters || score) {
     let response = await buildQuery({ type, filters, score, nested_fields })
     query = response.query
   }
 
-  let body = {
+  let body = query && {
     query,
   }
 
