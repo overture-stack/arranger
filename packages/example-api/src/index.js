@@ -3,7 +3,7 @@ import { promisify } from 'util'
 import elasticsearch from 'elasticsearch'
 import makeSchema from '@arranger/schema'
 import server from '@arranger/server'
-import { getNestedFields } from '@arranger/mapping-utils'
+import { addMappingsToTypes } from '@arranger/mapping-utils'
 
 let writeFile = promisify(fs.writeFile)
 
@@ -17,31 +17,15 @@ let fetchMappings = ({ types, es }) => {
     ),
   )
 }
-
-let writeMappingsToFiles = async ({ types, mappings }) =>
-  types.forEach(
-    async ([type], i) =>
-      await writeFile(
-        mappingFolder(type),
-        JSON.stringify(Object.values(mappings[i])[0].mappings, null, 2),
-      ),
-  )
-
-let addMappingsToTypes = ({ types, mappings }) => {
-  return types.map(([key, type], i) => {
-    let mapping = Object.values(mappings[i])[0].mappings[type.es_type]
-      .properties
-
-    return [
-      key,
-      {
-        ...type,
-        mapping,
-        nested_fields: getNestedFields(mapping),
-      },
-    ]
-  })
-}
+//
+// let writeMappingsToFiles = async ({ types, mappings }) =>
+//   types.forEach(
+//     async ([type], i) =>
+//       await writeFile(
+//         mappingFolder(type),
+//         JSON.stringify(Object.values(mappings[i])[0].mappings, null, 2),
+//       ),
+//   )
 
 let main = async () => {
   if (process.env.WITH_ES) {
@@ -58,7 +42,7 @@ let main = async () => {
         requestTimeout: 1000,
       })
       .then(async () => {
-        // let types = Object.entries(global.config.ES_TYPES)
+        // TODO: get from config
         let ES_TYPES = {
           annotations: {
             index: 'anns',
@@ -69,13 +53,12 @@ let main = async () => {
         let types = Object.entries(ES_TYPES)
         let mappings = await fetchMappings({ types, es })
         let typesWithMappings = addMappingsToTypes({ types, mappings })
-        console.log(1111, typesWithMappings)
         let schema = makeSchema({ types: typesWithMappings })
         server({ schema, context: { es } })
       })
       .catch(err => {
         console.log(err)
-        // server({ schema })
+        server({ schema })
       })
   } else {
     let schema = makeSchema({ mock: true })
