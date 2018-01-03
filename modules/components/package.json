@@ -1,0 +1,27 @@
+{
+  "name": "@arranger/components",
+  "version": "0.0.1",
+  "description": "Data Portal Components",
+  "main": "index.js",
+  "scripts": {
+    "storybook": "start-storybook -p 9001 -c .storybook",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overture-stack/arranger.git"
+  },
+  "author": "OICR",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/overture-stack/arranger/issues"
+  },
+  "homepage": "https://github.com/overture-stack/arranger#readme",
+  "devDependencies": {
+    "@storybook/react": "^3.3.3"
+  },
+  "dependencies": {
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  }
+}
