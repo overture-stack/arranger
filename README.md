@@ -7,6 +7,7 @@
 * [What is a "Data Portal"?](#data-portal)
 * [Roadmap](#roadmap)
 * [Development](#development)
+* [License](#license) (TBD)
 
 ### Motivation
 
