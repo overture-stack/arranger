@@ -83,3 +83,13 @@ git clone git@github.com:overture-stack/arranger.git
 cd arranger && npm i
 npm run link -- <path-to-your-project>
 ```
+
+#### Sandbox
+
+If you are just experimenting with Arranger, you can create an application directly in this repository's `sandbox` folder. This way you can leverage [lerna](https://github.com/lerna/lerna) commands for a quicker development cycle. If you don't already have `lerna` installed globally you can run it from here after running `npm install`.
+
+```
+npm run lerna -- <command>
+```
+
+The [lerna](https://github.com/lerna/lerna) docs are pretty good and can help you get started, but you will probably want to build real applications in their own repositories.
