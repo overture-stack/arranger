@@ -1,17 +1,23 @@
 ![Arranger: Data Portal Generation](https://i.imgur.com/Qb9KBqJ.png)
 
-🚧 _under construction_
+🚧 _This project is pre-alpha. We will make an announcement upon entering beta_ 🚧
+
+* [Documentation](#Documentation) (in progress)
+* [Motivation](#motivation)
+* [What is a "Data Portal"?](#data-portal)
+* [Roadmap](#roadmap)
+* [Development](#development)
 
 ### Motivation
 
-The Ontario Institute for Cancer Research (OICR) has built two **Data Portals**:
+The Ontario Institute for Cancer Research (OICR) has built two **[Data Portals](#data-portal)**:
 
 * [International Cancer Genome Consortium (ICGC) Data Portal](https://dcc.icgc.org/)
 * [Genomic Data Commons (GDC) Data Portal](https://portal.gdc.cancer.gov/) (joint effort with University of Chicago)
 
 Although they are not identical in architecture, available data or overall purpose, there is tremendous amount of overlap in how they function and how users interact with them, despite being implemented differently. It's no coincidence. The GDC Data Portal was directly influenced by the ICGC Data Portal.
 
-With new projects ahead of us, there is an opportunity to create a framework designed to act as a core library for any given data portal, similar to what Elastic's Kibana accomplishes, but based on the features of our existing portals. There are many potential benefits:
+With new projects ahead of us, there is an opportunity to create a framework designed to act as a core library for any given data portal, similar to what Elastic's Kibana accomplishes, but based on the features of our existing portals and the expectation of continuous improvement and domain specific customization. There are many potential benefits:
 
 * Reduce duplicate code
 * Ability to fix bugs and add features to many projects at once
@@ -19,7 +25,14 @@ With new projects ahead of us, there is an opportunity to create a framework des
 * Increase cross-team communication
 * Encourage open source contribution
 
-### Goals
+<h3 id="data-portal">What Is A "Data Portal"?</h3>
+
+#### Topology
+
+![DP Topology](https://i.imgur.com/Ylm9drr.png)
+_this is way too simplistic. needs an update_
+
+### Roadmap
 
 #### Short Term
 
@@ -50,7 +63,23 @@ With new projects ahead of us, there is an opportunity to create a framework des
 * Kibana Plugin
 * Hosted Data Portal generating service
 
-### Topology
+### Development
 
-![DP Topology](https://i.imgur.com/Ylm9drr.png)
-_this is slightly too simplistic. needs an update_
+Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+
+_\* The GDC contains many features that are out of Arranger's scope_
+
+#### Installation
+
+Modules can be installed as needed via npm, scoped under `@arranger/<module>`. When documentation is ready we will list available modules here. In the meantime, take a look at the `sandbox` folder for examples.
+
+#### Contributing
+
+Since Arranger is in very early stages of devlopment, there's a good chance you will need to modify code in the core modules to meet the specific needs of your application. In such a case, pull this repo down and npm-link the packages to your project folder where you expect `node_modules` to be installed.
+
+```
+# clone, install & npm-link
+git clone git@github.com:overture-stack/arranger.git
+cd arranger && npm i
+npm run link -- <path-to-your-project>
+```
