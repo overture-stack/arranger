@@ -5,13 +5,17 @@
 * [Documentation](#Documentation) (in progress)
 * [Motivation](#motivation)
 * [What is a "Data Portal"?](#data-portal)
+  * [Topology](#topology)
 * [Roadmap](#roadmap)
 * [Development](#development)
+  * [Installation](#installation)
+  * [Contribution](#contribution)
+  * [Sandbox](#sandbox)
 * [License](#license) (TBD)
 
 ### Motivation
 
-The Ontario Institute for Cancer Research (OICR) has built two **[Data Portals](#data-portal)**:
+The Ontario Institute for Cancer Research ([OICR](https://oicr.on.ca/)) has built two **[Data Portals](#data-portal)**:
 
 * [International Cancer Genome Consortium (ICGC) Data Portal](https://dcc.icgc.org/)
 * [Genomic Data Commons (GDC) Data Portal](https://portal.gdc.cancer.gov/) (joint effort with University of Chicago)
@@ -74,7 +78,7 @@ _\* The GDC contains many features that are out of Arranger's scope_
 
 Modules can be installed as needed via npm, scoped under `@arranger/<module>`. When documentation is ready we will list available modules here. In the meantime, take a look at the `sandbox` folder for examples.
 
-#### Contributing
+#### Contribution
 
 Since Arranger is in very early stages of devlopment, there's a good chance you will need to modify code in the core modules to meet the specific needs of your application. In such a case, pull this repo down and npm-link the packages to your project folder where you expect `node_modules` to be installed.
 
@@ -94,3 +98,9 @@ npm run lerna -- <command>
 ```
 
 The [lerna](https://github.com/lerna/lerna) docs are pretty good and can help you get started, but you will probably want to build real applications in their own repositories.
+
+<hr />
+
+This project would not be possible without the incredible expertise and effort of ICGC & GDC contributors. Special thanks to [Shane Wilson](https://github.com/shanewilson) and [Bob Tiernay](https://github.com/btiernay) for creating a rock solid foundation to iterate on. There are many more people that deserve credit here, so please speak up so we can add them.
+
+🙏
