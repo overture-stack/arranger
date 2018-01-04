@@ -8,6 +8,6 @@ require('@babel/register')({
   ],
 })
 
-// global.config = require(`./${process.env.CONFIG}.config`)
+global.config = require(`./${process.env.CONFIG}.config`)
 
 require('./src/index')

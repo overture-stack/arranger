@@ -42,18 +42,11 @@ let main = async () => {
         requestTimeout: 1000,
       })
       .then(async () => {
-        // TODO: get from config
-        let ES_TYPES = {
-          annotations: {
-            index: 'anns',
-            es_type: 'anns',
-            name: 'Annotation',
-          },
-        }
-        let types = Object.entries(ES_TYPES)
+        let rootTypes = Object.entries(global.config.ROOT_TYPES)
+        let types = Object.entries(global.config.ES_TYPES)
         let mappings = await fetchMappings({ types, es })
         let typesWithMappings = addMappingsToTypes({ types, mappings })
-        let schema = makeSchema({ types: typesWithMappings })
+        let schema = makeSchema({ types: typesWithMappings, rootTypes })
         server({ schema, context: { es } })
       })
       .catch(err => {
