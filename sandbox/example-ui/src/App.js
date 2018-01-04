@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
+import TwoPaneLayout from './TwoPaneLayout'
 
 class App extends Component {
   render() {
     return (
-      <div>
-        <div>header</div>
+      <div className="app">
+        <TwoPaneLayout />
       </div>
     )
   }

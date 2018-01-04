@@ -1,3 +1,14 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.app {
+  height: 100vh;
+}
+
 body {
   margin: 0;
   padding: 0;
