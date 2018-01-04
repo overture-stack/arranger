@@ -8,7 +8,10 @@
   },
   "scripts": {
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src/ -d lib/",
+    "prepublish": "npm run build",
+    "flow": "flow"
   },
   "repository": {
     "type": "git",
@@ -21,7 +24,24 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "devDependencies": {
-    "@storybook/react": "^3.3.3"
+    "@babel/cli": "^7.0.0-beta.35",
+    "@babel/core": "^7.0.0-beta.35",
+    "babel-core": "7.0.0-bridge.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.35",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
+    "@babel/preset-env": "^7.0.0-beta.35",
+    "@babel/preset-flow": "^7.0.0-beta.35",
+    "@babel/preset-react": "^7.0.0-beta.37",
+    "@babel/register": "^7.0.0-beta.35",
+    "@storybook/react": "^3.3.3",
+    "babel-eslint": "^8.1.2",
+    "eslint": "^3.19.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-flowtype": "^2.40.1",
+    "eslint-plugin-prettier": "^2.4.0",
+    "eslint-plugin-react": "^7.5.1",
+    "flow-bin": "^0.62.0",
+    "prettier": "^1.9.2"
   },
   "dependencies": {
     "react": "^16.2.0",
