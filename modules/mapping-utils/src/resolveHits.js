@@ -45,21 +45,22 @@ export default type => async (
     query = response.query
   }
 
-  let body = query && {
-    query,
-  }
+  let body =
+    (query && {
+      query,
+    }) ||
+    {}
 
-  if (sort) {
-    // TODO: build sort properly
-    body.sort = [
-      {
-        'summary.case_count': {
-          missing: '_last',
-          order: 'desc',
-          mode: 'min',
-        },
-      },
-    ]
+  if (sort && sort.length) {
+    body.sort = sort.map(({ field, ...rest }) => {
+      const nested_path = nested_fields.find(
+        nestedField => field.indexOf(nestedField) === 0,
+      )
+
+      return {
+        [field]: { ...rest, ...(nested_path ? { nested_path } : {}) },
+      }
+    })
   }
 
   let { hits } = await es.search({
