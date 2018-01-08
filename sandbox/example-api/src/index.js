@@ -31,6 +31,10 @@ let main = async () => {
   if (process.env.WITH_ES) {
     let esconfig = {
       host: process.env.ES_HOST,
+    };
+
+    if (process.env.ES_USER && process.env.ES_PASSWORD) {
+      esconfig.httpAuth = `${process.env.ES_USER}:${process.env.ES_PASSWORD}`;
     }
 
     if (process.env.ES_TRACE) esconfig.log = process.env.ES_TRACE
