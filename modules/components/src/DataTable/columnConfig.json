@@ -1,0 +1,29 @@
+{
+  "files": {
+    "type": "files",
+    "keyField": "file_id",
+    "columns": [
+      { "Header": "File Id", "accessor": "file_id" },
+      { "Header": "Access", "accessor": "access" },
+      { "Header": "Name", "accessor": "file_name" },
+
+      { "Header": "Cases", "accessor": "cases.hits.total" },
+      {
+        "Header": "Project",
+        "accessor": "cases.hits.edges[0].node.project.project_id"
+      },
+      { "Header": "Data Category", "accessor": "data_category" },
+      { "Header": "Data Format", "accessor": "data_format" },
+      { "Header": "Size", "accessor": "file_size" },
+
+      { "Header": "Annotations", "accessor": "annotations.hits.total" },
+
+      { "Header": "Data Type", "accessor": "data_type" },
+      {
+        "Header": "Experimental Strategy",
+        "accessor": "experimental_strategy"
+      },
+      { "Header": "Platform", "accessor": "platform" }
+    ]
+  }
+}
