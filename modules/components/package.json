@@ -8,7 +8,7 @@
   },
   "scripts": {
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "mkdir -p src && babel src/ -d lib/",
     "prepublish": "npm run build",
     "flow": "flow"
@@ -42,6 +42,7 @@
     "eslint-plugin-prettier": "^2.4.0",
     "eslint-plugin-react": "^7.5.1",
     "flow-bin": "^0.62.0",
+    "jest": "^22.0.5",
     "prettier": "^1.9.2"
   },
   "dependencies": {
