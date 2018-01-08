@@ -4,23 +4,26 @@ export default (config, { queryName, sort, offset, first }) => {
   const API = 'http://localhost:5050'
 
   function toQuery(column) {
-    return column.accessor
-      .split('.')
-      .reverse()
-      .reduce((acc, segment, i, arr) => {
-        if (segment === 'hits') {
-          const first = get(arr[i - 1].match(/edges\[(\d+)\]/), '[1]', 0)
-          return `${segment}(first: ${first}) {
+    return (
+      column.query ||
+      column.accessor
+        .split('.')
+        .reverse()
+        .reduce((acc, segment, i, arr) => {
+          if (segment === 'hits') {
+            const first = get(arr[i - 1].match(/edges\[(\d+)\]/), '[1]', 0)
+            return `${segment}(first: ${first}) {
                 ${acc}
               }`
-        } else if (i === 0) {
-          return segment
-        } else {
-          return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
+          } else if (i === 0) {
+            return segment
+          } else {
+            return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
                 ${acc}
               }`
-        }
-      }, '')
+          }
+        }, '')
+    )
   }
 
   return fetch(`${API}/${queryName}`, {

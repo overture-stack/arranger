@@ -2,6 +2,7 @@ import React from 'react';
 import { get, intersection, xor } from 'lodash';
 
 import ReactTable from './EnhancedReactTable';
+import columnTypes from './columnTypes';
 
 class DataTable extends React.Component {
   state = {
@@ -83,7 +84,10 @@ class DataTable extends React.Component {
       <div>
         <ReactTable
           data={data}
-          columns={columns}
+          columns={columns.map(column => ({
+            ...column,
+            Cell: column.Cell || columnTypes[column.type],
+          }))}
           defaultPageSize={10}
           className="-striped -highlight"
           {...checkboxProps}
