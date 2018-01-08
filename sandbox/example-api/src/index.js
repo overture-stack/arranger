@@ -1,14 +1,18 @@
 import fs from 'fs';
 import { promisify } from 'util';
 import elasticsearch from 'elasticsearch';
-import makeSchema from '@arranger/schema';
-import server from '@arranger/server';
-import { addMappingsToTypes } from '@arranger/mapping-utils';
 import { Server } from 'http';
 import express from 'express';
 import socketIO from 'socket.io';
+import uuid from 'uuid/v4';
 import fetch from 'node-fetch';
-import { range } from 'lodash';
+import { range, flattenDeep } from 'lodash';
+import makeSchema from '@arranger/schema';
+import server from '@arranger/server';
+import {
+  addMappingsToTypes,
+  mappingToAggsState,
+} from '@arranger/mapping-utils';
 
 let app = express();
 let http = Server(app);
@@ -27,7 +31,6 @@ let fetchMappings = ({ types, es }) => {
   );
 };
 
-//
 // let writeMappingsToFiles = async ({ types, mappings }) =>
 //   types.forEach(
 //     async ([type], i) =>
@@ -127,6 +130,26 @@ let main = async () => {
             },
           );
         });
+
+        // TODO: if exists, diff against state(s)?
+
+        let body = flattenDeep(
+          typesWithMappings.map(([type, props]) => [
+            {
+              index: {
+                _index: `${type}-aggs-state`,
+                _type: `${type}-aggs-state`,
+                _id: uuid(),
+              },
+            },
+            JSON.stringify({
+              timestamp: new Date().toISOString(),
+              state: mappingToAggsState(props.mapping),
+            }),
+          ]),
+        );
+
+        await es.bulk({ body });
 
         server({ http, app, schema, context: { es, io } });
       })
