@@ -52,6 +52,7 @@ export default type => async (
     {}
 
   if (sort && sort.length) {
+    // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
     body.sort = sort.map(({ field, ...rest }) => {
       const nested_path = nested_fields.find(
         nestedField => field.indexOf(nestedField) === 0,
