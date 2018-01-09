@@ -4,7 +4,7 @@ export let esToGraphqlTypeMap = {
   text: 'String',
   date: 'String',
   boolean: 'Boolean',
-  long: 'Int',
+  long: 'Float',
   double: 'Float',
   integer: 'Float',
   float: 'Float',
