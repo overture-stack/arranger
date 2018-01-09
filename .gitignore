@@ -2,3 +2,6 @@ dist
 node_modules
 lerna-debug.log
 .DS_Store
+
+# remove this in beta
+package-lock.json
