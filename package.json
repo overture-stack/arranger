@@ -3,7 +3,9 @@
     "bootstrap": "lerna bootstrap --hoist",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
-    "publish": "lerna publish"
+    "publish": "lerna publish",
+    "netlify-build":
+      "npm i && npm run bootstrap -- --scope @arranger/components --scope example-ui && cd modules/components && build-storybook && cd ../../sandbox/example-ui && npm run build && mv ../../modules/components/storybook-static build/storybook"
   },
   "devDependencies": {
     "lerna": "^2.6.0",
