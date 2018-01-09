@@ -11,7 +11,7 @@
   * [Installation](#installation)
   * [Contribution](#contribution)
   * [Sandbox](#sandbox)
-* [License](#license) (TBD)
+* [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
 
 ### Motivation
 
