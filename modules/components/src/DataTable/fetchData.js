@@ -1,7 +1,7 @@
-import { get } from 'lodash'
+import { get } from 'lodash';
 
 export default (config, { queryName, sort, offset, first }) => {
-  const API = 'http://localhost:5050'
+  const API = 'http://localhost:5050';
 
   function toQuery(column) {
     return (
@@ -11,19 +11,19 @@ export default (config, { queryName, sort, offset, first }) => {
         .reverse()
         .reduce((acc, segment, i, arr) => {
           if (segment === 'hits') {
-            const first = get(arr[i - 1].match(/edges\[(\d+)\]/), '[1]', 0)
+            const first = get(arr[i - 1].match(/edges\[(\d+)\]/), '[1]', 0);
             return `${segment}(first: ${first}) {
                 ${acc}
-              }`
+              }`;
           } else if (i === 0) {
-            return segment
+            return segment;
           } else {
             return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
                 ${acc}
-              }`
+              }`;
           }
         }, '')
-    )
+    );
   }
 
   return fetch(`${API}/${queryName}`, {
@@ -52,18 +52,21 @@ export default (config, { queryName, sort, offset, first }) => {
               return {
                 ...s,
                 field: '_score',
-              }
+              };
             } else {
-              const nested = s.field.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/)
+              const nested = s.field.match(
+                /(.*)\.hits\.edges\[\d+\]\.node(.*)/,
+              );
 
               return {
                 ...s,
+                missing: 'first',
                 ...(nested
                   ? {
                       field: `${nested[1]}${nested[2]}`,
                     }
                   : {}),
-              }
+              };
             }
           }),
         score:
@@ -71,13 +74,13 @@ export default (config, { queryName, sort, offset, first }) => {
           sort
             .filter(s => s.field.indexOf('hits.total') >= 0)
             .map(s => {
-              const match = s.field.match(/((.*)s)\.hits\.total/)
-              return `${match[1]}.${match[2]}_id`
+              const match = s.field.match(/((.*)s)\.hits\.total/);
+              return `${match[1]}.${match[2]}_id`;
             })
             .join(','),
         offset,
         first,
       },
     }),
-  }).then(r => r.json())
-}
+  }).then(r => r.json());
+};

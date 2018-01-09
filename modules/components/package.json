@@ -45,6 +45,8 @@
     "prettier": "^1.9.2"
   },
   "dependencies": {
+    "downshift": "^1.23.2",
+    "filesize": "^3.5.11",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-table": "^6.7.6",

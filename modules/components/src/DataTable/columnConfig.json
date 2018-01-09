@@ -2,32 +2,39 @@
   "files": {
     "type": "files",
     "keyField": "file_id",
+    "defaultSorted":[
+      {
+        "id": "file_name",
+        "desc": false
+      }
+    ],
     "columns": [
+      { "Header": "Access", "accessor": "access", "maxWidth": 100 },
       { "Header": "File Id", "accessor": "file_id" },
-      { "Header": "Access", "accessor": "access" },
       { "Header": "Name", "accessor": "file_name" },
-
-      { "Header": "Cases", "accessor": "cases.hits.total", "type": "number" },
+      { "Header": "Cases", "accessor": "cases.hits.total", "type": "number", "sortable": false, "show": false },
       {
         "Header": "Project",
-        "accessor": "cases.hits.edges[0].node.project.project_id"
+        "accessor": "cases.hits.edges[0].node.project.project_id", "maxWidth": 150
       },
       { "Header": "Data Category", "accessor": "data_category" },
-      { "Header": "Data Format", "accessor": "data_format" },
-      { "Header": "Size", "accessor": "file_size" },
+      { "Header": "Data Format", "accessor": "data_format", "maxWidth": 100 },
+      { "Header": "Size", "accessor": "file_size", "maxWidth": 100, "type": "bits" },
 
       {
         "Header": "Annotations",
         "accessor": "annotations.hits.total",
-        "type": "number"
+        "type": "number",
+        "sortable": false, "maxWidth": 100
       },
 
       { "Header": "Data Type", "accessor": "data_type" },
       {
         "Header": "Experimental Strategy",
-        "accessor": "experimental_strategy"
+        "accessor": "experimental_strategy",
+        "show": false
       },
-      { "Header": "Platform", "accessor": "platform" }
+      { "Header": "Platform", "accessor": "platform", "show": false }
     ]
   }
 }
