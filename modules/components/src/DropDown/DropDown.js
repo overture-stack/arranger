@@ -30,7 +30,7 @@ class DropDown extends React.Component {
   };
   render() {
     const { isOpen } = this.state;
-    const { items, onChange, itemToString } = this.props;
+    const { items, onChange, itemToString, children } = this.props;
 
     return (
       <Downshift
@@ -60,10 +60,10 @@ class DropDown extends React.Component {
             }}
           >
             <button
-              style={{ display: 'inline-flex', cursor: 'pointer' }}
+              style={{ display: 'flex', cursor: 'pointer' }}
               {...getButtonProps({ onClick: this.handleToggleMenu })}
             >
-              <div style={{ marginRight: 8 }}>Show columns</div>
+              <div style={{ marginRight: 8 }}>{children}</div>
               <ArrowIcon isOpen={isOpen} />
             </button>
             {!isOpen ? null : (

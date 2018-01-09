@@ -1,26 +1,16 @@
 import React from 'react';
-import { isEqual, get, intersection, xor, noop } from 'lodash';
+import { get, intersection, xor, noop } from 'lodash';
 
 import ReactTable from './EnhancedReactTable';
-import columnTypes from './columnTypes';
+
 import { compose, defaultProps } from 'recompose';
-import DropDown from './DropDown';
 
 const enhance = compose(
   defaultProps({
     onSelectionChange: noop,
+    onPaginationChange: noop,
   }),
 );
-
-function normalizeColumns(columns) {
-  return columns.map(function(column) {
-    return {
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || columnTypes[column.type],
-    };
-  });
-}
 
 class DataTable extends React.Component {
   constructor(props) {
@@ -30,7 +20,6 @@ class DataTable extends React.Component {
       data: [],
       pages: -1,
       loading: false,
-      columns: normalizeColumns(props.config.columns),
     };
   }
 
@@ -49,7 +38,7 @@ class DataTable extends React.Component {
     const selection =
       this.state.selection.length === this.state.data.length
         ? []
-        : this.state.data.map(item => item[this.props.keyField]);
+        : this.state.data.map(item => item[this.props.config.keyField]);
 
     this.setSelection(selection);
   };
@@ -57,17 +46,14 @@ class DataTable extends React.Component {
   isSelected = key => {
     return this.state.selection.includes(key);
   };
-
-  componentWillReceiveProps(nextProps) {
-    const nextColumns = nextProps.config.columns;
-    if (!isEqual(nextColumns, this.props.config.columns)) {
-      this.setState({ columns: normalizeColumns(nextColumns) });
-    }
-  }
   render() {
     const { toggleSelection, toggleAll, isSelected } = this;
-    const { config: { keyField, defaultSorted }, fetchData } = this.props;
-    const { columns, data, selection, pages, loading } = this.state;
+    const {
+      config: { columns, keyField, defaultSorted },
+      fetchData,
+      defaultPageSize,
+    } = this.props;
+    const { data, selection, pages, loading } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -89,16 +75,22 @@ class DataTable extends React.Component {
         }).then(res => {
           const hits = get(res, 'data.files.hits') || {};
           const data = get(hits, 'edges', []).map(e => e.node);
-
+          const total = hits.total || 0;
+          if (total !== this.state.total) {
+            this.props.onPaginationChange({ total });
+          }
           this.setState({
             data,
-            pages: Math.ceil((hits.total || 0) / state.pageSize),
+            total,
+            pages: Math.ceil(total / state.pageSize),
             loading: false,
-            selection: intersection(
-              data.map(item => item[this.props.keyField]),
+          });
+          this.setSelection(
+            intersection(
+              data.map(item => item[this.props.config.keyField]),
               selection,
             ),
-          });
+          );
         });
       },
     };
@@ -113,33 +105,19 @@ class DataTable extends React.Component {
     };
 
     return (
-      <div>
-        <div style={{ padding: 10, display: 'flex' }}>
-          <DropDown
-            itemToString={i => i.Header}
-            items={columns}
-            onChange={item => {
-              this.setState({
-                columns: Object.assign([], columns, {
-                  [columns.indexOf(item)]: {
-                    ...item,
-                    show: !item.show,
-                  },
-                }),
-              });
-            }}
-          />
-        </div>
-        <ReactTable
-          data={data}
-          defaultSorted={defaultSorted}
-          columns={columns}
-          defaultPageSize={10}
-          className="-striped -highlight"
-          {...checkboxProps}
-          {...fetchFromServerProps}
-        />
-      </div>
+      <ReactTable
+        onPageChange={page => this.props.onPaginationChange({ page })}
+        onPageSizeChange={(pageSize, page) =>
+          this.props.onPaginationChange({ pageSize, page })
+        }
+        data={data}
+        defaultSorted={defaultSorted}
+        columns={columns}
+        defaultPageSize={defaultPageSize}
+        className="-striped -highlight"
+        {...checkboxProps}
+        {...fetchFromServerProps}
+      />
     );
   }
 }

@@ -2,7 +2,7 @@
   "files": {
     "type": "files",
     "keyField": "file_id",
-    "defaultSorted":[
+    "defaultSorted": [
       {
         "id": "file_name",
         "desc": false
@@ -12,20 +12,33 @@
       { "Header": "Access", "accessor": "access", "maxWidth": 100 },
       { "Header": "File Id", "accessor": "file_id" },
       { "Header": "Name", "accessor": "file_name" },
-      { "Header": "Cases", "accessor": "cases.hits.total", "type": "number", "sortable": false, "show": false },
+      {
+        "Header": "Cases",
+        "accessor": "cases.hits.total",
+        "type": "number",
+        "sortable": false,
+        "show": false
+      },
       {
         "Header": "Project",
-        "accessor": "cases.hits.edges[0].node.project.project_id", "maxWidth": 150
+        "accessor": "cases.hits.edges[0].node.project.project_id",
+        "maxWidth": 150
       },
       { "Header": "Data Category", "accessor": "data_category" },
       { "Header": "Data Format", "accessor": "data_format", "maxWidth": 100 },
-      { "Header": "Size", "accessor": "file_size", "maxWidth": 100, "type": "bits" },
+      {
+        "Header": "Size",
+        "accessor": "file_size",
+        "maxWidth": 100,
+        "type": "bits"
+      },
 
       {
         "Header": "Annotations",
         "accessor": "annotations.hits.total",
         "type": "number",
-        "sortable": false, "maxWidth": 100
+        "sortable": false,
+        "maxWidth": 100
       },
 
       { "Header": "Data Type", "accessor": "data_type" },
