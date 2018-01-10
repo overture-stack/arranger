@@ -1,20 +1,24 @@
 import React from 'react';
+
 import DropDown from '../../DropDown';
 import { compose, withProps } from 'recompose';
+import saveTSV from './saveTSV';
 
 const enhance = compose(
   withProps(({ columns }) => ({
-    columns: columns.filter(column => column.canChangeShow),
+    canChangeShowColumns: columns.filter(column => column.canChangeShow),
   })),
 );
 
 const TableToolbar = ({
   columns,
+  canChangeShowColumns,
   onColumnsChange,
   page = 0,
   pageSize = 0,
   total = 0,
   type = '',
+  streamData = () => {},
 }) => (
   <div style={{ padding: 10, display: 'flex' }}>
     <div style={{ flexGrow: 1 }}>
@@ -24,7 +28,7 @@ const TableToolbar = ({
     <input type="text" placeholder="Filter" />
     <DropDown
       itemToString={i => i.Header}
-      items={columns}
+      items={canChangeShowColumns}
       onChange={item => {
         onColumnsChange(
           Object.assign([], columns, {
@@ -39,7 +43,12 @@ const TableToolbar = ({
       Show columns
     </DropDown>
     <div>
-      <button style={{ display: 'flex', cursor: 'pointer' }}>
+      <button
+        style={{ display: 'flex', cursor: 'pointer' }}
+        onClick={() => {
+          saveTSV({ columns: columns.filter(c => c.show), streamData });
+        }}
+      >
         <div style={{ minHeight: 16 }}>Export TSV</div>
       </button>
     </div>

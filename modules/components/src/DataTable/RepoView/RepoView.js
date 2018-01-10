@@ -8,6 +8,7 @@ class RepoView extends React.Component {
     this.state = {
       columns: props.config.columns,
       pageSize: 10,
+      sort: props.config.defaultSorted,
     };
   }
   componentWillReceiveProps(nextProps) {
@@ -18,12 +19,23 @@ class RepoView extends React.Component {
     }
   }
   render() {
-    const { fetchData } = this.props;
-    const { columns, page, pageSize, total } = this.state;
+    const { fetchData, streamData } = this.props;
+    const { columns, page, pageSize, total, sort } = this.state;
 
     return (
       <div>
         <TableToolbar
+          streamData={options =>
+            streamData({
+              ...options,
+              sort: sort.length
+                ? sort.map(sort => ({
+                    field: sort.id,
+                    order: sort.desc ? 'desc' : 'asc',
+                  }))
+                : null,
+            })
+          }
           columns={columns}
           onColumnsChange={columns => this.setState({ columns })}
           total={total}
@@ -36,6 +48,7 @@ class RepoView extends React.Component {
           fetchData={fetchData}
           onSelectionChange={selection => console.log(selection)}
           onPaginationChange={state => this.setState(state)}
+          onSortedChange={sort => this.setState({ sort })}
           defaultPageSize={pageSize}
         />
       </div>

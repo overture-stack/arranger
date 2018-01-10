@@ -97,7 +97,7 @@ class DataTable extends React.Component {
 
   render() {
     const { toggleSelection, toggleAll, isSelected, onFetchData } = this;
-    const { config, defaultPageSize } = this.props;
+    const { config, defaultPageSize, onSortedChange } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selection, pages, loading } = this.state;
 
@@ -119,6 +119,7 @@ class DataTable extends React.Component {
 
     return (
       <ReactTable
+        onSortedChange={onSortedChange}
         onPageChange={page => this.props.onPaginationChange({ page })}
         onPageSizeChange={(pageSize, page) =>
           this.props.onPaginationChange({ pageSize, page })

@@ -1,15 +1,10 @@
 import React from 'react';
 import filesize from 'filesize';
 import { get } from 'lodash';
+import { getSingleValue } from './utils';
 
 const Number = props => <div style={{ textAlign: 'right' }}>{props.value}</div>;
-function getSingleValue(data) {
-  if (typeof data === 'object') {
-    return getSingleValue(Object.values(data)[0]);
-  } else {
-    return data;
-  }
-}
+
 export default {
   number: Number,
   bits: props => (

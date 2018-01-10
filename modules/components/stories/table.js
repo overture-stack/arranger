@@ -72,18 +72,45 @@ const dummyConfig = {
       canChangeShow: true,
       accessor: 'file_size',
     },
+    {
+      show: true,
+      Header: 'Cases Primary Site',
+      type: 'list',
+      sortable: false,
+      canChangeShow: false,
+      query:
+        'cases { hits(first: 5) { total, edges { node { primary_site } } } }',
+      listAccessor: 'cases.hits.edges',
+      totalAccessor: 'cases.hits.total',
+      id: 'cases.primary_site',
+    },
   ]),
 };
 
 const dummyData = Array(1000)
   .fill()
-  .map(() => ({
-    access: Math.random() > 0.5 ? 'controlled' : 'open',
-    file_id: uuid(),
-    file_name: uuid(),
-    data_type: uuid(),
-    file_size: Math.floor(Math.random() * 10000000),
-  }));
+  .map(() => {
+    const cases = Array(Math.floor(Math.random() * 10))
+      .fill()
+      .map(() => ({
+        node: {
+          primary_site: uuid(),
+        },
+      }));
+    return {
+      access: Math.random() > 0.5 ? 'controlled' : 'open',
+      file_id: uuid(),
+      file_name: uuid(),
+      data_type: uuid(),
+      file_size: Math.floor(Math.random() * 10000000),
+      cases: {
+        hits: {
+          total: cases.length,
+          edges: cases,
+        },
+      },
+    };
+  });
 
 const withColumns = compose(
   withState('columns', 'onColumnsChange', dummyConfig.columns),
@@ -102,6 +129,19 @@ function fetchDummyData(config, { sort, offset, first }) {
   });
 }
 
+function streamDummyData({ sort, first, onData, onEnd }) {
+  for (let i = 0; i < dummyData.length; i += first) {
+    onData({
+      total: dummyData.length,
+      data: (sort
+        ? orderBy(dummyData, sort.map(s => s.field), sort.map(s => s.order))
+        : dummyData
+      ).slice(i, i + first),
+    });
+  }
+  onEnd();
+}
+
 storiesOf('Table', module)
   .add('Table', () => (
     <DataTable
@@ -110,9 +150,13 @@ storiesOf('Table', module)
       onSelectionChange={selection => console.log(selection)}
     />
   ))
-  .add('Toolbar', () => <TableToolbarStory />)
+  .add('Toolbar', () => <TableToolbarStory streamData={streamDummyData} />)
   .add('Data Table', () => (
-    <RepoView config={dummyConfig} fetchData={fetchDummyData} />
+    <RepoView
+      config={dummyConfig}
+      fetchData={fetchDummyData}
+      streamData={streamDummyData}
+    />
   ))
   .add('Live Data Table', () => (
     <RepoView config={tableConfig} fetchData={fetchData} />
