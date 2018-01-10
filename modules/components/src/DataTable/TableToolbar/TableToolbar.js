@@ -1,7 +1,14 @@
 import React from 'react';
 import DropDown from '../../DropDown';
+import { compose, withProps } from 'recompose';
 
-export default ({
+const enhance = compose(
+  withProps(({ columns }) => ({
+    columns: columns.filter(column => column.canChangeShow),
+  })),
+);
+
+const TableToolbar = ({
   columns,
   onColumnsChange,
   page = 0,
@@ -38,3 +45,5 @@ export default ({
     </div>
   </div>
 );
+
+export default enhance(TableToolbar);

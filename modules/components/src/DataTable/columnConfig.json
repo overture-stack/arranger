@@ -2,52 +2,5220 @@
   "files": {
     "type": "files",
     "keyField": "file_id",
-    "defaultSorted": [
-      {
-        "id": "file_name",
-        "desc": false
-      }
-    ],
+    "defaultSorted": [{ "id": "access", "desc": false }],
     "columns": [
-      { "Header": "Access", "accessor": "access", "maxWidth": 100 },
-      { "Header": "File Id", "accessor": "file_id" },
-      { "Header": "Name", "accessor": "file_name" },
       {
-        "Header": "Cases",
-        "accessor": "cases.hits.total",
-        "type": "number",
-        "sortable": false,
-        "show": false
+        "show": true,
+        "Header": "Access",
+        "accessor": "access",
+        "canChangeShow": true,
+        "type": "string",
+        "sortable": false
       },
       {
-        "Header": "Project",
-        "accessor": "cases.hits.edges[0].node.project.project_id",
-        "maxWidth": 150
+        "show": false,
+        "Header": "Acl",
+        "accessor": "acl",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
       },
-      { "Header": "Data Category", "accessor": "data_category" },
-      { "Header": "Data Format", "accessor": "data_format", "maxWidth": 100 },
       {
-        "Header": "Size",
-        "accessor": "file_size",
-        "maxWidth": 100,
-        "type": "bits"
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Analysis Id",
+        "accessor": "analysis.hits.edges[0].analysis_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
       },
-
       {
-        "Header": "Annotations",
-        "accessor": "annotations.hits.total",
-        "type": "number",
-        "sortable": false,
-        "maxWidth": 100
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Analysis Type",
+        "accessor": "analysis.hits.edges[0].analysis_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
       },
-
-      { "Header": "Data Type", "accessor": "data_type" },
       {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Created Datetime",
+        "accessor": "analysis.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Access",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].access",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Input Files Hits Edges 0 Created Datetime",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Input Files Hits Edges 0 Data Category",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Data Format",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Data Type",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Error Type",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Input Files Hits Edges 0 Experimental Strategy",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].experimental_strategy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 File Id",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].file_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 File Name",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 File Size",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 File State",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Md 5 Sum",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Platform",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].platform",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Revision",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].revision",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 State",
+        "accessor": "analysis.hits.edges[0].input_files.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Input Files Hits Edges 0 State Comment",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Input Files Hits Edges 0 Submitter Id",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Input Files Hits Edges 0 Updated Datetime",
+        "accessor":
+          "analysis.hits.edges[0].input_files.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 RIN",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].RIN",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Adapter Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].adapter_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Adapter Sequence",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].adapter_sequence",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Base Caller Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].base_caller_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Base Caller Version",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].base_caller_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Created Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Experiment Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].experiment_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Flow Cell Barcode",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].flow_cell_barcode",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Includes Spike Ins",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].includes_spike_ins",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Instrument Model",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].instrument_model",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Is Paired End",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].is_paired_end",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Preparation Kit Catalog Number",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_preparation_kit_catalog_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Preparation Kit Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_preparation_kit_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Preparation Kit Vendor",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_preparation_kit_vendor",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Preparation Kit Version",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_preparation_kit_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Selection",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_selection",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Strand",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_strand",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Library Strategy",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].library_strategy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Platform",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].platform",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Id",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Adapter Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].adapter_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Basic Statistics",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].basic_statistics",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Created Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Encoding",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].encoding",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Fastq Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].fastq_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Kmer Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].kmer_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Overrepresented Sequences",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].overrepresented_sequences",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Base N Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_base_n_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Base Sequence Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_base_sequence_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Base Sequence Quality",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_base_sequence_quality",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Sequence Gc Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_sequence_gc_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Sequence Quality Score",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_sequence_quality_score",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Per Tile Sequence Quality",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].per_tile_sequence_quality",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Percent Gc Content",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].percent_gc_content",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Read Group Qc Id",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].read_group_qc_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Sequence Duplication Levels",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].sequence_duplication_levels",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Sequence Length Distribution",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].sequence_length_distribution",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 State",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Submitter Id",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Total Sequences",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].total_sequences",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Updated Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Workflow End Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].workflow_end_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Workflow Link",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].workflow_link",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Workflow Start Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].workflow_start_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Workflow Type",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].workflow_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Group Qcs Hits Edges 0 Workflow Version",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_group_qcs.hits.edges[0].workflow_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Read Length",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].read_length",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Sequencing Center",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].sequencing_center",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Sequencing Date",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].sequencing_date",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Size Selection Range",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].size_selection_range",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Spike Ins Concentration",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].spike_ins_concentration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Spike Ins Fasta",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].spike_ins_fasta",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 State",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Submitter Id",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Target Capture Kit Catalog Number",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].target_capture_kit_catalog_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Target Capture Kit Name",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].target_capture_kit_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Target Capture Kit Target Region",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].target_capture_kit_target_region",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Target Capture Kit Vendor",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].target_capture_kit_vendor",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Target Capture Kit Version",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].target_capture_kit_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 To Trim Adapter Sequence",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].to_trim_adapter_sequence",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Analysis Hits Edges 0 Metadata Hits Edges 0 Read Groups Hits Edges 0 Updated Datetime",
+        "accessor":
+          "analysis.hits.edges[0].metadata.hits.edges[0].read_groups.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 State",
+        "accessor": "analysis.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Submitter Id",
+        "accessor": "analysis.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Updated Datetime",
+        "accessor": "analysis.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Workflow End Datetime",
+        "accessor": "analysis.hits.edges[0].workflow_end_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Workflow Link",
+        "accessor": "analysis.hits.edges[0].workflow_link",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Workflow Start Datetime",
+        "accessor": "analysis.hits.edges[0].workflow_start_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Workflow Type",
+        "accessor": "analysis.hits.edges[0].workflow_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Analysis Hits Edges 0 Workflow Version",
+        "accessor": "analysis.hits.edges[0].workflow_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": true,
+        "Header": "Annotations Hits Edges 0 Annotation Id",
+        "id": "annotations.annotation_id",
+        "listAccessor": "annotations.hits.edges",
+        "totalAccessor": "annotations.hits.total",
+        "query":
+          "annotations { hits(first: 1) { total, edges { node { annotation_id } } } }",
+        "canChangeShow": false,
+        "type": "list",
+        "sortable": true
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Case Id",
+        "accessor": "annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Case Submitter Id",
+        "accessor": "annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Category",
+        "accessor": "annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Classification",
+        "accessor": "annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Created Datetime",
+        "accessor": "annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Creator",
+        "accessor": "annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Entity Id",
+        "accessor": "annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor": "annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Entity Type",
+        "accessor": "annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor": "annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor": "annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Notes",
+        "accessor": "annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 State",
+        "accessor": "annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Status",
+        "accessor": "annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Submitter Id",
+        "accessor": "annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Annotations Hits Edges 0 Updated Datetime",
+        "accessor": "annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Archive Id",
+        "accessor": "archive.hits.edges[0].archive_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Created Datetime",
+        "accessor": "archive.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Data Category",
+        "accessor": "archive.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Data Format",
+        "accessor": "archive.hits.edges[0].data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Data Type",
+        "accessor": "archive.hits.edges[0].data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Error Type",
+        "accessor": "archive.hits.edges[0].error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 File Name",
+        "accessor": "archive.hits.edges[0].file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 File Size",
+        "accessor": "archive.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 File State",
+        "accessor": "archive.hits.edges[0].file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Md 5 Sum",
+        "accessor": "archive.hits.edges[0].md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Revision",
+        "accessor": "archive.hits.edges[0].revision",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 State",
+        "accessor": "archive.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 State Comment",
+        "accessor": "archive.hits.edges[0].state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Submitter Id",
+        "accessor": "archive.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Archive Hits Edges 0 Updated Datetime",
+        "accessor": "archive.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Associated Entities Hits Edges 0 Case Id",
+        "accessor": "associated_entities.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Associated Entities Hits Edges 0 Entity Id",
+        "accessor": "associated_entities.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Associated Entities Hits Edges 0 Entity Submitter Id",
+        "accessor": "associated_entities.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Associated Entities Hits Edges 0 Entity Type",
+        "accessor": "associated_entities.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Aliquot Ids",
+        "accessor": "cases.hits.edges[0].aliquot_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Analyte Ids",
+        "accessor": "cases.hits.edges[0].analyte_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor": "cases.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Case Id",
+        "accessor": "cases.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Created Datetime",
+        "accessor": "cases.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Days To Index",
+        "accessor": "cases.hits.edges[0].days_to_index",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Demographic Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Demographic Id",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].demographic_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Ethnicity",
+        "accessor": "cases.hits.edges[0].demographic.hits.edges[0].ethnicity",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Gender",
+        "accessor": "cases.hits.edges[0].demographic.hits.edges[0].gender",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Race",
+        "accessor": "cases.hits.edges[0].demographic.hits.edges[0].race",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].demographic.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Demographic Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Year Of Birth",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].year_of_birth",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Demographic Hits Edges 0 Year Of Death",
+        "accessor":
+          "cases.hits.edges[0].demographic.hits.edges[0].year_of_death",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Age At Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].age_at_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Clinical M",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_clinical_m",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Clinical N",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_clinical_n",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Clinical Stage",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_clinical_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Clinical T",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_clinical_t",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Pathologic M",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_pathologic_m",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Pathologic N",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_pathologic_n",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Pathologic Stage",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_pathologic_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ajcc Pathologic T",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ajcc_pathologic_t",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ann Arbor B Symptoms",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ann_arbor_b_symptoms",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ann Arbor Clinical Stage",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ann_arbor_clinical_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ann Arbor Extranodal Involvement",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ann_arbor_extranodal_involvement",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ann Arbor Pathologic Stage",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ann_arbor_pathologic_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Burkitt Lymphoma Clinical Variant",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].burkitt_lymphoma_clinical_variant",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Cause Of Death",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].cause_of_death",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Circumferential Resection Margin",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].circumferential_resection_margin",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Classification Of Tumor",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].classification_of_tumor",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Colon Polyps History",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].colon_polyps_history",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Birth",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_birth",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Death",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_death",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Hiv Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_hiv_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Last Follow Up",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_last_follow_up",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Last Known Disease Status",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_last_known_disease_status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To New Event",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_new_event",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Days To Recurrence",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].days_to_recurrence",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Diagnosis Id",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].diagnosis_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Figo Stage",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].figo_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Hiv Positive",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].hiv_positive",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Hpv Positive Type",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].hpv_positive_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Hpv Status",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].hpv_status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Last Known Disease Status",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].last_known_disease_status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Laterality",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].laterality",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ldh Level At Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ldh_level_at_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Ldh Normal Range Upper",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].ldh_normal_range_upper",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Lymph Nodes Positive",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].lymph_nodes_positive",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Lymphatic Invasion Present",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].lymphatic_invasion_present",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Method Of Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].method_of_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Morphology",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].morphology",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 New Event Anatomic Site",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].new_event_anatomic_site",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 New Event Type",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].new_event_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Perineural Invasion Present",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].perineural_invasion_present",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Primary Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].primary_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Prior Malignancy",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].prior_malignancy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Prior Treatment",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].prior_treatment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Progression Or Recurrence",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].progression_or_recurrence",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Residual Disease",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].residual_disease",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Site Of Resection Or Biopsy",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].site_of_resection_or_biopsy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Submitter Id",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Tissue Or Organ Of Origin",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].tissue_or_organ_of_origin",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Days To Treatment",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].days_to_treatment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Days To Treatment End",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].days_to_treatment_end",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Days To Treatment Start",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].days_to_treatment_start",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Therapeutic Agents",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].therapeutic_agents",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Anatomic Site",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_anatomic_site",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Id",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Intent Type",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_intent_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Or Therapy",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_or_therapy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Outcome",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_outcome",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Treatment Type",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].treatment_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Treatments Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].treatments.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Tumor Grade",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].tumor_grade",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Tumor Stage",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].tumor_stage",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Diagnoses Hits Edges 0 Vascular Invasion Present",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].vascular_invasion_present",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Vital Status",
+        "accessor": "cases.hits.edges[0].diagnoses.hits.edges[0].vital_status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Diagnoses Hits Edges 0 Year Of Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].diagnoses.hits.edges[0].year_of_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Disease Type",
+        "accessor": "cases.hits.edges[0].disease_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Alcohol History",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].alcohol_history",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Alcohol Intensity",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].alcohol_intensity",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Bmi",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].bmi",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Exposures Hits Edges 0 Cigarettes Per Day",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].cigarettes_per_day",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Exposure Id",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].exposure_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Height",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].height",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Pack Years Smoked",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].pack_years_smoked",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Submitter Id",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Exposures Hits Edges 0 Tobacco Smoking Onset Year",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].tobacco_smoking_onset_year",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Exposures Hits Edges 0 Tobacco Smoking Quit Year",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].tobacco_smoking_quit_year",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Exposures Hits Edges 0 Tobacco Smoking Status",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].tobacco_smoking_status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].exposures.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Weight",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].weight",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Exposures Hits Edges 0 Years Smoked",
+        "accessor": "cases.hits.edges[0].exposures.hits.edges[0].years_smoked",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Family History Id",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].family_history_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Relationship Age At Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].relationship_age_at_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Relationship Gender",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].relationship_gender",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Relationship Primary Diagnosis",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].relationship_primary_diagnosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Relationship Type",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].relationship_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Relative With Cancer History",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].relative_with_cancer_history",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Family Histories Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].family_histories.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Family Histories Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].family_histories.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Portion Ids",
+        "accessor": "cases.hits.edges[0].portion_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Primary Site",
+        "accessor": "cases.hits.edges[0].primary_site",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Project Hits Edges 0 Dbgap Accession Number",
+        "accessor":
+          "cases.hits.edges[0].project.hits.edges[0].dbgap_accession_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Disease Type",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].disease_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Project Hits Edges 0 Intended Release Date",
+        "accessor":
+          "cases.hits.edges[0].project.hits.edges[0].intended_release_date",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Name",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Primary Site",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].primary_site",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Project Hits Edges 0 Program Hits Edges 0 Dbgap Accession Number",
+        "accessor":
+          "cases.hits.edges[0].project.hits.edges[0].program.hits.edges[0].dbgap_accession_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Project Hits Edges 0 Program Hits Edges 0 Name",
+        "accessor":
+          "cases.hits.edges[0].project.hits.edges[0].program.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Project Hits Edges 0 Program Hits Edges 0 Program Id",
+        "accessor":
+          "cases.hits.edges[0].project.hits.edges[0].program.hits.edges[0].program_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Project Id",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].project_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Releasable",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].releasable",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 Released",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].released",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Project Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].project.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Sample Ids",
+        "accessor": "cases.hits.edges[0].sample_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Biospecimen Anatomic Site",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].biospecimen_anatomic_site",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Composition",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].composition",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Current Weight",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].current_weight",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Days To Collection",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].days_to_collection",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Days To Sample Procurement",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].days_to_sample_procurement",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Diagnosis Pathologically Confirmed",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].diagnosis_pathologically_confirmed",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Freezing Method",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].freezing_method",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Initial Weight",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].initial_weight",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Intermediate Dimension",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].intermediate_dimension",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Is Ffpe",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].is_ffpe",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Longest Dimension",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].longest_dimension",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Method Of Sample Procurement",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].method_of_sample_procurement",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Oct Embedded",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].oct_embedded",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Pathology Report Uuid",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].pathology_report_uuid",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 A 260 A 280 Ratio",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].a260_a280_ratio",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Aliquot Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].aliquot_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Aliquot Quantity",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].aliquot_quantity",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Aliquot Volume",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].aliquot_volume",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Amount",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].amount",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Analyte Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].analyte_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Analyte Type Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].analyte_type_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Center Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].center_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Center Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].center_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Code",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].code",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Name",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Namespace",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].namespace",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Center Hits Edges 0 Short Name",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].center.hits.edges[0].short_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Concentration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].concentration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Source Center",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].source_center",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Aliquots Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].aliquots.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Amount",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].amount",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Analyte Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].analyte_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Analyte Quantity",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].analyte_quantity",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Analyte Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].analyte_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Analyte Type Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].analyte_type_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Analyte Volume",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].analyte_volume",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Concentration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].concentration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Normal Tumor Genotype Snp Match",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].normal_tumor_genotype_snp_match",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Ribosomal Rna 28 S 16 S Ratio",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].ribosomal_rna_28s_16s_ratio",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Spectrophotometer Method",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].spectrophotometer_method",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Analytes Hits Edges 0 Well Number",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].analytes.hits.edges[0].well_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Center Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].center_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Center Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].center_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Code",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].code",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Name",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Namespace",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].namespace",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Center Hits Edges 0 Short Name",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].center.hits.edges[0].short_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Creation Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].creation_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Is Ffpe",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].is_ffpe",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Portion Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].portion_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Portion Number",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].portion_number",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Annotation Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].annotation_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Case Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].case_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Case Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].case_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Category",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Classification",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].classification",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Creator",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].creator",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Entity Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].entity_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Entity Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].entity_submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Entity Type",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].entity_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Legacy Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].legacy_created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Legacy Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].legacy_updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Notes",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].notes",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Status",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].status",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Annotations Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].annotations.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Created Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Number Proliferating Cells",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].number_proliferating_cells",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Eosinophil Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_eosinophil_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Granulocyte Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_granulocyte_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Inflam Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_inflam_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Lymphocyte Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_lymphocyte_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Monocyte Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_monocyte_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Necrosis",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_necrosis",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Neutrophil Infiltration",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_neutrophil_infiltration",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Normal Cells",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_normal_cells",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Stromal Cells",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_stromal_cells",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Tumor Cells",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_tumor_cells",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Percent Tumor Nuclei",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].percent_tumor_nuclei",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Section Location",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].section_location",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Slide Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].slide_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Slides Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].slides.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 State",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Submitter Id",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Portions Hits Edges 0 Weight",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].portions.hits.edges[0].weight",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Preservation Method",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].preservation_method",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Sample Id",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].sample_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Sample Type",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].sample_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Sample Type Id",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].sample_type_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Shortest Dimension",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].shortest_dimension",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Submitter Id",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Time Between Clamping And Freezing",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].time_between_clamping_and_freezing",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Samples Hits Edges 0 Time Between Excision And Freezing",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].time_between_excision_and_freezing",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Tissue Type",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].tissue_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Tumor Code",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].tumor_code",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Tumor Code Id",
+        "accessor": "cases.hits.edges[0].samples.hits.edges[0].tumor_code_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Tumor Descriptor",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].tumor_descriptor",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Samples Hits Edges 0 Updated Datetime",
+        "accessor":
+          "cases.hits.edges[0].samples.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Slide Ids",
+        "accessor": "cases.hits.edges[0].slide_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 State",
+        "accessor": "cases.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Aliquot Ids",
+        "accessor": "cases.hits.edges[0].submitter_aliquot_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Analyte Ids",
+        "accessor": "cases.hits.edges[0].submitter_analyte_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Id",
+        "accessor": "cases.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Portion Ids",
+        "accessor": "cases.hits.edges[0].submitter_portion_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Sample Ids",
+        "accessor": "cases.hits.edges[0].submitter_sample_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Submitter Slide Ids",
+        "accessor": "cases.hits.edges[0].submitter_slide_ids",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Summary Hits Edges 0 Data Categories Hits Edges 0 Data Category",
+        "accessor":
+          "cases.hits.edges[0].summary.hits.edges[0].data_categories.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Summary Hits Edges 0 Data Categories Hits Edges 0 File Count",
+        "accessor":
+          "cases.hits.edges[0].summary.hits.edges[0].data_categories.hits.edges[0].file_count",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Summary Hits Edges 0 Experimental Strategies Hits Edges 0 Experimental Strategy",
+        "accessor":
+          "cases.hits.edges[0].summary.hits.edges[0].experimental_strategies.hits.edges[0].experimental_strategy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Summary Hits Edges 0 Experimental Strategies Hits Edges 0 File Count",
+        "accessor":
+          "cases.hits.edges[0].summary.hits.edges[0].experimental_strategies.hits.edges[0].file_count",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Summary Hits Edges 0 File Count",
+        "accessor": "cases.hits.edges[0].summary.hits.edges[0].file_count",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Summary Hits Edges 0 File Size",
+        "accessor": "cases.hits.edges[0].summary.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Tissue Source Site Hits Edges 0 Bcr Id",
+        "accessor":
+          "cases.hits.edges[0].tissue_source_site.hits.edges[0].bcr_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Tissue Source Site Hits Edges 0 Code",
+        "accessor": "cases.hits.edges[0].tissue_source_site.hits.edges[0].code",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Tissue Source Site Hits Edges 0 Name",
+        "accessor": "cases.hits.edges[0].tissue_source_site.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Tissue Source Site Hits Edges 0 Project",
+        "accessor":
+          "cases.hits.edges[0].tissue_source_site.hits.edges[0].project",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Cases Hits Edges 0 Tissue Source Site Hits Edges 0 Tissue Source Site Id",
+        "accessor":
+          "cases.hits.edges[0].tissue_source_site.hits.edges[0].tissue_source_site_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Cases Hits Edges 0 Updated Datetime",
+        "accessor": "cases.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Center Id",
+        "accessor": "center.hits.edges[0].center_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Center Type",
+        "accessor": "center.hits.edges[0].center_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Code",
+        "accessor": "center.hits.edges[0].code",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Name",
+        "accessor": "center.hits.edges[0].name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Namespace",
+        "accessor": "center.hits.edges[0].namespace",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Center Hits Edges 0 Short Name",
+        "accessor": "center.hits.edges[0].short_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Created Datetime",
+        "accessor": "created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Data Category",
+        "accessor": "data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Data Format",
+        "accessor": "data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Data Type",
+        "accessor": "data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Analysis Id",
+        "accessor": "downstream_analyses.hits.edges[0].analysis_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Analysis Type",
+        "accessor": "downstream_analyses.hits.edges[0].analysis_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Created Datetime",
+        "accessor": "downstream_analyses.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Access",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].access",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Created Datetime",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Data Category",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Data Format",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Data Type",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Error Type",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Experimental Strategy",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].experimental_strategy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 File Id",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].file_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 File Name",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 File Size",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 File State",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Md 5 Sum",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Platform",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].platform",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Revision",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].revision",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 State",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 State Comment",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Submitter Id",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header":
+          "Downstream Analyses Hits Edges 0 Output Files Hits Edges 0 Updated Datetime",
+        "accessor":
+          "downstream_analyses.hits.edges[0].output_files.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 State",
+        "accessor": "downstream_analyses.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Submitter Id",
+        "accessor": "downstream_analyses.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Updated Datetime",
+        "accessor": "downstream_analyses.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Workflow End Datetime",
+        "accessor": "downstream_analyses.hits.edges[0].workflow_end_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Workflow Link",
+        "accessor": "downstream_analyses.hits.edges[0].workflow_link",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Workflow Start Datetime",
+        "accessor": "downstream_analyses.hits.edges[0].workflow_start_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Workflow Type",
+        "accessor": "downstream_analyses.hits.edges[0].workflow_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Downstream Analyses Hits Edges 0 Workflow Version",
+        "accessor": "downstream_analyses.hits.edges[0].workflow_version",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Error Type",
+        "accessor": "error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
         "Header": "Experimental Strategy",
         "accessor": "experimental_strategy",
-        "show": false
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
       },
-      { "Header": "Platform", "accessor": "platform", "show": false }
+      {
+        "show": false,
+        "Header": "File Autocomplete",
+        "accessor": "file_autocomplete",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "File Id",
+        "accessor": "file_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "File Name",
+        "accessor": "file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "File Size",
+        "accessor": "file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "File State",
+        "accessor": "file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Access",
+        "accessor": "index_files.hits.edges[0].access",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Created Datetime",
+        "accessor": "index_files.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Data Category",
+        "accessor": "index_files.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Data Format",
+        "accessor": "index_files.hits.edges[0].data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Data Type",
+        "accessor": "index_files.hits.edges[0].data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Error Type",
+        "accessor": "index_files.hits.edges[0].error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Experimental Strategy",
+        "accessor": "index_files.hits.edges[0].experimental_strategy",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 File Id",
+        "accessor": "index_files.hits.edges[0].file_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 File Name",
+        "accessor": "index_files.hits.edges[0].file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 File Size",
+        "accessor": "index_files.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 File State",
+        "accessor": "index_files.hits.edges[0].file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Md 5 Sum",
+        "accessor": "index_files.hits.edges[0].md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Platform",
+        "accessor": "index_files.hits.edges[0].platform",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Revision",
+        "accessor": "index_files.hits.edges[0].revision",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 State",
+        "accessor": "index_files.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 State Comment",
+        "accessor": "index_files.hits.edges[0].state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Submitter Id",
+        "accessor": "index_files.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Index Files Hits Edges 0 Updated Datetime",
+        "accessor": "index_files.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Md 5 Sum",
+        "accessor": "md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Access",
+        "accessor": "metadata_files.hits.edges[0].access",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Created Datetime",
+        "accessor": "metadata_files.hits.edges[0].created_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Data Category",
+        "accessor": "metadata_files.hits.edges[0].data_category",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Data Format",
+        "accessor": "metadata_files.hits.edges[0].data_format",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Data Type",
+        "accessor": "metadata_files.hits.edges[0].data_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Error Type",
+        "accessor": "metadata_files.hits.edges[0].error_type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 File Id",
+        "accessor": "metadata_files.hits.edges[0].file_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 File Name",
+        "accessor": "metadata_files.hits.edges[0].file_name",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 File Size",
+        "accessor": "metadata_files.hits.edges[0].file_size",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 File State",
+        "accessor": "metadata_files.hits.edges[0].file_state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Md 5 Sum",
+        "accessor": "metadata_files.hits.edges[0].md5sum",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 State",
+        "accessor": "metadata_files.hits.edges[0].state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 State Comment",
+        "accessor": "metadata_files.hits.edges[0].state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Submitter Id",
+        "accessor": "metadata_files.hits.edges[0].submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Type",
+        "accessor": "metadata_files.hits.edges[0].type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Metadata Files Hits Edges 0 Updated Datetime",
+        "accessor": "metadata_files.hits.edges[0].updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Origin",
+        "accessor": "origin",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Platform",
+        "accessor": "platform",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Revision",
+        "accessor": "revision",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "State",
+        "accessor": "state",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "State Comment",
+        "accessor": "state_comment",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Submitter Id",
+        "accessor": "submitter_id",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Tags",
+        "accessor": "tags",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Type",
+        "accessor": "type",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      },
+      {
+        "show": false,
+        "Header": "Updated Datetime",
+        "accessor": "updated_datetime",
+        "canChangeShow": false,
+        "type": "string",
+        "sortable": false
+      }
     ]
   }
 }

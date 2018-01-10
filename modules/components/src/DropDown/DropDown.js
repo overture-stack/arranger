@@ -30,7 +30,13 @@ class DropDown extends React.Component {
   };
   render() {
     const { isOpen } = this.state;
-    const { items, onChange, itemToString, children } = this.props;
+    const {
+      items,
+      onChange,
+      itemToString,
+      children,
+      align = 'right',
+    } = this.props;
 
     return (
       <Downshift
@@ -77,6 +83,9 @@ class DropDown extends React.Component {
                   boxSizing: 'border-box',
                   cursor: 'pointer',
                   padding: 5,
+                  right: align === 'right' ? 0 : 'auto',
+                  left: align === 'right' ? 'auto' : 0,
+                  top: '100%',
                 }}
               >
                 {items.map((item, index) => (

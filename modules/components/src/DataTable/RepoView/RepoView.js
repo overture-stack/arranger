@@ -32,7 +32,7 @@ class RepoView extends React.Component {
         />
         <DataTable
           config={{ ...this.props.config, columns }}
-          fetchData={state => fetchData(this.props.config, state)}
+          fetchData={fetchData}
           onSelectionChange={selection => console.log(selection)}
           onPaginationChange={state => this.setState(state)}
           defaultPageSize={pageSize}

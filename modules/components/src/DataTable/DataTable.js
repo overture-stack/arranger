@@ -48,11 +48,8 @@ class DataTable extends React.Component {
   };
   render() {
     const { toggleSelection, toggleAll, isSelected } = this;
-    const {
-      config: { columns, keyField, defaultSorted },
-      fetchData,
-      defaultPageSize,
-    } = this.props;
+    const { config, fetchData, defaultPageSize } = this.props;
+    const { columns, keyField, defaultSorted } = config;
     const { data, selection, pages, loading } = this.state;
 
     const fetchFromServerProps = {
@@ -62,7 +59,7 @@ class DataTable extends React.Component {
       onFetchData: state => {
         this.setState({ loading: true });
 
-        fetchData({
+        fetchData(config, {
           queryName: 'Table',
           sort: state.sorted.length
             ? state.sorted.map(sort => ({

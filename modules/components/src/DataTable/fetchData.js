@@ -37,7 +37,15 @@ export default (config, { queryName, sort, offset, first }) => {
               total
               edges {
                 node {
-                  ${config.columns.map(toQuery).join('\n')}
+                  ${config.columns
+                    .filter(
+                      column =>
+                        column.fetch ||
+                        column.show ||
+                        column.accessor === config.keyField,
+                    )
+                    .map(toQuery)
+                    .join('\n')}
                 }
               }
             }

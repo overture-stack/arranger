@@ -32,11 +32,11 @@ const withColumns = compose(
 
 const TableToolbarStory = withColumns(TableToolbar);
 
-storiesOf('Table')
+storiesOf('Table', module)
   .add('Table', () => (
     <DataTable
       config={tableConfig}
-      fetchData={state => fetchData(tableConfig, state)}
+      fetchData={fetchData}
       onSelectionChange={selection => console.log(selection)}
     />
   ))
