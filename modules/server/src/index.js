@@ -5,12 +5,14 @@ import { graphqlExpress } from 'apollo-server-express'
 import { rainbow } from 'chalk-animation'
 
 module.exports = ({
+  app,
+  http,
+  io,
   port = 5050,
   context = {},
   schema,
   endpoints = ['/', '/graphql', '/graphql/:query'],
 } = {}) => {
-  const app = express()
   app.use(cors())
 
   app.use(
@@ -25,5 +27,5 @@ module.exports = ({
           }),
   )
 
-  app.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`))
+  http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`))
 }

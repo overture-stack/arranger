@@ -1,11 +1,18 @@
-import fs from 'fs'
-import { promisify } from 'util'
-import elasticsearch from 'elasticsearch'
-import makeSchema from '@arranger/schema'
-import server from '@arranger/server'
-import { addMappingsToTypes } from '@arranger/mapping-utils'
+import fs from 'fs';
+import { promisify } from 'util';
+import elasticsearch from 'elasticsearch';
+import makeSchema from '@arranger/schema';
+import server from '@arranger/server';
+import { addMappingsToTypes } from '@arranger/mapping-utils';
+import { Server } from 'http';
+import express from 'express';
+import socketIO from 'socket.io';
 
-let writeFile = promisify(fs.writeFile)
+let app = express();
+let http = Server(app);
+let io = socketIO(http);
+
+let writeFile = promisify(fs.writeFile);
 
 let fetchMappings = ({ types, es }) => {
   return Promise.all(
@@ -15,8 +22,8 @@ let fetchMappings = ({ types, es }) => {
         type: es_type,
       }),
     ),
-  )
-}
+  );
+};
 //
 // let writeMappingsToFiles = async ({ types, mappings }) =>
 //   types.forEach(
@@ -37,30 +44,30 @@ let main = async () => {
       esconfig.httpAuth = `${process.env.ES_USER}:${process.env.ES_PASSWORD}`;
     }
 
-    if (process.env.ES_TRACE) esconfig.log = process.env.ES_TRACE
+    if (process.env.ES_TRACE) esconfig.log = process.env.ES_TRACE;
 
-    let es = new elasticsearch.Client(esconfig)
+    let es = new elasticsearch.Client(esconfig);
 
     es
       .ping({
         requestTimeout: 1000,
       })
       .then(async () => {
-        let rootTypes = Object.entries(global.config.ROOT_TYPES)
-        let types = Object.entries(global.config.ES_TYPES)
-        let mappings = await fetchMappings({ types, es })
-        let typesWithMappings = addMappingsToTypes({ types, mappings })
-        let schema = makeSchema({ types: typesWithMappings, rootTypes })
-        server({ schema, context: { es } })
+        let rootTypes = Object.entries(global.config.ROOT_TYPES);
+        let types = Object.entries(global.config.ES_TYPES);
+        let mappings = await fetchMappings({ types, es });
+        let typesWithMappings = addMappingsToTypes({ types, mappings });
+        let schema = makeSchema({ types: typesWithMappings, rootTypes });
+        server({ http, app, schema, context: { es, io } });
       })
       .catch(err => {
-        console.log(err)
-        server({ schema })
-      })
+        console.log(err);
+        server({ schema });
+      });
   } else {
-    let schema = makeSchema({ mock: true })
-    server({ schema })
+    let schema = makeSchema({ mock: true });
+    server({ schema });
   }
-}
+};
 
-main()
+main();
