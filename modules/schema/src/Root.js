@@ -33,6 +33,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     viewer: Root
     query(query: String, types: [String]): QueryResults
     aggsState(indices: [String]): [AggsStates]
+    columnsState(indices: [String]): [ColumnsStates]
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${key}: ${type.name}`)}
   }
@@ -41,6 +42,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
   type Mutation {
     saveAggsState(index: String! state: JSON!): AggsStates
+    saveColumnsState(index: String! state: JSON!): ColumnsStates
   }
 
   schema {
@@ -73,6 +75,21 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
               body: {
                 sort: [{ timestamp: { order: 'desc' } }],
               },
+            }),
+          ),
+        );
+
+        return zip(indices, responses).map(([index, data]) => ({
+          index,
+          states: data.hits.hits.map(x => x._source),
+        }));
+      },
+      columnsState: async (obj, { indices }, { es }) => {
+        let responses = await Promise.all(
+          indices.map(index =>
+            es.search({
+              index: `${index}-columns-state`,
+              type: `${index}-columns-state`,
             }),
           ),
         );
