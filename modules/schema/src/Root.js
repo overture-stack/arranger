@@ -33,6 +33,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     viewer: Root
     query(query: String, types: [String]): QueryResults
     aggsState(indices: [String]): [AggsStates]
+    columnsState(indices: [String]): [ColumnsStates]
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${key}: ${type.name}`)}
   }
@@ -41,6 +42,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
   type Mutation {
     saveAggsState(index: String! state: JSON!): AggsStates
+    saveColumnsState(index: String! state: JSON!): ColumnsStates
   }
 
   schema {
@@ -70,6 +72,24 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             es.search({
               index: `${index}-aggs-state`,
               type: `${index}-aggs-state`,
+              body: {
+                sort: [{ timestamp: { order: 'desc' } }],
+              },
+            }),
+          ),
+        );
+
+        return zip(indices, responses).map(([index, data]) => ({
+          index,
+          states: data.hits.hits.map(x => x._source),
+        }));
+      },
+      columnsState: async (obj, { indices }, { es }) => {
+        let responses = await Promise.all(
+          indices.map(index =>
+            es.search({
+              index: `${index}-columns-state`,
+              type: `${index}-columns-state`,
               body: {
                 sort: [{ timestamp: { order: 'desc' } }],
               },
@@ -134,6 +154,33 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         let data = await es.search({
           index: `${index}-aggs-state`,
           type: `${index}-aggs-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+          },
+        });
+
+        return {
+          index,
+          states: data.hits.hits.map(x => x._source),
+        };
+      },
+      saveColumnsState: async (obj, { index, state }, { es }) => {
+        // TODO: validate / make proper input type
+
+        await es.create({
+          index: `${index}-columns-state`,
+          type: `${index}-columns-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            ...state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `${index}-columns-state`,
+          type: `${index}-columns-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
           },

@@ -12,6 +12,7 @@ import server from '@arranger/server';
 import {
   addMappingsToTypes,
   mappingToAggsState,
+  mappingToColumnsState,
 } from '@arranger/mapping-utils';
 
 let app = express();
@@ -130,19 +131,42 @@ let main = async () => {
         // TODO: if exists, diff against state(s)?
 
         let body = flattenDeep(
-          typesWithMappings.map(([type, props]) => [
-            {
-              index: {
-                _index: `${type}-aggs-state`,
-                _type: `${type}-aggs-state`,
-                _id: uuid(),
+          typesWithMappings.map(([type, props]) => {
+            const columns = mappingToColumnsState(props.mapping);
+
+            return [
+              {
+                index: {
+                  _index: `${type}-aggs-state`,
+                  _type: `${type}-aggs-state`,
+                  _id: uuid(),
+                },
               },
-            },
-            JSON.stringify({
-              timestamp: new Date().toISOString(),
-              state: mappingToAggsState(props.mapping),
-            }),
-          ]),
+              JSON.stringify({
+                timestamp: new Date().toISOString(),
+                state: mappingToAggsState(props.mapping),
+              }),
+              {
+                index: {
+                  _index: `${type}-columns-state`,
+                  _type: `${type}-columns-state`,
+                  _id: uuid(),
+                },
+              },
+              JSON.stringify({
+                timestamp: new Date().toISOString(),
+                type,
+                keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
+                defaultSorted: [
+                  {
+                    id: columns[0].id || columns[0].accessor,
+                    desc: false,
+                  },
+                ],
+                columns,
+              }),
+            ];
+          }),
         );
 
         await es.bulk({ body });
