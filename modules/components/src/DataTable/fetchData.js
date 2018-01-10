@@ -90,5 +90,15 @@ export default (config, { queryName, sort, offset, first }) => {
         first,
       },
     }),
-  }).then(r => r.json());
+  })
+    .then(r => r.json())
+    .then(r => {
+      const hits = get(r, 'data.files.hits') || {};
+      const data = get(hits, 'edges', []).map(e => e.node);
+      const total = hits.total || 0;
+      return {
+        total,
+        data,
+      };
+    });
 };

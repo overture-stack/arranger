@@ -47,6 +47,7 @@
   "dependencies": {
     "downshift": "^1.23.2",
     "filesize": "^3.5.11",
+    "lodash": "^4.17.4",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-table": "^6.7.6",

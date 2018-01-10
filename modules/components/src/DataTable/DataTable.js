@@ -64,10 +64,7 @@ class DataTable extends React.Component {
         : null,
       offset: state.page * state.pageSize,
       first: state.pageSize,
-    }).then(res => {
-      const hits = get(res, 'data.files.hits') || {};
-      const data = get(hits, 'edges', []).map(e => e.node);
-      const total = hits.total || 0;
+    }).then(({ total, data }) => {
       if (total !== this.state.total) {
         this.props.onPaginationChange({ total });
       }

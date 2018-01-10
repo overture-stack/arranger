@@ -1,6 +1,6 @@
 import React from 'react';
 import { isEqual } from 'lodash';
-import DataTable, { TableToolbar, fetchData } from '..';
+import DataTable, { TableToolbar } from '..';
 
 class RepoView extends React.Component {
   constructor(props) {
@@ -18,6 +18,7 @@ class RepoView extends React.Component {
     }
   }
   render() {
+    const { fetchData } = this.props;
     const { columns, page, pageSize, total } = this.state;
 
     return (
