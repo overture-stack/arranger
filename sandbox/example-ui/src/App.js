@@ -1,16 +1,27 @@
 import React, { Component } from 'react'
-// import io from 'socket.io-client'
+import io from 'socket.io-client'
 import TwoPaneLayout from './TwoPaneLayout'
 
-// let socket = io(`http://localhost:5050`)
+let socket = io(`http://localhost:5050`)
 
 
 
 class App extends Component {
+  state = { data: []}
+  componentDidMount()  {
+    socket.on('server::chunk', ({data}) => {
+      this.setState({ data: this.state.data.concat(data.models.hits.edges)})
+    })
+  }
   render() {
     return (
       <div className="app">
-        <TwoPaneLayout />
+        <button onClick={() => {
+          socket.emit('client::stream', { index: 'models', size: 100, fields: `id gender` })
+        }}>
+          doiiittt
+        </button>
+        {JSON.stringify(this.state.data)}
       </div>
     )
   }
