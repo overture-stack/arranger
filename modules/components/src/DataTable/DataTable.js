@@ -20,6 +20,7 @@ class DataTable extends React.Component {
       data: [],
       pages: -1,
       loading: false,
+      lastState: null,
     };
   }
 
@@ -46,9 +47,60 @@ class DataTable extends React.Component {
   isSelected = key => {
     return this.state.selection.includes(key);
   };
+
+  onFetchData = state => {
+    const { fetchData, config } = this.props;
+    const { selection } = this.state;
+
+    this.setState({ loading: true, lastState: state });
+
+    fetchData(config, {
+      queryName: 'Table',
+      sort: state.sorted.length
+        ? state.sorted.map(sort => ({
+            field: sort.id,
+            order: sort.desc ? 'desc' : 'asc',
+          }))
+        : null,
+      offset: state.page * state.pageSize,
+      first: state.pageSize,
+    }).then(res => {
+      const hits = get(res, 'data.files.hits') || {};
+      const data = get(hits, 'edges', []).map(e => e.node);
+      const total = hits.total || 0;
+      if (total !== this.state.total) {
+        this.props.onPaginationChange({ total });
+      }
+      this.setState({
+        data,
+        total,
+        pages: Math.ceil(total / state.pageSize),
+        loading: false,
+      });
+      this.setSelection(
+        intersection(
+          data.map(item => item[this.props.config.keyField]),
+          selection,
+        ),
+      );
+    });
+  };
+
+  componentDidUpdate(lastProps) {
+    if (
+      !this.state.loading &&
+      lastProps.config.columns.some(
+        (lastColumn, i) =>
+          lastColumn.show !== this.props.config.columns[i].show,
+      )
+    ) {
+      this.onFetchData(this.state.lastState);
+    }
+  }
+
   render() {
-    const { toggleSelection, toggleAll, isSelected } = this;
-    const { config, fetchData, defaultPageSize } = this.props;
+    const { toggleSelection, toggleAll, isSelected, onFetchData } = this;
+    const { config, defaultPageSize } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selection, pages, loading } = this.state;
 
@@ -56,40 +108,7 @@ class DataTable extends React.Component {
       pages,
       loading,
       manual: true,
-      onFetchData: state => {
-        this.setState({ loading: true });
-
-        fetchData(config, {
-          queryName: 'Table',
-          sort: state.sorted.length
-            ? state.sorted.map(sort => ({
-                field: sort.id,
-                order: sort.desc ? 'desc' : 'asc',
-              }))
-            : null,
-          offset: state.page * state.pageSize,
-          first: state.pageSize,
-        }).then(res => {
-          const hits = get(res, 'data.files.hits') || {};
-          const data = get(hits, 'edges', []).map(e => e.node);
-          const total = hits.total || 0;
-          if (total !== this.state.total) {
-            this.props.onPaginationChange({ total });
-          }
-          this.setState({
-            data,
-            total,
-            pages: Math.ceil(total / state.pageSize),
-            loading: false,
-          });
-          this.setSelection(
-            intersection(
-              data.map(item => item[this.props.config.keyField]),
-              selection,
-            ),
-          );
-        });
-      },
+      onFetchData,
     };
 
     const checkboxProps = {
