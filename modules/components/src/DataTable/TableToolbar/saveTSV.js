@@ -1,7 +1,11 @@
 import { get } from 'lodash';
-import { createWriteStream, supported } from 'streamsaver';
+// streamsaver uses ES6 and fails to minify, removing for now.
+// import { createWriteStream, supported } from 'streamsaver';
 import { saveAs } from 'filesaver.js';
 import { getSingleValue } from '../utils';
+
+const supported = false;
+const createWriteStream = () => {};
 
 function streamMethods(fileName) {
   const fileStream = createWriteStream(fileName);
