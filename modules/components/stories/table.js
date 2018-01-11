@@ -1,20 +1,37 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
-import { orderBy } from 'lodash';
+import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import DataTable, {
-  columnConfig,
   columnTypes,
-  fetchData,
+  columnsToGraphql,
   TableToolbar,
+  RepoView,
 } from '../src/DataTable';
 
-import { RepoView } from '../src/DataTable/RepoView/index';
-
 const tableConfig = {
-  ...columnConfig.files,
-  columns: normalizeColumns(columnConfig.files.columns),
+  type: 'models',
+  keyField: 'id',
+  defaultSorted: [],
+  columns: normalizeColumns([
+    {
+      show: true,
+      Header: 'ID',
+      type: 'string',
+      sortable: false,
+      canChangeShow: true,
+      accessor: 'id',
+    },
+    {
+      show: true,
+      Header: 'Gender',
+      type: 'string',
+      sortable: false,
+      canChangeShow: true,
+      accessor: 'gender',
+    },
+  ]),
 };
 
 function normalizeColumns(columns) {
@@ -164,5 +181,26 @@ storiesOf('Table', module)
     />
   ))
   .add('Live Data Table', () => (
-    <RepoView config={tableConfig} fetchData={fetchData} />
+    <RepoView
+      config={tableConfig}
+      fetchData={(...args) => {
+        const API = 'http://localhost:5050/table';
+
+        return fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(columnsToGraphql(...args)),
+        })
+          .then(r => r.json())
+          .then(r => {
+            const hits = get(r, 'data.files.hits') || {};
+            const data = get(hits, 'edges', []).map(e => e.node);
+            const total = hits.total || 0;
+            return {
+              total,
+              data,
+            };
+          });
+      }}
+    />
   ));

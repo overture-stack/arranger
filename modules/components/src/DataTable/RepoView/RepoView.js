@@ -19,11 +19,17 @@ class RepoView extends React.Component {
     }
   }
   render() {
-    const { fetchData, streamData, onSQONChange } = this.props;
+    const {
+      fetchData,
+      streamData,
+      onSQONChange,
+      onSelectionChange,
+      style,
+    } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
-      <div>
+      <div style={style}>
         <TableToolbar
           onSQONChange={onSQONChange}
           streamData={options =>
@@ -47,7 +53,7 @@ class RepoView extends React.Component {
         <DataTable
           config={{ ...this.props.config, columns }}
           fetchData={fetchData}
-          onSelectionChange={selection => console.log(selection)}
+          onSelectionChange={onSelectionChange}
           onPaginationChange={state => this.setState(state)}
           onSortedChange={sort => this.setState({ sort })}
           defaultPageSize={pageSize}

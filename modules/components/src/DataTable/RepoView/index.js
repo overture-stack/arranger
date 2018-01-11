@@ -1,1 +1,1 @@
-export { default as RepoView } from './RepoView';
+export { default } from './RepoView';

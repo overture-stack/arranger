@@ -45,6 +45,7 @@ export default function({
   onData(data + '\n');
 
   streamData({
+    columns: columnsShowing,
     sort: [],
     first: 1000,
     onData: chunk => {

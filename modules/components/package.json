@@ -9,7 +9,7 @@
   "scripts": {
     "storybook": "start-storybook -p 9001 -c .storybook",
     "test": "jest",
-    "build": "mkdir -p src && babel src/ -d lib/",
+    "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
     "prepublish": "npm run build",
     "flow": "flow"
   },
