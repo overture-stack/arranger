@@ -90,6 +90,9 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             es.search({
               index: `${index}-columns-state`,
               type: `${index}-columns-state`,
+              body: {
+                sort: [{ timestamp: { order: 'desc' } }],
+              },
             }),
           ),
         );
@@ -151,6 +154,33 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         let data = await es.search({
           index: `${index}-aggs-state`,
           type: `${index}-aggs-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+          },
+        });
+
+        return {
+          index,
+          states: data.hits.hits.map(x => x._source),
+        };
+      },
+      saveColumnsState: async (obj, { index, state }, { es }) => {
+        // TODO: validate / make proper input type
+
+        await es.create({
+          index: `${index}-columns-state`,
+          type: `${index}-columns-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            ...state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `${index}-columns-state`,
+          type: `${index}-columns-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
           },
