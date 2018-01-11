@@ -7,7 +7,7 @@ export default ({ aggs = [], handleChange = noop }) => (
     initial={{ searchTerm: '' }}
     render={({ searchTerm, update }) => (
       <Fragment>
-        <div style={{ padding: 10 }}>
+        <div className="edit-aggs-filter">
           <label>filter: </label>
           <input
             type="text"
@@ -16,7 +16,7 @@ export default ({ aggs = [], handleChange = noop }) => (
           />
         </div>
         {aggs.filter(x => x.field.includes(searchTerm)).map(x => (
-          <div key={x.field} style={{ padding: 10 }}>
+          <div key={x.field} className="edit-agg">
             <div>field: {x.field}</div>
             <div>
               displayName:
