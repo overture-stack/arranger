@@ -9,7 +9,7 @@
   "scripts": {
     "storybook": "start-storybook -p 9001 -c .storybook",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf src&&mkdir src&&babel src/ -d lib/",
+    "build": "mkdir -p src && babel src/ -d lib/",
     "prepublish": "npm run build",
     "flow": "flow"
   },
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@babel/cli": "^7.0.0-beta.35",
     "@babel/core": "^7.0.0-beta.35",
-    "babel-core": "7.0.0-bridge.0",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.37",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.35",
     "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
     "@babel/preset-env": "^7.0.0-beta.35",
@@ -34,6 +34,7 @@
     "@babel/preset-react": "^7.0.0-beta.37",
     "@babel/register": "^7.0.0-beta.35",
     "@storybook/react": "^3.3.3",
+    "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.1.2",
     "eslint": "^3.19.0",
     "eslint-config-prettier": "^2.9.0",
@@ -44,7 +45,14 @@
     "prettier": "^1.9.2"
   },
   "dependencies": {
+    "downshift": "^1.23.2",
+    "filesaver.js": "^0.2.0",
+    "filesize": "^3.5.11",
+    "lodash": "^4.17.4",
     "react": "^16.2.0",
-    "react-dom": "^16.2.0"
+    "react-dom": "^16.2.0",
+    "react-table": "^6.7.6",
+    "recompose": "^0.26.0",
+    "streamsaver": "^1.0.1"
   }
 }
