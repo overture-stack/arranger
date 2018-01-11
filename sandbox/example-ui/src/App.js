@@ -5,7 +5,7 @@ import { Formik } from 'formik';
 let API = 'http://localhost:5050';
 
 let aggFields = `
-index
+  index
   states {
     timestamp
     state {
@@ -17,57 +17,66 @@ index
       restricted
     }
   }
-}
 `;
+
+let api = body =>
+  fetch(API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  }).then(r => r.json());
 
 class Aggs extends Component {
   state = { aggs: [], temp: [], searchTerm: '' };
   async componentDidMount() {
-    let { data } = await fetch(API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: `
+    let { data } = await api({
+      query: `
         {
         	aggsState(indices:["${this.props.index}"]) {
-          ${aggFields}
-        }
-
-        `,
-      }),
-    }).then(r => r.json());
-
-    this.setState({
-      aggs: data.aggsState[0].states[0].state,
-      temp: data.aggsState[0].states[0].state,
-    });
-  }
-  async save(state) {
-    let { data } = await fetch(API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: `
-        mutation {
-          saveAggsState(state: ${this.state.temp} index: "${
-          this.props.index
-        }") {
             ${aggFields}
           }
         }
-        `,
-      }),
-    }).then(r => r.json());
+      `,
+    });
 
     this.setState({
       aggs: data.aggsState[0].states[0].state,
       temp: data.aggsState[0].states[0].state,
     });
   }
+  async save() {
+    let { data } = await api({
+      variables: { state: this.state.temp },
+      query: `
+        mutation($state: JSON!) {
+          saveAggsState(
+            state: $state
+            index: "${this.props.index}"
+          ) {
+            ${aggFields}
+          }
+        }
+      `,
+    });
+
+    // TODO: display latest in main section, maybe have previous states as well
+
+    this.setState({
+      aggs: data.saveAggsState.states[0].state,
+      temp: data.saveAggsState.states[0].state,
+    });
+  }
+  update = ({ field, key, value }) => {
+    let agg = this.state.temp.find(x => x.field === field);
+    let index = this.state.temp.findIndex(x => x.field === field);
+    let temp = Object.assign([], this.state.temp, {
+      [index]: { ...agg, [key]: value },
+    });
+    this.setState({ temp });
+    this.save();
+  };
   render() {
     return (
       <Fragment>
@@ -88,7 +97,13 @@ class Aggs extends Component {
                 displayName:
                 <input
                   value={x.displayName}
-                  onChange={e => this.setState({ test: e.target.value })}
+                  onChange={e =>
+                    this.update({
+                      field: x.field,
+                      key: 'displayName',
+                      value: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
