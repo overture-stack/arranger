@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@arranger/components": "^0.0.1",
     "@arranger/mapping-utils": "^0.0.1-0.0.10.0",
     "@arranger/schema": "^0.0.1-0.0.10.0",
     "@arranger/server": "^0.0.1-0.0.10.0",

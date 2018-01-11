@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
+    "@arranger/components": "^0.0.1",
     "@arranger/mapping-utils": "^0.0.1-0.0.10.0",
     "elasticsearch": "^14.0.0",
     "graphql-tools": "^2.14.1",
