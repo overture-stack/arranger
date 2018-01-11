@@ -2,8 +2,7 @@ import React from 'react';
 import io from 'socket.io-client';
 import { get } from 'lodash';
 
-import {
-  RepoView,
+import DataTable, {
   columnTypes,
   columnsToGraphql,
 } from '@arranger/components/lib/DataTable';
@@ -62,7 +61,7 @@ function streamData({ columns, sort, first, onData, onEnd }) {
 
 export default () => {
   return (
-    <RepoView
+    <DataTable
       config={tableConfig}
       fetchData={(config, ...args) => {
         const API = 'http://localhost:5050/table';

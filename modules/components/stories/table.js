@@ -4,10 +4,10 @@ import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import DataTable, {
+  Table,
   columnTypes,
   columnsToGraphql,
   TableToolbar,
-  RepoView,
 } from '../src/DataTable';
 
 const tableConfig = {
@@ -161,7 +161,7 @@ function streamDummyData({ sort, first, onData, onEnd }) {
 
 storiesOf('Table', module)
   .add('Table', () => (
-    <DataTable
+    <Table
       config={dummyConfig}
       fetchData={fetchDummyData}
       onSelectionChange={selection => console.log(selection)}
@@ -174,32 +174,29 @@ storiesOf('Table', module)
     />
   ))
   .add('Data Table', () => (
-    <RepoView
+    <DataTable
       config={dummyConfig}
       fetchData={fetchDummyData}
       streamData={streamDummyData}
     />
   ))
   .add('Live Data Table', () => (
-    <RepoView
+    <DataTable
       config={tableConfig}
-      fetchData={(...args) => {
+      fetchData={(config, ...args) => {
         const API = 'http://localhost:5050/table';
 
         return fetch(API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(columnsToGraphql(...args)),
+          body: JSON.stringify(columnsToGraphql(config, ...args)),
         })
           .then(r => r.json())
           .then(r => {
-            const hits = get(r, 'data.files.hits') || {};
+            const hits = get(r, `data.${config.type}.hits`) || {};
             const data = get(hits, 'edges', []).map(e => e.node);
             const total = hits.total || 0;
-            return {
-              total,
-              data,
-            };
+            return { total, data };
           });
       }}
     />
