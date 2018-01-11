@@ -3,6 +3,7 @@
   "version": "0.0.1-0.0.10.0",
   "private": true,
   "dependencies": {
+    "@arranger/components": "^0.0.1",
     "formik": "^0.10.5",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
