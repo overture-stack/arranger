@@ -4,7 +4,7 @@ import { BrowserRouter, Route } from 'react-router-dom';
 let API = 'http://localhost:5050';
 
 class Aggs extends Component {
-  state = { aggs: [] };
+  state = { aggs: [], searchTerm: '' };
   async componentDidMount() {
     let { data } = await fetch(API, {
       method: 'POST',
@@ -39,20 +39,36 @@ class Aggs extends Component {
   render() {
     return (
       <Fragment>
-        {this.state.aggs.map(x => (
-          <Fragment key={x.field}>
-            <div>field: {x.field}</div>
-            <div>displayName: {x.displayName}</div>
-            <div>
-              active: <input type="checkbox" checked={x.active} />
+        <div style={{ padding: 10 }}>
+          <label>filter: </label>
+          <input
+            type="text"
+            value={this.state.searchTerm}
+            onChange={e => this.setState({ searchTerm: e.target.value })}
+          />
+        </div>
+        {this.state.aggs
+          .filter(x => x.field.includes(this.state.searchTerm))
+          .map(x => (
+            <div key={x.field} style={{ padding: 10 }}>
+              <div>field: {x.field}</div>
+              <div>
+                displayName:
+                <input
+                  value={x.displayName}
+                  onChange={e => this.setState({ test: e.target.value })}
+                />
+              </div>
+              <div>
+                active: <input type="checkbox" checked={x.active} />
+              </div>
+              <div>type: {x.type}</div>
+              <div>allowedValues: {x.allowedValues}</div>
+              <div>
+                restricted: <input type="checkbox" checked={x.restricted} />
+              </div>
             </div>
-            <div>type: {x.type}</div>
-            <div>allowedValues: {x.allowedValues}</div>
-            <div>
-              restricted: <input type="checkbox" checked={x.restricted} />
-            </div>
-          </Fragment>
-        ))}
+          ))}
       </Fragment>
     );
   }
