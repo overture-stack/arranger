@@ -1,4 +1,5 @@
 import GraphQLJSON from 'graphql-type-json';
+import uuid from 'uuid/v4';
 import { startCase, zip } from 'lodash';
 import {
   createConnectionResolvers,
@@ -38,9 +39,13 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
+  type Mutation {
+    saveAggsState(index: String! state: JSON!): AggsStates
+  }
+
   schema {
     query: Root
-    # mutation: Mutation
+    mutation: Mutation
   }
 `;
 
@@ -71,7 +76,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
 
         return zip(indices, responses).map(([index, data]) => ({
           index,
-          states: data.hits.hits.map(x => x._source)
+          states: data.hits.hits.map(x => x._source),
         }));
       },
       viewer: resolveObject,
@@ -108,5 +113,31 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       }),
       {},
     ),
+    Mutation: {
+      saveAggsState: async (obj, { index, state }, { es }) => {
+        // TODO: validate / make proper input type
+
+        await es.create({
+          index: `${index}-aggs-state`,
+          type: `${index}-aggs-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `${index}-aggs-state`,
+          type: `${index}-aggs-state`,
+        });
+
+        return {
+          index,
+          states: data.hits.hits.map(x => x._source),
+        };
+      },
+    },
   };
 };
