@@ -57,6 +57,7 @@
     "react-table": "^6.7.6",
     "recompose": "^0.26.0",
     "socket.io-client": "^2.0.4",
-    "streamsaver": "^1.0.1"
+    "streamsaver": "^1.0.1",
+    "uuid": "^3.1.0"
   }
 }

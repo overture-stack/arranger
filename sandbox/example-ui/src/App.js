@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
+import { Formik } from 'formik';
 
 let API = 'http://localhost:5050';
 
@@ -34,7 +35,39 @@ class Aggs extends Component {
       }),
     }).then(r => r.json());
 
-    this.setState({ aggs: data.aggsState[0].states[0].state });
+    this.setState({
+      aggs: data.aggsState[0].states[0].state,
+      temp: data.aggsState[0].states[0].state,
+    });
+  }
+  async save() {
+    let { data } = await fetch(API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+        {
+        	aggsState(indices:["${this.props.index}"]) {
+            index
+            states {
+              timestamp
+              state {
+                field
+                displayName
+                active
+                type
+                allowedValues
+                restricted
+              }
+            }
+          }
+        }
+
+        `,
+      }),
+    }).then(r => r.json());
   }
   render() {
     return (
@@ -47,7 +80,7 @@ class Aggs extends Component {
             onChange={e => this.setState({ searchTerm: e.target.value })}
           />
         </div>
-        {this.state.aggs
+        {this.state.temp
           .filter(x => x.field.includes(this.state.searchTerm))
           .map(x => (
             <div key={x.field} style={{ padding: 10 }}>
