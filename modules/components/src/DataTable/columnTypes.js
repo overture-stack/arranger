@@ -14,6 +14,6 @@ export default {
     const columnList = get(props.original, props.column.listAccessor) || [];
     const total = get(props.original, props.column.totalAccessor);
     const firstValue = getSingleValue(columnList[0]);
-    return [firstValue || '', ...(total > 1 ? [<br />, '...'] : [])];
+    return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
   },
 };

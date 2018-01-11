@@ -19,12 +19,13 @@ class RepoView extends React.Component {
     }
   }
   render() {
-    const { fetchData, streamData } = this.props;
+    const { fetchData, streamData, onSQONChange } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
       <div>
         <TableToolbar
+          onSQONChange={onSQONChange}
           streamData={options =>
             streamData({
               ...options,

@@ -150,7 +150,12 @@ storiesOf('Table', module)
       onSelectionChange={selection => console.log(selection)}
     />
   ))
-  .add('Toolbar', () => <TableToolbarStory streamData={streamDummyData} />)
+  .add('Toolbar', () => (
+    <TableToolbarStory
+      onSQONChange={console.log.bind(console)}
+      streamData={streamDummyData}
+    />
+  ))
   .add('Data Table', () => (
     <RepoView
       config={dummyConfig}

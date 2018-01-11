@@ -14,6 +14,7 @@ const TableToolbar = ({
   columns,
   canChangeShowColumns,
   onColumnsChange,
+  onSQONChange,
   page = 0,
   pageSize = 0,
   total = 0,
@@ -25,7 +26,26 @@ const TableToolbar = ({
       Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)}{' '}
       {type} of {total}
     </div>
-    <input type="text" placeholder="Filter" />
+    <input
+      type="text"
+      placeholder="Filter"
+      onChange={e => {
+        const value = e.target.value;
+        const t = {
+          op: 'OR',
+          content: columns.filter(c => c.show).map(column => {
+            return {
+              op: 'IN',
+              content: {
+                field: column.accessor || column.id,
+                value,
+              },
+            };
+          }),
+        };
+        onSQONChange(t);
+      }}
+    />
     <DropDown
       itemToString={i => i.Header}
       items={canChangeShowColumns}
