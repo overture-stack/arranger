@@ -9,7 +9,7 @@
   "scripts": {
     "storybook": "start-storybook -p 9001 -c .storybook",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf src&&mkdir src&&babel src/ -d lib/",
+    "build": "mkdir -p src && babel src/ -d lib/",
     "prepublish": "npm run build",
     "flow": "flow"
   },
