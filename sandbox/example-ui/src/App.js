@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { BrowserRouter, Route } from 'react-router-dom';
-import { Formik } from 'formik';
+import { debounce } from 'lodash';
 
 let API = 'http://localhost:5050';
 
@@ -46,9 +46,9 @@ class Aggs extends Component {
       temp: data.aggsState[0].states[0].state,
     });
   }
-  async save() {
+  save = debounce(async state => {
     let { data } = await api({
-      variables: { state: this.state.temp },
+      variables: { state },
       query: `
         mutation($state: JSON!) {
           saveAggsState(
@@ -61,21 +61,18 @@ class Aggs extends Component {
       `,
     });
 
-    // TODO: display latest in main section, maybe have previous states as well
-
     this.setState({
       aggs: data.saveAggsState.states[0].state,
       temp: data.saveAggsState.states[0].state,
     });
-  }
+  }, 300);
   update = ({ field, key, value }) => {
     let agg = this.state.temp.find(x => x.field === field);
     let index = this.state.temp.findIndex(x => x.field === field);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...agg, [key]: value },
     });
-    this.setState({ temp });
-    this.save();
+    this.setState({ temp }, () => this.save(temp));
   };
   render() {
     return (

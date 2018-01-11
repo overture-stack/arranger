@@ -70,6 +70,9 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             es.search({
               index: `${index}-aggs-state`,
               type: `${index}-aggs-state`,
+              body: {
+                sort: [{ timestamp: { order: 'desc' } }],
+              },
             }),
           ),
         );
@@ -131,6 +134,9 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         let data = await es.search({
           index: `${index}-aggs-state`,
           type: `${index}-aggs-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+          },
         });
 
         return {
