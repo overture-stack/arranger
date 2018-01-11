@@ -4,8 +4,24 @@ import { Formik } from 'formik';
 
 let API = 'http://localhost:5050';
 
+let aggFields = `
+index
+  states {
+    timestamp
+    state {
+      field
+      displayName
+      active
+      type
+      allowedValues
+      restricted
+    }
+  }
+}
+`;
+
 class Aggs extends Component {
-  state = { aggs: [], searchTerm: '' };
+  state = { aggs: [], temp: [], searchTerm: '' };
   async componentDidMount() {
     let { data } = await fetch(API, {
       method: 'POST',
@@ -16,19 +32,7 @@ class Aggs extends Component {
         query: `
         {
         	aggsState(indices:["${this.props.index}"]) {
-            index
-            states {
-              timestamp
-              state {
-                field
-                displayName
-                active
-                type
-                allowedValues
-                restricted
-              }
-            }
-          }
+          ${aggFields}
         }
 
         `,
@@ -40,7 +44,7 @@ class Aggs extends Component {
       temp: data.aggsState[0].states[0].state,
     });
   }
-  async save() {
+  async save(state) {
     let { data } = await fetch(API, {
       method: 'POST',
       headers: {
@@ -48,26 +52,21 @@ class Aggs extends Component {
       },
       body: JSON.stringify({
         query: `
-        {
-        	aggsState(indices:["${this.props.index}"]) {
-            index
-            states {
-              timestamp
-              state {
-                field
-                displayName
-                active
-                type
-                allowedValues
-                restricted
-              }
-            }
+        mutation {
+          saveAggsState(state: ${this.state.temp} index: "${
+          this.props.index
+        }") {
+            ${aggFields}
           }
         }
-
         `,
       }),
     }).then(r => r.json());
+
+    this.setState({
+      aggs: data.aggsState[0].states[0].state,
+      temp: data.aggsState[0].states[0].state,
+    });
   }
   render() {
     return (
