@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@arranger/components": "^0.0.1",
-    "babel-core": "^6.26.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-grid-layout": "^0.16.2",
