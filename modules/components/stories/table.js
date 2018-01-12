@@ -1,54 +1,77 @@
 import React from 'react';
-import { storiesOf } from '@storybook/react';
+import { storiesOf, log } from '@storybook/react';
 import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
+import io from 'socket.io-client';
+import { action } from '@storybook/addon-actions';
+
 import DataTable, {
   Table,
-  columnTypes,
   columnsToGraphql,
   TableToolbar,
 } from '../src/DataTable';
 
+const withSQON = withState('sqon', 'setSQON', null);
+
 const tableConfig = {
   type: 'models',
-  keyField: 'id',
-  defaultSorted: [],
-  columns: normalizeColumns([
+  keyField: 'name',
+  defaultSorted: [
+    {
+      desc: true,
+      id: 'name',
+    },
+  ],
+  columns: [
     {
       show: true,
-      Header: 'ID',
+      Header: 'Name',
       type: 'string',
-      sortable: false,
+      sortable: true,
       canChangeShow: true,
-      accessor: 'id',
+      accessor: 'name',
+    },
+    {
+      show: true,
+      Header: 'Age At Diagnosis',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'age_at_diagnosis',
+    },
+    {
+      show: true,
+      Header: 'Model Growth Rate',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_growth_rate',
     },
     {
       show: true,
       Header: 'Gender',
       type: 'string',
-      sortable: false,
+      sortable: true,
       canChangeShow: true,
       accessor: 'gender',
     },
-  ]),
+    {
+      show: true,
+      Header: 'Vital Status',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'vital_status',
+    },
+  ],
 };
-
-function normalizeColumns(columns) {
-  return columns.map(function(column) {
-    return {
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || columnTypes[column.type],
-    };
-  });
-}
 
 const dummyConfig = {
   type: 'files',
   keyField: 'file_id',
   defaultSorted: [{ id: 'access', desc: false }],
-  columns: normalizeColumns([
+  columns: [
     {
       show: true,
       Header: 'Access',
@@ -101,7 +124,7 @@ const dummyConfig = {
       totalAccessor: 'cases.hits.total',
       id: 'cases.primary_site',
     },
-  ]),
+  ],
 };
 
 const dummyData = Array(1000)
@@ -159,12 +182,52 @@ function streamDummyData({ sort, first, onData, onEnd }) {
   onEnd();
 }
 
+const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
+  <DataTable
+    config={tableConfig}
+    onSQONChange={action('sqon changed')}
+    onSelectionChange={action('selection changed')}
+    streamData={({ columns, sort, first, onData, onEnd }) => {
+      let socket = io(`http://localhost:5050`);
+      socket.on('server::chunk', ({ data, total }) =>
+        onData({
+          total,
+          data: data[tableConfig.type].hits.edges.map(e => e.node),
+        }),
+      );
+
+      socket.on('server::stream::end', onEnd);
+
+      socket.emit('client::stream', {
+        index: tableConfig.type,
+        size: 100,
+        ...columnsToGraphql({ columns }, { sort, first }),
+      });
+    }}
+    fetchData={(config, options) => {
+      const API = 'http://localhost:5050/table';
+
+      return fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(columnsToGraphql(config, { ...options, sqon })),
+      })
+        .then(r => r.json())
+        .then(r => {
+          const hits = get(r, `data.${config.type}.hits`) || {};
+          const data = get(hits, 'edges', []).map(e => e.node);
+          const total = hits.total || 0;
+          return { total, data };
+        });
+    }}
+  />
+));
 storiesOf('Table', module)
   .add('Table', () => (
     <Table
       config={dummyConfig}
       fetchData={fetchDummyData}
-      onSelectionChange={selection => console.log(selection)}
+      onSelectionChange={action('selection changed')}
     />
   ))
   .add('Toolbar', () => (
@@ -180,24 +243,4 @@ storiesOf('Table', module)
       streamData={streamDummyData}
     />
   ))
-  .add('Live Data Table', () => (
-    <DataTable
-      config={tableConfig}
-      fetchData={(config, ...args) => {
-        const API = 'http://localhost:5050/table';
-
-        return fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(columnsToGraphql(config, ...args)),
-        })
-          .then(r => r.json())
-          .then(r => {
-            const hits = get(r, `data.${config.type}.hits`) || {};
-            const data = get(hits, 'edges', []).map(e => e.node);
-            const total = hits.total || 0;
-            return { total, data };
-          });
-      }}
-    />
-  ));
+  .add('Live Data Table', () => <EnhancedDataTable />);

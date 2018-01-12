@@ -1,4 +1,6 @@
 import { get } from 'lodash';
+import columnTypes from './columnTypes';
+import { withProps } from 'recompose';
 
 export function getSingleValue(data) {
   if (typeof data === 'object') {
@@ -8,7 +10,10 @@ export function getSingleValue(data) {
   }
 }
 
-export function columnsToGraphql(config, { queryName, sort, offset, first }) {
+export function columnsToGraphql(
+  config,
+  { sqon, queryName, sort, offset, first },
+) {
   function toQuery(column) {
     return (
       column.query ||
@@ -43,9 +48,9 @@ export function columnsToGraphql(config, { queryName, sort, offset, first }) {
   return {
     fields,
     query: `
-      query($sort: [Sort], $first: Int, $offset: Int, $score: String) {
+      query($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
         ${config.type} {
-          hits(first: $first, offset: $offset, sort: $sort, score: $score) {
+          hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
             total
             edges {
               node {
@@ -57,6 +62,7 @@ export function columnsToGraphql(config, { queryName, sort, offset, first }) {
       }
     `,
     variables: {
+      sqon: sqon || null,
       sort:
         sort &&
         sort.map(s => {
@@ -93,3 +99,20 @@ export function columnsToGraphql(config, { queryName, sort, offset, first }) {
     },
   };
 }
+
+export function normalizeColumns(columns) {
+  return columns.map(function(column) {
+    return {
+      ...column,
+      show: typeof column.show === 'boolean' ? column.show : true,
+      Cell: column.Cell || columnTypes[column.type],
+    };
+  });
+}
+
+export const withNormalizedColumns = withProps(({ config }) => ({
+  config: {
+    ...config,
+    columns: normalizeColumns(config.columns),
+  },
+}));

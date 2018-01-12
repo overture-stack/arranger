@@ -1,5 +1,11 @@
-export { default } from './DataTable';
+import { withNormalizedColumns } from './utils';
+import TableToolbar from './TableToolbar';
+import BaseTable from './Table';
+import BaseDataTable from './DataTable';
+
+const Table = withNormalizedColumns(BaseTable);
+const DataTable = withNormalizedColumns(BaseDataTable);
+
+export { Table, TableToolbar };
 export { columnsToGraphql } from './utils';
-export { default as columnTypes } from './columnTypes';
-export { default as TableToolbar } from './TableToolbar';
-export { default as Table } from './Table';
+export default DataTable;

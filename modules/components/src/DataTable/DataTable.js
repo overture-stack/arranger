@@ -55,7 +55,7 @@ class DataTable extends React.Component {
           fetchData={fetchData}
           onSelectionChange={onSelectionChange}
           onPaginationChange={state => this.setState(state)}
-          onSortedChange={sort => this.setState({ sort })}
+          onSortedChange={sort => this.setState({ sort, page: 0 })}
           defaultPageSize={pageSize}
         />
       </div>

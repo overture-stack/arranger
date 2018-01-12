@@ -7,15 +7,6 @@ import DataTable, {
   columnsToGraphql,
 } from '@arranger/components/lib/DataTable';
 
-function normalizeColumns(columns) {
-  return columns.map(function(column) {
-    return {
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || columnTypes[column.type],
-    };
-  });
-}
 
 const tableConfig = {
   type: 'models',
@@ -32,9 +23,17 @@ const tableConfig = {
     },
     {
       show: true,
+      Header: 'model_growth_rate',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_growth_rate',
+    },
+    {
+      show: true,
       Header: 'Gender',
       type: 'string',
-      sortable: false,
+      sortable: true,
       canChangeShow: true,
       accessor: 'gender',
     },
