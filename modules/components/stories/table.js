@@ -1,5 +1,5 @@
 import React from 'react';
-import { storiesOf, log } from '@storybook/react';
+import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
@@ -10,20 +10,129 @@ import DataTable, {
   Table,
   columnsToGraphql,
   TableToolbar,
+  getSingleValue,
 } from '../src/DataTable';
 
 const withSQON = withState('sqon', 'setSQON', null);
 
 const tableConfig = {
+  timestamp: '2018-01-12T16:42:07.495Z',
   type: 'models',
   keyField: 'name',
-  defaultSorted: [
-    {
-      desc: true,
-      id: 'name',
-    },
-  ],
+  defaultSorted: [{ id: 'age_at_diagnosis', desc: false }],
   columns: [
+    {
+      show: true,
+      Header: 'Age At Diagnosis',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'age_at_diagnosis',
+    },
+    {
+      show: true,
+      Header: 'Age At Sampling',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'age_at_sampling',
+    },
+    {
+      show: true,
+      Header: 'Cancer Related Somatic Mutations',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'cancer_related_somatic_mutations',
+    },
+    {
+      show: true,
+      Header: 'Clinical Stage',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'clinical_stage',
+    },
+    {
+      show: false,
+      Header: 'Disease Status At Unlinking',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'disease_status_at_unlinking',
+    },
+    {
+      show: false,
+      Header: 'Gender',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'gender',
+    },
+    {
+      show: false,
+      Header: 'Histological Type',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'histological_type',
+    },
+    {
+      show: false,
+      Header: 'Histopathological Biomarkers',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'histopathological_biomarkers',
+    },
+    {
+      show: false,
+      Header: 'List Of Chemo Drugs Available',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'list_of_chemo_drugs_available',
+    },
+    {
+      show: false,
+      Header: 'Model Availability',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_availability',
+    },
+    {
+      show: false,
+      Header: 'Model Growth Rate',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_growth_rate',
+    },
+    {
+      show: false,
+      Header: 'Model Image',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_image',
+    },
+    {
+      show: false,
+      Header: 'Model Type',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'model_type',
+    },
+    {
+      show: false,
+      Header: 'Molecular Characterization',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'molecular_characterization',
+    },
     {
       show: true,
       Header: 'Name',
@@ -33,31 +142,87 @@ const tableConfig = {
       accessor: 'name',
     },
     {
-      show: true,
-      Header: 'Age At Diagnosis',
+      show: false,
+      Header: 'Neoadjuvant Therapy',
       type: 'string',
       sortable: true,
       canChangeShow: true,
-      accessor: 'age_at_diagnosis',
+      accessor: 'neoadjuvant_therapy',
     },
     {
-      show: true,
-      Header: 'Model Growth Rate',
-      type: 'number',
-      sortable: true,
-      canChangeShow: true,
-      accessor: 'model_growth_rate',
-    },
-    {
-      show: true,
-      Header: 'Gender',
+      show: false,
+      Header: 'Pathological Tnm Stage',
       type: 'string',
       sortable: true,
       canChangeShow: true,
-      accessor: 'gender',
+      accessor: 'pathological_tnm_stage',
     },
     {
-      show: true,
+      show: false,
+      Header: 'Primary Site',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'primary_site',
+    },
+    {
+      show: false,
+      Header: 'Race',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'race',
+    },
+    {
+      show: false,
+      Header: 'Sample Acquisition Site',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'sample_acquisition_site',
+    },
+    {
+      show: false,
+      Header: 'Sequencing Derived Somatic Variants',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'sequencing_derived_somatic_variants',
+    },
+    {
+      show: false,
+      Header: 'Split Ratio',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'split_ratio',
+    },
+    {
+      show: false,
+      Header: 'Therapies',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'therapies',
+    },
+    {
+      show: false,
+      Header: 'Third Party Licensing Requirement',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'third_party_licensing_requirement',
+    },
+    {
+      show: false,
+      Header: 'Tumor Histological Grade',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'tumor_histological_grade',
+    },
+    {
+      show: false,
       Header: 'Vital Status',
       type: 'string',
       sortable: true,
@@ -239,6 +404,15 @@ storiesOf('Table', module)
   .add('Data Table', () => (
     <DataTable
       config={dummyConfig}
+      customTypes={{
+        list: props => {
+          const columnList =
+            get(props.original, props.column.listAccessor) || [];
+          const total = get(props.original, props.column.totalAccessor);
+          const firstValue = getSingleValue(columnList[0]);
+          return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+        },
+      }}
       fetchData={fetchDummyData}
       streamData={streamDummyData}
     />
