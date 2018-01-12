@@ -10,7 +10,10 @@ class App extends Component {
           <Route
             path="/admin/:index/:component"
             component={props => (
-              <AggsState index={props.match.params.index} render={EditAggs} />
+              <AggsState
+                index={props.match.params.index}
+                render={p => <EditAggs handleChange={p.update} {...p} />}
+              />
             )}
           />
         </Fragment>
