@@ -46,6 +46,7 @@
     "prettier": "^1.9.2"
   },
   "dependencies": {
+    "@storybook/addon-actions": "^3.3.8",
     "downshift": "^1.23.2",
     "filesaver.js": "^0.2.0",
     "filesize": "^3.5.11",

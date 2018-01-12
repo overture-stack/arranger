@@ -1,5 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
+import { action } from '@storybook/addon-actions';
 import EditAggs from '../src/Aggs/EditAggs';
 import './Aggs.css';
 
@@ -32,6 +33,10 @@ storiesOf('Aggs', module).add('EditAggs', () => (
           restricted: false,
         },
       ]}
+      handleChange={action('Agg State Change')}
     />
   </div>
 ));
+
+storiesOf('Aggs', module).add('TermAgg', () => <div>test</div>);
+storiesOf('Aggs', module).add('AggsPanel', () => <div>test</div>);

@@ -22,6 +22,7 @@
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
     "@arranger/components": "^0.0.1",
+    "@storybook/addon-actions": "^3.3.8",
     "elasticsearch": "^14.0.0",
     "graphql-fields": "^1.0.2",
     "lodash": "^4.17.4",

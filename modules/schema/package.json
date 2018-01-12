@@ -23,6 +23,7 @@
   "dependencies": {
     "@arranger/components": "^0.0.1",
     "@arranger/mapping-utils": "^0.0.1-0.0.10.0",
+    "@storybook/addon-actions": "^3.3.8",
     "elasticsearch": "^14.0.0",
     "graphql-tools": "^2.14.1",
     "graphql-type-json": "^0.1.4",
