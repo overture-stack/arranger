@@ -12,7 +12,7 @@ const tableConfig = {
   type: 'models',
   keyField: 'id',
   defaultSorted: [],
-  columns: normalizeColumns([
+  columns: [
     {
       show: true,
       Header: 'ID',
@@ -37,7 +37,7 @@ const tableConfig = {
       canChangeShow: true,
       accessor: 'gender',
     },
-  ]),
+  ],
 };
 
 function streamData({ columns, sort, first, onData, onEnd }) {
