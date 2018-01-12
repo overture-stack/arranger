@@ -20,10 +20,12 @@
     "url": "https://github.com/overture-stack/arranger/issues"
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
+  "peerDependencies": {
+    "graphql": "^0.11.7"
+  },
   "dependencies": {
     "@arranger/mapping-utils": "^0.0.1-0.0.10.0",
     "elasticsearch": "^14.0.0",
-    "graphql": "^0.11.7",
     "graphql-tools": "^2.14.1",
     "graphql-type-json": "^0.1.4",
     "lodash": "^4.17.4"

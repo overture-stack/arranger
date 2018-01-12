@@ -54,7 +54,8 @@ class DataTable extends React.Component {
 
     this.setState({ loading: true, lastState: state });
 
-    fetchData(config, {
+    fetchData( {
+      config,
       queryName: 'Table',
       sort: state.sorted.length
         ? state.sorted.map(sort => ({

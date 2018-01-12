@@ -7,7 +7,6 @@ import DataTable, {
   columnsToGraphql,
 } from '@arranger/components/lib/DataTable';
 
-
 const tableConfig = {
   type: 'models',
   keyField: 'id',
@@ -54,29 +53,31 @@ function streamData({ columns, sort, first, onData, onEnd }) {
   socket.emit('client::stream', {
     index: tableConfig.type,
     size: 100,
-    ...columnsToGraphql({ columns }, { sort, first }),
+    ...columnsToGraphql( { columns , sort, first }),
   });
+}
+
+function fetchData(options) {
+  const API = 'http://localhost:5050/table';
+  return fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(columnsToGraphql(options)),
+  })
+    .then(r => r.json())
+    .then(r => {
+      const hits = get(r, `data.${options.config.type}.hits`) || {};
+      const data = get(hits, 'edges', []).map(e => e.node);
+      const total = hits.total || 0;
+      return { total, data };
+    });
 }
 
 export default () => {
   return (
     <DataTable
       config={tableConfig}
-      fetchData={(config, ...args) => {
-        const API = 'http://localhost:5050/table';
-        return fetch(API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(columnsToGraphql(config, ...args)),
-        })
-          .then(r => r.json())
-          .then(r => {
-            const hits = get(r, `data.${config.type}.hits`) || {};
-            const data = get(hits, 'edges', []).map(e => e.node);
-            const total = hits.total || 0;
-            return { total, data };
-          });
-      }}
+      fetchData={fetchData}
       streamData={streamData}
     />
   );

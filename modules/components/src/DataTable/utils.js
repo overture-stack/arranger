@@ -11,8 +11,7 @@ export function getSingleValue(data) {
 }
 
 export function columnsToGraphql(
-  config,
-  { sqon, queryName, sort, offset, first },
+  { config, sqon, queryName, sort, offset, first },
 ) {
   function toQuery(column) {
     return (

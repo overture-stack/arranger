@@ -323,7 +323,7 @@ const withColumns = compose(
 
 const TableToolbarStory = withColumns(TableToolbar);
 
-function fetchDummyData(config, { sort, offset, first }) {
+function fetchDummyData({ config, sort, offset, first }) {
   return Promise.resolve({
     total: dummyData.length,
     data: orderBy(
@@ -366,20 +366,20 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
       socket.emit('client::stream', {
         index: tableConfig.type,
         size: 100,
-        ...columnsToGraphql({ columns }, { sort, first }),
+        ...columnsToGraphql({ columns, sort, first }),
       });
     }}
-    fetchData={(config, options) => {
+    fetchData={(options) => {
       const API = 'http://localhost:5050/table';
 
       return fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(columnsToGraphql(config, { ...options, sqon })),
+        body: JSON.stringify(columnsToGraphql({ ...options, sqon })),
       })
         .then(r => r.json())
         .then(r => {
-          const hits = get(r, `data.${config.type}.hits`) || {};
+          const hits = get(r, `data.${options.config.type}.hits`) || {};
           const data = get(hits, 'edges', []).map(e => e.node);
           const total = hits.total || 0;
           return { total, data };
