@@ -1,30 +1,25 @@
-import React, { Component } from 'react'
-import io from 'socket.io-client'
-import TwoPaneLayout from './TwoPaneLayout'
-
-let socket = io(`http://localhost:5050`)
-
-
+import React, { Component, Fragment } from 'react';
+import { BrowserRouter, Route } from 'react-router-dom';
+import { AggsState, EditAggs } from '@arranger/components/lib/Aggs';
 
 class App extends Component {
-  state = { data: []}
-  componentDidMount()  {
-    socket.on('server::chunk', ({data}) => {
-      this.setState({ data: this.state.data.concat(data.models.hits.edges)})
-    })
-  }
   render() {
     return (
-      <div className="app">
-        <button onClick={() => {
-          socket.emit('client::stream', { index: 'models', size: 100, fields: `id gender` })
-        }}>
-          doiiittt
-        </button>
-        {JSON.stringify(this.state.data)}
-      </div>
-    )
+      <BrowserRouter>
+        <Fragment>
+          <Route
+            path="/admin/:index/:component"
+            component={props => (
+              <AggsState
+                index={props.match.params.index}
+                render={p => <EditAggs handleChange={p.update} {...p} />}
+              />
+            )}
+          />
+        </Fragment>
+      </BrowserRouter>
+    );
   }
 }
 
-export default App
+export default App;
