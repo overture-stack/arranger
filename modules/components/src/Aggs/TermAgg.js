@@ -9,22 +9,18 @@ import _ from 'lodash';
 export default ({
   handleFieldClick = () => {},
   isActive = () => {},
-  ...props
+  field = '',
+  buckets = [],
+  title = '',
+  displayName = 'Unnamed Field',
 }) => {
-  const dotField = props.field.replace(/__/g, '.');
-  const filteredBuckets = props.buckets;
+  const dotField = field.replace(/__/g, '.');
+  const filteredBuckets = buckets;
 
   return (
-    <div style={props.style} className="test-term-aggregation">
-      <div style={{ display: 'flex', padding: 10, alignItems: 'center' }}>
-        <span
-          style={{
-            fontSize: 15,
-            color: '#537979',
-          }}
-        >
-          {dotField}
-        </span>
+    <div className="test-term-aggregation">
+      <div>
+        <span>{displayName}</span>
       </div>
       <div>
         {_.orderBy(filteredBuckets, 'doc_count', 'desc')
@@ -58,11 +54,8 @@ export default ({
                     field: dotField,
                     value: bucket.name,
                   })}
-                  id={`input-${props.title}-${bucket.name.replace(/\s/g, '-')}`}
-                  name={`input-${props.title}-${bucket.name.replace(
-                    /\s/g,
-                    '-',
-                  )}`}
+                  id={`input-${title}-${bucket.name.replace(/\s/g, '-')}`}
+                  name={`input-${title}-${bucket.name.replace(/\s/g, '-')}`}
                 />
                 {bucket.name}
                 {/* <OverflowTooltippedLabel
