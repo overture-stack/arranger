@@ -31,6 +31,6 @@ export default class extends Component {
     }
   }
   render() {
-    return this.props.children(this.state.data);
+    return this.props.render(this.state.data);
   }
 }

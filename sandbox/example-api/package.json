@@ -15,6 +15,7 @@
     "@arranger/mapping-utils": "^0.0.1-0.0.10.0",
     "@arranger/schema": "^0.0.1-0.0.10.0",
     "@arranger/server": "^0.0.1-0.0.10.0",
+    "@storybook/addon-actions": "^3.3.8",
     "babel-polyfill": "^6.26.0",
     "dotenv": "^4.0.0",
     "elasticsearch": "^14.0.0",
