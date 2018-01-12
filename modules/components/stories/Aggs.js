@@ -50,19 +50,13 @@ storiesOf('Aggs', module).add('TermAgg', () => (
           key: 'Acute Myeloid Leukemia',
         },
         {
-          doc_count: 1,
+          doc_count: 10,
           key: 'Acinar cell neoplasms',
         },
-        {
-          doc_count: 1,
-          key: 'Adenomas and Adenocarcinomas',
-        },
-        {
-          doc_count: 1,
-          key: 'Adnexal and Skin Appendage Neoplasms',
-        },
       ]}
+      handleChange={action('Term Agg Selection')}
     />
   </div>
 ));
+
 storiesOf('Aggs', module).add('AggsPanel', () => <div>test</div>);

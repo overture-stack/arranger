@@ -1,21 +1,14 @@
 import React from 'react';
-import _ from 'lodash';
-// import { Route } from 'react-router-dom'
-// import Link from './Link'
-// import { parse } from 'query-string'
-// import { inCurrentFilters } from './filters'
-// import Location from './Location'
+import { orderBy } from 'lodash';
 
 export default ({
-  handleFieldClick = () => {},
-  isActive = () => {},
   field = '',
-  buckets = [],
-  title = '',
   displayName = 'Unnamed Field',
+  buckets = [],
+  handleValueClick = () => {},
+  isActive = () => {},
 }) => {
   const dotField = field.replace(/__/g, '.');
-  const filteredBuckets = buckets;
 
   return (
     <div className="test-term-aggregation">
@@ -23,7 +16,7 @@ export default ({
         <span>{displayName}</span>
       </div>
       <div>
-        {_.orderBy(filteredBuckets, 'doc_count', 'desc')
+        {orderBy(buckets, 'doc_count', 'desc')
           // .slice(0, props.showingMore ? Infinity : 5)
           .map(b => ({ ...b, name: b.key_as_string || b.key }))
           .map(bucket => (
@@ -32,14 +25,12 @@ export default ({
               className="bucket-item"
               style={{ display: 'flex' }}
               onClick={() =>
-                handleFieldClick({
+                handleValueClick({
                   field: dotField,
                   value: bucket.name,
                 })
               }
             >
-              {/* <Location> */}
-              {/* {p => ( */}
               <span className="bucket-link" merge="toggle">
                 <input
                   readOnly
@@ -54,8 +45,8 @@ export default ({
                     field: dotField,
                     value: bucket.name,
                   })}
-                  id={`input-${title}-${bucket.name.replace(/\s/g, '-')}`}
-                  name={`input-${title}-${bucket.name.replace(/\s/g, '-')}`}
+                  id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                  name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                 />
                 {bucket.name}
                 {/* <OverflowTooltippedLabel
@@ -71,8 +62,6 @@ export default ({
                     {bucket.name}
                   </OverflowTooltippedLabel> */}
               </span>
-              {/* )} */}
-              {/* </Location> */}
               <span className="bucket-count">
                 {bucket.doc_count.toLocaleString()}
               </span>
