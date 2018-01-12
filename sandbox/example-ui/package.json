@@ -3,6 +3,7 @@
   "version": "0.0.1-0.0.10.0",
   "private": true,
   "dependencies": {
+    "@arranger/components": "^0.0.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-grid-layout": "^0.16.2",

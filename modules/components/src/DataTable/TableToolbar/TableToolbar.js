@@ -38,7 +38,7 @@ const TableToolbar = ({
               op: 'IN',
               content: {
                 field: column.accessor || column.id,
-                value,
+                value: [value],
               },
             };
           }),

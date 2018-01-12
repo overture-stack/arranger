@@ -7,9 +7,10 @@
     "access": "public"
   },
   "scripts": {
+    "build-storybook": "build-storybook",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "test": "jest",
-    "build": "mkdir -p src && babel src/ -d lib/",
+    "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
     "prepublish": "npm run build",
     "flow": "flow"
   },
@@ -33,6 +34,7 @@
     "@babel/preset-flow": "^7.0.0-beta.35",
     "@babel/preset-react": "^7.0.0-beta.37",
     "@babel/register": "^7.0.0-beta.35",
+    "@storybook/addon-actions": "^3.3.8",
     "@storybook/react": "^3.3.3",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.1.2",
@@ -54,6 +56,7 @@
     "react-dom": "^16.2.0",
     "react-table": "^6.7.6",
     "recompose": "^0.26.0",
+    "socket.io-client": "^2.0.4",
     "streamsaver": "^1.0.1"
   }
 }

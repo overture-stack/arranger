@@ -1,37 +1,50 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
-import { orderBy } from 'lodash';
+import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
+import io from 'socket.io-client';
+import { action } from '@storybook/addon-actions';
+
 import DataTable, {
-  columnConfig,
-  columnTypes,
-  fetchData,
+  Table,
+  columnsToGraphql,
   TableToolbar,
+  getSingleValue,
 } from '../src/DataTable';
 
-import { RepoView } from '../src/DataTable/RepoView/index';
+const withSQON = withState('sqon', 'setSQON', null);
 
 const tableConfig = {
-  ...columnConfig.files,
-  columns: normalizeColumns(columnConfig.files.columns),
+  timestamp: '2018-01-12T16:42:07.495Z',
+  type: 'models',
+  keyField: 'name',
+  defaultSorted: [{ id: 'age_at_diagnosis', desc: false }],
+  columns: [
+    {
+      show: true,
+      Header: 'Age At Diagnosis',
+      type: 'number',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'age_at_diagnosis',
+    },
+    {
+      show: true,
+      Header: 'Name',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'name',
+    },
+  ],
 };
-
-function normalizeColumns(columns) {
-  return columns.map(function(column) {
-    return {
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || columnTypes[column.type],
-    };
-  });
-}
 
 const dummyConfig = {
   type: 'files',
   keyField: 'file_id',
   defaultSorted: [{ id: 'access', desc: false }],
-  columns: normalizeColumns([
+  columns: [
     {
       show: true,
       Header: 'Access',
@@ -84,7 +97,7 @@ const dummyConfig = {
       totalAccessor: 'cases.hits.total',
       id: 'cases.primary_site',
     },
-  ]),
+  ],
 };
 
 const dummyData = Array(1000)
@@ -118,7 +131,7 @@ const withColumns = compose(
 
 const TableToolbarStory = withColumns(TableToolbar);
 
-function fetchDummyData(config, { sort, offset, first }) {
+function fetchDummyData({ config, sort, offset, first }) {
   return Promise.resolve({
     total: dummyData.length,
     data: orderBy(
@@ -142,12 +155,52 @@ function streamDummyData({ sort, first, onData, onEnd }) {
   onEnd();
 }
 
+const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
+  <DataTable
+    config={tableConfig}
+    onSQONChange={action('sqon changed')}
+    onSelectionChange={action('selection changed')}
+    streamData={({ columns, sort, first, onData, onEnd }) => {
+      let socket = io(`http://localhost:5050`);
+      socket.on('server::chunk', ({ data, total }) =>
+        onData({
+          total,
+          data: data[tableConfig.type].hits.edges.map(e => e.node),
+        }),
+      );
+
+      socket.on('server::stream::end', onEnd);
+
+      socket.emit('client::stream', {
+        index: tableConfig.type,
+        size: 100,
+        ...columnsToGraphql({ columns, sort, first }),
+      });
+    }}
+    fetchData={options => {
+      const API = 'http://localhost:5050/table';
+
+      return fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(columnsToGraphql({ ...options, sqon })),
+      })
+        .then(r => r.json())
+        .then(r => {
+          const hits = get(r, `data.${options.config.type}.hits`) || {};
+          const data = get(hits, 'edges', []).map(e => e.node);
+          const total = hits.total || 0;
+          return { total, data };
+        });
+    }}
+  />
+));
 storiesOf('Table', module)
   .add('Table', () => (
-    <DataTable
+    <Table
       config={dummyConfig}
       fetchData={fetchDummyData}
-      onSelectionChange={selection => console.log(selection)}
+      onSelectionChange={action('selection changed')}
     />
   ))
   .add('Toolbar', () => (
@@ -157,12 +210,19 @@ storiesOf('Table', module)
     />
   ))
   .add('Data Table', () => (
-    <RepoView
+    <DataTable
       config={dummyConfig}
+      customTypes={{
+        list: props => {
+          const columnList =
+            get(props.original, props.column.listAccessor) || [];
+          const total = get(props.original, props.column.totalAccessor);
+          const firstValue = getSingleValue(columnList[0]);
+          return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+        },
+      }}
       fetchData={fetchDummyData}
       streamData={streamDummyData}
     />
   ))
-  .add('Live Data Table', () => (
-    <RepoView config={tableConfig} fetchData={fetchData} />
-  ));
+  .add('Live Data Table', () => <EnhancedDataTable />);

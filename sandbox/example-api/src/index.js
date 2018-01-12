@@ -72,11 +72,11 @@ let main = async () => {
         io.on('connection', socket => {
           socket.on(
             'client::stream',
-            async ({ index, filters = null, size = 100, fields = '' }) => {
+            async ({ index, variables = null, size = 100, fields = '' }) => {
               let { data } = await fetch('http://localhost:5050', {
                 ...fetchOptions,
                 body: JSON.stringify({
-                  variables: { filters },
+                  variables,
                   query: `
                   query ($filters: JSON) {
                     ${index} {
@@ -92,12 +92,17 @@ let main = async () => {
               let total = data[index].hits.total;
               let steps = range(0, Math.round(total / size));
 
-              steps.forEach(async (x, i) => {
-                fetch('http://localhost:5050', {
-                  ...fetchOptions,
-                  body: JSON.stringify({
-                    variables: { first: size, offset: x * size },
-                    query: `
+              await Promise.all(
+                steps.map((x, i) => {
+                  return fetch('http://localhost:5050', {
+                    ...fetchOptions,
+                    body: JSON.stringify({
+                      variables: {
+                        ...variables,
+                        first: size,
+                        offset: x * size,
+                      },
+                      query: `
                     query ($first: Int, $offset: Int) {
                       ${index} {
                         hits(first: $first, offset: $offset) {
@@ -110,16 +115,15 @@ let main = async () => {
                       }
                     }
                   `,
-                  }),
-                })
-                  .then(r => r.json())
-                  .then(({ data }) => {
-                    socket.emit('server::chunk', {
-                      data,
-                      complete: i === steps.length - 1,
+                    }),
+                  })
+                    .then(r => r.json())
+                    .then(({ data }) => {
+                      socket.emit('server::chunk', { data, total });
                     });
-                  });
-              });
+                }),
+              );
+              socket.emit('server::stream::end', {});
             },
           );
         });

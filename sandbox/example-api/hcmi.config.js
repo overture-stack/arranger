@@ -1,6 +1,6 @@
 export let ES_TYPES = {
   models: {
-    index: 'docs',
+    index: 'models',
     es_type: 'models',
     name: 'Models',
     customFields: `
