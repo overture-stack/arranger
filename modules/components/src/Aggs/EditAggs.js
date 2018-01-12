@@ -32,7 +32,18 @@ export default ({ aggs = [], handleChange = noop }) => (
               />
             </div>
             <div>
-              active: <input type="checkbox" checked={x.active} />
+              active:
+              <input
+                type="checkbox"
+                checked={x.active}
+                onClick={() =>
+                  handleChange({
+                    field: x.field,
+                    key: 'active',
+                    value: !x.active,
+                  })
+                }
+              />
             </div>
             <div>type: {x.type}</div>
             <div>allowedValues: {x.allowedValues}</div>
