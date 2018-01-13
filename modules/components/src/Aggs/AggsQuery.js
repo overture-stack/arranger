@@ -1,6 +1,6 @@
 import React from 'react';
 import { capitalize } from 'lodash';
-import Query from './Query';
+import Query from '../Query';
 
 export default ({ index, aggs, ...props }) => (
   <Query
@@ -9,10 +9,10 @@ export default ({ index, aggs, ...props }) => (
     query {
       ${index} {
         aggregations {
-          ${aggs.map(([name, type]) => {
+          ${aggs.map(({ field, type }) => {
             return type === 'Aggregations'
               ? `
-                ${name} {
+                ${field} {
                   buckets {
                     doc_count
                     key
@@ -20,7 +20,7 @@ export default ({ index, aggs, ...props }) => (
                 }
               `
               : `
-              ${name} {
+              ${field} {
                 stats {
                   max
                   min

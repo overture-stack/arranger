@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@storybook/addon-actions": "^3.3.8",
+    "babel-polyfill": "^6.26.0",
     "downshift": "^1.23.2",
     "filesaver.js": "^0.2.0",
     "filesize": "^3.5.11",

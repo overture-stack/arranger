@@ -5,6 +5,7 @@
   "dependencies": {
     "@arranger/components": "^0.0.1",
     "@storybook/addon-actions": "^3.3.8",
+    "babel-polyfill": "^6.26.0",
     "formik": "^0.10.5",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
