@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { debounce } from 'lodash';
 
 let API = 'http://localhost:5050';
 
@@ -13,28 +14,31 @@ let api = ({ endpoint = 'graphql', name = 'UnnamedQuery', query, variables }) =>
 
 export default class extends Component {
   state = { data: null, error: null };
-  async componentDidMount() {
-    let { query, variables, name, endpoint } = this.props;
-    try {
-      let { data, errors } = await api({ endpoint, query, variables, name });
-      this.setState({ data, error: { errors } });
-    } catch (error) {
-      this.setState({ error });
-    }
+  componentDidMount() {
+    this.fetch(this.props);
   }
   componentWillReceiveProps(next) {
+    //TODO: more critical check
     if (
       JSON.stringify(this.props.query) !== JSON.stringify(next.query) ||
       JSON.stringify(this.props.variables) !== JSON.stringify(next.variables)
     ) {
-      let { endpoint, query, variables, name } = next;
-      api({ endpoint, query, variables, name }).then(({ data }) =>
-        this.setState({ data }),
-      );
+      this.fetch(next);
     }
   }
   componentDidCatch(error, info) {
     this.setState({ error });
+  }
+  fetch = debounce(async options => {
+    try {
+      let { data, errors } = await api(options);
+      this.setState({ data, error: { errors } });
+    } catch (error) {
+      this.setState({ error: error.message });
+    }
+  }, this.props.debounceTime || 0);
+  componentDidUpdate() {
+    if (this.props.onUpdate) this.props.onUpdate(this.state);
   }
   render() {
     return this.state.error ? (

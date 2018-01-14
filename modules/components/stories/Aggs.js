@@ -62,18 +62,17 @@ storiesOf('Aggs', module).add('TermAgg', () => (
 
 storiesOf('Aggs', module).add('AggsPanel', () => (
   <State
-    initial={{ index: '', go: false }}
-    render={({ index, go, update }) => (
+    initial={{ index: '' }}
+    render={({ index, update }) => (
       <div>
         <label>index: </label>
         <input // <-- could be a dropdown of available indices
           value={index}
           onChange={e => update({ index: e.target.value })}
         />
-        <button onClick={() => update({ go: true })}>Go</button>
-        {go && (
+        {index && (
           <div>
-            <AggsPanel aggs={aggs} index={index} />
+            <AggsPanel aggs={aggs} index={index} debounceTime={200} />
           </div>
         )}
       </div>

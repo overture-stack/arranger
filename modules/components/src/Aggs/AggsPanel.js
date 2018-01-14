@@ -6,7 +6,7 @@ import Location from '../Location';
 import TermAgg from './TermAgg';
 import AggsQuery from './AggsQuery';
 
-export default ({ index, aggs = [] }) =>
+export default ({ index, aggs = [], ...props }) =>
   !aggs.length ? null : (
     <AggsQuery
       index={index}
@@ -55,5 +55,6 @@ export default ({ index, aggs = [] }) =>
           </div>
         )
       }
+      {...props}
     />
   );
