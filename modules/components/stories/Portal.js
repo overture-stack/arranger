@@ -1,14 +1,15 @@
 import React from 'react';
+import { get } from 'lodash';
+import io from 'socket.io-client';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import './Aggs.css';
 import SQONView from '../src/SQONView';
+import State from '../src/State';
+import TermAgg from '../src/Aggs/TermAgg';
+import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
 
-import io from 'socket.io-client';
-import { get } from 'lodash';
-
-import DataTable, { columnTypes, columnsToGraphql } from '../src//DataTable';
-import AggsPanel from '../src/Aggs/AggsPanel';
+import DataTable, { columnTypes, columnsToGraphql } from '../src/DataTable';
 
 const tableConfig = {
   type: 'models',
@@ -86,19 +87,105 @@ let Table = () => {
   );
 };
 
+let aggs = [
+  {
+    field: 'color',
+    displayName: 'Color',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        doc_count: 1,
+        key: 'green',
+      },
+      {
+        doc_count: 5,
+        key: 'yellow',
+      },
+      {
+        doc_count: 12,
+        key: 'blue',
+      },
+    ],
+  },
+  {
+    field: 'taste',
+    displayName: 'Taste',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        doc_count: 1,
+        key: 'spicy',
+      },
+      {
+        doc_count: 5,
+        key: 'sweet',
+      },
+      {
+        doc_count: 12,
+        key: 'sour',
+      },
+    ],
+  },
+];
+
+let defaultSQON = {
+  op: 'and',
+  content: [],
+};
+
 storiesOf('Portal', module).add('Exploration', () => (
-  <div className="app" style={{ display: 'flex' }}>
-    <div>
-      <AggsPanel />
-    </div>
-    <div style={{ flexGrow: 1 }}>
-      <SQONView
-        sqon={{
-          op: 'and',
-          content: [],
-        }}
-      />
-      <Table />
-    </div>
-  </div>
+  <State
+    initial={{ sqon: null }}
+    render={({ sqon, update }) => (
+      <div className="app" style={{ display: 'flex' }}>
+        <div>
+          {aggs.map(agg => (
+            // TODO: switch on agg type
+            <TermAgg
+              key={agg.field}
+              {...agg}
+              Content={({ content, ...props }) => (
+                <div
+                  {...props}
+                  onClick={() =>
+                    update({
+                      sqon: toggleSQON(
+                        {
+                          op: 'and',
+                          content: [
+                            {
+                              op: 'in',
+                              content,
+                            },
+                          ],
+                        },
+                        sqon || defaultSQON,
+                      ),
+                    })
+                  }
+                />
+              )}
+              isActive={d =>
+                inCurrentSQON({
+                  value: d.value,
+                  dotField: d.field,
+                  currentSQON: sqon?.content || defaultSQON.content,
+                })
+              }
+            />
+          ))}
+        </div>
+        <div style={{ flexGrow: 1 }}>
+          <SQONView sqon={sqon || defaultSQON} />
+          <Table />
+        </div>
+      </div>
+    )}
+  />
 ));

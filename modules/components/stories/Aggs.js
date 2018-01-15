@@ -32,6 +32,28 @@ let aggs = [
       },
     ],
   },
+  {
+    field: 'taste',
+    displayName: 'Taste',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        doc_count: 1,
+        key: 'spicy',
+      },
+      {
+        doc_count: 5,
+        key: 'sweet',
+      },
+      {
+        doc_count: 12,
+        key: 'sour',
+      },
+    ],
+  },
 ];
 
 storiesOf('Aggs', module).add('EditAggs', () => (
@@ -70,14 +92,14 @@ storiesOf('Aggs', module).add('AggsWithSQON', () => (
     initial={{ sqon: null }}
     render={({ sqon, update }) => (
       <div>
-        <div>{JSON.stringify(sqon)}</div>
+        <div>SQON: {JSON.stringify(sqon)}</div>
         <div>
           {aggs.map(agg => (
             // TODO: switch on agg type
             <TermAgg
               key={agg.field}
               {...agg}
-              Value={({ getValue, ...props }) => (
+              Content={({ content, ...props }) => (
                 <div
                   {...props}
                   onClick={() =>
@@ -88,7 +110,7 @@ storiesOf('Aggs', module).add('AggsWithSQON', () => (
                           content: [
                             {
                               op: 'in',
-                              content: getValue(),
+                              content,
                             },
                           ],
                         },
