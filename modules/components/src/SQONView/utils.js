@@ -207,12 +207,14 @@ export const inCurrentSQON = ({
   currentSQON: TGroupContent,
   value: string,
   dotField: string,
-}): boolean =>
-  currentSQON.some(
+}): boolean => {
+  console.log(1111, currentSQON);
+  return currentSQON.some(
     f =>
       f.content.field === dotField &&
       [].concat(f.content.value || []).includes(value),
   );
+};
 
 // true if field in
 export const fieldInCurrentSQON = ({

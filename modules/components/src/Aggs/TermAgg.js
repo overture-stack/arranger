@@ -7,6 +7,7 @@ export default ({
   buckets = [],
   handleValueClick = () => {},
   isActive = () => {},
+  Value = p => <div {...p} />,
 }) => {
   const dotField = field.replace(/__/g, '.');
 
@@ -20,16 +21,14 @@ export default ({
           // .slice(0, props.showingMore ? Infinity : 5)
           .map(b => ({ ...b, name: b.key_as_string || b.key }))
           .map(bucket => (
-            <div
+            <Value
               key={bucket.name}
               className="bucket-item"
               style={{ display: 'flex' }}
-              onClick={() =>
-                handleValueClick({
-                  field: dotField,
-                  value: bucket.name,
-                })
-              }
+              getValue={() => ({
+                field: dotField,
+                value: bucket.name,
+              })}
             >
               <span className="bucket-link" merge="toggle">
                 <input
@@ -65,7 +64,7 @@ export default ({
               <span className="bucket-count">
                 {bucket.doc_count.toLocaleString()}
               </span>
-            </div>
+            </Value>
           ))}
       </div>
     </div>

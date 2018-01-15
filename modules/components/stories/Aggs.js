@@ -4,33 +4,33 @@ import { action } from '@storybook/addon-actions';
 import EditAggs from '../src/Aggs/EditAggs';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
+import AggsPanell from '../src/Aggs/AggsPanell';
+import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
 import State from '../src/State';
 import './Aggs.css';
 
 let aggs = [
   {
-    field: 'age_at_diagnosis',
-    displayName: 'Age At Diagnosis',
-    active: false,
-    type: 'NumericAggregations',
-    allowedValues: [],
-    restricted: false,
-  },
-  {
-    field: 'age_at_sampling',
-    displayName: 'Age At Sampling',
-    active: false,
-    type: 'NumericAggregations',
-    allowedValues: [],
-    restricted: false,
-  },
-  {
-    field: 'cancer_related_somatic_mutations',
-    displayName: 'Cancer Related Somatic Mutations',
+    field: 'color',
+    displayName: 'Color',
     active: false,
     type: 'Aggregations',
     allowedValues: [],
     restricted: false,
+    buckets: [
+      {
+        doc_count: 1,
+        key: 'green',
+      },
+      {
+        doc_count: 10,
+        key: 'yellow',
+      },
+      {
+        doc_count: 12,
+        key: 'blue',
+      },
+    ],
   },
 ];
 
@@ -55,14 +55,57 @@ storiesOf('Aggs', module).add('TermAgg', () => (
           key: 'Acinar cell neoplasms',
         },
       ]}
-      handleChange={action('Term Agg Selection')}
+      handleValueClick={action('Term Agg Selection')}
     />
   </div>
 ));
 
-storiesOf('Aggs', module).add('AggsPanel', () => (
+storiesOf('Aggs', module).add('AggsWithSQON', () => (
   <State
-    initial={{ index: '' }}
+    initial={{ sqon: { content: [] } }}
+    render={({ sqon, update }) => (
+      <div>
+        <div>{JSON.stringify(sqon)}</div>
+        <div>
+          {aggs.map(agg => (
+            // TODO: switch on agg type
+            <TermAgg
+              key={agg.field}
+              {...agg}
+              Value={({ getValue, ...props }) => (
+                <div
+                  {...props}
+                  onClick={() =>
+                    update({
+                      sqon: toggleSQON(
+                        {
+                          op: 'and',
+                          content: [getValue()],
+                        },
+                        sqon,
+                      ),
+                    })
+                  }
+                />
+              )}
+              // isActive={d =>
+              //   inCurrentSQON({
+              //     key: d.value,
+              //     dotField: d.field,
+              //     currentSQON: sqon.content || [],
+              //   })
+              // }
+            />
+          ))}
+        </div>
+      </div>
+    )}
+  />
+));
+
+storiesOf('Aggs', module).add('LiveDataAggsPanel', () => (
+  <State
+    initial={{ index: '', sqon: {} }}
     render={({ index, update }) => (
       <div>
         <label>index: </label>
