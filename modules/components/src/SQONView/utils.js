@@ -200,7 +200,7 @@ export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
 
 // true if field and value in
 export const inCurrentSQON = ({
-  currentSQON,
+  currentSQON, //TODO: this is actually sqon.content
   value,
   dotField,
 }: {
@@ -208,7 +208,6 @@ export const inCurrentSQON = ({
   value: string,
   dotField: string,
 }): boolean => {
-  console.log(1111, currentSQON);
   return currentSQON.some(
     f =>
       f.content.field === dotField &&

@@ -23,7 +23,7 @@ let aggs = [
         key: 'green',
       },
       {
-        doc_count: 10,
+        doc_count: 5,
         key: 'yellow',
       },
       {
@@ -60,9 +60,14 @@ storiesOf('Aggs', module).add('TermAgg', () => (
   </div>
 ));
 
+let defaultSQON = {
+  op: 'and',
+  content: [],
+};
+
 storiesOf('Aggs', module).add('AggsWithSQON', () => (
   <State
-    initial={{ sqon: { content: [] } }}
+    initial={{ sqon: null }}
     render={({ sqon, update }) => (
       <div>
         <div>{JSON.stringify(sqon)}</div>
@@ -80,21 +85,26 @@ storiesOf('Aggs', module).add('AggsWithSQON', () => (
                       sqon: toggleSQON(
                         {
                           op: 'and',
-                          content: [getValue()],
+                          content: [
+                            {
+                              op: 'in',
+                              content: getValue(),
+                            },
+                          ],
                         },
-                        sqon,
+                        sqon || defaultSQON,
                       ),
                     })
                   }
                 />
               )}
-              // isActive={d =>
-              //   inCurrentSQON({
-              //     key: d.value,
-              //     dotField: d.field,
-              //     currentSQON: sqon.content || [],
-              //   })
-              // }
+              isActive={d =>
+                inCurrentSQON({
+                  value: d.value,
+                  dotField: d.field,
+                  currentSQON: sqon?.content || defaultSQON.content,
+                })
+              }
             />
           ))}
         </div>
