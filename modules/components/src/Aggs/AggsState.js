@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { debounce } from 'lodash';
 
-let API = 'http://localhost:5050';
+let API = 'http://localhost:5050/graphql/AggsStateQuery';
 
 let aggFields = `
   index
@@ -31,21 +31,35 @@ export default class extends Component {
   state = { aggs: [], temp: [] };
 
   async componentDidMount() {
-    let { data } = await api({
-      query: `
-        {
-        	aggsState(indices:["${this.props.index}"]) {
-            ${aggFields}
-          }
-        }
-      `,
-    });
-
-    this.setState({
-      aggs: data.aggsState[0].states[0].state,
-      temp: data.aggsState[0].states[0].state,
-    });
+    this.fetchAggsState(this.props);
   }
+
+  componentWillReceiveProps(next) {
+    if (this.props.index !== next.index) {
+      this.fetchAggsState(next);
+    }
+  }
+
+  fetchAggsState = debounce(async ({ index }) => {
+    try {
+      let { data } = await api({
+        query: `
+          {
+            aggsState(indices:["${this.props.index}"]) {
+              ${aggFields}
+            }
+          }
+        `,
+      });
+
+      this.setState({
+        aggs: data.aggsState[0].states[0].state,
+        temp: data.aggsState[0].states[0].state,
+      });
+    } catch (e) {
+      // this.setState({ })
+    }
+  }, 300);
 
   save = debounce(async state => {
     let { data } = await api({

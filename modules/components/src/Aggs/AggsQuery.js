@@ -2,10 +2,13 @@ import React from 'react';
 import { capitalize } from 'lodash';
 import Query from '../Query';
 
-export default ({ index, aggs, ...props }) => (
-  <Query
-    name={`${capitalize(index)}AggregationsQuery`}
-    query={`
+export default ({ index = '', aggs = [], ...props }) =>
+  !index || !aggs.length ? (
+    'invalid props'
+  ) : (
+    <Query
+      name={`${capitalize(index)}AggregationsQuery`}
+      query={`
     query {
       ${index} {
         aggregations {
@@ -41,6 +44,6 @@ export default ({ index, aggs, ...props }) => (
       }
     }
   `}
-    {...props}
-  />
-);
+      {...props}
+    />
+  );

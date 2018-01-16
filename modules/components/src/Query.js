@@ -13,7 +13,7 @@ let api = ({ endpoint = 'graphql', name = 'UnnamedQuery', query, variables }) =>
   }).then(r => r.json());
 
 export default class extends Component {
-  state = { data: null, error: null };
+  state = { data: null, error: null, loading: false };
   componentDidMount() {
     this.fetch(this.props);
   }
@@ -30,11 +30,16 @@ export default class extends Component {
     this.setState({ error });
   }
   fetch = debounce(async options => {
+    this.setState({ loading: true });
     try {
       let { data, errors } = await api(options);
-      this.setState({ data, error: { errors } });
+      this.setState({
+        data,
+        error: errors ? { errors } : null,
+        loading: false,
+      });
     } catch (error) {
-      this.setState({ error: error.message });
+      this.setState({ error: error.message, loading: false });
     }
   }, this.props.debounceTime || 0);
   componentDidUpdate() {

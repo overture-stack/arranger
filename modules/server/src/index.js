@@ -1,8 +1,8 @@
-import express from 'express'
-import bodyParser from 'body-parser'
-import cors from 'cors'
-import { graphqlExpress } from 'apollo-server-express'
-import { rainbow } from 'chalk-animation'
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import { graphqlExpress } from 'apollo-server-express';
+import { rainbow } from 'chalk-animation';
 
 module.exports = ({
   app,
@@ -13,11 +13,11 @@ module.exports = ({
   schema,
   endpoints = ['/', '/graphql', '/graphql/:query'],
 } = {}) => {
-  app.use(cors())
+  app.use(cors());
 
   app.use(
     endpoints,
-    bodyParser.json(),
+    bodyParser.json({ limit: '50mb' }),
     schema
       ? graphqlExpress({ schema, context })
       : (req, res) =>
@@ -25,7 +25,7 @@ module.exports = ({
             error:
               'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
           }),
-  )
+  );
 
-  http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`))
-}
+  http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`));
+};
