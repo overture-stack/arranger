@@ -1,9 +1,9 @@
-import getNestedFields from './getNestedFields'
+import getNestedFields from './getNestedFields';
 
 let addMappingsToTypes = ({ types, mappings }) => {
   return types.map(([key, type], i) => {
     let mapping = Object.values(mappings[i])[0].mappings[type.es_type]
-      .properties
+      .properties;
 
     return [
       key,
@@ -12,8 +12,8 @@ let addMappingsToTypes = ({ types, mappings }) => {
         mapping,
         nested_fields: getNestedFields(mapping),
       },
-    ]
-  })
-}
+    ];
+  });
+};
 
-export default addMappingsToTypes
+export default addMappingsToTypes;

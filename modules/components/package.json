@@ -48,6 +48,8 @@
     "prettier": "^1.9.2"
   },
   "dependencies": {
+    "@storybook/addon-actions": "^3.3.8",
+    "babel-polyfill": "^6.26.0",
     "downshift": "^1.23.2",
     "filesaver.js": "^0.2.0",
     "filesize": "^3.5.11",
@@ -57,6 +59,7 @@
     "react-table": "^6.7.6",
     "recompose": "^0.26.0",
     "socket.io-client": "^2.0.4",
-    "streamsaver": "^1.0.1"
+    "streamsaver": "^1.0.1",
+    "uuid": "^3.1.0"
   }
 }

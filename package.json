@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "bootstrap": "lerna bootstrap --hoist",
+    "bootstrap": "lerna bootstrap",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
     "publish": "lerna publish",

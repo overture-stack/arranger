@@ -1,22 +1,23 @@
-import React, { Component } from 'react';
-import Table from './Table';
-import SQONView from '@arranger/components/lib/SQONView';
+import React, { Component, Fragment } from 'react';
+import { BrowserRouter, Route } from 'react-router-dom';
+import { AggsState, EditAggs } from '@arranger/components/lib/Aggs';
 
 class App extends Component {
   render() {
     return (
-      <div className="app" style={{ display: 'flex' }}>
-        <div>aggregations</div>
-        <div style={{ flexGrow: 1 }}>
-          <SQONView
-            sqon={{
-              op: 'and',
-              content: [],
-            }}
+      <BrowserRouter>
+        <Fragment>
+          <Route
+            path="/admin/:index/:component"
+            component={props => (
+              <AggsState
+                index={props.match.params.index}
+                render={p => <EditAggs handleChange={p.update} {...p} />}
+              />
+            )}
           />
-          <Table />
-        </div>
-      </div>
+        </Fragment>
+      </BrowserRouter>
     );
   }
 }
