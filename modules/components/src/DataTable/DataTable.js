@@ -25,6 +25,7 @@ class DataTable extends React.Component {
       onSQONChange,
       onSelectionChange,
       style,
+      sqon,
     } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
@@ -51,6 +52,7 @@ class DataTable extends React.Component {
           type={this.props.config.type}
         />
         <Table
+          sqon={sqon}
           config={{ ...this.props.config, columns }}
           fetchData={fetchData}
           onSelectionChange={onSelectionChange}

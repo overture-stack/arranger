@@ -14,38 +14,6 @@ import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
 
 import DataTable, { columnTypes, columnsToGraphql } from '../src/DataTable';
 
-const tableConfig = {
-  type: 'models',
-  keyField: 'id',
-  defaultSorted: [],
-  columns: [
-    {
-      show: true,
-      Header: 'ID',
-      type: 'string',
-      sortable: false,
-      canChangeShow: true,
-      accessor: 'id',
-    },
-    {
-      show: true,
-      Header: 'model_growth_rate',
-      type: 'number',
-      sortable: true,
-      canChangeShow: true,
-      accessor: 'model_growth_rate',
-    },
-    {
-      show: true,
-      Header: 'Gender',
-      type: 'string',
-      sortable: true,
-      canChangeShow: true,
-      accessor: 'gender',
-    },
-  ],
-};
-
 function streamData({ columns, sort, first, onData, onEnd }) {
   let socket = io(`http://localhost:5050`);
   socket.on('server::chunk', ({ data, total }) =>
@@ -65,7 +33,7 @@ function streamData({ columns, sort, first, onData, onEnd }) {
 }
 
 function fetchData(options) {
-  const API = 'http://localhost:5050/table';
+  const API = 'http://localhost:5050';
   return fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -80,19 +48,70 @@ function fetchData(options) {
     });
 }
 
-let Table = () => {
-  return (
-    <DataTable
-      config={tableConfig}
-      fetchData={fetchData}
-      streamData={streamData}
-    />
-  );
-};
-
 let defaultSQON = {
   op: 'and',
   content: [],
+};
+
+const tableConfig = {
+  timestamp: '2018-01-12T16:42:07.495Z',
+  type: 'files',
+  keyField: 'file_id',
+  defaultSorted: [{ id: 'access', desc: false }],
+  columns: [
+    {
+      show: true,
+      Header: 'Access',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'access',
+    },
+    {
+      show: true,
+      Header: 'File Id',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'file_id',
+    },
+    {
+      show: true,
+      Header: 'File Name',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'file_name',
+    },
+    {
+      show: true,
+      Header: 'Data Type',
+      type: 'string',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'data_type',
+    },
+    {
+      show: true,
+      Header: 'File Size',
+      type: 'bits',
+      sortable: true,
+      canChangeShow: true,
+      accessor: 'file_size',
+    },
+    {
+      show: true,
+      Header: 'Cases Primary Site',
+      type: 'list',
+      sortable: false,
+      canChangeShow: false,
+      query:
+        'cases { hits(first: 5) { total, edges { node { primary_site } } } }',
+      listAccessor: 'cases.hits.edges',
+      totalAccessor: 'cases.hits.total',
+      id: 'cases.primary_site',
+    },
+  ],
 };
 
 storiesOf('Portal', module).add('Exploration', () => (
@@ -175,7 +194,14 @@ storiesOf('Portal', module).add('Exploration', () => (
           />
           <div style={{ flexGrow: 1 }}>
             <SQONView sqon={sqon || defaultSQON} />
-            {/* <Table /> */}
+            <DataTable
+              sqon={sqon}
+              config={tableConfig}
+              onSQONChange={action('sqon changed')}
+              onSelectionChange={action('selection changed')}
+              streamData={streamData}
+              fetchData={fetchData}
+            />
           </div>
         </div>
       </div>

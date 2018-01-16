@@ -48,14 +48,16 @@ class DataTable extends React.Component {
     return this.state.selection.includes(key);
   };
 
+  // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
-    const { fetchData, config } = this.props;
+    const { fetchData, config, sqon } = this.props;
     const { selection } = this.state;
 
     this.setState({ loading: true, lastState: state });
 
-    fetchData( {
+    fetchData({
       config,
+      sqon,
       queryName: 'Table',
       sort: state.sorted.length
         ? state.sorted.map(sort => ({
@@ -92,6 +94,11 @@ class DataTable extends React.Component {
           lastColumn.show !== this.props.config.columns[i].show,
       )
     ) {
+      this.onFetchData(this.state.lastState);
+    }
+
+    // TODO: in receive props? better if else ladder?
+    if (this.props.sqon !== lastProps.sqon) {
       this.onFetchData(this.state.lastState);
     }
   }

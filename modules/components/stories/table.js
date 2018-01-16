@@ -41,6 +41,7 @@ const tableConfig = {
 };
 
 const dummyConfig = {
+  timestamp: '2018-01-12T16:42:07.495Z',
   type: 'files',
   keyField: 'file_id',
   defaultSorted: [{ id: 'access', desc: false }],

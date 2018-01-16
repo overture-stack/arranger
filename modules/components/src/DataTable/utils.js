@@ -10,9 +10,14 @@ export function getSingleValue(data) {
   }
 }
 
-export function columnsToGraphql(
-  { config, sqon, queryName, sort, offset, first },
-) {
+export function columnsToGraphql({
+  config,
+  sqon,
+  queryName,
+  sort,
+  offset,
+  first,
+}) {
   function toQuery(column) {
     return (
       column.query ||
@@ -85,14 +90,15 @@ export function columnsToGraphql(
           }
         }),
       score:
-        sort &&
-        sort
-          .filter(s => s.field.indexOf('hits.total') >= 0)
-          .map(s => {
-            const match = s.field.match(/((.*)s)\.hits\.total/);
-            return `${match[1]}.${match[2]}_id`;
-          })
-          .join(','),
+        (sort &&
+          sort
+            .filter(s => s.field.indexOf('hits.total') >= 0)
+            .map(s => {
+              const match = s.field.match(/((.*)s)\.hits\.total/);
+              return `${match[1]}.${match[2]}_id`;
+            })
+            .join(',')) ||
+        null,
       offset,
       first,
     },
