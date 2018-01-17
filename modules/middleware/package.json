@@ -4,7 +4,7 @@
   "description": "Arranger Middleware",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node -r babel-register src/index"
   },
   "dependencies": {
     "axios": "^0.15.3",
@@ -13,6 +13,7 @@
     "express": "^4.16.2",
     "lodash": "^4.17.4",
     "morgan": "^1.9.0",
+    "python-js": "^0.9.8",
     "winston": "^2.4.0"
   },
   "author": "",
