@@ -178,59 +178,73 @@ export default class FilterProcessor{
         let r = {t: {k: v}};
         let path = k.split(".");
 
-        for( let i =1; i < path.length; i++){
-            let p = ".".join(path[:-i])
-
-            if p in nested:
-                if not is_nested(r):
-                    r = wrap_not(r) if op in HAVE_NOT_OPS else wrap_must(r)
-            else:
-                r = wrap_must(r)
-            r = wrap_filter(r, p)
-        }
+        r = this.wrap_filter_based_on_path(r, path,nested, op);
         return r
+    }
+    wrap_filter_based_on_path(r, path,nested, op){
+        for( let i =1; i < path.length; i++) {
+            let p = _.chunk(path, path.length - i)[0].join(".");
+            if (nested.includes(p)) {
+                if(!this.is_nested(r))
+                    r = CONSTANTS.HAVE_NOT_OPS.includes(op) ? this.wrap_not(r) : this.wrap_must(r);
+                else
+                    r = this.wrap_must(r);
 
+                r = this.wrap_filter(r, p)
+            }
+        }
     }
     _get_set_filter(doc_type, nested, x){
-        op = x['op']
-        content = x['content']
+        let op = x['op'],
+            content = x['content'];
 
-        full_field = field_to_full_path_on_doc_type(doc_type, content['field'])
+        // TODO: make this generic
+        let full_field = field_to_full_path_on_doc_type(doc_type, content['field'])
 
-        values = content['value']
-        t = "terms"
+        let values = content['value'],
+            t = "terms",
+            value = values;
 
-        value = values
-        if isinstance(values, list):
-        value = values[0]
+        value = typeof values === "object" ? values[0] : value;
+        let set_id = value.replace('set_id:', '');
 
-        value = value.encode()
-        set_id = value.replace('set_id:', '')
-
-        r = {
+        let r = {
             t: {
                 "boost": 0,
                 full_field: {
-                    "index" : FIELD_TO_SET_TYPE[content['field']],
-                    "type" : FIELD_TO_SET_TYPE[content['field']],
+                    "index" : CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
+                    "type" : CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
                     "id" : set_id,
                     "path" : "ids"
                 }
             }
-        }
+        };
 
-        path = full_field.split(".")
-        for i in range(1, len(path)):
-        p = ".".join(path[:-i])
-
-        if p in nested:
-        if not is_nested(r):
-        r = wrap_not(r) if op in HAVE_NOT_OPS else wrap_must(r)
-        else:
-            r = wrap_must(r)
-        r = wrap_filter(r, p)
-
+        let path = full_field.split(".");
+        r = this.wrap_filter_based_on_path(r, path,nested, op);
         return r
+    }
+    is_nested(x){
+        return x.includes(CONSTANTS.ES_NESTED);
+    }
+    wrap_bool(op, val)
+    {
+        return {ES_BOOL: {op: typeof val === "object" ? val : [val]}}
+    }
+    wrap_must(val){
+        return this.wrap_bool(CONSTANTS.ES_MUST, val)
+    }
+    wrap_not(val)
+    {
+        return this.wrap_bool(CONSTANTS.ES_MUST_NOT, val)
+    }
+    wrap_filter(val, p){
+        return {
+            ES_NESTED: {
+                ES_PATH: p,
+                ES_QUERY: val
+            }
+        }
     }
 
 }
