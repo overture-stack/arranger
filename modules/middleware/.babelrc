@@ -1,7 +1,9 @@
 {
-  "plugins": [
-    "@babel/plugin-proposal-optional-chaining",
-    "@babel/plugin-proposal-object-rest-spread"
+  "presets": [
+    "env"
   ],
-  "presets": ["@babel/env"]
+  "plugins": [
+    "transform-object-rest-spread"
+  ],
+  "sourceMaps": "both"
 }

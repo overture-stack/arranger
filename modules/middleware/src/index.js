@@ -1,29 +1,18 @@
-import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools'
-import {
-  typeDefs as generateTypeDefs,
-  resolvers as generateResolvers,
-} from './Root'
+import pythonjs from "python-js"
 
-module.exports = ({
-  types = [],
-  rootTypes = [],
-  scalarTypes = [],
-  mock = false,
-} = {}) => {
-  let typeDefs = generateTypeDefs({ types, rootTypes, scalarTypes })
-  let resolvers = generateResolvers({ types, rootTypes, scalarTypes })
+my_python_code = `EQ = '='
+NEQ = '!='
+IN = 'in'
+EXCLUDE = 'exclude'
+EXCLUDE_IF_ANY = 'excludeifany'
+GT = ">"
+GTE = ">="
+LT = "<"
+LTE = "<="
+AND = "and"
+OR = "or"
+IS = "is"
+NOT = "not"`
+var code = pythonjs.translator.to_javascript( my_python_code );
 
-  let schema = makeExecutableSchema({
-    typeDefs,
-    resolvers,
-  })
-
-  if (mock) {
-    addMockFunctionsToSchema({
-      schema,
-      mocks: { JSON: () => JSON.stringify({ key: 'value' }) },
-    })
-  }
-
-  return schema
-}
+console.log(code);
