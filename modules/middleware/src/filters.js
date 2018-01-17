@@ -178,15 +178,16 @@ export default class FilterProcessor{
         let r = {t: {k: v}};
         let path = k.split(".");
 
-        //TODO: Check for correctness: for i in range(1, len(path)): p = ".".join(path[:-i])
-        p = path[0]
-        if p in nested:
-            if not is_nested(r):
-                r = wrap_not(r) if op in HAVE_NOT_OPS else wrap_must(r)
-        else:
-            r = wrap_must(r)
-        r = wrap_filter(r, p)
+        for( let i =1; i < path.length; i++){
+            let p = ".".join(path[:-i])
 
+            if p in nested:
+                if not is_nested(r):
+                    r = wrap_not(r) if op in HAVE_NOT_OPS else wrap_must(r)
+            else:
+                r = wrap_must(r)
+            r = wrap_filter(r, p)
+        }
         return r
 
     }
