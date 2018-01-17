@@ -22,6 +22,7 @@
 "use strict";
 import CONSTANTS from 'constants';
 import _ from 'lodash';
+import utf8 from 'utf8';
 /*
     Filter processor
  */
@@ -157,6 +158,14 @@ export default class FilterProcessor{
         }
         return this._get_term_filter(doc_type, nested, x);
     }
+    _get_must_not_filter(doc_type, nested, x){
+        let tf = this._get_term_filter(doc_type, nested, x)
+        return this.is_nested(tf) ? tf : this.wrap_not(tf);
+    }
+    _get_must_not_any_filter(doc_type, nested, x){
+        let tf = _get_term_filter(doc_type, nested, x);
+        return this.wrap_not(tf);
+    }
     _get_regex_filter(doc_type, nested, x, upperCase){
         let op = x['op'],
             content = x['content'];
@@ -168,6 +177,7 @@ export default class FilterProcessor{
         let t = "regexp";
 
         v = v.replace('*', '.*');
+        v =  utf8.encode(v);
         // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
         // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
         if(upperCase) v = v.toUpperCase();
@@ -181,19 +191,6 @@ export default class FilterProcessor{
         r = this.wrap_filter_based_on_path(r, path,nested, op);
         return r
     }
-    wrap_filter_based_on_path(r, path,nested, op){
-        for( let i =1; i < path.length; i++) {
-            let p = _.chunk(path, path.length - i)[0].join(".");
-            if (nested.includes(p)) {
-                if(!this.is_nested(r))
-                    r = CONSTANTS.HAVE_NOT_OPS.includes(op) ? this.wrap_not(r) : this.wrap_must(r);
-                else
-                    r = this.wrap_must(r);
-
-                r = this.wrap_filter(r, p)
-            }
-        }
-    }
     _get_set_filter(doc_type, nested, x){
         let op = x['op'],
             content = x['content'];
@@ -206,6 +203,7 @@ export default class FilterProcessor{
             value = values;
 
         value = typeof values === "object" ? values[0] : value;
+        value =  utf8.encode(value);
         let set_id = value.replace('set_id:', '');
 
         let r = {
@@ -224,18 +222,62 @@ export default class FilterProcessor{
         r = this.wrap_filter_based_on_path(r, path,nested, op);
         return r
     }
+    _get_term_filter(doc_type, nested, x,upperCase) {
+        let op= x['op'],
+            content = x['content'];
+
+        // TODO: make this generic
+        let k = this.field_to_full_path_on_doc_type(doc_type, content['field']);
+        let v = content["value"],
+            t = "term";
+
+        if(typeof v === "object"){
+            v = v.map(item => {
+                if(item == null) return "";
+                // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
+                // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
+                if(typeof item === "string") return upperCase ? utf8.encode(item).toUpperCase() : utf8.encode(item);
+                else return item;
+            });
+            t = "terms";
+        }
+        else if(typeof  v === "string") {
+            // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
+            // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
+            v = upperCase ? utf8.encode(v).toUpperCase() : utf8.encode(v);
+        }
+        if (t == "term")
+            r = {t: {k: {"value": v, "boost": 0}}};
+        else
+            r = {t: {k: v, "boost": 0}};
+
+        let path = k.split(".");
+        r = this.wrap_filter_based_on_path(r, path,nested, op);
+        return r
+    }
+    wrap_filter_based_on_path(r, path,nested, op){
+        for( let i =1; i < path.length; i++) {
+            let p = _.chunk(path, path.length - i)[0].join(".");
+            if (nested.includes(p)) {
+                if(!this.is_nested(r))
+                    r = CONSTANTS.HAVE_NOT_OPS.includes(op) ? this.wrap_not(r) : this.wrap_must(r);
+                else
+                    r = this.wrap_must(r);
+
+                r = this.wrap_filter(r, p)
+            }
+        }
+    }
     is_nested(x){
         return x.includes(CONSTANTS.ES_NESTED);
     }
-    wrap_bool(op, val)
-    {
+    wrap_bool(op, val) {
         return {ES_BOOL: {op: typeof val === "object" ? val : [val]}}
     }
     wrap_must(val){
         return this.wrap_bool(CONSTANTS.ES_MUST, val)
     }
-    wrap_not(val)
-    {
+    wrap_not(val) {
         return this.wrap_bool(CONSTANTS.ES_MUST_NOT, val)
     }
     wrap_filter(val, p){
