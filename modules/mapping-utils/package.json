@@ -1,6 +1,6 @@
 {
   "name": "@arranger/mapping-utils",
-  "version": "0.0.1-0.0.10.0",
+  "version": "0.0.1-0.0.11.0",
   "description": "Transform Elasticsearch mappings",
   "main": "dist/index.js",
   "publishConfig": {
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/components": "^0.0.1",
+    "@arranger/components": "^0.0.1-0.0.11.0",
     "@storybook/addon-actions": "^3.3.8",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",

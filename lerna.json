@@ -1,5 +1,8 @@
 {
   "lerna": "2.5.1",
-  "version": "0.0.1-0.0.10.0",
-  "packages": ["modules/*", "sandbox/*"]
+  "version": "0.0.1-0.0.11.0",
+  "packages": [
+    "modules/*",
+    "sandbox/*"
+  ]
 }
