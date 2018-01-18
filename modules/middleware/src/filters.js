@@ -61,9 +61,9 @@ export default class FilterProcessor{
         if(op === CONSTANTS.AND)
             f = this._get_and_filter(doc_type, nested, content);
         if(op === CONSTANTS.OR)
-            f = _get_or_filter(doc_type, nested, content);
+            f = this._get_or_filter(doc_type, nested, content);
         if(op in CONSTANTS.RANGE_OPS_KEYS)
-            f = _get_range_filter(doc_type, nested, content, op);
+            f = this._get_range_filter(doc_type, nested, content, op);
 
         return f
     }
@@ -190,7 +190,7 @@ export default class FilterProcessor{
                 else musts.concat(curr)
             }
             else if (is_should)
-                shoulds.concat(_get_or_filter(doc_type, nested, content));
+                shoulds.concat(this._get_or_filter(doc_type, nested, content));
         });
         //   # wrap both shoulds and must in ES_MUST so ES_SHOULD so score does not interfere
         //   # _get_or_filter already wraps shoulds with ES_SHOULD
@@ -202,6 +202,44 @@ export default class FilterProcessor{
             , {});
 
         return {ES_BOOL:r}
+    }
+    _get_or_filter(doc_type, nested, content){
+        let must_not =
+            _.filter(content, x => x['op'] in CONSTANTS.MUST_NOT_OPS).
+            map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
+        let should =
+            _.filter(content, x=> x['op'] in CONSTANTS.HAVE_OPS).
+                map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
+        should =
+            should.concat(_.filter(content, x=> x['op'] === CONSTANTS.OR).
+            map(x => this._get_or_filter(doc_type, nested, x['content'])));
+        should =
+            should.concat(_.filter(content, x=> x['op'] === CONSTANTS.AND).
+                map(x => this._get_and_filter(doc_type, nested, x['content'])));
+        should =
+            should.concat(_.filter(content, x=> x['op'] in CONSTANTS.IS_OPS).
+                map(x => this._get_missing_filter(doc_type, nested, x['content'])));
+        if (must_not) should.append(this.wrap_not(must_not));
+        return { ES_BOOL: should != null || should.length>0 ? { ES_SHOULD: should } : {}};
+    }
+    _get_range_filter(doc_type, nested, content, op){
+        // TODO: make this generic
+        let k = field_to_full_path_on_doc_type(doc_type, content['field']),
+            v = content["value"],
+            obj = { "boost": 0 };
+
+        if(typeof v === "object")
+            v = op in [CONSTANTS.GT, CONSTANTS.GTE] ? _.max(v) : _.min(v);
+        else if( typeof v === "string")
+            v = utf8.encode(v);
+
+        obj[CONSTANTS.RANGE_OPS[op]] = v;
+
+        let r = {"range": {k: obj}},
+            path = k.split(".");
+
+        r = this.wrap_filter_based_on_path(r, path,nested, op);
+        return r;
     }
     term_optimizer(op, content){
         let op_mapping = {
