@@ -48,7 +48,8 @@ export default class FilterProcessor{
         });
 
         let op = filters["op"],
-            content = filters["content"];
+            content = filters["content"],
+            f;
 
         if(op === CONSTANTS.IN)
             f = this._get_term_or_regex_or_set_filter(doc_type, nested, filters);
@@ -75,26 +76,26 @@ export default class FilterProcessor{
             return this.term_optimizer(op, content);
 
         if (op in [CONSTANTS.IN, CONSTANTS.EXCLUDE]
-            && content['value'].length > 1
-            && (content['value'].some(v => v.includes('*')) || content['value'].some(v => v.includes('set_id:')))){
+            && content["value"].length > 1
+            && (content["value"].some(v => v.includes("*")) || content["value"].some(v => v.includes("set_id:")))){
 
             // seperate regex and set_id into one list, terms in another and OR them
             let ps =
-                _.filter(content['value'], psv => psv.includes('*') || psv.includes('set_id:'))
+                _.filter(content["value"], psv => psv.includes("*") || psv.includes("set_id:"))
                     .map(psv => { return {
                         "op": op,
                         "content": {
-                        "field": content['field'],
+                        "field": content["field"],
                          "value": [psv]
                     }}});
 
-            let terms = _.filter(content['value'],psv => (!psv.includes('*')) && (!psv.includes('set_id:'))),
+            let terms = _.filter(content["value"],psv => (!psv.includes("*")) && (!psv.includes("set_id:"))),
                 ts = [];
             if (terms.length > 0) {
                 ts = [{
                     "op": op,
                     "content": {
-                        "field": content['field'],
+                        "field": content["field"],
                         "value": terms
                     }
                 }];
@@ -121,12 +122,12 @@ export default class FilterProcessor{
     _get_term_or_regex_or_set_filter(doc_type, nested, x){
         let value;
 
-        typeof x['content']['value'] === "object" ? value = x['content']['value'][0] : value = x['content']['value'];
+        typeof x["content"]["value"] === "object" ? value = x["content"]["value"][0] : value = x["content"]["value"];
 
         if (typeof value === "string"){
-            if (value.includes('*'))
+            if (value.includes("*"))
                 return this._get_regex_filter(doc_type, nested, x);
-            else if (value.includes('set_id:'))
+            else if (value.includes("set_id:"))
                 return this._get_set_filter(doc_type, nested, x);
         }
         return this._get_term_filter(doc_type, nested, x);
@@ -140,11 +141,11 @@ export default class FilterProcessor{
         return this.wrap_not(tf);
     }
     _get_missing_filter(doc_type, nested, content, op){
-        // TODO: make this generic
-        let k = field_to_full_path_on_doc_type(doc_type, content['field']);
+
+        let k = this.field_to_full_path_on_doc_type(doc_type, content["field"]);
 
         //# FIXME assumes missing
-        let r = {'exists': {'field': k, "boost": 0}};
+        let r = {"exists": {"field": k, "boost": 0}};
         let path = k.split(".");
 
         for( let i =1; i < path.length; i++) {
@@ -164,8 +165,8 @@ export default class FilterProcessor{
 
         //# TODO remove for loop
         xs.forEach(x => {
-            let op = x['op'],
-                content = x['content'];
+            let op = x["op"],
+                content = x["content"];
 
             let is_must = op in CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS_KEYS);
             let is_must_not = op in CONSTANTS.MUST_NOT_OPS;
@@ -205,26 +206,26 @@ export default class FilterProcessor{
     }
     _get_or_filter(doc_type, nested, content){
         let must_not =
-            _.filter(content, x => x['op'] in CONSTANTS.MUST_NOT_OPS).
+            _.filter(content, x => x["op"] in CONSTANTS.MUST_NOT_OPS).
             map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
         let should =
-            _.filter(content, x=> x['op'] in CONSTANTS.HAVE_OPS).
+            _.filter(content, x=> x["op"] in CONSTANTS.HAVE_OPS).
                 map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
         should =
-            should.concat(_.filter(content, x=> x['op'] === CONSTANTS.OR).
-            map(x => this._get_or_filter(doc_type, nested, x['content'])));
+            should.concat(_.filter(content, x=> x["op"] === CONSTANTS.OR).
+            map(x => this._get_or_filter(doc_type, nested, x["content"])));
         should =
-            should.concat(_.filter(content, x=> x['op'] === CONSTANTS.AND).
-                map(x => this._get_and_filter(doc_type, nested, x['content'])));
+            should.concat(_.filter(content, x=> x["op"] === CONSTANTS.AND).
+                map(x => this._get_and_filter(doc_type, nested, x["content"])));
         should =
-            should.concat(_.filter(content, x=> x['op'] in CONSTANTS.IS_OPS).
-                map(x => this._get_missing_filter(doc_type, nested, x['content'])));
+            should.concat(_.filter(content, x=> x["op"] in CONSTANTS.IS_OPS).
+                map(x => this._get_missing_filter(doc_type, nested, x["content"])));
         if (must_not) should.append(this.wrap_not(must_not));
         return { ES_BOOL: should != null || should.length>0 ? { ES_SHOULD: should } : {}};
     }
     _get_range_filter(doc_type, nested, content, op){
-        // TODO: make this generic
-        let k = field_to_full_path_on_doc_type(doc_type, content['field']),
+
+        let k = this.field_to_full_path_on_doc_type(doc_type, content["field"]),
             v = content["value"],
             obj = { "boost": 0 };
 
@@ -260,8 +261,8 @@ export default class FilterProcessor{
             other = [];
 
         content.forEach(c => {
-            if(c['op'].toLowerCase() === parent_op)
-                inside.concat(this.grouping_optimizer(c['content'], parent_op));
+            if(c["op"].toLowerCase() === parent_op)
+                inside.concat(this.grouping_optimizer(c["content"], parent_op));
             else
                 other = [other, this.filter_optimizer(c)];
         });
@@ -269,23 +270,23 @@ export default class FilterProcessor{
         return other.concat(inside);
     }
     _get_regex_filter(doc_type, nested, x, upperCase){
-        let op = x['op'],
-            content = x['content'];
+        let op = x["op"],
+            content = x["content"];
 
-        // TODO: make this generic
-        let k = this.field_to_full_path_on_doc_type(doc_type, content['field']);
+
+        let k = this.this.field_to_full_path_on_doc_type(doc_type, content["field"]);
 
         let v = typeof content["value"] === "object" ? content["value"][0] : content["value"];
         let t = "regexp";
 
-        v = v.replace('*', '.*');
+        v = v.replace("*", '.*');
         v =  utf8.encode(v);
         // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
         // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
         if(upperCase) v = v.toUpperCase();
 
-        // TODO: Check for correctness: replacement for if '*' in v[0]: v = v[0][:-1]
-        if(v.startswith('*')) v = "";
+        // TODO: Check for correctness: replacement for if "*" in v[0]: v = v[0][:-1]
+        if(v.startswith("*")) v = "";
 
         let r = {t: {k: v}};
         let path = k.split(".");
@@ -294,26 +295,26 @@ export default class FilterProcessor{
         return r
     }
     _get_set_filter(doc_type, nested, x){
-        let op = x['op'],
-            content = x['content'];
+        let op = x["op"],
+            content = x["content"];
 
-        // TODO: make this generic
-        let full_field = field_to_full_path_on_doc_type(doc_type, content['field'])
 
-        let values = content['value'],
+        let full_field = this.field_to_full_path_on_doc_type(doc_type, content["field"])
+
+        let values = content["value"],
             t = "terms",
             value = values;
 
         value = typeof values === "object" ? values[0] : value;
         value =  utf8.encode(value);
-        let set_id = value.replace('set_id:', '');
+        let set_id = value.replace("set_id:", '');
 
         let r = {
             t: {
                 "boost": 0,
                 full_field: {
-                    "index" : CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
-                    "type" : CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
+                    "index" : CONSTANTS.FIELD_TO_SET_TYPE[content["field"]],
+                    "type" : CONSTANTS.FIELD_TO_SET_TYPE[content["field"]],
                     "id" : set_id,
                     "path" : "ids"
                 }
@@ -325,11 +326,11 @@ export default class FilterProcessor{
         return r
     }
     _get_term_filter(doc_type, nested, x,upperCase) {
-        let op= x['op'],
-            content = x['content'];
+        let op= x["op"],
+            content = x["content"];
 
-        // TODO: make this generic
-        let k = this.field_to_full_path_on_doc_type(doc_type, content['field']);
+
+        let k = this.field_to_full_path_on_doc_type(doc_type, content["field"]);
         let v = content["value"],
             t = "term";
 
@@ -348,7 +349,7 @@ export default class FilterProcessor{
             // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
             v = upperCase ? utf8.encode(v).toUpperCase() : utf8.encode(v);
         }
-        if (t == "term")
+        if (t === "term")
             r = {t: {k: {"value": v, "boost": 0}}};
         else
             r = {t: {k: v, "boost": 0}};
@@ -384,6 +385,10 @@ export default class FilterProcessor{
         else
             musts.concat(curr)
 
+    }
+    // TODO: make this generic
+    field_to_full_path_on_doc_type(doc_type, field){
+        return field.split('.');
     }
     wrap_filter_based_on_path(r, path,nested, op){
         for( let i =1; i < path.length; i++) {

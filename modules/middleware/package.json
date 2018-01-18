@@ -1,10 +1,45 @@
 {
-  "name": "middleware",
-  "version": "1.0.0",
+  "name": "@arranger/middleware",
+  "version": "0.0.1-0.0.11.0",
   "description": "Arranger Middleware",
   "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "start": "node -r babel-register src/index"
+    "test": "jest",
+    "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
+    "prepublish": "npm run build",
+    "flow": "flow"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/overture-stack/arranger.git"
+  },
+  "author": "OICR",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/overture-stack/arranger/issues"
+  },
+  "homepage": "https://github.com/overture-stack/arranger#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.35",
+    "@babel/core": "^7.0.0-beta.35",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.37",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
+    "@babel/preset-env": "^7.0.0-beta.35",
+    "@babel/preset-flow": "^7.0.0-beta.35",
+    "@babel/preset-react": "^7.0.0-beta.37",
+    "@babel/register": "^7.0.0-beta.35",
+    "babel-core": "7.0.0-bridge.0",
+    "babel-eslint": "^8.1.2",
+    "eslint": "^3.19.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-flowtype": "^2.40.1",
+    "eslint-plugin-prettier": "^2.4.0",
+    "flow-bin": "^0.62.0",
+    "jest": "^22.0.5",
+    "prettier": "^1.9.2"
   },
   "dependencies": {
     "axios": "^0.15.3",
@@ -13,10 +48,7 @@
     "express": "^4.16.2",
     "lodash": "^4.17.4",
     "morgan": "^1.9.0",
-    "python-js": "^0.9.8",
     "utf8": "^3.0.0",
     "winston": "^2.4.0"
-  },
-  "author": "",
-  "license": "ISC"
+  }
 }
