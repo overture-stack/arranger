@@ -44,7 +44,7 @@ const EQ = "=",
     IS_OPS = [IS, NOT],
     GROUP_OPS = [AND, OR];
 
-const CONSTANTS = {
+export const CONSTANTS = {
      EQ : EQ
     ,NEQ : NEQ
     ,IN : IN
@@ -84,8 +84,4 @@ const CONSTANTS = {
         "files.analysis.input_files.file_id": "file_set",
         "files.downstream_analyses.output_files.file_id": "file_set",
     }
-};
-
-module.exports = {
-    CONSTANTS
 };
