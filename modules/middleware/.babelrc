@@ -1,9 +1,12 @@
 {
   "presets": [
-    "env"
+    "@babel/env",
+    "@babel/react",
+    "@babel/flow"
   ],
   "plugins": [
-    "transform-object-rest-spread"
+    "@babel/plugin-proposal-optional-chaining",
+    "@babel/plugin-proposal-class-properties"
   ],
   "sourceMaps": "both"
 }
