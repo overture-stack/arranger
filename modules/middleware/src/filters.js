@@ -20,7 +20,7 @@
  */
 
 "use strict";
-import CONSTANTS from 'constants';
+import CONSTANTS from './constants';
 import _ from 'lodash';
 import utf8 from 'utf8';
 /*
@@ -72,6 +72,7 @@ export default class FilterProcessor{
         let op = filters["op"],
             content = filters["content"];
 
+        console.log("test log.")
         if (op in [CONSTANTS.EQ , CONSTANTS.NEQ])
             return this.term_optimizer(op, content);
 
@@ -102,7 +103,7 @@ export default class FilterProcessor{
             }
 
             return {
-                "op": OR,
+                "op": CONSTANTS.OR,
                 "content": ts.concat(ps)
                 }
         }
@@ -133,7 +134,7 @@ export default class FilterProcessor{
         return this._get_term_filter(doc_type, nested, x);
     }
     _get_must_not_filter(doc_type, nested, x){
-        let tf = this._get_term_filter(doc_type, nested, x)
+        let tf = this._get_term_filter(doc_type, nested, x);
         return this.is_nested(tf) ? tf : this.wrap_not(tf);
     }
     _get_must_not_any_filter(doc_type, nested, x){
@@ -349,6 +350,7 @@ export default class FilterProcessor{
             // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
             v = upperCase ? utf8.encode(v).toUpperCase() : utf8.encode(v);
         }
+        let r;
         if (t === "term")
             r = {t: {k: {"value": v, "boost": 0}}};
         else
