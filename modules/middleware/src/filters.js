@@ -20,9 +20,9 @@
  */
 
 "use strict";
-import CONSTANTS from './constants';
 import _ from 'lodash';
 import utf8 from 'utf8';
+import { CONSTANTS } from './constants';
 /*
     Filter processor
  */
@@ -57,13 +57,13 @@ export default class FilterProcessor{
             f = this._get_must_not_filter(doc_type, nested, filters);
         if(op === CONSTANTS.EXCLUDE_IF_ANY)
             f = this._get_must_not_any_filter(doc_type, nested, filters);
-        if(op in CONSTANTS.IS_OPS)
+        if(CONSTANTS.IS_OPS.includes(op))
             f = this._get_missing_filter(doc_type, nested, content,op);
         if(op === CONSTANTS.AND)
             f = this._get_and_filter(doc_type, nested, content);
         if(op === CONSTANTS.OR)
             f = this._get_or_filter(doc_type, nested, content);
-        if(op in CONSTANTS.RANGE_OPS_KEYS)
+        if(CONSTANTS.RANGE_OPS_KEYS.includes(op))
             f = this._get_range_filter(doc_type, nested, content, op);
 
         return f
@@ -72,11 +72,10 @@ export default class FilterProcessor{
         let op = filters["op"],
             content = filters["content"];
 
-        console.log("test log.")
-        if (op in [CONSTANTS.EQ , CONSTANTS.NEQ])
+        if ([CONSTANTS.EQ , CONSTANTS.NEQ].includes(op))
             return this.term_optimizer(op, content);
 
-        if (op in [CONSTANTS.IN, CONSTANTS.EXCLUDE]
+        if ([CONSTANTS.IN, CONSTANTS.EXCLUDE].includes(op)
             && content["value"].length > 1
             && (content["value"].some(v => v.includes("*")) || content["value"].some(v => v.includes("set_id:")))){
 
@@ -108,7 +107,7 @@ export default class FilterProcessor{
                 }
         }
 
-        if (op in CONSTANTS.GROUP_OPS) {
+        if (CONSTANTS.GROUP_OPS.includes(op)) {
             return {
                 "op": op,
                 "content": this.grouping_optimizer(content, op)
@@ -169,17 +168,17 @@ export default class FilterProcessor{
             let op = x["op"],
                 content = x["content"];
 
-            let is_must = op in CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS_KEYS);
-            let is_must_not = op in CONSTANTS.MUST_NOT_OPS;
+            let is_must = CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS_KEYS).includes(op);
+            let is_must_not = CONSTANTS.MUST_NOT_OPS.includes(op);
             let is_should = op === CONSTANTS.OR;
 
             if (is_must || is_must_not){
                 let curr;
-                if (op in CONSTANTS.VALUE_OPS)
+                if (CONSTANTS.VALUE_OPS.includes(op))
                     curr = this._get_term_or_regex_or_set_filter(doc_type, nested, x);
-                else if(op in CONSTANTS.IS_OPS)
+                else if(CONSTANTS.IS_OPS.includes(op))
                     curr = this._get_missing_filter(doc_type, nested, content, op);
-                else if (op in CONSTANTS.RANGE_OPS_KEYS)
+                else if (CONSTANTS.RANGE_OPS_KEYS.includes(op))
                     curr = this._get_range_filter(doc_type, nested, content, op);
 
                 if (this.is_nested(curr)){
@@ -207,10 +206,10 @@ export default class FilterProcessor{
     }
     _get_or_filter(doc_type, nested, content){
         let must_not =
-            _.filter(content, x => x["op"] in CONSTANTS.MUST_NOT_OPS).
+            _.filter(content, x => CONSTANTS.MUST_NOT_OPS.includes(x["op"])).
             map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
         let should =
-            _.filter(content, x=> x["op"] in CONSTANTS.HAVE_OPS).
+            _.filter(content, x=> CONSTANTS.HAVE_OPS.includes(x["op"])).
                 map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
         should =
             should.concat(_.filter(content, x=> x["op"] === CONSTANTS.OR).
@@ -219,7 +218,7 @@ export default class FilterProcessor{
             should.concat(_.filter(content, x=> x["op"] === CONSTANTS.AND).
                 map(x => this._get_and_filter(doc_type, nested, x["content"])));
         should =
-            should.concat(_.filter(content, x=> x["op"] in CONSTANTS.IS_OPS).
+            should.concat(_.filter(content, x=> CONSTANTS.IS_OPS.includes(x["op"])).
                 map(x => this._get_missing_filter(doc_type, nested, x["content"])));
         if (must_not) should.append(this.wrap_not(must_not));
         return { ES_BOOL: should != null || should.length>0 ? { ES_SHOULD: should } : {}};
@@ -231,7 +230,7 @@ export default class FilterProcessor{
             obj = { "boost": 0 };
 
         if(typeof v === "object")
-            v = op in [CONSTANTS.GT, CONSTANTS.GTE] ? _.max(v) : _.min(v);
+            v = [CONSTANTS.GT, CONSTANTS.GTE].includes(op) ? _.max(v) : _.min(v);
         else if( typeof v === "string")
             v = utf8.encode(v);
 
@@ -390,7 +389,7 @@ export default class FilterProcessor{
     }
     // TODO: make this generic
     field_to_full_path_on_doc_type(doc_type, field){
-        return field.split('.');
+        return field;
     }
     wrap_filter_based_on_path(r, path,nested, op){
         for( let i =1; i < path.length; i++) {
@@ -403,7 +402,8 @@ export default class FilterProcessor{
 
                 r = this.wrap_filter(r, p)
             }
-        }
+        }// for loop ends here
+        return r;
     }
     is_nested(x){
         return x.includes(CONSTANTS.ES_NESTED);
