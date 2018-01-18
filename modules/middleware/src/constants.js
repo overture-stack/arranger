@@ -41,7 +41,8 @@ const EQ = "=",
     },
     HAVE_OPS = [EQ, IN],
     HAVE_NOT_OPS = [NEQ, EXCLUDE],
-    IS_OPS = [IS, NOT];
+    IS_OPS = [IS, NOT],
+    GROUP_OPS = [AND, OR];
 
 const CONSTANTS = {
      EQ : EQ

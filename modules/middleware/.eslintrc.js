@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["prettier", "prettier/flowtype", "plugin:flowtype/recommended", "react-app"],
+  extends: ["prettier", "prettier/flowtype", "plugin:flowtype/recommended"],
   plugins: [
     "flowtype",
     "prettier"
