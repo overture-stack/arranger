@@ -7,8 +7,10 @@ import socketIO from 'socket.io';
 import uuid from 'uuid/v4';
 import fetch from 'node-fetch';
 import { range, flattenDeep } from 'lodash';
+import bodyParser from 'body-parser';
+import cors from 'cors';
 import makeSchema from '@arranger/schema';
-import server from '@arranger/server';
+import { graphqlEndpoint, setupSocket } from '@arranger/server';
 import {
   addMappingsToTypes,
   mappingToAggsState,
@@ -72,64 +74,7 @@ let main = async () => {
           },
         };
 
-        io.on('connection', socket => {
-          socket.on(
-            'client::stream',
-            async ({ index, variables = null, size = 100, fields = '' }) => {
-              let { data } = await fetch('http://localhost:5050', {
-                ...fetchOptions,
-                body: JSON.stringify({
-                  variables,
-                  query: `
-                  query ($filters: JSON) {
-                    ${index} {
-                      hits(filters: $filters) {
-                        total
-                      }
-                    }
-                  }
-                `,
-                }),
-              }).then(r => r.json());
-
-              let total = data[index].hits.total;
-              let steps = range(0, Math.round(total / size));
-
-              await Promise.all(
-                steps.map((x, i) => {
-                  return fetch('http://localhost:5050', {
-                    ...fetchOptions,
-                    body: JSON.stringify({
-                      variables: {
-                        ...variables,
-                        first: size,
-                        offset: x * size,
-                      },
-                      query: `
-                    query ($first: Int, $offset: Int) {
-                      ${index} {
-                        hits(first: $first, offset: $offset) {
-                          edges {
-                            node {
-                              ${fields}
-                            }
-                          }
-                        }
-                      }
-                    }
-                  `,
-                    }),
-                  })
-                    .then(r => r.json())
-                    .then(({ data }) => {
-                      socket.emit('server::chunk', { data, total });
-                    });
-                }),
-              );
-              socket.emit('server::stream::end', {});
-            },
-          );
-        });
+        setupSocket({ io });
 
         // TODO: if exists, diff against state(s)?
 
@@ -151,15 +96,120 @@ let main = async () => {
 
         await es.bulk({ body });
 
-        server({ http, app, schema, context: { es, io } });
+        app.use(cors());
+
+        app.use(
+          '/projects/add',
+          bodyParser.json({ limit: '50mb' }),
+          async (req, res) => {
+            let { eshost: host, id } = req.body;
+
+            if (!id) return res.json({ error: 'id cannot be empty' });
+
+            // create es client from ip
+            let es;
+            try {
+              es = new elasticsearch.Client({ host });
+            } catch (error) {
+              return res.json({ error: error.message });
+            }
+
+            // create arranger-projects index
+            // get arranger projects
+
+            let projects = [];
+
+            let arrangerconfig = {
+              projectsIndex: {
+                index: 'arranger-projects',
+                type: 'arranger-projects',
+              },
+            };
+
+            try {
+              await es.create({
+                ...arrangerconfig.projectsIndex,
+                refresh: true,
+                id,
+                body: {
+                  id,
+                },
+              });
+            } catch (error) {
+              return res.json({ error: error.message });
+            }
+
+            try {
+              projects = await es.search(arrangerconfig.projectsIndex);
+            } catch (error) {
+              try {
+                await es.indices.create({
+                  index: arrangerconfig.projectsIndex.index,
+                });
+                res.json({ projects });
+              } catch (error) {
+                return res.json({ error: error.message });
+              }
+              return res.json({ error: error.message });
+            }
+
+            res.json({ projects: projects.hits.hits.map(x => x._source) });
+          },
+        );
+
+        app.use(
+          '/projects',
+          bodyParser.json({ limit: '50mb' }),
+          async (req, res) => {
+            let { eshost: host } = req.body;
+
+            // create es client from ip
+            let es;
+            try {
+              es = new elasticsearch.Client({ host });
+            } catch (error) {
+              return res.json({ error: error.message });
+            }
+
+            // create arranger-projects index
+            // get arranger projects
+
+            let projects = [];
+
+            let arrangerconfig = {
+              projectsIndex: {
+                index: 'arranger-projects',
+                type: 'arranger-projects',
+              },
+            };
+
+            try {
+              projects = await es.search(arrangerconfig.projectsIndex);
+            } catch (error) {
+              try {
+                await es.indices.create({
+                  index: arrangerconfig.projectsIndex.index,
+                });
+                res.json({ projects });
+              } catch (error) {
+                return res.json({ error: error.message });
+              }
+              return res.json({ error: error.message });
+            }
+
+            res.json({ projects: projects.hits.hits.map(x => x._source) });
+          },
+        );
+
+        graphqlEndpoint({ http, app, schema, context: { es, io } });
       })
       .catch(err => {
         console.log(err);
-        server({ schema });
+        graphqlEndpoint({ schema });
       });
   } else {
     let schema = makeSchema({ mock: true });
-    server({ schema });
+    graphqlEndpoint({ schema });
   }
 };
 
