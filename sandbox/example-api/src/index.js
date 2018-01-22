@@ -133,6 +133,7 @@ let main = async () => {
                 id,
                 body: {
                   id,
+                  timestamp: new Date().toISOString(),
                 },
               });
             } catch (error) {
