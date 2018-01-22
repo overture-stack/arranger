@@ -14,11 +14,15 @@ let api = ({ endpoint = '', body }) =>
 
 class Dashboard extends React.Component {
   state = {
-    eshost: '',
+    eshost: 'http://localhost:9200',
     projects: [],
-    newProjectName: '',
+    newProjectName: 'test',
     activeProject: '',
   };
+
+  componentDidMount() {
+    this.getProjects({ eshost: this.state.eshost });
+  }
 
   getProjects = debounce(async ({ eshost }) => {
     let { projects, error } = await api({
@@ -68,7 +72,20 @@ class Dashboard extends React.Component {
         <button onClick={this.addProject}>Add Project</button>
         <div>
           projects:
-          {this.state.projects.map(x => <div key={x.id}>{x.id}</div>)}
+          {this.state.projects.map(x => (
+            <div
+              key={x.id}
+              onClick={() => this.setState({ activeProject: x.id })}
+              style={{
+                textDecoration:
+                  this.state.activeProject === x.id ? 'none' : 'underline',
+                cursor:
+                  this.state.activeProject === x.id ? 'default' : 'pointer',
+              }}
+            >
+              {x.id}
+            </div>
+          ))}
         </div>
       </div>
     );
