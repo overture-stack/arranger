@@ -39,6 +39,7 @@
   "devDependencies": {
     "@babel/cli": "^7.0.0-beta.35",
     "@babel/core": "^7.0.0-beta.35",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.38",
     "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
     "@babel/preset-env": "^7.0.0-beta.35",
     "@babel/register": "^7.0.0-beta.35",
