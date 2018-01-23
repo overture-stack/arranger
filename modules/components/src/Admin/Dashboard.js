@@ -55,12 +55,23 @@ class Dashboard extends React.Component {
 
   getTypes = async () => {
     let { types, error } = await api({
-      endpoint: '/projects/add',
-      body: { eshost: this.state.eshost, id: this.state.newProjectName },
+      endpoint: `/projects/${this.state.activeProject}/types`,
+      body: { eshost: this.state.eshost },
     });
 
     if (!error) {
-      this.setState({ projects });
+      this.setState({ types });
+    }
+  };
+
+  addType = async () => {
+    let { types, error } = await api({
+      endpoint: `/projects/${this.state.activeProject}/types/add`,
+      body: { eshost: this.state.eshost },
+    });
+
+    if (!error) {
+      this.setState({ types });
     }
   };
 
@@ -103,7 +114,7 @@ class Dashboard extends React.Component {
                   this.state.activeProject === x.id ? 'none' : 'underline',
                 cursor:
                   this.state.activeProject === x.id ? 'default' : 'pointer',
-                color: this.state.activeProject === x.id ? 'blue' : 'default',
+                color: this.state.activeProject === x.id ? 'blue' : 'black',
               }}
             >
               {x.id}

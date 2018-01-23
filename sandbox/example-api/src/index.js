@@ -42,6 +42,8 @@ let fetchMappings = ({ types, es }) => {
 //       ),
 //   )
 
+let mapHits = x => x.hits.hits.map(x => x._source);
+
 let main = async () => {
   if (process.env.WITH_ES) {
     let esconfig = {
@@ -97,110 +99,164 @@ let main = async () => {
         await es.bulk({ body });
 
         app.use(cors());
+        app.use(bodyParser.json({ limit: '50mb' }));
 
-        app.use(
-          '/projects/add',
-          bodyParser.json({ limit: '50mb' }),
-          async (req, res) => {
-            let { eshost: host, id } = req.body;
+        // create request context
+        app.use((req, res, next) => {
+          req.context = {};
+          next();
+        });
 
-            if (!id) return res.json({ error: 'id cannot be empty' });
+        // create es client
+        app.use(async (req, res, next) => {
+          let { eshost: host } = req.body;
+          if (!host) return res.json({ error: 'host must be provided' });
+          try {
+            req.context.es = new elasticsearch.Client({ host });
+          } catch (error) {
+            return res.json({ error: error.message });
+          }
+          next();
+        });
 
-            // create es client from ip
-            let es;
+        app.use('/projects/:id/types', async (req, res) => {
+          let { es } = req.context;
+          let { id } = req.params;
+          if (!id) res.json({ error: 'project empty' });
+
+          let arrangerconfig = {
+            projectsIndex: {
+              index: `arranger-projects-${id}`,
+              type: `arranger-projects-${id}`,
+            },
+          };
+
+          let types = [];
+
+          try {
+            types = await es.search(arrangerconfig.projectsIndex);
+          } catch (error) {
             try {
-              es = new elasticsearch.Client({ host });
-            } catch (error) {
-              return res.json({ error: error.message });
-            }
-
-            // create arranger-projects index
-            // get arranger projects
-
-            let projects = [];
-
-            let arrangerconfig = {
-              projectsIndex: {
-                index: 'arranger-projects',
-                type: 'arranger-projects',
-              },
-            };
-
-            try {
-              await es.create({
-                ...arrangerconfig.projectsIndex,
-                refresh: true,
-                id,
-                body: {
-                  id,
-                  timestamp: new Date().toISOString(),
-                },
+              await es.indices.create({
+                index: arrangerconfig.projectsIndex.index,
               });
+              return res.json({ types });
             } catch (error) {
               return res.json({ error: error.message });
             }
+            return res.json({ error: error.message });
+          }
 
+          res.json({ types: mapHits(types) });
+        });
+
+        app.use('/projects/:id/types', async (req, res) => {
+          let { es } = req.context;
+          let { id } = req.params;
+          if (!id) res.json({ error: 'project empty' });
+
+          let arrangerconfig = {
+            projectsIndex: {
+              index: `arranger-projects-${id}`,
+              type: `arranger-projects-${id}`,
+            },
+          };
+
+          let types = [];
+
+          try {
+            types = await es.search(arrangerconfig.projectsIndex);
+          } catch (error) {
             try {
-              projects = await es.search(arrangerconfig.projectsIndex);
-            } catch (error) {
-              try {
-                await es.indices.create({
-                  index: arrangerconfig.projectsIndex.index,
-                });
-                res.json({ projects });
-              } catch (error) {
-                return res.json({ error: error.message });
-              }
-              return res.json({ error: error.message });
-            }
-
-            res.json({ projects: projects.hits.hits.map(x => x._source) });
-          },
-        );
-
-        app.use(
-          '/projects',
-          bodyParser.json({ limit: '50mb' }),
-          async (req, res) => {
-            let { eshost: host } = req.body;
-
-            // create es client from ip
-            let es;
-            try {
-              es = new elasticsearch.Client({ host });
+              await es.indices.create({
+                index: arrangerconfig.projectsIndex.index,
+              });
+              return res.json({ types });
             } catch (error) {
               return res.json({ error: error.message });
             }
+            return res.json({ error: error.message });
+          }
 
-            // create arranger-projects index
-            // get arranger projects
+          res.json({ types: mapHits(types) });
+        });
 
-            let projects = [];
+        app.use('/projects/add', async (req, res) => {
+          let { es } = req.context;
+          let { id } = req.body;
 
-            let arrangerconfig = {
-              projectsIndex: {
-                index: 'arranger-projects',
-                type: 'arranger-projects',
+          if (!id) return res.json({ error: 'id cannot be empty' });
+
+          let projects = [];
+
+          let arrangerconfig = {
+            projectsIndex: {
+              index: 'arranger-projects',
+              type: 'arranger-projects',
+            },
+          };
+
+          try {
+            await es.create({
+              ...arrangerconfig.projectsIndex,
+              refresh: true,
+              id,
+              body: {
+                id,
+                timestamp: new Date().toISOString(),
               },
-            };
+            });
+          } catch (error) {
+            return res.json({ error: error.message });
+          }
 
+          try {
+            projects = await es.search(arrangerconfig.projectsIndex);
+          } catch (error) {
             try {
-              projects = await es.search(arrangerconfig.projectsIndex);
+              await es.indices.create({
+                index: arrangerconfig.projectsIndex.index,
+              });
+              return res.json({ projects });
             } catch (error) {
-              try {
-                await es.indices.create({
-                  index: arrangerconfig.projectsIndex.index,
-                });
-                res.json({ projects });
-              } catch (error) {
-                return res.json({ error: error.message });
-              }
               return res.json({ error: error.message });
             }
+            return res.json({ error: error.message });
+          }
 
-            res.json({ projects: projects.hits.hits.map(x => x._source) });
-          },
-        );
+          res.json({ projects: mapHits(projects) });
+        });
+
+        app.use('/projects', async (req, res) => {
+          let { es } = req.context;
+          // create arranger-projects index
+          // get arranger projects
+
+          let projects = [];
+
+          let arrangerconfig = {
+            projectsIndex: {
+              index: 'arranger-projects',
+              type: 'arranger-projects',
+            },
+          };
+
+          try {
+            projects = await es.search(arrangerconfig.projectsIndex);
+          } catch (error) {
+            try {
+              await es.indices.create({
+                index: arrangerconfig.projectsIndex.index,
+              });
+              res.json({ projects });
+            } catch (error) {
+              return res.json({ error: error.message });
+            }
+            return res.json({ error: error.message });
+          }
+
+          res.json({ projects: projects.hits.hits.map(x => x._source) });
+        });
 
         graphqlEndpoint({ http, app, schema, context: { es, io } });
       })
