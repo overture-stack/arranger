@@ -1,5 +1,6 @@
 import React from 'react';
 import { debounce } from 'lodash';
+import './Dashboard.css';
 
 let API = 'http://localhost:5050';
 
@@ -15,9 +16,15 @@ let api = ({ endpoint = '', body }) =>
 class Dashboard extends React.Component {
   state = {
     eshost: 'http://localhost:9200',
+
     projects: [],
     newProjectName: 'test',
-    activeProject: '',
+    activeProject: null,
+
+    newTypeIndex: '',
+    newTypeName: '',
+    types: [],
+    activeType: null,
   };
 
   componentDidMount() {
@@ -46,6 +53,17 @@ class Dashboard extends React.Component {
     }
   };
 
+  getTypes = async () => {
+    let { types, error } = await api({
+      endpoint: '/projects/add',
+      body: { eshost: this.state.eshost, id: this.state.newProjectName },
+    });
+
+    if (!error) {
+      this.setState({ projects });
+    }
+  };
+
   render() {
     return (
       <div>
@@ -64,29 +82,68 @@ class Dashboard extends React.Component {
             }}
           />
         </div>
-        <label>new project: </label>
-        <input
-          value={this.state.newProjectName}
-          onChange={e => this.setState({ newProjectName: e.target.value })}
-        />
-        <button onClick={this.addProject}>Add Project</button>
         <div>
-          projects:
+          <label>new project: </label>
+          <input
+            value={this.state.newProjectName}
+            onChange={e => this.setState({ newProjectName: e.target.value })}
+          />
+          <button onClick={this.addProject}>Add Project</button>
+        </div>
+        <div>
+          <label>projects: </label>
           {this.state.projects.map(x => (
             <div
               key={x.id}
-              onClick={() => this.setState({ activeProject: x.id })}
+              onClick={() =>
+                this.setState({ activeProject: x.id }, this.getTypes)
+              }
               style={{
                 textDecoration:
                   this.state.activeProject === x.id ? 'none' : 'underline',
                 cursor:
                   this.state.activeProject === x.id ? 'default' : 'pointer',
+                color: this.state.activeProject === x.id ? 'blue' : 'default',
               }}
             >
               {x.id}
             </div>
           ))}
         </div>
+        {this.state.activeProject && (
+          <>
+            <div>
+              <label>new type index: </label>
+              <input
+                value={this.state.newTypeIndex}
+                onChange={e => this.setState({ newTypeIndex: e.target.value })}
+              />
+              <label>new type name (ie. "Case"): </label>
+              <input
+                value={this.state.newTypeName}
+                onChange={e => this.setState({ newTypeName: e.target.value })}
+              />
+              <button onClick={this.addType}>Add Type</button>
+            </div>
+            <div>
+              <label>types: </label>
+              {this.state.types.map(x => (
+                <div
+                  key={x.id}
+                  onClick={() => this.setState({ activeType: x.id })}
+                  style={{
+                    textDecoration:
+                      this.state.activeType === x.id ? 'none' : 'underline',
+                    cursor:
+                      this.state.activeType === x.id ? 'default' : 'pointer',
+                  }}
+                >
+                  {x.id}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     );
   }
