@@ -122,7 +122,7 @@ let main = async () => {
         app.use('/projects/:id/types', async (req, res) => {
           let { es } = req.context;
           let { id } = req.params;
-          if (!id) res.json({ error: 'project empty' });
+          if (!id) return res.json({ error: 'project empty' });
 
           let arrangerconfig = {
             projectsIndex: {
@@ -153,7 +153,7 @@ let main = async () => {
         app.use('/projects/:id/types', async (req, res) => {
           let { es } = req.context;
           let { id } = req.params;
-          if (!id) res.json({ error: 'project empty' });
+          if (!id) return res.json({ error: 'project empty' });
 
           let arrangerconfig = {
             projectsIndex: {
