@@ -100,8 +100,8 @@ class Dashboard extends React.Component {
           />
         </div>
         <div className="row">
-          <div>
-            <div>
+          <section>
+            {/* <div>
               <label>new project: </label>
               <input
                 value={this.state.newProjectName}
@@ -110,9 +110,9 @@ class Dashboard extends React.Component {
                 }
               />
               <button onClick={this.addProject}>Add Project</button>
-            </div>
+            </div> */}
             <div>
-              <label>projects: </label>
+              <label className="projects">PROJECTS</label>
               {this.state.projects.map(x => (
                 <div
                   key={x.id}
@@ -131,9 +131,9 @@ class Dashboard extends React.Component {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
           {this.state.activeProject && (
-            <div>
+            <section>
               <div>
                 <label>new type index: </label>
                 <input
@@ -188,7 +188,7 @@ class Dashboard extends React.Component {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>
