@@ -8,9 +8,6 @@
   * [Topology](#topology)
 * [Roadmap](#roadmap)
 * [Development](#development)
-  * [Installation](#installation)
-  * [Contribution](#contribution)
-  * [Sandbox](#sandbox)
 * [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
 
 ### Motivation
@@ -40,6 +37,8 @@ _this is way too simplistic. needs an update_
 ### Roadmap
 
 #### Short Term
+
+* cli tool for bootstrapping new projects
 
 * Provide all necessary modules to implement searching functionality
   * Dynamic GraphQL schema generation
@@ -73,34 +72,3 @@ _this is way too simplistic. needs an update_
 Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
 
 _\* The GDC contains many features that are out of Arranger's scope_
-
-#### Installation
-
-Modules can be installed as needed via npm, scoped under `@arranger/<module>`. When documentation is ready we will list available modules here. In the meantime, take a look at the `sandbox` folder for examples.
-
-#### Contribution
-
-Since Arranger is in very early stages of devlopment, there's a good chance you will need to modify code in the core modules to meet the specific needs of your application. In such a case, pull this repo down and npm-link the packages to your project folder where you expect `node_modules` to be installed.
-
-```
-# clone, install & npm-link
-git clone git@github.com:overture-stack/arranger.git
-cd arranger && npm i
-npm run link -- <path-to-your-project>
-```
-
-#### Sandbox
-
-If you are just experimenting with Arranger, you can create an application directly in this repository's `sandbox` folder. This way you can leverage [lerna](https://github.com/lerna/lerna) commands for a quicker development cycle. If you don't already have `lerna` installed globally you can run it from here after running `npm install`.
-
-```
-npm run lerna -- <command>
-```
-
-The [lerna](https://github.com/lerna/lerna) docs are pretty good and can help you get started, but you will probably want to build real applications in their own repositories.
-
-<hr />
-
-This project would not be possible without the incredible expertise and effort of ICGC & GDC contributors. Special thanks to [Shane Wilson](https://github.com/shanewilson) and [Bob Tiernay](https://github.com/btiernay) for creating a rock solid foundation to iterate on. There are many more people that deserve credit here, so please speak up so we can add them.
-
-🙏

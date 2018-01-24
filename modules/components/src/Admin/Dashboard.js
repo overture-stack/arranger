@@ -18,7 +18,7 @@ class Dashboard extends React.Component {
     eshost: 'http://localhost:9200',
 
     projects: [],
-    newProjectName: 'test',
+    newProjectName: '',
     activeProject: null,
 
     newTypeIndex: '',
@@ -36,6 +36,10 @@ class Dashboard extends React.Component {
       endpoint: '/projects',
       body: { eshost },
     });
+
+    if (error) {
+      this.setState({ projects: [], types: [], activeProject: null });
+    }
 
     if (!error) {
       this.setState({ projects });
@@ -81,14 +85,12 @@ class Dashboard extends React.Component {
 
   render() {
     return (
-      <div>
-        <div>
-          <h1>Arranger</h1>
-        </div>
-        <div>
-          <label>eshost: </label>
+      <div className="app">
+        <div className="row">
+          <div className="title-arranger">ARRANGER</div>
+          <div className="title-elasticsearch">ELASTICSEARCH HOST :</div>
           <input
-            type="text"
+            className="eshost-input"
             value={this.state.eshost}
             onChange={e => {
               let state = { eshost: e.target.value };
@@ -97,92 +99,98 @@ class Dashboard extends React.Component {
             }}
           />
         </div>
-        <div>
-          <label>new project: </label>
-          <input
-            value={this.state.newProjectName}
-            onChange={e => this.setState({ newProjectName: e.target.value })}
-          />
-          <button onClick={this.addProject}>Add Project</button>
-        </div>
-        <div>
-          <label>projects: </label>
-          {this.state.projects.map(x => (
-            <div
-              key={x.id}
-              onClick={() =>
-                this.setState({ activeProject: x.id }, this.getTypes)
-              }
-              style={{
-                textDecoration:
-                  this.state.activeProject === x.id ? 'none' : 'underline',
-                cursor:
-                  this.state.activeProject === x.id ? 'default' : 'pointer',
-                color: this.state.activeProject === x.id ? 'blue' : 'black',
-              }}
-            >
-              {x.id}
-            </div>
-          ))}
-        </div>
-        {this.state.activeProject && (
-          <>
+        <div className="row">
+          <div>
             <div>
-              <label>new type index: </label>
+              <label>new project: </label>
               <input
-                value={this.state.newTypeIndex}
-                onChange={e => this.setState({ newTypeIndex: e.target.value })}
+                value={this.state.newProjectName}
+                onChange={e =>
+                  this.setState({ newProjectName: e.target.value })
+                }
               />
-              <label>new type name (ie. "Case"): </label>
-              <input
-                value={this.state.newTypeName}
-                onChange={e => this.setState({ newTypeName: e.target.value })}
-              />
-              <button onClick={this.addType}>Add Type</button>
+              <button onClick={this.addProject}>Add Project</button>
             </div>
             <div>
-              <label>types: </label>
-              {this.state.types.map(x => (
-                <div key={x.index}>
-                  <div>
-                    <label>index: </label>
-                    <span
-                      key={x.index}
-                      onClick={() => this.setState({ activeType: x.id })}
-                      style={{
-                        textDecoration:
-                          this.state.activeType === x.id ? 'none' : 'underline',
-                        cursor:
-                          this.state.activeType === x.id
-                            ? 'default'
-                            : 'pointer',
-                      }}
-                    >
-                      {x.index}
-                    </span>
-                  </div>
-                  <div>
-                    <label>active: </label>
-                    <input
-                      type="checkbox"
-                      checked={x.active}
-                      key={x.index}
-                      onClick={() => this.setState({ activeType: x.id })}
-                      style={{
-                        textDecoration:
-                          this.state.activeType === x.id ? 'none' : 'underline',
-                        cursor:
-                          this.state.activeType === x.id
-                            ? 'default'
-                            : 'pointer',
-                      }}
-                    />
-                  </div>
+              <label>projects: </label>
+              {this.state.projects.map(x => (
+                <div
+                  key={x.id}
+                  onClick={() =>
+                    this.setState({ activeProject: x.id }, this.getTypes)
+                  }
+                  style={{
+                    textDecoration:
+                      this.state.activeProject === x.id ? 'none' : 'underline',
+                    cursor:
+                      this.state.activeProject === x.id ? 'default' : 'pointer',
+                    color: this.state.activeProject === x.id ? 'blue' : 'black',
+                  }}
+                >
+                  {x.id}
                 </div>
               ))}
             </div>
-          </>
-        )}
+          </div>
+          {this.state.activeProject && (
+            <div>
+              <div>
+                <label>new type index: </label>
+                <input
+                  value={this.state.newTypeIndex}
+                  onChange={e =>
+                    this.setState({ newTypeIndex: e.target.value })
+                  }
+                />
+                <label>new type name (ie. "Case"): </label>
+                <input
+                  value={this.state.newTypeName}
+                  onChange={e => this.setState({ newTypeName: e.target.value })}
+                />
+                <button onClick={this.addType}>Add Type</button>
+              </div>
+              <div>
+                <label>types: </label>
+                {this.state.types.map(x => (
+                  <div key={x.index}>
+                    <div>
+                      <label>name: </label>
+                      <span>{x.name}</span>
+                    </div>
+                    <div>
+                      <label>index: </label>
+                      <span
+                        key={x.index}
+                        onClick={() => this.setState({ activeType: x.index })}
+                        style={{
+                          textDecoration:
+                            this.state.activeType === x.index
+                              ? 'none'
+                              : 'underline',
+                          cursor:
+                            this.state.activeType === x.index
+                              ? 'default'
+                              : 'pointer',
+                        }}
+                      >
+                        {x.index}
+                      </span>
+                    </div>
+                    <div>
+                      <label>active: </label>
+                      <input
+                        type="checkbox"
+                        checked={x.active}
+                        key={x.index}
+                        onChange={() => {}}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
