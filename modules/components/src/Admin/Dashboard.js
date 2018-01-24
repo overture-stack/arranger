@@ -101,16 +101,17 @@ class Dashboard extends React.Component {
         </div>
         <div className="row">
           <section>
-            {/* <div>
-              <label>new project: </label>
+            <div>
               <input
+                style={{ padding: 5 }}
+                placeholder="New Project..."
                 value={this.state.newProjectName}
                 onChange={e =>
                   this.setState({ newProjectName: e.target.value })
                 }
               />
-              <button onClick={this.addProject}>Add Project</button>
-            </div> */}
+              <button onClick={this.addProject}>+</button>
+            </div>
             <div>
               <label className="projects">PROJECTS</label>
               {this.state.projects.map(x => (
