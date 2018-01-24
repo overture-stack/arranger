@@ -5,6 +5,8 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
+import { css } from 'glamor'
+
 
 import DataTable, {
   Table,
@@ -100,6 +102,83 @@ const dummyConfig = {
     },
   ],
 };
+
+
+const THEME_MODEL = {
+  AVAILABLE_THEMES : [
+    {
+      id: "theme_1",
+      title: "theme 1",
+      stylePath: './themes/theme1.css'
+    },
+    {
+      id: "theme_2",
+      title: "theme 2",
+      stylePath: './themes/theme2.css'
+    }
+  ],
+  SELECTED_THEME: "theme_1"
+}
+
+class ThemeProvider extends React.Component {
+
+  state = {
+    themeLoaded: false,
+    loadedStyle: null,
+  }
+
+  componentDidMount() {
+    // TODO: inject stylesheet based on props
+    const selectedThemeId = "theme_1"
+    const stylePath = this.props.availableThemes
+      .find(theme => theme.id === selectedThemeId)
+      .stylePath
+    console.log(stylePath)
+    const theme = require("./themes/theme2.css").default
+    this.setState({
+      themeLoaded: true,
+      loadedStyle: theme
+    })
+  }
+
+  render() {
+    return this.state.themeLoaded
+      ? (
+        <>
+          <style media="screen">
+            { this.state.loadedStyle }
+          </style>
+          { this.props.children }
+        </>
+      )
+      : null
+    }
+}
+
+class ThemeSwitcher extends React.Component {
+  constructor(props){
+    super(props)
+    this.state = {
+      selectedThemeId: props.availableThemes[0].id
+    }
+  }
+  render(){
+    return (
+      <>
+        <select onChange={themeId => setState({...this.state, selectedThemeId: themeId})} >
+          {
+            this.props.availableThemes.map(theme => (
+              <option id={theme.id} value={theme.title}> {theme.title} </option>
+            ))
+          }
+        </select>
+        <ThemeProvider selected={this.state.selectedThemeId} availableThemes={this.props.availableThemes}>
+          { this.props.children }
+        </ThemeProvider>
+      </>
+    )
+  }
+}
 
 const dummyData = Array(1000)
   .fill()
@@ -198,11 +277,13 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
 ));
 storiesOf('Table', module)
   .add('Table', () => (
-    <Table
-      config={dummyConfig}
-      fetchData={fetchDummyData}
-      onSelectionChange={action('selection changed')}
-    />
+    <ThemeSwitcher availableThemes={THEME_MODEL.AVAILABLE_THEMES}>
+      <Table
+        config={dummyConfig}
+        fetchData={fetchDummyData}
+        onSelectionChange={action('selection changed')}
+      />
+    </ThemeSwitcher>
   ))
   .add('Toolbar', () => (
     <TableToolbarStory
