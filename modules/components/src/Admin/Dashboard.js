@@ -67,7 +67,11 @@ class Dashboard extends React.Component {
   addType = async () => {
     let { types, error } = await api({
       endpoint: `/projects/${this.state.activeProject}/types/add`,
-      body: { eshost: this.state.eshost },
+      body: {
+        eshost: this.state.eshost,
+        index: this.state.newTypeIndex,
+        name: this.state.newTypeName,
+      },
     });
 
     if (!error) {
@@ -139,17 +143,41 @@ class Dashboard extends React.Component {
             <div>
               <label>types: </label>
               {this.state.types.map(x => (
-                <div
-                  key={x.id}
-                  onClick={() => this.setState({ activeType: x.id })}
-                  style={{
-                    textDecoration:
-                      this.state.activeType === x.id ? 'none' : 'underline',
-                    cursor:
-                      this.state.activeType === x.id ? 'default' : 'pointer',
-                  }}
-                >
-                  {x.id}
+                <div key={x.index}>
+                  <div>
+                    <label>index: </label>
+                    <span
+                      key={x.index}
+                      onClick={() => this.setState({ activeType: x.id })}
+                      style={{
+                        textDecoration:
+                          this.state.activeType === x.id ? 'none' : 'underline',
+                        cursor:
+                          this.state.activeType === x.id
+                            ? 'default'
+                            : 'pointer',
+                      }}
+                    >
+                      {x.index}
+                    </span>
+                  </div>
+                  <div>
+                    <label>active: </label>
+                    <input
+                      type="checkbox"
+                      checked={x.active}
+                      key={x.index}
+                      onClick={() => this.setState({ activeType: x.id })}
+                      style={{
+                        textDecoration:
+                          this.state.activeType === x.id ? 'none' : 'underline',
+                        cursor:
+                          this.state.activeType === x.id
+                            ? 'default'
+                            : 'pointer',
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

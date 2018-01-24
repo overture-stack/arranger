@@ -119,10 +119,14 @@ let main = async () => {
           next();
         });
 
-        app.use('/projects/:id/types', async (req, res) => {
+        app.use('/projects/:id/types/add', async (req, res) => {
           let { es } = req.context;
           let { id } = req.params;
-          if (!id) return res.json({ error: 'project empty' });
+          let { index, name } = req.body;
+
+          if (!id || !index || !name) {
+            return res.json({ error: 'missing fields' });
+          }
 
           let arrangerconfig = {
             projectsIndex: {
@@ -130,6 +134,22 @@ let main = async () => {
               type: `arranger-projects-${id}`,
             },
           };
+
+          try {
+            await es.create({
+              ...arrangerconfig.projectsIndex,
+              refresh: true,
+              id: index,
+              body: {
+                index,
+                name,
+                active: true,
+                timestamp: new Date().toISOString(),
+              },
+            });
+          } catch (error) {
+            return res.json({ error: error.message });
+          }
 
           let types = [];
 
