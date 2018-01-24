@@ -5,8 +5,6 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
-import { css } from 'glamor'
-
 
 import DataTable, {
   Table,
@@ -104,8 +102,7 @@ const dummyConfig = {
 };
 
 
-const THEME_MODEL = {
-  AVAILABLE_THEMES : [
+const AVAILABLE_THEMES = [
     {
       id: "theme_1",
       title: "theme 1",
@@ -116,11 +113,9 @@ const THEME_MODEL = {
       title: "theme 2",
       stylePath: './themes/theme2.css'
     }
-  ],
-  SELECTED_THEME: "theme_1"
-}
+]
 
-class ThemeProvider extends React.Component {
+class StyleProvider extends React.Component {
 
   state = {
     themeLoaded: false,
@@ -128,13 +123,19 @@ class ThemeProvider extends React.Component {
   }
 
   componentDidMount() {
-    // TODO: inject stylesheet based on props
-    const selectedThemeId = "theme_1"
+    this.renderStyle()
+  }
+
+  componentWillReceiveProps() {
+    this.renderStyle()
+  }
+
+  renderStyle(){
+    const selectedThemeId = this.props.selected
     const stylePath = this.props.availableThemes
       .find(theme => theme.id === selectedThemeId)
       .stylePath
-    console.log(stylePath)
-    const theme = require("./themes/theme2.css").default
+    const theme = require("" + stylePath).default
     this.setState({
       themeLoaded: true,
       loadedStyle: theme
@@ -145,9 +146,7 @@ class ThemeProvider extends React.Component {
     return this.state.themeLoaded
       ? (
         <>
-          <style media="screen">
-            { this.state.loadedStyle }
-          </style>
+          <style>{ this.state.loadedStyle }</style>
           { this.props.children }
         </>
       )
@@ -161,20 +160,27 @@ class ThemeSwitcher extends React.Component {
     this.state = {
       selectedThemeId: props.availableThemes[0].id
     }
+    this.onStyleChange = this.onStyleChange.bind(this)
+  }
+  onStyleChange(e){
+    this.setState({
+      ...this.state,
+      selectedThemeId: e.target.value
+    })
   }
   render(){
     return (
       <>
-        <select onChange={themeId => setState({...this.state, selectedThemeId: themeId})} >
+        <select value={this.state.selectedThemeId} onChange={ this.onStyleChange } >
           {
             this.props.availableThemes.map(theme => (
-              <option id={theme.id} value={theme.title}> {theme.title} </option>
+              <option key={theme.id} value={theme.id}> {theme.title} </option>
             ))
           }
         </select>
-        <ThemeProvider selected={this.state.selectedThemeId} availableThemes={this.props.availableThemes}>
+        <StyleProvider selected={this.state.selectedThemeId} availableThemes={this.props.availableThemes}>
           { this.props.children }
-        </ThemeProvider>
+        </StyleProvider>
       </>
     )
   }
@@ -277,7 +283,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
 ));
 storiesOf('Table', module)
   .add('Table', () => (
-    <ThemeSwitcher availableThemes={THEME_MODEL.AVAILABLE_THEMES}>
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
       <Table
         config={dummyConfig}
         fetchData={fetchDummyData}
