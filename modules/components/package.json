@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build-storybook": "build-storybook",
-    "storybook": "start-storybook -p 9001 -c .storybook",
+    "storybook": "start-storybook -p 9001 -c .storybook -s ./public",
     "test": "jest",
     "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
     "prepublish": "npm run build",

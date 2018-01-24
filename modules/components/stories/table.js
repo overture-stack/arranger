@@ -106,12 +106,12 @@ const AVAILABLE_THEMES = [
     {
       id: "theme_1",
       title: "theme 1",
-      stylePath: './themes/theme1.css'
+      stylePath: './themeStyles/theme1.css'
     },
     {
       id: "theme_2",
       title: "theme 2",
-      stylePath: './themes/theme2.css'
+      stylePath: './themeStyles/theme2.css'
     }
 ]
 
@@ -123,30 +123,31 @@ class StyleProvider extends React.Component {
   }
 
   componentDidMount() {
-    this.renderStyle()
+    this.applyStyle(this.props.availableThemes, this.props.selected)
   }
 
-  componentWillReceiveProps() {
-    this.renderStyle()
+  componentWillReceiveProps(nextProps) {
+    this.applyStyle(nextProps.availableThemes, nextProps.selected)
   }
 
-  renderStyle(){
-    const selectedThemeId = this.props.selected
-    const stylePath = this.props.availableThemes
+  applyStyle(_availableThemes, _selectedThemeId){
+    const selectedThemeId = _selectedThemeId
+    const stylePath = _availableThemes
       .find(theme => theme.id === selectedThemeId)
       .stylePath
-    const theme = require("" + stylePath).default
-    this.setState({
-      themeLoaded: true,
-      loadedStyle: theme
-    })
+    fetch(stylePath)
+      .then(data => data.text())
+      .then(str => this.setState({
+        themeLoaded: true,
+        loadedStyle: str,
+      }))
   }
 
   render() {
     return this.state.themeLoaded
       ? (
         <>
-          <style>{ this.state.loadedStyle }</style>
+          <style dangerouslySetInnerHTML={{__html:this.state.loadedStyle}}/>
           { this.props.children }
         </>
       )
