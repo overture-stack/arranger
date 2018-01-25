@@ -52,6 +52,35 @@ let main = async () => {
   let http = Server(app);
   let io = socketIO(http);
 
+  let connections = [];
+
+  io.on('connection', socket => {
+    connections.push(socket);
+
+    socket.on('arranger::monitorProjects', ({ projects = [], eshost }) => {
+      socket.monitorIntervalId = setInterval(async () => {
+        let statuses = await Promise.all(
+          projects.map(x =>
+            fetch(`http://localhost:${port}/${x.id}/ping`, {
+              headers: {
+                ES_HOST: eshost,
+              },
+            })
+              .then(r => {
+                if (r.ok) return r.text();
+              })
+              .then(r => {
+                return { [x.id]: r === 'ok' };
+              })
+              .catch(() => ({ [x.id]: false })),
+          ),
+        );
+
+        socket.emit('server::projectsStatus', statuses);
+      }, 3000);
+    });
+  });
+
   app.use(cors());
   app.use(bodyParser.json({ limit: '50mb' }));
 
@@ -258,6 +287,8 @@ let main = async () => {
     });
 
     let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
+
+    app.get(`/${id}/ping`, (req, res) => res.send('ok'));
 
     app.use(
       `/${id}/graphql`,

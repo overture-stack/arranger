@@ -1,8 +1,11 @@
 import React from 'react';
 import { debounce } from 'lodash';
+import io from 'socket.io-client';
 import './Dashboard.css';
 
 let API = 'http://localhost:5050';
+
+let socket = io(API);
 
 let api = ({ endpoint = '', body }) =>
   fetch(API + endpoint, {
@@ -36,6 +39,10 @@ class Dashboard extends React.Component {
 
   componentDidMount() {
     this.getProjects({ eshost: this.state.eshost });
+
+    socket.on('server::projectsStatus', data => {
+      console.log(123, data);
+    });
   }
 
   getProjects = debounce(async ({ eshost }) => {
@@ -57,6 +64,11 @@ class Dashboard extends React.Component {
 
     if (!error) {
       this.setState({ projects, projectsTotal: total, error: null });
+
+      socket.emit('arranger::monitorProjects', {
+        projects: projects.filter(x => x.active),
+        eshost,
+      });
     }
   }, 300);
 
@@ -238,22 +250,25 @@ class Dashboard extends React.Component {
                   >
                     {x.id}
                   </span>
-                  {this.state.activeProject === x.id && (
-                    <div style={{ marginLeft: 'auto' }}>
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => this.spinup({ id: x.id })}
-                      >
-                        🌀
-                      </span>
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => this.deleteProject({ id: x.id })}
-                      >
-                        🔥
-                      </span>
-                    </div>
-                  )}
+                  <div style={{ marginLeft: 'auto' }}>
+                    {this.state.activeProject === x.id && (
+                      <>
+                        <span
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => this.spinup({ id: x.id })}
+                        >
+                          🌀
+                        </span>
+                        <span
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => this.deleteProject({ id: x.id })}
+                        >
+                          🔥
+                        </span>
+                      </>
+                    )}
+                    {x.active && <span>✅</span>}
+                  </div>
                 </div>
               ))}
             </div>
