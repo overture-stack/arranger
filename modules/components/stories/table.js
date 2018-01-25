@@ -5,6 +5,7 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
+import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher'
 
 import DataTable, {
   Table,
@@ -100,92 +101,6 @@ const dummyConfig = {
     },
   ],
 };
-
-
-const AVAILABLE_THEMES = [
-    {
-      id: "theme_1",
-      title: "theme 1",
-      stylePath: './themeStyles/theme1.css'
-    },
-    {
-      id: "theme_2",
-      title: "theme 2",
-      stylePath: './themeStyles/theme2.css'
-    }
-]
-
-class StyleProvider extends React.Component {
-
-  state = {
-    themeLoaded: false,
-    loadedStyle: null,
-  }
-
-  componentDidMount() {
-    this.applyStyle(this.props.availableThemes, this.props.selected)
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.applyStyle(nextProps.availableThemes, nextProps.selected)
-  }
-
-  applyStyle(_availableThemes, _selectedThemeId){
-    const selectedThemeId = _selectedThemeId
-    const stylePath = _availableThemes
-      .find(theme => theme.id === selectedThemeId)
-      .stylePath
-    fetch(stylePath)
-      .then(data => data.text())
-      .then(str => this.setState({
-        themeLoaded: true,
-        loadedStyle: str,
-      }))
-  }
-
-  render() {
-    return this.state.themeLoaded
-      ? (
-        <>
-          <style dangerouslySetInnerHTML={{__html:this.state.loadedStyle}}/>
-          { this.props.children }
-        </>
-      )
-      : null
-    }
-}
-
-class ThemeSwitcher extends React.Component {
-  constructor(props){
-    super(props)
-    this.state = {
-      selectedThemeId: props.availableThemes[0].id
-    }
-    this.onStyleChange = this.onStyleChange.bind(this)
-  }
-  onStyleChange(e){
-    this.setState({
-      ...this.state,
-      selectedThemeId: e.target.value
-    })
-  }
-  render(){
-    return (
-      <>
-        <select value={this.state.selectedThemeId} onChange={ this.onStyleChange } >
-          {
-            this.props.availableThemes.map(theme => (
-              <option key={theme.id} value={theme.id}> {theme.title} </option>
-            ))
-          }
-        </select>
-        <StyleProvider selected={this.state.selectedThemeId} availableThemes={this.props.availableThemes}>
-          { this.props.children }
-        </StyleProvider>
-      </>
-    )
-  }
-}
 
 const dummyData = Array(1000)
   .fill()
