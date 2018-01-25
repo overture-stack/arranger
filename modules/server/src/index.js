@@ -18,14 +18,26 @@ import {
 
 let writeFile = promisify(fs.writeFile);
 
+let fetchMapping = ({ index, es }) => {
+  return es.indices
+    .getMapping({
+      index,
+      type: index,
+    })
+    .catch(err => {
+      // TODO: return something more useful than false
+      return false;
+    })
+    .then(val => {
+      return { index: index, mapping: val };
+    });
+};
+
 let fetchMappings = ({ types, es }) => {
   return Promise.all(
-    types.map(([, { index, es_type }]) =>
-      es.indices.getMapping({
-        index,
-        type: es_type,
-      }),
-    ),
+    types.map(({ index }) => {
+      return fetchMapping({ index, es });
+    }),
   );
 };
 
@@ -138,7 +150,15 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ types: mapHits(types) });
+    let hits = mapHits(types);
+    let mappings = await fetchMappings({ es, types: hits });
+    types = hits.map(x => {
+      return {
+        ...x,
+        mappings: mappings.find(y => y.index === x.index).mapping,
+      };
+    })
+    res.json({ types });
   });
 
   app.use('/projects/:id/delete', async (req, res) => {
