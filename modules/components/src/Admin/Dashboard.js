@@ -58,6 +58,17 @@ class Dashboard extends React.Component {
     }
   };
 
+  deleteProject = async ({ id }) => {
+    let { projects, total, error } = await api({
+      endpoint: `/projects/${id}/delete`,
+      body: { eshost: this.state.eshost },
+    });
+
+    if (!error) {
+      this.setState({ projects, projectsTotal: total });
+    }
+  };
+
   getTypes = async () => {
     let { types, error } = await api({
       endpoint: `/projects/${this.state.activeProject}/types`,
@@ -118,20 +129,33 @@ class Dashboard extends React.Component {
                 PROJECTS ({this.state.projectsTotal})
               </label>
               {this.state.projects.map(x => (
-                <div
-                  key={x.id}
-                  onClick={() =>
-                    this.setState({ activeProject: x.id }, this.getTypes)
-                  }
-                  style={{
-                    textDecoration:
-                      this.state.activeProject === x.id ? 'none' : 'underline',
-                    cursor:
-                      this.state.activeProject === x.id ? 'default' : 'pointer',
-                    color: this.state.activeProject === x.id ? 'blue' : 'black',
-                  }}
-                >
-                  {x.id}
+                <div key={x.id}>
+                  <span
+                    onClick={() =>
+                      this.setState({ activeProject: x.id }, this.getTypes)
+                    }
+                    style={{
+                      textDecoration:
+                        this.state.activeProject === x.id
+                          ? 'none'
+                          : 'underline',
+                      cursor:
+                        this.state.activeProject === x.id
+                          ? 'default'
+                          : 'pointer',
+                      color:
+                        this.state.activeProject === x.id ? 'blue' : 'black',
+                    }}
+                  >
+                    {x.id}
+                  </span>
+                  <span> | </span>
+                  <span
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => this.deleteProject({ id: x.id })}
+                  >
+                    🔥
+                  </span>
                 </div>
               ))}
             </div>
