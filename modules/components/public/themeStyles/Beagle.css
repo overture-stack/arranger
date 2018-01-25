@@ -30,14 +30,39 @@ div {
   border-right: 1px solid #cacbcf;
 }
 
-.ReactTable.-striped .rt-resizable-header-content {
+.ReactTable .rt-resizable-header-content {
   color: #404c9a;
 }
 
-.ReactTable.-striped .rt-thead {
+.ReactTable .rt-thead {
     background-color: #edeef1;
 }
 
 .ReactTable.-striped .rt-tr.-odd {
   background-color: #f4f5f8;
+}
+
+.ReactTable .-pagination {
+    height: 64px;
+}
+.ReactTable .-pagination .-pageJump {
+  border: solid 1px #cacbcf;
+  border-radius: 10px;
+  height: 30px;
+  display: flex;
+  overflow: hidden;
+}
+.ReactTable .-pagination_button {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #74757d;
+  border-right: solid 1px #cacbcf;
+  min-width: 34px;
+  align-items: center;
+  justify-content: center;
+}
+.ReactTable .-pagination_button.-current {
+  background: #f0f1f6;
+  color: #009bb8;
 }
