@@ -119,7 +119,7 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ types: mapHits(types) });
+    res.json({ types: mapHits(types), total: types.hits.total });
   });
 
   app.use('/projects/:id/types', async (req, res) => {
@@ -151,14 +151,16 @@ let main = async () => {
     }
 
     let hits = mapHits(types);
+
     let mappings = await fetchMappings({ es, types: hits });
-    types = hits.map(x => {
-      return {
+
+    res.json({
+      types: hits.map(x => ({
         ...x,
         mappings: mappings.find(y => y.index === x.index).mapping,
-      };
-    })
-    res.json({ types });
+      })),
+      total: types.hits.total,
+    });
   });
 
   app.use('/projects/:id/delete', async (req, res) => {

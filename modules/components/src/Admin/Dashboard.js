@@ -25,6 +25,7 @@ class Dashboard extends React.Component {
     newTypeIndex: '',
     newTypeName: '',
     types: [],
+    typesTotal: 0,
     activeType: null,
   };
 
@@ -70,18 +71,18 @@ class Dashboard extends React.Component {
   };
 
   getTypes = async () => {
-    let { types, error } = await api({
+    let { types, total, error } = await api({
       endpoint: `/projects/${this.state.activeProject}/types`,
       body: { eshost: this.state.eshost },
     });
 
     if (!error) {
-      this.setState({ types });
+      this.setState({ types, typesTotal: total });
     }
   };
 
   addType = async () => {
-    let { types, error } = await api({
+    let { types, total, error } = await api({
       endpoint: `/projects/${this.state.activeProject}/types/add`,
       body: {
         eshost: this.state.eshost,
@@ -91,7 +92,7 @@ class Dashboard extends React.Component {
     });
 
     if (!error) {
-      this.setState({ types });
+      this.setState({ types, typesTotal: total });
     }
   };
 
@@ -162,23 +163,25 @@ class Dashboard extends React.Component {
           </section>
           {this.state.activeProject && (
             <section>
-              <div>
-                <label>new type index: </label>
+              <div style={{ padding: 5 }}>
                 <input
+                  placeholder="Type name"
+                  value={this.state.newTypeName}
+                  onChange={e => this.setState({ newTypeName: e.target.value })}
+                />
+                <input
+                  placeholder="index"
                   value={this.state.newTypeIndex}
                   onChange={e =>
                     this.setState({ newTypeIndex: e.target.value })
                   }
                 />
-                <label>new type name (ie. "Case"): </label>
-                <input
-                  value={this.state.newTypeName}
-                  onChange={e => this.setState({ newTypeName: e.target.value })}
-                />
                 <button onClick={this.addType}>Add Type</button>
               </div>
               <div>
-                <label>types: </label>
+                <label className="projects">
+                  TYPES ({this.state.typesTotal})
+                </label>
                 {this.state.types.map(x => (
                   <div key={x.index}>
                     <div>
@@ -215,9 +218,11 @@ class Dashboard extends React.Component {
                     </div>
                     <div>
                       <label>mappings: </label>
-                      { x.mappings ? (
-                        <pre>{ (JSON.stringify(x.mappings, null, 2)) }</pre>
-                      ) : `nope` }
+                      {x.mappings ? (
+                        <pre>{JSON.stringify(x.mappings, null, 2)}</pre>
+                      ) : (
+                        `nope`
+                      )}
                     </div>
                   </div>
                 ))}
