@@ -231,7 +231,7 @@ export default class CustomPaginationComponent extends ReactTablePagination {
               {this.state.pagesShown.map((pageIndex, i) => (
                 <span className={classnames("-pagination_button", this.state.page === pageIndex ? '-current' : '')}
                   onClick={() => this.changePage(pageIndex)} key={i}
-                >{pageIndex}</span>
+                >{pageIndex + 1}</span>
               ))}
               <span className="-next -pagination_button"
                 onClick={() => {
