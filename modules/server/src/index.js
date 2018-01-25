@@ -269,8 +269,8 @@ let main = async () => {
       projectsIndex: {
         index: 'arranger-projects',
         type: 'arranger-projects',
+        size: 1000,
       },
-      size: 1000,
     };
 
     try {
