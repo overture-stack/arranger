@@ -141,6 +141,51 @@ let main = async () => {
     res.json({ types: mapHits(types) });
   });
 
+  app.use('/projects/:id/delete', async (req, res) => {
+    let { es } = req.context;
+    let { id } = req.params;
+
+    if (!id) return res.json({ error: 'id cannot be empty' });
+
+    let projects = [];
+
+    let arrangerconfig = {
+      projectsIndex: {
+        index: 'arranger-projects',
+        type: 'arranger-projects',
+      },
+    };
+
+    try {
+      await es.delete({
+        ...arrangerconfig.projectsIndex,
+        refresh: true,
+        id,
+      });
+    } catch (error) {
+      return res.json({ error: error.message });
+    }
+
+    try {
+      projects = await es.search({
+        ...arrangerconfig.projectsIndex,
+        size: 1000,
+      });
+    } catch (error) {
+      try {
+        await es.indices.create({
+          index: arrangerconfig.projectsIndex.index,
+        });
+        return res.json({ projects });
+      } catch (error) {
+        return res.json({ error: error.message });
+      }
+      return res.json({ error: error.message });
+    }
+
+    res.json({ projects: mapHits(projects), total: projects.hits.total });
+  });
+
   app.use('/projects/add', async (req, res) => {
     let { es } = req.context;
     let { id } = req.body;
