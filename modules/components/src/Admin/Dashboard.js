@@ -18,6 +18,7 @@ class Dashboard extends React.Component {
     eshost: 'http://localhost:9200',
 
     projects: [],
+    projectsTotal: 0,
     newProjectName: '',
     activeProject: null,
 
@@ -32,7 +33,7 @@ class Dashboard extends React.Component {
   }
 
   getProjects = debounce(async ({ eshost }) => {
-    let { projects, error } = await api({
+    let { projects, total, error } = await api({
       endpoint: '/projects',
       body: { eshost },
     });
@@ -42,18 +43,18 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
-      this.setState({ projects });
+      this.setState({ projects, projectsTotal: total });
     }
   }, 300);
 
   addProject = async () => {
-    let { projects, error } = await api({
+    let { projects, total, error } = await api({
       endpoint: '/projects/add',
       body: { eshost: this.state.eshost, id: this.state.newProjectName },
     });
 
     if (!error) {
-      this.setState({ projects });
+      this.setState({ projects, projectsTotal: total });
     }
   };
 
@@ -113,7 +114,9 @@ class Dashboard extends React.Component {
               <button onClick={this.addProject}>+</button>
             </div>
             <div>
-              <label className="projects">PROJECTS</label>
+              <label className="projects">
+                PROJECTS ({this.state.projectsTotal})
+              </label>
               {this.state.projects.map(x => (
                 <div
                   key={x.id}
