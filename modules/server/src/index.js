@@ -119,7 +119,17 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ types: mapHits(types), total: types.hits.total });
+    let hits = mapHits(types);
+
+    let mappings = await fetchMappings({ es, types: hits });
+
+    res.json({
+      types: hits.map(x => ({
+        ...x,
+        mappings: mappings.find(y => y.index === x.index).mapping,
+      })),
+      total: types.hits.total,
+    });
   });
 
   app.use('/projects/:id/types', async (req, res) => {
