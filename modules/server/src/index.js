@@ -158,7 +158,6 @@ let main = async () => {
         mappings: mappings.find(y => y.index === x.index).mapping,
       };
     })
-    console.log(types)
     res.json({ types });
   });
 
@@ -240,7 +239,10 @@ let main = async () => {
     }
 
     try {
-      projects = await es.search(arrangerconfig.projectsIndex);
+      projects = await es.search({
+        ...arrangerconfig.projectsIndex,
+        size: 1000,
+      });
     } catch (error) {
       try {
         await es.indices.create({
@@ -253,7 +255,7 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ projects: mapHits(projects) });
+    res.json({ projects: mapHits(projects), total: projects.hits.total });
   });
 
   app.use('/projects', async (req, res) => {
@@ -268,6 +270,7 @@ let main = async () => {
         index: 'arranger-projects',
         type: 'arranger-projects',
       },
+      size: 1000,
     };
 
     try {
@@ -284,7 +287,10 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ projects: projects.hits.hits.map(x => x._source) });
+    res.json({
+      projects: projects.hits.hits.map(x => x._source),
+      total: projects.hits.total,
+    });
   });
 
   http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`));
