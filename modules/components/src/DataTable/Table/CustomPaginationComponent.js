@@ -223,8 +223,8 @@ export default class CustomPaginationComponent extends ReactTablePagination {
                   this.setState({
                     ...this.state,
                     pagesShown: this.state.page-1 >= 0
-                    ? ( this.getPagesShownShiftedDown() )
-                    : pagesShown
+                      ? ( this.getPagesShownShiftedDown() )
+                      : this.state.pagesShown
                   })
                 }}
               >{'<'}</span>
@@ -239,8 +239,8 @@ export default class CustomPaginationComponent extends ReactTablePagination {
                   this.setState({
                     ...this.state,
                     pagesShown: this.state.page+1 <= pages
-                    ? ( this.getPagesShownShiftedUp() )
-                    : pagesShown
+                      ? ( this.getPagesShownShiftedUp() )
+                      : this.state.pagesShown
                   })
                 }}
               >{'>'}</span>
