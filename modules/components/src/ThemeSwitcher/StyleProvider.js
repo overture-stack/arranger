@@ -7,19 +7,22 @@ export default class StyleProvider extends React.Component {
     loadedStyle: null,
   }
 
-  componentDidMount() {
+  componentDidMount = () => {
     this.applyStyle(this.props.availableThemes, this.props.selected)
   }
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps = (nextProps) => {
     this.applyStyle(nextProps.availableThemes, nextProps.selected)
   }
 
-  applyStyle(_availableThemes, _selectedThemeId){
-    const selectedThemeId = _selectedThemeId
-    const stylePath = _availableThemes
+  applyStyle = (availableThemes, selectedThemeId) => {
+    const stylePath = availableThemes
       .find(theme => theme.id === selectedThemeId)
       .stylePath
+    this.setState({
+      themeLoaded: false,
+      loadedStyle: null,
+    })
     fetch(stylePath)
       .then(data => data.text())
       .then(str => this.setState({
@@ -32,7 +35,7 @@ export default class StyleProvider extends React.Component {
     return this.state.themeLoaded
       ? (
         <>
-          <style dangerouslySetInnerHTML={{__html:this.state.loadedStyle}}/>
+          <style type="text/css"> {this.state.loadedStyle} </style>
           { this.props.children }
         </>
       )

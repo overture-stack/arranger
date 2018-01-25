@@ -7,9 +7,8 @@ export default class ThemeSwitcher extends React.Component {
     this.state = {
       selectedThemeId: props.availableThemes[0].id
     }
-    this.onStyleChange = this.onStyleChange.bind(this)
   }
-  onStyleChange(e){
+  onStyleChange = (e) => {
     this.setState({
       ...this.state,
       selectedThemeId: e.target.value
@@ -35,13 +34,13 @@ export default class ThemeSwitcher extends React.Component {
 
 export const AVAILABLE_THEMES = [
     {
-      id: "theme_1",
-      title: "theme 1",
-      stylePath: './themeStyles/theme1.css'
+      id: "default",
+      title: "Default",
+      stylePath: './themeStyles/default.css'
     },
     {
-      id: "theme_2",
-      title: "theme 2",
-      stylePath: './themeStyles/theme2.css'
+      id: "kids_first",
+      title: "Kids First",
+      stylePath: './themeStyles/kids_first.css'
     }
 ]
