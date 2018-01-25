@@ -59,6 +59,7 @@ class Dashboard extends React.Component {
         projects,
         projectsTotal: total,
         activeProject: this.state.newProjectName,
+        newProjectName: '',
       });
     }
   };
@@ -105,6 +106,26 @@ class Dashboard extends React.Component {
     }
   };
 
+  spinup = async ({ id }) => {
+    await api({
+      endpoint: `/projects/${id}/spinup`,
+      body: {
+        eshost: this.state.eshost,
+        id,
+      },
+    });
+  };
+
+  teardown = async ({ id }) => {
+    await api({
+      endpoint: `/projects/${id}/teardown`,
+      body: {
+        eshost: this.state.eshost,
+        id,
+      },
+    });
+  };
+
   render() {
     return (
       <div className="app">
@@ -139,7 +160,11 @@ class Dashboard extends React.Component {
                 PROJECTS ({this.state.projectsTotal})
               </label>
               {this.state.projects.map(x => (
-                <div key={x.id}>
+                <div
+                  key={x.id}
+                  className="row"
+                  style={{ alignItems: 'center' }}
+                >
                   <span
                     onClick={() =>
                       this.setState({ activeProject: x.id }, this.getTypes)
@@ -160,12 +185,20 @@ class Dashboard extends React.Component {
                     {x.id}
                   </span>
                   {this.state.activeProject === x.id && (
-                    <span
-                      style={{ cursor: 'pointer', float: 'right' }}
-                      onClick={() => this.deleteProject({ id: x.id })}
-                    >
-                      🔥
-                    </span>
+                    <div style={{ marginLeft: 'auto' }}>
+                      <span
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => this.spinup({ id: x.id })}
+                      >
+                        🌀
+                      </span>
+                      <span
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => this.deleteProject({ id: x.id })}
+                      >
+                        🔥
+                      </span>
+                    </div>
                   )}
                 </div>
               ))}
