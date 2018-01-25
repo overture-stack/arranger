@@ -55,7 +55,11 @@ class Dashboard extends React.Component {
     });
 
     if (!error) {
-      this.setState({ projects, projectsTotal: total });
+      this.setState({
+        projects,
+        projectsTotal: total,
+        activeProject: this.state.newProjectName,
+      });
     }
   };
 
@@ -66,7 +70,12 @@ class Dashboard extends React.Component {
     });
 
     if (!error) {
-      this.setState({ projects, projectsTotal: total });
+      this.setState({
+        projects,
+        projectsTotal: total,
+        types: [],
+        activeProject: null,
+      });
     }
   };
 
@@ -150,13 +159,14 @@ class Dashboard extends React.Component {
                   >
                     {x.id}
                   </span>
-                  <span> | </span>
-                  <span
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => this.deleteProject({ id: x.id })}
-                  >
-                    🔥
-                  </span>
+                  {this.state.activeProject === x.id && (
+                    <span
+                      style={{ cursor: 'pointer', float: 'right' }}
+                      onClick={() => this.deleteProject({ id: x.id })}
+                    >
+                      🔥
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
