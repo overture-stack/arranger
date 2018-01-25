@@ -45,6 +45,13 @@ label {
   flex-grow: 1;
 }
 
+.error {
+  background-color: #af2f4c;
+  font-weight: bold;
+  padding: 10px;
+  color: white;
+}
+
 .row {
   display: flex;
 }

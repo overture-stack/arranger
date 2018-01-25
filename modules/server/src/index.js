@@ -20,6 +20,7 @@ import {
 let writeFile = promisify(fs.writeFile);
 
 let fetchMapping = ({ index, es }) => {
+  // TODO: check for aliases!!
   return es.indices
     .getMapping({
       index,
@@ -73,7 +74,7 @@ let main = async () => {
     next();
   });
 
-  app.use('/projects/:id/types/:index', async (req, res) => {
+  app.use('/projects/:id/types/:index/fields', async (req, res) => {
     let { es } = req.context;
     let { id, index } = req.params;
 
@@ -98,6 +99,7 @@ let main = async () => {
           index: arrangerconfig.projectsIndex.index,
         });
 
+        // TODO: check for aliases!!
         let mappings = await es.indices.getMapping({
           index,
           type: index,

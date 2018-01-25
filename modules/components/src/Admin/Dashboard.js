@@ -16,6 +16,7 @@ let api = ({ endpoint = '', body }) =>
 class Dashboard extends React.Component {
   state = {
     eshost: 'http://localhost:9200',
+    error: null,
 
     projects: [],
     projectsTotal: 0,
@@ -44,11 +45,18 @@ class Dashboard extends React.Component {
     });
 
     if (error) {
-      this.setState({ projects: [], types: [], activeProject: null });
+      this.setState({
+        error,
+        projects: [],
+        types: [],
+        activeProject: null,
+        projectsTotal: 0,
+        typesTotal: 0,
+      });
     }
 
     if (!error) {
-      this.setState({ projects, projectsTotal: total });
+      this.setState({ projects, projectsTotal: total, error: null });
     }
   }, 300);
 
@@ -58,12 +66,17 @@ class Dashboard extends React.Component {
       body: { eshost: this.state.eshost, id: this.state.newProjectName },
     });
 
+    if (error) {
+      this.setState({ error });
+    }
+
     if (!error) {
       this.setState({
         projects,
         projectsTotal: total,
         activeProject: this.state.newProjectName,
         newProjectName: '',
+        error: null,
       });
     }
   };
@@ -74,24 +87,35 @@ class Dashboard extends React.Component {
       body: { eshost: this.state.eshost },
     });
 
+    if (error) {
+      this.setState({ error });
+    }
+
     if (!error) {
       this.setState({
         projects,
         projectsTotal: total,
         types: [],
         activeProject: null,
+        error: null,
       });
     }
   };
 
   getFields = async ({ activeType }) => {
     let { fields, total, error } = await api({
-      endpoint: `/projects/${this.state.activeProject}/types/${activeType}`,
+      endpoint: `/projects/${
+        this.state.activeProject
+      }/types/${activeType}/fields`,
       body: { eshost: this.state.eshost },
     });
 
+    if (error) {
+      this.setState({ error });
+    }
+
     if (!error) {
-      this.setState({ fields, fieldsTotal: total });
+      this.setState({ fields, fieldsTotal: total, error: null });
     }
   };
 
@@ -101,8 +125,12 @@ class Dashboard extends React.Component {
       body: { eshost: this.state.eshost },
     });
 
+    if (error) {
+      this.setState({ error });
+    }
+
     if (!error) {
-      this.setState({ types, typesTotal: total });
+      this.setState({ types, typesTotal: total, error: null });
     }
   };
 
@@ -116,12 +144,17 @@ class Dashboard extends React.Component {
       },
     });
 
+    if (error) {
+      this.setState({ error });
+    }
+
     if (!error) {
       this.setState({
         types,
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
+        error: null,
       });
     }
   };
@@ -162,6 +195,7 @@ class Dashboard extends React.Component {
             }}
           />
         </div>
+        {this.state.error && <div className="error">⚠️ {this.state.error}</div>}
         <div className="row">
           <section>
             <div>
