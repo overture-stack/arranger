@@ -27,6 +27,10 @@ class Dashboard extends React.Component {
     types: [],
     typesTotal: 0,
     activeType: null,
+
+    fields: [],
+    fieldsTotal: 0,
+    activeField: null,
   };
 
   componentDidMount() {
@@ -77,6 +81,17 @@ class Dashboard extends React.Component {
         types: [],
         activeProject: null,
       });
+    }
+  };
+
+  getFields = async ({ activeType }) => {
+    let { fields, total, error } = await api({
+      endpoint: `/projects/${this.state.activeProject}/types/${activeType}`,
+      body: { eshost: this.state.eshost },
+    });
+
+    if (!error) {
+      this.setState({ fields, fieldsTotal: total });
     }
   };
 
@@ -246,7 +261,11 @@ class Dashboard extends React.Component {
                       <label>INDEX: </label>
                       <span
                         key={x.index}
-                        onClick={() => this.setState({ activeType: x.index })}
+                        onClick={() => {
+                          let state = { activeType: x.index };
+                          this.setState(state);
+                          this.getFields(state);
+                        }}
                         style={{
                           textDecoration:
                             this.state.activeType === x.index
@@ -282,8 +301,15 @@ class Dashboard extends React.Component {
             this.state.activeType && (
               <section>
                 <div style={{ padding: 5 }}>
-                  <label>FIELDS (): </label>
+                  <label className="projects">
+                    FIELDS ({this.state.fieldsTotal})
+                  </label>
                 </div>
+                {this.state.fields.map(x => (
+                  <div key={x.index} className="type-container">
+                    {x.field}
+                  </div>
+                ))}
               </section>
             )}
         </div>
