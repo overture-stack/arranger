@@ -1,0 +1,8 @@
+.-pageJump {
+  border: solid 1px lightgrey;
+  border-radius: 5px;
+}
+.ReactTable .-pagination_button {
+  padding-left: 10px;
+  padding-right: 10px;
+}

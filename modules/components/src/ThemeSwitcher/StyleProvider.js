@@ -19,10 +19,6 @@ export default class StyleProvider extends React.Component {
     const stylePath = availableThemes
       .find(theme => theme.id === selectedThemeId)
       .stylePath
-    this.setState({
-      themeLoaded: false,
-      loadedStyle: null,
-    })
     fetch(stylePath)
       .then(data => data.text())
       .then(str => this.setState({
