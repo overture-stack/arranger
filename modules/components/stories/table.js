@@ -197,44 +197,63 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
     }}
   />
 ));
+
+const ComponentContainer = (props) => (
+  <div style={{
+    position: 'absolute',
+    left: '0px',
+    right: '0px',
+    top: '50px',
+    bottom: '0px',
+  }}>{props.children}</div>
+)
+
 storiesOf('Table', module)
   .add('Table', () => (
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
-      <Table
-        config={dummyConfig}
-        fetchData={fetchDummyData}
-        onSelectionChange={action('selection changed')}
-      />
+      <ComponentContainer>
+        <Table
+          config={dummyConfig}
+          fetchData={fetchDummyData}
+          onSelectionChange={action('selection changed')}
+        />
+      </ComponentContainer>
     </ThemeSwitcher>
   ))
   .add('Toolbar', () => (
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
-      <TableToolbarStory
-        onSQONChange={console.log.bind(console)}
-        streamData={streamDummyData}
-      />
+      <ComponentContainer>
+        <TableToolbarStory
+          onSQONChange={console.log.bind(console)}
+          streamData={streamDummyData}
+        />
+      </ComponentContainer>
     </ThemeSwitcher>
   ))
   .add('Data Table', () => (
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
-      <DataTable
-        config={dummyConfig}
-        customTypes={{
-          list: props => {
-            const columnList =
-              get(props.original, props.column.listAccessor) || [];
-            const total = get(props.original, props.column.totalAccessor);
-            const firstValue = getSingleValue(columnList[0]);
-            return total > 1 ? <a href="">{total} total</a> : firstValue || '';
-          },
-        }}
-        fetchData={fetchDummyData}
-        streamData={streamDummyData}
-      />
+      <ComponentContainer>
+        <DataTable
+          config={dummyConfig}
+          customTypes={{
+            list: props => {
+              const columnList =
+                get(props.original, props.column.listAccessor) || [];
+              const total = get(props.original, props.column.totalAccessor);
+              const firstValue = getSingleValue(columnList[0]);
+              return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+            },
+          }}
+          fetchData={fetchDummyData}
+          streamData={streamDummyData}
+        />
+      </ComponentContainer>
     </ThemeSwitcher>
   ))
   .add('Live Data Table', () =>
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
-      <EnhancedDataTable />
+      <ComponentContainer>
+        <EnhancedDataTable />
+      </ComponentContainer>
     </ThemeSwitcher>
   );

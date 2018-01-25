@@ -12,3 +12,13 @@
   background: lightgrey;
   color: #f0f1f6;
 }
+.ReactTable .rt-thead {
+  overflow-y: scroll;
+}
+.ReactTable {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
