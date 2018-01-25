@@ -3,6 +3,11 @@
   border-radius: 5px;
 }
 .ReactTable .-pagination_button {
+  cursor: pointer;
   padding-left: 10px;
   padding-right: 10px;
+  color: lightgrey;
+}
+.ReactTable .-pagination_button.-current {
+  background: green;
 }
