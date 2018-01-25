@@ -6,8 +6,9 @@
   cursor: pointer;
   padding-left: 10px;
   padding-right: 10px;
-  color: lightgrey;
+  color: grey;
 }
 .ReactTable .-pagination_button.-current {
-  background: green;
+  background: lightgrey;
+  color: #f0f1f6;
 }

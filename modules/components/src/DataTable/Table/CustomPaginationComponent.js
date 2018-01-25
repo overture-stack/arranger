@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import classnames from 'classnames'
 import './style.css'
-
+import { range, min, max } from 'lodash'
 // import _ from './utils'
 
 const defaultButton = props => (
@@ -145,9 +145,29 @@ class ReactTablePagination extends Component {
 
 
 export default class CustomPaginationComponent extends ReactTablePagination {
+
+  constructor(props){
+    super(props)
+    this.state = {
+      ...this.state,
+      pagesShown: range(0, 10)
+    }
+    console.log(this.state);
+  }
+
+  getPagesShownShiftedDown = () => {
+    return this.state.pagesShown
+  }
+
+  getPagesShownShiftedUp = () => {
+    return this.state.pagesShown
+  }
+
   render(){
+    const numPagesShown = 5
     const {
       page,
+      pages,
       showPageSizeOptions,
       pageSizeOptions,
       pageSize,
@@ -198,15 +218,31 @@ export default class CustomPaginationComponent extends ReactTablePagination {
             <span className="-pageJump">
               <span className="-toStart -pagination_button">{'<<'}</span>
               <span className="-previous -pagination_button"
-                onClick={() => this.changePage(this.state.page-1 >= 0 ? this.state.page-1 : this.state.page)}
+                onClick={() => {
+                  this.changePage(this.state.page-1 >= 0 ? this.state.page-1 : this.state.page)
+                  this.setState({
+                    ...this.state,
+                    pagesShown: this.state.page-1 >= 0
+                    ? ( this.getPagesShownShiftedDown() )
+                    : pagesShown
+                  })
+                }}
               >{'<'}</span>
-              {[0, 1, 2, 3].map((pageIndex, i) => (
-                <span className="-pagination_button {this.state.page === pageIndex ? '-current' : ''}"
+              {this.state.pagesShown.map((pageIndex, i) => (
+                <span className={classnames("-pagination_button", this.state.page === pageIndex ? '-current' : '')}
                   onClick={() => this.changePage(pageIndex)} key={i}
                 >{pageIndex}</span>
               ))}
               <span className="-next -pagination_button"
-                onClick={() => this.changePage(this.state.page+1)}
+                onClick={() => {
+                  this.changePage(this.state.page+1 <= pages ? this.state.page+1 : this.state.page)
+                  this.setState({
+                    ...this.state,
+                    pagesShown: this.state.page+1 <= pages
+                    ? ( this.getPagesShownShiftedUp() )
+                    : pagesShown
+                  })
+                }}
               >{'>'}</span>
               <span className="-toEnd -pagination_button">{'>>'}</span>
             </span>
