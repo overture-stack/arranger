@@ -48,3 +48,19 @@ label {
 .row {
   display: flex;
 }
+
+.warning {
+  color: rgb(197, 18, 35);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.type-container {
+  margin: 10px 0;
+}
+
+.type-container label {
+  border: none;
+  font-size: 14px;
+  margin-right: 5px;
+}

@@ -102,7 +102,12 @@ class Dashboard extends React.Component {
     });
 
     if (!error) {
-      this.setState({ types, typesTotal: total });
+      this.setState({
+        types,
+        typesTotal: total,
+        newTypeIndex: '',
+        newTypeName: '',
+      });
     }
   };
 
@@ -226,13 +231,13 @@ class Dashboard extends React.Component {
                   TYPES ({this.state.typesTotal})
                 </label>
                 {this.state.types.map(x => (
-                  <div key={x.index}>
+                  <div key={x.index} className="type-container">
                     <div>
-                      <label>name: </label>
+                      <label>NAME: </label>
                       <span>{x.name}</span>
                     </div>
                     <div>
-                      <label>index: </label>
+                      <label>INDEX: </label>
                       <span
                         key={x.index}
                         onClick={() => this.setState({ activeType: x.index })}
@@ -251,7 +256,7 @@ class Dashboard extends React.Component {
                       </span>
                     </div>
                     <div>
-                      <label>active: </label>
+                      <label>ACTIVE: </label>
                       <input
                         type="checkbox"
                         checked={x.active}
@@ -259,19 +264,22 @@ class Dashboard extends React.Component {
                         onChange={() => {}}
                       />
                     </div>
-                    <div>
-                      <label>mappings: </label>
-                      {x.mappings ? (
-                        <pre>{JSON.stringify(x.mappings, null, 2)}</pre>
-                      ) : (
-                        `nope`
-                      )}
-                    </div>
+                    {!x.mappings && (
+                      <div className="warning">No mappings found.</div>
+                    )}
                   </div>
                 ))}
               </div>
             </section>
           )}
+          {this.state.activeProject &&
+            this.state.activeType && (
+              <section>
+                <div style={{ padding: 5 }}>
+                  <label>FIELDS (): </label>
+                </div>
+              </section>
+            )}
         </div>
       </div>
     );
