@@ -208,25 +208,33 @@ storiesOf('Table', module)
     </ThemeSwitcher>
   ))
   .add('Toolbar', () => (
-    <TableToolbarStory
-      onSQONChange={console.log.bind(console)}
-      streamData={streamDummyData}
-    />
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <TableToolbarStory
+        onSQONChange={console.log.bind(console)}
+        streamData={streamDummyData}
+      />
+    </ThemeSwitcher>
   ))
   .add('Data Table', () => (
-    <DataTable
-      config={dummyConfig}
-      customTypes={{
-        list: props => {
-          const columnList =
-            get(props.original, props.column.listAccessor) || [];
-          const total = get(props.original, props.column.totalAccessor);
-          const firstValue = getSingleValue(columnList[0]);
-          return total > 1 ? <a href="">{total} total</a> : firstValue || '';
-        },
-      }}
-      fetchData={fetchDummyData}
-      streamData={streamDummyData}
-    />
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <DataTable
+        config={dummyConfig}
+        customTypes={{
+          list: props => {
+            const columnList =
+              get(props.original, props.column.listAccessor) || [];
+            const total = get(props.original, props.column.totalAccessor);
+            const firstValue = getSingleValue(columnList[0]);
+            return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+          },
+        }}
+        fetchData={fetchDummyData}
+        streamData={streamDummyData}
+      />
+    </ThemeSwitcher>
   ))
-  .add('Live Data Table', () => <EnhancedDataTable />);
+  .add('Live Data Table', () =>
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <EnhancedDataTable />
+    </ThemeSwitcher>
+  );
