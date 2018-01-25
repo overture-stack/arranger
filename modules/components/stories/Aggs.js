@@ -2,6 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import EditAggs from '../src/Aggs/EditAggs';
+import RangeAgg from '../src/Aggs/RangeAgg';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
 import AggsPanell from '../src/Aggs/AggsPanell';
@@ -54,6 +55,26 @@ let aggs = [
       },
     ],
   },
+  {
+    field: 'diagnoses__days_to_death',
+    displayName: 'Days To Death',
+    active: false,
+    type: 'Numeric Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        doc_count: 3841,
+        key: '0.0',
+        key_as_string: null,
+      },
+      {
+        doc_count: 305,
+        key: '2000.0',
+        key_as_string: null,
+      },
+    ],
+  },
 ];
 
 storiesOf('Aggs', module).add('EditAggs', () => (
@@ -78,6 +99,73 @@ storiesOf('Aggs', module).add('TermAgg', () => (
         },
       ]}
       handleValueClick={action('Term Agg Selection')}
+    />
+  </div>
+));
+
+storiesOf('Aggs', module).add('RangeAgg', () => (
+  <div className="range-agg-wrapper">
+    <RangeAgg
+      field="days_to_death"
+      displayName="Days To Death"
+      buckets={[
+        {
+          doc_count: 3087,
+          key: '0.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 754,
+          key: '1000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 227,
+          key: '2000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 78,
+          key: '3000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 23,
+          key: '4000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 10,
+          key: '5000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 11,
+          key: '6000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 2,
+          key: '7000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 1,
+          key: '8000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 1,
+          key: '9000.0',
+          key_as_string: null,
+        },
+        {
+          doc_count: 2,
+          key: '10000.0',
+          key_as_string: null,
+        },
+      ]}
+      handleValueClick={action('Range Agg Selection Change')}
     />
   </div>
 ));
