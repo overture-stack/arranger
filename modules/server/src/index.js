@@ -18,15 +18,23 @@ import {
 
 let writeFile = promisify(fs.writeFile);
 
-let fetchMappings = ({ types, es }) => {
-  return Promise.all(
-    types.map(([, { index, es_type }]) =>
-      es.indices.getMapping({
-        index,
-        type: es_type,
-      }),
-    ),
-  );
+let fetchMappings = async ({ types, es }) => {
+  return await Promise.all(
+    types.map(({ index, name }) => {
+      return fetchMapping({ index, name, es })
+    })
+  )
+}
+
+let fetchMapping = ({ index, name, es }) => {
+  return es.indices.getMapping({
+      index,
+      type: name,
+    }).catch(err => {
+      return false
+    }).then(val => {
+      return val ? val : { [index]: false }
+    })
 };
 
 let mapHits = x => x.hits.hits.map(x => x._source);
@@ -138,6 +146,7 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
+<<<<<<< Updated upstream
     res.json({ types: mapHits(types) });
   });
 
@@ -187,6 +196,12 @@ let main = async () => {
     }
 
     res.json({ projects: mapHits(projects), total: projects.hits.total });
+=======
+    let hits = mapHits(types)
+    let mappings = await fetchMappings({ es, types: hits })
+    console.log(mappings)
+    res.json({ types: hits });
+>>>>>>> Stashed changes
   });
 
   app.use('/projects/add', async (req, res) => {
@@ -219,10 +234,7 @@ let main = async () => {
     }
 
     try {
-      projects = await es.search({
-        ...arrangerconfig.projectsIndex,
-        size: 1000,
-      });
+      projects = await es.search(arrangerconfig.projectsIndex);
     } catch (error) {
       try {
         await es.indices.create({
@@ -235,7 +247,7 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({ projects: mapHits(projects), total: projects.hits.total });
+    res.json({ projects: mapHits(projects) });
   });
 
   app.use('/projects', async (req, res) => {
@@ -249,7 +261,6 @@ let main = async () => {
       projectsIndex: {
         index: 'arranger-projects',
         type: 'arranger-projects',
-        size: 1000,
       },
     };
 
@@ -267,10 +278,7 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-    res.json({
-      projects: projects.hits.hits.map(x => x._source),
-      total: projects.hits.total,
-    });
+    res.json({ projects: projects.hits.hits.map(x => x._source) });
   });
 
   http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`));
