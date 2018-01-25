@@ -306,8 +306,26 @@ class Dashboard extends React.Component {
                   </label>
                 </div>
                 {this.state.fields.map(x => (
-                  <div key={x.index} className="type-container">
+                  <div
+                    key={x.index}
+                    className="type-container"
+                    onClick={() => this.setState({ activeField: x })}
+                  >
                     {x.field}
+                  </div>
+                ))}
+              </section>
+            )}
+          {this.state.activeProject &&
+            this.state.activeType &&
+            this.state.activeField && (
+              <section>
+                <div style={{ padding: 5 }}>
+                  <label className="projects">CONFIGURE FIELD</label>
+                </div>
+                {Object.entries(this.state.activeField).map(([key, val]) => (
+                  <div key={key} className="type-container">
+                    {key}: {val}
                   </div>
                 ))}
               </section>
