@@ -18,23 +18,27 @@ import {
 
 let writeFile = promisify(fs.writeFile);
 
-let fetchMappings = async ({ types, es }) => {
-  return await Promise.all(
-    types.map(({ index, name }) => {
-      return fetchMapping({ index, name, es })
-    })
-  )
-}
-
-let fetchMapping = ({ index, name, es }) => {
-  return es.indices.getMapping({
+let fetchMapping = ({ index, es }) => {
+  return es.indices
+    .getMapping({
       index,
-      type: name,
-    }).catch(err => {
-      return false
-    }).then(val => {
-      return val ? val : { [index]: false }
+      type: index,
     })
+    .catch(err => {
+      // TODO: return something more useful than false
+      return false;
+    })
+    .then(val => {
+      return { index: index, mapping: val };
+    });
+};
+
+let fetchMappings = ({ types, es }) => {
+  return Promise.all(
+    types.map(({ index }) => {
+      return fetchMapping({ index, es });
+    }),
+  );
 };
 
 let mapHits = x => x.hits.hits.map(x => x._source);
@@ -146,8 +150,16 @@ let main = async () => {
       return res.json({ error: error.message });
     }
 
-<<<<<<< Updated upstream
-    res.json({ types: mapHits(types) });
+    let hits = mapHits(types);
+    let mappings = await fetchMappings({ es, types: hits });
+    types = hits.map(x => {
+      return {
+        ...x,
+        mappings: mappings.find(y => y.index === x.index).mapping,
+      };
+    })
+    console.log(types)
+    res.json({ types });
   });
 
   app.use('/projects/:id/delete', async (req, res) => {
@@ -196,12 +208,6 @@ let main = async () => {
     }
 
     res.json({ projects: mapHits(projects), total: projects.hits.total });
-=======
-    let hits = mapHits(types)
-    let mappings = await fetchMappings({ es, types: hits })
-    console.log(mappings)
-    res.json({ types: hits });
->>>>>>> Stashed changes
   });
 
   app.use('/projects/add', async (req, res) => {

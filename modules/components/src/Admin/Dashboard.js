@@ -213,6 +213,12 @@ class Dashboard extends React.Component {
                         onChange={() => {}}
                       />
                     </div>
+                    <div>
+                      <label>mappings: </label>
+                      { x.mappings ? (
+                        <pre>{ (JSON.stringify(x.mappings, null, 2)) }</pre>
+                      ) : `nope` }
+                    </div>
                   </div>
                 ))}
               </div>
