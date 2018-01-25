@@ -212,19 +212,25 @@ class Dashboard extends React.Component {
           {this.state.activeProject && (
             <section>
               <div style={{ padding: 5 }}>
-                <input
-                  placeholder="Type name"
-                  value={this.state.newTypeName}
-                  onChange={e => this.setState({ newTypeName: e.target.value })}
-                />
-                <input
-                  placeholder="index"
-                  value={this.state.newTypeIndex}
-                  onChange={e =>
-                    this.setState({ newTypeIndex: e.target.value })
-                  }
-                />
-                <button onClick={this.addType}>Add Type</button>
+                <div>
+                  <input
+                    placeholder="Type name"
+                    value={this.state.newTypeName}
+                    onChange={e =>
+                      this.setState({ newTypeName: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <input
+                    placeholder="index"
+                    value={this.state.newTypeIndex}
+                    onChange={e =>
+                      this.setState({ newTypeIndex: e.target.value })
+                    }
+                  />
+                  <button onClick={this.addType}>+</button>
+                </div>
               </div>
               <div>
                 <label className="projects">
