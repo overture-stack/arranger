@@ -39,8 +39,8 @@ export const AVAILABLE_THEMES = [
       stylePath: './themeStyles/default.css'
     },
     {
-      id: "kids_first",
-      title: "Kids First",
-      stylePath: './themeStyles/kids_first.css'
+      id: "beagle",
+      title: "Beagle",
+      stylePath: './themeStyles/beagle.css'
     }
 ]
