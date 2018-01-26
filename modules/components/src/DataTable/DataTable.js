@@ -51,15 +51,23 @@ class DataTable extends React.Component {
           pageSize={pageSize}
           type={this.props.config.type}
         />
-        <Table
-          sqon={sqon}
-          config={{ ...this.props.config, columns }}
-          fetchData={fetchData}
-          onSelectionChange={onSelectionChange}
-          onPaginationChange={state => this.setState(state)}
-          onSortedChange={sort => this.setState({ sort, page: 0 })}
-          defaultPageSize={pageSize}
-        />
+        <div style={{
+          position: 'absolute',
+          left: '0px',
+          right: '0px',
+          bottom: '0px',
+          top: '50px',
+        }}>
+          <Table
+            sqon={sqon}
+            config={{ ...this.props.config, columns }}
+            fetchData={fetchData}
+            onSelectionChange={onSelectionChange}
+            onPaginationChange={state => this.setState(state)}
+            onSortedChange={sort => this.setState({ sort, page: 0 })}
+            defaultPageSize={pageSize}
+          />
+        </div>
       </div>
     );
   }

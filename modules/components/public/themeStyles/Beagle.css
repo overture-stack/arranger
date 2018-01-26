@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+
+div {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.ReactTable {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.8em;
+}
+
+.ReactTable .rt-tbody .rt-tr-group{
+  border-bottom: none
+}
+
+.ReactTable .rt-tbody .rt-td {
+  font-family: sans-serif;
+  border-right: 1px solid #cacbcf;
+}
+
+.ReactTable .rt-tbody .rt-td :first-child {
+  font-family: sans-serif;
+}
+
+.ReactTable.-striped .rt-th {
+  font-weight: bolder;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #cacbcf;
+  border-right: 1px solid #cacbcf;
+}
+
+.ReactTable .rt-resizable-header-content {
+  color: #404c9a;
+}
+
+.ReactTable .rt-thead {
+    background-color: #edeef1;
+}
+
+.ReactTable.-striped .rt-tr.-odd {
+  background-color: #f4f5f8;
+}
+
+.ReactTable .-pagination {
+    height: 64px;
+}
+.ReactTable .-pagination .-pageJump {
+  border: solid 1px #cacbcf;
+  border-radius: 10px;
+  height: 30px;
+  display: flex;
+  overflow: hidden;
+}
+.ReactTable .-pagination_button {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #74757d;
+  border-right: solid 1px #cacbcf;
+  min-width: 34px;
+  padding-left: 0px;
+  padding-right: 0px;
+  align-items: center;
+  justify-content: center;
+}
+.ReactTable .-pagination_button.-current {
+  background: #f0f1f6;
+  color: #009bb8;
+}
+.ReactTable a {
+  color: #90278e;
+}
+.ReactTable .rt-table {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 64px;
+}
+.ReactTable .pagination-bottom {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background: white;
+  height: 64px;
+}

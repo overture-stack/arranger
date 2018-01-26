@@ -2,6 +2,8 @@ import React from 'react';
 import { get, intersection, xor, noop } from 'lodash';
 
 import ReactTable from './EnhancedReactTable';
+import { ReactTablePagination } from 'react-table';
+import CustomPaginationComponent from './CustomPaginationComponent'
 
 import { compose, defaultProps } from 'recompose';
 
@@ -137,10 +139,11 @@ class DataTable extends React.Component {
         columns={columns}
         defaultPageSize={defaultPageSize}
         className="-striped -highlight"
+        PaginationComponent={ CustomPaginationComponent }
         {...checkboxProps}
         {...fetchFromServerProps}
       />
-    );
+    )
   }
 }
 

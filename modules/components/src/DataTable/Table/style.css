@@ -1,0 +1,28 @@
+.-pageJump {
+  border: solid 1px lightgrey;
+  border-radius: 5px;
+}
+.ReactTable .-pagination_button {
+  cursor: pointer;
+  padding-left: 10px;
+  padding-right: 10px;
+  color: grey;
+  user-select: none;
+}
+.ReactTable .-pagination_button.-current {
+  background: lightgrey;
+  color: #f0f1f6;
+}
+.ReactTable .rt-thead {
+  overflow-y: scroll;
+}
+.ReactTable .rt-tbody {
+  overflow-y: scroll;
+}
+.ReactTable {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}

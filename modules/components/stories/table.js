@@ -5,6 +5,7 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
+import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher'
 
 import DataTable, {
   Table,
@@ -196,34 +197,63 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
     }}
   />
 ));
+
+const ComponentContainer = (props) => (
+  <div style={{
+    position: 'absolute',
+    left: '0px',
+    right: '0px',
+    top: '50px',
+    bottom: '0px',
+  }}>{props.children}</div>
+)
+
 storiesOf('Table', module)
   .add('Table', () => (
-    <Table
-      config={dummyConfig}
-      fetchData={fetchDummyData}
-      onSelectionChange={action('selection changed')}
-    />
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <ComponentContainer>
+        <Table
+          config={dummyConfig}
+          fetchData={fetchDummyData}
+          onSelectionChange={action('selection changed')}
+        />
+      </ComponentContainer>
+    </ThemeSwitcher>
   ))
   .add('Toolbar', () => (
-    <TableToolbarStory
-      onSQONChange={console.log.bind(console)}
-      streamData={streamDummyData}
-    />
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <ComponentContainer>
+        <TableToolbarStory
+          onSQONChange={console.log.bind(console)}
+          streamData={streamDummyData}
+        />
+      </ComponentContainer>
+    </ThemeSwitcher>
   ))
   .add('Data Table', () => (
-    <DataTable
-      config={dummyConfig}
-      customTypes={{
-        list: props => {
-          const columnList =
-            get(props.original, props.column.listAccessor) || [];
-          const total = get(props.original, props.column.totalAccessor);
-          const firstValue = getSingleValue(columnList[0]);
-          return total > 1 ? <a href="">{total} total</a> : firstValue || '';
-        },
-      }}
-      fetchData={fetchDummyData}
-      streamData={streamDummyData}
-    />
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <ComponentContainer>
+        <DataTable
+          config={dummyConfig}
+          customTypes={{
+            list: props => {
+              const columnList =
+                get(props.original, props.column.listAccessor) || [];
+              const total = get(props.original, props.column.totalAccessor);
+              const firstValue = getSingleValue(columnList[0]);
+              return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+            },
+          }}
+          fetchData={fetchDummyData}
+          streamData={streamDummyData}
+        />
+      </ComponentContainer>
+    </ThemeSwitcher>
   ))
-  .add('Live Data Table', () => <EnhancedDataTable />);
+  .add('Live Data Table', () =>
+    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+      <ComponentContainer>
+        <EnhancedDataTable />
+      </ComponentContainer>
+    </ThemeSwitcher>
+  );
