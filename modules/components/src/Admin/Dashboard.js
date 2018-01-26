@@ -41,6 +41,14 @@ class Dashboard extends React.Component {
   componentDidMount() {
     this.getProjects({ eshost: this.state.eshost });
 
+    socket.io.on('connect_error', error => {
+      this.setState({ error: error.message });
+    });
+
+    socket.io.on('reconnect', a => {
+      this.setState({ error: null });
+    });
+
     socket.on('server::projectsStatus', projectStates => {
       this.setState({ projectStates });
     });
@@ -254,12 +262,27 @@ class Dashboard extends React.Component {
                   <div style={{ marginLeft: 'auto' }}>
                     {this.state.activeProject === x.id && (
                       <>
-                        <span
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => this.spinup({ id: x.id })}
-                        >
-                          🌀
-                        </span>
+                        {x.active &&
+                          this.state.projectStates.find(p => p.id === x.id)
+                            ?.status !== 200 && (
+                            <span
+                              className="onoff"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => this.spinup({ id: x.id })}
+                            >
+                              ⚡️
+                            </span>
+                          )}
+                        {this.state.projectStates.find(p => p.id === x.id)
+                          ?.status === 200 && (
+                          <span
+                            className="onoff"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => this.spinup({ id: x.id })}
+                          >
+                            💤
+                          </span>
+                        )}
                         <span
                           style={{ cursor: 'pointer' }}
                           onClick={() => this.deleteProject({ id: x.id })}
@@ -273,9 +296,9 @@ class Dashboard extends React.Component {
                         <span>✅</span>
                         <span>
                           {this.state.projectStates.find(p => p.id === x.id)
-                            ?.status === 400
-                            ? `⬇️`
-                            : `⬆️`}
+                            ?.status === 400 && `⬇️`}
+                          {this.state.projectStates.find(p => p.id === x.id)
+                            ?.status === 200 && `⬆️`}
                         </span>
                       </>
                     )}
