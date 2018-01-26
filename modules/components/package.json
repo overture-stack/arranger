@@ -48,16 +48,19 @@
     "prettier": "^1.9.2"
   },
   "dependencies": {
-    "@storybook/addon-actions": "^3.3.8",
     "babel-polyfill": "^6.26.0",
     "downshift": "^1.23.2",
     "filesaver.js": "^0.2.0",
     "filesize": "^3.5.11",
+    "graphql": "^0.12.3",
     "lodash": "^4.17.4",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
+    "react-router-dom": "^4.2.2",
     "react-table": "^6.7.6",
     "recompose": "^0.26.0",
+    "semantic-ui-css": "^2.2.12",
+    "semantic-ui-react": "^0.77.2",
     "socket.io-client": "^2.0.4",
     "streamsaver": "^1.0.1",
     "uuid": "^3.1.0"

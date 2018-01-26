@@ -1,0 +1,78 @@
+html,
+body,
+#root,
+.app {
+  height: 100vh;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: Helvetica;
+}
+
+section {
+  padding: 10px;
+}
+
+label {
+  letter-spacing: 1px;
+  border-bottom: 1px solid;
+  margin-bottom: 5px;
+  display: inline-block;
+  color: #5a8f94;
+}
+
+.title-arranger {
+  padding: 10px;
+  background-color: #5b8f94;
+  font-weight: bold;
+  color: white;
+}
+
+.title-elasticsearch {
+  padding: 10px;
+  background-color: #525145;
+  color: white;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+
+.eshost-input {
+  padding: 0 10px;
+  border: none;
+  outline: none;
+  display: flex;
+  border-bottom: 1px solid #e4e4e4;
+  flex-grow: 1;
+}
+
+.error {
+  background-color: #af2f4c;
+  font-weight: bold;
+  padding: 10px;
+  color: white;
+}
+
+.row {
+  display: flex;
+}
+
+.warning {
+  color: rgb(197, 18, 35);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.type-container {
+  margin: 10px 0;
+}
+
+.type-container label {
+  border: none;
+  font-size: 14px;
+  margin-right: 5px;
+}
+
+.field-item:hover {
+  cursor: pointer;
+  background-color: rgb(240, 238, 227);
+}
