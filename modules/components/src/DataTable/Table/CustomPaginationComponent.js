@@ -191,27 +191,27 @@ export default class CustomPaginationComponent extends ReactTablePagination {
   }
 
   onStartPageClick = () => {
-    const { page, minPageShown, maxPageShown } = this.state
-    const numPagesShown = maxPageShown - minPageShown
     this.changePage(0)
     this.setState({
       ...this.state,
       minPageShown: 0,
-      maxPageShown: numPagesShown
+      maxPageShown: this.getNumPagesShown()
     })
   }
 
   onEndPageClick = () => {
     const { pages } = this.props
-    const { page, minPageShown, maxPageShown } = this.state
-    const numPagesShown = maxPageShown - minPageShown
     this.changePage(pages - 1)
     this.setState({
       ...this.state,
-      minPageShown: pages - numPagesShown,
+      minPageShown: pages - this.getNumPagesShown(),
       maxPageShown: pages
     })
   }
+
+  getNumPagesShown = () => (
+    this.state.maxPageShown - this.state.minPageShown
+  )
 
   render(){
     const numPagesShown = this.state.maxPageShown - this.state.minPageShown
