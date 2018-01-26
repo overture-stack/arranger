@@ -207,9 +207,8 @@ const ComponentContainer = props => (
       top: '50px',
       bottom: '0px',
     }}
-  >
-    {props.children}
-  </div>
+    {...props}
+  />
 );
 
 storiesOf('Table', module)
