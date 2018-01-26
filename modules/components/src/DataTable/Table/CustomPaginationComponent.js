@@ -157,7 +157,6 @@ export default class CustomPaginationComponent extends ReactTablePagination {
   }
 
   onPreviousPageClick = () => {
-    const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     this.changePage(max([this.state.page-1, 0]))
     this.setState({
       ...this.state,
@@ -174,7 +173,6 @@ export default class CustomPaginationComponent extends ReactTablePagination {
 
   onNextPageClick = () => {
     const { pages } = this.props
-    const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     this.changePage(min([this.state.page+1, pages]))
     this.setState({
       ...this.state,
