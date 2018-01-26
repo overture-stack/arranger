@@ -208,7 +208,7 @@ export default class CustomPaginationComponent extends ReactTablePagination {
   }
 
   getNumPagesShown = () => (
-    this.state.maxPageShown - this.state.minPageShown
+    10
   )
 
   render(){

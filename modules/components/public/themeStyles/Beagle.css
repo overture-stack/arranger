@@ -59,6 +59,8 @@ div {
   color: #74757d;
   border-right: solid 1px #cacbcf;
   min-width: 34px;
+  padding-left: 0px;
+  padding-right: 0px;
   align-items: center;
   justify-content: center;
 }
