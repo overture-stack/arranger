@@ -156,6 +156,42 @@ export default class CustomPaginationComponent extends ReactTablePagination {
     console.log(this.state);
   }
 
+  onPreviousPageClick = () => {
+    const numPagesShown = this.state.maxPageShown - this.state.minPageShown
+    this.changePage(max([this.state.page-1, 0]))
+    this.setState({
+      ...this.state,
+      minPageShown: this.state.page <= this.state.minPageShown
+        ? max([this.state.minPageShown - 1, 0])
+        : this.state.minPageShown,
+      maxPageShown: this.state.page <= this.state.minPageShown
+        ? (this.state.minPageShown - 1 < 0
+          ? this.state.maxPageShown
+          : this.state.maxPageShown - 1
+        ) : this.state.maxPageShown,
+    })
+  }
+
+  onNextPageClick = () => {
+    const {
+      pages
+    } = this.props
+    const numPagesShown = this.state.maxPageShown - this.state.minPageShown
+    this.changePage(min([this.state.page+1, pages]))
+    this.setState({
+      ...this.state,
+      minPageShown: this.state.page >= this.state.maxPageShown - 1
+        ? (this.state.maxPageShown < pages
+          ? this.state.minPageShown + 1
+          : this.state.minPageShown
+        )
+        : this.state.minPageShown,
+      maxPageShown: this.state.page >= this.state.maxPageShown - 1
+        ? min([this.state.maxPageShown + 1, pages])
+        : this.state.maxPageShown,
+    })
+  }
+
   render(){
     const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     const {
@@ -205,20 +241,7 @@ export default class CustomPaginationComponent extends ReactTablePagination {
             <span className="-pageJump">
               <span className="-toStart -pagination_button">{'<<'}</span>
               <span className="-previous -pagination_button"
-                onClick={() => {
-                  this.changePage(max([this.state.page-1, 0]))
-                  this.setState({
-                    ...this.state,
-                    minPageShown: this.state.page <= this.state.minPageShown
-                      ? max([this.state.minPageShown - 1, 0])
-                      : this.state.minPageShown,
-                    maxPageShown: this.state.page <= this.state.minPageShown
-                      ? (this.state.minPageShown - 1 < 0
-                        ? this.state.maxPageShown
-                        : this.state.maxPageShown - 1
-                      ) : this.state.maxPageShown,
-                  })
-                }}
+                onClick={ this.onPreviousPageClick }
               >{'<'}</span>
               {
                 range(this.state.minPageShown, this.state.maxPageShown)
@@ -232,21 +255,7 @@ export default class CustomPaginationComponent extends ReactTablePagination {
                   ))
               }
               <span className="-next -pagination_button"
-                onClick={() => {
-                  this.changePage(min([this.state.page+1, pages]))
-                  this.setState({
-                    ...this.state,
-                    minPageShown: this.state.page >= this.state.maxPageShown - 1
-                      ? (this.state.maxPageShown < pages
-                        ? this.state.minPageShown + 1
-                        : this.state.minPageShown
-                      )
-                      : this.state.minPageShown,
-                    maxPageShown: this.state.page >= this.state.maxPageShown - 1
-                      ? min([this.state.maxPageShown + 1, pages])
-                      : this.state.maxPageShown,
-                  })
-                }}
+                onClick={ this.onNextPageClick }
               >{'>'}</span>
               <span className="-toEnd -pagination_button">{'>>'}</span>
             </span>
