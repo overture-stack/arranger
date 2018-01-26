@@ -150,21 +150,16 @@ export default class CustomPaginationComponent extends ReactTablePagination {
     super(props)
     this.state = {
       ...this.state,
-      pagesShown: range(0, 10)
+      minPageShown: 0,
+      maxPageShown: 10,
     }
     console.log(this.state);
   }
 
-  getPagesShownShiftedDown = () => {
-    return this.state.pagesShown
-  }
 
-  getPagesShownShiftedUp = () => {
-    return this.state.pagesShown
-  }
 
   render(){
-    const numPagesShown = 5
+    const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     const {
       page,
       pages,
@@ -219,28 +214,40 @@ export default class CustomPaginationComponent extends ReactTablePagination {
               <span className="-toStart -pagination_button">{'<<'}</span>
               <span className="-previous -pagination_button"
                 onClick={() => {
-                  this.changePage(this.state.page-1 >= 0 ? this.state.page-1 : this.state.page)
+                  this.changePage(max([this.state.page-1, 0]))
                   this.setState({
                     ...this.state,
-                    pagesShown: this.state.page-1 >= 0
-                      ? ( this.getPagesShownShiftedDown() )
-                      : this.state.pagesShown
+                    minPageShown: this.state.page <= this.state.minPageShown
+                      ? this.state.minPageShown - 1
+                      : this.state.minPageShown,
+                    maxPageShown: this.state.page <= this.state.minPageShown
+                      ? this.state.maxPageShown - 1
+                      : this.state.maxPageShown,
                   })
                 }}
               >{'<'}</span>
-              {this.state.pagesShown.map((pageIndex, i) => (
-                <span className={classnames("-pagination_button", this.state.page === pageIndex ? '-current' : '')}
-                  onClick={() => this.changePage(pageIndex)} key={i}
-                >{pageIndex + 1}</span>
-              ))}
+              {
+                range(this.state.minPageShown, this.state.maxPageShown)
+                  .map((pageIndex, i) => (
+                    <span className={classnames(
+                        "-pagination_button",
+                        this.state.page === pageIndex ? '-current' : ''
+                      )}
+                      onClick={() => this.changePage(pageIndex)} key={i}
+                    >{pageIndex + 1}</span>
+                  ))
+              }
               <span className="-next -pagination_button"
                 onClick={() => {
-                  this.changePage(this.state.page+1 <= pages ? this.state.page+1 : this.state.page)
+                  this.changePage(min([this.state.page+1, pages]))
                   this.setState({
                     ...this.state,
-                    pagesShown: this.state.page+1 <= pages
-                      ? ( this.getPagesShownShiftedUp() )
-                      : this.state.pagesShown
+                    minPageShown: this.state.page >= this.state.maxPageShown - 1
+                      ? this.state.minPageShown + 1
+                      : this.state.minPageShown,
+                    maxPageShown: this.state.page >= this.state.maxPageShown - 1
+                      ? this.state.maxPageShown + 1
+                      : this.state.maxPageShown,
                   })
                 }}
               >{'>'}</span>

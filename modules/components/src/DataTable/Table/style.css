@@ -7,6 +7,7 @@
   padding-left: 10px;
   padding-right: 10px;
   color: grey;
+  user-select: none;
 }
 .ReactTable .-pagination_button.-current {
   background: lightgrey;
