@@ -1,4 +1,4 @@
-import { flattenDeep } from 'lodash'
+import { flattenDeep } from 'lodash';
 
 export let esToAggTypeMap = {
   string: 'Aggregations',
@@ -12,7 +12,7 @@ export let esToAggTypeMap = {
   double: 'NumericAggregations',
   integer: 'NumericAggregations',
   float: 'NumericAggregations',
-}
+};
 
 // add two underscores after a value if it's truthy (not an empty string)
 // used to create fields representing es paths
@@ -20,8 +20,8 @@ export let esToAggTypeMap = {
 // diagnoses.treatments 👎
 // vs
 // diagnoses__treatments 👍
-type TappendUnderscores = (a: string) => string
-let appendUnderscores: TappendUnderscores = x => (x ? x + '__' : '')
+type TappendUnderscores = (a: string) => string;
+let appendUnderscores: TappendUnderscores = x => (x ? x + '__' : '');
 
 let mappingToAggsType = (properties, parent = '') => {
   return flattenDeep(
@@ -33,14 +33,14 @@ let mappingToAggsType = (properties, parent = '') => {
       .map(
         ([field, data]) =>
           data.type && data.type !== 'nested'
-            ? `${appendUnderscores(parent) + field}: ${esToAggTypeMap[
-                data.type
-              ]}`
+            ? `${appendUnderscores(parent) + field}: ${
+                esToAggTypeMap[data.type]
+              }`
             : mappingToAggsType(
                 data.properties,
                 appendUnderscores(parent) + field,
               ),
       ),
-  )
-}
-export default mappingToAggsType
+  );
+};
+export default mappingToAggsType;
