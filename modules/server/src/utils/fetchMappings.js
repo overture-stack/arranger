@@ -1,5 +1,10 @@
-export let fetchMapping = ({ index, es }) => {
+export let fetchMapping = async ({ index, es }) => {
   // TODO: check for aliases!!
+
+  let aliases = await es.cat.aliases({ format: 'json' });
+
+  console.log(123, aliases);
+
   return es.indices
     .getMapping({
       index,
