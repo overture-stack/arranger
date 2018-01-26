@@ -4,20 +4,16 @@ div {
   font-family: 'Montserrat', sans-serif;
 }
 
-html {
-  background-color: #f4f5f8;
-}
-
 /***********************************/
 /* styling for the table component */
 /***********************************/
 .ReactTable {
-  font-family: "Montserrat", sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 0.8em;
 }
 
-.ReactTable .rt-tbody .rt-tr-group{
-  border-bottom: none
+.ReactTable .rt-tbody .rt-tr-group {
+  border-bottom: none;
 }
 
 .ReactTable .rt-tbody .rt-td {
@@ -42,7 +38,7 @@ html {
 }
 
 .ReactTable .rt-thead {
-    background-color: #edeef1;
+  background-color: #edeef1;
 }
 
 .ReactTable.-striped .rt-tr.-odd {
@@ -50,7 +46,7 @@ html {
 }
 
 .ReactTable .-pagination {
-    height: 64px;
+  height: 64px;
 }
 .ReactTable .-pagination .-pageJump {
   border: solid 1px #cacbcf;
@@ -94,38 +90,38 @@ html {
   height: 64px;
 }
 
-
 /***********************************/
 /** styling for the aggregations ***/
 /***********************************/
-.aggregation-card{
+.aggregation-card {
   padding: 10px;
   margin-top: 5px;
   margin-bottom: 5px;
   background: white;
   border: solid 1px #d4d6dd;
   border-left: solid 5px;
-} .aggregation-card:nth-child(5n+1) {
-    border-left-color: #a42c90;
-  }
-  .aggregation-card:nth-child(5n+2) {
-    border-left-color: #00afed;
-  }
-  .aggregation-card:nth-child(5n+3) {
-    border-left-color: #ff9324;
-  }
-  .aggregation-card:nth-child(5n+4) {
-    border-left-color: #009bb8;
-  }
-  .aggregation-card:nth-child(5n+5) {
-    border-left-color: #d8202f;
-  }
-.aggregation-card .title-wrapper{
+}
+.aggregation-card:nth-child(5n + 1) {
+  border-left-color: #a42c90;
+}
+.aggregation-card:nth-child(5n + 2) {
+  border-left-color: #00afed;
+}
+.aggregation-card:nth-child(5n + 3) {
+  border-left-color: #ff9324;
+}
+.aggregation-card:nth-child(5n + 4) {
+  border-left-color: #009bb8;
+}
+.aggregation-card:nth-child(5n + 5) {
+  border-left-color: #d8202f;
+}
+.aggregation-card .title-wrapper {
   padding-bottom: 7px;
   color: #404c9a;
   border-bottom: solid 1px #e0e1e6;
 }
-.aggregation-card .title-wrapper .title{
+.aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
   font-size: 0.9em;
@@ -134,12 +130,12 @@ html {
 .aggregation-card .bucket {
   padding-top: 5px;
 }
-.aggregation-card .bucket-item{
+.aggregation-card .bucket-item {
   padding-top: 5px;
   font-size: 0.8em;
 }
-.aggregation-card .bucket-item .bucket-count{
-	border-radius: 5px;
+.aggregation-card .bucket-item .bucket-count {
+  border-radius: 5px;
   background-color: rgba(169, 173, 192, 0.3);
   color: #343434;
   padding-left: 10px;
