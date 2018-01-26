@@ -1,3 +1,7 @@
+import { flattenDeep } from 'lodash';
+import { mappingToAggsState } from '@arranger/mapping-utils';
+import mapHits from '../utils/mapHits';
+
 export default async (req, res) => {
   let { es } = req.context;
   let { id, index } = req.params;

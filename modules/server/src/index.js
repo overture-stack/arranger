@@ -20,32 +20,6 @@ import projectsRoutes from './projects';
 
 let writeFile = promisify(fs.writeFile);
 
-let fetchMapping = ({ index, es }) => {
-  // TODO: check for aliases!!
-  return es.indices
-    .getMapping({
-      index,
-      type: index,
-    })
-    .catch(err => {
-      // TODO: return something more useful than false
-      return false;
-    })
-    .then(val => {
-      return { index: index, mapping: val };
-    });
-};
-
-let fetchMappings = ({ types, es }) => {
-  return Promise.all(
-    types.map(({ index }) => {
-      return fetchMapping({ index, es });
-    }),
-  );
-};
-
-let mapHits = x => x.hits.hits.map(x => x._source);
-
 let port = process.env.PORT || 5050;
 
 let main = async () => {

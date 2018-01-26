@@ -1,3 +1,5 @@
+import mapHits from '../utils/mapHits';
+
 export default async (req, res) => {
   let { es } = req.context;
 
@@ -26,7 +28,7 @@ export default async (req, res) => {
   }
 
   res.json({
-    projects: projects.hits.hits.map(x => x._source),
+    projects: mapHits(projects),
     total: projects.hits.total,
   });
 };

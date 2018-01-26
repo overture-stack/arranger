@@ -1,3 +1,5 @@
+import mapHits from '../utils/mapHits';
+
 export default async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
