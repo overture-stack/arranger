@@ -218,22 +218,24 @@ export default class CustomPaginationComponent extends ReactTablePagination {
                   this.setState({
                     ...this.state,
                     minPageShown: this.state.page <= this.state.minPageShown
-                      ? this.state.minPageShown - 1
+                      ? max([this.state.minPageShown - 1, 0])
                       : this.state.minPageShown,
                     maxPageShown: this.state.page <= this.state.minPageShown
-                      ? this.state.maxPageShown - 1
-                      : this.state.maxPageShown,
+                      ? (this.state.minPageShown - 1 < 0
+                        ? this.state.maxPageShown
+                        : this.state.maxPageShown - 1
+                      ) : this.state.maxPageShown,
                   })
                 }}
               >{'<'}</span>
               {
                 range(this.state.minPageShown, this.state.maxPageShown)
-                  .map((pageIndex, i) => (
-                    <span className={classnames(
+                  .map(pageIndex => (
+                    <span key={pageIndex} className={classnames(
                         "-pagination_button",
                         this.state.page === pageIndex ? '-current' : ''
                       )}
-                      onClick={() => this.changePage(pageIndex)} key={i}
+                      onClick={() => this.changePage(pageIndex)}
                     >{pageIndex + 1}</span>
                   ))
               }
@@ -243,10 +245,13 @@ export default class CustomPaginationComponent extends ReactTablePagination {
                   this.setState({
                     ...this.state,
                     minPageShown: this.state.page >= this.state.maxPageShown - 1
-                      ? this.state.minPageShown + 1
+                      ? (this.state.maxPageShown < pages
+                        ? this.state.minPageShown + 1
+                        : this.state.minPageShown
+                      )
                       : this.state.minPageShown,
                     maxPageShown: this.state.page >= this.state.maxPageShown - 1
-                      ? this.state.maxPageShown + 1
+                      ? min([this.state.maxPageShown + 1, pages])
                       : this.state.maxPageShown,
                   })
                 }}
