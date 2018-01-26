@@ -173,9 +173,7 @@ export default class CustomPaginationComponent extends ReactTablePagination {
   }
 
   onNextPageClick = () => {
-    const {
-      pages
-    } = this.props
+    const { pages } = this.props
     const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     this.changePage(min([this.state.page+1, pages]))
     this.setState({
@@ -189,6 +187,29 @@ export default class CustomPaginationComponent extends ReactTablePagination {
       maxPageShown: this.state.page >= this.state.maxPageShown - 1
         ? min([this.state.maxPageShown + 1, pages])
         : this.state.maxPageShown,
+    })
+  }
+
+  onStartPageClick = () => {
+    const { page, minPageShown, maxPageShown } = this.state
+    const numPagesShown = maxPageShown - minPageShown
+    this.changePage(0)
+    this.setState({
+      ...this.state,
+      minPageShown: 0,
+      maxPageShown: numPagesShown
+    })
+  }
+
+  onEndPageClick = () => {
+    const { pages } = this.props
+    const { page, minPageShown, maxPageShown } = this.state
+    const numPagesShown = maxPageShown - minPageShown
+    this.changePage(pages - 1)
+    this.setState({
+      ...this.state,
+      minPageShown: pages - numPagesShown,
+      maxPageShown: pages
     })
   }
 
@@ -239,7 +260,9 @@ export default class CustomPaginationComponent extends ReactTablePagination {
           showPageJump
           ? (
             <span className="-pageJump">
-              <span className="-toStart -pagination_button">{'<<'}</span>
+              <span className="-toStart -pagination_button"
+                onClick={ this.onStartPageClick }
+              >{'<<'}</span>
               <span className="-previous -pagination_button"
                 onClick={ this.onPreviousPageClick }
               >{'<'}</span>
@@ -257,7 +280,9 @@ export default class CustomPaginationComponent extends ReactTablePagination {
               <span className="-next -pagination_button"
                 onClick={ this.onNextPageClick }
               >{'>'}</span>
-              <span className="-toEnd -pagination_button">{'>>'}</span>
+              <span className="-toEnd -pagination_button"
+                onClick={ this.onEndPageClick }
+              >{'>>'}</span>
             </span>
           )
           : (
