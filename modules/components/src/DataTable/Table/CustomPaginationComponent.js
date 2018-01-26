@@ -10,6 +10,7 @@ const defaultButton = props => (
   </button>
 )
 
+// this is the original ReactTablePagination component from reactTable
 class ReactTablePagination extends Component {
   constructor (props) {
     super()
