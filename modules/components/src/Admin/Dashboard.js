@@ -25,6 +25,7 @@ class Dashboard extends React.Component {
     projectsTotal: 0,
     newProjectName: '',
     activeProject: null,
+    projectStates: [],
 
     newTypeIndex: '',
     newTypeName: '',
@@ -40,8 +41,8 @@ class Dashboard extends React.Component {
   componentDidMount() {
     this.getProjects({ eshost: this.state.eshost });
 
-    socket.on('server::projectsStatus', data => {
-      console.log(123, data);
+    socket.on('server::projectsStatus', projectStates => {
+      this.setState({ projectStates });
     });
   }
 
@@ -267,7 +268,17 @@ class Dashboard extends React.Component {
                         </span>
                       </>
                     )}
-                    {x.active && <span>✅</span>}
+                    {x.active && (
+                      <>
+                        <span>✅</span>
+                        <span>
+                          {this.state.projectStates.find(p => p.id === x.id)
+                            ?.status === 400
+                            ? `⬇️`
+                            : `⬆️`}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

@@ -70,9 +70,9 @@ let main = async () => {
                 if (r.ok) return r.text();
               })
               .then(r => {
-                return { [x.id]: r === 'ok' };
+                return { id: x.id, status: r === 'ok' ? 200 : 400 };
               })
-              .catch(() => ({ [x.id]: false })),
+              .catch(() => ({ id: x.id, status: 400 })),
           ),
         );
 
