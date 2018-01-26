@@ -1,46 +1,48 @@
 import React from 'react';
-import StyleProvider from './StyleProvider.js'
+import StyleProvider from './StyleProvider.js';
 
 export default class ThemeSwitcher extends React.Component {
-  constructor(props){
-    super(props)
+  constructor(props) {
+    super(props);
     this.state = {
-      selectedThemeId: props.availableThemes[0].id
-    }
+      selectedThemeId: props.availableThemes[0]?.id,
+    };
   }
-  onStyleChange = (e) => {
-    this.setState({
-      ...this.state,
-      selectedThemeId: e.target.value
-    })
-  }
-  render(){
+  render() {
     return (
       <>
-        <select value={this.state.selectedThemeId} onChange={ this.onStyleChange } >
-          {
-            this.props.availableThemes.map(theme => (
-              <option key={theme.id} value={theme.id}> {theme.title} </option>
-            ))
+        <select
+          value={this.state.selectedThemeId}
+          onChange={e =>
+            this.setState({
+              selectedThemeId: e.target.value,
+            })
           }
+        >
+          {this.props.availableThemes.map(theme => (
+            <option key={theme.id} value={theme.id}>
+              {theme.title}
+            </option>
+          ))}
         </select>
-        <StyleProvider selected={this.state.selectedThemeId} availableThemes={this.props.availableThemes}>
-          { this.props.children }
-        </StyleProvider>
+        <StyleProvider
+          selected={this.state.selectedThemeId}
+          availableThemes={this.props.availableThemes}
+        />
       </>
-    )
+    );
   }
 }
 
 export const AVAILABLE_THEMES = [
-    {
-      id: "default",
-      title: "Default",
-      stylePath: './themeStyles/default.css'
-    },
-    {
-      id: "beagle",
-      title: "Beagle",
-      stylePath: './themeStyles/beagle.css'
-    }
-]
+  {
+    id: 'default',
+    title: 'Default',
+    stylePath: './themeStyles/default.css',
+  },
+  {
+    id: 'beagle',
+    title: 'Beagle',
+    stylePath: './themeStyles/beagle.css',
+  },
+];

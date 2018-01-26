@@ -51,13 +51,15 @@ class DataTable extends React.Component {
           pageSize={pageSize}
           type={this.props.config.type}
         />
-        <div style={{
-          position: 'absolute',
-          left: '0px',
-          right: '0px',
-          bottom: '0px',
-          top: '50px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            top: 50,
+          }}
+        >
           <Table
             sqon={sqon}
             config={{ ...this.props.config, columns }}
