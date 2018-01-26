@@ -100,10 +100,26 @@ html {
 /***********************************/
 .aggregation-card{
   padding: 10px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
   background: white;
-}
+  border: solid 1px #d4d6dd;
+  border-left: solid 5px;
+} .aggregation-card:nth-child(5n+1) {
+    border-left-color: #a42c90;
+  }
+  .aggregation-card:nth-child(5n+2) {
+    border-left-color: #00afed;
+  }
+  .aggregation-card:nth-child(5n+3) {
+    border-left-color: #ff9324;
+  }
+  .aggregation-card:nth-child(5n+4) {
+    border-left-color: #009bb8;
+  }
+  .aggregation-card:nth-child(5n+5) {
+    border-left-color: #d8202f;
+  }
 .aggregation-card .title-wrapper{
   padding-bottom: 7px;
   color: #404c9a;
@@ -119,17 +135,16 @@ html {
   padding-top: 5px;
 }
 .aggregation-card .bucket-item{
-  padding-top: 7px;
-  padding-bottom: 10px;
+  padding-top: 5px;
   font-size: 0.8em;
 }
 .aggregation-card .bucket-item .bucket-count{
 	border-radius: 5px;
-	background-color: #a9adc0;
-	border: solid 1px #cacbcf;
   background-color: rgba(169, 173, 192, 0.3);
   color: #343434;
   padding-left: 10px;
   padding-right: 10px;
   font-family: sans-serif;
+  display: flex;
+  align-items: center;
 }
