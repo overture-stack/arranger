@@ -4,8 +4,8 @@ import { range, min, max } from 'lodash';
 import './style.css';
 
 export default class CustomPagination extends Component {
-  constructor(props){
-    super(props)
+  constructor(props) {
+    super(props);
     this.state = {
       minPageShown: 0,
       maxPageShown: 10,
