@@ -71,3 +71,8 @@ label {
   font-size: 14px;
   margin-right: 5px;
 }
+
+.field-item:hover {
+  cursor: pointer;
+  background-color: rgb(240, 238, 227);
+}

@@ -85,7 +85,7 @@ export default ({ app }) => async (req, res) => {
           }),
   );
 
-  console.log(`graphql server running at ${id}/graphql`);
+  console.log(`graphql server running at /${id}/graphql`);
 
-  res.json({ message: `graphql server running at ${id}/graphql` });
+  res.json({ message: `graphql server running at /${id}/graphql` });
 };

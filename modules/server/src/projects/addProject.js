@@ -22,7 +22,7 @@ export default async (req, res) => {
       id,
       body: {
         id,
-        active: false,
+        active: true,
         timestamp: new Date().toISOString(),
       },
     });

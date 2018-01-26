@@ -22,7 +22,7 @@ export default async (req, res) => {
       await es.indices.create({
         index: arrangerconfig.projectsIndex.index,
       });
-      return res.json({ types });
+      return res.json({ types, total: 0 });
     } catch (error) {
       return res.json({ error: error.message });
     }

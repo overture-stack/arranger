@@ -1,5 +1,5 @@
 import React from 'react';
-import { debounce } from 'lodash';
+import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import './Dashboard.css';
 
@@ -77,6 +77,8 @@ class Dashboard extends React.Component {
         projectsTotal: total,
         error: null,
         fields: [],
+        types: [],
+        typesTotal: 0,
         fieldsTotal: 0,
         activeField: null,
         activeType: null,
@@ -106,6 +108,11 @@ class Dashboard extends React.Component {
         activeProject: this.state.newProjectName,
         newProjectName: '',
         error: null,
+        typesTotal: 0,
+        types: [],
+        fields: [],
+        activeField: null,
+        activeType: null,
       });
     }
   };
@@ -399,7 +406,9 @@ class Dashboard extends React.Component {
                 {this.state.fields.map(x => (
                   <div
                     key={x.field}
-                    className="type-container"
+                    className={`field-item ${
+                      x.field == this.state.activeField?.field ? 'active' : ''
+                    }`}
                     onClick={() => this.setState({ activeField: x })}
                   >
                     {x.field}
@@ -412,13 +421,17 @@ class Dashboard extends React.Component {
             this.state.activeField && (
               <section>
                 <div style={{ padding: 5 }}>
-                  <label className="projects">CONFIGURE FIELD</label>
+                  <label className="projects">
+                    {this.state.activeField.field}
+                  </label>
                 </div>
-                {Object.entries(this.state.activeField).map(([key, val]) => (
-                  <div key={key} className="type-container">
-                    {key}: {val}
-                  </div>
-                ))}
+                {Object.entries(this.state.activeField)
+                  .filter(([key]) => key !== 'field')
+                  .map(([key, val]) => (
+                    <div key={key} className="type-container">
+                      {startCase(key)}: {val}
+                    </div>
+                  ))}
               </section>
             )}
         </div>
