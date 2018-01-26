@@ -156,8 +156,6 @@ export default class CustomPaginationComponent extends ReactTablePagination {
     console.log(this.state);
   }
 
-
-
   render(){
     const numPagesShown = this.state.maxPageShown - this.state.minPageShown
     const {
@@ -184,12 +182,6 @@ export default class CustomPaginationComponent extends ReactTablePagination {
           alignItems: 'center',
         }}
       >
-        {
-          (() => (
-            // <ReactTablePagination {...this.props}></ReactTablePagination>
-            ""
-          ))()
-        }
         {
           showPageSizeOptions &&
             <span className="select-wrap -pageSizeOptions">
