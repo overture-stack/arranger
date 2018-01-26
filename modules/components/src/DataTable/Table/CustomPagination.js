@@ -4,10 +4,14 @@ import { range, min, max } from 'lodash';
 import './style.css';
 
 export default class CustomPagination extends Component {
-  state = {
-    minPageShown: 0,
-    maxPageShown: 10,
-  };
+  constructor(props){
+    super(props)
+    this.state = {
+      minPageShown: 0,
+      maxPageShown: 10,
+      page: props.page,
+    };
+  }
 
   getSafePage = page => {
     if (isNaN(page)) {
