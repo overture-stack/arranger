@@ -72,7 +72,15 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
-      this.setState({ projects, projectsTotal: total, error: null });
+      this.setState({
+        projects,
+        projectsTotal: total,
+        error: null,
+        fields: [],
+        fieldsTotal: 0,
+        activeField: null,
+        activeType: null,
+      });
 
       socket.emit('arranger::monitorProjects', {
         projects: projects.filter(x => x.active),
@@ -390,7 +398,7 @@ class Dashboard extends React.Component {
                 </div>
                 {this.state.fields.map(x => (
                   <div
-                    key={x.index}
+                    key={x.field}
                     className="type-container"
                     onClick={() => this.setState({ activeField: x })}
                   >

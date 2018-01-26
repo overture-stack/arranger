@@ -7,7 +7,7 @@ import {
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 
-export default async (req, res) => {
+export default ({ app }) => async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
   if (!id) return res.json({ error: 'project empty' });
