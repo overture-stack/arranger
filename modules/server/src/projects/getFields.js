@@ -1,5 +1,5 @@
 import { flattenDeep } from 'lodash';
-import { mappingToAggsState } from '@arranger/mapping-utils';
+import { extendFields } from '@arranger/mapping-utils';
 import mapHits from '../utils/mapHits';
 
 export default async (req, res) => {
@@ -35,7 +35,7 @@ export default async (req, res) => {
 
       let mapping = mappings[index].mappings[index].properties;
 
-      let fields = mappingToAggsState(mapping);
+      let fields = extendFields(mapping);
 
       let body = flattenDeep(
         fields.map(x => [

@@ -286,7 +286,7 @@ class Dashboard extends React.Component {
                           <span
                             className="onoff"
                             style={{ cursor: 'pointer' }}
-                            onClick={() => this.spinup({ id: x.id })}
+                            onClick={() => this.teardown({ id: x.id })}
                           >
                             💤
                           </span>
