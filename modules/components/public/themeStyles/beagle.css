@@ -167,7 +167,9 @@ div {
   display: none;
 }
 
-.sqon-bubble, .sqon-less, .sqon-more {
+.sqon-bubble,
+.sqon-less,
+.sqon-more {
   display: flex;
   align-items: center;
   height: 22px;
@@ -209,7 +211,9 @@ div {
   margin-right: 0.3em;
 }
 
-.sqon-clear, .sqon-less, .sqon-more {
+.sqon-clear,
+.sqon-less,
+.sqon-more {
   padding: 0 12px;
   color: #fff;
   background-color: #ffffff;
@@ -218,7 +222,8 @@ div {
   text-transform: uppercase;
 }
 
-.sqon-less, .sqon-more {
+.sqon-less,
+.sqon-more {
   margin-right: 6px;
 }
 
