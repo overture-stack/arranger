@@ -4,6 +4,13 @@ div {
   font-family: 'Montserrat', sans-serif;
 }
 
+html {
+  background-color: #f4f5f8;
+}
+
+/***********************************/
+/* styling for the table component */
+/***********************************/
 .ReactTable {
   font-family: "Montserrat", sans-serif;
   font-size: 0.8em;
@@ -85,4 +92,44 @@ div {
   right: 0px;
   background: white;
   height: 64px;
+}
+
+
+/***********************************/
+/** styling for the aggregations ***/
+/***********************************/
+.aggregation-card{
+  padding: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background: white;
+}
+.aggregation-card .title-wrapper{
+  padding-bottom: 7px;
+  color: #404c9a;
+  border-bottom: solid 1px #e0e1e6;
+}
+.aggregation-card .title-wrapper .title{
+  color: #404c9a;
+  font-weight: bolder;
+  font-size: 0.9em;
+  font-family: sans-serif;
+}
+.aggregation-card .bucket {
+  padding-top: 5px;
+}
+.aggregation-card .bucket-item{
+  padding-top: 7px;
+  padding-bottom: 10px;
+  font-size: 0.8em;
+}
+.aggregation-card .bucket-item .bucket-count{
+	border-radius: 5px;
+	background-color: #a9adc0;
+	border: solid 1px #cacbcf;
+  background-color: rgba(169, 173, 192, 0.3);
+  color: #343434;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-family: sans-serif;
 }
