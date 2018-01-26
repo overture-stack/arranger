@@ -66,3 +66,21 @@ div {
   background: #f0f1f6;
   color: #009bb8;
 }
+.ReactTable a {
+  color: #90278e;
+}
+.ReactTable .rt-table {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 64px;
+}
+.ReactTable .pagination-bottom {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background: white;
+  height: 64px;
+}

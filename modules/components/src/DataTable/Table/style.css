@@ -16,6 +16,9 @@
 .ReactTable .rt-thead {
   overflow-y: scroll;
 }
+.ReactTable .rt-tbody {
+  overflow-y: scroll;
+}
 .ReactTable {
   position: absolute;
   top: 0px;
