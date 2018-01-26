@@ -12,11 +12,11 @@ export default ({
   const dotField = field.replace(/__/g, '.');
 
   return (
-    <div className="test-term-aggregation">
-      <div>
-        <span>{displayName}</span>
+    <div className="test-term-aggregation aggregation-card">
+      <div className="title-wrapper">
+        <span className="title">{displayName}</span>
       </div>
-      <div>
+      <div className="bucket">
         {orderBy(buckets, 'doc_count', 'desc')
           // .slice(0, props.showingMore ? Infinity : 5)
           .map(b => ({ ...b, name: b.key_as_string || b.key }))
