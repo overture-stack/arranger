@@ -5,7 +5,7 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
-import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher'
+import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 
 import DataTable, {
   Table,
@@ -198,19 +198,24 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   />
 ));
 
-const ComponentContainer = (props) => (
-  <div style={{
-    position: 'absolute',
-    left: '0px',
-    right: '0px',
-    top: '50px',
-    bottom: '0px',
-  }}>{props.children}</div>
-)
+const ComponentContainer = props => (
+  <div
+    style={{
+      position: 'absolute',
+      left: '0px',
+      right: '0px',
+      top: '50px',
+      bottom: '0px',
+    }}
+  >
+    {props.children}
+  </div>
+);
 
 storiesOf('Table', module)
   .add('Table', () => (
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+    <>
+      <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
       <ComponentContainer>
         <Table
           config={dummyConfig}
@@ -218,20 +223,22 @@ storiesOf('Table', module)
           onSelectionChange={action('selection changed')}
         />
       </ComponentContainer>
-    </ThemeSwitcher>
+    </>
   ))
   .add('Toolbar', () => (
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+    <>
+      <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
       <ComponentContainer>
         <TableToolbarStory
           onSQONChange={console.log.bind(console)}
           streamData={streamDummyData}
         />
       </ComponentContainer>
-    </ThemeSwitcher>
+    </>
   ))
   .add('Data Table', () => (
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+    <>
+      <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
       <ComponentContainer>
         <DataTable
           config={dummyConfig}
@@ -241,19 +248,24 @@ storiesOf('Table', module)
                 get(props.original, props.column.listAccessor) || [];
               const total = get(props.original, props.column.totalAccessor);
               const firstValue = getSingleValue(columnList[0]);
-              return total > 1 ? <a href="">{total} total</a> : firstValue || '';
+              return total > 1 ? (
+                <a href="">{total} total</a>
+              ) : (
+                firstValue || ''
+              );
             },
           }}
           fetchData={fetchDummyData}
           streamData={streamDummyData}
         />
       </ComponentContainer>
-    </ThemeSwitcher>
+    </>
   ))
-  .add('Live Data Table', () =>
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES}>
+  .add('Live Data Table', () => (
+    <>
+      <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
       <ComponentContainer>
         <EnhancedDataTable />
       </ComponentContainer>
-    </ThemeSwitcher>
-  );
+    </>
+  ));

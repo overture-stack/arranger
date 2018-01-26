@@ -29,11 +29,10 @@ export default class StyleProvider extends React.Component {
   };
 
   render() {
-    return this.state.themeLoaded ? (
-      <>
+    return (
+      this.state.themeLoaded && (
         <style type="text/css"> {this.state.loadedStyle} </style>
-        {this.props.children}
-      </>
-    ) : null;
+      )
+    );
   }
 }

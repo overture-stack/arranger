@@ -28,9 +28,7 @@ export default class ThemeSwitcher extends React.Component {
         <StyleProvider
           selected={this.state.selectedThemeId}
           availableThemes={this.props.availableThemes}
-        >
-          {this.props.children}
-        </StyleProvider>
+        />
       </>
     );
   }
