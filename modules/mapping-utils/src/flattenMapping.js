@@ -16,7 +16,7 @@ let flattenMapping = (properties, parent = '') => {
                 field: joinWith()(parent) + field,
                 type: data.type,
               }
-            : mappingToAggsType(data.properties, joinWith()(parent) + field),
+            : flattenMapping(data.properties, joinWith()(parent) + field),
       ),
   );
 };

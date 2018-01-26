@@ -1,13 +1,10 @@
 export let fetchMapping = async ({ index, es }) => {
-  // TODO: check for aliases!!
-
   let aliases = await es.cat.aliases({ format: 'json' });
-
-  console.log(123, aliases);
+  let alias = aliases?.find(x => x.alias === index)?.index;
 
   return es.indices
     .getMapping({
-      index,
+      index: alias || index,
       type: index,
     })
     .catch(err => {
@@ -15,7 +12,7 @@ export let fetchMapping = async ({ index, es }) => {
       return false;
     })
     .then(val => {
-      return { index: index, mapping: val };
+      return { index: index, mapping: val, alias };
     });
 };
 

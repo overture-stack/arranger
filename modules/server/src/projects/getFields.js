@@ -27,13 +27,15 @@ export default async (req, res) => {
         index: arrangerconfig.projectsIndex.index,
       });
 
-      // TODO: check for aliases!!
+      let aliases = await es.cat.aliases({ format: 'json' });
+      let alias = aliases?.find(x => x.alias === index)?.index;
+
       let mappings = await es.indices.getMapping({
-        index,
+        index: alias || index,
         type: index,
       });
 
-      let mapping = mappings[index].mappings[index].properties;
+      let mapping = mappings[alias || index].mappings[index].properties;
 
       let fields = extendFields(mapping);
 
