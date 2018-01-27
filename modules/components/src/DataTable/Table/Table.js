@@ -55,7 +55,7 @@ class DataTable extends React.Component {
 
     this.setState({ loading: true, lastState: state });
 
-    fetchData({
+    fetchData?.({
       config,
       sqon,
       queryName: 'Table',

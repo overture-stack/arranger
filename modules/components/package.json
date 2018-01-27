@@ -10,8 +10,6 @@
     "build-storybook": "build-storybook",
     "storybook": "start-storybook -p 9001 -c .storybook -s ./public",
     "test": "jest",
-    "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
-    "prepublish": "npm run build",
     "flow": "flow"
   },
   "repository": {
@@ -62,6 +60,7 @@
     "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.2",
     "socket.io-client": "^2.0.4",
+    "storybook-router": "^0.3.2",
     "streamsaver": "^1.0.1",
     "uuid": "^3.1.0"
   }
