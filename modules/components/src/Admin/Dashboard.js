@@ -226,7 +226,13 @@ class Dashboard extends React.Component {
     let headerHeight = 38;
     return (
       <BrowserRouter>
-        <div className="app">
+        <div
+          className="app"
+          css={`
+            display: flex;
+            flex-direction: column;
+          `}
+        >
           <div className="row">
             <div
               className="title-arranger"
@@ -259,8 +265,28 @@ class Dashboard extends React.Component {
           {this.state.error && (
             <div className="error">⚠️ {this.state.error}</div>
           )}
-          <div>
+          <div
+            css={`
+              flex-grow: 1;
+              position: relative;
+            `}
+          >
             <DataTable
+              customActions={
+                <div>
+                  <input
+                    style={{ padding: 5 }}
+                    placeholder="New Project..."
+                    value={this.state.newProjectName}
+                    onChange={e =>
+                      this.setState({ newProjectName: e.target.value })
+                    }
+                  />
+                  <button onClick={this.addProject}>+</button>
+                </div>
+              }
+              allowTogglingColumns={false}
+              allowTSVExport={false}
               config={{
                 timestamp: '2018-01-12T16:42:07.495Z',
                 type: 'Projects',
@@ -277,9 +303,17 @@ class Dashboard extends React.Component {
                   },
                 ],
               }}
-              fetchData={() =>
-                Promise.resolve({ total: 1, data: [{ id: 'test' }] })
-              }
+              data={{
+                total: this.state.projectsTotal,
+                data: this.state.projects,
+              }}
+              loading={false}
+              // fetchData={() =>
+              //   Promise.resolve({
+              //     total: this.state.projectsTotal,
+              //     data: this.state.projects,
+              //   })
+              // }
             />
           </div>
           <div className="row">
