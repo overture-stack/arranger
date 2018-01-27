@@ -79,8 +79,10 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
       this.setState({
-        projects,
+        projects: projectsWithTypes,
         projectsTotal: total,
         error: null,
         fields: [],
@@ -97,6 +99,36 @@ class Dashboard extends React.Component {
       });
     }
   }, 300);
+
+  addTypesToProjects = projects =>
+    Promise.all(
+      projects.map((x, i) =>
+        api({
+          endpoint: `/projects/${x.id}/types`,
+          body: { eshost: this.state.eshost },
+        }).then(data => ({
+          ...projects[i],
+          types: data,
+          delete: () => (
+            <span
+              style={{ cursor: 'pointer' }}
+              onClick={() => this.deleteProject({ id: x.id })}
+            >
+              🔥
+            </span>
+          ),
+          active: () => x.active && <span>✅</span>,
+          endpointStatus: () => (
+            <span>
+              {this.state.projectStates.find(p => p.id === x.id)?.status ===
+                400 && `⬇️`}
+              {this.state.projectStates.find(p => p.id === x.id)?.status ===
+                200 && `⬆️`}
+            </span>
+          ),
+        })),
+      ),
+    );
 
   addProject = async () => {
     let { projects, total, error } = await api({
@@ -135,8 +167,10 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
       this.setState({
-        projects,
+        projects: projectsWithTypes,
         projectsTotal: total,
         types: [],
         activeProject: null,
@@ -287,6 +321,12 @@ class Dashboard extends React.Component {
               }
               allowTogglingColumns={false}
               allowTSVExport={false}
+              customTypes={{
+                entity: props => {
+                  return <Link to={`/${props.value}`}>{props.value}</Link>;
+                },
+                component: ({ value: Component }) => <Component />,
+              }}
               config={{
                 timestamp: '2018-01-12T16:42:07.495Z',
                 type: 'Projects',
@@ -295,11 +335,43 @@ class Dashboard extends React.Component {
                 columns: [
                   {
                     show: true,
-                    Header: 'id',
-                    type: 'string',
+                    Header: 'ID',
+                    type: 'entity',
                     sortable: true,
                     canChangeShow: true,
                     accessor: 'id',
+                  },
+                  {
+                    show: true,
+                    Header: '# Types',
+                    type: 'number',
+                    sortable: true,
+                    canChangeShow: true,
+                    accessor: 'types.total',
+                  },
+                  {
+                    show: true,
+                    Header: 'Active',
+                    type: 'component',
+                    sortable: false,
+                    canChangeShow: false,
+                    accessor: 'active',
+                  },
+                  {
+                    show: true,
+                    Header: 'Endpoint Status',
+                    type: 'component',
+                    sortable: false,
+                    canChangeShow: false,
+                    accessor: 'endpointStatus',
+                  },
+                  {
+                    show: true,
+                    Header: 'Delete',
+                    type: 'component',
+                    sortable: false,
+                    canChangeShow: false,
+                    accessor: 'delete',
                   },
                 ],
               }}
@@ -382,12 +454,6 @@ class Dashboard extends React.Component {
                               💤
                             </span>
                           )}
-                          <span
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => this.deleteProject({ id: x.id })}
-                          >
-                            🔥
-                          </span>
                         </>
                       )}
                       {x.active && (
