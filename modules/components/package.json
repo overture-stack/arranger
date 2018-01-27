@@ -36,6 +36,7 @@
     "@storybook/react": "^3.3.3",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.1.2",
+    "babel-plugin-emotion": "^8.0.12",
     "eslint": "^3.19.0",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-flowtype": "^2.40.1",
@@ -48,6 +49,7 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "downshift": "^1.23.2",
+    "emotion": "^8.0.12",
     "filesaver.js": "^0.2.0",
     "filesize": "^3.5.11",
     "graphql": "^0.12.3",

@@ -223,12 +223,29 @@ class Dashboard extends React.Component {
   };
 
   render() {
+    let headerHeight = 38;
     return (
       <BrowserRouter>
         <div className="app">
           <div className="row">
-            <div className="title-arranger">ARRANGER</div>
-            <div className="title-elasticsearch">ELASTICSEARCH HOST :</div>
+            <div
+              className="title-arranger"
+              css={`
+                line-height: ${headerHeight}px;
+                padding: 0 10px;
+              `}
+            >
+              ARRANGER
+            </div>
+            <div
+              className="title-elasticsearch"
+              css={`
+                line-height: ${headerHeight}px;
+                padding: 0 10px;
+              `}
+            >
+              ELASTICSEARCH HOST :
+            </div>
             <input
               className="eshost-input"
               value={this.state.eshost}
@@ -242,9 +259,31 @@ class Dashboard extends React.Component {
           {this.state.error && (
             <div className="error">⚠️ {this.state.error}</div>
           )}
-          <DataTable />
+          <div>
+            <DataTable
+              config={{
+                timestamp: '2018-01-12T16:42:07.495Z',
+                type: 'Projects',
+                keyField: 'id',
+                defaultSorted: [{ id: 'id', desc: false }],
+                columns: [
+                  {
+                    show: true,
+                    Header: 'id',
+                    type: 'string',
+                    sortable: true,
+                    canChangeShow: true,
+                    accessor: 'id',
+                  },
+                ],
+              }}
+              fetchData={() =>
+                Promise.resolve({ total: 1, data: [{ id: 'test' }] })
+              }
+            />
+          </div>
           <div className="row">
-            <section>
+            {/* <section>
               <div>
                 <input
                   style={{ padding: 5 }}
@@ -332,7 +371,7 @@ class Dashboard extends React.Component {
                   </div>
                 ))}
               </div>
-            </section>
+            </section> */}
             {this.state.activeProject && (
               <section>
                 <div style={{ padding: 5 }}>

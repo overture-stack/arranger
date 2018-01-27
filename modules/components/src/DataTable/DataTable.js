@@ -24,13 +24,12 @@ class DataTable extends React.Component {
       streamData,
       onSQONChange,
       onSelectionChange,
-      style,
       sqon,
     } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
-      <div style={style}>
+      <>
         <TableToolbar
           onSQONChange={onSQONChange}
           streamData={options =>
@@ -70,7 +69,7 @@ class DataTable extends React.Component {
             defaultPageSize={pageSize}
           />
         </div>
-      </div>
+      </>
     );
   }
 }
