@@ -65,7 +65,7 @@ class DataTable extends React.Component {
             left: 0,
             right: 0,
             bottom: 0,
-            top: 50,
+            top: 83, // TODO: get from props
           }}
         >
           <Table

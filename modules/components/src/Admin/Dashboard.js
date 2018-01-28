@@ -1,13 +1,10 @@
 import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
-import { BrowserRouter, Route, Link } from 'react-router-dom';
-import DataTable, {
-  Table,
-  columnsToGraphql,
-  TableToolbar,
-  getSingleValue,
-} from '../DataTable';
+import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
+
+import Header from './Header';
+import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
 
 let API = 'http://localhost:5050';
@@ -110,21 +107,39 @@ class Dashboard extends React.Component {
           ...projects[i],
           types: data,
           delete: () => (
-            <span
-              style={{ cursor: 'pointer' }}
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
               onClick={() => this.deleteProject({ id: x.id })}
             >
               🔥
-            </span>
+            </div>
           ),
-          active: () => x.active && <span>✅</span>,
+          active: () =>
+            x.active && (
+              <div
+                css={`
+                  cursor: pointer;
+                  text-align: center;
+                `}
+              >
+                ✅
+              </div>
+            ),
           endpointStatus: () => (
-            <span>
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+            >
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
                 400 && `⬇️`}
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
                 200 && `⬆️`}
-            </span>
+            </div>
           ),
         })),
       ),
@@ -179,11 +194,9 @@ class Dashboard extends React.Component {
     }
   };
 
-  getFields = async ({ activeType }) => {
+  getFields = async ({ activeType, projectId }) => {
     let { fields, total, error } = await api({
-      endpoint: `/projects/${
-        this.state.activeProject
-      }/types/${activeType}/fields`,
+      endpoint: `/projects/${projectId}/types/${activeType}/fields`,
       body: { eshost: this.state.eshost },
     });
 
@@ -267,169 +280,90 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
-          <div className="row">
-            <div
-              className="title-arranger"
-              css={`
-                line-height: ${headerHeight}px;
-                padding: 0 10px;
-              `}
-            >
-              ARRANGER
-            </div>
-            <div
-              className="title-elasticsearch"
-              css={`
-                line-height: ${headerHeight}px;
-                padding: 0 10px;
-              `}
-            >
-              ELASTICSEARCH HOST :
-            </div>
-            <input
-              className="eshost-input"
-              value={this.state.eshost}
-              onChange={e => {
-                let state = { eshost: e.target.value };
-                this.setState(state);
-                this.getProjects(state);
-              }}
-            />
-          </div>
+          <Header
+            eshost={this.state.eshost}
+            height={headerHeight}
+            handleOnChange={e => {
+              let state = { eshost: e.target.value };
+              this.setState(state);
+              this.getProjects(state);
+            }}
+          />
           {this.state.error && (
             <div className="error">⚠️ {this.state.error}</div>
           )}
-          <div
-            css={`
-              flex-grow: 1;
-              position: relative;
-            `}
-          >
-            <DataTable
-              customActions={
-                <div>
-                  <input
-                    style={{ padding: 5 }}
-                    placeholder="New Project..."
-                    value={this.state.newProjectName}
-                    onChange={e =>
-                      this.setState({ newProjectName: e.target.value })
-                    }
-                  />
-                  <button onClick={this.addProject}>+</button>
+          <Route
+            render={p =>
+              // needed for storybook
+              p.location.pathname === '/iframe.html' && (
+                <Redirect to="/projects" />
+              )
+            }
+          />
+          <Route // breadcrums
+            render={p => {
+              let split = location.pathname.split('/');
+              return (
+                <div
+                  css={`
+                    line-height: ${headerHeight}px;
+                    padding: 0 10px;
+                  `}
+                >
+                  {split.reduce(
+                    (breadCrumbs, segment, i) => [
+                      ...breadCrumbs,
+                      <React.Fragment key={segment}>
+                        <Link
+                          key={segment}
+                          to={`/${segment}`} // TODO: parent path
+                          css={`
+                            text-transform: uppercase;
+                            text-decoration: none;
+                            font-weight: bold;
+                            font-size: 12px;
+                          `}
+                        >
+                          {segment}
+                        </Link>
+                        {i !== 0 && i !== split.length - 1 && <span> / </span>}
+                      </React.Fragment>,
+                    ],
+                    [],
+                  )}
                 </div>
-              }
-              allowTogglingColumns={false}
-              allowTSVExport={false}
-              customTypes={{
-                entity: props => {
-                  return <Link to={`/${props.value}`}>{props.value}</Link>;
-                },
-                component: ({ value: Component }) => <Component />,
-              }}
-              config={{
-                timestamp: '2018-01-12T16:42:07.495Z',
-                type: 'Projects',
-                keyField: 'id',
-                defaultSorted: [{ id: 'id', desc: false }],
-                columns: [
-                  {
-                    show: true,
-                    Header: 'ID',
-                    type: 'entity',
-                    sortable: true,
-                    canChangeShow: true,
-                    accessor: 'id',
-                  },
-                  {
-                    show: true,
-                    Header: '# Types',
-                    type: 'number',
-                    sortable: true,
-                    canChangeShow: true,
-                    accessor: 'types.total',
-                  },
-                  {
-                    show: true,
-                    Header: 'Active',
-                    type: 'component',
-                    sortable: false,
-                    canChangeShow: false,
-                    accessor: 'active',
-                  },
-                  {
-                    show: true,
-                    Header: 'Endpoint Status',
-                    type: 'component',
-                    sortable: false,
-                    canChangeShow: false,
-                    accessor: 'endpointStatus',
-                  },
-                  {
-                    show: true,
-                    Header: 'Delete',
-                    type: 'component',
-                    sortable: false,
-                    canChangeShow: false,
-                    accessor: 'delete',
-                  },
-                ],
-              }}
-              data={{
-                total: this.state.projectsTotal,
-                data: this.state.projects,
-              }}
-              loading={false}
-              // fetchData={() =>
-              //   Promise.resolve({
-              //     total: this.state.projectsTotal,
-              //     data: this.state.projects,
-              //   })
-              // }
-            />
-          </div>
-          <div className="row">
-            {/* <section>
-              <div>
-                <input
-                  style={{ padding: 5 }}
-                  placeholder="New Project..."
-                  value={this.state.newProjectName}
-                  onChange={e =>
-                    this.setState({ newProjectName: e.target.value })
-                  }
+              );
+            }}
+          />
+          <Route
+            path="/projects"
+            exact
+            render={() => (
+              <div
+                css={`
+                  flex-grow: 1;
+                  position: relative;
+                `}
+              >
+                <ProjectsTable
+                  newProjectName={this.state.newProjectName}
+                  setNewProjectName={s => this.setState(s)}
+                  addProject={this.addProject}
+                  projectsTotal={this.state.projectsTotal}
+                  projects={this.state.projects}
                 />
-                <button onClick={this.addProject}>+</button>
               </div>
+            )}
+          />
+
+          {/* <section>
               <div>
-                <label className="projects">
-                  PROJECTS ({this.state.projectsTotal})
-                </label>
                 {this.state.projects.map(x => (
                   <div
                     key={x.id}
                     className="row"
                     style={{ alignItems: 'center' }}
                   >
-                    <span
-                      onClick={() =>
-                        this.setState({ activeProject: x.id }, this.getTypes)
-                      }
-                      style={{
-                        textDecoration:
-                          this.state.activeProject === x.id
-                            ? 'none'
-                            : 'underline',
-                        cursor:
-                          this.state.activeProject === x.id
-                            ? 'default'
-                            : 'pointer',
-                        color:
-                          this.state.activeProject === x.id ? 'blue' : 'black',
-                      }}
-                    >
-                      {x.id}
-                    </span>
                     <div style={{ marginLeft: 'auto' }}>
                       {this.state.activeProject === x.id && (
                         <>
@@ -456,23 +390,15 @@ class Dashboard extends React.Component {
                           )}
                         </>
                       )}
-                      {x.active && (
-                        <>
-                          <span>✅</span>
-                          <span>
-                            {this.state.projectStates.find(p => p.id === x.id)
-                              ?.status === 400 && `⬇️`}
-                            {this.state.projectStates.find(p => p.id === x.id)
-                              ?.status === 200 && `⬆️`}
-                          </span>
-                        </>
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </section> */}
-            {this.state.activeProject && (
+          <Route
+            exact
+            path="/projects/:id"
+            render={({ match, history, location }) => (
               <section>
                 <div style={{ padding: 5 }}>
                   <div>
@@ -499,92 +425,101 @@ class Dashboard extends React.Component {
                   <label className="projects">
                     TYPES ({this.state.typesTotal})
                   </label>
-                  {this.state.types.map(x => (
-                    <div key={x.index} className="type-container">
-                      <div>
-                        <label>NAME: </label>
-                        <span>{x.name}</span>
+                  {this.state.projects
+                    ?.find(x => x.id === match.params.id)
+                    ?.types?.types?.map(x => (
+                      <div key={x.index} className="type-container">
+                        <div>
+                          <label>NAME: </label>
+                          <span>{x.name}</span>
+                        </div>
+                        <div>
+                          <label>INDEX: </label>
+                          <span
+                            key={x.index}
+                            onClick={() => {
+                              let state = { activeType: x.index };
+                              this.setState(state);
+                              this.getFields({
+                                ...state,
+                                projectId: match.params.id,
+                              });
+                              history.push(location.pathname + '/' + x.index);
+                            }}
+                            style={{
+                              textDecoration:
+                                this.state.activeType === x.index
+                                  ? 'none'
+                                  : 'underline',
+                              cursor:
+                                this.state.activeType === x.index
+                                  ? 'default'
+                                  : 'pointer',
+                            }}
+                          >
+                            {x.index}
+                          </span>
+                        </div>
+                        <div>
+                          <label>ACTIVE: </label>
+                          <input
+                            type="checkbox"
+                            checked={x.active}
+                            key={x.index}
+                            onChange={() => {}}
+                          />
+                        </div>
+                        {!x.mappings && (
+                          <div className="warning">No mappings found.</div>
+                        )}
                       </div>
-                      <div>
-                        <label>INDEX: </label>
-                        <span
-                          key={x.index}
-                          onClick={() => {
-                            let state = { activeType: x.index };
-                            this.setState(state);
-                            this.getFields(state);
-                          }}
-                          style={{
-                            textDecoration:
-                              this.state.activeType === x.index
-                                ? 'none'
-                                : 'underline',
-                            cursor:
-                              this.state.activeType === x.index
-                                ? 'default'
-                                : 'pointer',
-                          }}
-                        >
-                          {x.index}
-                        </span>
-                      </div>
-                      <div>
-                        <label>ACTIVE: </label>
-                        <input
-                          type="checkbox"
-                          checked={x.active}
-                          key={x.index}
-                          onChange={() => {}}
-                        />
-                      </div>
-                      {!x.mappings && (
-                        <div className="warning">No mappings found.</div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </section>
             )}
-            {this.state.activeProject &&
-              this.state.activeType && (
-                <section>
-                  <div style={{ padding: 5 }}>
-                    <label className="projects">
-                      FIELDS ({this.state.fieldsTotal})
-                    </label>
+          />
+          <Route
+            exact
+            path="/projects/:projectId/:index"
+            render={() => (
+              <section>
+                <div style={{ padding: 5 }}>
+                  <label className="projects">
+                    FIELDS ({this.state.fieldsTotal})
+                  </label>
+                </div>
+                {this.state.fields.map(x => (
+                  <div
+                    key={x.field}
+                    className={`field-item ${
+                      x.field == this.state.activeField?.field ? 'active' : ''
+                    }`}
+                    onClick={() => this.setState({ activeField: x })}
+                  >
+                    {x.field}
                   </div>
-                  {this.state.fields.map(x => (
-                    <div
-                      key={x.field}
-                      className={`field-item ${
-                        x.field == this.state.activeField?.field ? 'active' : ''
-                      }`}
-                      onClick={() => this.setState({ activeField: x })}
-                    >
-                      {x.field}
+                ))}
+              </section>
+            )}
+          />
+          {this.state.activeProject &&
+            this.state.activeType &&
+            this.state.activeField && (
+              <section>
+                <div style={{ padding: 5 }}>
+                  <label className="projects">
+                    {this.state.activeField.field}
+                  </label>
+                </div>
+                {Object.entries(this.state.activeField)
+                  .filter(([key]) => key !== 'field')
+                  .map(([key, val]) => (
+                    <div key={key} className="type-container">
+                      {startCase(key)}: {val}
                     </div>
                   ))}
-                </section>
-              )}
-            {this.state.activeProject &&
-              this.state.activeType &&
-              this.state.activeField && (
-                <section>
-                  <div style={{ padding: 5 }}>
-                    <label className="projects">
-                      {this.state.activeField.field}
-                    </label>
-                  </div>
-                  {Object.entries(this.state.activeField)
-                    .filter(([key]) => key !== 'field')
-                    .map(([key, val]) => (
-                      <div key={key} className="type-container">
-                        {startCase(key)}: {val}
-                      </div>
-                    ))}
-                </section>
-              )}
-          </div>
+              </section>
+            )}
         </div>
       </BrowserRouter>
     );
