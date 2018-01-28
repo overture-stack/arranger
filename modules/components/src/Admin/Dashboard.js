@@ -499,7 +499,7 @@ class Dashboard extends React.Component {
           <Route
             exact
             path="/projects/:projectId/:index"
-            render={() => (
+            render={({ match, history, location }) => (
               <section>
                 <div style={{ padding: 5 }}>
                   <label className="projects">
@@ -512,7 +512,10 @@ class Dashboard extends React.Component {
                     className={`field-item ${
                       x.field == this.state.activeField?.field ? 'active' : ''
                     }`}
-                    onClick={() => this.setState({ activeField: x })}
+                    onClick={() => {
+                      this.setState({ activeField: x });
+                      history.push(location.pathname + '/' + x.field);
+                    }}
                   >
                     {x.field}
                   </div>
@@ -520,24 +523,50 @@ class Dashboard extends React.Component {
               </section>
             )}
           />
-          {this.state.activeProject &&
-            this.state.activeType &&
-            this.state.activeField && (
-              <section>
-                <div style={{ padding: 5 }}>
-                  <label className="projects">
-                    {this.state.activeField.field}
-                  </label>
-                </div>
-                {Object.entries(this.state.activeField)
-                  .filter(([key]) => key !== 'field')
-                  .map(([key, val]) => (
-                    <div key={key} className="type-container">
-                      {startCase(key)}: {val}
+          <Route
+            exact
+            path="/projects/:projectId/:index/:field"
+            render={() => (
+              <div className="row">
+                <section>
+                  asdasdasdz
+                  <div style={{ padding: 5 }}>
+                    <label className="projects">
+                      FIELDS ({this.state.fieldsTotal})
+                    </label>
+                  </div>
+                  {this.state.fields.map(x => (
+                    <div
+                      key={x.field}
+                      className={`field-item ${
+                        x.field == this.state.activeField?.field ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        this.setState({ activeField: x });
+                        history.push(location.pathname + '/' + x.field);
+                      }}
+                    >
+                      {x.field}
                     </div>
                   ))}
-              </section>
+                </section>
+                <section>
+                  <div style={{ padding: 5 }}>
+                    <label className="projects">
+                      {this.state.activeField?.field}
+                    </label>
+                  </div>
+                  {Object.entries(this.state.activeField || {})
+                    .filter(([key]) => key !== 'field')
+                    .map(([key, val]) => (
+                      <div key={key} className="type-container">
+                        {startCase(key)}: {val}
+                      </div>
+                    ))}
+                </section>
+              </div>
             )}
+          />
         </div>
       </BrowserRouter>
     );
