@@ -128,6 +128,17 @@ class Dashboard extends React.Component {
                 ✅
               </div>
             ),
+          spinup: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.spinup({ id: x.id })}
+            >
+              ⚡️
+            </div>
+          ),
           endpointStatus: () => (
             <div
               css={`

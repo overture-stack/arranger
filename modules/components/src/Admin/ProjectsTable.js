@@ -75,6 +75,14 @@ export default ({
           canChangeShow: false,
           accessor: 'delete',
         },
+        {
+          show: true,
+          Header: 'ARRANGE!',
+          type: 'component',
+          sortable: false,
+          canChangeShow: false,
+          accessor: 'spinup',
+        },
       ],
     }}
     data={{
