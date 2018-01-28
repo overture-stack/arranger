@@ -252,8 +252,13 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(
+        this.state.projects,
+      );
+
       this.setState({
         types,
+        projects: projectsWithTypes,
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
