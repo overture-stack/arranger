@@ -77,7 +77,7 @@ let main = async () => {
     let host = eshost || req.get('ES_HOST');
     if (!host) return res.json({ error: 'host must be provided' });
     try {
-      req.context.es = new elasticsearch.Client({ host });
+      req.context.es = new elasticsearch.Client({ host, log: 'trace' });
     } catch (error) {
       return res.json({ error: error.message });
     }

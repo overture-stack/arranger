@@ -526,7 +526,7 @@ class Dashboard extends React.Component {
           <Route
             exact
             path="/projects/:projectId/:index/:field"
-            render={() => (
+            render={({ match, history, location }) => (
               <div className="row">
                 <section>
                   asdasdasdz
@@ -543,7 +543,7 @@ class Dashboard extends React.Component {
                       }`}
                       onClick={() => {
                         this.setState({ activeField: x });
-                        history.push(location.pathname + '/' + x.field);
+                        history.push(location.pathname + '/' + x.field); // TODO: will break
                       }}
                     >
                       {x.field}
@@ -560,7 +560,35 @@ class Dashboard extends React.Component {
                     .filter(([key]) => key !== 'field')
                     .map(([key, val]) => (
                       <div key={key} className="type-container">
-                        {startCase(key)}: {val}
+                        {startCase(key)}:
+                        {typeof val === 'boolean' ? (
+                          <input
+                            type="checkbox"
+                            checked={val}
+                            onChange={async e => {
+                              let r = await api({
+                                endpoint: `/projects/${
+                                  match.params.projectId
+                                }/types/${match.params.index}/fields/${
+                                  match.params.field
+                                }/update`,
+                                body: {
+                                  eshost: this.state.eshost,
+                                  key,
+                                  value: e.target.checked,
+                                },
+                              });
+
+                              let activeField = r.fields.find(
+                                x => x.field === this.state.activeField.field,
+                              );
+
+                              this.setState({ fields: r.fields, activeField });
+                            }}
+                          />
+                        ) : (
+                          val
+                        )}
                       </div>
                     ))}
                 </section>
