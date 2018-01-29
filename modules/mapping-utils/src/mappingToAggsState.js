@@ -1,4 +1,3 @@
-import { startCase } from 'lodash'
 import mappingToAggsType from './mappingToAggsType';
 
 export default mapping =>
@@ -7,8 +6,5 @@ export default mapping =>
     .map(([field, type]) => ({
       field,
       type,
-      displayName: startCase(field.replace(/__/g, ' ')),
       active: false,
-      allowedValues: [],
-      restricted: false,
     }));
