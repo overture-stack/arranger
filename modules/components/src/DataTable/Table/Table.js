@@ -55,7 +55,7 @@ class DataTable extends React.Component {
 
     this.setState({ loading: true, lastState: state });
 
-    fetchData({
+    fetchData?.({
       config,
       sqon,
       queryName: 'Table',
@@ -71,6 +71,7 @@ class DataTable extends React.Component {
       if (total !== this.state.total) {
         this.props.onPaginationChange({ total });
       }
+
       this.setState({
         data,
         total,
@@ -105,13 +106,19 @@ class DataTable extends React.Component {
 
   render() {
     const { toggleSelection, toggleAll, isSelected, onFetchData } = this;
-    const { config, defaultPageSize, onSortedChange } = this.props;
+    const {
+      config,
+      defaultPageSize,
+      onSortedChange,
+      propsData,
+      loading: propsLoading,
+    } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selection, pages, loading } = this.state;
 
     const fetchFromServerProps = {
       pages,
-      loading,
+      loading: propsLoading !== null ? propsLoading : loading,
       manual: true,
       onFetchData,
     };
@@ -132,7 +139,7 @@ class DataTable extends React.Component {
         onPageSizeChange={(pageSize, page) =>
           this.props.onPaginationChange({ pageSize, page })
         }
-        data={data}
+        data={propsData?.data || data}
         defaultSorted={defaultSorted}
         columns={columns}
         defaultPageSize={defaultPageSize}

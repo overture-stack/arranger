@@ -17,8 +17,12 @@ const TableToolbar = ({
   onSQONChange,
   page = 0,
   pageSize = 0,
-  total = 0,
+  propsData,
+  total = propsData?.total || 0,
   type = '',
+  allowTogglingColumns = true,
+  allowTSVExport = true,
+  customActions = null,
   streamData = () => {},
 }) => (
   <div style={{ padding: 10, display: 'flex' }}>
@@ -46,32 +50,37 @@ const TableToolbar = ({
         onSQONChange(t);
       }}
     />
-    <DropDown
-      itemToString={i => i.Header}
-      items={canChangeShowColumns}
-      onChange={item => {
-        onColumnsChange(
-          Object.assign([], columns, {
-            [columns.indexOf(item)]: {
-              ...item,
-              show: !item.show,
-            },
-          }),
-        );
-      }}
-    >
-      Show columns
-    </DropDown>
-    <div>
-      <button
-        style={{ display: 'flex', cursor: 'pointer' }}
-        onClick={() => {
-          saveTSV({ columns: columns.filter(c => c.show), streamData });
+    {allowTogglingColumns && (
+      <DropDown
+        itemToString={i => i.Header}
+        items={canChangeShowColumns}
+        onChange={item => {
+          onColumnsChange(
+            Object.assign([], columns, {
+              [columns.indexOf(item)]: {
+                ...item,
+                show: !item.show,
+              },
+            }),
+          );
         }}
       >
-        <div style={{ minHeight: 16 }}>Export TSV</div>
-      </button>
-    </div>
+        Show columns
+      </DropDown>
+    )}
+    {allowTSVExport && (
+      <div>
+        <button
+          style={{ display: 'flex', cursor: 'pointer' }}
+          onClick={() => {
+            saveTSV({ columns: columns.filter(c => c.show), streamData });
+          }}
+        >
+          <div style={{ minHeight: 16 }}>Export TSV</div>
+        </button>
+      </div>
+    )}
+    {customActions}
   </div>
 );
 

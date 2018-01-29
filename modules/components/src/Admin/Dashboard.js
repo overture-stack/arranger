@@ -1,6 +1,10 @@
 import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
+import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
+
+import Header from './Header';
+import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
 
 let API = 'http://localhost:5050';
@@ -72,8 +76,10 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
       this.setState({
-        projects,
+        projects: projectsWithTypes,
         projectsTotal: total,
         error: null,
         fields: [],
@@ -91,6 +97,65 @@ class Dashboard extends React.Component {
     }
   }, 300);
 
+  addTypesToProjects = projects =>
+    Promise.all(
+      projects.map((x, i) =>
+        api({
+          endpoint: `/projects/${x.id}/types`,
+          body: { eshost: this.state.eshost },
+        }).then(data => ({
+          ...projects[i],
+          types: data,
+          delete: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.deleteProject({ id: x.id })}
+            >
+              🔥
+            </div>
+          ),
+          active: () =>
+            x.active && (
+              <div
+                css={`
+                  cursor: pointer;
+                  text-align: center;
+                `}
+              >
+                ✅
+              </div>
+            ),
+          spinup: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.spinup({ id: x.id })}
+            >
+              ⚡️
+            </div>
+          ),
+          endpointStatus: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+            >
+              {this.state.projectStates.find(p => p.id === x.id)?.status ===
+                400 && `⬇️`}
+              {this.state.projectStates.find(p => p.id === x.id)?.status ===
+                200 && `⬆️`}
+            </div>
+          ),
+        })),
+      ),
+    );
+
   addProject = async () => {
     let { projects, total, error } = await api({
       endpoint: '/projects/add',
@@ -102,8 +167,10 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
       this.setState({
-        projects,
+        projects: projectsWithTypes,
         projectsTotal: total,
         activeProject: this.state.newProjectName,
         newProjectName: '',
@@ -128,8 +195,10 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
       this.setState({
-        projects,
+        projects: projectsWithTypes,
         projectsTotal: total,
         types: [],
         activeProject: null,
@@ -138,11 +207,9 @@ class Dashboard extends React.Component {
     }
   };
 
-  getFields = async ({ activeType }) => {
+  getFields = async ({ activeType, projectId }) => {
     let { fields, total, error } = await api({
-      endpoint: `/projects/${
-        this.state.activeProject
-      }/types/${activeType}/fields`,
+      endpoint: `/projects/${projectId}/types/${activeType}/fields`,
       body: { eshost: this.state.eshost },
     });
 
@@ -185,8 +252,13 @@ class Dashboard extends React.Component {
     }
 
     if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(
+        this.state.projects,
+      );
+
       this.setState({
         types,
+        projects: projectsWithTypes,
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
@@ -216,187 +288,218 @@ class Dashboard extends React.Component {
   };
 
   render() {
+    let headerHeight = 38;
     return (
-      <div className="app">
-        <div className="row">
-          <div className="title-arranger">ARRANGER</div>
-          <div className="title-elasticsearch">ELASTICSEARCH HOST :</div>
-          <input
-            className="eshost-input"
-            value={this.state.eshost}
-            onChange={e => {
+      <BrowserRouter>
+        <div
+          className="app"
+          css={`
+            display: flex;
+            flex-direction: column;
+          `}
+        >
+          <Header
+            eshost={this.state.eshost}
+            height={headerHeight}
+            handleOnChange={e => {
               let state = { eshost: e.target.value };
               this.setState(state);
               this.getProjects(state);
             }}
           />
-        </div>
-        {this.state.error && <div className="error">⚠️ {this.state.error}</div>}
-        <div className="row">
-          <section>
-            <div>
-              <input
-                style={{ padding: 5 }}
-                placeholder="New Project..."
-                value={this.state.newProjectName}
-                onChange={e =>
-                  this.setState({ newProjectName: e.target.value })
-                }
-              />
-              <button onClick={this.addProject}>+</button>
-            </div>
-            <div>
-              <label className="projects">
-                PROJECTS ({this.state.projectsTotal})
-              </label>
-              {this.state.projects.map(x => (
+          {this.state.error && (
+            <div className="error">⚠️ {this.state.error}</div>
+          )}
+          <Route
+            render={p =>
+              // needed for storybook
+              p.location.pathname === '/iframe.html' && (
+                <Redirect to="/projects" />
+              )
+            }
+          />
+          <Route // breadcrums
+            render={p => {
+              let split = location.pathname.split('/');
+              return (
                 <div
-                  key={x.id}
-                  className="row"
-                  style={{ alignItems: 'center' }}
+                  css={`
+                    line-height: ${headerHeight}px;
+                    padding: 0 10px;
+                  `}
                 >
-                  <span
-                    onClick={() =>
-                      this.setState({ activeProject: x.id }, this.getTypes)
-                    }
-                    style={{
-                      textDecoration:
-                        this.state.activeProject === x.id
-                          ? 'none'
-                          : 'underline',
-                      cursor:
-                        this.state.activeProject === x.id
-                          ? 'default'
-                          : 'pointer',
-                      color:
-                        this.state.activeProject === x.id ? 'blue' : 'black',
-                    }}
+                  {split.reduce(
+                    (breadCrumbs, segment, i) => [
+                      ...breadCrumbs,
+                      <React.Fragment key={segment}>
+                        <Link
+                          key={segment}
+                          to={`/${segment}`} // TODO: parent path
+                          css={`
+                            text-transform: uppercase;
+                            text-decoration: none;
+                            font-weight: bold;
+                            font-size: 12px;
+                          `}
+                        >
+                          {segment}
+                        </Link>
+                        {i !== 0 && i !== split.length - 1 && <span> / </span>}
+                      </React.Fragment>,
+                    ],
+                    [],
+                  )}
+                </div>
+              );
+            }}
+          />
+          <Route
+            path="/projects"
+            exact
+            render={() => (
+              <div
+                css={`
+                  flex-grow: 1;
+                  position: relative;
+                `}
+              >
+                <ProjectsTable
+                  newProjectName={this.state.newProjectName}
+                  setNewProjectName={s => this.setState(s)}
+                  addProject={this.addProject}
+                  projectsTotal={this.state.projectsTotal}
+                  projects={this.state.projects}
+                />
+              </div>
+            )}
+          />
+
+          {/* <section>
+              <div>
+                {this.state.projects.map(x => (
+                  <div
+                    key={x.id}
+                    className="row"
+                    style={{ alignItems: 'center' }}
                   >
-                    {x.id}
-                  </span>
-                  <div style={{ marginLeft: 'auto' }}>
-                    {this.state.activeProject === x.id && (
-                      <>
-                        {x.active &&
-                          this.state.projectStates.find(p => p.id === x.id)
-                            ?.status !== 200 && (
+                    <div style={{ marginLeft: 'auto' }}>
+                      {this.state.activeProject === x.id && (
+                        <>
+                          {x.active &&
+                            this.state.projectStates.find(p => p.id === x.id)
+                              ?.status !== 200 && (
+                              <span
+                                className="onoff"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => this.spinup({ id: x.id })}
+                              >
+                                ⚡️
+                              </span>
+                            )}
+                          {this.state.projectStates.find(p => p.id === x.id)
+                            ?.status === 200 && (
                             <span
                               className="onoff"
                               style={{ cursor: 'pointer' }}
-                              onClick={() => this.spinup({ id: x.id })}
+                              onClick={() => this.teardown({ id: x.id })}
                             >
-                              ⚡️
+                              💤
                             </span>
                           )}
-                        {this.state.projectStates.find(p => p.id === x.id)
-                          ?.status === 200 && (
-                          <span
-                            className="onoff"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => this.teardown({ id: x.id })}
-                          >
-                            💤
-                          </span>
-                        )}
-                        <span
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => this.deleteProject({ id: x.id })}
-                        >
-                          🔥
-                        </span>
-                      </>
-                    )}
-                    {x.active && (
-                      <>
-                        <span>✅</span>
-                        <span>
-                          {this.state.projectStates.find(p => p.id === x.id)
-                            ?.status === 400 && `⬇️`}
-                          {this.state.projectStates.find(p => p.id === x.id)
-                            ?.status === 200 && `⬆️`}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-          {this.state.activeProject && (
-            <section>
-              <div style={{ padding: 5 }}>
-                <div>
-                  <input
-                    placeholder="Type name"
-                    value={this.state.newTypeName}
-                    onChange={e =>
-                      this.setState({ newTypeName: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <input
-                    placeholder="index"
-                    value={this.state.newTypeIndex}
-                    onChange={e =>
-                      this.setState({ newTypeIndex: e.target.value })
-                    }
-                  />
-                  <button onClick={this.addType}>+</button>
-                </div>
-              </div>
-              <div>
-                <label className="projects">
-                  TYPES ({this.state.typesTotal})
-                </label>
-                {this.state.types.map(x => (
-                  <div key={x.index} className="type-container">
-                    <div>
-                      <label>NAME: </label>
-                      <span>{x.name}</span>
+                        </>
+                      )}
                     </div>
-                    <div>
-                      <label>INDEX: </label>
-                      <span
-                        key={x.index}
-                        onClick={() => {
-                          let state = { activeType: x.index };
-                          this.setState(state);
-                          this.getFields(state);
-                        }}
-                        style={{
-                          textDecoration:
-                            this.state.activeType === x.index
-                              ? 'none'
-                              : 'underline',
-                          cursor:
-                            this.state.activeType === x.index
-                              ? 'default'
-                              : 'pointer',
-                        }}
-                      >
-                        {x.index}
-                      </span>
-                    </div>
-                    <div>
-                      <label>ACTIVE: </label>
-                      <input
-                        type="checkbox"
-                        checked={x.active}
-                        key={x.index}
-                        onChange={() => {}}
-                      />
-                    </div>
-                    {!x.mappings && (
-                      <div className="warning">No mappings found.</div>
-                    )}
                   </div>
                 ))}
               </div>
-            </section>
-          )}
-          {this.state.activeProject &&
-            this.state.activeType && (
+            </section> */}
+          <Route
+            exact
+            path="/projects/:id"
+            render={({ match, history, location }) => (
+              <section>
+                <div style={{ padding: 5 }}>
+                  <div>
+                    <input
+                      placeholder="Type name"
+                      value={this.state.newTypeName}
+                      onChange={e =>
+                        this.setState({ newTypeName: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <input
+                      placeholder="index"
+                      value={this.state.newTypeIndex}
+                      onChange={e =>
+                        this.setState({ newTypeIndex: e.target.value })
+                      }
+                    />
+                    <button onClick={this.addType}>+</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="projects">
+                    TYPES ({this.state.typesTotal})
+                  </label>
+                  {this.state.projects
+                    ?.find(x => x.id === match.params.id)
+                    ?.types?.types?.map(x => (
+                      <div key={x.index} className="type-container">
+                        <div>
+                          <label>NAME: </label>
+                          <span>{x.name}</span>
+                        </div>
+                        <div>
+                          <label>INDEX: </label>
+                          <span
+                            key={x.index}
+                            onClick={() => {
+                              let state = { activeType: x.index };
+                              this.setState(state);
+                              this.getFields({
+                                ...state,
+                                projectId: match.params.id,
+                              });
+                              history.push(location.pathname + '/' + x.index);
+                            }}
+                            style={{
+                              textDecoration:
+                                this.state.activeType === x.index
+                                  ? 'none'
+                                  : 'underline',
+                              cursor:
+                                this.state.activeType === x.index
+                                  ? 'default'
+                                  : 'pointer',
+                            }}
+                          >
+                            {x.index}
+                          </span>
+                        </div>
+                        <div>
+                          <label>ACTIVE: </label>
+                          <input
+                            type="checkbox"
+                            checked={x.active}
+                            key={x.index}
+                            onChange={() => {}}
+                          />
+                        </div>
+                        {!x.mappings && (
+                          <div className="warning">No mappings found.</div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+          />
+          <Route
+            exact
+            path="/projects/:projectId/:index"
+            render={({ match, history, location }) => (
               <section>
                 <div style={{ padding: 5 }}>
                   <label className="projects">
@@ -409,33 +512,94 @@ class Dashboard extends React.Component {
                     className={`field-item ${
                       x.field == this.state.activeField?.field ? 'active' : ''
                     }`}
-                    onClick={() => this.setState({ activeField: x })}
+                    onClick={() => {
+                      this.setState({ activeField: x });
+                      history.push(location.pathname + '/' + x.field);
+                    }}
                   >
                     {x.field}
                   </div>
                 ))}
               </section>
             )}
-          {this.state.activeProject &&
-            this.state.activeType &&
-            this.state.activeField && (
-              <section>
-                <div style={{ padding: 5 }}>
-                  <label className="projects">
-                    {this.state.activeField.field}
-                  </label>
-                </div>
-                {Object.entries(this.state.activeField)
-                  .filter(([key]) => key !== 'field')
-                  .map(([key, val]) => (
-                    <div key={key} className="type-container">
-                      {startCase(key)}: {val}
+          />
+          <Route
+            exact
+            path="/projects/:projectId/:index/:field"
+            render={({ match, history, location }) => (
+              <div className="row">
+                <section>
+                  <div style={{ padding: 5 }}>
+                    <label className="projects">
+                      FIELDS ({this.state.fieldsTotal})
+                    </label>
+                  </div>
+                  {this.state.fields.map(x => (
+                    <div
+                      key={x.field}
+                      className={`field-item ${
+                        x.field == this.state.activeField?.field ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        this.setState({ activeField: x });
+                        history.push(
+                          `/projects/${match.params.projectId}/${
+                            match.params.index
+                          }/${x.field}`,
+                        );
+                      }}
+                    >
+                      {x.field}
                     </div>
                   ))}
-              </section>
+                </section>
+                <section>
+                  <div style={{ padding: 5 }}>
+                    <label className="projects">
+                      {this.state.activeField?.field}
+                    </label>
+                  </div>
+                  {Object.entries(this.state.activeField || {})
+                    .filter(([key]) => key !== 'field')
+                    .map(([key, val]) => (
+                      <div key={key} className="type-container">
+                        {startCase(key)}:
+                        {typeof val === 'boolean' ? (
+                          <input
+                            type="checkbox"
+                            checked={val}
+                            onChange={async e => {
+                              let r = await api({
+                                endpoint: `/projects/${
+                                  match.params.projectId
+                                }/types/${match.params.index}/fields/${
+                                  match.params.field
+                                }/update`,
+                                body: {
+                                  eshost: this.state.eshost,
+                                  key,
+                                  value: e.target.checked,
+                                },
+                              });
+
+                              let activeField = r.fields.find(
+                                x => x.field === this.state.activeField.field,
+                              );
+
+                              this.setState({ fields: r.fields, activeField });
+                            }}
+                          />
+                        ) : (
+                          val
+                        )}
+                      </div>
+                    ))}
+                </section>
+              </div>
             )}
+          />
         </div>
-      </div>
+      </BrowserRouter>
     );
   }
 }

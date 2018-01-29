@@ -11,7 +11,7 @@ export function getSingleValue(data) {
 }
 
 export function columnsToGraphql({
-  config,
+  config = {},
   sqon,
   queryName,
   sort,
@@ -105,7 +105,7 @@ export function columnsToGraphql({
   };
 }
 
-export function normalizeColumns(columns, customTypes) {
+export function normalizeColumns(columns = [], customTypes) {
   const types = {
     ...columnTypes,
     ...customTypes,
@@ -119,9 +119,11 @@ export function normalizeColumns(columns, customTypes) {
   });
 }
 
-export const withNormalizedColumns = withProps(({ config, customTypes }) => ({
-  config: {
-    ...config,
-    columns: normalizeColumns(config.columns, customTypes),
-  },
-}));
+export const withNormalizedColumns = withProps(
+  ({ config = {}, customTypes }) => ({
+    config: {
+      ...config,
+      columns: normalizeColumns(config.columns, customTypes),
+    },
+  }),
+);
