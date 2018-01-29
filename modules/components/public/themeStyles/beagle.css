@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
+@import url('https://use.fontawesome.com/releases/v5.0.6/css/all.css');
 
 div {
   font-family: 'Montserrat', sans-serif;
@@ -252,4 +253,35 @@ div {
 
 .sqon-value-group-end {
   margin-right: 10px;
+}
+
+/***********************************/
+/**** styling for the tree view ****/
+/***********************************/
+.tree-view .tree-view_children {
+  margin-left: 20px;
+}
+.tree-view .header {
+  color: #2b388f;
+  font-size: 1.2em;
+}
+.tree-view .tree-view_children .leaf {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.tree-view .tree-view_arrow:after {
+  content: '›';
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  width: 20px;
+}
+.tree-view .tree-view_arrow {
+  transform: rotate(90deg);
+  margin-right: 0px;
+  color: #009bb8;
+}
+.tree-view .tree-view_arrow-collapsed {
+  transform: rotate(0deg);
 }
