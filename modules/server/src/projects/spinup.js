@@ -6,6 +6,7 @@ import {
   addMappingsToTypes,
   mappingToAggsState,
   esToGraphqlTypeMap,
+  mappingToColumnsState,
 } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
@@ -99,7 +100,7 @@ export default ({ app }) => async (req, res) => {
 
   let body = flattenDeep(
     typesWithMappings.map(([type, props]) => {
-      // const columns = mappingToColumnsState(props.mapping);
+      const columns = mappingToColumnsState(props.mapping);
 
       return [
         {
@@ -113,25 +114,25 @@ export default ({ app }) => async (req, res) => {
           timestamp: new Date().toISOString(),
           state: mappingToAggsState(props.mapping),
         }),
-        // {
-        //   index: {
-        //     _index: `${type}-columns-state`,
-        //     _type: `${type}-columns-state`,
-        //     _id: uuid(),
-        //   },
-        // },
-        // JSON.stringify({
-        //   timestamp: new Date().toISOString(),
-        //   type,
-        //   keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
-        //   defaultSorted: [
-        //     {
-        //       id: columns[0].id || columns[0].accessor,
-        //       desc: false,
-        //     },
-        //   ],
-        //   columns,
-        // }),
+        {
+          index: {
+            _index: `arranger-projects-${id}-${type}-columns-state`,
+            _type: `arranger-projects-${id}-${type}-columns-state`,
+            _id: uuid(),
+          },
+        },
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          type,
+          keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
+          defaultSorted: [
+            {
+              id: columns[0].id || columns[0].accessor,
+              desc: false,
+            },
+          ],
+          columns,
+        }),
       ];
     }),
   );
