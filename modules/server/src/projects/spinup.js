@@ -123,15 +123,17 @@ export default ({ app }) => async (req, res) => {
         },
         JSON.stringify({
           timestamp: new Date().toISOString(),
-          type,
-          keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
-          defaultSorted: [
-            {
-              id: columns[0].id || columns[0].accessor,
-              desc: false,
-            },
-          ],
-          columns,
+          state: {
+            type,
+            keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
+            defaultSorted: [
+              {
+                id: columns[0].id || columns[0].accessor,
+                desc: false,
+              },
+            ],
+            columns,
+          },
         }),
       ];
     }),

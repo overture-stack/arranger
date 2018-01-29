@@ -4,7 +4,9 @@ import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 
 import AggsState from '../Aggs/AggsState';
+import ColumnsState from '../Aggs/ColumnsState';
 import EditAggs from '../Aggs/EditAggs';
+import EditColumns from '../Aggs/EditColumns';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
@@ -333,9 +335,8 @@ class Dashboard extends React.Component {
                   {split.reduce(
                     (breadCrumbs, segment, i) => [
                       ...breadCrumbs,
-                      <React.Fragment key={segment}>
+                      <React.Fragment key={segment + i}>
                         <Link
-                          key={segment}
                           to={`/${segment}`} // TODO: parent path
                           css={`
                             text-transform: uppercase;
@@ -484,18 +485,46 @@ class Dashboard extends React.Component {
                     </div>
                   ))}
                 </section>
-                <AggsState
-                  projectId={match.params.projectId}
-                  index={match.params.index}
-                  render={aggsState => (
+                <div className="row">
+                  <div>
                     <div>
-                      <EditAggs
-                        handleChange={aggsState.update}
-                        {...aggsState}
-                      />
+                      <label>Aggregations State</label>
                     </div>
-                  )}
-                />
+                    <AggsState
+                      projectId={match.params.projectId}
+                      index={match.params.index}
+                      render={aggsState => (
+                        <div>
+                          <EditAggs
+                            handleChange={aggsState.update}
+                            {...aggsState}
+                          />
+                        </div>
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <div>
+                      <label>Columns State</label>
+                    </div>
+                    <ColumnsState
+                      projectId={match.params.projectId}
+                      index={match.params.index}
+                      render={aggsState =>
+                        !aggsState.aggs.columns ? (
+                          ''
+                        ) : (
+                          <div>
+                            <EditColumns
+                              handleChange={aggsState.update}
+                              {...aggsState}
+                            />
+                          </div>
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             )}
           />

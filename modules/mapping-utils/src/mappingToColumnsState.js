@@ -26,6 +26,7 @@ export default mapping => {
       type,
       sortable: type !== 'list',
       canChangeShow: type !== 'list',
+      field: id,
       ...(type === 'list'
         ? {
             query: toQuery(field),

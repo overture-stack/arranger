@@ -29,15 +29,20 @@ export let typeDefs = `
     listAccessor: String
     totalAccessor: String
     id: String
+    field: String
     accessor: String
   }
 
-  type ColumnsState {
-    timestamp: String
+  type ColumnState {
     type: String
     keyField: String
     defaultSorted: [ColumnSort]
     columns: [Column]
+  }
+
+  type ColumnsState {
+    state: ColumnState
+    timestamp: String
   }
 
   type ColumnsStates {
