@@ -529,7 +529,6 @@ class Dashboard extends React.Component {
             render={({ match, history, location }) => (
               <div className="row">
                 <section>
-                  asdasdasdz
                   <div style={{ padding: 5 }}>
                     <label className="projects">
                       FIELDS ({this.state.fieldsTotal})
@@ -543,7 +542,11 @@ class Dashboard extends React.Component {
                       }`}
                       onClick={() => {
                         this.setState({ activeField: x });
-                        history.push(`/projects/${match.params.projectId}/${match.params.index}/${x.field}`);
+                        history.push(
+                          `/projects/${match.params.projectId}/${
+                            match.params.index
+                          }/${x.field}`,
+                        );
                       }}
                     >
                       {x.field}
