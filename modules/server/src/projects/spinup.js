@@ -143,7 +143,7 @@ export default ({ app }) => async (req, res) => {
   app.use(
     `/${id}/graphql`,
     schema
-      ? graphqlExpress({ schema, context: { es } })
+      ? graphqlExpress({ schema, context: { es, projectId: id } })
       : (req, res) =>
           res.json({
             error:

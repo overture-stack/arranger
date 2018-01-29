@@ -32,7 +32,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     node(id: ID!): Node
     viewer: Root
     query(query: String, types: [String]): QueryResults
-    aggsState(projectId: String! indices: [String]): [AggsStates]
+    aggsState(indices: [String]): [AggsStates]
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${key}: ${type.name}`)}
   }
@@ -64,7 +64,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
   return {
     JSON: GraphQLJSON,
     Root: {
-      aggsState: async (obj, { indices, projectId }, { es }) => {
+      aggsState: async (obj, { indices }, { es, projectId }) => {
         let responses = await Promise.all(
           indices.map(index =>
             es.search({
