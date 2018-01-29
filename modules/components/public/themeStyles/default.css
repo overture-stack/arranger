@@ -1,0 +1,24 @@
+.sqon-view {
+    background-color: #EDF8FB;
+    padding: 1.1rem;
+}
+
+.sqon-bubble {
+    color: #fff;
+    padding: 6px;
+}
+.sqon-value {
+    background-color: #D6E02F;
+}
+
+.sqon-op {
+    background-color: #C73E89;
+}
+
+.sqon-field {
+    background-color: #3FC5ED;
+}
+
+.sqon-clear {
+    background-color: #C73E89;
+}

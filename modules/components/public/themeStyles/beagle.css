@@ -144,3 +144,56 @@ div {
   display: flex;
   align-items: center;
 }
+
+/**************************************/
+/* styling for the SQONView component */
+/**************************************/
+
+.sqon-view {
+  background-color: #f4f5f8;
+  border: solid 1px #d4d6dd;
+  padding: 14px 20px;
+}
+
+.sqon-view-empty {
+  display: none;
+}
+
+.sqon-bubble {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  border-radius: 10.5px;
+  font-family: Montserrat;
+  font-size: 11px;
+  font-weight: 300;
+  letter-spacing: 0.2px;
+}
+
+.sqon-value {
+  background-color: #404c9a;
+  color: #fff;
+  padding: 0 6px 0 12px;
+}
+
+.sqon-op {
+  font-family: OpenSans;
+  font-weight: normal;
+  color: #74757d;
+}
+
+.sqon-field {
+  font-family: OpenSans;
+  font-weight: 600;
+  color: #343434;
+  text-transform: uppercase;
+}
+
+.sqon-clear {
+  padding: 0 12px;
+  color: #fff;
+  background-color: #ffffff;
+  color: #008199;
+  border: solid 1px #cacbcf;
+  text-transform: uppercase;
+}

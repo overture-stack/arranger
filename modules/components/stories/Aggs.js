@@ -6,9 +6,9 @@ import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
 import AggsPanell from '../src/Aggs/AggsPanell';
 import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
-import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher/index';
 import State from '../src/State';
 import './Aggs.css';
+import { themeDecorator } from './decorators';
 
 let aggs = [
   {
@@ -57,18 +57,19 @@ let aggs = [
   },
 ];
 
-storiesOf('Aggs', module).add('EditAggs', () => (
-  <>
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+let defaultSQON = {
+  op: 'and',
+  content: [],
+};
+
+storiesOf('Aggs', module)
+  .addDecorator(themeDecorator)
+  .add('EditAggs', () => (
     <div className="edit-aggs-wrapper">
       <EditAggs aggs={aggs} handleChange={action('Agg State Change')} />
     </div>
-  </>
-));
-
-storiesOf('Aggs', module).add('TermAgg', () => (
-  <>
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+  ))
+  .add('TermAgg', () => (
     <div className="term-agg-wrapper">
       <TermAgg
         field="disease_type"
@@ -86,17 +87,8 @@ storiesOf('Aggs', module).add('TermAgg', () => (
         handleValueClick={action('Term Agg Selection')}
       />
     </div>
-  </>
-));
-
-let defaultSQON = {
-  op: 'and',
-  content: [],
-};
-
-storiesOf('Aggs', module).add('AggsWithSQON', () => (
-  <>
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+  ))
+  .add('AggsWithSQON', () => (
     <State
       initial={{ sqon: null }}
       render={({ sqon, update }) => (
@@ -142,12 +134,8 @@ storiesOf('Aggs', module).add('AggsWithSQON', () => (
         </div>
       )}
     />
-  </>
-));
-
-storiesOf('Aggs', module).add('LiveDataAggsPanel', () => (
-  <>
-    <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+  ))
+  .add('LiveDataAggsPanel', () => (
     <State
       initial={{ index: '', sqon: {} }}
       render={({ index, update }) => (
@@ -165,5 +153,4 @@ storiesOf('Aggs', module).add('LiveDataAggsPanel', () => (
         </div>
       )}
     />
-  </>
-));
+  ));
