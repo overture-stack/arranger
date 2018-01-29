@@ -10,6 +10,7 @@ import {
 const dataSource = [
   {
     title: 'Animal',
+    isHeader: true,
     children: [
       {
         title: 'Cat',
@@ -52,12 +53,9 @@ const dataSource = [
 storiesOf('Treeview', module).add('Treeview', () => (
   <>
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
-<<<<<<< HEAD
     <NestedTreeView
       dataSource={elasticMappingToDisplayTreeData(MOCK_MAPPING)}
     />
-=======
->>>>>>> 50a9611... adds ThemeSwitcher
     <NestedTreeView dataSource={dataSource} />
   </>
 ));
