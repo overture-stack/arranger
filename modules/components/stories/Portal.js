@@ -116,8 +116,8 @@ const tableConfig = {
 
 storiesOf('Portal', module).add('Exploration', () => (
   <State
-    initial={{ index: '', editMode: false, sqon: null }}
-    render={({ index, sqon, editMode, update }) => (
+    initial={{ index: '', projectId: '', editMode: false, sqon: null }}
+    render={({ index, projectId, sqon, editMode, update }) => (
       <div>
         <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
         <label>index: </label>
@@ -125,76 +125,90 @@ storiesOf('Portal', module).add('Exploration', () => (
           value={index}
           onChange={e => update({ index: e.target.value })}
         />
+        <label>projectId: </label>
+        <input
+          value={projectId}
+          onChange={e => update({ projectId: e.target.value })}
+        />
         <button onClick={() => update({ editMode: !editMode })}>
           {editMode ? 'View Portal' : 'Edit Mode'}
         </button>
         <div className="app" style={{ display: 'flex' }}>
-          <AggsState
-            index={index}
-            render={aggsState =>
-              editMode ? (
-                <div>
-                  <EditAggs handleChange={aggsState.update} {...aggsState} />
-                </div>
-              ) : (
-                <AggsQuery
-                  debounceTime={300}
-                  endpoint="cats"
-                  index={index}
-                  aggs={aggsState.aggs.filter(x => x.active)}
-                  render={data =>
-                    data && (
-                      <div>
-                        {aggsState.aggs
-                          .filter(x => x.active)
-                          .map(agg => ({
-                            ...agg,
-                            ...data[index].aggregations[agg.field],
-                          }))
-                          .map(agg => (
-                            // TODO: switch on agg type
-                            <TermAgg
-                              key={agg.field}
-                              {...agg}
-                              Content={({ content, ...props }) => (
-                                <div
-                                  {...props}
-                                  onClick={() =>
-                                    update({
-                                      sqon: toggleSQON(
-                                        {
-                                          op: 'and',
-                                          content: [
-                                            {
-                                              op: 'in',
-                                              content,
-                                            },
-                                          ],
-                                        },
-                                        sqon || defaultSQON,
-                                      ),
-                                    })
-                                  }
-                                />
-                              )}
-                              isActive={d =>
-                                inCurrentSQON({
-                                  value: d.value,
-                                  dotField: d.field,
-                                  currentSQON:
-                                    sqon?.content || defaultSQON.content,
-                                })
-                              }
-                            />
-                          ))}
-                      </div>
-                    )
-                  }
-                />
-              )
-            }
-          />
-          <div style={{ flexGrow: 1 }}>
+          <div className="aggs-panel">
+            <AggsState
+              projectId={projectId}
+              index={index}
+              render={aggsState => {
+                console.log(123, aggsState);
+                return editMode ? (
+                  <div>
+                    <EditAggs handleChange={aggsState.update} {...aggsState} />
+                  </div>
+                ) : (
+                  <AggsQuery
+                    debounceTime={300}
+                    projectId={projectId}
+                    index={index}
+                    aggs={aggsState.aggs.filter(x => x.active)}
+                    render={data =>
+                      data && (
+                        <div>
+                          {aggsState.aggs
+                            .filter(x => x.active)
+                            .map(agg => ({
+                              ...agg,
+                              ...data[index].aggregations[agg.field],
+                            }))
+                            .map(agg => (
+                              // TODO: switch on agg type
+                              <TermAgg
+                                key={agg.field}
+                                {...agg}
+                                Content={({ content, ...props }) => (
+                                  <div
+                                    {...props}
+                                    onClick={() =>
+                                      update({
+                                        sqon: toggleSQON(
+                                          {
+                                            op: 'and',
+                                            content: [
+                                              {
+                                                op: 'in',
+                                                content,
+                                              },
+                                            ],
+                                          },
+                                          sqon || defaultSQON,
+                                        ),
+                                      })
+                                    }
+                                  />
+                                )}
+                                isActive={d =>
+                                  inCurrentSQON({
+                                    value: d.value,
+                                    dotField: d.field,
+                                    currentSQON:
+                                      sqon?.content || defaultSQON.content,
+                                  })
+                                }
+                              />
+                            ))}
+                        </div>
+                      )
+                    }
+                  />
+                );
+              }}
+            />
+          </div>
+          <div
+            css={`
+              position: relative;
+              flex-grow: 1;
+            `}
+          >
             <SQONView sqon={sqon || defaultSQON} />
             <DataTable
               sqon={sqon}

@@ -3,8 +3,8 @@ import { debounce } from 'lodash';
 
 let API = 'http://localhost:5050';
 
-let api = ({ endpoint = 'graphql', name = 'UnnamedQuery', query, variables }) =>
-  fetch(API + `/${endpoint}/${name}`, {
+let api = ({ projectId, name = 'UnnamedQuery', query, variables }) =>
+  fetch(API + `/${projectId}/graphql/${name}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

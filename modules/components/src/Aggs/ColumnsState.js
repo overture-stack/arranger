@@ -3,14 +3,29 @@ import { debounce } from 'lodash';
 
 let API = 'http://localhost:5050';
 
-let aggFields = `
+let fields = `
   index
   states {
     timestamp
     state {
-      field
-      active
+      keyField
       type
+      defaultSorted {
+        id
+        desc
+      }
+      columns {
+        show
+        type
+        field
+        sortable
+        canChangeShow
+        query
+        listAccessor
+        totalAccessor
+        id
+        accessor
+      }
     }
   }
 `;
@@ -26,7 +41,7 @@ let api = ({ body, endpoint = '' }) =>
   }).then(r => r.json());
 
 export default class extends Component {
-  state = { aggs: [], temp: [] };
+  state = { aggs: {}, temp: {} };
 
   async componentDidMount() {
     this.fetchAggsState(this.props);
@@ -45,8 +60,8 @@ export default class extends Component {
         body: {
           query: `
           {
-            aggsState(indices:["${this.props.index}"]) {
-              ${aggFields}
+            columnsState(indices:["${this.props.index}"]) {
+              ${fields}
             }
           }
         `,
@@ -54,8 +69,8 @@ export default class extends Component {
       });
 
       this.setState({
-        aggs: data.aggsState[0].states[0].state,
-        temp: data.aggsState[0].states[0].state,
+        aggs: data.columnsState[0].states[0].state,
+        temp: data.columnsState[0].states[0].state,
       });
     } catch (e) {
       // this.setState({ })
@@ -69,11 +84,11 @@ export default class extends Component {
         variables: { state },
         query: `
         mutation($state: JSON!) {
-          saveAggsState(
+          saveColumnsState(
             state: $state
             index: "${this.props.index}"
           ) {
-            ${aggFields}
+            ${fields}
           }
         }
       `,
@@ -81,8 +96,8 @@ export default class extends Component {
     });
 
     this.setState({
-      aggs: data.saveAggsState.states[0].state,
-      temp: data.saveAggsState.states[0].state,
+      aggs: data.saveColumnsState.states[0].state,
+      temp: data.saveColumnsState.states[0].state,
     });
   }, 300);
 

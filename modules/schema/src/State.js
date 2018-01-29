@@ -2,10 +2,7 @@ export let typeDefs = `
   type AggState {
     field: String
     type: String
-    displayName: String
     active: Boolean
-    allowedValues: [String]
-    restricted: Boolean
   }
 
   type AggsState {
@@ -16,5 +13,40 @@ export let typeDefs = `
   type AggsStates {
     index: String
     states: [AggsState]
+  }
+
+  type ColumnSort {
+    id: String
+    desc: Boolean
+  }
+
+  type Column {
+    show: Boolean
+    type: String
+    sortable: Boolean
+    canChangeShow: Boolean
+    query: String
+    listAccessor: String
+    totalAccessor: String
+    id: String
+    field: String
+    accessor: String
+  }
+
+  type ColumnState {
+    type: String
+    keyField: String
+    defaultSorted: [ColumnSort]
+    columns: [Column]
+  }
+
+  type ColumnsState {
+    state: ColumnState
+    timestamp: String
+  }
+
+  type ColumnsStates {
+    index: String
+    states: [ColumnsState]
   }
 `;

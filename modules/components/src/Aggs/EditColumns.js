@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import { noop } from 'lodash';
 import State from '../State';
 
-export default ({ aggs = [], handleChange = noop }) => (
+export default ({ aggs = {}, handleChange = noop }) => (
   <State
     initial={{ searchTerm: '' }}
     render={({ searchTerm, update }) => (
@@ -15,19 +15,19 @@ export default ({ aggs = [], handleChange = noop }) => (
             onChange={e => update({ searchTerm: e.target.value })}
           />
         </div>
-        {aggs.filter(x => x.field.includes(searchTerm)).map(x => (
+        {aggs.columns?.filter(x => x.field.includes(searchTerm)).map(x => (
           <div key={x.field} className="edit-agg">
             <div>field: {x.field}</div>
             <div>
               active:
               <input
                 type="checkbox"
-                checked={x.active}
+                checked={x.show}
                 onClick={() =>
                   handleChange({
                     field: x.field,
-                    key: 'active',
-                    value: !x.active,
+                    key: 'show',
+                    value: !x.show,
                   })
                 }
               />
