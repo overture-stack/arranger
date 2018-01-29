@@ -1,8 +1,8 @@
-import { capitalize } from 'lodash'
-import mappingToNestedFields from './mappingToNestedFields'
-import mappingToScalarFields from './mappingToScalarFields'
-import createConnectionTypeDefs from './createConnectionTypeDefs'
-import mappingToObjectTypes from './mappingToObjectTypes'
+import { capitalize } from 'lodash';
+import mappingToNestedFields from './mappingToNestedFields';
+import mappingToScalarFields from './mappingToScalarFields';
+import createConnectionTypeDefs from './createConnectionTypeDefs';
+import mappingToObjectTypes from './mappingToObjectTypes';
 
 let mappingToFields = ({ type }) => {
   return [
@@ -20,12 +20,12 @@ let mappingToFields = ({ type }) => {
     createConnectionTypeDefs({
       type,
       fields: [
-        mappingToScalarFields(type.mapping),
+        mappingToScalarFields(type.mapping, type.extendedFields),
         mappingToNestedFields(type.name, type.mapping),
         type.customFields,
       ],
     }),
-  ].join()
-}
+  ].join();
+};
 
-export default mappingToFields
+export default mappingToFields;

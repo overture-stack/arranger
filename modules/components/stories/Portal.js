@@ -11,7 +11,7 @@ import AggsState from '../src/Aggs/AggsState';
 import AggsQuery from '../src/Aggs/AggsQuery';
 import EditAggs from '../src/Aggs/EditAggs';
 import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
-
+import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import DataTable, { columnTypes, columnsToGraphql } from '../src/DataTable';
 
 function streamData({ columns, sort, first, onData, onEnd }) {
@@ -119,6 +119,7 @@ storiesOf('Portal', module).add('Exploration', () => (
     initial={{ index: '', editMode: false, sqon: null }}
     render={({ index, sqon, editMode, update }) => (
       <div>
+        <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
         <label>index: </label>
         <input // <-- could be a dropdown of available indices
           value={index}
@@ -138,6 +139,7 @@ storiesOf('Portal', module).add('Exploration', () => (
               ) : (
                 <AggsQuery
                   debounceTime={300}
+                  endpoint="cats"
                   index={index}
                   aggs={aggsState.aggs.filter(x => x.active)}
                   render={data =>

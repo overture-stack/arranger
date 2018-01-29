@@ -8,6 +8,7 @@ let api = ({ endpoint = 'graphql', name = 'UnnamedQuery', query, variables }) =>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ES_HOST: 'http://localhost:9200',
     },
     body: JSON.stringify({ query, variables }),
   }).then(r => r.json());
