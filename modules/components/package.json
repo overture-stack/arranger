@@ -7,7 +7,7 @@
     "access": "public"
   },
   "scripts": {
-    "build-storybook": "build-storybook",
+    "build-storybook": "build-storybook -s ./public",
     "storybook": "start-storybook -p 9001 -c .storybook -s ./public",
     "test": "jest",
     "flow": "flow"
