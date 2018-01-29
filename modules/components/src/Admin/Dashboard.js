@@ -543,7 +543,7 @@ class Dashboard extends React.Component {
                       }`}
                       onClick={() => {
                         this.setState({ activeField: x });
-                        history.push(location.pathname + '/' + x.field); // TODO: will break
+                        history.push(`/projects/${match.params.projectId}/${match.params.index}/${x.field}`);
                       }}
                     >
                       {x.field}
