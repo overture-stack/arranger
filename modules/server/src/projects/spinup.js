@@ -3,6 +3,7 @@ import makeSchema from '@arranger/schema';
 import {
   addMappingsToTypes,
   mappingToAggsState,
+  esToGraphqlTypeMap,
 } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
@@ -57,16 +58,36 @@ export default ({ app }) => async (req, res) => {
   let hits = mapHits(types);
   let mappings = await fetchMappings({ es, types: hits });
 
+  let extended = [];
+
+  try {
+    extended = await Promise.all(
+      hits.map(async type => {
+        let fields = await es.search({
+          index: `arranger-projects-${id}-${type.index}`,
+          type: `arranger-projects-${id}-${type.index}`,
+        });
+
+        return { ...type, fields: mapHits(fields) };
+      }),
+    );
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+
   let typesWithMappings = addMappingsToTypes({
-    types: hits.map(type => [
-      type.index,
-      {
-        index: type.index,
-        es_type: type.index,
-        name: type.name,
-        customFields: ``,
-      },
-    ]),
+    types: extended.map(type => {
+      return [
+        type.index,
+        {
+          index: type.index,
+          es_type: type.index,
+          name: type.name,
+          extendedFields: type.fields,
+          customFields: ``,
+        },
+      ];
+    }),
     mappings: mappings.map(m => m.mapping),
   });
 
