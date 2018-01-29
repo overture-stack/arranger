@@ -21,14 +21,12 @@ label {
 }
 
 .title-arranger {
-  padding: 10px;
   background-color: #5b8f94;
   font-weight: bold;
   color: white;
 }
 
 .title-elasticsearch {
-  padding: 10px;
   background-color: #525145;
   color: white;
   display: flex;

@@ -6,8 +6,10 @@ import getTypes from './getTypes';
 import deleteProject from './deleteProject';
 import addProject from './addProject';
 import getProjects from './getProjects';
+import updateField from './updateField';
 
 export default ({ app }) => {
+  app.use('/projects/:id/types/:index/fields/:field/update', updateField);
   app.use('/projects/:id/types/:index/fields', getFields);
   app.use('/projects/:id/types/add', addType);
   app.use('/projects/:id/spinup', spinup({ app }));

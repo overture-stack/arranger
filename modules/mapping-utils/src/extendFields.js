@@ -7,6 +7,5 @@ export default mapping =>
     type,
     displayName: startCase(field.replace(/\./g, ' ')),
     active: false,
-    allowedValues: [],
-    restricted: false,
+    isArray: false,
   }));

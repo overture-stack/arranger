@@ -24,14 +24,22 @@ class DataTable extends React.Component {
       streamData,
       onSQONChange,
       onSelectionChange,
-      style,
       sqon,
+      allowTogglingColumns = true,
+      allowTSVExport = true,
+      customActions = null,
+      data = null,
+      loading = null,
     } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
-      <div style={style}>
+      <>
         <TableToolbar
+          propsData={data}
+          customActions={customActions}
+          allowTogglingColumns={allowTogglingColumns}
+          allowTSVExport={allowTSVExport}
           onSQONChange={onSQONChange}
           streamData={options =>
             streamData({
@@ -57,10 +65,11 @@ class DataTable extends React.Component {
             left: 0,
             right: 0,
             bottom: 0,
-            top: 50,
+            top: 83, // TODO: get from props
           }}
         >
           <Table
+            propsData={data}
             sqon={sqon}
             config={{ ...this.props.config, columns }}
             fetchData={fetchData}
@@ -68,9 +77,10 @@ class DataTable extends React.Component {
             onPaginationChange={state => this.setState(state)}
             onSortedChange={sort => this.setState({ sort, page: 0 })}
             defaultPageSize={pageSize}
+            loading={loading}
           />
         </div>
-      </div>
+      </>
     );
   }
 }
