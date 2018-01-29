@@ -3,6 +3,8 @@ import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 
+import AggsState from '../Aggs/AggsState';
+import EditAggs from '../Aggs/EditAggs';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
@@ -373,46 +375,6 @@ class Dashboard extends React.Component {
               </div>
             )}
           />
-
-          {/* <section>
-              <div>
-                {this.state.projects.map(x => (
-                  <div
-                    key={x.id}
-                    className="row"
-                    style={{ alignItems: 'center' }}
-                  >
-                    <div style={{ marginLeft: 'auto' }}>
-                      {this.state.activeProject === x.id && (
-                        <>
-                          {x.active &&
-                            this.state.projectStates.find(p => p.id === x.id)
-                              ?.status !== 200 && (
-                              <span
-                                className="onoff"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => this.spinup({ id: x.id })}
-                              >
-                                ⚡️
-                              </span>
-                            )}
-                          {this.state.projectStates.find(p => p.id === x.id)
-                            ?.status === 200 && (
-                            <span
-                              className="onoff"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => this.teardown({ id: x.id })}
-                            >
-                              💤
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section> */}
           <Route
             exact
             path="/projects/:id"
@@ -500,27 +462,41 @@ class Dashboard extends React.Component {
             exact
             path="/projects/:projectId/:index"
             render={({ match, history, location }) => (
-              <section>
-                <div style={{ padding: 5 }}>
-                  <label className="projects">
-                    FIELDS ({this.state.fieldsTotal})
-                  </label>
-                </div>
-                {this.state.fields.map(x => (
-                  <div
-                    key={x.field}
-                    className={`field-item ${
-                      x.field == this.state.activeField?.field ? 'active' : ''
-                    }`}
-                    onClick={() => {
-                      this.setState({ activeField: x });
-                      history.push(location.pathname + '/' + x.field);
-                    }}
-                  >
-                    {x.field}
+              <div>
+                <section>
+                  <div style={{ padding: 5 }}>
+                    <label className="projects">
+                      FIELDS ({this.state.fieldsTotal})
+                    </label>
                   </div>
-                ))}
-              </section>
+                  {this.state.fields.map(x => (
+                    <div
+                      key={x.field}
+                      className={`field-item ${
+                        x.field == this.state.activeField?.field ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        this.setState({ activeField: x });
+                        history.push(location.pathname + '/' + x.field);
+                      }}
+                    >
+                      {x.field}
+                    </div>
+                  ))}
+                </section>
+                <AggsState
+                  projectId={match.params.projectId}
+                  index={match.params.index}
+                  render={aggsState => (
+                    <div>
+                      <EditAggs
+                        handleChange={aggsState.update}
+                        {...aggsState}
+                      />
+                    </div>
+                  )}
+                />
+              </div>
             )}
           />
           <Route
