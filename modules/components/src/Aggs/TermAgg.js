@@ -10,7 +10,7 @@ const TermAggs = ({
   isActive = () => {},
   isCollapsed = false,
   Content = 'div',
-  onArrowClick = () => {},
+  onHeaderClick = () => {},
 }) => {
   const dotField = field.replace(/__/g, '.');
 
@@ -18,7 +18,7 @@ const TermAggs = ({
     <div className="test-term-aggregation aggregation-card">
       <div
         className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-        onClick={onArrowClick}
+        onClick={onHeaderClick}
       >
         <span className="title">{displayName}</span>
         <span className={`arrow ${isCollapsed && 'collapsed'}`} />
@@ -91,7 +91,7 @@ class CollapsibleTermAgg extends Component {
       <TermAggs
         {...this.props}
         isCollapsed={this.state.isCollapsed}
-        onArrowClick={() =>
+        onHeaderClick={() =>
           this.setState({ isCollapsed: !this.state.isCollapsed })
         }
       />
