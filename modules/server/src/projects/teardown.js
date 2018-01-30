@@ -1,13 +1,14 @@
-// TODO:
-// this is not working.. want to "unregister" this middleware somehow
+import express from 'express';
 
 export default ({ app }) => async (req, res) => {
   let { id } = req.params;
   if (!id) return res.json({ error: 'project empty' });
 
-  app.use(`/${id}/ping`, (req, res) => res.send('disabled'));
+  global.apps[id] = express.Router();
 
-  app.use(`/${id}/graphql`, (req, res) =>
+  global.apps[id].use(`/${id}/ping`, (req, res) => res.send('disabled'));
+
+  global.apps[id].use(`/${id}/graphql`, (req, res) =>
     res.json({ message: `${id} graphql service has been disabled` }),
   );
 

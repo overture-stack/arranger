@@ -143,6 +143,17 @@ class Dashboard extends React.Component {
               ⚡️
             </div>
           ),
+          teardown: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.teardown({ id: x.id })}
+            >
+              💤
+            </div>
+          ),
           endpointStatus: () => (
             <div
               css={`

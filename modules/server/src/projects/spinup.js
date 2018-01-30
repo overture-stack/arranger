@@ -1,6 +1,7 @@
 import { graphqlExpress } from 'apollo-server-express';
 import uuid from 'uuid/v4';
 import { flattenDeep } from 'lodash';
+import express from 'express';
 import makeSchema from '@arranger/schema';
 import {
   addMappingsToTypes,
@@ -149,9 +150,11 @@ export default ({ app }) => async (req, res) => {
 
   await es.bulk({ body });
 
-  app.get(`/${id}/ping`, (req, res) => res.send('ok'));
+  global.apps[id] = express.Router();
 
-  app.use(
+  global.apps[id].get(`/${id}/ping`, (req, res) => res.send('ok'));
+
+  global.apps[id].use(
     `/${id}/graphql`,
     schema
       ? graphqlExpress({ schema, context: { es, projectId: id } })

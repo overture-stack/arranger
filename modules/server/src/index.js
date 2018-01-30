@@ -86,6 +86,14 @@ let main = async () => {
 
   projectsRoutes({ app });
 
+  global.apps = {};
+
+  app.use((req, res, next) => {
+    let routers = Object.values(apps);
+    if (!routers.length) return next();
+    routers.forEach(router => router(req, res, next));
+  });
+
   http.listen(port, () => rainbow(`⚡️ Listening on port ${port} ⚡️`));
 };
 

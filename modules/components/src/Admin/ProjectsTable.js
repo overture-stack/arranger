@@ -83,6 +83,14 @@ export default ({
           canChangeShow: false,
           accessor: 'spinup',
         },
+        {
+          show: true,
+          Header: 'decomission',
+          type: 'component',
+          sortable: false,
+          canChangeShow: false,
+          accessor: 'teardown',
+        },
       ],
     }}
     data={{
