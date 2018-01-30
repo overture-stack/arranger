@@ -19,7 +19,6 @@
  */
 
 "use strict";
-import _ from 'lodash';
 import utf8 from 'utf8';
 import { CONSTANTS } from './constants';
 import FilterProcessor from './filters';
@@ -258,7 +257,7 @@ export default class AggregationProcessor{
         } else {
           // ORIGINAL: nested_query = get_nested_query(read_nested_bool(nested_query).get('must', []), parent)
           const nested_bool = this.filterProcessor.read_nested_bool(nested_query);
-          nested_query = this.get_nested_query( _.get(nested_bool, 'must', []), parent);
+          nested_query = this.get_nested_query( ( nested_bool?.must || [] ), parent);
         }
       } else {
         continue;
@@ -491,7 +490,7 @@ export default class AggregationProcessor{
     if (graphql_fields[CONSTANTS.HISTOGRAM]) {
 
       const args = graphql_fields.histogram.arguments;
-      const interval = _.get(args, '[0].interval', this.historgramInterval);
+      const interval = args[0]?.interval || this.historgramInterval;
       
       numeric_agg[`${field}:historgram`] = {
         histogram: {
