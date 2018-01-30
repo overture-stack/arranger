@@ -52,10 +52,8 @@ export default class AggregationProcessor{
     const doc_type = type.name.toLowerCase();
     const filters = this.build_filters_from_args( {args, doc_type, fields, nested_fields} );
     
-    // No logic found in the gdcapi method that makes global_aggregations true
-    // In this code I pass the variable through in case we find a need for it, but the code has not been implemented to handle the true cases.
-    //  In most cases, the python code that would be implemented for the true case is included as a comment.
-    const global_aggregations = false;
+    // global_aggregations boolean is set as inverse of argument 'aggregations_filter_themselves' value
+    const global_aggregations = !args.aggregations_filter_themselves;
     const aggs = this.build_aggregations( {filters, fields, nested_fields, graphql_fields, global_aggregations} );
     return { 'query':filters, aggs };
   }
@@ -106,26 +104,26 @@ export default class AggregationProcessor{
     }
   }
 
-  build_aggregations({filters, fields, nested_fields, graphql_fields, global_aggregations}) {
+  build_aggregations({ filters, fields, nested_fields, graphql_fields, global_aggregations=false }) {
 
     // NOTE: This is an implementation of gdcapi utils.build_aggregations, not request.build_aggregations
     // The latter (request.build_aggregation) is referenced in the gdcapi search service, which is not the use case being worked on here.
     
-    const aggs = {}
+    const aggs = {};
 
     // Add to aggs for each field
     fields.forEach( raw_field => {
       // Translate from graphql field format by:
       //  - get field name before .
       //  - replace all __ with .
-      const double_underscore_field = raw_field.split('.')[0]
-      const field = double_underscore_field.replace('__','.')
+      const double_underscore_field = raw_field.split('.')[0];
+      const field = double_underscore_field.replace('__','.');
 
       // find the longest nested path to the facet if it exists
-      const path_to_facet = this.get_nested_path_to_field(field, nested_fields)
+      const path_to_facet = this.get_nested_path_to_field({field, nested_fields});
 
       if (path_to_facet) {
-        const nested_query = this.get_nested_query_from_path(filters, path_to_facet, nested_fields, match_all=false);
+        const nested_query = this.get_nested_query_from_path({filters, path_to_facet, nested_fields, match_all:false});
         const nested_field_agg = this.create_term_or_numeric_agg(field, graphql_fields[double_underscore_field], path_to_facet);
 
         const nested_aggs = this.ensure_path_to_agg(aggs, path_to_facet, nested_fields, filters, global_aggregations);
@@ -133,25 +131,22 @@ export default class AggregationProcessor{
         if(nested_query) {
           const query = nested_query.nested ? nested_query.nested.query : {};
           
-          // NOT IMPLEMENTED - global_aggregations always false, this is reference code in case it becomes needed
-          /*
-          if global_aggregations:
-              cleaned_query = remove_field_from_query(
-                  field, query,
-                  # if field not in query use query because nested aggs still need to be filtered by other
-                  # fields in the nested path
-                  use_if_not_found=query,
-                  # if field only term found in query then it doesn't need to be filtered
-                  use_if_clean_empty=None
-              )
-              if cleaned_query:
-                  nested_aggs.update(create_filtered_agg(field, cleaned_query, nested_field_agg))
-              else:
-                  # There is a query but it is just the nested field - just add it to aggs
-                  nested_aggs.update(nested_field_agg)
-          else:
-              nested_aggs.update(create_filtered_agg(field, query, nested_field_agg))
-          */
+          if (global_aggregations) {
+            const cleaned_query = this.remove_field_from_query({
+              field,
+              query,
+              use_if_not_found:query,
+              use_if_clean_empty:null
+            });
+            if (cleaned_query) {
+              const filteredAgg = this.create_filtered_agg(field, cleaned_query, nested_field_agg);
+              Object.assign(nested_aggs, filteredAgg);
+            } else {
+              // There is a query but it is just the nested field - just add it to aggs
+              Object.assign(nested_aggs, nested_field_agg);
+            }
+          }
+
           const filteredAgg = this.create_filtered_agg(field, query, nested_field_agg);
           Object.assign(nested_aggs, filteredAgg);
           
@@ -163,25 +158,25 @@ export default class AggregationProcessor{
       } else {
         const field_agg = this.create_term_or_numeric_agg(field, graphql_fields[double_underscore_field]);
         
-        // NOT IMPLEMENTED - global_aggregations always false, this is reference code in case it becomes needed
-        /*
-          cleaned_query = None
-          if global_aggregations:
-              cleaned_query = remove_field_from_query(
-                  field, filters,
-                  # if the field isn't in the filter do nothing and let ES filter it
-                  use_if_not_found=None,
-                  # if the field is the only filter do not let ES filter it
-                  use_if_clean_empty={"match_all": {}}
-              )
+        let cleaned_query = null;
 
-          if cleaned_query:
-              # needs to be global of ES will auto filter the aggs results
-              aggs.update(create_global_agg(field, create_filtered_agg(field, cleaned_query, field_agg)))
-          else:
-              aggs.update(field_agg)
-        */
-        Object.assign(aggs, field_agg);
+        if (global_aggregations) {
+          cleaned_query = this.remove_field_from_query({
+            field,
+            filters,
+            use_if_not_found:null,
+            use_if_clean_empty: {match_all: {}}
+          });
+        }
+
+        if (cleaned_query) {
+          const filteredAgg = this.create_filtered_agg(field, cleaned_query, field_agg);
+          const globalAgg = this.create_global_agg(field, filteredAgg);
+          Object.assign(aggs, filteredAgg);
+        } else {
+          Object.assign(aggs, field_agg);
+        }
+
       }
       
     });
@@ -189,7 +184,51 @@ export default class AggregationProcessor{
     return aggs;
   }
 
-  get_nested_query_from_path(query, path, nested_fields, match_all=true) {
+  remove_field_from_query({field, query, use_if_not_found=null, use_if_clean_empty=null}) {
+    return this.remove_pred_from_query(
+      item=> item.terms?.hasOwnProperty(field),
+      item=> !item.hasOwnProperty('terms') || (item.hasOwnProperty('terms') && !item.terms.hasOwnProperty(field)),
+      query,
+      use_if_not_found,
+      use_if_clean_empty
+    )
+  }
+
+  remove_path_from_query(_path, query, use_if_not_found=null, use_if_clean_empty=null) {
+    return this.remove_pred_from_query(
+      item => item.nested?.path === _path,
+      item => !item.hasOwnProperty('nested') || item.nested?.path !== _path,
+      query,
+      use_if_not_found,
+      use_if_clean_empty
+    )
+  }
+
+  remove_pred_from_query(pred_find, pred_clean, query, use_if_not_found, use_if_clean_empty) {
+    let clean_filter = use_if_not_found;
+
+    const musts = query?.bool?.must || [];
+    const found_filter = musts.some(item => pred_find(item));
+    
+    if (found_filter) {
+      clean_filter = musts.filter(item => pred_clean(item))
+      if (clean_filter.length === 0) {
+        clean_filter = use_if_clean_empty;
+
+      } else if(clean_filter.length === 1) {
+        clean_filter = clean_filter[0];
+
+      } else {
+        clean_filter = {[CONSTANTS.ES_BOOL]: {[CONSTANTS.ES_MUST]: clean_filter}};
+
+      }
+    }
+
+    return clean_filter;
+
+  }
+
+  get_nested_query_from_path({query, path, nested_fields, match_all=true}) {
     
     const match_all_query = {'nested': {'path': path, 'query': {'bool': {'must': [{'match_all': {}}]}}}};
 
@@ -242,13 +281,37 @@ export default class AggregationProcessor{
    */
   ensure_path_to_agg(aggs, path, nested_fields, query, global_aggregations=false) {
     
+
     // NOT IMPLEMENTED - global_aggregations always false, this is reference code in case it becomes needed
-    /*
-    if global_aggregations:
-        ensure_global_when_needed(aggs, path, nested_fields, query)
-    */
+    if (global_aggregations) {
+      this.ensure_global_when_needed(aggs, path, nested_fields, query);
+    }
 
     return this.ensure_filtered_along_path(aggs, path, nested_fields, query, global_aggregations);
+
+  }
+
+  /**
+   * Non-functional Warning - This modifies the content of the aggs variable.
+   */
+  ensure_global_when_needed(aggs, _path, nested_fields, query) {
+    const short_nested_path = this.get_nested_path_to_field({_path, nested_fields, short_circuit:true});
+    const nested_query = this.get_nested_query_from_path({query, short_nested_path, nested_fields, match_all:false});
+
+    const label = `${short_nested_path}:global`;
+    if(! (aggs.hasOwnProperty(nested_query) && aggs.hasOwnProperty(label)) ) {
+      const nested_aggs = {};
+      if (aggs.hasOwnProperty(short_nested_path)) {
+        nested_aggs[short_nested_path] = aggs[short_nested_path];
+      }
+      const globalAgg = create_global_agg(short_nested_path, nested_agg);
+
+      // This line modifies the input aggs
+      Object.assign(aggs, globalAgg);
+    }
+
+    // Return the input aggs, potentially modified
+    return aggs;
 
   }
 
@@ -287,20 +350,24 @@ export default class AggregationProcessor{
           }
         }
 
-        // NOT IMPLEMENTED - global_aggregations always false, this is reference code in case it becomes needed
-        /*
-        if global_aggregations:
-                cleaned_query = remove_path_from_query(p, nested_query, use_if_not_found=nested_query)
+        if (global_aggregations) {
+          const cleaned_query = this.remove_path_from_query(p, nested_query, use_if_not_found=nested_query);
 
-                if cleaned_query:
-                    label = '{}:filtered'.format(label)
-                    path_aggs = create_filtered_agg(p, cleaned_query, path_aggs)
+          if (cleaned_query) {
+            const label = `${label}:filtered`;
+            path_aggs = this.create_filtered_agg(p, cleaned_query, path_aggs);
 
-                if query and len(query.keys()) > 0:
+            // The following python code was not transcribed as the nested_query object it defines 
+            //  is not used outside of this block - Not sure the intention of this code, but the methods have no side effects and
+            //  the outputs are unused, so we can ignore them
+            /* 
+            if query and len(query.keys()) > 0:
                     nested_query = get_nested_query_from_path(query, p, nested_fields, match_all=False)
                     if nested_query:
                         nested_query = read_nested_query(nested_query)
-        */
+            */
+          }
+        }
 
         Object.assign(nested_aggs, path_aggs);
         nested_aggs = nested_aggs[label].aggs;
@@ -315,7 +382,7 @@ export default class AggregationProcessor{
     return nested_aggs;
   }
 
-  get_nested_path_to_field(field, nested, short_circuit=false) {
+  get_nested_path_to_field({field, nested, short_circuit=false}) {
     if (!Array.isArray(nested)) {
       return null;
     }
@@ -347,6 +414,16 @@ export default class AggregationProcessor{
         aggs,
       }
     };
+  }
+
+  create_global_agg(field, aggs){
+    const globalFieldName = `${field}:global`;
+    return {
+        [globalFieldName]: {
+            global: {},
+            aggs
+        }
+    }
   }
 
   create_term_or_numeric_agg(field, graphql_fields, nested=false) {
