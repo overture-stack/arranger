@@ -10,6 +10,10 @@ export default async (req, res) => {
     return res.json({ error: 'missing fields' });
   }
 
+  // indices must be lower cased
+  id = id.toLowerCase();
+  index = index.toLowerCase();
+
   let arrangerconfig = {
     projectsIndex: {
       index: `arranger-projects-${id}-${index}`,

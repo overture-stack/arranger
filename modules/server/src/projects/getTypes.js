@@ -4,7 +4,11 @@ import mapHits from '../utils/mapHits';
 export default async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
+
   if (!id) return res.json({ error: 'project empty' });
+
+  // indices must be lower cased
+  id = id.toLowerCase();
 
   let arrangerconfig = {
     projectsIndex: {
