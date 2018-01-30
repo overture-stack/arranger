@@ -49,11 +49,11 @@ const elasticMappingToDisplayTreeData = elasticMapping => {
     return {
       title: key,
       id: key,
-      [fieldProps.properties && 'children']: fieldProps.properties
-        ? elasticMappingToDisplayTreeData(fieldProps.properties)
-        : undefined,
+      ...(fieldProps.properties
+        ? { children: elasticMappingToDisplayTreeData(fieldProps.properties) }
+        : {}),
     };
   });
 };
 
-export default elasticMappingToDisplayTreeData;
+export default { MOCK_MAPPING, elasticMappingToDisplayTreeData };

@@ -2,11 +2,13 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import NestedTreeView from '../src/NestedTreeView';
-import {
+import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
+import { themeDecorator } from './decorators';
+
+const {
   elasticMappingToDisplayTreeData,
   MOCK_MAPPING,
-} from './mappingToTreeData';
-import { themeDecorator } from './decorators';
+} = mappingToDisplayTreeData;
 
 const dataSource = [
   {
