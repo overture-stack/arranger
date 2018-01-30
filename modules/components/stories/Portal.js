@@ -131,6 +131,7 @@ const tableConfig = {
   ],
 };
 
+<<<<<<< HEAD
 class GetProjects extends React.Component {
   state = { projects: [] };
   async componentDidMount() {
@@ -182,6 +183,100 @@ class App extends React.Component {
     return (
       <>
         {this.state.shouldRefresh && (
+=======
+storiesOf('Portal', module).add('Exploration', () => (
+  <State
+    initial={{ index: '', projectId: '', editMode: false, sqon: null }}
+    render={({ index, projectId, sqon, editMode, update }) => (
+      <div>
+        <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+        <label>index: </label>
+        <input // <-- could be a dropdown of available indices
+          value={index}
+          onChange={e => update({ index: e.target.value })}
+        />
+        <label>projectId: </label>
+        <input
+          value={projectId}
+          onChange={e => update({ projectId: e.target.value })}
+        />
+        <button onClick={() => update({ editMode: !editMode })}>
+          {editMode ? 'View Portal' : 'Edit Mode'}
+        </button>
+        <div className="app" style={{ display: 'flex' }}>
+          <div className="aggs-panel">
+            <AggsState
+              projectId={projectId}
+              index={index}
+              render={aggsState => {
+                console.log(123, aggsState);
+                return editMode ? (
+                  <div>
+                    <EditAggs handleChange={aggsState.update} {...aggsState} />
+                  </div>
+                ) : (
+                  <AggsQuery
+                    debounceTime={300}
+                    projectId={projectId}
+                    index={index}
+                    aggs={aggsState.aggs.filter(x => x.active)}
+                    render={data =>
+                      data && (
+                        <div>
+                          {aggsState.aggs
+                            .filter(x => x.active)
+                            .map(agg => ({
+                              ...agg,
+                              ...data[index].aggregations[agg.field],
+                              ...data[index].extended.find(
+                                x => x.field === agg.field,
+                              ),
+                            }))
+                            .map(agg => (
+                              // TODO: switch on agg type
+                              <TermAgg
+                                key={agg.field}
+                                {...agg}
+                                Content={({ content, ...props }) => (
+                                  <div
+                                    {...props}
+                                    onClick={() =>
+                                      update({
+                                        sqon: toggleSQON(
+                                          {
+                                            op: 'and',
+                                            content: [
+                                              {
+                                                op: 'in',
+                                                content,
+                                              },
+                                            ],
+                                          },
+                                          sqon || defaultSQON,
+                                        ),
+                                      })
+                                    }
+                                  />
+                                )}
+                                isActive={d =>
+                                  inCurrentSQON({
+                                    value: d.value,
+                                    dotField: d.field,
+                                    currentSQON:
+                                      sqon?.content || defaultSQON.content,
+                                  })
+                                }
+                              />
+                            ))}
+                        </div>
+                      )
+                    }
+                  />
+                );
+              }}
+            />
+          </div>
+>>>>>>> 38bcf7c... puts back bad normalization
           <div
             css={`
               z-index: 10000;
