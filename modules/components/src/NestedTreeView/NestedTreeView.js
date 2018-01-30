@@ -7,7 +7,7 @@ const NestedTreeView = ({ dataSource, depth = 0 }) =>
     ({ title, id, children, isHeader }, i) =>
       children ? (
         <ReactTreeView
-          key={id || i}
+          key={id || `${title}-${i}`}
           nodeLabel={title}
           defaultCollapsed={true}
           itemClassName={depth == 0 && 'header'}
@@ -16,7 +16,7 @@ const NestedTreeView = ({ dataSource, depth = 0 }) =>
         </ReactTreeView>
       ) : (
         <div
-          key={id || i}
+          key={id || `${title}-${i}`}
           className={`tree-view_children leaf ${depth == 0 && 'header'}`}
         >
           {title}
