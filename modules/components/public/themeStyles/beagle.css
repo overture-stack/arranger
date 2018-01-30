@@ -156,7 +156,11 @@ div {
 }
 
 .sqon-group {
-  padding-top: 10px;
+  flex-wrap: wrap;
+}
+
+.sqon-group > * {
+  margin-top: 10px;
 }
 
 .sqon-view-empty {
@@ -182,6 +186,7 @@ div {
   padding: 0 7px 0 12px;
   margin-right: 4px;
 }
+
 .sqon-value:after {
   content: url(x.svg);
   margin-left: 9px;

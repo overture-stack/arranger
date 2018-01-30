@@ -55,6 +55,43 @@ storiesOf('SQONView', module)
       }}
     />
   ))
+  .add('one field, 20 values', () => (
+    <SQONView
+      sqon={{
+        op: 'and',
+        content: [
+          {
+            op: 'in',
+            content: {
+              field: 'primary_site',
+              value: [
+                'lung',
+                'heart',
+                'brain',
+                'blood',
+                'kidney',
+                'lung1',
+                'heart1',
+                'brain1',
+                'blood1',
+                'kidney1',
+                'lung2',
+                'heart2',
+                'brain2',
+                'blood2',
+                'kidney2',
+                'lung3',
+                'heart3',
+                'brain3',
+                'blood3',
+                'kidney3',
+              ],
+            },
+          },
+        ],
+      }}
+    />
+  ))
   .add('two fields, 3 values each', () => (
     <SQONView
       sqon={{
