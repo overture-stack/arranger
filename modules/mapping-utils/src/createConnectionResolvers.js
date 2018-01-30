@@ -13,11 +13,6 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
       // TODO: stitch extended mapping
       return type.mapping;
     },
-    extended: (obj, { fields }) => {
-      return fields
-        ? type.extendedFields.filter(x => fields.includes(x.field))
-        : type.extendedFields;
-    },
     hits: resolveHits(type),
     aggregations: resolveAggregations(type),
   },

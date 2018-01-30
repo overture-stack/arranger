@@ -74,14 +74,6 @@ export default ({ app, io }) => async (req, res) => {
         let fields = await es.search({
           index: `arranger-projects-${id}-${type.index}`,
           type: `arranger-projects-${id}-${type.index}`,
-          size: 0,
-          _source: false,
-        });
-
-        fields = await es.search({
-          index: `arranger-projects-${id}-${type.index}`,
-          type: `arranger-projects-${id}-${type.index}`,
-          size: fields.hits.total,
         });
 
         return { ...type, fields: mapHits(fields) };

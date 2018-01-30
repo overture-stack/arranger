@@ -8,13 +8,9 @@ export default ({ index = '', aggs = [], ...props }) =>
   ) : (
     <Query
       name={`${capitalize(index)}AggregationsQuery`}
-      variables={{
-        fields: aggs.map(x => x.field),
-      }}
       query={`
-    query ${capitalize(index)}AggregationsQuery($fields: [String]) {
+    query {
       ${index} {
-        extended(fields: $fields)
         aggregations {
           ${aggs.map(({ field, type }) => {
             return type === 'Aggregations'

@@ -4,8 +4,6 @@ export default ({ type, fields = '' }) => `
   type ${type.name} {
     mapping: JSON
 
-    extended(fields: [String]): JSON
-
     hits(
       score: String
       offset: Int
