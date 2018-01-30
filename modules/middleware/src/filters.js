@@ -158,6 +158,8 @@ export default class FilterProcessor{
         if (op === CONSTANTS.IS) r = this.wrap_not(r);
         return r
     }
+
+
     _get_and_filter(doc_type, nested, xs){
         let musts= [],
             must_nots = [],
@@ -165,12 +167,12 @@ export default class FilterProcessor{
 
         //# TODO remove for loop
         xs.forEach(x => {
-            let op = x["op"],
+            const op = x["op"],
                 content = x["content"];
 
-            let is_must = CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS_KEYS).includes(op);
-            let is_must_not = CONSTANTS.MUST_NOT_OPS.includes(op);
-            let is_should = op === CONSTANTS.OR;
+            const is_must = CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS_KEYS).includes(op);
+            const is_must_not = CONSTANTS.MUST_NOT_OPS.includes(op);
+            const is_should = op === CONSTANTS.OR;
 
             if (is_must || is_must_not){
                 let curr;
@@ -182,27 +184,25 @@ export default class FilterProcessor{
                     curr = this._get_range_filter(doc_type, nested, content, op);
 
                 if (this.is_nested(curr)){
-                    let filteredMusts =
+                    const filteredMusts =
                         _.filter(musts, m => this.is_nested(m) && this.read_path(m) === this.read_path(curr));
                     this.collapse_nested_filters(filteredMusts.length > 0 ? filteredMusts[0] : null,
                         curr, op === CONSTANTS.EXCLUDE_IF_ANY ? must_nots : musts);
                 }
-                else if(is_must_not) must_nots.concat(curr);
-                else musts.concat(curr)
+                else if(is_must_not) must_nots.push(curr);
+                else musts.push(curr)
             }
             else if (is_should)
-                shoulds.concat(this._get_or_filter(doc_type, nested, content));
+                shoulds.push(this._get_or_filter(doc_type, nested, content));
         });
         //   # wrap both shoulds and must in ES_MUST so ES_SHOULD so score does not interfere
         //   # _get_or_filter already wraps shoulds with ES_SHOULD
-        let esMust = CONSTANTS.ES_MUST,
-            esMustNot = CONSTANTS.ES_MUST_NOT;
-        let r = _.reduce({ esMust: shoulds !== null ? musts.concat(shoulds): musts,
-              esMustNot : must_nots
-            }, (result, value, key) => value !== null && value.length > 0 ? result[key] = value : result
-            , {});
+        let r = {};
+        musts = shoulds !== null ? musts.concat(shoulds) : musts;
+        if (musts.length > 0) r[CONSTANTS.ES_MUST] = musts;
+        if (must_nots.length > 0) r[CONSTANTS.ES_MUST_NOT] = must_nots;
 
-        return {ES_BOOL:r}
+        return { [CONSTANTS.ES_BOOL]: r };
     }
     _get_or_filter(doc_type, nested, content){
         let must_not =
@@ -221,7 +221,7 @@ export default class FilterProcessor{
             should.concat(_.filter(content, x=> CONSTANTS.IS_OPS.includes(x["op"])).
                 map(x => this._get_missing_filter(doc_type, nested, x["content"])));
         if (must_not) should.append(this.wrap_not(must_not));
-        return { ES_BOOL: should != null || should.length>0 ? { ES_SHOULD: should } : {}};
+        return { [ES_BOOL]: should != null || should.length>0 ? { [ES_SHOULD]: should } : {}};
     }
     _get_range_filter(doc_type, nested, content, op){
 
@@ -261,10 +261,12 @@ export default class FilterProcessor{
             other = [];
 
         content.forEach(c => {
-            if(c["op"].toLowerCase() === parent_op)
-                inside.concat(this.grouping_optimizer(c["content"], parent_op));
-            else
-                other = [other, this.filter_optimizer(c)];
+            if(c["op"].toLowerCase() === parent_op) {
+                inside = inside.concat(this.grouping_optimizer(c["content"], parent_op));
+            }
+            else {
+                other.push(this.filter_optimizer(c));
+            }
         });
 
         return other.concat(inside);
@@ -351,9 +353,9 @@ export default class FilterProcessor{
         }
         let r;
         if (t === "term")
-            r = {t: {k: {"value": v, "boost": 0}}};
+            r = {[t]: {[k]: {"value": v, "boost": 0}}};
         else
-            r = {t: {k: v, "boost": 0}};
+            r = {[t]: {[k]: v, "boost": 0}};
 
         let path = k.split(".");
         r = this.wrap_filter_based_on_path(r, path,nested, op);
@@ -405,11 +407,11 @@ export default class FilterProcessor{
         }// for loop ends here
         return r;
     }
-    is_nested(x){
-        return x.includes(CONSTANTS.ES_NESTED);
+    is_nested(x) {
+        return x.hasOwnProperty(CONSTANTS.ES_NESTED);
     }
     wrap_bool(op, val) {
-        return {ES_BOOL: {op: typeof val === "object" ? val : [val]}}
+        return {[ES_BOOL]: {op: typeof val === "object" ? val : [val]}}
     }
     wrap_must(val){
         return this.wrap_bool(CONSTANTS.ES_MUST, val)
@@ -419,9 +421,9 @@ export default class FilterProcessor{
     }
     wrap_filter(val, p){
         return {
-            ES_NESTED: {
-                ES_PATH: p,
-                ES_QUERY: val
+            [ES_NESTED]: {
+                [ES_PATH]: p,
+                [ES_QUERY]: val
             }
         }
     }
