@@ -6,6 +6,7 @@ import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
 import AggsPanell from '../src/Aggs/AggsPanell';
 import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
+import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher/index';
 import State from '../src/State';
 import './Aggs.css';
 import { themeDecorator } from './decorators';

@@ -121,6 +121,10 @@ div {
   color: #404c9a;
   border-bottom: solid 1px #e0e1e6;
 }
+.aggregation-card .title-wrapper.collapsed {
+  padding-bottom: 0px;
+  border-bottom: none;
+}
 .aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
@@ -129,6 +133,9 @@ div {
 }
 .aggregation-card .bucket {
   padding-top: 5px;
+}
+.aggregation-card .bucket.collapsed {
+  padding-top: 0px;
 }
 .aggregation-card .bucket-item {
   padding-top: 5px;
@@ -167,7 +174,9 @@ div {
   display: none;
 }
 
-.sqon-bubble, .sqon-less, .sqon-more {
+.sqon-bubble,
+.sqon-less,
+.sqon-more {
   display: flex;
   align-items: center;
   height: 22px;
@@ -209,7 +218,9 @@ div {
   margin-right: 0.3em;
 }
 
-.sqon-clear, .sqon-less, .sqon-more {
+.sqon-clear,
+.sqon-less,
+.sqon-more {
   padding: 0 12px;
   color: #fff;
   background-color: #ffffff;
@@ -218,7 +229,8 @@ div {
   text-transform: uppercase;
 }
 
-.sqon-less, .sqon-more {
+.sqon-less,
+.sqon-more {
   margin-right: 6px;
 }
 

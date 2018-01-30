@@ -1,0 +1,17 @@
+.aggregation-card .title-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.aggregation-card .arrow:after {
+  content: '›';
+}
+.aggregation-card .arrow.collapsed {
+  transform: rotate(0deg);
+}
+.aggregation-card .arrow {
+  transform: rotate(90deg);
+  transition: all 0.5s;
+}
