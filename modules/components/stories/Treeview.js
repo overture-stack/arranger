@@ -57,19 +57,6 @@ const dataSource = [
 
 storiesOf('Treeview', module)
   .addDecorator(themeDecorator)
-  .addDecorator(story => (
-    <div
-      style={{
-        position: 'absolute',
-        left: '0px',
-        right: '0px',
-        top: '50px',
-        bottom: '0px',
-      }}
-    >
-      {story()}
-    </div>
-  ))
   .add('Treeview', () => (
     <>
       <NestedTreeView
