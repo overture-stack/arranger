@@ -11,7 +11,6 @@ const dataSource = [
   {
     title: 'Animal',
     id: 'animal',
-    isHeader: true,
     children: [
       {
         title: 'Cat',
@@ -54,7 +53,6 @@ const dataSource = [
     ],
   },
 ];
-
 storiesOf('Treeview', module).add('Treeview', () => (
   <>
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
