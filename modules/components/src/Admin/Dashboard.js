@@ -11,7 +11,10 @@ import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
 
-let API = 'http://localhost:5050';
+let API =
+  process.env.REACT_APP_API ||
+  localStorage.REACT_APP_API ||
+  'http://localhost:5050';
 
 let socket = io(API);
 
