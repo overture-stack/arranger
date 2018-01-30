@@ -29,7 +29,7 @@ let api = ({ endpoint = '', body }) =>
 
 class Dashboard extends React.Component {
   state = {
-    eshost: 'http://localhost:9200',
+    eshost: localStorage.ES_HOST || 'http://localhost:9200',
     error: null,
 
     projects: [],
