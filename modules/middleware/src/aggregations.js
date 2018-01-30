@@ -26,14 +26,13 @@ import FilterProcessor from './filters';
 /*
     Aggregation Processor
 
+    Services provided:
+      buildAggregations({ type, fields, graphql_fields, nested_fields, args })
+      pruneAggregations({ nested_fields, aggs })
+
     Use by creating a new instance of Aggregationprocessor and passing the graphQL content to buildAggregations
     Example:
       new AggregationProcessor().buildAggregations({ type, fields, graphql_fields, nested_fields, args });
-
-    Sample output:
-    { query: { bool: { must: [ { terms: { primary_site: [ 'Colorectal' ], boost: 0 } } ] } }},
-      aggs:  { primary_site: { terms: { field: 'primary_site', size: 100 } } }
-    }
  */
 export default class AggregationProcessor{
 
@@ -45,8 +44,15 @@ export default class AggregationProcessor{
       this.logger = logger || console;
   }
   buildAggregations({ type, fields, graphql_fields, nested_fields, args }) {
-    /* To Match the GDCAPI response, this needs to return an object of the form:
-      { query: {}, aggs: {} };
+    /* 
+    To Match the GDCAPI response, this needs to return an object of the form:
+      { query: {}, aggs: {} }
+     
+      Sample output:
+      { 
+        query: { bool: { must: [ { terms: { primary_site: [ 'Colorectal' ], boost: 0 } } ] } }},
+        aggs:  { primary_site: { terms: { field: 'primary_site', size: 100 } } }
+      }
     */
     
     const doc_type = type.name.toLowerCase();
@@ -56,6 +62,11 @@ export default class AggregationProcessor{
     const global_aggregations = !args.aggregations_filter_themselves;
     const aggs = this.build_aggregations( {filters, fields, nested_fields, graphql_fields, global_aggregations} );
     return { 'query':filters, aggs };
+  }
+
+  pruneAggregations({ nested_fields, aggs }) {
+    const pruned = this.prune_aggs(aggs, nested_fields);
+    return { pruned: pruned };
   }
 
   /**
@@ -303,6 +314,8 @@ export default class AggregationProcessor{
       const nested_aggs = {};
       if (aggs.hasOwnProperty(short_nested_path)) {
         nested_aggs[short_nested_path] = aggs[short_nested_path];
+
+        delete aggs[short_nested_path];
       }
       const globalAgg = create_global_agg(short_nested_path, nested_agg);
 
@@ -489,6 +502,89 @@ export default class AggregationProcessor{
     }
 
     return numeric_agg;
+  }
+
+  prune_aggs(aggs, nested_fields) {
+    /*
+     Transcribed from gdcapi utils.prune_aggs
+
+     TODO: nested_fields is not used... need to determine if it can be removed.
+     */
+
+    const p_a = {};
+
+    Object.entries(aggs).forEach((entry) => {
+      const k = entry[0];
+      let v = entry[1];
+
+      if(k === 'doc_count') {
+        // Don't add doc_count to output
+        return;
+      }
+
+      const field_type = k.split(':');
+      const field = field_type[0]
+      const agg_type = field_type.length === 2 ? field_type[1] : null;
+
+      switch(agg_type) {
+        case 'global':
+          // Note: this is transcribed correctly, but it means sub_field will always be the same as agg_type
+          //  Therefore this whole block is useless...
+          const sub_field_type = k.split(':');
+          const sub_field = sub_field_type[0];
+          const sub_type = sub_field_type.length === 2 ? sub_field_type[1] : null;
+          if(sub_type === 'filtered') {
+            v = v[`${field}:filtered`][field];
+          }
+          break;
+
+        case 'filtered':
+          // ORIGINAL: v = { k: innerValue for k, innerValue in v.items() if re.match(r"{}(:(stats|histogram))?".format(field), k) is not None}
+          const filteredEntries = Object.entries(v).filter(item => {
+            const key = item[0];
+            const innerValue = item[1];
+            return [`${field}:stats`,`${field}:historgram`].includes(key);
+          });
+
+          const innerValues = filteredEntries.map(item => item[1]);
+          v = {
+            [k] : innerValues
+          }
+          break;
+
+        case 'stats':
+          const stats_agg = p_a[field] || {};
+          Object.assign(stats_agg, {'stats':v} );
+          p_a[field] = stats_agg;
+          break;
+
+        case 'histogram':
+          const histo_agg = p_a[field] || {};
+          Object.assign(histo_agg, {'histogram':v} );
+          p_a[field] = histo_agg;
+          break;
+
+        default:
+          break;
+      }
+
+      if (!(['stats','histogram'].includes(agg_type))) {
+        if (v.buckets && Array.isArray(v.buckets)) {
+          v.buckets.forEach(bucket => {
+            if (bucket.rn) {
+              bucket.doc_count = bucket.rn.doc_count;
+              delete bucket.rn;
+            }
+          });
+
+          p_a[field] = v;
+        } else {
+          Object.assign(p_a, this.prune_aggs(v, nested_fields));
+        }
+      }
+    });
+
+    return p_a;
   }
 
 };
