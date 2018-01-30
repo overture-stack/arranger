@@ -33,7 +33,10 @@ function streamData({ columns, sort, first, onData, onEnd }) {
 }
 
 function fetchData(options) {
-  const API = 'http://localhost:5050';
+  let API =
+    process.env.REACT_APP_API ||
+    localStorage.REACT_APP_API ||
+    'http://localhost:5050';
   return fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

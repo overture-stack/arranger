@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import { debounce } from 'lodash';
 
-let API = 'http://localhost:5050';
+let API =
+  process.env.REACT_APP_API ||
+  localStorage.REACT_APP_API ||
+  'http://localhost:5050';
 
 let api = ({ projectId, name = 'UnnamedQuery', query, variables }) =>
   fetch(API + `/${projectId}/graphql/${name}`, {
