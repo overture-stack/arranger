@@ -8,53 +8,39 @@ import {
   withProps,
   withHandlers,
   defaultProps,
-// $FlowIgnore
+  // $FlowIgnore
 } from 'recompose';
 
-import { Row, Column } from '../Flex';
+import { Row } from '../Flex';
 import { toggleSQON } from './utils';
 import type { TGroupSQON, TValueSQON } from './types';
 
-const Bubble = ({ children, style, ...props }) => (
-  <div
-    style={{
-      padding: '6px 6px',
-      borderRadius: '4px',
-      color: 'white',
-      ...style,
-    }}
-    {...props}
-  >
-    {children}
+const Bubble = ({ className = '', children, ...props }) => (
+  <div className={`${className} sqon-bubble`} {...props}>
+    <div>{children}</div>
   </div>
 );
 
-export const Field = ({ children, style, ...props }: { style?: Object, children?: mixed }) => (
-  <Bubble
-    className="sqon-field"
-    style={{ backgroundColor: '#3FC5ED', ...style }}
-    {...props}
-  >
+export const Field = ({ children, ...props }: { children?: mixed }) => (
+  <Bubble className="sqon-field" {...props}>
     {children}
   </Bubble>
 );
 
-export const Op = ({ children, style, ...props }: { style?: Object, children?: mixed }) => (
-  <Bubble
-    className="sqon-op"
-    style={{ backgroundColor: '#C73E89', ...style }}
-    {...props}
-  >
+export const Op = ({ children, ...props }: { children?: mixed }) => (
+  <Bubble className="sqon-op" {...props}>
     {children}
   </Bubble>
 );
 
-export const Value = ({ children, style, ...props }: { style?: Object, children?: mixed }) => (
-  <Bubble
-    className="sqon-value"
-    style={{ backgroundColor: '#D6E02F', ...style }}
-    {...props}
-  >
+export const Value = ({
+  children,
+  className = '',
+  ...props
+}: {
+  children?: mixed,
+}) => (
+  <Bubble className={`sqon-value ${className}`} {...props}>
     {children}
   </Bubble>
 );
@@ -70,7 +56,7 @@ type TValueCrumbArg = {
 };
 
 type TClearArg = {
-  nextSQON: TGroupSQON
+  nextSQON: TGroupSQON,
 };
 
 const enhance = compose(
@@ -78,14 +64,13 @@ const enhance = compose(
     FieldCrumb: ({ field, nextSQON }: TFieldCrumbArg) => (
       <Field onClick={() => console.log(nextSQON)}>{field}</Field>
     ),
-    ValueCrumb: ({ value, nextSQON }: TValueCrumbArg) => (
-      <Value onClick={() => console.log(nextSQON)}>{value}</Value>
+    ValueCrumb: ({ value, nextSQON, ...props }: TValueCrumbArg) => (
+      <Value onClick={() => console.log(nextSQON)} {...props}>
+        {value}
+      </Value>
     ),
     Clear: ({ nextSQON }: TClearArg) => (
-      <Bubble
-        style={{ backgroundColor: '#C73E89' }}
-        onClick={() => console.log(nextSQON)}
-      >
+      <Bubble className="sqon-clear" onClick={() => console.log(nextSQON)}>
         Clear
       </Bubble>
     ),
@@ -121,32 +106,34 @@ const SQON = ({
   onLessClicked: Function,
 }) => {
   const sqonContent = sqon.content || [];
+  const isEmpty = sqonContent.length === 0;
   return (
-    <div
-      className="sqon-view"
-      style={{
-        padding: '6px 12px',
-        borderRadius: '4px',
-        backgroundColor: '#EDF8FB',
-      }}
-    >
-      {sqonContent.length === 0 && (
+    <div className={`sqon-view ${isEmpty ? 'sqon-view-empty' : ''}`}>
+      {isEmpty && (
         <div className="sqon-empty-message">
           {'\u2190 Start by selecting a query field'}
         </div>
       )}
       {sqonContent.length >= 1 && (
-        <Row spacing="0.3em" wrap>
-          <div style={{ padding: '0.5rem 0' }}>{Clear({ nextSQON: {} })}</div>
+        <Row wrap>
+          <Row
+            className="sqon-group"
+            key="clear"
+            style={{ alignItems: 'center' }}
+          >
+            {Clear({ nextSQON: {} })}
+          </Row>
           {sqonContent.map((valueSQON, i) => {
             const field = valueSQON.content.field;
             const value = [].concat(valueSQON.content.value || []);
             const op = valueSQON.op;
+            const isSingleValue = !Array.isArray(value) || value.length === 1;
+            console.log(value, isSingleValue);
             return (
               <Row
+                className="sqon-group"
                 key={`${field}.${op}.${value.join()}`}
-                spacing="0.3em"
-                style={{ padding: '0.5rem 0' }}
+                style={{ alignItems: 'center' }}
               >
                 {FieldCrumb({
                   field,
@@ -158,43 +145,57 @@ const SQON = ({
                     sqon,
                   ),
                 })}
-                <Op>{op}</Op>
-                {value.length > 1 && <span>(</span>}
-                {(isExpanded(valueSQON) ? value : take(value, 2)).map(value =>
-                  ValueCrumb({
-                    value,
-                    nextSQON: toggleSQON(
-                      {
-                        op: 'and',
-                        content: [
-                          {
-                            op: op,
-                            content: {
-                              field: field,
-                              value: [value],
+                <Op>{op === 'in' && isSingleValue ? 'is' : op}</Op>
+                {value.length > 1 && (
+                  <span className="sqon-value-group sqon-value-group-start">
+                    (
+                  </span>
+                )}
+                {(isExpanded(valueSQON) ? value : take(value, 2)).map(
+                  (value, i) =>
+                    ValueCrumb({
+                      key: value,
+                      value,
+                      className: isSingleValue ? 'sqon-value-single' : '',
+                      nextSQON: toggleSQON(
+                        {
+                          op: 'and',
+                          content: [
+                            {
+                              op: op,
+                              content: {
+                                field: field,
+                                value: [value],
+                              },
                             },
-                          },
-                        ],
-                      },
-                      sqon,
-                    ),
-                  }),
+                          ],
+                        },
+                        sqon,
+                      ),
+                    }),
                 )}
                 {value.length > 2 &&
                   !isExpanded(valueSQON) && (
-                    <span onClick={() => onLessClicked(valueSQON)}>
+                    <span
+                      className="sqon-more"
+                      onClick={() => onLessClicked(valueSQON)}
+                    >
                       {'\u2026'}
                     </span>
                   )}
                 {isExpanded(valueSQON) && (
                   <div
-                    style={{ padding: '6px 0' }}
+                    className="sqon-less"
                     onClick={() => onLessClicked(valueSQON)}
                   >
                     Less
                   </div>
                 )}
-                {value.length > 1 && <span>)</span>}
+                {value.length > 1 && (
+                  <span className="sqon-value-group sqon-value-group-end">
+                    )
+                  </span>
+                )}
                 {i < sqonContent.length - 1 && <Op>{sqon.op}</Op>}
               </Row>
             );
