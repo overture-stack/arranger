@@ -158,6 +158,9 @@ storiesOf('Portal', module).add('Exploration', () => (
                             .map(agg => ({
                               ...agg,
                               ...data[index].aggregations[agg.field],
+                              ...data[index].extended.find(
+                                x => x.field === agg.field,
+                              ),
                             }))
                             .map(agg => (
                               // TODO: switch on agg type
