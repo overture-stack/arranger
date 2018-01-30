@@ -404,7 +404,10 @@ class Dashboard extends React.Component {
                 </div>
                 <div>
                   <label className="projects">
-                    TYPES ({this.state.typesTotal})
+                    TYPES ({
+                      this.state.projects?.find(x => x.id === match.params.id)
+                        ?.types?.total
+                    })
                   </label>
                   {this.state.projects
                     ?.find(x => x.id === match.params.id)
