@@ -6,6 +6,13 @@ export default async (req, res) => {
   let { id, index, field } = req.params;
   let { key, value } = req.body;
 
+  if (!id || !index || !field) return res.json({ error: 'missing fields' });
+
+  // indices must be lower cased
+  id = id.toLowerCase();
+  index = index.toLowerCase();
+  field = field.toLowerCase();
+
   try {
     await es.update({
       index: `arranger-projects-${id}-${index}`,

@@ -6,6 +6,9 @@ export default async (req, res) => {
 
   if (!id) return res.json({ error: 'id cannot be empty' });
 
+  // indices must be lower cased
+  id = id.toLowerCase();
+
   let projects = [];
 
   let arrangerconfig = {

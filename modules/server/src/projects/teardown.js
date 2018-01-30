@@ -2,7 +2,11 @@ import express from 'express';
 
 export default ({ app }) => async (req, res) => {
   let { id } = req.params;
+
   if (!id) return res.json({ error: 'project empty' });
+
+  // indices must be lower cased
+  id = id.toLowerCase();
 
   global.apps[id] = express.Router();
 
