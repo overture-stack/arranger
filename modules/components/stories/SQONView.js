@@ -1,18 +1,8 @@
 import React from 'react';
 //$FlowIgnore
 import { storiesOf } from '@storybook/react';
-import SQONView, { Value } from '../src/SQONView';
+import SQONView from '../src/SQONView';
 import { themeDecorator } from './decorators';
-
-const ValueCrumb = ({ value, nextSQON }) => (
-  <Value onClick={() => console.log(nextSQON)}>
-    {value}
-    <svg width="8" height="8" stroke="white" style={{ marginLeft: 11 }}>
-      <line x1="0" y1="0" x2="8" y2="8" />
-      <line x1="8" y1="0" x2="0" y2="8" />
-    </svg>
-  </Value>
-);
 
 storiesOf('SQONView', module)
   .addDecorator(themeDecorator)
@@ -31,7 +21,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('one field, two values', () => (
@@ -48,7 +37,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('one field, 5 values', () => (
@@ -65,7 +53,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('two fields, 3 values each', () => (
@@ -89,7 +76,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('range', () => (
@@ -113,7 +99,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('range and term', () => (
@@ -144,7 +129,6 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ))
   .add('value is not array', () => (
@@ -168,6 +152,5 @@ storiesOf('SQONView', module)
           },
         ],
       }}
-      ValueCrumb={ValueCrumb}
     />
   ));

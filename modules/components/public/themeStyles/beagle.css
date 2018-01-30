@@ -152,14 +152,18 @@ div {
 .sqon-view {
   background-color: #f4f5f8;
   border: solid 1px #d4d6dd;
-  padding: 14px 20px;
+  padding: 4px 19px 14px;
+}
+
+.sqon-group {
+  padding-top: 10px;
 }
 
 .sqon-view-empty {
   display: none;
 }
 
-.sqon-bubble {
+.sqon-bubble, .sqon-less, .sqon-more {
   display: flex;
   align-items: center;
   height: 22px;
@@ -168,32 +172,69 @@ div {
   font-size: 11px;
   font-weight: 300;
   letter-spacing: 0.2px;
+  margin-right: 10px;
+  flex: none;
 }
 
 .sqon-value {
   background-color: #404c9a;
   color: #fff;
-  padding: 0 6px 0 12px;
+  padding: 0 7px 0 12px;
+  margin-right: 4px;
+}
+.sqon-value:after {
+  content: url(x.svg);
+  margin-left: 9px;
+}
+
+.sqon-value-single {
+  margin-right: 10px;
 }
 
 .sqon-op {
-  font-family: OpenSans;
   font-weight: normal;
   color: #74757d;
+  margin-right: 5px;
 }
 
 .sqon-field {
-  font-family: OpenSans;
   font-weight: 600;
   color: #343434;
   text-transform: uppercase;
+  margin-right: 0.3em;
 }
 
-.sqon-clear {
+.sqon-clear, .sqon-less, .sqon-more {
   padding: 0 12px;
   color: #fff;
   background-color: #ffffff;
   color: #008199;
   border: solid 1px #cacbcf;
   text-transform: uppercase;
+}
+
+.sqon-less, .sqon-more {
+  margin-right: 6px;
+}
+
+.sqon-more {
+  font-size: 24px;
+  line-height: 0.3em;
+  display: block;
+  color: #009bb8;
+}
+
+.sqon-value-group {
+  font-size: 22px;
+  line-height: 22px;
+  color: #009bb8;
+}
+
+.sqon-value-group-start {
+  margin-right: 6px;
+  margin-left: 8px;
+}
+
+.sqon-value-group-end {
+  margin-right: 10px;
 }

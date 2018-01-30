@@ -11,7 +11,7 @@ import {
   // $FlowIgnore
 } from 'recompose';
 
-import { Row, Column } from '../Flex';
+import { Row } from '../Flex';
 import { toggleSQON } from './utils';
 import type { TGroupSQON, TValueSQON } from './types';
 
@@ -33,8 +33,14 @@ export const Op = ({ children, ...props }: { children?: mixed }) => (
   </Bubble>
 );
 
-export const Value = ({ children, ...props }: { children?: mixed }) => (
-  <Bubble className="sqon-value" {...props}>
+export const Value = ({
+  children,
+  className = '',
+  ...props
+}: {
+  children?: mixed,
+}) => (
+  <Bubble className={`sqon-value ${className}`} {...props}>
     {children}
   </Bubble>
 );
@@ -58,8 +64,10 @@ const enhance = compose(
     FieldCrumb: ({ field, nextSQON }: TFieldCrumbArg) => (
       <Field onClick={() => console.log(nextSQON)}>{field}</Field>
     ),
-    ValueCrumb: ({ value, nextSQON }: TValueCrumbArg) => (
-      <Value onClick={() => console.log(nextSQON)}>{value}</Value>
+    ValueCrumb: ({ value, nextSQON, ...props }: TValueCrumbArg) => (
+      <Value onClick={() => console.log(nextSQON)} {...props}>
+        {value}
+      </Value>
     ),
     Clear: ({ nextSQON }: TClearArg) => (
       <Bubble className="sqon-clear" onClick={() => console.log(nextSQON)}>
@@ -107,15 +115,26 @@ const SQON = ({
         </div>
       )}
       {sqonContent.length >= 1 && (
-        <Row spacing="0.3em" wrap>
-          <div>{Clear({ nextSQON: {} })}</div>
+        <Row wrap>
+          <Row
+            className="sqon-group"
+            key="clear"
+            style={{ alignItems: 'center' }}
+          >
+            {Clear({ nextSQON: {} })}
+          </Row>
           {sqonContent.map((valueSQON, i) => {
             const field = valueSQON.content.field;
             const value = [].concat(valueSQON.content.value || []);
             const op = valueSQON.op;
-            console.log(op);
+            const isSingleValue = !Array.isArray(value) || value.length === 1;
+            console.log(value, isSingleValue);
             return (
-              <Row key={`${field}.${op}.${value.join()}`} spacing="0.3em">
+              <Row
+                className="sqon-group"
+                key={`${field}.${op}.${value.join()}`}
+                style={{ alignItems: 'center' }}
+              >
                 {FieldCrumb({
                   field,
                   nextSQON: toggleSQON(
@@ -126,43 +145,57 @@ const SQON = ({
                     sqon,
                   ),
                 })}
-                <Op>{op === 'in' && value.length === 1 ? 'is' : op}</Op>
-                {value.length > 1 && <span>(</span>}
-                {(isExpanded(valueSQON) ? value : take(value, 2)).map(value =>
-                  ValueCrumb({
-                    value,
-                    nextSQON: toggleSQON(
-                      {
-                        op: 'and',
-                        content: [
-                          {
-                            op: op,
-                            content: {
-                              field: field,
-                              value: [value],
+                <Op>{op === 'in' && isSingleValue ? 'is' : op}</Op>
+                {value.length > 1 && (
+                  <span className="sqon-value-group sqon-value-group-start">
+                    (
+                  </span>
+                )}
+                {(isExpanded(valueSQON) ? value : take(value, 2)).map(
+                  (value, i) =>
+                    ValueCrumb({
+                      key: value,
+                      value,
+                      className: isSingleValue ? 'sqon-value-single' : '',
+                      nextSQON: toggleSQON(
+                        {
+                          op: 'and',
+                          content: [
+                            {
+                              op: op,
+                              content: {
+                                field: field,
+                                value: [value],
+                              },
                             },
-                          },
-                        ],
-                      },
-                      sqon,
-                    ),
-                  }),
+                          ],
+                        },
+                        sqon,
+                      ),
+                    }),
                 )}
                 {value.length > 2 &&
                   !isExpanded(valueSQON) && (
-                    <span onClick={() => onLessClicked(valueSQON)}>
+                    <span
+                      className="sqon-more"
+                      onClick={() => onLessClicked(valueSQON)}
+                    >
                       {'\u2026'}
                     </span>
                   )}
                 {isExpanded(valueSQON) && (
                   <div
-                    style={{ padding: '6px 0' }}
+                    className="sqon-less"
                     onClick={() => onLessClicked(valueSQON)}
                   >
                     Less
                   </div>
                 )}
-                {value.length > 1 && <span>)</span>}
+                {value.length > 1 && (
+                  <span className="sqon-value-group sqon-value-group-end">
+                    )
+                  </span>
+                )}
                 {i < sqonContent.length - 1 && <Op>{sqon.op}</Op>}
               </Row>
             );
