@@ -2,13 +2,13 @@
   "name": "@arranger/middleware",
   "version": "0.0.1-0.0.0.1",
   "description": "Arranger Middleware",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "test": "jest",
-    "build": "mkdir -p src && babel src/ -d lib/ --copy-files",
+    "build": "mkdir -p src && babel src --out-dir dist",
     "prepublish": "npm run build",
     "flow": "flow"
   },
