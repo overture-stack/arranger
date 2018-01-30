@@ -9,7 +9,7 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let fields = Object.keys(graphql_fields);
   let nested_fields = type.nested_fields;
 
-  let { query, aggs } = await buildAggregations({
+  let { query, aggs } = buildAggregations({
     type,
     args,
     fields,

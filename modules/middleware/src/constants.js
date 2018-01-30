@@ -84,4 +84,7 @@ export const CONSTANTS = {
         "files.analysis.input_files.file_id": "file_set",
         "files.downstream_analyses.output_files.file_id": "file_set",
     }
+    ,BUCKETS : 'buckets'
+    ,STATS : 'stats'
+    ,HISTOGRAM : 'histogram'
 };
