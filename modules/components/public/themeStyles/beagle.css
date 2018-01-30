@@ -121,6 +121,10 @@ div {
   color: #404c9a;
   border-bottom: solid 1px #e0e1e6;
 }
+.aggregation-card .title-wrapper.collapsed {
+  padding-bottom: 0px;
+  border-bottom: none;
+}
 .aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
@@ -129,6 +133,9 @@ div {
 }
 .aggregation-card .bucket {
   padding-top: 5px;
+}
+.aggregation-card .bucket.collapsed {
+  padding-top: 0px;
 }
 .aggregation-card .bucket-item {
   padding-top: 5px;
