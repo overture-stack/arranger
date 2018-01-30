@@ -11,6 +11,9 @@ export { default as mappingToScalarFields } from './mappingToScalarFields';
 export { default as getNestedFields } from './getNestedFields';
 export { default as flattenMapping } from './flattenMapping';
 export { default as extendFields } from './extendFields';
+export {
+  default as mappingToDisplayTreeData,
+} from './mappingToDisplayTreeData';
 
 export let esToGraphqlTypeMap = {
   keyword: 'String',

@@ -2,12 +2,15 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import NestedTreeView from '../src/NestedTreeView';
+import {
+  elasticMappingToDisplayTreeData,
+  MOCK_MAPPING,
+} from './mappingToTreeData';
 
 const dataSource = [
   {
     title: 'Animal',
     id: 'animal',
-    isHeader: true,
     children: [
       {
         title: 'Cat',
@@ -54,6 +57,9 @@ const dataSource = [
 storiesOf('Treeview', module).add('Treeview', () => (
   <>
     <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+    <NestedTreeView
+      dataSource={elasticMappingToDisplayTreeData(MOCK_MAPPING)}
+    />
     <NestedTreeView dataSource={dataSource} />
   </>
 ));

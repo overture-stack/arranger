@@ -2,7 +2,7 @@ import React from 'react';
 import ReactTreeView from './ReactTreeView';
 import './style.css';
 
-const NestedTreeView = ({ dataSource }) =>
+const NestedTreeView = ({ dataSource, depth = 0 }) =>
   dataSource.map(
     ({ title, id, children, isHeader }, i) =>
       children ? (
@@ -10,12 +10,15 @@ const NestedTreeView = ({ dataSource }) =>
           key={id || i}
           nodeLabel={title}
           defaultCollapsed={true}
-          itemClassName={isHeader && 'header'}
+          itemClassName={depth == 0 && 'header'}
         >
-          <NestedTreeView dataSource={children} />
+          <NestedTreeView dataSource={children} depth={depth + 1} />
         </ReactTreeView>
       ) : (
-        <div key={id || i} className="tree-view_children leaf">
+        <div
+          key={id || i}
+          className={`tree-view_children leaf ${depth == 0 && 'header'}`}
+        >
           {title}
         </div>
       ),
