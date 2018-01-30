@@ -10,16 +10,20 @@ import {
 const dataSource = [
   {
     title: 'Animal',
+    id: 'animal',
     isHeader: true,
     children: [
       {
         title: 'Cat',
+        id: 'cat',
       },
       {
         title: 'Dog',
+        id: 'dog',
         children: [
           {
             title: 'Beagle',
+            id: 'beagle',
             children: [
               {
                 title: 'My Beagle',
@@ -33,6 +37,7 @@ const dataSource = [
           },
           {
             title: 'Pug',
+            id: 'pug',
             children: [
               {
                 title: 'My Pug',
