@@ -2,6 +2,29 @@
 
 🚧 _This project is pre-alpha. We will make an announcement upon entering beta_ 🚧
 
+### Quickstart
+
+#### Clone, Install, Bootstrap
+
+```
+git clone git@github.com:overture-stack/arranger.git
+cd arranger
+npm i
+npm run bootstrap
+```
+
+#### Run server
+
+```
+npm run start-server
+```
+
+#### Run Storybook
+
+```
+npm run start-storybook
+```
+
 * [Documentation](#Documentation) (in progress)
 * [Motivation](#motivation)
 * [What is a "Data Portal"?](#data-portal)

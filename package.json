@@ -4,8 +4,9 @@
     "lerna": "lerna",
     "link": "npm-link-shared modules",
     "publish": "lerna publish",
-    "netlify-build":
-      "npm i && npm run bootstrap -- --scope @arranger/components && cd modules/components && npm run build-storybook"
+    "start-server": "cd modules/server && npm start",
+    "start-storybook": "cd modules/components && npm run storybook",
+    "netlify-build": "npm i && npm run bootstrap -- --scope @arranger/components && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
     "lerna": "^2.6.0",
