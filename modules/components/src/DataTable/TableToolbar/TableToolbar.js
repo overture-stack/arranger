@@ -24,8 +24,9 @@ const TableToolbar = ({
   allowTSVExport = true,
   customActions = null,
   streamData = () => {},
+  style,
 }) => (
-  <div style={{ padding: 10, display: 'flex' }}>
+  <div style={{ padding: 10, display: 'flex', ...style }}>
     <div style={{ flexGrow: 1 }}>
       Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)}{' '}
       {type} of {total}

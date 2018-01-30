@@ -175,210 +175,215 @@ storiesOf('Portal', module).add('Exploration', () => (
       sqon: null,
     }}
     render={({ index, projectId, sqon, editMode, update }) => (
-      <>
-        <span
-          css={`
-            opacity: 0;
-            position: absolute;
-            left: -999px;
-          `}
-        >
-          <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
-        </span>
-        {(!index || !projectId) && (
-          <div
+      <div
+        style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}
+      >
+        <div>
+          <span
             css={`
-              height: 100vh;
-              display: flex;
-              flex-directon: column;
-              justify-content: center;
-              align-items: center;
+              opacity: 0;
+              position: absolute;
+              left: -999px;
             `}
           >
+            <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+          </span>
+          {(!index || !projectId) && (
             <div
               css={`
+                height: 100vh;
                 display: flex;
-                flex-direction: column;
+                flex-directon: column;
+                justify-content: center;
+                align-items: center;
               `}
             >
-              <GetProjects
-                render={({ projects }) => (
-                  <>
-                    <h2>
-                      {process.env.STORYBOOK_PORTAL_NAME ||
-                        process.env.STORYBOOK_PORTAL_NAME ||
-                        'Data Portal'}
-                    </h2>
-                    <select
-                      value={projectId}
-                      onChange={e => {
-                        localStorage.demoProject = e.target.value;
-                        update({
-                          projectId: e.target.value,
-                        });
-                      }}
-                    >
-                      <option id="version">Select a version</option>
-                      {projects.map(x => (
-                        <option key={x.id} value={x.id}>
-                          {x.id}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={index}
-                      onChange={e => {
-                        localStorage.demoIndex = e.target.value;
-                        update({
-                          index: e.target.value,
-                        });
-                      }}
-                    >
-                      <option id="version">Select an index</option>
-                      {projects
-                        .find(x => x.id === projectId)
-                        ?.types?.types?.map(x => (
-                          <option key={x.index} value={x.index}>
-                            {x.index}
+              <div
+                css={`
+                  display: flex;
+                  flex-direction: column;
+                `}
+              >
+                <GetProjects
+                  render={({ projects }) => (
+                    <>
+                      <h2>
+                        {process.env.STORYBOOK_PORTAL_NAME ||
+                          process.env.STORYBOOK_PORTAL_NAME ||
+                          'Data Portal'}
+                      </h2>
+                      <select
+                        value={projectId}
+                        onChange={e => {
+                          localStorage.demoProject = e.target.value;
+                          update({
+                            projectId: e.target.value,
+                          });
+                        }}
+                      >
+                        <option id="version">Select a version</option>
+                        {projects.map(x => (
+                          <option key={x.id} value={x.id}>
+                            {x.id}
                           </option>
                         ))}
-                    </select>
-                  </>
-                )}
-              />
+                      </select>
+                      <select
+                        value={index}
+                        onChange={e => {
+                          localStorage.demoIndex = e.target.value;
+                          update({
+                            index: e.target.value,
+                          });
+                        }}
+                      >
+                        <option id="version">Select an index</option>
+                        {projects
+                          .find(x => x.id === projectId)
+                          ?.types?.types?.map(x => (
+                            <option key={x.index} value={x.index}>
+                              {x.index}
+                            </option>
+                          ))}
+                      </select>
+                    </>
+                  )}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
         {index &&
           projectId && (
-            <>
-              <div className="app">
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="portal" style={{ display: 'flex' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div
+                  css={`
+                    display: flex;
+                    line-height: 40px;
+                    padding: 0 20px;
+                    font-size: 20px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+                      0 1px 10px 0 rgba(0, 0, 0, 0.12),
+                      0 2px 4px -1px rgba(0, 0, 0, 0.3);
+                  `}
+                >
+                  {process.env.STORYBOOK_PORTAL_NAME ||
+                    process.env.STORYBOOK_PORTAL_NAME ||
+                    'Data Portal'}{' '}
+                  Search Page
                   <div
                     css={`
-                      display: flex;
-                      line-height: 40px;
-                      padding: 0 20px;
-                      font-size: 20px;
-                      font-weight: bold;
-                      box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
-                        0 1px 10px 0 rgba(0, 0, 0, 0.12),
-                        0 2px 4px -1px rgba(0, 0, 0, 0.3);
+                      margin-left: auto;
+                      cursor: pointer;
                     `}
+                    onClick={() => {
+                      delete localStorage.demoProject;
+                      delete localStorage.demoIndex;
+                      update({ index: '', projectId: '' });
+                    }}
                   >
-                    {process.env.STORYBOOK_PORTAL_NAME ||
-                      process.env.STORYBOOK_PORTAL_NAME ||
-                      'Data Portal'}{' '}
-                    Search Page
-                    <div
-                      css={`
-                        margin-left: auto;
-                        cursor: pointer;
-                      `}
-                      onClick={() => {
-                        delete localStorage.demoProject;
-                        delete localStorage.demoIndex;
-                        update({ index: '', projectId: '' });
-                      }}
-                    >
-                      Logout
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', height: 'calc(100vh - 40px)' }}>
-                  <div className="aggs-panel">
-                    <AggsState
-                      projectId={projectId}
-                      index={index}
-                      render={aggsState => {
-                        return (
-                          <AggsQuery
-                            debounceTime={300}
-                            projectId={projectId}
-                            index={index}
-                            aggs={aggsState.aggs.filter(x => x.active)}
-                            render={data =>
-                              data && (
-                                <div
-                                  css={`
-                                    width: 220px;
-                                  `}
-                                >
-                                  {aggsState.aggs
-                                    .filter(x => x.active)
-                                    .map(agg => ({
-                                      ...agg,
-                                      ...data[index].aggregations[agg.field],
-                                      ...data[index].extended.find(
-                                        x => x.field === agg.field,
-                                      ),
-                                    }))
-                                    .map(agg => (
-                                      // TODO: switch on agg type
-                                      <TermAgg
-                                        key={agg.field}
-                                        {...agg}
-                                        Content={({ content, ...props }) => (
-                                          <div
-                                            {...props}
-                                            onClick={() =>
-                                              update({
-                                                sqon: toggleSQON(
-                                                  {
-                                                    op: 'and',
-                                                    content: [
-                                                      {
-                                                        op: 'in',
-                                                        content,
-                                                      },
-                                                    ],
-                                                  },
-                                                  sqon || defaultSQON,
-                                                ),
-                                              })
-                                            }
-                                          />
-                                        )}
-                                        isActive={d =>
-                                          inCurrentSQON({
-                                            value: d.value,
-                                            dotField: d.field,
-                                            currentSQON:
-                                              sqon?.content ||
-                                              defaultSQON.content,
-                                          })
-                                        }
-                                      />
-                                    ))}
-                                </div>
-                              )
-                            }
-                          />
-                        );
-                      }}
-                    />
-                  </div>
-                  <div
-                    css={`
-                      position: relative;
-                      flex-grow: 1;
-                    `}
-                  >
-                    <SQONView sqon={sqon || defaultSQON} />
-                    <DataTable
-                      sqon={sqon}
-                      config={tableConfig}
-                      onSQONChange={action('sqon changed')}
-                      onSelectionChange={action('selection changed')}
-                      streamData={streamData}
-                      fetchData={fetchData}
-                    />
+                    Logout
                   </div>
                 </div>
               </div>
-            </>
+              <div style={{ display: 'flex', flexGrow: 1 }}>
+                <div className="aggs-panel">
+                  <AggsState
+                    projectId={projectId}
+                    index={index}
+                    render={aggsState => {
+                      return (
+                        <AggsQuery
+                          debounceTime={300}
+                          projectId={projectId}
+                          index={index}
+                          aggs={aggsState.aggs.filter(x => x.active)}
+                          render={data =>
+                            data && (
+                              <div
+                                css={`
+                                  width: 220px;
+                                `}
+                              >
+                                {aggsState.aggs
+                                  .filter(x => x.active)
+                                  .map(agg => ({
+                                    ...agg,
+                                    ...data[index].aggregations[agg.field],
+                                    ...data[index].extended.find(
+                                      x => x.field === agg.field,
+                                    ),
+                                  }))
+                                  .map(agg => (
+                                    // TODO: switch on agg type
+                                    <TermAgg
+                                      key={agg.field}
+                                      {...agg}
+                                      Content={({ content, ...props }) => (
+                                        <div
+                                          {...props}
+                                          onClick={() =>
+                                            update({
+                                              sqon: toggleSQON(
+                                                {
+                                                  op: 'and',
+                                                  content: [
+                                                    {
+                                                      op: 'in',
+                                                      content,
+                                                    },
+                                                  ],
+                                                },
+                                                sqon || defaultSQON,
+                                              ),
+                                            })
+                                          }
+                                        />
+                                      )}
+                                      isActive={d =>
+                                        inCurrentSQON({
+                                          value: d.value,
+                                          dotField: d.field,
+                                          currentSQON:
+                                            sqon?.content ||
+                                            defaultSQON.content,
+                                        })
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            )
+                          }
+                        />
+                      );
+                    }}
+                  />
+                </div>
+                <div
+                  css={`
+                    position: relative;
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
+                  `}
+                >
+                  <SQONView sqon={sqon || defaultSQON} />
+                  <DataTable
+                    toolbarStyle={{ flex: 'none' }}
+                    sqon={sqon}
+                    config={tableConfig}
+                    onSQONChange={action('sqon changed')}
+                    onSelectionChange={action('selection changed')}
+                    streamData={streamData}
+                    fetchData={fetchData}
+                  />
+                </div>
+              </div>
+            </div>
           )}
-      </>
+      </div>
     )}
   />
 ));

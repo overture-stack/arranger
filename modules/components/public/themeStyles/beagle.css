@@ -3,13 +3,21 @@
 div {
   font-family: 'Montserrat', sans-serif;
 }
-
+.portal {
+  flex-grow: 1;
+}
 /***********************************/
 /* styling for the table component */
 /***********************************/
+
+.ReactTable .rt-thead, .ReactTable .rt-tbody {
+  overflow-y: scroll;
+}
+
 .ReactTable {
   font-family: 'Montserrat', sans-serif;
   font-size: 0.8em;
+  flex-grow: 1;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
@@ -74,18 +82,7 @@ div {
 .ReactTable a {
   color: #90278e;
 }
-.ReactTable .rt-table {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  bottom: 64px;
-}
 .ReactTable .pagination-bottom {
-  position: absolute;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
   background: white;
   height: 64px;
 }
