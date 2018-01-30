@@ -1,14 +1,18 @@
-import resolveAggregations from './resolveAggregations'
-import resolveHits from './resolveHits'
+import resolveAggregations from './resolveAggregations';
+import resolveHits from './resolveHits';
 
 type TcreateConnectionResolversArgs = {
   type: Object,
-}
+};
 type TcreateConnectionResolvers = (
   args: TcreateConnectionResolversArgs,
-) => Object
+) => Object;
 let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
   [type.name]: {
+    mapping: () => {
+      // TODO: stitch extended mapping
+      return type.mapping;
+    },
     hits: resolveHits(type),
     aggregations: resolveAggregations(type),
   },
@@ -18,6 +22,6 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
   [type.name + 'Edge']: {
     node: node => node,
   },
-})
+});
 
-export default createConnectionResolvers
+export default createConnectionResolvers;

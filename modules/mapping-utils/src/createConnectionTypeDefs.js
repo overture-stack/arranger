@@ -1,10 +1,11 @@
-import mappingToAggsType from './mappingToAggsType'
+import mappingToAggsType from './mappingToAggsType';
 
 export default ({ type, fields = '' }) => `
   type ${type.name} {
+    mapping: JSON
+
     hits(
       score: String
-      query: String
       offset: Int
       sort: [Sort]
       filters: JSON
@@ -40,4 +41,4 @@ export default ({ type, fields = '' }) => `
     score: Int
     ${fields}
   }
-`
+`;
