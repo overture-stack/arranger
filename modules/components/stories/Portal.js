@@ -16,8 +16,13 @@ import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import DataTable, { columnTypes, columnsToGraphql } from '../src/DataTable';
 
+let API =
+  process.env.STORYBOOK_API ||
+  localStorage.STORYBOOK_API ||
+  'http://localhost:5050';
+
 function streamData({ columns, sort, first, onData, onEnd }) {
-  let socket = io(`http://localhost:5050`);
+  let socket = io(API);
   socket.on('server::chunk', ({ data, total }) =>
     onData({
       total,
@@ -35,10 +40,6 @@ function streamData({ columns, sort, first, onData, onEnd }) {
 }
 
 function fetchData(options) {
-  let API =
-    process.env.REACT_APP_API ||
-    localStorage.REACT_APP_API ||
-    'http://localhost:5050';
   return fetch(API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -120,7 +121,7 @@ const tableConfig = {
 };
 
 let eshost =
-  process.env.REACT_APP_ES_HOST ||
+  process.env.STORYBOOK_ES_HOST ||
   localStorage.ES_HOST ||
   'http://localhost:9200';
 
@@ -205,7 +206,7 @@ storiesOf('Portal', module).add('Exploration', () => (
                   <>
                     <h2>
                       {process.env.STORYBOOK_PORTAL_NAME ||
-                        process.env.REACT_APP_PORTAL_NAME ||
+                        process.env.STORYBOOK_PORTAL_NAME ||
                         'Data Portal'}
                     </h2>
                     <select
@@ -266,7 +267,7 @@ storiesOf('Portal', module).add('Exploration', () => (
                     `}
                   >
                     {process.env.STORYBOOK_PORTAL_NAME ||
-                      process.env.REACT_APP_PORTAL_NAME ||
+                      process.env.STORYBOOK_PORTAL_NAME ||
                       'Data Portal'}{' '}
                     Search Page
                     <div

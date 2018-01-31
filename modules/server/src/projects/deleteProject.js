@@ -25,7 +25,7 @@ export default async (req, res) => {
       id,
     });
     await es.indices.delete({
-      index: `arranger-projects-${id}`,
+      index: `arranger-projects-${id}*`,
     });
   } catch (error) {
     return res.json({ error: error.message });
@@ -41,7 +41,7 @@ export default async (req, res) => {
       await es.indices.create({
         index: arrangerconfig.projectsIndex.index,
       });
-      return res.json({ projects });
+      return res.json({ projects, total: 0 });
     } catch (error) {
       return res.json({ error: error.message });
     }

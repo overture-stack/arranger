@@ -17,8 +17,8 @@ import './Dashboard.css';
 fontawesome.library.add(solid);
 
 let API =
-  process.env.REACT_APP_API ||
-  localStorage.REACT_APP_API ||
+  process.env.STORYBOOK_API ||
+  localStorage.STORYBOOK_API ||
   'http://localhost:5050';
 
 let socket = io(API);
