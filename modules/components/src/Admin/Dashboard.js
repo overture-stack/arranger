@@ -551,7 +551,6 @@ class Dashboard extends React.Component {
                       >
                         Table
                       </a>
-
                       <input
                         placeholder="filter fields.."
                         value={filterText}
@@ -571,21 +570,23 @@ class Dashboard extends React.Component {
                                 FIELDS ({this.state.fieldsTotal})
                               </label>
                             </div>
-                            {this.state.fields.map(x => (
-                              <div
-                                key={x.field}
-                                className={`field-item ${
-                                  x.field == this.state.activeField?.field
-                                    ? 'active'
-                                    : ''
-                                }`}
-                                onClick={() => {
-                                  this.setState({ activeField: x });
-                                }}
-                              >
-                                {x.field}
-                              </div>
-                            ))}
+                            {this.state.fields
+                              .filter(x => x.field.includes(filterText))
+                              .map(x => (
+                                <div
+                                  key={x.field}
+                                  className={`field-item ${
+                                    x.field == this.state.activeField?.field
+                                      ? 'active'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    this.setState({ activeField: x });
+                                  }}
+                                >
+                                  {x.field}
+                                </div>
+                              ))}
                           </section>
                           <section>
                             <div style={{ padding: 5 }}>
@@ -598,7 +599,40 @@ class Dashboard extends React.Component {
                               .map(([key, val]) => (
                                 <div key={key} className="type-container">
                                   {startCase(key)}:
-                                  {typeof val === 'boolean' ? (
+                                  {typeof val === 'string' && (
+                                    <input
+                                      type="text"
+                                      value={val}
+                                      onChange={async e => {
+                                        let r = await api({
+                                          endpoint: `/projects/${
+                                            match.params.projectId
+                                          }/types/${
+                                            match.params.index
+                                          }/fields/${
+                                            this.state.activeField?.field
+                                          }/update`,
+                                          body: {
+                                            eshost: this.state.eshost,
+                                            key,
+                                            value: e.target.value,
+                                          },
+                                        });
+
+                                        let activeField = r.fields.find(
+                                          x =>
+                                            x.field ===
+                                            this.state.activeField.field,
+                                        );
+
+                                        this.setState({
+                                          fields: r.fields,
+                                          activeField,
+                                        });
+                                      }}
+                                    />
+                                  )}
+                                  {typeof val === 'boolean' && (
                                     <input
                                       type="checkbox"
                                       checked={val}
@@ -609,7 +643,7 @@ class Dashboard extends React.Component {
                                           }/types/${
                                             match.params.index
                                           }/fields/${
-                                            match.params.field
+                                            this.state.activeField?.field
                                           }/update`,
                                           body: {
                                             eshost: this.state.eshost,
@@ -630,8 +664,6 @@ class Dashboard extends React.Component {
                                         });
                                       }}
                                     />
-                                  ) : (
-                                    val
                                   )}
                                 </div>
                               ))}

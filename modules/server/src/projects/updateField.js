@@ -35,6 +35,14 @@ export default async (req, res) => {
     fields = await es.search({
       index: `arranger-projects-${id}-${index}`,
       type: `arranger-projects-${id}-${index}`,
+      size: 0,
+      _source: false,
+    });
+
+    fields = await es.search({
+      index: `arranger-projects-${id}-${index}`,
+      type: `arranger-projects-${id}-${index}`,
+      size: fields.hits.total,
     });
   } catch (error) {
     return res.json({ error: error.message });
