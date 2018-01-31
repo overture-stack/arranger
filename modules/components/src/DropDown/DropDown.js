@@ -78,10 +78,7 @@ class DropDown extends React.Component {
                   <div
                     className="dropDownContentElement"
                     key={item.id || itemToString(item)}
-                    {...getItemProps({
-                      item,
-                      index,
-                    })}
+                    {...getItemProps({ item, index })}
                   >
                     {itemToString(item)}
                     <input
