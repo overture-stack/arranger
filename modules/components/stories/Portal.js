@@ -337,7 +337,12 @@ storiesOf('Portal', module).add('Exploration', () => (
                                                   content: [
                                                     {
                                                       op: 'in',
-                                                      content,
+                                                      content: {
+                                                        ...content,
+                                                        value: [].concat(
+                                                          content.value || [],
+                                                        ),
+                                                      },
                                                     },
                                                   ],
                                                 },

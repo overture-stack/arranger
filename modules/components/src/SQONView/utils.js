@@ -185,7 +185,7 @@ export const setSQON = ({ value, field }: TValueContent) => ({
   content: [
     {
       op: 'in',
-      content: { field, value },
+      content: { field, value: [].concat(value || []) },
     },
   ],
 });
@@ -240,13 +240,11 @@ export const makeSQON: TMakeSQON = fields => {
   return {
     op: 'and',
     content: fields.map(item => {
-      const value = _.isArray(item.value) ? item.value : item.value.split(',');
-
       return {
         op: 'in',
         content: {
           field: item.field,
-          value,
+          value: [].concat(item.value || []),
         },
       };
     }),
