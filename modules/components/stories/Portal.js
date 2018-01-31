@@ -255,6 +255,7 @@ storiesOf('Portal', module).add('Exploration', () => (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div
                     css={`
+                      display: flex;
                       line-height: 40px;
                       padding: 0 20px;
                       font-size: 20px;
@@ -268,6 +269,18 @@ storiesOf('Portal', module).add('Exploration', () => (
                       process.env.REACT_APP_PORTAL_NAME ||
                       'Data Portal'}{' '}
                     Search Page
+                    <div
+                      css={`
+                        margin-left: auto;
+                        cursor: pointer;
+                      `}
+                      onClick={() => {
+                        localStorage.demoProject = localStorage.demoIndex = undefined;
+                        update({ index: '', projectId: '' });
+                      }}
+                    >
+                      Logout
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', height: 'calc(100vh - 40px)' }}>
