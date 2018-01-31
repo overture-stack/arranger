@@ -70,28 +70,14 @@ class DropDown extends React.Component {
               <div
                 className="dropDownContent"
                 style={{
-                  position: 'absolute',
-                  background: 'white',
-                  minWidth: '100%',
-                  zIndex: 1,
-                  border: '1px solid rgba(0, 0, 0, 0.05)',
-                  boxSizing: 'border-box',
-                  cursor: 'pointer',
-                  padding: 5,
                   right: align === 'right' ? 0 : 'auto',
                   left: align === 'right' ? 'auto' : 0,
-                  top: '100%',
                 }}
               >
                 {items.map((item, index) => (
                   <div
                     className="dropDownContentElement"
                     key={item.id || itemToString(item)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: 5,
-                    }}
                     {...getItemProps({
                       item,
                       index,
