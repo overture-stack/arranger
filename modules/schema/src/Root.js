@@ -137,7 +137,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       {},
     ),
     Mutation: {
-      saveAggsState: async (obj, { index, state }, { es, projectId }) => {
+      saveAggsState: async (obj, { index, state }, { es, projectId, io }) => {
         // TODO: validate / make proper input type
 
         await es.create({
@@ -158,16 +158,20 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             sort: [{ timestamp: { order: 'desc' } }],
           },
         });
+
+        io?.emit('server::refresh');
 
         return {
           index,
           states: data.hits.hits.map(x => x._source),
         };
       },
-      saveColumnsState: async (obj, { index, state }, { es, projectId }) => {
+      saveColumnsState: async (
+        obj,
+        { index, state },
+        { es, projectId, io },
+      ) => {
         // TODO: validate / make proper input type
-
-        console.log(123, state);
 
         await es.create({
           index: `arranger-projects-${projectId}-${index}-columns-state`,
@@ -187,6 +191,8 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             sort: [{ timestamp: { order: 'desc' } }],
           },
         });
+
+        io?.emit('server::refresh');
 
         return {
           index,

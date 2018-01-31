@@ -121,7 +121,6 @@ export default class extends Component {
       }),
     };
 
-    console.log(temp);
     this.setState({ temp }, () => this.save(temp));
   };
 
@@ -136,7 +135,7 @@ export default class extends Component {
           );
           return {
             ...column,
-            Header: extended.displayName,
+            Header: extended?.displayName,
           };
         }),
       },
