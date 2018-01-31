@@ -6,6 +6,7 @@ import FontAwesomeIcon from '@fortawesome/react-fontawesome';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
 import TextInput from '../../Input';
+import './Toolbar.css';
 
 const enhance = compose(
   withProps(({ columns }) => ({
