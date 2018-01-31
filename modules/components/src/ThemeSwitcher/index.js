@@ -38,11 +38,11 @@ export const AVAILABLE_THEMES = [
   {
     id: 'beagle',
     title: 'Beagle',
-    stylePath: './themeStyles/beagle.css',
+    stylePath: '/themeStyles/beagle.css',
   },
   {
     id: 'default',
     title: 'Default',
-    stylePath: './themeStyles/default.css',
+    stylePath: '/themeStyles/default.css',
   },
 ];
