@@ -11,18 +11,18 @@ git clone git@github.com:overture-stack/arranger.git
 cd arranger
 npm i
 npm run bootstrap
-```
 
-#### Run server
+# run server on :5050
+npm run server
 
-```
-npm run start-server
-```
+# run dashboard on :6060
+npm run dashboard
 
-#### Run Storybook
+# run portal on :7070
+npm run portal
 
-```
-npm run start-storybook
+# run storybook on :8080
+npm run storybook
 ```
 
 * [Documentation](#Documentation) (in progress)
