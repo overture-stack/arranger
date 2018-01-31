@@ -158,7 +158,6 @@ class GetProjects extends React.Component {
     );
 
   render() {
-    console.log(this.state);
     return this.state.projects.length > 0 && this.props.render(this.state);
   }
 }
@@ -304,119 +303,113 @@ storiesOf('Portal', module).add('Exploration', () => (
           </div>
           {index &&
             projectId && (
-              <>
-                <div className="portal" style={{ display: 'flex' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div
-                      css={`
-                        display: flex;
-                        line-height: 40px;
-                        padding: 0 20px;
-                        font-size: 20px;
-                        font-weight: bold;
-                        box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
-                          0 1px 10px 0 rgba(0, 0, 0, 0.12),
-                          0 2px 4px -1px rgba(0, 0, 0, 0.3);
-                      `}
-                    >
-                      {process.env.STORYBOOK_PORTAL_NAME ||
-                        process.env.STORYBOOK_PORTAL_NAME ||
-                        'Data Portal'}{' '}
-                      Search Page
-                      <div
-                        css={`
-                          margin-left: auto;
-                          cursor: pointer;
-                        `}
-                        onClick={() => {
-                          delete localStorage.demoProject;
-                          delete localStorage.demoIndex;
-                          update({ index: '', projectId: '' });
-                        }}
-                      >
-                        Logout
-                      </div>
-                    </div>
+              <div className="portal">
+                <div
+                  css={`
+                    display: flex;
+                    line-height: 40px;
+                    padding: 0 20px;
+                    font-size: 20px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+                      0 1px 10px 0 rgba(0, 0, 0, 0.12),
+                      0 2px 4px -1px rgba(0, 0, 0, 0.3);
+                  `}
+                >
+                  {process.env.STORYBOOK_PORTAL_NAME ||
+                    process.env.STORYBOOK_PORTAL_NAME ||
+                    'Data Portal'}{' '}
+                  Search Page
+                  <div
+                    css={`
+                      margin-left: auto;
+                      cursor: pointer;
+                    `}
+                    onClick={() => {
+                      delete localStorage.demoProject;
+                      delete localStorage.demoIndex;
+                      update({ index: '', projectId: '' });
+                    }}
+                  >
+                    Logout
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexGrow: 1 }}>
-                  <div className="aggs-panel">
-                    <AggsState
-                      projectId={projectId}
-                      index={index}
-                      render={aggsState => {
-                        return (
-                          <AggsQuery
-                            debounceTime={300}
-                            projectId={projectId}
-                            index={index}
-                            aggs={aggsState.aggs.filter(x => x.active)}
-                            render={data =>
-                              data && (
-                                <div
-                                  css={`
-                                    width: 220px;
-                                  `}
-                                >
-                                  {aggsState.aggs
-                                    .filter(x => x.active)
-                                    .map(agg => ({
-                                      ...agg,
-                                      ...data[index].aggregations[agg.field],
-                                      ...data[index].extended.find(
-                                        x => x.field === agg.field,
-                                      ),
-                                    }))
-                                    .map(agg => (
-                                      // TODO: switch on agg type
-                                      <TermAgg
-                                        key={agg.field}
-                                        {...agg}
-                                        Content={({ content, ...props }) => (
-                                          <div
-                                            {...props}
-                                            onClick={() =>
-                                              update({
-                                                sqon: toggleSQON(
-                                                  {
-                                                    op: 'and',
-                                                    content: [
-                                                      {
-                                                        op: 'in',
-                                                        content: {
-                                                          ...content,
-                                                          value: [].concat(
-                                                            content.value || [],
-                                                          ),
-                                                        },
+                  <AggsState
+                    projectId={projectId}
+                    index={index}
+                    render={aggsState => {
+                      return (
+                        <AggsQuery
+                          debounceTime={300}
+                          projectId={projectId}
+                          index={index}
+                          aggs={aggsState.aggs.filter(x => x.active)}
+                          render={data =>
+                            data && (
+                              <div
+                                css={`
+                                  width: 220px;
+                                `}
+                              >
+                                {aggsState.aggs
+                                  .filter(x => x.active)
+                                  .map(agg => ({
+                                    ...agg,
+                                    ...data[index].aggregations[agg.field],
+                                    ...data[index].extended.find(
+                                      x => x.field === agg.field,
+                                    ),
+                                  }))
+                                  .map(agg => (
+                                    // TODO: switch on agg type
+                                    <TermAgg
+                                      key={agg.field}
+                                      {...agg}
+                                      Content={({ content, ...props }) => (
+                                        <div
+                                          {...props}
+                                          onClick={() =>
+                                            update({
+                                              sqon: toggleSQON(
+                                                {
+                                                  op: 'and',
+                                                  content: [
+                                                    {
+                                                      op: 'in',
+                                                      content: {
+                                                        ...content,
+                                                        value: [].concat(
+                                                          content.value || [],
+                                                        ),
                                                       },
-                                                    ],
-                                                  },
-                                                  sqon || defaultSQON,
-                                                ),
-                                              })
-                                            }
-                                          />
-                                        )}
-                                        isActive={d =>
-                                          inCurrentSQON({
-                                            value: d.value,
-                                            dotField: d.field,
-                                            currentSQON:
-                                              sqon?.content ||
-                                              defaultSQON.content,
-                                          })
-                                        }
-                                      />
-                                    ))}
-                                </div>
-                              )
-                            }
-                          />
-                        );
-                      }}
-                    />
-                  </div>
+                                                    },
+                                                  ],
+                                                },
+                                                sqon || defaultSQON,
+                                              ),
+                                            })
+                                          }
+                                        />
+                                      )}
+                                      isActive={d =>
+                                        inCurrentSQON({
+                                          value: d.value,
+                                          dotField: d.field,
+                                          currentSQON:
+                                            sqon?.content ||
+                                            defaultSQON.content,
+                                        })
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            )
+                          }
+                        />
+                      );
+                    }}
+                  />
                   <div
                     css={`
                       position: relative;
@@ -451,7 +444,7 @@ storiesOf('Portal', module).add('Exploration', () => (
                     />
                   </div>
                 </div>
-              </>
+              </div>
             )}
         </div>
       )}

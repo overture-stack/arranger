@@ -136,7 +136,7 @@ export default class extends Component {
           );
           return {
             ...column,
-            Header: extended.displayName,
+            Header: extended?.displayName,
           };
         }),
       },

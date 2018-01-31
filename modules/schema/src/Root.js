@@ -173,8 +173,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       ) => {
         // TODO: validate / make proper input type
 
-        console.log(123, state);
-
         await es.create({
           index: `arranger-projects-${projectId}-${index}-columns-state`,
           type: `arranger-projects-${projectId}-${index}-columns-state`,
