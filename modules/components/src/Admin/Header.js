@@ -1,7 +1,7 @@
 import React from 'react';
 
-export default ({ height, eshost, handleOnChange }) => (
-  <div className="row">
+export default ({ height, eshost, handleOnChange, style, className = '' }) => (
+  <div className={`row ${className}`} style={style}>
     <div
       className="title-arranger"
       css={`
