@@ -29,7 +29,10 @@ export let api = ({ endpoint = '', body }) =>
 
 class Dashboard extends React.Component {
   state = {
-    eshost: localStorage.ES_HOST || 'http://localhost:9200',
+    eshost:
+      process.env.STORYBOOK_ES_HOST ||
+      localStorage.ES_HOST ||
+      'http://localhost:9200',
     error: null,
 
     projects: [],
@@ -320,6 +323,7 @@ class Dashboard extends React.Component {
             eshost={this.state.eshost}
             height={headerHeight}
             handleOnChange={e => {
+              localStorage.ES_HOST = e.target.value;
               let state = { eshost: e.target.value };
               this.setState(state);
               this.getProjects(state);
@@ -359,7 +363,7 @@ class Dashboard extends React.Component {
                             font-size: 12px;
                           `}
                         >
-                          {segment}
+                          {i === 1 ? 'versions' : segment}
                         </Link>
                         {i !== 0 && i !== split.length - 1 && <span> / </span>}
                       </React.Fragment>,

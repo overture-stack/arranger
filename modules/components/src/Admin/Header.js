@@ -9,7 +9,7 @@ export default ({ height, eshost, handleOnChange }) => (
         padding: 0 10px;
       `}
     >
-      ARRANGER
+      {process.env.STORYBOOK_ADMIN_TITLE || ARRANGER}
     </div>
     <div
       className="title-elasticsearch"

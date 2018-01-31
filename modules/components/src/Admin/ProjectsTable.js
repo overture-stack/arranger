@@ -14,7 +14,7 @@ export default ({
       <div>
         <input
           style={{ padding: 5 }}
-          placeholder="New Project..."
+          placeholder="New Version..."
           value={newProjectName}
           onChange={e => setNewProjectName({ newProjectName: e.target.value })}
         />
@@ -31,7 +31,7 @@ export default ({
     }}
     config={{
       timestamp: '2018-01-12T16:42:07.495Z',
-      type: 'Projects',
+      type: 'Versions',
       keyField: 'id',
       defaultSorted: [{ id: 'id', desc: false }],
       columns: [
