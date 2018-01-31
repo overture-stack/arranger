@@ -2,7 +2,7 @@ import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
-
+import State from '../State';
 import AggsState from '../Aggs/AggsState';
 import ColumnsState from '../Aggs/ColumnsState';
 import EditAggs from '../Aggs/EditAggs';
@@ -484,69 +484,123 @@ class Dashboard extends React.Component {
             exact
             path="/projects/:projectId/:index"
             render={({ match, history, location }) => (
-              <div>
-                <section>
-                  <div style={{ padding: 5 }}>
-                    <label className="projects">
-                      FIELDS ({this.state.fieldsTotal})
-                    </label>
-                  </div>
-                  {this.state.fields.map(x => (
-                    <div
-                      key={x.field}
-                      className={`field-item ${
-                        x.field == this.state.activeField?.field ? 'active' : ''
-                      }`}
-                      onClick={() => {
-                        this.setState({ activeField: x });
-                        history.push(location.pathname + '/' + x.field);
-                      }}
-                    >
-                      {x.field}
-                    </div>
-                  ))}
-                </section>
-                <div className="row">
+              <State
+                initial={{ tab: 'fields' }}
+                render={({ update, tab }) => (
                   <div>
                     <div>
-                      <label>Aggregations State</label>
+                      <a
+                        css={`
+                          text-transform: uppercase;
+                          cursor: pointer;
+                          padding: 0 6px;
+                          color: ${tab === 'fields'
+                            ? 'black'
+                            : 'rgb(128, 30, 148)'};
+                        `}
+                        onClick={() => update({ tab: 'fields' })}
+                      >
+                        Fields
+                      </a>
+                      <a
+                        css={`
+                          text-transform: uppercase;
+                          cursor: pointer;
+                          padding: 0 6px;
+                          color: ${tab === 'aggs'
+                            ? 'black'
+                            : 'rgb(128, 30, 148)'};
+                        `}
+                        onClick={() => update({ tab: 'aggs' })}
+                      >
+                        Aggregations
+                      </a>
+                      <a
+                        css={`
+                          text-transform: uppercase;
+                          padding: 0 6px;
+                          cursor: pointer;
+                          color: ${tab === 'columns'
+                            ? 'black'
+                            : 'rgb(128, 30, 148)'};
+                        `}
+                        onClick={() => update({ tab: 'columns' })}
+                      >
+                        Table
+                      </a>
                     </div>
-                    <AggsState
-                      projectId={match.params.projectId}
-                      index={match.params.index}
-                      render={aggsState => (
+                    <div>
+                      {tab === 'fields' && (
+                        <section>
+                          <div style={{ padding: 5 }}>
+                            <label className="projects">
+                              FIELDS ({this.state.fieldsTotal})
+                            </label>
+                          </div>
+                          {this.state.fields.map(x => (
+                            <div
+                              key={x.field}
+                              className={`field-item ${
+                                x.field == this.state.activeField?.field
+                                  ? 'active'
+                                  : ''
+                              }`}
+                              onClick={() => {
+                                this.setState({ activeField: x });
+                                history.push(location.pathname + '/' + x.field);
+                              }}
+                            >
+                              {x.field}
+                            </div>
+                          ))}
+                        </section>
+                      )}
+                      {tab === 'aggs' && (
                         <div>
-                          <EditAggs
-                            handleChange={aggsState.update}
-                            {...aggsState}
+                          <div>
+                            <label>Aggregations State</label>
+                          </div>
+                          <AggsState
+                            projectId={match.params.projectId}
+                            index={match.params.index}
+                            render={aggsState => (
+                              <div>
+                                <EditAggs
+                                  handleChange={aggsState.update}
+                                  {...aggsState}
+                                />
+                              </div>
+                            )}
                           />
                         </div>
                       )}
-                    />
-                  </div>
-                  <div>
-                    <div>
-                      <label>Columns State</label>
-                    </div>
-                    <ColumnsState
-                      projectId={match.params.projectId}
-                      index={match.params.index}
-                      render={aggsState =>
-                        !aggsState.aggs.columns ? (
-                          ''
-                        ) : (
+                      {tab === 'columns' && (
+                        <div>
                           <div>
-                            <EditColumns
-                              handleChange={aggsState.update}
-                              {...aggsState}
-                            />
+                            <label>Columns State</label>
                           </div>
-                        )
-                      }
-                    />
+                          <ColumnsState
+                            projectId={match.params.projectId}
+                            index={match.params.index}
+                            render={aggsState =>
+                              !aggsState.aggs.columns ? (
+                                ''
+                              ) : (
+                                <div>
+                                  <EditColumns
+                                    handleChange={aggsState.update}
+                                    {...aggsState}
+                                  />
+                                </div>
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
+              />
             )}
           />
           <Route
