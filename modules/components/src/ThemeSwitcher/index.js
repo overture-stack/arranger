@@ -36,13 +36,13 @@ export default class ThemeSwitcher extends React.Component {
 
 export const AVAILABLE_THEMES = [
   {
-    id: 'default',
-    title: 'Default',
-    stylePath: './themeStyles/default.css',
-  },
-  {
     id: 'beagle',
     title: 'Beagle',
     stylePath: './themeStyles/beagle.css',
+  },
+  {
+    id: 'default',
+    title: 'Default',
+    stylePath: './themeStyles/default.css',
   },
 ];

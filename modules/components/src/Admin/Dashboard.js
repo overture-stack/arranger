@@ -18,7 +18,7 @@ let API =
 
 let socket = io(API);
 
-let api = ({ endpoint = '', body }) =>
+export let api = ({ endpoint = '', body }) =>
   fetch(API + endpoint, {
     method: 'POST',
     headers: {

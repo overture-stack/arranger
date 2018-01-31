@@ -1,9 +1,11 @@
 import React from 'react';
 import { get } from 'lodash';
 import io from 'socket.io-client';
+import { injectGlobal } from 'emotion';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import './Aggs.css';
+import DropDown from '../src/DropDown';
+import { api } from '../src/Admin/Dashboard';
 import SQONView from '../src/SQONView';
 import State from '../src/State';
 import TermAgg from '../src/Aggs/TermAgg';
@@ -117,116 +119,251 @@ const tableConfig = {
   ],
 };
 
+let eshost =
+  process.env.REACT_APP_ES_HOST ||
+  localStorage.ES_HOST ||
+  'http://localhost:9200';
+
+class GetProjects extends React.Component {
+  state = { projects: [] };
+  async componentDidMount() {
+    let { projects, total, error } = await api({
+      endpoint: '/projects',
+      body: { eshost },
+    });
+
+    projects = await this.addTypesToProjects(projects);
+
+    this.setState({ projects });
+  }
+
+  addTypesToProjects = projects =>
+    Promise.all(
+      projects.map((x, i) =>
+        api({
+          endpoint: `/projects/${x.id}/types`,
+          body: { eshost },
+        }).then(data => ({
+          ...projects[i],
+          types: data,
+        })),
+      ),
+    );
+
+  render() {
+    console.log(this.state);
+    return this.state.projects.length > 0 && this.props.render(this.state);
+  }
+}
+
+injectGlobal`
+  html,
+  body,
+  #root {
+    height: 100vh;
+    margin: 0;
+  }
+`;
+
 storiesOf('Portal', module).add('Exploration', () => (
   <State
-    initial={{ index: '', projectId: '', editMode: false, sqon: null }}
+    initial={{
+      index: localStorage.demoIndex,
+      projectId: localStorage.demoProject,
+      editMode: false,
+      sqon: null,
+    }}
     render={({ index, projectId, sqon, editMode, update }) => (
-      <div>
-        <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
-        <label>index: </label>
-        <input // <-- could be a dropdown of available indices
-          value={index}
-          onChange={e => update({ index: e.target.value })}
-        />
-        <label>projectId: </label>
-        <input
-          value={projectId}
-          onChange={e => update({ projectId: e.target.value })}
-        />
-        <button onClick={() => update({ editMode: !editMode })}>
-          {editMode ? 'View Portal' : 'Edit Mode'}
-        </button>
-        <div className="app" style={{ display: 'flex' }}>
-          <div className="aggs-panel">
-            <AggsState
-              projectId={projectId}
-              index={index}
-              render={aggsState => {
-                console.log(123, aggsState);
-                return editMode ? (
-                  <div>
-                    <EditAggs handleChange={aggsState.update} {...aggsState} />
-                  </div>
-                ) : (
-                  <AggsQuery
-                    debounceTime={300}
-                    projectId={projectId}
-                    index={index}
-                    aggs={aggsState.aggs.filter(x => x.active)}
-                    render={data =>
-                      data && (
-                        <div>
-                          {aggsState.aggs
-                            .filter(x => x.active)
-                            .map(agg => ({
-                              ...agg,
-                              ...data[index].aggregations[agg.field],
-                              ...data[index].extended.find(
-                                x => x.field === agg.field,
-                              ),
-                            }))
-                            .map(agg => (
-                              // TODO: switch on agg type
-                              <TermAgg
-                                key={agg.field}
-                                {...agg}
-                                Content={({ content, ...props }) => (
-                                  <div
-                                    {...props}
-                                    onClick={() =>
-                                      update({
-                                        sqon: toggleSQON(
-                                          {
-                                            op: 'and',
-                                            content: [
-                                              {
-                                                op: 'in',
-                                                content,
-                                              },
-                                            ],
-                                          },
-                                          sqon || defaultSQON,
-                                        ),
-                                      })
-                                    }
-                                  />
-                                )}
-                                isActive={d =>
-                                  inCurrentSQON({
-                                    value: d.value,
-                                    dotField: d.field,
-                                    currentSQON:
-                                      sqon?.content || defaultSQON.content,
-                                  })
-                                }
-                              />
-                            ))}
-                        </div>
-                      )
-                    }
-                  />
-                );
-              }}
-            />
-          </div>
+      <>
+        <span
+          css={`
+            opacity: 0;
+            position: absolute;
+            left: -999px;
+          `}
+        >
+          <ThemeSwitcher availableThemes={AVAILABLE_THEMES} />
+        </span>
+        {(!index || !projectId) && (
           <div
             css={`
-              position: relative;
-              flex-grow: 1;
+              height: 100vh;
+              display: flex;
+              flex-directon: column;
+              justify-content: center;
+              align-items: center;
             `}
           >
-            <SQONView sqon={sqon || defaultSQON} />
-            <DataTable
-              sqon={sqon}
-              config={tableConfig}
-              onSQONChange={action('sqon changed')}
-              onSelectionChange={action('selection changed')}
-              streamData={streamData}
-              fetchData={fetchData}
-            />
+            <div
+              css={`
+                display: flex;
+                flex-direction: column;
+              `}
+            >
+              <GetProjects
+                render={({ projects }) => (
+                  <>
+                    <h2>
+                      {process.env.STORYBOOK_PORTAL_NAME ||
+                        process.env.REACT_APP_PORTAL_NAME ||
+                        'Data Portal'}
+                    </h2>
+                    <select
+                      value={projectId}
+                      onChange={e => {
+                        localStorage.demoProject = e.target.value;
+                        update({
+                          projectId: e.target.value,
+                        });
+                      }}
+                    >
+                      <option id="version">Select a version</option>
+                      {projects.map(x => (
+                        <option key={x.id} value={x.id}>
+                          {x.id}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={index}
+                      onChange={e => {
+                        localStorage.demoIndex = e.target.value;
+                        update({
+                          index: e.target.value,
+                        });
+                      }}
+                    >
+                      <option id="version">Select an index</option>
+                      {projects
+                        .find(x => x.id === projectId)
+                        ?.types?.types?.map(x => (
+                          <option key={x.index} value={x.index}>
+                            {x.index}
+                          </option>
+                        ))}
+                    </select>
+                  </>
+                )}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+        {index &&
+          projectId && (
+            <>
+              <div className="app">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div
+                    css={`
+                      line-height: 40px;
+                      padding: 0 20px;
+                      font-size: 20px;
+                      font-weight: bold;
+                      box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+                        0 1px 10px 0 rgba(0, 0, 0, 0.12),
+                        0 2px 4px -1px rgba(0, 0, 0, 0.3);
+                    `}
+                  >
+                    {process.env.STORYBOOK_PORTAL_NAME ||
+                      process.env.REACT_APP_PORTAL_NAME ||
+                      'Data Portal'}{' '}
+                    Search Page
+                  </div>
+                </div>
+                <div style={{ display: 'flex', height: 'calc(100vh - 40px)' }}>
+                  <div className="aggs-panel">
+                    <AggsState
+                      projectId={projectId}
+                      index={index}
+                      render={aggsState => {
+                        return (
+                          <AggsQuery
+                            debounceTime={300}
+                            projectId={projectId}
+                            index={index}
+                            aggs={aggsState.aggs.filter(x => x.active)}
+                            render={data =>
+                              data && (
+                                <div
+                                  css={`
+                                    width: 220px;
+                                  `}
+                                >
+                                  {aggsState.aggs
+                                    .filter(x => x.active)
+                                    .map(agg => ({
+                                      ...agg,
+                                      ...data[index].aggregations[agg.field],
+                                      ...data[index].extended.find(
+                                        x => x.field === agg.field,
+                                      ),
+                                    }))
+                                    .map(agg => (
+                                      // TODO: switch on agg type
+                                      <TermAgg
+                                        key={agg.field}
+                                        {...agg}
+                                        Content={({ content, ...props }) => (
+                                          <div
+                                            {...props}
+                                            onClick={() =>
+                                              update({
+                                                sqon: toggleSQON(
+                                                  {
+                                                    op: 'and',
+                                                    content: [
+                                                      {
+                                                        op: 'in',
+                                                        content,
+                                                      },
+                                                    ],
+                                                  },
+                                                  sqon || defaultSQON,
+                                                ),
+                                              })
+                                            }
+                                          />
+                                        )}
+                                        isActive={d =>
+                                          inCurrentSQON({
+                                            value: d.value,
+                                            dotField: d.field,
+                                            currentSQON:
+                                              sqon?.content ||
+                                              defaultSQON.content,
+                                          })
+                                        }
+                                      />
+                                    ))}
+                                </div>
+                              )
+                            }
+                          />
+                        );
+                      }}
+                    />
+                  </div>
+                  <div
+                    css={`
+                      position: relative;
+                      flex-grow: 1;
+                    `}
+                  >
+                    <SQONView sqon={sqon || defaultSQON} />
+                    <DataTable
+                      sqon={sqon}
+                      config={tableConfig}
+                      onSQONChange={action('sqon changed')}
+                      onSelectionChange={action('selection changed')}
+                      streamData={streamData}
+                      fetchData={fetchData}
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+      </>
     )}
   />
 ));

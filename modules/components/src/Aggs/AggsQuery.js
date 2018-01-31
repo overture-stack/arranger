@@ -4,7 +4,7 @@ import Query from '../Query';
 
 export default ({ index = '', aggs = [], ...props }) =>
   !index || !aggs.length ? (
-    'invalid props'
+    ''
   ) : (
     <Query
       name={`${capitalize(index)}AggregationsQuery`}
