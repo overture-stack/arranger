@@ -3,7 +3,10 @@ import { debounce } from 'lodash';
 import { compose, withProps, withPropsOnChange } from 'recompose';
 
 import DropDown from '../../DropDown';
+import FontAwesomeIcon from '@fortawesome/react-fontawesome';
+import { compose, withProps } from 'recompose';
 import saveTSV from './saveTSV';
+import TextInput from '../../Input';
 
 const enhance = compose(
   withProps(({ columns }) => ({
@@ -31,13 +34,17 @@ const TableToolbar = ({
   streamData = () => {},
   style,
 }) => (
-  <div style={{ padding: 10, display: 'flex', flex: 'none', ...style }}>
+  <div
+    style={{ padding: 10, display: 'flex', flex: 'none', ...style }}
+    className="tableToolbar"
+  >
     <div style={{ flexGrow: 1 }}>
       Showing {(page * pageSize + 1).toLocaleString()} -{' '}
       {Math.min((page + 1) * pageSize, total).toLocaleString()} {type} of{' '}
       {total?.toLocaleString()}
     </div>
-    <input
+    <TextInput
+      icon={<FontAwesomeIcon icon="search" />}
       type="text"
       placeholder="Filter"
       onChange={e => {

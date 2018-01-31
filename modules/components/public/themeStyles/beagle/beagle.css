@@ -282,6 +282,7 @@ div {
 .sqon-value-group-end {
   margin-right: 10px;
 }
+
 /***********************************/
 /**** styling for the tree view ****/
 /***********************************/
@@ -316,4 +317,25 @@ div {
 }
 .tree-view .tree-view_arrow-collapsed {
   transform: rotate(0deg);
+}
+
+/**************************************/
+/****** styling for the input  ********/
+/**************************************/
+.inputWrapper {
+  width: 177px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+}
+.inputWrapper .inputIcon {
+  color: #a9adc0;
+}
+
+/**************************************/
+/*** styling for the Table Toolbar ****/
+/**************************************/
+.tableToolbar {
+  height: 40px;
+  padding: 10px;
 }
