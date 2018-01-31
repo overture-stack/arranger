@@ -1,9 +1,21 @@
 import 'babel-polyfill';
 import { configure } from '@storybook/react';
+import { setOptions } from '@storybook/addon-options';
 
-function loadStories() {
-  require('../stories/index.js');
-  // You can require as many stories as you need.
-}
+let start = () => {
+  if (process.env.STORYBOOK_DASHBOARD) {
+    setOptions({ goFullScreen: true });
+    configure(() => require('../stories/Dashboard'), module);
+    return;
+  }
 
-configure(loadStories, module);
+  if (process.env.STORYBOOK_PORTAL) {
+    setOptions({ goFullScreen: true });
+    configure(() => require('../stories/Portal'), module);
+    return;
+  }
+
+  configure(() => require('../stories/index'), module);
+};
+
+start();
