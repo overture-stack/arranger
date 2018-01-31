@@ -390,23 +390,26 @@ class Dashboard extends React.Component {
                   `}
                 >
                   {split.reduce(
-                    (breadCrumbs, segment, i) => [
-                      ...breadCrumbs,
-                      <React.Fragment key={segment + i}>
-                        <Link
-                          to={`${split.slice(0, i + 1).join(`/`)}`}
-                          css={`
-                            text-transform: uppercase;
-                            text-decoration: none;
-                            font-weight: bold;
-                            font-size: 12px;
-                          `}
-                        >
-                          {i === 1 ? 'versions' : segment}
-                        </Link>
-                        {i !== 0 && i !== split.length - 1 && <span> / </span>}
-                      </React.Fragment>,
-                    ],
+                    (breadCrumbs, segment, i) => {
+                      const path = split.slice(0, i + 1).join(`/`)
+                      return [
+                        ...breadCrumbs,
+                        <React.Fragment key={path}>
+                          <Link
+                            to={path}
+                            css={`
+                              text-transform: uppercase;
+                              text-decoration: none;
+                              font-weight: bold;
+                              font-size: 12px;
+                            `}
+                          >
+                            {i === 1 ? 'versions' : segment}
+                          </Link>
+                          {i !== 0 && i !== split.length - 1 && <span> / </span>}
+                        </React.Fragment>,
+                      ]
+                    },
                     [],
                   )}
                 </div>
