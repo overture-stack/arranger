@@ -109,56 +109,50 @@ export default ({ app }) => async (req, res) => {
 
   let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
 
-  try {
-    // check if state already made
-    await es.search({
-      index: `arranger-projects-${id}-${type}-aggs-state`,
-      type: `arranger-projects-${id}-${type}-aggs-state`,
-    });
-  } catch (error) {
-    // if doesn't exist create it
+  let body = flattenDeep(
+    typesWithMappings.map(([type, props]) => {
+      const columns = mappingToColumnsState(props.mapping);
 
-    let body = flattenDeep(
-      typesWithMappings.map(([type, props]) => {
-        const columns = mappingToColumnsState(props.mapping);
-
-        return [
-          {
-            index: {
-              _index: `arranger-projects-${id}-${type}-aggs-state`,
-              _type: `arranger-projects-${id}-${type}-aggs-state`,
-              _id: uuid(),
-            },
+      return [
+        {
+          index: {
+            _index: `arranger-projects-${id}-${type}-aggs-state`,
+            _type: `arranger-projects-${id}-${type}-aggs-state`,
+            _id: uuid(),
           },
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            state: mappingToAggsState(props.mapping),
-          }),
-          {
-            index: {
-              _index: `arranger-projects-${id}-${type}-columns-state`,
-              _type: `arranger-projects-${id}-${type}-columns-state`,
-              _id: uuid(),
-            },
+        },
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          state: mappingToAggsState(props.mapping),
+        }),
+        {
+          index: {
+            _index: `arranger-projects-${id}-${type}-columns-state`,
+            _type: `arranger-projects-${id}-${type}-columns-state`,
+            _id: uuid(),
           },
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            state: {
-              type,
-              keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
-              defaultSorted: [
-                {
-                  id: columns[0].id || columns[0].accessor,
-                  desc: false,
-                },
-              ],
-              columns,
-            },
-          }),
-        ];
-      }),
-    );
+        },
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          state: {
+            type,
+            keyField: type.replace(/(s|_.*)$/, '') + '_id', // TODO: find better way to generate this
+            defaultSorted: [
+              {
+                id: columns[0].id || columns[0].accessor,
+                desc: false,
+              },
+            ],
+            columns,
+          },
+        }),
+      ];
+    }),
+  );
 
+  // TODO: don't add new states of state indices exist
+  // don't add new ui states if decomissioned
+  if (!global.apps[id]) {
     await es.bulk({ body });
   }
 
