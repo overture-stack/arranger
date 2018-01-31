@@ -12,6 +12,7 @@ import EditAggs from '../Aggs/EditAggs';
 import EditColumns from '../Aggs/EditColumns';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
+import TypesTable from './TypesTable';
 import './Dashboard.css';
 
 fontawesome.library.add(solid);
@@ -422,83 +423,49 @@ class Dashboard extends React.Component {
             path="/projects/:id"
             render={({ match, history, location }) => (
               <section>
-                <div style={{ padding: 5 }}>
-                  <div>
-                    <input
-                      placeholder="Type name"
-                      value={this.state.newTypeName}
-                      onChange={e =>
-                        this.setState({ newTypeName: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <input
-                      placeholder="index"
-                      value={this.state.newTypeIndex}
-                      onChange={e =>
-                        this.setState({ newTypeIndex: e.target.value })
-                      }
-                    />
-                    <button onClick={this.addType}>+</button>
-                  </div>
-                </div>
                 <div>
-                  <label className="projects">
-                    TYPES ({
+                  <TypesTable
+                    onLinkClick={index => {
+                      let state = { activeType: index };
+                      this.setState(state);
+                      this.getFields({
+                        ...state,
+                        projectId: match.params.id,
+                      });
+                    }}
+                    projectId={match.params.id}
+                    total={
                       this.state.projects?.find(x => x.id === match.params.id)
                         ?.types?.total
-                    })
-                  </label>
-                  {this.state.projects
-                    ?.find(x => x.id === match.params.id)
-                    ?.types?.types?.map(x => (
-                      <div key={x.index} className="type-container">
+                    }
+                    data={
+                      this.state.projects?.find(x => x.id === match.params.id)
+                        ?.types?.types
+                    }
+                    customActions={
+                      <>
                         <div>
-                          <label>NAME: </label>
-                          <span>{x.name}</span>
-                        </div>
-                        <div>
-                          <label>INDEX: </label>
-                          <span
-                            key={x.index}
-                            onClick={() => {
-                              let state = { activeType: x.index };
-                              this.setState(state);
-                              this.getFields({
-                                ...state,
-                                projectId: match.params.id,
-                              });
-                              history.push(location.pathname + '/' + x.index);
-                            }}
-                            style={{
-                              textDecoration:
-                                this.state.activeType === x.index
-                                  ? 'none'
-                                  : 'underline',
-                              cursor:
-                                this.state.activeType === x.index
-                                  ? 'default'
-                                  : 'pointer',
-                            }}
-                          >
-                            {x.index}
-                          </span>
-                        </div>
-                        <div>
-                          <label>ACTIVE: </label>
                           <input
-                            type="checkbox"
-                            checked={x.active}
-                            key={x.index}
-                            onChange={() => {}}
+                            placeholder="Type name"
+                            value={this.state.newTypeName}
+                            onChange={e =>
+                              this.setState({ newTypeName: e.target.value })
+                            }
                           />
                         </div>
-                        {!x.mappings && (
-                          <div className="warning">No mappings found.</div>
-                        )}
-                      </div>
-                    ))}
+                        <div>
+                          <input
+                            placeholder="index"
+                            value={this.state.newTypeIndex}
+                            onChange={e =>
+                              this.setState({ newTypeIndex: e.target.value })
+                            }
+                          />
+                          <button onClick={this.addType}>+</button>
+                        </div>
+                      </>
+                    }
+                  />
                 </div>
               </section>
             )}
