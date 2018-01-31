@@ -638,23 +638,18 @@ class Dashboard extends React.Component {
                         </div>
                       )}
                       {tab === 'aggs' && (
-                        <div>
-                          <div>
-                            <label>Aggregations State</label>
-                          </div>
-                          <AggsState
-                            projectId={match.params.projectId}
-                            index={match.params.index}
-                            render={aggsState => (
-                              <div>
-                                <EditAggs
-                                  handleChange={aggsState.update}
-                                  {...aggsState}
-                                />
-                              </div>
-                            )}
-                          />
-                        </div>
+                        <AggsState
+                          projectId={match.params.projectId}
+                          index={match.params.index}
+                          render={aggsState => (
+                            <div>
+                              <EditAggs
+                                handleChange={aggsState.update}
+                                {...aggsState}
+                              />
+                            </div>
+                          )}
+                        />
                       )}
                       {tab === 'columns' && (
                         <div>
