@@ -167,13 +167,15 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       saveColumnsState: async (obj, { index, state }, { es, projectId }) => {
         // TODO: validate / make proper input type
 
+        console.log(123, state);
+
         await es.create({
           index: `arranger-projects-${projectId}-${index}-columns-state`,
           type: `arranger-projects-${projectId}-${index}-columns-state`,
           id: uuid(),
           body: {
             timestamp: new Date().toISOString(),
-            ...state,
+            state,
           },
           refresh: true,
         });

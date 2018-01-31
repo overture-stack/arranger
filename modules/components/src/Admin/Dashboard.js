@@ -7,13 +7,12 @@ import solid from '@fortawesome/fontawesome-free-solid';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
-import ColumnsState from '../Aggs/ColumnsState';
 import EditAggs from '../Aggs/EditAggs';
-import EditColumns from '../Aggs/EditColumns';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
 import './Dashboard.css';
+import { ColumnsState, EditColumns } from '../DataTable';
 
 fontawesome.library.add(solid);
 
@@ -24,11 +23,12 @@ let API =
 
 let socket = io(API);
 
-export let api = ({ endpoint = '', body }) =>
+export let api = ({ endpoint = '', body, headers }) =>
   fetch(API + endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...headers,
     },
     body: JSON.stringify(body),
   }).then(r => r.json());
@@ -94,9 +94,13 @@ class Dashboard extends React.Component {
     if (!error) {
       let projectsWithTypes = await this.addTypesToProjects(projects);
 
+      const activeProject = window.location.pathname.split('/')[2];
       this.setState({
         projects: projectsWithTypes,
         projectsTotal: total,
+        activeProject: projectsWithTypes.some(p => p.id === activeProject)
+          ? activeProject
+          : null,
         error: null,
         fields: [],
         types: [],
@@ -659,16 +663,14 @@ class Dashboard extends React.Component {
                           <ColumnsState
                             projectId={match.params.projectId}
                             index={match.params.index}
-                            render={aggsState =>
-                              !aggsState.aggs.columns ? (
+                            render={columnsState =>
+                              !columnsState.state.columns ? (
                                 ''
                               ) : (
-                                <div>
-                                  <EditColumns
-                                    handleChange={aggsState.update}
-                                    {...aggsState}
-                                  />
-                                </div>
+                                <EditColumns
+                                  handleChange={columnsState.update}
+                                  {...columnsState}
+                                />
                               )
                             }
                           />

@@ -105,11 +105,14 @@ export default class extends Component {
   }, 300);
 
   update = ({ field, key, value }) => {
-    let agg = this.state.temp.find(x => x.field === field);
-    let index = this.state.temp.findIndex(x => x.field === field);
-    let temp = Object.assign([], this.state.temp, {
-      [index]: { ...agg, [key]: value },
-    });
+    let column = this.state.temp.columns.find(x => x.field === field);
+    let index = this.state.temp.columns.findIndex(x => x.field === field);
+    let temp = {
+      ...this.state.temp,
+      columns: Object.assign([], this.state.temp.columns, {
+        [index]: { ...column, [key]: value },
+      }),
+    };
     this.setState({ temp }, () => this.save(temp));
   };
 
