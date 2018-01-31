@@ -21,6 +21,7 @@ import projectsRoutes from './projects';
 let writeFile = promisify(fs.writeFile);
 
 let port = process.env.PORT || 5050;
+let pingMs = process.env.PING_MS || 2200;
 
 let main = async () => {
   let app = express();
@@ -39,7 +40,7 @@ let main = async () => {
     });
 
     socket.on('arranger::monitorProjects', ({ projects = [], eshost }) => {
-      socket.monitorIntervalId = setInterval(async () => {
+      let pingProject = async () => {
         let statuses = await Promise.all(
           projects.map(x =>
             fetch(`http://localhost:${port}/${x.id}/ping`, {
@@ -58,7 +59,10 @@ let main = async () => {
         );
 
         socket.emit('server::projectsStatus', statuses);
-      }, 3000);
+      };
+
+      pingProject();
+      socket.monitorIntervalId = setInterval(pingProject, pingMs);
     });
   });
 
