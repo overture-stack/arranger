@@ -99,6 +99,9 @@ div {
   border: solid 1px #d4d6dd;
   border-left: solid 5px;
 }
+.aggregation-card:first-child {
+  margin-top: 0;
+}
 .aggregation-card:nth-child(5n + 1) {
   border-left-color: #a42c90;
 }

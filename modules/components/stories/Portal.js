@@ -302,9 +302,17 @@ storiesOf('Portal', module).add('Exploration', () => (
           </div>
           {index &&
             projectId && (
-              <div className="portal">
+              <div
+                className="portal"
+                css={`
+                  display: flex;
+                  flex-direction: column;
+                `}
+              >
                 <div
                   css={`
+                    z-index: 1;
+                    flex: none;
                     display: flex;
                     line-height: 40px;
                     padding: 0 20px;
@@ -333,7 +341,7 @@ storiesOf('Portal', module).add('Exploration', () => (
                     Logout
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexGrow: 1 }}>
+                <div style={{ display: 'flex' }}>
                   <AggsState
                     projectId={projectId}
                     index={index}

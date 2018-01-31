@@ -15,6 +15,7 @@ const TableToolbar = ({
   canChangeShowColumns,
   onColumnsChange,
   onSQONChange,
+  onFilterChange = () => {},
   page = 0,
   pageSize = 0,
   propsData,
@@ -36,20 +37,7 @@ const TableToolbar = ({
       type="text"
       placeholder="Filter"
       onChange={e => {
-        const value = e.target.value;
-        const t = {
-          op: 'OR',
-          content: columns.filter(c => c.show).map(column => {
-            return {
-              op: 'IN',
-              content: {
-                field: column.accessor || column.id,
-                value: [value],
-              },
-            };
-          }),
-        };
-        onSQONChange(t);
+        onFilterChange(e.target.value);
       }}
     />
     {allowTogglingColumns && (

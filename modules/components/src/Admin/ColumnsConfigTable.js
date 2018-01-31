@@ -19,7 +19,9 @@ export default ({ total, data, handleChange, onFilterChange }) => (
             <input
               type="checkbox"
               checked={props.value}
-              onChange={() => handleChange(props.original)}
+              onChange={() =>
+                handleChange({ key: props.column.id, row: props.original })
+              }
             />
           </div>
         );
@@ -28,9 +30,9 @@ export default ({ total, data, handleChange, onFilterChange }) => (
     }}
     config={{
       timestamp: '2018-01-12T16:42:07.495Z',
-      type: 'Aggs',
-      keyField: 'id',
-      defaultSorted: [{ id: 'id', desc: false }],
+      type: 'Columns',
+      keyField: 'field',
+      defaultSorted: [{ id: 'field', desc: false }],
       columns: [
         {
           show: true,
@@ -42,11 +44,11 @@ export default ({ total, data, handleChange, onFilterChange }) => (
         },
         {
           show: true,
-          Header: 'Agg Type',
-          type: 'text',
+          Header: 'Show',
+          type: 'checkbox',
           sortable: true,
           canChangeShow: true,
-          accessor: 'type',
+          accessor: 'show',
         },
         {
           show: true,
@@ -54,7 +56,15 @@ export default ({ total, data, handleChange, onFilterChange }) => (
           type: 'checkbox',
           sortable: true,
           canChangeShow: true,
-          accessor: 'active',
+          accessor: 'canChangeShow',
+        },
+        {
+          show: true,
+          Header: 'Type',
+          type: 'text',
+          sortable: true,
+          canChangeShow: true,
+          accessor: 'type',
         },
       ],
     }}

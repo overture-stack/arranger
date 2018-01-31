@@ -65,7 +65,7 @@ export default class extends Component {
         body: {
           variables: {
             fields: config.columns
-              .filter(column => column.canChangeShow)
+              .filter(column => column.canChangeShow || column.show)
               .map(column => column.field),
           },
           query: `
@@ -136,7 +136,7 @@ export default class extends Component {
           );
           return {
             ...column,
-            Header: extended?.displayName,
+            Header: extended?.displayName || column.field,
           };
         }),
       },
