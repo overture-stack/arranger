@@ -1,6 +1,9 @@
 import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
+import fontawesome from '@fortawesome/fontawesome';
+import FontAwesomeIcon from '@fortawesome/react-fontawesome';
+import solid from '@fortawesome/fontawesome-free-solid';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
@@ -10,6 +13,8 @@ import EditColumns from '../Aggs/EditColumns';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import './Dashboard.css';
+
+fontawesome.library.add(solid);
 
 let API =
   process.env.REACT_APP_API ||
@@ -168,9 +173,27 @@ class Dashboard extends React.Component {
               `}
             >
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                400 && `⬇️`}
+                400 && (
+                <span
+                  css={`
+                    color: rgb(164, 21, 46);
+                    font-size: 25px;
+                  `}
+                >
+                  <FontAwesomeIcon icon="caret-down" />
+                </span>
+              )}
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                200 && `⬆️`}
+                200 && (
+                <span
+                  css={`
+                    color: rgb(21, 164, 66);
+                    font-size: 25px;
+                  `}
+                >
+                  <FontAwesomeIcon icon="caret-up" />
+                </span>
+              )}
             </div>
           ),
         })),
@@ -485,8 +508,8 @@ class Dashboard extends React.Component {
             path="/projects/:projectId/:index"
             render={({ match, history, location }) => (
               <State
-                initial={{ tab: 'fields' }}
-                render={({ update, tab }) => (
+                initial={{ tab: 'fields', filterText: '' }}
+                render={({ update, tab, filterText }) => (
                   <div>
                     <div>
                       <a
@@ -528,32 +551,92 @@ class Dashboard extends React.Component {
                       >
                         Table
                       </a>
+
+                      <input
+                        placeholder="filter fields.."
+                        value={filterText}
+                        onChange={e => update({ filterText: e.target.value })}
+                      />
                     </div>
                     <div>
                       {tab === 'fields' && (
-                        <section>
-                          <div style={{ padding: 5 }}>
-                            <label className="projects">
-                              FIELDS ({this.state.fieldsTotal})
-                            </label>
-                          </div>
-                          {this.state.fields.map(x => (
-                            <div
-                              key={x.field}
-                              className={`field-item ${
-                                x.field == this.state.activeField?.field
-                                  ? 'active'
-                                  : ''
-                              }`}
-                              onClick={() => {
-                                this.setState({ activeField: x });
-                                history.push(location.pathname + '/' + x.field);
-                              }}
-                            >
-                              {x.field}
+                        <div
+                          css={`
+                            display: flex;
+                          `}
+                        >
+                          <section>
+                            <div style={{ padding: 5 }}>
+                              <label className="projects">
+                                FIELDS ({this.state.fieldsTotal})
+                              </label>
                             </div>
-                          ))}
-                        </section>
+                            {this.state.fields.map(x => (
+                              <div
+                                key={x.field}
+                                className={`field-item ${
+                                  x.field == this.state.activeField?.field
+                                    ? 'active'
+                                    : ''
+                                }`}
+                                onClick={() => {
+                                  this.setState({ activeField: x });
+                                }}
+                              >
+                                {x.field}
+                              </div>
+                            ))}
+                          </section>
+                          <section>
+                            <div style={{ padding: 5 }}>
+                              <label className="projects">
+                                {this.state.activeField?.field}
+                              </label>
+                            </div>
+                            {Object.entries(this.state.activeField || {})
+                              .filter(([key]) => key !== 'field')
+                              .map(([key, val]) => (
+                                <div key={key} className="type-container">
+                                  {startCase(key)}:
+                                  {typeof val === 'boolean' ? (
+                                    <input
+                                      type="checkbox"
+                                      checked={val}
+                                      onChange={async e => {
+                                        let r = await api({
+                                          endpoint: `/projects/${
+                                            match.params.projectId
+                                          }/types/${
+                                            match.params.index
+                                          }/fields/${
+                                            match.params.field
+                                          }/update`,
+                                          body: {
+                                            eshost: this.state.eshost,
+                                            key,
+                                            value: e.target.checked,
+                                          },
+                                        });
+
+                                        let activeField = r.fields.find(
+                                          x =>
+                                            x.field ===
+                                            this.state.activeField.field,
+                                        );
+
+                                        this.setState({
+                                          fields: r.fields,
+                                          activeField,
+                                        });
+                                      }}
+                                    />
+                                  ) : (
+                                    val
+                                  )}
+                                </div>
+                              ))}
+                          </section>
+                        </div>
                       )}
                       {tab === 'aggs' && (
                         <div>
@@ -601,81 +684,6 @@ class Dashboard extends React.Component {
                   </div>
                 )}
               />
-            )}
-          />
-          <Route
-            exact
-            path="/projects/:projectId/:index/:field"
-            render={({ match, history, location }) => (
-              <div className="row">
-                <section>
-                  <div style={{ padding: 5 }}>
-                    <label className="projects">
-                      FIELDS ({this.state.fieldsTotal})
-                    </label>
-                  </div>
-                  {this.state.fields.map(x => (
-                    <div
-                      key={x.field}
-                      className={`field-item ${
-                        x.field == this.state.activeField?.field ? 'active' : ''
-                      }`}
-                      onClick={() => {
-                        this.setState({ activeField: x });
-                        history.push(
-                          `/projects/${match.params.projectId}/${
-                            match.params.index
-                          }/${x.field}`,
-                        );
-                      }}
-                    >
-                      {x.field}
-                    </div>
-                  ))}
-                </section>
-                <section>
-                  <div style={{ padding: 5 }}>
-                    <label className="projects">
-                      {this.state.activeField?.field}
-                    </label>
-                  </div>
-                  {Object.entries(this.state.activeField || {})
-                    .filter(([key]) => key !== 'field')
-                    .map(([key, val]) => (
-                      <div key={key} className="type-container">
-                        {startCase(key)}:
-                        {typeof val === 'boolean' ? (
-                          <input
-                            type="checkbox"
-                            checked={val}
-                            onChange={async e => {
-                              let r = await api({
-                                endpoint: `/projects/${
-                                  match.params.projectId
-                                }/types/${match.params.index}/fields/${
-                                  match.params.field
-                                }/update`,
-                                body: {
-                                  eshost: this.state.eshost,
-                                  key,
-                                  value: e.target.checked,
-                                },
-                              });
-
-                              let activeField = r.fields.find(
-                                x => x.field === this.state.activeField.field,
-                              );
-
-                              this.setState({ fields: r.fields, activeField });
-                            }}
-                          />
-                        ) : (
-                          val
-                        )}
-                      </div>
-                    ))}
-                </section>
-              </div>
             )}
           />
         </div>
