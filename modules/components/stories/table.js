@@ -223,6 +223,7 @@ storiesOf('Table', module)
   .add('Toolbar', () => (
     <TableToolbarStory
       onSQONChange={console.log.bind(console)}
+      onFilterChange={console.log.bind(console)}
       streamData={streamDummyData}
     />
   ))

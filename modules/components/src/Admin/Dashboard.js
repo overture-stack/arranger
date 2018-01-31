@@ -481,7 +481,12 @@ class Dashboard extends React.Component {
               <State
                 initial={{ tab: 'fields', filterText: '' }}
                 render={({ update, tab, filterText }) => (
-                  <div>
+                  <div
+                    css={`
+                      display: flex;
+                      flex-direction: column;
+                    `}
+                  >
                     <div>
                       <a
                         css={`
@@ -528,7 +533,7 @@ class Dashboard extends React.Component {
                         onChange={e => update({ filterText: e.target.value })}
                       />
                     </div>
-                    <div>
+                    <>
                       {tab === 'fields' && (
                         <div
                           css={`
@@ -646,12 +651,10 @@ class Dashboard extends React.Component {
                           projectId={match.params.projectId}
                           index={match.params.index}
                           render={aggsState => (
-                            <div>
-                              <EditAggs
-                                handleChange={aggsState.update}
-                                {...aggsState}
-                              />
-                            </div>
+                            <EditAggs
+                              handleChange={aggsState.update}
+                              {...aggsState}
+                            />
                           )}
                         />
                       )}
@@ -663,20 +666,16 @@ class Dashboard extends React.Component {
                           <ColumnsState
                             projectId={match.params.projectId}
                             index={match.params.index}
-                            render={columnsState =>
-                              !columnsState.state.columns ? (
-                                ''
-                              ) : (
-                                <EditColumns
-                                  handleChange={columnsState.update}
-                                  {...columnsState}
-                                />
-                              )
-                            }
+                            render={columnsState => (
+                              <EditColumns
+                                handleChange={columnsState.update}
+                                {...columnsState}
+                              />
+                            )}
                           />
                         </div>
                       )}
-                    </div>
+                    </>
                   </div>
                 )}
               />

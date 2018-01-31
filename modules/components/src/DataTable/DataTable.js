@@ -32,12 +32,14 @@ class DataTable extends React.Component {
       loading = null,
       tableStyle,
       toolbarStyle,
+      onFilterChange,
     } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
       <>
         <TableToolbar
+          onFilterChange={onFilterChange}
           style={toolbarStyle}
           propsData={data}
           customActions={customActions}
