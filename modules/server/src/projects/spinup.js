@@ -12,7 +12,7 @@ import {
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 
-export default ({ app }) => async (req, res) => {
+export default ({ app, io }) => async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
 
@@ -163,13 +163,15 @@ export default ({ app }) => async (req, res) => {
   global.apps[id].use(
     `/${id}/graphql`,
     schema
-      ? graphqlExpress({ schema, context: { es, projectId: id } })
+      ? graphqlExpress({ schema, context: { es, projectId: id, io } })
       : (req, res) =>
           res.json({
             error:
               'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
           }),
   );
+
+  io.emit('server::refresh');
 
   console.log(`graphql server running at /${id}/graphql`);
 

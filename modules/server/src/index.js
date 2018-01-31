@@ -88,7 +88,7 @@ let main = async () => {
     next();
   });
 
-  projectsRoutes({ app });
+  projectsRoutes({ app, io });
 
   global.apps = {};
 

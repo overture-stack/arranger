@@ -1,7 +1,7 @@
 import { flattenDeep } from 'lodash';
 import mapHits from '../utils/mapHits';
 
-export default async (req, res) => {
+export default ({ io }) => async (req, res) => {
   let { es } = req.context;
   let { id, index, field } = req.params;
   let { key, value } = req.body;
@@ -25,6 +25,8 @@ export default async (req, res) => {
         },
       },
     });
+
+    io.emit('server::refresh');
   } catch (error) {
     res.json({ error: error.message });
   }
