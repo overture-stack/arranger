@@ -15,8 +15,8 @@ const TermAggs = ({
 
   return (
     <State
-      initial={{ isCollapsed: false }}
-      render={({ update, isCollapsed }) => (
+      initial={{ isCollapsed: false, showingMore: false }}
+      render={({ update, isCollapsed, showingMore }) => (
         <div className="test-term-aggregation aggregation-card">
           <div
             className={`title-wrapper ${isCollapsed && 'collapsed'}`}
@@ -28,7 +28,7 @@ const TermAggs = ({
           {!isCollapsed && (
             <div className={`bucket ${isCollapsed && 'collapsed'}`}>
               {orderBy(buckets, 'doc_count', 'desc')
-                // .slice(0, props.showingMore ? Infinity : 5)
+                .slice(0, showingMore ? Infinity : 5)
                 .map(b => ({ ...b, name: b.key_as_string || b.key }))
                 .map(bucket => (
                   <Content
@@ -81,6 +81,12 @@ const TermAggs = ({
                     </span>
                   </Content>
                 ))}
+
+              <div onClick={() => update({ showingMore: !showingMore })}>
+                {showingMore
+                  ? 'Less...'
+                  : buckets.length > 5 && `${buckets.length - 5} More...`}
+              </div>
             </div>
           )}
         </div>
