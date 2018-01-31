@@ -1,5 +1,6 @@
 import React from 'react';
 import Downshift from 'downshift';
+import './DropDown.css';
 
 function ArrowIcon({ isOpen }) {
   return (
@@ -57,23 +58,17 @@ class DropDown extends React.Component {
           inputValue,
           highlightedIndex,
         }) => (
-          <div
-            style={{
-              display: 'inline-block',
-              position: 'relative',
-              whiteSpace: 'nowrap',
-              zIndex: 999,
-            }}
-          >
+          <div className="dropDownHeader">
             <button
-              style={{ display: 'flex', cursor: 'pointer' }}
+              className="dropDownButton"
               {...getButtonProps({ onClick: this.handleToggleMenu })}
             >
-              <div style={{ marginRight: 8 }}>{children}</div>
+              <div className="dropDownButtonContent">{children}</div>
               <ArrowIcon isOpen={isOpen} />
             </button>
             {!isOpen ? null : (
               <div
+                className="dropDownContent"
                 style={{
                   position: 'absolute',
                   background: 'white',
@@ -90,6 +85,7 @@ class DropDown extends React.Component {
               >
                 {items.map((item, index) => (
                   <div
+                    className="dropDownContentElement"
                     key={item.id || itemToString(item)}
                     style={{
                       display: 'flex',

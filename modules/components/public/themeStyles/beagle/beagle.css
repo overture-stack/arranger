@@ -333,9 +333,20 @@ div {
 }
 
 /**************************************/
+/***** styling for the dropdown  ******/
+/**************************************/
+.dropDownHeader {
+  display: flex;
+}
+
+.dropDownHeader .dropDownButton {
+  border: solid 1px lightgrey;
+}
+
+/**************************************/
 /*** styling for the Table Toolbar ****/
 /**************************************/
 .tableToolbar {
-  height: 40px;
+  height: 50px;
   padding: 10px;
 }
