@@ -394,7 +394,7 @@ class Dashboard extends React.Component {
                       ...breadCrumbs,
                       <React.Fragment key={segment + i}>
                         <Link
-                          to={`/${segment}`} // TODO: parent path
+                          to={`${split.slice(0, i + 1).join(`/`)}`}
                           css={`
                             text-transform: uppercase;
                             text-decoration: none;
