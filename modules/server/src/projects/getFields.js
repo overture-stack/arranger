@@ -24,7 +24,18 @@ export default async (req, res) => {
   let fields = [];
 
   try {
-    fields = await es.search(arrangerconfig.projectsIndex);
+    fields = await es.search({
+      index: `arranger-projects-${id}-${index}`,
+      type: `arranger-projects-${id}-${index}`,
+      size: 0,
+      _source: false,
+    });
+
+    fields = await es.search({
+      index: `arranger-projects-${id}-${index}`,
+      type: `arranger-projects-${id}-${index}`,
+      size: fields.hits.total,
+    });
   } catch (error) {
     try {
       await es.indices.create({
