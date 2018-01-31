@@ -5,13 +5,13 @@ import { injectGlobal } from 'emotion';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { api } from '../src/Admin/Dashboard';
-import SQONView from '../src/SQONView';
+import SQONView, { Value, Bubble } from '../src/SQONView';
 import State from '../src/State';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsState from '../src/Aggs/AggsState';
 import AggsQuery from '../src/Aggs/AggsQuery';
 
-import { inCurrentSQON, toggleSQON } from '../src/SQONView/utils';
+import { inCurrentSQON, toggleSQON, setSQON } from '../src/SQONView/utils';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import DataTable, {
   EditColumns,
@@ -417,7 +417,25 @@ storiesOf('Portal', module).add('Exploration', () => (
                       flex-direction: column;
                     `}
                   >
-                    <SQONView sqon={sqon || defaultSQON} />
+                    <SQONView
+                      sqon={sqon || defaultSQON}
+                      ValueCrumb={({ value, nextSQON, ...props }) => (
+                        <Value
+                          onClick={() => update({ sqon: nextSQON })}
+                          {...props}
+                        >
+                          {value}
+                        </Value>
+                      )}
+                      Clear={({ nextSQON }) => (
+                        <Bubble
+                          className="sqon-clear"
+                          onClick={() => update({ sqon: nextSQON })}
+                        >
+                          Clear
+                        </Bubble>
+                      )}
+                    />
                     <ColumnsState
                       projectId={projectId}
                       index={index}
