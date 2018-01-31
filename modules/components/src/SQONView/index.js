@@ -15,7 +15,7 @@ import { Row } from '../Flex';
 import { toggleSQON } from './utils';
 import type { TGroupSQON, TValueSQON } from './types';
 
-const Bubble = ({ className = '', children, ...props }) => (
+export const Bubble = ({ className = '', children, ...props }) => (
   <div className={`${className} sqon-bubble`} {...props}>
     <div>{children}</div>
   </div>
