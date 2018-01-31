@@ -4,17 +4,20 @@ import io from 'socket.io-client';
 import { injectGlobal } from 'emotion';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-import DropDown from '../src/DropDown';
 import { api } from '../src/Admin/Dashboard';
 import SQONView from '../src/SQONView';
 import State from '../src/State';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsState from '../src/Aggs/AggsState';
 import AggsQuery from '../src/Aggs/AggsQuery';
-import EditAggs from '../src/Aggs/EditAggs';
-import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
+
+import { inCurrentSQON, toggleSQON } from '../src/SQONView/utils';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
-import DataTable, { columnTypes, columnsToGraphql } from '../src/DataTable';
+import DataTable, {
+  EditColumns,
+  ColumnsState,
+  columnsToGraphql,
+} from '../src/DataTable';
 
 let API =
   process.env.STORYBOOK_API ||
@@ -39,20 +42,27 @@ function streamData({ columns, sort, first, onData, onEnd }) {
   });
 }
 
-function fetchData(options) {
-  return fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(columnsToGraphql(options)),
-  })
-    .then(r => r.json())
-    .then(r => {
+const eshost =
+  process.env.STORYBOOK_ES_HOST ||
+  localStorage.ES_HOST ||
+  'http://localhost:9200';
+
+const fetchData = projectId => {
+  return options => {
+    return api({
+      endpoint: `/${projectId}/graphql`,
+      headers: {
+        ES_HOST: eshost,
+      },
+      body: columnsToGraphql(options),
+    }).then(r => {
       const hits = get(r, `data.${options.config.type}.hits`) || {};
       const data = get(hits, 'edges', []).map(e => e.node);
       const total = hits.total || 0;
       return { total, data };
     });
-}
+  };
+};
 
 let defaultSQON = {
   op: 'and',
@@ -119,11 +129,6 @@ const tableConfig = {
     },
   ],
 };
-
-let eshost =
-  process.env.STORYBOOK_ES_HOST ||
-  localStorage.ES_HOST ||
-  'http://localhost:9200';
 
 class GetProjects extends React.Component {
   state = { projects: [] };
@@ -370,13 +375,28 @@ storiesOf('Portal', module).add('Exploration', () => (
                   `}
                 >
                   <SQONView sqon={sqon || defaultSQON} />
-                  <DataTable
-                    sqon={sqon}
-                    config={tableConfig}
-                    onSQONChange={action('sqon changed')}
-                    onSelectionChange={action('selection changed')}
-                    streamData={streamData}
-                    fetchData={fetchData}
+                  <ColumnsState
+                    projectId={projectId}
+                    index={index}
+                    render={columnState => {
+                      return editMode ? (
+                        <div>
+                          <EditColumns
+                            handleChange={columnState.update}
+                            {...columnState}
+                          />
+                        </div>
+                      ) : (
+                        <DataTable
+                          sqon={sqon}
+                          config={columnState.state}
+                          onSQONChange={action('sqon changed')}
+                          onSelectionChange={action('selection changed')}
+                          streamData={streamData}
+                          fetchData={fetchData(projectId)}
+                        />
+                      );
+                    }}
                   />
                 </div>
               </div>
