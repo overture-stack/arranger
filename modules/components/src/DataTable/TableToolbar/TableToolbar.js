@@ -28,8 +28,9 @@ const TableToolbar = ({
 }) => (
   <div style={{ padding: 10, display: 'flex', flex: 'none', ...style }}>
     <div style={{ flexGrow: 1 }}>
-      Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)}{' '}
-      {type} of {total}
+      Showing {(page * pageSize + 1).toLocaleString()} -{' '}
+      {Math.min((page + 1) * pageSize, total).toLocaleString()} {type} of{' '}
+      {total?.toLocaleString()}
     </div>
     <input
       type="text"
