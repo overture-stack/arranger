@@ -275,7 +275,8 @@ storiesOf('Portal', module).add('Exploration', () => (
                         cursor: pointer;
                       `}
                       onClick={() => {
-                        localStorage.demoProject = localStorage.demoIndex = undefined;
+                        delete localStorage.demoProject;
+                        delete localStorage.demoIndex;
                         update({ index: '', projectId: '' });
                       }}
                     >
