@@ -150,6 +150,7 @@ div {
   font-family: sans-serif;
   display: flex;
   align-items: center;
+  margin-left: auto;
 }
 
 /**************************************/
