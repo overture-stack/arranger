@@ -371,7 +371,6 @@ storiesOf('Portal', module).add('Exploration', () => (
                 >
                   <SQONView sqon={sqon || defaultSQON} />
                   <DataTable
-                    toolbarStyle={{ flex: 'none' }}
                     sqon={sqon}
                     config={tableConfig}
                     onSQONChange={action('sqon changed')}

@@ -344,6 +344,9 @@ class Dashboard extends React.Component {
           `}
         >
           <Header
+            css={`
+              flex: none;
+            `}
             eshost={this.state.eshost}
             height={headerHeight}
             handleOnChange={e => {
@@ -354,7 +357,14 @@ class Dashboard extends React.Component {
             }}
           />
           {this.state.error && (
-            <div className="error">⚠️ {this.state.error}</div>
+            <div
+              className="error"
+              css={`
+                flex: none;
+              `}
+            >
+              ⚠️ {this.state.error}
+            </div>
           )}
           <Route
             render={p =>
@@ -372,6 +382,7 @@ class Dashboard extends React.Component {
                   css={`
                     line-height: ${headerHeight}px;
                     padding: 0 10px;
+                    flex: none;
                   `}
                 >
                   {split.reduce(
@@ -402,72 +413,61 @@ class Dashboard extends React.Component {
             path="/projects"
             exact
             render={() => (
-              <div
-                css={`
-                  flex-grow: 1;
-                  position: relative;
-                `}
-              >
-                <ProjectsTable
-                  newProjectName={this.state.newProjectName}
-                  setNewProjectName={s => this.setState(s)}
-                  addProject={this.addProject}
-                  projectsTotal={this.state.projectsTotal}
-                  projects={this.state.projects}
-                />
-              </div>
+              <ProjectsTable
+                newProjectName={this.state.newProjectName}
+                setNewProjectName={s => this.setState(s)}
+                addProject={this.addProject}
+                projectsTotal={this.state.projectsTotal}
+                projects={this.state.projects}
+              />
             )}
           />
           <Route
             exact
             path="/projects/:id"
             render={({ match, history, location }) => (
-              <section>
-                <div>
-                  <TypesTable
-                    onLinkClick={index => {
-                      let state = { activeType: index };
-                      this.setState(state);
-                      this.getFields({
-                        ...state,
-                        projectId: match.params.id,
-                      });
-                    }}
-                    projectId={match.params.id}
-                    total={
-                      this.state.projects?.find(x => x.id === match.params.id)
-                        ?.types?.total
-                    }
-                    data={
-                      this.state.projects?.find(x => x.id === match.params.id)
-                        ?.types?.types
-                    }
-                    customActions={
-                      <>
-                        <div>
-                          <input
-                            placeholder="Type name"
-                            value={this.state.newTypeName}
-                            onChange={e =>
-                              this.setState({ newTypeName: e.target.value })
-                            }
-                          />
-                        </div>
-                        <div>
-                          <input
-                            placeholder="index"
-                            value={this.state.newTypeIndex}
-                            onChange={e =>
-                              this.setState({ newTypeIndex: e.target.value })
-                            }
-                          />
-                          <button onClick={this.addType}>+</button>
-                        </div>
-                      </>
-                    }
-                  />
-                </div>
-              </section>
+              <TypesTable
+                onLinkClick={index => {
+                  let state = { activeType: index };
+                  this.setState(state);
+                  this.getFields({
+                    ...state,
+                    projectId: match.params.id,
+                  });
+                }}
+                projectId={match.params.id}
+                total={
+                  this.state.projects?.find(x => x.id === match.params.id)
+                    ?.types?.total
+                }
+                data={
+                  this.state.projects?.find(x => x.id === match.params.id)
+                    ?.types?.types
+                }
+                customActions={
+                  <>
+                    <div>
+                      <input
+                        placeholder="Type name"
+                        value={this.state.newTypeName}
+                        onChange={e =>
+                          this.setState({ newTypeName: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <input
+                        placeholder="index"
+                        value={this.state.newTypeIndex}
+                        onChange={e =>
+                          this.setState({ newTypeIndex: e.target.value })
+                        }
+                      />
+                      <button onClick={this.addType}>+</button>
+                    </div>
+                  </>
+                }
+              />
             )}
           />
           <Route

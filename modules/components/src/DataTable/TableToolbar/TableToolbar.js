@@ -26,7 +26,7 @@ const TableToolbar = ({
   streamData = () => {},
   style,
 }) => (
-  <div style={{ padding: 10, display: 'flex', ...style }}>
+  <div style={{ padding: 10, display: 'flex', flex: 'none', ...style }}>
     <div style={{ flexGrow: 1 }}>
       Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)}{' '}
       {type} of {total}
