@@ -24,6 +24,7 @@ let columnFields = `
         type
         sortable
         canChangeShow
+        query
       }
     }
   }
