@@ -7,7 +7,7 @@ class DataTable extends React.Component {
     super(props);
     this.state = {
       columns: props.config.columns,
-      pageSize: 10,
+      pageSize: 20,
       sort: props.config.defaultSorted,
     };
   }
@@ -30,12 +30,15 @@ class DataTable extends React.Component {
       customActions = null,
       data = null,
       loading = null,
+      tableStyle,
+      toolbarStyle,
     } = this.props;
     const { columns, page, pageSize, total, sort } = this.state;
 
     return (
       <>
         <TableToolbar
+          style={toolbarStyle}
           propsData={data}
           customActions={customActions}
           allowTogglingColumns={allowTogglingColumns}
@@ -59,27 +62,18 @@ class DataTable extends React.Component {
           pageSize={pageSize}
           type={this.props.config.type}
         />
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            top: 83, // TODO: get from props
-          }}
-        >
-          <Table
-            propsData={data}
-            sqon={sqon}
-            config={{ ...this.props.config, columns }}
-            fetchData={fetchData}
-            onSelectionChange={onSelectionChange}
-            onPaginationChange={state => this.setState(state)}
-            onSortedChange={sort => this.setState({ sort, page: 0 })}
-            defaultPageSize={pageSize}
-            loading={loading}
-          />
-        </div>
+        <Table
+          style={tableStyle}
+          propsData={data}
+          sqon={sqon}
+          config={{ ...this.props.config, columns }}
+          fetchData={fetchData}
+          onSelectionChange={onSelectionChange}
+          onPaginationChange={state => this.setState(state)}
+          onSortedChange={sort => this.setState({ sort, page: 0 })}
+          defaultPageSize={pageSize}
+          loading={loading}
+        />
       </>
     );
   }
