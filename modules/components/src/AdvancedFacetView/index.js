@@ -8,11 +8,12 @@ const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 export default ({ elasticMapping }) => (
   <State
     initial={{
-      selectedPath: null,
+      selectedPath: '',
     }}
     render={({ update, selectedPath }) => (
       <NestedTreeView
         dataSource={elasticMappingToDisplayTreeData(elasticMapping)}
+        selectedPath={selectedPath}
         onLeafSelect={path => {
           update({ selectedPath: path });
         }}
