@@ -15,14 +15,22 @@ const FacetView = ({ mapping }) => (
 
 const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
-  return rawDisplayData;
-  return rawDisplayData.map(node => ({
-    ...node,
-    // title:
-  }));
+  const replaceNodeDisplayName = node => {
+    const extension = extendedMapping.find(
+      extension => extension.field === node.path,
+    );
+    return {
+      ...node,
+      title: extension ? extension.displayName : node.title,
+      ...(node.children
+        ? { children: node.children.map(replaceNodeDisplayName) }
+        : {}),
+    };
+  };
+  return rawDisplayData.map(replaceNodeDisplayName);
 };
 
-export default ({ elasticMapping, extendedMapping }) => {
+export default ({ elasticMapping = {}, extendedMapping = [] }) => {
   const fieldMappingFromPath = path =>
     path
       .split('.')
