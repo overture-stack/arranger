@@ -13,8 +13,8 @@ export default ({ elasticMapping }) => {
       .reduce(
         (parentNode, nextPath) =>
           parentNode[nextPath]
-            ? parentNode[nextPath]
-            : parentNode.properties ? parentNode.properties[nextPath] : {},
+            ? [nextPath]
+            : parentNode.properties ? [nextPath] : {},
         elasticMapping,
       ) || {};
 
