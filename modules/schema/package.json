@@ -7,7 +7,8 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist",
+    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist",
+    "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

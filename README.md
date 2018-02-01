@@ -12,6 +12,9 @@ cd arranger
 npm i
 npm run bootstrap
 
+# watch modules and rebuild on change
+npm run start
+
 # run server on :5050
 npm run server
 

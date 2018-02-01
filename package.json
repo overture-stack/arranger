@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "start": "npm run bootstrap && npm run lerna -- run --parallel watch",
     "bootstrap": "lerna bootstrap --hoist",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
