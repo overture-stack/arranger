@@ -6,6 +6,13 @@ import './AdvancedFacetView.css';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
+const FacetView = ({ mapping }) => (
+  <div>
+    mapping:
+    <pre>{JSON.stringify(mapping, null, 2)}</pre>
+  </div>
+);
+
 export default ({ elasticMapping }) => {
   const fieldMappingFromPath = path =>
     path
@@ -22,23 +29,24 @@ export default ({ elasticMapping }) => {
     <State
       initial={{
         selectedPath: '',
+        selectedMapping: {},
       }}
-      render={({ update, selectedPath }) => (
+      render={({ update, selectedPath, selectedMapping }) => (
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <NestedTreeView
               dataSource={elasticMappingToDisplayTreeData(elasticMapping)}
               selectedPath={selectedPath}
               onLeafSelect={path => {
-                update({ selectedPath: path });
+                update({
+                  selectedPath: path,
+                  selectedMapping: fieldMappingFromPath(path),
+                });
               }}
             />
           </div>
           <div className="panel facetsPanel">
-            mapping:
-            <pre>
-              {JSON.stringify(fieldMappingFromPath(selectedPath), null, 2)}
-            </pre>
+            <FacetView mapping={selectedMapping} />
           </div>
         </div>
       )}
