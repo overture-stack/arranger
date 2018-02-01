@@ -59,6 +59,14 @@ export default ({ total, data, customActions, projectId, onLinkClick }) => (
           canChangeShow: false,
           accessor: 'mappings',
         },
+        {
+          show: true,
+          Header: 'Delete',
+          type: 'component',
+          sortable: false,
+          canChangeShow: false,
+          accessor: 'delete',
+        },
       ],
     }}
     data={{

@@ -233,6 +233,20 @@ class Dashboard extends React.Component {
     }
   };
 
+  deleteType = async ({ projectId, index }) => {
+    let { projects, total, error } = await api({
+      endpoint: `/projects/${projectId}/types/${index}/delete`,
+      body: { eshost: this.state.eshost },
+    });
+    if (error) {
+      this.setState({ error });
+    }
+    if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+      this.setState({ projects: projectsWithTypes });
+    }
+  };
+
   deleteProject = async ({ id }) => {
     let { projects, total, error } = await api({
       endpoint: `/projects/${id}/delete`,
@@ -422,6 +436,7 @@ class Dashboard extends React.Component {
             render={() => (
               <ProjectsTable
                 newProjectName={this.state.newProjectName}
+                setActiveProject={s => this.setState(s)}
                 setNewProjectName={s => this.setState(s)}
                 addProject={this.addProject}
                 projectsTotal={this.state.projectsTotal}
@@ -447,10 +462,27 @@ class Dashboard extends React.Component {
                   this.state.projects?.find(x => x.id === match.params.id)
                     ?.types?.total
                 }
-                data={
-                  this.state.projects?.find(x => x.id === match.params.id)
-                    ?.types?.types
-                }
+                data={this.state.projects
+                  ?.find(x => x.id === match.params.id)
+                  ?.types?.types.map(x => ({
+                    ...x,
+                    delete: () => (
+                      <div
+                        css={`
+                          cursor: pointer;
+                          text-align: center;
+                        `}
+                        onClick={() =>
+                          this.deleteType({
+                            projectId: match.params.id,
+                            index: x.index,
+                          })
+                        }
+                      >
+                        🔥
+                      </div>
+                    ),
+                  }))}
                 customActions={
                   <>
                     <div>

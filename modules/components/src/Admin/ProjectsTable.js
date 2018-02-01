@@ -4,6 +4,7 @@ import DataTable from '../DataTable';
 
 export default ({
   newProjectName,
+  setActiveProject,
   setNewProjectName,
   addProject,
   projectsTotal,
@@ -25,7 +26,14 @@ export default ({
     allowTSVExport={false}
     customTypes={{
       entity: props => {
-        return <Link to={`/projects/${props.value}`}>{props.value}</Link>;
+        return (
+          <Link
+            onClick={() => setActiveProject({ activeProject: props.value })}
+            to={`/projects/${props.value}`}
+          >
+            {props.value}
+          </Link>
+        );
       },
       component: ({ value: Component }) => <Component />,
     }}
