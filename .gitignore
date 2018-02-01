@@ -5,3 +5,4 @@ lerna-debug.log
 
 # remove this in beta
 package-lock.json
+yarn.lock
