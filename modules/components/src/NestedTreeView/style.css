@@ -34,7 +34,6 @@
 
 .tree-view .header {
   color: #2b388f;
-  font-size: 1.2em;
 }
 
 .tree-view_children.leaf {
@@ -47,6 +46,5 @@
 }
 .tree-view_children.leaf.header {
   color: #2b388f;
-  font-size: 1.2em;
   padding-left: 3px;
 }

@@ -1,0 +1,12 @@
+.facetViewWrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+.facetViewWrapper .treeViewPanel {
+  flex: 1;
+}
+
+.facetViewWrapper .facetsPanel {
+  flex: 2;
+}
