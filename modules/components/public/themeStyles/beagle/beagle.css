@@ -396,4 +396,5 @@ div {
 /*********************************************/
 .facetViewWrapper .treeViewPanel {
   background-color: #fafafc;
+  border: solid 1px #d4d6dd;
 }
