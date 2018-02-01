@@ -1,6 +1,5 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import NestedTreeView from '../src/NestedTreeView';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
