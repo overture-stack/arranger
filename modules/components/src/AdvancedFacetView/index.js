@@ -13,7 +13,16 @@ const FacetView = ({ mapping }) => (
   </div>
 );
 
-export default ({ elasticMapping }) => {
+const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
+  const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
+  return rawDisplayData;
+  return rawDisplayData.map(node => ({
+    ...node,
+    // title:
+  }));
+};
+
+export default ({ elasticMapping, extendedMapping }) => {
   const fieldMappingFromPath = path =>
     path
       .split('.')
@@ -35,7 +44,10 @@ export default ({ elasticMapping }) => {
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <NestedTreeView
-              dataSource={elasticMappingToDisplayTreeData(elasticMapping)}
+              dataSource={injectExtensionToElasticMapping(
+                elasticMapping,
+                extendedMapping,
+              )}
               selectedPath={selectedPath}
               onLeafSelect={path => {
                 update({
