@@ -13,13 +13,9 @@ import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
 import './Dashboard.css';
 import { ColumnsState, EditColumns } from '../DataTable';
+import { ES_HOST, API } from '../utils/config';
 
 fontawesome.library.add(solid);
-
-let API =
-  process.env.STORYBOOK_API ||
-  localStorage.STORYBOOK_API ||
-  'http://localhost:5050';
 
 let socket = io(API);
 
@@ -35,10 +31,7 @@ export let api = ({ endpoint = '', body, headers }) =>
 
 class Dashboard extends React.Component {
   state = {
-    eshost:
-      process.env.STORYBOOK_ES_HOST ||
-      localStorage.ES_HOST ||
-      'http://localhost:9200',
+    eshost: ES_HOST,
     error: null,
 
     projects: [],
@@ -403,29 +396,26 @@ class Dashboard extends React.Component {
                     flex: none;
                   `}
                 >
-                  {split.reduce(
-                    (breadCrumbs, segment, i) => {
-                      const path = split.slice(0, i + 1).join(`/`)
-                      return [
-                        ...breadCrumbs,
-                        <React.Fragment key={path}>
-                          <Link
-                            to={path}
-                            css={`
-                              text-transform: uppercase;
-                              text-decoration: none;
-                              font-weight: bold;
-                              font-size: 12px;
-                            `}
-                          >
-                            {i === 1 ? 'versions' : segment}
-                          </Link>
-                          {i !== 0 && i !== split.length - 1 && <span> / </span>}
-                        </React.Fragment>,
-                      ]
-                    },
-                    [],
-                  )}
+                  {split.reduce((breadCrumbs, segment, i) => {
+                    const path = split.slice(0, i + 1).join(`/`);
+                    return [
+                      ...breadCrumbs,
+                      <React.Fragment key={path}>
+                        <Link
+                          to={path}
+                          css={`
+                            text-transform: uppercase;
+                            text-decoration: none;
+                            font-weight: bold;
+                            font-size: 12px;
+                          `}
+                        >
+                          {i === 1 ? 'versions' : segment}
+                        </Link>
+                        {i !== 0 && i !== split.length - 1 && <span> / </span>}
+                      </React.Fragment>,
+                    ];
+                  }, [])}
                 </div>
               );
             }}

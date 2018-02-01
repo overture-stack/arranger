@@ -2,11 +2,7 @@ import { Component } from 'react';
 import { debounce } from 'lodash';
 
 import { api } from '../Admin/Dashboard';
-
-const eshost =
-  process.env.STORYBOOK_ES_HOST ||
-  localStorage.STORYBOOK_ES_HOST ||
-  'http://localhost:9200';
+import { ES_HOST } from '../utils/config';
 
 let columnFields = `
   states {
@@ -47,7 +43,7 @@ export default class extends Component {
     try {
       let { data } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
-        headers: { ES_HOST: eshost },
+        headers: { ES_HOST },
         body: {
           query: `
           {
@@ -61,7 +57,7 @@ export default class extends Component {
       const config = data.columnsState[0].states[0].state;
       let { data: { [this.props.index]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
-        headers: { ES_HOST: eshost },
+        headers: { ES_HOST },
         body: {
           variables: {
             fields: config.columns
@@ -91,7 +87,7 @@ export default class extends Component {
   save = debounce(async state => {
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
-      headers: { ES_HOST: eshost },
+      headers: { ES_HOST },
       body: {
         variables: { state },
         query: `

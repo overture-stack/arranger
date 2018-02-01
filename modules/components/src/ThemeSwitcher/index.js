@@ -46,3 +46,5 @@ export const AVAILABLE_THEMES = [
     stylePath: '/themeStyles/default.css',
   },
 ];
+
+export { StyleProvider };

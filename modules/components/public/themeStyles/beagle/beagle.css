@@ -166,13 +166,13 @@ div {
 .aggregation-card .showMore-wrapper.more::before {
   margin-top: 3px;
   margin-right: 4px;
-  content: url(themeStyles/beagle/aggsPlus.svg);
+  content: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+ICA8Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iNiIgZmlsbD0iIzkwMjc4ZSIgLz4gIDxsaW5lIHgxPSI2IiB5MT0iMiIgeDI9IjYiIHkyPSIxMCIgc3R5bGU9InN0cm9rZTp3aGl0ZTsgc3Ryb2tlLXdpZHRoOjIiIC8+ICA8bGluZSB4MT0iMiIgeTE9IjYiIHgyPSIxMCIgeTI9IjYiIHN0eWxlPSJzdHJva2U6d2hpdGU7IHN0cm9rZS13aWR0aDoyIiAvPjwvc3ZnPg==);
 }
 
 .aggregation-card .showMore-wrapper.less::before {
   margin-top: 3px;
   margin-right: 4px;
-  content: url(themeStyles/beagle/aggsMinus.svg);
+  content: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+ICA8Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iNiIgZmlsbD0iIzkwMjc4ZSIgLz4gIDxsaW5lIHgxPSIyIiB5MT0iNiIgeDI9IjEwIiB5Mj0iNiIgc3R5bGU9InN0cm9rZTp3aGl0ZTsgc3Ryb2tlLXdpZHRoOjIiIC8+PC9zdmc+);
 }
 
 /**************************************/
@@ -220,7 +220,7 @@ div {
 }
 
 .sqon-value:after {
-  content: url(themeStyles/beagle/x.svg);
+  content: url(data:image/svg+xml,%3Csvg%20width%3D%228%22%20height%3D%228%22%20stroke%3D%22white%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%0A%20%20%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%228%22%20y2%3D%228%22%20/%3E%0A%20%20%3Cline%20x1%3D%228%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%228%22%20/%3E%0A%3C/svg%3E);
   margin-left: 9px;
 }
 

@@ -5,7 +5,8 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
-
+import { API } from '../src/utils/config';
+import urlJoin from 'url-join';
 import DataTable, {
   Table,
   columnsToGraphql,
@@ -163,7 +164,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
     onSQONChange={action('sqon changed')}
     onSelectionChange={action('selection changed')}
     streamData={({ columns, sort, first, onData, onEnd }) => {
-      let socket = io(`http://localhost:5050`);
+      let socket = io(API);
       socket.on('server::chunk', ({ data, total }) =>
         onData({
           total,
@@ -180,9 +181,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
       });
     }}
     fetchData={options => {
-      const API = 'http://localhost:5050/table';
-
-      return fetch(API, {
+      return fetch(urlJoin(API, 'table'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(columnsToGraphql({ ...options, sqon })),
