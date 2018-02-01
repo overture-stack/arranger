@@ -25,7 +25,7 @@ export default ({ elasticMapping }) => {
       }}
       render={({ update, selectedPath }) => (
         <div className="facetViewWrapper">
-          <div className="treeViewPanel">
+          <div className="panel treeViewPanel">
             <NestedTreeView
               dataSource={elasticMappingToDisplayTreeData(elasticMapping)}
               selectedPath={selectedPath}
@@ -34,8 +34,11 @@ export default ({ elasticMapping }) => {
               }}
             />
           </div>
-          <div className="facetsPanel">
-            type: {fieldMappingFromPath(selectedPath).type}
+          <div className="panel facetsPanel">
+            mapping:
+            <pre>
+              {JSON.stringify(fieldMappingFromPath(selectedPath), null, 2)}
+            </pre>
           </div>
         </div>
       )}

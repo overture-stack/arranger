@@ -394,6 +394,9 @@ div {
 /*********************************************/
 /**** styling for the Advanced Facet View ****/
 /*********************************************/
+.facetViewWrapper .panel {
+  margin: 15px;
+}
 .facetViewWrapper .treeViewPanel {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
