@@ -15,3 +15,7 @@
   transform: rotate(90deg);
   transition: all 0.5s;
 }
+.aggregation-card .showMore-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}

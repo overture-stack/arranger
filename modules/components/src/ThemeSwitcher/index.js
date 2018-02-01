@@ -38,7 +38,7 @@ export const AVAILABLE_THEMES = [
   {
     id: 'beagle',
     title: 'Beagle',
-    stylePath: '/themeStyles/beagle.css',
+    stylePath: '/themeStyles/beagle/beagle.css',
   },
   {
     id: 'default',
