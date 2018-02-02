@@ -549,7 +549,7 @@ export default class AggregationProcessor {
   }
 
   create_numeric_field_agg(field, graphql_fields) {
-    numeric_agg = {};
+    let numeric_agg = {};
 
     if (graphql_fields[CONSTANTS.STATS]) {
       numeric_agg[`${field}:stats`] = {
@@ -561,7 +561,7 @@ export default class AggregationProcessor {
 
     if (graphql_fields[CONSTANTS.HISTOGRAM]) {
       const args = graphql_fields.histogram.arguments;
-      const interval = args[0]?.interval || this.historgramInterval;
+      const interval = (args && args[0]?.interval) || this.historgramInterval;
 
       numeric_agg[`${field}:historgram`] = {
         histogram: {
