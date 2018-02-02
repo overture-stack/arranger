@@ -141,7 +141,6 @@ div {
 }
 .aggregation-card .bucket-item {
   padding-top: 5px;
-  font-size: 0.8em;
 }
 .aggregation-card .bucket-item .bucket-count {
   border-radius: 5px;
@@ -173,6 +172,10 @@ div {
   margin-top: 3px;
   margin-right: 4px;
   content: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+ICA8Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iNiIgZmlsbD0iIzkwMjc4ZSIgLz4gIDxsaW5lIHgxPSIyIiB5MT0iNiIgeDI9IjEwIiB5Mj0iNiIgc3R5bGU9InN0cm9rZTp3aGl0ZTsgc3Ryb2tlLXdpZHRoOjIiIC8+PC9zdmc+);
+
+.aggregation-card .bucket-item,
+.aggregation-card .input-range__label {
+  font-size: 0.8em;
 }
 
 /**************************************/

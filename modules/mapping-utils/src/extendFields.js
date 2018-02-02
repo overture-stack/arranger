@@ -8,4 +8,5 @@ export default mapping =>
     displayName: startCase(field.replace(/\./g, ' ')),
     active: false,
     isArray: false,
+    unit: null,
   }));
