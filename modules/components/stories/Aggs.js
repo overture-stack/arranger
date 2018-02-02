@@ -2,10 +2,11 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import EditAggs from '../src/Aggs/EditAggs';
+import RangeAgg from '../src/Aggs/RangeAgg';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
 import AggsPanell from '../src/Aggs/AggsPanell';
-import { inCurrentSQON, addInSQON, toggleSQON } from '../src/SQONView/utils';
+import { inCurrentSQON, addInSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher/index';
 import State from '../src/State';
 import './Aggs.css';
@@ -101,7 +102,7 @@ storiesOf('Aggs', module)
       />
     </div>
   ))
-  .add('AggsWithSQON', () => (
+  .add('TermAggsWithSQON', () => (
     <State
       initial={{ sqon: null }}
       render={({ sqon, update }) => (
@@ -148,6 +149,56 @@ storiesOf('Aggs', module)
               />
             ))}
           </div>
+        </div>
+      )}
+    />
+  ))
+  .add('RangeAgg', () => (
+    <RangeAgg
+      field="cases__diagnoses__days_to_death"
+      displayName="Diagnoses Days To Death"
+      stats={{
+        min: 15,
+        max: 820,
+        count: 1000,
+        avg: 70,
+        sum: 15000,
+      }}
+      handleChange={action(`Range Change`)}
+    />
+  ))
+  .add('RangeAggWithSQON', () => (
+    <State
+      initial={{ sqon: null }}
+      render={({ sqon, update }) => (
+        <div className="range with sqon">
+          <div>SQON: {JSON.stringify(sqon)}</div>
+          <RangeAgg
+            field="cases__diagnoses__days_to_death"
+            displayName="Diagnoses Days To Death"
+            stats={{
+              min: 15,
+              max: 820,
+              count: 1000,
+              avg: 70,
+              sum: 15000,
+            }}
+            handleChange={({ max, min, field }) => {
+              console.log(min, max, field)
+              update({
+                sqon: replaceSQON(
+                  {
+                    op: 'and',
+                    content: [
+                      { op: '>=', content: { field, value: min } },
+                      { op: '<=', content: { field, value: max } },
+                    ],
+                  },
+                  sqon || defaultSQON,
+                ),
+              });
+            }}
+          />
         </div>
       )}
     />
