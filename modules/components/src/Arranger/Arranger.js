@@ -1,6 +1,7 @@
 import React from 'react';
 import { get } from 'lodash';
-
+import { provideState, injectState } from 'freactal';
+import { compose } from 'recompose';
 import io from 'socket.io-client';
 
 import { columnsToGraphql } from '../DataTable';
@@ -9,7 +10,7 @@ import { API, ES_HOST } from '../utils/config';
 
 let socket = io(API);
 
-function streamData({ type, columns, sort, first, onData, onEnd }) {
+const streamData = type => ({ columns, sort, first, onData, onEnd }) => {
   socket.on('server::chunk', ({ data, total }) =>
     onData({
       total,
@@ -24,7 +25,7 @@ function streamData({ type, columns, sort, first, onData, onEnd }) {
     size: 100,
     ...columnsToGraphql({ columns, sort, first }),
   });
-}
+};
 
 const fetchData = projectId => {
   return options => {
@@ -43,14 +44,30 @@ const fetchData = projectId => {
   };
 };
 
+const enhance = compose(
+  provideState({
+    initialState: ({ projectId = '', index = '', sqon = null }) => ({
+      arranger: {
+        sqon,
+        projectId,
+        index,
+        streamData: streamData(index),
+        fetchData: fetchData(projectId),
+      },
+    }),
+    effects: {
+      setSQON: (effects, sqon) => state => ({
+        ...state,
+        arranger: { ...state.arranger, sqon },
+      }),
+    },
+  }),
+  injectState,
+);
+
 class Arranger extends React.Component {
   state = {
     shouldRefresh: false,
-    sqon: null,
-  };
-
-  onSQONChange = sqon => {
-    return this.setState({ sqon });
   };
 
   componentDidMount() {
@@ -111,17 +128,7 @@ class Arranger extends React.Component {
                   flex-direction: column;
                 `}
               >
-                {render
-                  ? render({
-                      projectId,
-                      index,
-                      sqon,
-                      streamData: options =>
-                        streamData({ ...options, type: index }),
-                      fetchData,
-                      onSQONChange: this.onSQONChange,
-                    })
-                  : 'default'}
+                {render ? render({}) : 'default'}
               </div>
             )}
         </div>
@@ -130,4 +137,4 @@ class Arranger extends React.Component {
   }
 }
 
-export default Arranger;
+export default enhance(Arranger);

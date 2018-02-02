@@ -1,13 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { compose } from 'recompose';
+import { injectState } from 'freactal';
 
 import SQONView, { Value, Bubble } from '../SQONView';
 import TermAgg from '../Aggs/TermAgg';
 import AggsState from '../Aggs/AggsState';
 import AggsQuery from '../Aggs/AggsQuery';
-
 import { inCurrentSQON, toggleSQON } from '../SQONView/utils';
-
 import DataTable, { ColumnsState } from '../DataTable';
 
 let defaultSQON = {
@@ -15,13 +14,11 @@ let defaultSQON = {
   content: [],
 };
 
+const enhance = compose(injectState);
+
 const Portal = ({
-  projectId,
-  index,
-  sqon,
-  streamData,
-  fetchData,
-  onSQONChange,
+  state: { arranger: { projectId, index, sqon, streamData, fetchData } },
+  effects: { setSQON },
   style,
 }) => {
   return (
@@ -61,7 +58,7 @@ const Portal = ({
                             <div
                               {...props}
                               onClick={() =>
-                                onSQONChange(
+                                setSQON(
                                   toggleSQON(
                                     {
                                       op: 'and',
@@ -110,15 +107,12 @@ const Portal = ({
         <SQONView
           sqon={sqon || defaultSQON}
           ValueCrumb={({ value, nextSQON, ...props }) => (
-            <Value onClick={() => onSQONChange(nextSQON)} {...props}>
+            <Value onClick={() => setSQON(nextSQON)} {...props}>
               {value}
             </Value>
           )}
           Clear={({ nextSQON }) => (
-            <Bubble
-              className="sqon-clear"
-              onClick={() => onSQONChange(nextSQON)}
-            >
+            <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
               Clear
             </Bubble>
           )}
@@ -131,10 +125,10 @@ const Portal = ({
               <DataTable
                 sqon={sqon}
                 config={columnState.state}
-                onSQONChange={onSQONChange}
+                setSQON={setSQON}
                 onSelectionChange={console.log('selection changed')}
                 streamData={streamData}
-                fetchData={fetchData(projectId)}
+                fetchData={fetchData}
               />
             );
           }}
@@ -144,6 +138,4 @@ const Portal = ({
   );
 };
 
-Portal.contextTypes = { arranger: PropTypes.object };
-
-export default Portal;
+export default enhance(Portal);
