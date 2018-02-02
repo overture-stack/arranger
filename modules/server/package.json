@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "cd .. && nodemon --watch '*' server/index.js",
+    "run-prod": "node index.js",
     "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
