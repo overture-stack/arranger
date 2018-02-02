@@ -1,10 +1,6 @@
 import { Component } from 'react';
 import { debounce } from 'lodash';
-
-let API =
-  process.env.STORYBOOK_API ||
-  localStorage.STORYBOOK_API ||
-  'http://localhost:5050';
+import { ES_HOST, API } from '../utils/config';
 
 let aggFields = `
   index
@@ -23,7 +19,7 @@ let api = ({ body, endpoint = '' }) =>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ES_HOST: 'http://localhost:9200', // TODO; get from somewhere
+      ES_HOST: ES_HOST,
     },
     body: JSON.stringify(body),
   }).then(r => r.json());

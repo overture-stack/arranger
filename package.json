@@ -13,6 +13,15 @@
       "npm i && npm run bootstrap && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
+    "babel-eslint": "^8.2.1",
+    "eslint": "^4.16.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-config-react-app": "^2.1.0",
+    "eslint-plugin-flowtype": "^2.42.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-prettier": "^2.6.0",
+    "eslint-plugin-react": "^7.6.1",
     "lerna": "^2.6.0",
     "npm-link-shared": "^0.5.2",
     "prettier": "^1.9.2"

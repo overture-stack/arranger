@@ -1,17 +1,13 @@
 import React, { Component } from 'react';
 import { debounce } from 'lodash';
-
-let API =
-  process.env.STORYBOOK_API ||
-  localStorage.STORYBOOK_API ||
-  'http://localhost:5050';
+import { ES_HOST, API } from './utils/config';
 
 let api = ({ projectId, name = 'UnnamedQuery', query, variables }) =>
   fetch(API + `/${projectId}/graphql/${name}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ES_HOST: 'http://localhost:9200',
+      ES_HOST,
     },
     body: JSON.stringify({ query, variables }),
   }).then(r => r.json());
