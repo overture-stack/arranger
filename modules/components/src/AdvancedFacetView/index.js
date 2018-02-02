@@ -6,10 +6,11 @@ import './AdvancedFacetView.css';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
-const FacetView = ({ mapping, path, aggregations }) => (
+const FacetView = ({ mapping, path, aggregations, disPlayTreeData }) => (
   <div>
     {path && `${path}:`}
     <pre>{JSON.stringify(mapping, null, 2)}</pre>
+    {}
   </div>
 );
 
@@ -45,7 +46,10 @@ export default ({
             : parentNode.properties ? parentNode.properties[nextPath] : {},
         elasticMapping,
       ) || {};
-
+  const disPlayTreeData = injectExtensionToElasticMapping(
+    elasticMapping,
+    extendedMapping,
+  );
   return (
     <State
       initial={{
@@ -56,10 +60,7 @@ export default ({
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <NestedTreeView
-              dataSource={injectExtensionToElasticMapping(
-                elasticMapping,
-                extendedMapping,
-              )}
+              dataSource={disPlayTreeData}
               selectedPath={selectedPath}
               onLeafSelect={path => {
                 update({
@@ -74,6 +75,7 @@ export default ({
               mapping={selectedMapping}
               path={selectedPath}
               aggregations={aggregations}
+              disPlayTreeData={disPlayTreeData}
             />
           </div>
         </div>
