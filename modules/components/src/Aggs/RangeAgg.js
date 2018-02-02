@@ -17,22 +17,18 @@ class RangeAgg extends Component {
 
   componentWillMount() {
     let { field, stats: { min, max } } = this.props;
-    console.log('mount', field, min, max);
     this.setState({ field, min, max, value: { min, max } });
   }
 
   componentWillReceiveProps(nextProps) {
     let { field, stats: { min, max } } = this.props;
-    let { value } = this.state
-    console.log('receiveProps 1 ', field, min, max, value)
-    let update = {
+    let { value } = this.state;
+    this.setState({
       field,
       min,
       max,
       value: { min: Math.max(value.min, min), max: Math.min(value.max, max) },
-    };
-    console.log('receiveProps', update);
-    this.setState(update);
+    });
   }
 
   setValue = ({ min, max }) => {

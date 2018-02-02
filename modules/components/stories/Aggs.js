@@ -184,7 +184,6 @@ storiesOf('Aggs', module)
               sum: 15000,
             }}
             handleChange={({ max, min, field }) => {
-              console.log(min, max, field)
               update({
                 sqon: replaceSQON(
                   {
