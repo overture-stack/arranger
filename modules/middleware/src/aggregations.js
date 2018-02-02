@@ -125,7 +125,7 @@ export default class AggregationProcessor {
       //  - get field name before .
       //  - replace all __ with .
       const double_underscore_field = raw_field.split('.')[0];
-      const field = double_underscore_field.replace('__', '.');
+      const field = double_underscore_field.split('__').join('.');
 
       // find the longest nested path to the facet if it exists
       const path_to_facet = this.get_nested_path_to_field({
