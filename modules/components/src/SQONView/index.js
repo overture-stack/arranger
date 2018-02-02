@@ -121,7 +121,7 @@ const SQON = ({
             key="clear"
             style={{ alignItems: 'center' }}
           >
-            {Clear({ nextSQON: {} })}
+            {Clear({ nextSQON: null })}
           </Row>
           {sqonContent.map((valueSQON, i) => {
             const field = valueSQON.content.field;
