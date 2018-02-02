@@ -10,6 +10,7 @@ const TermAggs = ({
   handleValueClick = () => {},
   isActive = () => {},
   Content = 'div',
+  maxTerms = 5,
 }) => {
   const dotField = field.replace(/__/g, '.');
 
@@ -28,7 +29,7 @@ const TermAggs = ({
           {!isCollapsed && (
             <div className={`bucket ${isCollapsed && 'collapsed'}`}>
               {orderBy(buckets, 'doc_count', 'desc')
-                .slice(0, showingMore ? Infinity : 5)
+                .slice(0, showingMore ? Infinity : maxTerms)
                 .map(b => ({ ...b, name: b.key_as_string || b.key }))
                 .map(bucket => (
                   <Content
@@ -82,11 +83,16 @@ const TermAggs = ({
                   </Content>
                 ))}
 
-              <div onClick={() => update({ showingMore: !showingMore })}>
-                {showingMore
-                  ? 'Less...'
-                  : buckets.length > 5 && `${buckets.length - 5} More...`}
-              </div>
+              {buckets.length > maxTerms && (
+                <div
+                  className={`showMore-wrapper ${
+                    showingMore ? 'less' : 'more'
+                  }`}
+                  onClick={() => update({ showingMore: !showingMore })}
+                >
+                  {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
+                </div>
+              )}
             </div>
           )}
         </div>

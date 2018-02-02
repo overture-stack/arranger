@@ -11,7 +11,8 @@ div {
 /* styling for the table component */
 /***********************************/
 
-.ReactTable .rt-thead, .ReactTable .rt-tbody {
+.ReactTable .rt-thead,
+.ReactTable .rt-tbody {
   overflow-y: scroll;
 }
 
@@ -153,6 +154,26 @@ div {
   align-items: center;
   margin-left: auto;
 }
+.aggregation-card .showMore-wrapper {
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: #90278e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.aggregation-card .showMore-wrapper.more::before {
+  margin-top: 3px;
+  margin-right: 4px;
+  content: url(themeStyles/beagle/aggsPlus.svg);
+}
+
+.aggregation-card .showMore-wrapper.less::before {
+  margin-top: 3px;
+  margin-right: 4px;
+  content: url(themeStyles/beagle/aggsMinus.svg);
+}
 
 /**************************************/
 /* styling for the SQONView component */
@@ -199,7 +220,7 @@ div {
 }
 
 .sqon-value:after {
-  content: url(x.svg);
+  content: url(themeStyles/beagle/x.svg);
   margin-left: 9px;
 }
 

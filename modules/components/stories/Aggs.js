@@ -54,6 +54,18 @@ let aggs = [
         doc_count: 12,
         key: 'sour',
       },
+      {
+        doc_count: 5,
+        key: 'salty',
+      },
+      {
+        doc_count: 12,
+        key: 'umami',
+      },
+      {
+        doc_count: 12,
+        key: 'bland',
+      },
     ],
   },
 ];
@@ -95,7 +107,11 @@ storiesOf('Aggs', module)
       render={({ sqon, update }) => (
         <div>
           <div>SQON: {JSON.stringify(sqon)}</div>
-          <div>
+          <div
+            css={`
+              width: 300px;
+            `}
+          >
             {aggs.map(agg => (
               // TODO: switch on agg type
               <TermAgg
@@ -147,7 +163,11 @@ storiesOf('Aggs', module)
             onChange={e => update({ index: e.target.value })}
           />
           {index && (
-            <div>
+            <div
+              css={`
+                width: 300px;
+              `}
+            >
               <AggsPanel aggs={aggs} index={index} debounceTime={200} />
             </div>
           )}
