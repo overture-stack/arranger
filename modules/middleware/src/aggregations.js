@@ -135,8 +135,8 @@ export default class AggregationProcessor {
 
       if (path_to_facet) {
         const nested_query = this.get_nested_query_from_path({
-          filters,
-          path_to_facet,
+          query: filters,
+          path: path_to_facet,
           nested_fields,
           match_all: false,
         });
@@ -370,7 +370,7 @@ export default class AggregationProcessor {
     });
     const nested_query = this.get_nested_query_from_path({
       query,
-      short_nested_path,
+      path: short_nested_path,
       nested_fields,
       match_all: false,
     });
