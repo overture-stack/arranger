@@ -9,7 +9,7 @@ const ES_INDEX = 'models';
 const API_HOST = 'http://localhost:5050';
 const ES_HOST = 'http://142.1.177.54:9200';
 
-const fetchMapping = () =>
+const fetchGraphqlQuery = async query =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
     method: 'POST',
     headers: {
@@ -17,20 +17,44 @@ const fetchMapping = () =>
       ES_HOST: ES_HOST, // TODO; get from somewhere
     },
     body: JSON.stringify({
-      query: `{
-        ${ES_INDEX} {
-          mapping,
-          extended,
-        }
-      }`,
+      query: query,
     }),
   })
-    .then(r => r.json())
-    .then(({ data }) => {
-      return Promise.resolve(data[ES_INDEX]);
-    });
+    .then(res => res.json())
+    .then(data => Promise.resolve(data.data));
 
-window.fetchAggregation = () =>
+const fetchMapping = async () =>
+  fetchGraphqlQuery(`{
+    ${ES_INDEX} {
+      mapping,
+    }
+  }`).then(data => {
+    return Promise.resolve(data[ES_INDEX]);
+  });
+
+const fetchExtendedMapping = async () =>
+  fetchGraphqlQuery(`{
+    ${ES_INDEX} {
+      extended,
+    }
+  }`).then(data => {
+    return Promise.resolve(data[ES_INDEX]);
+  });
+
+const fetchAggsState = () =>
+  fetchGraphqlQuery(`{
+    aggsState(indices: ["${ES_INDEX}"]) {
+      states {
+        state {
+          field
+          type
+          active
+        }
+      }
+    }
+  }`);
+
+const fetchAggregation = () =>
   fetchMapping().then(({ mapping }) => {
     return Promise.resolve(
       Object.keys(mapping).reduce(
@@ -48,15 +72,28 @@ window.fetchAggregation = () =>
     );
   });
 
+window.fetchAggregationData = async () => {
+  Promise.all([fetchMapping(), fetchExtendedMapping(), fetchAggsState()]).then(
+    ([{ mapping }, { extended }, { aggsState }]) => {
+      console.log([mapping, extended, aggsState]);
+      const aggs = aggsState[0].states[0].state;
+      console.log(latestState);
+    },
+  );
+};
+
 class AdvancedFacetViewLiveStory extends React.Component {
   state = {
     mapping: {},
     extended: {},
   };
   componentDidMount() {
-    Promise.all([fetchMapping(), fetchAggregation()]).then(
-      ([{ extended, mapping }, aggregations]) =>
-        this.setState({ extended, mapping, aggregations }),
+    Promise.all([
+      fetchMapping(),
+      fetchExtendedMapping(),
+      fetchAggregation(),
+    ]).then(([{ mapping }, { extended }, aggregations]) =>
+      this.setState({ mapping, extended, aggregations }),
     );
   }
   render() {
