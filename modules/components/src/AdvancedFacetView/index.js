@@ -6,7 +6,7 @@ import './AdvancedFacetView.css';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
-const FacetView = ({ mapping, path }) => (
+const FacetView = ({ mapping, path, aggregations }) => (
   <div>
     {path && `${path}:`}
     <pre>{JSON.stringify(mapping, null, 2)}</pre>
@@ -30,7 +30,11 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   return rawDisplayData.map(replaceNodeDisplayName);
 };
 
-export default ({ elasticMapping = {}, extendedMapping = [] }) => {
+export default ({
+  elasticMapping = {},
+  extendedMapping = [],
+  aggregations = {},
+}) => {
   const fieldMappingFromPath = path =>
     path
       .split('.')
@@ -66,7 +70,11 @@ export default ({ elasticMapping = {}, extendedMapping = [] }) => {
             />
           </div>
           <div className="panel facetsPanel">
-            <FacetView mapping={selectedMapping} path={selectedPath} />
+            <FacetView
+              mapping={selectedMapping}
+              path={selectedPath}
+              aggregations={aggregations}
+            />
           </div>
         </div>
       )}
