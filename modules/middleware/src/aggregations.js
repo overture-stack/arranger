@@ -130,7 +130,7 @@ export default class AggregationProcessor {
       // find the longest nested path to the facet if it exists
       const path_to_facet = this.get_nested_path_to_field({
         field,
-        nested_fields,
+        nested: nested_fields,
       });
 
       if (path_to_facet) {
@@ -364,8 +364,8 @@ export default class AggregationProcessor {
    */
   ensure_global_when_needed(aggs, _path, nested_fields, query) {
     const short_nested_path = this.get_nested_path_to_field({
-      _path,
-      nested_fields,
+      field: _path,
+      nested: nested_fields,
       short_circuit: true,
     });
     const nested_query = this.get_nested_query_from_path({
