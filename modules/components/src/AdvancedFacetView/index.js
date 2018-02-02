@@ -6,11 +6,42 @@ import './AdvancedFacetView.css';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
+const NumericAggSection = ({ buckets }) =>
+  buckets.map(({ key, doc_count }) => (
+    <div key={key}>
+      <input type="checkbox" />
+      {` ${key}`}
+    </div>
+  ));
+
+const FacetViewNode = ({ title, id, children, path, buckets = [] }) => {
+  return (
+    <div style={{ marginLeft: 20, borderLeft: 'solid 2px red' }}>
+      <div>
+        {title}
+        <NumericAggSection buckets={buckets} />
+      </div>
+      {children
+        ? children.map(childNode => (
+            <FacetViewNode key={childNode.path} {...childNode} />
+          ))
+        : null}
+    </div>
+  );
+};
+
 const FacetView = ({ mapping, path, aggregations, disPlayTreeData }) => (
   <div>
     {path && `${path}:`}
     <pre>{JSON.stringify(mapping, null, 2)}</pre>
-    {}
+    aggregations:
+    {disPlayTreeData.map(node => (
+      <FacetViewNode
+        key={node.path}
+        // buckets={aggregations[node.path].buckets}
+        {...node}
+      />
+    ))}
   </div>
 );
 

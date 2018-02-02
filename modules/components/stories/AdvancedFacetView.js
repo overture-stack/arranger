@@ -1,5 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
+import { omit } from 'lodash';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
@@ -75,8 +76,13 @@ const fetchAggregation = () =>
 window.fetchAggregationData = async () => {
   Promise.all([fetchMapping(), fetchExtendedMapping(), fetchAggsState()]).then(
     ([{ mapping }, { extended }, { aggsState }]) => {
-      console.log([mapping, extended, aggsState]);
-      const aggs = aggsState[0].states[0].state;
+      const latestState = aggsState[0].states[0].state.map(
+        ({ field, type }) => ({
+          field: field.split('__').join('.'),
+          type,
+        }),
+      );
+      console.log(mapping);
       console.log(latestState);
     },
   );
@@ -107,9 +113,41 @@ class AdvancedFacetViewLiveStory extends React.Component {
   }
 }
 
+const injectMockBuckets = node =>
+  Object.keys(node).reduce(
+    (agg, key) => ({
+      ...agg,
+      [key]: attachBucketToNode(node[key]),
+    }),
+    {},
+  );
+
+const attachBucketToNode = mappingNode => ({
+  ...mappingNode,
+  ...(mappingNode.properties
+    ? {
+        properties: injectMockBuckets(mappingNode.properties),
+      }
+    : {
+        bucket: [
+          { key: 'male', doc_count: 200 },
+          { key: 'female', doc_count: 300 },
+        ],
+      }),
+});
+
+const mockAggregations = (window.mockAggregations = injectMockBuckets(
+  elasticMockMapping,
+));
+
+console.log('mockAggregations: ', mockAggregations);
+
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
   .add('AdvancedFacetViewLive', () => <AdvancedFacetViewLiveStory />)
   .add('AdvancedFacetView', () => (
-    <AdvancedFacetView elasticMapping={elasticMockMapping} />
+    <AdvancedFacetView
+      elasticMapping={elasticMockMapping}
+      aggregations={mockAggregations}
+    />
   ));
