@@ -1,8 +1,15 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { injectGlobal } from 'emotion';
+import { compose } from 'recompose';
+import { injectState } from 'freactal';
 
-import Arranger, { Portal, GetProjects } from '../src/Arranger';
+import Arranger, {
+  GetProjects,
+  Aggregations,
+  CurrentSQON,
+  Table,
+} from '../src/Arranger';
 import State from '../src/State';
 import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import {
@@ -112,6 +119,31 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
   );
 };
 
+const Portal = compose(injectState)(
+  ({
+    state: { arranger: { projectId, index, sqon, streamData, fetchData } },
+    effects: { setSQON },
+    style,
+  }) => {
+    return (
+      <div style={{ display: 'flex', ...style }}>
+        <Aggregations />
+        <div
+          css={`
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+          `}
+        >
+          <CurrentSQON />
+          <Table />
+        </div>
+      </div>
+    );
+  },
+);
+
 storiesOf('Portal', module).add('Portal', () => (
   <>
     <StyleProvider selected="beagle" availableThemes={AVAILABLE_THEMES} />
@@ -129,7 +161,7 @@ storiesOf('Portal', module).add('Portal', () => (
               return (
                 <>
                   <DemoHeader update={update} />
-                  <Portal {...props} />
+                  <Portal />
                 </>
               );
             }}
