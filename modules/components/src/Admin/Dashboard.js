@@ -5,6 +5,8 @@ import fontawesome from '@fortawesome/fontawesome';
 import FontAwesomeIcon from '@fortawesome/react-fontawesome';
 import solid from '@fortawesome/fontawesome-free-solid';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
+import convert from 'convert-units';
+
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
 import EditAggs from '../Aggs/EditAggs';
@@ -600,7 +602,90 @@ class Dashboard extends React.Component {
                               .map(([key, val]) => (
                                 <div key={key} className="type-container">
                                   {startCase(key)}:
-                                  {typeof val === 'string' && (
+                                  {key === 'unit' ? (
+                                    <State
+                                      initial={{
+                                        val,
+                                        measure: val
+                                          ? convert().describe(val).measure
+                                          : '',
+                                      }}
+                                      val={val}
+                                      onReceiveProps={({
+                                        props,
+                                        state,
+                                        update,
+                                      }) => {
+                                        if (props.val !== state.val) {
+                                          update({
+                                            val,
+                                            measure: val
+                                              ? convert().describe(val).measure
+                                              : '',
+                                          });
+                                        }
+                                      }}
+                                      render={({ measure, update }) => (
+                                        <div>
+                                          <select
+                                            value={measure}
+                                            onChange={e =>
+                                              update({
+                                                measure: e.target.value,
+                                              })
+                                            }
+                                          >
+                                            {['', ...convert().measures()].map(
+                                              x => <option key={x}>{x}</option>,
+                                            )}
+                                          </select>
+                                          {measure && (
+                                            <select
+                                              value={val || ''}
+                                              onChange={async e => {
+                                                update({ val });
+                                                let r = await api({
+                                                  endpoint: `/projects/${
+                                                    match.params.projectId
+                                                  }/types/${
+                                                    match.params.index
+                                                  }/fields/${
+                                                    this.state.activeField
+                                                      ?.field
+                                                  }/update`,
+                                                  body: {
+                                                    eshost: this.state.eshost,
+                                                    key,
+                                                    value: e.target.value,
+                                                  },
+                                                });
+                                                let activeField = r.fields.find(
+                                                  x =>
+                                                    x.field ===
+                                                    this.state.activeField
+                                                      .field,
+                                                );
+
+                                                this.setState({
+                                                  fields: r.fields,
+                                                  activeField,
+                                                });
+                                              }}
+                                            >
+                                              {[
+                                                '',
+                                                ...convert().possibilities(
+                                                  measure,
+                                                ),
+                                              ].map(x => (
+                                                <option key={x}>{x}</option>
+                                              ))}
+                                            </select>
+                                          )}
+                                        </div>
+                                      )}
+                                    />
+                                  ) : typeof val === 'string' ? (
                                     <input
                                       type="text"
                                       value={val}
@@ -632,39 +717,40 @@ class Dashboard extends React.Component {
                                         });
                                       }}
                                     />
-                                  )}
-                                  {typeof val === 'boolean' && (
-                                    <input
-                                      type="checkbox"
-                                      checked={val}
-                                      onChange={async e => {
-                                        let r = await api({
-                                          endpoint: `/projects/${
-                                            match.params.projectId
-                                          }/types/${
-                                            match.params.index
-                                          }/fields/${
-                                            this.state.activeField?.field
-                                          }/update`,
-                                          body: {
-                                            eshost: this.state.eshost,
-                                            key,
-                                            value: e.target.checked,
-                                          },
-                                        });
+                                  ) : (
+                                    typeof val === 'boolean' && (
+                                      <input
+                                        type="checkbox"
+                                        checked={val}
+                                        onChange={async e => {
+                                          let r = await api({
+                                            endpoint: `/projects/${
+                                              match.params.projectId
+                                            }/types/${
+                                              match.params.index
+                                            }/fields/${
+                                              this.state.activeField?.field
+                                            }/update`,
+                                            body: {
+                                              eshost: this.state.eshost,
+                                              key,
+                                              value: e.target.checked,
+                                            },
+                                          });
 
-                                        let activeField = r.fields.find(
-                                          x =>
-                                            x.field ===
-                                            this.state.activeField.field,
-                                        );
+                                          let activeField = r.fields.find(
+                                            x =>
+                                              x.field ===
+                                              this.state.activeField.field,
+                                          );
 
-                                        this.setState({
-                                          fields: r.fields,
-                                          activeField,
-                                        });
-                                      }}
-                                    />
+                                          this.setState({
+                                            fields: r.fields,
+                                            activeField,
+                                          });
+                                        }}
+                                      />
+                                    )
                                   )}
                                 </div>
                               ))}

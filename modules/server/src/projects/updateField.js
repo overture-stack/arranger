@@ -11,7 +11,6 @@ export default ({ io }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
-  field = field.toLowerCase();
 
   try {
     await es.update({
@@ -28,7 +27,7 @@ export default ({ io }) => async (req, res) => {
 
     io.emit('server::refresh');
   } catch (error) {
-    res.json({ error: error.message });
+    return res.json({ error: error.message });
   }
 
   let fields = [];

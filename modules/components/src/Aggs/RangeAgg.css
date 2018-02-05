@@ -1,0 +1,27 @@
+.unit-wrapper {
+  text-align: center;
+  margin-top: 4px;
+}
+
+.unit-wrapper span {
+  margin: 0 5px;
+}
+
+.unit-wrapper label {
+  margin-left: 2px;
+  font-family: inherit;
+  color: inherit;
+  border-bottom: none;
+}
+
+.input-range-wrapper {
+  margin-left: 25px;
+  margin-right: 25px;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+.input-range__label {
+  font-family: inherit !important;
+  color: inherit !important;
+}
