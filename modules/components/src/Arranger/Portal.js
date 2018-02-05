@@ -52,10 +52,6 @@ const Portal = ({
                           x => x.field === agg.field,
                         ),
                       }))
-                      .map(agg => {
-                        console.log(agg);
-                        return agg;
-                      })
                       .map(agg => (
                         // TODO: switch on agg type
                         <TermAgg

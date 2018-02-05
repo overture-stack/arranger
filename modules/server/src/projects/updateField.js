@@ -13,7 +13,6 @@ export default ({ io }) => async (req, res) => {
   index = index.toLowerCase();
 
   try {
-    console.log(`updating field: `, id, index, field, key, JSON.stringify(value));
     await es.update({
       index: `arranger-projects-${id}-${index}`,
       type: `arranger-projects-${id}-${index}`,
@@ -28,7 +27,6 @@ export default ({ io }) => async (req, res) => {
 
     io.emit('server::refresh');
   } catch (error) {
-    console.log('error: ', error)
     return res.json({ error: error.message });
   }
 
