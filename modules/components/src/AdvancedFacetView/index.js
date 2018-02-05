@@ -13,22 +13,27 @@ const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
 const esTypeToAggType = esType => esToAggTypeMap[esType];
 
-const NumericAggSection = ({ buckets }) =>
-  buckets.map(({ key, doc_count }) => (
-    <div key={key}>
-      <input type="checkbox" />
-      {` ${key}`}
-    </div>
-  ));
+const NumericAggSection = () => <div>aggs</div>;
 
-const FacetViewNode = ({ title, id, children, path, type, buckets = [] }) => {
+const AggWrapper = ({ aggType, props }) => (
+  <div>
+    {
+      {
+        Aggregations: <NumericAggSection {...props} />,
+        NumericAggregations: <NumericAggSection {...props} />,
+      }[aggType]
+    }
+  </div>
+);
+
+const FacetViewNode = ({ title, id, children, path, type, aggProps }) => {
   const esType = type;
-  console.log('type: ', esTypeToAggType(esType));
+  const aggType = esTypeToAggType(esType);
   return (
     <div style={{ marginLeft: 20, borderLeft: 'solid 2px red' }}>
       <div>
         {title}
-        <NumericAggSection buckets={buckets} />
+        <AggWrapper aggType={aggType} props={aggProps} />
       </div>
       {children
         ? children.map(childNode => (
@@ -50,13 +55,7 @@ const FacetView = ({
     <pre>{JSON.stringify(selectedMapping, null, 2)}</pre>
     aggregations:
     {disPlayTreeData.map(node => {
-      return (
-        <FacetViewNode
-          key={node.path}
-          // buckets={aggregations[node.path].buckets}
-          {...node}
-        />
-      );
+      return <FacetViewNode key={node.path} {...node} />;
     })}
   </div>
 );
