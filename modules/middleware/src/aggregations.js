@@ -21,12 +21,12 @@ export default class AggregationProcessor {
     this.logger = logger || console;
   }
   buildAggregations({ type, fields, graphql_fields, nested_fields, args }) {
-    /* 
+    /*
     To Match the GDCAPI response, this needs to return an object of the form:
       { query: {}, aggs: {} }
-     
+
       Sample output:
-      { 
+      {
         query: { bool: { must: [ { terms: { primary_site: [ 'Colorectal' ], boost: 0 } } ] } }},
         aggs:  { primary_site: { terms: { field: 'primary_site', size: 100 } } }
       }
@@ -125,18 +125,18 @@ export default class AggregationProcessor {
       //  - get field name before .
       //  - replace all __ with .
       const double_underscore_field = raw_field.split('.')[0];
-      const field = double_underscore_field.replace('__', '.');
+      const field = double_underscore_field.split('__').join('.');
 
       // find the longest nested path to the facet if it exists
       const path_to_facet = this.get_nested_path_to_field({
         field,
-        nested_fields,
+        nested: nested_fields,
       });
 
       if (path_to_facet) {
         const nested_query = this.get_nested_query_from_path({
-          filters,
-          path_to_facet,
+          query: filters,
+          path: path_to_facet,
           nested_fields,
           match_all: false,
         });
@@ -364,13 +364,13 @@ export default class AggregationProcessor {
    */
   ensure_global_when_needed(aggs, _path, nested_fields, query) {
     const short_nested_path = this.get_nested_path_to_field({
-      _path,
-      nested_fields,
+      field: _path,
+      nested: nested_fields,
       short_circuit: true,
     });
     const nested_query = this.get_nested_query_from_path({
       query,
-      short_nested_path,
+      path: short_nested_path,
       nested_fields,
       match_all: false,
     });
@@ -448,7 +448,7 @@ export default class AggregationProcessor {
             // The following python code was not transcribed as the nested_query object it defines
             //  is not used outside of this block - Not sure the intention of this code, but the methods have no side effects and
             //  the outputs are unused, so we can ignore them
-            /* 
+            /*
             if query and len(query.keys()) > 0:
                     nested_query = get_nested_query_from_path(query, p, nested_fields, match_all=False)
                     if nested_query:
@@ -549,7 +549,7 @@ export default class AggregationProcessor {
   }
 
   create_numeric_field_agg(field, graphql_fields) {
-    numeric_agg = {};
+    let numeric_agg = {};
 
     if (graphql_fields[CONSTANTS.STATS]) {
       numeric_agg[`${field}:stats`] = {
@@ -561,7 +561,7 @@ export default class AggregationProcessor {
 
     if (graphql_fields[CONSTANTS.HISTOGRAM]) {
       const args = graphql_fields.histogram.arguments;
-      const interval = args[0]?.interval || this.historgramInterval;
+      const interval = args?.[0]?.interval || this.historgramInterval;
 
       numeric_agg[`${field}:historgram`] = {
         histogram: {
