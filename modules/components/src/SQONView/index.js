@@ -105,7 +105,7 @@ const SQON = ({
   setExpanded: () => void,
   onLessClicked: Function,
 }) => {
-  const sqonContent = sqon.content || [];
+  const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;
   return (
     <div className={`sqon-view ${isEmpty ? 'sqon-view-empty' : ''}`}>

@@ -6,18 +6,13 @@ import SQONView, { Value, Bubble } from '../SQONView';
 
 const enhance = compose(injectState);
 
-let defaultSQON = {
-  op: 'and',
-  content: [],
-};
-
 const CurrentSQON = ({
   state: { arranger: { sqon } },
   effects: { setSQON },
 }) => {
   return (
     <SQONView
-      sqon={sqon || defaultSQON}
+      sqon={sqon}
       ValueCrumb={({ value, nextSQON, ...props }) => (
         <Value onClick={() => setSQON(nextSQON)} {...props}>
           {value}

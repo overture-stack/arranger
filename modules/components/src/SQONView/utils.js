@@ -200,15 +200,16 @@ export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
 
 // true if field and value in
 export const inCurrentSQON = ({
-  currentSQON, //TODO: this is actually sqon.content
+  currentSQON,
   value,
   dotField,
 }: {
-  currentSQON: TGroupContent,
+  currentSQON: TGroupSQON,
   value: string,
   dotField: string,
 }): boolean => {
-  return currentSQON.some(
+  const content = currentSQON?.content;
+  return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
     f =>
       f.content.field === dotField &&
       [].concat(f.content.value || []).includes(value),

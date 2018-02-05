@@ -9,11 +9,6 @@ import { inCurrentSQON, toggleSQON } from '../SQONView/utils';
 
 const enhance = compose(injectState);
 
-let defaultSQON = {
-  op: 'and',
-  content: [],
-};
-
 const Aggregations = ({
   effects: { setSQON },
   state: { arranger: { sqon, projectId, index } },
@@ -66,7 +61,7 @@ const Aggregations = ({
                                       },
                                     ],
                                   },
-                                  sqon || defaultSQON,
+                                  sqon,
                                 ),
                               )
                             }
@@ -76,7 +71,7 @@ const Aggregations = ({
                           inCurrentSQON({
                             value: d.value,
                             dotField: d.field,
-                            currentSQON: sqon?.content || defaultSQON.content,
+                            currentSQON: sqon,
                           })
                         }
                       />
