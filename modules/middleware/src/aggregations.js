@@ -21,12 +21,12 @@ export default class AggregationProcessor {
     this.logger = logger || console;
   }
   buildAggregations({ type, fields, graphql_fields, nested_fields, args }) {
-    /* 
+    /*
     To Match the GDCAPI response, this needs to return an object of the form:
       { query: {}, aggs: {} }
-     
+
       Sample output:
-      { 
+      {
         query: { bool: { must: [ { terms: { primary_site: [ 'Colorectal' ], boost: 0 } } ] } }},
         aggs:  { primary_site: { terms: { field: 'primary_site', size: 100 } } }
       }
@@ -448,7 +448,7 @@ export default class AggregationProcessor {
             // The following python code was not transcribed as the nested_query object it defines
             //  is not used outside of this block - Not sure the intention of this code, but the methods have no side effects and
             //  the outputs are unused, so we can ignore them
-            /* 
+            /*
             if query and len(query.keys()) > 0:
                     nested_query = get_nested_query_from_path(query, p, nested_fields, match_all=False)
                     if nested_query:
@@ -561,7 +561,7 @@ export default class AggregationProcessor {
 
     if (graphql_fields[CONSTANTS.HISTOGRAM]) {
       const args = graphql_fields.histogram.arguments;
-      const interval = (args && args[0]?.interval) || this.historgramInterval;
+      const interval = args?.[0]?.interval || this.historgramInterval;
 
       numeric_agg[`${field}:historgram`] = {
         histogram: {
