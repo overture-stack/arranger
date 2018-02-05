@@ -83,12 +83,6 @@ window.fetchAggregationDataWithExtendedMapping = async extended => {
     .map(serializeToGraphQl);
   const getAggregationQuery = () =>
     allAggsNames
-      .filter(
-        aggName =>
-          ['age_at_diagnosis', 'age_at_sampling', 'model_growth_rate'].indexOf(
-            aggName,
-          ) === -1,
-      )
       .map(aggName => {
         const aggType = extended.find(
           entry => serializeToGraphQl(entry.field) === aggName,
