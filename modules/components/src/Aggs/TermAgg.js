@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { orderBy } from 'lodash';
-import './TermAgg.css';
+import './AggregationCard.css';
 import State from '../State';
 
 const TermAggs = ({

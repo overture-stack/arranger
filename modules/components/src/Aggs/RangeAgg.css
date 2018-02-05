@@ -1,0 +1,11 @@
+.input-range-wrapper {
+  margin-left: 25px;
+  margin-right: 25px;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+.input-range__label {
+  font-family: inherit !important;
+  color: inherit !important;
+}
