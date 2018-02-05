@@ -154,6 +154,7 @@ const Portal = ({
                     ),
                   )
                 }
+                onColumnsChange={columnState.toggle}
                 onSelectionChange={console.log('selection changed')}
                 streamData={streamData}
                 fetchData={fetchData(projectId)}
