@@ -6,18 +6,18 @@ import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
 
-const PROJECT_ID = 'testing1';
-const ES_INDEX = 'testing1';
-const API_HOST = 'http://localhost:5050';
+const PROJECT_ID = 'testing1'; // TODO: get from somewhere
+const ES_INDEX = 'testing1'; // TODO: get from somewhere
+const API_HOST = 'http://localhost:5050'; // TODO: get from somewhere
 // const ES_HOST = 'http://142.1.177.54:9200';
-const ES_HOST = 'http://localhost:9200';
+const ES_HOST = 'http://localhost:9200'; // TODO: get from somewhere
 
 const fetchGraphqlQuery = async query =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ES_HOST: ES_HOST, // TODO; get from somewhere
+      ES_HOST: ES_HOST,
     },
     body: JSON.stringify({
       query: query,
@@ -104,7 +104,17 @@ window.fetchAggregationDataWithExtendedMapping = async extended => {
       }
     }`;
   console.log(query);
-  return fetchGraphqlQuery(query).then(data => Promise.resolve(data[ES_INDEX]));
+  return fetchGraphqlQuery(query).then(data =>
+    Promise.resolve({
+      aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
+        (agg, key) => ({
+          ...agg,
+          [serializeToPath(key)]: data[ES_INDEX].aggregations[key],
+        }),
+        {},
+      ),
+    }),
+  );
 };
 
 class AdvancedFacetViewLiveStory extends React.Component {

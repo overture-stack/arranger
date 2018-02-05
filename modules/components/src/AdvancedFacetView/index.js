@@ -8,36 +8,43 @@ import {
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import './AdvancedFacetView.css';
+import TermAggs from '../Aggs/TermAgg';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
 const esTypeToAggType = esType => esToAggTypeMap[esType];
 
-const NumericAggSection = () => <div>aggs</div>;
-
-const AggWrapper = ({ aggType, props }) => (
+const AggWrapper = ({ aggType, aggProps, title }) => (
   <div>
     {
       {
-        Aggregations: <NumericAggSection {...props} />,
-        NumericAggregations: <NumericAggSection {...props} />,
+        Aggregations: <TermAggs buckets={aggProps ? aggProps.buckets : null} />,
+        NumericAggregations: <div>PLACEHOLDER!!!</div>,
       }[aggType]
     }
   </div>
 );
 
-const FacetViewNode = ({ title, id, children, path, type, aggProps }) => {
+const FacetViewNode = ({ title, id, children, path, type, aggregations }) => {
   const esType = type;
   const aggType = esTypeToAggType(esType);
   return (
-    <div style={{ marginLeft: 20, borderLeft: 'solid 2px red' }}>
+    <div style={{ marginLeft: 20 }}>
       <div>
         {title}
-        <AggWrapper aggType={aggType} props={aggProps} />
+        <AggWrapper
+          title={title}
+          aggType={aggType}
+          aggProps={aggregations[path]}
+        />
       </div>
       {children
         ? children.map(childNode => (
-            <FacetViewNode key={childNode.path} {...childNode} />
+            <FacetViewNode
+              key={childNode.path}
+              aggregations={aggregations}
+              {...childNode}
+            />
           ))
         : null}
     </div>
@@ -55,7 +62,9 @@ const FacetView = ({
     <pre>{JSON.stringify(selectedMapping, null, 2)}</pre>
     aggregations:
     {disPlayTreeData.map(node => {
-      return <FacetViewNode key={node.path} {...node} />;
+      return (
+        <FacetViewNode key={node.path} aggregations={aggregations} {...node} />
+      );
     })}
   </div>
 );
