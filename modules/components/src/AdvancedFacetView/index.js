@@ -1,10 +1,17 @@
 import React from 'react';
 import State from '../State';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
+import {
+  mappingToDisplayTreeData,
+  esToAggTypeMap,
+  mappingToAggsState,
+} from '@arranger/mapping-utils';
+import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import './AdvancedFacetView.css';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
+
+const esTypeToAggType = esType => esToAggTypeMap[esType];
 
 const NumericAggSection = ({ buckets }) =>
   buckets.map(({ key, doc_count }) => (
@@ -14,7 +21,9 @@ const NumericAggSection = ({ buckets }) =>
     </div>
   ));
 
-const FacetViewNode = ({ title, id, children, path, buckets = [] }) => {
+const FacetViewNode = ({ title, id, children, path, type, buckets = [] }) => {
+  const esType = type;
+  console.log('type: ', esTypeToAggType(esType));
   return (
     <div style={{ marginLeft: 20, borderLeft: 'solid 2px red' }}>
       <div>
@@ -30,18 +39,25 @@ const FacetViewNode = ({ title, id, children, path, buckets = [] }) => {
   );
 };
 
-const FacetView = ({ mapping, path, aggregations, disPlayTreeData }) => (
+const FacetView = ({
+  selectedMapping,
+  path,
+  aggregations,
+  disPlayTreeData,
+}) => (
   <div>
     {path && `${path}:`}
-    <pre>{JSON.stringify(mapping, null, 2)}</pre>
+    <pre>{JSON.stringify(selectedMapping, null, 2)}</pre>
     aggregations:
-    {disPlayTreeData.map(node => (
-      <FacetViewNode
-        key={node.path}
-        // buckets={aggregations[node.path].buckets}
-        {...node}
-      />
-    ))}
+    {disPlayTreeData.map(node => {
+      return (
+        <FacetViewNode
+          key={node.path}
+          // buckets={aggregations[node.path].buckets}
+          {...node}
+        />
+      );
+    })}
   </div>
 );
 
@@ -56,6 +72,11 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
       title: extension ? extension.displayName : node.title,
       ...(node.children
         ? { children: node.children.map(replaceNodeDisplayName) }
+        : {}),
+      ...(extension
+        ? {
+            type: extension.type || node.title,
+          }
         : {}),
     };
   };
@@ -103,7 +124,7 @@ export default ({
           </div>
           <div className="panel facetsPanel">
             <FacetView
-              mapping={selectedMapping}
+              selectedMapping={selectedMapping}
               path={selectedPath}
               aggregations={aggregations}
               disPlayTreeData={disPlayTreeData}

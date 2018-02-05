@@ -1,18 +1,5 @@
 import { flattenDeep } from 'lodash';
-
-export let esToAggTypeMap = {
-  string: 'Aggregations',
-  object: 'Aggregations',
-  text: 'Aggregations',
-  boolean: 'Aggregations',
-  date: 'Aggregations',
-  keyword: 'Aggregations',
-  id: 'Aggregations',
-  long: 'NumericAggregations',
-  double: 'NumericAggregations',
-  integer: 'NumericAggregations',
-  float: 'NumericAggregations',
-};
+import esToAggTypeMap from './esToAggTypeMap';
 
 // add two underscores after a value if it's truthy (not an empty string)
 // used to create fields representing es paths

@@ -5,10 +5,11 @@ import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
 
-const PROJECT_ID = 'testing5';
-const ES_INDEX = 'models';
+const PROJECT_ID = 'testing1';
+const ES_INDEX = 'testing1';
 const API_HOST = 'http://localhost:5050';
-const ES_HOST = 'http://142.1.177.54:9200';
+// const ES_HOST = 'http://142.1.177.54:9200';
+const ES_HOST = 'http://localhost:9200';
 
 const fetchGraphqlQuery = async query =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
@@ -139,8 +140,6 @@ const attachBucketToNode = mappingNode => ({
 const mockAggregations = (window.mockAggregations = injectMockBuckets(
   elasticMockMapping,
 ));
-
-console.log('mockAggregations: ', mockAggregations);
 
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
