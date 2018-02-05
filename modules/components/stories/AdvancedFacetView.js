@@ -1,6 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { omit } from 'lodash';
+import { esToAggTypeMap } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
@@ -74,39 +75,42 @@ const fetchMockAggregation = () =>
     );
   });
 
-window.fetchAggregationData = async () => {
-  Promise.all([fetchMapping(), fetchExtendedMapping()]).then(
-    ([{ mapping }, { extended }]) => {
-      const serializeToGraphQl = aggName => aggName.split('.').join('__');
-      const serializeToPath = aggName => aggName.split('__').join('.');
-      const allAggsNames = extended
-        .map(entry => entry.field)
-        .map(serializeToGraphQl);
-      const getAggregationQuery = () =>
-        allAggsNames
-          .map(aggName => {
-            const aggType = extended.find(
-              entry => serializeToGraphQl(entry.field) === aggName,
-            ).type;
-            return `
-              ${aggName} {
-                ${
-                  aggType === 'keyword'
-                    ? `buckets { key doc_count }`
-                    : `stats { max min avg sum }`
-                }
-              }`;
-          })
-          .join('');
-      const query = `
-      {
-        ${ES_INDEX} {
-          aggregations { ${getAggregationQuery()} }
-        }
-      }`;
-      return fetchGraphqlQuery(query);
-    },
-  );
+window.fetchAggregationDataWithExtendedMapping = async extended => {
+  const serializeToGraphQl = aggName => aggName.split('.').join('__');
+  const serializeToPath = aggName => aggName.split('__').join('.');
+  const allAggsNames = extended
+    .map(entry => entry.field)
+    .map(serializeToGraphQl);
+  const getAggregationQuery = () =>
+    allAggsNames
+      .filter(
+        aggName =>
+          ['age_at_diagnosis', 'age_at_sampling', 'model_growth_rate'].indexOf(
+            aggName,
+          ) === -1,
+      )
+      .map(aggName => {
+        const aggType = extended.find(
+          entry => serializeToGraphQl(entry.field) === aggName,
+        ).type;
+        return `
+          ${aggName} {
+            ${
+              esToAggTypeMap[aggType] === 'Aggregations'
+                ? `buckets { key doc_count }`
+                : `stats { max min avg sum }`
+            }
+          }`;
+      })
+      .join('');
+  const query = `
+    {
+      ${ES_INDEX} {
+        aggregations { ${getAggregationQuery()} }
+      }
+    }`;
+  console.log(query);
+  return fetchGraphqlQuery(query).then(data => Promise.resolve(data[ES_INDEX]));
 };
 
 class AdvancedFacetViewLiveStory extends React.Component {
@@ -115,12 +119,12 @@ class AdvancedFacetViewLiveStory extends React.Component {
     extended: {},
   };
   componentDidMount() {
-    Promise.all([
-      fetchMapping(),
-      fetchExtendedMapping(),
-      fetchAggregationData(),
-    ]).then(([{ mapping }, { extended }, aggregations]) =>
-      this.setState({ mapping, extended, aggregations }),
+    Promise.all([fetchMapping(), fetchExtendedMapping()]).then(
+      ([{ mapping }, { extended }]) =>
+        fetchAggregationDataWithExtendedMapping(extended).then(
+          ({ aggregations }) =>
+            this.setState({ mapping, extended, aggregations }),
+        ),
     );
   }
   render() {
