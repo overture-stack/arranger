@@ -43,6 +43,8 @@ const fetchData = projectId => {
 };
 
 class Arranger extends React.Component {
+  state = {};
+
   componentWillMount() {
     const hasChildren =
       this.props.children && React.Children.count(this.props.children) !== 0;
