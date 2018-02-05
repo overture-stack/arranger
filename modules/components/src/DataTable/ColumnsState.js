@@ -141,6 +141,7 @@ export default class extends Component {
           return {
             ...column,
             Header: extendedField?.displayName || column.field,
+            extendedType: extendedField?.type,
             show: column.field in toggled ? toggled[column.field] : column.show,
           };
         }),

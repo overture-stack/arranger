@@ -134,11 +134,6 @@ const Portal = ({
                 onSQONChange={onSQONChange}
                 onColumnsChange={toggle}
                 onFilterChange={x => {
-                  const keys = state.columns.reduce((acc, x) => ({
-                    ...acc,
-                    [x.type]: 1
-                  }), {})
-                  console.log(`KEYS`, keys)
                   const mySqon = toggleSQON(
                     {
                       op: 'and',
@@ -146,15 +141,22 @@ const Portal = ({
                         {
                           op: 'filter',
                           content: {
-                            fields: state.columns.filter(x => x.show).map(x => x.field),
+                            fields: state.columns
+                              .filter(
+                                x =>
+                                  ['text', 'keyword'].includes(
+                                    x.extendedType,
+                                  ) && x.show,
+                              )
+                              .map(x => x.field),
                             value: x,
-                          }
+                          },
                         },
                       ],
                     },
                     sqon || defaultSQON,
-                  )
-                  console.log(`SQON`, mySqon)
+                  );
+                  console.log(`SQON`, JSON.stringify(mySqon, null, 2));
                 }}
                 onSelectionChange={console.log('selection changed')}
                 streamData={streamData}
