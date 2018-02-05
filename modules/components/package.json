@@ -63,6 +63,7 @@
     "@fortawesome/fontawesome-free-solid": "^5.0.6",
     "@fortawesome/react-fontawesome": "^0.0.17",
     "babel-polyfill": "^6.26.0",
+    "convert-units": "^2.3.4",
     "downshift": "^1.23.2",
     "emotion": "^8.0.12",
     "filesaver.js": "^0.2.0",
