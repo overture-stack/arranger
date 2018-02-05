@@ -1,8 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { injectGlobal } from 'emotion';
-import { compose } from 'recompose';
-import { injectState } from 'freactal';
 
 import Arranger, {
   GetProjects,
@@ -119,30 +117,24 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
   );
 };
 
-const Portal = compose(injectState)(
-  ({
-    state: { arranger: { projectId, index, sqon, streamData, fetchData } },
-    effects: { setSQON },
-    style,
-  }) => {
-    return (
-      <div style={{ display: 'flex', ...style }}>
-        <Aggregations />
-        <div
-          css={`
-            position: relative;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-          `}
-        >
-          <CurrentSQON />
-          <Table />
-        </div>
+const Portal = ({ style, ...props }) => {
+  return (
+    <div style={{ display: 'flex', ...style }}>
+      <Aggregations {...props} />
+      <div
+        css={`
+          position: relative;
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        `}
+      >
+        <CurrentSQON {...props} />
+        <Table {...props} />
       </div>
-    );
-  },
-);
+    </div>
+  );
+};
 
 storiesOf('Portal', module).add('Portal', () => (
   <>
@@ -161,7 +153,7 @@ storiesOf('Portal', module).add('Portal', () => (
               return (
                 <>
                   <DemoHeader update={update} />
-                  <Portal />
+                  <Portal {...props} />
                 </>
               );
             }}

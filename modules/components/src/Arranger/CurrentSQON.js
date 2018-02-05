@@ -1,15 +1,8 @@
 import React from 'react';
-import { compose } from 'recompose';
-import { injectState } from 'freactal';
 
 import SQONView, { Value, Bubble } from '../SQONView';
 
-const enhance = compose(injectState);
-
-const CurrentSQON = ({
-  state: { arranger: { sqon } },
-  effects: { setSQON },
-}) => {
+const CurrentSQON = ({ sqon, setSQON }) => {
   return (
     <SQONView
       sqon={sqon}
@@ -27,4 +20,4 @@ const CurrentSQON = ({
   );
 };
 
-export default enhance(CurrentSQON);
+export default CurrentSQON;

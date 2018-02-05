@@ -1,7 +1,5 @@
 import React from 'react';
 import { get } from 'lodash';
-import { provideState, injectState } from 'freactal';
-import { compose } from 'recompose';
 import io from 'socket.io-client';
 
 import { columnsToGraphql } from '../DataTable';
@@ -44,28 +42,6 @@ const fetchData = projectId => {
   };
 };
 
-const enhance = compose(
-  provideState({
-    initialState: ({ projectId = '', index = '', sqon = null }) => ({
-      arranger: {
-        socket,
-        sqon,
-        projectId,
-        index,
-        streamData: streamData(index),
-        fetchData: fetchData(projectId),
-      },
-    }),
-    effects: {
-      setSQON: (effects, sqon) => state => ({
-        ...state,
-        arranger: { ...state.arranger, sqon },
-      }),
-    },
-  }),
-  injectState,
-);
-
 class Arranger extends React.Component {
   componentWillMount() {
     const hasChildren =
@@ -88,35 +64,23 @@ class Arranger extends React.Component {
         'You should not use <Arranger render> and <Arranger children> in the same arranger; <Arranger children> will be ignored',
       );
     }
-
-    if (!this.props.index) {
-      console.warn('arranger requires an index to be passed in');
-    }
-
-    if (!this.props.projectId) {
-      console.warn('arranger requires a projectId to be passed in');
-    }
   }
 
   render() {
-    const {
-      index,
-      projectId,
-      children,
-      render,
-      component,
-      state,
-      effects,
-    } = this.props;
+    const { index, projectId, children, render, component } = this.props;
+    const { sqon } = this.state;
 
     const childProps = {
-      state,
-      effects,
+      socket,
+      sqon,
+      projectId,
+      index,
+      streamData,
+      fetchData,
+      setSQON: sqon => this.setState({ sqon }),
     };
 
-    if (!index || !projectId) {
-      return null;
-    } else if (component) {
+    if (component) {
       return React.createElement(component, childProps);
     } else if (render) {
       return render(childProps);
@@ -128,4 +92,4 @@ class Arranger extends React.Component {
   }
 }
 
-export default enhance(Arranger);
+export default Arranger;

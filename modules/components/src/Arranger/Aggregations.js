@@ -1,18 +1,9 @@
 import React from 'react';
-import { compose } from 'recompose';
-import { injectState } from 'freactal';
 
-import TermAgg from '../Aggs/TermAgg';
-import AggsState from '../Aggs/AggsState';
-import AggsQuery from '../Aggs/AggsQuery';
+import { AggsState, AggsQuery, TermAgg } from '../Aggs';
 import { inCurrentSQON, toggleSQON } from '../SQONView/utils';
 
-const enhance = compose(injectState);
-
-const Aggregations = ({
-  effects: { setSQON },
-  state: { arranger: { sqon, projectId, index } },
-}) => {
+const Aggregations = ({ setSQON, sqon, projectId, index }) => {
   return (
     <AggsState
       projectId={projectId}
@@ -86,4 +77,4 @@ const Aggregations = ({
   );
 };
 
-export default enhance(Aggregations);
+export default Aggregations;

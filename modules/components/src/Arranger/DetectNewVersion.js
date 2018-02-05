@@ -1,14 +1,10 @@
 import React from 'react';
-import { injectState } from 'freactal';
-import { compose } from 'recompose';
-
-const enhance = compose(injectState);
 
 class DetectNewVersion extends React.Component {
   state = { shouldRefresh: false };
 
   componentDidMount() {
-    this.props.state.arranger.socket.on('server::refresh', () => {
+    this.props.socket.on('server::refresh', () => {
       this.setState({ shouldRefresh: true });
     });
   }
@@ -45,4 +41,4 @@ class DetectNewVersion extends React.Component {
   }
 }
 
-export default enhance(DetectNewVersion);
+export default DetectNewVersion;
