@@ -176,6 +176,7 @@ storiesOf('Aggs', module)
           <RangeAgg
             field="cases__diagnoses__days_to_death"
             displayName="Diagnoses Days To Death"
+            unit={'d'}
             stats={{
               min: 15,
               max: 820,
