@@ -45,14 +45,7 @@ const TableToolbar = ({
         itemToString={i => i.Header}
         items={canChangeShowColumns}
         onChange={item => {
-          onColumnsChange(
-            Object.assign([], columns, {
-              [columns.indexOf(item)]: {
-                ...item,
-                show: !item.show,
-              },
-            }),
-          );
+          onColumnsChange({ ...item, show: !item.show });
         }}
       >
         Show columns
