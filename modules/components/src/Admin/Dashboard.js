@@ -616,7 +616,7 @@ class Dashboard extends React.Component {
                                         state,
                                         update,
                                       }) => {
-                                        if (props.val != state.val) {
+                                        if (props.val !== state.val) {
                                           update({
                                             val,
                                             measure: val
