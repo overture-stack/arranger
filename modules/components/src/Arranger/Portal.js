@@ -126,13 +126,36 @@ const Portal = ({
         <ColumnsState
           projectId={projectId}
           index={index}
-          render={columnState => {
+          render={({ toggle, state }) => {
             return (
               <DataTable
                 sqon={sqon}
-                config={columnState.state}
+                config={state}
                 onSQONChange={onSQONChange}
-                onColumnsChange={columnState.toggle}
+                onColumnsChange={toggle}
+                onFilterChange={x => {
+                  const keys = state.columns.reduce((acc, x) => ({
+                    ...acc,
+                    [x.type]: 1
+                  }), {})
+                  console.log(`KEYS`, keys)
+                  const mySqon = toggleSQON(
+                    {
+                      op: 'and',
+                      content: [
+                        {
+                          op: 'filter',
+                          content: {
+                            fields: state.columns.filter(x => x.show).map(x => x.field),
+                            value: x,
+                          }
+                        },
+                      ],
+                    },
+                    sqon || defaultSQON,
+                  )
+                  console.log(`SQON`, mySqon)
+                }}
                 onSelectionChange={console.log('selection changed')}
                 streamData={streamData}
                 fetchData={fetchData(projectId)}
