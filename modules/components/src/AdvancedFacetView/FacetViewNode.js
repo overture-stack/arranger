@@ -10,22 +10,27 @@ const FacetViewNode = ({ title, id, children, path, type, aggregations }) => {
   return (
     <div style={{ marginLeft: 20 }}>
       <div>
-        {title}
+        {
+          // title
+        }
         <AggWrapper
           title={title}
           aggType={aggType}
           aggProps={aggregations[path]}
         />
       </div>
-      {children
-        ? children.map(childNode => (
+      {children ? (
+        <div>
+          <div>{title}</div>
+          {children.map(childNode => (
             <FacetViewNode
               key={childNode.path}
               aggregations={aggregations}
               {...childNode}
             />
-          ))
-        : null}
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };
