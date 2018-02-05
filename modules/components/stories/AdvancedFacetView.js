@@ -56,7 +56,7 @@ const fetchAggsState = () =>
     }
   }`);
 
-const fetchAggregation = () =>
+const fetchMockAggregation = () =>
   fetchMapping().then(({ mapping }) => {
     return Promise.resolve(
       Object.keys(mapping).reduce(
@@ -75,16 +75,36 @@ const fetchAggregation = () =>
   });
 
 window.fetchAggregationData = async () => {
-  Promise.all([fetchMapping(), fetchExtendedMapping(), fetchAggsState()]).then(
-    ([{ mapping }, { extended }, { aggsState }]) => {
-      const latestState = aggsState[0].states[0].state.map(
-        ({ field, type }) => ({
-          field: field.split('__').join('.'),
-          type,
-        }),
-      );
-      console.log(mapping);
-      console.log(latestState);
+  Promise.all([fetchMapping(), fetchExtendedMapping()]).then(
+    ([{ mapping }, { extended }]) => {
+      const serializeToGraphQl = aggName => aggName.split('.').join('__');
+      const serializeToPath = aggName => aggName.split('__').join('.');
+      const allAggsNames = extended
+        .map(entry => entry.field)
+        .map(serializeToGraphQl);
+      const getAggregationQuery = () =>
+        allAggsNames
+          .map(aggName => {
+            const aggType = extended.find(
+              entry => serializeToGraphQl(entry.field) === aggName,
+            ).type;
+            return `
+              ${aggName} {
+                ${
+                  aggType === 'keyword'
+                    ? `buckets { key doc_count }`
+                    : `stats { max min avg sum }`
+                }
+              }`;
+          })
+          .join('');
+      const query = `
+      {
+        ${ES_INDEX} {
+          aggregations { ${getAggregationQuery()} }
+        }
+      }`;
+      return fetchGraphqlQuery(query);
     },
   );
 };
@@ -98,7 +118,7 @@ class AdvancedFacetViewLiveStory extends React.Component {
     Promise.all([
       fetchMapping(),
       fetchExtendedMapping(),
-      fetchAggregation(),
+      fetchAggregationData(),
     ]).then(([{ mapping }, { extended }, aggregations]) =>
       this.setState({ mapping, extended, aggregations }),
     );

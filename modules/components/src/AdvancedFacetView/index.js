@@ -87,6 +87,7 @@ export default ({
   extendedMapping = [],
   aggregations = {},
 }) => {
+  console.log('aggregations: ', aggregations);
   const fieldMappingFromPath = path =>
     path
       .split('.')
