@@ -44,38 +44,7 @@ const fetchExtendedMapping = async () =>
     return Promise.resolve(data[ES_INDEX]);
   });
 
-const fetchAggsState = () =>
-  fetchGraphqlQuery(`{
-    aggsState(indices: ["${ES_INDEX}"]) {
-      states {
-        state {
-          field
-          type
-          active
-        }
-      }
-    }
-  }`);
-
-const fetchMockAggregation = () =>
-  fetchMapping().then(({ mapping }) => {
-    return Promise.resolve(
-      Object.keys(mapping).reduce(
-        (agg, key) => ({
-          ...agg,
-          [key]: {
-            buckets: [
-              { key: 'male', doc_count: 200 },
-              { key: 'female', doc_count: 300 },
-            ],
-          },
-        }),
-        {},
-      ),
-    );
-  });
-
-window.fetchAggregationDataWithExtendedMapping = async extended => {
+const fetchAggregationDataWithExtendedMapping = async extended => {
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
   const allAggsNames = extended
