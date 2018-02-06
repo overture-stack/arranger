@@ -51,7 +51,7 @@ export default class FacetView extends React.Component {
               key={node.path}
               aggregations={aggregations}
               onValueChange={({ value, path }) =>
-                console.log(`${path}: ${value}`)
+                console.log(`${path}: `, value)
               }
               {...node}
             />

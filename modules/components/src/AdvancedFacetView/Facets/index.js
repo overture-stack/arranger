@@ -22,7 +22,10 @@ export default ({
         ),
         NumericAggregations: (
           <NumericAggregation
-            {...{ aggType, aggProps, title, onValueChange }}
+            {...{ aggType, aggProps, title }}
+            onValueChange={({ value }) => {
+              onValueChange({ value: value });
+            }}
           />
         ),
       }[aggType]

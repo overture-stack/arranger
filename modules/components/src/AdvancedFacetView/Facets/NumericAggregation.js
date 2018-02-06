@@ -5,6 +5,10 @@ export default ({ aggType, aggProps, title, onValueChange }) => (
   <RangeAgg
     stats={aggProps ? aggProps.stats : null}
     displayName={title}
-    handleChange={onValueChange}
+    handleChange={({ min, max, field }) =>
+      onValueChange({
+        value: { min, max },
+      })
+    }
   />
 );
