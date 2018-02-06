@@ -1,0 +1,33 @@
+.dropDownHeader {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+  z-index: 999;
+}
+
+.dropDownHeader .dropDownButton {
+  display: flex;
+  cursor: pointer;
+}
+
+.dropDownHeader .dropDownButton .dropDownButtonContent {
+  margin-right: 8px;
+}
+
+.dropDownHeader .dropDownContent {
+  position: absolute;
+  background: white;
+  min-width: 100%;
+  z-index: 1;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 5px;
+  top: 100%;
+}
+
+.dropDownContentElement {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+}

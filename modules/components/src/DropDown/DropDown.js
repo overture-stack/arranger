@@ -1,5 +1,6 @@
 import React from 'react';
 import Downshift from 'downshift';
+import './DropDown.css';
 
 function ArrowIcon({ isOpen }) {
   return (
@@ -57,49 +58,27 @@ class DropDown extends React.Component {
           inputValue,
           highlightedIndex,
         }) => (
-          <div
-            style={{
-              display: 'inline-block',
-              position: 'relative',
-              whiteSpace: 'nowrap',
-              zIndex: 999,
-            }}
-          >
+          <div className="dropDownHeader">
             <button
-              style={{ display: 'flex', cursor: 'pointer' }}
+              className="dropDownButton"
               {...getButtonProps({ onClick: this.handleToggleMenu })}
             >
-              <div style={{ marginRight: 8 }}>{children}</div>
+              <div className="dropDownButtonContent">{children}</div>
               <ArrowIcon isOpen={isOpen} />
             </button>
             {!isOpen ? null : (
               <div
+                className="dropDownContent"
                 style={{
-                  position: 'absolute',
-                  background: 'white',
-                  minWidth: '100%',
-                  zIndex: 1,
-                  border: '1px solid rgba(0, 0, 0, 0.05)',
-                  boxSizing: 'border-box',
-                  cursor: 'pointer',
-                  padding: 5,
                   right: align === 'right' ? 0 : 'auto',
                   left: align === 'right' ? 'auto' : 0,
-                  top: '100%',
                 }}
               >
                 {items.map((item, index) => (
                   <div
+                    className="dropDownContentElement"
                     key={item.id || itemToString(item)}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: 5,
-                    }}
-                    {...getItemProps({
-                      item,
-                      index,
-                    })}
+                    {...getItemProps({ item, index })}
                   >
                     {itemToString(item)}
                     <input
