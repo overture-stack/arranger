@@ -13,11 +13,8 @@ const FacetViewNode = ({
   aggregations,
 }) => {
   return (
-    <div style={{ marginLeft: 20 }}>
+    <div id={path} style={{ marginLeft: 20 }}>
       <div>
-        {
-          // title
-        }
         <AggWrapper
           title={title}
           aggType={esTypeToAggType(esType)}

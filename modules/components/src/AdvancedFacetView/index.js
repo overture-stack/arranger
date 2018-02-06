@@ -4,7 +4,7 @@ import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import './AdvancedFacetView.css';
-import FacetViewNode from './FacetViewNode';
+import FacetView from './FacetView';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
@@ -29,24 +29,6 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   };
   return rawDisplayData.map(replaceNodeDisplayName);
 };
-
-const FacetView = ({
-  selectedMapping,
-  path,
-  aggregations,
-  disPlayTreeData,
-}) => (
-  <div>
-    {path && `${path}:`}
-    <pre>{JSON.stringify(selectedMapping, null, 2)}</pre>
-    aggregations:
-    {disPlayTreeData.map(node => {
-      return (
-        <FacetViewNode key={node.path} aggregations={aggregations} {...node} />
-      );
-    })}
-  </div>
-);
 
 export default ({
   elasticMapping = {},

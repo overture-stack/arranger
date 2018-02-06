@@ -1,12 +1,19 @@
 .facetViewWrapper {
   display: flex;
   flex-direction: row;
+  max-height: 1000px;
 }
 
 .facetViewWrapper .treeViewPanel {
   flex: 1;
+  overflow-y: scroll;
 }
 
 .facetViewWrapper .facetsPanel {
   flex: 2;
+}
+
+.facetViewWrapper .facetsPanel .facetView {
+  height: 100%;
+  overflow-y: scroll;
 }
