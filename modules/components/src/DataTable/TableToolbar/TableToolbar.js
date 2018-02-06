@@ -1,12 +1,16 @@
 import React from 'react';
+import { debounce } from 'lodash';
+import { compose, withProps, withPropsOnChange } from 'recompose';
 
 import DropDown from '../../DropDown';
-import { compose, withProps } from 'recompose';
 import saveTSV from './saveTSV';
 
 const enhance = compose(
   withProps(({ columns }) => ({
     canChangeShowColumns: columns.filter(column => column.canChangeShow),
+  })),
+  withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
+    debouncedOnFilterChange: debounce(onFilterChange, 300),
   })),
 );
 
@@ -15,7 +19,7 @@ const TableToolbar = ({
   canChangeShowColumns,
   onColumnsChange,
   onSQONChange,
-  onFilterChange = () => {},
+  debouncedOnFilterChange,
   page = 0,
   pageSize = 0,
   propsData,
@@ -37,7 +41,7 @@ const TableToolbar = ({
       type="text"
       placeholder="Filter"
       onChange={e => {
-        onFilterChange(e.target.value);
+        debouncedOnFilterChange(e.target.value);
       }}
     />
     {allowTogglingColumns && (
@@ -45,14 +49,7 @@ const TableToolbar = ({
         itemToString={i => i.Header}
         items={canChangeShowColumns}
         onChange={item => {
-          onColumnsChange(
-            Object.assign([], columns, {
-              [columns.indexOf(item)]: {
-                ...item,
-                show: !item.show,
-              },
-            }),
-          );
+          onColumnsChange({ ...item, show: !item.show });
         }}
       >
         Show columns

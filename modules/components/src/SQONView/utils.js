@@ -147,6 +147,18 @@ export const addInSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
+export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
+  const { fields, value } = q?.content?.[0]?.content || {};
+  const merged = {
+    op: 'and',
+    content: [
+      ...(ctxq?.content?.filter(x => x.op !== 'filter') || []),
+      ...(!fields || !value ? [] : q.content),
+    ].sort(sortSQON),
+  };
+  return merged.content.length ? merged : null;
+};
+
 const mergeFns: TMergeFns = v => {
   switch (v) {
     case 'toggle':

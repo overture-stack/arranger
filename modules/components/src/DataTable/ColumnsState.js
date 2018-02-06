@@ -27,7 +27,11 @@ let columnFields = `
 `;
 
 export default class extends Component {
-  state = { config: { keyField: 'id', columns: [] }, extended: [] };
+  state = {
+    config: { keyField: 'id', columns: [] },
+    extended: [],
+    toggled: {},
+  };
 
   async componentDidMount() {
     this.fetchColumnsState(this.props);
@@ -121,18 +125,24 @@ export default class extends Component {
     this.setState({ temp }, () => this.save(temp));
   };
 
+  toggle = ({ field, show }) => {
+    this.setState({ toggled: { ...this.state.toggled, [field]: show } });
+  };
+
   render() {
+    let { config, extended, toggled } = this.state;
     return this.props.render({
       update: this.update,
+      toggle: this.toggle,
       state: {
-        ...this.state.config,
-        columns: this.state.config.columns.map(column => {
-          const extended = this.state.extended.find(
-            e => e.field === column.field,
-          );
+        ...config,
+        columns: config.columns.map(column => {
+          const extendedField = extended.find(e => e.field === column.field);
           return {
             ...column,
-            Header: extended?.displayName || column.field,
+            Header: extendedField?.displayName || column.field,
+            extendedType: extendedField?.type,
+            show: column.field in toggled ? toggled[column.field] : column.show,
           };
         }),
       },

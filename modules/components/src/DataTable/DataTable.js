@@ -6,20 +6,14 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      columns: props.config.columns,
       pageSize: 20,
       sort: props.config.defaultSorted,
     };
   }
-  componentWillReceiveProps(nextProps) {
-    const columns = nextProps.config.columns;
 
-    if (!isEqual(columns, this.props.config.columns)) {
-      this.setState({ columns });
-    }
-  }
   render() {
     const {
+      config,
       fetchData,
       streamData,
       onSQONChange,
@@ -33,8 +27,9 @@ class DataTable extends React.Component {
       tableStyle,
       toolbarStyle,
       onFilterChange,
+      onColumnsChange = () => {},
     } = this.props;
-    const { columns, page, pageSize, total, sort } = this.state;
+    const { page, pageSize, total, sort } = this.state;
 
     return (
       <>
@@ -57,18 +52,18 @@ class DataTable extends React.Component {
                 : null,
             })
           }
-          columns={columns}
-          onColumnsChange={columns => this.setState({ columns })}
+          columns={config.columns}
+          onColumnsChange={onColumnsChange}
           total={total}
           page={page}
           pageSize={pageSize}
-          type={this.props.config.type}
+          type={config.type}
         />
         <Table
           style={tableStyle}
           propsData={data}
           sqon={sqon}
-          config={{ ...this.props.config, columns }}
+          config={config}
           fetchData={fetchData}
           onSelectionChange={onSelectionChange}
           onPaginationChange={state => this.setState(state)}
