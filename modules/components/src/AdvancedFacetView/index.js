@@ -3,6 +3,7 @@ import State from '../State';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
+import SQONView from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 
@@ -34,8 +35,8 @@ export default ({
   elasticMapping = {},
   extendedMapping = [],
   aggregations = {},
+  sqon = {},
 }) => {
-  console.log('aggregations: ', aggregations);
   const fieldMappingFromPath = path =>
     path
       .split('.')
@@ -57,28 +58,33 @@ export default ({
         selectedMapping: {},
       }}
       render={({ update, selectedPath, selectedMapping }) => (
-        <div className="facetViewWrapper">
-          <div className="panel treeViewPanel">
-            <NestedTreeView
-              dataSource={disPlayTreeData}
-              selectedPath={selectedPath}
-              onLeafSelect={path => {
-                update({
-                  selectedPath: path,
-                  selectedMapping: fieldMappingFromPath(path),
-                });
-              }}
-            />
+        <>
+          <div>
+            <SQONView sqon={sqon} />
           </div>
-          <div className="panel facetsPanel">
-            <FacetView
-              selectedMapping={selectedMapping}
-              path={selectedPath}
-              aggregations={aggregations}
-              disPlayTreeData={disPlayTreeData}
-            />
+          <div className="facetViewWrapper">
+            <div className="panel treeViewPanel">
+              <NestedTreeView
+                dataSource={disPlayTreeData}
+                selectedPath={selectedPath}
+                onLeafSelect={path => {
+                  update({
+                    selectedPath: path,
+                    selectedMapping: fieldMappingFromPath(path),
+                  });
+                }}
+              />
+            </div>
+            <div className="panel facetsPanel">
+              <FacetView
+                selectedMapping={selectedMapping}
+                path={selectedPath}
+                aggregations={aggregations}
+                disPlayTreeData={disPlayTreeData}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
     />
   );

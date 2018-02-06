@@ -121,6 +121,18 @@ class AdvancedFacetViewLiveStory extends React.Component {
   state = {
     mapping: {},
     extended: {},
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: {
+            field: 'primary_site',
+            value: ['lung'],
+          },
+        },
+      ],
+    },
   };
   componentDidMount() {
     Promise.all([fetchMapping(), fetchExtendedMapping()]).then(
@@ -137,6 +149,7 @@ class AdvancedFacetViewLiveStory extends React.Component {
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended}
         aggregations={this.state.aggregations}
+        sqon={this.state.sqon}
       />
     );
   }
