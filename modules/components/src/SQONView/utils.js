@@ -147,21 +147,14 @@ export const addInSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-export const replaceFilterSQON: TMergeSQON = ({ fields, value }, ctxq) => {
-  if (!ctxq) return null;
-
-  const index = ctxq.content.findIndex(x => x.op === 'filter');
-  const q = { op: 'filter', content: { fields, value } };
+export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
+  const { fields, value } = q?.content?.[0]?.content || {};
   const merged = {
     op: 'and',
-    content: (!fields || !value
-      ? ctxq.content.filter(x => x.op !== 'filter')
-      : index >= 0
-        ? Object.assign([], ctxq.content, {
-            [index]: q,
-          })
-        : [...ctxq.content, q]
-    ).sort(sortSQON),
+    content: [
+      ...(ctxq?.content?.filter(x => x.op !== 'filter') || []),
+      ...(!fields || !value ? [] : q.content),
+    ].sort(sortSQON),
   };
   return merged.content.length ? merged : null;
 };

@@ -23,14 +23,22 @@ const Table = ({ sqon, projectId, index, streamData, fetchData, setSQON }) => {
               setSQON(
                 replaceFilterSQON(
                   {
-                    fields: columnState.state.columns
-                      .filter(
-                        x =>
-                          ['text', 'keyword'].includes(x.extendedType) &&
-                          x.show,
-                      )
-                      .map(x => x.field),
-                    value,
+                    op: 'and',
+                    content: [
+                      {
+                        op: 'filter',
+                        content: {
+                          fields: columnState.state.columns
+                            .filter(
+                              x =>
+                                ['text', 'keyword'].includes(x.extendedType) &&
+                                x.show,
+                            )
+                            .map(x => x.field),
+                          value,
+                        },
+                      },
+                    ],
                   },
                   sqon,
                 ),
