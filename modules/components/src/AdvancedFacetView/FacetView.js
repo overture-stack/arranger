@@ -3,6 +3,9 @@ import FacetViewNode from './FacetViewNode';
 import $ from 'jquery';
 
 export default class FacetView extends React.Component {
+  state = {
+    isAnimating: false,
+  };
   componentWillReceiveProps({
     selectedMapping,
     path: selectedPath,
@@ -18,14 +21,24 @@ export default class FacetView extends React.Component {
     const targetElementId = path.split('.').join('__');
     const targetElement = $(this.root).find(`#${targetElementId}`);
     if (targetElement) {
+      this.setState({ isAnimating: true });
+      console.log('animating!');
       $(this.root)
         .stop()
         .animate(
           {
             scrollTop: $(this.root).scrollTop() + targetElement.offset().top,
           },
-          1000,
+          {
+            duration: 1000,
+            complete: () => console.log('COMPLETE!'),
+          },
         );
+    }
+  };
+
+  onRootScroll = e => {
+    if (!this.state.isAnimating) {
     }
   };
 
@@ -37,7 +50,11 @@ export default class FacetView extends React.Component {
       disPlayTreeData,
     } = this.props;
     return (
-      <div className="facetView" ref={el => (this.root = el)}>
+      <div
+        className="facetView"
+        onScroll={this.onRootScroll}
+        ref={el => (this.root = el)}
+      >
         {disPlayTreeData.map(node => {
           return (
             <FacetViewNode
