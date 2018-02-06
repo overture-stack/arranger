@@ -27,7 +27,7 @@ export default class FacetView extends React.Component {
         .stop()
         .animate(
           {
-            scrollTop: $(this.root).scrollTop() + element1.offset().top,
+            scrollTop: $(this.root).scrollTop() + targetElement.offset().top,
           },
           {
             duration: 500,
