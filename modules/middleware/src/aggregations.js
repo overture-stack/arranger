@@ -14,7 +14,7 @@ import FilterProcessor from './filters';
  */
 export default class AggregationProcessor {
   querySize = 100;
-  historgramInterval = 1000;
+  histogramInterval = 1000;
   filterProcessor = new FilterProcessor();
 
   constructor(logger) {
@@ -561,9 +561,9 @@ export default class AggregationProcessor {
 
     if (graphql_fields[CONSTANTS.HISTOGRAM]) {
       const args = graphql_fields.histogram.arguments;
-      const interval = args?.[0]?.interval || this.historgramInterval;
+      const interval = args?.[0]?.interval || this.histogramInterval;
 
-      numeric_agg[`${field}:historgram`] = {
+      numeric_agg[`${field}:histogram`] = {
         histogram: {
           field,
           interval,
@@ -614,7 +614,7 @@ export default class AggregationProcessor {
           const filteredEntries = Object.entries(v).filter(item => {
             const key = item[0];
             const innerValue = item[1];
-            return [`${field}:stats`, `${field}:historgram`].includes(key);
+            return [`${field}:stats`, `${field}:histogram`].includes(key);
           });
 
           const innerValues = filteredEntries.map(item => item[1]);
