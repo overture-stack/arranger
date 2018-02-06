@@ -1,12 +1,15 @@
 import React from 'react';
 import TermAggregation from './TermAggregation';
+import NumericAggregation from './NumericAggregation';
 
 export default ({ aggType, aggProps, title }) => (
   <div>
     {
       {
         Aggregations: <TermAggregation {...{ aggType, aggProps, title }} />,
-        NumericAggregations: <div>PLACEHOLDER!!!</div>,
+        NumericAggregations: (
+          <NumericAggregation {...{ aggType, aggProps, title }} />
+        ),
       }[aggType]
     }
   </div>

@@ -103,6 +103,7 @@ window.fetchAggregationDataWithExtendedMapping = async extended => {
         aggregations { ${getAggregationQuery()} }
       }
     }`;
+  console.log(query);
   return fetchGraphqlQuery(query).then(data =>
     Promise.resolve({
       aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
