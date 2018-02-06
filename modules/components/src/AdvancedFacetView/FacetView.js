@@ -12,7 +12,7 @@ export default class FacetView extends React.Component {
     aggregations,
     disPlayTreeData,
   }) {
-    if (selectedPath && selectedPath != this.props.path) {
+    if (selectedPath) {
       this.scrollToPath(selectedPath);
     }
   }
@@ -27,18 +27,13 @@ export default class FacetView extends React.Component {
         .stop()
         .animate(
           {
-            scrollTop: $(this.root).scrollTop() + targetElement.offset().top,
+            scrollTop: $(this.root).scrollTop() + element1.offset().top,
           },
           {
-            duration: 1000,
+            duration: 500,
             complete: () => console.log('COMPLETE!'),
           },
         );
-    }
-  };
-
-  onRootScroll = e => {
-    if (!this.state.isAnimating) {
     }
   };
 
@@ -50,11 +45,7 @@ export default class FacetView extends React.Component {
       disPlayTreeData,
     } = this.props;
     return (
-      <div
-        className="facetView"
-        onScroll={this.onRootScroll}
-        ref={el => (this.root = el)}
-      >
+      <div className="facetView" ref={el => (this.root = el)}>
         {disPlayTreeData.map(node => {
           return (
             <FacetViewNode
