@@ -21,7 +21,7 @@ export default ({ app, io }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
 
-  let arrangerconfig = {
+  let arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects`,
       type: `arranger-projects`,
@@ -35,12 +35,12 @@ export default ({ app, io }) => async (req, res) => {
   };
 
   try {
-    await es.update(arrangerconfig.projectsIndex);
+    await es.update(arrangerConfig.projectsIndex);
   } catch (error) {
     return res.json({ error: error.message });
   }
 
-  arrangerconfig = {
+  arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects-${id}`,
       type: `arranger-projects-${id}`,
@@ -50,11 +50,11 @@ export default ({ app, io }) => async (req, res) => {
   let types = [];
 
   try {
-    types = await es.search(arrangerconfig.projectsIndex);
+    types = await es.search(arrangerConfig.projectsIndex);
   } catch (error) {
     try {
       await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
+        index: arrangerConfig.projectsIndex.index,
       });
       return res.json({ types });
     } catch (error) {
