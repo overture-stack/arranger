@@ -1,16 +1,15 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { themeDecorator } from './decorators';
 import EditAggs from '../src/Aggs/EditAggs';
 import RangeAgg from '../src/Aggs/RangeAgg';
 import TermAgg from '../src/Aggs/TermAgg';
 import AggsPanel from '../src/Aggs/AggsPanel';
-import AggsPanell from '../src/Aggs/AggsPanell';
-import { inCurrentSQON, addInSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
-import ThemeSwitcher, { AVAILABLE_THEMES } from '../src/ThemeSwitcher/index';
+import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
+
 import State from '../src/State';
 import './Aggs.css';
-import { themeDecorator } from './decorators';
 
 let aggs = [
   {
@@ -71,11 +70,6 @@ let aggs = [
   },
 ];
 
-let defaultSQON = {
-  op: 'and',
-  content: [],
-};
-
 storiesOf('Aggs', module)
   .addDecorator(themeDecorator)
   .add('EditAggs', () => (
@@ -133,7 +127,7 @@ storiesOf('Aggs', module)
                               },
                             ],
                           },
-                          sqon || defaultSQON,
+                          sqon,
                         ),
                       })
                     }
@@ -143,7 +137,7 @@ storiesOf('Aggs', module)
                   inCurrentSQON({
                     value: d.value,
                     dotField: d.field,
-                    currentSQON: sqon?.content || defaultSQON.content,
+                    currentSQON: sqon,
                   })
                 }
               />

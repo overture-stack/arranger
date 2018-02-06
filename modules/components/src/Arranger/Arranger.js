@@ -1,6 +1,5 @@
 import React from 'react';
 import { get } from 'lodash';
-
 import io from 'socket.io-client';
 
 import { columnsToGraphql } from '../DataTable';
@@ -9,7 +8,7 @@ import { API, ES_HOST } from '../utils/config';
 
 let socket = io(API);
 
-function streamData({ type, columns, sort, first, onData, onEnd }) {
+const streamData = type => ({ columns, sort, first, onData, onEnd }) => {
   socket.on('server::chunk', ({ data, total }) =>
     onData({
       total,
@@ -24,7 +23,7 @@ function streamData({ type, columns, sort, first, onData, onEnd }) {
     size: 100,
     ...columnsToGraphql({ columns, sort, first }),
   });
-}
+};
 
 const fetchData = projectId => {
   return options => {
@@ -44,89 +43,54 @@ const fetchData = projectId => {
 };
 
 class Arranger extends React.Component {
-  state = {
-    shouldRefresh: false,
-    sqon: null,
-  };
+  state = {};
 
-  onSQONChange = sqon => {
-    return this.setState({ sqon });
-  };
+  componentWillMount() {
+    const hasChildren =
+      this.props.children && React.Children.count(this.props.children) !== 0;
 
-  componentDidMount() {
-    if (!this.props.index) {
-      console.warn('arranger requires an index to be passed in');
+    if (this.props.component && this.props.render) {
+      console.warn(
+        'You should not use <Arranger component> and <Arranger render> in the same arranger; <Arranger render> will be ignored',
+      );
     }
 
-    if (!this.props.index) {
-      console.warn('arranger requires a projectId to be passed in');
+    if (this.props.component && hasChildren) {
+      console.warn(
+        'You should not use <Arranger component> and <Arranger children> in the same arranger; <Arranger children> will be ignored',
+      );
     }
 
-    socket.on('server::refresh', () => {
-      this.setState({ shouldRefresh: true });
-    });
+    if (this.props.render && hasChildren) {
+      console.warn(
+        'You should not use <Arranger render> and <Arranger children> in the same arranger; <Arranger children> will be ignored',
+      );
+    }
   }
 
   render() {
-    const { index, projectId, render } = this.props;
-    const { shouldRefresh, sqon } = this.state;
+    const { index, projectId, children, render, component } = this.props;
+    const { sqon } = this.state;
 
-    return (
-      <>
-        {shouldRefresh && (
-          <div
-            css={`
-              z-index: 10000;
-              position: fixed;
-              bottom: 20px;
-              right: 20px;
-              background: #383838;
-              color: white;
-              padding: 10px;
-              border-radius: 6px;
-            `}
-          >
-            A new version of this app is available.{' '}
-            <span
-              css={`
-                cursor: pointer;
-                color: rgb(154, 232, 229);
-                font-weight: bold;
-              `}
-              onClick={() => (window.location.href = window.location.href)}
-            >
-              REFRESH
-            </span>
-          </div>
-        )}
-        <div
-          style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}
-        >
-          {index &&
-            projectId && (
-              <div
-                className="portal"
-                css={`
-                  display: flex;
-                  flex-direction: column;
-                `}
-              >
-                {render
-                  ? render({
-                      projectId,
-                      index,
-                      sqon,
-                      streamData: options =>
-                        streamData({ ...options, type: index }),
-                      fetchData,
-                      onSQONChange: this.onSQONChange,
-                    })
-                  : 'default'}
-              </div>
-            )}
-        </div>
-      </>
-    );
+    const childProps = {
+      socket,
+      sqon,
+      projectId,
+      index,
+      streamData,
+      fetchData,
+      setSQON: sqon => this.setState({ sqon }),
+    };
+
+    if (component) {
+      return React.createElement(component, childProps);
+    } else if (render) {
+      return render(childProps);
+    } else if (children) {
+      return typeof children === 'function' ? children(childProps) : children;
+    } else {
+      return null;
+    }
   }
 }
 
