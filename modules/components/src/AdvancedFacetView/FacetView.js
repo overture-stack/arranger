@@ -22,7 +22,6 @@ export default class FacetView extends React.Component {
     const targetElement = $(this.root).find(`#${targetElementId}`);
     if (targetElement) {
       this.setState({ isAnimating: true });
-      console.log('animating!');
       $(this.root)
         .stop()
         .animate(
@@ -31,7 +30,7 @@ export default class FacetView extends React.Component {
           },
           {
             duration: 500,
-            complete: () => console.log('COMPLETE!'),
+            complete: () => this.setState({ isAnimating: false }),
           },
         );
     }
@@ -51,6 +50,9 @@ export default class FacetView extends React.Component {
             <FacetViewNode
               key={node.path}
               aggregations={aggregations}
+              onValueChange={({ value, path }) =>
+                console.log(`${path}: ${value}`)
+              }
               {...node}
             />
           );

@@ -38,6 +38,7 @@ const TermAggs = ({
                     style={{
                       display: 'flex',
                     }}
+                    onClick={() => handleValueClick(bucket)}
                     content={{
                       field: dotField,
                       value: bucket.name,

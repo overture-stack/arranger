@@ -11,6 +11,7 @@ const FacetViewNode = ({
   path,
   type: esType,
   aggregations,
+  onValueChange,
 }) => {
   return (
     <div id={path.split('.').join('__')} style={{ marginLeft: 20 }}>
@@ -19,6 +20,10 @@ const FacetViewNode = ({
           title={title}
           aggType={esTypeToAggType(esType)}
           aggProps={aggregations[path]}
+          path={path}
+          onValueChange={({ value }) =>
+            onValueChange({ value: value, path: path })
+          }
         />
       </div>
       {children ? (
@@ -28,6 +33,7 @@ const FacetViewNode = ({
             <FacetViewNode
               key={childNode.path}
               aggregations={aggregations}
+              onValueChange={onValueChange}
               {...childNode}
             />
           ))}
