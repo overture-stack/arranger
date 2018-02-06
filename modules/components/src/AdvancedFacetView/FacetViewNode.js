@@ -22,7 +22,12 @@ const FacetViewNode = ({
           aggProps={aggregations[path]}
           path={path}
           onValueChange={({ value }) =>
-            onValueChange({ value: value, path: path })
+            onValueChange({
+              value,
+              path: path,
+              esType: esType,
+              aggType: esTypeToAggType(esType),
+            })
           }
         />
       </div>

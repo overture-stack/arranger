@@ -36,6 +36,7 @@ export default ({
   extendedMapping = [],
   aggregations = {},
   sqon = {},
+  onSqonFieldChange = () => {},
 }) => {
   const fieldMappingFromPath = path =>
     path
@@ -77,6 +78,9 @@ export default ({
             </div>
             <div className="panel facetsPanel">
               <FacetView
+                onValueChange={({ value, path, esType, aggType }) =>
+                  onSqonFieldChange({ value, path, esType, aggType })
+                }
                 selectedMapping={selectedMapping}
                 path={selectedPath}
                 aggregations={aggregations}

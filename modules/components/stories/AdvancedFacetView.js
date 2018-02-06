@@ -143,13 +143,18 @@ class AdvancedFacetViewLiveStory extends React.Component {
         ),
     );
   }
+  onSqonFieldChange = ({ value, path, esType, aggType }) => {
+    console.log(value, path, esType, aggType);
+  };
   render() {
+    const { sqon = {} } = this.props;
     return (
       <AdvancedFacetView
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended}
         aggregations={this.state.aggregations}
-        sqon={this.state.sqon}
+        sqon={sqon}
+        onSqonFieldChange={this.onSqonFieldChange}
       />
     );
   }
@@ -184,7 +189,22 @@ const mockAggregations = (window.mockAggregations = injectMockBuckets(
 
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
-  .add('AdvancedFacetViewLive', () => <AdvancedFacetViewLiveStory />)
+  .add('AdvancedFacetViewLive', () => (
+    <AdvancedFacetViewLiveStory
+      sqon={{
+        op: 'and',
+        content: [
+          {
+            op: 'in',
+            content: {
+              field: 'primary_site',
+              value: ['lung'],
+            },
+          },
+        ],
+      }}
+    />
+  ))
   .add('AdvancedFacetView', () => (
     <AdvancedFacetView
       elasticMapping={elasticMockMapping}
