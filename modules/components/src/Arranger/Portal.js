@@ -1,12 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import SQONView, { Value, Bubble } from '../SQONView';
 import TermAgg from '../Aggs/TermAgg';
 import AggsState from '../Aggs/AggsState';
 import AggsQuery from '../Aggs/AggsQuery';
 
-import { inCurrentSQON, toggleSQON } from '../SQONView/utils';
+import {
+  inCurrentSQON,
+  toggleSQON,
+  replaceFilterSQON,
+  removeFilterSQON,
+} from '../SQONView/utils';
 
 import DataTable, { ColumnsState } from '../DataTable';
 
@@ -133,31 +137,23 @@ const Portal = ({
                 config={state}
                 onSQONChange={onSQONChange}
                 onColumnsChange={toggle}
-                onFilterChange={x => {
-                  const mySqon = toggleSQON(
-                    {
-                      op: 'and',
-                      content: [
-                        {
-                          op: 'filter',
-                          content: {
-                            fields: state.columns
-                              .filter(
-                                x =>
-                                  ['text', 'keyword'].includes(
-                                    x.extendedType,
-                                  ) && x.show,
-                              )
-                              .map(x => x.field),
-                            value: x,
-                          },
-                        },
-                      ],
-                    },
-                    sqon || defaultSQON,
-                  );
-                  console.log(`SQON`, JSON.stringify(mySqon, null, 2));
-                }}
+                onFilterChange={value =>
+                  onSQONChange(
+                    replaceFilterSQON(
+                      {
+                        fields: state.columns
+                          .filter(
+                            x =>
+                              ['text', 'keyword'].includes(x.extendedType) &&
+                              x.show,
+                          )
+                          .map(x => x.field),
+                        value,
+                      },
+                      sqon || defaultSQON,
+                    ),
+                  )
+                }
                 onSelectionChange={console.log('selection changed')}
                 streamData={streamData}
                 fetchData={fetchData(projectId)}

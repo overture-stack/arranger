@@ -1,4 +1,5 @@
 import React from 'react';
+import { debounce } from 'lodash'
 
 import DropDown from '../../DropDown';
 import { compose, withProps } from 'recompose';
@@ -16,6 +17,7 @@ const TableToolbar = ({
   onColumnsChange,
   onSQONChange,
   onFilterChange = () => {},
+  donFilterChange = debounce(onFilterChange, 300),
   page = 0,
   pageSize = 0,
   propsData,
@@ -37,7 +39,7 @@ const TableToolbar = ({
       type="text"
       placeholder="Filter"
       onChange={e => {
-        onFilterChange(e.target.value);
+        donFilterChange(e.target.value);
       }}
     />
     {allowTogglingColumns && (

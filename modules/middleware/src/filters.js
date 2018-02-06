@@ -36,6 +36,8 @@ export default class FilterProcessor {
       f = this._get_must_not_filter(doc_type, nested, filters);
     if (op === CONSTANTS.EXCLUDE_IF_ANY)
       f = this._get_must_not_any_filter(doc_type, nested, filters);
+    if (op === CONSTANTS.FILTER)
+      f = this._get_fuzzy_filter(doc_type, nested, content, op);
     if (CONSTANTS.IS_OPS.includes(op))
       f = this._get_missing_filter(doc_type, nested, content, op);
     if (op === CONSTANTS.AND)
@@ -131,6 +133,36 @@ export default class FilterProcessor {
     let tf = _get_term_filter(doc_type, nested, x);
     return this.wrap_not(tf);
   }
+  _get_fuzzy_filter(doc_type, nested, content, op) {
+    let { fields, value } = content;
+
+    // group queries by their nesting level
+    const sortedNested = nested.sort((x, y) => y.length - x.length);
+    const nestedMap = fields.reduce((map, x) => {
+      const group = sortedNested.find(y => x.includes(y)) || '';
+      return { ...map, [group]: group in map ? [...map[group], x] : [x] };
+    }, {});
+
+    // construct one multi match per nested group
+    const should = Object.keys(nestedMap)
+      .map(x => ({
+        [CONSTANTS.ES_MULTI_MATCH]: {
+          [CONSTANTS.ES_QUERY]: value,
+          [CONSTANTS.ES_FIELDS]: nestedMap[x],
+          [CONSTANTS.ES_TYPE]: CONSTANTS.ES_PHRASE_PREFIX,
+        },
+      }))
+      .map(x =>
+        this.wrap_filter_based_on_path(
+          x,
+          x.multi_match.fields[0].split('.'),
+          nested,
+          op,
+        ),
+      );
+
+    return { [CONSTANTS.ES_BOOL]: { should } };
+  }
   _get_missing_filter(doc_type, nested, content, op) {
     let k = this.field_to_full_path_on_doc_type(doc_type, content['field']);
 
@@ -173,6 +205,8 @@ export default class FilterProcessor {
           curr = this._get_missing_filter(doc_type, nested, content, op);
         else if (CONSTANTS.RANGE_OPS_KEYS.includes(op))
           curr = this._get_range_filter(doc_type, nested, content, op);
+        else if (op === CONSTANTS.FILTER)
+          curr = this._get_fuzzy_filter(doc_type, nested, content, op);
 
         if (this.is_nested(curr)) {
           const filteredMusts = _.filter(
@@ -207,6 +241,11 @@ export default class FilterProcessor {
       CONSTANTS.HAVE_OPS.includes(x['op']),
     ).map(x => this._get_term_or_regex_or_set_filter(doc_type, nested, x));
     should = should.concat(
+      _.filter(content, x => x['op'] === CONSTANTS.FILTER).map(x =>
+        this._get_fuzzy_filter(doc_type, nested, x['content'], x['op']),
+      ),
+    );
+    should = should.concat(
       _.filter(content, x => x['op'] === CONSTANTS.OR).map(x =>
         this._get_or_filter(doc_type, nested, x['content']),
       ),
@@ -223,7 +262,7 @@ export default class FilterProcessor {
     );
     if (must_not) should.append(this.wrap_not(must_not));
     return {
-      [ES_BOOL]:
+      [CONSTANTS.ES_BOOL]:
         should != null || should.length > 0 ? { [ES_SHOULD]: should } : {},
     };
   }
@@ -430,7 +469,9 @@ export default class FilterProcessor {
     return x.hasOwnProperty(CONSTANTS.ES_NESTED);
   }
   wrap_bool(op, val) {
-    return { [ES_BOOL]: { op: typeof val === 'object' ? val : [val] } };
+    return {
+      [CONSTANTS.ES_BOOL]: { [op]: typeof val === 'object' ? val : [val] },
+    };
   }
   wrap_must(val) {
     return this.wrap_bool(CONSTANTS.ES_MUST, val);
@@ -440,9 +481,9 @@ export default class FilterProcessor {
   }
   wrap_filter(val, p) {
     return {
-      [ES_NESTED]: {
-        [ES_PATH]: p,
-        [ES_QUERY]: val,
+      [CONSTANTS.ES_NESTED]: {
+        [CONSTANTS.ES_PATH]: p,
+        [CONSTANTS.ES_QUERY]: val,
       },
     };
   }

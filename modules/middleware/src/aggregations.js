@@ -383,7 +383,7 @@ export default class AggregationProcessor {
 
         delete aggs[short_nested_path];
       }
-      const globalAgg = create_global_agg(short_nested_path, nested_agg);
+      const globalAgg = this.create_global_agg(short_nested_path, nested_agg);
 
       // This line modifies the input aggs
       Object.assign(aggs, globalAgg);
