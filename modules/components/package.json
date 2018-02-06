@@ -7,7 +7,7 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
+    "prepublish": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
     "watch": "babel src --out-dir dist --copy-files --watch",
     "build-storybook": "build-storybook -s ./public",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
