@@ -4,9 +4,14 @@ import AggWrapper from './Facets';
 
 const esTypeToAggType = esType => esToAggTypeMap[esType];
 
-const FacetViewNode = ({ title, id, children, path, type, aggregations }) => {
-  const esType = type;
-  const aggType = esTypeToAggType(esType);
+const FacetViewNode = ({
+  title,
+  id,
+  children,
+  path,
+  type: esType,
+  aggregations,
+}) => {
   return (
     <div style={{ marginLeft: 20 }}>
       <div>
@@ -15,7 +20,7 @@ const FacetViewNode = ({ title, id, children, path, type, aggregations }) => {
         }
         <AggWrapper
           title={title}
-          aggType={aggType}
+          aggType={esTypeToAggType(esType)}
           aggProps={aggregations[path]}
         />
       </div>
