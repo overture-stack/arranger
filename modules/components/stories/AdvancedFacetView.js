@@ -87,7 +87,7 @@ const fetchAggregationDataFromExtendedMapping = async extended => {
   );
 };
 
-class AdvancedFacetViewLiveStory extends React.Component {
+class LiveAdvancedFacetView extends React.Component {
   state = {
     mapping: {},
     extended: {},
@@ -129,9 +129,7 @@ class AdvancedFacetViewLiveStory extends React.Component {
       },
       this.state.sqon,
     );
-    this.setState({
-      sqon: newSQON,
-    });
+    this.setState({ sqon: newSQON });
   };
   render() {
     const { sqon = {} } = this.props;
@@ -176,7 +174,7 @@ const mockAggregations = (window.mockAggregations = injectMockBuckets(
 
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
-  .add('AdvancedFacetViewLive', () => <AdvancedFacetViewLiveStory />)
+  .add('AdvancedFacetViewLive', () => <LiveAdvancedFacetView />)
   .add('AdvancedFacetView', () => (
     <AdvancedFacetView
       elasticMapping={elasticMockMapping}

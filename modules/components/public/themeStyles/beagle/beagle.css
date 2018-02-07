@@ -141,6 +141,7 @@ div {
 }
 .aggregation-card .bucket-item {
   padding-top: 5px;
+  cursor: pointer;
 }
 .aggregation-card .bucket-item .bucket-count {
   border-radius: 5px;
