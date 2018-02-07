@@ -37,15 +37,21 @@ export default class FacetView extends React.Component {
           },
           {
             duration: 500,
-            complete: () => this.setState({ isAnimating: false }),
+            complete: () => this.stopScrollAnimation(),
           },
         );
     }
   };
 
+  stopScrollAnimation = () => {
+    $(this.root).stop();
+    this.setState({ isAnimating: false });
+  };
+
   onScroll = debounce(e => {
     const { aggregations, onUserScroll = () => {} } = this.props;
     const { isAnimating } = this.state;
+    this.stopScrollAnimation();
     if (!isAnimating) {
       const allFacetPaths = Object.keys(aggregations);
       const allNodeDomElements = allFacetPaths
@@ -66,7 +72,7 @@ export default class FacetView extends React.Component {
         console.log('FAIL!!!');
       }
     }
-  }, 300);
+  }, 500);
 
   render() {
     const {
