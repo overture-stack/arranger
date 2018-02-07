@@ -5,6 +5,7 @@ import { esToAggTypeMap } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
+import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
 
 const PROJECT_ID = 'testing1'; // TODO: get from somewhere
 const ES_INDEX = 'testing1'; // TODO: get from somewhere
@@ -96,8 +97,8 @@ class AdvancedFacetViewLiveStory extends React.Component {
         {
           op: 'in',
           content: {
-            field: 'primary_site',
-            value: ['lung'],
+            field: 'clinical_stage',
+            value: ['stage_1', 'stage_2'],
           },
         },
       ],
@@ -113,7 +114,24 @@ class AdvancedFacetViewLiveStory extends React.Component {
     );
   }
   onSqonFieldChange = ({ value, path, esType, aggType }) => {
-    console.log(value, path, esType, aggType);
+    const newSQON = toggleSQON(
+      {
+        op: 'and',
+        content: [
+          {
+            op: 'in',
+            content: {
+              field: path,
+              value: value,
+            },
+          },
+        ],
+      },
+      this.state.sqon,
+    );
+    this.setState({
+      sqon: newSQON,
+    });
   };
   render() {
     const { sqon = {} } = this.props;
@@ -122,7 +140,7 @@ class AdvancedFacetViewLiveStory extends React.Component {
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended}
         aggregations={this.state.aggregations}
-        sqon={sqon}
+        sqon={this.state.sqon}
         onSqonFieldChange={this.onSqonFieldChange}
       />
     );
@@ -158,22 +176,7 @@ const mockAggregations = (window.mockAggregations = injectMockBuckets(
 
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
-  .add('AdvancedFacetViewLive', () => (
-    <AdvancedFacetViewLiveStory
-      sqon={{
-        op: 'and',
-        content: [
-          {
-            op: 'in',
-            content: {
-              field: 'clinical_stage',
-              value: ['stage_1', 'stage_2'],
-            },
-          },
-        ],
-      }}
-    />
-  ))
+  .add('AdvancedFacetViewLive', () => <AdvancedFacetViewLiveStory />)
   .add('AdvancedFacetView', () => (
     <AdvancedFacetView
       elasticMapping={elasticMockMapping}
