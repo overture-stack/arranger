@@ -1,6 +1,6 @@
 import React from 'react';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
-import AggWrapper from './Facets';
+import FacetWrapper from './Facets';
 
 const esTypeToAggType = esType => esToAggTypeMap[esType];
 
@@ -22,7 +22,8 @@ const FacetViewNode = ({
     >
       {!children && (
         <div className="aggWrapper">
-          <AggWrapper
+          {!esType && <div className="facetTitle">{title}</div>}
+          <FacetWrapper
             sqon={sqon}
             title={title}
             aggType={esTypeToAggType(esType)}

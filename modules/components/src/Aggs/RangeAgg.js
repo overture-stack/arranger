@@ -15,14 +15,17 @@ const SUPPORTED_CONVERSIONS = {
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let { field, stats: { min, max }, unit } = props;
+    let { field, stats: { min, max }, unit, value } = props;
     this.state = {
       field,
       min,
       max,
       unit: unit,
       displayUnit: unit,
-      value: { min, max },
+      value: {
+        min: value ? value.min || min : min,
+        max: value ? value.max || max : max,
+      },
     };
   }
 
