@@ -7,6 +7,7 @@ export default ({
   aggProps,
   title,
   path,
+  sqon = {},
   onValueChange = ({ value }) => console.log(value),
 }) => (
   <div>
@@ -14,7 +15,7 @@ export default ({
       {
         Aggregations: (
           <TermAggregation
-            {...{ aggType, aggProps, title }}
+            {...{ aggType, aggProps, title, sqon, path }}
             onValueChange={({ value }) => {
               onValueChange({ value: value });
             }}
@@ -22,7 +23,7 @@ export default ({
         ),
         NumericAggregations: (
           <NumericAggregation
-            {...{ aggType, aggProps, title }}
+            {...{ aggType, aggProps, title, sqon, path }}
             onValueChange={({ value }) => {
               onValueChange({ value: value });
             }}

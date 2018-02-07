@@ -78,6 +78,7 @@ export default ({
             </div>
             <div className="panel facetsPanel">
               <FacetView
+                sqon={sqon}
                 onValueChange={({ value, path, esType, aggType }) =>
                   onSqonFieldChange({ value, path, esType, aggType })
                 }

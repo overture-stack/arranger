@@ -166,8 +166,8 @@ storiesOf('AdvancedFacetView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
-              value: ['lung'],
+              field: 'clinical_stage',
+              value: ['stage_1', 'stage_2'],
             },
           },
         ],

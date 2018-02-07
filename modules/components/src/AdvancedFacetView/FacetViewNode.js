@@ -12,6 +12,7 @@ const FacetViewNode = ({
   type: esType,
   aggregations,
   onValueChange,
+  sqon = {},
 }) => {
   return (
     <div
@@ -22,6 +23,7 @@ const FacetViewNode = ({
       {!children && (
         <div className="aggWrapper">
           <AggWrapper
+            sqon={sqon}
             title={title}
             aggType={esTypeToAggType(esType)}
             aggProps={aggregations[path]}
@@ -42,6 +44,7 @@ const FacetViewNode = ({
           <div className="facetTitle">{title}</div>
           {children.map(childNode => (
             <FacetViewNode
+              sqon={sqon}
               key={childNode.path}
               aggregations={aggregations}
               onValueChange={onValueChange}

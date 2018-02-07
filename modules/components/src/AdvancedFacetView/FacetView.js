@@ -46,12 +46,14 @@ export default class FacetView extends React.Component {
       aggregations,
       disPlayTreeData,
       onValueChange,
+      sqon = {},
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
         {disPlayTreeData.map(node => {
           return (
             <FacetViewNode
+              sqon={sqon}
               key={node.path}
               aggregations={aggregations}
               onValueChange={({ value, path, esType, aggType }) =>
