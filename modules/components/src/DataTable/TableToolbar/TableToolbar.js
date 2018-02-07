@@ -41,7 +41,7 @@ const TableToolbar = ({
   style,
 }) => (
   <div
-    style={{ padding: 10, display: 'flex', flex: 'none', ...style }}
+    style={{ display: 'flex', flex: 'none', ...style }}
     className="tableToolbar"
   >
     <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
@@ -56,7 +56,7 @@ const TableToolbar = ({
         placeholder="Filter"
         value={filterVal}
         onChange={({ target: { value } }) => {
-          setFilterVal(value)
+          setFilterVal(value);
           debouncedOnFilterChange(value);
         }}
       />

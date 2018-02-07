@@ -21,6 +21,7 @@ let columnFields = `
         sortable
         canChangeShow
         query
+        listAccessor
       }
     }
   }
@@ -77,7 +78,6 @@ export default class extends Component {
         `,
         },
       });
-      console.log(extended);
 
       this.setState({
         extended,
