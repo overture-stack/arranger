@@ -5,7 +5,7 @@ import { esToAggTypeMap } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
-import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
+import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 
 const PROJECT_ID = 'testing1'; // TODO: get from somewhere
 const ES_INDEX = 'testing1'; // TODO: get from somewhere
@@ -132,7 +132,13 @@ class LiveAdvancedFacetView extends React.Component {
             this.state.sqon,
           );
         case 'NumericAggregations':
-          return this.state.sqon;
+          return replaceSQON({
+            op: 'and',
+            content: [
+              { op: '>=', content: { field: path, value: value.min } },
+              { op: '<=', content: { field: path, value: value.max } },
+            ],
+          });
         default:
           return this.state.sqon;
       }
