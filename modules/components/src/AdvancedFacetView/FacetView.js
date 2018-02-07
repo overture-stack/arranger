@@ -1,6 +1,10 @@
 import React from 'react';
 import FacetViewNode from './FacetViewNode';
 import $ from 'jquery';
+import { debounce } from 'lodash';
+
+const serializeToDomId = path => path.split('.').join('__');
+const serializeDomIdToPath = path => path.split('.').join('__');
 
 export default class FacetView extends React.Component {
   state = {
@@ -18,7 +22,7 @@ export default class FacetView extends React.Component {
   }
 
   scrollToPath = path => {
-    const targetElementId = path.split('.').join('__');
+    const targetElementId = serializeToDomId(path);
     const targetElement = $(this.root).find(`#${targetElementId}`);
     if (targetElement) {
       this.setState({ isAnimating: true });
@@ -39,6 +43,31 @@ export default class FacetView extends React.Component {
     }
   };
 
+  onScroll = debounce(e => {
+    const { aggregations, onUserScroll = () => {} } = this.props;
+    const { isAnimating } = this.state;
+    if (!isAnimating) {
+      const allFacetPaths = Object.keys(aggregations);
+      const allNodeDomElements = allFacetPaths
+        .map(serializeToDomId)
+        .map(id => $(this.root).find(`#${id}`))
+        .filter(el => el[0]);
+      const rootTop = $(this.root).offset().top;
+      const currentTopElement = allNodeDomElements.find(element => {
+        const elementTop = element.offset().top - 1;
+        const elementHeight = element.outerHeight();
+        return elementTop + elementHeight > rootTop && elementTop < rootTop;
+      });
+      if (currentTopElement) {
+        const currentTopElementId = currentTopElement.attr('id');
+        const currentTopPath = serializeDomIdToPath(currentTopElementId);
+        onUserScroll({ topPath: currentTopElementId });
+      } else {
+        console.log('FAIL!!!');
+      }
+    }
+  }, 300);
+
   render() {
     const {
       selectedMapping,
@@ -49,7 +78,11 @@ export default class FacetView extends React.Component {
       sqon = {},
     } = this.props;
     return (
-      <div className="facetView" ref={el => (this.root = el)}>
+      <div
+        className="facetView"
+        ref={el => (this.root = el)}
+        onScroll={this.onScroll}
+      >
         {disPlayTreeData.map(node => {
           return (
             <FacetViewNode
