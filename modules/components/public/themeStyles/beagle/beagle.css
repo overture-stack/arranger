@@ -391,6 +391,10 @@ div {
   border-bottom-right-radius: 10px;
 }
 
+.range-wrapper {
+  min-height: 2.7em;
+}
+
 /*********************************************/
 /**** styling for the Advanced Facet View ****/
 /*********************************************/
@@ -411,6 +415,7 @@ div {
 }
 .advancedFacetViewWrapper .aggWrapper {
   border-left: solid 5px;
+  height: 100%;
 }
 .advancedFacetViewWrapper .aggWrapper .facetTitle {
   margin-left: 20px;
@@ -441,6 +446,8 @@ div {
   border-left-color: #e7e8ed;
 }
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel .aggregation-card {
+  padding-top: 0px;
+  padding-bottom: 0px;
   border-right: none;
   border-top: none;
   border-bottom: none;

@@ -86,7 +86,7 @@ class RangeAgg extends Component {
             {!isCollapsed &&
               min !== null &&
               max !== null && (
-                <div>
+                <div className="range-wrapper">
                   <div className="unit-wrapper">
                     {unit &&
                       SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
