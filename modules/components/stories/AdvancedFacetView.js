@@ -73,7 +73,6 @@ const fetchAggregationDataFromExtendedMapping = async extended => {
         aggregations { ${getAggregationQuery()} }
       }
     }`;
-  console.log(query);
   return fetchGraphqlQuery(query).then(data =>
     Promise.resolve({
       aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
@@ -114,21 +113,30 @@ class LiveAdvancedFacetView extends React.Component {
     );
   }
   onSqonFieldChange = ({ value, path, esType, aggType }) => {
-    const newSQON = toggleSQON(
-      {
-        op: 'and',
-        content: [
-          {
-            op: 'in',
-            content: {
-              field: path,
-              value: value,
+    const newSQON = (() => {
+      switch (aggType) {
+        case 'Aggregations':
+          return toggleSQON(
+            {
+              op: 'and',
+              content: [
+                {
+                  op: 'in',
+                  content: {
+                    field: path,
+                    value: value,
+                  },
+                },
+              ],
             },
-          },
-        ],
-      },
-      this.state.sqon,
-    );
+            this.state.sqon,
+          );
+        case 'NumericAggregations':
+          return this.state.sqon;
+        default:
+          return this.state.sqon;
+      }
+    })();
     this.setState({ sqon: newSQON });
   };
   render() {
