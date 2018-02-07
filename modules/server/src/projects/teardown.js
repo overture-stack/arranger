@@ -1,6 +1,7 @@
 import express from 'express';
+import { setProject, getProject } from '../utils/projects';
 
-export default ({ app }) => async (req, res) => {
+export default async (req, res) => {
   let { id } = req.params;
 
   if (!id) return res.json({ error: 'project empty' });
@@ -8,13 +9,15 @@ export default ({ app }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
 
-  global.apps[id] = express.Router();
+  const projectApp = express.Router();
 
-  global.apps[id].use(`/${id}/ping`, (req, res) => res.send('disabled'));
+  projectApp.use(`/${id}/ping`, (req, res) => res.send('disabled'));
 
-  global.apps[id].use(`/${id}/graphql`, (req, res) =>
+  projectApp.use(`/${id}/graphql`, (req, res) =>
     res.json({ message: `${id} graphql service has been disabled` }),
   );
+
+  setProject(id, { ...getProject(id), app: projectApp });
 
   console.log(`attempted teardown of /${id}/graphql`);
 

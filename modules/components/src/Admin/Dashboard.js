@@ -14,19 +14,10 @@ import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
 import './Dashboard.css';
 import { ColumnsState, EditColumns } from '../DataTable';
-import { ES_HOST, API } from '../utils/config';
+import { ES_HOST, ARRANGER_API } from '../utils/config';
+import api from '../utils/api';
 
-let socket = io(API);
-
-export let api = ({ endpoint = '', body, headers }) =>
-  fetch(API + endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: JSON.stringify(body),
-  }).then(r => r.json());
+let socket = io(ARRANGER_API);
 
 class Dashboard extends React.Component {
   state = {

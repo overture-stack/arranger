@@ -6,23 +6,15 @@ import makeSchema from '@arranger/schema';
 import {
   addMappingsToTypes,
   mappingToAggsState,
-  esToGraphqlTypeMap,
   mappingToColumnsState,
 } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 
-export default ({ app, io }) => async (req, res) => {
-  let { es } = req.context;
-  let { id } = req.params;
-
-  if (!id) return res.json({ error: 'project empty' });
-
-  // indices must be lower cased
-  id = id.toLowerCase();
-
-  let arrangerconfig = {
-    projectsIndex: {
+import { getProject, setProject } from '../utils/projects';
+async function setProjectActive({ id, es, res }) {
+  try {
+    await es.update({
       index: `arranger-projects`,
       type: `arranger-projects`,
       id,
@@ -31,38 +23,40 @@ export default ({ app, io }) => async (req, res) => {
           active: true,
         },
       },
-    },
-  };
-
-  try {
-    await es.update(arrangerconfig.projectsIndex);
+    });
   } catch (error) {
     return res.json({ error: error.message });
   }
+}
 
-  arrangerconfig = {
-    projectsIndex: {
-      index: `arranger-projects-${id}`,
-      type: `arranger-projects-${id}`,
-    },
-  };
-
-  let types = [];
+async function getTypes({ id, es, res }) {
+  const index = `arranger-projects-${id}`;
 
   try {
-    types = await es.search(arrangerconfig.projectsIndex);
+    return await es.search({ index, type: index });
   } catch (error) {
     try {
-      await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
-      });
-      return res.json({ types });
+      await es.indices.create({ index });
     } catch (error) {
-      return res.json({ error: error.message });
+      res.json({ error: error.message });
     }
-    return res.json({ error: error.message });
+    return null;
   }
+}
 
+export default ({ io }) => async (req, res) => {
+  let { es } = req.context;
+  let { id } = req.params;
+
+  if (!id) return res.json({ error: 'project empty' });
+
+  // indices must be lower cased
+  id = id.toLowerCase();
+
+  setProjectActive({ id, es, res });
+
+  const types = await getTypes({ id, es, res });
+  if (!types) return;
   let hits = mapHits(types);
   let mappings = await fetchMappings({ es, types: hits });
 
@@ -152,15 +146,15 @@ export default ({ app, io }) => async (req, res) => {
 
   // TODO: don't add new states of state indices exist
   // don't add new ui states if decomissioned
-  if (!global.apps[id]) {
+  if (!getProject(id)) {
     await es.bulk({ body });
   }
 
-  global.apps[id] = express.Router();
+  const projectApp = express.Router();
 
-  global.apps[id].get(`/${id}/ping`, (req, res) => res.send('ok'));
+  projectApp.get(`/${id}/ping`, (req, res) => res.send('ok'));
 
-  global.apps[id].use(
+  projectApp.use(
     `/${id}/graphql`,
     schema
       ? graphqlExpress({ schema, context: { es, projectId: id, io } })
@@ -171,6 +165,7 @@ export default ({ app, io }) => async (req, res) => {
           }),
   );
 
+  setProject(id, { app: projectApp, schema, es, io });
   io.emit('server::refresh');
 
   console.log(`graphql server running at /${id}/graphql`);

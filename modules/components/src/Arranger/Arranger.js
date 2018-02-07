@@ -3,10 +3,10 @@ import { get } from 'lodash';
 import io from 'socket.io-client';
 
 import { columnsToGraphql } from '../DataTable';
-import { api } from '../Admin/Dashboard';
-import { API, ES_HOST } from '../utils/config';
+import api from '../utils/api';
+import { ARRANGER_API } from '../utils/config';
 
-let socket = io(API);
+let socket = io(ARRANGER_API);
 
 const streamData = type => ({ columns, sort, first, onData, onEnd }) => {
   socket.on('server::chunk', ({ data, total }) =>
@@ -29,9 +29,6 @@ const fetchData = projectId => {
   return options => {
     return api({
       endpoint: `/${projectId}/graphql`,
-      headers: {
-        ES_HOST,
-      },
       body: columnsToGraphql(options),
     }).then(r => {
       const hits = get(r, `data.${options.config.type}.hits`) || {};

@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import { debounce } from 'lodash';
-import { ES_HOST, API } from '../utils/config';
+import api from '../utils/api';
 
 let aggFields = `
   index
@@ -13,16 +13,6 @@ let aggFields = `
     }
   }
 `;
-
-let api = ({ body, endpoint = '' }) =>
-  fetch(API + endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ES_HOST: ES_HOST,
-    },
-    body: JSON.stringify(body),
-  }).then(r => r.json());
 
 export default class extends Component {
   state = { aggs: [], temp: [] };
