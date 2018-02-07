@@ -190,4 +190,20 @@ storiesOf('SQONView', module)
         ],
       }}
     />
+  ))
+  .add('text filter', () => (
+    <SQONView
+      sqon={{
+        op: 'and',
+        content: [
+          {
+            op: 'filter',
+            content: {
+              fields: ['gender', 'state', 'country'],
+              value: 'fema',
+            },
+          },
+        ],
+      }}
+    />
   ));
