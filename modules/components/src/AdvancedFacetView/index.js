@@ -59,7 +59,7 @@ export default ({
         selectedMapping: {},
       }}
       render={({ update, selectedPath, selectedMapping }) => (
-        <>
+        <div className="advancedFacetViewWrapper">
           <div>
             <SQONView sqon={sqon} />
           </div>
@@ -88,7 +88,7 @@ export default ({
               />
             </div>
           </div>
-        </>
+        </div>
       )}
     />
   );

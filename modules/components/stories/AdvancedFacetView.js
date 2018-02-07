@@ -44,7 +44,7 @@ const fetchExtendedMapping = async () =>
     return Promise.resolve(data[ES_INDEX]);
   });
 
-const fetchAggregationDataWithExtendedMapping = async extended => {
+const fetchAggregationDataFromExtendedMapping = async extended => {
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
   const allAggsNames = extended
@@ -106,7 +106,7 @@ class AdvancedFacetViewLiveStory extends React.Component {
   componentDidMount() {
     Promise.all([fetchMapping(), fetchExtendedMapping()]).then(
       ([{ mapping }, { extended }]) =>
-        fetchAggregationDataWithExtendedMapping(extended).then(
+        fetchAggregationDataFromExtendedMapping(extended).then(
           ({ aggregations }) =>
             this.setState({ mapping, extended, aggregations }),
         ),

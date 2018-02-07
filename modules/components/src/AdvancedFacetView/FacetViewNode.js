@@ -14,26 +14,32 @@ const FacetViewNode = ({
   onValueChange,
 }) => {
   return (
-    <div id={path.split('.').join('__')} style={{ marginLeft: 20 }}>
-      <div>
-        <AggWrapper
-          title={title}
-          aggType={esTypeToAggType(esType)}
-          aggProps={aggregations[path]}
-          path={path}
-          onValueChange={({ value }) =>
-            onValueChange({
-              value,
-              path: path,
-              esType: esType,
-              aggType: esTypeToAggType(esType),
-            })
-          }
-        />
-      </div>
-      {children ? (
-        <div>
-          <div>{title}</div>
+    <div
+      className="facetViewNode"
+      id={path.split('.').join('__')}
+      style={{ marginLeft: 20 }}
+    >
+      {!children && (
+        <div className="aggWrapper">
+          <AggWrapper
+            title={title}
+            aggType={esTypeToAggType(esType)}
+            aggProps={aggregations[path]}
+            path={path}
+            onValueChange={({ value }) =>
+              onValueChange({
+                value,
+                path: path,
+                esType: esType,
+                aggType: esTypeToAggType(esType),
+              })
+            }
+          />
+        </div>
+      )}
+      {children && (
+        <div className="aggWrapper">
+          <div className="facetTitle">{title}</div>
           {children.map(childNode => (
             <FacetViewNode
               key={childNode.path}
@@ -43,7 +49,7 @@ const FacetViewNode = ({
             />
           ))}
         </div>
-      ) : null}
+      )}
     </div>
   );
 };

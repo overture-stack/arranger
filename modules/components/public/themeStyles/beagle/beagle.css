@@ -394,10 +394,63 @@ div {
 /*********************************************/
 /**** styling for the Advanced Facet View ****/
 /*********************************************/
-.facetViewWrapper .panel {
-  margin: 15px;
+.advancedFacetViewWrapper {
+  padding: 15px;
 }
-.facetViewWrapper .treeViewPanel {
+.advancedFacetViewWrapper .facetViewWrapper {
+  margin-top: 15px;
+}
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
+}
+.advancedFacetViewWrapper .facetViewWrapper .facetsPanel .facetViewNode {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: solid 1px #d4d6dd;
+}
+.advancedFacetViewWrapper .aggWrapper {
+  border-left: solid 5px;
+}
+.advancedFacetViewWrapper .aggWrapper .facetTitle {
+  margin-left: 20px;
+  color: #404c9a;
+  font-weight: bolder;
+  font-size: 0.9em;
+  font-family: sans-serif;
+}
+.facetViewNode:nth-child(5n + 1) .aggWrapper {
+  border-left-color: #a42c90;
+}
+.facetViewNode:nth-child(5n + 2) .aggWrapper {
+  border-left-color: #00afed;
+}
+.facetViewNode:nth-child(5n + 3) .aggWrapper {
+  border-left-color: #ff9324;
+}
+.facetViewNode:nth-child(5n + 4) .aggWrapper {
+  border-left-color: #009bb8;
+}
+.facetViewNode:nth-child(5n + 5) .aggWrapper {
+  border-left-color: #d8202f;
+}
+.advancedFacetViewWrapper .facetViewNode .aggWrapper .facetViewNode {
+  border-bottom: none;
+}
+.facetViewNode .aggWrapper .aggWrapper {
+  border-left-color: #e7e8ed;
+}
+.advancedFacetViewWrapper .facetViewWrapper .facetsPanel .aggregation-card {
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  margin: 0px;
+  border-left: none;
+}
+.advancedFacetViewWrapper
+  .facetViewWrapper
+  .facetsPanel
+  .aggregation-card
+  .title-wrapper {
+  border-bottom: none;
 }
