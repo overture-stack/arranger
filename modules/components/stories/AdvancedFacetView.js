@@ -92,15 +92,7 @@ class LiveAdvancedFacetView extends React.Component {
     extended: {},
     sqon: {
       op: 'and',
-      content: [
-        {
-          op: 'in',
-          content: {
-            field: 'clinical_stage',
-            value: ['stage_1', 'stage_2'],
-          },
-        },
-      ],
+      content: [],
     },
   };
   componentDidMount() {
@@ -116,6 +108,7 @@ class LiveAdvancedFacetView extends React.Component {
     const newSQON = (() => {
       switch (aggType) {
         case 'Aggregations':
+          console.log('oldSQON: ', this.state.sqon);
           return toggleSQON(
             {
               op: 'and',
@@ -132,17 +125,21 @@ class LiveAdvancedFacetView extends React.Component {
             this.state.sqon,
           );
         case 'NumericAggregations':
-          return replaceSQON({
-            op: 'and',
-            content: [
-              { op: '>=', content: { field: path, value: value.min } },
-              { op: '<=', content: { field: path, value: value.max } },
-            ],
-          });
+          return replaceSQON(
+            {
+              op: 'and',
+              content: [
+                { op: '>=', content: { field: path, value: value.min } },
+                { op: '<=', content: { field: path, value: value.max } },
+              ],
+            },
+            this.state.sqon,
+          );
         default:
           return this.state.sqon;
       }
     })();
+    console.log('newSQON: ', newSQON);
     this.setState({ sqon: newSQON });
   };
   render() {
