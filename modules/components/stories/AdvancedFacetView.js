@@ -108,7 +108,6 @@ class LiveAdvancedFacetView extends React.Component {
     const newSQON = (() => {
       switch (aggType) {
         case 'Aggregations':
-          console.log('oldSQON: ', this.state.sqon);
           return toggleSQON(
             {
               op: 'and',
@@ -139,7 +138,6 @@ class LiveAdvancedFacetView extends React.Component {
           return this.state.sqon;
       }
     })();
-    console.log('newSQON: ', newSQON);
     this.setState({ sqon: newSQON });
   };
   render() {
