@@ -1,7 +1,16 @@
+.advancedFacetViewWrapper {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  display: flex;
+  flex-direction: column;
+}
+
 .facetViewWrapper {
   display: flex;
   flex-direction: row;
-  max-height: 1000px;
 }
 
 .facetViewWrapper .treeViewPanel {
