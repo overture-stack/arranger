@@ -3,7 +3,7 @@ import { keys } from 'lodash';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
-import SQONView from '../SQONView';
+import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import State from '../State';
@@ -99,11 +99,45 @@ export default ({
         selectedPath: '',
         selectedMapping: {},
         withValueOnly: false,
+        localSQON: {
+          op: 'and',
+          content: [],
+        },
       }}
-      render={({ update, selectedPath, selectedMapping, withValueOnly }) => (
+      render={({
+        update,
+        selectedPath,
+        selectedMapping,
+        withValueOnly,
+        localSQON,
+      }) => (
         <div className="advancedFacetViewWrapper">
           <div>
-            <SQONView sqon={sqon} />
+            <SQONView
+              sqon={sqon || localSQON}
+              ValueCrumb={({ value, nextSQON, ...props }) => (
+                <Value
+                  onClick={() => {
+                    update({ localSQON: nextSQON });
+                    onSqonFieldChange({ sqon: nextSQON });
+                  }}
+                  {...props}
+                >
+                  {value}
+                </Value>
+              )}
+              Clear={({ nextSQON }) => (
+                <Bubble
+                  className="sqon-clear"
+                  onClick={() => {
+                    update({ localSQON: nextSQON });
+                    onSqonFieldChange({ sqon: nextSQON });
+                  }}
+                >
+                  Clear
+                </Bubble>
+              )}
+            />
           </div>
           <div className="facetViewWrapper">
             <div className="panel treeViewPanel">
@@ -151,7 +185,7 @@ export default ({
             </div>
             <div className="panel facetsPanel">
               <FacetView
-                sqon={sqon}
+                sqon={sqon || localSQON}
                 onValueChange={({ value, path, esType, aggType }) =>
                   onSqonFieldChange({ value, path, esType, aggType })
                 }

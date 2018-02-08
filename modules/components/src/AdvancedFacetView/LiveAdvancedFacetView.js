@@ -125,43 +125,47 @@ export default class LiveAdvancedFacetView extends React.Component {
   componentWillReceiveProps({ sqon = this.state.sqon }) {
     this.setState({ sqon });
   }
-  onSqonFieldChange = ({ value, path, esType, aggType }) => {
+  onSqonFieldChange = ({ value, path, esType, aggType, sqon }) => {
     const { onSqonChange = () => {} } = this.props;
-    const newSQON = (() => {
-      switch (aggType) {
-        case 'Aggregations':
-          return toggleSQON(
-            {
-              op: 'and',
-              content: [
-                {
-                  op: 'in',
-                  content: {
-                    field: path,
-                    value: value,
+    if (sqon) {
+      this.setState({ sqon });
+    } else {
+      const newSQON = (() => {
+        switch (aggType) {
+          case 'Aggregations':
+            return toggleSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: 'in',
+                    content: {
+                      field: path,
+                      value: value,
+                    },
                   },
-                },
-              ],
-            },
-            this.state.sqon,
-          );
-        case 'NumericAggregations':
-          return replaceSQON(
-            {
-              op: 'and',
-              content: [
-                { op: '>=', content: { field: path, value: value.min } },
-                { op: '<=', content: { field: path, value: value.max } },
-              ],
-            },
-            this.state.sqon,
-          );
-        default:
-          return this.state.sqon;
-      }
-    })();
-    this.setState({ sqon: newSQON });
-    onSqonChange({ newSQON });
+                ],
+              },
+              this.state.sqon,
+            );
+          case 'NumericAggregations':
+            return replaceSQON(
+              {
+                op: 'and',
+                content: [
+                  { op: '>=', content: { field: path, value: value.min } },
+                  { op: '<=', content: { field: path, value: value.max } },
+                ],
+              },
+              this.state.sqon,
+            );
+          default:
+            return this.state.sqon;
+        }
+      })();
+      this.setState({ sqon: newSQON });
+      onSqonChange({ newSQON });
+    }
   };
   render() {
     const { sqon = {} } = this.props;

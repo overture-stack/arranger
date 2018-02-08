@@ -31,12 +31,16 @@ class RangeAgg extends Component {
 
   componentWillReceiveProps(nextProps) {
     let { field, stats: { min, max } } = this.props;
+    const { value: externalVal } = nextProps;
     let { value } = this.state;
     this.setState({
       field,
       min,
       max,
-      value: { min: Math.max(value.min, min), max: Math.min(value.max, max) },
+      value: {
+        min: Math.max(externalVal?.min || value.min, min),
+        max: Math.min(externalVal?.max || value.max, max),
+      },
     });
   }
 
