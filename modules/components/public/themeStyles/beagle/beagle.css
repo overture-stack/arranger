@@ -18,7 +18,7 @@ div {
 
 .ReactTable {
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.8em;
+  font-size: 0.8rem;
   flex-grow: 1;
 }
 
@@ -130,7 +130,7 @@ div {
 .aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   font-family: sans-serif;
 }
 .aggregation-card .bucket {
@@ -156,7 +156,7 @@ div {
 }
 .aggregation-card .showMore-wrapper {
   margin-top: 5px;
-  font-size: 0.8em;
+  font-size: 0.8rem;
   color: #90278e;
   cursor: pointer;
   display: flex;
@@ -177,7 +177,7 @@ div {
 
 .aggregation-card .bucket-item,
 .aggregation-card .input-range__label {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
 
 /**************************************/
@@ -244,7 +244,7 @@ div {
   font-weight: 600;
   color: #343434;
   text-transform: uppercase;
-  margin-right: 0.3em;
+  margin-right: 0.3rem;
 }
 
 .sqon-clear,
@@ -266,7 +266,7 @@ div {
 
 .sqon-more {
   font-size: 24px;
-  line-height: 0.3em;
+  line-height: 0.3rem;
   display: block;
   color: #009bb8;
 }
@@ -299,7 +299,7 @@ div {
 }
 .tree-view .header {
   color: #2b388f;
-  /* font-size: 1.2em; */
+  /* font-size: 1.2rem; */
   border-top: solid 1px #e0e1e6;
   padding-left: 20px;
 }
@@ -310,7 +310,7 @@ div {
 }
 .tree-view_children.leaf.header {
   color: #2b388f;
-  /* font-size: 1.2em; */
+  /* font-size: 1.2rem; */
   padding-left: 25px;
 }
 .tree-view .tree-view_arrow:after {
@@ -318,7 +318,7 @@ div {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.5em;
+  font-size: 1.5rem;
   width: 20px;
 }
 .tree-view .tree-view_arrow {
@@ -393,7 +393,7 @@ div {
 }
 
 .range-wrapper {
-  min-height: 2.7em;
+  min-height: 2.7rem;
 }
 
 /*********************************************/
@@ -413,6 +413,7 @@ div {
   padding-top: 10px;
   padding-bottom: 10px;
   border-bottom: solid 1px #d4d6dd;
+  padding-left: 20px;
 }
 .advancedFacetViewWrapper .aggWrapper {
   border-left: solid 5px;
@@ -422,8 +423,24 @@ div {
   margin-left: 20px;
   color: #404c9a;
   font-weight: bolder;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   font-family: sans-serif;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding-right: 10px;
+}
+.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow::after {
+  content: '\203a';
+  color: #404c9a;
+  font-weight: normal;
+}
+.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow {
+  transform: rotate(90deg);
+  transition: all 0.5s;
+}
+.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow.collapsed {
+  transform: rotate(0deg);
 }
 .facetViewNode:nth-child(5n + 1) .aggWrapper {
   border-left-color: #a42c90;
@@ -450,6 +467,7 @@ div {
   padding-top: 0px;
   padding-bottom: 0px;
   border-right: none;
+  padding-left: 20px;
   border-top: none;
   border-bottom: none;
   margin: 0px;
