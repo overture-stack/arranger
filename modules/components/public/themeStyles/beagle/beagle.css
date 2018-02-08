@@ -448,7 +448,7 @@ div {
   padding-left: 20px;
 }
 .advancedFacetViewWrapper .facetTitle {
-  cursor: pointer;
+  cursor: default;
   padding: 10px;
   background: #e7e8ed;
   display: flex;
@@ -508,6 +508,7 @@ div {
   margin-top: 0px;
 }
 .advancedFacetViewWrapper .aggWrapper.depth_0 .aggregation-card .title-wrapper {
+  cursor: default;
   border: none;
   padding: 10px;
   padding-left: 20px;
