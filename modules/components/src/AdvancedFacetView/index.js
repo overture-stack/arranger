@@ -62,10 +62,14 @@ const filterOutNonValue = ({ aggregations, displayTreeData }) => {
             }
           : node,
     );
-  const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
-    displayTreeData,
-  );
-  return { displayTreeDataWithValue, aggregationsWithValue };
+  if (displayTreeData) {
+    const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
+      displayTreeData,
+    );
+    return { displayTreeDataWithValue, aggregationsWithValue };
+  } else {
+    return { aggregationsWithValue };
+  }
 };
 
 export default ({
@@ -104,18 +108,24 @@ export default ({
           <div className="facetViewWrapper">
             <div className="panel treeViewPanel">
               <div className="panelHeading">
-                {Object.keys(aggregations).length} fields
-                <span>
-                  <input
-                    type="checkBox"
-                    value={withValueOnly}
-                    onClick={() =>
-                      update({
-                        selectedPath: displayTreeData[0]?.path,
-                        withValueOnly: !withValueOnly,
-                      })
-                    }
-                  />
+                {withValueOnly
+                  ? keys(
+                      filterOutNonValue({
+                        aggregations,
+                      }).aggregationsWithValue,
+                    ).length
+                  : Object.keys(aggregations).length}{' '}
+                fields
+                <span
+                  style={{ cursor: 'pointer' }}
+                  onClick={() =>
+                    update({
+                      selectedPath: displayTreeData[0]?.path,
+                      withValueOnly: !withValueOnly,
+                    })
+                  }
+                >
+                  <input type="checkBox" checked={withValueOnly} />
                   Show only fields with value
                 </span>
               </div>
