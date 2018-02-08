@@ -52,7 +52,7 @@ export default class FacetView extends React.Component {
     const { aggregations, onUserScroll = () => {} } = this.props;
     const { isAnimating } = this.state;
     if (!isAnimating) {
-      onUserScroll({ topPath: null });
+      onUserScroll(e);
     }
   };
 
