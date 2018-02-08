@@ -534,74 +534,14 @@ div {
   padding-right: 10px;
 }
 
-/* .facetViewNode.depth_0 {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  border-bottom: solid 1px #d4d6dd;
-  padding-left: 0px;
+/*********************************************/
+/******** styling for the Slider *************/
+/*********************************************/
+.input-range__slider {
+  background-color: #ffffff;
+  box-shadow: 0 0 5.9px 0.1px #bbbbbb;
+  border: solid 1px #c3c3c3;
 }
-.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
-  border-left: solid 5px;
-  height: 100%;
+.input-range__track.input-range__track--active {
+  background-color: #009bb8;
 }
-.facetViewNode.depth_1:nth-child(5n + 1) .aggWrapper {
-  border-left-color: #a42c90;
-}
-.facetViewNode.depth_1:nth-child(5n + 2) .aggWrapper {
-  border-left-color: #00afed;
-}
-.facetViewNode.depth_1:nth-child(5n + 3) .aggWrapper {
-  border-left-color: #ff9324;
-}
-.facetViewNode.depth_1:nth-child(5n + 4) .aggWrapper {
-  border-left-color: #009bb8;
-}
-.facetViewNode.depth_1:nth-child(5n + 5) .aggWrapper {
-  border-left-color: #d8202f;
-}
-.facetViewNode.depth_0 {
-  border-left: none;
-}
-.advancedFacetViewWrapper .facetViewNode.depth_1 {
-  border-bottom: none;
-}
-.advancedFacetViewWrapper .aggWrapper .facetTitle {
-  margin-left: 20px;
-  color: #404c9a;
-  font-weight: bolder;
-  font-size: 0.9rem;
-  font-family: sans-serif;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  padding-right: 10px;
-}
-.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow::after {
-  content: '\203a';
-  color: #404c9a;
-  font-weight: normal;
-}
-.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow {
-  transform: rotate(90deg);
-  transition: all 0.5s;
-}
-.advancedFacetViewWrapper .aggWrapper .facetTitle .arrow.collapsed {
-  transform: rotate(0deg);
-}
-.advancedFacetViewWrapper .facetViewWrapper .facetsPanel .aggregation-card {
-  padding-top: 0px;
-  padding-bottom: 0px;
-  border-right: none;
-  padding-left: 20px;
-  border-top: none;
-  border-bottom: none;
-  margin: 0px;
-  border-left: none;
-}
-.advancedFacetViewWrapper
-  .facetViewWrapper
-  .facetsPanel
-  .aggregation-card
-  .title-wrapper {
-  border-bottom: none;
-} */
