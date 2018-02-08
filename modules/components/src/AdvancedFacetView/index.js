@@ -155,9 +155,7 @@ export default ({
                 onValueChange={({ value, path, esType, aggType }) =>
                   onSqonFieldChange({ value, path, esType, aggType })
                 }
-                onUserScroll={({ topPath }) =>
-                  update({ selectedPath: topPath })
-                }
+                onUserScroll={e => update({ selectedPath: null })}
                 selectedMapping={selectedMapping}
                 path={selectedPath}
                 aggregations={aggregations}

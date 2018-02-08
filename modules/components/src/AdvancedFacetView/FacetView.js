@@ -48,31 +48,13 @@ export default class FacetView extends React.Component {
     this.setState({ isAnimating: false });
   };
 
-  onScroll = debounce(e => {
+  onScroll = e => {
     const { aggregations, onUserScroll = () => {} } = this.props;
     const { isAnimating } = this.state;
-    this.stopScrollAnimation();
     if (!isAnimating) {
-      const allFacetPaths = Object.keys(aggregations);
-      const allNodeDomElements = allFacetPaths
-        .map(serializeToDomId)
-        .map(id => $(this.root).find(`#${id}`))
-        .filter(el => el[0]);
-      const rootTop = $(this.root).offset().top;
-      const currentTopElement = allNodeDomElements.find(element => {
-        const elementTop = element.offset().top - 1;
-        const elementHeight = element.outerHeight();
-        return elementTop + elementHeight > rootTop && elementTop < rootTop;
-      });
-      if (currentTopElement) {
-        const currentTopElementId = currentTopElement.attr('id');
-        const currentTopPath = serializeDomIdToPath(currentTopElementId);
-        onUserScroll({ topPath: currentTopElementId });
-      } else {
-        console.log('FAIL!!!');
-      }
+      onUserScroll({ topPath: null });
     }
-  }, 500);
+  };
 
   render() {
     const {

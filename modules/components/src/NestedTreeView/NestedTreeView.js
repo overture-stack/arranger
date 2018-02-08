@@ -9,7 +9,7 @@ const NestedTreeView = ({
   selectedPath = '',
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
-    const selectedPathArray = selectedPath.split('.');
+    const selectedPathArray = selectedPath?.split('.') || [];
     return children ? (
       <ReactTreeView
         key={path}
