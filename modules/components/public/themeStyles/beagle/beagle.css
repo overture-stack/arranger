@@ -416,15 +416,153 @@ div {
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
   margin-left: 20px;
 }
-.advancedFacetViewWrapper .facetViewWrapper .facetsPanel .facetViewNode {
+.advancedFacetViewWrapper .aggregation-card {
+  border: none;
+}
+.facetViewWrapper .facetsPanel .facetView .facetViewNode {
+  padding-left: 0px;
+  position: relative;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
+  border-left: solid 5px;
+}
+.facetViewNode.depth_1:nth-child(5n + 1) .aggWrapper {
+  border-left-color: #a42c90;
+}
+.facetViewNode.depth_1:nth-child(5n + 2) .aggWrapper {
+  border-left-color: #00afed;
+}
+.facetViewNode.depth_1:nth-child(5n + 3) .aggWrapper {
+  border-left-color: #ff9324;
+}
+.facetViewNode.depth_1:nth-child(5n + 4) .aggWrapper {
+  border-left-color: #009bb8;
+}
+.facetViewNode.depth_1:nth-child(5n + 5) .aggWrapper {
+  border-left-color: #d8202f;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_2 .aggWrapper {
+  border-left-color: #e7e8ed;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
+  padding-left: 20px;
+}
+.advancedFacetViewWrapper .facetTitle {
+  cursor: pointer;
+  padding: 10px;
+  background: #e7e8ed;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.advancedFacetViewWrapper .facetTitle .arrow::after {
+  content: '\203a';
+  color: #404c9a;
+  font-weight: normal;
+}
+.advancedFacetViewWrapper .facetTitle .arrow {
+  transform: rotate(90deg);
+  transition: all 0.5s;
+}
+.advancedFacetViewWrapper .facetTitle .arrow.collapsed {
+  transform: rotate(0deg);
+}
+.advancedFacetViewWrapper .facetViewNode.depth_0 .facetTitle {
+  padding: 10px;
+  padding-left: 20px;
+  background: #e7e8ed;
+  color: #2b388f;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .facetTitle {
+  padding: 0px;
+  padding-right: 11px;
+  background: none;
+  color: #404c9a;
+  font-size: 0.9rem;
+}
+.aggWrapper {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.facetViewNode.depth_1 {
+  margin-bottom: 20px;
+}
+.facetViewNode.depth_1:after {
+  pointer-events: none;
+  content: '';
+  border-bottom: solid 1px #d4d6dd;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: -10px;
+}
+.advancedFacetViewWrapper
+  .aggWrapper.depth_0
+  .aggregation-card
+  .title-wrapper
+  .title {
+  font-family: 'Montserrat', sans-serif;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_0:first-child .aggWrapper {
+  margin-top: 0px;
+}
+.advancedFacetViewWrapper .aggWrapper.depth_0 .aggregation-card .title-wrapper {
+  border: none;
+  padding: 10px;
+  padding-left: 20px;
+  background: #e7e8ed;
+  color: #2b388f;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: lighter;
+}
+.advancedFacetViewWrapper .aggWrapper.depth_1 .aggregation-card .title-wrapper {
+  padding: 0px;
+  padding-right: 10px;
+  background: none;
+  color: #404c9a;
+  font-size: 0.9rem;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card {
+  padding: 0px;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .title-wrapper {
+  padding-right: 10px;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .bucket {
+  padding-right: 10px;
+}
+
+/* .facetViewNode.depth_0 {
   padding-top: 10px;
   padding-bottom: 10px;
   border-bottom: solid 1px #d4d6dd;
   padding-left: 0px;
 }
-.advancedFacetViewWrapper .aggWrapper {
+.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
   border-left: solid 5px;
   height: 100%;
+}
+.facetViewNode.depth_1:nth-child(5n + 1) .aggWrapper {
+  border-left-color: #a42c90;
+}
+.facetViewNode.depth_1:nth-child(5n + 2) .aggWrapper {
+  border-left-color: #00afed;
+}
+.facetViewNode.depth_1:nth-child(5n + 3) .aggWrapper {
+  border-left-color: #ff9324;
+}
+.facetViewNode.depth_1:nth-child(5n + 4) .aggWrapper {
+  border-left-color: #009bb8;
+}
+.facetViewNode.depth_1:nth-child(5n + 5) .aggWrapper {
+  border-left-color: #d8202f;
+}
+.facetViewNode.depth_0 {
+  border-left: none;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 {
+  border-bottom: none;
 }
 .advancedFacetViewWrapper .aggWrapper .facetTitle {
   margin-left: 20px;
@@ -449,28 +587,6 @@ div {
 .advancedFacetViewWrapper .aggWrapper .facetTitle .arrow.collapsed {
   transform: rotate(0deg);
 }
-.facetViewNode:nth-child(5n + 1) .aggWrapper {
-  border-left-color: #a42c90;
-}
-.facetViewNode:nth-child(5n + 2) .aggWrapper {
-  border-left-color: #00afed;
-}
-.facetViewNode:nth-child(5n + 3) .aggWrapper {
-  border-left-color: #ff9324;
-}
-.facetViewNode:nth-child(5n + 4) .aggWrapper {
-  border-left-color: #009bb8;
-}
-.facetViewNode:nth-child(5n + 5) .aggWrapper {
-  border-left-color: #d8202f;
-}
-.advancedFacetViewWrapper .facetViewNode .aggWrapper .facetViewNode {
-  border-bottom: none;
-}
-.facetViewNode .aggWrapper .aggWrapper {
-  border-left-color: #e7e8ed;
-  margin-left: 20px;
-}
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel .aggregation-card {
   padding-top: 0px;
   padding-bottom: 0px;
@@ -487,4 +603,4 @@ div {
   .aggregation-card
   .title-wrapper {
   border-bottom: none;
-}
+} */

@@ -5,6 +5,7 @@ import { inCurrentSQON, replaceSQON, toggleSQON } from '../../SQONView/utils';
 export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => (
   <TermAggs
     key={title}
+    collapsible={false}
     handleValueClick={bucket => {
       onValueChange({
         value: bucket.key,

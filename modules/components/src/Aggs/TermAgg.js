@@ -11,6 +11,7 @@ const TermAggs = ({
   isActive = () => {},
   Content = 'div',
   maxTerms = 5,
+  collapsible = true,
 }) => {
   const dotField = field.replace(/__/g, '.');
 
@@ -21,10 +22,16 @@ const TermAggs = ({
         <div className="test-term-aggregation aggregation-card">
           <div
             className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-            onClick={() => update({ isCollapsed: !isCollapsed })}
+            onClick={
+              collapsible
+                ? () => update({ isCollapsed: !isCollapsed })
+                : () => {}
+            }
           >
             <span className="title">{displayName}</span>
-            <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+            {collapsible && (
+              <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+            )}
           </div>
           {!isCollapsed && (
             <div className={`bucket ${isCollapsed && 'collapsed'}`}>

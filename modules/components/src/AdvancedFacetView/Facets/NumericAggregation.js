@@ -4,6 +4,7 @@ import RangeAgg from '../../Aggs/RangeAgg';
 export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => (
   <RangeAgg
     stats={aggProps?.stats}
+    collapsible={false}
     value={{
       min: sqon?.content.find(
         content => content.content?.field === path && content.op === '>=',

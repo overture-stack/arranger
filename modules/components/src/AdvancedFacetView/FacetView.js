@@ -74,6 +74,7 @@ export default class FacetView extends React.Component {
         {displayTreeData.map(node => {
           return (
             <FacetViewNode
+              depth={0}
               sqon={sqon}
               key={node.path}
               aggregations={aggregations}

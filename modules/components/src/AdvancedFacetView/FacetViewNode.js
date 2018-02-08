@@ -14,11 +14,15 @@ const FacetViewNode = ({
   aggregations,
   onValueChange,
   sqon = {},
+  depth,
 }) => {
   return (
-    <div className="facetViewNode" id={path.split('.').join('__')}>
+    <div
+      className={`facetViewNode depth_${depth}`}
+      id={path.split('.').join('__')}
+    >
       {!children && (
-        <div className="aggWrapper">
+        <div className={`aggWrapper depth_${depth}`}>
           {!esType && <div className="facetTitle">{title}</div>}
           <FacetWrapper
             sqon={sqon}
@@ -38,30 +42,19 @@ const FacetViewNode = ({
         </div>
       )}
       {children && (
-        <State
-          initial={{ expanded: true }}
-          render={({ update, expanded }) => (
-            <div className="aggWrapper">
-              <div
-                className="facetTitle"
-                onClick={() => update({ expanded: !expanded })}
-              >
-                {title}
-                <div className={`arrow ${!expanded ? 'collapsed' : ''}`} />
-              </div>
-              {expanded &&
-                children.map(childNode => (
-                  <FacetViewNode
-                    sqon={sqon}
-                    key={childNode.path}
-                    aggregations={aggregations}
-                    onValueChange={onValueChange}
-                    {...childNode}
-                  />
-                ))}
-            </div>
-          )}
-        />
+        <div className={`aggWrapper depth_${depth}`}>
+          <div className="facetTitle">{title}</div>
+          {children.map(childNode => (
+            <FacetViewNode
+              depth={depth + 1}
+              sqon={sqon}
+              key={childNode.path}
+              aggregations={aggregations}
+              onValueChange={onValueChange}
+              {...childNode}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

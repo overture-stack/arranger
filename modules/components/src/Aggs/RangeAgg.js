@@ -71,6 +71,7 @@ class RangeAgg extends Component {
       Content = 'div',
       displayName = 'Unnamed Field',
       buckets = [],
+      collapsible = true,
       handleChange = () => {},
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
@@ -81,10 +82,16 @@ class RangeAgg extends Component {
           <div className="aggregation-card">
             <div
               className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-              onClick={() => update({ isCollapsed: !isCollapsed })}
+              onClick={
+                collapsible
+                  ? () => update({ isCollapsed: !isCollapsed })
+                  : () => {}
+              }
             >
               <span className="title">{displayName}</span>
-              <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+              {collapsible && (
+                <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+              )}
             </div>
             {!isCollapsed &&
               min !== null &&
