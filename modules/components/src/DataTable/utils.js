@@ -44,9 +44,10 @@ export function columnsToGraphql({
   const fields = config.columns
     .filter(
       column =>
-        column.accessor !== config.keyField && (column.fetch || column.show),
+        !(column.accessor && column.accessor === config.keyField) &&
+        (column.fetch || column.show),
     )
-    .concat({ accessor: config.keyField })
+    .concat(config.keyField ? { accessor: config.keyField } : [])
     .map(toQuery)
     .join('\n');
 

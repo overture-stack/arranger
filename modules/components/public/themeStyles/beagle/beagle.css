@@ -221,6 +221,7 @@ div {
   color: #fff;
   padding: 0 7px 0 12px;
   margin-right: 4px;
+  cursor: pointer;
 }
 
 .sqon-value:after {
@@ -254,6 +255,7 @@ div {
   color: #008199;
   border: solid 1px #cacbcf;
   text-transform: uppercase;
+  cursor: pointer;
 }
 
 .sqon-less,
@@ -342,8 +344,7 @@ div {
 /*** styling for the Table Toolbar ****/
 /**************************************/
 .tableToolbar {
-  height: 50px;
-  padding: 10px;
+  padding: 14px 19px 12px 15px;
 }
 
 .tableToolbar .buttonWrapper {
