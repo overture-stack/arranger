@@ -15,7 +15,18 @@
 
 .facetViewWrapper .treeViewPanel {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.facetViewWrapper .treeViewPanel .panelHeading {
+  display: flex;
+  justify-content: space-between;
+}
+
+.facetViewWrapper .treeViewPanel .treeView {
   overflow-y: scroll;
+  flex: 1;
 }
 
 .facetViewWrapper .facetsPanel {

@@ -14,7 +14,7 @@ export default class FacetView extends React.Component {
     selectedMapping,
     path: selectedPath,
     aggregations,
-    disPlayTreeData,
+    displayTreeData,
   }) {
     if (selectedPath) {
       this.scrollToPath(selectedPath);
@@ -79,7 +79,7 @@ export default class FacetView extends React.Component {
       selectedMapping,
       path: selectedPath,
       aggregations,
-      disPlayTreeData,
+      displayTreeData,
       onValueChange,
       sqon = {},
     } = this.props;
@@ -89,7 +89,7 @@ export default class FacetView extends React.Component {
         ref={el => (this.root = el)}
         onScroll={this.onScroll}
       >
-        {disPlayTreeData.map(node => {
+        {displayTreeData.map(node => {
           return (
             <FacetViewNode
               sqon={sqon}

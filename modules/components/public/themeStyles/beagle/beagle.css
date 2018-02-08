@@ -409,6 +409,10 @@ div {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
 }
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .panelHeading {
+  background-color: #e7e8ed;
+  padding: 10px;
+}
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
   margin-left: 20px;
 }

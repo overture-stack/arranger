@@ -1,11 +1,12 @@
 import React from 'react';
-import State from '../State';
+import { keys } from 'lodash';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
+import State from '../State';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
@@ -31,6 +32,42 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   return rawDisplayData.map(replaceNodeDisplayName);
 };
 
+const filterOutNonValue = ({ aggregations, displayTreeData }) => {
+  const aggregationsWithValue = keys(aggregations).reduce(
+    (a, key) => ({
+      ...a,
+      ...(() => {
+        const keyHasValue =
+          aggregations[key].buckets?.length > 0 ||
+          aggregations[key].stats?.min ||
+          aggregations[key].stats?.max;
+        return keyHasValue ? { [key]: aggregations[key] } : {};
+      })(),
+    }),
+    {},
+  );
+  const keysWithValue = keys(aggregationsWithValue);
+  const doesDisplayNodeHaveValue = node => {
+    return node.children
+      ? node.children.filter(doesDisplayNodeHaveValue).length
+      : keysWithValue.indexOf(node.path) > -1;
+  };
+  const applyFilterToDisplayNodeCollection = collection =>
+    collection.filter(doesDisplayNodeHaveValue).map(
+      node =>
+        node.children
+          ? {
+              ...node,
+              children: applyFilterToDisplayNodeCollection(node.children),
+            }
+          : node,
+    );
+  const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
+    displayTreeData,
+  );
+  return { displayTreeDataWithValue, aggregationsWithValue };
+};
+
 export default ({
   elasticMapping = {},
   extendedMapping = [],
@@ -48,7 +85,7 @@ export default ({
             : parentNode.properties ? parentNode.properties[nextPath] : {},
         elasticMapping,
       ) || {};
-  const disPlayTreeData = injectExtensionToElasticMapping(
+  const displayTreeData = injectExtensionToElasticMapping(
     elasticMapping,
     extendedMapping,
   );
@@ -57,24 +94,45 @@ export default ({
       initial={{
         selectedPath: '',
         selectedMapping: {},
+        withValueOnly: false,
       }}
-      render={({ update, selectedPath, selectedMapping }) => (
+      render={({ update, selectedPath, selectedMapping, withValueOnly }) => (
         <div className="advancedFacetViewWrapper">
           <div>
             <SQONView sqon={sqon} />
           </div>
           <div className="facetViewWrapper">
             <div className="panel treeViewPanel">
-              <NestedTreeView
-                dataSource={disPlayTreeData}
-                selectedPath={selectedPath}
-                onLeafSelect={path => {
-                  update({
-                    selectedPath: path,
-                    selectedMapping: fieldMappingFromPath(path),
-                  });
-                }}
-              />
+              <div className="panelHeading">
+                {Object.keys(aggregations).length} fields
+                <span>
+                  <input
+                    type="checkBox"
+                    value={withValueOnly}
+                    onClick={() => update({ withValueOnly: !withValueOnly })}
+                  />
+                  Show only fields with value
+                </span>
+              </div>
+              <div className="treeView">
+                <NestedTreeView
+                  dataSource={
+                    withValueOnly
+                      ? filterOutNonValue({
+                          displayTreeData,
+                          aggregations,
+                        }).displayTreeDataWithValue
+                      : displayTreeData
+                  }
+                  selectedPath={selectedPath}
+                  onLeafSelect={path => {
+                    update({
+                      selectedPath: path,
+                      selectedMapping: fieldMappingFromPath(path),
+                    });
+                  }}
+                />
+              </div>
             </div>
             <div className="panel facetsPanel">
               <FacetView
@@ -88,7 +146,14 @@ export default ({
                 selectedMapping={selectedMapping}
                 path={selectedPath}
                 aggregations={aggregations}
-                disPlayTreeData={disPlayTreeData}
+                displayTreeData={
+                  withValueOnly
+                    ? filterOutNonValue({
+                        displayTreeData,
+                        aggregations,
+                      }).displayTreeDataWithValue
+                    : displayTreeData
+                }
               />
             </div>
           </div>
