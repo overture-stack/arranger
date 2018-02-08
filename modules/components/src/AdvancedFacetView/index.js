@@ -109,7 +109,12 @@ export default ({
                   <input
                     type="checkBox"
                     value={withValueOnly}
-                    onClick={() => update({ withValueOnly: !withValueOnly })}
+                    onClick={() =>
+                      update({
+                        selectedPath: displayTreeData[0]?.path,
+                        withValueOnly: !withValueOnly,
+                      })
+                    }
                   />
                   Show only fields with value
                 </span>
