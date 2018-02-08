@@ -16,7 +16,6 @@ class DataTable extends React.Component {
       config,
       fetchData,
       streamData,
-      onSQONChange,
       onSelectionChange,
       sqon,
       allowTogglingColumns = true,
@@ -40,7 +39,7 @@ class DataTable extends React.Component {
           customActions={customActions}
           allowTogglingColumns={allowTogglingColumns}
           allowTSVExport={allowTSVExport}
-          onSQONChange={onSQONChange}
+          sqon={sqon}
           streamData={options =>
             streamData({
               ...options,

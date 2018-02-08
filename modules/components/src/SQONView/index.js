@@ -12,7 +12,7 @@ import {
 } from 'recompose';
 
 import { Row } from '../Flex';
-import { toggleSQON } from './utils';
+import { toggleSQON, replaceFilterSQON } from './utils';
 import type { TGroupSQON, TValueSQON } from './types';
 
 export const Bubble = ({ className = '', children, ...props }) => (
@@ -124,19 +124,17 @@ const SQON = ({
             {Clear({ nextSQON: null })}
           </Row>
           {sqonContent.map((valueSQON, i) => {
-            const field = valueSQON.content.field;
+            const { op, content: { field, fields } } = valueSQON;
             const value = [].concat(valueSQON.content.value || []);
-            const op = valueSQON.op;
             const isSingleValue = !Array.isArray(value) || value.length === 1;
-            console.log(value, isSingleValue);
             return (
               <Row
                 className="sqon-group"
-                key={`${field}.${op}.${value.join()}`}
+                key={`${field || fields.join()}.${op}.${value.join()}`}
                 style={{ alignItems: 'center' }}
               >
                 {FieldCrumb({
-                  field,
+                  field: op === 'filter' ? op : field,
                   nextSQON: toggleSQON(
                     {
                       op: 'and',
@@ -145,7 +143,11 @@ const SQON = ({
                     sqon,
                   ),
                 })}
-                <Op>{op === 'in' && isSingleValue ? 'is' : op}</Op>
+                <Op>
+                  {(op === 'in' && isSingleValue) || op === 'filter'
+                    ? 'is'
+                    : op}
+                </Op>
                 {value.length > 1 && (
                   <span className="sqon-value-group sqon-value-group-start">
                     (
@@ -157,7 +159,13 @@ const SQON = ({
                       key: value,
                       value,
                       className: isSingleValue ? 'sqon-value-single' : '',
-                      nextSQON: toggleSQON(
+                      nextSQON: op === 'filter' ? replaceFilterSQON(
+                        {
+                          op: 'and',
+                          content: [],
+                        },
+                        sqon,
+                      ) : toggleSQON(
                         {
                           op: 'and',
                           content: [

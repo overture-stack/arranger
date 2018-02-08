@@ -1,6 +1,6 @@
 import React from 'react';
 import { debounce } from 'lodash';
-import { compose, withProps, withPropsOnChange } from 'recompose';
+import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import FontAwesomeIcon from '@fortawesome/react-fontawesome';
 
 import saveTSV from './saveTSV';
@@ -15,13 +15,19 @@ const enhance = compose(
   withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
     debouncedOnFilterChange: debounce(onFilterChange, 300),
   })),
+  withState('filterVal', 'setFilterVal', ''),
+  withPropsOnChange(['sqon'], ({ sqon, setFilterVal }) => {
+    if (!sqon?.content?.find(x => x.op === 'filter')) setFilterVal('');
+  }),
 );
 
 const TableToolbar = ({
   columns,
   canChangeShowColumns,
   onColumnsChange,
-  onSQONChange,
+  filterVal,
+  setFilterVal,
+  onFilterChange,
   debouncedOnFilterChange,
   page = 0,
   pageSize = 0,
@@ -48,19 +54,12 @@ const TableToolbar = ({
         icon={<FontAwesomeIcon icon="search" />}
         type="text"
         placeholder="Filter"
-        onChange={e => {
-          debouncedOnFilterChange(e.target.value);
+        value={filterVal}
+        onChange={({ target: { value } }) => {
+          setFilterVal(value)
+          debouncedOnFilterChange(value);
         }}
       />
-      {allowTogglingColumns && (
-        <DropDown
-          itemToString={i => i.Header}
-          items={canChangeShowColumns}
-          onChange={item => {
-            onColumnsChange({ ...item, show: !item.show });
-          }}
-        />
-      )}
     </div>
     <div className="group">
       {allowTogglingColumns && (
@@ -68,14 +67,9 @@ const TableToolbar = ({
           itemToString={i => i.Header}
           items={canChangeShowColumns}
           onChange={item => {
-            onColumnsChange(
-              Object.assign([], columns, {
-                [columns.indexOf(item)]: {
-                  ...item,
-                  show: !item.show,
-                },
-              }),
-            );
+            setFilterVal('');
+            onFilterChange('');
+            onColumnsChange({ ...item, show: !item.show });
           }}
         >
           Show columns
