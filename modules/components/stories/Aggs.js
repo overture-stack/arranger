@@ -2,10 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
-import EditAggs from '../src/Aggs/EditAggs';
-import RangeAgg from '../src/Aggs/RangeAgg';
-import TermAgg from '../src/Aggs/TermAgg';
-import AggsPanel from '../src/Aggs/AggsPanel';
+import { EditAggs, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
 import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
 
 import State from '../src/State';
@@ -188,7 +185,7 @@ storiesOf('Aggs', module)
                       { op: '<=', content: { field, value: max } },
                     ],
                   },
-                  sqon || defaultSQON,
+                  sqon,
                 ),
               });
             }}
