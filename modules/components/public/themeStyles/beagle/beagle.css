@@ -409,11 +409,14 @@ div {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
 }
+.advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
+  margin-left: 20px;
+}
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel .facetViewNode {
   padding-top: 10px;
   padding-bottom: 10px;
   border-bottom: solid 1px #d4d6dd;
-  padding-left: 20px;
+  padding-left: 0px;
 }
 .advancedFacetViewWrapper .aggWrapper {
   border-left: solid 5px;
@@ -462,6 +465,7 @@ div {
 }
 .facetViewNode .aggWrapper .aggWrapper {
   border-left-color: #e7e8ed;
+  margin-left: 20px;
 }
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel .aggregation-card {
   padding-top: 0px;
