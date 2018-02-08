@@ -72,6 +72,11 @@ const filterOutNonValue = ({ aggregations, displayTreeData }) => {
   }
 };
 
+const emptySQON = {
+  op: 'and',
+  content: [],
+};
+
 export default ({
   elasticMapping = {},
   extendedMapping = [],
@@ -99,10 +104,7 @@ export default ({
         selectedPath: '',
         selectedMapping: {},
         withValueOnly: false,
-        localSQON: {
-          op: 'and',
-          content: [],
-        },
+        localSQON: emptySQON,
       }}
       render={({
         update,
@@ -130,8 +132,8 @@ export default ({
                 <Bubble
                   className="sqon-clear"
                   onClick={() => {
-                    update({ localSQON: nextSQON });
-                    onSqonFieldChange({ sqon: nextSQON });
+                    update({ localSQON: emptySQON });
+                    onSqonFieldChange({ sqon: emptySQON });
                   }}
                 >
                   Clear
