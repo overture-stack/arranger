@@ -8,20 +8,33 @@ import { ARRANGER_API } from '../utils/config';
 
 let socket = io(ARRANGER_API);
 
-const streamData = type => ({ columns, sort, first, onData, onEnd }) => {
-  socket.on('server::chunk', ({ data, total }) =>
-    onData({
-      total,
-      data: data[type].hits.edges.map(e => e.node),
-    }),
-  );
+const streamData = (type, projectId) => ({
+  columns,
+  sort,
+  first,
+  onData,
+  onEnd,
+  sqon,
+}) => {
+  return new Promise(resolve => {
+    socket.on('server::chunk', ({ data, total }) =>
+      onData({
+        total,
+        data: data[type].hits.edges.map(e => e.node),
+      }),
+    );
 
-  socket.on('server::stream::end', onEnd);
+    socket.on('server::stream::end', () => {
+      onEnd();
+      resolve();
+    });
 
-  socket.emit('client::stream', {
-    index: type,
-    size: 100,
-    ...columnsToGraphql({ columns, sort, first }),
+    socket.emit('client::stream', {
+      index: type,
+      projectId,
+      size: first,
+      ...columnsToGraphql({ sqon, config: { columns, type }, sort, first }),
+    });
   });
 };
 

@@ -16,7 +16,7 @@ const Table = ({ sqon, projectId, index, streamData, fetchData, setSQON }) => {
             config={columnState.state}
             setSQON={setSQON}
             onSelectionChange={console.log('selection changed')}
-            streamData={streamData(index)}
+            streamData={streamData(index, projectId)}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
             onFilterChange={value =>
