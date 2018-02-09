@@ -472,7 +472,7 @@ export default class FilterProcessor {
   }
   wrap_bool(op, val) {
     return {
-      [CONSTANTS.ES_BOOL]: { [op]: [val] },
+      [CONSTANTS.ES_BOOL]: { [op]: Array.isArray(val) ? val : [val] },
     };
   }
   wrap_must(val) {
