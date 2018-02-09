@@ -7,6 +7,7 @@ import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
 import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
+import { action } from '@storybook/addon-actions';
 
 const PROJECT_ID = 'testing1';
 const ES_INDEX = 'testing1';
@@ -44,7 +45,22 @@ const mockAggregations = (window.mockAggregations = injectMockBuckets(
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
   .add('AdvancedFacetViewLive', () => (
-    <LiveAdvancedFacetView {...{ PROJECT_ID, ES_INDEX, API_HOST, ES_HOST }} />
+    <LiveAdvancedFacetView
+      {...{
+        PROJECT_ID,
+        ES_INDEX,
+        API_HOST,
+        ES_HOST,
+        onSqonChange: ({ sqon }) => console.log(sqon),
+        sqon: {
+          op: 'and',
+          content: [
+            { op: '>=', content: { field: 'age_at_diagnosis', value: 17 } },
+            { op: '<=', content: { field: 'age_at_diagnosis', value: 26 } },
+          ],
+        },
+      }}
+    />
   ))
   .add('AdvancedFacetView', () => (
     <AdvancedFacetView

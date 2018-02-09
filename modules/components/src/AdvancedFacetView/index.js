@@ -176,7 +176,6 @@ export default class AdvancedFacetView extends React.Component {
             return localSQON;
         }
       })();
-      console.log('handleFacetViewValueChange: ', newSQON);
       this.setState({ localSQON: newSQON }, () =>
         onSqonFieldChange({ sqon: newSQON }),
       );
