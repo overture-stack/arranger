@@ -5,7 +5,7 @@ import {
   createConnectionResolvers,
   mappingToFields,
 } from '@arranger/mapping-utils';
-import { typeDefs as MutationTypeDefs } from './Mutation';
+// import { typeDefs as MutationTypeDefs } from './Mutation';
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SortTypeDefs } from './Sort';
 import { typeDefs as StateTypeDefs } from './State';

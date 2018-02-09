@@ -217,7 +217,7 @@ class Dashboard extends React.Component {
   };
 
   deleteType = async ({ projectId, index }) => {
-    let { projects, total, error } = await api({
+    let { projects, error } = await api({
       endpoint: `/projects/${projectId}/types/${index}/delete`,
       body: { eshost: this.state.eshost },
     });
