@@ -91,8 +91,6 @@ export default class AdvancedFacetView extends React.Component {
     };
   }
   componentWillReceiveProps({ sqon }) {
-    console.log('componentWillReceiveProps: ', sqon);
-    console.log('this.state.localSQON: ', this.state.localSQON);
     this.setState({
       localSQON: sqon || this.state.localSQON,
     });
