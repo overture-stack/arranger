@@ -1,6 +1,6 @@
 {
   "name": "@arranger/schema",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "GraphQL Schema for Data Portals",
   "main": "dist/index.js",
   "publishConfig": {
@@ -25,7 +25,7 @@
     "graphql": "^0.11.7"
   },
   "dependencies": {
-    "@arranger/mapping-utils": "^0.0.2",
+    "@arranger/mapping-utils": "^0.0.4",
     "@storybook/addon-actions": "^3.3.8",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
