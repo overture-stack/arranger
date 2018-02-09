@@ -12,7 +12,12 @@ import {
 } from 'recompose';
 
 import { Row } from '../Flex';
-import { toggleSQON, replaceFilterSQON } from './utils';
+import {
+  toggleSQON,
+  replaceFilterSQON,
+  replaceSQON,
+  removeSQON,
+} from './utils';
 import type { TGroupSQON, TValueSQON } from './types';
 
 export const Bubble = ({ className = '', children, ...props }) => (
@@ -85,6 +90,58 @@ const enhance = compose(
     },
   }),
 );
+
+const getNextSQON = ({ valueSQON, sqon }) => {
+  const { content: { field, value }, op } = valueSQON;
+  switch (op) {
+    case 'filter':
+      return replaceFilterSQON(
+        {
+          op: 'and',
+          content: [],
+        },
+        sqon,
+      );
+    case 'in':
+      return toggleSQON(
+        {
+          op: 'and',
+          content: [
+            {
+              op: op,
+              content: {
+                field: field,
+                value: [value],
+              },
+            },
+          ],
+        },
+        sqon,
+      );
+    case '>=': {
+      return {
+        op: 'and',
+        content: sqon.content.filter(
+          child =>
+            !(
+              child.op === op && child.content.field === valueSQON.content.field
+            ),
+        ),
+      };
+    }
+    case '<=': {
+      return {
+        op: 'and',
+        content: sqon.content.filter(
+          child =>
+            !(
+              child.op === op && child.content.field === valueSQON.content.field
+            ),
+        ),
+      };
+    }
+  }
+};
 
 const SQON = ({
   sqon,
@@ -159,27 +216,7 @@ const SQON = ({
                       key: value,
                       value,
                       className: isSingleValue ? 'sqon-value-single' : '',
-                      nextSQON: op === 'filter' ? replaceFilterSQON(
-                        {
-                          op: 'and',
-                          content: [],
-                        },
-                        sqon,
-                      ) : toggleSQON(
-                        {
-                          op: 'and',
-                          content: [
-                            {
-                              op: op,
-                              content: {
-                                field: field,
-                                value: [value],
-                              },
-                            },
-                          ],
-                        },
-                        sqon,
-                      ),
+                      nextSQON: getNextSQON({ valueSQON, sqon }),
                     }),
                 )}
                 {value.length > 2 &&
