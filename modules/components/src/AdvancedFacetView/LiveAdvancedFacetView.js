@@ -130,7 +130,6 @@ export default class LiveAdvancedFacetView extends React.Component {
     onSqonChange({ sqon });
   };
   render() {
-    const { sqon = {} } = this.props;
     return (
       <AdvancedFacetView
         elasticMapping={this.state.mapping}
