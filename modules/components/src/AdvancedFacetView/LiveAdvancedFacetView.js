@@ -3,7 +3,6 @@ import { storiesOf } from '@storybook/react';
 import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
-import { replaceSQON, toggleSQON } from '../SQONView/utils';
 
 const fetchGraphqlQuery = async ({ query, API_HOST, PROJECT_ID, ES_HOST }) =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
@@ -125,47 +124,10 @@ export default class LiveAdvancedFacetView extends React.Component {
   componentWillReceiveProps({ sqon = this.state.sqon }) {
     this.setState({ sqon });
   }
-  onSqonFieldChange = ({ value, path, esType, aggType, sqon }) => {
+  onSqonFieldChange = ({ sqon }) => {
     const { onSqonChange = () => {} } = this.props;
-    if (sqon) {
-      this.setState({ sqon });
-    } else {
-      const newSQON = (() => {
-        switch (aggType) {
-          case 'Aggregations':
-            return toggleSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: 'in',
-                    content: {
-                      field: path,
-                      value: value,
-                    },
-                  },
-                ],
-              },
-              this.state.sqon,
-            );
-          case 'NumericAggregations':
-            return replaceSQON(
-              {
-                op: 'and',
-                content: [
-                  { op: '>=', content: { field: path, value: value.min } },
-                  { op: '<=', content: { field: path, value: value.max } },
-                ],
-              },
-              this.state.sqon,
-            );
-          default:
-            return this.state.sqon;
-        }
-      })();
-      this.setState({ sqon: newSQON });
-      onSqonChange({ newSQON });
-    }
+    this.setState({ sqon });
+    onSqonChange({ sqon });
   };
   render() {
     const { sqon = {} } = this.props;
@@ -174,8 +136,8 @@ export default class LiveAdvancedFacetView extends React.Component {
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended}
         aggregations={this.state.aggregations}
-        sqon={this.state.sqon}
         onSqonFieldChange={this.onSqonFieldChange}
+        sqon={this.state.sqon}
       />
     );
   }

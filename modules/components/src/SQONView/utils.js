@@ -223,7 +223,7 @@ export const inCurrentSQON = ({
   const content = currentSQON?.content;
   return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
     f =>
-      f.content.field === dotField &&
+      f.content?.field === dotField &&
       [].concat(f.content.value || []).includes(value),
   );
 };

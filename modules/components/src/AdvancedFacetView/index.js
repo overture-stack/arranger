@@ -7,6 +7,7 @@ import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import State from '../State';
+import { replaceSQON, toggleSQON } from '../SQONView/utils';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
@@ -83,6 +84,18 @@ const serializeDomIdToPath = path => path.split('.').join('__');
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      localSQON: props.sqon || emptySQON,
+      selectedPath: null,
+      withValueOnly: false,
+    };
+  }
+  componentWillReceiveProps({ sqon }) {
+    console.log('componentWillReceiveProps: ', sqon);
+    console.log('this.state.localSQON: ', this.state.localSQON);
+    this.setState({
+      localSQON: sqon || this.state.localSQON,
+    });
   }
   fieldMappingFromPath = path => {
     const {
@@ -90,7 +103,6 @@ export default class AdvancedFacetView extends React.Component {
       extendedMapping = [],
       aggregations = {},
       sqon = {},
-      onSqonFieldChange = () => {},
     } = this.props;
     return (
       path
@@ -109,9 +121,10 @@ export default class AdvancedFacetView extends React.Component {
       elasticMapping = {},
       extendedMapping = [],
       aggregations = {},
-      sqon = {},
+      sqon,
       onSqonFieldChange = () => {},
     } = this.props;
+    const { localSQON, selectedPath, withValueOnly } = this.state;
     const displayTreeData = injectExtensionToElasticMapping(
       elasticMapping,
       extendedMapping,
@@ -125,110 +138,144 @@ export default class AdvancedFacetView extends React.Component {
         targetElement.scrollIntoView({ behavior: 'smooth' });
       }
     };
+    const handleFacetViewValueChange = ({ value, path, esType, aggType }) => {
+      const newSQON = (() => {
+        switch (aggType) {
+          case 'Aggregations':
+            return toggleSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: 'in',
+                    content: {
+                      field: path,
+                      value: value,
+                    },
+                  },
+                ],
+              },
+              localSQON,
+            );
+          case 'NumericAggregations':
+            return replaceSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: '>=',
+                    content: { field: path, value: value.min },
+                  },
+                  {
+                    op: '<=',
+                    content: { field: path, value: value.max },
+                  },
+                ],
+              },
+              localSQON,
+            );
+          default:
+            return localSQON;
+        }
+      })();
+      console.log('handleFacetViewValueChange: ', newSQON);
+      this.setState({ localSQON: newSQON }, () =>
+        onSqonFieldChange({ sqon: newSQON }),
+      );
+    };
     return (
-      <State
-        initial={{
-          selectedPath: '',
-          withValueOnly: false,
-          localSQON: emptySQON,
-        }}
-        render={({ update, selectedPath, withValueOnly, localSQON }) => (
-          <div className="advancedFacetViewWrapper">
-            <div>
-              <SQONView
-                sqon={sqon || localSQON}
-                ValueCrumb={({ value, nextSQON, ...props }) => (
-                  <Value
-                    onClick={() => {
-                      update({ localSQON: nextSQON });
-                      onSqonFieldChange({ sqon: nextSQON });
-                    }}
-                    {...props}
-                  >
-                    {value}
-                  </Value>
-                )}
-                Clear={({ nextSQON }) => (
-                  <Bubble
-                    className="sqon-clear"
-                    onClick={() => {
-                      update({ localSQON: emptySQON });
-                      onSqonFieldChange({ sqon: emptySQON });
-                    }}
-                  >
-                    Clear
-                  </Bubble>
-                )}
+      <div className="advancedFacetViewWrapper">
+        <div>
+          <SQONView
+            sqon={sqon || localSQON}
+            ValueCrumb={({ value, nextSQON, ...props }) => (
+              <Value
+                onClick={() => {
+                  this.setState({ localSQON: nextSQON }, () =>
+                    onSqonFieldChange({ sqon: nextSQON }),
+                  );
+                }}
+                {...props}
+              >
+                {value}
+              </Value>
+            )}
+            Clear={({ nextSQON }) => (
+              <Bubble
+                className="sqon-clear"
+                onClick={() => {
+                  this.setState({ localSQON: nextSQON }, () =>
+                    onSqonFieldChange({ sqon: nextSQON }),
+                  );
+                }}
+              >
+                Clear
+              </Bubble>
+            )}
+          />
+        </div>
+        <div className="facetViewWrapper">
+          <div className="panel treeViewPanel">
+            <div className="panelHeading">
+              {withValueOnly
+                ? keys(
+                    filterOutNonValue({
+                      aggregations,
+                    }).aggregationsWithValue,
+                  ).length
+                : Object.keys(aggregations).length}{' '}
+              fields
+              <span
+                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  this.setState({
+                    selectedPath: displayTreeData[0]?.path,
+                    withValueOnly: !withValueOnly,
+                  })
+                }
+              >
+                <input type="checkBox" checked={withValueOnly} />
+                Show only fields with value
+              </span>
+            </div>
+            <div className="treeView">
+              <NestedTreeView
+                dataSource={
+                  withValueOnly
+                    ? filterOutNonValue({
+                        displayTreeData,
+                        aggregations,
+                      }).displayTreeDataWithValue
+                    : displayTreeData
+                }
+                selectedPath={selectedPath}
+                onLeafSelect={path => {
+                  scrollFacetViewToPath(path);
+                  this.setState({
+                    selectedPath: path,
+                  });
+                }}
               />
             </div>
-            <div className="facetViewWrapper">
-              <div className="panel treeViewPanel">
-                <div className="panelHeading">
-                  {withValueOnly
-                    ? keys(
-                        filterOutNonValue({
-                          aggregations,
-                        }).aggregationsWithValue,
-                      ).length
-                    : Object.keys(aggregations).length}{' '}
-                  fields
-                  <span
-                    style={{ cursor: 'pointer' }}
-                    onClick={() =>
-                      update({
-                        selectedPath: displayTreeData[0]?.path,
-                        withValueOnly: !withValueOnly,
-                      })
-                    }
-                  >
-                    <input type="checkBox" checked={withValueOnly} />
-                    Show only fields with value
-                  </span>
-                </div>
-                <div className="treeView">
-                  <NestedTreeView
-                    dataSource={
-                      withValueOnly
-                        ? filterOutNonValue({
-                            displayTreeData,
-                            aggregations,
-                          }).displayTreeDataWithValue
-                        : displayTreeData
-                    }
-                    selectedPath={selectedPath}
-                    onLeafSelect={path => {
-                      scrollFacetViewToPath(path);
-                      update({
-                        selectedPath: path,
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="panel facetsPanel">
-                <FacetView
-                  ref={view => (this.facetView = view)}
-                  sqon={sqon || localSQON}
-                  onValueChange={({ value, path, esType, aggType }) =>
-                    onSqonFieldChange({ value, path, esType, aggType })
-                  }
-                  onUserScroll={e => update({ selectedPath: null })}
-                  path={selectedPath}
-                  aggregations={aggregations}
-                  displayTreeData={
-                    withValueOnly
-                      ? filterOutNonValue({
-                          displayTreeData,
-                          aggregations,
-                        }).displayTreeDataWithValue
-                      : displayTreeData
-                  }
-                />
-              </div>
-            </div>
           </div>
-        )}
-      />
+          <div className="panel facetsPanel">
+            <FacetView
+              ref={view => (this.facetView = view)}
+              sqon={sqon || localSQON}
+              onValueChange={handleFacetViewValueChange}
+              aggregations={aggregations}
+              displayTreeData={
+                withValueOnly
+                  ? filterOutNonValue({
+                      displayTreeData,
+                      aggregations,
+                    }).displayTreeDataWithValue
+                  : displayTreeData
+              }
+            />
+          </div>
+        </div>
+      </div>
     );
   }
 }

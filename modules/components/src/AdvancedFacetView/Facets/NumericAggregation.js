@@ -7,11 +7,11 @@ export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => (
     collapsible={false}
     value={{
       min:
-        sqon?.content.find(
+        sqon?.content?.find(
           content => content.content?.field === path && content.op === '>=',
         )?.content.value || aggProps?.stats.min,
       max:
-        sqon?.content.find(
+        sqon?.content?.find(
           content => content.content?.field === path && content.op === '<=',
         )?.content.value || aggProps?.stats.max,
     }}
