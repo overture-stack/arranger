@@ -21,7 +21,7 @@ export default ({ app, io }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
 
-  let arrangerconfig = {
+  let arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects`,
       type: `arranger-projects`,
@@ -35,12 +35,12 @@ export default ({ app, io }) => async (req, res) => {
   };
 
   try {
-    await es.update(arrangerconfig.projectsIndex);
+    await es.update(arrangerConfig.projectsIndex);
   } catch (error) {
     return res.json({ error: error.message });
   }
 
-  arrangerconfig = {
+  arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects-${id}`,
       type: `arranger-projects-${id}`,
@@ -50,11 +50,11 @@ export default ({ app, io }) => async (req, res) => {
   let types = [];
 
   try {
-    types = await es.search(arrangerconfig.projectsIndex);
+    types = await es.search(arrangerConfig.projectsIndex);
   } catch (error) {
     try {
       await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
+        index: arrangerConfig.projectsIndex.index,
       });
       return res.json({ types });
     } catch (error) {
@@ -109,50 +109,53 @@ export default ({ app, io }) => async (req, res) => {
 
   let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
 
-  let body = flattenDeep(
-    typesWithMappings.map(([type, props]) => {
-      const columns = mappingToColumnsState(props.mapping);
+  const createAggsState = typesWithMappings.map(async ([type, props]) => {
+    const index = `arranger-projects-${id}-${type}-aggs-state`;
+    const count = await es
+      .count({ index, type: index })
+      .then(d => d.count, () => 0);
+    return !(count > 0)
+      ? [
+          { index: { _index: index, _type: index, _id: uuid() } },
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            state: mappingToAggsState(props.mapping),
+          }),
+        ]
+      : [];
+  });
 
-      return [
-        {
-          index: {
-            _index: `arranger-projects-${id}-${type}-aggs-state`,
-            _type: `arranger-projects-${id}-${type}-aggs-state`,
-            _id: uuid(),
-          },
-        },
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          state: mappingToAggsState(props.mapping),
-        }),
-        {
-          index: {
-            _index: `arranger-projects-${id}-${type}-columns-state`,
-            _type: `arranger-projects-${id}-${type}-columns-state`,
-            _id: uuid(),
-          },
-        },
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          state: {
-            type,
-            keyField: 'id',
-            defaultSorted: [
-              {
-                id: columns[0].id || columns[0].accessor,
-                desc: false,
-              },
-            ],
-            columns,
-          },
-        }),
-      ];
-    }),
+  const createColumnsState = typesWithMappings.map(async ([type, props]) => {
+    const columns = mappingToColumnsState(props.mapping);
+    const index = `arranger-projects-${id}-${type}-columns-state`;
+    const count = await es
+      .count({ index, type: index })
+      .then(d => d.count, () => 0);
+
+    return !(count > 0)
+      ? [
+          { index: { _index: index, _type: index, _id: uuid() } },
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            state: {
+              type,
+              keyField: 'id',
+              defaultSorted: [
+                { id: columns[0].id || columns[0].accessor, desc: false },
+              ],
+              columns,
+            },
+          }),
+        ]
+      : [];
+  });
+
+  let body = flattenDeep(
+    await Promise.all([...createAggsState, ...createColumnsState]),
   );
 
-  // TODO: don't add new states of state indices exist
-  // don't add new ui states if decomissioned
-  if (!global.apps[id]) {
+  // TODO: don't add new ui states if decomissioned
+  if (!global.apps[id] && body.length > 0) {
     await es.bulk({ body });
   }
 
