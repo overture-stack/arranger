@@ -66,5 +66,13 @@ storiesOf('AdvancedFacetView', module)
     <AdvancedFacetView
       elasticMapping={elasticMockMapping}
       aggregations={mockAggregations}
+      extendedMapping={[]}
+      sqon={{
+        op: 'and',
+        content: [
+          { op: '>=', content: { field: 'age_at_diagnosis', value: 17 } },
+          { op: '<=', content: { field: 'age_at_diagnosis', value: 26 } },
+        ],
+      }}
     />
   ));
