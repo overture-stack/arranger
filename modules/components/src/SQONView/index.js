@@ -159,27 +159,30 @@ const SQON = ({
                       key: value,
                       value,
                       className: isSingleValue ? 'sqon-value-single' : '',
-                      nextSQON: op === 'filter' ? replaceFilterSQON(
-                        {
-                          op: 'and',
-                          content: [],
-                        },
-                        sqon,
-                      ) : toggleSQON(
-                        {
-                          op: 'and',
-                          content: [
-                            {
-                              op: op,
-                              content: {
-                                field: field,
-                                value: [value],
+                      nextSQON:
+                        op === 'filter'
+                          ? replaceFilterSQON(
+                              {
+                                op: 'and',
+                                content: [],
                               },
-                            },
-                          ],
-                        },
-                        sqon,
-                      ),
+                              sqon,
+                            )
+                          : toggleSQON(
+                              {
+                                op: 'and',
+                                content: [
+                                  {
+                                    op: op,
+                                    content: {
+                                      field: field,
+                                      value: [value],
+                                    },
+                                  },
+                                ],
+                              },
+                              sqon,
+                            ),
                     }),
                 )}
                 {value.length > 2 &&
