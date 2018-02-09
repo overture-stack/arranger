@@ -1,4 +1,3 @@
-import utf8 from 'utf8';
 import { CONSTANTS } from './constants';
 import FilterProcessor from './filters';
 /*
@@ -210,7 +209,6 @@ export default class AggregationProcessor {
             cleaned_query,
             field_agg,
           );
-          const globalAgg = this.create_global_agg(field, filteredAgg);
           Object.assign(aggs, filteredAgg);
         } else {
           Object.assign(aggs, field_agg);
@@ -228,7 +226,7 @@ export default class AggregationProcessor {
     use_if_clean_empty = null,
   }) {
     return this.remove_pred_from_query(
-      item => item.terms?.hasOwnProperty(field),
+      item => item?.terms?.hasOwnProperty(field),
       item =>
         !item.hasOwnProperty('terms') ||
         (item.hasOwnProperty('terms') && !item.terms.hasOwnProperty(field)),
@@ -327,7 +325,7 @@ export default class AggregationProcessor {
   get_nested_query(arr, _path) {
     for (let i = 0; i < arr.length; i++) {
       const item = arr[i];
-      if (filterProcessor.read_path(item) === _path) {
+      if (this.filterProcessor.read_path(item) === _path) {
         return item;
       }
     }
@@ -383,7 +381,7 @@ export default class AggregationProcessor {
 
         delete aggs[short_nested_path];
       }
-      const globalAgg = this.create_global_agg(short_nested_path, nested_agg);
+      const globalAgg = this.create_global_agg(short_nested_path, nested_aggs);
 
       // This line modifies the input aggs
       Object.assign(aggs, globalAgg);
@@ -425,24 +423,20 @@ export default class AggregationProcessor {
         continue;
       }
 
-      if (Array.isArray(nested) && nested_fields.includes(path)) {
+      if (Array.isArray(nested_fields) && nested_fields.includes(path)) {
         let label = p;
-        const path_aggs = {
-          p: {
+        let path_aggs = {
+          [p]: {
             nested: { path: p },
             aggs: {},
           },
         };
 
         if (global_aggregations) {
-          const cleaned_query = this.remove_path_from_query(
-            p,
-            nested_query,
-            (use_if_not_found = nested_query),
-          );
+          const cleaned_query = this.remove_path_from_query(p, nested_aggs);
 
           if (cleaned_query) {
-            const label = `${label}:filtered`;
+            label = `${label}:filtered`;
             path_aggs = this.create_filtered_agg(p, cleaned_query, path_aggs);
 
             // The following python code was not transcribed as the nested_query object it defines
@@ -601,7 +595,6 @@ export default class AggregationProcessor {
           // Note: this is transcribed correctly, but it means sub_field will always be the same as agg_type
           //  Therefore this whole block is useless...
           const sub_field_type = k.split(':');
-          const sub_field = sub_field_type[0];
           const sub_type =
             sub_field_type.length === 2 ? sub_field_type[1] : null;
           if (sub_type === 'filtered') {
@@ -613,7 +606,6 @@ export default class AggregationProcessor {
           // ORIGINAL: v = { k: innerValue for k, innerValue in v.items() if re.match(r"{}(:(stats|histogram))?".format(field), k) is not None}
           const filteredEntries = Object.entries(v).filter(item => {
             const key = item[0];
-            const innerValue = item[1];
             return [`${field}:stats`, `${field}:histogram`].includes(key);
           });
 
