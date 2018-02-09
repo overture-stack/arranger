@@ -103,50 +103,53 @@ export default ({ io }) => async (req, res) => {
 
   let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
 
-  let body = flattenDeep(
-    typesWithMappings.map(([type, props]) => {
-      const columns = mappingToColumnsState(props.mapping);
+  const createAggsState = typesWithMappings.map(async ([type, props]) => {
+    const index = `arranger-projects-${id}-${type}-aggs-state`;
+    const count = await es
+      .count({ index, type: index })
+      .then(d => d.count, () => 0);
+    return !(count > 0)
+      ? [
+          { index: { _index: index, _type: index, _id: uuid() } },
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            state: mappingToAggsState(props.mapping),
+          }),
+        ]
+      : [];
+  });
 
-      return [
-        {
-          index: {
-            _index: `arranger-projects-${id}-${type}-aggs-state`,
-            _type: `arranger-projects-${id}-${type}-aggs-state`,
-            _id: uuid(),
-          },
-        },
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          state: mappingToAggsState(props.mapping),
-        }),
-        {
-          index: {
-            _index: `arranger-projects-${id}-${type}-columns-state`,
-            _type: `arranger-projects-${id}-${type}-columns-state`,
-            _id: uuid(),
-          },
-        },
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          state: {
-            type,
-            keyField: 'id',
-            defaultSorted: [
-              {
-                id: columns[0].id || columns[0].accessor,
-                desc: false,
-              },
-            ],
-            columns,
-          },
-        }),
-      ];
-    }),
+  const createColumnsState = typesWithMappings.map(async ([type, props]) => {
+    const columns = mappingToColumnsState(props.mapping);
+    const index = `arranger-projects-${id}-${type}-columns-state`;
+    const count = await es
+      .count({ index, type: index })
+      .then(d => d.count, () => 0);
+
+    return !(count > 0)
+      ? [
+          { index: { _index: index, _type: index, _id: uuid() } },
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            state: {
+              type,
+              keyField: 'id',
+              defaultSorted: [
+                { id: columns[0].id || columns[0].accessor, desc: false },
+              ],
+              columns,
+            },
+          }),
+        ]
+      : [];
+  });
+
+  let body = flattenDeep(
+    await Promise.all([...createAggsState, ...createColumnsState]),
   );
 
-  // TODO: don't add new states of state indices exist
-  // don't add new ui states if decomissioned
-  if (!getProject(id)) {
+  // TODO: don't add new ui states if decomissioned
+  if (!getProject(id) && body.length > 0) {
     await es.bulk({ body });
   }
 
