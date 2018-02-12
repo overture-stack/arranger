@@ -1,11 +1,10 @@
 import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
-import fontawesome from '@fortawesome/fontawesome';
-import FontAwesomeIcon from '@fortawesome/react-fontawesome';
-import solid from '@fortawesome/fontawesome-free-solid';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 import convert from 'convert-units';
+import CaretDownIcon from 'react-icons/lib/fa/caret-down';
+import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
@@ -16,8 +15,6 @@ import TypesTable from './TypesTable';
 import './Dashboard.css';
 import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, API } from '../utils/config';
-
-fontawesome.library.add(solid);
 
 let socket = io(API);
 
@@ -180,7 +177,7 @@ class Dashboard extends React.Component {
                     font-size: 25px;
                   `}
                 >
-                  <FontAwesomeIcon icon="caret-down" />
+                  <CaretDownIcon />
                 </span>
               )}
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
@@ -191,7 +188,7 @@ class Dashboard extends React.Component {
                     font-size: 25px;
                   `}
                 >
-                  <FontAwesomeIcon icon="caret-up" />
+                  <CaretUpIcon />
                 </span>
               )}
             </div>
