@@ -5,17 +5,17 @@ let joinWith = (s = '.') => x => (x ? x + s : '');
 let flattenMapping = (properties, parent = '') => {
   return Object.entries(properties).map(
     ([field, data]) =>
-      data.type && data.type !== 'nested' && !data.properties
+      !data.properties
         ? {
             field: joinWith()(parent) + field,
             type: data.type,
           }
         : [
-            ...{
+            {
               field: joinWith()(parent) + field,
               type: data.type || 'object',
             },
-            flattenMapping(data.properties, joinWith()(parent) + field),
+            ...flattenMapping(data.properties, joinWith()(parent) + field),
           ],
   );
 };
