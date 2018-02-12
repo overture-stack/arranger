@@ -1,13 +1,13 @@
-import { capitalize } from 'lodash';
-import mappingToNestedFields from './mappingToNestedFields';
-import mappingToScalarFields from './mappingToScalarFields';
-import mappingToNestedTypes from './mappingToNestedTypes';
-import mappingToFields from './mappingToFields';
-import createConnectionTypeDefs from './createConnectionTypeDefs';
+import { capitalize } from 'lodash'
+import mappingToNestedFields from './mappingToNestedFields'
+import mappingToScalarFields from './mappingToScalarFields'
+import mappingToNestedTypes from './mappingToNestedTypes'
+import mappingToFields from './mappingToFields'
+import createConnectionTypeDefs from './createConnectionTypeDefs'
 
 let mappingToObjectTypes = (type, mapping) => {
   return Object.entries(mapping)
-    .filter(([, metadata]) => metadata.properties)
+    .filter(([, metadata]) => !metadata.type && metadata.properties)
     .map(
       ([field, metadata]) => `
         ${mappingToObjectTypes(type + capitalize(field), metadata.properties)},
@@ -23,8 +23,8 @@ let mappingToObjectTypes = (type, mapping) => {
           ${mappingToScalarFields(metadata.properties)}
         }
       `,
-    );
-};
+    )
+}
 
 // TODO: figure out where this is making a dupe fiel
 
@@ -46,4 +46,4 @@ let mappingToObjectTypes = (type, mapping) => {
 //     )
 // }
 
-export default mappingToObjectTypes;
+export default mappingToObjectTypes

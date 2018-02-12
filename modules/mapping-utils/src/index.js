@@ -19,8 +19,6 @@ export {
 export let esToGraphqlTypeMap = {
   keyword: 'String',
   string: 'String',
-  nested: 'String',
-  object: 'String',
   text: 'String',
   date: 'String',
   boolean: 'Boolean',
