@@ -1,12 +1,12 @@
-import { capitalize } from 'lodash'
-import mappingToNestedFields from './mappingToNestedFields'
-import mappingToScalarFields from './mappingToScalarFields'
-import createConnectionTypeDefs from './createConnectionTypeDefs'
-import mappingToObjectTypes from './mappingToObjectTypes'
+import { capitalize } from 'lodash';
+import mappingToNestedFields from './mappingToNestedFields';
+import mappingToScalarFields from './mappingToScalarFields';
+import createConnectionTypeDefs from './createConnectionTypeDefs';
+import mappingToObjectTypes from './mappingToObjectTypes';
 
 let mappingToNestedTypes = (type, mapping) => {
   return Object.entries(mapping)
-    .filter(([, metadata]) => metadata.type === 'nested')
+    .filter(([, metadata]) => metadata.properties)
     .map(
       ([field, metadata]) => `
         ${mappingToObjectTypes(type + capitalize(field), metadata.properties)},
@@ -27,9 +27,8 @@ let mappingToNestedTypes = (type, mapping) => {
             ),
           ],
         })}
-
       `,
-    )
-}
+    );
+};
 
-export default mappingToNestedTypes
+export default mappingToNestedTypes;

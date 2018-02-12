@@ -8,7 +8,7 @@ let mappingToFields = ({ type }) => {
   return [
     mappingToObjectTypes(type.name, type.mapping),
     Object.entries(type.mapping)
-      .filter(([, metadata]) => metadata.type === 'nested')
+      .filter(([, metadata]) => metadata.properties)
       .map(([field, metadata]) =>
         mappingToFields({
           type: {
