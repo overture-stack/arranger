@@ -110,7 +110,6 @@ storiesOf('Aggs', module)
                 key={agg.field}
                 {...agg}
                 Content={({ content, ...props }) => {
-                  console.log(props);
                   return (
                     <div
                       {...props}

@@ -21,7 +21,7 @@ const FacetViewNode = ({
       className={`facetViewNode depth_${depth}`}
       id={path.split('.').join('__')}
     >
-      {!children && (
+      {!children && ( // if there is no children FacetWrapper is brought in to render an agg corresponding to the type
         <div className={`aggWrapper depth_${depth}`}>
           {!esType && <div className="facetTitle">{title}</div>}
           <FacetWrapper
@@ -41,7 +41,7 @@ const FacetViewNode = ({
           />
         </div>
       )}
-      {children && (
+      {children && ( // if there are children, another nested layer is recursively rendered
         <div className={`aggWrapper depth_${depth}`}>
           <div className="facetTitle">{title}</div>
           {children.map(childNode => (

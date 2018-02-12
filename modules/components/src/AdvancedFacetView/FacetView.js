@@ -7,6 +7,13 @@ const serializeToDomId = path => path.split('.').join('__');
 const serializeDomIdToPath = path => path.split('.').join('__');
 
 export default class FacetView extends React.Component {
+  scrollToPath = path => {
+    const targetElementId = serializeToDomId(path);
+    const targetElement = this.root.querySelector(`#${targetElementId}`);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   render() {
     const {
       aggregations,

@@ -78,9 +78,6 @@ const emptySQON = {
   content: [],
 };
 
-const serializeToDomId = path => path.split('.').join('__');
-const serializeDomIdToPath = path => path.split('.').join('__');
-
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
@@ -128,13 +125,7 @@ export default class AdvancedFacetView extends React.Component {
       extendedMapping,
     );
     const scrollFacetViewToPath = path => {
-      const targetElementId = serializeToDomId(path);
-      const targetElement = this.facetView.root.querySelector(
-        `#${targetElementId}`,
-      );
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth' });
-      }
+      this.facetView.scrollToPath(path);
     };
     const handleFacetViewValueChange = ({ value, path, esType, aggType }) => {
       const newSQON = (() => {
