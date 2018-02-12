@@ -1,7 +1,7 @@
 import React from 'react';
 import { debounce } from 'lodash';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
-import FontAwesomeIcon from '@fortawesome/react-fontawesome';
+import SearchIcon from 'react-icons/lib/fa/search';
 
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
@@ -51,7 +51,7 @@ const TableToolbar = ({
     </div>
     <div className="group">
       <TextInput
-        icon={<FontAwesomeIcon icon="search" />}
+        icon={<SearchIcon />}
         type="text"
         placeholder="Filter"
         value={filterVal}
