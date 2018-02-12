@@ -27,11 +27,14 @@ let columnFields = `
 `;
 
 export default class extends Component {
-  state = {
-    config: { keyField: 'id', columns: [] },
-    extended: [],
-    toggled: {},
-  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      config: { keyField: 'id', columns: [], type: props.index },
+      extended: [],
+      toggled: {},
+    };
+  }
 
   async componentDidMount() {
     this.fetchColumnsState(this.props);
