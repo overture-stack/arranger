@@ -1,16 +1,14 @@
 import { getProject } from '../utils/projects';
+import socketStream from 'socket.io-stream';
 
 export default ({ io, schema, context }) =>
   io.on('connection', socket => {
-    socket.on(
+    socketStream(socket).on(
       'client::stream',
-      async ({
-        projectId,
-        index,
-        variables = null,
-        size = 100,
-        fields = '',
-      }) => {
+      async (
+        stream,
+        { projectId, index, variables = null, size = 100, fields = '' },
+      ) => {
         const project = getProject(projectId);
 
         const { data } = await project.runQuery({
@@ -25,9 +23,9 @@ export default ({ io, schema, context }) =>
           `,
           variables,
         });
-
         let total = data[index].hits.total;
-        let steps = Array(Math.round(total / size)).fill();
+
+        let steps = Array(Math.ceil(total / size)).fill();
 
         await Promise.all(
           steps.map((x, i) => {
@@ -52,13 +50,13 @@ export default ({ io, schema, context }) =>
                   offset: i * size,
                 },
               })
-              .then(({ data }) =>
-                socket.emit('server::chunk', { data, total }),
-              );
+              .then(({ data }) => {
+                return stream.write(JSON.stringify({ data, total }), 'utf8');
+              });
           }),
         );
 
-        socket.emit('server::stream::end', {});
+        stream.end();
       },
     );
   });

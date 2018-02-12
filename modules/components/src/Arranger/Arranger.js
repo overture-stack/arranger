@@ -1,12 +1,14 @@
 import React from 'react';
 import { get } from 'lodash';
 import io from 'socket.io-client';
+import ioStream from 'socket.io-stream';
 
 import { columnsToGraphql } from '../DataTable';
 import api from '../utils/api';
 import { ARRANGER_API } from '../utils/config';
 
 let socket = io(ARRANGER_API);
+let streamSocket = ioStream(socket);
 
 const streamData = (type, projectId) => ({
   columns,
@@ -17,19 +19,22 @@ const streamData = (type, projectId) => ({
   sqon,
 }) => {
   return new Promise(resolve => {
-    socket.on('server::chunk', ({ data, total }) =>
+    const stream = ioStream.createStream();
+
+    stream.on('data', chunk => {
+      const { data, total } = JSON.parse(chunk);
       onData({
         total,
         data: data[type].hits.edges.map(e => e.node),
-      }),
-    );
+      });
+    });
 
-    socket.on('server::stream::end', () => {
+    stream.on('end', () => {
       onEnd();
       resolve();
     });
 
-    socket.emit('client::stream', {
+    streamSocket.emit('client::stream', stream, {
       index: type,
       projectId,
       size: first,
