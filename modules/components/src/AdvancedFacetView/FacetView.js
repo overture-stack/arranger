@@ -10,7 +10,7 @@ export default class FacetView extends React.Component {
     const targetElementId = serializeToDomId(path);
     const targetElement = this.root.querySelector(`#${targetElementId}`);
     if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth' });
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
   render() {
