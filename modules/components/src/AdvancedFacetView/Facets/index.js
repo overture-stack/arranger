@@ -8,7 +8,7 @@ const aggregationTypeMap = {
 };
 
 const AggregationComponent = ({ aggType, ...rest }) =>
-  aggregationTypeMap[aggType]({ ...rest, aggType });
+  aggregationTypeMap[aggType]?.({ ...rest, aggType }) || null;
 
 export default ({
   aggType,
