@@ -106,7 +106,9 @@ export default class LiveAdvancedFacetView extends React.Component {
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
       fetchAggregationDataFromExtendedMapping({
-        extended,
+        extended: extended.filter(
+          e => e.type !== 'object' && e.type !== 'nested',
+        ),
         ...fetchConfig,
       }).then(({ aggregations }) =>
         this.setState({ mapping, extended, aggregations }),
