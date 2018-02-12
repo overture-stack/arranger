@@ -1,7 +1,5 @@
 import fetch from 'node-fetch';
-import { PORT } from '../utils/config';
-
-let pingMs = process.env.PING_MS || 2200;
+import { PORT, PING_MS } from '../utils/config';
 
 export default ({ io }) =>
   io.on('connection', socket => {
@@ -24,6 +22,6 @@ export default ({ io }) =>
       };
 
       pingProject();
-      socket.monitorIntervalId = setInterval(pingProject, pingMs);
+      socket.monitorIntervalId = setInterval(pingProject, PING_MS);
     });
   });
