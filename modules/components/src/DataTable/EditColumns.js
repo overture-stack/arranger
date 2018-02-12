@@ -22,7 +22,7 @@ export default ({ state = {}, handleChange = noop, ...props }) => {
               handleChange({
                 field: x.row.field,
                 key: x.key,
-                value: !x.row[x.key],
+                value: typeof x.value === 'undefined' ? !x.row[x.key] : x.value,
               })
             }
           />
