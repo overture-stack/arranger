@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react';
 import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
+import { isEqual } from 'lodash';
 
 const fetchGraphqlQuery = async ({ query, API_HOST, PROJECT_ID, ES_HOST }) =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
@@ -26,9 +27,7 @@ const fetchMapping = async fetchConfig =>
       }
     }`,
     ...fetchConfig,
-  }).then(data => {
-    return Promise.resolve(data[fetchConfig.ES_INDEX]);
-  });
+  }).then(data => data[fetchConfig.ES_INDEX]);
 
 const fetchExtendedMapping = async fetchConfig =>
   fetchGraphqlQuery({
@@ -38,9 +37,7 @@ const fetchExtendedMapping = async fetchConfig =>
       }
     }`,
     ...fetchConfig,
-  }).then(data => {
-    return Promise.resolve(data[fetchConfig.ES_INDEX]);
-  });
+  }).then(data => data[fetchConfig.ES_INDEX]);
 
 const fetchAggregationDataFromExtendedMapping = async ({
   extended,
@@ -80,17 +77,15 @@ const fetchAggregationDataFromExtendedMapping = async ({
   return fetchGraphqlQuery({
     query,
     ...fetchConfig,
-  }).then(data =>
-    Promise.resolve({
-      aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
-        (agg, key) => ({
-          ...agg,
-          [serializeToPath(key)]: data[ES_INDEX].aggregations[key],
-        }),
-        {},
-      ),
-    }),
-  );
+  }).then(data => ({
+    aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
+      (agg, key) => ({
+        ...agg,
+        [serializeToPath(key)]: data[ES_INDEX].aggregations[key],
+      }),
+      {},
+    ),
+  }));
 };
 
 export default class LiveAdvancedFacetView extends React.Component {
@@ -119,7 +114,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     );
   }
   componentWillReceiveProps({ sqon }) {
-    if (sqon) {
+    if (!isEqual(sqon, this.state.sqon)) {
       this.setState({ sqon });
     }
   }

@@ -1,6 +1,5 @@
 import React from 'react';
 import FacetViewNode from './FacetViewNode';
-import $ from 'jquery';
 import { debounce } from 'lodash';
 
 const serializeToDomId = path => path.split('.').join('__');
