@@ -118,8 +118,10 @@ export default class LiveAdvancedFacetView extends React.Component {
       ),
     );
   }
-  componentWillReceiveProps({ sqon = this.state.sqon }) {
-    this.setState({ sqon });
+  componentWillReceiveProps({ sqon }) {
+    if (sqon) {
+      this.setState({ sqon });
+    }
   }
   onSqonFieldChange = ({ sqon }) => {
     const { onSqonChange = () => {} } = this.props;

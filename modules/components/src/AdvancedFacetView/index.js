@@ -13,40 +13,35 @@ const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
 const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
-  const replaceNodeDisplayName = node => {
+  const extend = node => {
     const extension = extendedMapping.find(
       extension => extension.field === node.path,
     );
     return {
       ...node,
-      title: extension ? extension.displayName : node.title,
-      ...(node.children
-        ? { children: node.children.map(replaceNodeDisplayName) }
-        : {}),
       ...(extension
         ? {
+            title: extension.displayName || node.title,
             type: extension.type || node.title,
           }
         : {}),
+      ...(node.children ? { children: node.children.map(extend) } : {}),
     };
   };
-  return rawDisplayData.map(replaceNodeDisplayName);
+  return rawDisplayData.map(extend);
 };
 
 const filterOutNonValue = ({ aggregations, displayTreeData }) => {
-  const aggregationsWithValue = keys(aggregations).reduce(
-    (a, key) => ({
+  const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
+    const keyHasValue =
+      aggregations[key].buckets?.length > 0 ||
+      aggregations[key].stats?.min ||
+      aggregations[key].stats?.max;
+    return {
       ...a,
-      ...(() => {
-        const keyHasValue =
-          aggregations[key].buckets?.length > 0 ||
-          aggregations[key].stats?.min ||
-          aggregations[key].stats?.max;
-        return keyHasValue ? { [key]: aggregations[key] } : {};
-      })(),
-    }),
-    {},
-  );
+      ...(keyHasValue ? { [key]: aggregations[key] } : {}),
+    };
+  }, {});
   const keysWithValue = keys(aggregationsWithValue);
   const doesDisplayNodeHaveValue = node => {
     return node.children
@@ -73,24 +68,13 @@ const filterOutNonValue = ({ aggregations, displayTreeData }) => {
   }
 };
 
-const emptySQON = {
-  op: 'and',
-  content: [],
-};
-
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      localSQON: props.sqon || emptySQON,
       selectedPath: null,
       withValueOnly: false,
     };
-  }
-  componentWillReceiveProps({ sqon }) {
-    this.setState({
-      localSQON: sqon || this.state.localSQON,
-    });
   }
   fieldMappingFromPath = path => {
     const {
@@ -119,7 +103,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       onSqonFieldChange = () => {},
     } = this.props;
-    const { localSQON, selectedPath, withValueOnly } = this.state;
+    const { selectedPath, withValueOnly } = this.state;
     const displayTreeData = injectExtensionToElasticMapping(
       elasticMapping,
       extendedMapping,
@@ -128,6 +112,7 @@ export default class AdvancedFacetView extends React.Component {
       this.facetView.scrollToPath(path);
     };
     const handleFacetViewValueChange = ({ value, path, esType, aggType }) => {
+      const { sqon } = this.props;
       const newSQON = (() => {
         switch (aggType) {
           case 'Aggregations':
@@ -144,7 +129,7 @@ export default class AdvancedFacetView extends React.Component {
                   },
                 ],
               },
-              localSQON,
+              sqon,
             );
           case 'NumericAggregations':
             return replaceSQON(
@@ -161,27 +146,23 @@ export default class AdvancedFacetView extends React.Component {
                   },
                 ],
               },
-              localSQON,
+              sqon,
             );
           default:
-            return localSQON;
+            return sqon;
         }
       })();
-      this.setState({ localSQON: newSQON }, () =>
-        onSqonFieldChange({ sqon: newSQON }),
-      );
+      onSqonFieldChange({ sqon: newSQON });
     };
     return (
       <div className="advancedFacetViewWrapper">
         <div>
           <SQONView
-            sqon={sqon || localSQON}
+            sqon={sqon}
             ValueCrumb={({ value, nextSQON, ...props }) => (
               <Value
                 onClick={() => {
-                  this.setState({ localSQON: nextSQON }, () =>
-                    onSqonFieldChange({ sqon: nextSQON }),
-                  );
+                  onSqonFieldChange({ sqon: nextSQON });
                 }}
                 {...props}
               >
@@ -192,9 +173,7 @@ export default class AdvancedFacetView extends React.Component {
               <Bubble
                 className="sqon-clear"
                 onClick={() => {
-                  this.setState({ localSQON: nextSQON }, () =>
-                    onSqonFieldChange({ sqon: nextSQON }),
-                  );
+                  onSqonFieldChange({ sqon: nextSQON });
                 }}
               >
                 Clear
@@ -249,7 +228,7 @@ export default class AdvancedFacetView extends React.Component {
           <div className="panel facetsPanel">
             <FacetView
               ref={view => (this.facetView = view)}
-              sqon={sqon || localSQON}
+              sqon={sqon}
               onValueChange={handleFacetViewValueChange}
               aggregations={aggregations}
               displayTreeData={
