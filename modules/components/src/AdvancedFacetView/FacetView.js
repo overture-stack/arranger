@@ -4,7 +4,6 @@ import $ from 'jquery';
 import { debounce } from 'lodash';
 
 const serializeToDomId = path => path.split('.').join('__');
-const serializeDomIdToPath = path => path.split('.').join('__');
 
 export default class FacetView extends React.Component {
   scrollToPath = path => {
