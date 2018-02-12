@@ -16,7 +16,7 @@ const fetchGraphqlQuery = async ({ query, API_HOST, PROJECT_ID, ES_HOST }) =>
     }),
   })
     .then(res => res.json())
-    .then(data => Promise.resolve(data.data));
+    .then(data => data.data);
 
 const fetchMapping = async fetchConfig =>
   fetchGraphqlQuery({
@@ -100,10 +100,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     this.state = {
       mapping: {},
       extended: {},
-      sqon: sqon || {
-        op: 'and',
-        content: [],
-      },
+      sqon: sqon || null,
     };
   }
   componentDidMount() {
