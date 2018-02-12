@@ -45,7 +45,7 @@ export const combineValues: TCombineValues = (x, y) => {
   if (yValue.length === 0) return x;
 
   const merged = {
-    op: 'in',
+    op: x.op,
     content: {
       field: x.content.field,
       value: xValue
@@ -96,7 +96,7 @@ export const toggleSQON: TMergeSQON = (q, ctxq) => {
         const found = acc.find(a => compareTerms(a, ctx));
         if (!found) return [...acc, ctx];
         return [
-          ...acc.filter(y => y.content.field !== found.content.field),
+          ...acc.filter(y => !compareTerms(y, found)),
           combineValues(found, ctx),
         ].filter(Boolean);
       }, q.content)
