@@ -2,12 +2,14 @@ import React, { Component } from 'react';
 import { orderBy } from 'lodash';
 import './AggregationCard.css';
 import State from '../State';
+import { toggleSQON } from '../SQONView/utils';
 
 const TermAggs = ({
   field = '',
   displayName = 'Unnamed Field',
   buckets = [],
   handleValueClick = () => {},
+  handleNextSQON = () => {},
   isActive = () => {},
   Content = 'div',
   maxTerms = 5,
@@ -49,6 +51,25 @@ const TermAggs = ({
                     content={{
                       field: dotField,
                       value: bucket.name,
+                    }}
+                    onClick={() => {
+                      handleNextSQON(sqon =>
+                        toggleSQON(
+                          {
+                            op: 'and',
+                            content: [
+                              {
+                                op: 'in',
+                                content: {
+                                  field: dotField,
+                                  value: [].concat(bucket.name || []),
+                                },
+                              },
+                            ],
+                          },
+                          sqon,
+                        ),
+                      );
                     }}
                   >
                     <span className="bucket-link" merge="toggle">

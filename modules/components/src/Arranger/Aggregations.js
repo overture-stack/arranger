@@ -37,30 +37,9 @@ const Aggregations = ({
                     <TermAgg
                       key={agg.field}
                       {...agg}
-                      Content={({ content, ...props }) => (
-                        <div
-                          {...props}
-                          onClick={() =>
-                            setSQON(
-                              toggleSQON(
-                                {
-                                  op: 'and',
-                                  content: [
-                                    {
-                                      op: 'in',
-                                      content: {
-                                        ...content,
-                                        value: [].concat(content.value || []),
-                                      },
-                                    },
-                                  ],
-                                },
-                                sqon,
-                              ),
-                            )
-                          }
-                        />
-                      )}
+                      handleNextSQON={nextSQON => {
+                        setSQON(nextSQON(sqon));
+                      }}
                       isActive={d =>
                         inCurrentSQON({
                           value: d.value,
