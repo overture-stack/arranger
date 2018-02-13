@@ -15,7 +15,7 @@ export function deleteValue(key) {
   delete localStorage[key];
 }
 
-export const API = getValue('API', 'http://localhost:5050');
+export const ARRANGER_API = getValue('ARRANGER_API', 'http://localhost:5050');
 export const ES_HOST = getValue('ES_HOST', 'http://localhost:9200');
 export const ACTIVE_PROJECT = getValue('ACTIVE_PROJECT', '');
 export const ACTIVE_INDEX = getValue('ACTIVE_INDEX', '');

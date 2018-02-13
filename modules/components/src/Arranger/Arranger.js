@@ -1,27 +1,45 @@
 import React from 'react';
 import { get } from 'lodash';
 import io from 'socket.io-client';
+import ioStream from 'socket.io-stream';
 
 import { columnsToGraphql } from '../DataTable';
-import { api } from '../Admin/Dashboard';
-import { API, ES_HOST } from '../utils/config';
+import api from '../utils/api';
+import { ARRANGER_API } from '../utils/config';
 
-let socket = io(API);
+let socket = io(ARRANGER_API);
+let streamSocket = ioStream(socket);
 
-const streamData = type => ({ columns, sort, first, onData, onEnd }) => {
-  socket.on('server::chunk', ({ data, total }) =>
-    onData({
-      total,
-      data: data[type].hits.edges.map(e => e.node),
-    }),
-  );
+const streamData = (type, projectId) => ({
+  columns,
+  sort,
+  first,
+  onData,
+  onEnd,
+  sqon,
+}) => {
+  return new Promise(resolve => {
+    const stream = ioStream.createStream();
 
-  socket.on('server::stream::end', onEnd);
+    stream.on('data', chunk => {
+      const { data, total } = JSON.parse(chunk);
+      onData({
+        total,
+        data: data[type].hits.edges.map(e => e.node),
+      });
+    });
 
-  socket.emit('client::stream', {
-    index: type,
-    size: 100,
-    ...columnsToGraphql({ columns, sort, first }),
+    stream.on('end', () => {
+      onEnd();
+      resolve();
+    });
+
+    streamSocket.emit('client::stream', stream, {
+      index: type,
+      projectId,
+      size: first,
+      ...columnsToGraphql({ sqon, config: { columns, type }, sort, first }),
+    });
   });
 };
 
@@ -29,9 +47,6 @@ const fetchData = projectId => {
   return options => {
     return api({
       endpoint: `/${projectId}/graphql`,
-      headers: {
-        ES_HOST,
-      },
       body: columnsToGraphql(options),
     }).then(r => {
       const hits = get(r, `data.${options.config.type}.hits`) || {};

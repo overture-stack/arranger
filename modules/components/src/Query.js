@@ -1,16 +1,6 @@
 import React, { Component } from 'react';
 import { debounce } from 'lodash';
-import { ES_HOST, API } from './utils/config';
-
-let api = ({ projectId, name = 'UnnamedQuery', query, variables }) =>
-  fetch(API + `/${projectId}/graphql/${name}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ES_HOST,
-    },
-    body: JSON.stringify({ query, variables }),
-  }).then(r => r.json());
+import api from './utils/api';
 
 export default class extends Component {
   state = { data: null, error: null, loading: false };
@@ -29,19 +19,26 @@ export default class extends Component {
   componentDidCatch(error, info) {
     this.setState({ error });
   }
-  fetch = debounce(async options => {
-    this.setState({ loading: true });
-    try {
-      let { data, errors } = await api(options);
-      this.setState({
-        data,
-        error: errors ? { errors } : null,
-        loading: false,
-      });
-    } catch (error) {
-      this.setState({ error: error.message, loading: false });
-    }
-  }, this.props.debounceTime || 0);
+  fetch = debounce(
+    async ({ projectId, query, variables, name, ...options }) => {
+      this.setState({ loading: true });
+      try {
+        let { data, errors } = await api({
+          ...options,
+          endpoint: `/${projectId}/graphql/${name}`,
+          body: { query, variables },
+        });
+        this.setState({
+          data,
+          error: errors ? { errors } : null,
+          loading: false,
+        });
+      } catch (error) {
+        this.setState({ error: error.message, loading: false });
+      }
+    },
+    this.props.debounceTime || 0,
+  );
   componentDidUpdate() {
     if (this.props.onUpdate) this.props.onUpdate(this.state);
   }

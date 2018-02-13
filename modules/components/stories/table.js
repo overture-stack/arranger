@@ -5,8 +5,7 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
-import { API } from '../src/utils/config';
-import urlJoin from 'url-join';
+import { ARRANGER_API } from '../src/utils/config';
 import DataTable, {
   Table,
   columnsToGraphql,
@@ -14,6 +13,7 @@ import DataTable, {
   getSingleValue,
 } from '../src/DataTable';
 import { themeDecorator } from './decorators';
+import api from '../src/utils/api';
 
 const withSQON = withState('sqon', 'setSQON', null);
 
@@ -164,7 +164,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
     onSQONChange={action('sqon changed')}
     onSelectionChange={action('selection changed')}
     streamData={({ columns, sort, first, onData, onEnd }) => {
-      let socket = io(API);
+      let socket = io(ARRANGER_API);
       socket.on('server::chunk', ({ data, total }) =>
         onData({
           total,
@@ -181,18 +181,15 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
       });
     }}
     fetchData={options => {
-      return fetch(urlJoin(API, 'table'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(columnsToGraphql({ ...options, sqon })),
-      })
-        .then(r => r.json())
-        .then(r => {
-          const hits = get(r, `data.${options.config.type}.hits`) || {};
-          const data = get(hits, 'edges', []).map(e => e.node);
-          const total = hits.total || 0;
-          return { total, data };
-        });
+      return api({
+        endpoint: 'table',
+        body: columnsToGraphql({ ...options, sqon }),
+      }).then(r => {
+        const hits = get(r, `data.${options.config.type}.hits`) || {};
+        const data = get(hits, 'edges', []).map(e => e.node);
+        const total = hits.total || 0;
+        return { total, data };
+      });
     }}
   />
 ));

@@ -2,6 +2,16 @@ import { get } from 'lodash';
 import columnTypes from './columnTypes';
 import { withProps } from 'recompose';
 
+export function getAllValue(data) {
+  if (typeof data === 'object') {
+    return Object.values(data || {})
+      .map(getAllValue)
+      .reduce((a, b) => a.concat(b), []);
+  } else {
+    return data;
+  }
+}
+
 export function getSingleValue(data) {
   if (typeof data === 'object') {
     return getSingleValue(Object.values(data)[0]);

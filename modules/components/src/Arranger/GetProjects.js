@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { api } from '../Admin/Dashboard';
+import api from '../utils/api';
 import { ES_HOST } from '../utils/config';
 
 class GetProjects extends React.Component {
