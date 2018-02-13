@@ -9,7 +9,6 @@ const TermAggs = ({
   displayName = 'Unnamed Field',
   buckets = [],
   handleValueClick = () => {},
-  handleNextSQON = () => {},
   isActive = () => {},
   Content = 'div',
   maxTerms = 5,
