@@ -15,7 +15,7 @@ class DataTable extends React.Component {
       config,
       fetchData,
       streamData,
-      setSelection,
+      setSelectedTableRows,
       sqon,
       allowTogglingColumns = true,
       allowTSVExport = true,
@@ -63,7 +63,7 @@ class DataTable extends React.Component {
           sqon={sqon}
           config={config}
           fetchData={fetchData}
-          setSelection={setSelection}
+          setSelectedTableRows={setSelectedTableRows}
           onPaginationChange={state => this.setState(state)}
           onSortedChange={sort => this.setState({ sort, page: 0 })}
           defaultPageSize={pageSize}

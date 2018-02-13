@@ -59,7 +59,7 @@ const fetchData = projectId => {
 
 class Arranger extends React.Component {
   state = {
-    selection: [],
+    selectedTableRows: [],
     sqon: null,
   };
 
@@ -88,18 +88,19 @@ class Arranger extends React.Component {
 
   render() {
     const { index, projectId, children, render, component } = this.props;
-    const { sqon, selection } = this.state;
+    const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
       socket,
       sqon,
-      selection,
+      selectedTableRows,
       projectId,
       index,
       streamData,
       fetchData,
       setSQON: sqon => this.setState({ sqon }),
-      setSelection: selection => this.setState({ selection }),
+      setSelectedTableRows: selectedTableRows =>
+        this.setState({ selectedTableRows }),
     };
 
     if (component) {

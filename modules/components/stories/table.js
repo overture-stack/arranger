@@ -161,7 +161,7 @@ function streamDummyData({ sort, first, onData, onEnd }) {
 const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   <DataTable
     config={tableConfig}
-    setSelection={action('selection changed')}
+    setSelectedTableRows={action('selection changed')}
     streamData={({ columns, sort, first, onData, onEnd }) => {
       let socket = io(ARRANGER_API);
       socket.on('server::chunk', ({ data, total }) =>
@@ -212,7 +212,7 @@ storiesOf('Table', module)
     <Table
       config={dummyConfig}
       fetchData={fetchDummyData}
-      setSelection={action('selection changed')}
+      setSelectedTableRows={action('selection changed')}
     />
   ))
   .add('Toolbar', () => (

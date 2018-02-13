@@ -6,7 +6,7 @@ import CustomPagination from './CustomPagination';
 
 const enhance = compose(
   defaultProps({
-    setSelection: noop,
+    setSelectedTableRows: noop,
     onPaginationChange: noop,
   }),
 );
@@ -15,7 +15,7 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selection: [],
+      selectedTableRows: [],
       data: [],
       pages: -1,
       loading: false,
@@ -23,34 +23,34 @@ class DataTable extends React.Component {
     };
   }
 
-  setSelection(selection) {
-    this.props.setSelection(selection);
-    this.setState({ selection });
+  setSelectedTableRows(selectedTableRows) {
+    this.props.setSelectedTableRows(selectedTableRows);
+    this.setState({ selectedTableRows });
   }
 
-  toggleSelection = key => {
-    const selection = xor(this.state.selection, [key]);
+  toggleSelectedTableRow = key => {
+    const selectedTableRows = xor(this.state.selectedTableRows, [key]);
 
-    this.setSelection(selection);
+    this.setSelectedTableRows(selectedTableRows);
   };
 
   toggleAll = () => {
-    const selection =
-      this.state.selection.length === this.state.data.length
+    const selectedTableRows =
+      this.state.selectedTableRows.length === this.state.data.length
         ? []
         : this.state.data.map(item => item[this.props.config.keyField]);
 
-    this.setSelection(selection);
+    this.setSelectedTableRows(selectedTableRows);
   };
 
   isSelected = key => {
-    return this.state.selection.includes(key);
+    return this.state.selectedTableRows.includes(key);
   };
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
     const { fetchData, config, sqon } = this.props;
-    const { selection } = this.state;
+    const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
 
@@ -77,10 +77,10 @@ class DataTable extends React.Component {
         pages: Math.ceil(total / state.pageSize),
         loading: false,
       });
-      this.setSelection(
+      this.setSelectedTableRows(
         intersection(
           data.map(item => item[this.props.config.keyField]),
-          selection,
+          selectedTableRows,
         ),
       );
     });
@@ -104,7 +104,7 @@ class DataTable extends React.Component {
   }
 
   render() {
-    const { toggleSelection, toggleAll, isSelected, onFetchData } = this;
+    const { toggleSelectedTableRow, toggleAll, isSelected, onFetchData } = this;
     const {
       config,
       defaultPageSize,
@@ -114,7 +114,7 @@ class DataTable extends React.Component {
       style,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
-    const { data, selection, pages, loading } = this.state;
+    const { data, selectedTableRows, pages, loading } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -124,9 +124,9 @@ class DataTable extends React.Component {
     };
 
     const checkboxProps = {
-      selectAll: selection.length === data.length,
+      selectAll: selectedTableRows.length === data.length,
       isSelected,
-      toggleSelection,
+      toggleSelection: toggleSelectedTableRow,
       toggleAll,
       selectType: 'checkbox',
       keyField,
