@@ -3,6 +3,9 @@
   "version": "0.0.7",
   "description": "GraphQL Server",
   "main": "dist/index.js",
+  "bin": {
+    "arranger-server": "./index.js"
+  },
   "publishConfig": {
     "access": "public"
   },
