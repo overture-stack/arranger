@@ -1,13 +1,12 @@
 import React from 'react';
-import { get, intersection, xor, noop } from 'lodash';
-import { ReactTablePagination } from 'react-table';
+import { intersection, xor, noop } from 'lodash';
 import { compose, defaultProps } from 'recompose';
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
 
 const enhance = compose(
   defaultProps({
-    onSelectionChange: noop,
+    setSelection: noop,
     onPaginationChange: noop,
   }),
 );
@@ -25,7 +24,7 @@ class DataTable extends React.Component {
   }
 
   setSelection(selection) {
-    this.props.onSelectionChange(selection);
+    this.props.setSelection(selection);
     this.setState({ selection });
   }
 
