@@ -1,7 +1,8 @@
 # Arranger Server
 
 ```
-npm i @arranger/server
+npm i -g @arranger/server
+arranger-server
 ```
 
 #### Develop
