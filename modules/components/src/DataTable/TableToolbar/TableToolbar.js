@@ -16,17 +16,28 @@ const enhance = compose(
   withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
     debouncedOnFilterChange: debounce(onFilterChange, 300),
   })),
-  withPropsOnChange(
-    ['handleNextFilterSQON'],
-    ({ handleNextFilterSQON = () => {} }) => ({
-      debouncedHandleNextFilterSQON: debounce(handleNextFilterSQON, 300),
-    }),
-  ),
   withState('filterVal', 'setFilterVal', ''),
   withPropsOnChange(['sqon'], ({ sqon, setFilterVal }) => {
     if (!sqon?.content?.find(x => x.op === 'filter')) setFilterVal('');
   }),
 );
+
+const generateNextSQON = value => ({ sqon, fields }) =>
+  replaceFilterSQON(
+    {
+      op: 'and',
+      content: [
+        {
+          op: 'filter',
+          content: {
+            fields: fields,
+            value,
+          },
+        },
+      ],
+    },
+    sqon,
+  );
 
 const TableToolbar = ({
   columns,
@@ -36,7 +47,6 @@ const TableToolbar = ({
   setFilterVal,
   onFilterChange,
   debouncedOnFilterChange,
-  debouncedHandleNextFilterSQON,
   page = 0,
   pageSize = 0,
   propsData,
@@ -65,24 +75,10 @@ const TableToolbar = ({
         value={filterVal}
         onChange={({ target: { value } }) => {
           setFilterVal(value);
-          debouncedOnFilterChange(value);
-          debouncedHandleNextFilterSQON(({ sqon, fields }) =>
-            replaceFilterSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: 'filter',
-                    content: {
-                      fields: fields,
-                      value,
-                    },
-                  },
-                ],
-              },
-              sqon,
-            ),
-          );
+          debouncedOnFilterChange({
+            value,
+            generateNextSQON: generateNextSQON(value),
+          });
         }}
       />
     </div>
@@ -93,7 +89,10 @@ const TableToolbar = ({
           items={canChangeShowColumns}
           onChange={item => {
             setFilterVal('');
-            onFilterChange('');
+            onFilterChange({
+              value: '',
+              generateNextSQON: generateNextSQON(''),
+            });
             onColumnsChange({ ...item, show: !item.show });
           }}
         >

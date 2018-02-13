@@ -109,9 +109,9 @@ storiesOf('Aggs', module)
               <TermAgg
                 key={agg.field}
                 {...agg}
-                handleNextSQON={nextSQON => {
-                  update({ sqon: nextSQON(sqon) });
-                }}
+                handleValueClick={({ generateNextSQON }) =>
+                  update({ sqon: generateNextSQON(sqon) })
+                }
                 isActive={d =>
                   inCurrentSQON({
                     value: d.value,
@@ -157,9 +157,9 @@ storiesOf('Aggs', module)
               avg: 70,
               sum: 15000,
             }}
-            handleNextSQON={nextSQON => {
-              update({ sqon: nextSQON(sqon) });
-            }}
+            handleChange={({ generateNextSQON }) =>
+              update({ sqon: generateNextSQON(sqon) })
+            }
           />
         </div>
       )}

@@ -37,9 +37,9 @@ const Aggregations = ({
                     <TermAgg
                       key={agg.field}
                       {...agg}
-                      handleNextSQON={nextSQON => {
-                        setSQON(nextSQON(sqon));
-                      }}
+                      handleValueClick={({ generateNextSQON }) =>
+                        setSQON(generateNextSQON(sqon))
+                      }
                       isActive={d =>
                         inCurrentSQON({
                           value: d.value,

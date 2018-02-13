@@ -47,30 +47,31 @@ const TermAggs = ({
                     style={{
                       display: 'flex',
                     }}
-                    onClick={() => handleValueClick(bucket)}
                     content={{
                       field: dotField,
                       value: bucket.name,
                     }}
-                    onClick={() => {
-                      handleNextSQON(sqon =>
-                        toggleSQON(
-                          {
-                            op: 'and',
-                            content: [
-                              {
-                                op: 'in',
-                                content: {
-                                  field: dotField,
-                                  value: [].concat(bucket.name || []),
+                    onClick={() =>
+                      handleValueClick({
+                        bucket,
+                        generateNextSQON: sqon =>
+                          toggleSQON(
+                            {
+                              op: 'and',
+                              content: [
+                                {
+                                  op: 'in',
+                                  content: {
+                                    field: dotField,
+                                    value: [].concat(bucket.name || []),
+                                  },
                                 },
-                              },
-                            ],
-                          },
-                          sqon,
-                        ),
-                      );
-                    }}
+                              ],
+                            },
+                            sqon,
+                          ),
+                      })
+                    }
                   >
                     <span className="bucket-link" merge="toggle">
                       <input

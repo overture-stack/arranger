@@ -25,7 +25,6 @@ class DataTable extends React.Component {
       tableStyle,
       toolbarStyle,
       onFilterChange,
-      handleNextFilterSQON,
       onColumnsChange = () => {},
     } = this.props;
     const { page, pageSize, total, sort } = this.state;
@@ -33,7 +32,6 @@ class DataTable extends React.Component {
     return (
       <>
         <TableToolbar
-          handleNextFilterSQON={handleNextFilterSQON}
           onFilterChange={onFilterChange}
           style={toolbarStyle}
           propsData={data}

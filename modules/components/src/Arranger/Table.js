@@ -25,9 +25,9 @@ const Table = ({
             streamData={streamData(index, projectId)}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
-            handleNextFilterSQON={nextFilterSQON => {
+            onFilterChange={({ generateNextSQON }) => {
               setSQON(
-                nextFilterSQON({
+                generateNextSQON({
                   sqon,
                   fields: columnState.state.columns
                     .filter(

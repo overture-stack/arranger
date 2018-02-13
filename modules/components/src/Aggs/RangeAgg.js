@@ -46,22 +46,24 @@ class RangeAgg extends Component {
   }
 
   onChangeComplete = () => {
-    let { handleChange, handleNextSQON } = this.props;
+    let { handleChange } = this.props;
     let { field, value: { min, max } } = this.state;
-    if (handleChange) handleChange({ field, min, max });
-    if (handleNextSQON)
-      handleNextSQON(sqon =>
-        replaceSQON(
-          {
-            op: 'and',
-            content: [
-              { op: '>=', content: { field, value: min } },
-              { op: '<=', content: { field, value: max } },
-            ],
-          },
-          sqon,
-        ),
-      );
+    handleChange?.({
+        field,
+        min,
+        max,
+        generateNextSQON: sqon =>
+          replaceSQON(
+            {
+              op: 'and',
+              content: [
+                { op: '>=', content: { field, value: min } },
+                { op: '<=', content: { field, value: max } },
+              ],
+            },
+            sqon,
+          ),
+      });
   };
 
   setValue = ({ min, max }) => {
