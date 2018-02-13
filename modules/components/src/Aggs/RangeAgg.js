@@ -15,25 +15,32 @@ const SUPPORTED_CONVERSIONS = {
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let { field, stats: { min, max }, unit } = props;
+    let { field, stats: { min, max }, unit, value } = props;
     this.state = {
       field,
       min,
       max,
       unit: unit,
       displayUnit: unit,
-      value: { min, max },
+      value: {
+        min: value ? value.min || min : min,
+        max: value ? value.max || max : max,
+      },
     };
   }
 
   componentWillReceiveProps(nextProps) {
     let { field, stats: { min, max } } = this.props;
+    const { value: externalVal } = nextProps;
     let { value } = this.state;
     this.setState({
       field,
       min,
       max,
-      value: { min: Math.max(value.min, min), max: Math.min(value.max, max) },
+      value: {
+        min: Math.max(externalVal?.min || value.min, min),
+        max: Math.min(externalVal?.max || value.max, max),
+      },
     });
   }
 
@@ -68,6 +75,7 @@ class RangeAgg extends Component {
       Content = 'div',
       displayName = 'Unnamed Field',
       buckets = [],
+      collapsible = true,
       handleChange = () => {},
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
@@ -78,15 +86,21 @@ class RangeAgg extends Component {
           <div className="aggregation-card">
             <div
               className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-              onClick={() => update({ isCollapsed: !isCollapsed })}
+              onClick={
+                collapsible
+                  ? () => update({ isCollapsed: !isCollapsed })
+                  : () => {}
+              }
             >
               <span className="title">{displayName}</span>
-              <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+              {collapsible && (
+                <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+              )}
             </div>
             {!isCollapsed &&
               min !== null &&
               max !== null && (
-                <div>
+                <div className="range-wrapper">
                   <div className="unit-wrapper">
                     {unit &&
                       SUPPORTED_CONVERSIONS[convert().describe(unit).measure]

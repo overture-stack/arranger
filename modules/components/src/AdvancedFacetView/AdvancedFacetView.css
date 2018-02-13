@@ -1,0 +1,43 @@
+.advancedFacetViewWrapper {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  display: flex;
+  flex-direction: column;
+}
+
+.facetViewWrapper {
+  display: flex;
+  flex-direction: row;
+}
+
+.facetViewWrapper .treeViewPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.facetViewWrapper .treeViewPanel .panelHeading {
+  display: flex;
+  justify-content: space-between;
+}
+
+.facetViewWrapper .treeViewPanel .treeView {
+  overflow-y: scroll;
+  flex: 1;
+}
+
+.facetViewWrapper .facetsPanel {
+  flex: 2;
+}
+
+.facetViewWrapper .facetsPanel .facetView {
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.facetViewWrapper .facetsPanel .facetView .facetViewNode {
+  padding-left: 20px;
+}

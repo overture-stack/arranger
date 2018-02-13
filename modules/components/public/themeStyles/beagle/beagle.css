@@ -18,7 +18,7 @@ div {
 
 .ReactTable {
   font-family: 'Montserrat', sans-serif;
-  font-size: 0.8em;
+  font-size: 0.8rem;
   flex-grow: 1;
 }
 
@@ -130,7 +130,7 @@ div {
 .aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   font-family: sans-serif;
 }
 .aggregation-card .bucket {
@@ -141,6 +141,7 @@ div {
 }
 .aggregation-card .bucket-item {
   padding-top: 5px;
+  cursor: pointer;
 }
 .aggregation-card .bucket-item .bucket-count {
   border-radius: 5px;
@@ -155,7 +156,7 @@ div {
 }
 .aggregation-card .showMore-wrapper {
   margin-top: 5px;
-  font-size: 0.8em;
+  font-size: 0.8rem;
   color: #90278e;
   cursor: pointer;
   display: flex;
@@ -176,7 +177,7 @@ div {
 
 .aggregation-card .bucket-item,
 .aggregation-card .input-range__label {
-  font-size: 0.8em;
+  font-size: 0.8rem;
 }
 
 /**************************************/
@@ -243,7 +244,7 @@ div {
   font-weight: 600;
   color: #343434;
   text-transform: uppercase;
-  margin-right: 0.3em;
+  margin-right: 0.3rem;
 }
 
 .sqon-clear,
@@ -265,7 +266,7 @@ div {
 
 .sqon-more {
   font-size: 24px;
-  line-height: 0.3em;
+  line-height: 0.3rem;
   display: block;
   color: #009bb8;
 }
@@ -288,28 +289,36 @@ div {
 /***********************************/
 /**** styling for the tree view ****/
 /***********************************/
+.tree-view {
+}
 .tree-view .tree-view_children {
   margin-left: 20px;
 }
+.tree-view_item {
+  padding-left: 20px;
+}
 .tree-view .header {
   color: #2b388f;
-  font-size: 1.2em;
+  /* font-size: 1.2rem; */
+  border-top: solid 1px #e0e1e6;
+  padding-left: 20px;
 }
 .tree-view_children.leaf {
-  margin-top: 5px;
-  margin-bottom: 5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-left: 20px;
 }
 .tree-view_children.leaf.header {
   color: #2b388f;
-  font-size: 1.2em;
-  padding-left: 5px;
+  /* font-size: 1.2rem; */
+  padding-left: 25px;
 }
 .tree-view .tree-view_arrow:after {
   content: '›';
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.5em;
+  font-size: 1.5rem;
   width: 20px;
 }
 .tree-view .tree-view_arrow {
@@ -381,4 +390,158 @@ div {
 .tableToolbar .group :last-child {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
+}
+
+.range-wrapper {
+  min-height: 2.7rem;
+}
+
+/*********************************************/
+/**** styling for the Advanced Facet View ****/
+/*********************************************/
+.advancedFacetViewWrapper {
+  padding: 15px;
+}
+.advancedFacetViewWrapper .facetViewWrapper {
+  margin-top: 15px;
+}
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel {
+  background-color: #fafafc;
+  border: solid 1px #d4d6dd;
+}
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .panelHeading {
+  background-color: #e7e8ed;
+  padding: 10px;
+}
+.advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
+  margin-left: 20px;
+}
+.advancedFacetViewWrapper .aggregation-card {
+  border: none;
+}
+.facetViewWrapper .facetsPanel .facetView .facetViewNode {
+  padding-left: 0px;
+  position: relative;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
+  border-left: solid 5px;
+}
+.facetViewNode.depth_1:nth-child(5n + 1) .aggWrapper {
+  border-left-color: #a42c90;
+}
+.facetViewNode.depth_1:nth-child(5n + 2) .aggWrapper {
+  border-left-color: #00afed;
+}
+.facetViewNode.depth_1:nth-child(5n + 3) .aggWrapper {
+  border-left-color: #ff9324;
+}
+.facetViewNode.depth_1:nth-child(5n + 4) .aggWrapper {
+  border-left-color: #009bb8;
+}
+.facetViewNode.depth_1:nth-child(5n + 5) .aggWrapper {
+  border-left-color: #d8202f;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_2 .aggWrapper {
+  border-left-color: #e7e8ed;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .aggWrapper {
+  padding-left: 20px;
+}
+.advancedFacetViewWrapper .facetTitle {
+  cursor: default;
+  padding: 10px;
+  background: #e7e8ed;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.advancedFacetViewWrapper .facetTitle .arrow::after {
+  content: '\203a';
+  color: #404c9a;
+  font-weight: normal;
+}
+.advancedFacetViewWrapper .facetTitle .arrow {
+  transform: rotate(90deg);
+  transition: all 0.5s;
+}
+.advancedFacetViewWrapper .facetTitle .arrow.collapsed {
+  transform: rotate(0deg);
+}
+.advancedFacetViewWrapper .facetViewNode.depth_0 .facetTitle {
+  padding: 10px;
+  padding-left: 20px;
+  background: #e7e8ed;
+  color: #2b388f;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_1 .facetTitle {
+  padding: 0px;
+  padding-right: 11px;
+  background: none;
+  color: #404c9a;
+  font-size: 0.9rem;
+}
+.aggWrapper {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.facetViewNode.depth_1 {
+  margin-bottom: 20px;
+}
+.facetViewNode.depth_1:after {
+  pointer-events: none;
+  content: '';
+  border-bottom: solid 1px #d4d6dd;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: -10px;
+}
+.advancedFacetViewWrapper
+  .aggWrapper.depth_0
+  .aggregation-card
+  .title-wrapper
+  .title {
+  font-family: 'Montserrat', sans-serif;
+}
+.advancedFacetViewWrapper .facetViewNode.depth_0:first-child .aggWrapper {
+  margin-top: 0px;
+}
+.advancedFacetViewWrapper .aggWrapper.depth_0 .aggregation-card .title-wrapper {
+  cursor: default;
+  border: none;
+  padding: 10px;
+  padding-left: 20px;
+  background: #e7e8ed;
+  color: #2b388f;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: lighter;
+}
+.advancedFacetViewWrapper .aggWrapper.depth_1 .aggregation-card .title-wrapper {
+  padding: 0px;
+  padding-right: 10px;
+  background: none;
+  color: #404c9a;
+  font-size: 0.9rem;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card {
+  padding: 0px;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .title-wrapper {
+  padding-right: 10px;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .bucket {
+  padding-right: 10px;
+}
+
+/*********************************************/
+/******** styling for the Slider *************/
+/*********************************************/
+.input-range__slider {
+  background-color: #ffffff;
+  box-shadow: 0 0 5.9px 0.1px #bbbbbb;
+  border: solid 1px #c3c3c3;
+}
+.input-range__track.input-range__track--active {
+  background-color: #009bb8;
 }

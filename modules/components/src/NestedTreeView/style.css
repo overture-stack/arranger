@@ -34,15 +34,17 @@
 
 .tree-view .header {
   color: #2b388f;
-  font-size: 1.2em;
 }
 
 .tree-view_children.leaf {
   margin-top: 5px;
   margin-bottom: 5px;
+  cursor: pointer;
+}
+.tree-view_children.leaf.selected {
+  background: #e7e8ed;
 }
 .tree-view_children.leaf.header {
   color: #2b388f;
-  font-size: 1.2em;
   padding-left: 3px;
 }
