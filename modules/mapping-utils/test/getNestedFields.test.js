@@ -30,4 +30,5 @@ test('getNestedFields', () => {
   let expected = ['diagnoses', 'diagnoses.treatments'];
 
   expect(actual.length).toBe(expected.length);
+  expected.forEach((field, i) => expect(field).toEqual(actual[i]));
 });
