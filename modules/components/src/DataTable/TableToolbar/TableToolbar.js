@@ -3,6 +3,7 @@ import { debounce } from 'lodash';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import SearchIcon from 'react-icons/lib/fa/search';
 
+import { replaceFilterSQON } from '../../SQONView/utils';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
 import TextInput from '../../Input';
@@ -15,6 +16,12 @@ const enhance = compose(
   withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
     debouncedOnFilterChange: debounce(onFilterChange, 300),
   })),
+  withPropsOnChange(
+    ['handleNextFilterSQON'],
+    ({ handleNextFilterSQON = () => {} }) => ({
+      debouncedHandleNextFilterSQON: debounce(handleNextFilterSQON, 300),
+    }),
+  ),
   withState('filterVal', 'setFilterVal', ''),
   withPropsOnChange(['sqon'], ({ sqon, setFilterVal }) => {
     if (!sqon?.content?.find(x => x.op === 'filter')) setFilterVal('');
@@ -29,6 +36,7 @@ const TableToolbar = ({
   setFilterVal,
   onFilterChange,
   debouncedOnFilterChange,
+  debouncedHandleNextFilterSQON,
   page = 0,
   pageSize = 0,
   propsData,
@@ -58,6 +66,23 @@ const TableToolbar = ({
         onChange={({ target: { value } }) => {
           setFilterVal(value);
           debouncedOnFilterChange(value);
+          debouncedHandleNextFilterSQON(({ sqon, fields }) =>
+            replaceFilterSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: 'filter',
+                    content: {
+                      fields: fields,
+                      value,
+                    },
+                  },
+                ],
+              },
+              sqon,
+            ),
+          );
         }}
       />
     </div>
