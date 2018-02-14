@@ -34,9 +34,9 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
 const filterOutNonValue = ({ aggregations, displayTreeData }) => {
   const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
     const keyHasValue =
-      aggregations[key].buckets?.length > 0 ||
-      aggregations[key].stats?.min ||
-      aggregations[key].stats?.max;
+      aggregations[key]?.buckets?.length > 0 ||
+      aggregations[key]?.stats?.min ||
+      aggregations[key]?.stats?.max;
     return {
       ...a,
       ...(keyHasValue ? { [key]: aggregations[key] } : {}),

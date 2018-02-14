@@ -111,7 +111,11 @@ export default class LiveAdvancedFacetView extends React.Component {
         ),
         ...fetchConfig,
       }).then(({ aggregations }) =>
-        this.setState({ mapping, extended, aggregations }),
+        this.setState({
+          mapping,
+          extended,
+          aggregations,
+        }),
       ),
     );
   }

@@ -9,11 +9,10 @@ import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 import { action } from '@storybook/addon-actions';
 
-const PROJECT_ID = 'testing1';
-const ES_INDEX = 'testing1';
+const PROJECT_ID = 'feb-14';
+const ES_INDEX = 'file';
 const API_HOST = 'http://localhost:5050';
 const ES_HOST = 'http://localhost:9200';
-// const ES_HOST = 'http://142.1.177.54:9200';
 
 const injectMockBuckets = node =>
   Object.keys(node).reduce(
