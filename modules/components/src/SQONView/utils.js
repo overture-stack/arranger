@@ -1,8 +1,4 @@
 /* @flow */
-/* eslint fp/no-mutating-methods: 0 */
-
-// $FlowIgnore
-import _ from 'lodash';
 import { parseSQONParam } from '../utils/uri';
 
 import type {
