@@ -36,10 +36,15 @@ let main = async ({ io, app }) => {
     let commit = req.body.after.trim();
 
     if (branch === github.branch && commit !== github.commit) {
-      console.log('should restart');
+      exec(
+        'git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart kf-api',
+        err => {
+          if (err) throw err;
+        },
+      );
     }
 
-    res.json({ thanks: 'yo' });
+    res.json({ message: 'restarting api' });
   });
 
   app.use((req, res, next) => {
