@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
