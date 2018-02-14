@@ -9,7 +9,7 @@
   "scripts": {
     "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist",
     "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -39,6 +39,8 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
     "@babel/preset-env": "^7.0.0-beta.35",
     "@babel/preset-flow": "^7.0.0-beta.35",
-    "@babel/register": "^7.0.0-beta.35"
+    "@babel/register": "^7.0.0-beta.35",
+    "babel-jest": "^22.2.2",
+    "jest": "^22.3.0"
   }
 }
