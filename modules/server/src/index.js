@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { exec } from 'child_process';
 import elasticsearch from 'elasticsearch';
 import { rainbow } from 'chalk-animation';
 import { Server } from 'http';
@@ -13,12 +14,21 @@ import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 
+let github = {};
+
 let main = async ({ io, app }) => {
   sockets({ io });
 
+  exec('git rev-parse --abbrev-ref HEAD', (err, branch) => {
+    if (!err) github.branch = branch.trim();
+  });
+
   app.post('/github', (req, res) => {
-    console.log('github stuff?');
-    console.log(req.body);
+    console.log(req.body.ref);
+
+    console.log(123, ref.split('/').pop());
+
+    console.log('current', github);
 
     res.json({ thanks: 'yo' });
   });
