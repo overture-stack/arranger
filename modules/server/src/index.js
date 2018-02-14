@@ -36,8 +36,9 @@ let main = async ({ io, app }) => {
     let commit = req.body.after.trim();
 
     if (branch === github.branch && commit !== github.commit) {
+      console.log('SHUTTING DOWN AND RESTARTGIN');
       exec(
-        'git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
+        'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
         err => {
           if (err) throw err;
         },
