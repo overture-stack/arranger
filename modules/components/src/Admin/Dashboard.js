@@ -39,6 +39,8 @@ class Dashboard extends React.Component {
     fields: [],
     fieldsTotal: 0,
     activeField: null,
+
+    refresh: false,
   };
 
   componentDidMount() {
@@ -54,6 +56,10 @@ class Dashboard extends React.Component {
 
     socket.on('server::projectsStatus', projectStates => {
       this.setState({ projectStates });
+    });
+
+    socket.on('server::newServerVersion', () => {
+      this.setState({ refresh: true });
     });
   }
 
@@ -344,6 +350,32 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
+          {this.state.refresh && (
+            <div
+              css={`
+                z-index: 10000;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: #383838;
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+              `}
+            >
+              A new version of the Arranger server is available.{' '}
+              <span
+                css={`
+                  cursor: pointer;
+                  color: rgb(154, 232, 229);
+                  font-weight: bold;
+                `}
+                onClick={() => (window.location.href = window.location.href)}
+              >
+                REDPLOY?
+              </span>
+            </div>
+          )}
           <Header
             css={`
               flex: none;

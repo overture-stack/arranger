@@ -15,6 +15,18 @@ import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 
 let github = {};
+let newerGithub = {};
+
+let restart = ({ io }) => {
+  io.emit('server::serverRestarting');
+
+  exec(
+    'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
+    err => {
+      if (err) throw err;
+    },
+  );
+};
 
 let main = async ({ io, app }) => {
   sockets({ io });
@@ -27,22 +39,23 @@ let main = async ({ io, app }) => {
     if (!err) github.commit = commit.trim();
   });
 
+  app.post('/restartServer', (req, res) => {
+    restart({ io });
+  });
+
   app.post('/github', (req, res) => {
-    let branch = req.body.ref
+    newerGithub.branch = req.body.ref
       .split('/')
       .pop()
       .trim();
 
-    let commit = req.body.after.trim();
+    newerGithub.commit = req.body.after.trim();
 
-    if (branch === github.branch && commit !== github.commit) {
-      console.log('SHUTTING DOWN AND RESTARTGIN');
-      exec(
-        'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
-        err => {
-          if (err) throw err;
-        },
-      );
+    if (
+      newerGithub.branch === github.branch &&
+      newerGithub.commit !== github.commit
+    ) {
+      io.emit('server::newServerVersion');
     }
 
     res.json({ message: 'restarting api' });
