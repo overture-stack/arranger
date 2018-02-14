@@ -23,12 +23,21 @@ let main = async ({ io, app }) => {
     if (!err) github.branch = branch.trim();
   });
 
+  exec('git rev-parse HEAD', (err, commit) => {
+    if (!err) github.commit = commit.trim();
+  });
+
   app.post('/github', (req, res) => {
-    let branch = req.body.ref.split('/').pop();
+    let branch = req.body.ref
+      .split('/')
+      .pop()
+      .trim();
 
-    console.log(123, branch);
+    let commit = req.body.after.trim();
 
-    console.log('current', github);
+    if (branch === github.branch && commit !== github.commit) {
+      console.log('should restart');
+    }
 
     res.json({ thanks: 'yo' });
   });
