@@ -12,7 +12,7 @@ export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => (
       });
     }}
     field={path}
-    buckets={aggProps ? aggProps.buckets : null}
+    buckets={aggProps ? aggProps.buckets || [] : []}
     displayName={title}
     isActive={d => {
       return inCurrentSQON({
