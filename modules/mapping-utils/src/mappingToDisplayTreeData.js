@@ -1,5 +1,3 @@
-import React from 'react';
-
 const MOCK_MAPPING = {
   boolean: {
     type: 'boolean',
