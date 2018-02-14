@@ -6,7 +6,7 @@ export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => (
   <TermAggs
     key={title}
     collapsible={false}
-    handleValueClick={bucket => {
+    handleValueClick={({ bucket }) => {
       onValueChange({
         value: bucket.key,
       });

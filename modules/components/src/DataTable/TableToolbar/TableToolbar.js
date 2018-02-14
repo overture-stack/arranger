@@ -3,6 +3,7 @@ import { debounce } from 'lodash';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import SearchIcon from 'react-icons/lib/fa/search';
 
+import { replaceFilterSQON } from '../../SQONView/utils';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
 import TextInput from '../../Input';
@@ -20,6 +21,23 @@ const enhance = compose(
     if (!sqon?.content?.find(x => x.op === 'filter')) setFilterVal('');
   }),
 );
+
+const generateNextSQON = value => ({ sqon, fields }) =>
+  replaceFilterSQON(
+    {
+      op: 'and',
+      content: [
+        {
+          op: 'filter',
+          content: {
+            fields: fields,
+            value,
+          },
+        },
+      ],
+    },
+    sqon,
+  );
 
 const TableToolbar = ({
   columns,
@@ -57,7 +75,10 @@ const TableToolbar = ({
         value={filterVal}
         onChange={({ target: { value } }) => {
           setFilterVal(value);
-          debouncedOnFilterChange(value);
+          debouncedOnFilterChange({
+            value,
+            generateNextSQON: generateNextSQON(value),
+          });
         }}
       />
     </div>
@@ -68,7 +89,10 @@ const TableToolbar = ({
           items={canChangeShowColumns}
           onChange={item => {
             setFilterVal('');
-            onFilterChange('');
+            onFilterChange({
+              value: '',
+              generateNextSQON: generateNextSQON(''),
+            });
             onColumnsChange({ ...item, show: !item.show });
           }}
         >

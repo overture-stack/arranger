@@ -66,24 +66,30 @@ class DataTable extends React.Component {
         : null,
       offset: state.page * state.pageSize,
       first: state.pageSize,
-    }).then(({ total, data }) => {
-      if (total !== this.state.total) {
-        this.props.onPaginationChange({ total });
-      }
+    })
+      .then(({ total, data }) => {
+        if (total !== this.state.total) {
+          this.props.onPaginationChange({ total });
+        }
 
-      this.setState({
-        data,
-        total,
-        pages: Math.ceil(total / state.pageSize),
-        loading: false,
+        this.setState({
+          data,
+          total,
+          pages: Math.ceil(total / state.pageSize),
+          loading: false,
+        });
+
+        this.setSelectedTableRows(
+          intersection(
+            data.map(item => item[this.props.config.keyField]),
+            selectedTableRows,
+          ),
+        );
+      })
+      .catch(err => {
+        console.error(err);
+        this.setState({ loading: false });
       });
-      this.setSelectedTableRows(
-        intersection(
-          data.map(item => item[this.props.config.keyField]),
-          selectedTableRows,
-        ),
-      );
-    });
   };
 
   componentDidUpdate(lastProps) {

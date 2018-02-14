@@ -109,29 +109,9 @@ storiesOf('Aggs', module)
               <TermAgg
                 key={agg.field}
                 {...agg}
-                Content={({ content, ...props }) => {
-                  return (
-                    <div
-                      {...props}
-                      onClick={() =>
-                        update({
-                          sqon: toggleSQON(
-                            {
-                              op: 'and',
-                              content: [
-                                {
-                                  op: 'in',
-                                  content,
-                                },
-                              ],
-                            },
-                            sqon,
-                          ),
-                        })
-                      }
-                    />
-                  );
-                }}
+                handleValueClick={({ generateNextSQON }) =>
+                  update({ sqon: generateNextSQON(sqon) })
+                }
                 isActive={d =>
                   inCurrentSQON({
                     value: d.value,
@@ -177,20 +157,9 @@ storiesOf('Aggs', module)
               avg: 70,
               sum: 15000,
             }}
-            handleChange={({ max, min, field }) => {
-              update({
-                sqon: replaceSQON(
-                  {
-                    op: 'and',
-                    content: [
-                      { op: '>=', content: { field, value: min } },
-                      { op: '<=', content: { field, value: max } },
-                    ],
-                  },
-                  sqon,
-                ),
-              });
-            }}
+            handleChange={({ generateNextSQON }) =>
+              update({ sqon: generateNextSQON(sqon) })
+            }
           />
         </div>
       )}

@@ -206,6 +206,12 @@ export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
       }
     : null;
 
+// returns current value for a given field / operation
+export const currentFieldValue = ({ sqon, dotField, op }) =>
+  sqon?.content?.find(
+    content => content.content?.field === dotField && content.op === op,
+  )?.content.value;
+
 // true if field and value in
 export const inCurrentSQON = ({
   currentSQON,

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import InputRange from 'react-input-range';
 import convert from 'convert-units';
+import { replaceSQON } from '../SQONView/utils';
 
 import 'react-input-range/lib/css/index.css';
 import './AggregationCard.css';
@@ -44,9 +45,25 @@ class RangeAgg extends Component {
     });
   }
 
-  onChangeComplete = callback => {
+  onChangeComplete = () => {
+    let { handleChange } = this.props;
     let { field, value: { min, max } } = this.state;
-    callback({ field, min, max });
+    handleChange?.({
+        field,
+        min,
+        max,
+        generateNextSQON: sqon =>
+          replaceSQON(
+            {
+              op: 'and',
+              content: [
+                { op: '>=', content: { field, value: min } },
+                { op: '<=', content: { field, value: max } },
+              ],
+            },
+            sqon,
+          ),
+      });
   };
 
   setValue = ({ min, max }) => {
@@ -128,9 +145,7 @@ class RangeAgg extends Component {
                       value={value}
                       formatLabel={this.formatRangeLabel}
                       onChange={x => this.setValue(x)}
-                      onChangeComplete={() =>
-                        this.onChangeComplete(handleChange)
-                      }
+                      onChangeComplete={this.onChangeComplete}
                     />
                   </div>
                 </div>
