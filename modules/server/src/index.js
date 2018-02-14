@@ -24,9 +24,9 @@ let main = async ({ io, app }) => {
   });
 
   app.post('/github', (req, res) => {
-    console.log(req.body.ref);
+    let branch = req.body.ref.split('/').pop();
 
-    console.log(123, ref.split('/').pop());
+    console.log(123, branch);
 
     console.log('current', github);
 
