@@ -37,7 +37,7 @@ let main = async ({ io, app }) => {
 
     if (branch === github.branch && commit !== github.commit) {
       exec(
-        'git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart kf-api',
+        'git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
         err => {
           if (err) throw err;
         },
