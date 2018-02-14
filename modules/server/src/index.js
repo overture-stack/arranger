@@ -13,7 +13,7 @@ import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 
-let startCMS = async ({ io, app }) => {
+let main = async ({ io, app }) => {
   sockets({ io });
 
   app.use((req, res, next) => {
@@ -23,6 +23,10 @@ let startCMS = async ({ io, app }) => {
   });
 
   projectsRoutes({ app, io });
+
+  if (PROJECT_ID && ES_HOST) {
+    startSingleProject({ io, app });
+  }
 };
 
 let startSingleProject = async ({ app, io }) => {
@@ -44,10 +48,6 @@ let io = socketIO(http);
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 
-if (PROJECT_ID && ES_HOST) {
-  startSingleProject({ io, app });
-} else {
-  startCMS({ io, app });
-}
+main({ io, app });
 
 http.listen(PORT, () => rainbow(`⚡️ Listening on port ${PORT} ⚡️`));
