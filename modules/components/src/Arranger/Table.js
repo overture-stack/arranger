@@ -21,6 +21,7 @@ const Table = ({
         return (
           <DataTable
             {...props}
+            sqon={sqon}
             config={columnState.state}
             streamData={streamData(index, projectId)}
             fetchData={fetchData(projectId)}
