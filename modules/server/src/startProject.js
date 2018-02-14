@@ -82,6 +82,12 @@ export default async function startProjectApp({ es, id, io }) {
 
   let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
 
+  let mockSchema = makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    mock: true,
+  });
+
   const createAggsState = typesWithMappings.map(async ([type, props]) => {
     const index = `arranger-projects-${id}-${type}-aggs-state`;
     const count = await es
@@ -136,15 +142,26 @@ export default async function startProjectApp({ es, id, io }) {
 
   projectApp.get(`/${id}/ping`, (req, res) => res.send('ok'));
 
+  let noSchemaHandler = (req, res) =>
+    res.json({
+      error:
+        'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
+    });
+
+  projectApp.use(
+    `/mock/${id}/graphql`,
+    mockSchema
+      ? graphqlExpress({
+          schema: mockSchema,
+        })
+      : noSchemaHandler,
+  );
+
   projectApp.use(
     `/${id}/graphql`,
     schema
       ? graphqlExpress({ schema, context: { es, projectId: id, io } })
-      : (req, res) =>
-          res.json({
-            error:
-              'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
-          }),
+      : noSchemaHandler,
   );
 
   setProject(id, { app: projectApp, schema, es, io });
