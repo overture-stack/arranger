@@ -4,7 +4,15 @@ import DataTable, { ColumnsState } from '../DataTable';
 
 import { replaceFilterSQON } from '../SQONView/utils';
 
-const Table = ({ projectId, index, streamData, fetchData, ...props }) => {
+const Table = ({
+  projectId,
+  index,
+  streamData,
+  fetchData,
+  setSQON,
+  sqon,
+  ...props
+}) => {
   return (
     <ColumnsState
       projectId={projectId}
