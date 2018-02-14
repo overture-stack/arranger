@@ -16,6 +16,13 @@ import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 let main = async ({ io, app }) => {
   sockets({ io });
 
+  app.post('/github', (req, res) => {
+    console.log('github stuff?');
+    console.log(req.body);
+
+    res.json({ thanks: 'yo' });
+  });
+
   app.use((req, res, next) => {
     let projects = getProjects();
     if (!projects.length) return next();
