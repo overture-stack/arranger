@@ -1,7 +1,7 @@
 import { get, flatten } from 'lodash';
 // streamsaver uses ES6 and fails to minify, removing for now.
 // import { createWriteStream, supported } from 'streamsaver';
-import { saveAs } from 'filesaver.js';
+import { saveAs } from 'file-saver';
 
 import { getAllValue } from '../utils';
 

@@ -25,9 +25,6 @@
     "url": "https://github.com/overture-stack/arranger/issues"
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
-  "peerDependencies": {
-    "graphql": "^0.11.7"
-  },
   "dependencies": {
     "@arranger/mapping-utils": "^0.0.7",
     "@arranger/middleware": "^0.0.6",
@@ -41,18 +38,17 @@
     "express": "^4.16.2",
     "graphql": "^0.12.3",
     "node-fetch": "^2.0.0",
-    "react-router-dom": "^4.2.2",
     "socket.io": "^2.0.4",
     "socket.io-stream": "^0.9.1",
-    "uuid": "^3.1.0"
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.35",
-    "@babel/core": "^7.0.0-beta.35",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.38",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.35",
-    "@babel/preset-env": "^7.0.0-beta.35",
-    "@babel/register": "^7.0.0-beta.35",
+    "@babel/cli": "^7.0.0-beta.40",
+    "@babel/core": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
+    "@babel/preset-env": "^7.0.0-beta.40",
+    "@babel/register": "^7.0.0-beta.40",
     "nodemon": "^1.13.3"
   }
 }

@@ -1,4 +1,9 @@
 {
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/overture-stack/arranger.git"
+  },
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "start": "npm run bootstrap && npm run lerna -- run --parallel watch",
     "bootstrap": "lerna bootstrap --hoist",
@@ -9,17 +14,16 @@
     "storybook": "cd modules/components && npm run storybook",
     "dashboard": "cd modules/components && npm run dashboard",
     "portal": "cd modules/components && npm run portal",
-    "netlify-build":
-      "npm i && npm run bootstrap && cd modules/components && npm run build-storybook"
+    "netlify-build": "npm i && npm run bootstrap && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.1",
-    "eslint": "^4.16.0",
+    "eslint": "^4.1.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-config-react-app": "^2.1.0",
     "eslint-plugin-flowtype": "^2.42.0",
     "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-jsx-a11y": "^5.1.1",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-react": "^7.6.1",
     "lerna": "^2.6.0",
