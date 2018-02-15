@@ -14,7 +14,7 @@
     "storybook": "cd modules/components && npm run storybook",
     "dashboard": "cd modules/components && npm run dashboard",
     "portal": "cd modules/components && npm run portal",
-    "netlify-build": "npm i && npm run bootstrap && cd modules/components && npm run build-storybook"
+    "netlify-build": "npm i && npm run bootstrap -- --scope=@arranger/components --include-filtered-dependencies && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.1",
