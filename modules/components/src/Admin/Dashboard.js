@@ -340,6 +340,12 @@ class Dashboard extends React.Component {
     });
   };
 
+  redeployServer = async () => {
+    await api({
+      endpoint: `/restartServer`,
+    });
+  };
+
   render() {
     let headerHeight = 38;
     return (
@@ -355,7 +361,21 @@ class Dashboard extends React.Component {
             socket={socket}
             event="server::newServerVersion"
             Message={() => {
-              return <div>it's working I thinkg</div>;
+              return (
+                <div>
+                  A newer version of the Arranger server is available.
+                  <span
+                    css={`
+                      cursor: pointer;
+                      color: rgb(154, 232, 229);
+                      font-weight: bold;
+                    `}
+                    onClick={this.redeployServer}
+                  >
+                    &nbsp;DEPLOY
+                  </span>
+                </div>
+              );
             }}
           />
           <Header
@@ -365,7 +385,7 @@ class Dashboard extends React.Component {
             eshost={this.state.eshost}
             height={headerHeight}
             handleOnChange={e => {
-              localStorage.ES_HOST = e.target.value;
+              localStorage.ES_HOST = e.xtarget.value;
               let state = { eshost: e.target.value };
               this.setState(state);
               this.getProjects(state);
