@@ -124,7 +124,7 @@ export default class AdvancedFacetView extends React.Component {
                     op: 'in',
                     content: {
                       field: path,
-                      value: value,
+                      value: typeof value === 'string' ? [value] : value,
                     },
                   },
                 ],
