@@ -2,7 +2,7 @@ import React from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
 class DetectNewVersion extends React.Component {
-  state = { shouldRefresh: false };
+  state = { shouldRefresh: false, autoClose: false };
 
   defaultProps = {
     event: 'server::refresh',
@@ -25,6 +25,8 @@ class DetectNewVersion extends React.Component {
 
   componentDidMount() {
     this.props.socket.on('server::init', () => {
+      toast.dismiss();
+      this.setState({ autoClose: true });
       toast('The server is online.', {
         className: {
           background: 'black',
@@ -34,6 +36,7 @@ class DetectNewVersion extends React.Component {
     });
 
     this.props.socket.on('server::serverRestarting', () => {
+      toast.dismiss();
       toast('The server is restarting. Please standby.', {
         className: {
           background: 'black',
@@ -43,8 +46,8 @@ class DetectNewVersion extends React.Component {
     });
 
     this.props.socket.on(this.props.event, () => {
-      this.setState({ shouldRefresh: true });
-
+      this.setState({ shouldRefresh: true, autoClose: false });
+      toast.dismiss();
       toast(this.props.Message, {
         className: {
           background: 'black',
