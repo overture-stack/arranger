@@ -7,7 +7,7 @@ let github = {};
 let newerGithub = {};
 
 let restartCmd =
-  'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api';
+  'RESTART=true cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api';
 
 let restart = ({ io }) => {
   io.emit('server::serverRestarting');
@@ -37,8 +37,13 @@ export default async ({ app, io }) => {
     key: 'commit',
   });
 
+  if (process.env.RESTART) {
+    io.emit('server::restartSuccesful');
+  }
+
   app.post('/restartServer', (req, res) => {
     restart({ io });
+    res.json({ message: 'restarting server' });
   });
 
   app.post('/github', (req, res) => {
