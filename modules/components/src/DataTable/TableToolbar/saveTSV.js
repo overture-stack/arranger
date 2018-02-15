@@ -59,22 +59,24 @@ function getRows(args) {
     entities = [],
   } = args;
   if (pathIndex >= paths.length - 1) {
-    return columns.map(column => {
-      const entity = entities
-        .slice()
-        .reverse()
-        .find(entity => column.field.indexOf(entity.field) === 0);
+    return [
+      columns.map(column => {
+        const entity = entities
+          .slice()
+          .reverse()
+          .find(entity => column.field.indexOf(entity.field) === 0);
 
-      if (entity) {
-        return get(
-          entity.data,
-          // TODO: don't assume all edges will start with node
-          'node.' + column.field.replace(entity.field, '').replace(/^\./, ''),
-        );
-      } else {
-        return getValue(row, column);
-      }
-    });
+        if (entity) {
+          return get(
+            entity.data,
+            // TODO: don't assume all edges will start with node
+            'node.' + column.field.replace(entity.field, '').replace(/^\./, ''),
+          );
+        } else {
+          return getValue(row, column);
+        }
+      }),
+    ];
   } else {
     const currentPath = paths[pathIndex];
     return flatten(
@@ -121,17 +123,15 @@ export default function({
     first: 1000,
     sqon,
     onData: chunk => {
-      const data = chunk.data
-        .map(row => {
-          return flatten(
-            getRows({
-              row,
-              paths: uniqueBy.split('[].').filter(Boolean),
-              columns: columnsShowing,
-            }),
-          ).join('\t');
-        })
-        .join('\n');
+      const data = flatten(
+        chunk.data.map(row => {
+          return getRows({
+            row,
+            paths: uniqueBy.split('[].').filter(Boolean),
+            columns: columnsShowing,
+          }).map(row => row.join('\t'));
+        }),
+      ).join('\n');
 
       onData(data + '\n');
     },
