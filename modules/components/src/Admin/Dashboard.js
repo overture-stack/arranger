@@ -379,7 +379,7 @@ class Dashboard extends React.Component {
             eshost={this.state.eshost}
             height={headerHeight}
             handleOnChange={e => {
-              localStorage.ES_HOST = e.xtarget.value;
+              localStorage.ES_HOST = e.target.value;
               let state = { eshost: e.target.value };
               this.setState(state);
               this.getProjects(state);
