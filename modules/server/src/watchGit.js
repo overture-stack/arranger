@@ -39,8 +39,6 @@ export default async ({ app, io }) => {
     key: 'commit',
   });
 
-  io.emit('server::init');
-
   app.post('/restartServer', (req, res) => {
     restart({ io });
     res.json({ message: 'restarting server' });
