@@ -1,43 +1,39 @@
 import React from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 
 class DetectNewVersion extends React.Component {
-  state = { shouldRefresh: false };
+  state = { shouldRefresh: true };
 
   componentDidMount() {
     this.props.socket.on('server::refresh', () => {
       this.setState({ shouldRefresh: true });
+
+      toast(
+        <span>
+          A new version of this app is available.
+          <span
+            css={`
+              cursor: pointer;
+              color: rgb(154, 232, 229);
+              font-weight: bold;
+            `}
+            onClick={() => (window.location.href = window.location.href)}
+          >
+            &nbsp;REFRESH
+          </span>
+        </span>,
+        {
+          className: {
+            background: 'black',
+          },
+          position: toast.POSITION.BOTTOM_RIGHT,
+        },
+      );
     });
   }
 
   render() {
-    const { shouldRefresh } = this.state;
-
-    return shouldRefresh ? (
-      <div
-        css={`
-          z-index: 10000;
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          background: #383838;
-          color: white;
-          padding: 10px;
-          border-radius: 6px;
-        `}
-      >
-        A new version of this app is available.{' '}
-        <span
-          css={`
-            cursor: pointer;
-            color: rgb(154, 232, 229);
-            font-weight: bold;
-          `}
-          onClick={() => (window.location.href = window.location.href)}
-        >
-          REFRESH
-        </span>
-      </div>
-    ) : null;
+    return this.state.shouldRefresh && <ToastContainer autoClose={false} />;
   }
 }
 
