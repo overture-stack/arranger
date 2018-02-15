@@ -30,7 +30,9 @@ const Aggregations = ({
                   .map(agg => ({
                     ...agg,
                     ...data[index].aggregations[agg.field],
-                    ...data[index].extended.find(x => x.field === agg.field),
+                    ...data[index].extended.find(
+                      x => x.field.replace(/\./g, '__') === agg.field,
+                    ),
                   }))
                   .map(agg => (
                     // TODO: switch on agg type
