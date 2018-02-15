@@ -1,5 +1,4 @@
 import React from 'react';
-import { storiesOf } from '@storybook/react';
 import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
