@@ -24,8 +24,8 @@ class DetectNewVersion extends React.Component {
   };
 
   componentDidMount() {
-    this.props.socket.on('server::restartSuccesful', () => {
-      toast('The server has redployed succesfully!', {
+    this.props.socket.on('server::init', () => {
+      toast('The server is online.', {
         className: {
           background: 'black',
         },

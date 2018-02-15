@@ -8,7 +8,7 @@ let github = {};
 let newerGithub = {};
 
 let restartCmd =
-  'RESTART=true cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api --update-env';
+  'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api';
 
 let restart = ({ io }) => {
   console.log(chalk`♻️ {cyan server rebuild initializing} ♻️`);
@@ -39,13 +39,7 @@ export default async ({ app, io }) => {
     key: 'commit',
   });
 
-  console.log(123, 'up again');
-
-  console.log(234, process.env.RESTART);
-
-  if (process.env.RESTART) {
-    io.emit('server::restartSuccesful');
-  }
+  io.emit('server::init');
 
   app.post('/restartServer', (req, res) => {
     restart({ io });
