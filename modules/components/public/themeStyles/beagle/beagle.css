@@ -11,15 +11,19 @@ div {
 /* styling for the table component */
 /***********************************/
 
-.ReactTable .rt-thead,
-.ReactTable .rt-tbody {
+.scroll-react-table .ReactTable .rt-thead,
+.scroll-react-table .ReactTable .rt-tbody {
   overflow-y: scroll;
+}
+
+.scroll-react-table .ReactTable {
+  flex-grow: 1;
 }
 
 .ReactTable {
   font-family: 'Montserrat', sans-serif;
   font-size: 0.8rem;
-  flex-grow: 1;
+  background: #fff;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
@@ -53,6 +57,9 @@ div {
 
 .ReactTable.-striped .rt-tr.-odd {
   background-color: #f4f5f8;
+}
+.ReactTable.-striped .rt-tr.-even {
+  background-color: #fff;
 }
 
 .ReactTable .-pagination {
@@ -358,6 +365,7 @@ div {
 /**************************************/
 .tableToolbar {
   padding: 14px 19px 12px 15px;
+  background: #fff;
 }
 
 .tableToolbar .buttonWrapper {
