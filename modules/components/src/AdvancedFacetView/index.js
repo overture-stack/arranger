@@ -73,7 +73,7 @@ export default class AdvancedFacetView extends React.Component {
     super(props);
     this.state = {
       selectedPath: null,
-      withValueOnly: false,
+      withValueOnly: true,
     };
   }
   fieldMappingFromPath = path => {
