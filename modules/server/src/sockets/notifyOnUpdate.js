@@ -7,6 +7,8 @@ export default ({ io }) =>
       clearInterval(socket.monitorIntervalId);
     });
 
+    socket.emit('server::init');
+
     socket.on('arranger::monitorProjects', ({ projects = [] }) => {
       let pingProject = async () => {
         let statuses = await Promise.all(

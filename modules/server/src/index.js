@@ -9,12 +9,14 @@ import cors from 'cors';
 
 import projectsRoutes from './projects';
 import sockets from './sockets';
+import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 
 let main = async ({ io, app }) => {
   sockets({ io });
+  watchGit({ app, io });
 
   app.use((req, res, next) => {
     let projects = getProjects();

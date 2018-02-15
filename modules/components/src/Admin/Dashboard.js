@@ -6,6 +6,7 @@ import convert from 'convert-units';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
+import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
 import EditAggs from '../Aggs/EditAggs';
@@ -333,6 +334,12 @@ class Dashboard extends React.Component {
     });
   };
 
+  redeployServer = async () => {
+    await api({
+      endpoint: `/restartServer`,
+    });
+  };
+
   render() {
     let headerHeight = 38;
     return (
@@ -344,6 +351,27 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
+          <DetectNewVersion
+            socket={socket}
+            event="server::newServerVersion"
+            Message={() => {
+              return (
+                <div>
+                  A newer version of the Arranger server is available.
+                  <span
+                    css={`
+                      cursor: pointer;
+                      color: rgb(154, 232, 229);
+                      font-weight: bold;
+                    `}
+                    onClick={this.redeployServer}
+                  >
+                    &nbsp;DEPLOY
+                  </span>
+                </div>
+              );
+            }}
+          />
           <Header
             css={`
               flex: none;

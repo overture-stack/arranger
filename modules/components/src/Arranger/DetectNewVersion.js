@@ -1,31 +1,14 @@
 import React from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 
 class DetectNewVersion extends React.Component {
   state = { shouldRefresh: false };
 
-  componentDidMount() {
-    this.props.socket.on('server::refresh', () => {
-      this.setState({ shouldRefresh: true });
-    });
-  }
-
-  render() {
-    const { shouldRefresh } = this.state;
-
-    return shouldRefresh ? (
-      <div
-        css={`
-          z-index: 10000;
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          background: #383838;
-          color: white;
-          padding: 10px;
-          border-radius: 6px;
-        `}
-      >
-        A new version of this app is available.{' '}
+  defaultProps = {
+    event: 'server::refresh',
+    Message: () => (
+      <span>
+        A new version of this app is available.
         <span
           css={`
             cursor: pointer;
@@ -34,10 +17,44 @@ class DetectNewVersion extends React.Component {
           `}
           onClick={() => (window.location.href = window.location.href)}
         >
-          REFRESH
+          &nbsp;REFRESH
         </span>
-      </div>
-    ) : null;
+      </span>
+    ),
+  };
+
+  componentDidMount() {
+    this.props.socket.on('server::init', () => {
+      toast('The server is online.', {
+        className: {
+          background: 'black',
+        },
+        position: toast.POSITION.BOTTOM_RIGHT,
+      });
+    });
+
+    this.props.socket.on('server::serverRestarting', () => {
+      toast('The server is restarting. Please standby.', {
+        className: {
+          background: 'black',
+        },
+        position: toast.POSITION.BOTTOM_RIGHT,
+      });
+    });
+
+    this.props.socket.on(this.props.event, () => {
+      this.setState({ shouldRefresh: true });
+      toast(this.props.Message, {
+        className: {
+          background: 'black',
+        },
+        position: toast.POSITION.BOTTOM_RIGHT,
+      });
+    });
+  }
+
+  render() {
+    return this.state.shouldRefresh && <ToastContainer autoClose={false} />;
   }
 }
 
