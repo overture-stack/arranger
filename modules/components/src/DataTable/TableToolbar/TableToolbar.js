@@ -1,12 +1,11 @@
 import React from 'react';
-import { debounce } from 'lodash';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
-import SearchIcon from 'react-icons/lib/fa/search';
+import { debounce } from 'lodash';
 
-import { replaceFilterSQON } from '../../SQONView/utils';
+import { replaceFilterSQON, currentFilterValue } from '../../SQONView/utils';
+import TextFilter, { generateNextSQON } from './TextFilter';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
-import TextInput from '../../Input';
 import './Toolbar.css';
 
 const enhance = compose(
@@ -18,26 +17,9 @@ const enhance = compose(
   })),
   withState('filterVal', 'setFilterVal', ''),
   withPropsOnChange(['sqon'], ({ sqon, setFilterVal }) => {
-    if (!sqon?.content?.find(x => x.op === 'filter')) setFilterVal('');
+    if (!currentFilterValue(sqon)) setFilterVal('');
   }),
 );
-
-const generateNextSQON = value => ({ sqon, fields }) =>
-  replaceFilterSQON(
-    {
-      op: 'and',
-      content: [
-        {
-          op: 'filter',
-          content: {
-            fields: fields,
-            value,
-          },
-        },
-      ],
-    },
-    sqon,
-  );
 
 const TableToolbar = ({
   columns,
@@ -68,17 +50,11 @@ const TableToolbar = ({
       {total?.toLocaleString()}
     </div>
     <div className="group">
-      <TextInput
-        icon={<SearchIcon />}
-        type="text"
-        placeholder="Filter"
+      <TextFilter
         value={filterVal}
-        onChange={({ target: { value } }) => {
+        onChange={({ value, generateNextSQON }) => {
           setFilterVal(value);
-          debouncedOnFilterChange({
-            value,
-            generateNextSQON: generateNextSQON(value),
-          });
+          debouncedOnFilterChange({ value, generateNextSQON });
         }}
       />
     </div>
