@@ -39,6 +39,8 @@ export default async ({ app, io }) => {
     key: 'commit',
   });
 
+  console.log(234, process.env);
+
   if (process.env.RESTART) {
     io.emit('server::restartSuccesful');
   }
