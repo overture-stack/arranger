@@ -58,7 +58,11 @@ class DetectNewVersion extends React.Component {
   }
 
   render() {
-    return this.state.shouldRefresh && <ToastContainer autoClose={false} />;
+    return (
+      this.state.shouldRefresh && (
+        <ToastContainer autoClose={this.state.autoClose} />
+      )
+    );
   }
 }
 
