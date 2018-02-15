@@ -33,10 +33,10 @@ let main = async ({ io, app }) => {
 
   exec('git rev-parse --abbrev-ref HEAD', (err, branch) => {
     if (!err) github.branch = branch.trim();
-  });
 
-  exec('git rev-parse HEAD', (err, commit) => {
-    if (!err) github.commit = commit.trim();
+    exec('git rev-parse HEAD', (err, commit) => {
+      if (!err) github.commit = commit.trim();
+    });
   });
 
   app.post('/restartServer', (req, res) => {
