@@ -11,7 +11,7 @@ let restartCmd =
   'RESTART=true cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api';
 
 let restart = ({ io }) => {
-  console.log(chalk`♻️ {server rebuild initializing} ♻️`);
+  console.log(chalk`♻️ {cyan server rebuild initializing} ♻️`);
   io.emit('server::serverRestarting');
 
   exec(restartCmd, err => {
