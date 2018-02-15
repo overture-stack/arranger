@@ -6,6 +6,7 @@ import convert from 'convert-units';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
+import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
 import AggsState from '../Aggs/AggsState';
 import EditAggs from '../Aggs/EditAggs';
@@ -350,32 +351,13 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
-          {this.state.refresh && (
-            <div
-              css={`
-                z-index: 10000;
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: #383838;
-                color: white;
-                padding: 10px;
-                border-radius: 6px;
-              `}
-            >
-              A new version of the Arranger server is available.{' '}
-              <span
-                css={`
-                  cursor: pointer;
-                  color: rgb(154, 232, 229);
-                  font-weight: bold;
-                `}
-                onClick={() => (window.location.href = window.location.href)}
-              >
-                REDPLOY?
-              </span>
-            </div>
-          )}
+          <DetectNewVersion
+            socket={socket}
+            event="server::newServerVersion"
+            Message={() => {
+              return <div>it's working I thinkg</div>;
+            }}
+          />
           <Header
             css={`
               flex: none;

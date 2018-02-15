@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { exec } from 'child_process';
 import elasticsearch from 'elasticsearch';
 import { rainbow } from 'chalk-animation';
 import { Server } from 'http';
@@ -10,56 +9,14 @@ import cors from 'cors';
 
 import projectsRoutes from './projects';
 import sockets from './sockets';
+import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
 
-let github = {};
-let newerGithub = {};
-
-let restart = ({ io }) => {
-  io.emit('server::serverRestarting');
-
-  exec(
-    'cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api',
-    err => {
-      if (err) throw err;
-    },
-  );
-};
-
 let main = async ({ io, app }) => {
   sockets({ io });
-
-  exec('git rev-parse --abbrev-ref HEAD', (err, branch) => {
-    if (!err) github.branch = branch.trim();
-
-    exec('git rev-parse HEAD', (err, commit) => {
-      if (!err) github.commit = commit.trim();
-    });
-  });
-
-  app.post('/restartServer', (req, res) => {
-    restart({ io });
-  });
-
-  app.post('/github', (req, res) => {
-    newerGithub.branch = req.body.ref
-      .split('/')
-      .pop()
-      .trim();
-
-    newerGithub.commit = req.body.after.trim();
-
-    if (
-      newerGithub.branch === github.branch &&
-      newerGithub.commit !== github.commit
-    ) {
-      io.emit('server::newServerVersion');
-    }
-
-    res.json({ message: 'restarting api' });
-  });
+  watchGit({ app, io });
 
   app.use((req, res, next) => {
     let projects = getProjects();
