@@ -1,5 +1,6 @@
 import { promisify } from 'util';
 import { exec as e } from 'child_process';
+import chalk from 'chalk';
 
 let exec = promisify(e);
 
@@ -10,6 +11,7 @@ let restartCmd =
   'RESTART=true cd ~/arranger && git pull && npm i && npm run bootstrap -- --scope @arranger/server --include-filtered-dependencies && pm2 restart api';
 
 let restart = ({ io }) => {
+  console.log(chalk`♻️ {server rebuild initializing} ♻️`);
   io.emit('server::serverRestarting');
 
   exec(restartCmd, err => {
