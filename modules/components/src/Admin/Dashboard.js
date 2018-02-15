@@ -40,8 +40,6 @@ class Dashboard extends React.Component {
     fields: [],
     fieldsTotal: 0,
     activeField: null,
-
-    refresh: false,
   };
 
   componentDidMount() {
@@ -57,10 +55,6 @@ class Dashboard extends React.Component {
 
     socket.on('server::projectsStatus', projectStates => {
       this.setState({ projectStates });
-    });
-
-    socket.on('server::newServerVersion', () => {
-      this.setState({ refresh: true });
     });
   }
 
