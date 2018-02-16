@@ -7,7 +7,6 @@
     "access": "public"
   },
   "scripts": {
-    "test": "jest",
     "build": "mkdir -p src && babel src --out-dir dist",
     "prepare": "npm run build",
     "watch": "mkdir -p src && babel src --watch --out-dir dist",

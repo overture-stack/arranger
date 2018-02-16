@@ -10,10 +10,10 @@
     "access": "public"
   },
   "scripts": {
-    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
+    "start":
+      "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
-    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist"
   },
   "repository": {
     "type": "git",
