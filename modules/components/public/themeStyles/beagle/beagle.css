@@ -546,6 +546,34 @@ div {
   padding-right: 10px;
 }
 
+.advancedFacetViewWrapper .filterWrapper {
+  margin-bottom: 20px;
+}
+
+.advancedFacetViewWrapper .resultList {
+  border: solid 1px #e7e8ed;
+  max-height: 300px;
+  overflow-y: scroll;
+}
+
+.advancedFacetViewWrapper .resultItem {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.advancedFacetViewWrapper .resultItem:hover {
+  background: #e7e8ed;
+}
+
+.advancedFacetViewWrapper .resultItem .title {
+  font-weight: bold;
+}
+
+.advancedFacetViewWrapper .resultItem .field {
+  padding-left: 10px;
+  color: lightgrey;
+}
+
 /*********************************************/
 /******** styling for the Slider *************/
 /*********************************************/

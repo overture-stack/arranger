@@ -20,30 +20,35 @@ export default ({
           value={currentValue}
           onChange={e => update({ currentValue: e.target.value })}
         />
-        <div
-          className="resultList"
-          style={{ maxHeight: 300, overflowY: 'scroll' }}
-        >
-          {(withValueOnly
-            ? filterOutNonValue({ extendedMapping, aggregations })
-                .extendedMappingWithValue
-            : extendedMapping
-          )
-            ?.filter?.(
-              ({ displayName }) =>
-                displayName
-                  .toLowerCase()
-                  .indexOf(
-                    (currentValue?.length ? currentValue : null)?.toLowerCase(),
-                  ) > -1,
+        {
+          <div className="resultList">
+            {(withValueOnly
+              ? filterOutNonValue({ extendedMapping, aggregations })
+                  .extendedMappingWithValue
+              : extendedMapping
             )
-            .map(({ displayName, field, ...rest }) => (
-              <div className="resultItem" onClick={() => onFieldSelect(field)}>
-                <span className="title">{displayName}</span>
-                <span className="field">{field}</span>
-              </div>
-            ))}
-        </div>
+              ?.filter?.(
+                ({ displayName }) =>
+                  displayName
+                    .toLowerCase()
+                    .indexOf(
+                      (currentValue?.length
+                        ? currentValue
+                        : null
+                      )?.toLowerCase(),
+                    ) > -1,
+              )
+              .map(({ displayName, field, ...rest }) => (
+                <div
+                  className="resultItem"
+                  onClick={() => onFieldSelect(field)}
+                >
+                  <span className="title">{displayName}</span>
+                  <span className="field">{field}</span>
+                </div>
+              ))}
+          </div>
+        }
       </div>
     )}
   />
