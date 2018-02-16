@@ -37,10 +37,8 @@ export default ({
             value={currentValue}
             onChange={e => update({ currentValue: e.target.value })}
           />
-          {
-            <div
-              className={`resultList ${filteredList?.length ? 'shown' : ''}`}
-            >
+          {currentValue.length ? (
+            <div className={`resultList shown`}>
               {filteredList?.map(({ displayName, field, ...rest }) => (
                 <div
                   className="resultItem"
@@ -51,7 +49,7 @@ export default ({
                 </div>
               ))}
             </div>
-          }
+          ) : null}
         </div>
       );
     }}

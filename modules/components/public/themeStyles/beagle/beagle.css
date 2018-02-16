@@ -558,7 +558,7 @@ div {
 }
 
 .advancedFacetViewWrapper .resultList {
-  max-height: 130px;
+  height: 130px;
   overflow-y: scroll;
 }
 
