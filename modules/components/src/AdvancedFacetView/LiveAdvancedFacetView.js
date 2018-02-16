@@ -72,11 +72,11 @@ const fetchAggregationData = async ({
   const query = `
     {
       ${ES_INDEX} {
-        aggregations ${
+        aggregations (aggregations_filter_themselves: false ${
           sqon
-            ? `(filters: ${stringifyObject(sqon, { singleQuotes: false })})`
+            ? `filters: ${stringifyObject(sqon, { singleQuotes: false })}`
             : ''
-        } { ${getAggregationQuery()} }
+        }) { ${getAggregationQuery()} }
       }
     }`;
   return fetchGraphqlQuery({
