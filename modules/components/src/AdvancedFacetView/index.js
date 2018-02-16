@@ -105,7 +105,10 @@ export default class AdvancedFacetView extends React.Component {
             elasticMapping,
             extendedMapping,
             aggregations,
-            onFieldSelect: field => scrollFacetViewToPath(field),
+            onFieldSelect: field => {
+              scrollFacetViewToPath(field);
+              this.setState({ selectedPath: field });
+            },
           }}
         />
         <div>
@@ -171,9 +174,7 @@ export default class AdvancedFacetView extends React.Component {
                 selectedPath={selectedPath}
                 onLeafSelect={path => {
                   scrollFacetViewToPath(path);
-                  this.setState({
-                    selectedPath: path,
-                  });
+                  this.setState({ selectedPath: path });
                 }}
               />
             </div>
