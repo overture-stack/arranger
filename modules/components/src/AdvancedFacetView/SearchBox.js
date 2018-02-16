@@ -14,12 +14,16 @@ export default ({
   <State
     initial={{ currentValue: null }}
     render={({ update, currentValue }) => (
-      <div>
+      <div className="filterWrapper">
         <Input
+          className="filterInput"
           value={currentValue}
           onChange={e => update({ currentValue: e.target.value })}
         />
-        <div style={{ maxHeight: 300, overflow: 'scroll' }}>
+        <div
+          className="resultList"
+          style={{ maxHeight: 300, overflowY: 'scroll' }}
+        >
           {(withValueOnly
             ? filterOutNonValue({ extendedMapping, aggregations })
                 .extendedMappingWithValue
@@ -34,7 +38,10 @@ export default ({
                   ) > -1,
             )
             .map(({ displayName, field, ...rest }) => (
-              <div onClick={() => onFieldSelect(field)}>{displayName}</div>
+              <div className="resultItem" onClick={() => onFieldSelect(field)}>
+                <span className="title">{displayName}</span>
+                <span className="field">{field}</span>
+              </div>
             ))}
         </div>
       </div>
