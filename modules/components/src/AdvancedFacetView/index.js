@@ -32,7 +32,11 @@ const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
   return rawDisplayData.map(extend);
 };
 
-const filterOutNonValue = ({ aggregations, displayTreeData }) => {
+const filterOutNonValue = ({
+  aggregations,
+  displayTreeData,
+  extendedMapping,
+}) => {
   const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
     const keyHasValue =
       aggregations[key]?.buckets?.length > 0 ||
@@ -63,15 +67,36 @@ const filterOutNonValue = ({ aggregations, displayTreeData }) => {
     const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
       displayTreeData,
     );
-    return { displayTreeDataWithValue, aggregationsWithValue };
+    return {
+      displayTreeDataWithValue,
+      aggregationsWithValue,
+      ...(extendedMapping
+        ? {
+            extendedMappingWithValue: extendedMapping?.filter?.(
+              ({ field }) => aggregationsWithValue[field],
+            ),
+          }
+        : {}),
+    };
   } else {
-    return { aggregationsWithValue };
+    return {
+      aggregationsWithValue,
+      ...(extendedMapping
+        ? {
+            extendedMappingWithValue: extendedMapping?.filter?.(
+              ({ field }) => aggregationsWithValue[field],
+            ),
+          }
+        : {}),
+    };
   }
 };
 
 const SearchBox = ({
+  withValueOnly,
   elasticMapping,
   extendedMapping,
+  aggregations,
   onFieldSelect = () => {},
 }) => (
   <State
@@ -82,8 +107,12 @@ const SearchBox = ({
           value={currentValue}
           onChange={e => update({ currentValue: e.target.value })}
         />
-        <div>
-          {extendedMapping
+        <div style={{ maxHeight: 300, overflow: 'scroll' }}>
+          {(withValueOnly
+            ? filterOutNonValue({ extendedMapping, aggregations })
+                .extendedMappingWithValue
+            : extendedMapping
+          )
             ?.filter?.(
               ({ displayName }) =>
                 displayName
@@ -92,7 +121,9 @@ const SearchBox = ({
                     (currentValue?.length ? currentValue : null)?.toLowerCase(),
                   ) > -1,
             )
-            .map(({ displayName }) => <div>{displayName}</div>)}
+            .map(({ displayName, field, ...rest }) => (
+              <div onClick={() => onFieldSelect(field)}>{displayName}</div>
+            ))}
         </div>
       </div>
     )}
@@ -187,6 +218,15 @@ export default class AdvancedFacetView extends React.Component {
     };
     return (
       <div className="advancedFacetViewWrapper">
+        <SearchBox
+          {...{
+            withValueOnly,
+            elasticMapping,
+            extendedMapping,
+            aggregations,
+            onFieldSelect: field => scrollFacetViewToPath(field),
+          }}
+        />
         <div>
           <SQONView
             sqon={sqon}
@@ -212,7 +252,6 @@ export default class AdvancedFacetView extends React.Component {
             )}
           />
         </div>
-        <SearchBox {...{ elasticMapping, extendedMapping }} />
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <div className="panelHeading">
@@ -242,6 +281,7 @@ export default class AdvancedFacetView extends React.Component {
                 dataSource={
                   withValueOnly
                     ? filterOutNonValue({
+                        extendedMapping,
                         displayTreeData,
                         aggregations,
                       }).displayTreeDataWithValue
