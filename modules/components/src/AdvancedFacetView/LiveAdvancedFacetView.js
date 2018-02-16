@@ -3,6 +3,7 @@ import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
+import stringifyObject from 'stringify-object';
 
 const fetchGraphqlQuery = async ({ query, API_HOST, PROJECT_ID, ES_HOST }) =>
   fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
@@ -38,7 +39,8 @@ const fetchExtendedMapping = async fetchConfig =>
     ...fetchConfig,
   }).then(data => data[fetchConfig.ES_INDEX]);
 
-const fetchAggregationDataFromExtendedMapping = async ({
+const fetchAggregationData = async ({
+  sqon,
   extended,
   PROJECT_ID,
   ES_INDEX,
@@ -70,7 +72,11 @@ const fetchAggregationDataFromExtendedMapping = async ({
   const query = `
     {
       ${ES_INDEX} {
-        aggregations { ${getAggregationQuery()} }
+        aggregations ${
+          sqon
+            ? `(filters: ${stringifyObject(sqon, { singleQuotes: false })})`
+            : ''
+        } { ${getAggregationQuery()} }
       }
     }`;
   return fetchGraphqlQuery({
@@ -94,6 +100,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     this.state = {
       mapping: {},
       extended: {},
+      aggregations: null,
       sqon: sqon || null,
     };
   }
@@ -104,7 +111,7 @@ export default class LiveAdvancedFacetView extends React.Component {
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
-      fetchAggregationDataFromExtendedMapping({
+      fetchAggregationData({
         extended: extended.filter(
           e => e.type !== 'object' && e.type !== 'nested',
         ),
@@ -125,7 +132,15 @@ export default class LiveAdvancedFacetView extends React.Component {
   }
   onSqonFieldChange = ({ sqon }) => {
     const { onSqonChange = () => {} } = this.props;
-    this.setState({ sqon }, () => onSqonChange({ sqon }));
+    fetchAggregationData({
+      ...this.props,
+      extended: this.state.extended.filter(
+        e => e.type !== 'object' && e.type !== 'nested',
+      ),
+      sqon,
+    }).then(({ aggregations }) =>
+      this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
+    );
   };
   render() {
     return (
