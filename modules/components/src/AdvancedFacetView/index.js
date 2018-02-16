@@ -8,6 +8,7 @@ import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import State from '../State';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
+import Input from '../Input';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
@@ -67,6 +68,36 @@ const filterOutNonValue = ({ aggregations, displayTreeData }) => {
     return { aggregationsWithValue };
   }
 };
+
+const SearchBox = ({
+  elasticMapping,
+  extendedMapping,
+  onFieldSelect = () => {},
+}) => (
+  <State
+    initial={{ currentValue: null }}
+    render={({ update, currentValue }) => (
+      <div>
+        <Input
+          value={currentValue}
+          onChange={e => update({ currentValue: e.target.value })}
+        />
+        <div>
+          {extendedMapping
+            ?.filter?.(
+              ({ displayName }) =>
+                displayName
+                  .toLowerCase()
+                  .indexOf(
+                    (currentValue?.length ? currentValue : null)?.toLowerCase(),
+                  ) > -1,
+            )
+            .map(({ displayName }) => <div>{displayName}</div>)}
+        </div>
+      </div>
+    )}
+  />
+);
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -181,6 +212,7 @@ export default class AdvancedFacetView extends React.Component {
             )}
           />
         </div>
+        <SearchBox {...{ elasticMapping, extendedMapping }} />
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <div className="panelHeading">
