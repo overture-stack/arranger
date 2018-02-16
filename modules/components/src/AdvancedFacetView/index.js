@@ -1,6 +1,5 @@
 import React from 'react';
 import { keys } from 'lodash';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
@@ -9,126 +8,8 @@ import FacetView from './FacetView';
 import State from '../State';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
 import Input from '../Input';
-
-const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
-
-const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
-  const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
-  const extend = node => {
-    const extension = extendedMapping.find(
-      extension => extension.field === node.path,
-    );
-    return {
-      ...node,
-      ...(extension
-        ? {
-            title: extension.displayName || node.title,
-            type: extension.type || node.title,
-          }
-        : {}),
-      ...(node.children ? { children: node.children.map(extend) } : {}),
-    };
-  };
-  return rawDisplayData.map(extend);
-};
-
-const filterOutNonValue = ({
-  aggregations,
-  displayTreeData,
-  extendedMapping,
-}) => {
-  const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
-    const keyHasValue =
-      aggregations[key]?.buckets?.length > 0 ||
-      aggregations[key]?.stats?.min ||
-      aggregations[key]?.stats?.max;
-    return {
-      ...a,
-      ...(keyHasValue ? { [key]: aggregations[key] } : {}),
-    };
-  }, {});
-  const keysWithValue = keys(aggregationsWithValue);
-  const doesDisplayNodeHaveValue = node => {
-    return node.children
-      ? node.children.filter(doesDisplayNodeHaveValue).length
-      : keysWithValue.indexOf(node.path) > -1;
-  };
-  const applyFilterToDisplayNodeCollection = collection =>
-    collection.filter(doesDisplayNodeHaveValue).map(
-      node =>
-        node.children
-          ? {
-              ...node,
-              children: applyFilterToDisplayNodeCollection(node.children),
-            }
-          : node,
-    );
-  if (displayTreeData) {
-    const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
-      displayTreeData,
-    );
-    return {
-      displayTreeDataWithValue,
-      aggregationsWithValue,
-      ...(extendedMapping
-        ? {
-            extendedMappingWithValue: extendedMapping?.filter?.(
-              ({ field }) => aggregationsWithValue[field],
-            ),
-          }
-        : {}),
-    };
-  } else {
-    return {
-      aggregationsWithValue,
-      ...(extendedMapping
-        ? {
-            extendedMappingWithValue: extendedMapping?.filter?.(
-              ({ field }) => aggregationsWithValue[field],
-            ),
-          }
-        : {}),
-    };
-  }
-};
-
-const SearchBox = ({
-  withValueOnly,
-  elasticMapping,
-  extendedMapping,
-  aggregations,
-  onFieldSelect = () => {},
-}) => (
-  <State
-    initial={{ currentValue: null }}
-    render={({ update, currentValue }) => (
-      <div>
-        <Input
-          value={currentValue}
-          onChange={e => update({ currentValue: e.target.value })}
-        />
-        <div style={{ maxHeight: 300, overflow: 'scroll' }}>
-          {(withValueOnly
-            ? filterOutNonValue({ extendedMapping, aggregations })
-                .extendedMappingWithValue
-            : extendedMapping
-          )
-            ?.filter?.(
-              ({ displayName }) =>
-                displayName
-                  .toLowerCase()
-                  .indexOf(
-                    (currentValue?.length ? currentValue : null)?.toLowerCase(),
-                  ) > -1,
-            )
-            .map(({ displayName, field, ...rest }) => (
-              <div onClick={() => onFieldSelect(field)}>{displayName}</div>
-            ))}
-        </div>
-      </div>
-    )}
-  />
-);
+import SearchBox from './SearchBox';
+import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
