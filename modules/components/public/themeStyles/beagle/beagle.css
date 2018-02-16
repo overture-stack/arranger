@@ -559,7 +559,7 @@ div {
 
 .advancedFacetViewWrapper .resultList {
   border: solid 1px #e7e8ed;
-  max-height: 300px;
+  max-height: 130px;
   overflow-y: scroll;
 }
 
