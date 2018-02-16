@@ -13,4 +13,7 @@
 
 .inputWrapper .inputIcon {
   color: lightgrey;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import State from '../State';
-import Input from '../Input';
+import TextInput from '../Input';
+import SearchIcon from 'react-icons/lib/fa/search';
 
 import { filterOutNonValue } from './utils.js';
 
@@ -15,8 +16,11 @@ export default ({
     initial={{ currentValue: null }}
     render={({ update, currentValue }) => (
       <div className="filterWrapper">
-        <Input
+        <TextInput
+          icon={<SearchIcon />}
           className="filterInput"
+          type="text"
+          placeholder="Filter"
           value={currentValue}
           onChange={e => update({ currentValue: e.target.value })}
         />

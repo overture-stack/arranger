@@ -550,6 +550,13 @@ div {
   margin-bottom: 20px;
 }
 
+.advancedFacetViewWrapper .filterWrapper .inputWrapper {
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+  padding: 10px;
+}
+
 .advancedFacetViewWrapper .resultList {
   border: solid 1px #e7e8ed;
   max-height: 300px;
