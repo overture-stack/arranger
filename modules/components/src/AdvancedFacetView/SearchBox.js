@@ -13,36 +13,35 @@ export default ({
   onFieldSelect = () => {},
 }) => (
   <State
-    initial={{ currentValue: null }}
-    render={({ update, currentValue }) => (
-      <div className="filterWrapper">
-        <TextInput
-          icon={<SearchIcon />}
-          className="filterInput"
-          type="text"
-          placeholder="Filter"
-          value={currentValue}
-          onChange={e => update({ currentValue: e.target.value })}
-        />
-        {
-          <div className="resultList">
-            {(withValueOnly
-              ? filterOutNonValue({ extendedMapping, aggregations })
-                  .extendedMappingWithValue
-              : extendedMapping
-            )
-              ?.filter?.(
-                ({ displayName }) =>
-                  displayName
-                    .toLowerCase()
-                    .indexOf(
-                      (currentValue?.length
-                        ? currentValue
-                        : null
-                      )?.toLowerCase(),
-                    ) > -1,
-              )
-              .map(({ displayName, field, ...rest }) => (
+    initial={{ currentValue: '' }}
+    render={({ update, currentValue }) => {
+      const filteredList = (withValueOnly
+        ? filterOutNonValue({ extendedMapping, aggregations })
+            .extendedMappingWithValue
+        : extendedMapping
+      )?.filter?.(
+        ({ displayName }) =>
+          displayName
+            .toLowerCase()
+            .indexOf(
+              (currentValue?.length ? currentValue : null)?.toLowerCase(),
+            ) > -1,
+      );
+      return (
+        <div className="filterWrapper">
+          <TextInput
+            icon={<SearchIcon />}
+            className="filterInput"
+            type="text"
+            placeholder="Filter"
+            value={currentValue}
+            onChange={e => update({ currentValue: e.target.value })}
+          />
+          {
+            <div
+              className={`resultList ${filteredList?.length ? 'shown' : ''}`}
+            >
+              {filteredList?.map(({ displayName, field, ...rest }) => (
                 <div
                   className="resultItem"
                   onClick={() => onFieldSelect(field)}
@@ -51,9 +50,10 @@ export default ({
                   <span className="field">{field}</span>
                 </div>
               ))}
-          </div>
-        }
-      </div>
-    )}
+            </div>
+          }
+        </div>
+      );
+    }}
   />
 );

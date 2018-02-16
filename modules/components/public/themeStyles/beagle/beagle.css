@@ -558,14 +558,18 @@ div {
 }
 
 .advancedFacetViewWrapper .resultList {
-  border: solid 1px #e7e8ed;
   max-height: 130px;
   overflow-y: scroll;
+}
+
+.advancedFacetViewWrapper .resultList.shown {
+  border: solid 1px #e7e8ed;
 }
 
 .advancedFacetViewWrapper .resultItem {
   padding: 10px;
   cursor: pointer;
+  border-bottom: solid 1px #e7e8ed;
 }
 
 .advancedFacetViewWrapper .resultItem:hover {
