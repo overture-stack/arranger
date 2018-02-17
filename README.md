@@ -1,6 +1,6 @@
 ![Arranger: Data Portal Generation](https://i.imgur.com/Qb9KBqJ.png)
 
-🚧 _This project is pre-alpha. We will make an announcement upon entering beta_ 🚧
+🚧 _This project is alpha. We will make an announcement upon entering beta_ 🚧
 
 ### Quickstart
 
@@ -13,7 +13,10 @@ npm i
 npm run bootstrap
 
 # watch modules and rebuild on change
-npm run start
+npm start
+
+# run tests for all modules
+npm test
 
 # run server on :5050
 npm run server
