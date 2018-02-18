@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 class DetectNewVersion extends React.Component {
   state = { shouldRefresh: false };
 
-  defaultProps = {
+  static defaultProps = {
     event: 'server::refresh',
     Message: () => (
       <span>
