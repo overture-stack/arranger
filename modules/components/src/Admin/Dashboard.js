@@ -2,7 +2,7 @@ import React from 'react';
 import Component from 'react-component-component';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
-import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
+import { Route, Link, Redirect } from 'react-router-dom';
 import convert from 'convert-units';
 import GraphiQL from 'graphiql';
 import 'graphiql/graphiql.css';
@@ -363,7 +363,7 @@ class Dashboard extends React.Component {
   render() {
     let headerHeight = 38;
     return (
-      <BrowserRouter>
+      <>
         <div
           className="app"
           css={`
@@ -850,7 +850,7 @@ class Dashboard extends React.Component {
             )}
           />
         </div>
-      </BrowserRouter>
+      </>
     );
   }
 }
