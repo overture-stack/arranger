@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.0.11",
+  "version": "0.0.13-breaking",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -10,8 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "start":
-      "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
+    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
     "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist"
   },
@@ -26,9 +25,9 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/mapping-utils": "^0.0.11",
-    "@arranger/middleware": "^0.0.10",
-    "@arranger/schema": "^0.0.11",
+    "@arranger/mapping-utils": "^0.0.13-breaking",
+    "@arranger/middleware": "^0.0.13-breaking",
+    "@arranger/schema": "^0.0.13-breaking",
     "apollo-server-express": "^1.3.1",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
