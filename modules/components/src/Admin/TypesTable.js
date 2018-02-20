@@ -2,14 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from '../DataTable';
 
-export default ({
-  total,
-  data,
-  customActions,
-  projectId,
-  onLinkClick,
-  basePath,
-}) => (
+export default ({ total, data, customActions, projectId, onLinkClick }) => (
   <DataTable
     customActions={customActions}
     allowTogglingColumns={false}
@@ -18,7 +11,7 @@ export default ({
       entity: props => {
         return (
           <Link
-            to={`${basePath}/${projectId}/${props.value}`}
+            to={`/${projectId}/${props.value}`}
             onClick={() => onLinkClick(props.value)}
           >
             {props.value}

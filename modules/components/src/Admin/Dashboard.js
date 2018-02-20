@@ -2,7 +2,7 @@ import React from 'react';
 import Component from 'react-component-component';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
-import { Route, Link, Redirect } from 'react-router-dom';
+import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
 import GraphiQL from 'graphiql';
 import 'graphiql/graphiql.css';
@@ -188,10 +188,7 @@ class Dashboard extends React.Component {
                 >
                   <CaretUpIcon />
 
-                  <Link
-                    // TODO: add basePath
-                    to={`/graphiql/${x.id}`}
-                  >
+                  <Link to={`/graphiql/${x.id}`}>
                     <img
                       css={`
                         width: 15px;
@@ -362,11 +359,9 @@ class Dashboard extends React.Component {
 
   render() {
     let headerHeight = 38;
-    let basePath =
-      (this.props.match?.url || '') + (this.props.versionsPath || '') || '/';
 
     return (
-      <>
+      <BrowserRouter basename={this.props.basename || ''}>
         <div
           className="app"
           css={`
@@ -418,17 +413,16 @@ class Dashboard extends React.Component {
               ⚠️ {this.state.error}
             </div>
           )}
+
           <Route
             render={p =>
               // needed for storybook
-              p.location.pathname === '/iframe.html' && (
-                <Redirect to={basePath} />
-              )
+              p.location.pathname === '/iframe.html' && <Redirect to={'/'} />
             }
           />
           <Route // breadcrums
             render={p => {
-              let split = location.pathname.split('/');
+              let split = p.location.pathname.split('/');
               return (
                 <div
                   css={`
@@ -451,9 +445,9 @@ class Dashboard extends React.Component {
                             font-size: 12px;
                           `}
                         >
-                          {i === 1 ? 'versions' : segment}
+                          {i === 0 ? 'versions' : segment}
                         </Link>
-                        {i !== 0 && i !== split.length - 1 && <span> / </span>}
+                        {i !== split.length - 1 && <span> / </span>}
                       </React.Fragment>,
                     ];
                   }, [])}
@@ -461,329 +455,299 @@ class Dashboard extends React.Component {
               );
             }}
           />
-          <Route
-            path="/graphiql/:projectId"
-            render={({ match }) => (
-              <Component
-                initialState={{ projectId: match.params.projectId }}
-                shouldUpdate={({ state }) =>
-                  state.projectId !== match.params.projectId
-                }
-                render={() => (
-                  <GraphiQL
-                    fetcher={body =>
-                      api({
-                        endpoint: `/${match.params.projectId}/graphql`,
-                        body,
-                      })
-                    }
-                  />
-                )}
-              />
-            )}
-          />
-          <Route
-            path={basePath}
-            exact
-            render={() => (
-              <ProjectsTable
-                basePath={basePath}
-                newProjectName={this.state.newProjectName}
-                setActiveProject={s => this.setState(s)}
-                setNewProjectName={s => this.setState(s)}
-                addProject={this.addProject}
-                projectsTotal={this.state.projectsTotal}
-                projects={this.state.projects}
-              />
-            )}
-          />
-          <Route
-            exact
-            path={basePath + '/:id'}
-            render={({ match, history, location }) => (
-              <TypesTable
-                basePath={basePath}
-                onLinkClick={index => {
-                  let state = { activeType: index };
-                  this.setState(state);
-                  this.getFields({
-                    ...state,
-                    projectId: match.params.id,
-                  });
-                }}
-                projectId={match.params.id}
-                total={
-                  this.state.projects?.find(x => x.id === match.params.id)
-                    ?.types?.total
-                }
-                data={this.state.projects
-                  ?.find(x => x.id === match.params.id)
-                  ?.types?.types.map(x => ({
-                    ...x,
-                    delete: () => (
-                      <div
-                        css={`
-                          cursor: pointer;
-                          text-align: center;
-                        `}
-                        onClick={() =>
-                          this.deleteType({
-                            projectId: match.params.id,
-                            index: x.index,
-                          })
-                        }
-                      >
-                        🔥
-                      </div>
-                    ),
-                  }))}
-                customActions={
-                  <>
-                    <div>
-                      <input
-                        placeholder="Type name"
-                        value={this.state.newTypeName}
-                        onChange={e =>
-                          this.setState({ newTypeName: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <input
-                        placeholder="index"
-                        value={this.state.newTypeIndex}
-                        onChange={e =>
-                          this.setState({ newTypeIndex: e.target.value })
-                        }
-                      />
-                      <button onClick={this.addType}>+</button>
-                    </div>
-                  </>
-                }
-              />
-            )}
-          />
-          <Route
-            exact
-            path={basePath + '/:projectId/:index'}
-            render={({ match, history, location }) => (
-              <State
-                initial={{ tab: 'fields', filterText: '' }}
-                render={({ update, tab, filterText }) => (
-                  <div
-                    css={`
-                      display: flex;
-                      flex-direction: column;
-                    `}
-                  >
-                    <div>
-                      <a
-                        css={`
-                          text-transform: uppercase;
-                          cursor: pointer;
-                          padding: 0 6px;
-                          color: ${tab === 'fields'
-                            ? 'black'
-                            : 'rgb(128, 30, 148)'};
-                        `}
-                        onClick={() => update({ tab: 'fields' })}
-                      >
-                        Fields
-                      </a>
-                      <a
-                        css={`
-                          text-transform: uppercase;
-                          cursor: pointer;
-                          padding: 0 6px;
-                          color: ${tab === 'aggs'
-                            ? 'black'
-                            : 'rgb(128, 30, 148)'};
-                        `}
-                        onClick={() => update({ tab: 'aggs' })}
-                      >
-                        Aggregations
-                      </a>
-                      <a
-                        css={`
-                          text-transform: uppercase;
-                          padding: 0 6px;
-                          cursor: pointer;
-                          color: ${tab === 'columns'
-                            ? 'black'
-                            : 'rgb(128, 30, 148)'};
-                        `}
-                        onClick={() => update({ tab: 'columns' })}
-                      >
-                        Table
-                      </a>
-                      <input
-                        placeholder="filter fields.."
-                        value={filterText}
-                        onChange={e => update({ filterText: e.target.value })}
-                      />
-                    </div>
-                    <>
-                      {tab === 'fields' && (
+          <Switch>
+            <Route
+              path="/graphiql/:projectId"
+              render={({ match }) => (
+                <Component
+                  initialState={{ projectId: match.params.projectId }}
+                  shouldUpdate={({ state }) =>
+                    state.projectId !== match.params.projectId
+                  }
+                  render={() => (
+                    <GraphiQL
+                      fetcher={body =>
+                        api({
+                          endpoint: `/${match.params.projectId}/graphql`,
+                          body,
+                        })
+                      }
+                    />
+                  )}
+                />
+              )}
+            />
+            <Route
+              path={'/'}
+              exact
+              render={() => (
+                <ProjectsTable
+                  newProjectName={this.state.newProjectName}
+                  setActiveProject={s => this.setState(s)}
+                  setNewProjectName={s => this.setState(s)}
+                  addProject={this.addProject}
+                  projectsTotal={this.state.projectsTotal}
+                  projects={this.state.projects}
+                />
+              )}
+            />
+            <Route
+              exact
+              path={'/:id'}
+              render={({ match, history, location }) => (
+                <TypesTable
+                  onLinkClick={index => {
+                    let state = { activeType: index };
+                    this.setState(state);
+                    this.getFields({
+                      ...state,
+                      projectId: match.params.id,
+                    });
+                  }}
+                  projectId={match.params.id}
+                  total={
+                    this.state.projects?.find(x => x.id === match.params.id)
+                      ?.types?.total
+                  }
+                  data={this.state.projects
+                    ?.find(x => x.id === match.params.id)
+                    ?.types?.types.map(x => ({
+                      ...x,
+                      delete: () => (
                         <div
                           css={`
-                            display: flex;
+                            cursor: pointer;
+                            text-align: center;
                           `}
+                          onClick={() =>
+                            this.deleteType({
+                              projectId: match.params.id,
+                              index: x.index,
+                            })
+                          }
                         >
-                          <section>
-                            <div style={{ padding: 5 }}>
-                              <label className="projects">
-                                FIELDS ({this.state.fieldsTotal})
-                              </label>
-                            </div>
-                            {this.state.fields
-                              .filter(x => x.field.includes(filterText))
-                              .map(x => (
-                                <div
-                                  key={x.field}
-                                  className={`field-item ${
-                                    x.field == this.state.activeField?.field
-                                      ? 'active'
-                                      : ''
-                                  }`}
-                                  onClick={() => {
-                                    this.setState({ activeField: x });
-                                  }}
-                                >
-                                  {x.field}
-                                </div>
-                              ))}
-                          </section>
-                          <section>
-                            <div style={{ padding: 5 }}>
-                              <label className="projects">
-                                {this.state.activeField?.field}
-                              </label>
-                            </div>
-                            {Object.entries(this.state.activeField || {})
-                              .filter(([key]) => key !== 'field')
-                              .map(([key, val]) => (
-                                <div key={key} className="type-container">
-                                  {startCase(key)}:
-                                  {key === 'unit' ? (
-                                    <State
-                                      initial={{
-                                        val,
-                                        measure: val
-                                          ? convert().describe(val).measure
-                                          : '',
-                                      }}
-                                      val={val}
-                                      onReceiveProps={({
-                                        props,
-                                        state,
-                                        update,
-                                      }) => {
-                                        if (props.val !== state.val) {
-                                          update({
-                                            val,
-                                            measure: val
-                                              ? convert().describe(val).measure
-                                              : '',
-                                          });
-                                        }
-                                      }}
-                                      render={({ measure, update }) => (
-                                        <div>
-                                          <select
-                                            value={measure}
-                                            onChange={e =>
-                                              update({
-                                                measure: e.target.value,
-                                              })
-                                            }
-                                          >
-                                            {['', ...convert().measures()].map(
-                                              x => <option key={x}>{x}</option>,
-                                            )}
-                                          </select>
-                                          {measure && (
+                          🔥
+                        </div>
+                      ),
+                    }))}
+                  customActions={
+                    <>
+                      <div>
+                        <input
+                          placeholder="Type name"
+                          value={this.state.newTypeName}
+                          onChange={e =>
+                            this.setState({ newTypeName: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <input
+                          placeholder="index"
+                          value={this.state.newTypeIndex}
+                          onChange={e =>
+                            this.setState({ newTypeIndex: e.target.value })
+                          }
+                        />
+                        <button onClick={this.addType}>+</button>
+                      </div>
+                    </>
+                  }
+                />
+              )}
+            />
+            <Route
+              exact
+              path={'/:projectId/:index'}
+              render={({ match, history, location }) => (
+                <State
+                  initial={{ tab: 'fields', filterText: '' }}
+                  render={({ update, tab, filterText }) => (
+                    <div
+                      css={`
+                        display: flex;
+                        flex-direction: column;
+                      `}
+                    >
+                      <div>
+                        <a
+                          css={`
+                            text-transform: uppercase;
+                            cursor: pointer;
+                            padding: 0 6px;
+                            color: ${tab === 'fields'
+                              ? 'black'
+                              : 'rgb(128, 30, 148)'};
+                          `}
+                          onClick={() => update({ tab: 'fields' })}
+                        >
+                          Fields
+                        </a>
+                        <a
+                          css={`
+                            text-transform: uppercase;
+                            cursor: pointer;
+                            padding: 0 6px;
+                            color: ${tab === 'aggs'
+                              ? 'black'
+                              : 'rgb(128, 30, 148)'};
+                          `}
+                          onClick={() => update({ tab: 'aggs' })}
+                        >
+                          Aggregations
+                        </a>
+                        <a
+                          css={`
+                            text-transform: uppercase;
+                            padding: 0 6px;
+                            cursor: pointer;
+                            color: ${tab === 'columns'
+                              ? 'black'
+                              : 'rgb(128, 30, 148)'};
+                          `}
+                          onClick={() => update({ tab: 'columns' })}
+                        >
+                          Table
+                        </a>
+                        <input
+                          placeholder="filter fields.."
+                          value={filterText}
+                          onChange={e => update({ filterText: e.target.value })}
+                        />
+                      </div>
+                      <>
+                        {tab === 'fields' && (
+                          <div
+                            css={`
+                              display: flex;
+                            `}
+                          >
+                            <section>
+                              <div style={{ padding: 5 }}>
+                                <label className="projects">
+                                  FIELDS ({this.state.fieldsTotal})
+                                </label>
+                              </div>
+                              {this.state.fields
+                                .filter(x => x.field.includes(filterText))
+                                .map(x => (
+                                  <div
+                                    key={x.field}
+                                    className={`field-item ${
+                                      x.field == this.state.activeField?.field
+                                        ? 'active'
+                                        : ''
+                                    }`}
+                                    onClick={() => {
+                                      this.setState({ activeField: x });
+                                    }}
+                                  >
+                                    {x.field}
+                                  </div>
+                                ))}
+                            </section>
+                            <section>
+                              <div style={{ padding: 5 }}>
+                                <label className="projects">
+                                  {this.state.activeField?.field}
+                                </label>
+                              </div>
+                              {Object.entries(this.state.activeField || {})
+                                .filter(([key]) => key !== 'field')
+                                .map(([key, val]) => (
+                                  <div key={key} className="type-container">
+                                    {startCase(key)}:
+                                    {key === 'unit' ? (
+                                      <State
+                                        initial={{
+                                          val,
+                                          measure: val
+                                            ? convert().describe(val).measure
+                                            : '',
+                                        }}
+                                        val={val}
+                                        onReceiveProps={({
+                                          props,
+                                          state,
+                                          update,
+                                        }) => {
+                                          if (props.val !== state.val) {
+                                            update({
+                                              val,
+                                              measure: val
+                                                ? convert().describe(val)
+                                                    .measure
+                                                : '',
+                                            });
+                                          }
+                                        }}
+                                        render={({ measure, update }) => (
+                                          <div>
                                             <select
-                                              value={val || ''}
-                                              onChange={async e => {
-                                                update({ val });
-                                                let r = await api({
-                                                  endpoint: `/projects/${
-                                                    match.params.projectId
-                                                  }/types/${
-                                                    match.params.index
-                                                  }/fields/${
-                                                    this.state.activeField
-                                                      ?.field
-                                                  }/update`,
-                                                  body: {
-                                                    eshost: this.state.eshost,
-                                                    key,
-                                                    value: e.target.value,
-                                                  },
-                                                });
-                                                let activeField = r.fields.find(
-                                                  x =>
-                                                    x.field ===
-                                                    this.state.activeField
-                                                      .field,
-                                                );
-
-                                                this.setState({
-                                                  fields: r.fields,
-                                                  activeField,
-                                                });
-                                              }}
+                                              value={measure}
+                                              onChange={e =>
+                                                update({
+                                                  measure: e.target.value,
+                                                })
+                                              }
                                             >
                                               {[
                                                 '',
-                                                ...convert().possibilities(
-                                                  measure,
-                                                ),
+                                                ...convert().measures(),
                                               ].map(x => (
                                                 <option key={x}>{x}</option>
                                               ))}
                                             </select>
-                                          )}
-                                        </div>
-                                      )}
-                                    />
-                                  ) : typeof val === 'string' ? (
-                                    <input
-                                      type="text"
-                                      value={val}
-                                      onChange={async e => {
-                                        let r = await api({
-                                          endpoint: `/projects/${
-                                            match.params.projectId
-                                          }/types/${
-                                            match.params.index
-                                          }/fields/${
-                                            this.state.activeField?.field
-                                          }/update`,
-                                          body: {
-                                            eshost: this.state.eshost,
-                                            key,
-                                            value: e.target.value,
-                                          },
-                                        });
+                                            {measure && (
+                                              <select
+                                                value={val || ''}
+                                                onChange={async e => {
+                                                  update({ val });
+                                                  let r = await api({
+                                                    endpoint: `/projects/${
+                                                      match.params.projectId
+                                                    }/types/${
+                                                      match.params.index
+                                                    }/fields/${
+                                                      this.state.activeField
+                                                        ?.field
+                                                    }/update`,
+                                                    body: {
+                                                      eshost: this.state.eshost,
+                                                      key,
+                                                      value: e.target.value,
+                                                    },
+                                                  });
+                                                  let activeField = r.fields.find(
+                                                    x =>
+                                                      x.field ===
+                                                      this.state.activeField
+                                                        .field,
+                                                  );
 
-                                        let activeField = r.fields.find(
-                                          x =>
-                                            x.field ===
-                                            this.state.activeField.field,
-                                        );
-
-                                        this.setState({
-                                          fields: r.fields,
-                                          activeField,
-                                        });
-                                      }}
-                                    />
-                                  ) : (
-                                    typeof val === 'boolean' && (
+                                                  this.setState({
+                                                    fields: r.fields,
+                                                    activeField,
+                                                  });
+                                                }}
+                                              >
+                                                {[
+                                                  '',
+                                                  ...convert().possibilities(
+                                                    measure,
+                                                  ),
+                                                ].map(x => (
+                                                  <option key={x}>{x}</option>
+                                                ))}
+                                              </select>
+                                            )}
+                                          </div>
+                                        )}
+                                      />
+                                    ) : typeof val === 'string' ? (
                                       <input
-                                        type="checkbox"
-                                        checked={val}
+                                        type="text"
+                                        value={val}
                                         onChange={async e => {
                                           let r = await api({
                                             endpoint: `/projects/${
@@ -796,7 +760,7 @@ class Dashboard extends React.Component {
                                             body: {
                                               eshost: this.state.eshost,
                                               key,
-                                              value: e.target.checked,
+                                              value: e.target.value,
                                             },
                                           });
 
@@ -812,50 +776,84 @@ class Dashboard extends React.Component {
                                           });
                                         }}
                                       />
-                                    )
-                                  )}
-                                </div>
-                              ))}
-                          </section>
-                        </div>
-                      )}
-                      {tab === 'aggs' && (
-                        <AggsState
-                          projectId={match.params.projectId}
-                          index={match.params.index}
-                          render={aggsState => (
-                            <EditAggs
-                              handleChange={aggsState.update}
-                              {...aggsState}
-                            />
-                          )}
-                        />
-                      )}
-                      {tab === 'columns' && (
-                        <div>
-                          <div>
-                            <label>Columns State</label>
+                                    ) : (
+                                      typeof val === 'boolean' && (
+                                        <input
+                                          type="checkbox"
+                                          checked={val}
+                                          onChange={async e => {
+                                            let r = await api({
+                                              endpoint: `/projects/${
+                                                match.params.projectId
+                                              }/types/${
+                                                match.params.index
+                                              }/fields/${
+                                                this.state.activeField?.field
+                                              }/update`,
+                                              body: {
+                                                eshost: this.state.eshost,
+                                                key,
+                                                value: e.target.checked,
+                                              },
+                                            });
+
+                                            let activeField = r.fields.find(
+                                              x =>
+                                                x.field ===
+                                                this.state.activeField.field,
+                                            );
+
+                                            this.setState({
+                                              fields: r.fields,
+                                              activeField,
+                                            });
+                                          }}
+                                        />
+                                      )
+                                    )}
+                                  </div>
+                                ))}
+                            </section>
                           </div>
-                          <ColumnsState
+                        )}
+                        {tab === 'aggs' && (
+                          <AggsState
                             projectId={match.params.projectId}
                             index={match.params.index}
-                            render={columnsState => (
-                              <EditColumns
-                                handleChange={columnsState.update}
-                                {...columnsState}
+                            render={aggsState => (
+                              <EditAggs
+                                handleChange={aggsState.update}
+                                {...aggsState}
                               />
                             )}
                           />
-                        </div>
-                      )}
-                    </>
-                  </div>
-                )}
-              />
-            )}
-          />
+                        )}
+                        {tab === 'columns' && (
+                          <div>
+                            <div>
+                              <label>Columns State</label>
+                            </div>
+                            <ColumnsState
+                              projectId={match.params.projectId}
+                              index={match.params.index}
+                              render={columnsState => (
+                                <EditColumns
+                                  handleChange={columnsState.update}
+                                  {...columnsState}
+                                />
+                              )}
+                            />
+                          </div>
+                        )}
+                      </>
+                    </div>
+                  )}
+                />
+              )}
+            />
+          </Switch>
         </div>
-      </>
+      </BrowserRouter>
     );
   }
 }

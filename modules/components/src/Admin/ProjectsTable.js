@@ -9,7 +9,6 @@ export default ({
   addProject,
   projectsTotal,
   projects,
-  basePath,
 }) => (
   <DataTable
     customActions={
@@ -30,7 +29,7 @@ export default ({
         return (
           <Link
             onClick={() => setActiveProject({ activeProject: props.value })}
-            to={`${basePath}/${props.value}`}
+            to={`/${props.value}`}
           >
             {props.value}
           </Link>
