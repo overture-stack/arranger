@@ -24,7 +24,7 @@ pipeline {
      steps {
        slackSend (color: '#ddaa00', message: ":construction_worker: TESTING STARTED: (${env.BUILD_URL})")
        sh '''
-       arranger/dataservice-api/test_stage/test.sh
+       dataservice-api/test_stage/test.sh
        '''
        slackSend (color: '#41aa58', message: ":white_check_mark: TESTING COMPLETED: (${env.BUILD_URL})")
      }
@@ -37,14 +37,14 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-        arranger/dataservice-api/build_stage/build.sh
+        dataservice-api/build_stage/build.sh
         '''
       }
     }
     stage('Publish') {
       steps {
         sh '''
-        arranger/dataservice-api/publish_stage/publish.sh
+        dataservice-api/publish_stage/publish.sh
         '''
         slackSend (color: '#41aa58', message: ":arrow_up: PUSHED IMAGE: (${env.BUILD_URL})")
       }
@@ -63,7 +63,7 @@ pipeline {
       steps {
         slackSend (color: '#005e99', message: ":deploying_dev: DEPLOYING TO DEVELOPMENT: (${env.BUILD_URL})")
         sh '''
-        arranger/dataservice-api/deploy_stage/deploy.sh dev
+        dataservice-api/deploy_stage/deploy.sh dev
         '''
         slackSend (color: '#41aa58', message: ":white_check_mark: DEPLOYED TO DEVELOPMENT: (${env.BUILD_URL})")
       }
@@ -82,7 +82,7 @@ pipeline {
      steps {
        slackSend (color: '#005e99', message: ":deploying_qa: DEPLOYING TO QA: (${env.BUILD_URL})")
        sh '''
-       arranger/dataservice-api/deploy_stage/deploy.sh qa
+       dataservice-api/deploy_stage/deploy.sh qa
        '''
        slackSend (color: '#41aa58', message: ":white_check_mark: DEPLOYED TO QA: (${env.BUILD_URL})")
      }
