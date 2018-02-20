@@ -11,8 +11,6 @@ import { action } from '@storybook/addon-actions';
 
 const PROJECT_ID = 'feb-14';
 const ES_INDEX = 'file';
-const API_HOST = 'http://localhost:5050';
-const ES_HOST = 'http://localhost:9200';
 
 const injectMockBuckets = node =>
   Object.keys(node).reduce(
@@ -46,10 +44,8 @@ storiesOf('AdvancedFacetView', module)
   .add('AdvancedFacetViewLive', () => (
     <LiveAdvancedFacetView
       {...{
-        PROJECT_ID,
-        ES_INDEX,
-        API_HOST,
-        ES_HOST,
+        projectId: PROJECT_ID,
+        index: ES_INDEX,
         onSqonChange: ({ sqon }) => console.log(sqon),
         sqon: {
           op: 'and',

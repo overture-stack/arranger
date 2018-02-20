@@ -98,7 +98,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     };
   }
   componentDidMount() {
-    const { PROJECT_ID, ES_INDEX } = this.props;
+    const { projectId: PROJECT_ID, index: ES_INDEX } = this.props;
     const fetchConfig = { PROJECT_ID, ES_INDEX };
     Promise.all([
       fetchMapping(fetchConfig),
