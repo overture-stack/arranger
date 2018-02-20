@@ -5,13 +5,15 @@
     "test": "jest"
   },
   "jest": {
-    "setupFiles": ["jest-localstorage-mock"],
+    "setupFiles": [
+      "jest-localstorage-mock"
+    ],
     "moduleNameMapper": {
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     }
   },
   "dependencies": {
-    "@arranger/components": "^0.0.13"
+    "@arranger/components": "^0.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.40",
