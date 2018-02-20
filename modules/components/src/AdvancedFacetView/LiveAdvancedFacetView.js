@@ -124,9 +124,15 @@ export default class LiveAdvancedFacetView extends React.Component {
     }
   }
   onSqonFieldChange = ({ sqon }) => {
-    const { onSqonChange = () => {} } = this.props;
+    const {
+      onSqonChange = () => {},
+      projectId: PROJECT_ID,
+      index: ES_INDEX,
+    } = this.props;
     fetchAggregationData({
       ...this.props,
+      PROJECT_ID,
+      ES_INDEX,
       extended: this.state.extended.filter(
         e => e.type !== 'object' && e.type !== 'nested',
       ),
