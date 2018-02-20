@@ -4,9 +4,6 @@ import { saveAs } from 'file-saver';
 
 import { getAllValue } from '../utils';
 
-// const supported = false;
-// const createWriteStream = () => {};
-
 function streamMethods(fileName) {
   const fileStream = createWriteStream(fileName);
   const writer = fileStream.getWriter();
