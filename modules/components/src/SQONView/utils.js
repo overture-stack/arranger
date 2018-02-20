@@ -149,11 +149,14 @@ export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
     op: 'and',
     content: [
       ...(ctxq?.content?.filter(x => x.op !== 'filter') || []),
-      ...(!fields || !value ? [] : q.content),
+      ...(!fields?.length || !value?.length ? [] : q.content),
     ].sort(sortSQON),
   };
   return merged.content.length ? merged : null;
 };
+
+export const currentFilterValue = sqon =>
+  sqon?.content?.find(({ op }) => op === 'filter')?.content?.value || '';
 
 const mergeFns: TMergeFns = v => {
   switch (v) {
