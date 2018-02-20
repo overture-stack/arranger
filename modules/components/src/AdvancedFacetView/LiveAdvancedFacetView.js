@@ -4,20 +4,15 @@ import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
 import stringifyObject from 'stringify-object';
+import apiFetch from '../utils/api';
 
-const fetchGraphqlQuery = async ({ query, API_HOST, PROJECT_ID, ES_HOST }) =>
-  fetch(`${API_HOST}/${PROJECT_ID}/graphql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ES_HOST: ES_HOST,
-    },
-    body: JSON.stringify({
+const fetchGraphqlQuery = async ({ query, PROJECT_ID, ES_HOST }) =>
+  apiFetch({
+    endpoint: `/${PROJECT_ID}/graphql`,
+    body: {
       query: query,
-    }),
-  })
-    .then(res => res.json())
-    .then(data => data.data);
+    },
+  }).then(data => data.data);
 
 const fetchMapping = async fetchConfig =>
   fetchGraphqlQuery({
