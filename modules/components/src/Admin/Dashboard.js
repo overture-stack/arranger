@@ -3,6 +3,8 @@ import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
 import convert from 'convert-units';
+import GraphiQL from 'graphiql';
+import 'graphiql/graphiql.css';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
@@ -181,6 +183,13 @@ class Dashboard extends React.Component {
                   `}
                 >
                   <CaretUpIcon />
+
+                  <Link
+                    // TODO: add basePath
+                    to={`/graphiql/${x.id}`}
+                  >
+                    gql
+                  </Link>
                 </span>
               )}
             </div>
@@ -437,6 +446,19 @@ class Dashboard extends React.Component {
                 </div>
               );
             }}
+          />
+          <Route
+            path="/graphiql/:projectId"
+            render={({ match }) => (
+              <GraphiQL
+                fetcher={body =>
+                  api({
+                    endpoint: `/${match.params.projectId}/graphql`,
+                    body,
+                  })
+                }
+              />
+            )}
           />
           <Route
             path="/projects"
