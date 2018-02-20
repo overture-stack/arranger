@@ -178,6 +178,9 @@ class Dashboard extends React.Component {
                 200 && (
                 <span
                   css={`
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     color: rgb(21, 164, 66);
                     font-size: 25px;
                   `}
@@ -188,7 +191,14 @@ class Dashboard extends React.Component {
                     // TODO: add basePath
                     to={`/graphiql/${x.id}`}
                   >
-                    gql
+                    <img
+                      css={`
+                        width: 15px;
+                      `}
+                      alt="graphiql"
+                      src="
+                    https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/GraphQL_Logo.svg/128px-GraphQL_Logo.svg.png"
+                    />
                   </Link>
                 </span>
               )}
@@ -349,6 +359,9 @@ class Dashboard extends React.Component {
     });
   };
 
+  lastGraphiqlProject = null;
+  lastGraphiqlFetcher = null;
+
   render() {
     let headerHeight = 38;
     return (
@@ -449,16 +462,17 @@ class Dashboard extends React.Component {
           />
           <Route
             path="/graphiql/:projectId"
-            render={({ match }) => (
-              <GraphiQL
-                fetcher={body =>
+            render={({ match }) => {
+              if (match.params.projectId !== this.lastGraphiqlProject) {
+                this.lastGraphiqlProject = match.params.projectId;
+                this.lastGraphiqlFetcher = body =>
                   api({
                     endpoint: `/${match.params.projectId}/graphql`,
                     body,
-                  })
-                }
-              />
-            )}
+                  });
+              }
+              return <GraphiQL fetcher={this.lastGraphiqlFetcher} />;
+            }}
           />
           <Route
             path="/projects"
