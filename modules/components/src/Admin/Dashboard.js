@@ -1,7 +1,7 @@
 import React from 'react';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
-import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
+import { Route, Link, Redirect } from 'react-router-dom';
 import convert from 'convert-units';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
@@ -342,8 +342,11 @@ class Dashboard extends React.Component {
 
   render() {
     let headerHeight = 38;
+    let basePath =
+      (this.props.match?.url || '') + (this.props.versionsPath || '') || '/';
+
     return (
-      <BrowserRouter>
+      <>
         <div
           className="app"
           css={`
@@ -399,7 +402,7 @@ class Dashboard extends React.Component {
             render={p =>
               // needed for storybook
               p.location.pathname === '/iframe.html' && (
-                <Redirect to="/projects" />
+                <Redirect to={basePath} />
               )
             }
           />
@@ -439,10 +442,11 @@ class Dashboard extends React.Component {
             }}
           />
           <Route
-            path="/projects"
+            path={basePath}
             exact
             render={() => (
               <ProjectsTable
+                basePath={basePath}
                 newProjectName={this.state.newProjectName}
                 setActiveProject={s => this.setState(s)}
                 setNewProjectName={s => this.setState(s)}
@@ -454,9 +458,10 @@ class Dashboard extends React.Component {
           />
           <Route
             exact
-            path="/projects/:id"
+            path={basePath + '/:id'}
             render={({ match, history, location }) => (
               <TypesTable
+                basePath={basePath}
                 onLinkClick={index => {
                   let state = { activeType: index };
                   this.setState(state);
@@ -519,7 +524,7 @@ class Dashboard extends React.Component {
           />
           <Route
             exact
-            path="/projects/:projectId/:index"
+            path={basePath + '/:projectId/:index'}
             render={({ match, history, location }) => (
               <State
                 initial={{ tab: 'fields', filterText: '' }}
@@ -809,7 +814,7 @@ class Dashboard extends React.Component {
             )}
           />
         </div>
-      </BrowserRouter>
+      </>
     );
   }
 }
