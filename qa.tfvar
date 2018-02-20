@@ -1,0 +1,6 @@
+environment="qa"
+chop_cidr="159.14.232.34/32"
+bucket="chopawsd3b-remote-state-files"
+organzation="kf"
+region="us-east-1"
+vault_url="https://vault-qa.kids-first.io:443"
