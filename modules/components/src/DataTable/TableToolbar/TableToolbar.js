@@ -3,7 +3,7 @@ import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
 
 import { replaceFilterSQON, currentFilterValue } from '../../SQONView/utils';
-import TextFilter, { generateNextSQON } from './TextFilter';
+import TextFilter, { generateNextSQON } from '../TextFilter';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
 import './Toolbar.css';
