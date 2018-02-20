@@ -6,7 +6,7 @@ import { isEqual } from 'lodash';
 import stringifyObject from 'stringify-object';
 import apiFetch from '../utils/api';
 
-const fetchGraphqlQuery = async ({ query, PROJECT_ID, ES_HOST }) =>
+const fetchGraphqlQuery = async ({ query, PROJECT_ID }) =>
   apiFetch({
     endpoint: `/${PROJECT_ID}/graphql`,
     body: {
@@ -39,9 +39,8 @@ const fetchAggregationData = async ({
   extended,
   PROJECT_ID,
   ES_INDEX,
-  ES_HOST,
 }) => {
-  const fetchConfig = { PROJECT_ID, ES_INDEX, ES_HOST };
+  const fetchConfig = { PROJECT_ID, ES_INDEX };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
   const allAggsNames = extended
@@ -99,8 +98,8 @@ export default class LiveAdvancedFacetView extends React.Component {
     };
   }
   componentDidMount() {
-    const { PROJECT_ID, ES_INDEX, ES_HOST } = this.props;
-    const fetchConfig = { PROJECT_ID, ES_INDEX, ES_HOST };
+    const { PROJECT_ID, ES_INDEX } = this.props;
+    const fetchConfig = { PROJECT_ID, ES_INDEX };
     Promise.all([
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
