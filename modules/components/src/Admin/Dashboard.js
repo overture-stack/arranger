@@ -1,4 +1,5 @@
 import React from 'react';
+import Component from 'react-component-component';
 import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect } from 'react-router-dom';
@@ -359,9 +360,6 @@ class Dashboard extends React.Component {
     });
   };
 
-  lastGraphiqlProject = null;
-  lastGraphiqlFetcher = null;
-
   render() {
     let headerHeight = 38;
     return (
@@ -462,17 +460,24 @@ class Dashboard extends React.Component {
           />
           <Route
             path="/graphiql/:projectId"
-            render={({ match }) => {
-              if (match.params.projectId !== this.lastGraphiqlProject) {
-                this.lastGraphiqlProject = match.params.projectId;
-                this.lastGraphiqlFetcher = body =>
-                  api({
-                    endpoint: `/${match.params.projectId}/graphql`,
-                    body,
-                  });
-              }
-              return <GraphiQL fetcher={this.lastGraphiqlFetcher} />;
-            }}
+            render={({ match }) => (
+              <Component
+                initialState={{ projectId: match.params.projectId }}
+                shouldUpdate={({ state }) =>
+                  state.projectId !== match.params.projectId
+                }
+                render={() => (
+                  <GraphiQL
+                    fetcher={body =>
+                      api({
+                        endpoint: `/${match.params.projectId}/graphql`,
+                        body,
+                      })
+                    }
+                  />
+                )}
+              />
+            )}
           />
           <Route
             path="/projects"
