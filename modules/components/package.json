@@ -83,6 +83,7 @@
     "socket.io-stream": "^0.9.1",
     "storybook-router": "^0.3.2",
     "streamsaver": "^1.0.1",
+    "stringify-object": "^3.2.2",
     "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
