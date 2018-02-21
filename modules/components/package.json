@@ -7,12 +7,15 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
+    "prepare":
+      "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
     "watch": "babel src --out-dir dist --copy-files --watch",
     "build-storybook": "build-storybook -s ./public",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
-    "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-    "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
+    "dashboard":
+      "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
+    "portal":
+      "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
     "test": "jest",
     "flow": "flow"
   },
@@ -83,6 +86,7 @@
     "socket.io-stream": "^0.9.1",
     "storybook-router": "^0.3.2",
     "streamsaver": "^1.0.1",
+    "stringify-object": "^3.2.2",
     "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
