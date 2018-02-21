@@ -6,9 +6,9 @@ import { isEqual } from 'lodash';
 import stringifyObject from 'stringify-object';
 import apiFetch from '../utils/api';
 
-const fetchGraphqlQuery = async ({ query, PROJECT_ID }) =>
+const fetchGraphqlQuery = async ({ query, projectId }) =>
   apiFetch({
-    endpoint: `/${PROJECT_ID}/graphql`,
+    endpoint: `/${projectId}/graphql`,
     body: {
       query: query,
     },
@@ -17,30 +17,25 @@ const fetchGraphqlQuery = async ({ query, PROJECT_ID }) =>
 const fetchMapping = async fetchConfig =>
   fetchGraphqlQuery({
     query: `{
-      ${fetchConfig.ES_INDEX} {
+      ${fetchConfig.index} {
         mapping,
       }
     }`,
     ...fetchConfig,
-  }).then(data => data[fetchConfig.ES_INDEX]);
+  }).then(data => data[fetchConfig.index]);
 
 const fetchExtendedMapping = async fetchConfig =>
   fetchGraphqlQuery({
     query: `{
-      ${fetchConfig.ES_INDEX} {
+      ${fetchConfig.index} {
         extended,
       }
     }`,
     ...fetchConfig,
-  }).then(data => data[fetchConfig.ES_INDEX]);
+  }).then(data => data[fetchConfig.index]);
 
-const fetchAggregationData = async ({
-  sqon,
-  extended,
-  PROJECT_ID,
-  ES_INDEX,
-}) => {
-  const fetchConfig = { PROJECT_ID, ES_INDEX };
+const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
+  const fetchConfig = { projectId, index };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
   const allAggsNames = extended
@@ -64,7 +59,7 @@ const fetchAggregationData = async ({
       .join('');
   const query = `
     {
-      ${ES_INDEX} {
+      ${index} {
         aggregations (aggregations_filter_themselves: false ${
           sqon
             ? `filters: ${stringifyObject(sqon, { singleQuotes: false })}`
@@ -76,10 +71,10 @@ const fetchAggregationData = async ({
     query,
     ...fetchConfig,
   }).then(data => ({
-    aggregations: Object.keys(data[ES_INDEX].aggregations).reduce(
+    aggregations: Object.keys(data[index].aggregations).reduce(
       (agg, key) => ({
         ...agg,
-        [serializeToPath(key)]: data[ES_INDEX].aggregations[key],
+        [serializeToPath(key)]: data[index].aggregations[key],
       }),
       {},
     ),
@@ -98,8 +93,8 @@ export default class LiveAdvancedFacetView extends React.Component {
     };
   }
   componentDidMount() {
-    const { projectId: PROJECT_ID, index: ES_INDEX } = this.props;
-    const fetchConfig = { PROJECT_ID, ES_INDEX };
+    const { projectId, index } = this.props;
+    const fetchConfig = { projectId, index };
     Promise.all([
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
@@ -124,15 +119,9 @@ export default class LiveAdvancedFacetView extends React.Component {
     }
   }
   onSqonFieldChange = ({ sqon }) => {
-    const {
-      onSqonChange = () => {},
-      projectId: PROJECT_ID,
-      index: ES_INDEX,
-    } = this.props;
+    const { onSqonChange = () => {}, projectId, index } = this.props;
     fetchAggregationData({
       ...this.props,
-      PROJECT_ID,
-      ES_INDEX,
       extended: this.state.extended.filter(
         e => e.type !== 'object' && e.type !== 'nested',
       ),
