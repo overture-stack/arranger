@@ -106,6 +106,15 @@ export default class extends React.Component {
     );
   };
 
+  getHighlightedHtmlTemplate = displayName => {
+    const { currentValue } = this.state;
+    const output = displayName
+      .toLowerCase()
+      .split(currentValue.toLowerCase())
+      .join(`<span class="matched">${currentValue}</span>`);
+    return output;
+  };
+
   componentDidMount() {
     window.addEventListener('click', this.onWindowClick);
   }
@@ -131,7 +140,7 @@ export default class extends React.Component {
           className="filterInput"
           type="text"
           placeholder="Filter"
-          value={currentValue}
+          value={currentValue.toLowerCase()}
           onClick={e => {
             this.setState({ isDropdownShown: true });
             e.stopPropagation();
@@ -160,7 +169,12 @@ export default class extends React.Component {
                   onFieldSelect(field);
                 }}
               >
-                <span className="title">{displayName}</span>
+                <span
+                  className="title"
+                  dangerouslySetInnerHTML={{
+                    __html: this.getHighlightedHtmlTemplate(displayName),
+                  }}
+                />
                 <span className="field">{field}</span>
               </div>
             ))}
