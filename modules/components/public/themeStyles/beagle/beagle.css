@@ -572,7 +572,7 @@ div {
   border-bottom: solid 1px #e7e8ed;
 }
 
-.advancedFacetViewWrapper .resultItem:hover {
+.advancedFacetViewWrapper .resultItem.highlighted {
   background: #e7e8ed;
 }
 
