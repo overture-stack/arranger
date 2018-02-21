@@ -108,10 +108,11 @@ export default class extends React.Component {
 
   getHighlightedHtmlTemplate = displayName => {
     const { currentValue } = this.state;
-    const output = displayName
-      .toLowerCase()
-      .split(currentValue.toLowerCase())
-      .join(`<span class="matched">${currentValue}</span>`);
+    const regex = new RegExp(currentValue, 'i');
+    const output = displayName.replace(
+      regex,
+      `<span class="matched">${displayName.match(regex)[0]}</span>`,
+    );
     return output;
   };
 
@@ -140,7 +141,7 @@ export default class extends React.Component {
           className="filterInput"
           type="text"
           placeholder="Filter"
-          value={currentValue.toLowerCase()}
+          value={currentValue}
           onClick={e => {
             this.setState({ isDropdownShown: true });
             e.stopPropagation();

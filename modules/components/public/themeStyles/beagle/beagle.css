@@ -578,7 +578,6 @@ div {
 
 .advancedFacetViewWrapper .resultItem .title {
   font-weight: bold;
-  text-transform: lowercase;
 }
 
 .advancedFacetViewWrapper .resultItem .title .matched {
