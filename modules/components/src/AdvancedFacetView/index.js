@@ -1,6 +1,5 @@
 import React from 'react';
 import { keys } from 'lodash';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
@@ -8,65 +7,9 @@ import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import State from '../State';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
-
-const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
-
-const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
-  const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
-  const extend = node => {
-    const extension = extendedMapping.find(
-      extension => extension.field === node.path,
-    );
-    return {
-      ...node,
-      ...(extension
-        ? {
-            title: extension.displayName || node.title,
-            type: extension.type || node.title,
-          }
-        : {}),
-      ...(node.children ? { children: node.children.map(extend) } : {}),
-    };
-  };
-  return rawDisplayData.map(extend);
-};
-
-const filterOutNonValue = ({ aggregations, displayTreeData }) => {
-  const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
-    const keyHasValue =
-      aggregations[key]?.buckets?.length > 0 ||
-      aggregations[key]?.stats?.min ||
-      aggregations[key]?.stats?.max;
-    return {
-      ...a,
-      ...(keyHasValue ? { [key]: aggregations[key] } : {}),
-    };
-  }, {});
-  const keysWithValue = keys(aggregationsWithValue);
-  const doesDisplayNodeHaveValue = node => {
-    return node.children
-      ? node.children.filter(doesDisplayNodeHaveValue).length
-      : keysWithValue.indexOf(node.path) > -1;
-  };
-  const applyFilterToDisplayNodeCollection = collection =>
-    collection.filter(doesDisplayNodeHaveValue).map(
-      node =>
-        node.children
-          ? {
-              ...node,
-              children: applyFilterToDisplayNodeCollection(node.children),
-            }
-          : node,
-    );
-  if (displayTreeData) {
-    const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
-      displayTreeData,
-    );
-    return { displayTreeDataWithValue, aggregationsWithValue };
-  } else {
-    return { aggregationsWithValue };
-  }
-};
+import Input from '../Input';
+import SearchBox from './SearchBox';
+import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -156,6 +99,18 @@ export default class AdvancedFacetView extends React.Component {
     };
     return (
       <div className="advancedFacetViewWrapper">
+        <SearchBox
+          {...{
+            withValueOnly,
+            elasticMapping,
+            extendedMapping,
+            aggregations,
+            onFieldSelect: field => {
+              scrollFacetViewToPath(field);
+              this.setState({ selectedPath: field });
+            },
+          }}
+        />
         <div>
           <SQONView
             sqon={sqon}
@@ -210,6 +165,7 @@ export default class AdvancedFacetView extends React.Component {
                 dataSource={
                   withValueOnly
                     ? filterOutNonValue({
+                        extendedMapping,
                         displayTreeData,
                         aggregations,
                       }).displayTreeDataWithValue
@@ -218,9 +174,7 @@ export default class AdvancedFacetView extends React.Component {
                 selectedPath={selectedPath}
                 onLeafSelect={path => {
                   scrollFacetViewToPath(path);
-                  this.setState({
-                    selectedPath: path,
-                  });
+                  this.setState({ selectedPath: path });
                 }}
               />
             </div>

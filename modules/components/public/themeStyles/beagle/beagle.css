@@ -546,6 +546,45 @@ div {
   padding-right: 10px;
 }
 
+.advancedFacetViewWrapper .filterWrapper {
+  margin-bottom: 20px;
+}
+
+.advancedFacetViewWrapper .filterWrapper .inputWrapper {
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+  padding: 10px;
+}
+
+.advancedFacetViewWrapper .resultList {
+  height: 130px;
+  overflow-y: scroll;
+}
+
+.advancedFacetViewWrapper .resultList.shown {
+  border: solid 1px #e7e8ed;
+}
+
+.advancedFacetViewWrapper .resultItem {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: solid 1px #e7e8ed;
+}
+
+.advancedFacetViewWrapper .resultItem:hover {
+  background: #e7e8ed;
+}
+
+.advancedFacetViewWrapper .resultItem .title {
+  font-weight: bold;
+}
+
+.advancedFacetViewWrapper .resultItem .field {
+  padding-left: 10px;
+  color: lightgrey;
+}
+
 /*********************************************/
 /******** styling for the Slider *************/
 /*********************************************/
