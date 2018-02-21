@@ -91,7 +91,7 @@ export default function(args) {
         chunk.data[args.index].hits.edges.map(e => e.node).map(row => {
           return getRows({
             row,
-            paths: args.uniqueBy.split('[].').filter(Boolean),
+            paths: (args.uniqueBy || '').split('[].').filter(Boolean),
             columns: args.columns,
           }).map(row => row.join('\t'));
         }),

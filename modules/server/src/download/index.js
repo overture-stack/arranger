@@ -26,20 +26,24 @@ export default function({ projectId }) {
     const pack = tar.pack();
 
     Promise.all(
-      files.map(file => {
+      files.map((file, i) => {
         return new Promise((resolve, reject) => {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
           const fileStream = makeTSV(file);
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
-            pack.entry({ name: file.fileName }, data, function(err) {
-              if (err) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            });
+            pack.entry(
+              { name: file.fileName || `file-${i + 1}.tsv` },
+              data,
+              function(err) {
+                if (err) {
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              },
+            );
           });
         });
       }),
@@ -65,7 +69,7 @@ export default function({ projectId }) {
 
       if (files.length === 1) {
         output = makeTSV(files[0]);
-        responseFileName = files[0].fileName;
+        responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
       } else {
         output = multipleFiles({ files });
