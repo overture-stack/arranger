@@ -5,10 +5,10 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
+import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 import { ARRANGER_API } from '../src/utils/config';
 import DataTable, {
   Table,
-  columnsToGraphql,
   TableToolbar,
   getSingleValue,
 } from '../src/DataTable';

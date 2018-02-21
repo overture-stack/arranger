@@ -7,7 +7,7 @@ const Table = withNormalizedColumns(BaseTable);
 const DataTable = withNormalizedColumns(BaseDataTable);
 
 export { Table, TableToolbar };
-export { columnsToGraphql, getSingleValue } from './utils';
+export { getSingleValue } from './utils';
 export { default as ColumnsState } from './ColumnsState';
 export { default as EditColumns } from './EditColumns';
 
