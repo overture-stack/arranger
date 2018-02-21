@@ -14,7 +14,6 @@ class DataTable extends React.Component {
     const {
       config,
       fetchData,
-      streamData,
       setSelectedTableRows,
       sqon,
       allowTogglingColumns = true,
@@ -27,7 +26,7 @@ class DataTable extends React.Component {
       onFilterChange,
       onColumnsChange = () => {},
     } = this.props;
-    const { page, pageSize, total, sort } = this.state;
+    const { page, pageSize, total } = this.state;
 
     return (
       <>
@@ -39,17 +38,6 @@ class DataTable extends React.Component {
           allowTogglingColumns={allowTogglingColumns}
           allowTSVExport={allowTSVExport}
           sqon={sqon}
-          streamData={options =>
-            streamData({
-              ...options,
-              sort: sort.length
-                ? sort.map(sort => ({
-                    field: sort.id,
-                    order: sort.desc ? 'desc' : 'asc',
-                  }))
-                : null,
-            })
-          }
           columns={config.columns}
           onColumnsChange={onColumnsChange}
           total={total}

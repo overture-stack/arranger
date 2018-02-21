@@ -37,7 +37,6 @@ const TableToolbar = ({
   allowTogglingColumns = true,
   allowTSVExport = true,
   customActions = null,
-  streamData = () => {},
   style,
 }) => (
   <div

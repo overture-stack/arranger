@@ -2,17 +2,7 @@ import React from 'react';
 
 import DataTable, { ColumnsState } from '../DataTable';
 
-import { replaceFilterSQON } from '../SQONView/utils';
-
-const Table = ({
-  projectId,
-  index,
-  streamData,
-  fetchData,
-  setSQON,
-  sqon,
-  ...props
-}) => {
+const Table = ({ projectId, index, fetchData, setSQON, sqon, ...props }) => {
   return (
     <ColumnsState
       projectId={projectId}
@@ -23,7 +13,6 @@ const Table = ({
             {...props}
             sqon={sqon}
             config={columnState.state}
-            streamData={streamData(index, projectId)}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
             onFilterChange={({ generateNextSQON }) => {
