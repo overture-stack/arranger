@@ -1,8 +1,9 @@
 import React from 'react';
 import { capitalize } from 'lodash';
 import Query from '../Query';
+import stringifyObject from 'stringify-object';
 
-export default ({ index = '', aggs = [], ...props }) =>
+export default ({ index = '', aggs = [], sqon = null, ...props }) =>
   !index || !aggs.length ? (
     ''
   ) : (
@@ -15,7 +16,11 @@ export default ({ index = '', aggs = [], ...props }) =>
     query ${capitalize(index)}AggregationsQuery($fields: [String]) {
       ${index} {
         extended(fields: $fields)
-        aggregations {
+        aggregations (aggregations_filter_themselves: false ${
+          sqon
+            ? `filters: ${stringifyObject(sqon, { singleQuotes: false })}`
+            : ''
+        }){
           ${aggs.map(({ field, type }) => {
             return type === 'Aggregations'
               ? `

@@ -22,6 +22,7 @@ const Aggregations = ({
               debounceTime={300}
               projectId={projectId}
               index={index}
+              sqon={sqon}
               aggs={aggsState.aggs.filter(x => x.active)}
               render={data =>
                 data &&
