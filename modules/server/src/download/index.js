@@ -56,9 +56,9 @@ export default function({ projectId }) {
 
   router.use(bodyParser.urlencoded({ extended: true }));
 
-  router.post('/', function(req, res) {
-    const { files, fileName = 'file.tar.gz' } = JSON.parse(req.body.params);
-
+  router.post('/', async function(req, res) {
+    const { params, downloadCookieKey, downloadCookiePath } = req.body;
+    const { files, fileName = 'file.tar.gz' } = JSON.parse(params);
     if (!files || !files.length) {
       console.warn('no files defined to download');
       res.status(400).send('files array was missing or empty');
@@ -82,6 +82,7 @@ export default function({ projectId }) {
         'Content-disposition',
         `attachment; filename=${responseFileName}`,
       );
+      res.clearCookie(downloadCookieKey, { path: downloadCookiePath });
       output.pipe(res);
     }
   });

@@ -1,7 +1,8 @@
 import { ARRANGER_API } from './config';
+import urlJoin from 'url-join';
 
 export default ({ endpoint = '', body, headers }) =>
-  fetch(ARRANGER_API + endpoint, {
+  fetch(urlJoin(ARRANGER_API, endpoint), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

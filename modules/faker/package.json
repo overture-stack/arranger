@@ -6,7 +6,6 @@
     "start": "node -r babel-register src/index"
   },
   "dependencies": {
-    "axios": "^0.15.3",
     "elasticsearch": "^14.0.0",
     "json-schema-faker": "^0.4.6",
     "lodash": "^4.17.4",
