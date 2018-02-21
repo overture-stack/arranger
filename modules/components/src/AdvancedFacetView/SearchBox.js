@@ -183,7 +183,7 @@ export default class extends React.Component {
                     __html: this.getHighlightedHtmlTemplate(displayName),
                   }}
                 />
-                <span className="field">{field}</span>
+                <span className="field">{`(${field})`}</span>
               </div>
             ))}
           </div>

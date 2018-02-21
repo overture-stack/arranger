@@ -558,18 +558,21 @@ div {
 }
 
 .advancedFacetViewWrapper .resultList {
-  height: 130px;
+  height: 140px;
   overflow-y: scroll;
+  border-radius: 5px;
+  box-shadow: 0 0 7.8px 0.2px #bbbbbb;
 }
 
 .advancedFacetViewWrapper .resultList.shown {
-  border: solid 1px #e7e8ed;
+  /* border: solid 1px #e7e8ed; */
 }
 
 .advancedFacetViewWrapper .resultItem {
   padding: 10px;
   cursor: pointer;
-  border-bottom: solid 1px #e7e8ed;
+  font-size: 0.8em;
+  /* border-bottom: solid 1px #e7e8ed; */
 }
 
 .advancedFacetViewWrapper .resultItem.highlighted {
@@ -577,7 +580,7 @@ div {
 }
 
 .advancedFacetViewWrapper .resultItem .title {
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 .advancedFacetViewWrapper .resultItem .title .matched {
