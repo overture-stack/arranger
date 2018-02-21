@@ -59,6 +59,7 @@ export default class extends React.Component {
                 key={field}
                 className="resultItem"
                 onClick={() => {
+                  this.setState({ currentValue: displayName });
                   onFieldSelect(field);
                 }}
               >
