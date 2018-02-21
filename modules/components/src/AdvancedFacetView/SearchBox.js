@@ -147,11 +147,18 @@ export default class extends React.Component {
             e.stopPropagation();
           }}
           onChange={e =>
-            this.setState({
-              isDropdownShown: true,
-              currentValue: e.target.value,
-              highlightedField: null,
-            })
+            this.setState(
+              {
+                isDropdownShown: true,
+                currentValue: e.target.value,
+              },
+              () => {
+                const newFilteredList = this.getFilteredList();
+                this.setState({
+                  highlightedField: newFilteredList?.[0]?.field,
+                });
+              },
+            )
           }
           onKeyDown={e => this.handleKeyPress(e)}
         />
