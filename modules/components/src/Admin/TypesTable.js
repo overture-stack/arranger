@@ -11,7 +11,7 @@ export default ({ total, data, customActions, projectId, onLinkClick }) => (
       entity: props => {
         return (
           <Link
-            to={`/projects/${projectId}/${props.value}`}
+            to={`/${projectId}/${props.value}`}
             onClick={() => onLinkClick(props.value)}
           >
             {props.value}

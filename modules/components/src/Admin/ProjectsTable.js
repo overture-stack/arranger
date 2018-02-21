@@ -29,7 +29,7 @@ export default ({
         return (
           <Link
             onClick={() => setActiveProject({ activeProject: props.value })}
-            to={`/projects/${props.value}`}
+            to={`/${props.value}`}
           >
             {props.value}
           </Link>
