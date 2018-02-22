@@ -300,31 +300,29 @@ div {
 /***********************************/
 /**** styling for the tree view ****/
 /***********************************/
-.tree-view {
-}
-.tree-view .tree-view_children {
-  margin-left: 20px;
-}
-.tree-view_item {
-  padding-left: 20px;
-}
 .tree-view .header {
-  color: #2b388f;
-  /* font-size: 1.2rem; */
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.tree-view .header::before {
+  content: '';
+  position: absolute;
   border-top: solid 1px #e0e1e6;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+.facetViewWrapper .tree-view {
+  position: relative;
   padding-left: 20px;
 }
-.tree-view_children.leaf {
-  padding-top: 7px;
-  padding-bottom: 7px;
-  padding-left: 20px;
+.facetViewWrapper .tree-view_item {
+  position: relative;
+  margin-left: -20px;
+  padding-left: 10px;
 }
-.tree-view_children.leaf.header {
-  color: #2b388f;
-  /* font-size: 1.2rem; */
-  padding-left: 25px;
-}
-.tree-view .tree-view_arrow:after {
+.facetViewWrapper .tree-view .tree-view_arrow:after {
   content: '›';
   display: flex;
   justify-content: center;
@@ -332,13 +330,33 @@ div {
   font-size: 1.5rem;
   width: 20px;
 }
-.tree-view .tree-view_arrow {
+.facetViewWrapper .tree-view .tree-view_arrow {
   transform: rotate(90deg);
   margin-right: 0px;
   color: #009bb8;
 }
-.tree-view .tree-view_arrow-collapsed {
+.facetViewWrapper .tree-view .tree-view_arrow-collapsed {
   transform: rotate(0deg);
+}
+.facetViewWrapper .tree-view_children.leaf.header {
+  padding-left: 30px;
+}
+.tree-view_children .tree-view_children.leaf {
+  margin-left: 30px;
+}
+.facetViewWrapper .tree-view_children {
+  padding-left: 0px;
+  margin-left: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.facetViewWrapper .tree-view_children-collapsed {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.tree-view_item.header .tree-view_children {
+  padding-left: 0px;
 }
 
 /**************************************/
@@ -420,6 +438,9 @@ div {
 .advancedFacetViewWrapper .facetViewWrapper .treeViewPanel {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
+}
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .treeView {
+  padding-top: 10px;
 }
 .advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .panelHeading {
   background-color: #e7e8ed;
