@@ -15,7 +15,7 @@ import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import {
   PORTAL_NAME,
   ACTIVE_INDEX,
-  ACTIVE_PROJECT,
+  PROJECT_ID,
   deleteValue,
   setValue,
 } from '../src/utils/config';
@@ -54,7 +54,7 @@ const DemoHeader = ({ update }) => {
           cursor: pointer;
         `}
         onClick={() => {
-          deleteValue('ACTIVE_PROJECT');
+          deleteValue('PROJECT_ID');
           deleteValue('ACTIVE_INDEX');
           update({ index: '', projectId: '' });
         }}
@@ -86,7 +86,7 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
       <select
         value={projectId}
         onChange={e => {
-          setValue('ACTIVE_PROJECT', e.target.value);
+          setValue('PROJECT_ID', e.target.value);
           update({
             projectId: e.target.value,
           });
@@ -144,7 +144,7 @@ storiesOf('Portal', module).add('Portal', () => (
     <State
       initial={{
         index: ACTIVE_INDEX,
-        projectId: ACTIVE_PROJECT,
+        projectId: PROJECT_ID,
       }}
       render={({ index, projectId, update }) => {
         return index && projectId ? (

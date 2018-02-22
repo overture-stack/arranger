@@ -5,10 +5,10 @@ import { orderBy, get } from 'lodash';
 import uuid from 'uuid';
 import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
+import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 import { ARRANGER_API } from '../src/utils/config';
 import DataTable, {
   Table,
-  columnsToGraphql,
   TableToolbar,
   getSingleValue,
 } from '../src/DataTable';
@@ -162,23 +162,6 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   <DataTable
     config={tableConfig}
     setSelectedTableRows={action('selection changed')}
-    streamData={({ columns, sort, first, onData, onEnd }) => {
-      let socket = io(ARRANGER_API);
-      socket.on('server::chunk', ({ data, total }) =>
-        onData({
-          total,
-          data: data[tableConfig.type].hits.edges.map(e => e.node),
-        }),
-      );
-
-      socket.on('server::stream::end', onEnd);
-
-      socket.emit('client::stream', {
-        index: tableConfig.type,
-        size: 100,
-        ...columnsToGraphql({ columns, sort, first }),
-      });
-    }}
     fetchData={options => {
       return api({
         endpoint: 'table',
@@ -216,10 +199,7 @@ storiesOf('Table', module)
     />
   ))
   .add('Toolbar', () => (
-    <TableToolbarStory
-      onFilterChange={console.log.bind(console)}
-      streamData={streamDummyData}
-    />
+    <TableToolbarStory onFilterChange={console.log.bind(console)} />
   ))
   .add('Data Table', () => (
     <DataTable
@@ -234,7 +214,6 @@ storiesOf('Table', module)
         },
       }}
       fetchData={fetchDummyData}
-      streamData={streamDummyData}
     />
   ))
   .add('Live Data Table', () => <EnhancedDataTable />);

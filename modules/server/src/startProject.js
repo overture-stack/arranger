@@ -11,6 +11,7 @@ import {
 import { fetchMappings } from './utils/fetchMappings';
 import mapHits from './utils/mapHits';
 import { getProject, setProject } from './utils/projects';
+import download from './download';
 
 function setProjectActive({ id, es }) {
   return es.update({
@@ -163,6 +164,8 @@ export default async function startProjectApp({ es, id, io }) {
       ? graphqlExpress({ schema, context: { es, projectId: id, io } })
       : noSchemaHandler,
   );
+
+  projectApp.use(`/${id}/download`, download({ projectId: id }));
 
   setProject(id, { app: projectApp, schema, es, io });
 

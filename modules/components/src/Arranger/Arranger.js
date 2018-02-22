@@ -3,7 +3,8 @@ import { get } from 'lodash';
 import io from 'socket.io-client';
 import ioStream from 'socket.io-stream';
 
-import { columnsToGraphql } from '../DataTable';
+import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
+
 import api from '../utils/api';
 import { ARRANGER_API } from '../utils/config';
 
