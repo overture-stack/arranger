@@ -5,6 +5,12 @@ import State from '../State';
 import TextInput from '../Input';
 import { filterOutNonValue } from './utils.js';
 
+const keycodes = {
+  enter: 13,
+  up: 38,
+  down: 40,
+};
+
 export default class extends React.Component {
   state = { currentValue: '', isDropdownShown: false, highlightedField: null };
   dropdownRefs = {};
@@ -23,8 +29,7 @@ export default class extends React.Component {
       ({ field }) => field === highlightedField,
     );
 
-    // enter
-    if (e.keyCode === 13) {
+    if (e.keyCode === keycodes.enter) {
       this.setState({
         isDropdownShown: false,
         highlightedField: null,
@@ -37,16 +42,8 @@ export default class extends React.Component {
       onFieldSelect(highlightedField);
     }
 
-    // up
-    if (e.keyCode === 38) {
-      const newHighlightedField =
-        filteredList?.[
-          Math.max(
-            (filteredList?.map(agg => agg.field).indexOf(highlightedField) ||
-              0) - 1,
-            0,
-          )
-        ]?.field || null;
+    if (e.keyCode === keycodes.up || e.keyCode === keycodes.down) {
+      const newHighlightedField = this.getNextHighlightedField(e.keyCode);
       this.setState(
         {
           highlightedField: newHighlightedField,
@@ -58,27 +55,31 @@ export default class extends React.Component {
           }),
       );
     }
+  };
 
-    // down
-    if (e.keyCode === 40) {
-      const newHighlightedField =
+  getNextHighlightedField = keycode => {
+    const filteredList = this.getFilteredList();
+    const { highlightedField } = this.state;
+    if (keycode === keycodes.up) {
+      return (
+        filteredList?.[
+          Math.max(
+            filteredList?.map(agg => agg.field).indexOf(highlightedField) - 1,
+            0,
+          )
+        ]?.field || null
+      );
+    } else if (keycode === keycodes.down) {
+      return (
         filteredList?.[
           Math.min(
-            (filteredList?.map(agg => agg.field).indexOf(highlightedField) ||
-              0) + 1,
+            filteredList?.map(agg => agg.field).indexOf(highlightedField) + 1,
             filteredList.length - 1,
           )
-        ]?.field || null;
-      this.setState(
-        {
-          highlightedField: newHighlightedField,
-        },
-        () =>
-          this.dropdownRefs[newHighlightedField]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-          }),
+        ]?.field || null
       );
+    } else {
+      return null;
     }
   };
 
