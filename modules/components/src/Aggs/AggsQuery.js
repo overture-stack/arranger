@@ -58,9 +58,3 @@ export default ({ index = '', aggs = [], sqon = null, ...props }) =>
       {...props}
     />
   );
-
-// ${
-//   sqon
-//     ? `filters: ${stringifyObject(sqon, { singleQuotes: false })}`
-//     : ''
-// }
