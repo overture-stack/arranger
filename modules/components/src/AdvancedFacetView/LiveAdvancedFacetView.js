@@ -3,14 +3,14 @@ import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
-import stringifyObject from 'stringify-object';
 import apiFetch from '../utils/api';
 
-const fetchGraphqlQuery = async ({ query, projectId }) =>
+const fetchGraphqlQuery = async ({ query, projectId, variables = null }) =>
   apiFetch({
     endpoint: `/${projectId}/graphql`,
     body: {
       query: query,
+      variables,
     },
   }).then(data => data.data);
 
@@ -58,17 +58,17 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
       })
       .join('');
   const query = `
-    {
+    query ($sqon: JSON){
       ${index} {
-        aggregations (aggregations_filter_themselves: false ${
-          sqon
-            ? `filters: ${stringifyObject(sqon, { singleQuotes: false })}`
-            : ''
-        }) { ${getAggregationQuery()} }
+        aggregations (
+          aggregations_filter_themselves: false
+          filters: $sqon
+        ) { ${getAggregationQuery()} }
       }
     }`;
   return fetchGraphqlQuery({
     query,
+    variables: { sqon },
     ...fetchConfig,
   }).then(data => ({
     aggregations: Object.keys(data[index].aggregations).reduce(
