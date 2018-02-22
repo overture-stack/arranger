@@ -1,6 +1,5 @@
 import React from 'react';
 import SearchIcon from 'react-icons/lib/fa/search';
-import $ from 'jquery';
 
 import State from '../State';
 import TextInput from '../Input';
@@ -21,7 +20,7 @@ export default class extends React.Component {
     const { highlightedField } = this.state;
     const { extendedMapping, onFieldSelect = () => {} } = this.props;
     const highlightedAgg = extendedMapping.find(
-      ({ field, displayName }) => field === highlightedField,
+      ({ field }) => field === highlightedField,
     );
 
     // enter
@@ -109,11 +108,21 @@ export default class extends React.Component {
   getHighlightedHtmlTemplate = displayName => {
     const { currentValue } = this.state;
     const regex = new RegExp(currentValue, 'i');
-    const output = displayName.replace(
-      regex,
-      `<span class="matched">${displayName.match(regex)[0]}</span>`,
+    const matchResult = displayName.match(regex);
+    const foundIndex = matchResult.index;
+    const seg1 = displayName.substring(0, foundIndex);
+    const foundQuery = matchResult[0];
+    const seg2 = displayName.substring(
+      foundIndex + foundQuery.length,
+      displayName.length,
     );
-    return output;
+    return (
+      <span>
+        {seg1}
+        <span className="matched">{foundQuery}</span>
+        {seg2}
+      </span>
+    );
   };
 
   componentDidMount() {
@@ -177,12 +186,9 @@ export default class extends React.Component {
                   onFieldSelect(field);
                 }}
               >
-                <span
-                  className="title"
-                  dangerouslySetInnerHTML={{
-                    __html: this.getHighlightedHtmlTemplate(displayName),
-                  }}
-                />
+                <span className="title">
+                  {this.getHighlightedHtmlTemplate(displayName)}
+                </span>
                 <span className="field">{`(${field})`}</span>
               </div>
             ))}

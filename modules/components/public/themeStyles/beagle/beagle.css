@@ -565,14 +565,12 @@ div {
 }
 
 .advancedFacetViewWrapper .resultList.shown {
-  /* border: solid 1px #e7e8ed; */
 }
 
 .advancedFacetViewWrapper .resultItem {
   padding: 10px;
   cursor: pointer;
   font-size: 0.8em;
-  /* border-bottom: solid 1px #e7e8ed; */
 }
 
 .advancedFacetViewWrapper .resultItem.highlighted {
@@ -580,7 +578,6 @@ div {
 }
 
 .advancedFacetViewWrapper .resultItem .title {
-  /* font-weight: bold; */
 }
 
 .advancedFacetViewWrapper .resultItem .title .matched {
