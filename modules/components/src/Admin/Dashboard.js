@@ -4,8 +4,11 @@ import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
-import GraphiQL from 'graphiql';
-import 'graphiql/graphiql.css';
+
+// TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
+// import GraphiQL from 'graphiql';
+// import 'graphiql/graphiql.css';
+
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
@@ -464,16 +467,27 @@ class Dashboard extends React.Component {
                   shouldUpdate={({ state }) =>
                     state.projectId !== match.params.projectId
                   }
-                  render={() => (
-                    <GraphiQL
-                      fetcher={body =>
-                        api({
-                          endpoint: `/${match.params.projectId}/graphql`,
-                          body,
-                        })
-                      }
-                    />
-                  )}
+                  render={
+                    () =>
+                      `Ensure that there is only one instance of "graphql" in the node_modules
+                    directory. If different versions of "graphql" are the dependencies of other
+                    relied on modules, use "resolutions" to ensure only one version is installed.
+
+                    https://yarnpkg.com/en/docs/selective-version-resolutions
+
+                    Duplicate "graphql" modules cannot be used at the same time since different
+                    versions may have different capabilities and behavior. The data from one
+                    version used in the function from another could produce confusing and
+                    spurious results.`
+                    // <GraphiQL
+                    //   fetcher={body =>
+                    //     api({
+                    //       endpoint: `/${match.params.projectId}/graphql`,
+                    //       body,
+                    //     })
+                    //   }
+                    // />
+                  }
                 />
               )}
             />
