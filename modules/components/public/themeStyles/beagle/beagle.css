@@ -441,10 +441,14 @@ div {
 }
 .advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .treeView {
   padding-top: 10px;
+  font-size: 0.9em;
 }
 .advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .panelHeading {
+  font-size: 0.8em;
   background-color: #e7e8ed;
   padding: 10px;
+  display: flex;
+  align-items: center;
 }
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
   margin-left: 20px;
