@@ -25,13 +25,12 @@
     "@arranger/middleware": "^0.1.3",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
-    "graphql": "^0.12.3",
     "graphql-fields": "^1.0.2",
     "lodash": "^4.17.4",
     "node-fetch": "^2.0.0"
   },
   "peerDependencies": {
-    "graphql": "*"
+    "graphql": "^0.11.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.0.0-beta.40",
