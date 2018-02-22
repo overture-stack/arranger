@@ -1,6 +1,6 @@
 {
   "name": "@arranger/components",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Data Portal Components",
   "main": "dist/index.js",
   "publishConfig": {
