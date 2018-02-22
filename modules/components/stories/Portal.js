@@ -2,7 +2,8 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { injectGlobal } from 'emotion';
 
-import Arranger, {
+import {
+  Arranger,
   GetProjects,
   Aggregations,
   CurrentSQON,
