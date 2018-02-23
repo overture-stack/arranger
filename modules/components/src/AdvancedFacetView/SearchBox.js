@@ -44,6 +44,7 @@ export default class extends React.Component {
 
     if (e.keyCode === keycodes.up || e.keyCode === keycodes.down) {
       const newHighlightedField = this.getNextHighlightedField(e.keyCode);
+      e.preventDefault();
       this.setState(
         {
           highlightedField: newHighlightedField,
