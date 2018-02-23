@@ -45,7 +45,6 @@ const NestedTreeView = ({
     ) : (
       <div
         onClick={() => {
-          console.log(id || title);
           onLeafSelect(id || title);
         }}
         key={path}

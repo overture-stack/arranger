@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
 @import url('https://use.fontawesome.com/releases/v5.0.6/css/all.css');
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
 @import url('/themeStyles/beagle/responsive.css');
 
 div {
@@ -32,12 +33,12 @@ div {
 }
 
 .ReactTable .rt-tbody .rt-td {
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
   border-right: 1px solid #cacbcf;
 }
 
 .ReactTable .rt-tbody .rt-td :first-child {
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .ReactTable.-striped .rt-th {
@@ -143,7 +144,7 @@ div {
   color: #404c9a;
   font-weight: bolder;
   font-size: 0.9rem;
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 .aggregation-card .bucket {
   padding-top: 5px;
@@ -161,7 +162,7 @@ div {
   color: #343434;
   padding-left: 10px;
   padding-right: 10px;
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
   display: flex;
   align-items: center;
   margin-left: auto;
@@ -323,6 +324,14 @@ div {
   margin-left: -20px;
   padding-left: 10px;
 }
+.facetViewWrapper .tree-view_item .label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+}
+.facetViewWrapper .tree-view_item.header .label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: inherit;
+}
 .facetViewWrapper .tree-view .tree-view_arrow:after {
   content: '›';
   display: flex;
@@ -348,6 +357,8 @@ div {
 }
 .tree-view_children .tree-view_children.leaf {
   margin-left: 30px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
 }
 .facetViewWrapper .tree-view_children {
   padding-left: 0px;
@@ -460,6 +471,10 @@ div {
 }
 .advancedFacetViewWrapper .aggregation-card {
   border: none;
+}
+.advancedFacetViewWrapper .aggregation-card .bucket-link {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
 }
 .facetViewWrapper .facetsPanel .facetView {
   overflow-x: hidden;
