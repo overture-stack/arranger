@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
 @import url('https://use.fontawesome.com/releases/v5.0.6/css/all.css');
+@import url('/themeStyles/beagle/responsive.css');
 
 div {
   font-family: 'Montserrat', sans-serif;
@@ -572,8 +573,8 @@ div {
 }
 .advancedFacetViewWrapper .facetViewNode .aggregation-card .bucket {
   padding-right: 10px;
-  display: flex;
-  flex-wrap: wrap;
+  /* display: flex;
+  flex-wrap: wrap; */
 }
 .advancedFacetViewWrapper
   .facetViewNode
@@ -583,10 +584,28 @@ div {
   padding-right: 10px;
   display: flex;
   flex-wrap: wrap;
-  width: 50%;
+  /* width: 50%; */
   padding: 9px;
   flex-wrap: nowrap;
 }
+
+.advancedFacetViewWrapper
+  .facetViewNode
+  .hasShortValues
+  .aggregation-card
+  .bucket {
+  display: flex;
+  flex-wrap: wrap;
+}
+.advancedFacetViewWrapper
+  .facetViewNode
+  .hasShortValues
+  .aggregation-card
+  .bucket
+  .bucket-item {
+  width: 50%;
+}
+
 .advancedFacetViewWrapper .facetViewNode .aggregation-card .showMore-wrapper {
   flex: 1;
 }
