@@ -15,6 +15,7 @@ export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => {
             value: bucket.key,
           });
         }}
+        maxTerms={6}
         field={path}
         buckets={buckets}
         displayName={title}
