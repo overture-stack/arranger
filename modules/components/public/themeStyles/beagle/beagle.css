@@ -572,6 +572,23 @@ div {
 }
 .advancedFacetViewWrapper .facetViewNode .aggregation-card .bucket {
   padding-right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.advancedFacetViewWrapper
+  .facetViewNode
+  .aggregation-card
+  .bucket
+  .bucket-item {
+  padding-right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  width: 50%;
+  padding: 9px;
+  flex-wrap: nowrap;
+}
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .showMore-wrapper {
+  flex: 1;
 }
 
 .advancedFacetViewWrapper .filterWrapper {
