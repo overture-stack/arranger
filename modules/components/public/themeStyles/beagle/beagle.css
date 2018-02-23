@@ -456,6 +456,9 @@ div {
 .advancedFacetViewWrapper .aggregation-card {
   border: none;
 }
+.facetViewWrapper .facetsPanel .facetView {
+  overflow-x: hidden;
+}
 .facetViewWrapper .facetsPanel .facetView .facetViewNode {
   padding-left: 0px;
   position: relative;
@@ -624,4 +627,18 @@ div {
 }
 .input-range__track.input-range__track--active {
   background-color: #009bb8;
+}
+.input-range__label--max .input-range__label-container {
+  left: 0px;
+}
+.input-range__label--min .input-range__label-container {
+  left: 0px;
+}
+
+.input-range__label.input-range__label--value .input-range__label-container {
+  left: 0px;
+}
+
+.input-range__slider-container:nth-child(3) .input-range__label-container {
+  left: -100%;
 }
