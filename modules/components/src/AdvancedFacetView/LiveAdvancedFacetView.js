@@ -34,8 +34,6 @@ const fetchExtendedMapping = async fetchConfig =>
     ...fetchConfig,
   }).then(data => data[fetchConfig.index]);
 
-const blackListedAggTypes = ['object', 'nested', 'id'];
-
 const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   const fetchConfig = { projectId, index };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
@@ -83,6 +81,39 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   }));
 };
 
+const removeIds = ({ mapping, extended, parentField = null }) => {
+  const output = {
+    ...Object.entries(mapping).reduce((acc, [key, val]) => {
+      const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
+      const isId =
+        extended.find(ex => ex.field === currentField)?.type === 'id';
+      const toSpread = !isId
+        ? {
+            ...(val.properties
+              ? {
+                  [key]: {
+                    ...val,
+                    properties: removeIds({
+                      mapping: val.properties,
+                      extended,
+                      parentField: currentField,
+                    }),
+                  },
+                }
+              : {
+                  [key]: val,
+                }),
+          }
+        : {};
+      return {
+        ...acc,
+        ...toSpread,
+      };
+    }, {}),
+  };
+  return output;
+};
+
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
@@ -94,6 +125,7 @@ export default class LiveAdvancedFacetView extends React.Component {
       sqon: sqon || null,
     };
   }
+  blackListedAggTypes = ['object', 'nested', 'id'];
   componentDidMount() {
     const { projectId, index } = this.props;
     const fetchConfig = { projectId, index };
@@ -102,15 +134,17 @@ export default class LiveAdvancedFacetView extends React.Component {
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
       fetchAggregationData({
-        extended: extended.filter(!blackListedAggTypes.find(e.type)),
+        extended: extended.filter(
+          e => !this.blackListedAggTypes.find(type => type === e.type),
+        ),
         ...fetchConfig,
-      }).then(({ aggregations }) =>
+      }).then(({ aggregations }) => {
         this.setState({
-          mapping,
-          extended,
+          mapping: removeIds({ mapping, extended }),
+          extended: extended.filter(ex => ex.type !== 'id'),
           aggregations,
-        }),
-      ),
+        });
+      }),
     );
   }
   componentWillReceiveProps({ sqon }) {

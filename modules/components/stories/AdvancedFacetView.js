@@ -9,7 +9,7 @@ import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 import { action } from '@storybook/addon-actions';
 
-const PROJECT_ID = 'feb-14';
+const PROJECT_ID = 'feb-23';
 const ES_INDEX = 'file';
 
 const injectMockBuckets = node =>
