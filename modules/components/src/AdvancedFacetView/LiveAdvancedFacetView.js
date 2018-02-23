@@ -34,6 +34,8 @@ const fetchExtendedMapping = async fetchConfig =>
     ...fetchConfig,
   }).then(data => data[fetchConfig.index]);
 
+const blackListedAggTypes = ['object', 'nested', 'id'];
+
 const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   const fetchConfig = { projectId, index };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
@@ -100,9 +102,7 @@ export default class LiveAdvancedFacetView extends React.Component {
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
       fetchAggregationData({
-        extended: extended.filter(
-          e => e.type !== 'object' && e.type !== 'nested',
-        ),
+        extended: extended.filter(!blackListedAggTypes.find(e.type)),
         ...fetchConfig,
       }).then(({ aggregations }) =>
         this.setState({
