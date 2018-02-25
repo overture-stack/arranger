@@ -5,6 +5,7 @@ import addType from './addType';
 import spinUp from './spinUp';
 import teardown from './teardown';
 import getTypes from './getTypes';
+import updateProject from './updateProject';
 import deleteProject from './deleteProject';
 import deleteType from './deleteType';
 import addProject from './addProject';
@@ -40,6 +41,7 @@ export default ({ app, io }) => {
   app.use('/projects/:id/teardown', teardown);
   app.use('/projects/:id/types', getTypes);
   app.use('/projects/:id/delete', deleteProject);
+  app.use('/projects/:id/update', updateProject);
   app.use('/projects/add', addProject);
   app.use('/projects', getProjects);
 };

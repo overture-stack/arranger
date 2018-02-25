@@ -61,7 +61,7 @@ export default ({
         },
         {
           show: true,
-          Header: 'Active',
+          Header: 'Arrange on Start',
           type: 'component',
           sortable: false,
           canChangeShow: false,

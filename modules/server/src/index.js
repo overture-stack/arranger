@@ -6,13 +6,14 @@ import express from 'express';
 import socketIO from 'socket.io';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import fetch from 'node-fetch';
 
 import projectsRoutes from './projects';
 import sockets from './sockets';
 import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
-import { PORT, ES_HOST, PROJECT_ID } from './utils/config';
+import { PORT, ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 
 let main = async ({ io, app }) => {
   sockets({ io });
@@ -27,17 +28,37 @@ let main = async ({ io, app }) => {
   projectsRoutes({ app, io });
 
   if (PROJECT_ID && ES_HOST) {
-    startSingleProject({ io, app });
+    startSingleProject({ io, app, projectId: PROJECT_ID });
+  }
+
+  if (!PROJECT_ID && ES_HOST) {
+    let projects;
+    try {
+      let data = await fetch(`http://localhost:${PORT}/projects`, {
+        headers: { ES_HOST },
+      }).then(r => r.json());
+
+      projects = data.projects;
+    } catch (error) {
+      console.warn(error);
+    }
+
+    projects
+      .filter(project => project.active)
+      .slice(0, MAX_LIVE_VERSIONS)
+      .forEach(project =>
+        startSingleProject({ io, app, projectId: project.id }),
+      );
   }
 };
 
-let startSingleProject = async ({ app, io }) => {
+let startSingleProject = async ({ app, io, projectId }) => {
   sockets({ io });
 
   const projectApp = await startProject({
     es: new elasticsearch.Client({ host: ES_HOST }),
     io,
-    id: PROJECT_ID,
+    id: projectId,
   });
 
   app.use('/', projectApp);
