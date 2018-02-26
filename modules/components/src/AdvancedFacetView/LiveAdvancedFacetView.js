@@ -81,6 +81,39 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   }));
 };
 
+const removeIdsFromMapping = ({ mapping, extended, parentField = null }) => {
+  const output = {
+    ...Object.entries(mapping).reduce((acc, [key, val]) => {
+      const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
+      const isId =
+        extended.find(ex => ex.field === currentField)?.type === 'id';
+      const toSpread = !isId
+        ? {
+            ...(val.properties
+              ? {
+                  [key]: {
+                    ...val,
+                    properties: removeIdsFromMapping({
+                      mapping: val.properties,
+                      extended,
+                      parentField: currentField,
+                    }),
+                  },
+                }
+              : {
+                  [key]: val,
+                }),
+          }
+        : {};
+      return {
+        ...acc,
+        ...toSpread,
+      };
+    }, {}),
+  };
+  return output;
+};
+
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
@@ -95,22 +128,24 @@ export default class LiveAdvancedFacetView extends React.Component {
   componentDidMount() {
     const { projectId, index } = this.props;
     const fetchConfig = { projectId, index };
+    const blackListedAggTypes = ['object', 'nested', 'id'];
     Promise.all([
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
       fetchAggregationData({
         extended: extended.filter(
-          e => e.type !== 'object' && e.type !== 'nested',
+          // filtering out fields that do not have aggs
+          e => !blackListedAggTypes.find(type => type === e.type),
         ),
         ...fetchConfig,
-      }).then(({ aggregations }) =>
+      }).then(({ aggregations }) => {
         this.setState({
-          mapping,
-          extended,
+          mapping: removeIdsFromMapping({ mapping, extended }),
+          extended: extended.filter(ex => ex.type !== 'id'),
           aggregations,
-        }),
-      ),
+        });
+      }),
     );
   }
   componentWillReceiveProps({ sqon }) {

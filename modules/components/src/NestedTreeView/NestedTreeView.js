@@ -14,9 +14,24 @@ const NestedTreeView = ({
     return children ? (
       <ReactTreeView
         key={path}
-        nodeLabel={title}
+        nodeLabel={
+          <div
+            className={'label'}
+            style={{
+              display: 'inline',
+              cursor: 'pointer',
+            }}
+            onClick={e => {
+              onLeafSelect(id || title);
+            }}
+          >
+            {title}
+          </div>
+        }
         defaultCollapsed={true}
-        itemClassName={depth === 0 && 'header'}
+        itemClassName={`${
+          selectedPath === (id || title) ? 'selected' : ''
+        } ${depth === 0 && 'header'}`}
       >
         <NestedTreeView
           onLeafSelect={selectedPath => {
@@ -29,7 +44,9 @@ const NestedTreeView = ({
       </ReactTreeView>
     ) : (
       <div
-        onClick={() => onLeafSelect(id || title)}
+        onClick={() => {
+          onLeafSelect(id || title);
+        }}
         key={path}
         className={`tree-view_children leaf
           ${depth === 0 ? 'header' : ''}

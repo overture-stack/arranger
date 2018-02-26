@@ -139,15 +139,18 @@ export default class AdvancedFacetView extends React.Component {
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
             <div className="panelHeading">
-              {withValueOnly
-                ? keys(
-                    filterOutNonValue({
-                      aggregations,
-                    }).aggregationsWithValue,
-                  ).length
-                : Object.keys(aggregations).length}{' '}
-              fields
+              <span className="fieldsShown">
+                {withValueOnly
+                  ? keys(
+                      filterOutNonValue({
+                        aggregations,
+                      }).aggregationsWithValue,
+                    ).length
+                  : Object.keys(aggregations).length}{' '}
+                fields
+              </span>
               <span
+                className="valueOnlyCheck"
                 style={{ cursor: 'pointer' }}
                 onClick={() =>
                   this.setState({

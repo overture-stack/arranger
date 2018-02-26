@@ -5,6 +5,11 @@
 
 .tree-view_item {
   /* immediate child of .tree-view, for styling convenience */
+  pointer-events: none;
+}
+
+.tree-view_item .label {
+  pointer-events: all;
 }
 
 /* style for the children nodes container */
@@ -21,6 +26,7 @@
   margin-right: 6px;
   display: inline-block;
   user-select: none;
+  pointer-events: all;
 }
 
 .tree-view_arrow:after {
@@ -47,4 +53,10 @@
 .tree-view_children.leaf.header {
   color: #2b388f;
   padding-left: 3px;
+}
+.tree-view_children.leaf.selected {
+  background: #e7e8ed;
+}
+.tree-view_item.selected {
+  background: #e7e8ed;
 }

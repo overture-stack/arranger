@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,500,700');
 @import url('https://use.fontawesome.com/releases/v5.0.6/css/all.css');
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
 div {
   font-family: 'Montserrat', sans-serif;
@@ -31,12 +32,12 @@ div {
 }
 
 .ReactTable .rt-tbody .rt-td {
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
   border-right: 1px solid #cacbcf;
 }
 
 .ReactTable .rt-tbody .rt-td :first-child {
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .ReactTable.-striped .rt-th {
@@ -142,7 +143,7 @@ div {
   color: #404c9a;
   font-weight: bolder;
   font-size: 0.9rem;
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 .aggregation-card .bucket {
   padding-top: 5px;
@@ -160,7 +161,7 @@ div {
   color: #343434;
   padding-left: 10px;
   padding-right: 10px;
-  font-family: sans-serif;
+  font-family: 'Open Sans', sans-serif;
   display: flex;
   align-items: center;
   margin-left: auto;
@@ -300,31 +301,37 @@ div {
 /***********************************/
 /**** styling for the tree view ****/
 /***********************************/
-.tree-view {
-}
-.tree-view .tree-view_children {
-  margin-left: 20px;
-}
-.tree-view_item {
-  padding-left: 20px;
-}
 .tree-view .header {
-  color: #2b388f;
-  /* font-size: 1.2rem; */
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.tree-view .header::before {
+  content: '';
+  position: absolute;
   border-top: solid 1px #e0e1e6;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+.facetViewWrapper .tree-view {
+  position: relative;
   padding-left: 20px;
 }
-.tree-view_children.leaf {
-  padding-top: 7px;
-  padding-bottom: 7px;
-  padding-left: 20px;
+.facetViewWrapper .tree-view_item {
+  position: relative;
+  margin-left: -20px;
+  padding-left: 10px;
 }
-.tree-view_children.leaf.header {
-  color: #2b388f;
-  /* font-size: 1.2rem; */
-  padding-left: 25px;
+.facetViewWrapper .tree-view_item .label {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
 }
-.tree-view .tree-view_arrow:after {
+.facetViewWrapper .tree-view_item.header .label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: inherit;
+}
+.facetViewWrapper .tree-view .tree-view_arrow:after {
   content: '›';
   display: flex;
   justify-content: center;
@@ -332,13 +339,39 @@ div {
   font-size: 1.5rem;
   width: 20px;
 }
-.tree-view .tree-view_arrow {
+.facetViewWrapper .tree-view .tree-view_arrow {
   transform: rotate(90deg);
   margin-right: 0px;
   color: #009bb8;
 }
-.tree-view .tree-view_arrow-collapsed {
+.facetViewWrapper .tree-view .tree-view_arrow-collapsed {
   transform: rotate(0deg);
+}
+.facetViewWrapper .tree-view_children.leaf.header {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-left: 30px;
+}
+.tree-view_children .tree-view_children.leaf {
+  margin-left: 30px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+}
+.facetViewWrapper .tree-view_children {
+  padding-left: 0px;
+  margin-left: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.facetViewWrapper .tree-view_children-collapsed {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.tree-view_item.header .tree-view_children {
+  padding-left: 0px;
 }
 
 /**************************************/
@@ -421,15 +454,29 @@ div {
   background-color: #fafafc;
   border: solid 1px #d4d6dd;
 }
+.advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .treeView {
+  padding-top: 10px;
+  font-size: 0.9em;
+}
 .advancedFacetViewWrapper .facetViewWrapper .treeViewPanel .panelHeading {
+  font-size: 0.8em;
   background-color: #e7e8ed;
   padding: 10px;
+  display: flex;
+  align-items: center;
 }
 .advancedFacetViewWrapper .facetViewWrapper .facetsPanel {
   margin-left: 20px;
 }
 .advancedFacetViewWrapper .aggregation-card {
   border: none;
+}
+.advancedFacetViewWrapper .aggregation-card .bucket-link {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 13px;
+}
+.facetViewWrapper .facetsPanel .facetView {
+  overflow-x: hidden;
 }
 .facetViewWrapper .facetsPanel .facetView .facetViewNode {
   padding-left: 0px;
@@ -544,6 +591,41 @@ div {
 }
 .advancedFacetViewWrapper .facetViewNode .aggregation-card .bucket {
   padding-right: 10px;
+  /* display: flex;
+  flex-wrap: wrap; */
+}
+.advancedFacetViewWrapper
+  .facetViewNode
+  .aggregation-card
+  .bucket
+  .bucket-item {
+  padding-right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  /* width: 50%; */
+  padding: 9px;
+  flex-wrap: nowrap;
+}
+
+.advancedFacetViewWrapper
+  .facetViewNode
+  /* .hasShortValues */
+  .aggregation-card
+  .bucket {
+  display: flex;
+  flex-wrap: wrap;
+}
+.advancedFacetViewWrapper
+  .facetViewNode
+  /* .hasShortValues */
+  .aggregation-card
+  .bucket
+  .bucket-item {
+  width: 50%;
+}
+
+.advancedFacetViewWrapper .facetViewNode .aggregation-card .showMore-wrapper {
+  flex: 1;
 }
 
 .advancedFacetViewWrapper .filterWrapper {
@@ -558,26 +640,30 @@ div {
 }
 
 .advancedFacetViewWrapper .resultList {
-  height: 130px;
+  height: 140px;
   overflow-y: scroll;
+  border-radius: 5px;
+  box-shadow: 0 0 7.8px 0.2px #bbbbbb;
 }
 
 .advancedFacetViewWrapper .resultList.shown {
-  border: solid 1px #e7e8ed;
 }
 
 .advancedFacetViewWrapper .resultItem {
   padding: 10px;
   cursor: pointer;
-  border-bottom: solid 1px #e7e8ed;
+  font-size: 0.8em;
 }
 
-.advancedFacetViewWrapper .resultItem:hover {
+.advancedFacetViewWrapper .resultItem.highlighted {
   background: #e7e8ed;
 }
 
 .advancedFacetViewWrapper .resultItem .title {
-  font-weight: bold;
+}
+
+.advancedFacetViewWrapper .resultItem .title .matched {
+  background-color: #f7ed9c;
 }
 
 .advancedFacetViewWrapper .resultItem .field {
@@ -595,4 +681,19 @@ div {
 }
 .input-range__track.input-range__track--active {
   background-color: #009bb8;
+}
+.input-range__label--max .input-range__label-container {
+  left: 0px;
+}
+.input-range__label--min .input-range__label-container {
+  left: 0px;
+}
+
+.input-range__label.input-range__label--value .input-range__label-container {
+  left: 0px;
+}
+
+.input-range__slider-container:nth-child(3)
+  .input-range__label.input-range__label--value {
+  right: 100%;
 }

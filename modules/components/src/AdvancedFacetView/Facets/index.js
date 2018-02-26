@@ -18,14 +18,10 @@ export default ({
   sqon = {},
   onValueChange = ({ value }) => console.log(value),
 }) => (
-  <div>
-    {
-      <AggregationComponent
-        {...{ aggType, aggProps, title, sqon, path }}
-        onValueChange={({ value }) => {
-          onValueChange({ value: value });
-        }}
-      />
-    }
-  </div>
+  <AggregationComponent
+    {...{ aggType, aggProps, title, sqon, path }}
+    onValueChange={({ value }) => {
+      onValueChange({ value: value });
+    }}
+  />
 );
