@@ -1,4 +1,5 @@
 import { CONSTANTS } from './constants';
+import { merge } from 'lodash';
 import FilterProcessor from './filters';
 /*
     Aggregation Processor
@@ -174,14 +175,14 @@ export default class AggregationProcessor {
               // There is a query but it is just the nested field - just add it to aggs
               Object.assign(nested_aggs, nested_field_agg);
             }
+          } else {
+            const filteredAgg = this.create_filtered_agg(
+              field,
+              query,
+              nested_field_agg,
+            );
+            Object.assign(nested_aggs, filteredAgg);
           }
-
-          const filteredAgg = this.create_filtered_agg(
-            field,
-            query,
-            nested_field_agg,
-          );
-          Object.assign(nested_aggs, filteredAgg);
         } else {
           // No query - just add to aggs
           Object.assign(nested_aggs, nested_field_agg);
@@ -204,10 +205,10 @@ export default class AggregationProcessor {
         }
 
         if (cleaned_query) {
-          const filteredAgg = this.create_filtered_agg(
+          // needs to be global of ES will auto filter the aggs results
+          const filteredAgg = this.create_global_agg(
             field,
-            cleaned_query,
-            field_agg,
+            this.create_filtered_agg(field, cleaned_query, field_agg),
           );
           Object.assign(aggs, filteredAgg);
         } else {
