@@ -9,7 +9,7 @@ let flattenMapping = (properties, parent = '') => {
         !data.properties
           ? {
               field: joinWith()(parent) + field,
-              type: field.indexOf('id') > -1 ? 'id' : data.type,
+              type: field.includes('id') ? 'id' : data.type,
             }
           : [
               {
