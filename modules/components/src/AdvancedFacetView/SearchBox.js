@@ -4,6 +4,7 @@ import SearchIcon from 'react-icons/lib/fa/search';
 import State from '../State';
 import TextInput from '../Input';
 import { filterOutNonValue } from './utils.js';
+import TextHighlight from '../TextHighlight';
 
 const keycodes = {
   enter: 13,
@@ -107,26 +108,6 @@ export default class extends React.Component {
     );
   };
 
-  getHighlightedHtmlTemplate = displayName => {
-    const { currentValue } = this.state;
-    const regex = new RegExp(currentValue, 'i');
-    const matchResult = displayName.match(regex);
-    const foundIndex = matchResult.index;
-    const seg1 = displayName.substring(0, foundIndex);
-    const foundQuery = matchResult[0];
-    const seg2 = displayName.substring(
-      foundIndex + foundQuery.length,
-      displayName.length,
-    );
-    return (
-      <span>
-        {seg1}
-        <span className="matched">{foundQuery}</span>
-        {seg2}
-      </span>
-    );
-  };
-
   componentDidMount() {
     window.addEventListener('click', this.onWindowClick);
   }
@@ -189,7 +170,10 @@ export default class extends React.Component {
                 }}
               >
                 <span className="title">
-                  {this.getHighlightedHtmlTemplate(displayName)}
+                  <TextHighlight
+                    content={displayName}
+                    highlightText={currentValue}
+                  />
                 </span>
                 <span className="field">{`(${field})`}</span>
               </div>
