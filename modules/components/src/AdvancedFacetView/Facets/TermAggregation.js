@@ -2,9 +2,19 @@ import React from 'react';
 import TermAggs from '../../Aggs/TermAgg';
 import { inCurrentSQON, replaceSQON, toggleSQON } from '../../SQONView/utils';
 
-export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => {
+export default ({
+  aggType,
+  aggProps,
+  title,
+  onValueChange,
+  sqon,
+  path,
+  maxTerms = 6,
+  stackingLengthLimit = 50,
+}) => {
   const buckets = aggProps ? aggProps.buckets || [] : [];
-  const hasLongValues = true && buckets.find(({ key }) => key.length > 50);
+  const hasLongValues =
+    buckets.find(({ key }) => key.length > stackingLengthLimit) !== undefined;
   return (
     <div className={hasLongValues ? 'hasLongValues' : 'hasShortValues'}>
       <TermAggs
@@ -15,7 +25,7 @@ export default ({ aggType, aggProps, title, onValueChange, sqon, path }) => {
             value: bucket.key,
           });
         }}
-        maxTerms={6}
+        maxTerms={maxTerms}
         field={path}
         buckets={buckets}
         displayName={title}
