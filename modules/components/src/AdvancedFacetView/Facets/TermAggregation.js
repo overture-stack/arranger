@@ -13,8 +13,9 @@ export default ({
   stackingLengthLimit = 50,
 }) => {
   const buckets = aggProps ? aggProps.buckets || [] : [];
-  const hasLongValues =
-    buckets.find(({ key }) => key.length > stackingLengthLimit) !== undefined;
+  const hasLongValues = buckets.some(
+    ({ key }) => key.length > stackingLengthLimit,
+  );
   return (
     <div className={hasLongValues ? 'hasLongValues' : 'hasShortValues'}>
       <TermAggs
