@@ -81,7 +81,7 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   }));
 };
 
-const removeIds = ({ mapping, extended, parentField = null }) => {
+const removeIdsFromMapping = ({ mapping, extended, parentField = null }) => {
   const output = {
     ...Object.entries(mapping).reduce((acc, [key, val]) => {
       const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
@@ -93,7 +93,7 @@ const removeIds = ({ mapping, extended, parentField = null }) => {
               ? {
                   [key]: {
                     ...val,
-                    properties: removeIds({
+                    properties: removeIdsFromMapping({
                       mapping: val.properties,
                       extended,
                       parentField: currentField,
@@ -125,22 +125,23 @@ export default class LiveAdvancedFacetView extends React.Component {
       sqon: sqon || null,
     };
   }
-  blackListedAggTypes = ['object', 'nested', 'id'];
   componentDidMount() {
     const { projectId, index } = this.props;
     const fetchConfig = { projectId, index };
+    const blackListedAggTypes = ['object', 'nested', 'id'];
     Promise.all([
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
     ]).then(([{ mapping }, { extended }]) =>
       fetchAggregationData({
         extended: extended.filter(
-          e => !this.blackListedAggTypes.find(type => type === e.type),
+          // filtering out fields that do not have aggs
+          e => !blackListedAggTypes.find(type => type === e.type),
         ),
         ...fetchConfig,
       }).then(({ aggregations }) => {
         this.setState({
-          mapping: removeIds({ mapping, extended }),
+          mapping: removeIdsFromMapping({ mapping, extended }),
           extended: extended.filter(ex => ex.type !== 'id'),
           aggregations,
         });
