@@ -9,9 +9,6 @@ import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 import { action } from '@storybook/addon-actions';
 
-const PROJECT_ID = 'feb-23';
-const ES_INDEX = 'file';
-
 const injectMockBuckets = node =>
   Object.keys(node).reduce(
     (agg, key) => ({
@@ -44,8 +41,8 @@ storiesOf('AdvancedFacetView', module)
   .add('AdvancedFacetViewLive', () => (
     <LiveAdvancedFacetView
       {...{
-        projectId: PROJECT_ID,
-        index: ES_INDEX,
+        projectId: process.env['STORYBOOK_AFV_PROJECT_ID'],
+        index: process.env['STORYBOOK_AFV_ACTIVE_INDEX'],
         onSqonChange: ({ sqon }) => console.log(sqon),
         sqon: {
           op: 'and',
