@@ -19,7 +19,9 @@ RUN apk add --no-cache git bash && \
     npm cache clean -f && \
     apk del git bash
 
-EXPOSE 5050
-
 CMD cd modules/server && npm run run-prod
 
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
