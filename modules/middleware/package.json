@@ -10,7 +10,8 @@
     "build": "mkdir -p src && babel src --out-dir dist",
     "prepare": "npm run build",
     "watch": "mkdir -p src && babel src --watch --out-dir dist",
-    "flow": "flow"
+    "flow": "flow",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
