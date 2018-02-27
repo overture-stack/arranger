@@ -385,7 +385,7 @@ export default class AggregationProcessor {
       const globalAgg = this.create_global_agg(short_nested_path, nested_aggs);
 
       // This line modifies the input aggs
-      Object.assign(aggs, globalAgg);
+      merge(aggs, globalAgg);
     }
 
     // Return the input aggs, potentially modified
@@ -420,7 +420,7 @@ export default class AggregationProcessor {
       }
 
       if (nested_aggs.hasOwnProperty(p)) {
-        nested_aggs = nested_aggs[path].aggs;
+        nested_aggs = nested_aggs[p].aggs;
         continue;
       }
 
