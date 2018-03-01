@@ -85,18 +85,19 @@ export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
       isFirst = false;
       this.push(columns.map(column => column.Header).join('\t') + '\n');
     }
+    const rows = flatten(
+      get(chunk, `data['${index}'].hits.edges`, []).map(row => {
+        return getRows({
+          row: row.node,
+          paths: (uniqueBy || '').split('[].').filter(Boolean),
+          columns: columns,
+        }).map(row => row.map(r => r || emptyValue).join('\t'));
+      }),
+    ).join('\n');
 
-    this.push(
-      flatten(
-        get(chunk, `data['${index}'].hits.edges`, []).map(row => {
-          return getRows({
-            row: row.node,
-            paths: (uniqueBy || '').split('[].').filter(Boolean),
-            columns: columns,
-          }).map(row => row.map(r => r || emptyValue).join('\t'));
-        }),
-      ).join('\n'),
-    );
+    if (rows) {
+      this.push(rows);
+    }
 
     callback();
   });
