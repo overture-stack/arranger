@@ -21,11 +21,10 @@ let mappingToColumnsType = (properties, parent = '', isList = false) => {
     Object.entries(properties)
       .filter(
         ([field, data]) =>
-          ((data.type && data.type !== 'nested') || data.properties) &&
-          (data.type !== 'nested' || !parent.match(/hits.edges\[\d*\]/)), // TODO: support double nested fields
+          data.type !== 'nested' || !parent.match(/hits.edges\[\d*\]/), // TODO: support double nested fields
       )
       .map(([field, data]) => {
-        return data.type !== 'nested'
+        return !data.properties
           ? {
               type: isList ? 'list' : esToColumnType[data.type],
               field: `${appendDot(parent) + field}`,
@@ -33,13 +32,23 @@ let mappingToColumnsType = (properties, parent = '', isList = false) => {
           : [
               mappingToColumnsType(
                 data.properties,
-                `${appendDot(parent)}${appendDot(field)}hits.edges[0].node`,
-                true,
+                `${appendDot(parent)}${
+                  data.type === 'nested'
+                    ? `${appendDot(field)}hits.edges[0].node`
+                    : field
+                }`,
+                data.type === 'nested' || isList,
               ),
-              {
-                type: 'number',
-                field: `${appendDot(parent)}${appendDot(field)}hits.total`,
-              },
+              ...(data.type === 'nested'
+                ? [
+                    {
+                      type: 'number',
+                      field: `${appendDot(parent)}${appendDot(
+                        field,
+                      )}hits.total`,
+                    },
+                  ]
+                : []),
             ];
       }),
   );
