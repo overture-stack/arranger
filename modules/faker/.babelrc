@@ -3,7 +3,9 @@
     "env"
   ],
   "plugins": [
-    "transform-object-rest-spread"
+    "transform-object-rest-spread",
+    "transform-async-to-generator",
+    "transform-runtime"
   ],
   "sourceMaps": "both"
 }

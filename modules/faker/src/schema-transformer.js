@@ -26,17 +26,55 @@ export default class SchemaTransformer {
   }
 
   transform(schemaObject) {
-    if (!schemaObject.type) return;
+    if (!schemaObject.type) {
+      if (!schemaObject.properties) {
+        return;
+      } else {
+        schemaObject.type = 'object';
+      }
+    }
+
     // if type is object
     if (schemaObject.type === 'object') {
       this.addRequiredProps(schemaObject, []);
       // transform objects in properties (anything that is not an object or array will be skipped)
       _.forEach(schemaObject.properties, item => this.transform(item));
+    } else if (schemaObject.type === 'nested') {
+      schemaObject.type = 'array';
+      schemaObject.items = [
+        { type: 'object', properties: schemaObject.properties },
+      ];
+      delete schemaObject.properties;
+      this.transform(schemaObject);
     } else if (schemaObject.type === 'array') {
       // if type is array
-      if (!schemaObject.items)
+      if (!schemaObject.items) {
         throw Error('Invalid Schema object. No items found.');
+      }
       _.forEach(schemaObject.items, item => this.transform(item));
+    } else {
+      switch (schemaObject.type) {
+        case 'date':
+          schemaObject.type = 'string';
+          schemaObject.format = 'date-time';
+          break;
+        case 'keyword':
+          schemaObject.type = 'string';
+          schemaObject.chance = 'word';
+          break;
+        case 'text':
+          schemaObject.type = 'string';
+          schemaObject.chance = 'sentence';
+          break;
+        case 'long':
+          schemaObject.type = 'integer';
+          schemaObject.chance = 'd100';
+          break;
+        case 'float':
+          schemaObject.type = 'integer';
+          schemaObject.chance = 'd100';
+          break;
+      }
     }
   }
   /*
