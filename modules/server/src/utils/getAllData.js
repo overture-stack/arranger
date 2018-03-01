@@ -8,12 +8,14 @@ function getAllData({
   variables = null,
   size = 100,
   fields = '',
+  mock,
 }) {
   const stream = new PassThrough({ objectMode: true });
   const project = getProject(projectId);
 
   project
     .runQuery({
+      mock,
       query: `
         query ($sqon: JSON) {
           ${index} {
@@ -33,6 +35,7 @@ function getAllData({
         steps.map((x, i) => {
           return project
             .runQuery({
+              mock,
               query: `
               query ($sqon: JSON, $first: Int, $offset: Int) {
                 ${index} {
