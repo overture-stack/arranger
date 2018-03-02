@@ -23,7 +23,7 @@ export default class extends React.Component {
     });
 
   handleKeyPress = e => {
-    const filteredList = this.getFilteredList();
+    const filteredFacetsList = this.getFilteredFacetsList();
     const { highlightedField } = this.state;
     const { extendedMapping, onFieldSelect = () => {} } = this.props;
     const highlightedAgg = extendedMapping.find(
@@ -60,23 +60,27 @@ export default class extends React.Component {
   };
 
   getNextHighlightedField = keycode => {
-    const filteredList = this.getFilteredList();
+    const filteredFacetsList = this.getFilteredFacetsList();
     const { highlightedField } = this.state;
     if (keycode === keycodes.up) {
       return (
-        filteredList?.[
+        filteredFacetsList?.[
           Math.max(
-            filteredList?.map(agg => agg.field).indexOf(highlightedField) - 1,
+            filteredFacetsList
+              ?.map(agg => agg.field)
+              .indexOf(highlightedField) - 1,
             0,
           )
         ]?.field || null
       );
     } else if (keycode === keycodes.down) {
       return (
-        filteredList?.[
+        filteredFacetsList?.[
           Math.min(
-            filteredList?.map(agg => agg.field).indexOf(highlightedField) + 1,
-            filteredList.length - 1,
+            filteredFacetsList
+              ?.map(agg => agg.field)
+              .indexOf(highlightedField) + 1,
+            filteredFacetsList.length - 1,
           )
         ]?.field || null
       );
@@ -85,7 +89,7 @@ export default class extends React.Component {
     }
   };
 
-  getFilteredList = () => {
+  getFilteredFacetsList = () => {
     const {
       withValueOnly,
       elasticMapping,
@@ -125,7 +129,7 @@ export default class extends React.Component {
       onFieldSelect = () => {},
     } = this.props;
     const { currentValue, isDropdownShown, highlightedField } = this.state;
-    const filteredList = this.getFilteredList();
+    const filteredFacetsList = this.getFilteredFacetsList();
     return (
       <div className="filterWrapper">
         <TextInput
@@ -145,7 +149,7 @@ export default class extends React.Component {
                 currentValue: e.target.value,
               },
               () => {
-                const newFilteredList = this.getFilteredList();
+                const newFilteredList = this.getFilteredFacetsList();
                 this.setState({
                   highlightedField: newFilteredList?.[0]?.field,
                 });
@@ -154,9 +158,9 @@ export default class extends React.Component {
           }
           onKeyDown={e => this.handleKeyPress(e)}
         />
-        {filteredList?.length && isDropdownShown ? (
+        {filteredFacetsList?.length && isDropdownShown ? (
           <div className={`resultList shown`}>
-            {filteredList?.map(({ displayName, field, ...rest }) => (
+            {filteredFacetsList?.map(({ displayName, field, ...rest }) => (
               <div
                 key={field}
                 ref={el => (this.dropdownRefs[field] = el)}
