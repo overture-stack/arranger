@@ -23,7 +23,7 @@ export default class extends React.Component {
     });
 
   handleKeyPress = e => {
-    const filteredFacetsList = this.getFilteredFacetsList();
+    const filteredFacetsList = this.getFilteredFacets();
     const { highlightedField } = this.state;
     const { extendedMapping, onFieldSelect = () => {} } = this.props;
     const highlightedAgg = extendedMapping.find(
@@ -60,7 +60,7 @@ export default class extends React.Component {
   };
 
   getNextHighlightedField = keycode => {
-    const filteredFacetsList = this.getFilteredFacetsList();
+    const filteredFacetsList = this.getFilteredFacets();
     const { highlightedField } = this.state;
     if (keycode === keycodes.up) {
       return (
@@ -89,7 +89,28 @@ export default class extends React.Component {
     }
   };
 
-  getFilteredFacetsList = () => {
+  getFilteredFacetValues = () => {
+    const { aggregations } = this.props;
+    const { currentValue } = this.state;
+    return !aggregations
+      ? []
+      : Object.entries(aggregations)
+          .reduce(
+            (acc, [key, agg]) => [
+              ...acc,
+              ...(agg.buckets
+                ? agg.buckets.map(bucket => ({
+                    field: key.split('__').join('.'),
+                    value: bucket.key,
+                  }))
+                : []),
+            ],
+            [],
+          )
+          .filter(({ value }) => value.includes(currentValue));
+  };
+
+  getFilteredFacets = () => {
     const {
       withValueOnly,
       elasticMapping,
@@ -129,7 +150,8 @@ export default class extends React.Component {
       onFieldSelect = () => {},
     } = this.props;
     const { currentValue, isDropdownShown, highlightedField } = this.state;
-    const filteredFacetsList = this.getFilteredFacetsList();
+    const filteredFacetsList = this.getFilteredFacets();
+    const filteredVacetValues = this.getFilteredFacetValues();
     return (
       <div className="filterWrapper">
         <TextInput
@@ -149,7 +171,7 @@ export default class extends React.Component {
                 currentValue: e.target.value,
               },
               () => {
-                const newFilteredList = this.getFilteredFacetsList();
+                const newFilteredList = this.getFilteredFacets();
                 this.setState({
                   highlightedField: newFilteredList?.[0]?.field,
                 });
