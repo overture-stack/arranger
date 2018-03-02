@@ -424,7 +424,7 @@ export default class AggregationProcessor {
         continue;
       }
 
-      if (Array.isArray(nested_fields) && nested_fields.includes(path)) {
+      if (Array.isArray(nested_fields) && nested_fields.includes(p)) {
         let label = p;
         let path_aggs = {
           [p]: {
