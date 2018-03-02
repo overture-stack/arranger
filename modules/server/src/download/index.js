@@ -9,10 +9,9 @@ import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 
 export default function({ projectId }) {
-  function makeTSV(args, mock) {
+  function makeTSV(args) {
     return getAllData({
       projectId,
-      mock,
       ...args,
       ...columnsToGraphql({
         sqon: args.sqon,
@@ -31,7 +30,7 @@ export default function({ projectId }) {
         return new Promise((resolve, reject) => {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
-          const fileStream = makeTSV(file, mock);
+          const fileStream = makeTSV({ ...file, mock: file.mock || mock });
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
@@ -69,7 +68,7 @@ export default function({ projectId }) {
       let contentType;
 
       if (files.length === 1) {
-        output = makeTSV(files[0], mock);
+        output = makeTSV({ ...files[0], mock: files[0].mock || mock });
         responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
       } else {
