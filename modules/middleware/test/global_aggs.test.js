@@ -60,7 +60,7 @@ let expected = {
   },
 };
 
-test('build_aggregations should handle nested aggregations', () => {
+test('build_aggregations should handle `aggregations_filter_themselves` variable', () => {
   const actual = new AggregationProcessor().buildAggregations(input);
   expect(actual).toEqual(expected);
 });
