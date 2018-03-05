@@ -1,17 +1,28 @@
 import React, { Component } from 'react';
-import { debounce } from 'lodash';
+import { isEqual, debounce } from 'lodash';
+import path from 'path';
 import api from './utils/api';
 
-export default class extends Component {
+export const withQuery = getOptions => Component => props => {
+  const options = getOptions(props);
+
+  return (
+    <Query
+      {...options}
+      render={data => <Component {...props} {...{ [options.key]: data }} />}
+    />
+  );
+};
+
+export default class Query extends Component {
   state = { data: null, error: null, loading: false };
   componentDidMount() {
     this.fetch(this.props);
   }
   componentWillReceiveProps(next) {
-    //TODO: more critical check
     if (
-      JSON.stringify(this.props.query) !== JSON.stringify(next.query) ||
-      JSON.stringify(this.props.variables) !== JSON.stringify(next.variables)
+      !isEqual(this.props.query, next.query) ||
+      !isEqual(this.props.variables, next.variables)
     ) {
       this.fetch(next);
     }
@@ -25,7 +36,7 @@ export default class extends Component {
       try {
         let { data, errors } = await api({
           ...options,
-          endpoint: `/${projectId}/graphql/${name}`,
+          endpoint: path.join(projectId, 'graphql', name || ''),
           body: { query, variables },
         });
         this.setState({
@@ -34,7 +45,7 @@ export default class extends Component {
           loading: false,
         });
       } catch (error) {
-        this.setState({ error: error.message, loading: false });
+        this.setState({ data: null, error: error.message, loading: false });
       }
     },
     this.props.debounceTime || 0,
@@ -43,10 +54,11 @@ export default class extends Component {
     if (this.props.onUpdate) this.props.onUpdate(this.state);
   }
   render() {
-    return this.state.error ? (
-      <pre>{JSON.stringify(this.state.error, null, 2)}</pre>
+    const { error, data } = this.state;
+    return error ? (
+      <pre>{JSON.stringify(error, null, 2)}</pre>
     ) : (
-      this.props.render(this.state.data)
+      this.props.render(data)
     );
   }
 }
