@@ -123,18 +123,23 @@ export default class extends React.Component {
     const filteredValueList = getFilteredFacetValues();
     const combinedSet = toPairs(
       groupBy(
-        (filteredFacetsList || []).concat(filteredValueList),
+        (filteredFacetsList || []).concat(filteredValueList || []),
         entry => entry.field,
       ),
     ).reduce(
       (acc, [field, group]) => [
         ...acc,
-        ...group.map(
-          entry =>
-            entry.displayName
-              ? entry
-              : { ...entry, displayName: getDisplayNameByField(field) },
-        ),
+        ...group
+          .map(
+            entry =>
+              entry.displayName
+                ? entry
+                : { ...entry, displayName: getDisplayNameByField(field) },
+          )
+          .map(entry => ({
+            ...entry,
+            id: entry.value ? `${field}_${entry.value}` : field,
+          })),
       ],
       [],
     );
@@ -186,8 +191,12 @@ export default class extends React.Component {
       },
       state: { currentValue, isDropdownShown, highlightedField },
       getFilteredFacets,
+      getCombinedFilteredList,
       handleKeyPress,
     } = this;
+
+    const combinedFilteredList = getCombinedFilteredList();
+    console.log('combinedFilteredList: ', getCombinedFilteredList());
 
     const filteredFacetsList = getFilteredFacets();
 
@@ -221,30 +230,36 @@ export default class extends React.Component {
         />
         {filteredFacetsList?.length && isDropdownShown ? (
           <div className={`resultList shown`}>
-            {filteredFacetsList?.map(({ displayName, value, field }) => {
-              return (
-                <div
-                  key={field}
-                  ref={el => (this.dropdownRefs[field] = el)}
-                  onMouseEnter={e => this.setState({ highlightedField: field })}
-                  className={`resultItem ${
-                    highlightedField === field ? 'highlighted' : ''
-                  }`}
-                  onClick={() => {
-                    this.setState({ currentValue: displayName || value });
-                    onFieldSelect(field);
-                  }}
-                >
-                  <span className="title">
-                    <TextHighlight
-                      content={displayName || value}
-                      highlightText={currentValue}
-                    />
-                  </span>
-                  <span className="field">{`(${field})`}</span>
-                </div>
-              );
-            })}
+            {filteredFacetsList?.map(
+              ({ displayName: fieldDisplayName, value, field }) => {
+                return (
+                  <div
+                    key={field}
+                    ref={el => (this.dropdownRefs[field] = el)}
+                    onMouseEnter={e =>
+                      this.setState({ highlightedField: field })
+                    }
+                    className={`resultItem ${
+                      highlightedField === field ? 'highlighted' : ''
+                    }`}
+                    onClick={() => {
+                      this.setState({
+                        currentValue: fieldDisplayName || value,
+                      });
+                      onFieldSelect(field);
+                    }}
+                  >
+                    <span className="title">
+                      <TextHighlight
+                        content={fieldDisplayName || value}
+                        highlightText={currentValue}
+                      />
+                    </span>
+                    <span className="field">{`(${field})`}</span>
+                  </div>
+                );
+              },
+            )}
           </div>
         ) : null}
       </div>
