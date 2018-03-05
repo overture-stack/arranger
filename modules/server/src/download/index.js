@@ -22,7 +22,7 @@ export default function({ projectId }) {
     }).pipe(dataToTSV(args));
   }
 
-  function multipleFiles({ files }) {
+  function multipleFiles({ files, mock }) {
     const pack = tar.pack();
 
     Promise.all(
@@ -30,7 +30,7 @@ export default function({ projectId }) {
         return new Promise((resolve, reject) => {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
-          const fileStream = makeTSV(file);
+          const fileStream = makeTSV({ ...file, mock: file.mock || mock });
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
@@ -58,7 +58,7 @@ export default function({ projectId }) {
 
   router.post('/', async function(req, res) {
     const { params, downloadCookieKey, downloadCookiePath } = req.body;
-    const { files, fileName = 'file.tar.gz' } = JSON.parse(params);
+    const { files, fileName = 'file.tar.gz', mock } = JSON.parse(params);
     if (!files || !files.length) {
       console.warn('no files defined to download');
       res.status(400).send('files array was missing or empty');
@@ -68,11 +68,11 @@ export default function({ projectId }) {
       let contentType;
 
       if (files.length === 1) {
-        output = makeTSV(files[0]);
+        output = makeTSV({ ...files[0], mock: files[0].mock || mock });
         responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
       } else {
-        output = multipleFiles({ files });
+        output = multipleFiles({ files, mock });
         responseFileName = fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'); // make sure file ends with '.tar.gz'
         contentType = 'application/gzip';
       }

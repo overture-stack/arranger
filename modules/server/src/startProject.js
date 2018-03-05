@@ -167,7 +167,7 @@ export default async function startProjectApp({ es, id, io }) {
 
   projectApp.use(`/${id}/download`, download({ projectId: id }));
 
-  setProject(id, { app: projectApp, schema, es, io });
+  setProject(id, { app: projectApp, schema, mockSchema, es, io });
 
   io.emit('server::refresh');
 

@@ -11,18 +11,21 @@ export function getProjects() {
 }
 
 export function setProject(id, project) {
-  project.runQuery = ({ query, variables }) =>
-    runQuery({
-      schema: project.schema,
+  project.runQuery = ({ query, variables, mock }) => {
+    const schema = mock ? project.mockSchema : project.schema;
+
+    return runQuery({
+      schema,
       query,
       context: {
-        schema: project.schema,
+        schema,
         es: project.es,
         projectId: id,
         io: project.io,
       },
       variables,
     });
+  };
 
   projects[id] = project;
 }
