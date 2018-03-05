@@ -366,7 +366,7 @@ class Dashboard extends React.Component {
     return (
       <BrowserRouter basename={this.props.basename || ''}>
         <div
-          className="app"
+          className="dashboard"
           css={`
             display: flex;
             flex-direction: column;
