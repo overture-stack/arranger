@@ -29,6 +29,7 @@ function getAllData({
     })
     .then(({ data }) => {
       const total = data[index].hits.total;
+      stream.write({ data: null, total });
       const steps = Array(Math.ceil(total / size)).fill();
 
       return Promise.all(
@@ -37,18 +38,18 @@ function getAllData({
             .runQuery({
               mock,
               query: `
-              query ($sqon: JSON, $first: Int, $offset: Int) {
-                ${index} {
-                  hits(first: $first, offset: $offset, filters: $sqon) {
-                    edges {
-                      node {
-                        ${fields}
+                query ($sqon: JSON, $first: Int, $offset: Int) {
+                  ${index} {
+                    hits(first: $first, offset: $offset, filters: $sqon) {
+                      edges {
+                        node {
+                          ${fields}
+                        }
                       }
                     }
                   }
                 }
-              }
-            `,
+              `,
               variables: {
                 ...variables,
                 first: size,
