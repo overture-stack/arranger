@@ -94,8 +94,7 @@ const dummyConfig = {
       type: 'list',
       sortable: false,
       canChangeShow: false,
-      query:
-        'cases { hits(first: 5) { total, edges { node { primary_site } } } }',
+      query: 'cases { hits { total, edges { node { primary_site } } } }',
       listAccessor: 'cases.hits.edges',
       totalAccessor: 'cases.hits.total',
       id: 'cases.primary_site',

@@ -1,5 +1,23 @@
 import { get } from 'lodash';
 
+export function toQuery(column) {
+  return (
+    column.query ||
+    column.accessor
+      .split('.')
+      .reverse()
+      .reduce((acc, segment, i, arr) => {
+        if (i === 0) {
+          return segment;
+        } else {
+          return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
+                ${acc}
+              }`;
+        }
+      }, '')
+  );
+}
+
 export default function columnsToGraphql({
   config = {},
   sqon,
@@ -8,29 +26,6 @@ export default function columnsToGraphql({
   offset,
   first,
 }) {
-  function toQuery(column) {
-    return (
-      column.query ||
-      column.accessor
-        .split('.')
-        .reverse()
-        .reduce((acc, segment, i, arr) => {
-          if (segment === 'hits') {
-            const first = get(arr[i - 1].match(/edges\[(\d+)\]/), '[1]', 0);
-            return `${segment}(first: ${first}) {
-                  ${acc}
-                }`;
-          } else if (i === 0) {
-            return segment;
-          } else {
-            return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
-                  ${acc}
-                }`;
-          }
-        }, '')
-    );
-  }
-
   const fields = config.columns
     .filter(
       column =>
