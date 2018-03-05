@@ -1,6 +1,8 @@
 import 'babel-polyfill';
 import winston from 'winston';
 import fs from 'fs';
+import axios from 'axios';
+import urlJoin from 'url-join';
 import SchemaLister from './list-schemas';
 import SchemaFaker from './schema-faker';
 import SchemaTransformer from './schema-transformer';
@@ -14,32 +16,58 @@ let logger = new winston.Logger({
   ],
 });
 
-logger.info('*** Fake Data Generation Begins ***');
+function schemaFromFile() {
+  let schemaLister = new SchemaLister(logger);
+  let schemas = schemaLister.list('./schemas');
 
-let schemaLister = new SchemaLister(logger);
+  return (Object.entries(schemas).find(
+    ([key]) => key === `${process.env.ES_INDEX}.json`,
+  ) || [])[1];
+}
 
-let schemas = schemaLister.list('./schemas');
+async function schemaFromMapping() {
+  const {
+    data: {
+      [process.env.ES_INDEX]: { mappings: { [process.env.ES_TYPE]: mapping } },
+    },
+  } = await axios.get(
+    urlJoin(
+      process.env.ES_HOST,
+      process.env.ES_INDEX,
+      process.env.ES_TYPE,
+      '_mapping',
+    ),
+  );
 
-Object.entries(schemas).forEach(([key, item]) => {
+  return mapping;
+}
+
+async function main() {
   try {
-    if (key !== 'model.json') return;
+    logger.info('*** Fake Data Generation Begins ***');
+    let index = process.env.ES_INDEX;
 
-    logger.info('Generating fake values for schema: ' + key);
+    let schema = process.env.FROM_MAPPING
+      ? await schemaFromMapping()
+      : schemaFromFile();
+
+    logger.info('Generating fake values for schema: ' + index);
 
     let transformer = new SchemaTransformer(logger);
-
-    transformer.transform(item);
+    transformer.transform(schema);
 
     let output = [];
     // generate 5000 data points
     for (var count = 0; count < 5000; count++) {
-      let dataPoint = new SchemaFaker(item);
+      let dataPoint = new SchemaFaker(schema);
       output.push(dataPoint);
     }
 
     let exporter = new DataExporter(logger);
     exporter.writeToES(output);
   } catch (err) {
-    logger.error(`Error processing schema for : ${key}. Details: ${err}`);
+    logger.error(`Error processing schema for : ${index}. Details: ${err}`);
   }
-});
+}
+
+main();

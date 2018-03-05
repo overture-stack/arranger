@@ -6,15 +6,19 @@
     "start": "node -r babel-register src/index"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "elasticsearch": "^14.0.0",
     "json-schema-faker": "^0.4.6",
     "lodash": "^4.17.4",
+    "url-join": "^4.0.0",
     "uuid": "^3.2.1",
     "winston": "^2.4.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "prettier": "^1.9.2"

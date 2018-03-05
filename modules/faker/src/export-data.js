@@ -69,6 +69,10 @@ export default class DataExporter {
       ]),
     );
 
-    es.bulk({ body });
+    es.bulk({ body }).then(({ errors, items }) => {
+      if (errors) {
+        console.log('errors occurred while writing to elasticsearch.');
+      }
+    });
   }
 }
