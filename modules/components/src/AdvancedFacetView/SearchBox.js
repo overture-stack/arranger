@@ -25,7 +25,6 @@ export default class extends React.Component {
 
   handleKeyPress = e => {
     const {
-      filteredFacetsList,
       getCombinedFilteredList,
       state: { highlightedField },
       props: { onFieldSelect = () => {} },
@@ -110,7 +109,9 @@ export default class extends React.Component {
               ],
               [],
             )
-            .filter(({ value }) => value.includes(currentValue));
+            .filter(({ value }) =>
+              value.toLowerCase().includes(currentValue.toLowerCase()),
+            );
   };
 
   getCombinedFilteredList = () => {
@@ -190,7 +191,6 @@ export default class extends React.Component {
         onFieldSelect = () => {},
       },
       state: { currentValue, isDropdownShown, highlightedField },
-      getFilteredFacets,
       getCombinedFilteredList,
       handleKeyPress,
     } = this;
@@ -216,7 +216,7 @@ export default class extends React.Component {
                 currentValue: e.target.value,
               },
               () => {
-                const newFilteredList = getFilteredFacets();
+                const newFilteredList = getCombinedFilteredList();
                 this.setState({
                   highlightedField: newFilteredList?.[0]?.field,
                 });
