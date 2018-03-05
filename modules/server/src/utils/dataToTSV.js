@@ -77,23 +77,23 @@ function getRows(args) {
   }
 }
 
-export default function(args) {
+export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
   let isFirst = true;
 
   return through2.obj(function(chunk, enc, callback) {
     if (isFirst) {
       isFirst = false;
-      this.push(args.columns.map(column => column.Header).join('\t') + '\n');
+      this.push(columns.map(column => column.Header).join('\t') + '\n');
     }
 
     this.push(
       flatten(
-        chunk.data[args.index].hits.edges.map(e => e.node).map(row => {
+        get(chunk, `data['${index}'].hits.edges`, []).map(row => {
           return getRows({
-            row,
-            paths: (args.uniqueBy || '').split('[].').filter(Boolean),
-            columns: args.columns,
-          }).map(row => row.join('\t'));
+            row: row.node,
+            paths: (uniqueBy || '').split('[].').filter(Boolean),
+            columns: columns,
+          }).map(row => row.map(r => r || emptyValue).join('\t'));
         }),
       ).join('\n'),
     );
