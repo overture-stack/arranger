@@ -5,6 +5,7 @@ import State from '../State';
 import TextInput from '../Input';
 import { filterOutNonValue } from './utils.js';
 import TextHighlight from '../TextHighlight';
+import { groupBy, toPairs } from 'lodash';
 
 const keycodes = {
   enter: 13,
@@ -92,23 +93,56 @@ export default class extends React.Component {
   getFilteredFacetValues = () => {
     const { aggregations } = this.props;
     const { currentValue } = this.state;
-    return !aggregations
+    return !currentValue?.length
       ? []
-      : Object.entries(aggregations)
-          .reduce(
-            (acc, [key, agg]) => [
-              ...acc,
-              ...(agg.buckets
-                ? agg.buckets.map(bucket => ({
-                    field: key.split('__').join('.'),
-                    value: bucket.key,
-                  }))
-                : []),
-            ],
-            [],
-          )
-          .filter(({ value }) => value.includes(currentValue));
+      : !aggregations
+        ? []
+        : Object.entries(aggregations)
+            .reduce(
+              (acc, [key, agg]) => [
+                ...acc,
+                ...(agg.buckets
+                  ? agg.buckets.map(bucket => ({
+                      field: key.split('__').join('.'),
+                      value: bucket.key,
+                    }))
+                  : []),
+              ],
+              [],
+            )
+            .filter(({ value }) => value.includes(currentValue));
   };
+
+  getCombinedFilteredList = () => {
+    const {
+      getFilteredFacets,
+      getFilteredFacetValues,
+      getDisplayNameByField,
+    } = this;
+    const filteredFacetsList = getFilteredFacets();
+    const filteredValueList = getFilteredFacetValues();
+    const combinedSet = toPairs(
+      groupBy(
+        (filteredFacetsList || []).concat(filteredValueList),
+        entry => entry.field,
+      ),
+    ).reduce(
+      (acc, [field, group]) => [
+        ...acc,
+        ...group.map(
+          entry =>
+            entry.displayName
+              ? entry
+              : { ...entry, displayName: getDisplayNameByField(field) },
+        ),
+      ],
+      [],
+    );
+    return combinedSet;
+  };
+
+  getDisplayNameByField = field =>
+    this.props.extendedMapping.find(entry => entry.field === field).displayName;
 
   getFilteredFacets = () => {
     const {
@@ -143,15 +177,20 @@ export default class extends React.Component {
 
   render() {
     const {
-      withValueOnly,
-      elasticMapping,
-      extendedMapping,
-      aggregations,
-      onFieldSelect = () => {},
-    } = this.props;
-    const { currentValue, isDropdownShown, highlightedField } = this.state;
-    const filteredFacetsList = this.getFilteredFacets();
-    const filteredVacetValues = this.getFilteredFacetValues();
+      props: {
+        withValueOnly,
+        elasticMapping,
+        extendedMapping,
+        aggregations,
+        onFieldSelect = () => {},
+      },
+      state: { currentValue, isDropdownShown, highlightedField },
+      getFilteredFacets,
+      handleKeyPress,
+    } = this;
+
+    const filteredFacetsList = getFilteredFacets();
+
     return (
       <div className="filterWrapper">
         <TextInput
@@ -171,39 +210,41 @@ export default class extends React.Component {
                 currentValue: e.target.value,
               },
               () => {
-                const newFilteredList = this.getFilteredFacets();
+                const newFilteredList = getFilteredFacets();
                 this.setState({
                   highlightedField: newFilteredList?.[0]?.field,
                 });
               },
             )
           }
-          onKeyDown={e => this.handleKeyPress(e)}
+          onKeyDown={handleKeyPress}
         />
         {filteredFacetsList?.length && isDropdownShown ? (
           <div className={`resultList shown`}>
-            {filteredFacetsList?.map(({ displayName, field, ...rest }) => (
-              <div
-                key={field}
-                ref={el => (this.dropdownRefs[field] = el)}
-                onMouseEnter={e => this.setState({ highlightedField: field })}
-                className={`resultItem ${
-                  highlightedField === field ? 'highlighted' : ''
-                }`}
-                onClick={() => {
-                  this.setState({ currentValue: displayName });
-                  onFieldSelect(field);
-                }}
-              >
-                <span className="title">
-                  <TextHighlight
-                    content={displayName}
-                    highlightText={currentValue}
-                  />
-                </span>
-                <span className="field">{`(${field})`}</span>
-              </div>
-            ))}
+            {filteredFacetsList?.map(({ displayName, value, field }) => {
+              return (
+                <div
+                  key={field}
+                  ref={el => (this.dropdownRefs[field] = el)}
+                  onMouseEnter={e => this.setState({ highlightedField: field })}
+                  className={`resultItem ${
+                    highlightedField === field ? 'highlighted' : ''
+                  }`}
+                  onClick={() => {
+                    this.setState({ currentValue: displayName || value });
+                    onFieldSelect(field);
+                  }}
+                >
+                  <span className="title">
+                    <TextHighlight
+                      content={displayName || value}
+                      highlightText={currentValue}
+                    />
+                  </span>
+                  <span className="field">{`(${field})`}</span>
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>
