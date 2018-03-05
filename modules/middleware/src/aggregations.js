@@ -610,13 +610,15 @@ export default class AggregationProcessor {
           /*
           b = { k: innerValue for k, innerValue in v.items() if re.match(r"{}(:(stats|histogram))?".format(field), k) is not None}
           */
-          v = Object.entries(v).reduce((acc, [k, v]) => {
-            if (!k.match(new RegExp(`${field}(:(stats|histogram))?`)))
+          v = Object.entries(v).reduce((acc, [innerKey, innerValue]) => {
+            if (!innerKey.match(new RegExp(`${field}(:(stats|histogram))?`)))
               return acc;
 
-            acc[k] = v;
+            acc[innerKey] = innerValue;
             return acc;
           }, {});
+
+          break;
 
         case 'stats':
           const stats_agg = p_a[field] || {};
