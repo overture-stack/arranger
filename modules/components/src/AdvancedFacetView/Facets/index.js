@@ -7,22 +7,27 @@ const aggregationTypeMap = {
   NumericAggregations: NumericAggregation,
 };
 
-const AggregationComponent = ({ aggType, ...rest }) =>
+const FacetWrapper = ({ aggType, ...rest }) =>
   aggregationTypeMap[aggType]?.({ ...rest, aggType }) || null;
 
-export default ({
-  aggType,
-  aggProps,
-  title,
-  path,
-  sqon = {},
-  constructEntryId = ({ value }) => console.log(value),
-  onValueChange,
-}) => (
-  <AggregationComponent
-    {...{ aggType, aggProps, title, sqon, path, constructEntryId }}
-    onValueChange={({ value }) => {
-      onValueChange({ value: value });
-    }}
-  />
-);
+export default class extends React.Component {
+  render() {
+    const {
+      aggType,
+      aggProps,
+      title,
+      path,
+      sqon = {},
+      constructEntryId = ({ value }) => value,
+      onValueChange,
+    } = this.props;
+    return (
+      <FacetWrapper
+        {...{ aggType, aggProps, title, sqon, path, constructEntryId }}
+        onValueChange={({ value }) => {
+          onValueChange({ value: value });
+        }}
+      />
+    );
+  }
+}

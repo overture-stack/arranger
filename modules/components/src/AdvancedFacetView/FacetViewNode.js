@@ -5,64 +5,74 @@ import State from '../State';
 
 const esTypeToAggType = esType => esToAggTypeMap[esType];
 
-const FacetViewNode = ({
-  title,
-  id,
-  children,
-  path,
-  type: esType,
-  aggregations,
-  onValueChange,
-  sqon = {},
-  constructEntryId = ({ field, value }) =>
-    value ? `${field}---${value}` : field,
-  depth,
-}) => {
-  return (
-    <div
-      className={`facetViewNode depth_${depth}`}
-      id={constructEntryId({ field: path.split('.').join('__') })}
-    >
-      {!children && ( // if there is no children FacetWrapper is brought in to render an agg corresponding to the type
-        <div className={`aggWrapper depth_${depth}`}>
-          {!esType && <div className="facetTitle">{title}</div>}
-          <FacetWrapper
-            sqon={sqon}
-            title={title}
-            aggType={esTypeToAggType(esType)}
-            aggProps={aggregations[path]}
-            path={path}
-            constructEntryId={({ value }) =>
-              constructEntryId({ field: path.split('.').join('__'), value })
-            }
-            onValueChange={({ value }) =>
-              onValueChange({
-                value,
-                path: path,
-                esType: esType,
-                aggType: esTypeToAggType(esType),
-              })
-            }
-          />
-        </div>
-      )}
-      {children && ( // if there are children, another nested layer is recursively rendered
-        <div className={`aggWrapper depth_${depth}`}>
-          <div className="facetTitle">{title}</div>
-          {children.map(childNode => (
-            <FacetViewNode
-              depth={depth + 1}
+class FacetViewNode extends React.Component {
+  render() {
+    const {
+      title,
+      id,
+      children,
+      path,
+      type: esType,
+      aggregations,
+      onValueChange,
+      sqon = {},
+      constructEntryId = ({ field, value }) =>
+        value ? `${field}---${value}` : field,
+      depth,
+    } = this.props;
+    return (
+      <div
+        className={`facetViewNode depth_${depth}`}
+        id={constructEntryId({ field: path.split('.').join('__') })}
+      >
+        {!children && ( // if there is no children FacetWrapper is brought in to render an agg corresponding to the type
+          <div className={`aggWrapper depth_${depth}`}>
+            {!esType && <div className="facetTitle">{title}</div>}
+            <FacetWrapper
+              ref={el => (this.refs = { facetWrapper: el })}
               sqon={sqon}
-              key={childNode.path}
-              aggregations={aggregations}
-              onValueChange={onValueChange}
-              {...childNode}
+              title={title}
+              aggType={esTypeToAggType(esType)}
+              aggProps={aggregations[path]}
+              path={path}
+              constructEntryId={({ value }) =>
+                constructEntryId({ field: path.split('.').join('__'), value })
+              }
+              onValueChange={({ value }) =>
+                onValueChange({
+                  value,
+                  path: path,
+                  esType: esType,
+                  aggType: esTypeToAggType(esType),
+                })
+              }
             />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+          </div>
+        )}
+        {children && ( // if there are children, another nested layer is recursively rendered
+          <div className={`aggWrapper depth_${depth}`}>
+            <div className="facetTitle">{title}</div>
+            {children.map(childNode => (
+              <FacetViewNode
+                ref={el => {
+                  this.refs = {
+                    ...this.refs,
+                    [childNode.path]: el,
+                  };
+                }}
+                depth={depth + 1}
+                sqon={sqon}
+                key={childNode.path}
+                aggregations={aggregations}
+                onValueChange={onValueChange}
+                {...childNode}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+}
 // '\203A'
 export default FacetViewNode;

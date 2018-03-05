@@ -12,24 +12,33 @@ export default class FacetView extends React.Component {
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+  componentDidUpdate() {
+    console.log(this.refs);
+  }
   render() {
     const {
       aggregations,
       displayTreeData,
       onValueChange,
       sqon = {},
-      constructEntryId = ({ field, value }) =>
-        value ? `${field}---${value}` : field,
+      constructEntryId,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
         {displayTreeData.map(node => {
           return (
             <FacetViewNode
+              ref={el => {
+                this.refs = {
+                  ...this.refs,
+                  [node.path]: el,
+                };
+              }}
               constructEntryId={constructEntryId}
               depth={0}
               sqon={sqon}
               key={node.path}
+              path={node.path}
               aggregations={aggregations}
               onValueChange={({ value, path, esType, aggType }) =>
                 onValueChange({ value, path, esType, aggType })
