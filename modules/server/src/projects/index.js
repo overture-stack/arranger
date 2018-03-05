@@ -1,5 +1,5 @@
 import elasticsearch from 'elasticsearch';
-
+import { ES_LOG } from '../utils/config';
 import getFields from './getFields';
 import addType from './addType';
 import spinUp from './spinUp';
@@ -19,7 +19,10 @@ export default ({ app, io }) => {
     req.context = req.context || {};
     if (!host) return res.json({ error: 'host must be provided' });
     try {
-      req.context.es = new elasticsearch.Client({ host });
+      req.context.es = new elasticsearch.Client({
+        host,
+        log: ES_LOG,
+      });
     } catch (error) {
       return res.json({ error: error.message });
     }

@@ -54,7 +54,7 @@ export default class AggregationProcessor {
 
   pruneAggregations({ nested_fields, aggs }) {
     const pruned = this.prune_aggs(aggs, nested_fields);
-    return { pruned: pruned };
+    return { pruned };
   }
 
   /**
@@ -198,7 +198,7 @@ export default class AggregationProcessor {
         if (global_aggregations) {
           cleaned_query = this.remove_field_from_query({
             field,
-            filters,
+            query: filters,
             use_if_not_found: null,
             use_if_clean_empty: { match_all: {} },
           });
@@ -227,7 +227,9 @@ export default class AggregationProcessor {
     use_if_clean_empty = null,
   }) {
     return this.remove_pred_from_query(
-      item => item?.terms?.hasOwnProperty(field),
+      item => {
+        return item?.terms?.hasOwnProperty(field);
+      },
       item =>
         !item.hasOwnProperty('terms') ||
         (item.hasOwnProperty('terms') && !item.terms.hasOwnProperty(field)),
@@ -493,7 +495,7 @@ export default class AggregationProcessor {
     const filteredFieldName = `${field}:filtered`;
     return {
       [filteredFieldName]: {
-        filters,
+        filter: filters,
         aggs,
       },
     };
@@ -604,16 +606,18 @@ export default class AggregationProcessor {
           break;
 
         case 'filtered':
-          // ORIGINAL: v = { k: innerValue for k, innerValue in v.items() if re.match(r"{}(:(stats|histogram))?".format(field), k) is not None}
-          const filteredEntries = Object.entries(v).filter(item => {
-            const key = item[0];
-            return [`${field}:stats`, `${field}:histogram`].includes(key);
-          });
+          // original python code
+          /*
+          b = { k: innerValue for k, innerValue in v.items() if re.match(r"{}(:(stats|histogram))?".format(field), k) is not None}
+          */
+          v = Object.entries(v).reduce((acc, [innerKey, innerValue]) => {
+            if (!innerKey.match(new RegExp(`${field}(:(stats|histogram))?`)))
+              return acc;
 
-          const innerValues = filteredEntries.map(item => item[1]);
-          v = {
-            [k]: innerValues,
-          };
+            acc[innerKey] = innerValue;
+            return acc;
+          }, {});
+
           break;
 
         case 'stats':
