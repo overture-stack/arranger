@@ -4,29 +4,39 @@ import buildQuery from './buildQuery';
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
 let resolveNested = ({ node, nested_fields, parent = '' }) => {
-  return Object.entries(node)
-    .filter(([field]) => nested_fields.includes(joinParent(parent, field)))
-    .reduce((acc, [field, hits]) => {
-      // TODO: inner hits query if necessary
-      return {
-        ...acc,
-        [field]: {
-          hits: {
-            edges: hits.map(node => ({
-              node: {
-                ...node,
-                ...resolveNested({
-                  node,
-                  nested_fields,
-                  parent: joinParent(parent, field),
-                }),
-              },
-            })),
-            total: hits.length,
-          },
-        },
-      };
-    }, {});
+  if (typeof node !== 'object' || !node) return node;
+
+  return (
+    Object.entries(node)
+      .reduce((acc, [field, hits]) => {
+        // TODO: inner hits query if necessary
+        const fullPath = joinParent(parent, field);
+        return {
+          ...acc,
+          [field]: nested_fields.includes(fullPath)
+            ? {
+                hits: {
+                  edges: hits.map(node => ({
+                    node: {
+                      ...node,
+                      ...resolveNested({
+                        node,
+                        nested_fields,
+                        parent: fullPath,
+                      }),
+                    },
+                  })),
+                  total: hits.length,
+                },
+              }
+            : resolveNested({
+                node: hits,
+                nested_fields,
+                parent: fullPath,
+              }),
+        };
+      }, {})
+  );
 };
 
 export default type => async (
