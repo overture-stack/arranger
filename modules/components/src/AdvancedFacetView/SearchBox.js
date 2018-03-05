@@ -24,20 +24,24 @@ export default class extends React.Component {
     });
 
   handleKeyPress = e => {
-    const filteredFacetsList = this.getFilteredFacets();
-    const { highlightedField } = this.state;
-    const { extendedMapping, onFieldSelect = () => {} } = this.props;
-    const highlightedAgg = extendedMapping.find(
-      ({ field }) => field === highlightedField,
+    const {
+      filteredFacetsList,
+      getCombinedFilteredList,
+      state: { highlightedField },
+      props: { onFieldSelect = () => {} },
+    } = this;
+    const highlightedEntry = getCombinedFilteredList().find(
+      ({ id }) => id === highlightedField,
     );
 
     if (e.keyCode === keycodes.enter) {
       this.setState({
         isDropdownShown: false,
         highlightedField: null,
-        ...(highlightedAgg
+        ...(highlightedEntry
           ? {
-              currentValue: highlightedAgg.displayName,
+              currentValue:
+                highlightedEntry.value || highlightedEntry.displayName,
             }
           : {}),
       });
@@ -61,29 +65,25 @@ export default class extends React.Component {
   };
 
   getNextHighlightedField = keycode => {
-    const filteredFacetsList = this.getFilteredFacets();
+    const filteredList = this.getCombinedFilteredList();
     const { highlightedField } = this.state;
     if (keycode === keycodes.up) {
       return (
-        filteredFacetsList?.[
+        filteredList?.[
           Math.max(
-            filteredFacetsList
-              ?.map(agg => agg.field)
-              .indexOf(highlightedField) - 1,
+            filteredList?.map(entry => entry.id).indexOf(highlightedField) - 1,
             0,
           )
-        ]?.field || null
+        ]?.id || null
       );
     } else if (keycode === keycodes.down) {
       return (
-        filteredFacetsList?.[
+        filteredList?.[
           Math.min(
-            filteredFacetsList
-              ?.map(agg => agg.field)
-              .indexOf(highlightedField) + 1,
-            filteredFacetsList.length - 1,
+            filteredList?.map(entry => entry.id).indexOf(highlightedField) + 1,
+            filteredList.length - 1,
           )
-        ]?.field || null
+        ]?.id || null
       );
     } else {
       return null;
@@ -124,7 +124,7 @@ export default class extends React.Component {
     const combinedSet = toPairs(
       groupBy(
         (filteredFacetsList || []).concat(filteredValueList || []),
-        entry => entry.field,
+        'field',
       ),
     ).reduce(
       (acc, [field, group]) => [
@@ -195,10 +195,7 @@ export default class extends React.Component {
       handleKeyPress,
     } = this;
 
-    const combinedFilteredList = getCombinedFilteredList();
-    console.log('combinedFilteredList: ', getCombinedFilteredList());
-
-    const filteredFacetsList = getFilteredFacets();
+    const filteredList = getCombinedFilteredList();
 
     return (
       <div className="filterWrapper">
@@ -228,34 +225,46 @@ export default class extends React.Component {
           }
           onKeyDown={handleKeyPress}
         />
-        {filteredFacetsList?.length && isDropdownShown ? (
+        {filteredList?.length && isDropdownShown ? (
           <div className={`resultList shown`}>
-            {filteredFacetsList?.map(
-              ({ displayName: fieldDisplayName, value, field }) => {
+            {filteredList?.map(
+              ({ displayName: fieldDisplayName, value, field, id }) => {
                 return (
                   <div
-                    key={field}
-                    ref={el => (this.dropdownRefs[field] = el)}
-                    onMouseEnter={e =>
-                      this.setState({ highlightedField: field })
-                    }
+                    key={id}
+                    ref={el => (this.dropdownRefs[id] = el)}
+                    onMouseEnter={e => this.setState({ highlightedField: id })}
                     className={`resultItem ${
-                      highlightedField === field ? 'highlighted' : ''
+                      highlightedField === id ? 'highlighted' : ''
                     }`}
                     onClick={() => {
                       this.setState({
-                        currentValue: fieldDisplayName || value,
+                        currentValue: value || fieldDisplayName,
                       });
-                      onFieldSelect(field);
+                      onFieldSelect(id);
                     }}
                   >
-                    <span className="title">
-                      <TextHighlight
-                        content={fieldDisplayName || value}
-                        highlightText={currentValue}
-                      />
-                    </span>
-                    <span className="field">{`(${field})`}</span>
+                    {value ? (
+                      <>
+                        <span className="field">{`${fieldDisplayName}: `}</span>
+                        <span className="title">
+                          <TextHighlight
+                            content={value}
+                            highlightText={currentValue}
+                          />
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="title">
+                          <TextHighlight
+                            content={fieldDisplayName}
+                            highlightText={currentValue}
+                          />
+                        </span>
+                        <span className="field">{`(${field})`}</span>
+                      </>
+                    )}
                   </div>
                 );
               },
