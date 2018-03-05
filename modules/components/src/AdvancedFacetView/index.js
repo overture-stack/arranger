@@ -38,6 +38,8 @@ export default class AdvancedFacetView extends React.Component {
         ) || {}
     );
   };
+  constructFilterId = ({ field, value }) =>
+    value ? `${field}---${value}` : field;
   render() {
     const {
       elasticMapping = {},
@@ -105,9 +107,10 @@ export default class AdvancedFacetView extends React.Component {
             elasticMapping,
             extendedMapping,
             aggregations,
+            constructEntryId: this.constructFilterId,
             onFieldSelect: field => {
               scrollFacetViewToPath(field);
-              this.setState({ selectedPath: field });
+              this.setState({ selectedPath: field.split('---')[0] });
             },
           }}
         />
@@ -184,6 +187,7 @@ export default class AdvancedFacetView extends React.Component {
           </div>
           <div className="panel facetsPanel">
             <FacetView
+              constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}
               sqon={sqon}
               onValueChange={handleFacetViewValueChange}

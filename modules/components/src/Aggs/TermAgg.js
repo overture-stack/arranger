@@ -13,6 +13,7 @@ const TermAggs = ({
   Content = 'div',
   maxTerms = 5,
   collapsible = true,
+  constructEntryId = ({ value }) => value,
 }) => {
   const dotField = field.replace(/__/g, '.');
 
@@ -41,6 +42,7 @@ const TermAggs = ({
                 .map(b => ({ ...b, name: b.key_as_string || b.key }))
                 .map(bucket => (
                   <Content
+                    id={constructEntryId({ value: bucket.name })}
                     key={bucket.name}
                     className="bucket-item"
                     style={{

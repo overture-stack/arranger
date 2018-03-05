@@ -11,6 +11,7 @@ export default ({
   path,
   maxTerms = 6,
   stackingLengthLimit = 50,
+  constructEntryId,
 }) => {
   const buckets = aggProps ? aggProps.buckets || [] : [];
   const hasLongValues = buckets.some(
@@ -26,6 +27,7 @@ export default ({
             value: bucket.key,
           });
         }}
+        constructEntryId={constructEntryId}
         maxTerms={maxTerms}
         field={path}
         buckets={buckets}

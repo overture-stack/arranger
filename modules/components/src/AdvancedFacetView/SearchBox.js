@@ -119,6 +119,10 @@ export default class extends React.Component {
       getFilteredFacets,
       getFilteredFacetValues,
       getDisplayNameByField,
+      props: {
+        constructEntryId = ({ field, value }) =>
+          value ? `${field}_${value}` : field,
+      },
     } = this;
     const filteredFacetsList = getFilteredFacets();
     const filteredValueList = getFilteredFacetValues();
@@ -139,7 +143,7 @@ export default class extends React.Component {
           )
           .map(entry => ({
             ...entry,
-            id: entry.value ? `${field}_${entry.value}` : field,
+            id: constructEntryId(entry),
           })),
       ],
       [],

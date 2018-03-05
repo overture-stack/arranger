@@ -14,12 +14,14 @@ const FacetViewNode = ({
   aggregations,
   onValueChange,
   sqon = {},
+  constructEntryId = ({ field, value }) =>
+    value ? `${field}---${value}` : field,
   depth,
 }) => {
   return (
     <div
       className={`facetViewNode depth_${depth}`}
-      id={path.split('.').join('__')}
+      id={constructEntryId({ field: path.split('.').join('__') })}
     >
       {!children && ( // if there is no children FacetWrapper is brought in to render an agg corresponding to the type
         <div className={`aggWrapper depth_${depth}`}>
@@ -30,6 +32,9 @@ const FacetViewNode = ({
             aggType={esTypeToAggType(esType)}
             aggProps={aggregations[path]}
             path={path}
+            constructEntryId={({ value }) =>
+              constructEntryId({ field: path.split('.').join('__'), value })
+            }
             onValueChange={({ value }) =>
               onValueChange({
                 value,

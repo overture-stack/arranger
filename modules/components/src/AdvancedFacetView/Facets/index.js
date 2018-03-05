@@ -16,10 +16,11 @@ export default ({
   title,
   path,
   sqon = {},
-  onValueChange = ({ value }) => console.log(value),
+  constructEntryId = ({ value }) => console.log(value),
+  onValueChange,
 }) => (
   <AggregationComponent
-    {...{ aggType, aggProps, title, sqon, path }}
+    {...{ aggType, aggProps, title, sqon, path, constructEntryId }}
     onValueChange={({ value }) => {
       onValueChange({ value: value });
     }}
