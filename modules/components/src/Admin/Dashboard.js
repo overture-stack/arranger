@@ -19,7 +19,6 @@ import EditAggs from '../Aggs/EditAggs';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import './Dashboard.css';
 import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
@@ -49,6 +48,8 @@ class Dashboard extends React.Component {
   };
 
   componentDidMount() {
+    require('./Dashboard.css');
+
     this.getProjects({ eshost: this.state.eshost });
 
     socket.io.on('connect_error', error => {
