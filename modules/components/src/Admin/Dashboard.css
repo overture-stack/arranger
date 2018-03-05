@@ -1,18 +1,15 @@
-html,
-body,
-#root,
-.app {
+.dashboard {
   height: 100vh;
   box-sizing: border-box;
   margin: 0;
   font-family: Helvetica;
 }
 
-section {
+.dashboard section {
   padding: 10px;
 }
 
-label {
+.dashboard label {
   letter-spacing: 1px;
   border-bottom: 1px solid;
   margin-bottom: 5px;
@@ -20,13 +17,13 @@ label {
   color: #5a8f94;
 }
 
-.title-arranger {
+.dashboard .title-arranger {
   background-color: #a72696;
   font-weight: bold;
   color: white;
 }
 
-.title-elasticsearch {
+.dashboard .title-elasticsearch {
   background-color: #525145;
   color: white;
   display: flex;
@@ -34,7 +31,7 @@ label {
   font-size: 11px;
 }
 
-.eshost-input {
+.dashboard .eshost-input {
   padding: 0 10px;
   border: none;
   outline: none;
@@ -43,34 +40,34 @@ label {
   flex-grow: 1;
 }
 
-.error {
+.dashboard .error {
   background-color: #af2f4c;
   font-weight: bold;
   padding: 10px;
   color: white;
 }
 
-.row {
+.dashboard .row {
   display: flex;
 }
 
-.warning {
+.dashboard .warning {
   color: rgb(197, 18, 35);
   font-weight: bold;
   font-size: 12px;
 }
 
-.type-container {
+.dashboard .type-container {
   margin: 10px 0;
 }
 
-.type-container label {
+.dashboard .type-container label {
   border: none;
   font-size: 14px;
   margin-right: 5px;
 }
 
-.field-item:hover {
+.dashboard .field-item:hover {
   cursor: pointer;
   background-color: rgb(240, 238, 227);
 }
