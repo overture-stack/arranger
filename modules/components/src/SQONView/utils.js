@@ -17,8 +17,10 @@ import type {
 
 function compareTerms(a, b) {
   return (
-    a.content.field === b.content.field &&
-    a.op.toLowerCase() === b.op.toLowerCase()
+    a.op.toLowerCase() === b.op.toLowerCase() &&
+    (a.content.field
+      ? a.content.field === b.content.field
+      : a.content.entity === b.content.entity)
   );
 }
 
@@ -144,19 +146,27 @@ export const addInSQON: TMergeSQON = (q, ctxq) => {
 };
 
 export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
-  const { fields, value } = q?.content?.[0]?.content || {};
+  const { entity, fields, value } = q?.content?.[0]?.content || {};
   const merged = {
     op: 'and',
     content: [
-      ...(ctxq?.content?.filter(x => x.op !== 'filter') || []),
+      ...(ctxq?.content?.filter(
+        x =>
+          entity
+            ? !(x.op === 'filter' && x.content.entity === entity)
+            : x.op !== 'filter',
+      ) || []),
       ...(!fields?.length || !value?.length ? [] : q.content),
     ].sort(sortSQON),
   };
   return merged.content.length ? merged : null;
 };
 
-export const currentFilterValue = sqon =>
-  sqon?.content?.find(({ op }) => op === 'filter')?.content?.value || '';
+export const currentFilterValue = (sqon, entity = null) =>
+  sqon?.content?.find(
+    ({ op, content }) =>
+      op === 'filter' && (!entity || entity === content.entity),
+  )?.content?.value || '';
 
 const mergeFns: TMergeFns = v => {
   switch (v) {

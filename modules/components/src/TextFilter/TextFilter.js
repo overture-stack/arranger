@@ -4,7 +4,7 @@ import SearchIcon from 'react-icons/lib/fa/search';
 import TextInput from '../Input';
 import { replaceFilterSQON } from '../SQONView/utils';
 
-export const generateNextSQON = value => ({ sqon, fields }) =>
+export const generateNextSQON = value => ({ sqon, fields, entity }) =>
   replaceFilterSQON(
     {
       op: 'and',
@@ -14,6 +14,7 @@ export const generateNextSQON = value => ({ sqon, fields }) =>
           content: {
             fields: fields,
             value,
+            ...(entity && { entity }),
           },
         },
       ],
