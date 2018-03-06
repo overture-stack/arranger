@@ -7,46 +7,35 @@ const aggregationTypeMap = {
   NumericAggregations: NumericAggregation,
 };
 
-class FacetWrapper extends React.Component {
-  render() {
-    const { aggType, searchboxSelectionObservable, ...rest } = this.props;
-    return (
-      aggregationTypeMap[aggType]?.({
-        ...rest,
-        aggType,
-        searchboxSelectionObservable,
-      }) || null
-    );
-  }
-}
+const FacetWrapper = ({ aggType, searchboxSelectionObservable, ...rest }) =>
+  aggregationTypeMap[aggType]?.({
+    ...rest,
+    aggType,
+    searchboxSelectionObservable,
+  }) || null;
 
-export default class extends React.Component {
-  render() {
-    const {
+export default ({
+  aggType,
+  aggProps,
+  title,
+  path,
+  sqon = {},
+  constructEntryId = ({ value }) => value,
+  onValueChange,
+  searchboxSelectionObservable,
+}) => (
+  <FacetWrapper
+    {...{
       aggType,
       aggProps,
       title,
+      sqon,
       path,
-      sqon = {},
-      constructEntryId = ({ value }) => value,
-      onValueChange,
+      constructEntryId,
       searchboxSelectionObservable,
-    } = this.props;
-    return (
-      <FacetWrapper
-        {...{
-          aggType,
-          aggProps,
-          title,
-          sqon,
-          path,
-          constructEntryId,
-          searchboxSelectionObservable,
-        }}
-        onValueChange={({ value }) => {
-          onValueChange({ value: value });
-        }}
-      />
-    );
-  }
-}
+    }}
+    onValueChange={({ value }) => {
+      onValueChange({ value: value });
+    }}
+  />
+);
