@@ -14,7 +14,8 @@ class State extends React.Component {
     onReceiveProps &&
       onReceiveProps({ props, state: this.state, update: this.update });
   }
-  update = object => this.setState(state => ({ ...state, ...object }));
+  update = (object, onComplete = () => {}) =>
+    this.setState(state => ({ ...state, ...object }), onComplete);
   componentDidUpdate(prevProps, prevState) {
     if (this.props.didUpdate) {
       this.props.didUpdate({
