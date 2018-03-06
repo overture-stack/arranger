@@ -8,6 +8,7 @@ const Aggregations = ({
   sqon,
   projectId,
   index,
+  indexName,
   className = '',
   style,
 }) => {
@@ -21,7 +22,7 @@ const Aggregations = ({
             <AggsQuery
               debounceTime={300}
               projectId={projectId}
-              index={index}
+              index={indexName}
               sqon={sqon}
               aggs={aggsState.aggs.filter(x => x.active)}
               render={data =>
@@ -30,8 +31,8 @@ const Aggregations = ({
                   .filter(x => x.active)
                   .map(agg => ({
                     ...agg,
-                    ...data[index].aggregations[agg.field],
-                    ...data[index].extended.find(
+                    ...data[indexName].aggregations[agg.field],
+                    ...data[indexName].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                   }))

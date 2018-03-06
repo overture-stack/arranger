@@ -15,6 +15,7 @@ import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import {
   PORTAL_NAME,
   ACTIVE_INDEX,
+  ACTIVE_INDEX_NAME,
   PROJECT_ID,
   deleteValue,
   setValue,
@@ -56,7 +57,8 @@ const DemoHeader = ({ update }) => {
         onClick={() => {
           deleteValue('PROJECT_ID');
           deleteValue('ACTIVE_INDEX');
-          update({ index: '', projectId: '' });
+          deleteValue('ACTIVE_INDEX_NAME');
+          update({ index: '', indexName: '', projectId: '' });
         }}
       >
         Logout
@@ -103,8 +105,15 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
         value={index}
         onChange={e => {
           setValue('ACTIVE_INDEX', e.target.value);
+
+          let indexName = projects
+            .find(x => x.id === projectId)
+            ?.types?.types.find(x => x.index === e.target.value).name;
+
+          setValue('ACTIVE_INDEX_NAME', indexName);
           update({
             index: e.target.value,
+            indexName,
           });
         }}
       >
@@ -144,12 +153,14 @@ storiesOf('Portal', module).add('Portal', () => (
     <State
       initial={{
         index: ACTIVE_INDEX,
+        indexName: ACTIVE_INDEX_NAME,
         projectId: PROJECT_ID,
       }}
-      render={({ index, projectId, update }) => {
+      render={({ index, indexName, projectId, update }) => {
         return index && projectId ? (
           <Arranger
             index={index}
+            indexName={indexName}
             projectId={projectId}
             render={props => {
               return (

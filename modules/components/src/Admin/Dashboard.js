@@ -848,7 +848,7 @@ class Dashboard extends React.Component {
                             <ColumnsState
                               projectId={match.params.projectId}
                               index={match.params.index}
-                              graphqlField={
+                              indexName={
                                 this.state.projects
                                   .find(x => x.id === match.params.projectId)
                                   .types.types.find(

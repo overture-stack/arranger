@@ -2,17 +2,29 @@ import React from 'react';
 
 import DataTable, { ColumnsState } from '../DataTable';
 
-const Table = ({ projectId, index, fetchData, setSQON, sqon, ...props }) => {
+const Table = ({
+  projectId,
+  index,
+  indexName,
+  fetchData,
+  setSQON,
+  sqon,
+  ...props
+}) => {
   return (
     <ColumnsState
       projectId={projectId}
       index={index}
+      indexName={indexName}
       render={columnState => {
         return (
           <DataTable
             {...props}
             sqon={sqon}
-            config={columnState.state}
+            config={{
+              ...columnState.state,
+              type: indexName,
+            }}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
             onFilterChange={({ generateNextSQON }) => {
