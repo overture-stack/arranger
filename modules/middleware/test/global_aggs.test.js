@@ -6,9 +6,15 @@ let input = {
     es_type: 'file',
     name: 'file',
   },
-  fields: ['acl'],
+  fields: ['acl', 'mdx'],
   nested_fields: [],
   graphql_fields: {
+    mdx: {
+      stats: {
+        min: {},
+        max: {},
+      },
+    },
     acl: {
       buckets: {
         key: {},
@@ -19,7 +25,11 @@ let input = {
   args: {
     filters: {
       op: 'and',
-      content: [{ op: 'in', content: { field: 'acl', value: ['phs000178'] } }],
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
     },
     aggregations_filter_themselves: false,
   },
@@ -35,6 +45,8 @@ let expected = {
             boost: 0,
           },
         },
+        { range: { mdx: { boost: 0, gte: 100 } } },
+        { range: { mdx: { boost: 0, lte: 200 } } },
       ],
     },
   },
@@ -44,7 +56,12 @@ let expected = {
       aggs: {
         'acl:filtered': {
           filter: {
-            match_all: {},
+            bool: {
+              must: [
+                { range: { mdx: { boost: 0, gte: 100 } } },
+                { range: { mdx: { boost: 0, lte: 200 } } },
+              ],
+            },
           },
           aggs: {
             acl: {
@@ -52,6 +69,24 @@ let expected = {
                 field: 'acl',
                 size: 100,
               },
+            },
+          },
+        },
+      },
+    },
+    'mdx:global': {
+      global: {},
+      aggs: {
+        'mdx:filtered': {
+          filter: {
+            terms: {
+              acl: ['phs000178'],
+              boost: 0,
+            },
+          },
+          aggs: {
+            'mdx:stats': {
+              stats: { field: 'mdx' },
             },
           },
         },
