@@ -1,5 +1,6 @@
 import React from 'react';
 import { keys } from 'lodash';
+import { Subject } from 'rxjs';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
@@ -38,6 +39,8 @@ export default class AdvancedFacetView extends React.Component {
         ) || {}
     );
   };
+  constructFilterId = ({ field, value }) =>
+    value ? `${field}---${value}` : field;
   render() {
     const {
       elasticMapping = {},
@@ -97,6 +100,7 @@ export default class AdvancedFacetView extends React.Component {
       })();
       onSqonFieldChange({ sqon: newSQON });
     };
+    const searchBoxSelection$ = new Subject();
     return (
       <div className="advancedFacetViewWrapper">
         <SearchBox
@@ -105,9 +109,11 @@ export default class AdvancedFacetView extends React.Component {
             elasticMapping,
             extendedMapping,
             aggregations,
-            onFieldSelect: field => {
+            constructEntryId: this.constructFilterId,
+            onFieldSelect: ({ field, value }) => {
               scrollFacetViewToPath(field);
               this.setState({ selectedPath: field });
+              searchBoxSelection$.next({ field, value });
             },
           }}
         />
@@ -184,6 +190,8 @@ export default class AdvancedFacetView extends React.Component {
           </div>
           <div className="panel facetsPanel">
             <FacetView
+              searchboxSelectionObservable={searchBoxSelection$}
+              constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}
               sqon={sqon}
               onValueChange={handleFacetViewValueChange}

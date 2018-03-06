@@ -18,15 +18,20 @@ export default class FacetView extends React.Component {
       displayTreeData,
       onValueChange,
       sqon = {},
+      constructEntryId,
+      searchboxSelectionObservable,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
         {displayTreeData.map(node => {
           return (
             <FacetViewNode
+              searchboxSelectionObservable={searchboxSelectionObservable}
+              constructEntryId={constructEntryId}
               depth={0}
               sqon={sqon}
               key={node.path}
+              path={node.path}
               aggregations={aggregations}
               onValueChange={({ value, path, esType, aggType }) =>
                 onValueChange({ value, path, esType, aggType })

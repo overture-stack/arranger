@@ -7,8 +7,12 @@ const aggregationTypeMap = {
   NumericAggregations: NumericAggregation,
 };
 
-const AggregationComponent = ({ aggType, ...rest }) =>
-  aggregationTypeMap[aggType]?.({ ...rest, aggType }) || null;
+const FacetWrapper = ({ aggType, searchboxSelectionObservable, ...rest }) =>
+  aggregationTypeMap[aggType]?.({
+    ...rest,
+    aggType,
+    searchboxSelectionObservable,
+  }) || null;
 
 export default ({
   aggType,
@@ -16,10 +20,20 @@ export default ({
   title,
   path,
   sqon = {},
-  onValueChange = ({ value }) => console.log(value),
+  constructEntryId = ({ value }) => value,
+  onValueChange,
+  searchboxSelectionObservable,
 }) => (
-  <AggregationComponent
-    {...{ aggType, aggProps, title, sqon, path }}
+  <FacetWrapper
+    {...{
+      aggType,
+      aggProps,
+      title,
+      sqon,
+      path,
+      constructEntryId,
+      searchboxSelectionObservable,
+    }}
     onValueChange={({ value }) => {
       onValueChange({ value: value });
     }}
