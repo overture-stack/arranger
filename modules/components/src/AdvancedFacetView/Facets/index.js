@@ -9,7 +9,10 @@ const aggregationTypeMap = {
 
 class FacetWrapper extends React.Component {
   render() {
-    const { aggType, ...rest } = this.props;
+    const { aggType, searchboxSelectionObservable, ...rest } = this.props;
+    searchboxSelectionObservable.subscribe(field => {
+      console.log(field);
+    });
     return (
       aggregationTypeMap[aggType]?.({
         ...rest,
@@ -30,10 +33,19 @@ export default class extends React.Component {
       sqon = {},
       constructEntryId = ({ value }) => value,
       onValueChange,
+      searchboxSelectionObservable,
     } = this.props;
     return (
       <FacetWrapper
-        {...{ aggType, aggProps, title, sqon, path, constructEntryId }}
+        {...{
+          aggType,
+          aggProps,
+          title,
+          sqon,
+          path,
+          constructEntryId,
+          searchboxSelectionObservable,
+        }}
         onValueChange={({ value }) => {
           onValueChange({ value: value });
         }}

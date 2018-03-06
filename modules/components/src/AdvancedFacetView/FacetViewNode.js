@@ -19,6 +19,7 @@ class FacetViewNode extends React.Component {
       constructEntryId = ({ field, value }) =>
         value ? `${field}---${value}` : field,
       depth,
+      searchboxSelectionObservable,
     } = this.props;
     return (
       <div
@@ -38,6 +39,7 @@ class FacetViewNode extends React.Component {
               constructEntryId={({ value }) =>
                 constructEntryId({ field: path.split('.').join('__'), value })
               }
+              searchboxSelectionObservable={searchboxSelectionObservable}
               onValueChange={({ value }) =>
                 onValueChange({
                   value,
@@ -65,6 +67,7 @@ class FacetViewNode extends React.Component {
                 key={childNode.path}
                 aggregations={aggregations}
                 onValueChange={onValueChange}
+                searchboxSelectionObservable={searchboxSelectionObservable}
                 {...childNode}
               />
             ))}

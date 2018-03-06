@@ -12,9 +12,6 @@ export default class FacetView extends React.Component {
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-  componentDidUpdate() {
-    console.log(this.refs);
-  }
   render() {
     const {
       aggregations,
@@ -22,6 +19,7 @@ export default class FacetView extends React.Component {
       onValueChange,
       sqon = {},
       constructEntryId,
+      searchboxSelectionObservable,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
@@ -34,6 +32,7 @@ export default class FacetView extends React.Component {
                   [node.path]: el,
                 };
               }}
+              searchboxSelectionObservable={searchboxSelectionObservable}
               constructEntryId={constructEntryId}
               depth={0}
               sqon={sqon}
