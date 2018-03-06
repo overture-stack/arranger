@@ -46,8 +46,8 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
   type Mutation {
-    saveAggsState(index: String! state: JSON!): AggsStates
-    saveColumnsState(index: String! state: JSON!): ColumnsStates
+    saveAggsState(graphqlField: String! state: JSON!): AggsState
+    saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
   }
 
   schema {
@@ -144,45 +144,16 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       {},
     ),
     Mutation: {
-      saveAggsState: async (obj, { index, state }, { es, projectId, io }) => {
-        // TODO: validate / make proper input type
-
-        await es.create({
-          index: `arranger-projects-${projectId}-${index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${index}-aggs-state`,
-          id: uuid(),
-          body: {
-            timestamp: new Date().toISOString(),
-            state,
-          },
-          refresh: true,
-        });
-
-        let data = await es.search({
-          index: `arranger-projects-${projectId}-${index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${index}-aggs-state`,
-          body: {
-            sort: [{ timestamp: { order: 'desc' } }],
-          },
-        });
-
-        io?.emit('server::refresh');
-
-        return {
-          index,
-          states: data.hits.hits.map(x => x._source),
-        };
-      },
-      saveColumnsState: async (
+      saveAggsState: async (
         obj,
-        { index, state },
+        { graphqlField, state },
         { es, projectId, io },
       ) => {
         // TODO: validate / make proper input type
-
+        const type = types.find(t => t.name === graphqlField);
         await es.create({
-          index: `arranger-projects-${projectId}-${index}-columns-state`,
-          type: `arranger-projects-${projectId}-${index}-columns-state`,
+          index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+          type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
           id: uuid(),
           body: {
             timestamp: new Date().toISOString(),
@@ -192,19 +163,48 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         });
 
         let data = await es.search({
-          index: `arranger-projects-${projectId}-${index}-columns-state`,
-          type: `arranger-projects-${projectId}-${index}-columns-state`,
+          index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+          type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
           },
         });
 
         io?.emit('server::refresh');
 
-        return {
-          index,
-          states: data.hits.hits.map(x => x._source),
-        };
+        return data.hits.hits[0]._source;
+      },
+      saveColumnsState: async (
+        obj,
+        { graphqlField, state },
+        { es, projectId, io },
+      ) => {
+        // TODO: validate / make proper input type
+        const type = types.find(t => t.name === graphqlField);
+        await es.create({
+          index: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
+          },
+        });
+
+        io?.emit('server::refresh');
+
+        return data.hits.hits[0]._source;
       },
     },
   };

@@ -3,14 +3,10 @@ import { debounce } from 'lodash';
 import api from '../utils/api';
 
 let aggFields = `
-  index
-  states {
-    timestamp
-    state {
-      field
-      active
-      type
-    }
+  state {
+    field
+    active
+    type
   }
 `;
 
@@ -22,29 +18,31 @@ export default class extends Component {
   }
 
   componentWillReceiveProps(next) {
-    if (this.props.index !== next.index) {
+    if (this.props.graphqlField !== next.graphqlField) {
       this.fetchAggsState(next);
     }
   }
 
-  fetchAggsState = debounce(async ({ index }) => {
+  fetchAggsState = debounce(async ({ graphqlField }) => {
     try {
       let { data } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
-          {
-            aggsState(indices:["${this.props.index}"]) {
-              ${aggFields}
+            {
+              ${graphqlField} {
+                aggsState {
+                  ${aggFields}
+                }
+              }
             }
-          }
-        `,
+          `,
         },
       });
 
       this.setState({
-        aggs: data.aggsState[0].states[0].state,
-        temp: data.aggsState[0].states[0].state,
+        aggs: data[graphqlField].aggsState.state,
+        temp: data[graphqlField].aggsState.state,
       });
     } catch (e) {
       // this.setState({ })
@@ -60,7 +58,7 @@ export default class extends Component {
         mutation($state: JSON!) {
           saveAggsState(
             state: $state
-            index: "${this.props.index}"
+            graphqlField: "${this.props.graphqlField}"
           ) {
             ${aggFields}
           }
@@ -70,8 +68,8 @@ export default class extends Component {
     });
 
     this.setState({
-      aggs: data.saveAggsState.states[0].state,
-      temp: data.saveAggsState.states[0].state,
+      aggs: data.saveAggsState.state,
+      temp: data.saveAggsState.state,
     });
   }, 300);
 
