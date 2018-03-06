@@ -26,12 +26,6 @@ export default class FacetView extends React.Component {
         {displayTreeData.map(node => {
           return (
             <FacetViewNode
-              ref={el => {
-                this.refs = {
-                  ...this.refs,
-                  [node.path]: el,
-                };
-              }}
               searchboxSelectionObservable={searchboxSelectionObservable}
               constructEntryId={constructEntryId}
               depth={0}

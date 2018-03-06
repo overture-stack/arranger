@@ -30,7 +30,6 @@ class FacetViewNode extends React.Component {
           <div className={`aggWrapper depth_${depth}`}>
             {!esType && <div className="facetTitle">{title}</div>}
             <FacetWrapper
-              ref={el => (this.refs = { facetWrapper: el })}
               sqon={sqon}
               title={title}
               aggType={esTypeToAggType(esType)}
@@ -56,12 +55,6 @@ class FacetViewNode extends React.Component {
             <div className="facetTitle">{title}</div>
             {children.map(childNode => (
               <FacetViewNode
-                ref={el => {
-                  this.refs = {
-                    ...this.refs,
-                    [childNode.path]: el,
-                  };
-                }}
                 depth={depth + 1}
                 sqon={sqon}
                 key={childNode.path}

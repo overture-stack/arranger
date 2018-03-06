@@ -14,7 +14,6 @@ class FacetWrapper extends React.Component {
       aggregationTypeMap[aggType]?.({
         ...rest,
         aggType,
-        ref: el => (this.refs.aggComponent = el),
         searchboxSelectionObservable,
       }) || null
     );
