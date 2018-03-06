@@ -7,7 +7,7 @@ class State extends React.Component {
   }
   componentDidMount() {
     const { async = () => {} } = this.props;
-    Promise.resolve(async).then(this.update);
+    Promise.resolve(async()).then(this.update);
   }
   componentWillReceiveProps(props) {
     let { onReceiveProps } = props;
