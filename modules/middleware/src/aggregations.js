@@ -227,12 +227,12 @@ export default class AggregationProcessor {
     use_if_clean_empty = null,
   }) {
     return this.remove_pred_from_query(
-      item => {
-        return item?.terms?.hasOwnProperty(field);
-      },
       item =>
-        !item.hasOwnProperty('terms') ||
-        (item.hasOwnProperty('terms') && !item.terms.hasOwnProperty(field)),
+        item?.terms?.hasOwnProperty(field) ||
+        item?.range?.hasOwnProperty(field),
+      item =>
+        !item?.terms?.hasOwnProperty(field) &&
+        !item?.range?.hasOwnProperty(field),
       query,
       use_if_not_found,
       use_if_clean_empty,
