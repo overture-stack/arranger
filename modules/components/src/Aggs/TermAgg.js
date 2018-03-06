@@ -14,11 +14,17 @@ const TermAggs = ({
   maxTerms = 5,
   collapsible = true,
   constructEntryId = ({ value }) => value,
+  observableValueInFocus,
 }) => {
   const dotField = field.replace(/__/g, '.');
 
   return (
     <State
+      didUpdate={({ update }) => {
+        observableValueInFocus?.subscribe(data =>
+          update({ isCollapsed: false }),
+        );
+      }}
       initial={{ isCollapsed: false, showingMore: false }}
       render={({ update, isCollapsed, showingMore }) => (
         <div className="test-term-aggregation aggregation-card">

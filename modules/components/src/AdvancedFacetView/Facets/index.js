@@ -10,14 +10,12 @@ const aggregationTypeMap = {
 class FacetWrapper extends React.Component {
   render() {
     const { aggType, searchboxSelectionObservable, ...rest } = this.props;
-    searchboxSelectionObservable.subscribe(field => {
-      console.log(field);
-    });
     return (
       aggregationTypeMap[aggType]?.({
         ...rest,
         aggType,
         ref: el => (this.refs.aggComponent = el),
+        searchboxSelectionObservable,
       }) || null
     );
   }

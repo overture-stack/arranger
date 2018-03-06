@@ -6,17 +6,30 @@ class State extends React.Component {
     this.state = props.initial;
   }
   componentDidMount() {
-    if (this.props.async) {
-      Promise.resolve(this.props.async()).then(this.update);
-    }
+    const { async = () => {} } = this.props;
+    Promise.resolve(async).then(this.update);
   }
   componentWillReceiveProps(props) {
     let { onReceiveProps } = props;
-    onReceiveProps && onReceiveProps({ props, state: this.state, update: this.update });
+    onReceiveProps &&
+      onReceiveProps({ props, state: this.state, update: this.update });
   }
   update = object => this.setState(state => ({ ...state, ...object }));
+  componentDidUpdate(prevProps, prevState) {
+    if (this.props.didUpdate) {
+      this.props.didUpdate({
+        prevProps,
+        prevState,
+        update: this.update,
+        ...this.state,
+      });
+    }
+  }
   render() {
-    return this.props.render({ ...this.state, update: this.update });
+    return this.props.render({
+      ...this.state,
+      update: this.update,
+    });
   }
 }
 

@@ -12,6 +12,7 @@ export default ({
   maxTerms = 6,
   stackingLengthLimit = 50,
   constructEntryId,
+  searchboxSelectionObservable,
 }) => {
   const buckets = aggProps ? aggProps.buckets || [] : [];
   const hasLongValues = buckets.some(
@@ -20,6 +21,9 @@ export default ({
   return (
     <div className={hasLongValues ? 'hasLongValues' : 'hasShortValues'}>
       <TermAggs
+        observableValueInFocus={searchboxSelectionObservable.filter(
+          ({ field, value }) => field === path,
+        )}
         key={title}
         collapsible={false}
         handleValueClick={({ bucket }) => {
