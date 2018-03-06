@@ -8,6 +8,16 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let graphql_fields = getFields(info);
   let fields = Object.keys(graphql_fields);
   let nested_fields = type.nested_fields;
+  const { extendedFields } = type;
+
+  const parseDates = query =>
+    Object.entries(query).reduce(
+      (acc, [key, val]) => ({
+        ...acc,
+        [key]: val,
+      }),
+      {},
+    );
 
   let { query, aggs } = buildAggregations({
     type,
@@ -20,7 +30,7 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let body =
     query && Object.keys(query).length
       ? {
-          query,
+          query: parseDates(query),
           aggs,
         }
       : { aggs };
