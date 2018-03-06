@@ -33,12 +33,6 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     viewer: Root
     query(query: String, types: [String]): QueryResults
 
-    @deprecated(reason: "use [type] { aggsState } instead")
-    aggsState(indices: [String]): [AggsStates]
-
-    @deprecated(reason: "use [type] { columnsState } instead")
-    columnsState(indices: [String]): [ColumnsStates]
-
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
   }
@@ -71,44 +65,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
   return {
     JSON: GraphQLJSON,
     Root: {
-      aggsState: async (obj, { indices }, { es, projectId }) => {
-        let responses = await Promise.all(
-          indices.map(index =>
-            es.search({
-              index: `arranger-projects-${projectId}-${index}-aggs-state`,
-              type: `arranger-projects-${projectId}-${index}-aggs-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-                size: 1,
-              },
-            }),
-          ),
-        );
-
-        return zip(indices, responses).map(([index, data]) => ({
-          index,
-          states: data.hits.hits.map(x => x._source),
-        }));
-      },
-      columnsState: async (obj, { indices }, { es, projectId }) => {
-        let responses = await Promise.all(
-          indices.map(index =>
-            es.search({
-              index: `arranger-projects-${projectId}-${index}-columns-state`,
-              type: `arranger-projects-${projectId}-${index}-columns-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-                size: 1,
-              },
-            }),
-          ),
-        );
-
-        return zip(indices, responses).map(([index, data]) => ({
-          index,
-          states: data.hits.hits.map(x => x._source),
-        }));
-      },
       viewer: resolveObject,
       ...[...types, ...rootTypes].reduce(
         (acc, [key, type]) => ({
