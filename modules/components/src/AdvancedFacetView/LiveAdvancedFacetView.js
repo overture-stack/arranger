@@ -81,22 +81,29 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   }));
 };
 
-const removeIdsFromMapping = ({ mapping, extended, parentField = null }) => {
+const removeFieldTypesFromMapping = ({
+  mapping,
+  extended,
+  parentField = null,
+  fieldTypesToExclude = [],
+}) => {
   const output = {
     ...Object.entries(mapping).reduce((acc, [key, val]) => {
       const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
-      const isId =
-        extended.find(ex => ex.field === currentField)?.type === 'id';
+      const isId = fieldTypesToExclude.some(
+        type => type === extended.find(ex => ex.field === currentField)?.type,
+      );
       const toSpread = !isId
         ? {
             ...(val.properties
               ? {
                   [key]: {
                     ...val,
-                    properties: removeIdsFromMapping({
+                    properties: removeFieldTypesFromMapping({
                       mapping: val.properties,
                       extended,
                       parentField: currentField,
+                      fieldTypesToExclude,
                     }),
                   },
                 }
@@ -128,7 +135,7 @@ export default class LiveAdvancedFacetView extends React.Component {
   componentDidMount() {
     const { projectId, index } = this.props;
     const fetchConfig = { projectId, index };
-    const blackListedAggTypes = ['object', 'nested', 'id'];
+    const blackListedAggTypes = ['object', 'nested', 'id', 'text'];
     Promise.all([
       fetchMapping(fetchConfig),
       fetchExtendedMapping(fetchConfig),
@@ -141,7 +148,11 @@ export default class LiveAdvancedFacetView extends React.Component {
         ...fetchConfig,
       }).then(({ aggregations }) => {
         this.setState({
-          mapping: removeIdsFromMapping({ mapping, extended }),
+          mapping: removeFieldTypesFromMapping({
+            mapping,
+            extended,
+            fieldTypesToExclude: ['id', 'text'],
+          }),
           extended: extended.filter(ex => ex.type !== 'id'),
           aggregations,
         });
