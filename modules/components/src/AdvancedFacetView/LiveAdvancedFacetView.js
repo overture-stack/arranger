@@ -13,6 +13,7 @@ const fetchGraphqlQuery = async ({ query, projectId, variables = null }) =>
       variables,
     },
   }).then(data => data.data);
+
 const fetchMapping = async fetchConfig =>
   fetchGraphqlQuery({
     query: `{
