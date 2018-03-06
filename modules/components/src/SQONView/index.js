@@ -124,7 +124,7 @@ const SQON = ({
             {Clear({ nextSQON: null })}
           </Row>
           {sqonContent.map((valueSQON, i) => {
-            const { op, content: { field, fields } } = valueSQON;
+            const { op, content: { field, fields, entity } } = valueSQON;
             const value = [].concat(valueSQON.content.value || []);
             const isSingleValue = !Array.isArray(value) || value.length === 1;
             return (
@@ -134,7 +134,8 @@ const SQON = ({
                 style={{ alignItems: 'center' }}
               >
                 {FieldCrumb({
-                  field: op === 'filter' ? op : field,
+                  field:
+                    op === 'filter' ? (entity ? `${entity}.${op}` : op) : field,
                   nextSQON: toggleSQON(
                     {
                       op: 'and',
@@ -163,8 +164,10 @@ const SQON = ({
                         op === 'filter'
                           ? replaceFilterSQON(
                               {
-                                op: 'and',
-                                content: [],
+                                op: 'filter',
+                                content: {
+                                  ...(entity && { entity }),
+                                },
                               },
                               sqon,
                             )
