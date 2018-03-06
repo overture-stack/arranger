@@ -5,6 +5,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@arranger/server": "^0.1.11",
     "elasticsearch": "^14.0.0"
   },
   "devDependencies": {

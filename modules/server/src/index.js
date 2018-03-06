@@ -73,4 +73,18 @@ app.use(bodyParser.json({ limit: '50mb' }));
 
 main({ io, app });
 
-http.listen(PORT, () => rainbow(`⚡️ Listening on port ${PORT} ⚡️`));
+export default () => ({
+  ...app,
+  status: 'off',
+  listen(
+    port = PORT,
+    cb = () => {
+      rainbow(`⚡️ Listening on port ${port} ⚡️`);
+    },
+  ) {
+    http.listen(port, () => {
+      this.status = 'on';
+      cb();
+    });
+  },
+});

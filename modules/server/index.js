@@ -9,4 +9,5 @@ require('@babel/register')({
   ],
 });
 
-require('./src/index');
+let server = require('./src/index').default();
+server.listen();
