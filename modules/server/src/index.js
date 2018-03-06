@@ -64,33 +64,43 @@ let startSingleProject = async ({ app, io, projectId }) => {
   app.use('/', projectApp);
 };
 
-let app = express();
-let http = Server(app);
-let io = socketIO(http);
+export default () => {
+  let app = express();
+  app.use(cors());
+  app.use(bodyParser.json({ limit: '50mb' }));
 
-app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
+  let http = Server(this.app);
+  let io = socketIO(this.http);
 
-main({ io, app });
+  main({ io, app });
 
-export default () => ({
-  ...app,
-  status: 'off',
-  listen(
-    port = PORT,
-    cb = () => {
-      rainbow(`⚡️ Listening on port ${port} ⚡️`);
+  let server = {
+    app,
+    io,
+    http,
+    status: 'off',
+    listen(
+      port = PORT,
+      cb = () => {
+        rainbow(`⚡️ Listening on port ${port} ⚡️`);
+      },
+    ) {
+      this.http.listen(port, () => {
+        this.status = 'on';
+        cb();
+      });
     },
-  ) {
-    http.listen(port, () => {
-      this.status = 'on';
-      cb();
-    });
-  },
-  close(cb) {
-    http.close(() => {
-      this.status = 'off';
-      cb();
-    });
-  },
-});
+    close(cb = () => {}) {
+      if (this.http) {
+        this.http.close(() => {
+          this.status = 'off';
+          cb();
+        });
+      } else {
+        throw '❗️ cannot close server that has not been started ❗️';
+      }
+    },
+  };
+
+  return server;
+};
