@@ -44,7 +44,10 @@ export default class extends React.Component {
             }
           : {}),
       });
-      onFieldSelect(highlightedField);
+      onFieldSelect({
+        field: highlightedEntry.field,
+        value: highlightedEntry.value,
+      });
     }
 
     if (e.keyCode === keycodes.up || e.keyCode === keycodes.down) {
@@ -245,7 +248,7 @@ export default class extends React.Component {
                       this.setState({
                         currentValue: value || fieldDisplayName,
                       });
-                      onFieldSelect(id);
+                      onFieldSelect({ field, value });
                     }}
                   >
                     {value ? (

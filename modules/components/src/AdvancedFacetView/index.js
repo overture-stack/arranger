@@ -110,13 +110,10 @@ export default class AdvancedFacetView extends React.Component {
             extendedMapping,
             aggregations,
             constructEntryId: this.constructFilterId,
-            onFieldSelect: field => {
+            onFieldSelect: ({ field, value }) => {
               scrollFacetViewToPath(field);
-              this.setState({ selectedPath: field.split('---')[0] });
-              searchBoxSelection$.next({
-                field: field.split('---')[0],
-                value: field.split('---')[1],
-              });
+              this.setState({ selectedPath: field });
+              searchBoxSelection$.next({ field, value });
             },
           }}
         />
