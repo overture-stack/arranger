@@ -35,7 +35,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     aggsState(indices: [String]): [AggsStates]
     columnsState(indices: [String]): [ColumnsStates]
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
-    ${types.map(([key, type]) => `${key}: ${type.name}`)}
+    ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
   }
 
   ${rootTypes.map(([, type]) => type.typeDefs)}
@@ -104,9 +104,9 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       },
       viewer: resolveObject,
       ...[...types, ...rootTypes].reduce(
-        (acc, [key]) => ({
+        (acc, [key, type]) => ({
           ...acc,
-          [key]: resolveObject,
+          [type.name || key]: resolveObject,
         }),
         {},
       ),
