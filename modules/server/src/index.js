@@ -87,4 +87,10 @@ export default () => ({
       cb();
     });
   },
+  close(cb) {
+    http.close(() => {
+      this.status = 'off';
+      cb();
+    });
+  },
 });
