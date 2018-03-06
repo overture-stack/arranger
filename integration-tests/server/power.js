@@ -1,7 +1,7 @@
 import createServer from '@arranger/server';
 
 export default () =>
-  test('server should start and stop no demand', () => {
+  test('server should start and stop on demand', () => {
     let server = createServer();
     expect(server.status).toBe('off');
     server.listen(7357, () => {
