@@ -61,7 +61,7 @@ export default class extends Component {
         },
       });
       const config = data.columnsState[0].states[0].state;
-      let { data: { [this.props.indexName]: { extended } } } = await api({
+      let { data: { [this.props.graphqlField]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           variables: {
@@ -71,7 +71,7 @@ export default class extends Component {
           },
           query: `
           query($fields: [String]){
-            ${this.props.indexName} {
+            ${this.props.graphqlField} {
               extended(fields: $fields)
             }
           }

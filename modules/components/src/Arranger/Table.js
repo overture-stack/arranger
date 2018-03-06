@@ -5,7 +5,7 @@ import DataTable, { ColumnsState } from '../DataTable';
 const Table = ({
   projectId,
   index,
-  indexName,
+  graphqlField,
   fetchData,
   setSQON,
   sqon,
@@ -15,7 +15,7 @@ const Table = ({
     <ColumnsState
       projectId={projectId}
       index={index}
-      indexName={indexName}
+      graphqlField={graphqlField}
       render={columnState => {
         return (
           <DataTable
@@ -23,7 +23,7 @@ const Table = ({
             sqon={sqon}
             config={{
               ...columnState.state,
-              type: indexName,
+              type: graphqlField,
             }}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}

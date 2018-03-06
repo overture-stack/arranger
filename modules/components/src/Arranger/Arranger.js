@@ -90,7 +90,7 @@ class Arranger extends React.Component {
   render() {
     const {
       index,
-      indexName,
+      graphqlField,
       projectId,
       children,
       render,
@@ -104,7 +104,7 @@ class Arranger extends React.Component {
       selectedTableRows,
       projectId,
       index,
-      indexName,
+      graphqlField,
       streamData,
       fetchData,
       setSQON: sqon => this.setState({ sqon }),
