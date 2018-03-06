@@ -2,17 +2,29 @@ import React from 'react';
 
 import DataTable, { ColumnsState } from '../DataTable';
 
-const Table = ({ projectId, index, fetchData, setSQON, sqon, ...props }) => {
+const Table = ({
+  projectId,
+  index,
+  graphqlField,
+  fetchData,
+  setSQON,
+  sqon,
+  ...props
+}) => {
   return (
     <ColumnsState
       projectId={projectId}
       index={index}
+      graphqlField={graphqlField}
       render={columnState => {
         return (
           <DataTable
             {...props}
             sqon={sqon}
-            config={columnState.state}
+            config={{
+              ...columnState.state,
+              type: graphqlField,
+            }}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
             onFilterChange={({ generateNextSQON }) => {

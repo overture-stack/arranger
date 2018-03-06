@@ -61,7 +61,7 @@ export default class extends Component {
         },
       });
       const config = data.columnsState[0].states[0].state;
-      let { data: { [this.props.index]: { extended } } } = await api({
+      let { data: { [this.props.graphqlField]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           variables: {
@@ -71,7 +71,7 @@ export default class extends Component {
           },
           query: `
           query($fields: [String]){
-            ${this.props.index} {
+            ${this.props.graphqlField} {
               extended(fields: $fields)
             }
           }
@@ -84,6 +84,7 @@ export default class extends Component {
         config,
       });
     } catch (e) {
+      console.warn(e);
       // this.setState({ })
     }
   }, 300);
@@ -130,6 +131,7 @@ export default class extends Component {
 
   render() {
     let { config, extended, toggled } = this.state;
+
     return this.props.render({
       update: this.update,
       toggle: this.toggle,

@@ -649,7 +649,7 @@ class Dashboard extends React.Component {
                                   <div
                                     key={x.field}
                                     className={`field-item ${
-                                      x.field == this.state.activeField?.field
+                                      x.field === this.state.activeField?.field
                                         ? 'active'
                                         : ''
                                     }`}
@@ -845,12 +845,16 @@ class Dashboard extends React.Component {
                         )}
                         {tab === 'columns' && (
                           <div>
-                            <div>
-                              <label>Columns State</label>
-                            </div>
                             <ColumnsState
                               projectId={match.params.projectId}
                               index={match.params.index}
+                              graphqlField={
+                                this.state.projects
+                                  .find(x => x.id === match.params.projectId)
+                                  .types.types.find(
+                                    x => x.index === match.params.index,
+                                  ).name
+                              }
                               render={columnsState => (
                                 <EditColumns
                                   handleChange={columnsState.update}

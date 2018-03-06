@@ -8,6 +8,7 @@ const Aggregations = ({
   sqon,
   projectId,
   index,
+  graphqlField,
   className = '',
   style,
 }) => {
@@ -21,7 +22,7 @@ const Aggregations = ({
             <AggsQuery
               debounceTime={300}
               projectId={projectId}
-              index={index}
+              index={graphqlField}
               sqon={sqon}
               aggs={aggsState.aggs.filter(x => x.active)}
               render={data =>
@@ -30,8 +31,8 @@ const Aggregations = ({
                   .filter(x => x.active)
                   .map(agg => ({
                     ...agg,
-                    ...data[index].aggregations[agg.field],
-                    ...data[index].extended.find(
+                    ...data[graphqlField].aggregations[agg.field],
+                    ...data[graphqlField].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                   }))

@@ -88,7 +88,14 @@ class Arranger extends React.Component {
   }
 
   render() {
-    const { index, projectId, children, render, component } = this.props;
+    const {
+      index,
+      graphqlField,
+      projectId,
+      children,
+      render,
+      component,
+    } = this.props;
     const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
@@ -97,6 +104,7 @@ class Arranger extends React.Component {
       selectedTableRows,
       projectId,
       index,
+      graphqlField,
       streamData,
       fetchData,
       setSQON: sqon => this.setState({ sqon }),
