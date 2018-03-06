@@ -15,7 +15,7 @@ import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { PORT, ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 
-let main = async ({ io, app }) => {
+let main = async ({ io, app, projectId, esHost, port }) => {
   sockets({ io });
   watchGit({ app, io });
 
@@ -27,15 +27,15 @@ let main = async ({ io, app }) => {
 
   projectsRoutes({ app, io });
 
-  if (PROJECT_ID && ES_HOST) {
-    startSingleProject({ io, app, projectId: PROJECT_ID });
+  if (projectId && esHost) {
+    startSingleProject({ io, app, projectId });
   }
 
-  if (!PROJECT_ID && ES_HOST) {
+  if (!projectId && esHost) {
     let projects;
     try {
-      let data = await fetch(`http://localhost:${PORT}/projects`, {
-        headers: { ES_HOST },
+      let data = await fetch(`http://localhost:${port}/projects`, {
+        headers: { ES_HOST: esHost },
       }).then(r => r.json());
 
       projects = data.projects;
@@ -64,15 +64,13 @@ let startSingleProject = async ({ app, io, projectId }) => {
   app.use('/', projectApp);
 };
 
-export default () => {
+export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
   let app = express();
   app.use(cors());
   app.use(bodyParser.json({ limit: '50mb' }));
 
-  let http = Server(this.app);
-  let io = socketIO(this.http);
-
-  main({ io, app });
+  let http = Server(app);
+  let io = socketIO(http);
 
   let server = {
     app,
@@ -82,6 +80,7 @@ export default () => {
     listen(
       port = PORT,
       cb = () => {
+        main({ io, app, projectId, esHost, port });
         rainbow(`⚡️ Listening on port ${port} ⚡️`);
       },
     ) {

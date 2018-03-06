@@ -27,7 +27,7 @@ export default () =>
         },
       });
     } catch (error) {
-      console.log(error);
+      // index exists
     }
 
     let projects;
