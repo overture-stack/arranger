@@ -32,8 +32,13 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     node(id: ID!): Node
     viewer: Root
     query(query: String, types: [String]): QueryResults
+
+    @deprecated(reason: "use [type] { aggsState } instead")
     aggsState(indices: [String]): [AggsStates]
+
+    @deprecated(reason: "use [type] { columnsState } instead")
     columnsState(indices: [String]): [ColumnsStates]
+
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
   }
@@ -74,6 +79,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
               type: `arranger-projects-${projectId}-${index}-aggs-state`,
               body: {
                 sort: [{ timestamp: { order: 'desc' } }],
+                size: 1,
               },
             }),
           ),
@@ -92,6 +98,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
               type: `arranger-projects-${projectId}-${index}-columns-state`,
               body: {
                 sort: [{ timestamp: { order: 'desc' } }],
+                size: 1,
               },
             }),
           ),

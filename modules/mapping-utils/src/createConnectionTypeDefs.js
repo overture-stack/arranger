@@ -6,6 +6,10 @@ export default ({ type, fields = '' }) => `
 
     extended(fields: [String]): JSON
 
+    aggsState: AggsState
+
+    columnsState: ColumnsState
+
     hits(
       score: String
       offset: Int

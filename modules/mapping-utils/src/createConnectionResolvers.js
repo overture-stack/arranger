@@ -1,3 +1,5 @@
+import { get } from 'lodash';
+
 import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 
@@ -17,6 +19,30 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
       return fields
         ? type.extendedFields.filter(x => fields.includes(x.field))
         : type.extendedFields;
+    },
+    aggsState: async (obj, { indices }, { es, projectId }) => {
+      const data = await es.search({
+        index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+        type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+        body: {
+          sort: [{ timestamp: { order: 'desc' } }],
+          size: 1,
+        },
+      });
+
+      return get(data, 'hits.hits[0]._source', null);
+    },
+    columnsState: async (obj, t, { es, projectId }) => {
+      let data = await es.search({
+        index: `arranger-projects-${projectId}-${type.index}-columns-state`,
+        type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+        body: {
+          sort: [{ timestamp: { order: 'desc' } }],
+          size: 1,
+        },
+      });
+
+      return get(data, 'hits.hits[0]._source', null);
     },
     hits: resolveHits(type),
     aggregations: resolveAggregations(type),
