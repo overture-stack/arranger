@@ -22,6 +22,7 @@ import TypesTable from './TypesTable';
 import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
+import AggPreviews from './previews/AggPreviews';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -905,10 +906,20 @@ class Dashboard extends React.Component {
                                 ).name
                             }
                             render={aggsState => (
-                              <EditAggs
-                                handleChange={aggsState.update}
-                                {...aggsState}
-                              />
+                              <div>
+                                <EditAggs
+                                  handleChange={aggsState.update}
+                                  {...aggsState}
+                                />
+                                <AggPreviews
+                                  {...{
+                                    setSQON: () => {},
+                                    sqon: null,
+                                    projectId: 'test2',
+                                    graphqlField: 'file',
+                                  }}
+                                />
+                              </div>
                             )}
                           />
                         )}
