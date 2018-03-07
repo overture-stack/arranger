@@ -67,13 +67,7 @@ let startSingleProject = async ({ app, io, projectId }) => {
 export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
   let app = express();
   app.use(cors());
-
-  // test needs to roll its own bodyparser
-  // errors because of this may happen to any consumer
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('waaaaatttt');
-    app.use(bodyParser.json({ limit: '50mb' }));
-  }
+  app.use(bodyParser.json({ limit: '50mb' }));
 
   let http = Server(app);
   let io = socketIO(http);

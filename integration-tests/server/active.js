@@ -7,6 +7,9 @@ let port = 5051;
 let esHost = 'http://127.0.0.1:9200';
 let api = ajax(`http://localhost:${port}`);
 
+// TODO: broken~!
+// https://stackoverflow.com/questions/49141927/express-body-parser-utf-8-error-in-test
+
 export default server =>
   test('active projects should start at server creation', () => {
     let server = createServer();
