@@ -17,7 +17,8 @@ class TermAggs extends React.Component {
       maxTerms = 5,
       collapsible = true,
       constructEntryId = ({ value }) => value,
-      observableValueInFocus,
+      valueCharacterLimit,
+      observableValueInFocus = null,
     } = this.props;
     const dotField = field.replace(/__/g, '.');
     return (
@@ -120,7 +121,11 @@ class TermAggs extends React.Component {
                             '-',
                           )}`}
                         />
-                        {bucket.name}
+                        {!valueCharacterLimit
+                          ? bucket.name
+                          : `${bucket.name}`.length > valueCharacterLimit
+                            ? `${bucket.name.slice(0, valueCharacterLimit)}...`
+                            : `${bucket.name}`}
                         {/* <OverflowTooltippedLabel
                           htmlFor={`input-${props.title}-${bucket.name.replace(
                             /\s/g,

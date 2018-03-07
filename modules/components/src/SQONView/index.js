@@ -36,12 +36,17 @@ export const Op = ({ children, ...props }: { children?: mixed }) => (
 export const Value = ({
   children,
   className = '',
+  valueCharacterLimit,
   ...props
 }: {
   children?: mixed,
 }) => (
   <Bubble className={`sqon-value ${className}`} {...props}>
-    {children}
+    {!valueCharacterLimit
+      ? children
+      : `${children}`.length > valueCharacterLimit
+        ? `${children.slice(0, valueCharacterLimit)}...`
+        : `${children}`}
   </Bubble>
 );
 
@@ -64,8 +69,16 @@ const enhance = compose(
     FieldCrumb: ({ field, nextSQON }: TFieldCrumbArg) => (
       <Field onClick={() => console.log(nextSQON)}>{field}</Field>
     ),
-    ValueCrumb: ({ value, nextSQON, ...props }: TValueCrumbArg) => (
-      <Value onClick={() => console.log(nextSQON)} {...props}>
+    ValueCrumb: ({
+      value,
+      nextSQON,
+      valueCharacterLimit,
+      ...props
+    }: TValueCrumbArg) => (
+      <Value
+        onClick={() => console.log(nextSQON)}
+        {...{ ...props, valueCharacterLimit }}
+      >
         {value}
       </Value>
     ),
@@ -159,6 +172,7 @@ const SQON = ({
                 {(isExpanded(valueSQON) ? value : take(value, 2)).map(
                   (value, i) =>
                     ValueCrumb({
+                      valueCharacterLimit,
                       key: value,
                       value,
                       className: isSingleValue ? 'sqon-value-single' : '',

@@ -20,12 +20,14 @@ export default class FacetView extends React.Component {
       sqon = {},
       constructEntryId,
       searchboxSelectionObservable,
+      valueCharacterLimit,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
         {displayTreeData.map(node => {
           return (
             <FacetViewNode
+              valueCharacterLimit={valueCharacterLimit}
               searchboxSelectionObservable={searchboxSelectionObservable}
               constructEntryId={constructEntryId}
               depth={0}
