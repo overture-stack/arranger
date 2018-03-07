@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import fs from 'fs';
 import elasticsearch from 'elasticsearch';
 import { rainbow } from 'chalk-animation';
@@ -7,7 +8,6 @@ import socketIO from 'socket.io';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import fetch from 'node-fetch';
-
 import projectsRoutes from './projects';
 import sockets from './sockets';
 import watchGit from './watchGit';
