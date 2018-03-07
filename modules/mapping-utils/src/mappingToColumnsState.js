@@ -14,9 +14,7 @@ export default mapping => {
       ...(type === 'list'
         ? {
             query: toQuery({ accessor: field }),
-            listAccessor: field.split(/\[\d*\].node/)[0],
-            totalAccessor: `${field.split(/edges\[\d*\].node/)[0]}total`,
-            id,
+            jsonPath: `$.${field.replace(/\[\d*\]/g, '.')}`,
           }
         : { accessor: field }),
     };
