@@ -106,7 +106,7 @@ export default class extends React.Component {
                 ...(agg.buckets
                   ? agg.buckets.map(bucket => ({
                       field: key.split('__').join('.'),
-                      value: bucket.key,
+                      value: bucket.key_as_string || bucket.key,
                     }))
                   : []),
               ],
