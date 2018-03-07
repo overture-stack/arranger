@@ -45,8 +45,9 @@ function getRows(args) {
           .find(entity => column.field.indexOf(entity.field) === 0);
 
         if (entity) {
+          // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
           return jsonPath.query(
-            entity.data,
+            cloneDeep(entity.data),
             column.jsonPath.replace(`${entity.path.join('..')}..`, ''),
           );
         } else {
