@@ -102,11 +102,38 @@ class Dashboard extends React.Component {
       });
 
       socket.emit('arranger::monitorProjects', {
-        projects: projects.filter(x => x.active),
+        projects,
         eshost,
       });
     }
   }, 300);
+
+  updateProjectField = async ({ id, field, value }) => {
+    let { projects, error } = await api({
+      endpoint: `/projects/${id}/update`,
+      body: { eshost: this.state.eshost, field, value },
+    });
+
+    if (error) {
+      this.setState({
+        error,
+        projects: [],
+        types: [],
+        activeProject: null,
+        projectsTotal: 0,
+        typesTotal: 0,
+      });
+    }
+
+    if (!error) {
+      let projectsWithTypes = await this.addTypesToProjects(projects);
+
+      this.setState({
+        projects: projectsWithTypes,
+        error: null,
+      });
+    }
+  };
 
   addTypesToProjects = projects =>
     Promise.all(
@@ -128,17 +155,43 @@ class Dashboard extends React.Component {
               🔥
             </div>
           ),
-          active: () =>
-            x.active && (
-              <div
+          active: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+            >
+              <span
+                onClick={() =>
+                  this.updateProjectField({
+                    id: x.id,
+                    field: 'active',
+                    value: true,
+                  })
+                }
                 css={`
-                  cursor: pointer;
-                  text-align: center;
+                  border-bottom: ${x.active ? '2px solid green' : 'none'};
                 `}
               >
                 ✅
-              </div>
-            ),
+              </span>{' '}
+              <span
+                onClick={() =>
+                  this.updateProjectField({
+                    id: x.id,
+                    field: 'active',
+                    value: false,
+                  })
+                }
+                css={`
+                  border-bottom: ${!x.active ? '2px solid green' : 'none'};
+                `}
+              >
+                Ⓧ
+              </span>
+            </div>
+          ),
           spinup: () => (
             <div
               css={`

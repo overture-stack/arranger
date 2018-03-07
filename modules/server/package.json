@@ -43,6 +43,7 @@
     "socket.io-stream": "^0.9.1",
     "tar-stream": "^1.5.5",
     "through2": "^2.0.3",
+    "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {
