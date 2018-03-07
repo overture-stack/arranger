@@ -906,11 +906,18 @@ class Dashboard extends React.Component {
                                 ).name
                             }
                             render={aggsState => (
-                              <div>
-                                <EditAggs
-                                  handleChange={aggsState.update}
-                                  {...aggsState}
-                                />
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                }}
+                              >
+                                <div style={{ flex: 1 }}>
+                                  <EditAggs
+                                    handleChange={aggsState.update}
+                                    {...aggsState}
+                                  />
+                                </div>
                                 <AggPreviews
                                   {...{
                                     setSQON: () => {},
