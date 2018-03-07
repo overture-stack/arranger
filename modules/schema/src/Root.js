@@ -108,8 +108,8 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         // TODO: validate / make proper input type
         const type = types.find(t => t.name === graphqlField);
         await es.create({
-          index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+          index: `${type.indexPrefix}-aggs-state`,
+          type: `${type.indexPrefix}-aggs-state`,
           id: uuid(),
           body: {
             timestamp: new Date().toISOString(),
@@ -119,8 +119,8 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         });
 
         let data = await es.search({
-          index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+          index: `${type.indexPrefix}-aggs-state`,
+          type: `${type.indexPrefix}-aggs-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
             size: 1,
@@ -139,8 +139,8 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         // TODO: validate / make proper input type
         const type = types.find(t => t.name === graphqlField);
         await es.create({
-          index: `arranger-projects-${projectId}-${type.index}-columns-state`,
-          type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          index: `${type.indexPrefix}-columns-state`,
+          type: `${type.indexPrefix}-columns-state`,
           id: uuid(),
           body: {
             timestamp: new Date().toISOString(),
@@ -150,8 +150,8 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         });
 
         let data = await es.search({
-          index: `arranger-projects-${projectId}-${type.index}-columns-state`,
-          type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+          index: `${type.indexPrefix}-columns-state`,
+          type: `${type.indexPrefix}-columns-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
             size: 1,

@@ -2,6 +2,7 @@ import { flattenDeep } from 'lodash';
 import { extendFields } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
+import getIndexPrefix from '../utils/getIndexPrefix';
 
 export default async (req, res) => {
   let { es } = req.context;
@@ -16,7 +17,7 @@ export default async (req, res) => {
   id = id.toLowerCase();
   index = index.toLowerCase();
 
-  let arrangerconfig = {
+  let arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects-${id}`,
       type: `arranger-projects-${id}`,
@@ -25,7 +26,7 @@ export default async (req, res) => {
 
   try {
     await es.create({
-      ...arrangerconfig.projectsIndex,
+      ...arrangerConfig.projectsIndex,
       refresh: true,
       id: index,
       body: {
@@ -42,17 +43,16 @@ export default async (req, res) => {
   let types = [];
 
   try {
-    types = await es.search(arrangerconfig.projectsIndex);
+    types = await es.search(arrangerConfig.projectsIndex);
   } catch (error) {
     try {
       await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
+        index: arrangerConfig.projectsIndex.index,
       });
       return res.json({ types });
     } catch (error) {
       return res.json({ error: error.message });
     }
-    return res.json({ error: error.message });
   }
 
   let hits = mapHits(types);
@@ -60,9 +60,13 @@ export default async (req, res) => {
   let mappings = await fetchMappings({ es, types: hits });
 
   if (hits.some(x => mappings.find(y => y.index === x.index).mapping)) {
+    const indexPrefix = getIndexPrefix({
+      projectId: id,
+      type: { index },
+    });
     try {
       await es.indices.create({
-        index: `arranger-projects-${id}-${index}`,
+        index: indexPrefix,
       });
 
       let aliases = await es.cat.aliases({ format: 'json' });
@@ -81,8 +85,8 @@ export default async (req, res) => {
         fields.map(x => [
           {
             index: {
-              _index: `arranger-projects-${id}-${index}`,
-              _type: `arranger-projects-${id}-${index}`,
+              _index: indexPrefix,
+              _type: indexPrefix,
               _id: x.field,
             },
           },

@@ -9,7 +9,10 @@ type TcreateConnectionResolversArgs = {
 type TcreateConnectionResolvers = (
   args: TcreateConnectionResolversArgs,
 ) => Object;
-let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
+let createConnectionResolvers: TcreateConnectionResolvers = ({
+  type,
+  indexPrefix,
+}) => ({
   [type.name]: {
     mapping: () => {
       // TODO: stitch extended mapping
@@ -22,8 +25,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
     },
     aggsState: async (obj, { indices }, { es, projectId }) => {
       const data = await es.search({
-        index: `arranger-projects-${projectId}-${type.index}-aggs-state`,
-        type: `arranger-projects-${projectId}-${type.index}-aggs-state`,
+        index: `${type.indexPrefix}-aggs-state`,
+        type: `${type.indexPrefix}-aggs-state`,
         body: {
           sort: [{ timestamp: { order: 'desc' } }],
           size: 1,
@@ -34,8 +37,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({ type }) => ({
     },
     columnsState: async (obj, t, { es, projectId }) => {
       let data = await es.search({
-        index: `arranger-projects-${projectId}-${type.index}-columns-state`,
-        type: `arranger-projects-${projectId}-${type.index}-columns-state`,
+        index: `${type.indexPrefix}-columns-state`,
+        type: `${type.indexPrefix}-columns-state`,
         body: {
           sort: [{ timestamp: { order: 'desc' } }],
           size: 1,

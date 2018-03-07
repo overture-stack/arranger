@@ -12,6 +12,7 @@ import { fetchMappings } from './utils/fetchMappings';
 import mapHits from './utils/mapHits';
 import { getProject, setProject } from './utils/projects';
 import download from './download';
+import getIndexPrefix from './utils/getIndexPrefix';
 
 function setProjectActive({ id, es }) {
   return es.update({
@@ -48,20 +49,25 @@ export default async function startProjectApp({ es, id, io }) {
 
   let extended = await Promise.all(
     hits.map(async type => {
+      const indexPrefix = getIndexPrefix({ projectId: id, type });
       let fields = await es.search({
-        index: `arranger-projects-${id}-${type.index}`,
-        type: `arranger-projects-${id}-${type.index}`,
+        index: indexPrefix,
+        type: indexPrefix,
         size: 0,
         _source: false,
       });
 
       fields = await es.search({
-        index: `arranger-projects-${id}-${type.index}`,
-        type: `arranger-projects-${id}-${type.index}`,
+        index: indexPrefix,
+        type: indexPrefix,
         size: fields.hits.total,
       });
 
-      return { ...type, fields: mapHits(fields) };
+      return {
+        ...type,
+        indexPrefix,
+        fields: mapHits(fields),
+      };
     }),
   );
 
@@ -75,6 +81,7 @@ export default async function startProjectApp({ es, id, io }) {
           name: type.name,
           extendedFields: type.fields,
           customFields: ``,
+          indexPrefix: type.indexPrefix,
         },
       ];
     }),
@@ -90,7 +97,7 @@ export default async function startProjectApp({ es, id, io }) {
   });
 
   const createAggsState = typesWithMappings.map(async ([type, props]) => {
-    const index = `arranger-projects-${id}-${type}-aggs-state`;
+    const index = `${props.indexPrefix}-aggs-state`;
     const count = await es
       .count({ index, type: index })
       .then(d => d.count, () => 0);
@@ -107,7 +114,7 @@ export default async function startProjectApp({ es, id, io }) {
 
   const createColumnsState = typesWithMappings.map(async ([type, props]) => {
     const columns = mappingToColumnsState(props.mapping);
-    const index = `arranger-projects-${id}-${type}-columns-state`;
+    const index = `${props.indexPrefix}-columns-state`;
     const count = await es
       .count({ index, type: index })
       .then(d => d.count, () => 0);

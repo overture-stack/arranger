@@ -1,5 +1,5 @@
-import { flattenDeep } from 'lodash';
 import mapHits from '../utils/mapHits';
+import getIndexPrefix from '../utils/getIndexPrefix';
 
 export default ({ io }) => async (req, res) => {
   let { es } = req.context;
@@ -11,11 +11,11 @@ export default ({ io }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
-
+  const indexPrefix = getIndexPrefix({ projectId: id, type: { index } });
   try {
     await es.update({
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
       refresh: true,
       id: field,
       body: {
@@ -34,15 +34,15 @@ export default ({ io }) => async (req, res) => {
 
   try {
     fields = await es.search({
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
       size: 0,
       _source: false,
     });
 
     fields = await es.search({
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
       size: fields.hits.total,
     });
   } catch (error) {

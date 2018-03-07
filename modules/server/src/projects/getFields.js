@@ -1,6 +1,7 @@
 import { flattenDeep } from 'lodash';
 import { extendFields } from '@arranger/mapping-utils';
 import mapHits from '../utils/mapHits';
+import getIndexPrefix from '../utils/getIndexPrefix';
 
 export default async (req, res) => {
   let { es } = req.context;
@@ -13,11 +14,11 @@ export default async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
-
-  let arrangerconfig = {
+  const indexPrefix = getIndexPrefix({ projectId: id, type: { index } });
+  let arrangerConfig = {
     projectsIndex: {
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
     },
   };
 
@@ -25,21 +26,21 @@ export default async (req, res) => {
 
   try {
     fields = await es.search({
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
       size: 0,
       _source: false,
     });
 
     fields = await es.search({
-      index: `arranger-projects-${id}-${index}`,
-      type: `arranger-projects-${id}-${index}`,
+      index: indexPrefix,
+      type: indexPrefix,
       size: fields.hits.total,
     });
   } catch (error) {
     try {
       await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
+        index: arrangerConfig.projectsIndex.index,
       });
 
       let aliases = await es.cat.aliases({ format: 'json' });
@@ -58,8 +59,8 @@ export default async (req, res) => {
         fields.map(x => [
           {
             index: {
-              _index: arrangerconfig.projectsIndex.index,
-              _type: arrangerconfig.projectsIndex.index,
+              _index: arrangerConfig.projectsIndex.index,
+              _type: arrangerConfig.projectsIndex.index,
               _id: x.field,
             },
           },
