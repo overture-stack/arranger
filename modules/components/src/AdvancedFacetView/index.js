@@ -1,6 +1,7 @@
 import React from 'react';
 import { keys } from 'lodash';
 import { Subject } from 'rxjs';
+import { truncate } from 'lodash';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
@@ -48,6 +49,7 @@ export default class AdvancedFacetView extends React.Component {
       aggregations = {},
       sqon,
       onSqonFieldChange = () => {},
+      valueCharacterLimit = 30,
     } = this.props;
     const { selectedPath, withValueOnly } = this.state;
     const displayTreeData = injectExtensionToElasticMapping(
@@ -120,6 +122,7 @@ export default class AdvancedFacetView extends React.Component {
         <div>
           <SQONView
             sqon={sqon}
+            valueCharacterLimit={valueCharacterLimit}
             ValueCrumb={({ value, nextSQON, ...props }) => (
               <Value
                 onClick={() => {
@@ -127,7 +130,9 @@ export default class AdvancedFacetView extends React.Component {
                 }}
                 {...props}
               >
-                {value}
+                {truncate(value, {
+                  length: valueCharacterLimit || Infinity,
+                })}
               </Value>
             )}
             Clear={({ nextSQON }) => (
@@ -190,6 +195,7 @@ export default class AdvancedFacetView extends React.Component {
           </div>
           <div className="panel facetsPanel">
             <FacetView
+              valueCharacterLimit={valueCharacterLimit}
               searchboxSelectionObservable={searchBoxSelection$}
               constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}

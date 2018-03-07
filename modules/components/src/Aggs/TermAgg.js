@@ -3,6 +3,7 @@ import { orderBy } from 'lodash';
 import './AggregationCard.css';
 import State from '../State';
 import { toggleSQON } from '../SQONView/utils';
+import { truncate } from 'lodash';
 
 class TermAggs extends React.Component {
   // needs ref
@@ -17,7 +18,8 @@ class TermAggs extends React.Component {
       maxTerms = 5,
       collapsible = true,
       constructEntryId = ({ value }) => value,
-      observableValueInFocus,
+      valueCharacterLimit,
+      observableValueInFocus = null,
     } = this.props;
     const dotField = field.replace(/__/g, '.');
     return (
@@ -120,7 +122,9 @@ class TermAggs extends React.Component {
                             '-',
                           )}`}
                         />
-                        {bucket.name}
+                        {truncate(bucket.name, {
+                          length: valueCharacterLimit || Infinity,
+                        })}
                         {/* <OverflowTooltippedLabel
                           htmlFor={`input-${props.title}-${bucket.name.replace(
                             /\s/g,

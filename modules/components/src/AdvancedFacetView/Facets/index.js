@@ -23,6 +23,7 @@ export default ({
   constructEntryId = ({ value }) => value,
   onValueChange,
   searchboxSelectionObservable,
+  valueCharacterLimit,
 }) => (
   <FacetWrapper
     {...{
@@ -33,6 +34,7 @@ export default ({
       path,
       constructEntryId,
       searchboxSelectionObservable,
+      valueCharacterLimit,
     }}
     onValueChange={({ value }) => {
       onValueChange({ value: value });
