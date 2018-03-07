@@ -44,7 +44,7 @@ let main = async ({ io, app, projectId, esHost, port }) => {
     }
 
     projects
-      .filter(project => project.active)
+      ?.filter(project => project.active)
       .slice(0, MAX_LIVE_VERSIONS)
       .forEach(project =>
         startSingleProject({ io, app, projectId: project.id }),
@@ -67,7 +67,13 @@ let startSingleProject = async ({ app, io, projectId }) => {
 export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
   let app = express();
   app.use(cors());
-  app.use(bodyParser.json({ limit: '50mb' }));
+
+  // test needs to roll its own bodyparser
+  // errors because of this may happen to any consumer
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('waaaaatttt');
+    app.use(bodyParser.json({ limit: '50mb' }));
+  }
 
   let http = Server(app);
   let io = socketIO(http);
@@ -80,11 +86,11 @@ export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
     listen(
       port = PORT,
       cb = () => {
-        main({ io, app, projectId, esHost, port });
         rainbow(`⚡️ Listening on port ${port} ⚡️`);
       },
     ) {
       this.http.listen(port, () => {
+        main({ io, app, projectId, esHost, port });
         this.status = 'on';
         cb();
       });
