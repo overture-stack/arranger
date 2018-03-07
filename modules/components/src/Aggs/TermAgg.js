@@ -122,7 +122,7 @@ class TermAggs extends React.Component {
                             '-',
                           )}`}
                         />
-                        {truncate(`${bucket.name}`, {
+                        {truncate(bucket.name, {
                           length: valueCharacterLimit || Infinity,
                         })}
                         {/* <OverflowTooltippedLabel

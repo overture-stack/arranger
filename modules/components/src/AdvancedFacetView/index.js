@@ -130,7 +130,7 @@ export default class AdvancedFacetView extends React.Component {
                 }}
                 {...props}
               >
-                {truncate(`${value}`, {
+                {truncate(value, {
                   length: valueCharacterLimit || Infinity,
                 })}
               </Value>
