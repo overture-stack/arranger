@@ -12,7 +12,8 @@
   "scripts": {
     "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
-    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist"
+    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -54,6 +55,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
     "@babel/preset-env": "^7.0.0-beta.40",
     "@babel/register": "^7.0.0-beta.40",
+    "jest": "^22.3.0",
     "nodemon": "^1.13.3"
   }
 }
