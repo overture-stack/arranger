@@ -1,8 +1,7 @@
 import React from 'react';
 import filesize from 'filesize';
-import { get } from 'lodash';
 import { getSingleValue } from './utils';
-import jsonPath from 'jsonpath';
+import jsonPath from 'jsonpath/jsonpath.min';
 const Number = props => <div style={{ textAlign: 'right' }}>{props.value}</div>;
 
 export default {

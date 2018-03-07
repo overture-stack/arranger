@@ -2,12 +2,10 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
-import jsonPath from 'jsonpath';
+import jsonPath from 'jsonpath/jsonpath.min';
 import uuid from 'uuid';
-import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
-import { ARRANGER_API } from '../src/utils/config';
 import DataTable, {
   Table,
   TableToolbar,
