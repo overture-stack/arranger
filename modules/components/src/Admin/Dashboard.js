@@ -22,7 +22,8 @@ import TypesTable from './TypesTable';
 import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
-import AggPreviews from './previews/AggPreviews';
+import AggPreviews from './Previews/AggPreviews';
+import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 
 let socket = io(ARRANGER_API);
 
@@ -886,7 +887,7 @@ class Dashboard extends React.Component {
                           </div>
                         )}
                         {tab === 'aggs' && (
-                          <AggsState
+                          <AggregationsTab
                             projectId={match.params.projectId}
                             graphqlField={
                               this.state.projects
@@ -895,29 +896,6 @@ class Dashboard extends React.Component {
                                   x => x.index === match.params.index,
                                 ).name
                             }
-                            render={aggsState => (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'row',
-                                }}
-                              >
-                                <div style={{ flex: 1 }}>
-                                  <EditAggs
-                                    handleChange={aggsState.update}
-                                    {...aggsState}
-                                  />
-                                </div>
-                                <AggPreviews
-                                  {...{
-                                    setSQON: () => {},
-                                    sqon: null,
-                                    projectId: 'test2',
-                                    graphqlField: 'file',
-                                  }}
-                                />
-                              </div>
-                            )}
                           />
                         )}
                         {tab === 'columns' && (
