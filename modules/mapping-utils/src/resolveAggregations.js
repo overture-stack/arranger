@@ -8,7 +8,6 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let graphql_fields = getFields(info);
   let fields = Object.keys(graphql_fields);
   let nested_fields = type.nested_fields;
-  const { extendedFields } = type;
 
   let { query, aggs } = buildAggregations({
     type,
