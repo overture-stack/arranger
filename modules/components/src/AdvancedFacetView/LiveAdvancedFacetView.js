@@ -121,18 +121,20 @@ const removeFieldTypesFromMapping = ({
   return output;
 };
 
+const defaultFieldTypesToExclude = ['id', 'text'];
+
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
-    const { sqon } = props;
+    const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
     this.state = {
       mapping: {},
       extended: {},
       aggregations: null,
       sqon: sqon || null,
     };
+    this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
   }
-  blackListedAggTypes = ['object', 'nested', 'id', 'text'];
   componentDidMount() {
     const { projectId, index } = this.props;
     const fetchConfig = { projectId, index };
@@ -147,15 +149,15 @@ export default class LiveAdvancedFacetView extends React.Component {
         ),
         ...fetchConfig,
       }).then(({ aggregations }) => {
-        const fieldsTypesToExclude = ['id', 'text'];
+        const { fieldTypesToExclude = defaultFieldTypesToExclude } = this.props;
         this.setState({
           mapping: removeFieldTypesFromMapping({
             mapping,
             extended,
-            fieldTypesToExclude: fieldsTypesToExclude,
+            fieldTypesToExclude: fieldTypesToExclude,
           }),
           extended: extended.filter(
-            ex => !fieldsTypesToExclude.some(type => ex.type === type),
+            ex => !fieldTypesToExclude.some(type => ex.type === type),
           ),
           aggregations,
         });
