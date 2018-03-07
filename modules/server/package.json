@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.1.16",
+  "version": "0.1.18-0",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -12,7 +12,8 @@
   "scripts": {
     "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
-    "prepare": "rm -rf dist&&mkdir dist&&babel src --out-dir dist"
+    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -25,9 +26,9 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/mapping-utils": "^0.1.13",
+    "@arranger/mapping-utils": "^0.1.18-0",
     "@arranger/middleware": "^0.1.12",
-    "@arranger/schema": "^0.1.14",
+    "@arranger/schema": "^0.1.18-0",
     "apollo-server-express": "^1.3.1",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
@@ -38,6 +39,7 @@
     "elasticsearch": "^14.0.0",
     "express": "^4.16.2",
     "graphql": "^0.11.0",
+    "jsonpath": "^1.0.0",
     "node-fetch": "^2.0.0",
     "socket.io": "^2.0.4",
     "socket.io-stream": "^0.9.1",
@@ -53,6 +55,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
     "@babel/preset-env": "^7.0.0-beta.40",
     "@babel/register": "^7.0.0-beta.40",
+    "jest": "^22.3.0",
     "nodemon": "^1.13.3"
   }
 }

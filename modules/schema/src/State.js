@@ -26,8 +26,7 @@ export let typeDefs = `
     sortable: Boolean
     canChangeShow: Boolean
     query: String
-    listAccessor: String
-    totalAccessor: String
+    jsonPath: String
     id: String
     field: String
     accessor: String

@@ -2,11 +2,10 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
+import jsonPath from 'jsonpath/jsonpath.min';
 import uuid from 'uuid';
-import io from 'socket.io-client';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
-import { ARRANGER_API } from '../src/utils/config';
 import DataTable, {
   Table,
   TableToolbar,
@@ -95,8 +94,7 @@ const dummyConfig = {
       sortable: false,
       canChangeShow: false,
       query: 'cases { hits { total, edges { node { primary_site } } } }',
-      listAccessor: 'cases.hits.edges',
-      totalAccessor: 'cases.hits.total',
+      jsonPath: '$.cases.hits.edges..node.primary_site',
       id: 'cases.primary_site',
     },
   ],
@@ -205,10 +203,9 @@ storiesOf('Table', module)
       config={dummyConfig}
       customTypes={{
         list: props => {
-          const columnList =
-            get(props.original, props.column.listAccessor) || [];
-          const total = get(props.original, props.column.totalAccessor);
-          const firstValue = getSingleValue(columnList[0]);
+          const values = jsonPath.query(props.original, props.column.jsonPath);
+          const total = values.length;
+          const firstValue = getSingleValue(values[0]);
           return total > 1 ? <a href="">{total} total</a> : firstValue || '';
         },
       }}
