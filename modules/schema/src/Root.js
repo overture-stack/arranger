@@ -106,7 +106,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         { es, projectId, io },
       ) => {
         // TODO: validate / make proper input type
-        const type = types.find(t => t.name === graphqlField);
+        const type = types.find(([, type]) => type.name === graphqlField)[1];
         await es.create({
           index: `${type.indexPrefix}-aggs-state`,
           type: `${type.indexPrefix}-aggs-state`,
@@ -137,7 +137,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         { es, projectId, io },
       ) => {
         // TODO: validate / make proper input type
-        const type = types.find(t => t.name === graphqlField);
+        const type = types.find(([, type]) => type.name === graphqlField)[1];
         await es.create({
           index: `${type.indexPrefix}-columns-state`,
           type: `${type.indexPrefix}-columns-state`,
