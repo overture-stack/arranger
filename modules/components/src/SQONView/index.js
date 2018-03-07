@@ -95,6 +95,7 @@ const SQON = ({
   expanded,
   setExpanded,
   onLessClicked,
+  valueCharacterLimit = 30,
 }: {
   sqon: TGroupSQON,
   FieldCrumb: (props: TFieldCrumbArg) => any,
@@ -104,6 +105,7 @@ const SQON = ({
   expanded: Array<TValueSQON>,
   setExpanded: () => void,
   onLessClicked: Function,
+  valueCharacterLimit: number,
 }) => {
   const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;

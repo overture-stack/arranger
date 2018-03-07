@@ -48,6 +48,7 @@ export default class AdvancedFacetView extends React.Component {
       aggregations = {},
       sqon,
       onSqonFieldChange = () => {},
+      valueCharacterLimit = 30,
     } = this.props;
     const { selectedPath, withValueOnly } = this.state;
     const displayTreeData = injectExtensionToElasticMapping(
@@ -120,6 +121,7 @@ export default class AdvancedFacetView extends React.Component {
         <div>
           <SQONView
             sqon={sqon}
+            valueCharacterLimit={valueCharacterLimit}
             ValueCrumb={({ value, nextSQON, ...props }) => (
               <Value
                 onClick={() => {
@@ -190,6 +192,7 @@ export default class AdvancedFacetView extends React.Component {
           </div>
           <div className="panel facetsPanel">
             <FacetView
+              valueCharacterLimit={valueCharacterLimit}
               searchboxSelectionObservable={searchBoxSelection$}
               constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}
