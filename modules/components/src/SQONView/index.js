@@ -108,7 +108,7 @@ const SQON = ({
   expanded,
   setExpanded,
   onLessClicked,
-  valueCharacterLimit = 30,
+  valueCharacterLimit = null,
 }: {
   sqon: TGroupSQON,
   FieldCrumb: (props: TFieldCrumbArg) => any,
