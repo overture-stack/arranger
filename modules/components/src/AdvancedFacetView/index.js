@@ -1,6 +1,7 @@
 import React from 'react';
 import { keys } from 'lodash';
 import { Subject } from 'rxjs';
+import { truncate } from 'lodash';
 import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
@@ -129,11 +130,9 @@ export default class AdvancedFacetView extends React.Component {
                 }}
                 {...props}
               >
-                {!valueCharacterLimit
-                  ? value
-                  : `${value}`.length > valueCharacterLimit
-                    ? `${value.slice(0, valueCharacterLimit)}...`
-                    : `${value}`}
+                {truncate(`${value}`, {
+                  length: valueCharacterLimit || Infinity,
+                })}
               </Value>
             )}
             Clear={({ nextSQON }) => (
