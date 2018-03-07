@@ -60,10 +60,7 @@ export default async (req, res) => {
   let mappings = await fetchMappings({ es, types: hits });
 
   if (hits.some(x => mappings.find(y => y.index === x.index).mapping)) {
-    const indexPrefix = getIndexPrefix({
-      projectId: id,
-      type: { index },
-    });
+    const indexPrefix = getIndexPrefix({ projectId: id, index });
     try {
       await es.indices.create({
         index: indexPrefix,

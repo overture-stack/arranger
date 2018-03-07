@@ -29,7 +29,7 @@ export default async (req, res) => {
       id: index,
     });
     await es.indices.delete({
-      index: `${getIndexPrefix({ projectId: id, type: { index } })}*`,
+      index: `${getIndexPrefix({ projectId: id, index })}*`,
     });
   } catch (error) {
     return res.json({ error: error.message });

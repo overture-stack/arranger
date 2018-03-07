@@ -49,7 +49,7 @@ export default async function startProjectApp({ es, id, io }) {
 
   let extended = await Promise.all(
     hits.map(async type => {
-      const indexPrefix = getIndexPrefix({ projectId: id, type });
+      const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
       let fields = await es.search({
         index: indexPrefix,
         type: indexPrefix,

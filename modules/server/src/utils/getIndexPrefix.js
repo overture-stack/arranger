@@ -1,9 +1,9 @@
-function getIndexPrefix({ projectId, type }) {
-  if (!projectId || !type || !type.index) {
+function getIndexPrefix({ projectId, index }) {
+  if (!projectId || !index) {
     throw new Error('missing arguments');
   }
 
-  return `arranger-projects-${projectId}-${type.index}`;
+  return `arranger-projects-${projectId}-${index}`;
 }
 
 export default getIndexPrefix;

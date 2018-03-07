@@ -11,7 +11,7 @@ export default ({ io }) => async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
-  const indexPrefix = getIndexPrefix({ projectId: id, type: { index } });
+  const indexPrefix = getIndexPrefix({ projectId: id, index });
   try {
     await es.update({
       index: indexPrefix,

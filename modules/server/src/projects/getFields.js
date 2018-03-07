@@ -14,7 +14,7 @@ export default async (req, res) => {
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
-  const indexPrefix = getIndexPrefix({ projectId: id, type: { index } });
+  const indexPrefix = getIndexPrefix({ projectId: id, index });
   let arrangerConfig = {
     projectsIndex: {
       index: indexPrefix,
