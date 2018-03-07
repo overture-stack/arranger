@@ -28,7 +28,7 @@ export default ({
         collapsible={false}
         handleValueClick={({ bucket }) => {
           onValueChange({
-            value: bucket.key,
+            value: bucket.key_as_string || bucket.key,
           });
         }}
         constructEntryId={constructEntryId}

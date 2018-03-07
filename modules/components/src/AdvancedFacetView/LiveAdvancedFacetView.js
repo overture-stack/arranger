@@ -51,7 +51,7 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
           ${aggName} {
             ${
               esToAggTypeMap[aggType] === 'Aggregations'
-                ? `buckets { key doc_count }`
+                ? `buckets { key key_as_string doc_count }`
                 : `stats { max min avg sum }`
             }
           }`;
@@ -90,7 +90,6 @@ const removeFieldTypesFromMapping = ({
   const output = {
     ...Object.entries(mapping).reduce((acc, [key, val]) => {
       const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
-      console.log('fieldTypesToExclude: ', fieldTypesToExclude);
       const isId = fieldTypesToExclude.some(
         type => type === extended.find(ex => ex.field === currentField)?.type,
       );

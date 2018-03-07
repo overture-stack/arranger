@@ -10,15 +10,6 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let nested_fields = type.nested_fields;
   const { extendedFields } = type;
 
-  const parseDates = query =>
-    Object.entries(query).reduce(
-      (acc, [key, val]) => ({
-        ...acc,
-        [key]: val,
-      }),
-      {},
-    );
-
   let { query, aggs } = buildAggregations({
     type,
     args,
@@ -30,7 +21,7 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
   let body =
     query && Object.keys(query).length
       ? {
-          query: parseDates(query),
+          query,
           aggs,
         }
       : { aggs };
