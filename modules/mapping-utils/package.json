@@ -1,6 +1,6 @@
 {
   "name": "@arranger/mapping-utils",
-  "version": "0.1.13",
+  "version": "0.1.16-0",
   "description": "Transform Elasticsearch mappings",
   "main": "dist/index.js",
   "publishConfig": {
