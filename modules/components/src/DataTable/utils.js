@@ -19,6 +19,7 @@ export function normalizeColumns(columns = [], customTypes) {
       ...column,
       show: typeof column.show === 'boolean' ? column.show : true,
       Cell: column.Cell || types[column.type],
+      ...(column.jsonPath ? { id: column.field } : {}),
     };
   });
 }

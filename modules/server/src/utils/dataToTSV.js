@@ -1,5 +1,6 @@
 import through2 from 'through2';
-import { get, flatten } from 'lodash';
+import { get, flatten, cloneDeep } from 'lodash';
+import jsonPath from 'jsonpath';
 
 function getAllValue(data) {
   if (typeof data === 'object') {
@@ -12,13 +13,15 @@ function getAllValue(data) {
 }
 
 function getValue(row, column) {
-  if (column.accessor) {
-    return get(row, column.accessor);
-  } else if (column.type === 'list') {
-    return get(row, column.listAccessor)
+  if (column.jsonPath) {
+    // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
+    return jsonPath
+      .query(cloneDeep(row), column.jsonPath)
       .map(getAllValue)
       .reduce((a, b) => a.concat(b), [])
       .join(', ');
+  } else if (column.accessor) {
+    return get(row, column.accessor);
   } else {
     return '';
   }
@@ -42,10 +45,9 @@ function getRows(args) {
           .find(entity => column.field.indexOf(entity.field) === 0);
 
         if (entity) {
-          return get(
+          return jsonPath.query(
             entity.data,
-            // TODO: don't assume all edges will start with node
-            'node.' + column.field.replace(entity.field, '').replace(/^\./, ''),
+            column.jsonPath.replace(`${entity.path.join('..')}..`, ''),
           );
         } else {
           return getValue(row, column);
@@ -63,6 +65,7 @@ function getRows(args) {
           entities: [
             ...entities,
             {
+              path: paths.slice(0, pathIndex + 1),
               field: paths
                 .slice(0, pathIndex + 1)
                 .join('')
@@ -77,23 +80,32 @@ function getRows(args) {
   }
 }
 
+export function columnsToHeader({ columns }) {
+  return columns.map(column => column.Header).join('\t') + '\n';
+}
+
+export function dataToTSV({ data, index, uniqueBy, columns, emptyValue }) {
+  return flatten(
+    get(data, `data['${index}'].hits.edges`, []).map(row => {
+      return getRows({
+        row: row.node,
+        paths: (uniqueBy || '').split('[].').filter(Boolean),
+        columns: columns,
+      }).map(row => row.map(r => r || emptyValue).join('\t'));
+    }),
+  ).join('\n');
+}
+
 export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
   let isFirst = true;
 
-  return through2.obj(function(chunk, enc, callback) {
+  return through2.obj(function(data, enc, callback) {
     if (isFirst) {
       isFirst = false;
-      this.push(columns.map(column => column.Header).join('\t') + '\n');
+      this.push(columnsToHeader({ columns }));
     }
-    const rows = flatten(
-      get(chunk, `data['${index}'].hits.edges`, []).map(row => {
-        return getRows({
-          row: row.node,
-          paths: (uniqueBy || '').split('[].').filter(Boolean),
-          columns: columns,
-        }).map(row => row.map(r => r || emptyValue).join('\t'));
-      }),
-    ).join('\n');
+
+    const rows = dataToTSV({ data, index, uniqueBy, columns, emptyValue });
 
     if (rows) {
       this.push(rows);

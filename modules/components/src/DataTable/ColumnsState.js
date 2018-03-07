@@ -19,7 +19,7 @@ let columnFields = `
       sortable
       canChangeShow
       query
-      listAccessor
+      jsonPath
     }
   }
 `;
