@@ -29,6 +29,7 @@ export default ({ index = '', aggs = [], sqon = null, ...props }) =>
                 ${field} {
                   buckets {
                     doc_count
+                    key_as_string
                     key
                   }
                 }
