@@ -154,7 +154,7 @@ export default class LiveAdvancedFacetView extends React.Component {
           mapping: removeFieldTypesFromMapping({
             mapping,
             extended,
-            fieldTypesToExclude: fieldTypesToExclude,
+            fieldTypesToExclude,
           }),
           extended: extended.filter(
             ex => !fieldTypesToExclude.some(type => ex.type === type),
