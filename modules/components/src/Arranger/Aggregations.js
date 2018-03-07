@@ -1,13 +1,12 @@
 import React from 'react';
 
 import { AggsState, AggsQuery, TermAgg } from '../Aggs';
-import { inCurrentSQON, toggleSQON } from '../SQONView/utils';
+import { inCurrentSQON } from '../SQONView/utils';
 
 const Aggregations = ({
   setSQON,
   sqon,
   projectId,
-  index,
   graphqlField,
   className = '',
   style,
@@ -16,7 +15,7 @@ const Aggregations = ({
     <div className={`aggregations ${className}`} style={style}>
       <AggsState
         projectId={projectId}
-        index={index}
+        graphqlField={graphqlField}
         render={aggsState => {
           return (
             <AggsQuery

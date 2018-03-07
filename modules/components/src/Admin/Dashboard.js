@@ -834,7 +834,13 @@ class Dashboard extends React.Component {
                         {tab === 'aggs' && (
                           <AggsState
                             projectId={match.params.projectId}
-                            index={match.params.index}
+                            graphqlField={
+                              this.state.projects
+                                .find(x => x.id === match.params.projectId)
+                                .types.types.find(
+                                  x => x.index === match.params.index,
+                                ).name
+                            }
                             render={aggsState => (
                               <EditAggs
                                 handleChange={aggsState.update}
@@ -847,7 +853,6 @@ class Dashboard extends React.Component {
                           <div>
                             <ColumnsState
                               projectId={match.params.projectId}
-                              index={match.params.index}
                               graphqlField={
                                 this.state.projects
                                   .find(x => x.id === match.params.projectId)

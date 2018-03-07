@@ -4,7 +4,6 @@ import DataTable, { ColumnsState } from '../DataTable';
 
 const Table = ({
   projectId,
-  index,
   graphqlField,
   fetchData,
   setSQON,
@@ -14,7 +13,6 @@ const Table = ({
   return (
     <ColumnsState
       projectId={projectId}
-      index={index}
       graphqlField={graphqlField}
       render={columnState => {
         return (

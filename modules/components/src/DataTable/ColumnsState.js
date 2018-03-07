@@ -4,24 +4,22 @@ import { debounce } from 'lodash';
 import api from '../utils/api';
 
 let columnFields = `
-  states {
-    state {
+  state {
+    type
+    keyField
+    defaultSorted{
+      id
+      desc
+    }
+    columns {
+      field
+      accessor
+      show
       type
-      keyField
-      defaultSorted{
-        id
-        desc
-      }
-      columns {
-        field
-        accessor
-        show
-        type
-        sortable
-        canChangeShow
-        query
-        listAccessor
-      }
+      sortable
+      canChangeShow
+      query
+      listAccessor
     }
   }
 `;
@@ -30,7 +28,7 @@ export default class extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      config: { keyField: 'id', columns: [], type: props.index },
+      config: { keyField: 'id', columns: [], type: props.graphqlField },
       extended: [],
       toggled: {},
     };
@@ -41,26 +39,29 @@ export default class extends Component {
   }
 
   componentWillReceiveProps(next) {
-    if (this.props.index !== next.index) {
+    if (this.props.graphqlField !== next.graphqlField) {
       this.fetchColumnsState(next);
     }
   }
 
-  fetchColumnsState = debounce(async ({ index }) => {
+  fetchColumnsState = debounce(async ({ graphqlField }) => {
     try {
       let { data } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
-          {
-            columnsState(indices:["${this.props.index}"]) {
-              ${columnFields}
+            {
+              ${graphqlField} {
+                columnsState {
+                  ${columnFields}
+                }
+              }
             }
-          }
-        `,
+          `,
         },
       });
-      const config = data.columnsState[0].states[0].state;
+
+      const config = data[graphqlField].columnsState.state;
       let { data: { [this.props.graphqlField]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
@@ -98,7 +99,7 @@ export default class extends Component {
         mutation($state: JSON!) {
           saveColumnsState(
             state: $state
-            index: "${this.props.index}"
+            graphqlField: "${this.props.graphqlField}"
           ) {
             ${columnFields}
           }
@@ -106,9 +107,9 @@ export default class extends Component {
       `,
       },
     });
-
+    console.log(data);
     this.setState({
-      config: data.saveColumnsState.states[0].state,
+      config: data.saveColumnsState.state,
     });
   }, 300);
 

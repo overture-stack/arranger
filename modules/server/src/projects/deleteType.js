@@ -1,4 +1,5 @@
 import mapHits from '../utils/mapHits';
+import getIndexPrefix from '../utils/getIndexPrefix';
 
 export default async (req, res) => {
   let { es } = req.context;
@@ -13,7 +14,7 @@ export default async (req, res) => {
 
   let projects = [];
 
-  let arrangerconfig = {
+  let arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects`,
       type: `arranger-projects`,
@@ -28,7 +29,7 @@ export default async (req, res) => {
       id: index,
     });
     await es.indices.delete({
-      index: `arranger-projects-${id}-${index}*`,
+      index: `${getIndexPrefix({ projectId: id, index })}*`,
     });
   } catch (error) {
     return res.json({ error: error.message });
@@ -36,19 +37,18 @@ export default async (req, res) => {
 
   try {
     projects = await es.search({
-      ...arrangerconfig.projectsIndex,
+      ...arrangerConfig.projectsIndex,
       size: 1000,
     });
   } catch (error) {
     try {
       await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
+        index: arrangerConfig.projectsIndex.index,
       });
       return res.json({ projects, total: 0 });
     } catch (error) {
       return res.json({ error: error.message });
     }
-    return res.json({ error: error.message });
   }
 
   res.json({ projects: mapHits(projects), total: projects.hits.total });

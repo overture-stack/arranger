@@ -32,8 +32,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     node(id: ID!): Node
     viewer: Root
     query(query: String, types: [String]): QueryResults
-    aggsState(indices: [String]): [AggsStates]
-    columnsState(indices: [String]): [ColumnsStates]
+
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
   }
@@ -41,8 +40,8 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
   type Mutation {
-    saveAggsState(index: String! state: JSON!): AggsStates
-    saveColumnsState(index: String! state: JSON!): ColumnsStates
+    saveAggsState(graphqlField: String! state: JSON!): AggsState
+    saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
   }
 
   schema {
@@ -66,42 +65,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
   return {
     JSON: GraphQLJSON,
     Root: {
-      aggsState: async (obj, { indices }, { es, projectId }) => {
-        let responses = await Promise.all(
-          indices.map(index =>
-            es.search({
-              index: `arranger-projects-${projectId}-${index}-aggs-state`,
-              type: `arranger-projects-${projectId}-${index}-aggs-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-              },
-            }),
-          ),
-        );
-
-        return zip(indices, responses).map(([index, data]) => ({
-          index,
-          states: data.hits.hits.map(x => x._source),
-        }));
-      },
-      columnsState: async (obj, { indices }, { es, projectId }) => {
-        let responses = await Promise.all(
-          indices.map(index =>
-            es.search({
-              index: `arranger-projects-${projectId}-${index}-columns-state`,
-              type: `arranger-projects-${projectId}-${index}-columns-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-              },
-            }),
-          ),
-        );
-
-        return zip(indices, responses).map(([index, data]) => ({
-          index,
-          states: data.hits.hits.map(x => x._source),
-        }));
-      },
       viewer: resolveObject,
       ...[...types, ...rootTypes].reduce(
         (acc, [key, type]) => ({
@@ -137,45 +100,16 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       {},
     ),
     Mutation: {
-      saveAggsState: async (obj, { index, state }, { es, projectId, io }) => {
-        // TODO: validate / make proper input type
-
-        await es.create({
-          index: `arranger-projects-${projectId}-${index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${index}-aggs-state`,
-          id: uuid(),
-          body: {
-            timestamp: new Date().toISOString(),
-            state,
-          },
-          refresh: true,
-        });
-
-        let data = await es.search({
-          index: `arranger-projects-${projectId}-${index}-aggs-state`,
-          type: `arranger-projects-${projectId}-${index}-aggs-state`,
-          body: {
-            sort: [{ timestamp: { order: 'desc' } }],
-          },
-        });
-
-        io?.emit('server::refresh');
-
-        return {
-          index,
-          states: data.hits.hits.map(x => x._source),
-        };
-      },
-      saveColumnsState: async (
+      saveAggsState: async (
         obj,
-        { index, state },
+        { graphqlField, state },
         { es, projectId, io },
       ) => {
         // TODO: validate / make proper input type
-
+        const type = types.find(t => t.name === graphqlField);
         await es.create({
-          index: `arranger-projects-${projectId}-${index}-columns-state`,
-          type: `arranger-projects-${projectId}-${index}-columns-state`,
+          index: `${type.indexPrefix}-aggs-state`,
+          type: `${type.indexPrefix}-aggs-state`,
           id: uuid(),
           body: {
             timestamp: new Date().toISOString(),
@@ -185,19 +119,48 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         });
 
         let data = await es.search({
-          index: `arranger-projects-${projectId}-${index}-columns-state`,
-          type: `arranger-projects-${projectId}-${index}-columns-state`,
+          index: `${type.indexPrefix}-aggs-state`,
+          type: `${type.indexPrefix}-aggs-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
           },
         });
 
         io?.emit('server::refresh');
 
-        return {
-          index,
-          states: data.hits.hits.map(x => x._source),
-        };
+        return data.hits.hits[0]._source;
+      },
+      saveColumnsState: async (
+        obj,
+        { graphqlField, state },
+        { es, projectId, io },
+      ) => {
+        // TODO: validate / make proper input type
+        const type = types.find(t => t.name === graphqlField);
+        await es.create({
+          index: `${type.indexPrefix}-columns-state`,
+          type: `${type.indexPrefix}-columns-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `${type.indexPrefix}-columns-state`,
+          type: `${type.indexPrefix}-columns-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
+          },
+        });
+
+        io?.emit('server::refresh');
+
+        return data.hits.hits[0]._source;
       },
     },
   };
