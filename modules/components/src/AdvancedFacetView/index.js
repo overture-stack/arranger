@@ -129,7 +129,11 @@ export default class AdvancedFacetView extends React.Component {
                 }}
                 {...props}
               >
-                {value}
+                {!valueCharacterLimit
+                  ? value
+                  : `${value}`.length > valueCharacterLimit
+                    ? `${value.slice(0, valueCharacterLimit)}...`
+                    : `${value}`}
               </Value>
             )}
             Clear={({ nextSQON }) => (
