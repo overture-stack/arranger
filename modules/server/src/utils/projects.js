@@ -20,7 +20,7 @@ export function setProject(project) {
       context: {
         schema,
         es: project.es,
-        projectId: id,
+        projectId: project.id,
         io: project.io,
       },
       variables,
