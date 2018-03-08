@@ -21,8 +21,8 @@ export default ({ projectId, graphqlField }) => (
           {...{
             setSQON: () => {},
             sqon: null,
-            projectId: 'test2',
-            graphqlField: 'file',
+            projectId,
+            graphqlField,
           }}
         />
       </div>
