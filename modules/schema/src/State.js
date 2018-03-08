@@ -3,6 +3,7 @@ export let typeDefs = `
     field: String
     type: String
     active: Boolean
+    layout: JSON
   }
 
   type AggsState {
