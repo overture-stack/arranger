@@ -49,7 +49,7 @@ const expectedOutput = {
   access: {
     terms: {
       field: 'access',
-      size: 100,
+      size: 300000,
     },
   },
   'cases:global': {
@@ -78,7 +78,7 @@ const expectedOutput = {
                     },
                     terms: {
                       field: 'cases.samples.portions.is_ffpe',
-                      size: 100,
+                      size: 300000,
                     },
                   },
                   'cases.samples.portions.slides': {
@@ -100,7 +100,7 @@ const expectedOutput = {
                             terms: {
                               field:
                                 'cases.samples.portions.slides.annotations.notes',
-                              size: 100,
+                              size: 300000,
                             },
                           },
                           'cases.samples.portions.slides.annotations.category': {
@@ -112,7 +112,7 @@ const expectedOutput = {
                             terms: {
                               field:
                                 'cases.samples.portions.slides.annotations.category',
-                              size: 100,
+                              size: 300000,
                             },
                           },
                         },

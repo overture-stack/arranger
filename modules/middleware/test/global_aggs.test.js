@@ -67,7 +67,7 @@ let expected = {
             acl: {
               terms: {
                 field: 'acl',
-                size: 100,
+                size: 300000,
               },
             },
           },
