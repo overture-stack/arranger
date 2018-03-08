@@ -36,7 +36,8 @@ function progressChecker(iFrame, cookieKey, downloadToken) {
       clearInterval(intervalId);
       intervalId = null;
     }
-    iFrame.parentNode.removeChild(iFrame);
+    // TODO: iframe was being removed before download was initialize. figure out better way to check
+    // iFrame.parentNode.removeChild(iFrame);
   }
 
   return Object.assign(
