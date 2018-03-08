@@ -39,12 +39,22 @@ const fetchLayout = async () =>
     },
   ]);
 
+const saveLayout = layout => {};
+
 class AggsLayout extends React.Component {
   state = {
     rowHeight: 0.1,
     layout: [],
   };
   aggComponents = {};
+
+  onLayoutChange = newLayout => {
+    const { onLayoutChange = () => {} } = this.props;
+    this.adjustLayout(newLayout).then(() => {
+      onLayoutChange(this.state.layout);
+    });
+  };
+
   adjustLayout = newLayout => {
     const { margin = 10 } = this.props;
     const contentPixelDimentions = toPairs(this.aggComponents).reduce(
@@ -57,12 +67,17 @@ class AggsLayout extends React.Component {
       }),
       {},
     );
-    this.setState({
-      layout: newLayout.map(item => ({
-        ...item,
-        h: (contentPixelDimentions[item.i].height + margin) / 10,
-        y: sortedIndexBy(newLayout, item, i => i.y),
-      })),
+    return new Promise((resolve, reject) => {
+      this.setState(
+        {
+          layout: newLayout.map(item => ({
+            ...item,
+            h: (contentPixelDimentions[item.i].height + margin) / 10,
+            y: sortedIndexBy(newLayout, item, i => i.y),
+          })),
+        },
+        () => resolve(),
+      );
     });
   };
 
@@ -93,7 +108,7 @@ class AggsLayout extends React.Component {
         isResizable={false}
         width={300}
         isDraggable={isArrangable}
-        onDragStop={this.adjustLayout}
+        onDragStop={this.onLayoutChange}
       >
         {aggsState.aggs
           .filter(x => x.active)
@@ -138,6 +153,7 @@ const Aggregations = ({
   className = '',
   style,
   isArrangable = false,
+  onLayoutChange,
 }) => (
   <div className={`aggregations ${className}`} style={style}>
     <AggsState
@@ -164,6 +180,7 @@ const Aggregations = ({
                     style,
                     isArrangable,
                     data,
+                    onLayoutChange,
                   }}
                 />
               )
