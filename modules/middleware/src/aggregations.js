@@ -1,6 +1,9 @@
 import { CONSTANTS } from './constants';
 import { merge } from 'lodash';
 import FilterProcessor from './filters';
+
+const MAX_AGGREGATION_SIZE = 300000;
+
 /*
     Aggregation Processor
 
@@ -13,7 +16,6 @@ import FilterProcessor from './filters';
       new AggregationProcessor().buildAggregations({ type, fields, graphql_fields, nested_fields, args });
  */
 export default class AggregationProcessor {
-  querySize = 100;
   histogramInterval = 1000;
   filterProcessor = new FilterProcessor();
 
@@ -532,7 +534,7 @@ export default class AggregationProcessor {
     return {
       [field]: {
         aggs: { rn: { reverse_nested: {} } },
-        terms: { field, size: this.querySize },
+        terms: { field, size: MAX_AGGREGATION_SIZE },
       },
     };
   }
@@ -540,7 +542,7 @@ export default class AggregationProcessor {
   create_term_field_agg(field) {
     return {
       [field]: {
-        terms: { field, size: this.querySize },
+        terms: { field, size: MAX_AGGREGATION_SIZE },
       },
     };
   }
