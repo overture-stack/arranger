@@ -1,45 +1,38 @@
 import React from 'react';
 
-import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
-import { inCurrentSQON } from '../../SQONView/utils';
 import { toPairs, sortedIndexBy, debounce } from 'lodash';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactGridLayout from 'react-grid-layout';
+import api from '../../utils/api';
+import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
+import { inCurrentSQON } from '../../SQONView/utils';
 
 const fetchLayout = async () =>
   Promise.resolve([
     {
-      i: 'controlled_access',
+      i: 'cancer_related_somatic_mutations',
       x: 0,
       y: 0,
       w: 1,
       h: 1,
     },
     {
-      i: 'data_type',
+      i: 'clinical_stage',
       x: 0,
       y: 1,
       w: 1,
       h: 1,
     },
-    {
-      i: 'file_format',
-      x: 0,
-      y: 2,
-      w: 1,
-      h: 1,
-    },
-    {
-      i: 'participants.phenotype.hpo.hpo_ids',
-      x: 0,
-      y: 3,
-      w: 1,
-      h: 1,
-    },
   ]);
 
-const saveLayout = layout => {};
+const saveLayout = ({ layout, projectId, graphQlFields }) =>
+  api({
+    endpoint: `/${projectId}/graphql`,
+    body: {
+      query: ``,
+    },
+  });
 
 class AggsLayout extends React.Component {
   state = {
@@ -87,15 +80,24 @@ class AggsLayout extends React.Component {
     this.adjustLayout(layout);
   }
 
-  componentDidUpdate() {
-    // toPairs(this.aggComponents)
-    //   .map(([_, aggComponent]) => aggComponent.observableContainerDimention)
-    //   .forEach(observable => {
-    //     const onChange = () => {
-    //       this.adjustLayout();
-    //     };
-    //     observable.subscribe(onChange);
+  componentWillReceiveProps(nextProps) {
+    // const { aggsState } = nextProps;
+    // if (aggsState) {
+    //   const aggs = aggsState.aggs.filter(x => x.active);
+    //   this.setState({
+    //     layout: aggs.map(
+    //       agg =>
+    //         this.state.layout[agg.field] || {
+    //           i: agg.field,
+    //           x: 0,
+    //           y: aggs.length,
+    //           w: 1,
+    //           h: 1,
+    //         },
+    //       this.adjustLayout(this.state.layout),
+    //     ),
     //   });
+    // }
   }
 
   render() {
@@ -175,49 +177,44 @@ const Aggregations = ({
   style,
   isArrangable = false,
   onLayoutChange,
-}) => (
-  <div className={`aggregations ${className}`} style={style}>
-    <AggsState
-      projectId={projectId}
-      graphqlField={graphqlField}
-      render={aggsState => {
-        return (
-          <AggsQuery
-            debounceTime={300}
-            projectId={projectId}
-            index={graphqlField}
-            sqon={sqon}
-            aggs={aggsState.aggs.filter(x => x.active)}
-            render={data =>
-              data && (
-                <AggsLayout
-                  {...{
-                    aggsState,
-                    setSQON,
-                    sqon,
-                    projectId,
-                    graphqlField,
-                    className,
-                    style,
-                    isArrangable,
-                    data,
-                    onLayoutChange,
-                  }}
-                />
-              )
-            }
-          />
-        );
-      }}
-    />
-  </div>
-);
+  aggsState,
+}) => {
+  return (
+    <div className={`aggregations ${className}`} style={style}>
+      <AggsQuery
+        debounceTime={300}
+        projectId={projectId}
+        index={graphqlField}
+        sqon={sqon}
+        aggs={aggsState.aggs.filter(x => x.active)}
+        render={data =>
+          data && (
+            <AggsLayout
+              {...{
+                aggsState,
+                setSQON,
+                sqon,
+                projectId,
+                graphqlField,
+                className,
+                style,
+                isArrangable,
+                data,
+                onLayoutChange,
+              }}
+            />
+          )
+        }
+      />
+    </div>
+  );
+};
 
 export default props => (
   <Aggregations
     {...{
       ...props,
-      onLayoutChange: layout => console.log(layout),
+      onLayoutChange: saveLayout,
       isArrangable: true,
     }}
   />
