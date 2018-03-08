@@ -10,7 +10,7 @@ arranger-server
 Run:
 
 ```
-npm start
+PORT=<...> ES_HOST=<...> npm start
 ```
 
 Build (required before publish):
