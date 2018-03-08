@@ -17,7 +17,7 @@ export default async (req, res) => {
     res.json({ message: `${id} graphql service has been disabled` }),
   );
 
-  setProject(id, { ...getProject(id), app: projectApp });
+  setProject({ ...getProject(id), app: projectApp, id });
 
   console.log(`attempted teardown of /${id}/graphql`);
 

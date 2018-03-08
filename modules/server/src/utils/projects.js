@@ -10,7 +10,7 @@ export function getProjects() {
   return Object.values(projects);
 }
 
-export function setProject(id, project) {
+export function setProject(project) {
   project.runQuery = ({ query, variables, mock }) => {
     const schema = mock ? project.mockSchema : project.schema;
 
@@ -27,5 +27,5 @@ export function setProject(id, project) {
     });
   };
 
-  projects[id] = project;
+  projects[project.id] = project;
 }
