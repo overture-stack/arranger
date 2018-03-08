@@ -51,7 +51,8 @@
     "jest": "^22.3.0",
     "prettier": "^1.9.2",
     "react": "^16.2.0",
-    "react-dom": "^16.2.0"
+    "react-dom": "^16.2.0",
+    "storybook-router": "^0.3.3"
   },
   "peerDependencies": {
     "react": "^16.2.0",
@@ -83,7 +84,6 @@
     "semantic-ui-react": "^0.77.2",
     "socket.io-client": "^2.0.4",
     "socket.io-stream": "^0.9.1",
-    "storybook-router": "^0.3.2",
     "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
