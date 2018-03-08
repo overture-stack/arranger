@@ -88,14 +88,14 @@ class AggsLayout extends React.Component {
   }
 
   componentDidUpdate() {
-    toPairs(this.aggComponents)
-      .map(([_, aggComponent]) => aggComponent.observableContainerDimention)
-      .forEach(observable => {
-        const onChange = () => {
-          this.adjustLayout();
-        };
-        observable.subscribe(onChange);
-      });
+    // toPairs(this.aggComponents)
+    //   .map(([_, aggComponent]) => aggComponent.observableContainerDimention)
+    //   .forEach(observable => {
+    //     const onChange = () => {
+    //       this.adjustLayout();
+    //     };
+    //     observable.subscribe(onChange);
+    //   });
   }
 
   render() {
@@ -133,7 +133,7 @@ class AggsLayout extends React.Component {
           }))
           .map((agg, index) => (
             // TODO: switch on agg type
-            <div key={agg.field}>
+            <div key={agg.field} style={{ position: 'relative' }}>
               <TermAgg
                 ref={el => (this.aggComponents[agg.field] = el)}
                 data-grid={{ x: 0, y: index }}
@@ -149,6 +149,15 @@ class AggsLayout extends React.Component {
                     currentSQON: sqon,
                   })
                 }
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                }}
               />
             </div>
           ))}
