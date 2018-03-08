@@ -14,15 +14,6 @@ import { getProject, setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
 
-function setProjectActive({ id, es }) {
-  return es.update({
-    index: `arranger-projects`,
-    type: `arranger-projects`,
-    id,
-    body: { doc: { active: true } },
-  });
-}
-
 async function getTypes({ id, es }) {
   const index = `arranger-projects-${id}`;
 
@@ -40,9 +31,8 @@ export default async function startProjectApp({ es, id, io }) {
   // indices must be lower cased
   id = id.toLowerCase();
 
-  await setProjectActive({ id, es });
-
   const types = await getTypes({ id, es });
+
   if (!types) return;
   let hits = mapHits(types);
   let mappings = await fetchMappings({ es, types: hits });
