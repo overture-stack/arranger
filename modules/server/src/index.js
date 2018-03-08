@@ -46,22 +46,33 @@ let main = async ({ io, app, projectId, esHost, port }) => {
     projects
       ?.filter(project => project.active)
       .slice(0, MAX_LIVE_VERSIONS)
-      .forEach(project =>
-        startSingleProject({ io, app, projectId: project.id }),
-      );
+      .forEach(project => {
+        try {
+          startSingleProject({ io, app, projectId: project.id });
+        } catch (error) {
+          console.warn(error.message);
+        }
+      });
   }
 };
 
 let startSingleProject = async ({ app, io, projectId }) => {
   sockets({ io });
 
-  const projectApp = await startProject({
-    es: new elasticsearch.Client({ host: ES_HOST }),
-    io,
-    id: projectId,
-  });
+  let projectApp;
 
-  app.use('/', projectApp);
+  try {
+    projectApp = await startProject({
+      es: new elasticsearch.Client({ host: ES_HOST }),
+      io,
+      id: projectId,
+    });
+  } catch (error) {
+    console.warn(error.message);
+    projectApp = null;
+  }
+
+  if (projectApp) app.use('/', projectApp);
 };
 
 export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
