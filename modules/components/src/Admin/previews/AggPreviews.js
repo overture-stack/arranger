@@ -24,15 +24,58 @@ const fetchLayout = async () =>
       w: 1,
       h: 1,
     },
+    {
+      i: 'disease_status_at_unlinking',
+      x: 0,
+      y: 2,
+      w: 1,
+      h: 1,
+    },
+    {
+      i: 'gender',
+      x: 0,
+      y: 2,
+      w: 1,
+      h: 1,
+    },
   ]);
 
-const saveLayout = ({ layout, projectId, graphQlFields }) =>
-  api({
-    endpoint: `/${projectId}/graphql`,
-    body: {
-      query: ``,
-    },
-  });
+const aggFields = `
+  state {
+    field
+    active
+    type
+    layout
+  }
+`;
+
+const saveLayout = async ({ layout, projectId, aggs }) => {
+  return Promise.all(
+    aggs.map(agg =>
+      api({
+        endpoint: `/${projectId}/graphql`,
+        body: {
+          variables: {
+            state: {
+              ...agg,
+              layout: layout.find(({ i }) => i === agg.field),
+            },
+          },
+          query: `
+        mutation($state: JSON!) {
+          saveAggsState(
+            state: $state
+            graphqlField: "${projectId}"
+          ) {
+            ${aggFields}
+          }
+        }
+      `,
+        },
+      }),
+    ),
+  );
+};
 
 class AggsLayout extends React.Component {
   state = {
@@ -45,7 +88,14 @@ class AggsLayout extends React.Component {
   onLayoutChange = newLayout => {
     const { onLayoutChange = () => {} } = this.props;
     this.adjustLayout(newLayout).then(() => {
-      onLayoutChange(this.state.layout);
+      // onLayoutChange(this.state.layout);
+      const { aggsState } = this.props;
+      const aggs = aggsState.aggs.filter(x => x.active);
+      saveLayout({
+        layout: this.state.layout,
+        projectId: this.props.projectId,
+        aggs,
+      });
     });
   };
 
@@ -214,7 +264,6 @@ export default props => (
   <Aggregations
     {...{
       ...props,
-      onLayoutChange: saveLayout,
       isArrangable: true,
     }}
   />
