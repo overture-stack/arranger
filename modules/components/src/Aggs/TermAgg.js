@@ -40,7 +40,10 @@ class TermAggs extends React.Component {
         }}
         initial={{ isCollapsed: false, showingMore: false }}
         render={({ update, isCollapsed, showingMore }) => (
-          <div className="test-term-aggregation aggregation-card">
+          <div
+            className="test-term-aggregation aggregation-card"
+            ref={el => (this.container = el)}
+          >
             <div
               className={`title-wrapper ${isCollapsed && 'collapsed'}`}
               onClick={
