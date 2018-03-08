@@ -138,7 +138,7 @@ export default async function startProjectApp({ es, id, io }) {
 
   const projectApp = express.Router();
 
-  projectApp.get(`/${id}/ping`, (req, res) => res.send('ok'));
+  projectApp.get(`/ping`, (req, res) => res.send('ok'));
 
   let noSchemaHandler = (req, res) =>
     res.json({
@@ -147,7 +147,7 @@ export default async function startProjectApp({ es, id, io }) {
     });
 
   projectApp.use(
-    `/mock/${id}/graphql`,
+    `/mock/graphql`,
     mockSchema
       ? graphqlExpress({
           schema: mockSchema,
@@ -156,15 +156,15 @@ export default async function startProjectApp({ es, id, io }) {
   );
 
   projectApp.use(
-    `/${id}/graphql`,
+    `/graphql`,
     schema
       ? graphqlExpress({ schema, context: { es, projectId: id, io } })
       : noSchemaHandler,
   );
 
-  projectApp.use(`/${id}/download`, download({ projectId: id }));
+  projectApp.use(`/download`, download({ projectId: id }));
 
-  setProject(id, { app: projectApp, schema, mockSchema, es, io });
+  setProject({ app: projectApp, schema, mockSchema, es, io, id });
 
   io.emit('server::refresh');
 

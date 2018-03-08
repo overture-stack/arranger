@@ -20,14 +20,14 @@ export default async (req, res) => {
       await es.indices.create({
         index: arrangerconfig.projectsIndex.index,
       });
-      res.json({ projects });
+      return res.json({ projects });
     } catch (error) {
       return res.json({ error: error.message });
     }
     return res.json({ error: error.message });
   }
 
-  res.json({
+  return res.json({
     projects: mapHits(projects),
     total: projects.hits.total,
   });

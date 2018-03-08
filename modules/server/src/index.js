@@ -19,10 +19,16 @@ let main = async ({ io, app, projectId, esHost, port }) => {
   sockets({ io });
   watchGit({ app, io });
 
-  app.use((req, res, next) => {
+  app.use('/:projectId', (req, res, next) => {
     let projects = getProjects();
     if (!projects.length) return next();
-    projects.forEach(project => project.app(req, res, next));
+    let project = projects.find(
+      p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
+    );
+    if (project) {
+      return project.app(req, res, next);
+    }
+    next();
   });
 
   projectsRoutes({ app, io });
@@ -57,8 +63,6 @@ let main = async ({ io, app, projectId, esHost, port }) => {
 };
 
 let startSingleProject = async ({ app, io, projectId }) => {
-  sockets({ io });
-
   let projectApp;
 
   try {
@@ -71,8 +75,6 @@ let startSingleProject = async ({ app, io, projectId }) => {
     console.warn(error.message);
     projectApp = null;
   }
-
-  if (projectApp) app.use('/', projectApp);
 };
 
 export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
