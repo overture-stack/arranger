@@ -47,6 +47,7 @@ class AggsLayout extends React.Component {
     layout: [],
   };
   aggComponents = {};
+  observableAggComponentDimentions;
 
   onLayoutChange = newLayout => {
     const { onLayoutChange = () => {} } = this.props;
@@ -84,6 +85,17 @@ class AggsLayout extends React.Component {
   async componentDidMount() {
     const layout = await fetchLayout();
     this.adjustLayout(layout);
+  }
+
+  componentDidUpdate() {
+    toPairs(this.aggComponents)
+      .map(([_, aggComponent]) => aggComponent.observableContainerDimention)
+      .forEach(observable => {
+        const onChange = () => {
+          this.adjustLayout();
+        };
+        observable.subscribe(onChange);
+      });
   }
 
   render() {
