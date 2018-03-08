@@ -7,25 +7,28 @@ export default ({ projectId, graphqlField }) => (
   <AggsState
     projectId={projectId}
     graphqlField={graphqlField}
-    render={aggsState => (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-        }}
-      >
-        <div style={{ flex: 1 }}>
-          <EditAggs handleChange={aggsState.update} {...aggsState} />
-        </div>
-        <AggPreviews
-          {...{
-            setSQON: () => {},
-            sqon: null,
-            projectId,
-            graphqlField,
+    render={aggsState => {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
           }}
-        />
-      </div>
-    )}
+        >
+          <div style={{ flex: 1 }}>
+            <EditAggs handleChange={aggsState.update} {...aggsState} />
+          </div>
+          <AggPreviews
+            {...{
+              setSQON: () => {},
+              sqon: null,
+              aggsState,
+              projectId,
+              graphqlField,
+            }}
+          />
+        </div>
+      );
+    }}
   />
 );
