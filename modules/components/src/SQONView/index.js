@@ -164,10 +164,15 @@ const SQON = ({
                         op === 'filter'
                           ? replaceFilterSQON(
                               {
-                                op: 'filter',
-                                content: {
-                                  ...(entity && { entity }),
-                                },
+                                op: 'and',
+                                content: [
+                                  {
+                                    op: op,
+                                    content: {
+                                      ...(entity && { entity }),
+                                    },
+                                  },
+                                ],
                               },
                               sqon,
                             )
