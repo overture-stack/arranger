@@ -6,7 +6,7 @@ function getAllData({
   projectId,
   index,
   variables = null,
-  size = 100,
+  size = 10000,
   fields = '',
   mock,
 }) {
