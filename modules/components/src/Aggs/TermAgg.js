@@ -4,7 +4,6 @@ import './AggregationCard.css';
 import State from '../State';
 import { toggleSQON } from '../SQONView/utils';
 import { truncate } from 'lodash';
-import { Subject } from 'rxjs';
 
 class TermAggs extends React.Component {
   // needs ref
@@ -23,17 +22,11 @@ class TermAggs extends React.Component {
       observableValueInFocus = null,
     } = this.props;
     const dotField = field.replace(/__/g, '.');
-    this.observableContainerDimention = new Subject();
-    const onContainerDimentionChange = () =>
-      this.observableContainerDimention.next({
-        container: this.container,
-      });
     return (
       <State
         didUpdate={({ update }) => {
           observableValueInFocus?.subscribe(({ field, value }) => {
             update({ showingMore: true }, () => {
-              onContainerDimentionChange();
               const refId = constructEntryId({ value });
               const bucketComponent = this.refs[refId];
               if (bucketComponent) {
@@ -55,11 +48,7 @@ class TermAggs extends React.Component {
               className={`title-wrapper ${isCollapsed && 'collapsed'}`}
               onClick={
                 collapsible
-                  ? () =>
-                      update(
-                        { isCollapsed: !isCollapsed },
-                        onContainerDimentionChange,
-                      )
+                  ? () => update({ isCollapsed: !isCollapsed })
                   : () => {}
               }
             >
@@ -163,12 +152,7 @@ class TermAggs extends React.Component {
                     className={`showMore-wrapper ${
                       showingMore ? 'less' : 'more'
                     }`}
-                    onClick={() =>
-                      update(
-                        { showingMore: !showingMore },
-                        onContainerDimentionChange,
-                      )
-                    }
+                    onClick={() => update({ showingMore: !showingMore })}
                   >
                     {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
                   </div>
