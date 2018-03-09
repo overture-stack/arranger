@@ -8,6 +8,7 @@ const Table = ({
   fetchData,
   setSQON,
   sqon,
+  fieldTypesForFilter = ['text', 'keyword'],
   ...props
 }) => {
   return (
@@ -32,7 +33,7 @@ const Table = ({
                   fields: columnState.state.columns
                     .filter(
                       x =>
-                        ['text', 'keyword'].includes(x.extendedType) && x.show,
+                        fieldTypesForFilter.includes(x.extendedType) && x.show,
                     )
                     .map(x => x.field),
                 }),
