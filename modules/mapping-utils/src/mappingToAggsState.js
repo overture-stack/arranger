@@ -7,4 +7,5 @@ export default mapping =>
       field,
       type,
       active: false,
+      layout: null,
     }));
