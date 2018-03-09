@@ -30,6 +30,7 @@ class DataTable extends React.Component {
       toolbarStyle,
       onFilterChange,
       onColumnsChange = () => {},
+      columnDropdownText,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -49,6 +50,7 @@ class DataTable extends React.Component {
           page={page}
           pageSize={pageSize}
           type={config.type}
+          columnDropdownText={columnDropdownText}
         />
         <Table
           style={tableStyle}

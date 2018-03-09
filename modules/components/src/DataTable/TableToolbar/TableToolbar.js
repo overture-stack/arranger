@@ -2,7 +2,7 @@ import React from 'react';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
 
-import { replaceFilterSQON, currentFilterValue } from '../../SQONView/utils';
+import { currentFilterValue } from '../../SQONView/utils';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
 import saveTSV from './saveTSV';
 import DropDown from '../../DropDown';
@@ -38,6 +38,7 @@ const TableToolbar = ({
   allowTSVExport = true,
   customActions = null,
   style,
+  columnDropdownText = 'Show columns',
 }) => (
   <div
     style={{ display: 'flex', flex: 'none', ...style }}
@@ -71,7 +72,7 @@ const TableToolbar = ({
             onColumnsChange({ ...item, show: !item.show });
           }}
         >
-          Show columns
+          {columnDropdownText}
         </DropDown>
       )}
       {allowTSVExport && (
