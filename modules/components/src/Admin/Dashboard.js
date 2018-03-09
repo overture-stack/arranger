@@ -22,7 +22,7 @@ import TypesTable from './TypesTable';
 import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
-import AggPreviews from './Previews/AggPreviews';
+import AggPreviews from './previews/AggPreviews';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 
 class Dashboard extends React.Component {
