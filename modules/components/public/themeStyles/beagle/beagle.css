@@ -89,6 +89,9 @@ div {
   background: #f0f1f6;
   color: #009bb8;
 }
+.ReactTable .-pagination_button.-toEnd {
+  border: none;
+}
 .ReactTable a {
   color: #90278e;
 }
