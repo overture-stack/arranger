@@ -9,6 +9,7 @@ export default {
   bits: props => (
     <Number value={filesize(props.value || 0, { base: 10 }).toUpperCase()} />
   ),
+  boolean: ({ value }) => (typeof value === 'boolean' ? `${value}` : ''),
   list: props => {
     const values = jsonPath.query(props.original, props.column.jsonPath);
     const total = values.length;
