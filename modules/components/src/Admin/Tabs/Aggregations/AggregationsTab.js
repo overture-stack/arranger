@@ -1,5 +1,5 @@
 import React from 'react';
-import AggPreviews from '../../Previews/AggPreviews';
+import AggPreviews from '../../previews/AggPreviews';
 import AggsState from '../../../Aggs/AggsState';
 import EditAggs from '../../../Aggs/EditAggs';
 
