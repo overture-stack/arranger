@@ -2,7 +2,7 @@ import columnTypes from './columnTypes';
 import { withProps } from 'recompose';
 
 export function getSingleValue(data) {
-  if (typeof data === 'object') {
+  if (typeof data === 'object' && data) {
     return getSingleValue(Object.values(data)[0]);
   } else {
     return data;
