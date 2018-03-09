@@ -5,9 +5,7 @@
     "test": "jest"
   },
   "jest": {
-    "setupFiles": [
-      "jest-localstorage-mock"
-    ],
+    "setupFiles": ["jest-localstorage-mock"],
     "moduleNameMapper": {
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     }
