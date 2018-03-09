@@ -1,4 +1,5 @@
 import React from 'react';
+import { isEqual } from 'lodash';
 import { Table, TableToolbar } from './';
 
 class DataTable extends React.Component {
@@ -9,7 +10,11 @@ class DataTable extends React.Component {
       sort: props.config.defaultSorted || [],
     };
   }
-
+  componentWillReceiveProps(nextProps) {
+    if (!isEqual(nextProps.sqon, this.props.sqon)) {
+      this.setState({ page: 0 });
+    }
+  }
   render() {
     const {
       config,
