@@ -45,16 +45,18 @@ class AggsLayout extends React.Component {
   adjustHeight = async aggComponentCollection => {
     const { margin = 10 } = this.props;
 
-    const contentPixelDimentions = toPairs(aggComponentCollection).reduce(
-      (acc, [key, termAgg]) => ({
-        ...acc,
-        [key]: {
-          height: termAgg.container.clientHeight,
-          width: termAgg.container.clientWidth,
-        },
-      }),
-      {},
-    );
+    const contentPixelDimentions = toPairs(aggComponentCollection)
+      .filter(([_, termAgg]) => termAgg)
+      .reduce(
+        (acc, [key, termAgg]) => ({
+          ...acc,
+          [key]: {
+            height: termAgg.container.clientHeight,
+            width: termAgg.container.clientWidth,
+          },
+        }),
+        {},
+      );
 
     return new Promise((resolve, reject) => {
       if (toPairs(contentPixelDimentions).length != this.state.layout.length) {
@@ -155,7 +157,10 @@ class AggsLayout extends React.Component {
               <TermAgg
                 ref={el => {
                   this.aggComponents[agg.field] = el;
-                  this.adjustHeight(this.aggComponents);
+                  setTimeout(() => {
+                    // TODO: actually grab container when available
+                    this.adjustHeight(this.aggComponents);
+                  }, 100);
                 }}
                 data-grid={{ x: 0, y: index }}
                 key={agg.field}
