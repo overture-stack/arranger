@@ -52,69 +52,64 @@ const expectedOutput = {
       size: 300000,
     },
   },
-  'cases:global': {
-    global: {},
+  cases: {
+    nested: {
+      path: 'cases',
+    },
     aggs: {
-      cases: {
+      'cases.samples': {
         nested: {
-          path: 'cases',
+          path: 'cases.samples',
         },
         aggs: {
-          'cases.samples': {
+          'cases.samples.portions': {
             nested: {
-              path: 'cases.samples',
+              path: 'cases.samples.portions',
             },
             aggs: {
-              'cases.samples.portions': {
+              'cases.samples.portions.is_ffpe': {
+                aggs: {
+                  rn: {
+                    reverse_nested: {},
+                  },
+                },
+                terms: {
+                  field: 'cases.samples.portions.is_ffpe',
+                  size: 300000,
+                },
+              },
+              'cases.samples.portions.slides': {
                 nested: {
-                  path: 'cases.samples.portions',
+                  path: 'cases.samples.portions.slides',
                 },
                 aggs: {
-                  'cases.samples.portions.is_ffpe': {
-                    aggs: {
-                      rn: {
-                        reverse_nested: {},
-                      },
-                    },
-                    terms: {
-                      field: 'cases.samples.portions.is_ffpe',
-                      size: 300000,
-                    },
-                  },
-                  'cases.samples.portions.slides': {
+                  'cases.samples.portions.slides.annotations': {
                     nested: {
-                      path: 'cases.samples.portions.slides',
+                      path: 'cases.samples.portions.slides.annotations',
                     },
                     aggs: {
-                      'cases.samples.portions.slides.annotations': {
-                        nested: {
-                          path: 'cases.samples.portions.slides.annotations',
-                        },
+                      'cases.samples.portions.slides.annotations.notes': {
                         aggs: {
-                          'cases.samples.portions.slides.annotations.notes': {
-                            aggs: {
-                              rn: {
-                                reverse_nested: {},
-                              },
-                            },
-                            terms: {
-                              field:
-                                'cases.samples.portions.slides.annotations.notes',
-                              size: 300000,
-                            },
+                          rn: {
+                            reverse_nested: {},
                           },
-                          'cases.samples.portions.slides.annotations.category': {
-                            aggs: {
-                              rn: {
-                                reverse_nested: {},
-                              },
-                            },
-                            terms: {
-                              field:
-                                'cases.samples.portions.slides.annotations.category',
-                              size: 300000,
-                            },
+                        },
+                        terms: {
+                          field:
+                            'cases.samples.portions.slides.annotations.notes',
+                          size: 300000,
+                        },
+                      },
+                      'cases.samples.portions.slides.annotations.category': {
+                        aggs: {
+                          rn: {
+                            reverse_nested: {},
                           },
+                        },
+                        terms: {
+                          field:
+                            'cases.samples.portions.slides.annotations.category',
+                          size: 300000,
                         },
                       },
                     },
