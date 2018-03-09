@@ -292,12 +292,12 @@ export default class AggregationProcessor {
     let nested_query = null;
     let parent = null;
 
-    const segments = path.split(',');
+    const segments = path.split('.');
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
       parent = parent ? `${parent}.${seg}` : seg;
 
-      if (nested_fields.hasOwnProperty(parent)) {
+      if (nested_fields.includes(parent)) {
         if (nested_query === null) {
           // ORIGINAL: nested_query = get_nested_query(query.get('bool', {}).get('must', []), parent)
           nested_query = this.get_nested_query(query?.bool?.must || [], parent);
@@ -348,7 +348,6 @@ export default class AggregationProcessor {
     query,
     global_aggregations = false,
   ) {
-    // NOT IMPLEMENTED - global_aggregations always false, this is reference code in case it becomes needed
     if (global_aggregations) {
       this.ensure_global_when_needed(aggs, path, nested_fields, query);
     }
@@ -379,7 +378,7 @@ export default class AggregationProcessor {
     });
 
     const label = `${short_nested_path}:global`;
-    if (!(aggs.hasOwnProperty(nested_query) && aggs.hasOwnProperty(label))) {
+    if (nested_query && !aggs.hasOwnProperty(label)) {
       const nested_aggs = {};
       if (aggs.hasOwnProperty(short_nested_path)) {
         nested_aggs[short_nested_path] = aggs[short_nested_path];
@@ -403,7 +402,7 @@ export default class AggregationProcessor {
     query,
     global_aggregations = false,
   ) {
-    let nested_aggs = Object.assign({}, aggs);
+    let nested_aggs = aggs;
 
     let p = null;
 
