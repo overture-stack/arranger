@@ -140,6 +140,7 @@ class DataTable extends React.Component {
 
     return (
       <ReactTable
+        minRows={0}
         style={style}
         onSortedChange={onSortedChange}
         onPageChange={page => this.props.onPaginationChange({ page })}
