@@ -92,6 +92,10 @@ div {
 .ReactTable .-pagination_button.-toEnd {
   border: none;
 }
+
+.ReactTable .-pagination_button.-disabled {
+  cursor: default;
+}
 .ReactTable a {
   color: #90278e;
 }

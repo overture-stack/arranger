@@ -1,96 +1,37 @@
-import React, { Component } from 'react';
+import React from 'react';
 import classnames from 'classnames';
-import { range, min, max } from 'lodash';
+import { range } from 'lodash';
+import ReactTablePagination from 'react-table/lib/pagination';
+
 import './style.css';
 
-export default class CustomPagination extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      minPageShown: 0,
-      maxPageShown: 10,
-      page: props.page,
-    };
-  }
+const MAX_PAGES_SHOWING = 10;
 
-  getSafePage = page => {
-    if (isNaN(page)) {
-      page = this.props.page;
-    }
-    return Math.min(Math.max(page, 0), this.props.pages - 1);
-  };
-
-  changePage = page => {
-    page = this.getSafePage(page);
-    this.setState({ page });
-    if (this.props.page !== page) {
-      this.props.onPageChange(page);
-    }
-  };
-
-  applyPage = e => {
-    if (e) {
-      e.preventDefault();
-    }
-    const page = this.state.page;
-    this.changePage(page === '' ? this.props.page : page);
-  };
-
+export default class CustomPagination extends ReactTablePagination {
   onPreviousPageClick = () => {
-    this.changePage(max([this.state.page - 1, 0]));
-    this.setState({
-      minPageShown:
-        this.state.page <= this.state.minPageShown
-          ? max([this.state.minPageShown - 1, 0])
-          : this.state.minPageShown,
-      maxPageShown:
-        this.state.page <= this.state.minPageShown
-          ? this.state.minPageShown - 1 < 0
-            ? this.state.maxPageShown
-            : this.state.maxPageShown - 1
-          : this.state.maxPageShown,
-    });
+    const { canPrevious, page } = this.props;
+    if (!canPrevious) return;
+    this.changePage(page - 1);
   };
 
   onNextPageClick = () => {
-    const { pages } = this.props;
-    this.changePage(min([this.state.page + 1, pages]));
-    this.setState({
-      minPageShown:
-        this.state.page >= this.state.maxPageShown - 1
-          ? this.state.maxPageShown < pages
-            ? this.state.minPageShown + 1
-            : this.state.minPageShown
-          : this.state.minPageShown,
-      maxPageShown:
-        this.state.page >= this.state.maxPageShown - 1
-          ? min([this.state.maxPageShown + 1, pages])
-          : this.state.maxPageShown,
-    });
+    const { page, canNext } = this.props;
+    if (!canNext) return;
+    this.changePage(page + 1);
   };
 
   onStartPageClick = () => {
+    if (!this.props.canPrevious) return;
     this.changePage(0);
-    this.setState({
-      minPageShown: 0,
-      maxPageShown: this.getNumPagesShown(),
-    });
   };
 
   onEndPageClick = () => {
+    if (!this.props.canNext) return;
     const { pages } = this.props;
     this.changePage(pages - 1);
-    this.setState({
-      minPageShown: pages - this.getNumPagesShown(),
-      maxPageShown: pages,
-    });
   };
 
-  // TODO: wat
-  getNumPagesShown = () => 10;
-
   render() {
-    const numPagesShown = this.state.maxPageShown - this.state.minPageShown;
     const {
       page,
       pages,
@@ -98,14 +39,16 @@ export default class CustomPagination extends Component {
       pageSizeOptions,
       pageSize,
       showPageJump,
-      canPrevious,
-      canNext,
       onPageSizeChange,
       className,
-      defaultButton = props => <button className="-btn" {...props} />,
-      PreviousComponent = defaultButton,
-      NextComponent = defaultButton,
+      canPrevious,
+      canNext,
     } = this.props;
+    const firstPage = Math.max(
+      Math.min(page - MAX_PAGES_SHOWING / 2, pages - MAX_PAGES_SHOWING),
+      0,
+    );
+    const lastPage = Math.min(firstPage + 10, pages);
     return (
       <div
         className={classnames(className, '-pagination')}
@@ -136,39 +79,45 @@ export default class CustomPagination extends Component {
         {showPageJump && (
           <span className="-pageJump">
             <span
-              className="-toStart -pagination_button"
+              className={`-toStart -pagination_button ${
+                canPrevious ? '' : '-disabled'
+              }`}
               onClick={this.onStartPageClick}
             >
               {'<<'}
             </span>
             <span
-              className="-previous -pagination_button"
+              className={`-previous -pagination_button ${
+                canPrevious ? '' : '-disabled'
+              }`}
               onClick={this.onPreviousPageClick}
             >
               {'<'}
             </span>
-            {range(this.state.minPageShown, this.state.maxPageShown).map(
-              pageIndex => (
-                <span
-                  key={pageIndex}
-                  className={classnames(
-                    '-pagination_button',
-                    this.state.page === pageIndex ? '-current' : '',
-                  )}
-                  onClick={() => this.changePage(pageIndex)}
-                >
-                  {pageIndex + 1}
-                </span>
-              ),
-            )}
+            {range(firstPage, lastPage).map(pageIndex => (
+              <span
+                key={pageIndex}
+                className={classnames(
+                  '-pagination_button',
+                  this.state.page === pageIndex ? '-current' : '',
+                )}
+                onClick={() => this.changePage(pageIndex)}
+              >
+                {pageIndex + 1}
+              </span>
+            ))}
             <span
-              className="-next -pagination_button"
+              className={`-next -pagination_button ${
+                canNext ? '' : '-disabled'
+              }`}
               onClick={this.onNextPageClick}
             >
               {'>'}
             </span>
             <span
-              className="-toEnd -pagination_button"
+              className={`-toEnd -pagination_button ${
+                canNext ? '' : '-disabled'
+              }`}
               onClick={this.onEndPageClick}
             >
               {'>>'}
