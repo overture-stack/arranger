@@ -435,11 +435,11 @@ div {
   padding-right: 10px;
 }
 
-.tableToolbar .group :first-child {
+.tableToolbar .group>:first-child {
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
 }
-.tableToolbar .group :last-child {
+.tableToolbar .group>:last-child {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
 }

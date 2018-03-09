@@ -31,6 +31,7 @@ class DataTable extends React.Component {
       onFilterChange,
       onColumnsChange = () => {},
       columnDropdownText,
+      exportTSVText,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -51,6 +52,7 @@ class DataTable extends React.Component {
           pageSize={pageSize}
           type={config.type}
           columnDropdownText={columnDropdownText}
+          exportTSVText={exportTSVText}
         />
         <Table
           style={tableStyle}

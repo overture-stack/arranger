@@ -39,6 +39,7 @@ const TableToolbar = ({
   customActions = null,
   style,
   columnDropdownText = 'Show columns',
+  exportTSVText = 'Export TSV',
 }) => (
   <div
     style={{ display: 'flex', flex: 'none', ...style }}
@@ -78,7 +79,12 @@ const TableToolbar = ({
       {allowTSVExport && (
         <div className="buttonWrapper">
           <button
-            style={{ display: 'flex', cursor: 'pointer' }}
+            style={{
+              display: 'flex',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              minHeight: 16,
+            }}
             onClick={() => {
               saveTSV({
                 files: [
@@ -90,7 +96,7 @@ const TableToolbar = ({
               });
             }}
           >
-            <div style={{ minHeight: 16 }}>Export TSV</div>
+            {exportTSVText}
           </button>
         </div>
       )}
