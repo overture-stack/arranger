@@ -7,6 +7,7 @@ let aggFields = `
     field
     active
     type
+    layout
   }
 `;
 

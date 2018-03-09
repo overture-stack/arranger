@@ -1,81 +1,25 @@
 import React from 'react';
 
-import { toPairs, sortedIndexBy, debounce } from 'lodash';
+import { toPairs, sortedIndexBy, debounce, sortBy } from 'lodash';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactGridLayout from 'react-grid-layout';
 import api from '../../utils/api';
 import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
 import { inCurrentSQON } from '../../SQONView/utils';
+import { Subject } from 'rxjs';
 
-const fetchLayout = async () =>
-  Promise.resolve([
-    {
-      i: 'cancer_related_somatic_mutations',
-      x: 0,
-      y: 0,
-      w: 1,
-      h: 1,
-    },
-    {
-      i: 'clinical_stage',
-      x: 0,
-      y: 1,
-      w: 1,
-      h: 1,
-    },
-    {
-      i: 'disease_status_at_unlinking',
-      x: 0,
-      y: 2,
-      w: 1,
-      h: 1,
-    },
-    {
-      i: 'gender',
-      x: 0,
-      y: 2,
-      w: 1,
-      h: 1,
-    },
-  ]);
+const fetchLayout = ({ aggsState }) =>
+  Promise.resolve(aggsState.aggs.map(x => x.layout).filter(x => x));
 
-const aggFields = `
-  state {
-    field
-    active
-    type
-    layout
-  }
-`;
-
-const saveLayout = async ({ layout, projectId, aggs }) => {
-  return Promise.all(
-    aggs.map(agg =>
-      api({
-        endpoint: `/${projectId}/graphql`,
-        body: {
-          variables: {
-            state: {
-              ...agg,
-              layout: layout.find(({ i }) => i === agg.field),
-            },
-          },
-          query: `
-        mutation($state: JSON!) {
-          saveAggsState(
-            state: $state
-            graphqlField: "${projectId}"
-          ) {
-            ${aggFields}
-          }
-        }
-      `,
-        },
-      }),
-    ),
+const saveLayout = async ({ layout, aggsState }) =>
+  layout.map(e =>
+    aggsState.update({
+      field: e.i,
+      key: 'layout',
+      value: e,
+    }),
   );
-};
 
 class AggsLayout extends React.Component {
   state = {
@@ -84,17 +28,24 @@ class AggsLayout extends React.Component {
   };
   aggComponents = {};
   observableAggComponentDimentions;
+  observableAggComponent = new Subject();
 
   onLayoutChange = newLayout => {
-    const { onLayoutChange = () => {} } = this.props;
+    const {
+      projectId,
+      aggsState,
+      graphqlField,
+      onLayoutChange = () => {},
+    } = this.props;
     this.adjustLayout(newLayout).then(() => {
       // onLayoutChange(this.state.layout);
+      console.log(newLayout);
+      console.log(this.state.layout);
       const { aggsState } = this.props;
       const aggs = aggsState.aggs.filter(x => x.active);
       saveLayout({
         layout: this.state.layout,
-        projectId: this.props.projectId,
-        aggs,
+        aggsState,
       });
     });
   };
@@ -111,13 +62,16 @@ class AggsLayout extends React.Component {
       }),
       {},
     );
+
+    const sorted = sortBy(newLayout, i => i.y);
+
     return new Promise((resolve, reject) => {
       this.setState(
         {
           layout: newLayout.map(item => ({
             ...item,
             h: (contentPixelDimentions[item.i].height + margin) / 10,
-            y: sortedIndexBy(newLayout, item, i => i.y),
+            y: sorted.indexOf(item),
           })),
         },
         () => resolve(),
@@ -126,28 +80,20 @@ class AggsLayout extends React.Component {
   };
 
   async componentDidMount() {
-    const layout = await fetchLayout();
-    this.adjustLayout(layout);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    // const { aggsState } = nextProps;
-    // if (aggsState) {
-    //   const aggs = aggsState.aggs.filter(x => x.active);
-    //   this.setState({
-    //     layout: aggs.map(
-    //       agg =>
-    //         this.state.layout[agg.field] || {
-    //           i: agg.field,
-    //           x: 0,
-    //           y: aggs.length,
-    //           w: 1,
-    //           h: 1,
-    //         },
-    //       this.adjustLayout(this.state.layout),
-    //     ),
-    //   });
-    // }
+    const { projectId, graphqlField, aggsState } = this.props;
+    const { observableAggComponent, adjustLayout } = this;
+    const newLayout = aggsState.aggs
+      .filter(x => x.active)
+      .map((agg, index) => ({
+        i: agg.field,
+        x: 0,
+        y: 0,
+        w: 1,
+        h: 1,
+        ...agg.layout,
+      }));
+    adjustLayout(newLayout);
+    observableAggComponent.subscribe(data => {});
   }
 
   render() {
@@ -162,6 +108,7 @@ class AggsLayout extends React.Component {
       isArrangable = false,
       data,
     } = this.props;
+    const { observableAggComponent } = this;
 
     return (
       <ReactGridLayout
@@ -187,7 +134,13 @@ class AggsLayout extends React.Component {
             // TODO: switch on agg type
             <div key={agg.field} style={{ position: 'relative' }}>
               <TermAgg
-                ref={el => (this.aggComponents[agg.field] = el)}
+                ref={el => {
+                  this.aggComponents[agg.field] = el;
+                  observableAggComponent.next({
+                    field: agg.field,
+                    el: el,
+                  });
+                }}
                 data-grid={{ x: 0, y: index }}
                 key={agg.field}
                 {...agg}
