@@ -12,8 +12,8 @@ const saveLayout = async ({ layout, aggsState }) =>
   layout.map(e =>
     aggsState.update({
       field: e.i,
-      key: 'layout',
-      value: e,
+      key: 'orderIndex',
+      value: e.y,
     }),
   );
 
@@ -109,10 +109,9 @@ class AggsLayout extends React.Component {
       .map((agg, index) => ({
         i: agg.field,
         x: 0,
-        y: 0,
+        y: agg.orderIndex || 0,
         w: 1,
         h: 1,
-        ...agg.layout,
       }));
     adjustLayout(newLayout);
   }
