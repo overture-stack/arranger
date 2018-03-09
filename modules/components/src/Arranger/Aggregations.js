@@ -35,9 +35,8 @@ const Aggregations = ({
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                   })),
-                  agg => agg.layout?.y || 0,
+                  agg => agg.orderIndex || 0,
                 ).map(agg => {
-                  console.log('agg: ', agg);
                   return (
                     // TODO: switch on agg type
                     <TermAgg
