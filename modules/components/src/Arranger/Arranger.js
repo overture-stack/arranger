@@ -59,7 +59,12 @@ class Arranger extends React.Component {
   constructor(props) {
     super(props);
 
-    let socket = io(props.socketConnectionString || ARRANGER_API);
+    let socket =
+      props.socket ||
+      io(
+        props.socketConnectionString || ARRANGER_API,
+        props.socketOptions || {},
+      );
     let streamSocket = ioStream(socket);
 
     this.state = {
