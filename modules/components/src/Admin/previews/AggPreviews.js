@@ -42,9 +42,10 @@ class AggsLayout extends React.Component {
     });
   };
 
-  adjustLayout = newLayout => {
+  adjustHeight = async aggComponentCollection => {
     const { margin = 10 } = this.props;
-    const contentPixelDimentions = toPairs(this.aggComponents).reduce(
+
+    const contentPixelDimentions = toPairs(aggComponentCollection).reduce(
       (acc, [key, termAgg]) => ({
         ...acc,
         [key]: {
@@ -55,18 +56,45 @@ class AggsLayout extends React.Component {
       {},
     );
 
-    const sorted = sortBy(newLayout, i => i.y);
-
     return new Promise((resolve, reject) => {
-      this.setState(
-        {
-          layout: newLayout.map(item => ({
-            ...item,
-            h: (contentPixelDimentions[item.i].height + margin) / 10,
-            y: sorted.indexOf(item),
-          })),
-        },
-        () => resolve(),
+      if (toPairs(contentPixelDimentions).length != this.state.layout.length) {
+        this.setState(
+          {
+            layout: toPairs(contentPixelDimentions).map(
+              ([key, dimention], index) => ({
+                ...(this.state.layout[key]
+                  ? this.state.layout[key]
+                  : {
+                      i: key,
+                      x: 0,
+                      y: index,
+                      w: 1,
+                      h: (dimention.height + margin) / 10,
+                    }),
+              }),
+            ),
+          },
+          () => resolve(),
+        );
+      } else {
+        resolve();
+      }
+    });
+  };
+
+  adjustLayout = newLayout => {
+    const sorted = sortBy(newLayout, i => i.y);
+    return new Promise((resolve, reject) => {
+      this.adjustHeight(this.aggComponents).then(() =>
+        this.setState(
+          {
+            layout: newLayout.map(item => ({
+              ...item,
+              y: sorted.indexOf(item),
+            })),
+          },
+          () => resolve(),
+        ),
       );
     });
   };
@@ -127,6 +155,7 @@ class AggsLayout extends React.Component {
               <TermAgg
                 ref={el => {
                   this.aggComponents[agg.field] = el;
+                  this.adjustHeight(this.aggComponents);
                 }}
                 data-grid={{ x: 0, y: index }}
                 key={agg.field}
