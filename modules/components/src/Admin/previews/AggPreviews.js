@@ -7,10 +7,6 @@ import ReactGridLayout from 'react-grid-layout';
 import api from '../../utils/api';
 import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
 import { inCurrentSQON } from '../../SQONView/utils';
-import { Subject } from 'rxjs';
-
-const fetchLayout = ({ aggsState }) =>
-  Promise.resolve(aggsState.aggs.map(x => x.layout).filter(x => x));
 
 const saveLayout = async ({ layout, aggsState }) =>
   layout.map(e =>
@@ -28,7 +24,6 @@ class AggsLayout extends React.Component {
   };
   aggComponents = {};
   observableAggComponentDimentions;
-  observableAggComponent = new Subject();
 
   onLayoutChange = newLayout => {
     const {
@@ -38,9 +33,6 @@ class AggsLayout extends React.Component {
       onLayoutChange = () => {},
     } = this.props;
     this.adjustLayout(newLayout).then(() => {
-      // onLayoutChange(this.state.layout);
-      console.log(newLayout);
-      console.log(this.state.layout);
       const { aggsState } = this.props;
       const aggs = aggsState.aggs.filter(x => x.active);
       saveLayout({
@@ -93,7 +85,6 @@ class AggsLayout extends React.Component {
         ...agg.layout,
       }));
     adjustLayout(newLayout);
-    observableAggComponent.subscribe(data => {});
   }
 
   render() {
@@ -136,10 +127,6 @@ class AggsLayout extends React.Component {
               <TermAgg
                 ref={el => {
                   this.aggComponents[agg.field] = el;
-                  observableAggComponent.next({
-                    field: agg.field,
-                    el: el,
-                  });
                 }}
                 data-grid={{ x: 0, y: index }}
                 key={agg.field}
