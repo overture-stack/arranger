@@ -1,5 +1,4 @@
 import 'babel-polyfill';
-import fs from 'fs';
 import elasticsearch from 'elasticsearch';
 import { rainbow } from 'chalk-animation';
 import { Server } from 'http';
