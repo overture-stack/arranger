@@ -8,10 +8,7 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 import api from '../utils/api';
 import { ARRANGER_API } from '../utils/config';
 
-let socket = io(ARRANGER_API);
-let streamSocket = ioStream(socket);
-
-const streamData = (type, projectId) => ({
+const streamData = ({ streamSocket }) => (type, projectId) => ({
   columns,
   sort,
   first,
@@ -59,10 +56,24 @@ const fetchData = projectId => {
 };
 
 class Arranger extends React.Component {
-  state = {
-    selectedTableRows: [],
-    sqon: null,
-  };
+  constructor(props) {
+    super(props);
+
+    let socket =
+      props.socket ||
+      io(
+        props.socketConnectionString || ARRANGER_API,
+        props.socketOptions || {},
+      );
+    let streamSocket = ioStream(socket);
+
+    this.state = {
+      selectedTableRows: [],
+      sqon: null,
+      socket,
+      streamSocket,
+    };
+  }
 
   componentWillMount() {
     const hasChildren =
@@ -99,13 +110,13 @@ class Arranger extends React.Component {
     const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
-      socket,
+      socket: this.state.socket,
       sqon,
       selectedTableRows,
       projectId,
       index,
       graphqlField,
-      streamData,
+      streamData: streamData({ streamSocket: this.state.streamSocket }),
       fetchData,
       setSQON: sqon => this.setState({ sqon }),
       setSelectedTableRows: selectedTableRows =>

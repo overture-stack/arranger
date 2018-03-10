@@ -23,44 +23,54 @@ import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
 
-let socket = io(ARRANGER_API);
-
 class Dashboard extends React.Component {
-  state = {
-    eshost: ES_HOST,
-    error: null,
+  constructor(props) {
+    super(props);
 
-    projects: [],
-    projectsTotal: 0,
-    newProjectName: '',
-    activeProject: null,
-    projectStates: [],
+    let socket =
+      props.socket ||
+      io(
+        props.socketConnectionString || ARRANGER_API,
+        props.socketOptions || {},
+      );
 
-    newTypeIndex: '',
-    newTypeName: '',
-    types: [],
-    typesTotal: 0,
-    activeType: null,
+    this.state = {
+      eshost: ES_HOST,
+      error: null,
 
-    fields: [],
-    fieldsTotal: 0,
-    activeField: null,
-  };
+      projects: [],
+      projectsTotal: 0,
+      newProjectName: '',
+      activeProject: null,
+      projectStates: [],
+
+      newTypeIndex: '',
+      newTypeName: '',
+      types: [],
+      typesTotal: 0,
+      activeType: null,
+
+      fields: [],
+      fieldsTotal: 0,
+      activeField: null,
+      socket,
+    };
+  }
 
   componentDidMount() {
     require('./Dashboard.css');
 
     this.getProjects({ eshost: this.state.eshost });
 
-    socket.io.on('connect_error', error => {
+    this.state.socket.io.on('connect_error', error => {
       this.setState({ error: error.message });
     });
 
-    socket.io.on('reconnect', a => {
+    this.state.socket.io.on('reconnect', a => {
       this.setState({ error: null });
     });
 
-    socket.on('server::projectsStatus', projectStates => {
+    this.state.socket.on('server::projectsStatus', projectStates => {
       this.setState({ projectStates });
     });
   }
@@ -101,7 +111,7 @@ class Dashboard extends React.Component {
         activeType: null,
       });
 
-      socket.emit('arranger::monitorProjects', {
+      this.state.socket.emit('arranger::monitorProjects', {
         projects,
         eshost,
       });
@@ -427,7 +437,7 @@ class Dashboard extends React.Component {
           `}
         >
           <DetectNewVersion
-            socket={socket}
+            socket={this.state.socket}
             event="server::newServerVersion"
             Message={() => {
               return (
