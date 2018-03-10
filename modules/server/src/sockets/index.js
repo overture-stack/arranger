@@ -1,7 +1,9 @@
 import streamData from './streamData';
 import notifyOnUpdate from './notifyOnUpdate';
 
-export default args => {
-  streamData(args);
-  notifyOnUpdate(args);
+export default ({ io, ...args }) => {
+  io.on('connection', socket => {
+    streamData({ ...args, socket });
+    notifyOnUpdate({ ...args, socket });
+  });
 };
