@@ -7,11 +7,13 @@ export default async (req, res) => {
 
   let arrangerconfig = {
     projectsIndex: {
-      index: 'arranger-projects',
+      indwex: 'arranger-projects',
       type: 'arranger-projects',
       size: 1000,
     },
   };
+
+  console.log('chamon', es);
 
   try {
     projects = await es.search(arrangerconfig.projectsIndex);
@@ -24,7 +26,6 @@ export default async (req, res) => {
     } catch (error) {
       return res.json({ error: error.message });
     }
-    return res.json({ error: error.message });
   }
 
   return res.json({

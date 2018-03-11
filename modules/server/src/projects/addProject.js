@@ -18,6 +18,8 @@ export default async (req, res) => {
     },
   };
 
+  console.log('wat', es.create);
+
   try {
     await es.create({
       ...arrangerconfig.projectsIndex,

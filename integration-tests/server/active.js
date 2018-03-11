@@ -1,50 +1,52 @@
-import createServer from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
-import fetch from 'node-fetch';
-import bodyParser from 'body-parser';
-let projectId = 'TEST-ACTIVE';
-let port = 5051;
-let esHost = 'http://127.0.0.1:9200';
-let api = ajax(`http://localhost:${port}`);
 
-// TODO: broken~!
-// https://stackoverflow.com/questions/49141927/express-body-parser-utf-8-error-in-test
+export default ({ server, port }) => {
+  let projectId = 'TEST-ACTIVE';
+  let esHost = 'http://127.0.0.1:9200';
+  let api = ajax(`http://localhost:${port}`);
 
-export default server =>
   test('active projects should start at server creation', () => {
-    let server = createServer();
-
-    server.app.use(bodyParser.json({ limit: '50mb' }));
-
     server.listen(port, async () => {
-      console.log(999, {
-        endpoint: 'projects/add',
-        body: { eshost: esHost, id: projectId },
-      });
-
-      let d;
+      let projects;
 
       try {
-        // d = await api({
-        //   endpoint: 'projects/add',
-        //   body: { eshost: esHost, id: projectId },
-        // });
-
-        d = await fetch(`http://localhost:${port}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            eshost: esHost,
-            id: projectId,
-          }),
-        }).then(r => r.text());
+        projects = await api({
+          endpoint: 'projects',
+          body: { eshost: esHost },
+        });
       } catch (error) {
-        console.log(123, error);
+        console.warn(error.message);
       }
 
-      console.log(d);
-      // server.close();
+      console.log('!!!', projects);
+
+      try {
+        await api({
+          endpoint: `projects/${projectId}/delete`,
+          body: {
+            eshost: esHost,
+            id: projectId,
+          },
+        });
+      } catch (error) {
+        console.warn(error.message);
+      }
+
+      let d;
+      try {
+        d = await api({
+          endpoint: 'projects/add',
+          body: { eshost: esHost, id: projectId },
+        });
+      } catch (error) {
+        console.warn(error.message);
+      }
+
+      try {
+        expect(d.projects.find(x => x.id === projectId).id).toBe(projectId);
+      } catch (error) {}
+
+      server.close();
     });
   });
+};
