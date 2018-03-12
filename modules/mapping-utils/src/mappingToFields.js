@@ -4,14 +4,16 @@ import mappingToScalarFields from './mappingToScalarFields';
 import createConnectionTypeDefs from './createConnectionTypeDefs';
 import mappingToObjectTypes from './mappingToObjectTypes';
 
-let mappingToFields = ({ type }) => {
+let mappingToFields = ({ type, parent }) => {
   return [
-    mappingToObjectTypes(type.name, type.mapping),
+    mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
     Object.entries(type.mapping)
       .filter(([, metadata]) => metadata.type === 'nested')
       .map(([field, metadata]) =>
         mappingToFields({
+          parent: [parent, field].filter(Boolean).join('.'),
           type: {
+            ...type,
             name: type.name + capitalize(field),
             mapping: metadata.properties,
           },
@@ -20,8 +22,8 @@ let mappingToFields = ({ type }) => {
     createConnectionTypeDefs({
       type,
       fields: [
-        mappingToScalarFields(type.mapping, type.extendedFields),
-        mappingToNestedFields(type.name, type.mapping),
+        mappingToScalarFields(type.mapping, type.extendedFields, parent),
+        mappingToNestedFields(type.name, type.mapping, parent, type.extendedFields),
         type.customFields,
       ],
     }),
