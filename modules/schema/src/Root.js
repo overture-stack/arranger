@@ -56,7 +56,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
   AggregationsTypeDefs,
   SortTypeDefs,
   StateTypeDefs,
-  ...types.map(([key, type]) => mappingToFields({ key, type })),
+  ...types.map(([key, type]) => mappingToFields({ key, type, parent: '' })),
 ];
 
 let resolveObject = () => ({});

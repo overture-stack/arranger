@@ -6,37 +6,44 @@ let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 let resolveNested = ({ node, nested_fields, parent = '' }) => {
   if (typeof node !== 'object' || !node) return node;
 
-  return (
-    Object.entries(node)
-      .reduce((acc, [field, hits]) => {
-        // TODO: inner hits query if necessary
-        const fullPath = joinParent(parent, field);
-        return {
-          ...acc,
-          [field]: nested_fields.includes(fullPath)
-            ? {
-                hits: {
-                  edges: hits.map(node => ({
-                    node: {
-                      ...node,
-                      ...resolveNested({
-                        node,
-                        nested_fields,
-                        parent: fullPath,
-                      }),
-                    },
-                  })),
-                  total: hits.length,
+  return Object.entries(node).reduce((acc, [field, hits]) => {
+    // TODO: inner hits query if necessary
+    const fullPath = joinParent(parent, field);
+
+    return {
+      ...acc,
+      [field]: nested_fields.includes(fullPath)
+        ? {
+            hits: {
+              edges: hits.map(node => ({
+                node: {
+                  ...node,
+                  ...resolveNested({
+                    node,
+                    nested_fields,
+                    parent: fullPath,
+                  }),
                 },
-              }
-            : resolveNested({
+              })),
+              total: hits.length,
+            },
+          }
+        : typeof hits === 'object'
+          ? Object.assign(
+              hits.constructor(),
+              resolveNested({
                 node: hits,
                 nested_fields,
                 parent: fullPath,
               }),
-        };
-      }, {})
-  );
+            )
+          : resolveNested({
+              node: hits,
+              nested_fields,
+              parent: fullPath,
+            }),
+    };
+  }, {});
 };
 
 export default type => async (

@@ -10,13 +10,14 @@ export let esToGraphqlTypeMap = {
   float: 'Float',
 };
 
-const maybeArray = (field, extendedFields, type) => {
-  return extendedFields?.find(x => x.field === field)?.isArray
+const maybeArray = (field, extendedFields, type, parent) => {
+  const fullField = [parent, field].filter(Boolean).join('.');
+  return extendedFields?.find(x => x.field === fullField)?.isArray
     ? `[${type}]`
     : type;
 };
 
-export default (mapping, extendedFields) => {
+export default (mapping, extendedFields, parent) => {
   return Object.entries(mapping)
     .filter(([, metadata]) =>
       Object.keys(esToGraphqlTypeMap).includes(metadata.type),
@@ -27,6 +28,7 @@ export default (mapping, extendedFields) => {
           field,
           extendedFields,
           esToGraphqlTypeMap[metadata.type],
+          parent,
         )}`,
     );
 };
