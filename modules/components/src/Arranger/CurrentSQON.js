@@ -1,11 +1,16 @@
 import React from 'react';
 
-import SQONView, { Value, Bubble } from '../SQONView';
+import SQONView, { Value, Bubble, Field } from '../SQONView';
 
-const CurrentSQON = ({ sqon, setSQON }) => {
+const CurrentSQON = ({ sqon, setSQON, extendedMapping }) => {
   return (
     <SQONView
       sqon={sqon}
+      FieldCrumb={({ field, ...props }) => (
+        <Field {...{ field, ...props }}>
+          {extendedMapping?.find(e => e.field === field)?.displayName || field}
+        </Field>
+      )}
       ValueCrumb={({ value, nextSQON, ...props }) => (
         <Value onClick={() => setSQON(nextSQON)} {...props}>
           {value}
