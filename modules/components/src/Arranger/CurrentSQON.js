@@ -16,11 +16,9 @@ const fetchExtendedMapping = ({ graphqlField, projectId }) =>
       }
     `,
     },
-  })
-    .then(response => ({
-      extendedMapping: response.data[graphqlField].extended,
-    }))
-    .catch(err => console.log(err));
+  }).then(response => ({
+    extendedMapping: response.data[graphqlField].extended,
+  }));
 
 const CurrentSQON = ({ sqon, setSQON, graphqlField, projectId }) => {
   return (
