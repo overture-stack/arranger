@@ -125,14 +125,7 @@ export default class AdvancedFacetView extends React.Component {
             valueCharacterLimit={valueCharacterLimit}
             FieldCrumb={({ field, ...props }) => (
               <Field {...{ field, ...props }}>
-                {(() => {
-                  const splittedFields = field.split('.');
-                  return splittedFields.length > 2
-                    ? `${splittedFields[splittedFields.length - 2]}.${
-                        splittedFields[splittedFields.length - 1]
-                      }`
-                    : field;
-                })()}
+                {extendedMapping.find(e => e.field === field)?.displayName}
               </Field>
             )}
             ValueCrumb={({ value, nextSQON, ...props }) => (

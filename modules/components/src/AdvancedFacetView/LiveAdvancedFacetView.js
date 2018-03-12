@@ -129,7 +129,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
     this.state = {
       mapping: {},
-      extended: {},
+      extended: [],
       aggregations: null,
       sqon: sqon || null,
     };
