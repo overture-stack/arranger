@@ -123,6 +123,11 @@ export default class AdvancedFacetView extends React.Component {
           <SQONView
             sqon={sqon}
             valueCharacterLimit={valueCharacterLimit}
+            FieldCrumb={({ field, ...props }) => (
+              <Field {...{ field, ...props }}>
+                {extendedMapping.find(e => e.field === field)?.displayName}
+              </Field>
+            )}
             ValueCrumb={({ value, nextSQON, ...props }) => (
               <Value
                 onClick={() => {
