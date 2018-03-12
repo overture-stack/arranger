@@ -175,7 +175,7 @@ describe('dataToTSV accessor columns', () => {
         {
           Header: 'Test2',
           field: 'test2',
-          jsonPath: '$.test2.hits.edges..node.nestedValue',
+          jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
     };
@@ -250,7 +250,7 @@ describe('dataToTSV accessor columns', () => {
         {
           Header: 'Test2',
           field: 'test2',
-          jsonPath: '$.test2.hits.edges..node.nestedValue',
+          jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
     };

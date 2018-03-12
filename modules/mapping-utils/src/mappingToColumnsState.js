@@ -14,7 +14,7 @@ export default mapping => {
       ...(type === 'list'
         ? {
             query: toQuery({ accessor: field }),
-            jsonPath: `$.${field.replace(/\[\d*\]/g, '.')}`,
+            jsonPath: `$.${field.replace(/\[\d*\]/g, '[*]')}`,
           }
         : { accessor: field }),
     };

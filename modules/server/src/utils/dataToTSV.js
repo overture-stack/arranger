@@ -48,7 +48,7 @@ function getRows(args) {
           return getValue(entity.data, {
             ...column,
             jsonPath: column.jsonPath.replace(
-              `${entity.path.join('..')}..`,
+              `${entity.path.join('[*].')}[*].`,
               '',
             ),
           });

@@ -94,7 +94,7 @@ const dummyConfig = {
       sortable: false,
       canChangeShow: false,
       query: 'cases { hits { total, edges { node { primary_site } } } }',
-      jsonPath: '$.cases.hits.edges..node.primary_site',
+      jsonPath: '$.cases.hits.edges[*].node.primary_site',
       id: 'cases.primary_site',
     },
   ],
