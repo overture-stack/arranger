@@ -260,10 +260,10 @@ export default class FilterProcessor {
         this._get_missing_filter(doc_type, nested, x['content']),
       ),
     );
-    if (must_not) should.append(this.wrap_not(must_not));
+    if (must_not && must_not.length) should.push(this.wrap_not(must_not));
     return {
       [CONSTANTS.ES_BOOL]:
-        should != null || should.length > 0
+        should && should.length > 0
           ? { [CONSTANTS.ES_SHOULD]: should }
           : {},
     };
