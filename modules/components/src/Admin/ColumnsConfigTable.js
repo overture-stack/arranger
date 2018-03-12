@@ -95,6 +95,14 @@ export default ({ total, data, handleChange, onFilterChange }) => (
         },
         {
           show: true,
+          Header: 'Sortable',
+          type: 'checkbox',
+          sortable: true,
+          canChangeShow: true,
+          accessor: 'sortable',
+        },
+        {
+          show: true,
           Header: 'Type',
           type: 'input',
           sortable: true,
