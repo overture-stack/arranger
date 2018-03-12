@@ -1,7 +1,7 @@
 import React from 'react';
+import Component from 'react-component-component';
 
 import SQONView, { Value, Bubble, Field } from '../SQONView';
-import State from '../State';
 import api from '../utils/api';
 
 const fetchExtendedMapping = ({ graphqlField, projectId }) =>
@@ -22,31 +22,40 @@ const fetchExtendedMapping = ({ graphqlField, projectId }) =>
 
 const CurrentSQON = ({ sqon, setSQON, graphqlField, projectId }) => {
   return (
-    <State
-      initial={{ extendedMapping: null }}
-      async={() => fetchExtendedMapping({ graphqlField, projectId })}
-      render={({ extendedMapping }) => (
-        <SQONView
-          sqon={sqon}
-          FieldCrumb={({ field, ...props }) => (
-            <Field {...{ field, ...props }}>
-              {extendedMapping?.find(e => e.field === field)?.displayName ||
-                field}
-            </Field>
-          )}
-          ValueCrumb={({ value, nextSQON, ...props }) => (
-            <Value onClick={() => setSQON(nextSQON)} {...props}>
-              {value}
-            </Value>
-          )}
-          Clear={({ nextSQON }) => (
-            <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
-              Clear
-            </Bubble>
-          )}
-        />
-      )}
-    />
+    <Component
+      initialState={{ extendedMapping: null }}
+      didMount={({ state: { extendedMapping }, setState }) =>
+        fetchExtendedMapping({ graphqlField, projectId }).then(
+          ({ extendedMapping }) => {
+            return setState({ extendedMapping });
+          },
+        )
+      }
+    >
+      {({ state: { extendedMapping } }) => {
+        return (
+          <SQONView
+            sqon={sqon}
+            FieldCrumb={({ field, ...props }) => (
+              <Field {...{ field, ...props }}>
+                {extendedMapping?.find(e => e.field === field)?.displayName ||
+                  field}
+              </Field>
+            )}
+            ValueCrumb={({ value, nextSQON, ...props }) => (
+              <Value onClick={() => setSQON(nextSQON)} {...props}>
+                {value}
+              </Value>
+            )}
+            Clear={({ nextSQON }) => (
+              <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
+                Clear
+              </Bubble>
+            )}
+          />
+        );
+      }}
+    </Component>
   );
 };
 
