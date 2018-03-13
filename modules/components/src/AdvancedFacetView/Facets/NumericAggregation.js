@@ -5,26 +5,24 @@ import { currentFieldValue } from '../../SQONView/utils';
 
 export default ({ aggType, aggProps, title, onValueChange, sqon, path }) =>
   aggProps?.stats && (
-    <div>
-      <RangeAgg
-        stats={aggProps?.stats}
-        collapsible={false}
-        value={{
-          min:
-            currentFieldValue({ sqon, dotField: path, op: '>=' }) ||
-            aggProps?.stats?.min ||
-            0,
-          max:
-            currentFieldValue({ sqon, dotField: path, op: '<=' }) ||
-            aggProps?.stats?.max ||
-            0,
-        }}
-        displayName={title}
-        handleChange={({ min, max, field }) =>
-          onValueChange({
-            value: { min, max },
-          })
-        }
-      />
-    </div>
+    <RangeAgg
+      stats={aggProps?.stats}
+      collapsible={false}
+      value={{
+        min:
+          currentFieldValue({ sqon, dotField: path, op: '>=' }) ||
+          aggProps?.stats?.min ||
+          0,
+        max:
+          currentFieldValue({ sqon, dotField: path, op: '<=' }) ||
+          aggProps?.stats?.max ||
+          0,
+      }}
+      displayName={title}
+      handleChange={({ min, max, field }) =>
+        onValueChange({
+          value: { min, max },
+        })
+      }
+    />
   );
