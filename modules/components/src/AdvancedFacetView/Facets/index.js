@@ -7,12 +7,52 @@ const aggregationTypeMap = {
   NumericAggregations: NumericAggregation,
 };
 
-const FacetWrapper = ({ aggType, searchboxSelection$, ...rest }) =>
-  aggregationTypeMap[aggType]?.({
-    ...rest,
-    aggType,
-    searchboxSelection$,
-  }) || null;
+class FacetWrapper extends React.Component {
+  state = {
+    shouldScrollHere: false,
+  };
+  scrollToThis = () => {
+    setTimeout(() => {
+      this.container?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      this.setState({ shouldScrollHere: false });
+    });
+  };
+  componentDidMount() {
+    const { focusedFacet$, path } = this.props;
+    focusedFacet$
+      ?.filter(({ field, value }) => field === path)
+      .subscribe(({ field }) => {
+        this.setState({ shouldScrollHere: true });
+      });
+  }
+  componentDidUpdate() {
+    const { focusedFacet$, path } = this.props;
+    focusedFacet$
+      ?.filter(({ field, value }) => field === path)
+      .subscribe(({ field }) => {
+        this.setState({ shouldScrollHere: true });
+      });
+  }
+  componentWillReceiveProps() {
+    if (this.state.shouldScrollHere) {
+      this.scrollToThis();
+    }
+  }
+  render() {
+    const { aggType, searchboxSelection$, ...rest } = this.props;
+    return (
+      aggregationTypeMap[aggType] && (
+        <div ref={el => (this.container = el)}>
+          {aggregationTypeMap[aggType]({
+            ...rest,
+            aggType,
+            searchboxSelection$,
+          }) || null}
+        </div>
+      )
+    );
+  }
+}
 
 export default ({
   aggType,
