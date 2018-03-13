@@ -18,6 +18,7 @@ const FacetViewNode = ({
     value ? `${field}---${value}` : field,
   depth,
   searchboxSelection$,
+  focusedFacet$,
   valueCharacterLimit,
 }) => (
   <div
@@ -28,6 +29,7 @@ const FacetViewNode = ({
       <div className={`aggWrapper depth_${depth}`}>
         {!esType && <div className="facetTitle">{title}</div>}
         <FacetWrapper
+          focusedFacet$={focusedFacet$}
           valueCharacterLimit={valueCharacterLimit}
           sqon={sqon}
           title={title}
@@ -54,6 +56,7 @@ const FacetViewNode = ({
         <div className="facetTitle">{title}</div>
         {children.map(childNode => (
           <FacetViewNode
+            focusedFacet$={focusedFacet$}
             valueCharacterLimit={valueCharacterLimit}
             depth={depth + 1}
             sqon={sqon}
