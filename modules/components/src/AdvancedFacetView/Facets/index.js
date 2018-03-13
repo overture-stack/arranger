@@ -16,7 +16,6 @@ class FacetWrapper extends React.Component {
     this.focusSubscription$ = focusedFacet$
       ?.filter(({ field, value }) => field === path)
       ?.subscribe(() => {
-        console.log('setting state!');
         this.setState({ shouldScrollHere: true });
       });
   }

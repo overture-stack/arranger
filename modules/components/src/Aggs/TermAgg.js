@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { orderBy } from 'lodash';
 import './AggregationCard.css';
-import State from '../State';
 import { toggleSQON } from '../SQONView/utils';
 import { truncate } from 'lodash';
+import Component from 'react-component-component';
 
 class TermAggs extends React.Component {
   // needs ref
@@ -23,29 +23,33 @@ class TermAggs extends React.Component {
     } = this.props;
     const dotField = field.replace(/__/g, '.');
     return (
-      <State
-        didUpdate={({ update }) => {
-          ValueInFocus$?.subscribe(({ field, value }) => {
-            update({ showingMore: true }, () => {
-              const refId = constructEntryId({ value });
-              const bucketComponent = this.refs[refId];
-              if (bucketComponent) {
-                bucketComponent.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'start',
-                });
-              }
-            });
-          });
+      <Component
+        didMount={({ setState }) => {
+          this.valueFocusSubscription = ValueInFocus$?.subscribe(
+            ({ field, value }) => {
+              setState({ showingMore: true }, () => {
+                const refId = constructEntryId({ value });
+                const bucketComponent = this.refs[refId];
+                if (bucketComponent) {
+                  bucketComponent.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  });
+                }
+              });
+            },
+          );
         }}
-        initial={{ isCollapsed: false, showingMore: false }}
-        render={({ update, isCollapsed, showingMore }) => (
+        willUnmount={() => this.valueFocusSubscription?.unsubscribe()}
+        initialState={{ isCollapsed: false, showingMore: false }}
+      >
+        {({ setState, state: { isCollapsed, showingMore } }) => (
           <div className="test-term-aggregation aggregation-card">
             <div
               className={`title-wrapper ${isCollapsed && 'collapsed'}`}
               onClick={
                 collapsible
-                  ? () => update({ isCollapsed: !isCollapsed })
+                  ? () => setState({ isCollapsed: !isCollapsed })
                   : () => {}
               }
             >
@@ -149,7 +153,7 @@ class TermAggs extends React.Component {
                     className={`showMore-wrapper ${
                       showingMore ? 'less' : 'more'
                     }`}
-                    onClick={() => update({ showingMore: !showingMore })}
+                    onClick={() => setState({ showingMore: !showingMore })}
                   >
                     {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
                   </div>
@@ -158,7 +162,7 @@ class TermAggs extends React.Component {
             )}
           </div>
         )}
-      />
+      </Component>
     );
   }
 }

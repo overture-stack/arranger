@@ -21,6 +21,7 @@ export default class AdvancedFacetView extends React.Component {
       withValueOnly: true,
     };
     this.focusedFacet$ = new Subject();
+    this.searchBoxSelection$ = new Subject();
   }
   fieldMappingFromPath = path => {
     const {
@@ -104,7 +105,6 @@ export default class AdvancedFacetView extends React.Component {
       onSqonFieldChange({ sqon: newSQON });
       this.focusedFacet$.next({ field: path });
     };
-    const searchBoxSelection$ = new Subject();
     return (
       <div className="advancedFacetViewWrapper">
         <SearchBox
@@ -117,7 +117,7 @@ export default class AdvancedFacetView extends React.Component {
             onFieldSelect: ({ field, value }) => {
               scrollFacetViewToPath(field);
               this.setState({ selectedPath: field });
-              searchBoxSelection$.next({ field, value });
+              this.searchBoxSelection$.next({ field, value });
             },
           }}
         />
@@ -204,7 +204,7 @@ export default class AdvancedFacetView extends React.Component {
             <FacetView
               focusedFacet$={this.focusedFacet$}
               valueCharacterLimit={valueCharacterLimit}
-              searchboxSelection$={searchBoxSelection$}
+              searchboxSelection$={this.searchBoxSelection$}
               constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}
               sqon={sqon}
