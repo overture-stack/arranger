@@ -459,7 +459,7 @@ export default class AggregationProcessor {
         nested_aggs = nested_aggs[label].aggs;
 
         if (nested_aggs.hasOwnProperty(p)) {
-          nested_aggs = nested_aggs[path].aggs;
+          nested_aggs = nested_aggs[p].aggs;
         }
       }
     } // end for loop
