@@ -40,6 +40,7 @@ const TableToolbar = ({
   style,
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
+  sqon,
 }) => (
   <div
     style={{ display: 'flex', flex: 'none', ...style }}
@@ -89,6 +90,8 @@ const TableToolbar = ({
               saveTSV({
                 files: [
                   {
+                    fileName: `${type}-table.tsv`,
+                    sqon,
                     index: type,
                     columns,
                   },
