@@ -4,6 +4,9 @@ import { debounce, startCase } from 'lodash';
 import io from 'socket.io-client';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
+import urlParse from 'url-parse';
+import urlJoin from 'url-join';
+import resolveURL from 'resolve-url';
 
 // TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
 // import GraphiQL from 'graphiql';
@@ -29,8 +32,11 @@ class Dashboard extends React.Component {
     let socket =
       props.socket ||
       io(
-        props.socketConnectionString || ARRANGER_API,
-        props.socketOptions || {},
+        props.socketConnectionString ||
+          urlParse(resolveURL(ARRANGER_API)).origin,
+        props.socketOptions || {
+          path: urlJoin(urlParse(ARRANGER_API).pathname, 'socket.io'),
+        },
       );
 
     this.state = {

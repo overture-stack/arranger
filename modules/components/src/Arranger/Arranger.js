@@ -2,6 +2,9 @@ import React from 'react';
 import { get } from 'lodash';
 import io from 'socket.io-client';
 import ioStream from 'socket.io-stream';
+import urlParse from 'url-parse';
+import urlJoin from 'url-join';
+import resolveURL from 'resolve-url';
 
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
@@ -62,8 +65,11 @@ class Arranger extends React.Component {
     let socket =
       props.socket ||
       io(
-        props.socketConnectionString || ARRANGER_API,
-        props.socketOptions || {},
+        props.socketConnectionString ||
+          urlParse(resolveURL(ARRANGER_API)).origin,
+        props.socketOptions || {
+          path: urlJoin(urlParse(ARRANGER_API).pathname, 'socket.io'),
+        },
       );
     let streamSocket = ioStream(socket);
 
