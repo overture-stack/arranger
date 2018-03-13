@@ -19,10 +19,6 @@ let appendDot = x => (x ? x + '.' : '');
 let mappingToColumnsType = (properties, parent = '', isList = false) => {
   return flattenDeep(
     Object.entries(properties)
-      .filter(
-        ([field, data]) =>
-          data.type !== 'nested' || !parent.match(/hits.edges\[\d*\]/), // TODO: support double nested fields
-      )
       .map(([field, data]) => {
         return !data.properties
           ? {
