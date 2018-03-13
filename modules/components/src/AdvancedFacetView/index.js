@@ -20,6 +20,7 @@ export default class AdvancedFacetView extends React.Component {
       selectedPath: null,
       withValueOnly: true,
     };
+    this.focusedFacet$ = new Subject();
   }
   fieldMappingFromPath = path => {
     const {
@@ -101,10 +102,9 @@ export default class AdvancedFacetView extends React.Component {
         }
       })();
       onSqonFieldChange({ sqon: newSQON });
-      focusedFacet$.next({ field: path });
+      this.focusedFacet$.next({ field: path });
     };
     const searchBoxSelection$ = new Subject();
-    const focusedFacet$ = new Subject();
     return (
       <div className="advancedFacetViewWrapper">
         <SearchBox
@@ -202,7 +202,7 @@ export default class AdvancedFacetView extends React.Component {
           </div>
           <div className="panel facetsPanel">
             <FacetView
-              focusedFacet$={focusedFacet$}
+              focusedFacet$={this.focusedFacet$}
               valueCharacterLimit={valueCharacterLimit}
               searchboxSelection$={searchBoxSelection$}
               constructEntryId={this.constructFilterId}

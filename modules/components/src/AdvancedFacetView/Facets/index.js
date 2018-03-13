@@ -25,14 +25,6 @@ class FacetWrapper extends React.Component {
         this.setState({ shouldScrollHere: true });
       });
   }
-  componentDidUpdate() {
-    const { focusedFacet$, path } = this.props;
-    focusedFacet$
-      ?.filter(({ field, value }) => field === path)
-      .subscribe(({ field }) => {
-        this.setState({ shouldScrollHere: true });
-      });
-  }
   componentWillReceiveProps() {
     if (this.state.shouldScrollHere) {
       this.scrollToThis();
