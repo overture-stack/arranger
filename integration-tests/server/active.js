@@ -20,31 +20,31 @@ export default ({ server, port }) => {
 
       console.log('!!!', projects);
 
-      try {
-        await api({
-          endpoint: `projects/${projectId}/delete`,
-          body: {
-            eshost: esHost,
-            id: projectId,
-          },
-        });
-      } catch (error) {
-        console.warn(error.message);
-      }
-
-      let d;
-      try {
-        d = await api({
-          endpoint: 'projects/add',
-          body: { eshost: esHost, id: projectId },
-        });
-      } catch (error) {
-        console.warn(error.message);
-      }
-
-      try {
-        expect(d.projects.find(x => x.id === projectId).id).toBe(projectId);
-      } catch (error) {}
+      // try {
+      //   await api({
+      //     endpoint: `projects/${projectId}/delete`,
+      //     body: {
+      //       eshost: esHost,
+      //       id: projectId,
+      //     },
+      //   });
+      // } catch (error) {
+      //   console.warn(error.message);
+      // }
+      //
+      // let d;
+      // try {
+      //   d = await api({
+      //     endpoint: 'projects/add',
+      //     body: { eshost: esHost, id: projectId },
+      //   });
+      // } catch (error) {
+      //   console.warn(error.message);
+      // }
+      //
+      // try {
+      //   expect(d.projects.find(x => x.id === projectId).id).toBe(projectId);
+      // } catch (error) {}
 
       server.close();
     });

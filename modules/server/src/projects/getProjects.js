@@ -13,7 +13,8 @@ export default async (req, res) => {
     },
   };
 
-  console.log('chamon', es);
+  console.log('chamon, indices', es.search);
+  // console.log('chamon', es.indices);
 
   try {
     projects = await es.search(arrangerconfig.projectsIndex);

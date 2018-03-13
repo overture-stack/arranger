@@ -9,7 +9,7 @@ import active from './active';
 
 let port = 5678;
 let server = createServer();
-server.listen(5678);
+// server.listen(5678);
 
 // connect();
 // power();

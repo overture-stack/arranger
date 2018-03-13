@@ -25,6 +25,8 @@ export default ({ app, io }) => {
         host,
         log: ES_LOG,
       });
+      console.log('es', req.context.es);
+      console.log('es.search', req.context.es.search);
     } catch (error) {
       return res.json({ error: error.message });
     }
