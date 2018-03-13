@@ -201,7 +201,7 @@ export default class AdvancedFacetView extends React.Component {
           <div className="panel facetsPanel">
             <FacetView
               valueCharacterLimit={valueCharacterLimit}
-              searchboxSelectionObservable={searchBoxSelection$}
+              searchboxSelection$={searchBoxSelection$}
               constructEntryId={this.constructFilterId}
               ref={view => (this.facetView = view)}
               sqon={sqon}

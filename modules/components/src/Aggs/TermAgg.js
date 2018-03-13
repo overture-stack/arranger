@@ -19,13 +19,13 @@ class TermAggs extends React.Component {
       collapsible = true,
       constructEntryId = ({ value }) => value,
       valueCharacterLimit,
-      observableValueInFocus = null,
+      ValueInFocus$ = null,
     } = this.props;
     const dotField = field.replace(/__/g, '.');
     return (
       <State
         didUpdate={({ update }) => {
-          observableValueInFocus?.subscribe(({ field, value }) => {
+          ValueInFocus$?.subscribe(({ field, value }) => {
             update({ showingMore: true }, () => {
               const refId = constructEntryId({ value });
               const bucketComponent = this.refs[refId];

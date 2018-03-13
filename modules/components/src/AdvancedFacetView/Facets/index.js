@@ -7,11 +7,11 @@ const aggregationTypeMap = {
   NumericAggregations: NumericAggregation,
 };
 
-const FacetWrapper = ({ aggType, searchboxSelectionObservable, ...rest }) =>
+const FacetWrapper = ({ aggType, searchboxSelection$, ...rest }) =>
   aggregationTypeMap[aggType]?.({
     ...rest,
     aggType,
-    searchboxSelectionObservable,
+    searchboxSelection$,
   }) || null;
 
 export default ({
@@ -22,7 +22,7 @@ export default ({
   sqon = {},
   constructEntryId = ({ value }) => value,
   onValueChange,
-  searchboxSelectionObservable,
+  searchboxSelection$,
   valueCharacterLimit,
 }) => (
   <FacetWrapper
@@ -33,7 +33,7 @@ export default ({
       sqon,
       path,
       constructEntryId,
-      searchboxSelectionObservable,
+      searchboxSelection$,
       valueCharacterLimit,
     }}
     onValueChange={({ value }) => {

@@ -19,7 +19,7 @@ export default class FacetView extends React.Component {
       onValueChange,
       sqon = {},
       constructEntryId,
-      searchboxSelectionObservable,
+      searchboxSelection$,
       valueCharacterLimit,
     } = this.props;
     return (
@@ -28,7 +28,7 @@ export default class FacetView extends React.Component {
           return (
             <FacetViewNode
               valueCharacterLimit={valueCharacterLimit}
-              searchboxSelectionObservable={searchboxSelectionObservable}
+              searchboxSelection$={searchboxSelection$}
               constructEntryId={constructEntryId}
               depth={0}
               sqon={sqon}

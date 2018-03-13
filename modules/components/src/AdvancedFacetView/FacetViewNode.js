@@ -17,7 +17,7 @@ const FacetViewNode = ({
   constructEntryId = ({ field, value }) =>
     value ? `${field}---${value}` : field,
   depth,
-  searchboxSelectionObservable,
+  searchboxSelection$,
   valueCharacterLimit,
 }) => (
   <div
@@ -37,7 +37,7 @@ const FacetViewNode = ({
           constructEntryId={({ value }) =>
             constructEntryId({ field: path.split('.').join('__'), value })
           }
-          searchboxSelectionObservable={searchboxSelectionObservable}
+          searchboxSelection$={searchboxSelection$}
           onValueChange={({ value }) =>
             onValueChange({
               value,
@@ -60,7 +60,7 @@ const FacetViewNode = ({
             key={childNode.path}
             aggregations={aggregations}
             onValueChange={onValueChange}
-            searchboxSelectionObservable={searchboxSelectionObservable}
+            searchboxSelection$={searchboxSelection$}
             {...childNode}
           />
         ))}
