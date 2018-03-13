@@ -19,14 +19,11 @@ export default ({ app, io }) => {
     let host = eshost || req.get('ES_HOST');
     req.context = req.context || {};
     if (!host) return res.json({ error: 'host must be provided' });
-    console.log(1111, host);
     try {
       req.context.es = new elasticsearch.Client({
         host,
         log: ES_LOG,
       });
-      console.log('es', req.context.es);
-      console.log('es.search', req.context.es.search);
     } catch (error) {
       return res.json({ error: error.message });
     }

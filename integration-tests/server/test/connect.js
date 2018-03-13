@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import elasticsearch from 'elasticsearch';
 
 let projectsIndex = {
@@ -8,12 +9,12 @@ let projectsIndex = {
 let testProject = 'TEST-PROJECT';
 
 export default () =>
-  test('should be able to connect to es', async () => {
+  it('should be able to connect to es', async () => {
     let es = new elasticsearch.Client({
       host: 'http://127.0.0.1:9200',
     });
 
-    expect(es).toBeDefined();
+    expect(es).to.exist;
 
     try {
       await es.create({
@@ -38,5 +39,5 @@ export default () =>
       console.log(error);
     }
 
-    expect(projects).toBeDefined();
+    expect(projects).to.exist;
   });
