@@ -11,23 +11,29 @@ class FacetWrapper extends React.Component {
   state = {
     shouldScrollHere: false,
   };
-  scrollToThis = () => {
-    setTimeout(() => {
-      this.container?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      this.setState({ shouldScrollHere: false });
-    });
-  };
   componentDidMount() {
     const { focusedFacet$, path } = this.props;
-    focusedFacet$
+    this.focusSubscription$ = focusedFacet$
       ?.filter(({ field, value }) => field === path)
-      .subscribe(({ field }) => {
+      ?.subscribe(() => {
+        console.log('setting state!');
         this.setState({ shouldScrollHere: true });
       });
   }
-  componentWillReceiveProps() {
+  componentWillUnmount() {
+    this.focusSubscription$?.unsubscribe();
+  }
+  componentDidUpdate() {
     if (this.state.shouldScrollHere) {
-      this.scrollToThis();
+      // can only scroll properly once the entire tree has been rendered.
+      // proxying full tree render complete by enforcing a time delay after this component has finished rendering
+      setTimeout(() => {
+        this.container?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+        this.setState({ shouldScrollHere: false });
+      }, 300);
     }
   }
   render() {
