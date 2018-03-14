@@ -22,9 +22,6 @@ class AggsLayout extends React.Component {
     layout: [],
   };
   aggComponents = {};
-  observableAggComponentDimentions;
-
-  captureLayoutToState = () => {};
 
   adjustHeight = async aggComponentCollection =>
     new Promise(resolve => {
@@ -61,7 +58,7 @@ class AggsLayout extends React.Component {
 
   async componentDidMount() {
     const { projectId, graphqlField, aggsState } = this.props;
-    const { observableAggComponent, captureLayoutToState } = this;
+    const { observableAggComponent } = this;
     const newLayout = aggsState.aggs.map((agg, index) => ({
       i: agg.field,
       x: 0,
