@@ -119,7 +119,7 @@ class AggsLayout extends React.Component {
             <div
               className={css`
                 padding: 10px;
-                border-left: solid 2px #a72696;
+                border-left: ${agg.active ? 'solid 2px #a72696' : 'none'};
                 background: white;
                 box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
               `}
