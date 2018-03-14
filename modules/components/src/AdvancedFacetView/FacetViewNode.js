@@ -17,7 +17,8 @@ const FacetViewNode = ({
   constructEntryId = ({ field, value }) =>
     value ? `${field}---${value}` : field,
   depth,
-  searchboxSelectionObservable,
+  searchboxSelection$,
+  focusedFacet$,
   valueCharacterLimit,
 }) => (
   <div
@@ -28,6 +29,7 @@ const FacetViewNode = ({
       <div className={`aggWrapper depth_${depth}`}>
         {!esType && <div className="facetTitle">{title}</div>}
         <FacetWrapper
+          focusedFacet$={focusedFacet$}
           valueCharacterLimit={valueCharacterLimit}
           sqon={sqon}
           title={title}
@@ -37,7 +39,7 @@ const FacetViewNode = ({
           constructEntryId={({ value }) =>
             constructEntryId({ field: path.split('.').join('__'), value })
           }
-          searchboxSelectionObservable={searchboxSelectionObservable}
+          searchboxSelection$={searchboxSelection$}
           onValueChange={({ value }) =>
             onValueChange({
               value,
@@ -54,13 +56,14 @@ const FacetViewNode = ({
         <div className="facetTitle">{title}</div>
         {children.map(childNode => (
           <FacetViewNode
+            focusedFacet$={focusedFacet$}
             valueCharacterLimit={valueCharacterLimit}
             depth={depth + 1}
             sqon={sqon}
             key={childNode.path}
             aggregations={aggregations}
             onValueChange={onValueChange}
-            searchboxSelectionObservable={searchboxSelectionObservable}
+            searchboxSelection$={searchboxSelection$}
             {...childNode}
           />
         ))}
