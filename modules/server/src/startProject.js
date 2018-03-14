@@ -1,6 +1,6 @@
 import { graphqlExpress } from 'apollo-server-express';
 import uuid from 'uuid/v4';
-import { flattenDeep } from 'lodash';
+import { flattenDeep, get } from 'lodash';
 import express from 'express';
 import makeSchema from '@arranger/schema';
 import {
@@ -105,11 +105,27 @@ export default async function startProjectApp({ es, id, io }) {
   const createColumnsState = typesWithMappings.map(async ([type, props]) => {
     const columns = mappingToColumnsState(props.mapping);
     const index = `${props.indexPrefix}-columns-state`;
-    const count = await es
-      .count({ index, type: index })
-      .then(d => d.count, () => 0);
 
-    return !(count > 0)
+    const existing = get(
+      await es
+        .search({
+          index,
+          type: index,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
+          },
+        })
+        .catch(e => null),
+      'hits.hits[0]._source',
+    );
+
+    const existingColumns = get(existing, 'state.columns') || [];
+    const newColumns = columns.filter(
+      c => !existingColumns.find(e => e.field === c.field),
+    );
+
+    return !existing || newColumns.length
       ? [
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
@@ -120,7 +136,8 @@ export default async function startProjectApp({ es, id, io }) {
               defaultSorted: [
                 { id: columns[0].id || columns[0].accessor, desc: false },
               ],
-              columns,
+              ...(get(existing, 'state') || {}),
+              columns: [...existingColumns, ...newColumns],
             },
           }),
         ]
