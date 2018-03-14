@@ -114,7 +114,7 @@ class RangeAgg extends Component {
                 <span className={`arrow ${isCollapsed && 'collapsed'}`} />
               )}
             </div>
-            {[!isCollapsed, min, max].every(Boolean) && (
+            {[!isCollapsed, min != null, max != null].every(Boolean) && (
               <div className="range-wrapper">
                 <div className="unit-wrapper">
                   {unit &&
