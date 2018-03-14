@@ -95,8 +95,8 @@ export default ({ projectId = PROJECT_ID, esHost = ES_HOST } = {}) => {
         rainbow(`⚡️ Listening on port ${port} ⚡️`);
       },
     ) {
-      this.http.listen(port, () => {
-        main({ io, app, projectId, esHost, port });
+      this.http.listen(port, async () => {
+        await main({ io, app, projectId, esHost, port });
         this.status = 'on';
         cb();
       });

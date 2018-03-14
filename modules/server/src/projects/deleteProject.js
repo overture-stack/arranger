@@ -45,7 +45,6 @@ export default async (req, res) => {
     } catch (error) {
       return res.json({ error: error.message });
     }
-    return res.json({ error: error.message });
   }
 
   res.json({ projects: mapHits(projects), total: projects.hits.total });
