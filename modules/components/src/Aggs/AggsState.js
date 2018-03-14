@@ -7,7 +7,6 @@ let aggFields = `
     field
     active
     type
-    orderIndex
   }
 `;
 

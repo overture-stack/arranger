@@ -3,7 +3,6 @@ export let typeDefs = `
     field: String
     type: String
     active: Boolean
-    orderIndex: Int
   }
 
   type AggsState {
