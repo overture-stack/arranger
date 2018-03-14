@@ -49,21 +49,21 @@ class RangeAgg extends Component {
     let { handleChange } = this.props;
     let { field, value: { min, max } } = this.state;
     handleChange?.({
-        field,
-        min,
-        max,
-        generateNextSQON: sqon =>
-          replaceSQON(
-            {
-              op: 'and',
-              content: [
-                { op: '>=', content: { field, value: min } },
-                { op: '<=', content: { field, value: max } },
-              ],
-            },
-            sqon,
-          ),
-      });
+      field,
+      min,
+      max,
+      generateNextSQON: sqon =>
+        replaceSQON(
+          {
+            op: 'and',
+            content: [
+              { op: '>=', content: { field, value: min } },
+              { op: '<=', content: { field, value: max } },
+            ],
+          },
+          sqon,
+        ),
+    });
   };
 
   setValue = ({ min, max }) => {
@@ -114,42 +114,40 @@ class RangeAgg extends Component {
                 <span className={`arrow ${isCollapsed && 'collapsed'}`} />
               )}
             </div>
-            {!isCollapsed &&
-              min !== null &&
-              max !== null && (
-                <div className="range-wrapper">
-                  <div className="unit-wrapper">
-                    {unit &&
-                      SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
-                        .map(x => convert().describe(x))
-                        .map(x => ({ ...x, active: x.abbr === displayUnit }))
-                        .map(({ abbr, plural, active }) => (
-                          <span key={abbr}>
-                            <input
-                              type="radio"
-                              id={abbr}
-                              value={abbr}
-                              checked={active}
-                              onChange={e =>
-                                this.setState({ displayUnit: e.target.value })
-                              }
-                            />
-                            <label htmlFor={abbr}>{plural}</label>
-                          </span>
-                        ))}
-                  </div>
-                  <div className="input-range-wrapper">
-                    <InputRange
-                      minValue={min}
-                      maxValue={max}
-                      value={value}
-                      formatLabel={this.formatRangeLabel}
-                      onChange={x => this.setValue(x)}
-                      onChangeComplete={this.onChangeComplete}
-                    />
-                  </div>
+            {[!isCollapsed, min, max].every(Boolean) && (
+              <div className="range-wrapper">
+                <div className="unit-wrapper">
+                  {unit &&
+                    SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
+                      .map(x => convert().describe(x))
+                      .map(x => ({ ...x, active: x.abbr === displayUnit }))
+                      .map(({ abbr, plural, active }) => (
+                        <span key={abbr}>
+                          <input
+                            type="radio"
+                            id={abbr}
+                            value={abbr}
+                            checked={active}
+                            onChange={e =>
+                              this.setState({ displayUnit: e.target.value })
+                            }
+                          />
+                          <label htmlFor={abbr}>{plural}</label>
+                        </span>
+                      ))}
                 </div>
-              )}
+                <div className="input-range-wrapper">
+                  <InputRange
+                    minValue={min}
+                    maxValue={max}
+                    value={value}
+                    formatLabel={this.formatRangeLabel}
+                    onChange={x => this.setValue(x)}
+                    onChangeComplete={this.onChangeComplete}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       />
