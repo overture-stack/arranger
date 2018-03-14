@@ -18,15 +18,16 @@ export default ({ projectId, graphqlField }) => (
           <div style={{ flex: 1 }}>
             <EditAggs handleChange={aggsState.update} {...aggsState} />
           </div>
-          <AggPreviews
-            {...{
-              setSQON: () => {},
-              sqon: null,
-              aggsState,
-              projectId,
-              graphqlField,
-            }}
-          />
+          <div>
+            <strong>Aggs order</strong>
+            <AggPreviews
+              {...{
+                aggsState,
+                projectId,
+                graphqlField,
+              }}
+            />
+          </div>
         </div>
       );
     }}

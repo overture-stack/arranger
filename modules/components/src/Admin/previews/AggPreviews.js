@@ -1,17 +1,19 @@
 import React from 'react';
 
 import { toPairs, sortedIndexBy, debounce, sortBy } from 'lodash';
+import { css } from 'emotion';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactGridLayout from 'react-grid-layout';
 import api from '../../utils/api';
 import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
 import { inCurrentSQON } from '../../SQONView/utils';
+import { fetchExtendedMapping } from '../../utils/api';
 
 const saveLayout = async ({ layout, aggsState }) => {
   const orderedAggFields = sortBy(
     aggsState.aggs,
-    ({ field }) => layout.find(({ i }) => field.split('__').join('.') === i).y,
+    ({ field }) => layout.find(({ i }) => field === i).y,
   ).map(({ field }) => field);
   aggsState.saveOrder(orderedAggFields);
 };
@@ -20,6 +22,7 @@ class AggsLayout extends React.Component {
   state = {
     rowHeight: 0.1,
     layout: [],
+    extendedMapping: [],
   };
   aggComponents = {};
 
@@ -33,8 +36,8 @@ class AggsLayout extends React.Component {
           (acc, [key, termAgg]) => ({
             ...acc,
             [key]: {
-              height: termAgg.container.clientHeight,
-              width: termAgg.container.clientWidth,
+              height: termAgg.clientHeight,
+              width: termAgg.clientWidth,
             },
           }),
           {},
@@ -66,10 +69,12 @@ class AggsLayout extends React.Component {
       w: 1,
       h: 1,
     }));
-    setTimeout(() => {
-      // TODO: replace actual termAggs with just placeholders so not to rely on heights
-      this.adjustHeight(this.aggComponents);
-    }, 100);
+    fetchExtendedMapping({ projectId, graphqlField }).then(
+      ({ extendedMapping }) =>
+        this.setState({ extendedMapping }, () =>
+          this.adjustHeight(this.aggComponents),
+        ),
+    );
   }
 
   onLayoutChange = layout => {
@@ -91,17 +96,14 @@ class AggsLayout extends React.Component {
   render() {
     const {
       aggsState,
-      setSQON,
-      sqon,
       projectId,
       graphqlField,
       className = '',
       style,
       isArrangable = false,
-      data,
     } = this.props;
     const { observableAggComponent } = this;
-
+    const { extendedMapping } = this.state;
     return (
       <ReactGridLayout
         className="layout"
@@ -113,53 +115,29 @@ class AggsLayout extends React.Component {
         isDraggable={isArrangable}
         onDragStop={this.onLayoutChange}
       >
-        {aggsState.aggs
-          .map(agg => ({
-            ...agg,
-            ...data[graphqlField].aggregations[agg.field],
-            ...data[graphqlField].extended.find(
-              x => x.field.replace(/\./g, '__') === agg.field,
-            ),
-          }))
-          .map((agg, index) => (
-            // TODO: switch on agg type
-            <div key={agg.field} style={{ position: 'relative' }}>
-              <TermAgg
-                ref={el => {
-                  this.aggComponents[agg.field] = el;
-                }}
-                data-grid={{ x: 0, y: index }}
-                key={agg.field}
-                {...agg}
-                handleValueClick={({ generateNextSQON }) =>
-                  setSQON(generateNextSQON(sqon))
-                }
-                isActive={d =>
-                  inCurrentSQON({
-                    value: d.value,
-                    dotField: d.field,
-                    currentSQON: sqon,
-                  })
-                }
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                }}
-              />
+        {aggsState.aggs.map((agg, index) => (
+          <div key={agg.field} style={{ position: 'relative' }}>
+            <div
+              className={css`
+                padding: 10px;
+                border-left: solid 2px #a72696;
+                background: white;
+                box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+              `}
+              ref={el => (this.aggComponents[agg.field] = el)}
+            >
+              {extendedMapping.find(
+                ex => ex.field.replace(/\./g, '__') === agg.field,
+              )?.displayName || agg.field}
             </div>
-          ))}
+          </div>
+        ))}
       </ReactGridLayout>
     );
   }
 }
 
 const Aggregations = ({
-  setSQON,
   sqon,
   projectId,
   graphqlField,
@@ -170,30 +148,18 @@ const Aggregations = ({
 }) => {
   return (
     <div className={`aggregations ${className}`} style={style}>
-      <AggsQuery
-        debounceTime={300}
-        projectId={projectId}
-        index={graphqlField}
-        sqon={sqon}
-        aggs={aggsState.aggs}
-        render={data =>
-          data && (
-            <AggsLayout
-              {...{
-                aggsState,
-                setSQON,
-                sqon,
-                projectId,
-                graphqlField,
-                className,
-                style,
-                isArrangable,
-                data,
-              }}
-            />
-          )
-        }
-      />
+      {aggsState.aggs.length && (
+        <AggsLayout
+          {...{
+            aggsState,
+            projectId,
+            graphqlField,
+            className,
+            style,
+            isArrangable,
+          }}
+        />
+      )}
     </div>
   );
 };
