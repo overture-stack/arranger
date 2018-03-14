@@ -8,14 +8,13 @@ import api from '../../utils/api';
 import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
 import { inCurrentSQON } from '../../SQONView/utils';
 
-const saveLayout = async ({ layout, aggsState }) =>
-  layout.map(e =>
-    aggsState.update({
-      field: e.i,
-      key: 'orderIndex',
-      value: e.y,
-    }),
-  );
+const saveLayout = async ({ layout, aggsState }) => {
+  const orderedAggFields = sortBy(
+    aggsState.aggs,
+    ({ field }) => layout.find(({ i }) => field.split('__').join('.') === i).y,
+  ).map(({ field }) => field);
+  aggsState.saveOrder(orderedAggFields);
+};
 
 class AggsLayout extends React.Component {
   state = {
@@ -25,96 +24,72 @@ class AggsLayout extends React.Component {
   aggComponents = {};
   observableAggComponentDimentions;
 
-  onLayoutChange = newLayout => {
-    const {
-      projectId,
-      aggsState,
-      graphqlField,
-      onLayoutChange = () => {},
-    } = this.props;
-    this.adjustLayout(newLayout).then(() => {
-      const { aggsState } = this.props;
-      const aggs = aggsState.aggs.filter(x => x.active);
-      saveLayout({
-        layout: this.state.layout,
-        aggsState,
+  captureLayoutToState = () => {};
+
+  adjustHeight = async aggComponentCollection =>
+    new Promise(resolve => {
+      const { margin = 10 } = this.props;
+
+      const contentPixelDimentions = toPairs(aggComponentCollection)
+        .filter(([_, termAgg]) => termAgg)
+        .reduce(
+          (acc, [key, termAgg]) => ({
+            ...acc,
+            [key]: {
+              height: termAgg.container.clientHeight,
+              width: termAgg.container.clientWidth,
+            },
+          }),
+          {},
+        );
+      this.setState({
+        layout: toPairs(contentPixelDimentions).map(
+          ([key, dimention], index) => ({
+            ...(this.state.layout[key]
+              ? this.state.layout[key]
+              : {
+                  i: key,
+                  x: 0,
+                  y: index,
+                  w: 1,
+                  h: (dimention.height + margin) / 10,
+                }),
+          }),
+        ),
       });
     });
-  };
-
-  adjustHeight = async aggComponentCollection => {
-    const { margin = 10 } = this.props;
-
-    const contentPixelDimentions = toPairs(aggComponentCollection)
-      .filter(([_, termAgg]) => termAgg)
-      .reduce(
-        (acc, [key, termAgg]) => ({
-          ...acc,
-          [key]: {
-            height: termAgg.container.clientHeight,
-            width: termAgg.container.clientWidth,
-          },
-        }),
-        {},
-      );
-
-    return new Promise((resolve, reject) => {
-      if (toPairs(contentPixelDimentions).length != this.state.layout.length) {
-        this.setState(
-          {
-            layout: toPairs(contentPixelDimentions).map(
-              ([key, dimention], index) => ({
-                ...(this.state.layout[key]
-                  ? this.state.layout[key]
-                  : {
-                      i: key,
-                      x: 0,
-                      y: index,
-                      w: 1,
-                      h: (dimention.height + margin) / 10,
-                    }),
-              }),
-            ),
-          },
-          () => resolve(),
-        );
-      } else {
-        resolve();
-      }
-    });
-  };
-
-  adjustLayout = newLayout => {
-    const sorted = sortBy(newLayout, i => i.y);
-    return new Promise((resolve, reject) => {
-      this.adjustHeight(this.aggComponents).then(() =>
-        this.setState(
-          {
-            layout: newLayout.map(item => ({
-              ...item,
-              y: sorted.indexOf(item),
-            })),
-          },
-          () => resolve(),
-        ),
-      );
-    });
-  };
 
   async componentDidMount() {
     const { projectId, graphqlField, aggsState } = this.props;
-    const { observableAggComponent, adjustLayout } = this;
-    const newLayout = aggsState.aggs
-      .filter(x => x.active)
-      .map((agg, index) => ({
-        i: agg.field,
-        x: 0,
-        y: agg.orderIndex || 0,
-        w: 1,
-        h: 1,
-      }));
-    adjustLayout(newLayout);
+    const { observableAggComponent, captureLayoutToState } = this;
+    const newLayout = aggsState.aggs.map((agg, index) => ({
+      i: agg.field,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+    }));
+    setTimeout(() => {
+      // TODO: actually grab container when all children render is complete
+      this.adjustHeight(this.aggComponents);
+    }, 100);
   }
+
+  onLayoutChange = layout => {
+    const { aggsState } = this.props;
+    const ordered = sortBy(layout, ({ y }) => y);
+    this.setState(
+      {
+        layout: this.state.layout.map(l => ({
+          ...l,
+          y: ordered.indexOf(ordered.find(({ i }) => i === l.i)),
+        })),
+      },
+      () => {
+        saveLayout({ layout: this.state.layout, aggsState });
+      },
+    );
+  };
 
   render() {
     const {
@@ -142,7 +117,6 @@ class AggsLayout extends React.Component {
         onDragStop={this.onLayoutChange}
       >
         {aggsState.aggs
-          .filter(x => x.active)
           .map(agg => ({
             ...agg,
             ...data[graphqlField].aggregations[agg.field],
@@ -156,10 +130,6 @@ class AggsLayout extends React.Component {
               <TermAgg
                 ref={el => {
                   this.aggComponents[agg.field] = el;
-                  setTimeout(() => {
-                    // TODO: actually grab container when available
-                    this.adjustHeight(this.aggComponents);
-                  }, 100);
                 }}
                 data-grid={{ x: 0, y: index }}
                 key={agg.field}
@@ -199,7 +169,6 @@ const Aggregations = ({
   className = '',
   style,
   isArrangable = false,
-  onLayoutChange,
   aggsState,
 }) => {
   return (
@@ -209,7 +178,7 @@ const Aggregations = ({
         projectId={projectId}
         index={graphqlField}
         sqon={sqon}
-        aggs={aggsState.aggs.filter(x => x.active)}
+        aggs={aggsState.aggs}
         render={data =>
           data && (
             <AggsLayout
@@ -223,7 +192,6 @@ const Aggregations = ({
                 style,
                 isArrangable,
                 data,
-                onLayoutChange,
               }}
             />
           )
