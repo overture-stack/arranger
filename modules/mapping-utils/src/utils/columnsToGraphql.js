@@ -1,9 +1,7 @@
-import { get } from 'lodash';
-
 export function toQuery(column) {
   return (
     column.query ||
-    column.accessor
+    (column.accessor || '')
       .split('.')
       .reverse()
       .reduce((acc, segment, i, arr) => {
