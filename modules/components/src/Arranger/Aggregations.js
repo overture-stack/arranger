@@ -1,5 +1,4 @@
 import React from 'react';
-import { sortBy } from 'lodash';
 
 import { AggsState, AggsQuery, TermAgg } from '../Aggs';
 import { inCurrentSQON } from '../SQONView/utils';
@@ -27,17 +26,16 @@ const Aggregations = ({
               aggs={aggsState.aggs.filter(x => x.active)}
               render={data =>
                 data &&
-                sortBy(
-                  aggsState.aggs.filter(x => x.active).map(agg => ({
+                aggsState.aggs
+                  .filter(x => x.active)
+                  .map(agg => ({
                     ...agg,
                     ...data[graphqlField].aggregations[agg.field],
                     ...data[graphqlField].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
-                  })),
-                  agg => agg.orderIndex || 0,
-                ).map(agg => {
-                  return (
+                  }))
+                  .map(agg => (
                     // TODO: switch on agg type
                     <TermAgg
                       key={agg.field}
@@ -53,8 +51,7 @@ const Aggregations = ({
                         })
                       }
                     />
-                  );
-                })
+                  ))
               }
             />
           );
