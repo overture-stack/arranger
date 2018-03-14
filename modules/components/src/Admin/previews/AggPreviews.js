@@ -100,7 +100,6 @@ class AggsLayout extends React.Component {
       graphqlField,
       className = '',
       style,
-      isArrangable = false,
     } = this.props;
     const { observableAggComponent } = this;
     const { extendedMapping } = this.state;
@@ -112,7 +111,7 @@ class AggsLayout extends React.Component {
         rowHeight={this.state.rowHeight}
         isResizable={false}
         width={300}
-        isDraggable={isArrangable}
+        isDraggable={true}
         onDragStop={this.onLayoutChange}
       >
         {aggsState.aggs.map((agg, index) => (
@@ -143,7 +142,6 @@ const Aggregations = ({
   graphqlField,
   className = '',
   style,
-  isArrangable = false,
   aggsState,
 }) => {
   return (
@@ -156,7 +154,6 @@ const Aggregations = ({
             graphqlField,
             className,
             style,
-            isArrangable,
           }}
         />
       )}
@@ -168,7 +165,6 @@ export default props => (
   <Aggregations
     {...{
       ...props,
-      isArrangable: true,
     }}
   />
 );
