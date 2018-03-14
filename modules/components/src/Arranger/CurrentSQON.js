@@ -20,7 +20,28 @@ const fetchExtendedMapping = ({ graphqlField, projectId }) =>
     extendedMapping: response.data[graphqlField].extended,
   }));
 
-const CurrentSQON = ({ sqon, setSQON, graphqlField, projectId }) => {
+export const CurrentSQON = ({ sqon, setSQON, extendedMapping, ...props }) => (
+  <SQONView
+    sqon={sqon}
+    FieldCrumb={({ field, nextSQON, ...props }) => (
+      <Field {...{ field, ...props }}>
+        {extendedMapping?.find(e => e.field === field)?.displayName || field}
+      </Field>
+    )}
+    ValueCrumb={({ value, nextSQON, ...props }) => (
+      <Value onClick={() => setSQON(nextSQON)} {...props}>
+        {value}
+      </Value>
+    )}
+    Clear={({ nextSQON }) => (
+      <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
+        Clear
+      </Bubble>
+    )}
+  />
+);
+
+const CurrentSQONState = ({ sqon, setSQON, graphqlField, projectId }) => {
   return (
     <Component
       initialState={{ extendedMapping: null }}
@@ -32,31 +53,11 @@ const CurrentSQON = ({ sqon, setSQON, graphqlField, projectId }) => {
         )
       }
     >
-      {({ state: { extendedMapping } }) => {
-        return (
-          <SQONView
-            sqon={sqon}
-            FieldCrumb={({ field, ...props }) => (
-              <Field {...{ field, ...props }}>
-                {extendedMapping?.find(e => e.field === field)?.displayName ||
-                  field}
-              </Field>
-            )}
-            ValueCrumb={({ value, nextSQON, ...props }) => (
-              <Value onClick={() => setSQON(nextSQON)} {...props}>
-                {value}
-              </Value>
-            )}
-            Clear={({ nextSQON }) => (
-              <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
-                Clear
-              </Bubble>
-            )}
-          />
-        );
-      }}
+      {({ state: { extendedMapping } }) => (
+        <CurrentSQON {...{ sqon, setSQON, extendedMapping }} />
+      )}
     </Component>
   );
 };
 
-export default CurrentSQON;
+export default CurrentSQONState;
