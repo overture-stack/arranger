@@ -1,26 +1,10 @@
 import { expect } from 'chai';
-import ajax from '@arranger/server/dist/utils/ajax';
 
-export default ({ server, port }) => {
-  let projectId = 'TEST-ACTIVE';
-  let esHost = 'http://127.0.0.1:9200';
-  let api = ajax(`http://localhost:${port}`);
-
-  it('active projects should start at server creation', () => {
+export default ({ server, api, port, esHost, projectId }) => {
+  it('should successfully add a project', done => {
     server.listen(port, async () => {
-      let projects;
-
       try {
-        projects = await api({
-          endpoint: 'projects',
-          body: { eshost: esHost },
-        });
-      } catch (error) {
-        console.warn(error.message);
-      }
-
-      try {
-        await api({
+        await api.post({
           endpoint: `projects/${projectId}/delete`,
           body: {
             eshost: esHost,
@@ -33,7 +17,7 @@ export default ({ server, port }) => {
 
       let d;
       try {
-        d = await api({
+        d = await api.post({
           endpoint: 'projects/add',
           body: { eshost: esHost, id: projectId },
         });
@@ -47,6 +31,7 @@ export default ({ server, port }) => {
       ).to.equal(projectId.toLowerCase());
 
       server.close();
+      done();
     });
   });
 };
