@@ -67,7 +67,7 @@ class AggsLayout extends React.Component {
       h: 1,
     }));
     setTimeout(() => {
-      // TODO: actually grab container when all children render is complete
+      // TODO: replace actual termAggs with just placeholders so not to rely on heights
       this.adjustHeight(this.aggComponents);
     }, 100);
   }
