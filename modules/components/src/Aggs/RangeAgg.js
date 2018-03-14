@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import InputRange from 'react-input-range';
 import convert from 'convert-units';
+import _ from 'lodash';
+
 import { replaceSQON } from '../SQONView/utils';
 
 import 'react-input-range/lib/css/index.css';
@@ -114,7 +116,7 @@ class RangeAgg extends Component {
                 <span className={`arrow ${isCollapsed && 'collapsed'}`} />
               )}
             </div>
-            {[!isCollapsed, min != null, max != null].every(Boolean) && (
+            {[!isCollapsed, !_.isNil(min), !_.isNil(max)].every(Boolean) && (
               <div className="range-wrapper">
                 <div className="unit-wrapper">
                   {unit &&
