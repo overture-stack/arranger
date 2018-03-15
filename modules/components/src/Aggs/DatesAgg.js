@@ -1,5 +1,11 @@
 import React, { Component } from 'react';
-import InputRange from 'react-input-range';
+import 'react-dates/initialize';
+import 'react-dates/lib/css/_datepicker.css';
+import {
+  DateRangePicker,
+  SingleDatePicker,
+  DayPickerRangeController,
+} from 'react-dates';
 import convert from 'convert-units';
 import _ from 'lodash';
 
@@ -12,6 +18,7 @@ import State from '../State';
 class DatesAgg extends Component {
   constructor(props) {
     super(props);
+    this.state = {};
   }
 
   render() {
@@ -41,7 +48,10 @@ class DatesAgg extends Component {
                 <span className={`arrow ${isCollapsed && 'collapsed'}`} />
               )}
             </div>
-            put stuff here!!!!
+            <DateRangePicker
+              focusedInput={this.state.focusedInput}
+              onFocusChange={focusedInput => this.setState({ focusedInput })}
+            />
           </div>
         )}
       />
