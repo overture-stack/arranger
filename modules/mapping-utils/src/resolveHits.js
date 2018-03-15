@@ -58,7 +58,7 @@ export default type => async (
   let query = filters;
 
   if (filters || score) {
-    query = buildQuery({ type, filters, score, nested_fields });
+    query = buildQuery({ filters, score, nested_fields });
   }
 
   let body =

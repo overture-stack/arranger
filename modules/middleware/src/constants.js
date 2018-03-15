@@ -1,22 +1,28 @@
-const EQ = '=',
-  NEQ = '!=',
-  IN = 'in',
-  EXCLUDE = 'exclude',
-  EXCLUDE_IF_ANY = 'excludeifany',
-  FILTER = 'filter',
-  GT = '>',
-  GTE = '>=',
-  LT = '<',
-  LTE = '<=',
-  AND = 'and',
-  OR = 'or',
-  IS = 'is',
-  NOT = 'not',
-  RANGE_OPS = [GT, LT, GTE, LTE],
-  HAVE_OPS = [EQ, IN],
-  HAVE_NOT_OPS = [NEQ, EXCLUDE],
-  IS_OPS = [IS, NOT],
-  GROUP_OPS = [AND, OR];
+export const EQ = '=';
+export const NEQ = '!=';
+export const IN = 'in';
+export const EXCLUDE = 'exclude';
+export const EXCLUDE_IF_ANY = 'excludeifany';
+export const FILTER = 'filter';
+export const GT = '>';
+export const GTE = '>=';
+export const LT = '<';
+export const LTE = '<=';
+export const AND = 'and';
+export const OR = 'or';
+export const IS = 'is';
+export const NOT = 'not';
+export const RANGE_OPS = [GT, LT, GTE, LTE];
+export const HAVE_OPS = [EQ, IN];
+export const HAVE_NOT_OPS = [NEQ, EXCLUDE];
+export const IS_OPS = [IS, NOT];
+export const GROUP_OPS = [AND, OR];
+
+export const AGGS_WRAPPER_TYPES = {
+  GLOBAL: 'global',
+  FILTERED: 'filtered',
+  NESTED: 'nested',
+};
 
 export const CONSTANTS = {
   EQ: EQ,
@@ -54,15 +60,7 @@ export const CONSTANTS = {
   ES_FIELDS: 'fields',
   ES_TYPE: 'type',
   ES_PHRASE_PREFIX: 'phrase_prefix',
-  FIELD_TO_SET_TYPE: {
-    'cases.case_id': 'case_set',
-    'files.file_id': 'file_set',
-    'genes.gene_id': 'gene_set',
-    'ssms.ssm_id': 'ssm_set',
-    'files.index_files.file_id': 'file_set',
-    'files.analysis.input_files.file_id': 'file_set',
-    'files.downstream_analyses.output_files.file_id': 'file_set',
-  },
+  FIELD_TO_SET_TYPE: {},
   BUCKETS: 'buckets',
   STATS: 'stats',
   HISTOGRAM: 'histogram',
