@@ -14,12 +14,9 @@ import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
 import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
-import AggsState from '../Aggs/AggsState';
-import EditAggs from '../Aggs/EditAggs';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';

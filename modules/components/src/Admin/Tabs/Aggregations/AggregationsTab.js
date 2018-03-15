@@ -1,7 +1,6 @@
 import React from 'react';
-import DraggableListOrderer from '../../previews/DraggableListOrderer';
-import AggsState from '../../../Aggs/AggsState';
-import EditAggs from '../../../Aggs/EditAggs';
+import DraggableListOrderer from '../DraggableListOrderer';
+import { EditAggs, AggsState } from '../../../Aggs';
 
 export default ({ projectId, graphqlField }) => (
   <AggsState

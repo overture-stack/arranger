@@ -1,7 +1,6 @@
 import React from 'react';
-import DraggableListOrderer from '../../previews/DraggableListOrderer';
-import ColumnsState from '../../../DataTable/ColumnsState';
-import EditColumns from '../../../DataTable/EditColumns';
+import DraggableListOrderer from '../DraggableListOrderer';
+import { ColumnsState, EditColumns } from '../../../DataTable';
 
 export default ({ projectId, graphqlField }) => (
   <ColumnsState
