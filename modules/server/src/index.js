@@ -33,7 +33,7 @@ let main = async ({ io, app, projectId, esHost, port }) => {
   projectsRoutes({ app, io });
 
   if (projectId && esHost) {
-    startSingleProject({ io, app, projectId });
+    startSingleProject({ io, app, projectId, esHost });
   }
 
   if (!projectId && esHost) {
@@ -53,7 +53,7 @@ let main = async ({ io, app, projectId, esHost, port }) => {
       .slice(0, MAX_LIVE_VERSIONS)
       .forEach(project => {
         try {
-          startSingleProject({ io, app, projectId: project.id });
+          startSingleProject({ io, app, projectId: project.id, esHost });
         } catch (error) {
           console.warn(error.message);
         }
@@ -61,12 +61,12 @@ let main = async ({ io, app, projectId, esHost, port }) => {
   }
 };
 
-let startSingleProject = async ({ app, io, projectId }) => {
+let startSingleProject = async ({ app, io, projectId, esHost }) => {
   let projectApp;
 
   try {
     projectApp = await startProject({
-      es: new elasticsearch.Client({ host: ES_HOST }),
+      es: new elasticsearch.Client({ host: esHost }),
       io,
       id: projectId,
     });
