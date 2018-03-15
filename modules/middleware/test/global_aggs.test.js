@@ -1,60 +1,39 @@
-import AggregationProcessor from '../src/aggregations.js';
+import buildAggregations from '../src/buildAggregations';
+import filters from '../src/filters';
 
-let input = {
-  type: {
-    index: 'file',
-    es_type: 'file',
-    name: 'file',
-  },
-  fields: ['acl', 'mdx'],
-  nested_fields: [],
-  graphql_fields: {
-    mdx: {
-      stats: {
-        min: {},
-        max: {},
+test('build_aggregations should handle `aggregations_filter_themselves` variable', () => {
+  let input = {
+    nestedFields: [],
+    graphqlFields: {
+      mdx: {
+        stats: {
+          min: {},
+          max: {},
+        },
+      },
+      acl: {
+        buckets: {
+          key: {},
+          doc_count: {},
+        },
       },
     },
-    acl: {
-      buckets: {
-        key: {},
-        doc_count: {},
-      },
-    },
-  },
-  args: {
-    filters: {
+    query: new filters().buildFilters([], {
       op: 'and',
       content: [
         { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
         { op: '>=', content: { field: 'mdx', value: 100 } },
         { op: '<=', content: { field: 'mdx', value: 200 } },
       ],
-    },
-    aggregations_filter_themselves: false,
-  },
-};
+    }),
+    aggregationsFilterThemselves: false,
+  };
 
-let expected = {
-  query: {
-    bool: {
-      must: [
-        {
-          terms: {
-            acl: ['phs000178'],
-            boost: 0,
-          },
-        },
-        { range: { mdx: { boost: 0, gte: 100 } } },
-        { range: { mdx: { boost: 0, lte: 200 } } },
-      ],
-    },
-  },
-  aggs: {
+  let expected = {
     'acl:global': {
-      global: {},
       aggs: {
         'acl:filtered': {
+          aggs: { acl: { terms: { field: 'acl', size: 300000 } } },
           filter: {
             bool: {
               must: [
@@ -63,39 +42,24 @@ let expected = {
               ],
             },
           },
-          aggs: {
-            acl: {
-              terms: {
-                field: 'acl',
-                size: 300000,
-              },
-            },
-          },
         },
       },
+      global: {},
     },
     'mdx:global': {
-      global: {},
       aggs: {
         'mdx:filtered': {
+          aggs: { 'mdx:stats': { stats: { field: 'mdx' } } },
           filter: {
-            terms: {
-              acl: ['phs000178'],
-              boost: 0,
-            },
-          },
-          aggs: {
-            'mdx:stats': {
-              stats: { field: 'mdx' },
+            bool: {
+              must: [{ terms: { acl: ['phs000178'], boost: 0 } }],
             },
           },
         },
       },
+      global: {},
     },
-  },
-};
-
-test('build_aggregations should handle `aggregations_filter_themselves` variable', () => {
-  const actual = new AggregationProcessor().buildAggregations(input);
-  expect(actual).toEqual(expected);
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expected);
 });
