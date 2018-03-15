@@ -1,6 +1,7 @@
 import { get, isEqual } from 'lodash';
 
-import { CONSTANTS, AGGS_WRAPPER_TYPES } from './constants';
+import * as CONSTANTS from './constants';
+import { AGGS_WRAPPER_TYPES } from './constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;

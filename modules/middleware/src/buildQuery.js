@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import utf8 from 'utf8';
-import { CONSTANTS } from './constants';
+import * as CONSTANTS from './constants';
 
 function termOptimizer(op, content) {
   let op_mapping = {

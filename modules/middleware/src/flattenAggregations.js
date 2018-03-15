@@ -1,4 +1,4 @@
-import { CONSTANTS, AGGS_WRAPPER_TYPES } from './constants';
+import { HISTOGRAM, STATS, AGGS_WRAPPER_TYPES } from './constants';
 
 function flattenAggregations(aggregations) {
   return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
@@ -8,7 +8,7 @@ function flattenAggregations(aggregations) {
 
     if (Object.values(AGGS_WRAPPER_TYPES).includes(agg_type)) {
       return { ...prunedAggs, ...flattenAggregations(value) };
-    } else if ([CONSTANTS.STATS, CONSTANTS.HISTOGRAM].includes(agg_type)) {
+    } else if ([STATS, HISTOGRAM].includes(agg_type)) {
       return {
         ...prunedAggs,
         [field]: { ...prunedAggs[field], [agg_type]: value },

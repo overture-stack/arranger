@@ -17,51 +17,33 @@ export const HAVE_OPS = [EQ, IN];
 export const HAVE_NOT_OPS = [NEQ, EXCLUDE];
 export const IS_OPS = [IS, NOT];
 export const GROUP_OPS = [AND, OR];
-
+export const BUCKETS = 'buckets';
+export const STATS = 'stats';
+export const HISTOGRAM = 'histogram';
+export const VALUE_OPS = HAVE_OPS.concat(HAVE_NOT_OPS).concat([EXCLUDE_IF_ANY]);
+export const MUST_OPS = HAVE_OPS.concat(IS_OPS).concat([FILTER]);
+export const MUST_NOT_OPS = HAVE_NOT_OPS.concat([EXCLUDE_IF_ANY]);
+export const ES_RANGE_OPS = {
+  [GT]: 'gt',
+  [LT]: 'lt',
+  [GTE]: 'gte',
+  [LTE]: 'lte',
+};
 export const AGGS_WRAPPER_TYPES = {
   GLOBAL: 'global',
   FILTERED: 'filtered',
   NESTED: 'nested',
 };
-
-export const CONSTANTS = {
-  EQ: EQ,
-  NEQ: NEQ,
-  IN: IN,
-  EXCLUDE: EXCLUDE,
-  EXCLUDE_IF_ANY: EXCLUDE_IF_ANY,
-  FILTER: FILTER,
-  GT: GT,
-  GTE: GTE,
-  LT: LT,
-  LTE: LTE,
-  AND: AND,
-  OR: OR,
-  IS: IS,
-  NOT: NOT,
-  HAVE_OPS: HAVE_OPS,
-  HAVE_NOT_OPS: HAVE_NOT_OPS,
-  IS_OPS: IS_OPS,
-  VALUE_OPS: HAVE_OPS.concat(HAVE_NOT_OPS).concat([EXCLUDE_IF_ANY]),
-  MUST_OPS: HAVE_OPS.concat(IS_OPS).concat([FILTER]),
-  MUST_NOT_OPS: HAVE_NOT_OPS.concat([EXCLUDE_IF_ANY]),
-  GROUP_OPS: GROUP_OPS,
-  RANGE_OPS: RANGE_OPS,
-  ES_RANGE_OPS: { [GT]: 'gt', [LT]: 'lt', [GTE]: 'gte', [LTE]: 'lte' },
-  ES_MUST: 'must',
-  ES_MUST_NOT: 'must_not',
-  ES_SHOULD: 'should',
-  ES_NESTED: 'nested',
-  ES_BOOL: 'bool',
-  ES_FILTER: 'filter',
-  ES_QUERY: 'query',
-  ES_PATH: 'path',
-  ES_MULTI_MATCH: 'multi_match',
-  ES_FIELDS: 'fields',
-  ES_TYPE: 'type',
-  ES_PHRASE_PREFIX: 'phrase_prefix',
-  FIELD_TO_SET_TYPE: {},
-  BUCKETS: 'buckets',
-  STATS: 'stats',
-  HISTOGRAM: 'histogram',
-};
+export const ES_MUST = 'must';
+export const ES_MUST_NOT = 'must_not';
+export const ES_SHOULD = 'should';
+export const ES_NESTED = 'nested';
+export const ES_BOOL = 'bool';
+export const ES_FILTER = 'filter';
+export const ES_QUERY = 'query';
+export const ES_PATH = 'path';
+export const ES_MULTI_MATCH = 'multi_match';
+export const ES_FIELDS = 'fields';
+export const ES_TYPE = 'type';
+export const ES_PHRASE_PREFIX = 'phrase_prefix';
+export const FIELD_TO_SET_TYPE = {};
