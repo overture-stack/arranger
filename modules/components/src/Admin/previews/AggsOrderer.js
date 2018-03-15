@@ -5,9 +5,7 @@ import { css } from 'emotion';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactGridLayout from 'react-grid-layout';
-import api from '../../utils/api';
 import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
-import { inCurrentSQON } from '../../SQONView/utils';
 import { fetchExtendedMapping } from '../../utils/api';
 
 const saveLayout = async ({ layout, aggsState }) => {
@@ -136,8 +134,7 @@ class AggsLayout extends React.Component {
   }
 }
 
-const Aggregations = ({
-  sqon,
+export default ({
   projectId,
   graphqlField,
   className = '',
@@ -160,11 +157,3 @@ const Aggregations = ({
     </div>
   );
 };
-
-export default props => (
-  <Aggregations
-    {...{
-      ...props,
-    }}
-  />
-);

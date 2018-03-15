@@ -1,5 +1,5 @@
 import React from 'react';
-import AggPreviews from '../../previews/AggPreviews';
+import AggsOrderer from '../../previews/AggsOrderer';
 import AggsState from '../../../Aggs/AggsState';
 import EditAggs from '../../../Aggs/EditAggs';
 
@@ -20,7 +20,7 @@ export default ({ projectId, graphqlField }) => (
           </div>
           <div>
             <strong>Aggs order</strong>
-            <AggPreviews
+            <AggsOrderer
               {...{
                 aggsState,
                 projectId,
