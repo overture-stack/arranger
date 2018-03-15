@@ -1,5 +1,5 @@
 import buildAggregations from '../src/buildAggregations.js';
-import filters from '../src/filters.js';
+import buildQuery from '../src/buildQuery';
 
 test('build_aggregations should handle nested aggregations', () => {
   const nestedFields = [
@@ -28,7 +28,7 @@ test('build_aggregations should handle nested aggregations', () => {
   ];
 
   const input = {
-    query: new filters().buildFilters(nestedFields, {}),
+    query: buildQuery({ nestedFields, filters: {} }),
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },

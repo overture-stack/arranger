@@ -1,5 +1,5 @@
 import buildAggregations from '../src/buildAggregations';
-import filters from '../src/filters';
+import buildQuery from '../src/buildQuery';
 
 test('build_aggregations should handle `aggregations_filter_themselves` variable', () => {
   let input = {
@@ -18,13 +18,16 @@ test('build_aggregations should handle `aggregations_filter_themselves` variable
         },
       },
     },
-    query: new filters().buildFilters([], {
-      op: 'and',
-      content: [
-        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-        { op: '>=', content: { field: 'mdx', value: 100 } },
-        { op: '<=', content: { field: 'mdx', value: 200 } },
-      ],
+    query: buildQuery({
+      nestedFields: [],
+      filters: {
+        op: 'and',
+        content: [
+          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+          { op: '>=', content: { field: 'mdx', value: 100 } },
+          { op: '<=', content: { field: 'mdx', value: 200 } },
+        ],
+      },
     }),
     aggregationsFilterThemselves: false,
   };
