@@ -1,34 +1,25 @@
 import React from 'react';
 
-import { toPairs, sortedIndexBy, debounce, sortBy } from 'lodash';
+import { toPairs, sortBy } from 'lodash';
 import { css } from 'emotion';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import ReactGridLayout from 'react-grid-layout';
-import { AggsState, AggsQuery, TermAgg } from '../../Aggs';
 import { fetchExtendedMapping } from '../../utils/api';
 
-const saveLayout = async ({ layout, aggsState }) => {
-  const orderedAggFields = sortBy(
-    aggsState.aggs,
-    ({ field }) => layout.find(({ i }) => field === i).y,
-  ).map(({ field }) => field);
-  aggsState.saveOrder(orderedAggFields);
-};
-
-class AggsLayout extends React.Component {
+class DraggableOrders extends React.Component {
   state = {
     rowHeight: 0.1,
     layout: [],
     extendedMapping: [],
   };
-  aggComponents = {};
+  listElements = {};
 
-  adjustHeight = async aggComponentCollection =>
+  adjustHeight = async listElements =>
     new Promise(resolve => {
       const { margin = 10 } = this.props;
 
-      const contentPixelDimentions = toPairs(aggComponentCollection)
+      const contentPixelDimentions = toPairs(listElements)
         .filter(([_, termAgg]) => termAgg)
         .reduce(
           (acc, [key, termAgg]) => ({
@@ -58,10 +49,9 @@ class AggsLayout extends React.Component {
     });
 
   async componentDidMount() {
-    const { projectId, graphqlField, aggsState } = this.props;
-    const { observableAggComponent } = this;
-    const newLayout = aggsState.aggs.map((agg, index) => ({
-      i: agg.field,
+    const { projectId, graphqlField, itemsList } = this.props;
+    const newLayout = itemsList.map((item, index) => ({
+      i: item.field,
       x: 0,
       y: 0,
       w: 1,
@@ -70,13 +60,13 @@ class AggsLayout extends React.Component {
     fetchExtendedMapping({ projectId, graphqlField }).then(
       ({ extendedMapping }) =>
         this.setState({ extendedMapping }, () =>
-          this.adjustHeight(this.aggComponents),
+          this.adjustHeight(this.listElements),
         ),
     );
   }
 
   onLayoutChange = layout => {
-    const { aggsState } = this.props;
+    const { itemsList, onOrderChange = () => {} } = this.props;
     const ordered = sortBy(layout, ({ y }) => y);
     this.setState(
       {
@@ -86,20 +76,23 @@ class AggsLayout extends React.Component {
         })),
       },
       () => {
-        saveLayout({ layout: this.state.layout, aggsState });
+        const orderedList = sortBy(
+          itemsList,
+          ({ field }) => layout.find(({ i }) => field === i).y,
+        );
+        onOrderChange(orderedList);
       },
     );
   };
 
   render() {
     const {
-      aggsState,
+      itemsList,
       projectId,
       graphqlField,
       className = '',
       style,
     } = this.props;
-    const { observableAggComponent } = this;
     const { extendedMapping } = this.state;
     return (
       <ReactGridLayout
@@ -112,20 +105,20 @@ class AggsLayout extends React.Component {
         isDraggable={true}
         onDragStop={this.onLayoutChange}
       >
-        {aggsState.aggs.map((agg, index) => (
-          <div key={agg.field} style={{ position: 'relative' }}>
+        {itemsList.map((item, index) => (
+          <div key={item.field} style={{ position: 'relative' }}>
             <div
               className={css`
                 padding: 10px;
-                border-left: ${agg.active ? 'solid 2px #a72696' : 'none'};
+                border-left: ${item.active ? 'solid 2px #a72696' : 'none'};
                 background: white;
                 box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
               `}
-              ref={el => (this.aggComponents[agg.field] = el)}
+              ref={el => (this.listElements[item.field] = el)}
             >
               {extendedMapping.find(
-                ex => ex.field.replace(/\./g, '__') === agg.field,
-              )?.displayName || agg.field}
+                ex => ex.field.replace(/\./g, '__') === item.field,
+              )?.displayName || item.field}
             </div>
           </div>
         ))}
@@ -139,14 +132,16 @@ export default ({
   graphqlField,
   className = '',
   style,
-  aggsState,
+  itemsList,
+  onOrderChange,
 }) => {
   return (
     <div className={`aggregations ${className}`} style={style}>
-      {aggsState.aggs.length && (
-        <AggsLayout
+      {itemsList.length && (
+        <DraggableOrders
           {...{
-            aggsState,
+            itemsList,
+            onOrderChange,
             projectId,
             graphqlField,
             className,

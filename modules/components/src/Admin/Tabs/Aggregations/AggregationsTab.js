@@ -1,5 +1,5 @@
 import React from 'react';
-import AggsOrderer from '../../previews/AggsOrderer';
+import DraggableListOrderer from '../../previews/DraggableListOrderer';
 import AggsState from '../../../Aggs/AggsState';
 import EditAggs from '../../../Aggs/EditAggs';
 
@@ -20,11 +20,17 @@ export default ({ projectId, graphqlField }) => (
           </div>
           <div>
             <strong>Aggs order</strong>
-            <AggsOrderer
+            <DraggableListOrderer
               {...{
-                aggsState,
+                itemsList: aggsState.aggs.map(({ field, active, ...rest }) => ({
+                  field: field,
+                  active: active,
+                  ...rest,
+                })),
                 projectId,
                 graphqlField,
+                onOrderChange: newItemList =>
+                  aggsState.saveOrder(newItemList.map(({ field }) => field)),
               }}
             />
           </div>

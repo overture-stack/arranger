@@ -23,6 +23,7 @@ import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
+import TableTab from './Tabs/Aggregations/TableTab';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -908,24 +909,16 @@ class Dashboard extends React.Component {
                           />
                         )}
                         {tab === 'columns' && (
-                          <div>
-                            <ColumnsState
-                              projectId={match.params.projectId}
-                              graphqlField={
-                                this.state.projects
-                                  .find(x => x.id === match.params.projectId)
-                                  .types.types.find(
-                                    x => x.index === match.params.index,
-                                  ).name
-                              }
-                              render={columnsState => (
-                                <EditColumns
-                                  handleChange={columnsState.update}
-                                  {...columnsState}
-                                />
-                              )}
-                            />
-                          </div>
+                          <TableTab
+                            projectId={match.params.projectId}
+                            graphqlField={
+                              this.state.projects
+                                .find(x => x.id === match.params.projectId)
+                                .types.types.find(
+                                  x => x.index === match.params.index,
+                                ).name
+                            }
+                          />
                         )}
                       </>
                     </div>
