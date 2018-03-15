@@ -1,6 +1,6 @@
 import getFields from 'graphql-fields';
 import { buildAggregations, flattenAggregations } from '@arranger/middleware';
-import buildQuery from './buildQuery';
+import { buildQuery } from '@arranger/middleware';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
@@ -16,7 +16,7 @@ export default type => async (
 ) => {
   const graphqlFields = getFields(info);
   const nestedFields = type.nested_fields;
-  const query = buildQuery({ filters, nested_fields: nestedFields });
+  const query = buildQuery({ nestedFields, filters });
   const aggs = buildAggregations({
     query,
     graphqlFields,

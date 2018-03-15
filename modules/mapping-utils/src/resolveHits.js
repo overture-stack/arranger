@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import buildQuery from './buildQuery';
+import { buildQuery } from '@arranger/middleware';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
@@ -53,12 +53,13 @@ export default type => async (
   info,
 ) => {
   let fields = getFields(info);
-  let nested_fields = type.nested_fields;
+  let nestedFields = type.nested_fields;
 
   let query = filters;
 
   if (filters || score) {
-    query = buildQuery({ filters, score, nested_fields });
+    // TODO: something with score?
+    query = buildQuery({ nestedFields, filters });
   }
 
   let body =
@@ -70,7 +71,7 @@ export default type => async (
   if (sort && sort.length) {
     // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
     body.sort = sort.map(({ field, missing, ...rest }) => {
-      const nested_path = nested_fields.find(
+      const nested_path = nestedFields.find(
         nestedField => field.indexOf(nestedField) === 0,
       );
 
@@ -98,7 +99,7 @@ export default type => async (
     let source = x._source;
     let nested_nodes = resolveNested({
       node: source,
-      nested_fields,
+      nested_fields: nestedFields,
     });
     return { id: x._id, ...source, ...nested_nodes };
   });
