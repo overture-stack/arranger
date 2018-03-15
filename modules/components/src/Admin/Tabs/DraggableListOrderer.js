@@ -9,7 +9,7 @@ import { fetchExtendedMapping } from '../../utils/api';
 
 class DraggableOrders extends React.Component {
   state = {
-    rowHeight: 0.1,
+    rowHeight: 1, // normalizes to pixel level
     layout: [],
     extendedMapping: [],
   };
@@ -41,7 +41,7 @@ class DraggableOrders extends React.Component {
                   x: 0,
                   y: index,
                   w: 1,
-                  h: (dimention.height + margin) / 10,
+                  h: (dimention.height + margin) / 10, //converts to react-grid-layout unit
                 }),
           }),
         ),
