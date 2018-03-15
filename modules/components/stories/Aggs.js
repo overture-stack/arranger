@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
 import {
+  DatesAgg,
   BooleanAgg,
   EditAggs,
   TermAgg,
@@ -126,6 +127,25 @@ storiesOf('Aggs', module)
   .add('TermAgg', () => (
     <div className="term-agg-wrapper">
       <TermAgg
+        field="disease_type"
+        displayName="Disease Type"
+        buckets={[
+          {
+            doc_count: 2,
+            key: 'Acute Myeloid Leukemia',
+          },
+          {
+            doc_count: 10,
+            key: 'Acinar cell neoplasms',
+          },
+        ]}
+        handleValueClick={action('Term Agg Selection')}
+      />
+    </div>
+  ))
+  .add('DatesAgg', () => (
+    <div className="term-agg-wrapper">
+      <DatesAgg
         field="disease_type"
         displayName="Disease Type"
         buckets={[
