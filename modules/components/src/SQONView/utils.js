@@ -279,23 +279,23 @@ export const makeSQON: TMakeSQON = fields => {
   };
 };
 
-export const removeSQON: TRemoveSQON = (field, query) => {
-  if (!query) return null;
-  if (!field) return query;
-  if (Object.keys(query).length === 0) return query;
+export const removeSQON: TRemoveSQON = (field, sqon) => {
+  if (!sqon) return null;
+  if (!field) return sqon;
+  if (Object.keys(sqon).length === 0) return sqon;
 
-  if (!Array.isArray(query.content)) {
+  if (!Array.isArray(sqon.content)) {
     const fieldFilter = typeof field === 'function' ? field : f => f === field;
-    return fieldFilter(query.content.field) ? null : query;
+    return fieldFilter(sqon.content.field) ? null : sqon;
   }
 
-  const filteredContent = query.content
+  const filteredContent = sqon.content
     .map(q => removeSQON(field, q))
     .filter(Boolean);
 
   return filteredContent.length
     ? {
-        ...query,
+        ...sqon,
         content: filteredContent,
       }
     : null;

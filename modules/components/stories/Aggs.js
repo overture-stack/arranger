@@ -2,11 +2,60 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
-import { EditAggs, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
+import {
+  BooleanAgg,
+  EditAggs,
+  TermAgg,
+  RangeAgg,
+  AggsPanel,
+} from '../src/Aggs';
 import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
 
 import State from '../src/State';
 import './Aggs.css';
+
+const bolleanAggs = [
+  {
+    field: 'participants__is_proband',
+    displayName: 'Participants is proband',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        key: '0',
+        doc_count: 2580,
+        key_as_string: 'false',
+      },
+      {
+        key: '1',
+        doc_count: 961,
+        key_as_string: 'true',
+      },
+    ],
+  },
+  {
+    field: 'sequencing_experiments__is_paired_end',
+    displayName: 'Is Paired Ende',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        key: '0',
+        doc_count: 2580,
+        key_as_string: 'false',
+      },
+      {
+        key: '1',
+        doc_count: 961,
+        key_as_string: 'true',
+      },
+    ],
+  },
+];
 
 let aggs = [
   {
@@ -161,6 +210,57 @@ storiesOf('Aggs', module)
               update({ sqon: generateNextSQON(sqon) })
             }
           />
+        </div>
+      )}
+    />
+  ))
+  .add('BooleanAgg', () => (
+    <BooleanAgg
+      field="cases__diagnoses__days_to_death"
+      displayName="Diagnoses Days To Death"
+      buckets={[
+        {
+          key: '0',
+          doc_count: 2580,
+          key_as_string: 'false',
+        },
+        {
+          key: '1',
+          doc_count: 961,
+          key_as_string: 'true',
+        },
+      ]}
+      handleChange={action(`Range Change`)}
+    />
+  ))
+  .add('BooleanAggWithSqon', () => (
+    <State
+      initial={{ sqon: null }}
+      render={({ sqon, update }) => (
+        <div>
+          <div>SQON: {JSON.stringify(sqon)}</div>
+          <div
+            css={`
+              width: 300px;
+            `}
+          >
+            {bolleanAggs.map(agg => (
+              // TODO: switch on agg type
+              <BooleanAgg
+                key={agg.field}
+                {...agg}
+                handleValueClick={({ generateNextSQON }) =>
+                  update({ sqon: generateNextSQON(sqon) })
+                }
+                isTrueSelected={({ evaluateInSqon }) =>
+                  evaluateInSqon({ sqon })
+                }
+                isFalseSelected={({ evaluateInSqon }) =>
+                  evaluateInSqon({ sqon })
+                }
+              />
+            ))}
+          </div>
         </div>
       )}
     />
