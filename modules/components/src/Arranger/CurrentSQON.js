@@ -2,23 +2,7 @@ import React from 'react';
 import Component from 'react-component-component';
 
 import SQONView, { Value, Bubble, Field } from '../SQONView';
-import api from '../utils/api';
-
-const fetchExtendedMapping = ({ graphqlField, projectId }) =>
-  api({
-    endpoint: `/${projectId}/graphql`,
-    body: {
-      query: `
-      {
-        ${graphqlField}{
-          extended
-        }
-      }
-    `,
-    },
-  }).then(response => ({
-    extendedMapping: response.data[graphqlField].extended,
-  }));
+import { fetchExtendedMapping } from '../utils/api';
 
 export const CurrentSQON = ({ sqon, setSQON, extendedMapping, ...props }) => (
   <SQONView

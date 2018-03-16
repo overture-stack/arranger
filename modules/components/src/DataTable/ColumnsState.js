@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { debounce } from 'lodash';
+import { debounce, sortBy } from 'lodash';
 
 import api from '../utils/api';
 
@@ -130,12 +130,32 @@ export default class extends Component {
     this.setState({ toggled: { ...this.state.toggled, [field]: show } });
   };
 
+  saveOrder = orderedFields => {
+    const columns = this.state.config.columns;
+    if (
+      orderedFields.every(field =>
+        columns.find(column => column.field === field),
+      ) &&
+      columns.every(column =>
+        orderedFields.find(field => field === column.field),
+      )
+    ) {
+      this.save({
+        ...this.state.config,
+        columns: sortBy(columns, ({ field }) => orderedFields.indexOf(field)),
+      });
+    } else {
+      console.warn('provided orderedFields are not clean: ', orderedFields);
+    }
+  };
+
   render() {
     let { config, extended, toggled } = this.state;
 
     return this.props.render({
       update: this.update,
       toggle: this.toggle,
+      saveOrder: this.saveOrder,
       state: {
         ...config,
         columns: config.columns.map(column => {

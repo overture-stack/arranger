@@ -1,7 +1,7 @@
 import { ARRANGER_API } from './config';
 import urlJoin from 'url-join';
 
-export default ({ endpoint = '', body, headers }) =>
+const api = ({ endpoint = '', body, headers }) =>
   fetch(urlJoin(ARRANGER_API, endpoint), {
     method: 'POST',
     headers: {
@@ -10,3 +10,21 @@ export default ({ endpoint = '', body, headers }) =>
     },
     body: JSON.stringify(body),
   }).then(r => r.json());
+
+export const fetchExtendedMapping = ({ graphqlField, projectId }) =>
+  api({
+    endpoint: `/${projectId}/graphql`,
+    body: {
+      query: `
+      {
+        ${graphqlField}{
+          extended
+        }
+      }
+    `,
+    },
+  }).then(response => ({
+    extendedMapping: response.data[graphqlField].extended,
+  }));
+
+export default api;

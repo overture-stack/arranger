@@ -14,14 +14,13 @@ import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
 import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
-import AggsState from '../Aggs/AggsState';
-import EditAggs from '../Aggs/EditAggs';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import { ColumnsState, EditColumns } from '../DataTable';
 import { ES_HOST, ARRANGER_API } from '../utils/config';
 import api from '../utils/api';
+import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
+import TableTab from './Tabs/Aggregations/TableTab';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -895,7 +894,7 @@ class Dashboard extends React.Component {
                           </div>
                         )}
                         {tab === 'aggs' && (
-                          <AggsState
+                          <AggregationsTab
                             projectId={match.params.projectId}
                             graphqlField={
                               this.state.projects
@@ -904,33 +903,19 @@ class Dashboard extends React.Component {
                                   x => x.index === match.params.index,
                                 ).name
                             }
-                            render={aggsState => (
-                              <EditAggs
-                                handleChange={aggsState.update}
-                                {...aggsState}
-                              />
-                            )}
                           />
                         )}
                         {tab === 'columns' && (
-                          <div>
-                            <ColumnsState
-                              projectId={match.params.projectId}
-                              graphqlField={
-                                this.state.projects
-                                  .find(x => x.id === match.params.projectId)
-                                  .types.types.find(
-                                    x => x.index === match.params.index,
-                                  ).name
-                              }
-                              render={columnsState => (
-                                <EditColumns
-                                  handleChange={columnsState.update}
-                                  {...columnsState}
-                                />
-                              )}
-                            />
-                          </div>
+                          <TableTab
+                            projectId={match.params.projectId}
+                            graphqlField={
+                              this.state.projects
+                                .find(x => x.id === match.params.projectId)
+                                .types.types.find(
+                                  x => x.index === match.params.index,
+                                ).name
+                            }
+                          />
                         )}
                       </>
                     </div>

@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { debounce } from 'lodash';
+import { debounce, sortBy } from 'lodash';
 import api from '../utils/api';
 
 let aggFields = `
@@ -82,7 +82,23 @@ export default class extends Component {
     this.setState({ temp }, () => this.save(temp));
   };
 
+  saveOrder = orderedFields => {
+    const aggs = this.state.temp;
+    if (
+      orderedFields.every(field => aggs.find(agg => agg.field === field)) &&
+      aggs.every(agg => orderedFields.find(field => field === agg.field))
+    ) {
+      this.save(sortBy(aggs, agg => orderedFields.indexOf(agg.field)));
+    } else {
+      console.warn('provided orderedFields are not clean: ', orderedFields);
+    }
+  };
+
   render() {
-    return this.props.render({ update: this.update, aggs: this.state.temp });
+    return this.props.render({
+      update: this.update,
+      aggs: this.state.temp,
+      saveOrder: this.saveOrder,
+    });
   }
 }
