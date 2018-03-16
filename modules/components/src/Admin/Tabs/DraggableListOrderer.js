@@ -1,10 +1,10 @@
 import React from 'react';
-
 import { toPairs, sortBy } from 'lodash';
 import { css } from 'emotion';
+import ReactGridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import ReactGridLayout from 'react-grid-layout';
+
 import { fetchExtendedMapping } from '../../utils/api';
 
 export default class DraggableOrders extends React.Component {
