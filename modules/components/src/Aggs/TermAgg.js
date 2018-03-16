@@ -138,9 +138,11 @@ class TermAggs extends React.Component {
                           {bucket.name}
                         </OverflowTooltippedLabel> */}
                       </span>
-                      <span className="bucket-count">
-                        {bucket.doc_count.toLocaleString()}
-                      </span>
+                      {bucket.doc_count && (
+                        <span className="bucket-count">
+                          {bucket.doc_count.toLocaleString()}
+                        </span>
+                      )}
                     </Content>
                   ))}
 
