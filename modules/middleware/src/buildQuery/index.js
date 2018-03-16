@@ -1,129 +1,99 @@
 import _ from 'lodash';
-import utf8 from 'utf8';
 import * as CONSTANTS from '../constants';
 import normalizeFilters from './normalizeFilters';
 
-function getTermOrRegexOrSetFilter(nested, x) {
-  let value;
-
-  typeof x['content']['value'] === 'object'
-    ? (value = x['content']['value'][0])
-    : (value = x['content']['value']);
-
-  if (typeof value === 'string') {
-    if (value.includes('*')) return getRegexFilter(nested, x);
-    else if (value.includes('set_id:')) return getSetFilter(nested, x);
-  }
-  return getTermFilter(nested, x);
-}
-
-function getRegexFilter(nested, x, upperCase) {
-  let op = x['op'],
-    content = x['content'];
-
-  let k = content['field'];
-
-  let v =
-    typeof content['value'] === 'object'
-      ? content['value'][0]
-      : content['value'];
-  let t = 'regexp';
-
-  v = v.replace('*', '.*');
-  v = utf8.encode(v);
-  // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
-  // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
-  if (upperCase) v = v.toUpperCase();
-
-  // TODO: Check for correctness: replacement for if "*" in v[0]: v = v[0][:-1]
-  if (v.startswith('*')) v = '';
-
-  let r = { [t]: { [k]: v } };
-  let path = k.split('.');
-
-  r = wrapFilterBasedOnPath(r, path, nested, op);
-  return r;
-}
-
-function getSetFilter(nested, x) {
-  let op = x['op'],
-    content = x['content'];
-
-  let full_field = content['field'];
-
-  let values = content['value'],
-    t = 'terms',
-    value = values;
-
-  value = typeof values === 'object' ? values[0] : value;
-  value = utf8.encode(value);
-  let set_id = value.replace('set_id:', '');
-
-  let r = {
-    [t]: {
-      boost: 0,
-      full_field: {
-        index: CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
-        type: CONSTANTS.FIELD_TO_SET_TYPE[content['field']],
-        id: set_id,
-        path: 'ids',
-      },
-    },
-  };
-
-  let path = full_field.split('.');
-  r = wrapFilterBasedOnPath(r, path, nested, op);
-  return r;
-}
-
-function getTermFilter(nested, x, upperCase) {
-  let op = x['op'],
-    content = x['content'];
-
-  let k = content['field'];
-  let v = content['value'],
-    t = 'term';
-
-  if (typeof v === 'object') {
-    v = v.map(item => {
-      if (item == null) return '';
-      // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
-      // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
-      if (typeof item === 'string')
-        return upperCase ? utf8.encode(item).toUpperCase() : utf8.encode(item);
-      else return item;
-    });
-    t = 'terms';
-  } else if (typeof v === 'string') {
-    // TODO: pass upperCase flag from calling functions to get an exact replacement of this:
-    // if k == "project_id" or k == 'cases.project.project_id' or k == 'project.project_id':
-    v = upperCase ? utf8.encode(v).toUpperCase() : utf8.encode(v);
-  }
-  let r;
-  if (t === 'term') r = { [t]: { [k]: { value: v, boost: 0 } } };
-  else r = { [t]: { [k]: v, boost: 0 } };
-
-  let path = k.split('.');
-  r = wrapFilterBasedOnPath(r, path, nested, op);
-  return r;
-}
-
-function wrapFilterBasedOnPath(r, path, nested, op) {
-  for (let i = 1; i < path.length; i++) {
-    let p = _.chunk(path, path.length - i)[0].join('.');
-    if (nested.includes(p)) {
-      if (!isNested(r))
-        r = CONSTANTS.HAVE_NOT_OPS.includes(op) ? wrapNot(r) : wrapMust(r);
-      else r = wrapMust(r);
-
-      r = wrapFilter(r, p);
-    }
-  }
-  return r;
-}
-
 function isNested(x) {
   return x && x.hasOwnProperty(CONSTANTS.ES_NESTED);
+}
+
+function getTermOrRegexOrSetFilter(nested, filter) {
+  const { content } = filter;
+  const value = Array.isArray(content.value) ? content.value[0] : content.value;
+
+  if (`${value}`.includes('*')) {
+    return getRegexFilter(nested, filter);
+  } else if (`${value}`.includes('set_id:')) {
+    return getSetFilter(nested, filter);
+  } else {
+    return getTermFilter(nested, filter);
+  }
+}
+
+function getRegexFilter(nested, filter) {
+  // TODO: support all regex instead of just `*` and converting to `.*`
+  const { op, content } = filter;
+  return wrapFilterBasedOnPath(
+    {
+      regexp: {
+        // TODO: calling function already does this, pass in that value to avoid this
+        [content.field]: (Array.isArray(content.value)
+          ? content.value[0]
+          : content.value
+        ).replace('*', '.*'),
+      },
+    },
+    content.field.split('.'),
+    nested,
+    op,
+  );
+}
+
+function getSetFilter(nested, filter) {
+  const { op, content } = filter;
+  const fullField = content.field;
+
+  const setId = (Array.isArray(content.value)
+    ? content.value[0]
+    : content.value
+  ).replace('set_id:', '');
+
+  const index = CONSTANTS.FIELD_TO_SET_TYPE[content.field];
+  return wrapFilterBasedOnPath(
+    {
+      terms: {
+        boost: 0,
+        [fullField]: { index, type: index, id: setId, path: 'ids' },
+      },
+    },
+    fullField.split('.'),
+    nested,
+    op,
+  );
+}
+
+function getTermFilter(nested, filter, upperCase) {
+  const { op, content: { value, field } } = filter;
+
+  return wrapFilterBasedOnPath(
+    Array.isArray(value)
+      ? {
+          terms: {
+            [field]: value.map(item => item || ''),
+            boost: 0,
+          },
+        }
+      : { term: { [field]: { value, boost: 0 } } },
+    field.split('.'),
+    nested,
+    op,
+  );
+}
+
+function wrapFilterBasedOnPath(esFilter, path, nested, op) {
+  for (let i = 1; i < path.length; i++) {
+    const p = path.slice(0, path.length - i).join('.');
+    if (nested.includes(p)) {
+      if (!isNested(esFilter) && CONSTANTS.HAVE_NOT_OPS.includes(op)) {
+        esFilter = wrapNot(esFilter);
+      } else {
+        esFilter = wrapMust(esFilter);
+      }
+
+      esFilter = wrapFilter(esFilter, p);
+    }
+  }
+
+  return esFilter;
 }
 
 function wrapNot(val) {
@@ -149,173 +119,152 @@ function wrapBool(op, val) {
   };
 }
 
-function getMustNotFilter(nested, x) {
-  let tf = getTermFilter(nested, x);
-  return isNested(tf) ? tf : wrapNot(tf);
+function getMustNotFilter(nested, filter) {
+  const termFilter = getTermFilter(nested, filter);
+  return isNested(termFilter) ? termFilter : wrapNot(termFilter);
 }
 
-function getMustNotAnyFilter(nested, x) {
-  let tf = getTermFilter(nested, x);
-  return wrapNot(tf);
+function getMustNotAnyFilter(nested, filter) {
+  let termFilter = getTermFilter(nested, filter);
+  return wrapNot(termFilter);
 }
 
 function getFuzzyFilter(nested, content, op) {
   let { fields, value } = content;
 
   // group queries by their nesting level
-  const sortedNested = nested.sort((x, y) => y.length - x.length);
-  const nestedMap = fields.reduce((map, x) => {
-    const group = sortedNested.find(y => x.includes(y)) || '';
-    return { ...map, [group]: group in map ? [...map[group], x] : [x] };
+  const sortedNested = nested.slice().sort((a, b) => b.length - a.length);
+  const nestedMap = fields.reduce((map, field) => {
+    const group = sortedNested.find(y => field.includes(y)) || '';
+    return { ...map, [group]: [...(map[group] || []), field] };
   }, {});
 
   // construct one multi match per nested group
-  const should = Object.keys(nestedMap)
-    .map(x => ({
-      [CONSTANTS.ES_MULTI_MATCH]: {
-        [CONSTANTS.ES_QUERY]: value,
-        [CONSTANTS.ES_FIELDS]: nestedMap[x],
-        [CONSTANTS.ES_TYPE]: CONSTANTS.ES_PHRASE_PREFIX,
+  const should = Object.values(nestedMap).map(fields =>
+    wrapFilterBasedOnPath(
+      {
+        [CONSTANTS.ES_MULTI_MATCH]: {
+          [CONSTANTS.ES_QUERY]: value,
+          [CONSTANTS.ES_FIELDS]: fields,
+          [CONSTANTS.ES_TYPE]: CONSTANTS.ES_PHRASE_PREFIX,
+        },
       },
-    }))
-    .map(x =>
-      wrapFilterBasedOnPath(x, x.multi_match.fields[0].split('.'), nested, op),
-    );
+      fields[0].split('.'),
+      nested,
+      op,
+    ),
+  );
 
   return { [CONSTANTS.ES_BOOL]: { should } };
 }
 
 function getMissingFilter(nested, content, op) {
-  let k = content['field'];
-
   //# FIXME assumes missing
-  let r = { exists: { field: k, boost: 0 } };
-  let path = k.split('.');
+  let esFilter = { exists: { field: content.field, boost: 0 } };
+  let path = content.field.split('.');
 
   for (let i = 1; i < path.length; i++) {
-    let p = _.chunk(path, path.length - i)[0].join('.');
+    const p = path.slice(0, path.length - i).join('.');
     if (nested.includes(p)) {
-      r = wrapMust(r);
-      r = wrapFilter(r, p);
+      esFilter = wrapFilter(wrapMust(esFilter), p);
     }
   }
-  if (op === CONSTANTS.IS) r = wrapNot(r);
-  return r;
+
+  if (op === CONSTANTS.IS) {
+    return wrapNot(esFilter);
+  } else {
+    return esFilter;
+  }
 }
 
 function getAndFilter(nestedFields, filters) {
-  let musts = [];
-  const must_nots = [];
-  const shoulds = [];
+  const musts = [];
+  const mustNots = [];
 
   filters.forEach(filter => {
-    const { op, content } = filter;
+    const { op } = filter;
 
-    const is_must = CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS).includes(op);
-    const is_must_not = CONSTANTS.MUST_NOT_OPS.includes(op);
-    const is_should = op === CONSTANTS.OR;
+    const isMust = CONSTANTS.MUST_OPS.concat(CONSTANTS.RANGE_OPS).includes(op);
+    const isMustNot = CONSTANTS.MUST_NOT_OPS.includes(op);
+    const isShould = op === CONSTANTS.OR;
 
-    if (is_must || is_must_not) {
-      let curr;
-      if (CONSTANTS.VALUE_OPS.includes(op)) {
-        curr = getTermOrRegexOrSetFilter(nestedFields, filter);
-      } else if (CONSTANTS.IS_OPS.includes(op)) {
-        curr = getMissingFilter(nestedFields, content, op);
-      } else if (CONSTANTS.RANGE_OPS.includes(op)) {
-        curr = getRangeFilter(nestedFields, content, op);
-      } else if (op === CONSTANTS.FILTER) {
-        curr = getFuzzyFilter(nestedFields, content, op);
-      }
-
-      if (isNested(curr)) {
-        const filteredMusts = musts.filter(
-          m => isNested(m) && readPath(m) === readPath(curr),
-        );
+    const esFilter = opSwitch({ nested: nestedFields, filter });
+    if (isMust || isMustNot) {
+      if (isNested(esFilter)) {
+        const nestingMatch =
+          musts.filter(
+            m => isNested(m) && readPath(m) === readPath(esFilter),
+          )[0] || null;
         collapseNestedFilters(
-          filteredMusts.length > 0 ? filteredMusts[0] : null,
-          curr,
-          op === CONSTANTS.EXCLUDE_IF_ANY ? must_nots : musts,
+          nestingMatch,
+          esFilter,
+          op === CONSTANTS.EXCLUDE_IF_ANY ? mustNots : musts,
         );
-      } else if (is_must_not) {
-        must_nots.push(curr);
+      } else if (isMustNot) {
+        mustNots.push(esFilter);
       } else {
-        musts.push(curr);
+        musts.push(esFilter);
       }
-    } else if (is_should) shoulds.push(getOrFilter(nestedFields, content));
+    } else if (isShould) {
+      musts.push(esFilter);
+    }
   });
-  //   # wrap both shoulds and must in ES_MUST so ES_SHOULD so score does not interfere
-  //   # _get_or_filter already wraps shoulds with ES_SHOULD
-  let r = {};
-  musts = shoulds !== null ? musts.concat(shoulds) : musts;
-  if (musts.length > 0) r[CONSTANTS.ES_MUST] = musts;
-  if (must_nots.length > 0) r[CONSTANTS.ES_MUST_NOT] = must_nots;
 
-  return { [CONSTANTS.ES_BOOL]: r };
+  return {
+    [CONSTANTS.ES_BOOL]: {
+      ...(musts.length ? { [CONSTANTS.ES_MUST]: musts } : {}),
+      ...(mustNots.length ? { [CONSTANTS.ES_MUST_NOT]: mustNots } : {}),
+    },
+  };
 }
 
-function getOrFilter(nested, content) {
-  let must_not = _.filter(content, x =>
-    CONSTANTS.MUST_NOT_OPS.includes(x['op']),
-  ).map(x => getTermOrRegexOrSetFilter(nested, x));
-  let should = _.filter(content, x => CONSTANTS.HAVE_OPS.includes(x['op'])).map(
-    x => getTermOrRegexOrSetFilter(nested, x),
-  );
-  should = should.concat(
-    _.filter(content, x => x['op'] === CONSTANTS.FILTER).map(x =>
-      getFuzzyFilter(nested, x['content'], x['op']),
-    ),
-  );
-  should = should.concat(
-    _.filter(content, x => x['op'] === CONSTANTS.OR).map(x =>
-      getOrFilter(nested, x['content']),
-    ),
-  );
-  should = should.concat(
-    _.filter(content, x => x['op'] === CONSTANTS.AND).map(x =>
-      getAndFilter(nested, x['content']),
-    ),
-  );
-  should = should.concat(
-    _.filter(content, x => CONSTANTS.IS_OPS.includes(x['op'])).map(x =>
-      getMissingFilter(nested, x['content']),
-    ),
-  );
-  if (must_not && must_not.length) should.push(wrapNot(must_not));
+function getOrFilter(nested, filters) {
+  const mustNots = filters
+    .filter(({ op }) => CONSTANTS.MUST_NOT_OPS.includes(op))
+    .map(filter => opSwitch({ nested, filter }));
+
+  const should = [
+    ...filters
+      .filter(({ op }) => !CONSTANTS.MUST_NOT_OPS.includes(op))
+      .map(filter => opSwitch({ nested, filter })),
+    ...(mustNots.length ? [wrapNot(mustNots)] : []),
+  ];
+
   return {
     [CONSTANTS.ES_BOOL]:
-      should && should.length > 0 ? { [CONSTANTS.ES_SHOULD]: should } : {},
+      should.length > 0 ? { [CONSTANTS.ES_SHOULD]: should } : {},
   };
 }
 
 function getRangeFilter(nested, content, op) {
-  let k = content['field'],
-    v = content['value'],
-    obj = { boost: 0 };
+  const value = Array.isArray(content.value)
+    ? [CONSTANTS.GT, CONSTANTS.GTE].includes(op)
+      ? _.max(content.value)
+      : _.min(content.value)
+    : content.value;
 
-  if (typeof v === 'object')
-    v = [CONSTANTS.GT, CONSTANTS.GTE].includes(op) ? _.max(v) : _.min(v);
-  else if (typeof v === 'string') v = utf8.encode(v);
+  const esFilter = {
+    range: {
+      [content.field]: { boost: 0, [CONSTANTS.ES_RANGE_OPS[op]]: value },
+    },
+  };
 
-  obj[CONSTANTS.ES_RANGE_OPS[op]] = v;
-
-  let r = { range: { [k]: obj } },
-    path = k.split('.');
-
-  r = wrapFilterBasedOnPath(r, path, nested, op);
-  return r;
+  return wrapFilterBasedOnPath(esFilter, content.field.split('.'), nested, op);
 }
 
-function readPath(x) {
-  return _.get(x, [CONSTANTS.ES_NESTED, CONSTANTS.ES_PATH], '');
+function readPath(filter) {
+  return _.get(filter, [CONSTANTS.ES_NESTED, CONSTANTS.ES_PATH], '');
 }
 
 function collapseNestedFilters(found, curr, musts) {
-  if (found !== null) {
+  if (found === null) {
+    musts.push(curr);
+  } else {
     if (readNestedBool(curr)[CONSTANTS.ES_MUST]) {
-      let child = readNestedBool(curr)[CONSTANTS.ES_MUST][0];
-      let found_musts = _.get(readNestedBool(found), CONSTANTS.ES_MUST, []);
+      const child = readNestedBool(curr)[CONSTANTS.ES_MUST][0];
+      const found_musts = _.get(readNestedBool(found), CONSTANTS.ES_MUST, []);
       if (isNested(child)) {
-        let filtered = _.filter(
+        const filtered = _.filter(
           found_musts,
           m => isNested(m) && readPath(m) === readPath(child),
         );
@@ -339,7 +288,7 @@ function collapseNestedFilters(found, curr, musts) {
         [],
       ).concat(readNestedBool(curr)[CONSTANTS.ES_MUST_NOT]);
     }
-  } else musts.push(curr);
+  }
 }
 
 function readNestedBool(x) {
@@ -348,6 +297,25 @@ function readNestedBool(x) {
     [CONSTANTS.ES_NESTED, CONSTANTS.ES_QUERY, CONSTANTS.ES_BOOL],
     {},
   );
+}
+
+function opSwitch({ nested, filter }) {
+  const { op } = filter;
+  if (CONSTANTS.VALUE_OPS.includes(op)) {
+    return getTermOrRegexOrSetFilter(nested, filter);
+  } else if (op === CONSTANTS.FILTER) {
+    return getFuzzyFilter(nested, filter.content, filter.op);
+  } else if (op === CONSTANTS.OR) {
+    return getOrFilter(nested, filter.content);
+  } else if (op === CONSTANTS.AND) {
+    return getAndFilter(nested, filter.content);
+  } else if (CONSTANTS.IS_OPS.includes(op)) {
+    return getMissingFilter(nested, filter.content, filter.op);
+  } else if (CONSTANTS.RANGE_OPS.includes(op)) {
+    return getRangeFilter(nested, filter.content, filter.op);
+  } else {
+    throw new Error('unknown op');
+  }
 }
 
 function buildQuery({ nestedFields, filters: rawFilters }) {
@@ -360,25 +328,14 @@ function buildQuery({ nestedFields, filters: rawFilters }) {
       throw Error(`Must specify : ${key}. in filters: ${filters}`);
     }
   });
-
-  const { op, content } = filters;
-
-  if (op === CONSTANTS.AND) {
-    return getAndFilter(nestedFields, content);
-  } else if (op === CONSTANTS.OR) {
-    return getOrFilter(nestedFields, content);
-  } else if (op === CONSTANTS.IN) {
-    return getTermOrRegexOrSetFilter(nestedFields, filters);
-  } else if (op === CONSTANTS.EXCLUDE) {
+  // TODO: EXCLUDE and EXCLUDE_IF_ANY handled different if in root? confirm?
+  const { op } = filters;
+  if (op === CONSTANTS.EXCLUDE) {
     return getMustNotFilter(nestedFields, filters);
   } else if (op === CONSTANTS.EXCLUDE_IF_ANY) {
     return getMustNotAnyFilter(nestedFields, filters);
-  } else if (op === CONSTANTS.FILTER) {
-    return getFuzzyFilter(nestedFields, content, op);
-  } else if (CONSTANTS.IS_OPS.includes(op)) {
-    return getMissingFilter(nestedFields, content, op);
-  } else if (CONSTANTS.RANGE_OPS.includes(op)) {
-    return getRangeFilter(nestedFields, content, op);
+  } else {
+    return opSwitch({ nested: nestedFields, filter: filters });
   }
 }
 
