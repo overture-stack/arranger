@@ -1,6 +1,9 @@
 import getFields from 'graphql-fields';
-import { buildAggregations, flattenAggregations } from '@arranger/middleware';
-import { buildQuery } from '@arranger/middleware';
+import {
+  buildQuery,
+  buildAggregations,
+  flattenAggregations,
+} from '@arranger/middleware';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 

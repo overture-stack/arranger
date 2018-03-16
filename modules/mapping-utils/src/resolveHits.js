@@ -3,7 +3,7 @@ import { buildQuery } from '@arranger/middleware';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
-let resolveNested = ({ node, nested_fields, parent = '' }) => {
+let resolveNested = ({ node, nestedFields, parent = '' }) => {
   if (typeof node !== 'object' || !node) return node;
 
   return Object.entries(node).reduce((acc, [field, hits]) => {
@@ -12,17 +12,13 @@ let resolveNested = ({ node, nested_fields, parent = '' }) => {
 
     return {
       ...acc,
-      [field]: nested_fields.includes(fullPath)
+      [field]: nestedFields.includes(fullPath)
         ? {
             hits: {
               edges: hits.map(node => ({
                 node: {
                   ...node,
-                  ...resolveNested({
-                    node,
-                    nested_fields,
-                    parent: fullPath,
-                  }),
+                  ...resolveNested({ node, nestedFields, parent: fullPath }),
                 },
               })),
               total: hits.length,
@@ -31,17 +27,9 @@ let resolveNested = ({ node, nested_fields, parent = '' }) => {
         : typeof hits === 'object'
           ? Object.assign(
               hits.constructor(),
-              resolveNested({
-                node: hits,
-                nested_fields,
-                parent: fullPath,
-              }),
+              resolveNested({ node: hits, nestedFields, parent: fullPath }),
             )
-          : resolveNested({
-              node: hits,
-              nested_fields,
-              parent: fullPath,
-            }),
+          : resolveNested({ node: hits, nestedFields, parent: fullPath }),
     };
   }, {});
 };
@@ -97,10 +85,7 @@ export default type => async (
 
   let nodes = hits.hits.map(x => {
     let source = x._source;
-    let nested_nodes = resolveNested({
-      node: source,
-      nested_fields: nestedFields,
-    });
+    let nested_nodes = resolveNested({ node: source, nestedFields });
     return { id: x._id, ...source, ...nested_nodes };
   });
 
