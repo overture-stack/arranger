@@ -116,9 +116,8 @@ class DraggableOrders extends React.Component {
               `}
               ref={el => (this.listElements[item.field] = el)}
             >
-              {extendedMapping.find(
-                ex => ex.field.replace(/\./g, '__') === item.field,
-              )?.displayName || item.field}
+              {extendedMapping.find(ex => ex.field === item.field)
+                ?.displayName || item.field}
             </div>
           </div>
         ))}

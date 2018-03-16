@@ -21,15 +21,16 @@ export default ({ projectId, graphqlField }) => (
             <strong>Aggregation Order</strong>
             <DraggableListOrderer
               {...{
-                itemsList: aggsState.aggs.map(({ field, active, ...rest }) => ({
-                  field: field,
-                  active: active,
+                itemsList: aggsState.aggs.map(({ field, ...rest }) => ({
+                  field: field.split('__').join('.'),
                   ...rest,
                 })),
                 projectId,
                 graphqlField,
                 onOrderChange: newItemList =>
-                  aggsState.saveOrder(newItemList.map(({ field }) => field)),
+                  aggsState.saveOrder(
+                    newItemList.map(({ field }) => field.split('.').join('__')),
+                  ),
               }}
             />
           </div>

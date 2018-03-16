@@ -21,18 +21,15 @@ export default ({ projectId, graphqlField }) => (
           <DraggableListOrderer
             {...{
               itemsList: columnsState.state.columns.map(
-                ({ field, ...rest }) => ({
-                  field: field.split('.').join('__'),
-                  active: rest.show,
+                ({ show, ...rest }) => ({
+                  active: show,
                   ...rest,
                 }),
               ),
               projectId,
               graphqlField,
               onOrderChange: newItemList =>
-                columnsState.saveOrder(
-                  newItemList.map(({ field }) => field.split('__').join('.')),
-                ),
+                columnsState.saveOrder(newItemList.map(({ field }) => field)),
             }}
           />
         </div>
