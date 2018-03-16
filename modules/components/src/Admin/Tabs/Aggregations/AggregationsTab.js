@@ -18,7 +18,7 @@ export default ({ projectId, graphqlField }) => (
             <EditAggs handleChange={aggsState.update} {...aggsState} />
           </div>
           <div>
-            <strong>Aggs order</strong>
+            <strong>Aggregation Order</strong>
             <DraggableListOrderer
               {...{
                 itemsList: aggsState.aggs.map(({ field, active, ...rest }) => ({
