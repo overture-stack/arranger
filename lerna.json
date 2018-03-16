@@ -2,7 +2,7 @@
   "lerna": "2.5.1",
   "version": "0.1.38",
   "packages": [
-    "modules/*", 
+    "modules/*",
     "integration-tests/*"
   ]
 }
