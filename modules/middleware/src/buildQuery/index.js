@@ -285,22 +285,22 @@ function opSwitch({ nestedFields, filter }) {
 
 function buildQuery({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
-  const filters = normalizeFilters(rawFilters);
-  const filterKeys = Object.keys(filters);
+  const filter = normalizeFilters(rawFilters);
+  const filterKeys = Object.keys(filter);
   ['op', 'content'].forEach(key => {
     if (!filterKeys.includes(key)) {
-      console.error(`Must specify : ${key}. in filters: ${filters}`);
-      throw Error(`Must specify : ${key}. in filters: ${filters}`);
+      console.error(`Must specify : ${key}. in filters: ${filter}`);
+      throw Error(`Must specify : ${key}. in filters: ${filter}`);
     }
   });
   // TODO: EXCLUDE and EXCLUDE_IF_ANY handled different if in root? confirm?
-  const { op } = filters;
+  const { op } = filter;
   if (op === CONSTANTS.EXCLUDE) {
-    return getMustNotFilter({ nestedFields, filters });
+    return getMustNotFilter({ nestedFields, filter });
   } else if (op === CONSTANTS.EXCLUDE_IF_ANY) {
-    return getMustNotAnyFilter({ nestedFields, filters });
+    return getMustNotAnyFilter({ nestedFields, filter });
   } else {
-    return opSwitch({ nestedFields, filter: filters });
+    return opSwitch({ nestedFields, filter });
   }
 }
 

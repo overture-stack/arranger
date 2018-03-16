@@ -23,7 +23,7 @@ function groupingOptimizer({ op, content }) {
 }
 
 function isSpecialFilter(value) {
-  return value.includes('*') || value.includes('set_id:');
+  return `${value}`.includes('*') || `${value}`.includes('set_id:');
 }
 
 function normalizeFilters(filter) {
@@ -37,14 +37,11 @@ function normalizeFilters(filter) {
     });
 
     const normalValues = value.filter(psv => !isSpecialFilter(psv));
-
-    return {
-      op: OR,
-      content:
-        normalValues.length > 0
-          ? [{ op, content: { field, value: normalValues } }, ...specialFilters]
-          : specialFilters,
-    };
+    const content =
+      normalValues.length > 0
+        ? [{ op, content: { field, value: normalValues } }, ...specialFilters]
+        : specialFilters;
+    return content.length > 1 ? { op: OR, content } : content[0];
   } else if (GROUP_OPS.includes(op)) {
     return groupingOptimizer(filter);
   } else {
