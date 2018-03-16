@@ -15,19 +15,9 @@ export default class DraggableOrders extends React.Component {
   componentDidMount() {
     const { projectId, graphqlField, itemsList } = this.props;
     fetchExtendedMapping({ projectId, graphqlField }).then(
-      ({ extendedMapping }) => this.setState({ extendedMapping }, () => {}),
+      ({ extendedMapping }) => this.setState({ extendedMapping }),
     );
   }
-
-  onLayoutChange = layout => {
-    const { itemsList, onOrderChange = () => {} } = this.props;
-    const ordered = sortBy(layout, ({ y }) => y);
-    const orderedList = sortBy(
-      itemsList,
-      ({ field }) => layout.find(({ i }) => field === i).y,
-    );
-    onOrderChange(orderedList);
-  };
 
   render() {
     const {
@@ -56,7 +46,15 @@ export default class DraggableOrders extends React.Component {
           isResizable={false}
           width={width}
           isDraggable={true}
-          onDragStop={this.onLayoutChange}
+          onDragStop={layout => {
+            const { itemsList, onOrderChange = () => {} } = this.props;
+            const ordered = sortBy(layout, ({ y }) => y);
+            const orderedList = sortBy(
+              itemsList,
+              ({ field }) => layout.find(({ i }) => field === i).y,
+            );
+            onOrderChange(orderedList);
+          }}
         >
           {itemsList.map((item, index) => (
             <div key={item.field} style={{ position: 'relative' }}>
