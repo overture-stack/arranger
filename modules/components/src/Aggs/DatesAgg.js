@@ -10,15 +10,14 @@ import convert from 'convert-units';
 import _ from 'lodash';
 
 import { replaceSQON } from '../SQONView/utils';
-
 import './AggregationCard.css';
-
-import State from '../State';
 
 class DatesAgg extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      isCollapsed: false,
+    };
   }
 
   render() {
@@ -30,32 +29,28 @@ class DatesAgg extends Component {
       collapsible = true,
       handleChange = () => {},
     } = this.props;
+    const { isCollapsed } = this.state;
     console.log('buckets: ', buckets);
     return (
-      <State
-        initial={{ isCollapsed: false }}
-        render={({ update, isCollapsed }) => (
-          <div className="aggregation-card">
-            <div
-              className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-              onClick={
-                collapsible
-                  ? () => update({ isCollapsed: !isCollapsed })
-                  : () => {}
-              }
-            >
-              <span className="title">{displayName}</span>
-              {collapsible && (
-                <span className={`arrow ${isCollapsed && 'collapsed'}`} />
-              )}
-            </div>
-            <DateRangePicker
-              focusedInput={this.state.focusedInput}
-              onFocusChange={focusedInput => this.setState({ focusedInput })}
-            />
-          </div>
-        )}
-      />
+      <div className="aggregation-card">
+        <div
+          className={`title-wrapper ${isCollapsed && 'collapsed'}`}
+          onClick={
+            collapsible
+              ? () => this.setState({ isCollapsed: !isCollapsed })
+              : () => {}
+          }
+        >
+          <span className="title">{displayName}</span>
+          {collapsible && (
+            <span className={`arrow ${isCollapsed && 'collapsed'}`} />
+          )}
+        </div>
+        <DateRangePicker
+          focusedInput={this.state.focusedInput}
+          onFocusChange={focusedInput => this.setState({ focusedInput })}
+        />
+      </div>
     );
   }
 }
