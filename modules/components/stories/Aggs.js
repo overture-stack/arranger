@@ -148,16 +148,7 @@ storiesOf('Aggs', module)
       <DatesAgg
         field="disease_type"
         displayName="Disease Type"
-        buckets={[
-          {
-            doc_count: 2,
-            key: 'Acute Myeloid Leukemia',
-          },
-          {
-            doc_count: 10,
-            key: 'Acinar cell neoplasms',
-          },
-        ]}
+        buckets={require('./dummyData/datesBucketsSample.json')}
         handleValueClick={action('Term Agg Selection')}
       />
     </div>

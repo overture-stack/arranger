@@ -30,6 +30,7 @@ class DatesAgg extends Component {
       collapsible = true,
       handleChange = () => {},
     } = this.props;
+    console.log('buckets: ', buckets);
     return (
       <State
         initial={{ isCollapsed: false }}
