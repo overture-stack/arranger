@@ -245,7 +245,6 @@ storiesOf('Aggs', module)
             `}
           >
             {bolleanAggs.map(agg => (
-              // TODO: switch on agg type
               <BooleanAgg
                 key={agg.field}
                 {...agg}
