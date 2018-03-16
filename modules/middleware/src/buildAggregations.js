@@ -77,6 +77,10 @@ function createTermAggregation({ field, isNested }) {
       ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
       terms: { field, size: MAX_AGGREGATION_SIZE },
     },
+    [`${field}:missing`]: {
+      ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
+      missing: { field: field },
+    },
   };
 }
 
