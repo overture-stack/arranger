@@ -52,7 +52,7 @@ function getRegexFilter({ nestedFields, filter }) {
   const esFilter = wrapFilter({
     filter,
     nestedFields,
-    esFilter: { regexp: { [field]: value.replace('*', '.*') } },
+    esFilter: { regexp: { [field]: value } },
     isNot: NOT_IN_OP === op,
   });
 
@@ -181,11 +181,11 @@ function getGroupFilter({ nestedFields, filter: { content, op } }) {
 }
 
 function opSwitch({ nestedFields, filter }) {
-  const { op, content: { value } } = filter;
+  const { op, content: { isRegex } } = filter;
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
-    if (`${value[0]}`.includes('*')) {
+    if (isRegex) {
       return getRegexFilter({ nestedFields, filter });
     } else {
       return getTermFilter({ nestedFields, filter });
