@@ -121,7 +121,6 @@ function wrapWithFilters({
       useIfEmpty: null,
     });
     // TODO: better way to figure out that the field wasn't found
-    console.log(query, cleanedQuery);
     if (!isEqual(cleanedQuery || {}, query || {})) {
       return createGlobalAggregation({
         field,

@@ -2,26 +2,25 @@ import { HISTOGRAM, STATS, AGGS_WRAPPER_TYPES } from './constants';
 
 function flattenAggregations(aggregations) {
   return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
-    if (key === 'doc_count') return prunedAggs;
+    const [field, aggregationType = null] = key.split(':');
 
-    const [field, agg_type = null] = key.split(':');
-
-    if (Object.values(AGGS_WRAPPER_TYPES).includes(agg_type)) {
+    if (Object.values(AGGS_WRAPPER_TYPES).includes(aggregationType)) {
       return { ...prunedAggs, ...flattenAggregations(value) };
-    } else if ([STATS, HISTOGRAM].includes(agg_type)) {
+    } else if ([STATS, HISTOGRAM].includes(aggregationType)) {
       return {
         ...prunedAggs,
-        [field]: { ...prunedAggs[field], [agg_type]: value },
+        [field]: { ...prunedAggs[field], [aggregationType]: value },
       };
     } else if (Array.isArray(value.buckets)) {
       return {
         ...prunedAggs,
         [field]: {
-          ...value,
-          buckets: value.buckets.map(({ rn, ...bucket }) => ({
-            ...bucket,
-            doc_count: rn ? rn.doc_count : bucket.doc_count,
-          })),
+          buckets: [
+            ...value.buckets.map(({ rn, ...bucket }) => ({
+              ...bucket,
+              doc_count: rn ? rn.doc_count : bucket.doc_count,
+            })),
+          ],
         },
       };
     } else {
