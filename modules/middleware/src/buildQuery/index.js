@@ -1,90 +1,7 @@
 import _ from 'lodash';
 import utf8 from 'utf8';
-import * as CONSTANTS from './constants';
-
-function termOptimizer(op, content) {
-  let op_mapping = {
-    EQ: CONSTANTS.IN,
-    NEQ: CONSTANTS.EXCLUDE,
-  };
-
-  if (typeof content['value'] === 'string')
-    content['value'] = [content['value']];
-
-  return filterOptimizer({
-    op: op_mapping[op],
-    content: content,
-  });
-}
-
-function groupingOptimizer(content, parent_op) {
-  let inside = [],
-    other = [];
-
-  content.forEach(c => {
-    if (c['op'].toLowerCase() === parent_op) {
-      inside = inside.concat(groupingOptimizer(c['content'], parent_op));
-    } else {
-      other.push(filterOptimizer(c));
-    }
-  });
-
-  return other.concat(inside);
-}
-
-function filterOptimizer({ op, content }) {
-  if ([CONSTANTS.EQ, CONSTANTS.NEQ].includes(op)) {
-    return termOptimizer(op, content);
-  } else if (
-    [CONSTANTS.IN, CONSTANTS.EXCLUDE].includes(op) &&
-    content.value.length > 1 &&
-    content.value.some(v => v.includes('*') || v.includes('set_id:'))
-  ) {
-    // seperate regex and set_id into one list, terms in another and OR them
-    const ps = content.value
-      .filter(psv => psv.includes('*') || psv.includes('set_id:'))
-      .map(psv => {
-        return {
-          op: op,
-          content: {
-            field: content['field'],
-            value: [psv],
-          },
-        };
-      });
-
-    const terms = content.value.filter(
-      psv => !psv.includes('*') && !psv.includes('set_id:'),
-    );
-    let ts =
-      terms.length > 0
-        ? [
-            {
-              op: op,
-              content: {
-                field: content['field'],
-                value: terms,
-              },
-            },
-          ]
-        : [];
-
-    return {
-      op: CONSTANTS.OR,
-      content: ts.concat(ps),
-    };
-  } else if (CONSTANTS.GROUP_OPS.includes(op)) {
-    return {
-      op: op,
-      content: groupingOptimizer(content, op),
-    };
-  } else {
-    return {
-      op: op,
-      content: content,
-    };
-  }
-}
+import * as CONSTANTS from '../constants';
+import normalizeFilters from './normalizeFilters';
 
 function getTermOrRegexOrSetFilter(nested, x) {
   let value;
@@ -389,7 +306,7 @@ function getRangeFilter(nested, content, op) {
 }
 
 function readPath(x) {
-  return _.get(x, [CONSTANTS.ES_NESTED, 'path'], '');
+  return _.get(x, [CONSTANTS.ES_NESTED, CONSTANTS.ES_PATH], '');
 }
 
 function collapseNestedFilters(found, curr, musts) {
@@ -435,8 +352,7 @@ function readNestedBool(x) {
 
 function buildQuery({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
-  const filters = filterOptimizer(rawFilters);
-
+  const filters = normalizeFilters(rawFilters);
   const filterKeys = Object.keys(filters);
   ['op', 'content'].forEach(key => {
     if (!filterKeys.includes(key)) {
