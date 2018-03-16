@@ -1,0 +1,30 @@
+.booleanFacetWrapper {
+  display: flex;
+  flex-direction: row;
+}
+.booleanFacetAny {
+  flex: 1;
+  text-align: center;
+  border: solid 1px #cacbcf;
+  border-top-left-radius: 100px;
+  border-bottom-left-radius: 100px;
+}
+.booleanFacetTrue {
+  flex: 1;
+  text-align: center;
+  border: solid 1px #cacbcf;
+}
+.booleanFacetFalse {
+  flex: 1;
+  text-align: center;
+  border: solid 1px #cacbcf;
+  border-top-right-radius: 100px;
+  border-bottom-right-radius: 100px;
+}
+
+.booleanFacetAny.active,
+.booleanFacetTrue.active,
+.booleanFacetFalse.active {
+  background: #e5f7fd;
+  border-color: '#00afed';
+}

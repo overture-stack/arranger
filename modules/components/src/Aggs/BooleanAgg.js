@@ -7,6 +7,7 @@ import {
   replaceSQON,
   removeSQON,
 } from '../SQONView/utils';
+import './BooleanAgg.css';
 
 const booleanValues = {
   true: 'true',
@@ -93,45 +94,21 @@ export default ({
 
   return (
     <AggsWrapper {...{ buckets, ...rest }}>
-      <div
-        className={`booleanFacetWrapper ${css`
-          display: flex;
-          flex-direction: row;
-        `}`}
-      >
+      <div className={`booleanFacetWrapper`}>
         <div
-          className={`booleanFacetAny ${css`
-            background: ${isNeitherActive ? '#e5f7fd' : 'none'};
-            flex: 1;
-            text-align: center;
-            border: solid 1px ${isNeitherActive ? '#00afed' : '#cacbcf'};
-            border-top-left-radius: 100px;
-            border-bottom-left-radius: 100px;
-          `}`}
+          className={`booleanFacetAny ${isNeitherActive ? 'active' : ''}`}
           onClick={handleAnyClick}
         >
           Any
         </div>
         <div
-          className={`booleanFacetTrue ${css`
-            background: ${isTrueActive ? '#e5f7fd' : 'none'};
-            flex: 1;
-            text-align: center;
-            border: solid 1px ${isTrueActive ? '#00afed' : '#cacbcf'};
-          `}`}
+          className={`booleanFacetTrue ${isTrueActive ? 'active' : ''}`}
           onClick={handleTrueClick}
         >
           Yes
         </div>
         <div
-          className={`booleanFacetFalse ${css`
-            background: ${isFalseActive ? '#e5f7fd' : 'none'};
-            flex: 1;
-            text-align: center;
-            border: solid 1px ${isFalseActive ? '#00afed' : '#cacbcf'};
-            border-top-right-radius: 100px;
-            border-bottom-right-radius: 100px;
-          `}`}
+          className={`booleanFacetFalse ${isFalseActive ? 'active' : ''}`}
           onClick={handleFalseClick}
         >
           No
