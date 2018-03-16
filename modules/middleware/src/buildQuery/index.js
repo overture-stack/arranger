@@ -69,6 +69,8 @@ function getTermOrRegexOrSetFilter({ nestedFields, filter }) {
 
   if (`${value}`.includes('*')) {
     return getRegexFilter({ nestedFields, filter });
+  } else if (`${value}`.includes('set_id:')) {
+    return getSetFilter({ nestedFields, filter });
   } else {
     return getTermFilter({ nestedFields, filter });
   }
@@ -87,6 +89,27 @@ function getRegexFilter({ nestedFields, filter }) {
           ? content.value[0]
           : content.value
         ).replace('*', '.*'),
+      },
+    },
+  });
+}
+
+function getSetFilter({ nestedFields, filter }) {
+  const { content } = filter;
+
+  const setId = (Array.isArray(content.value)
+    ? content.value[0]
+    : content.value
+  ).replace('set_id:', '');
+
+  const index = CONSTANTS.FIELD_TO_SET_TYPE[content.field];
+  return wrapFilterBasedOnPath({
+    filter,
+    nestedFields,
+    esFilter: {
+      terms: {
+        boost: 0,
+        [content.field]: { index, type: index, id: setId, path: 'ids' },
       },
     },
   });
