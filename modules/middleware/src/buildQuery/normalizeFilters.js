@@ -23,7 +23,7 @@ function groupingOptimizer({ op, content }) {
 }
 
 function isSpecialFilter(value) {
-  return `${value}`.includes('*') || `${value}`.includes('set_id:');
+  return `${value}`.includes('*');
 }
 
 function normalizeFilters(filter) {
