@@ -24,7 +24,7 @@ function createFilteredAggregation(field, filters, aggs) {
   };
 }
 
-function removeFieldFromQuery({ field, query, useIfEmpty = null }) {
+function removeFieldFromQuery({ field, query }) {
   // TODO: must_not? should?
   const musts = get(query, [CONSTANTS.ES_BOOL, CONSTANTS.ES_MUST]) || [];
   const filteredMusts = musts
@@ -33,16 +33,10 @@ function removeFieldFromQuery({ field, query, useIfEmpty = null }) {
       const nested = get(must, CONSTANTS.ES_NESTED);
       const nestedQuery = get(nested, CONSTANTS.ES_QUERY);
       if (nestedQuery) {
-        const cleaned = removeFieldFromQuery({
-          field,
-          query: nestedQuery,
-        });
+        const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
         return (
           cleaned && {
-            [CONSTANTS.ES_NESTED]: {
-              ...nested,
-              [CONSTANTS.ES_QUERY]: cleaned,
-            },
+            [CONSTANTS.ES_NESTED]: { ...nested, [CONSTANTS.ES_QUERY]: cleaned },
           }
         );
       } else {
@@ -51,11 +45,9 @@ function removeFieldFromQuery({ field, query, useIfEmpty = null }) {
     })
     .filter(Boolean);
 
-  if (filteredMusts.length === 0) {
-    return useIfEmpty;
-  } else {
-    return { [CONSTANTS.ES_BOOL]: { [CONSTANTS.ES_MUST]: filteredMusts } };
-  }
+  return filteredMusts.length === 0
+    ? null
+    : { [CONSTANTS.ES_BOOL]: { [CONSTANTS.ES_MUST]: filteredMusts } };
 }
 
 function createNumericAggregation({ field, graphqlField }) {
@@ -115,11 +107,7 @@ function wrapWithFilters({
   aggregation,
 }) {
   if (!aggregationsFilterThemselves) {
-    const cleanedQuery = removeFieldFromQuery({
-      field,
-      query,
-      useIfEmpty: null,
-    });
+    const cleanedQuery = removeFieldFromQuery({ field, query });
     // TODO: better way to figure out that the field wasn't found
     if (!isEqual(cleanedQuery || {}, query || {})) {
       return createGlobalAggregation({
