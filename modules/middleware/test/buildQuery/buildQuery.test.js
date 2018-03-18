@@ -7,10 +7,7 @@ test('buildQuery', () => {
         nestedFields: [],
         filters: {
           op: '=',
-          content: {
-            field: 'project_code',
-            value: ['ACC'],
-          },
+          content: { field: 'project_code', value: ['ACC'] },
         },
       },
       output: { terms: { project_code: ['ACC'], boost: 0 } },
@@ -393,10 +390,10 @@ test('buildQuery', () => {
       input: {
         nestedFields: [],
         filters: {
-          op: 'not',
+          op: 'missing',
           content: {
             field: 'cases.clinical.gender',
-            value: 'missing',
+            value: false,
           },
         },
       },
@@ -409,17 +406,17 @@ test('buildQuery', () => {
           op: 'and',
           content: [
             {
-              op: 'is',
+              op: 'missing',
               content: {
                 field: 'cases.clinical.gender',
-                value: 'missing',
+                value: true,
               },
             },
             {
-              op: 'not',
+              op: 'missing',
               content: {
                 field: 'cases.clinical.gender',
-                value: 'missing',
+                value: false,
               },
             },
           ],
@@ -447,17 +444,17 @@ test('buildQuery', () => {
           op: 'or',
           content: [
             {
-              op: 'is',
+              op: 'missing',
               content: {
                 field: 'cases.clinical.gender',
-                value: 'missing',
+                value: true,
               },
             },
             {
-              op: 'not',
+              op: 'missing',
               content: {
                 field: 'cases.clinical.gender',
-                value: 'missing',
+                value: false,
               },
             },
           ],
@@ -682,10 +679,10 @@ test('buildQuery', () => {
       input: {
         nestedFields: [],
         filters: {
-          op: 'is',
+          op: 'missing',
           content: {
             field: 'cases.clinical.gender',
-            value: 'missing',
+            value: true,
           },
         },
       },

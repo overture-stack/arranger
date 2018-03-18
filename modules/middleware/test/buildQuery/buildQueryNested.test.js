@@ -612,7 +612,7 @@ test('buildQuery nested', () => {
             field: 'files.foo.code',
             value: ['01'],
           },
-          op: 'exclude',
+          op: 'not-in',
         },
       },
       output: {
@@ -915,9 +915,9 @@ test('buildQuery nested', () => {
             {
               content: {
                 field: 'files.analysis.metadata.read_groups.is_paired_end',
-                value: 'MISSING',
+                value: true,
               },
-              op: 'is',
+              op: 'missing',
             },
           ],
           op: 'and',
@@ -946,33 +946,18 @@ test('buildQuery nested', () => {
                         },
                       },
                     ],
+                    must_not: [
+                      {
+                        exists: {
+                          field:
+                            'files.analysis.metadata.read_groups.is_paired_end',
+                          boost: 0,
+                        },
+                      },
+                    ],
                   },
                 },
                 path: 'files',
-              },
-            },
-            {
-              bool: {
-                must_not: [
-                  {
-                    nested: {
-                      query: {
-                        bool: {
-                          must: [
-                            {
-                              exists: {
-                                field:
-                                  'files.analysis.metadata.read_groups.is_paired_end',
-                                boost: 0,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      path: 'files',
-                    },
-                  },
-                ],
               },
             },
           ],
@@ -998,9 +983,9 @@ test('buildQuery nested', () => {
             {
               content: {
                 field: 'files.analysis.metadata.read_groups.is_paired_end',
-                value: 'MISSING',
+                value: false,
               },
-              op: 'not',
+              op: 'missing',
             },
           ],
           op: 'and',
@@ -1050,7 +1035,7 @@ test('buildQuery nested', () => {
         nestedFields,
         filters: {
           content: { field: 'files.foo.code', value: ['01'] },
-          op: 'excludeifany',
+          op: 'some-not-in',
         },
       },
       output: {
@@ -1092,7 +1077,7 @@ test('buildQuery nested', () => {
           content: [
             {
               content: { field: 'files.foo.bar.name', value: ['cname'] },
-              op: 'excludeifany',
+              op: 'some-not-in',
             },
             {
               content: { field: 'files.foo.bar.code', value: '01' },
