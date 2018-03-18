@@ -1,14 +1,24 @@
 import { get, isEqual } from 'lodash';
 
-import * as CONSTANTS from './constants';
-import { AGGS_WRAPPER_TYPES } from './constants';
+import {
+  AGGS_WRAPPER_GLOBAL,
+  AGGS_WRAPPER_FILTERED,
+  AGGS_WRAPPER_NESTED,
+  ES_BOOL,
+  ES_MUST,
+  ES_NESTED,
+  ES_QUERY,
+  STATS,
+  HISTOGRAM,
+  BUCKETS,
+} from './constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
 
 function createGlobalAggregation({ field, aggs }) {
   return {
-    [`${field}:${AGGS_WRAPPER_TYPES.GLOBAL}`]: {
+    [`${field}:${AGGS_WRAPPER_GLOBAL}`]: {
       global: {},
       aggs,
     },
@@ -17,7 +27,7 @@ function createGlobalAggregation({ field, aggs }) {
 
 function createFilteredAggregation(field, filters, aggs) {
   return {
-    [`${field}:${AGGS_WRAPPER_TYPES.FILTERED}`]: {
+    [`${field}:${AGGS_WRAPPER_FILTERED}`]: {
       filter: filters,
       aggs,
     },
@@ -26,17 +36,17 @@ function createFilteredAggregation(field, filters, aggs) {
 
 function removeFieldFromQuery({ field, query }) {
   // TODO: must_not? should?
-  const musts = get(query, [CONSTANTS.ES_BOOL, CONSTANTS.ES_MUST]) || [];
+  const musts = get(query, [ES_BOOL, ES_MUST]) || [];
   const filteredMusts = musts
     .map(must => {
       if (['terms', 'range'].some(key => get(must, [key, field]))) return null;
-      const nested = get(must, CONSTANTS.ES_NESTED);
-      const nestedQuery = get(nested, CONSTANTS.ES_QUERY);
+      const nested = get(must, ES_NESTED);
+      const nestedQuery = get(nested, ES_QUERY);
       if (nestedQuery) {
         const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
         return (
           cleaned && {
-            [CONSTANTS.ES_NESTED]: { ...nested, [CONSTANTS.ES_QUERY]: cleaned },
+            [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned },
           }
         );
       } else {
@@ -47,13 +57,11 @@ function removeFieldFromQuery({ field, query }) {
 
   return filteredMusts.length === 0
     ? null
-    : { [CONSTANTS.ES_BOOL]: { [CONSTANTS.ES_MUST]: filteredMusts } };
+    : { [ES_BOOL]: { [ES_MUST]: filteredMusts } };
 }
 
 function createNumericAggregation({ field, graphqlField }) {
-  const type = [CONSTANTS.STATS, CONSTANTS.HISTOGRAM].find(
-    t => graphqlField[t],
-  );
+  const type = [STATS, HISTOGRAM].find(t => graphqlField[t]);
   if (!type) {
     return {};
   } else {
@@ -63,7 +71,7 @@ function createNumericAggregation({ field, graphqlField }) {
       [`${field}:${type}`]: {
         [type]: {
           field,
-          ...(type === 'CONSTANTS.HISTOGRAM'
+          ...(type === HISTOGRAM
             ? {
                 interval: args.interval || HISTOGRAM_INTERVAL_DEFAULT,
               }
@@ -86,7 +94,7 @@ function createTermAggregation({ field, isNested }) {
 function createAggregation({ field, graphqlField, isNested = false }) {
   if (!graphqlField) {
     return {};
-  } else if (graphqlField[CONSTANTS.BUCKETS]) {
+  } else if (graphqlField[BUCKETS]) {
     return createTermAggregation({ field, isNested });
   } else {
     return createNumericAggregation({ field, graphqlField });
@@ -139,7 +147,10 @@ function buildAggregations({
 
     const aggregation = nestedPaths.reverse().reduce(
       (aggs, path) => ({
-        [`${field}:${AGGS_WRAPPER_TYPES.NESTED}`]: { nested: { path }, aggs },
+        [`${field}:${AGGS_WRAPPER_NESTED}`]: {
+          nested: { path },
+          aggs,
+        },
       }),
       fieldAgg,
     );

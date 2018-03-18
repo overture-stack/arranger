@@ -1,12 +1,10 @@
-import { HISTOGRAM, STATS, AGGS_WRAPPER_TYPES } from './constants';
+import { HISTOGRAM, STATS } from './constants';
 
 function flattenAggregations(aggregations) {
   return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
     const [field, aggregationType = null] = key.split(':');
 
-    if (Object.values(AGGS_WRAPPER_TYPES).includes(aggregationType)) {
-      return { ...prunedAggs, ...flattenAggregations(value) };
-    } else if ([STATS, HISTOGRAM].includes(aggregationType)) {
+    if ([STATS, HISTOGRAM].includes(aggregationType)) {
       return {
         ...prunedAggs,
         [field]: { ...prunedAggs[field], [aggregationType]: value },
