@@ -195,7 +195,7 @@ test('build_aggregations should handle nested aggregations with filters on same 
   expect(actualOutput).toEqual(expectedOutput);
 });
 
-test('build_aggregations should handle `aggregations_filter_themselves` variable', () => {
+test('build_aggregations should handle `aggregations_filter_themselves` variable set to false', () => {
   let input = {
     nestedFields: [],
     graphqlFields: {
@@ -256,6 +256,45 @@ test('build_aggregations should handle `aggregations_filter_themselves` variable
       },
       global: {},
     },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expected);
+});
+
+test('build_aggregations should handle `aggregations_filter_themselves` variable set to true', () => {
+  let input = {
+    nestedFields: [],
+    graphqlFields: {
+      mdx: {
+        stats: {
+          min: {},
+          max: {},
+        },
+      },
+      acl: {
+        buckets: {
+          key: {},
+          doc_count: {},
+        },
+      },
+    },
+    query: buildQuery({
+      nestedFields: [],
+      filters: {
+        op: 'and',
+        content: [
+          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+          { op: '>=', content: { field: 'mdx', value: 100 } },
+          { op: '<=', content: { field: 'mdx', value: 200 } },
+        ],
+      },
+    }),
+    aggregationsFilterThemselves: true,
+  };
+
+  let expected = {
+    acl: { terms: { field: 'acl', size: 300000 } },
+    'mdx:stats': { stats: { field: 'mdx' } },
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expected);

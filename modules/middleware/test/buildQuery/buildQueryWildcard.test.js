@@ -1,5 +1,5 @@
 import buildQuery from '../../src/buildQuery';
-test('buildQuery nested', () => {
+test('buildQuery wildcard nested', () => {
   const nestedFields = ['files', 'files.foo'];
 
   const tests = [

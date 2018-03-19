@@ -1,6 +1,89 @@
 import buildQuery from '../../src/buildQuery';
+test('buildQuery "and" and "or" ops', () => {
+  const tests = [
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: 'in',
+              content: { field: 'project_code', value: ['ACC'] },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: { must: [{ terms: { boost: 0, project_code: ['ACC'] } }] },
+      },
+    },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'or',
+          content: [
+            {
+              op: 'in',
+              content: { field: 'project_code', value: ['ACC'] },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: { should: [{ terms: { boost: 0, project_code: ['ACC'] } }] },
+      },
+    },
+  ];
 
-test('buildQuery', () => {
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    expect(actualOutput).toEqual(output);
+  });
+});
+
+test('buildQuery "and", "or" ops nested inside each other', () => {
+  const tests = [
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: 'or',
+              content: [
+                {
+                  op: 'in',
+                  content: { field: 'project_code', value: ['ACC'] },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              bool: {
+                should: [{ terms: { boost: 0, project_code: ['ACC'] } }],
+              },
+            },
+          ],
+        },
+      },
+    },
+  ];
+
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    expect(actualOutput).toEqual(output);
+  });
+});
+
+test('buildQuery "=" and "!=" ops', () => {
   const tests = [
     {
       input: {
@@ -390,6 +473,81 @@ test('buildQuery', () => {
       input: {
         nestedFields: [],
         filters: {
+          op: 'and',
+          content: [
+            {
+              op: '!=',
+              content: { field: 'access', value: 'protected' },
+            },
+            {
+              op: 'and',
+              content: [
+                {
+                  op: '=',
+                  content: { field: 'center.code', value: '01' },
+                },
+                {
+                  op: '=',
+                  content: {
+                    field: 'cases.project.primary_site',
+                    value: 'Brain',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must_not: [{ terms: { access: ['protected'], boost: 0 } }],
+          must: [
+            { terms: { 'center.code': ['01'], boost: 0 } },
+            { terms: { 'cases.project.primary_site': ['Brain'], boost: 0 } },
+          ],
+        },
+      },
+    },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: '=',
+          content: {
+            field: 'is_canonical',
+            value: [true],
+          },
+        },
+      },
+      output: { terms: { is_canonical: [true], boost: 0 } },
+    },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: '=',
+          content: {
+            field: 'case_count',
+            value: [24601],
+          },
+        },
+      },
+      output: { terms: { case_count: [24601], boost: 0 } },
+    },
+  ];
+
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    expect(actualOutput).toEqual(output);
+  });
+});
+
+test('buildQuery missing', () => {
+  const tests = [
+    {
+      input: {
+        nestedFields: [],
+        filters: {
           op: 'missing',
           content: {
             field: 'cases.clinical.gender',
@@ -479,41 +637,29 @@ test('buildQuery', () => {
       input: {
         nestedFields: [],
         filters: {
-          op: 'and',
-          content: [
-            {
-              op: '!=',
-              content: { field: 'access', value: 'protected' },
-            },
-            {
-              op: 'and',
-              content: [
-                {
-                  op: '=',
-                  content: { field: 'center.code', value: '01' },
-                },
-                {
-                  op: '=',
-                  content: {
-                    field: 'cases.project.primary_site',
-                    value: 'Brain',
-                  },
-                },
-              ],
-            },
-          ],
+          op: 'missing',
+          content: {
+            field: 'cases.clinical.gender',
+            value: true,
+          },
         },
       },
       output: {
         bool: {
-          must_not: [{ terms: { access: ['protected'], boost: 0 } }],
-          must: [
-            { terms: { 'center.code': ['01'], boost: 0 } },
-            { terms: { 'cases.project.primary_site': ['Brain'], boost: 0 } },
-          ],
+          must_not: [{ exists: { boost: 0, field: 'cases.clinical.gender' } }],
         },
       },
     },
+  ];
+
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    expect(actualOutput).toEqual(output);
+  });
+});
+
+test('buildQuery "<=" and "=>"', () => {
+  const tests = [
     {
       input: {
         nestedFields: [],
@@ -646,49 +792,6 @@ test('buildQuery', () => {
               },
             },
           ],
-        },
-      },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: '=',
-          content: {
-            field: 'is_canonical',
-            value: [true],
-          },
-        },
-      },
-      output: { terms: { is_canonical: [true], boost: 0 } },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: '=',
-          content: {
-            field: 'case_count',
-            value: [24601],
-          },
-        },
-      },
-      output: { terms: { case_count: [24601], boost: 0 } },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: 'missing',
-          content: {
-            field: 'cases.clinical.gender',
-            value: true,
-          },
-        },
-      },
-      output: {
-        bool: {
-          must_not: [{ exists: { boost: 0, field: 'cases.clinical.gender' } }],
         },
       },
     },
