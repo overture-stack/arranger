@@ -13,6 +13,11 @@ import _ from 'lodash';
 import { replaceSQON } from '../SQONView/utils';
 import './AggregationCard.css';
 
+const dateFormat = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
+
+const toMoment = dateString => moment(dateString, dateFormat);
+const fromMoment = moment => moment.dateFormat(dateFormat);
+
 class DatesAgg extends Component {
   constructor(props) {
     super(props);
@@ -29,7 +34,6 @@ class DatesAgg extends Component {
   render() {
     let {
       field = '',
-      Content = 'div',
       displayName = 'Unnamed Field',
       buckets = [],
       collapsible = true,
@@ -47,7 +51,11 @@ class DatesAgg extends Component {
       );
     };
 
-    console.log(this.state.selectedRange);
+    const bucketWithMoments = buckets.map(({ key_as_string, ...rest }) => ({
+      ...rest,
+      key_as_string,
+      moment: toMoment(key_as_string),
+    }));
 
     return (
       <div className="aggregation-card">
@@ -73,6 +81,7 @@ class DatesAgg extends Component {
           onDatesChange={({ startDate, endDate }) =>
             this.setState({ selectedRange: { startDate, endDate } })
           }
+          block
         />
       </div>
     );
