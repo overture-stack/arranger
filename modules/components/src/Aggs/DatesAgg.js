@@ -87,6 +87,16 @@ class DatesAgg extends Component {
     }
   };
 
+  getDateFromSqon = dateToGet => sqon => {
+    const { field } = this.props;
+    return sqon?.content
+      ?.filter(({ content: { field: sqonField } }) => {
+        return sqonField === field;
+      })
+      ?.find(({ op }) => op === (dateToGet === 'startDate' ? '>=' : '<='))
+      ?.content.value;
+  };
+
   render() {
     let {
       field = '',
@@ -108,20 +118,12 @@ class DatesAgg extends Component {
     const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
     const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
 
-    const getDateFromSqon = dateToGet => sqon =>
-      sqon?.content
-        ?.filter(({ content: { field: sqonField } }) => {
-          return sqonField === field;
-        })
-        ?.find(({ op }) => op === (dateToGet === 'startDate' ? '>=' : '<='))
-        ?.content.value;
-
-    const getRangeToRender = () => {
+    const rangeToRender = (() => {
       const startFromSqon = startDateFromSqon({
-        getDateFromSqon: getDateFromSqon('startDate'),
+        getDateFromSqon: this.getDateFromSqon('startDate'),
       });
       const endFromSqon = endDateFromSqon({
-        getDateFromSqon: getDateFromSqon('endDate'),
+        getDateFromSqon: this.getDateFromSqon('endDate'),
       });
       return {
         startDate:
@@ -133,18 +135,13 @@ class DatesAgg extends Component {
           (startFromSqon && toMoment(endFromSqon)) ||
           maxBucket?.moment,
       };
-    };
+    })();
 
-    const getInitialVisibleMonth = () => {
-      console.log('focusedInput: ', focusedInput);
-      const rangeToRender = getRangeToRender();
-      return (
-        focusedInput &&
-        (focusedInput === 'startDate'
-          ? rangeToRender.startDate || Moment()
-          : rangeToRender.endDate || Moment())
-      );
-    };
+    const getInitialVisibleMonth = () =>
+      focusedInput &&
+      (focusedInput === 'startDate'
+        ? rangeToRender.startDate || Moment()
+        : rangeToRender.endDate || Moment());
 
     return (
       <div className="aggregation-card">
@@ -166,8 +163,8 @@ class DatesAgg extends Component {
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
           initialVisibleMonth={getInitialVisibleMonth}
-          startDate={getRangeToRender().startDate}
-          endDate={getRangeToRender().endDate}
+          startDate={rangeToRender.startDate}
+          endDate={rangeToRender.endDate}
           isOutsideRange={() => false}
           onDatesChange={this.onDatesChange}
           showClearDates
