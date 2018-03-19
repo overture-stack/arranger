@@ -8,7 +8,7 @@ import {
   DayPickerRangeController,
 } from 'react-dates';
 import convert from 'convert-units';
-import { maxBy, minBy } from 'lodash';
+import { maxBy, minBy, debounce } from 'lodash';
 
 import { inCurrentSQON, replaceSQON, toggleSQON } from '../SQONView/utils';
 import './AggregationCard.css';
@@ -22,7 +22,7 @@ class DatesAgg extends Component {
     super(props);
     this.state = {
       isCollapsed: false,
-      focusedInput: null,
+      focusedInput: '',
       selectedRange: {
         startDate: null,
         endDate: null,
@@ -38,6 +38,8 @@ class DatesAgg extends Component {
       collapsible = true,
       handleChange = () => {},
       handleDateChange = () => {},
+      startDateFromSqon = () => null,
+      endDateFromSqon = () => null,
     } = this.props;
     const { isCollapsed, focusedInput, selectedRange } = this.state;
 
@@ -49,14 +51,83 @@ class DatesAgg extends Component {
     const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
     const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
 
+    const getDateFromSqon = dateToGet => sqon =>
+      sqon?.content
+        ?.filter(({ content: { field: sqonField } }) => {
+          return sqonField === field;
+        })
+        ?.find(({ op }) => op === (dateToGet === 'startDate' ? '>=' : '<='))
+        ?.content.value;
+
+    const getRangeToRender = () => {
+      const startFromSqon = startDateFromSqon({
+        getDateFromSqon: getDateFromSqon('startDate'),
+      });
+      const endFromSqon = endDateFromSqon({
+        getDateFromSqon: getDateFromSqon('endDate'),
+      });
+      return {
+        startDate:
+          this.state.selectedRange.startDate ||
+          (startFromSqon && toMoment(startFromSqon)) ||
+          minBucket?.moment,
+        endDate:
+          this.state.selectedRange.endDate ||
+          (startFromSqon && toMoment(endFromSqon)) ||
+          maxBucket?.moment,
+      };
+    };
+
     const getInitialVisibleMonth = () => {
       console.log('focusedInput: ', focusedInput);
+      const rangeToRender = getRangeToRender();
       return (
         focusedInput &&
         (focusedInput === 'startDate'
-          ? minBucket.moment || Moment()
-          : maxBucket.moment || Moment())
+          ? rangeToRender.startDate || Moment()
+          : rangeToRender.endDate || Moment())
       );
+    };
+
+    const onDatesChange = ({ startDate, endDate }) => {
+      this.setState({ selectedRange: { startDate, endDate } }, () => {
+        if (
+          this.state.selectedRange.startDate &&
+          this.state.selectedRange.endDate
+        ) {
+          handleDateChange({
+            generateNextSQON: sqon => {
+              return replaceSQON(
+                {
+                  op: 'and',
+                  content: [
+                    {
+                      op: '>=',
+                      content: {
+                        field,
+                        value: fromMoment(
+                          this.state.selectedRange.startDate.startOf('day'),
+                        ),
+                      },
+                    },
+                    {
+                      op: '<=',
+                      content: {
+                        field,
+                        value: fromMoment(
+                          this.state.selectedRange.endDate.endOf('day'),
+                        ),
+                      },
+                    },
+                  ],
+                },
+                sqon,
+              );
+            },
+          });
+          this.setState({ selectedRange: {} });
+        }
+      });
     };
 
     return (
@@ -75,53 +146,16 @@ class DatesAgg extends Component {
           )}
         </div>
         <DateRangePicker
+          numberOfMonths={2}
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
           initialVisibleMonth={getInitialVisibleMonth}
-          startDate={selectedRange.startDate}
-          endDate={selectedRange.endDate}
+          startDate={getRangeToRender().startDate}
+          endDate={getRangeToRender().endDate}
           isOutsideRange={() => false}
-          onDatesChange={({ startDate, endDate }) =>
-            this.setState({ selectedRange: { startDate, endDate } }, () => {
-              handleDateChange({
-                generateNextSQON: sqon => {
-                  return this.state.selectedRange.startDate &&
-                    this.state.selectedRange.endDate
-                    ? replaceSQON(
-                        {
-                          op: 'and',
-                          content: [
-                            {
-                              op: '>=',
-                              content: {
-                                field,
-                                value: fromMoment(
-                                  this.state.selectedRange.startDate.startOf(
-                                    'day',
-                                  ),
-                                ),
-                              },
-                            },
-                            {
-                              op: '<=',
-                              content: {
-                                field,
-                                value: fromMoment(
-                                  this.state.selectedRange.endDate.endOf('day'),
-                                ),
-                              },
-                            },
-                          ],
-                        },
-                        sqon,
-                      )
-                    : sqon;
-                  // return sqon;
-                },
-              });
-            })
-          }
+          onDatesChange={onDatesChange}
           block
+          small
         />
       </div>
     );

@@ -194,13 +194,15 @@ storiesOf('Aggs', module)
           <div>SQON: {JSON.stringify(sqon)}</div>
           <div
             css={`
-              width: 400px;
+              width: 300px;
             `}
           >
             <DatesAgg
               field="disease_type"
               displayName="Disease Type"
               buckets={require('./dummyData/datesBucketsSample.json')}
+              startDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
+              endDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
               handleDateChange={({ generateNextSQON = () => {} } = {}) =>
                 setState({ sqon: generateNextSQON(sqon) })
               }
