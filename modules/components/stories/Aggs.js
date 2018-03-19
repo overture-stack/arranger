@@ -201,7 +201,9 @@ storiesOf('Aggs', module)
               field="disease_type"
               displayName="Disease Type"
               buckets={require('./dummyData/datesBucketsSample.json')}
-              handleValueClick={action('Term Agg Selection')}
+              handleDateChange={({ generateNextSQON = () => {} } = {}) =>
+                setState({ sqon: generateNextSQON(sqon) })
+              }
             />
           </div>
         </div>

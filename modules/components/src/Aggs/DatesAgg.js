@@ -1,21 +1,20 @@
 import React, { Component } from 'react';
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
-import moment from 'moment';
+import Moment from 'moment';
 import {
   DateRangePicker,
   SingleDatePicker,
   DayPickerRangeController,
 } from 'react-dates';
 import convert from 'convert-units';
-import _ from 'lodash';
+import { maxBy, minBy } from 'lodash';
 
 import { replaceSQON } from '../SQONView/utils';
 import './AggregationCard.css';
 
 const dateFormat = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
-
-const toMoment = dateString => moment(dateString, dateFormat);
+const toMoment = dateString => Moment(dateString, dateFormat);
 const fromMoment = moment => moment.dateFormat(dateFormat);
 
 class DatesAgg extends Component {
@@ -38,24 +37,27 @@ class DatesAgg extends Component {
       buckets = [],
       collapsible = true,
       handleChange = () => {},
+      handleDateChange = () => {},
     } = this.props;
     const { isCollapsed, focusedInput } = this.state;
+
+    const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
+      ...rest,
+      key_as_string,
+      moment: toMoment(key_as_string),
+    }));
+    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
+    const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
 
     const getInitialVisibleMonth = () => {
       console.log('focusedInput: ', focusedInput);
       return (
         focusedInput &&
         (focusedInput === 'startDate'
-          ? this.state.selectedRange.startDate || moment()
-          : this.state.selectedRange.endDate || moment())
+          ? minBucket.moment || Moment()
+          : maxBucket.moment || Moment())
       );
     };
-
-    const bucketWithMoments = buckets.map(({ key_as_string, ...rest }) => ({
-      ...rest,
-      key_as_string,
-      moment: toMoment(key_as_string),
-    }));
 
     return (
       <div className="aggregation-card">
@@ -76,10 +78,17 @@ class DatesAgg extends Component {
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
           initialVisibleMonth={getInitialVisibleMonth}
-          startDate={this.state.selectedRange.startDate}
-          endDate={this.state.selectedRange.endDate}
+          startDate={minBucket.moment}
+          endDate={maxBucket.moment}
+          isOutsideRange={() => false}
           onDatesChange={({ startDate, endDate }) =>
-            this.setState({ selectedRange: { startDate, endDate } })
+            this.setState({ selectedRange: { startDate, endDate } }, () => {
+              handleDateChange({
+                generateNextSQON: sqon => {
+                  return sqon;
+                },
+              });
+            })
           }
           block
         />
