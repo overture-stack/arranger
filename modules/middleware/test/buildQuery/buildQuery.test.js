@@ -167,8 +167,12 @@ test('buildQuery "=" and "!=" ops', () => {
       },
       output: {
         bool: {
-          must: [{ terms: { program: ['TCGA'], boost: 0 } }],
-          must_not: [{ terms: { status: ['legacy'], boost: 0 } }],
+          must: [
+            { terms: { program: ['TCGA'], boost: 0 } },
+            {
+              bool: { must_not: [{ terms: { status: ['legacy'], boost: 0 } }] },
+            },
+          ],
         },
       },
     },
@@ -257,8 +261,10 @@ test('buildQuery "=" and "!=" ops', () => {
           must: [
             { terms: { program: ['TCGA'], boost: 0 } },
             { terms: { project: ['ACC'], boost: 0 } },
+            {
+              bool: { must_not: [{ terms: { status: ['legacy'], boost: 0 } }] },
+            },
           ],
-          must_not: [{ terms: { status: ['legacy'], boost: 0 } }],
         },
       },
     },
@@ -301,9 +307,9 @@ test('buildQuery "=" and "!=" ops', () => {
         bool: {
           must: [
             { terms: { program: ['TCGA'], boost: 0 } },
+            { bool: { must_not: [{ terms: { project: ['ACC'], boost: 0 } }] } },
             { terms: { status: ['legacy'], boost: 0 } },
           ],
-          must_not: [{ terms: { project: ['ACC'], boost: 0 } }],
         },
       },
     },
@@ -344,10 +350,16 @@ test('buildQuery "=" and "!=" ops', () => {
       },
       output: {
         bool: {
-          must: [{ terms: { program: ['TCGA'], boost: 0 } }],
-          must_not: [
-            { terms: { project: ['ACC'], boost: 0 } },
-            { terms: { status: ['legacy'], boost: 0 } },
+          must: [
+            { terms: { program: ['TCGA'], boost: 0 } },
+            {
+              bool: {
+                must_not: [
+                  { terms: { project: ['ACC'], boost: 0 } },
+                  { terms: { status: ['legacy'], boost: 0 } },
+                ],
+              },
+            },
           ],
         },
       },
@@ -500,8 +512,12 @@ test('buildQuery "=" and "!=" ops', () => {
       },
       output: {
         bool: {
-          must_not: [{ terms: { access: ['protected'], boost: 0 } }],
           must: [
+            {
+              bool: {
+                must_not: [{ terms: { access: ['protected'], boost: 0 } }],
+              },
+            },
             { terms: { 'center.code': ['01'], boost: 0 } },
             { terms: { 'cases.project.primary_site': ['Brain'], boost: 0 } },
           ],

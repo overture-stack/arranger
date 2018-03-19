@@ -203,48 +203,54 @@ test('buildQuery "some-not-in" nested', () => {
       },
       output: {
         bool: {
-          must_not: [
+          must: [
             {
-              nested: {
-                query: {
-                  bool: {
-                    must: [
-                      {
-                        nested: {
-                          query: {
-                            bool: {
-                              must: [
-                                {
-                                  nested: {
-                                    query: {
-                                      bool: {
-                                        must: [
-                                          {
-                                            terms: {
-                                              'files.foo.bar.name': ['cname'],
-                                              boost: 0,
+              bool: {
+                must_not: [
+                  {
+                    nested: {
+                      query: {
+                        bool: {
+                          must: [
+                            {
+                              nested: {
+                                query: {
+                                  bool: {
+                                    must: [
+                                      {
+                                        nested: {
+                                          query: {
+                                            bool: {
+                                              must: [
+                                                {
+                                                  terms: {
+                                                    'files.foo.bar.name': [
+                                                      'cname',
+                                                    ],
+                                                    boost: 0,
+                                                  },
+                                                },
+                                              ],
                                             },
                                           },
-                                        ],
+                                          path: 'files.foo.bar',
+                                        },
                                       },
-                                    },
-                                    path: 'files.foo.bar',
+                                    ],
                                   },
                                 },
-                              ],
+                                path: 'files.foo',
+                              },
                             },
-                          },
-                          path: 'files.foo',
+                          ],
                         },
                       },
-                    ],
+                      path: 'files',
+                    },
                   },
-                },
-                path: 'files',
+                ],
               },
             },
-          ],
-          must: [
             {
               nested: {
                 query: {
