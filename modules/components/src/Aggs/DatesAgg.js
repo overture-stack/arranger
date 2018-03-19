@@ -10,12 +10,12 @@ import {
 import convert from 'convert-units';
 import { maxBy, minBy } from 'lodash';
 
-import { replaceSQON } from '../SQONView/utils';
+import { inCurrentSQON, replaceSQON, toggleSQON } from '../SQONView/utils';
 import './AggregationCard.css';
 
 const dateFormat = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
 const toMoment = dateString => Moment(dateString, dateFormat);
-const fromMoment = moment => moment.dateFormat(dateFormat);
+const fromMoment = moment => moment?.format(dateFormat);
 
 class DatesAgg extends Component {
   constructor(props) {
@@ -39,15 +39,15 @@ class DatesAgg extends Component {
       handleChange = () => {},
       handleDateChange = () => {},
     } = this.props;
-    const { isCollapsed, focusedInput } = this.state;
+    const { isCollapsed, focusedInput, selectedRange } = this.state;
 
     const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
       ...rest,
       key_as_string,
       moment: toMoment(key_as_string),
     }));
-    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
     const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
+    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
 
     const getInitialVisibleMonth = () => {
       console.log('focusedInput: ', focusedInput);
@@ -78,14 +78,45 @@ class DatesAgg extends Component {
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
           initialVisibleMonth={getInitialVisibleMonth}
-          startDate={minBucket.moment}
-          endDate={maxBucket.moment}
+          startDate={selectedRange.startDate}
+          endDate={selectedRange.endDate}
           isOutsideRange={() => false}
           onDatesChange={({ startDate, endDate }) =>
             this.setState({ selectedRange: { startDate, endDate } }, () => {
               handleDateChange({
                 generateNextSQON: sqon => {
-                  return sqon;
+                  return this.state.selectedRange.startDate &&
+                    this.state.selectedRange.endDate
+                    ? replaceSQON(
+                        {
+                          op: 'and',
+                          content: [
+                            {
+                              op: '>=',
+                              content: {
+                                field,
+                                value: fromMoment(
+                                  this.state.selectedRange.startDate.startOf(
+                                    'day',
+                                  ),
+                                ),
+                              },
+                            },
+                            {
+                              op: '<=',
+                              content: {
+                                field,
+                                value: fromMoment(
+                                  this.state.selectedRange.endDate.endOf('day'),
+                                ),
+                              },
+                            },
+                          ],
+                        },
+                        sqon,
+                      )
+                    : sqon;
+                  // return sqon;
                 },
               });
             })
