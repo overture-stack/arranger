@@ -42,8 +42,8 @@ class DatesAgg extends Component {
       return (
         focusedInput &&
         (focusedInput === 'startDate'
-          ? this.state.selectedRange.startDate
-          : this.state.selectedRange.endDate)
+          ? this.state.selectedRange.startDate || moment()
+          : this.state.selectedRange.endDate || moment())
       );
     };
 
@@ -67,7 +67,7 @@ class DatesAgg extends Component {
         <DateRangePicker
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
-          initialVisibleMonth={() => moment()}
+          initialVisibleMonth={getInitialVisibleMonth}
           startDate={this.state.selectedRange.startDate}
           endDate={this.state.selectedRange.endDate}
           onDatesChange={({ startDate, endDate }) =>
