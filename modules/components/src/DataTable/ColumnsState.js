@@ -126,6 +126,18 @@ export default class extends Component {
     this.setState({ temp }, () => this.save(temp));
   };
 
+  add = column => {
+    const { id } = column;
+    let existing = this.state.config.columns.find(x => x.id === id);
+    if (existing) return;
+    let temp = {
+      ...this.state.config,
+      columns: [...this.state.config.columns, column],
+    };
+
+    this.setState({ temp }, () => this.save(temp));
+  };
+
   toggle = ({ field, show }) => {
     this.setState({ toggled: { ...this.state.toggled, [field]: show } });
   };
@@ -154,6 +166,7 @@ export default class extends Component {
 
     return this.props.render({
       update: this.update,
+      add: this.add,
       toggle: this.toggle,
       saveOrder: this.saveOrder,
       state: {

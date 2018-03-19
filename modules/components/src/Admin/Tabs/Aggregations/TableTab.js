@@ -14,7 +14,11 @@ export default ({ projectId, graphqlField }) => (
         }}
       >
         <div style={{ flex: 1 }}>
-          <EditColumns handleChange={columnsState.update} {...columnsState} />
+          <EditColumns
+            handleChange={columnsState.update}
+            addColumn={columnsState.add}
+            {...columnsState}
+          />
         </div>
         <div>
           <strong>Columns order</strong>
