@@ -30,6 +30,49 @@ class DatesAgg extends Component {
     };
   }
 
+  onDatesChange = ({ startDate, endDate }) => {
+    console.log('yo!!!');
+    const { field, handleDateChange = () => {} } = this.props;
+    this.setState({ selectedRange: { startDate, endDate } }, () => {
+      if (
+        this.state.selectedRange.startDate &&
+        this.state.selectedRange.endDate
+      ) {
+        handleDateChange({
+          generateNextSQON: sqon => {
+            return replaceSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: '>=',
+                    content: {
+                      field,
+                      value: fromMoment(
+                        this.state.selectedRange.startDate.startOf('day'),
+                      ),
+                    },
+                  },
+                  {
+                    op: '<=',
+                    content: {
+                      field,
+                      value: fromMoment(
+                        this.state.selectedRange.endDate.endOf('day'),
+                      ),
+                    },
+                  },
+                ],
+              },
+              sqon,
+            );
+          },
+        });
+        this.setState({ selectedRange: {} });
+      }
+    });
+  };
+
   render() {
     let {
       field = '',
@@ -89,47 +132,6 @@ class DatesAgg extends Component {
       );
     };
 
-    const onDatesChange = ({ startDate, endDate }) => {
-      this.setState({ selectedRange: { startDate, endDate } }, () => {
-        if (
-          this.state.selectedRange.startDate &&
-          this.state.selectedRange.endDate
-        ) {
-          handleDateChange({
-            generateNextSQON: sqon => {
-              return replaceSQON(
-                {
-                  op: 'and',
-                  content: [
-                    {
-                      op: '>=',
-                      content: {
-                        field,
-                        value: fromMoment(
-                          this.state.selectedRange.startDate.startOf('day'),
-                        ),
-                      },
-                    },
-                    {
-                      op: '<=',
-                      content: {
-                        field,
-                        value: fromMoment(
-                          this.state.selectedRange.endDate.endOf('day'),
-                        ),
-                      },
-                    },
-                  ],
-                },
-                sqon,
-              );
-            },
-          });
-          this.setState({ selectedRange: {} });
-        }
-      });
-    };
-
     return (
       <div className="aggregation-card">
         <div
@@ -153,7 +155,8 @@ class DatesAgg extends Component {
           startDate={getRangeToRender().startDate}
           endDate={getRangeToRender().endDate}
           isOutsideRange={() => false}
-          onDatesChange={onDatesChange}
+          onDatesChange={this.onDatesChange}
+          keepOpenOnDateSelect
           block
           small
         />
