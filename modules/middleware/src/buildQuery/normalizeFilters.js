@@ -1,38 +1,22 @@
 import {
   IN_OP,
   NOT_IN_OP,
-  SOME_NOT_IN_OP,
   OR_OP,
   AND_OP,
   NOT_OP,
   OP_ALIASES,
-  GT_OP,
-  GTE_OP,
-  LT_OP,
-  LTE_OP,
+  ARRAY_CONTENT,
 } from '../constants';
-
-const ARRAY_CONTENT = [
-  IN_OP,
-  NOT_IN_OP,
-  SOME_NOT_IN_OP,
-  GT_OP,
-  GTE_OP,
-  LT_OP,
-  LTE_OP,
-];
 
 function groupingOptimizer({ op, content }) {
   return {
     op,
-    content: content.reduce((filters, filter) => {
-      return [
-        ...filters,
-        ...(filter.op === op
-          ? groupingOptimizer(filter).content
-          : [normalizeFilters(filter)]),
-      ];
-    }, []),
+    content: content
+      .map(normalizeFilters)
+      .reduce(
+        (filters, f) => [...filters, ...(f.op === op ? f.content : [f])],
+        [],
+      ),
   };
 }
 
@@ -42,7 +26,6 @@ function isSpecialFilter(value) {
 
 function normalizeFilters(filter) {
   const { op, content } = filter;
-  const { value, field } = content || {};
 
   if (!op) {
     throw Error(`Must specify "op" in filters: ${filter}`);
@@ -50,6 +33,7 @@ function normalizeFilters(filter) {
     throw Error(`Must specify "content" in filters: ${filter}`);
   }
 
+  const { value } = content;
   if (OP_ALIASES[op]) {
     return normalizeFilters({ ...filter, op: OP_ALIASES[op] });
   } else if (ARRAY_CONTENT.includes(op) && !Array.isArray(value)) {
@@ -57,18 +41,27 @@ function normalizeFilters(filter) {
       ...filter,
       content: { ...content, value: [].concat(value) },
     });
-  } else if ([IN_OP, NOT_IN_OP].includes(op) && value.some(isSpecialFilter)) {
+  } else if (
+    [IN_OP, NOT_IN_OP].includes(op) &&
+    value.some(isSpecialFilter) &&
+    value.length > 1
+  ) {
     // Separate filters with special handling into separate filters and "or" them with the normal filter
-    const specialFilters = value
-      .filter(isSpecialFilter)
-      .map(specialValue => ({ op, content: { field, value: [specialValue] } }));
+    const specialFilters = value.filter(isSpecialFilter).map(specialValue => ({
+      ...filter,
+      content: { ...content, value: [specialValue] },
+    }));
 
     const normalValues = value.filter(psv => !isSpecialFilter(psv));
-    const content =
+    const filters =
       normalValues.length > 0
-        ? [{ op, content: { field, value: normalValues } }, ...specialFilters]
+        ? [
+            { ...filter, content: { ...content, value: normalValues } },
+            ...specialFilters,
+          ]
         : specialFilters;
-    return content.length > 1 ? { op: OR_OP, content } : content[0];
+
+    return normalizeFilters({ op: OR_OP, content: filters });
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {

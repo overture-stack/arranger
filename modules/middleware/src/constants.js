@@ -22,6 +22,16 @@ export const OP_ALIASES = {
   '!=': NOT_IN_OP,
 };
 
+export const ARRAY_CONTENT = [
+  IN_OP,
+  NOT_IN_OP,
+  SOME_NOT_IN_OP,
+  GT_OP,
+  GTE_OP,
+  LT_OP,
+  LTE_OP,
+];
+
 // elasticsearch values
 export const ES_MUST = 'must';
 export const ES_MUST_NOT = 'must_not';

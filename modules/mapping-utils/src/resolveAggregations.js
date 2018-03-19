@@ -9,32 +9,20 @@ let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
 export default type => async (
   obj,
-  {
-    offset = 0,
-    filters,
-    aggregations_filter_themselves: aggregationsFilterThemselves,
-  },
+  { offset = 0, filters, aggregations_filter_themselves },
   { es },
   info,
 ) => {
-  const graphqlFields = getFields(info);
   const nestedFields = type.nested_fields;
   const query = buildQuery({ nestedFields, filters });
   const aggs = buildAggregations({
     query,
-    graphqlFields,
+    graphqlFields: getFields(info),
     nestedFields,
-    aggregationsFilterThemselves,
+    aggregationsFilterThemselves: aggregations_filter_themselves,
   });
 
-  const body =
-    query && Object.keys(query).length
-      ? {
-          query,
-          aggs,
-        }
-      : { aggs };
-
+  const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
   const response = await es.search({
     index: type.index,
     type: type.es_type,

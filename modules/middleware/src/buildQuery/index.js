@@ -161,7 +161,7 @@ function collapseNestedFilters({ esFilter, bools }) {
   ];
 }
 
-const WRAPPERS = {
+const wrappers = {
   [AND_OP]: wrapMust,
   [OR_OP]: wrapShould,
   [NOT_OP]: wrapMustNot,
@@ -177,7 +177,7 @@ function getGroupFilter({ nestedFields, filter: { content, op } }) {
       [],
     );
 
-  return WRAPPERS[op](esFilters);
+  return wrappers[op](esFilters);
 }
 
 function opSwitch({ nestedFields, filter }) {
