@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
+import moment from 'moment';
 import {
   DateRangePicker,
   SingleDatePicker,
@@ -34,7 +35,19 @@ class DatesAgg extends Component {
       collapsible = true,
       handleChange = () => {},
     } = this.props;
-    const { isCollapsed } = this.state;
+    const { isCollapsed, focusedInput } = this.state;
+
+    const getInitialVisibleMonth = () => {
+      console.log('focusedInput: ', focusedInput);
+      return (
+        focusedInput &&
+        (focusedInput === 'startDate'
+          ? this.state.selectedRange.startDate
+          : this.state.selectedRange.endDate)
+      );
+    };
+
+    console.log(this.state.selectedRange);
 
     return (
       <div className="aggregation-card">
@@ -54,6 +67,7 @@ class DatesAgg extends Component {
         <DateRangePicker
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
+          initialVisibleMonth={() => moment()}
           startDate={this.state.selectedRange.startDate}
           endDate={this.state.selectedRange.endDate}
           onDatesChange={({ startDate, endDate }) =>
