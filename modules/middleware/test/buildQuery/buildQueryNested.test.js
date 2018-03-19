@@ -1,6 +1,107 @@
 import buildQuery from '../../src/buildQuery';
 
 test('buildQuery ">=" and "<=" nested', () => {
+  const nestedFields = [
+    'participants',
+    'participants.diagnoses',
+    'participants.family.family_data',
+    'participants.family.family_members',
+    'participants.family.family_members.diagnoses',
+    'participants.samples',
+    'participants.samples.aliquots',
+    'sequencing_experiments',
+  ];
+  const tests = [
+    {
+      input: {
+        nestedFields,
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: 'in',
+              content: {
+                field: 'participants.family.family_data.available_data_types',
+                value: ['submitted aligned reads'],
+              },
+            },
+            {
+              op: 'in',
+              content: {
+                field: 'participants.samples.anatomical_site',
+                value: [
+                  'C40.0: Long bones of upper limb, scapula and associated joints',
+                ],
+              },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              nested: {
+                path: 'participants',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'participants.family.family_data',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  terms: {
+                                    'participants.family.family_data.available_data_types': [
+                                      'submitted aligned reads',
+                                    ],
+                                    boost: 0,
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                      {
+                        nested: {
+                          path: 'participants.samples',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  terms: {
+                                    'participants.samples.anatomical_site': [
+                                      'C40.0: Long bones of upper limb, scapula and associated joints',
+                                    ],
+                                    boost: 0,
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  ];
+
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    expect(actualOutput).toEqual(output);
+  });
+});
+
+test('buildQuery ">=" and "<=" nested', () => {
   const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
