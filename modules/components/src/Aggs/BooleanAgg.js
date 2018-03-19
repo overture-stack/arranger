@@ -44,9 +44,9 @@ export default ({
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
 
-  const handleTrueClick = () =>
+  const handleTrueFalseClick = isTrue =>
     handleValueClick({
-      bucket: trueBucket,
+      bucket: isTrue ? trueBucket : falseBucket,
       generateNextSQON: sqon =>
         replaceSQON(
           {
@@ -56,28 +56,7 @@ export default ({
                 op: 'in',
                 content: {
                   field: dotField,
-                  value: [booleanValues.true],
-                },
-              },
-            ],
-          },
-          sqon,
-        ),
-    });
-
-  const handleFalseClick = () =>
-    handleValueClick({
-      bucket: falseBucket,
-      generateNextSQON: sqon =>
-        replaceSQON(
-          {
-            op: 'and',
-            content: [
-              {
-                op: 'in',
-                content: {
-                  field: dotField,
-                  value: [booleanValues.false],
+                  value: [isTrue ? booleanValues.true : booleanValues.false],
                 },
               },
             ],
@@ -103,13 +82,13 @@ export default ({
         </div>
         <div
           className={`booleanFacetTrue ${isTrueActive ? 'active' : ''}`}
-          onClick={handleTrueClick}
+          onClick={() => handleTrueFalseClick(true)}
         >
           Yes
         </div>
         <div
           className={`booleanFacetFalse ${isFalseActive ? 'active' : ''}`}
-          onClick={handleFalseClick}
+          onClick={() => handleTrueFalseClick(false)}
         >
           No
         </div>
