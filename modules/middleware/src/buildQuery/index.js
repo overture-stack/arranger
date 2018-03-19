@@ -20,6 +20,7 @@ import {
   AND_OP,
   MISSING_OP,
   FILTER_OP,
+  NOT_OP,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -29,9 +30,8 @@ import {
   wrapNested,
   mergePath,
   wrapShould,
+  wrapMust,
 } from '../utils/esFilter';
-
-const NESTED_BOOL_PATH = [ES_NESTED, ES_QUERY, ES_BOOL];
 
 function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
   return filter.content.field
@@ -129,68 +129,61 @@ function getRangeFilter({ nestedFields, filter }) {
 }
 
 function collapseNestedFilters({ esFilter, bools }) {
-  const found = bools.find(m => readPath(m) === readPath(esFilter));
+  const filterIsNested = isNested(esFilter);
+  const basePath = [...(filterIsNested ? [ES_NESTED, ES_QUERY] : []), ES_BOOL];
+  const path = [ES_MUST, ES_MUST_NOT]
+    .map(p => [...basePath, p])
+    .find(path => _.get(esFilter, path));
 
-  if (!found || !isNested(esFilter)) {
-    return [...bools, esFilter];
-  } else {
-    const path = [
-      ...NESTED_BOOL_PATH,
-      _.get(esFilter, [...NESTED_BOOL_PATH, ES_MUST]) ? ES_MUST : ES_MUST_NOT,
-    ];
+  const found =
+    path &&
+    bools.find(
+      bool =>
+        filterIsNested
+          ? readPath(bool) === readPath(esFilter)
+          : _.get(bool, path),
+    );
 
-    return [
-      ...bools.filter(m => readPath(m) !== readPath(esFilter)),
-      mergePath(
-        found,
-        path,
-        collapseNestedFilters({
-          esFilter: _.get(esFilter, path, [])[0],
-          bools: _.get(found, path, []),
-        }),
-      ),
-    ];
-  }
+  return [
+    ...bools.filter(bool => bool !== found),
+    found
+      ? mergePath(
+          found,
+          path,
+          filterIsNested
+            ? collapseNestedFilters({
+                esFilter: _.get(esFilter, path)[0],
+                bools: _.get(found, path, []),
+              })
+            : [..._.get(found, path), ..._.get(esFilter, path)],
+        )
+      : esFilter,
+  ];
 }
 
-function getAndFilter({ nestedFields, filter: filters }) {
-  const boolFilter = filters.content.reduce(
-    (bools, filter) => {
-      const { op } = filter;
-      const esFilter = opSwitch({ nestedFields, filter });
-      const shouldCollapse = isNested(esFilter) && op !== OR_OP;
-      let boolType =
-        (!shouldCollapse && op === NOT_IN_OP) || op === SOME_NOT_IN_OP
-          ? ES_MUST_NOT
-          : ES_MUST;
+const WRAPPERS = {
+  [AND_OP]: wrapMust,
+  [OR_OP]: wrapShould,
+  [NOT_OP]: wrapMustNot,
+};
+function getGroupFilter({ nestedFields, filter: { content, op } }) {
+  const esFilters = content
+    .map(filter => opSwitch({ nestedFields, filter }))
+    .reduce(
+      (bools, esFilter) =>
+        op === AND_OP || op === NOT_OP
+          ? collapseNestedFilters({ esFilter, bools })
+          : [...bools, esFilter],
+      [],
+    );
 
-      const collapsed = shouldCollapse
-        ? collapseNestedFilters({ esFilter, bools: bools[boolType] })
-        : [
-            ...bools[boolType],
-            ...(_.get(esFilter, [ES_BOOL, boolType]) || [esFilter]),
-          ];
-
-      return { ...bools, [boolType]: collapsed };
-    },
-    { [ES_MUST]: [], [ES_MUST_NOT]: [] },
-  );
-
-  return { [ES_BOOL]: _.omitBy(boolFilter, value => !value.length) };
-}
-
-function getOrFilter({ nestedFields, filter }) {
-  return wrapShould(
-    filter.content.map(filter => opSwitch({ nestedFields, filter })),
-  );
+  return WRAPPERS[op](esFilters);
 }
 
 function opSwitch({ nestedFields, filter }) {
   const { op, content: { value } } = filter;
-  if (OR_OP === op) {
-    return getOrFilter({ nestedFields, filter });
-  } else if (AND_OP === op) {
-    return getAndFilter({ nestedFields, filter });
+  if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
+    return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
     if (`${value[0]}`.includes('*')) {
       return getRegexFilter({ nestedFields, filter });

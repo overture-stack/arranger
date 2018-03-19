@@ -5,6 +5,7 @@ export const SOME_NOT_IN_OP = 'some-not-in';
 export const FILTER_OP = 'filter';
 export const AND_OP = 'and';
 export const OR_OP = 'or';
+export const NOT_OP = 'not';
 export const MISSING_OP = 'missing';
 export const GT_OP = 'gt';
 export const GTE_OP = 'gte';

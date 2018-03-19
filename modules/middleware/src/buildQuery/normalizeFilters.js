@@ -4,6 +4,7 @@ import {
   SOME_NOT_IN_OP,
   OR_OP,
   AND_OP,
+  NOT_OP,
   OP_ALIASES,
   GT_OP,
   GTE_OP,
@@ -68,7 +69,7 @@ function normalizeFilters(filter) {
         ? [{ op, content: { field, value: normalValues } }, ...specialFilters]
         : specialFilters;
     return content.length > 1 ? { op: OR_OP, content } : content[0];
-  } else if ([AND_OP, OR_OP].includes(op)) {
+  } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {
     return filter;

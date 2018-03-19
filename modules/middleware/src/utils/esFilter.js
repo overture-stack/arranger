@@ -4,7 +4,7 @@ import * as CONSTANTS from '../constants';
 export function mergePath(target, [key, ...path], data) {
   return {
     ...target,
-    [key]: path.length ? mergePath(target[key], path, data) : data,
+    [key]: path.length ? mergePath(_.get(target, key, {}), path, data) : data,
   };
 }
 
