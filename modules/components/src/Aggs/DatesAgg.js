@@ -10,7 +10,12 @@ import {
 import convert from 'convert-units';
 import { maxBy, minBy, debounce } from 'lodash';
 
-import { inCurrentSQON, replaceSQON, toggleSQON } from '../SQONView/utils';
+import {
+  inCurrentSQON,
+  replaceSQON,
+  toggleSQON,
+  removeSQON,
+} from '../SQONView/utils';
 import './AggregationCard.css';
 
 const dateFormat = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
@@ -22,7 +27,7 @@ class DatesAgg extends Component {
     super(props);
     this.state = {
       isCollapsed: false,
-      focusedInput: '',
+      focusedInput: 'startDate',
       selectedRange: {
         startDate: null,
         endDate: null,
@@ -31,46 +36,55 @@ class DatesAgg extends Component {
   }
 
   onDatesChange = ({ startDate, endDate }) => {
-    console.log('yo!!!');
-    const { field, handleDateChange = () => {} } = this.props;
-    this.setState({ selectedRange: { startDate, endDate } }, () => {
-      if (
-        this.state.selectedRange.startDate &&
-        this.state.selectedRange.endDate
-      ) {
-        handleDateChange({
-          generateNextSQON: sqon => {
-            return replaceSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: '>=',
-                    content: {
-                      field,
-                      value: fromMoment(
-                        this.state.selectedRange.startDate.startOf('day'),
-                      ),
+    console.log(startDate === this.state.selectedRange.startDate);
+    const {
+      field,
+      handleDateChange = () => {},
+      handleClearClick = () => {},
+    } = this.props;
+    if (!startDate && !endDate) {
+      console.log('clearing!!!');
+      handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
+    } else {
+      this.setState({ selectedRange: { startDate, endDate } }, () => {
+        if (
+          this.state.selectedRange.startDate &&
+          this.state.selectedRange.endDate
+        ) {
+          handleDateChange({
+            generateNextSQON: sqon => {
+              return replaceSQON(
+                {
+                  op: 'and',
+                  content: [
+                    {
+                      op: '>=',
+                      content: {
+                        field,
+                        value: fromMoment(
+                          this.state.selectedRange.startDate.startOf('day'),
+                        ),
+                      },
                     },
-                  },
-                  {
-                    op: '<=',
-                    content: {
-                      field,
-                      value: fromMoment(
-                        this.state.selectedRange.endDate.endOf('day'),
-                      ),
+                    {
+                      op: '<=',
+                      content: {
+                        field,
+                        value: fromMoment(
+                          this.state.selectedRange.endDate.endOf('day'),
+                        ),
+                      },
                     },
-                  },
-                ],
-              },
-              sqon,
-            );
-          },
-        });
-        this.setState({ selectedRange: {} });
-      }
-    });
+                  ],
+                },
+                sqon,
+              );
+            },
+          });
+          this.setState({ selectedRange: {} });
+        }
+      });
+    }
   };
 
   render() {
@@ -147,7 +161,7 @@ class DatesAgg extends Component {
             <span className={`arrow ${isCollapsed && 'collapsed'}`} />
           )}
         </div>
-        <DateRangePicker
+        <DayPickerRangeController
           numberOfMonths={2}
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
@@ -156,6 +170,7 @@ class DatesAgg extends Component {
           endDate={getRangeToRender().endDate}
           isOutsideRange={() => false}
           onDatesChange={this.onDatesChange}
+          showClearDates
           keepOpenOnDateSelect
           block
           small
