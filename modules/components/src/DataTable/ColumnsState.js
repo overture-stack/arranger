@@ -132,7 +132,7 @@ export default class extends Component {
     if (existing) return;
     let temp = {
       ...this.state.config,
-      columns: this.state.config.columns.concat({ ...column }),
+      columns: [...this.state.config.columns, column],
     };
 
     this.setState({ temp }, () => this.save(temp));
