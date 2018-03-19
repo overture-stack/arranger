@@ -17,6 +17,11 @@ class DatesAgg extends Component {
     super(props);
     this.state = {
       isCollapsed: false,
+      focusedInput: null,
+      selectedRange: {
+        startDate: null,
+        endDate: null,
+      },
     };
   }
 
@@ -30,7 +35,7 @@ class DatesAgg extends Component {
       handleChange = () => {},
     } = this.props;
     const { isCollapsed } = this.state;
-    console.log('buckets: ', buckets);
+
     return (
       <div className="aggregation-card">
         <div
@@ -49,6 +54,11 @@ class DatesAgg extends Component {
         <DateRangePicker
           focusedInput={this.state.focusedInput}
           onFocusChange={focusedInput => this.setState({ focusedInput })}
+          startDate={this.state.selectedRange.startDate}
+          endDate={this.state.selectedRange.endDate}
+          onDatesChange={({ startDate, endDate }) =>
+            this.setState({ selectedRange: { startDate, endDate } })
+          }
         />
       </div>
     );
