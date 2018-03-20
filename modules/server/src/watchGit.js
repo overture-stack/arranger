@@ -1,6 +1,7 @@
 import { promisify } from 'util';
 import { exec as e } from 'child_process';
 import chalk from 'chalk';
+import express from 'express';
 
 let exec = promisify(e);
 
@@ -28,7 +29,8 @@ let getGitInfo = async ({ cmd, key }) => {
   }
 };
 
-export default async ({ app, io }) => {
+export default async ({ io }) => {
+  const router = express.Router();
   await getGitInfo({
     cmd: 'git rev-parse --abbrev-ref HEAD',
     key: 'branch',
@@ -39,12 +41,12 @@ export default async ({ app, io }) => {
     key: 'commit',
   });
 
-  app.post('/restartServer', (req, res) => {
+  router.post('/restartServer', (req, res) => {
     restart({ io });
     res.json({ message: 'restarting server' });
   });
 
-  app.post('/github', (req, res) => {
+  router.post('/github', (req, res) => {
     newerGithub.branch = req.body.ref
       .split('/')
       .pop()
@@ -62,4 +64,6 @@ export default async ({ app, io }) => {
 
     res.json({ message: 'github push occured' });
   });
+
+  return router;
 };
