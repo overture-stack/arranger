@@ -46,7 +46,7 @@ class DatesAgg extends Component {
     super(props);
     this.state = {
       isCollapsed: false,
-      focusedInput: START_DATE_INPUT, // this should not be called with setState but with the observable below
+      focusedInput: START_DATE_INPUT, // this should not be modified with setState but with the observable below
       inputRangeValues: {
         startDate: null,
         endDate: null,
@@ -128,15 +128,13 @@ class DatesAgg extends Component {
     }
   };
 
-  isValidInputDateString = dateString =>
-    inputDateToMoment(dateString).isValid() &&
-    sumBy(dateString?.split('/') || '', str => str?.length === 2) === 3;
-
-  onInputValueChange = ({ value, input }) => {
+  onInputValueChange = ({ value = '', input }) => {
     const { inputRangeValues, selectedRange } = this.state;
-    const { isValidInputDateString } = this;
     const newMoment = inputDateToMoment(value);
-    if (!isValidInputDateString(value)) {
+    const isValidInputDateString =
+      newMoment.isValid() &&
+      sumBy(value.split('/'), str => str.length === 2) === 3;
+    if (!isValidInputDateString) {
       this.setState({
         inputRangeValues: { ...inputRangeValues, [input]: value },
       });
