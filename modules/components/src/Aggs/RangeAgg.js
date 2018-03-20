@@ -4,6 +4,7 @@ import convert from 'convert-units';
 import _ from 'lodash';
 
 import { replaceSQON } from '../SQONView/utils';
+import AggsWrapper from './AggsWrapper';
 
 import 'react-input-range/lib/css/index.css';
 import './AggregationCard.css';
@@ -99,60 +100,42 @@ class RangeAgg extends Component {
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     return (
-      <State
-        initial={{ isCollapsed: false }}
-        render={({ update, isCollapsed }) => (
-          <div className="aggregation-card">
-            <div
-              className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-              onClick={
-                collapsible
-                  ? () => update({ isCollapsed: !isCollapsed })
-                  : () => {}
-              }
-            >
-              <span className="title">{displayName}</span>
-              {collapsible && (
-                <span className={`arrow ${isCollapsed && 'collapsed'}`} />
-              )}
+      <AggsWrapper {...{ displayName }}>
+        {[!_.isNil(min), !_.isNil(max)].every(Boolean) && (
+          <div className="range-wrapper">
+            <div className="unit-wrapper">
+              {unit &&
+                SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
+                  .map(x => convert().describe(x))
+                  .map(x => ({ ...x, active: x.abbr === displayUnit }))
+                  .map(({ abbr, plural, active }) => (
+                    <span key={abbr}>
+                      <input
+                        type="radio"
+                        id={abbr}
+                        value={abbr}
+                        checked={active}
+                        onChange={e =>
+                          this.setState({ displayUnit: e.target.value })
+                        }
+                      />
+                      <label htmlFor={abbr}>{plural}</label>
+                    </span>
+                  ))}
             </div>
-            {[!isCollapsed, !_.isNil(min), !_.isNil(max)].every(Boolean) && (
-              <div className="range-wrapper">
-                <div className="unit-wrapper">
-                  {unit &&
-                    SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
-                      .map(x => convert().describe(x))
-                      .map(x => ({ ...x, active: x.abbr === displayUnit }))
-                      .map(({ abbr, plural, active }) => (
-                        <span key={abbr}>
-                          <input
-                            type="radio"
-                            id={abbr}
-                            value={abbr}
-                            checked={active}
-                            onChange={e =>
-                              this.setState({ displayUnit: e.target.value })
-                            }
-                          />
-                          <label htmlFor={abbr}>{plural}</label>
-                        </span>
-                      ))}
-                </div>
-                <div className="input-range-wrapper">
-                  <InputRange
-                    minValue={min}
-                    maxValue={max}
-                    value={value}
-                    formatLabel={this.formatRangeLabel}
-                    onChange={x => this.setValue(x)}
-                    onChangeComplete={this.onChangeComplete}
-                  />
-                </div>
-              </div>
-            )}
+            <div className="input-range-wrapper">
+              <InputRange
+                minValue={min}
+                maxValue={max}
+                value={value}
+                formatLabel={this.formatRangeLabel}
+                onChange={x => this.setValue(x)}
+                onChangeComplete={this.onChangeComplete}
+              />
+            </div>
           </div>
         )}
-      />
+      </AggsWrapper>
     );
   }
 }
