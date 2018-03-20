@@ -28,10 +28,14 @@ export default ({
     });
 
   const isTrueActive = isActive({
-    evaluateInSqon: createSqonValidator(true),
+    defaultEvaluator: createSqonValidator(true),
+    value: true,
+    dotField: false,
   });
   const isFalseActive = isActive({
-    evaluateInSqon: createSqonValidator(false),
+    defaultEvaluator: createSqonValidator(false),
+    value: true,
+    dotField: false,
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
 

@@ -251,7 +251,7 @@ storiesOf('Aggs', module)
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={({ evaluateInSqon }) => evaluateInSqon({ sqon })}
+                isActive={({ defaultEvaluator }) => defaultEvaluator({ sqon })}
               />
             ))}
           </div>
