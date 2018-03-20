@@ -7,6 +7,7 @@ import convert from 'convert-units';
 import { maxBy, minBy, debounce, sumBy, toPairs } from 'lodash';
 import { css } from 'emotion';
 import { Subject } from 'rxjs';
+import LocalState from 'react-component-component';
 
 import {
   inCurrentSQON,
@@ -44,10 +45,39 @@ const inputRow = css`
   height: 40px;
 `;
 
+const calendarNavbar = css`
+  height: 40px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-color: #edeef1;
+  border: solid 1px #e0e1e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+`;
+
+const cancelButton = css`
+  width: 57px;
+  height: 24px;
+  border-radius: 10.5px;
+  background-color: #009bb8;
+  border: solid 1px #cacbcf;
+`;
+
+const submitButton = css`
+  width: 57px;
+  height: 24px;
+  border-radius: 10.5px;
+  background-color: #009bb8;
+  border: solid 1px #cacbcf;
+  color: white;
+`;
+
 const Arrow = ({ style }) => (
   <svg
     style={style}
-    class="DayPickerNavigation_svg__horizontal DayPickerNavigation_svg__horizontal_1"
+    className="DayPickerNavigation_svg__horizontal DayPickerNavigation_svg__horizontal_1"
     viewBox="0 0 1000 1000"
   >
     <path d="M694.4 242.4l249.1 249.1c11 11 11 21 0 32L694.4 772.7c-5 5-10 7-16 7s-11-2-16-7c-11-11-11-21 0-32l210.1-210.1H67.1c-13 0-23-10-23-23s10-23 23-23h805.4L662.4 274.5c-21-21.1 11-53.1 32-32.1z" />
@@ -55,16 +85,14 @@ const Arrow = ({ style }) => (
 );
 
 const DateRangePicker = ({ dateRangePickerProps }) => (
-  <div>
-    <DayPickerRangeController
-      {...dateRangePickerProps}
-      hideKeyboardShortcutsPanel
-      showClearDates
-      keepOpenOnDateSelect
-      block
-      small
-    />
-  </div>
+  <DayPickerRangeController
+    {...dateRangePickerProps}
+    hideKeyboardShortcutsPanel
+    showClearDates
+    keepOpenOnDateSelect
+    block
+    small
+  />
 );
 
 class DatesAgg extends Component {
@@ -103,7 +131,7 @@ class DatesAgg extends Component {
     this.focusInputSubscription.unsubscribe();
   }
 
-  onDatesChange = ({ startDate, endDate }) => {
+  onDatesSet = ({ startDate, endDate }) => {
     const {
       field,
       handleDateChange = ({ generateNextSQON }) =>
@@ -146,9 +174,7 @@ class DatesAgg extends Component {
           selectedRange: {},
         });
         this.$focusedInput.next(
-          this.state.focusedInput === START_DATE_INPUT
-            ? END_DATE_INPUT
-            : START_DATE_INPUT,
+          this.state.focusedInput === START_DATE_INPUT ? END_DATE_INPUT : null,
         );
       }
     }
@@ -165,7 +191,7 @@ class DatesAgg extends Component {
         inputRangeValues: { ...inputRangeValues, [input]: value },
       });
     } else {
-      this.onDatesChange({
+      this.onDatesSet({
         ...this.getCalendarRangeToRender(),
         [input]: newMoment,
       });
@@ -188,7 +214,7 @@ class DatesAgg extends Component {
       endDateFromSqon = () => null,
       buckets,
     } = this.props;
-    const { selectedRange } = this.state;
+    const { selectedRange, inputRangeValues } = this.state;
     const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
       ...rest,
       key_as_string,
@@ -205,10 +231,14 @@ class DatesAgg extends Component {
     });
     return {
       startDate:
+        (inputRangeValues.startDate &&
+          inputDateToMoment(inputRangeValues.startDate)) ||
         selectedRange.startDate ||
         (startFromSqon && bucketDateToMoment(startFromSqon)) ||
         minBucket?.moment,
       endDate:
+        (inputRangeValues.endDate &&
+          inputDateToMoment(inputRangeValues.endDate)) ||
         selectedRange.endDate ||
         (startFromSqon && bucketDateToMoment(endFromSqon)) ||
         maxBucket?.moment,
@@ -259,7 +289,9 @@ class DatesAgg extends Component {
         >
           <input
             ref={el => (this.startDateInput = el)}
-            onFocus={() => this.$focusedInput.next(START_DATE_INPUT)}
+            onFocus={() => {
+              this.$focusedInput.next(START_DATE_INPUT);
+            }}
             className={`dateInput ${inputStyle}`}
             value={
               inputRangeValues.startDate
@@ -278,7 +310,9 @@ class DatesAgg extends Component {
           </div>
           <input
             ref={el => (this.endDateInput = el)}
-            onFocus={() => this.$focusedInput.next(END_DATE_INPUT)}
+            onFocus={() => {
+              this.$focusedInput.next(END_DATE_INPUT);
+            }}
             className={`dateInput ${inputStyle}`}
             value={
               inputRangeValues.endDate
@@ -292,41 +326,49 @@ class DatesAgg extends Component {
               })
             }
           />
-          <div
-            className={css`
-              position: absolute;
-              left: 0px;
-              top: 100%;
-            `}
-          >
-            {this.state.focusedInput && (
-              <DateRangePicker
-                {...{
-                  dateRangePickerProps: {
-                    numberOfMonths: 2,
-                    focusedInput: this.state.focusedInput,
-                    onFocusChange: focusedInput =>
-                      this.$focusedInput.next(focusedInput),
-                    initialVisibleMonth: getInitialVisibleMonth,
-                    startDate: rangeToRender.startDate,
-                    endDate: rangeToRender.endDate,
-                    isOutsideRange: () => false,
-                    onDatesChange: this.onDatesChange,
-                  },
-                }}
-              />
-            )}
-            <div
-              className={css`
-                height: 40px;
-                border-bottom-left-radius: 5px;
-                border-bottom-right-radius: 5px;
-                background-color: #edeef1;
-                border: solid 1px #e0e1e6;
-                display: flex;
-              `}
-            />
-          </div>
+          {this.state.focusedInput && (
+            <LocalState initialState={{ localRange: rangeToRender }}>
+              {({ state: { localRange }, setState }) => (
+                <div
+                  className={css`
+                    position: absolute;
+                    left: 0px;
+                    top: 100%;
+                  `}
+                >
+                  <DateRangePicker
+                    {...{
+                      dateRangePickerProps: {
+                        numberOfMonths: 2,
+                        focusedInput: this.state.focusedInput,
+                        onFocusChange: focusedInput =>
+                          this.$focusedInput.next(focusedInput),
+                        initialVisibleMonth: getInitialVisibleMonth,
+                        startDate: localRange.startDate,
+                        endDate: localRange.endDate,
+                        isOutsideRange: () => false,
+                        onDatesChange: range => setState({ localRange: range }),
+                      },
+                    }}
+                  />
+                  <div className={calendarNavbar}>
+                    <button
+                      className={cancelButton}
+                      onClick={() => this.$focusedInput.next(null)}
+                    >
+                      cancel
+                    </button>
+                    <button
+                      className={submitButton}
+                      onClick={() => this.onDatesSet(localRange)}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </LocalState>
+          )}
         </div>
       </div>
     );
