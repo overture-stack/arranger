@@ -127,30 +127,33 @@ export default function({
   query,
   aggregationsFilterThemselves,
 }) {
-  return Object.keys(graphqlFields).reduce((aggregations, rawField) => {
-    const field = rawField.split('__').join('.');
-    const nestedPaths = getNestedPathsInField({ field, nestedFields });
-    const fieldAggregation = createAggregation({
-      field,
-      graphqlField: graphqlFields[rawField],
-      isNested: nestedPaths.length,
-    });
-
-    const aggregation = nestedPaths.reverse().reduce(
-      (aggs, path) => ({
-        [`${field}:${AGGS_WRAPPER_NESTED}`]: { nested: { path }, aggs },
-      }),
-      fieldAggregation,
-    );
-
-    return {
-      ...aggregations,
-      ...wrapWithFilters({
-        query,
+  return Object.entries(graphqlFields).reduce(
+    (aggregations, [fieldKey, graphqlField]) => {
+      const field = fieldKey.replace(/__/g, '.');
+      const nestedPaths = getNestedPathsInField({ field, nestedFields });
+      const fieldAggregation = createAggregation({
         field,
-        aggregation,
-        aggregationsFilterThemselves,
-      }),
-    };
-  }, {});
+        graphqlField,
+        isNested: nestedPaths.length,
+      });
+
+      const aggregation = nestedPaths.reverse().reduce(
+        (aggs, path) => ({
+          [`${field}:${AGGS_WRAPPER_NESTED}`]: { nested: { path }, aggs },
+        }),
+        fieldAggregation,
+      );
+
+      return {
+        ...aggregations,
+        ...wrapWithFilters({
+          query,
+          field,
+          aggregation,
+          aggregationsFilterThemselves,
+        }),
+      };
+    },
+    {},
+  );
 }
