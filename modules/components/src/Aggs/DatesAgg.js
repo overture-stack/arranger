@@ -8,7 +8,7 @@ import {
   DayPickerRangeController,
 } from 'react-dates';
 import convert from 'convert-units';
-import { maxBy, minBy, debounce, sumBy } from 'lodash';
+import { maxBy, minBy, debounce, sumBy, toPairs } from 'lodash';
 import { css } from 'emotion';
 import { Subject } from 'rxjs';
 
@@ -84,74 +84,64 @@ class DatesAgg extends Component {
       handleClearClick = () => {},
     } = this.props;
     if (!startDate && !endDate) {
-      console.log('clearing!!!');
       handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
     } else {
-      this.setState(
-        {
-          selectedRange: ({
-            startDate = inputDateToMoment(
-              this.state.inputRangeValues.startDate,
-            ),
-            endDate = inputDateToMoment(this.state.inputRangeValues.endDate),
-          } = {}),
-        },
-        () => {
-          if (
-            this.state.selectedRange.startDate &&
-            this.state.selectedRange.endDate
-          ) {
-            handleDateChange({
-              generateNextSQON: sqon => {
-                return replaceSQON(
-                  {
-                    op: 'and',
-                    content: [
-                      {
-                        op: '>=',
-                        content: {
-                          field,
-                          value: momentToBucketDate(
-                            this.state.selectedRange.startDate.startOf('day'),
-                          ),
-                        },
+      this.setState({ selectedRange: { startDate, endDate } }, () => {
+        if (
+          this.state.selectedRange.startDate &&
+          this.state.selectedRange.endDate
+        ) {
+          handleDateChange({
+            generateNextSQON: sqon => {
+              return replaceSQON(
+                {
+                  op: 'and',
+                  content: [
+                    {
+                      op: '>=',
+                      content: {
+                        field,
+                        value: momentToBucketDate(
+                          this.state.selectedRange.startDate.startOf('day'),
+                        ),
                       },
-                      {
-                        op: '<=',
-                        content: {
-                          field,
-                          value: momentToBucketDate(
-                            this.state.selectedRange.endDate.endOf('day'),
-                          ),
-                        },
+                    },
+                    {
+                      op: '<=',
+                      content: {
+                        field,
+                        value: momentToBucketDate(
+                          this.state.selectedRange.endDate.endOf('day'),
+                        ),
                       },
-                    ],
-                  },
-                  sqon,
-                );
-              },
-            });
-            this.setState({ inputRangeValues: {}, selectedRange: {} });
-          }
-        },
-      );
+                    },
+                  ],
+                },
+                sqon,
+              );
+            },
+          });
+          this.setState({ inputRangeValues: {}, selectedRange: {} });
+        }
+      });
     }
   };
 
+  isValidInputDateString = dateString =>
+    inputDateToMoment(dateString).isValid() &&
+    sumBy(dateString?.split('/') || '', str => str?.length === 2) === 3;
+
   onInputValueChange = ({ value, input }) => {
     const { inputRangeValues, selectedRange } = this.state;
+    const { isValidInputDateString } = this;
     const newMoment = inputDateToMoment(value);
-    const isValidDateString =
-      newMoment.isValid() &&
-      sumBy(value.split('/'), str => str.length === 2) === 3;
-    console.log(value, isValidDateString);
-    if (!isValidDateString) {
+    if (!isValidInputDateString(value)) {
       this.setState({
         inputRangeValues: { ...inputRangeValues, [input]: value },
       });
     } else {
       this.onDatesChange({
-        ...selectedRange,
+        ...this.getRangeToRender(),
         [input]: newMoment,
       });
     }
@@ -165,6 +155,39 @@ class DatesAgg extends Component {
       })
       ?.find(({ op }) => op === (dateToGet === START_DATE_INPUT ? '>=' : '<='))
       ?.content.value;
+  };
+
+  getRangeToRender = () => {
+    const {
+      startDateFromSqon = () => null,
+      endDateFromSqon = () => null,
+      buckets,
+    } = this.props;
+    const { selectedRange } = this.state;
+    const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
+      ...rest,
+      key_as_string,
+      moment: bucketDateToMoment(key_as_string),
+    }));
+    const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
+    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
+
+    const startFromSqon = startDateFromSqon({
+      getDateFromSqon: this.getDateFromSqon(START_DATE_INPUT),
+    });
+    const endFromSqon = endDateFromSqon({
+      getDateFromSqon: this.getDateFromSqon(END_DATE_INPUT),
+    });
+    return {
+      startDate:
+        selectedRange.startDate ||
+        (startFromSqon && bucketDateToMoment(startFromSqon)) ||
+        minBucket?.moment,
+      endDate:
+        selectedRange.endDate ||
+        (startFromSqon && bucketDateToMoment(endFromSqon)) ||
+        maxBucket?.moment,
+    };
   };
 
   render() {
@@ -185,34 +208,7 @@ class DatesAgg extends Component {
       inputRangeValues,
     } = this.state;
 
-    console.log('inputRangeValues: ', inputRangeValues);
-
-    const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
-      ...rest,
-      key_as_string,
-      moment: bucketDateToMoment(key_as_string),
-    }));
-    const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
-    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
-
-    const rangeToRender = (() => {
-      const startFromSqon = startDateFromSqon({
-        getDateFromSqon: this.getDateFromSqon(START_DATE_INPUT),
-      });
-      const endFromSqon = endDateFromSqon({
-        getDateFromSqon: this.getDateFromSqon(END_DATE_INPUT),
-      });
-      return {
-        startDate:
-          this.state.selectedRange.startDate ||
-          (startFromSqon && bucketDateToMoment(startFromSqon)) ||
-          minBucket?.moment,
-        endDate:
-          this.state.selectedRange.endDate ||
-          (startFromSqon && bucketDateToMoment(endFromSqon)) ||
-          maxBucket?.moment,
-      };
-    })();
+    const rangeToRender = this.getRangeToRender();
 
     const getInitialVisibleMonth = () =>
       focusedInput &&
