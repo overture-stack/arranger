@@ -8,4 +8,4 @@ require('@babel/register')({
   ],
 });
 
-require('./src/cli');
+require('./src').App();
