@@ -86,44 +86,35 @@ class DatesAgg extends Component {
     if (!startDate && !endDate) {
       handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
     } else {
-      this.setState({ selectedRange: { startDate, endDate } }, () => {
-        if (
-          this.state.selectedRange.startDate &&
-          this.state.selectedRange.endDate
-        ) {
-          handleDateChange({
-            generateNextSQON: sqon => {
-              return replaceSQON(
-                {
-                  op: 'and',
-                  content: [
-                    {
-                      op: '>=',
-                      content: {
-                        field,
-                        value: momentToBucketDate(
-                          this.state.selectedRange.startDate.startOf('day'),
-                        ),
-                      },
+      this.setState({ selectedRange: { startDate, endDate } });
+      if (startDate && endDate) {
+        handleDateChange({
+          generateNextSQON: sqon =>
+            replaceSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: '>=',
+                    content: {
+                      field,
+                      value: momentToBucketDate(startDate.startOf('day')),
                     },
-                    {
-                      op: '<=',
-                      content: {
-                        field,
-                        value: momentToBucketDate(
-                          this.state.selectedRange.endDate.endOf('day'),
-                        ),
-                      },
+                  },
+                  {
+                    op: '<=',
+                    content: {
+                      field,
+                      value: momentToBucketDate(endDate.endOf('day')),
                     },
-                  ],
-                },
-                sqon,
-              );
-            },
-          });
-          this.setState({ inputRangeValues: {}, selectedRange: {} });
-        }
-      });
+                  },
+                ],
+              },
+              sqon,
+            ),
+        });
+        this.setState({ inputRangeValues: {}, selectedRange: {} });
+      }
     }
   };
 
