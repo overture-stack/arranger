@@ -9,17 +9,11 @@ import {
 } from '../SQONView/utils';
 import './BooleanAgg.css';
 
-const booleanValues = {
-  true: 'true',
-  false: 'false',
-};
-
 export default ({
   field,
   buckets,
   handleValueClick = () => {},
-  isTrueSelected = () => false,
-  isFalseSelected = () => false,
+  isActive = () => false,
   ...rest
 }) => {
   const trueBucket = buckets.find(({ key }) => key === '1');
@@ -29,14 +23,14 @@ export default ({
   const createSqonValidator = isTrue => ({ sqon }) =>
     inCurrentSQON({
       dotField,
-      value: isTrue ? booleanValues.true : booleanValues.false,
+      value: isTrue,
       currentSQON: sqon,
     });
 
-  const isTrueActive = isTrueSelected({
+  const isTrueActive = isActive({
     evaluateInSqon: createSqonValidator(true),
   });
-  const isFalseActive = isFalseSelected({
+  const isFalseActive = isActive({
     evaluateInSqon: createSqonValidator(false),
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
@@ -53,7 +47,7 @@ export default ({
                 op: 'in',
                 content: {
                   field: dotField,
-                  value: [isTrue ? booleanValues.true : booleanValues.false],
+                  value: [isTrue],
                 },
               },
             ],
@@ -72,7 +66,7 @@ export default ({
     <AggsWrapper {...{ buckets, ...rest }}>
       <div className={`booleanFacetWrapper`}>
         <div
-          className={`booleanFacetAny bucket-item ${
+          className={`booleanAggOption bucket-item ${
             isNeitherActive ? 'active' : ''
           }`}
           style={{ paddingTop: 0 }}
@@ -81,7 +75,7 @@ export default ({
           Any
         </div>
         <div
-          className={`booleanFacetTrue bucket-item ${
+          className={`booleanAggOption bucket-item ${
             isTrueActive ? 'active' : ''
           }`}
           style={{ paddingTop: 0 }}
@@ -100,7 +94,7 @@ export default ({
           )}
         </div>
         <div
-          className={`booleanFacetFalse bucket-item ${
+          className={`booleanAggOption bucket-item ${
             isFalseActive ? 'active' : ''
           }`}
           style={{ paddingTop: 0 }}

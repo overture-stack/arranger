@@ -4,35 +4,23 @@
   height: 30px;
   font-size: 0.9em;
 }
-.booleanFacetAny {
+.booleanAggOption {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
   border: solid 1px #cacbcf;
+}
+.booleanAggOption:first-child {
   border-top-left-radius: 100px;
   border-bottom-left-radius: 100px;
 }
-.booleanFacetTrue {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  border: solid 1px #cacbcf;
-}
-.booleanFacetFalse {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  border: solid 1px #cacbcf;
+.booleanAggOption:last-child {
   border-top-right-radius: 100px;
   border-bottom-right-radius: 100px;
 }
 
-.booleanFacetAny.active,
-.booleanFacetTrue.active,
-.booleanFacetFalse.active {
+.booleanAggOption.active {
   background: #e5f7fd;
   border-color: '#00afed';
 }

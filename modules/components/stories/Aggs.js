@@ -251,12 +251,7 @@ storiesOf('Aggs', module)
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isTrueSelected={({ evaluateInSqon }) =>
-                  evaluateInSqon({ sqon })
-                }
-                isFalseSelected={({ evaluateInSqon }) =>
-                  evaluateInSqon({ sqon })
-                }
+                isActive={({ evaluateInSqon }) => evaluateInSqon({ sqon })}
               />
             ))}
           </div>
