@@ -141,7 +141,7 @@ class DatesAgg extends Component {
       });
     } else {
       this.onDatesChange({
-        ...this.getRangeToRender(),
+        ...this.getCalendarRangeToRender(),
         [input]: newMoment,
       });
     }
@@ -157,7 +157,7 @@ class DatesAgg extends Component {
       ?.content.value;
   };
 
-  getRangeToRender = () => {
+  getCalendarRangeToRender = () => {
     const {
       startDateFromSqon = () => null,
       endDateFromSqon = () => null,
@@ -208,7 +208,7 @@ class DatesAgg extends Component {
       inputRangeValues,
     } = this.state;
 
-    const rangeToRender = this.getRangeToRender();
+    const rangeToRender = this.getCalendarRangeToRender();
 
     const getInitialVisibleMonth = () =>
       focusedInput &&
