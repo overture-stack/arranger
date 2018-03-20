@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('babel-polyfill');
 require('dotenv').config();
 require('@babel/register')({
   presets: ['@babel/env'],
