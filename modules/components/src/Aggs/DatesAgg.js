@@ -347,14 +347,35 @@ class DatesAgg extends Component {
                         startDate: localRange.startDate,
                         endDate: localRange.endDate,
                         isOutsideRange: () => false,
-                        onDatesChange: range => setState({ localRange: range }),
+                        onDatesChange: range => {
+                          setState({
+                            localRange: range,
+                          });
+                          this.setState({
+                            inputRangeValues: {
+                              ...this.state.inputRangeValues,
+                              ...toPairs(range)
+                                .filter(([_, moment]) => moment)
+                                .reduce(
+                                  (acc, [key, moment]) => ({
+                                    ...acc,
+                                    [key]: momentToInputDate(moment),
+                                  }),
+                                  {},
+                                ),
+                            },
+                          });
+                        },
                       },
                     }}
                   />
                   <div className={calendarNavbar}>
                     <button
                       className={cancelButton}
-                      onClick={() => this.$focusedInput.next(null)}
+                      onClick={() => {
+                        this.$focusedInput.next(null);
+                        this.setState({ inputRangeValues: {} });
+                      }}
                     >
                       cancel
                     </button>
