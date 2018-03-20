@@ -2,11 +2,7 @@ import React, { Component } from 'react';
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 import Moment from 'moment';
-import {
-  DateRangePicker,
-  SingleDatePicker,
-  DayPickerRangeController,
-} from 'react-dates';
+import { DayPickerRangeController } from 'react-dates';
 import convert from 'convert-units';
 import { maxBy, minBy, debounce, sumBy, toPairs } from 'lodash';
 import { css } from 'emotion';
@@ -31,7 +27,14 @@ const momentToBucketDate = moment => moment?.format(BUCKET_DATE_FORMAT);
 const inputDateToMoment = dateString => Moment(dateString, INPUT_DATE_FORMAT);
 const momentToInputDate = moment => moment?.format(INPUT_DATE_FORMAT);
 
-const inputStyle = css``;
+const inputStyle = css`
+  width: 119px;
+  height: 30px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+  padding-left: 10px;
+`;
 
 const inputRow = css`
   display: flex;
@@ -40,6 +43,29 @@ const inputRow = css`
   align-items: center;
   height: 40px;
 `;
+
+const Arrow = ({ style }) => (
+  <svg
+    style={style}
+    class="DayPickerNavigation_svg__horizontal DayPickerNavigation_svg__horizontal_1"
+    viewBox="0 0 1000 1000"
+  >
+    <path d="M694.4 242.4l249.1 249.1c11 11 11 21 0 32L694.4 772.7c-5 5-10 7-16 7s-11-2-16-7c-11-11-11-21 0-32l210.1-210.1H67.1c-13 0-23-10-23-23s10-23 23-23h805.4L662.4 274.5c-21-21.1 11-53.1 32-32.1z" />
+  </svg>
+);
+
+const DateRangePicker = ({ dateRangePickerProps }) => (
+  <div>
+    <DayPickerRangeController
+      {...dateRangePickerProps}
+      hideKeyboardShortcutsPanel
+      showClearDates
+      keepOpenOnDateSelect
+      block
+      small
+    />
+  </div>
+);
 
 class DatesAgg extends Component {
   constructor(props) {
@@ -234,7 +260,7 @@ class DatesAgg extends Component {
           <input
             ref={el => (this.startDateInput = el)}
             onFocus={() => this.$focusedInput.next(START_DATE_INPUT)}
-            className={`dateInput`}
+            className={`dateInput ${inputStyle}`}
             value={
               inputRangeValues.startDate
                 ? inputRangeValues.startDate
@@ -247,16 +273,13 @@ class DatesAgg extends Component {
               })
             }
           />
-          <svg
-            class="DayPickerNavigation_svg__horizontal DayPickerNavigation_svg__horizontal_1"
-            viewBox="0 0 1000 1000"
-          >
-            <path d="M694.4 242.4l249.1 249.1c11 11 11 21 0 32L694.4 772.7c-5 5-10 7-16 7s-11-2-16-7c-11-11-11-21 0-32l210.1-210.1H67.1c-13 0-23-10-23-23s10-23 23-23h805.4L662.4 274.5c-21-21.1 11-53.1 32-32.1z" />
-          </svg>
+          <div style={{ padding: 5 }}>
+            <Arrow />
+          </div>
           <input
             ref={el => (this.endDateInput = el)}
             onFocus={() => this.$focusedInput.next(END_DATE_INPUT)}
-            className={`dateInput`}
+            className={`dateInput ${inputStyle}`}
             value={
               inputRangeValues.endDate
                 ? inputRangeValues.endDate
@@ -277,23 +300,32 @@ class DatesAgg extends Component {
             `}
           >
             {this.state.focusedInput && (
-              <DayPickerRangeController
-                numberOfMonths={2}
-                focusedInput={this.state.focusedInput}
-                onFocusChange={focusedInput => {
-                  this.$focusedInput.next(focusedInput);
+              <DateRangePicker
+                {...{
+                  dateRangePickerProps: {
+                    numberOfMonths: 2,
+                    focusedInput: this.state.focusedInput,
+                    onFocusChange: focusedInput =>
+                      this.$focusedInput.next(focusedInput),
+                    initialVisibleMonth: getInitialVisibleMonth,
+                    startDate: rangeToRender.startDate,
+                    endDate: rangeToRender.endDate,
+                    isOutsideRange: () => false,
+                    onDatesChange: this.onDatesChange,
+                  },
                 }}
-                initialVisibleMonth={getInitialVisibleMonth}
-                startDate={rangeToRender.startDate}
-                endDate={rangeToRender.endDate}
-                isOutsideRange={() => false}
-                onDatesChange={this.onDatesChange}
-                showClearDates
-                keepOpenOnDateSelect
-                block
-                small
               />
             )}
+            <div
+              className={css`
+                height: 40px;
+                border-bottom-left-radius: 5px;
+                border-bottom-right-radius: 5px;
+                background-color: #edeef1;
+                border: solid 1px #e0e1e6;
+                display: flex;
+              `}
+            />
           </div>
         </div>
       </div>
