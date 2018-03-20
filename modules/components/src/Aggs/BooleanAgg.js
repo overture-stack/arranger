@@ -72,22 +72,51 @@ export default ({
     <AggsWrapper {...{ buckets, ...rest }}>
       <div className={`booleanFacetWrapper`}>
         <div
-          className={`booleanFacetAny ${isNeitherActive ? 'active' : ''}`}
+          className={`booleanFacetAny bucket-item ${
+            isNeitherActive ? 'active' : ''
+          }`}
+          style={{ paddingTop: 0 }}
           onClick={handleAnyClick}
         >
           Any
         </div>
         <div
-          className={`booleanFacetTrue ${isTrueActive ? 'active' : ''}`}
+          className={`booleanFacetTrue bucket-item ${
+            isTrueActive ? 'active' : ''
+          }`}
+          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(true)}
         >
           Yes
+          {trueBucket && (
+            <span
+              className={`bucket-count`}
+              style={{
+                marginLeft: 2,
+              }}
+            >
+              {trueBucket.doc_count}
+            </span>
+          )}
         </div>
         <div
-          className={`booleanFacetFalse ${isFalseActive ? 'active' : ''}`}
+          className={`booleanFacetFalse bucket-item ${
+            isFalseActive ? 'active' : ''
+          }`}
+          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(false)}
         >
           No
+          {falseBucket && (
+            <span
+              className={`bucket-count`}
+              style={{
+                marginLeft: 2,
+              }}
+            >
+              {falseBucket.doc_count}
+            </span>
+          )}
         </div>
       </div>
     </AggsWrapper>
