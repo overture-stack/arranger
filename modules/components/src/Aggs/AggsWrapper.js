@@ -3,8 +3,8 @@ import Component from 'react-component-component';
 import './AggregationCard.css';
 
 export default ({ children, collapsible = true, displayName }) => (
-  <Component initialState={{ isCollapsed: false, showingMore: false }}>
-    {({ setState, state: { isCollapsed, showingMore } }) => (
+  <Component initialState={{ isCollapsed: false }}>
+    {({ setState, state: { isCollapsed } }) => (
       <div className="aggregation-card">
         <div
           className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}
