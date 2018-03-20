@@ -46,7 +46,7 @@ class DatesAgg extends Component {
     super(props);
     this.state = {
       isCollapsed: false,
-      focusedInput: START_DATE_INPUT,
+      focusedInput: START_DATE_INPUT, // this should not be called with setState but with the observable below
       inputRangeValues: {
         startDate: null,
         endDate: null,
@@ -80,8 +80,10 @@ class DatesAgg extends Component {
   onDatesChange = ({ startDate, endDate }) => {
     const {
       field,
-      handleDateChange = () => {},
-      handleClearClick = () => {},
+      handleDateChange = ({ generateNextSQON }) =>
+        console.log('nextSqon: ', generateNextSQON(null)),
+      handleClearClick = ({ generateNextSQON }) =>
+        console.log('nextSqon: ', generateNextSQON(null)),
     } = this.props;
     if (!startDate && !endDate) {
       handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
@@ -113,7 +115,15 @@ class DatesAgg extends Component {
               sqon,
             ),
         });
-        this.setState({ inputRangeValues: {}, selectedRange: {} });
+        this.setState({
+          inputRangeValues: {},
+          selectedRange: {},
+        });
+        this.$focusedInput.next(
+          this.state.focusedInput === START_DATE_INPUT
+            ? END_DATE_INPUT
+            : START_DATE_INPUT,
+        );
       }
     }
   };
@@ -187,10 +197,6 @@ class DatesAgg extends Component {
       displayName = 'Unnamed Field',
       buckets = [],
       collapsible = true,
-      handleChange = () => {},
-      handleDateChange = () => {},
-      startDateFromSqon = () => null,
-      endDateFromSqon = () => null,
     } = this.props;
     const {
       isCollapsed,
@@ -272,22 +278,24 @@ class DatesAgg extends Component {
               top: 100%;
             `}
           >
-            <DayPickerRangeController
-              numberOfMonths={2}
-              focusedInput={this.state.focusedInput}
-              onFocusChange={focusedInput => {
-                this.$focusedInput.next(focusedInput);
-              }}
-              initialVisibleMonth={getInitialVisibleMonth}
-              startDate={rangeToRender.startDate}
-              endDate={rangeToRender.endDate}
-              isOutsideRange={() => false}
-              onDatesChange={this.onDatesChange}
-              showClearDates
-              keepOpenOnDateSelect
-              block
-              small
-            />
+            {this.state.focusedInput && (
+              <DayPickerRangeController
+                numberOfMonths={2}
+                focusedInput={this.state.focusedInput}
+                onFocusChange={focusedInput => {
+                  this.$focusedInput.next(focusedInput);
+                }}
+                initialVisibleMonth={getInitialVisibleMonth}
+                startDate={rangeToRender.startDate}
+                endDate={rangeToRender.endDate}
+                isOutsideRange={() => false}
+                onDatesChange={this.onDatesChange}
+                showClearDates
+                keepOpenOnDateSelect
+                block
+                small
+              />
+            )}
           </div>
         </div>
       </div>
