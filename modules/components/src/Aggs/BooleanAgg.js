@@ -26,7 +26,7 @@ export default ({
   const falseBucket = buckets.find(({ key }) => key === '0');
   const dotField = field.replace(/__/g, '.');
 
-  const createSqonGenerator = isTrue => ({ sqon }) =>
+  const createSqonValidator = isTrue => ({ sqon }) =>
     inCurrentSQON({
       dotField,
       value: isTrue ? booleanValues.true : booleanValues.false,
@@ -34,10 +34,10 @@ export default ({
     });
 
   const isTrueActive = isTrueSelected({
-    evaluateInSqon: createSqonGenerator(true),
+    evaluateInSqon: createSqonValidator(true),
   });
   const isFalseActive = isFalseSelected({
-    evaluateInSqon: createSqonGenerator(false),
+    evaluateInSqon: createSqonValidator(false),
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
 
