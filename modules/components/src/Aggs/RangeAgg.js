@@ -10,8 +10,6 @@ import 'react-input-range/lib/css/index.css';
 import './AggregationCard.css';
 import './RangeAgg.css';
 
-import State from '../State';
-
 const SUPPORTED_CONVERSIONS = {
   time: ['d', 'year'],
 };

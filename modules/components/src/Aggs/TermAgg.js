@@ -1,7 +1,6 @@
 import React from 'react';
 import { orderBy } from 'lodash';
 import './AggregationCard.css';
-import State from '../State';
 import { toggleSQON } from '../SQONView/utils';
 import { truncate } from 'lodash';
 import AggsWrapper from './AggsWrapper';
