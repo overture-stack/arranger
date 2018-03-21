@@ -251,7 +251,13 @@ storiesOf('Aggs', module)
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={({ defaultEvaluator }) => defaultEvaluator({ sqon })}
+                isActive={d =>
+                  inCurrentSQON({
+                    value: d.value,
+                    dotField: d.field,
+                    currentSQON: sqon,
+                  })
+                }
               />
             ))}
           </div>

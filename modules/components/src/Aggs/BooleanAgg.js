@@ -20,22 +20,13 @@ export default ({
   const falseBucket = buckets.find(({ key }) => key === '0');
   const dotField = field.replace(/__/g, '.');
 
-  const createSqonValidator = isTrue => ({ sqon }) =>
-    inCurrentSQON({
-      dotField,
-      value: isTrue,
-      currentSQON: sqon,
-    });
-
   const isTrueActive = isActive({
-    defaultEvaluator: createSqonValidator(true),
     value: true,
-    dotField: false,
+    field: dotField,
   });
   const isFalseActive = isActive({
-    defaultEvaluator: createSqonValidator(false),
-    value: true,
-    dotField: false,
+    value: false,
+    field: dotField,
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
 
