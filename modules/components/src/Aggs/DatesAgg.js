@@ -238,8 +238,8 @@ class DatesAgg extends React.Component {
                   <div className={DATE_PICKER_POSITIONS[datePickerPosition]}>
                     <DayPickerRangeController
                       {...{
+                        focusedInput,
                         numberOfMonths: 2,
-                        focusedInput: focusedInput,
                         onFocusChange: focusedInput =>
                           setInputFocus(focusedInput),
                         initialVisibleMonth: getInitialVisibleMonth,
@@ -253,10 +253,7 @@ class DatesAgg extends React.Component {
                         },
                       }}
                       hideKeyboardShortcutsPanel
-                      showClearDates
                       keepOpenOnDateSelect
-                      block
-                      small
                     />
                     <div className={`calendarNavbar`}>
                       <button
