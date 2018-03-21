@@ -1,13 +1,11 @@
-import React, { Component } from 'react';
-import 'react-dates/initialize';
-import 'react-dates/lib/css/_datepicker.css';
+import React from 'react';
 import Moment from 'moment';
 import { DayPickerRangeController } from 'react-dates';
-import convert from 'convert-units';
-import { maxBy, minBy, debounce, sumBy, toPairs } from 'lodash';
+import 'react-dates/initialize';
+import 'react-dates/lib/css/_datepicker.css';
+import { maxBy, minBy, sumBy } from 'lodash';
 import { css } from 'emotion';
-import LocalState from 'react-component-component';
-
+import Component from 'react-component-component';
 import {
   inCurrentSQON,
   replaceSQON,
@@ -16,6 +14,7 @@ import {
 } from '../SQONView/utils';
 import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
+import './DatesAgg.css';
 
 const START_DATE_INPUT = 'startDate';
 const END_DATE_INPUT = 'endDate';
@@ -24,55 +23,31 @@ const INPUT_DATE_FORMAT = 'YY/MM/DD';
 
 const bucketDateToMoment = dateString => Moment(dateString, BUCKET_DATE_FORMAT);
 const momentToBucketDate = moment => moment?.format(BUCKET_DATE_FORMAT);
-
 const inputDateToMoment = dateString => Moment(dateString, INPUT_DATE_FORMAT);
 const momentToInputDate = moment => moment?.format(INPUT_DATE_FORMAT);
 
-const inputStyle = css`
-  width: 119px;
-  height: 30px;
-  border-radius: 10px;
-  background-color: #ffffff;
-  border: solid 1px #cacbcf;
-  padding-left: 10px;
-`;
-
-const inputRow = css`
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  height: 40px;
-`;
-
-const calendarNavbar = css`
-  height: 40px;
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  background-color: #edeef1;
-  border: solid 1px #e0e1e6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-`;
-
-const cancelButton = css`
-  width: 57px;
-  height: 24px;
-  border-radius: 10.5px;
-  background-color: #009bb8;
-  border: solid 1px #cacbcf;
-`;
-
-const submitButton = css`
-  width: 57px;
-  height: 24px;
-  border-radius: 10.5px;
-  background-color: #009bb8;
-  border: solid 1px #cacbcf;
-  color: white;
-`;
+const DATE_PICKER_POSITIONS = {
+  BOTTOM_LEFT: css`
+    position: absolute;
+    left: 0%;
+    top: 100%;
+  `,
+  BOTTOM_RIGHT: css`
+    position: absolute;
+    right: 0%;
+    top: 100%;
+  `,
+  TOP_LEFT: css`
+    position: absolute;
+    left: 0%;
+    bottom: 100%;
+  `,
+  TOP_RIGHT: css`
+    position: absolute;
+    right: 0%;
+    bottom: 100%;
+  `,
+};
 
 const Arrow = ({ style }) => (
   <svg
@@ -84,7 +59,7 @@ const Arrow = ({ style }) => (
   </svg>
 );
 
-class DatesAgg extends Component {
+class DatesAgg extends React.Component {
   // needs ref...
 
   render() {
@@ -97,6 +72,7 @@ class DatesAgg extends Component {
       handleClearClick = ({ generateNextSQON }) => null,
       startDateFromSqon = () => null,
       endDateFromSqon = () => null,
+      datePickerPosition = 'BOTTOM_LEFT',
     } = this.props;
 
     const onDatesSet = ({ startDate, endDate }) => {
@@ -175,13 +151,14 @@ class DatesAgg extends Component {
 
     return (
       <AggsWrapper {...{ displayName, collapsible }}>
-        <LocalState
+        <Component
           initialState={{
             localRange: { ...initialRange }, // the moment objects passed into DayPickerRangeController
             inputRangeValues: {
+              // the strings to render in the inputs
               startDate: null,
               endDate: null,
-            }, // the strings to render in the inputs
+            },
             focusedInput: null,
           }}
         >
@@ -226,15 +203,11 @@ class DatesAgg extends Component {
                 ? initialRange.startDate || Moment()
                 : initialRange.endDate || Moment());
             return (
-              <div
-                className={`${inputRow} ${css`
-                  position: relative;
-                `}`}
-              >
+              <div className={`inputRow`}>
                 <input
                   ref={el => (this.startDateInput = el)}
                   onFocus={() => setInputFocus(START_DATE_INPUT)}
-                  className={`dateInput ${inputStyle}`}
+                  className={`dateInput`}
                   value={
                     inputRangeValues.startDate
                       ? inputRangeValues.startDate
@@ -253,7 +226,7 @@ class DatesAgg extends Component {
                 <input
                   ref={el => (this.endDateInput = el)}
                   onFocus={() => setInputFocus(END_DATE_INPUT)}
-                  className={`dateInput ${inputStyle}`}
+                  className={`dateInput`}
                   value={
                     inputRangeValues.endDate
                       ? inputRangeValues.endDate
@@ -267,13 +240,7 @@ class DatesAgg extends Component {
                   }
                 />
                 {focusedInput && (
-                  <div
-                    className={css`
-                      position: absolute;
-                      left: 0px;
-                      top: 100%;
-                    `}
-                  >
+                  <div className={DATE_PICKER_POSITIONS[datePickerPosition]}>
                     <DayPickerRangeController
                       {...{
                         numberOfMonths: 2,
@@ -296,9 +263,9 @@ class DatesAgg extends Component {
                       block
                       small
                     />
-                    <div className={calendarNavbar}>
+                    <div className={`calendarNavbar`}>
                       <button
-                        className={cancelButton}
+                        className={`cancelButton`}
                         onClick={() => {
                           setState({
                             inputRangeValues: {},
@@ -310,7 +277,7 @@ class DatesAgg extends Component {
                         cancel
                       </button>
                       <button
-                        className={submitButton}
+                        className={`submitButton`}
                         onClick={() => {
                           onDatesSet(localRange);
                           setInputFocus(null);
@@ -327,7 +294,7 @@ class DatesAgg extends Component {
               </div>
             );
           }}
-        </LocalState>
+        </Component>
       </AggsWrapper>
     );
   }

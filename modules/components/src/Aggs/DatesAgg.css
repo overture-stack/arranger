@@ -1,0 +1,46 @@
+.dateInput {
+  width: 119px;
+  height: 30px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+  padding-left: 10px;
+}
+
+.inputRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  position: relative;
+}
+
+.calendarNavbar {
+  height: 40px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-color: #edeef1;
+  border: solid 1px #e0e1e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+
+.cancelButton {
+  width: 57px;
+  height: 24px;
+  border-radius: 10.5px;
+  background-color: #009bb8;
+  border: solid 1px #cacbcf;
+}
+
+.submitButton {
+  width: 57px;
+  height: 24px;
+  border-radius: 10.5px;
+  background-color: #009bb8;
+  border: solid 1px #cacbcf;
+  color: white;
+}
