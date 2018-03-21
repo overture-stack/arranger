@@ -256,7 +256,7 @@ class DatesAgg extends React.Component {
                       keepOpenOnDateSelect
                     />
                     <div className={`calendarNavbar`}>
-                      <button
+                      <div
                         className={`cancelButton`}
                         onClick={() => {
                           setState({
@@ -267,8 +267,8 @@ class DatesAgg extends React.Component {
                         }}
                       >
                         cancel
-                      </button>
-                      <button
+                      </div>
+                      <div
                         className={`submitButton`}
                         onClick={() => {
                           onDatesSet(localRange);
@@ -279,7 +279,7 @@ class DatesAgg extends React.Component {
                         }}
                       >
                         Apply
-                      </button>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -29,18 +29,22 @@
 }
 
 .cancelButton {
-  width: 57px;
-  height: 24px;
-  border-radius: 10.5px;
-  background-color: #009bb8;
-  border: solid 1px #cacbcf;
+  font-family: Montserrat;
+  font-size: 14px;
+  font-weight: 300;
+  font-style: normal;
+  font-stretch: normal;
+  letter-spacing: 0.2px;
+  text-align: center;
+  color: #009bb8;
+  cursor: pointer;
 }
 
 .submitButton {
-  width: 57px;
-  height: 24px;
-  border-radius: 10.5px;
+  border-radius: 100px;
   background-color: #009bb8;
   border: solid 1px #cacbcf;
   color: white;
+  padding: 3px 10px;
+  cursor: pointer;
 }
