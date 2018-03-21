@@ -93,11 +93,8 @@ class DatesAgg extends Component {
       displayName = 'Unnamed Field',
       buckets = [],
       collapsible = true,
-      handleDateChange = ({ generateNextSQON }) =>
-        console.log('nextSqon: ', generateNextSQON(null)),
-      handleClearClick = ({ generateNextSQON }) =>
-        console.log('nextSqon: ', generateNextSQON(null)),
-
+      handleDateChange = ({ generateNextSQON }) => null,
+      handleClearClick = ({ generateNextSQON }) => null,
       startDateFromSqon = () => null,
       endDateFromSqon = () => null,
     } = this.props;
@@ -180,8 +177,11 @@ class DatesAgg extends Component {
       <AggsWrapper {...{ displayName, collapsible }}>
         <LocalState
           initialState={{
-            localRange: { ...initialRange },
-            inputRangeValues: {},
+            localRange: { ...initialRange }, // the moment objects passed into DayPickerRangeController
+            inputRangeValues: {
+              startDate: null,
+              endDate: null,
+            }, // the strings to render in the inputs
             focusedInput: null,
           }}
         >
@@ -314,6 +314,9 @@ class DatesAgg extends Component {
                         onClick={() => {
                           onDatesSet(localRange);
                           setInputFocus(null);
+                          setState({
+                            inputRangeValues: {},
+                          });
                         }}
                       >
                         Apply
