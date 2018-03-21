@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import express from 'express';
 import socketIO from 'socket.io';
 import { Server } from 'http';
