@@ -102,10 +102,6 @@ class DatesAgg extends Component {
     this.state = {
       isCollapsed: false,
       focusedInput: START_DATE_INPUT, // this should not be modified with setState but with the observable below
-      inputRangeValues: {
-        startDate: null,
-        endDate: null,
-      },
       selectedRange: {
         startDate: null,
         endDate: null,
@@ -181,24 +177,6 @@ class DatesAgg extends Component {
     }
   };
 
-  onInputValueChange = ({ value = '', input }) => {
-    const { inputRangeValues, selectedRange } = this.state;
-    const newMoment = inputDateToMoment(value);
-    const isValidInputDateString =
-      newMoment.isValid() &&
-      sumBy(value.split('/'), str => str.length === 2) === 3;
-    if (!isValidInputDateString) {
-      this.setState({
-        inputRangeValues: { ...inputRangeValues, [input]: value },
-      });
-    } else {
-      this.onDatesSet({
-        ...this.getCalendarRangeToRender(),
-        [input]: newMoment,
-      });
-    }
-  };
-
   getDateFromSqon = dateToGet => sqon => {
     const { field } = this.props;
     return sqon?.content
@@ -215,7 +193,7 @@ class DatesAgg extends Component {
       endDateFromSqon = () => null,
       buckets,
     } = this.props;
-    const { selectedRange, inputRangeValues } = this.state;
+    const { selectedRange } = this.state;
     const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
       ...rest,
       key_as_string,
@@ -232,14 +210,10 @@ class DatesAgg extends Component {
     });
     return {
       startDate:
-        (inputRangeValues.startDate &&
-          inputDateToMoment(inputRangeValues.startDate)) ||
         selectedRange.startDate ||
         (startFromSqon && bucketDateToMoment(startFromSqon)) ||
         minBucket?.moment,
       endDate:
-        (inputRangeValues.endDate &&
-          inputDateToMoment(inputRangeValues.endDate)) ||
         selectedRange.endDate ||
         (startFromSqon && bucketDateToMoment(endFromSqon)) ||
         maxBucket?.moment,
@@ -270,115 +244,132 @@ class DatesAgg extends Component {
 
     return (
       <AggsWrapper {...{ displayName }}>
-        <div
-          className={`${inputRow} ${css`
-            position: relative;
-          `}`}
+        <LocalState
+          initialState={{
+            localRange: { ...rangeToRender },
+            inputRangeValues: {},
+          }}
         >
-          <input
-            ref={el => (this.startDateInput = el)}
-            onFocus={() => {
-              this.$focusedInput.next(START_DATE_INPUT);
-            }}
-            className={`dateInput ${inputStyle}`}
-            value={
-              inputRangeValues.startDate
-                ? inputRangeValues.startDate
-                : momentToInputDate(rangeToRender.startDate)
-            }
-            onChange={e =>
-              this.onInputValueChange({
-                value: e.target.value,
-                input: START_DATE_INPUT,
-              })
-            }
-          />
-          <div style={{ padding: 5 }}>
-            <Arrow />
-          </div>
-          <input
-            ref={el => (this.endDateInput = el)}
-            onFocus={() => {
-              this.$focusedInput.next(END_DATE_INPUT);
-            }}
-            className={`dateInput ${inputStyle}`}
-            value={
-              inputRangeValues.endDate
-                ? inputRangeValues.endDate
-                : momentToInputDate(rangeToRender.endDate)
-            }
-            onChange={e =>
-              this.onInputValueChange({
-                value: e.target.value,
-                input: END_DATE_INPUT,
-              })
-            }
-          />
-          {this.state.focusedInput && (
-            <LocalState initialState={{ localRange: rangeToRender }}>
-              {({ state: { localRange }, setState }) => (
-                <div
-                  className={css`
-                    position: absolute;
-                    left: 0px;
-                    top: 100%;
-                  `}
-                >
-                  <DateRangePicker
-                    {...{
-                      dateRangePickerProps: {
-                        numberOfMonths: 2,
-                        focusedInput: this.state.focusedInput,
-                        onFocusChange: focusedInput =>
-                          this.$focusedInput.next(focusedInput),
-                        initialVisibleMonth: getInitialVisibleMonth,
-                        startDate: localRange.startDate,
-                        endDate: localRange.endDate,
-                        isOutsideRange: () => false,
-                        onDatesChange: range => {
-                          setState({
-                            localRange: range,
-                          });
-                          this.setState({
-                            inputRangeValues: {
-                              ...this.state.inputRangeValues,
-                              ...toPairs(range)
-                                .filter(([_, moment]) => moment)
-                                .reduce(
-                                  (acc, [key, moment]) => ({
-                                    ...acc,
-                                    [key]: momentToInputDate(moment),
-                                  }),
-                                  {},
-                                ),
-                            },
-                          });
-                        },
-                      },
-                    }}
-                  />
-                  <div className={calendarNavbar}>
-                    <button
-                      className={cancelButton}
-                      onClick={() => {
-                        this.$focusedInput.next(null);
-                        this.setState({ inputRangeValues: {} });
-                      }}
-                    >
-                      cancel
-                    </button>
-                    <button
-                      className={submitButton}
-                      onClick={() => this.onDatesSet(localRange)}
-                    >
-                      Apply
-                    </button>
-                  </div>
+          {({ state: { localRange, inputRangeValues }, setState }) => {
+            const inputChange = ({ value, input }) => {
+              const newMoment = inputDateToMoment(value);
+              const isValidInputDateString =
+                newMoment.isValid() &&
+                sumBy(value.split('/'), str => str.length === 2) === 3;
+              console.log('isValidInputDateString: ', isValidInputDateString);
+              if (!isValidInputDateString) {
+                setState({
+                  inputRangeValues: { ...inputRangeValues, [input]: value },
+                });
+              } else {
+                setState({
+                  inputRangeValues: {},
+                  localRange: {
+                    ...localRange,
+                    [input]: newMoment,
+                  },
+                });
+              }
+            };
+            return (
+              <div
+                className={`${inputRow} ${css`
+                  position: relative;
+                `}`}
+              >
+                <input
+                  ref={el => (this.startDateInput = el)}
+                  onFocus={() => {
+                    this.$focusedInput.next(START_DATE_INPUT);
+                  }}
+                  className={`dateInput ${inputStyle}`}
+                  value={
+                    inputRangeValues.startDate
+                      ? inputRangeValues.startDate
+                      : momentToInputDate(localRange.startDate)
+                  }
+                  onChange={e =>
+                    inputChange({
+                      value: e.target.value,
+                      input: START_DATE_INPUT,
+                    })
+                  }
+                />
+                <div style={{ padding: 5 }}>
+                  <Arrow />
                 </div>
-              )}
-            </LocalState>
-          )}
-        </div>
+                <input
+                  ref={el => (this.endDateInput = el)}
+                  onFocus={() => {
+                    this.$focusedInput.next(END_DATE_INPUT);
+                  }}
+                  className={`dateInput ${inputStyle}`}
+                  value={
+                    inputRangeValues.endDate
+                      ? inputRangeValues.endDate
+                      : momentToInputDate(localRange.endDate)
+                  }
+                  onChange={e =>
+                    inputChange({
+                      value: e.target.value,
+                      input: END_DATE_INPUT,
+                    })
+                  }
+                />
+                {this.state.focusedInput && (
+                  <div
+                    className={css`
+                      position: absolute;
+                      left: 0px;
+                      top: 100%;
+                    `}
+                  >
+                    <DateRangePicker
+                      {...{
+                        dateRangePickerProps: {
+                          numberOfMonths: 2,
+                          focusedInput: this.state.focusedInput,
+                          onFocusChange: focusedInput =>
+                            this.$focusedInput.next(focusedInput),
+                          initialVisibleMonth: getInitialVisibleMonth,
+                          startDate: localRange.startDate,
+                          endDate: localRange.endDate,
+                          isOutsideRange: () => false,
+                          onDatesChange: range => {
+                            setState({
+                              localRange: range,
+                            });
+                          },
+                        },
+                      }}
+                    />
+                    <div className={calendarNavbar}>
+                      <button
+                        className={cancelButton}
+                        onClick={() => {
+                          console.log('rangeToRender', rangeToRender);
+                          setState({
+                            inputRangeValues: {},
+                            localRange: { ...rangeToRender },
+                          });
+                          this.$focusedInput.next(null);
+                        }}
+                      >
+                        cancel
+                      </button>
+                      <button
+                        className={submitButton}
+                        onClick={() => this.onDatesSet(localRange)}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }}
+        </LocalState>
       </AggsWrapper>
     );
   }
