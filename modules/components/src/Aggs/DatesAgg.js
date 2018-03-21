@@ -16,6 +16,7 @@ import {
   removeSQON,
 } from '../SQONView/utils';
 import './AggregationCard.css';
+import AggsWrapper from './AggsWrapper';
 
 const START_DATE_INPUT = 'startDate';
 const END_DATE_INPUT = 'endDate';
@@ -268,20 +269,7 @@ class DatesAgg extends Component {
         : rangeToRender.endDate || Moment());
 
     return (
-      <div className="aggregation-card">
-        <div
-          className={`title-wrapper ${isCollapsed && 'collapsed'}`}
-          onClick={
-            collapsible
-              ? () => this.setState({ isCollapsed: !isCollapsed })
-              : () => {}
-          }
-        >
-          <span className="title">{displayName}</span>
-          {collapsible && (
-            <span className={`arrow ${isCollapsed && 'collapsed'}`} />
-          )}
-        </div>
+      <AggsWrapper {...{ displayName }}>
         <div
           className={`${inputRow} ${css`
             position: relative;
@@ -391,7 +379,7 @@ class DatesAgg extends Component {
             </LocalState>
           )}
         </div>
-      </div>
+      </AggsWrapper>
     );
   }
 }
