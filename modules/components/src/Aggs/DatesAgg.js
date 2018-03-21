@@ -6,7 +6,6 @@ import { DayPickerRangeController } from 'react-dates';
 import convert from 'convert-units';
 import { maxBy, minBy, debounce, sumBy, toPairs } from 'lodash';
 import { css } from 'emotion';
-import { Subject } from 'rxjs';
 import LocalState from 'react-component-component';
 
 import {
@@ -89,29 +88,22 @@ class DatesAgg extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      focusedInput: START_DATE_INPUT, // this should not be modified with setState but with the observable below
+      focusedInput: START_DATE_INPUT, // this should not be modified with setState but with setInputFocus
     };
+  }
 
-    // uses observable to bind dom input focus state because doesn't seem the input tag supports any focus prop
-    this.$focusedInput = new Subject();
-    this.focusInputSubscription = this.$focusedInput.subscribe(focusedInput => {
-      console.log('focusedInput changed!!!');
-      this.setState({ focusedInput }, () => {
-        if (focusedInput === START_DATE_INPUT) {
-          this.startDateInput.focus();
-        } else if (focusedInput === END_DATE_INPUT) {
-          this.endDateInput.focus();
-        } else {
-          this.startDateInput.blur();
-          this.endDateInput.blur();
-        }
-      });
+  setInputFocus = focusedInput => {
+    this.setState({ focusedInput }, () => {
+      if (focusedInput === START_DATE_INPUT) {
+        this.startDateInput.focus();
+      } else if (focusedInput === END_DATE_INPUT) {
+        this.endDateInput.focus();
+      } else {
+        this.startDateInput.blur();
+        this.endDateInput.blur();
+      }
     });
-  }
-
-  componentWillUnmount() {
-    this.focusInputSubscription.unsubscribe();
-  }
+  };
 
   onDatesSet = ({ startDate, endDate }) => {
     const {
@@ -150,7 +142,7 @@ class DatesAgg extends Component {
               sqon,
             ),
         });
-        this.$focusedInput.next(
+        this.setInputFocus(
           this.state.focusedInput === START_DATE_INPUT ? END_DATE_INPUT : null,
         );
       }
@@ -250,7 +242,7 @@ class DatesAgg extends Component {
                 <input
                   ref={el => (this.startDateInput = el)}
                   onFocus={() => {
-                    this.$focusedInput.next(START_DATE_INPUT);
+                    this.setInputFocus(START_DATE_INPUT);
                   }}
                   className={`dateInput ${inputStyle}`}
                   value={
@@ -271,7 +263,7 @@ class DatesAgg extends Component {
                 <input
                   ref={el => (this.endDateInput = el)}
                   onFocus={() => {
-                    this.$focusedInput.next(END_DATE_INPUT);
+                    this.setInputFocus(END_DATE_INPUT);
                   }}
                   className={`dateInput ${inputStyle}`}
                   value={
@@ -299,7 +291,7 @@ class DatesAgg extends Component {
                         numberOfMonths: 2,
                         focusedInput: this.state.focusedInput,
                         onFocusChange: focusedInput =>
-                          this.$focusedInput.next(focusedInput),
+                          this.setInputFocus(focusedInput),
                         initialVisibleMonth: getInitialVisibleMonth,
                         startDate: localRange.startDate,
                         endDate: localRange.endDate,
@@ -324,7 +316,7 @@ class DatesAgg extends Component {
                             inputRangeValues: {},
                             localRange: { ...rangeToRender },
                           });
-                          this.$focusedInput.next(null);
+                          this.setInputFocus(null);
                         }}
                       >
                         cancel
@@ -333,7 +325,7 @@ class DatesAgg extends Component {
                         className={submitButton}
                         onClick={() => {
                           this.onDatesSet(localRange);
-                          this.$focusedInput.next(null);
+                          this.setInputFocus(null);
                         }}
                       >
                         Apply
