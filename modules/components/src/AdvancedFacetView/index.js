@@ -1,5 +1,5 @@
 import React from 'react';
-import { keys } from 'lodash';
+import { keys, orderBy } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
 import NestedTreeView from '../NestedTreeView';
@@ -13,6 +13,29 @@ import {
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
 } from './utils.js';
+
+const orderDisplayTreeData = displayTreeData => {
+  const setWithChildrenOrdered = displayTreeData.map(
+    ({ children, ...rest }) => ({
+      ...rest,
+      ...(children
+        ? {
+            children: orderDisplayTreeData(children),
+          }
+        : {}),
+    }),
+  );
+  return [
+    ...orderBy(
+      setWithChildrenOrdered.filter(({ children }) => !children),
+      'title',
+    ),
+    ...orderBy(
+      setWithChildrenOrdered.filter(({ children }) => children),
+      'title',
+    ),
+  ];
+};
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
