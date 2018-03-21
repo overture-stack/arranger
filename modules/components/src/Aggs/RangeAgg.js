@@ -27,8 +27,8 @@ class RangeAgg extends Component {
       unit: unit,
       displayUnit: unit,
       value: {
-        min: value ? value.min || min : min,
-        max: value ? value.max || max : max,
+        min: !_.isNil(value) ? value.min || min : min,
+        max: !_.isNil(value) ? value.max || max : max,
       },
     };
   }
@@ -42,8 +42,14 @@ class RangeAgg extends Component {
       min,
       max,
       value: {
-        min: Math.max(externalVal?.min || value.min, min),
-        max: Math.min(externalVal?.max || value.max, max),
+        min: Math.max(
+          !_.isNil(externalVal?.min) ? externalVal.min : value.min,
+          min,
+        ),
+        max: Math.min(
+          !_.isNil(externalVal?.max) ? externalVal.max : value.max,
+          max,
+        ),
       },
     });
   }
