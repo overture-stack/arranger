@@ -1,31 +1,29 @@
 import getFields from 'graphql-fields';
-import buildAggregations from './buildAggregations';
-import pruneAggregations from './pruneAggregations';
+import {
+  buildQuery,
+  buildAggregations,
+  flattenAggregations,
+} from '@arranger/middleware';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
-  let graphql_fields = getFields(info);
-  let fields = Object.keys(graphql_fields);
-  let nested_fields = type.nested_fields;
-
-  let { query, aggs } = buildAggregations({
-    type,
-    args,
-    fields,
-    graphql_fields,
-    nested_fields,
+export default type => async (
+  obj,
+  { offset = 0, filters, aggregations_filter_themselves },
+  { es },
+  info,
+) => {
+  const nestedFields = type.nested_fields;
+  const query = buildQuery({ nestedFields, filters });
+  const aggs = buildAggregations({
+    query,
+    graphqlFields: getFields(info),
+    nestedFields,
+    aggregationsFilterThemselves: aggregations_filter_themselves,
   });
 
-  let body =
-    query && Object.keys(query).length
-      ? {
-          query,
-          aggs,
-        }
-      : { aggs };
-
-  let { aggregations } = await es.search({
+  const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
+  const response = await es.search({
     index: type.index,
     type: type.es_type,
     size: 0,
@@ -33,10 +31,7 @@ export default type => async (obj, { offset = 0, ...args }, { es }, info) => {
     body,
   });
 
-  let { pruned } = await pruneAggregations({
-    aggs: aggregations,
-    nested_fields,
-  });
+  const aggregations = flattenAggregations(response.aggregations);
 
-  return Object.entries(pruned).reduce(toGraphqlField, {});
+  return Object.entries(aggregations).reduce(toGraphqlField, {});
 };

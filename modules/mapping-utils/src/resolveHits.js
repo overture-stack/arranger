@@ -1,9 +1,9 @@
 import getFields from 'graphql-fields';
-import buildQuery from './buildQuery';
+import { buildQuery } from '@arranger/middleware';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
-let resolveNested = ({ node, nested_fields, parent = '' }) => {
+let resolveNested = ({ node, nestedFields, parent = '' }) => {
   if (typeof node !== 'object' || !node) return node;
 
   return Object.entries(node).reduce((acc, [field, hits]) => {
@@ -12,17 +12,13 @@ let resolveNested = ({ node, nested_fields, parent = '' }) => {
 
     return {
       ...acc,
-      [field]: nested_fields.includes(fullPath)
+      [field]: nestedFields.includes(fullPath)
         ? {
             hits: {
               edges: hits.map(node => ({
                 node: {
                   ...node,
-                  ...resolveNested({
-                    node,
-                    nested_fields,
-                    parent: fullPath,
-                  }),
+                  ...resolveNested({ node, nestedFields, parent: fullPath }),
                 },
               })),
               total: hits.length,
@@ -31,17 +27,9 @@ let resolveNested = ({ node, nested_fields, parent = '' }) => {
         : typeof hits === 'object'
           ? Object.assign(
               hits.constructor(),
-              resolveNested({
-                node: hits,
-                nested_fields,
-                parent: fullPath,
-              }),
+              resolveNested({ node: hits, nestedFields, parent: fullPath }),
             )
-          : resolveNested({
-              node: hits,
-              nested_fields,
-              parent: fullPath,
-            }),
+          : resolveNested({ node: hits, nestedFields, parent: fullPath }),
     };
   }, {});
 };
@@ -53,12 +41,13 @@ export default type => async (
   info,
 ) => {
   let fields = getFields(info);
-  let nested_fields = type.nested_fields;
+  let nestedFields = type.nested_fields;
 
   let query = filters;
 
   if (filters || score) {
-    query = buildQuery({ type, filters, score, nested_fields });
+    // TODO: something with score?
+    query = buildQuery({ nestedFields, filters });
   }
 
   let body =
@@ -70,7 +59,7 @@ export default type => async (
   if (sort && sort.length) {
     // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
     body.sort = sort.map(({ field, missing, ...rest }) => {
-      const nested_path = nested_fields.find(
+      const nested_path = nestedFields.find(
         nestedField => field.indexOf(nestedField) === 0,
       );
 
@@ -96,10 +85,7 @@ export default type => async (
 
   let nodes = hits.hits.map(x => {
     let source = x._source;
-    let nested_nodes = resolveNested({
-      node: source,
-      nested_fields,
-    });
+    let nested_nodes = resolveNested({ node: source, nestedFields });
     return { id: x._id, ...source, ...nested_nodes };
   });
 
