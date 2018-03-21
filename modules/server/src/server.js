@@ -1,7 +1,6 @@
 import elasticsearch from 'elasticsearch';
 import express from 'express';
 import bodyParser from 'body-parser';
-import cors from 'cors';
 import projectsRoutes from './projects';
 import sockets from './sockets';
 import watchGit from './watchGit';
@@ -24,7 +23,6 @@ export default async ({
   io,
 } = {}) => {
   const router = express.Router();
-  router.use(cors());
   router.use(bodyParser.json({ limit: '50mb' }));
 
   sockets({ io });

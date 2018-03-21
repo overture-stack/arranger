@@ -1,13 +1,9 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { omit } from 'lodash';
-import { esToAggTypeMap } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
 import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
-import { replaceSQON, toggleSQON } from '../src/SQONView/utils';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
-import { action } from '@storybook/addon-actions';
 
 const injectMockBuckets = node =>
   Object.keys(node).reduce(

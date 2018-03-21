@@ -1,13 +1,11 @@
 import { ARRANGER_API } from './config';
 import urlJoin from 'url-join';
 
+let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 const api = ({ endpoint = '', body, headers }) =>
   fetch(urlJoin(ARRANGER_API, endpoint), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: { ...alwaysSendHeaders, ...headers },
     body: JSON.stringify(body),
   }).then(r => r.json());
 
@@ -16,15 +14,19 @@ export const fetchExtendedMapping = ({ graphqlField, projectId }) =>
     endpoint: `/${projectId}/graphql`,
     body: {
       query: `
-      {
-        ${graphqlField}{
-          extended
+        {
+          ${graphqlField}{
+            extended
+          }
         }
-      }
-    `,
+      `,
     },
   }).then(response => ({
     extendedMapping: response.data[graphqlField].extended,
   }));
+
+export const addHeaders = headers => {
+  alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
+};
 
 export default api;
