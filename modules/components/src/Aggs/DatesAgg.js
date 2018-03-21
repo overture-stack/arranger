@@ -85,32 +85,17 @@ const Arrow = ({ style }) => (
   </svg>
 );
 
-const DateRangePicker = ({ dateRangePickerProps }) => (
-  <DayPickerRangeController
-    {...dateRangePickerProps}
-    hideKeyboardShortcutsPanel
-    showClearDates
-    keepOpenOnDateSelect
-    block
-    small
-  />
-);
-
 class DatesAgg extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isCollapsed: false,
       focusedInput: START_DATE_INPUT, // this should not be modified with setState but with the observable below
-      selectedRange: {
-        startDate: null,
-        endDate: null,
-      },
     };
 
     // uses observable to bind dom input focus state because doesn't seem the input tag supports any focus prop
     this.$focusedInput = new Subject();
     this.focusInputSubscription = this.$focusedInput.subscribe(focusedInput => {
+      console.log('focusedInput changed!!!');
       this.setState({ focusedInput }, () => {
         if (focusedInput === START_DATE_INPUT) {
           this.startDateInput.focus();
@@ -139,7 +124,6 @@ class DatesAgg extends Component {
     if (!startDate && !endDate) {
       handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
     } else {
-      this.setState({ selectedRange: { startDate, endDate } });
       if (startDate && endDate) {
         handleDateChange({
           generateNextSQON: sqon =>
@@ -166,10 +150,6 @@ class DatesAgg extends Component {
               sqon,
             ),
         });
-        this.setState({
-          inputRangeValues: {},
-          selectedRange: {},
-        });
         this.$focusedInput.next(
           this.state.focusedInput === START_DATE_INPUT ? END_DATE_INPUT : null,
         );
@@ -193,7 +173,6 @@ class DatesAgg extends Component {
       endDateFromSqon = () => null,
       buckets,
     } = this.props;
-    const { selectedRange } = this.state;
     const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
       ...rest,
       key_as_string,
@@ -210,13 +189,10 @@ class DatesAgg extends Component {
     });
     return {
       startDate:
-        selectedRange.startDate ||
         (startFromSqon && bucketDateToMoment(startFromSqon)) ||
         minBucket?.moment,
       endDate:
-        selectedRange.endDate ||
-        (startFromSqon && bucketDateToMoment(endFromSqon)) ||
-        maxBucket?.moment,
+        (startFromSqon && bucketDateToMoment(endFromSqon)) || maxBucket?.moment,
     };
   };
 
@@ -227,12 +203,7 @@ class DatesAgg extends Component {
       buckets = [],
       collapsible = true,
     } = this.props;
-    const {
-      isCollapsed,
-      focusedInput,
-      selectedRange,
-      inputRangeValues,
-    } = this.state;
+    const { focusedInput, inputRangeValues } = this.state;
 
     const rangeToRender = this.getCalendarRangeToRender();
 
@@ -256,7 +227,6 @@ class DatesAgg extends Component {
               const isValidInputDateString =
                 newMoment.isValid() &&
                 sumBy(value.split('/'), str => str.length === 2) === 3;
-              console.log('isValidInputDateString: ', isValidInputDateString);
               if (!isValidInputDateString) {
                 setState({
                   inputRangeValues: { ...inputRangeValues, [input]: value },
@@ -324,30 +294,32 @@ class DatesAgg extends Component {
                       top: 100%;
                     `}
                   >
-                    <DateRangePicker
+                    <DayPickerRangeController
                       {...{
-                        dateRangePickerProps: {
-                          numberOfMonths: 2,
-                          focusedInput: this.state.focusedInput,
-                          onFocusChange: focusedInput =>
-                            this.$focusedInput.next(focusedInput),
-                          initialVisibleMonth: getInitialVisibleMonth,
-                          startDate: localRange.startDate,
-                          endDate: localRange.endDate,
-                          isOutsideRange: () => false,
-                          onDatesChange: range => {
-                            setState({
-                              localRange: range,
-                            });
-                          },
+                        numberOfMonths: 2,
+                        focusedInput: this.state.focusedInput,
+                        onFocusChange: focusedInput =>
+                          this.$focusedInput.next(focusedInput),
+                        initialVisibleMonth: getInitialVisibleMonth,
+                        startDate: localRange.startDate,
+                        endDate: localRange.endDate,
+                        isOutsideRange: () => false,
+                        onDatesChange: range => {
+                          setState({
+                            localRange: range,
+                          });
                         },
                       }}
+                      hideKeyboardShortcutsPanel
+                      showClearDates
+                      keepOpenOnDateSelect
+                      block
+                      small
                     />
                     <div className={calendarNavbar}>
                       <button
                         className={cancelButton}
                         onClick={() => {
-                          console.log('rangeToRender', rangeToRender);
                           setState({
                             inputRangeValues: {},
                             localRange: { ...rangeToRender },
@@ -359,7 +331,10 @@ class DatesAgg extends Component {
                       </button>
                       <button
                         className={submitButton}
-                        onClick={() => this.onDatesSet(localRange)}
+                        onClick={() => {
+                          this.onDatesSet(localRange);
+                          this.$focusedInput.next(null);
+                        }}
                       >
                         Apply
                       </button>
