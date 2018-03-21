@@ -85,136 +85,111 @@ const Arrow = ({ style }) => (
 );
 
 class DatesAgg extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      focusedInput: START_DATE_INPUT, // this should not be modified with setState but with setInputFocus
-    };
-  }
-
-  setInputFocus = focusedInput => {
-    this.setState({ focusedInput }, () => {
-      if (focusedInput === START_DATE_INPUT) {
-        this.startDateInput.focus();
-      } else if (focusedInput === END_DATE_INPUT) {
-        this.endDateInput.focus();
-      } else {
-        this.startDateInput.blur();
-        this.endDateInput.blur();
-      }
-    });
-  };
-
-  onDatesSet = ({ startDate, endDate }) => {
-    const {
-      field,
-      handleDateChange = ({ generateNextSQON }) =>
-        console.log('nextSqon: ', generateNextSQON(null)),
-      handleClearClick = ({ generateNextSQON }) =>
-        console.log('nextSqon: ', generateNextSQON(null)),
-    } = this.props;
-    if (!startDate && !endDate) {
-      handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
-    } else {
-      if (startDate && endDate) {
-        handleDateChange({
-          generateNextSQON: sqon =>
-            replaceSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: '>=',
-                    content: {
-                      field,
-                      value: momentToBucketDate(startDate.startOf('day')),
-                    },
-                  },
-                  {
-                    op: '<=',
-                    content: {
-                      field,
-                      value: momentToBucketDate(endDate.endOf('day')),
-                    },
-                  },
-                ],
-              },
-              sqon,
-            ),
-        });
-        this.setInputFocus(
-          this.state.focusedInput === START_DATE_INPUT ? END_DATE_INPUT : null,
-        );
-      }
-    }
-  };
-
-  getDateFromSqon = dateToGet => sqon => {
-    const { field } = this.props;
-    return sqon?.content
-      ?.filter(({ content: { field: sqonField } }) => {
-        return sqonField === field;
-      })
-      ?.find(({ op }) => op === (dateToGet === START_DATE_INPUT ? '>=' : '<='))
-      ?.content.value;
-  };
-
-  getCalendarRangeToRender = () => {
-    const {
-      startDateFromSqon = () => null,
-      endDateFromSqon = () => null,
-      buckets,
-    } = this.props;
-    const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
-      ...rest,
-      key_as_string,
-      moment: bucketDateToMoment(key_as_string),
-    }));
-    const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
-    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
-
-    const startFromSqon = startDateFromSqon({
-      getDateFromSqon: this.getDateFromSqon(START_DATE_INPUT),
-    });
-    const endFromSqon = endDateFromSqon({
-      getDateFromSqon: this.getDateFromSqon(END_DATE_INPUT),
-    });
-    return {
-      startDate:
-        (startFromSqon && bucketDateToMoment(startFromSqon)) ||
-        minBucket?.moment,
-      endDate:
-        (startFromSqon && bucketDateToMoment(endFromSqon)) || maxBucket?.moment,
-    };
-  };
+  // needs ref...
 
   render() {
-    let {
+    const {
       field = '',
       displayName = 'Unnamed Field',
       buckets = [],
       collapsible = true,
+      handleDateChange = ({ generateNextSQON }) =>
+        console.log('nextSqon: ', generateNextSQON(null)),
+      handleClearClick = ({ generateNextSQON }) =>
+        console.log('nextSqon: ', generateNextSQON(null)),
+
+      startDateFromSqon = () => null,
+      endDateFromSqon = () => null,
     } = this.props;
-    const { focusedInput, inputRangeValues } = this.state;
 
-    const rangeToRender = this.getCalendarRangeToRender();
+    const onDatesSet = ({ startDate, endDate }) => {
+      if (!startDate && !endDate) {
+        handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
+      } else {
+        if (startDate && endDate) {
+          handleDateChange({
+            generateNextSQON: sqon =>
+              replaceSQON(
+                {
+                  op: 'and',
+                  content: [
+                    {
+                      op: '>=',
+                      content: {
+                        field,
+                        value: momentToBucketDate(startDate.startOf('day')),
+                      },
+                    },
+                    {
+                      op: '<=',
+                      content: {
+                        field,
+                        value: momentToBucketDate(endDate.endOf('day')),
+                      },
+                    },
+                  ],
+                },
+                sqon,
+              ),
+          });
+        }
+      }
+    };
 
-    const getInitialVisibleMonth = () =>
-      focusedInput &&
-      (focusedInput === START_DATE_INPUT
-        ? rangeToRender.startDate || Moment()
-        : rangeToRender.endDate || Moment());
+    const getDateFromSqon = dateToGet => sqon =>
+      sqon?.content
+        ?.filter(({ content: { field: sqonField } }) => {
+          return sqonField === field;
+        })
+        ?.find(
+          ({ op }) => op === (dateToGet === START_DATE_INPUT ? '>=' : '<='),
+        )?.content.value;
+
+    const getInitialRange = () => {
+      const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
+        ...rest,
+        key_as_string,
+        moment: bucketDateToMoment(key_as_string),
+      }));
+      const minBucket = minBy(bucketWithMoment, ({ moment }) =>
+        moment.valueOf(),
+      );
+      const maxBucket = maxBy(bucketWithMoment, ({ moment }) =>
+        moment.valueOf(),
+      );
+
+      const startFromSqon = startDateFromSqon({
+        getDateFromSqon: getDateFromSqon(START_DATE_INPUT),
+      });
+      const endFromSqon = endDateFromSqon({
+        getDateFromSqon: getDateFromSqon(END_DATE_INPUT),
+      });
+      return {
+        startDate:
+          (startFromSqon && bucketDateToMoment(startFromSqon)) ||
+          minBucket?.moment,
+        endDate:
+          (startFromSqon && bucketDateToMoment(endFromSqon)) ||
+          maxBucket?.moment,
+      };
+    };
+
+    const initialRange = getInitialRange();
 
     return (
-      <AggsWrapper {...{ displayName }}>
+      <AggsWrapper {...{ displayName, collapsible }}>
         <LocalState
           initialState={{
-            localRange: { ...rangeToRender },
+            localRange: { ...initialRange },
             inputRangeValues: {},
+            focusedInput: null,
           }}
         >
-          {({ state: { localRange, inputRangeValues }, setState }) => {
-            const inputChange = ({ value, input }) => {
+          {({
+            state: { localRange, inputRangeValues, focusedInput },
+            setState,
+          }) => {
+            const handleInputValueChange = ({ value, input }) => {
               const newMoment = inputDateToMoment(value);
               const isValidInputDateString =
                 newMoment.isValid() &&
@@ -233,6 +208,23 @@ class DatesAgg extends Component {
                 });
               }
             };
+            const setInputFocus = focusedInput => {
+              setState({ focusedInput }, () => {
+                if (focusedInput === START_DATE_INPUT) {
+                  this.startDateInput.focus();
+                } else if (focusedInput === END_DATE_INPUT) {
+                  this.endDateInput.focus();
+                } else {
+                  this.startDateInput.blur();
+                  this.endDateInput.blur();
+                }
+              });
+            };
+            const getInitialVisibleMonth = () =>
+              focusedInput &&
+              (focusedInput === START_DATE_INPUT
+                ? initialRange.startDate || Moment()
+                : initialRange.endDate || Moment());
             return (
               <div
                 className={`${inputRow} ${css`
@@ -241,9 +233,7 @@ class DatesAgg extends Component {
               >
                 <input
                   ref={el => (this.startDateInput = el)}
-                  onFocus={() => {
-                    this.setInputFocus(START_DATE_INPUT);
-                  }}
+                  onFocus={() => setInputFocus(START_DATE_INPUT)}
                   className={`dateInput ${inputStyle}`}
                   value={
                     inputRangeValues.startDate
@@ -251,7 +241,7 @@ class DatesAgg extends Component {
                       : momentToInputDate(localRange.startDate)
                   }
                   onChange={e =>
-                    inputChange({
+                    handleInputValueChange({
                       value: e.target.value,
                       input: START_DATE_INPUT,
                     })
@@ -262,9 +252,7 @@ class DatesAgg extends Component {
                 </div>
                 <input
                   ref={el => (this.endDateInput = el)}
-                  onFocus={() => {
-                    this.setInputFocus(END_DATE_INPUT);
-                  }}
+                  onFocus={() => setInputFocus(END_DATE_INPUT)}
                   className={`dateInput ${inputStyle}`}
                   value={
                     inputRangeValues.endDate
@@ -272,13 +260,13 @@ class DatesAgg extends Component {
                       : momentToInputDate(localRange.endDate)
                   }
                   onChange={e =>
-                    inputChange({
+                    handleInputValueChange({
                       value: e.target.value,
                       input: END_DATE_INPUT,
                     })
                   }
                 />
-                {this.state.focusedInput && (
+                {focusedInput && (
                   <div
                     className={css`
                       position: absolute;
@@ -289,9 +277,9 @@ class DatesAgg extends Component {
                     <DayPickerRangeController
                       {...{
                         numberOfMonths: 2,
-                        focusedInput: this.state.focusedInput,
+                        focusedInput: focusedInput,
                         onFocusChange: focusedInput =>
-                          this.setInputFocus(focusedInput),
+                          setInputFocus(focusedInput),
                         initialVisibleMonth: getInitialVisibleMonth,
                         startDate: localRange.startDate,
                         endDate: localRange.endDate,
@@ -314,9 +302,9 @@ class DatesAgg extends Component {
                         onClick={() => {
                           setState({
                             inputRangeValues: {},
-                            localRange: { ...rangeToRender },
+                            localRange: { ...initialRange },
                           });
-                          this.setInputFocus(null);
+                          setInputFocus(null);
                         }}
                       >
                         cancel
@@ -324,8 +312,8 @@ class DatesAgg extends Component {
                       <button
                         className={submitButton}
                         onClick={() => {
-                          this.onDatesSet(localRange);
-                          this.setInputFocus(null);
+                          onDatesSet(localRange);
+                          setInputFocus(null);
                         }}
                       >
                         Apply
