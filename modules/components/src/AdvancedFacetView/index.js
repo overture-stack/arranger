@@ -1,5 +1,5 @@
 import React from 'react';
-import { keys } from 'lodash';
+import { keys, orderBy } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
 import mappingUtils from '@arranger/mapping-utils';
@@ -12,6 +12,29 @@ import { replaceSQON, toggleSQON } from '../SQONView/utils';
 import Input from '../Input';
 import SearchBox from './SearchBox';
 import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
+
+const orderDisplayTreeData = displayTreeData => {
+  const setWithChildrenOrdered = displayTreeData.map(
+    ({ children, ...rest }) => ({
+      ...rest,
+      ...(children
+        ? {
+            children: orderDisplayTreeData(children),
+          }
+        : {}),
+    }),
+  );
+  return [
+    ...orderBy(
+      setWithChildrenOrdered.filter(({ children }) => !children),
+      'title',
+    ),
+    ...orderBy(
+      setWithChildrenOrdered.filter(({ children }) => children),
+      'title',
+    ),
+  ];
+};
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -52,9 +75,8 @@ export default class AdvancedFacetView extends React.Component {
       valueCharacterLimit = 30,
     } = this.props;
     const { selectedPath, withValueOnly } = this.state;
-    const displayTreeData = injectExtensionToElasticMapping(
-      elasticMapping,
-      extendedMapping,
+    const displayTreeData = orderDisplayTreeData(
+      injectExtensionToElasticMapping(elasticMapping, extendedMapping),
     );
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath(path);
