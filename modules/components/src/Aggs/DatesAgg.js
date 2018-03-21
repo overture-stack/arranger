@@ -69,43 +69,38 @@ class DatesAgg extends React.Component {
       buckets = [],
       collapsible = true,
       handleDateChange = ({ generateNextSQON }) => null,
-      handleClearClick = ({ generateNextSQON }) => null,
       startDateFromSqon = () => null,
       endDateFromSqon = () => null,
       datePickerPosition = 'BOTTOM_LEFT',
     } = this.props;
 
     const onDatesSet = ({ startDate, endDate }) => {
-      if (!startDate && !endDate) {
-        handleClearClick({ generateNextSQON: sqon => removeSQON(field, sqon) });
-      } else {
-        if (startDate && endDate) {
-          handleDateChange({
-            generateNextSQON: sqon =>
-              replaceSQON(
-                {
-                  op: 'and',
-                  content: [
-                    {
-                      op: '>=',
-                      content: {
-                        field,
-                        value: momentToBucketDate(startDate.startOf('day')),
-                      },
+      if (startDate && endDate) {
+        handleDateChange({
+          generateNextSQON: sqon =>
+            replaceSQON(
+              {
+                op: 'and',
+                content: [
+                  {
+                    op: '>=',
+                    content: {
+                      field,
+                      value: momentToBucketDate(startDate.startOf('day')),
                     },
-                    {
-                      op: '<=',
-                      content: {
-                        field,
-                        value: momentToBucketDate(endDate.endOf('day')),
-                      },
+                  },
+                  {
+                    op: '<=',
+                    content: {
+                      field,
+                      value: momentToBucketDate(endDate.endOf('day')),
                     },
-                  ],
-                },
-                sqon,
-              ),
-          });
-        }
+                  },
+                ],
+              },
+              sqon,
+            ),
+        });
       }
     };
 
