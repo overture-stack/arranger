@@ -413,3 +413,20 @@ div {
   .input-range__label.input-range__label--value {
   right: 100%;
 }
+
+/*********************************************/
+/*********** styling for the AFV *************/
+/*********************************************/
+.facetViewWrapper .treeViewPanel .panelHeading {
+  background-color: #e1f0f3;
+  padding: 10px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+.facetViewWrapper .treeViewPanel .panelHeading .valueOnlyCheck {
+  text-align: right;
+}
+.facetViewWrapper .treeViewPanel .panelHeading .fieldsShown {
+  font-weight: bold;
+}
