@@ -1,7 +1,6 @@
 import buildQuery from '../../src/buildQuery';
 test('buildQuery filter', () => {
   const nestedFields = ['files', 'files.foo'];
-  var t = 2;
   const tests = [
     {
       input: {
