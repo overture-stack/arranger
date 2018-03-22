@@ -47,8 +47,13 @@ storiesOf('AdvancedFacetView', module)
         sqon: {
           op: 'and',
           content: [
-            { op: '>=', content: { field: 'age_at_diagnosis', value: 17 } },
-            { op: '<=', content: { field: 'age_at_diagnosis', value: 26 } },
+            {
+              op: 'in',
+              content: {
+                field: 'data_type',
+                value: ['submitted aligned reads'],
+              },
+            },
           ],
         },
       }}
