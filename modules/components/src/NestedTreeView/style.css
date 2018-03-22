@@ -24,11 +24,11 @@
 
 .tree-view_arrow {
   cursor: pointer;
+  margin-right: 6px;
   display: inline-block;
   user-select: none;
   pointer-events: all;
   position: absolute;
-  margin-left: -10px;
 }
 
 .tree-view_arrow:after {
