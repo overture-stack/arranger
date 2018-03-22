@@ -48,3 +48,23 @@
   padding: 3px 10px;
   cursor: pointer;
 }
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+}
+.CalendarDay__selected_span,
+.CalendarDay__selected_span:hover,
+.CalendarDay__selected_span:active {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+  color: white;
+}
+.CalendarDay__hovered_span,
+.CalendarDay__hovered_span:hover,
+.CalendarDay__hovered_span:active {
+  color: white;
+  background: #404c9a;
+  border: 1px solid #5a6293;
+}
