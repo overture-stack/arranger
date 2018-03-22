@@ -6,7 +6,6 @@
   border: solid 1px #cacbcf;
   padding-left: 10px;
 }
-
 .inputRow {
   display: flex;
   flex-direction: row;
@@ -15,7 +14,6 @@
   height: 40px;
   position: relative;
 }
-
 .calendarNavbar {
   height: 40px;
   border-bottom-left-radius: 5px;
@@ -27,7 +25,6 @@
   align-items: center;
   padding: 20px;
 }
-
 .cancelButton {
   font-family: Montserrat;
   font-size: 14px;
@@ -39,7 +36,6 @@
   color: #009bb8;
   cursor: pointer;
 }
-
 .submitButton {
   border-radius: 100px;
   background-color: #009bb8;
@@ -47,7 +43,9 @@
   color: white;
   padding: 3px 10px;
   cursor: pointer;
+  font-size: 14px;
 }
+
 .CalendarDay__selected,
 .CalendarDay__selected:active,
 .CalendarDay__selected:hover {
