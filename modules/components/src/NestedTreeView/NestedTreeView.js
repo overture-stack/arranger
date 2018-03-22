@@ -7,7 +7,7 @@ const NestedTreeView = ({
   dataSource,
   depth = 0,
   indentationPx = 20,
-  labelPadding = 10,
+  labelPadding = 15,
   onLeafSelect = () => {},
   selectedPath = '',
 }) =>
@@ -35,7 +35,7 @@ const NestedTreeView = ({
         }
         defaultCollapsed={true}
         labelPadding={labelPadding}
-        itemClassName={`${headerClass} ${selectedClass} ${css`
+        itemClassName={`NestedTreeViewItem ${headerClass} ${selectedClass} ${css`
           padding-left: ${indentationPx * depth}px;
         `}`}
       >
@@ -54,15 +54,18 @@ const NestedTreeView = ({
           onLeafSelect(id || title);
         }}
         key={path}
-        className={`tree-view_children leaf
+        className={`NestedTreeViewItem tree-view_children leaf
           ${headerClass}
           ${selectedClass}
-          ${css`
-            padding-left: ${indentationPx * depth + labelPadding}px;
-          `}
         `}
       >
-        {title}
+        <span
+          className={css`
+            padding-left: ${indentationPx * depth + labelPadding}px;
+          `}
+        >
+          {title}
+        </span>
       </div>
     );
   });

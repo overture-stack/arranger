@@ -59,3 +59,9 @@
 .tree-view_item.selected {
   background: #e7e8ed;
 }
+
+.NestedTreeViewItem {
+  border-bottom: solid 1px #e0e1e6;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
