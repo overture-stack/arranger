@@ -21,6 +21,7 @@ import {
   MISSING_OP,
   FILTER_OP,
   NOT_OP,
+  ES_PREFIX,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -89,13 +90,16 @@ function getFuzzyFilter({ nestedFields, filter }) {
       wrapFilter({
         filter: { ...filter, content: { ...content, field: fields[0] } },
         nestedFields,
-        esFilter: {
-          [ES_MULTI_MATCH]: {
-            [ES_QUERY]: value,
-            [ES_FIELDS]: fields,
-            [ES_TYPE]: ES_PHRASE_PREFIX,
+        esFilter: wrapShould([
+          ...fields.map(field => ({ [ES_PREFIX]: { [field]: value } })),
+          {
+            [ES_MULTI_MATCH]: {
+              [ES_QUERY]: value,
+              [ES_FIELDS]: fields,
+              [ES_TYPE]: ES_PHRASE_PREFIX,
+            },
           },
-        },
+        ]),
       }),
     ),
   );
