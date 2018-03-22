@@ -39,29 +39,29 @@
   transform: rotate(-90deg);
 }
 
-.tree-view .header {
-  color: #2b388f;
-}
-
-.tree-view_children.leaf {
-  cursor: pointer;
-}
-.tree-view_children.leaf.selected {
-  background: #e7e8ed;
-}
-.tree-view_children.leaf.header {
-  color: #2b388f;
-  /* padding-left: 3px; */
-}
-.tree-view_children.leaf.selected {
-  background: #e7e8ed;
-}
-.tree-view_item.selected {
+.NestedTreeViewItem.selected {
   background: #e7e8ed;
 }
 
 .NestedTreeViewItem {
-  border-bottom: solid 1px #e0e1e6;
   padding-top: 5px;
   padding-bottom: 5px;
+}
+
+.NestedTreeViewItem .label {
+  color: #404c9a;
+}
+
+.NestedTreeViewItem.leaf {
+  color: #a42c90;
+}
+
+.NestedTreeViewItem.depth_0 {
+  background-color: #e7e8ed;
+  text-transform: uppercase;
+  color: #404c9a;
+}
+
+.NestedTreeViewItem.depth_1 {
+  border-top: solid 1px #e0e1e6;
 }

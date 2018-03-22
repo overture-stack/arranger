@@ -15,7 +15,7 @@ const NestedTreeView = ({
     const selectedPathArray =
       selectedPath?.split('.').filter(str => str.length) || [];
     const selectedClass = selectedPath === (id || title) ? 'selected' : '';
-    const headerClass = depth === 0 ? 'header' : '';
+    const depthClass = `depth_${depth}`;
     return children ? (
       <ReactTreeView
         key={path}
@@ -35,7 +35,7 @@ const NestedTreeView = ({
         }
         defaultCollapsed={true}
         labelPadding={labelPadding}
-        itemClassName={`NestedTreeViewItem ${headerClass} ${selectedClass} ${css`
+        itemClassName={`NestedTreeViewItem ${depthClass} ${selectedClass} ${css`
           padding-left: ${indentationPx * depth}px;
         `}`}
       >
@@ -55,7 +55,7 @@ const NestedTreeView = ({
         }}
         key={path}
         className={`NestedTreeViewItem tree-view_children leaf
-          ${headerClass}
+          ${depthClass}
           ${selectedClass}
         `}
       >
