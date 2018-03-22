@@ -1,6 +1,7 @@
 import React from 'react';
-import ReactTreeView from './ReactTreeView';
 import { css } from 'emotion';
+import ReactTreeView from './ReactTreeView';
+import TextHighlight from '../TextHighlight';
 import './style.css';
 
 const NestedTreeView = ({
@@ -10,6 +11,7 @@ const NestedTreeView = ({
   labelPadding = 15,
   onLeafSelect = () => {},
   selectedPath = '',
+  searchString = null,
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
     const selectedPathArray =
@@ -30,7 +32,7 @@ const NestedTreeView = ({
               onLeafSelect(id || title);
             }}
           >
-            {title}
+            <TextHighlight content={title} highlightText={searchString} />
           </div>
         }
         defaultCollapsed={true}
@@ -63,7 +65,7 @@ const NestedTreeView = ({
             padding-left: ${indentationPx * depth + labelPadding}px;
           `}
         >
-          {title}
+          <TextHighlight content={title} highlightText={searchString} />
         </div>
       </div>
     );
