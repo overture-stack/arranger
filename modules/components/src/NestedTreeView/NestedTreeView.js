@@ -47,6 +47,7 @@ const NestedTreeView = ({
           selectedPath={selectedPathArray.slice(1).join('.')}
           dataSource={children}
           depth={depth + 1}
+          searchString={searchString}
         />
       </ReactTreeView>
     ) : (

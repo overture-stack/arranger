@@ -42,6 +42,7 @@ export default class AdvancedFacetView extends React.Component {
     this.state = {
       selectedPath: null,
       withValueOnly: true,
+      searchBoxValue: null,
     };
   }
   fieldMappingFromPath = path => {
@@ -74,7 +75,7 @@ export default class AdvancedFacetView extends React.Component {
       onSqonFieldChange = () => {},
       valueCharacterLimit = 30,
     } = this.props;
-    const { selectedPath, withValueOnly } = this.state;
+    const { selectedPath, withValueOnly, searchBoxValue } = this.state;
     const displayTreeData = orderDisplayTreeData(
       injectExtensionToElasticMapping(elasticMapping, extendedMapping),
     );
@@ -134,6 +135,10 @@ export default class AdvancedFacetView extends React.Component {
             extendedMapping,
             aggregations,
             constructEntryId: this.constructFilterId,
+            onValueChange: ({ value }) =>
+              this.setState({
+                searchBoxValue: value,
+              }),
             onFieldSelect: ({ field, value }) => {
               scrollFacetViewToPath(field);
               this.setState({ selectedPath: field });
@@ -203,6 +208,7 @@ export default class AdvancedFacetView extends React.Component {
             </div>
             <div className="treeView">
               <NestedTreeView
+                searchString={searchBoxValue}
                 dataSource={
                   withValueOnly
                     ? filterOutNonValue({

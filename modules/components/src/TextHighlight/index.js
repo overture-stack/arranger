@@ -17,7 +17,7 @@ export default ({ content, highlightText }) => {
       {seg1}
       <span
         className={css`
-          background: yellow;
+          background: #f7ed9c;
         `}
       >
         {foundQuery}
