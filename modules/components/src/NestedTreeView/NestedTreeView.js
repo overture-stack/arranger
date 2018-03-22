@@ -6,26 +6,24 @@ import './style.css';
 const NestedTreeView = ({
   dataSource,
   depth = 0,
-  indentationPx = 10,
+  indentationPx = 20,
+  labelPadding = 10,
   onLeafSelect = () => {},
   selectedPath = '',
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
     const selectedPathArray =
       selectedPath?.split('.').filter(str => str.length) || [];
-    const indentationStyle = css`
-      padding-left: ${indentationPx * depth}px;
-    `;
     return children ? (
       <ReactTreeView
         key={path}
         nodeLabel={
           <div
-            className={'label'}
-            style={{
-              display: 'inline',
-              cursor: 'pointer',
-            }}
+            className={`label ${css`
+              display: inline;
+              cursor: pointer;
+              padding-left: ${labelPadding}px;
+            `}`}
             onClick={e => {
               onLeafSelect(id || title);
             }}
@@ -34,9 +32,12 @@ const NestedTreeView = ({
           </div>
         }
         defaultCollapsed={true}
+        labelPadding={labelPadding}
         itemClassName={`${selectedPath === (id || title) ? 'selected' : ''} ${
           depth === 0 ? 'header' : ''
-        } ${indentationStyle}`}
+        } ${css`
+          padding-left: ${indentationPx * depth}px;
+        `}`}
       >
         <NestedTreeView
           onLeafSelect={selectedPath => {
@@ -56,7 +57,9 @@ const NestedTreeView = ({
         className={`tree-view_children leaf
           ${depth === 0 ? 'header' : ''}
           ${selectedPath === (id || title) ? 'selected' : ''}
-          ${indentationStyle}
+          ${css`
+            padding-left: ${indentationPx * depth + labelPadding}px;
+          `}
         `}
       >
         {title}

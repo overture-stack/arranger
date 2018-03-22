@@ -28,7 +28,6 @@
   user-select: none;
   pointer-events: all;
   position: absolute;
-  margin-left: -10px;
 }
 
 .tree-view_arrow:after {
@@ -45,8 +44,6 @@
 }
 
 .tree-view_children.leaf {
-  margin-top: 5px;
-  margin-bottom: 5px;
   cursor: pointer;
 }
 .tree-view_children.leaf.selected {
