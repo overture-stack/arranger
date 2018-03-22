@@ -73,7 +73,8 @@ function getTermFilter({ nestedFields, filter }) {
 }
 
 function getFuzzyFilter({ nestedFields, filter }) {
-  const { content: { value, fields } } = filter;
+  const { content } = filter;
+  const { value, fields } = content;
 
   // group queries by their nesting level
   const sortedNested = nestedFields.slice().sort((a, b) => b.length - a.length);
@@ -86,7 +87,7 @@ function getFuzzyFilter({ nestedFields, filter }) {
   return wrapShould(
     Object.values(nestedMap).map(fields =>
       wrapFilter({
-        filter: { ...filter, field: fields[0] },
+        filter: { ...filter, content: { ...content, field: fields[0] } },
         nestedFields,
         esFilter: {
           [ES_MULTI_MATCH]: {
