@@ -39,29 +39,30 @@
   transform: rotate(-90deg);
 }
 
-.NestedTreeViewItem.selected {
+.NestedTreeViewNode {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  cursor: pointer;
+}
+
+.NestedTreeViewNode.selected {
   background: #e7e8ed;
 }
 
-.NestedTreeViewItem {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.NestedTreeViewItem .label {
+.NestedTreeViewNode.nested .label {
   color: #404c9a;
 }
 
-.NestedTreeViewItem.leaf {
+.NestedTreeViewNode.leaf {
   color: #a42c90;
 }
 
-.NestedTreeViewItem.depth_0 {
+.NestedTreeViewNode.depth_0 {
   background-color: #e7e8ed;
   text-transform: uppercase;
   color: #404c9a;
 }
 
-.NestedTreeViewItem.depth_1 {
+.NestedTreeViewNode.depth_1 {
   border-top: solid 1px #e0e1e6;
 }
