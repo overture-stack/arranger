@@ -42,13 +42,14 @@
 }
 
 .NestedTreeViewNode {
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
   cursor: pointer;
+  font-size: 13px;
 }
 
 .NestedTreeViewNode.selected {
-  background: #e7e8ed;
+  background: #e7e8ed73;
 }
 
 .NestedTreeViewNode.nested .label {
