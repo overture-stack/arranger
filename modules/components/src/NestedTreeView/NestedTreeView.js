@@ -14,6 +14,8 @@ const NestedTreeView = ({
   dataSource.map(({ title, id, children, path }, i) => {
     const selectedPathArray =
       selectedPath?.split('.').filter(str => str.length) || [];
+    const selectedClass = selectedPath === (id || title) ? 'selected' : '';
+    const headerClass = depth === 0 ? 'header' : '';
     return children ? (
       <ReactTreeView
         key={path}
@@ -33,9 +35,7 @@ const NestedTreeView = ({
         }
         defaultCollapsed={true}
         labelPadding={labelPadding}
-        itemClassName={`${selectedPath === (id || title) ? 'selected' : ''} ${
-          depth === 0 ? 'header' : ''
-        } ${css`
+        itemClassName={`${headerClass} ${selectedClass} ${css`
           padding-left: ${indentationPx * depth}px;
         `}`}
       >
@@ -55,8 +55,8 @@ const NestedTreeView = ({
         }}
         key={path}
         className={`tree-view_children leaf
-          ${depth === 0 ? 'header' : ''}
-          ${selectedPath === (id || title) ? 'selected' : ''}
+          ${headerClass}
+          ${selectedClass}
           ${css`
             padding-left: ${indentationPx * depth + labelPadding}px;
           `}
