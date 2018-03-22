@@ -28,32 +28,32 @@ function createFilteredAggregation({ field, filter, aggregation }) {
 }
 
 function removeFieldFromQuery({ field, query }) {
-  const filtered = Object.entries(get(query, ES_BOOL, {})).reduce(
-    (bool, [type, values]) => {
+  const nested = get(query, ES_NESTED);
+  const nestedQuery = get(nested, ES_QUERY);
+  const bool = get(query, ES_BOOL);
+
+  if (['terms', 'range'].some(k => get(query, [k, field]))) {
+    return null;
+  } else if (nestedQuery) {
+    const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
+    return (
+      cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } }
+    );
+  } else if (bool) {
+    const filtered = Object.entries(bool).reduce((bool, [type, values]) => {
       const filteredValues = values
-        .map(value => {
-          if (['terms', 'range'].some(k => get(value, [k, field]))) return null;
-          const nested = get(value, ES_NESTED);
-          const nestedQuery = get(nested, ES_QUERY);
-          if (nestedQuery) {
-            const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
-            return (
-              cleaned && { [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } }
-            );
-          } else {
-            return value;
-          }
-        })
+        .map(value => removeFieldFromQuery({ field, query: value }))
         .filter(Boolean);
 
       return filteredValues.length > 0
         ? { ...bool, [type]: filteredValues }
         : bool;
-    },
-    {},
-  );
+    }, {});
 
-  return Object.keys(filtered).length > 0 ? { [ES_BOOL]: filtered } : null;
+    return Object.keys(filtered).length > 0 ? { [ES_BOOL]: filtered } : null;
+  } else {
+    return query;
+  }
 }
 
 function createNumericAggregation({ type, field, graphqlField }) {
