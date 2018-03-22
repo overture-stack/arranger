@@ -1,7 +1,6 @@
 import buildQuery from '../../src/buildQuery';
 test('buildQuery filter', () => {
   const nestedFields = ['files', 'files.foo'];
-
   const tests = [
     {
       input: {
@@ -19,7 +18,8 @@ test('buildQuery filter', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
+                    should: [
+                      { prefix: { 'files.foo': 'v' } },
                       {
                         multi_match: {
                           fields: ['files.foo'],
@@ -33,10 +33,17 @@ test('buildQuery filter', () => {
               },
             },
             {
-              multi_match: {
-                fields: ['test'],
-                query: 'v',
-                type: 'phrase_prefix',
+              bool: {
+                should: [
+                  { prefix: { test: 'v' } },
+                  {
+                    multi_match: {
+                      fields: ['test'],
+                      query: 'v',
+                      type: 'phrase_prefix',
+                    },
+                  },
+                ],
               },
             },
           ],
