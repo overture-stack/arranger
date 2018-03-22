@@ -2,27 +2,20 @@ import React, { Component } from 'react';
 import { isEqual, debounce } from 'lodash';
 import path from 'path';
 import api from './utils/api';
+import { defaultProps } from 'recompose';
 
-export const withQuery = getOptions => Component => props => {
-  const options = getOptions(props);
-
-  return (
-    <Query
-      {...options}
-      render={data => <Component {...props} {...{ [options.key]: data }} />}
-    />
-  );
-};
-
-export default class Query extends Component {
+class Query extends Component {
   state = { data: null, error: null, loading: false };
   componentDidMount() {
-    this.fetch(this.props);
+    if (this.props.shouldFetch) {
+      this.fetch(this.props);
+    }
   }
   componentWillReceiveProps(next) {
     if (
       !isEqual(this.props.query, next.query) ||
-      !isEqual(this.props.variables, next.variables)
+      !isEqual(this.props.variables, next.variables) ||
+      (next.shouldFetch && !this.props.shouldFetch)
     ) {
       this.fetch(next);
     }
@@ -50,15 +43,27 @@ export default class Query extends Component {
     },
     this.props.debounceTime || 0,
   );
-  componentDidUpdate() {
-    if (this.props.onUpdate) this.props.onUpdate(this.state);
-  }
   render() {
-    const { error, data } = this.state;
-    return error ? (
+    const { loading, error, data } = this.state;
+    const { render, renderError } = this.props;
+    return error && renderError ? (
       <pre>{JSON.stringify(error, null, 2)}</pre>
     ) : (
-      this.props.render(data)
+      render({ data, loading, error })
     );
   }
 }
+const EnhancedQuery = defaultProps({ shouldFetch: true })(Query);
+
+export const withQuery = getOptions => Component => props => {
+  const options = getOptions(props);
+
+  return (
+    <EnhancedQuery
+      {...options}
+      render={data => <Component {...props} {...{ [options.key]: data }} />}
+    />
+  );
+};
+
+export default EnhancedQuery;
