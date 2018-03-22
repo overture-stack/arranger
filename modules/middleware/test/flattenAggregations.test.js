@@ -4,8 +4,8 @@ test('flattenAggregations', () => {
   const tests = [
     {
       input: {
-        status_global: {
-          status_filtered: {
+        'status:global': {
+          'status:filtered': {
             status: {
               buckets: [{ key: 'legacy', doc_count: 34 }],
               doc_count_error_upper_bound: 0,
@@ -18,10 +18,9 @@ test('flattenAggregations', () => {
     },
     {
       input: {
-        categoryName_missing: { doc_count: 0 },
-        itemType_missing: { doc_count: 0 },
-        itemType_global: {
-          itemType_filtered: {
+        'itemType:global': {
+          'itemType:filtered': {
+            'itemType:missing': { doc_count: 0 },
             itemType: {
               buckets: [
                 { key: 'Aliquot', doc_count: 16730 },
@@ -32,8 +31,9 @@ test('flattenAggregations', () => {
             },
           },
         },
-        categoryName_global: {
-          categoryName_filtered: {
+        'categoryName:global': {
+          'categoryName:filtered': {
+            'categoryName:missing': { doc_count: 0 },
             categoryName: {
               buckets: [
                 { key: 'Item flagged DN', doc_count: 16191 },
@@ -66,14 +66,14 @@ test('flattenAggregations', () => {
     },
     {
       input: {
-        status_global: {
-          status_filtered: {
+        'status:global': {
+          'status:filtered': {
             status: {
               buckets: [{ key: 'legacy', doc_count: 34 }],
               doc_count_error_upper_bound: 0,
               sum_other_doc_count: 0,
             },
-            status_missing: { doc_count: 1 },
+            'status:missing': { doc_count: 1 },
           },
         },
       },
@@ -81,16 +81,16 @@ test('flattenAggregations', () => {
         status: {
           buckets: [
             { key: 'legacy', doc_count: 34 },
-            // { key: '_missing', doc_count: 1 },
+            { key: '_missing', doc_count: 1 },
           ],
         },
       },
     },
     {
       input: {
-        status_missing: { doc_count: 0 },
-        'archive.revision_global': {
-          'archive.revision_filtered': {
+        'archive.revision:global': {
+          'archive.revision:filtered': {
+            'status:missing': { doc_count: 0 },
             'archive.revision': {
               buckets: [
                 { key: 2002, doc_count: 37860 },
@@ -117,7 +117,7 @@ test('flattenAggregations', () => {
           'samples.is_ffpe:filtered': {
             'samples.is_ffpe:nested': {
               'samples.is_ffpe:missing': {
-                is_ffpe_missing_rn: { doc_count: 5 },
+                rn: { doc_count: 5 },
                 doc_count: 3,
               },
               'samples.is_ffpe': {
@@ -134,22 +134,22 @@ test('flattenAggregations', () => {
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
       },
     },
     {
       input: {
-        'samples.portions.amount_global': {
-          'samples.portions.amount_filtered': {
+        'samples.portions.amount:global': {
+          'samples.portions.amount:filtered': {
             samples: {
               portions: {
                 'samples.portions.amount': {
                   buckets: [{ rn: { doc_count: 7 }, key: 'a', doc_count: 7 }],
                 },
-                amount_missing: {
-                  amount_missing_rn: { doc_count: 5 },
+                'samples.portions.amount:missing': {
+                  rn: { doc_count: 5 },
                   doc_count: 3,
                 },
                 doc_count: 123,
@@ -165,29 +165,29 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
       },
     },
     {
       input: {
-        'samples.portions.amount_global': {
-          'samples.portions.amount_filtered': {
+        'samples.portions.amount:global': {
+          'samples.portions.amount:filtered': {
             samples: {
-              is_ffpe_missing: {
-                is_ffpe_missing_rn: { doc_count: 5 },
-                doc_count: 3,
-              },
               portions: {
                 'samples.portions.amount': {
                   buckets: [{ rn: { doc_count: 7 }, key: 'a', doc_count: 7 }],
                 },
-                amount_missing: {
-                  amount_missing_rn: { doc_count: 5 },
+                'samples.portions.amount:missing': {
+                  rn: { doc_count: 5 },
                   doc_count: 3,
                 },
                 doc_count: 123,
+              },
+              'samples.is_ffpe:missing': {
+                rn: { doc_count: 5 },
+                doc_count: 3,
               },
               'samples.is_ffpe': {
                 buckets: [{ rn: { doc_count: 7 }, key: 'a', doc_count: 7 }],
@@ -203,42 +203,42 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
       },
     },
     {
       input: {
-        status_global: {
-          status_filtered: {
+        'status:global': {
+          'status:filtered': {
             status: {
               buckets: [{ key: 'legacy', doc_count: 34 }],
               doc_count_error_upper_bound: 0,
               sum_other_doc_count: 0,
             },
-            status_missing: { doc_count: 0 },
+            'status:missing': { doc_count: 0 },
           },
         },
         'samples.portions.amount_global': {
-          'samples.portions.amount_filtered': {
+          'samples.portions.amount:filtered': {
             samples: {
-              is_ffpe_missing: {
-                is_ffpe_missing_rn: { doc_count: 5 },
+              'samples.is_ffpe:missing': {
+                rn: { doc_count: 5 },
                 doc_count: 3,
               },
               portions: {
                 'samples.portions.amount': {
                   buckets: [{ rn: { doc_count: 7 }, key: 'a', doc_count: 7 }],
                 },
-                amount_missing: {
-                  amount_missing_rn: { doc_count: 5 },
+                'samples.portions.amount:missing': {
+                  rn: { doc_count: 5 },
                   doc_count: 3,
                 },
                 doc_count: 123,
@@ -258,13 +258,13 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            // { key: '_missing', doc_count: 5 },
+            { key: '_missing', doc_count: 5 },
           ],
         },
       },

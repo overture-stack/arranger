@@ -13,24 +13,20 @@ function flattenAggregations(aggregations) {
         [field]: { ...prunedAggs[field], [aggregationType]: value },
       };
     } else if (Array.isArray(value.buckets)) {
-      const missing = get(aggregations, [`${field}:missing`, 'doc_count']) || 0;
+      const missing = get(aggregations, [`${field}:missing`]);
+      const buckets = [
+        ...value.buckets,
+        ...(missing ? [{ ...missing, key: '_missing' }] : []),
+      ];
       return {
         ...prunedAggs,
         [field]: {
-          buckets: [
-            ...value.buckets.map(({ rn, ...bucket }) => ({
+          buckets: buckets
+            .map(({ rn, ...bucket }) => ({
               ...bucket,
               doc_count: rn ? rn.doc_count : bucket.doc_count,
-            })),
-            ...(missing
-              ? [
-                  {
-                    key: '_missing',
-                    doc_count: missing,
-                  },
-                ]
-              : []),
-          ],
+            }))
+            .filter(b => b.doc_count),
         },
       };
     } else {
