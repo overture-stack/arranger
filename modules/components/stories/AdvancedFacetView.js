@@ -33,7 +33,7 @@ const mockAggregations = (window.mockAggregations = injectMockBuckets(
 ));
 
 storiesOf('AdvancedFacetView', module)
-  // .addDecorator(themeDecorator)
+  .addDecorator(themeDecorator)
   .add('AdvancedFacetViewLive', () => (
     <LiveAdvancedFacetView
       {...{
