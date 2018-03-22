@@ -28,15 +28,17 @@
   user-select: none;
   pointer-events: all;
   position: absolute;
+  margin-left: 5px;
+  transform: rotate(90deg);
 }
 
 .tree-view_arrow:after {
-  content: '▾';
+  content: '›';
 }
 
 /* rotate the triangle to close it */
 .tree-view_arrow-collapsed {
-  transform: rotate(-90deg);
+  transform: rotate(0deg);
 }
 
 .NestedTreeViewNode {

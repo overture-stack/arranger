@@ -34,7 +34,6 @@ const NestedTreeView = ({
           </div>
         }
         defaultCollapsed={true}
-        labelPadding={labelPadding}
         itemClassName={`NestedTreeViewNode nested ${depthClass} ${selectedClass} ${css`
           padding-left: ${indentationPx * depth}px;
         `}`}
