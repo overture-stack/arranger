@@ -29,10 +29,12 @@
   pointer-events: all;
   position: absolute;
   margin-left: 5px;
+  top: 4px;
   transform: rotate(90deg);
 }
 
 .tree-view_arrow:after {
+  font-size: 17px;
   content: '›';
 }
 
@@ -64,6 +66,11 @@
   background-color: #e7e8ed;
   text-transform: uppercase;
   color: #404c9a;
+}
+
+.NestedTreeViewNode.depth_0 .tree-view_arrow {
+  position: absolute;
+  right: 20px;
 }
 
 .NestedTreeViewNode.depth_1 {
