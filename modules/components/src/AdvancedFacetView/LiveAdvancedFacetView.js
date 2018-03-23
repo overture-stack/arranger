@@ -71,7 +71,7 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
     variables: { sqon },
     ...fetchConfig,
   }).then(data => ({
-    aggregations: Object.keys(data[index].aggregations).reduce(
+    aggregations: Object.keys(data[index].aggregations || {}).reduce(
       (agg, key) => ({
         ...agg,
         [serializeToPath(key)]: data[index].aggregations[key],

@@ -2,35 +2,44 @@ import React from 'react';
 import Component from 'react-component-component';
 import './AggregationCard.css';
 
-export default ({ children, collapsible = true, displayName, filters }) => (
-  <Component initialState={{ isCollapsed: false }}>
-    {({ setState, state: { isCollapsed } }) => (
-      <div className="aggregation-card">
-        <div
-          className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}
-          onClick={
-            collapsible
-              ? () => setState({ isCollapsed: !isCollapsed })
-              : () => {}
-          }
-        >
-          <span className="title">{displayName}</span>
-          {collapsible && (
-            <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
+export default ({
+  children,
+  collapsible = true,
+  displayName,
+  filters,
+  wrapperComponent,
+}) =>
+  wrapperComponent ? (
+    <wrapperComponent>{children}</wrapperComponent>
+  ) : (
+    <Component initialState={{ isCollapsed: false }}>
+      {({ setState, state: { isCollapsed } }) => (
+        <div className="aggregation-card">
+          <div
+            className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}
+            onClick={
+              collapsible
+                ? () => setState({ isCollapsed: !isCollapsed })
+                : () => {}
+            }
+          >
+            <span className="title">{displayName}</span>
+            {collapsible && (
+              <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
+            )}
+          </div>
+          {filters &&
+            filters.map((x, i) => (
+              <div key={i} className="filter">
+                {x}
+              </div>
+            ))}
+          {!isCollapsed && (
+            <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>
+              {children}
+            </div>
           )}
         </div>
-        {filters &&
-          filters.map((x, i) => (
-            <div key={i} className="filter">
-              {x}
-            </div>
-          ))}
-        {!isCollapsed && (
-          <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>
-            {children}
-          </div>
-        )}
-      </div>
-    )}
-  </Component>
-);
+      )}
+    </Component>
+  );

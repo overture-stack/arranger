@@ -55,48 +55,8 @@ export default class AdvancedFacetView extends React.Component {
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath(path);
     };
-    const handleFacetViewValueChange = ({ value, path, esType, aggType }) => {
-      const { sqon } = this.props;
-      const newSQON = (() => {
-        switch (aggType) {
-          case 'Aggregations':
-            return toggleSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: 'in',
-                    content: {
-                      field: path,
-                      value: !Array.isArray(value) ? [value] : value,
-                    },
-                  },
-                ],
-              },
-              sqon,
-            );
-          case 'NumericAggregations':
-            return replaceSQON(
-              {
-                op: 'and',
-                content: [
-                  {
-                    op: '>=',
-                    content: { field: path, value: value.min },
-                  },
-                  {
-                    op: '<=',
-                    content: { field: path, value: value.max },
-                  },
-                ],
-              },
-              sqon,
-            );
-          default:
-            return sqon;
-        }
-      })();
-      onSqonFieldChange({ sqon: newSQON });
+    const handleFacetViewValueChange = ({ sqon }) => {
+      onSqonFieldChange({ sqon });
     };
     const searchBoxSelection$ = new Subject();
     return (
