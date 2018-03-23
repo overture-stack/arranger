@@ -2,66 +2,8 @@ import React from 'react';
 import FacetViewNode from './FacetViewNode';
 import { debounce, toPairs } from 'lodash';
 import { css } from 'emotion';
-import { TermAgg, RangeAgg, BooleanAgg } from '../Aggs';
-import { inCurrentSQON } from '../SQONView/utils';
-import { currentFieldValue } from '../SQONView/utils';
 import AggsWrapper from '../Aggs/AggsWrapper';
-
-const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
-  <TermAgg
-    handleValueClick={({ generateNextSQON }) => {
-      onValueChange({ sqon: generateNextSQON(sqon) });
-    }}
-    isActive={d =>
-      inCurrentSQON({
-        value: d.value,
-        dotField: d.field,
-        currentSQON: sqon,
-      })
-    }
-    {...{ ...rest }}
-  />
-);
-const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
-  <RangeAgg
-    value={{
-      min:
-        currentFieldValue({ sqon, dotField: field, op: '>=' }) ||
-        stats?.min ||
-        0,
-      max:
-        currentFieldValue({ sqon, dotField: field, op: '<=' }) ||
-        stats?.max ||
-        0,
-    }}
-    handleChange={({ generateNextSQON }) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
-    {...{ ...rest, stats, field }}
-  />
-);
-const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
-  <BooleanAgg
-    isActive={d =>
-      inCurrentSQON({
-        value: d.value,
-        dotField: d.field,
-        currentSQON: sqon,
-      })
-    }
-    handleValueClick={({ generateNextSQON }) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
-    {...{ ...rest }}
-  />
-);
-
-const aggComponents = {
-  keyword: composedTermAgg,
-  long: composedRangeAgg,
-  float: composedRangeAgg,
-  boolean: composedBooleanAgg,
-};
+import aggComponents from './aggComponents';
 
 const serializeToDomId = path => path.split('.').join('__');
 
