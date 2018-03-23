@@ -327,6 +327,10 @@ div {
   margin-right: 10px;
   color: #a9adc0;
 }
+.inputWrapper {
+  background: white;
+  border-radius: 10px;
+}
 
 /**************************************/
 /***** styling for the dropdown  ******/
@@ -417,7 +421,7 @@ div {
 /*********************************************/
 /*********** styling for the AFV *************/
 /*********************************************/
-.facetViewWrapper .treeViewPanel .panelHeading {
+.facetViewWrapper .panelHeading {
   background-color: #e1f0f3;
   padding: 10px;
   font-size: 13px;

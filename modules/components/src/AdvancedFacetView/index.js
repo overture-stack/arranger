@@ -61,24 +61,6 @@ export default class AdvancedFacetView extends React.Component {
     const searchBoxSelection$ = new Subject();
     return (
       <div className="advancedFacetViewWrapper">
-        <SearchBox
-          {...{
-            withValueOnly,
-            elasticMapping,
-            extendedMapping,
-            aggregations,
-            constructEntryId: this.constructFilterId,
-            onValueChange: ({ value }) =>
-              this.setState({
-                searchBoxValue: value,
-              }),
-            onFieldSelect: ({ field, value }) => {
-              scrollFacetViewToPath(field);
-              this.setState({ selectedPath: field });
-              searchBoxSelection$.next({ field, value });
-            },
-          }}
-        />
         <div>
           <SQONView
             sqon={sqon}
@@ -160,6 +142,26 @@ export default class AdvancedFacetView extends React.Component {
             </div>
           </div>
           <div className="panel facetsPanel">
+            <div className={`panelHeading`}>
+              <SearchBox
+                {...{
+                  withValueOnly,
+                  elasticMapping,
+                  extendedMapping,
+                  aggregations,
+                  constructEntryId: this.constructFilterId,
+                  onValueChange: ({ value }) =>
+                    this.setState({
+                      searchBoxValue: value,
+                    }),
+                  onFieldSelect: ({ field, value }) => {
+                    scrollFacetViewToPath(field);
+                    this.setState({ selectedPath: field });
+                    searchBoxSelection$.next({ field, value });
+                  },
+                }}
+              />
+            </div>
             <FacetView
               extendedMapping={extendedMapping}
               valueCharacterLimit={valueCharacterLimit}

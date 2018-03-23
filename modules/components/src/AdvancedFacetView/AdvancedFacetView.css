@@ -41,3 +41,18 @@
 .facetViewWrapper .facetsPanel .facetView .facetViewNode {
   padding-left: 20px;
 }
+
+.facetViewWrapper {
+  font-size: 13px;
+}
+
+.facetViewWrapper .bucket-count {
+  border-radius: 5px;
+  background-color: #e7e8ed;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.facetViewWrapper .bucket-item {
+  padding: 5px;
+}

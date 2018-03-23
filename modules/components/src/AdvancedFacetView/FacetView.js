@@ -7,10 +7,6 @@ import { inCurrentSQON } from '../SQONView/utils';
 import { currentFieldValue } from '../SQONView/utils';
 import AggsWrapper from '../Aggs/AggsWrapper';
 
-const WrapperComponent = props => (
-  <AggsWrapper {...{ ...props, collapsible: false }} />
-);
-
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
     handleValueClick={({ generateNextSQON }) => {
@@ -23,7 +19,7 @@ const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
-    {...{ ...rest, WrapperComponent }}
+    {...{ ...rest }}
   />
 );
 const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
@@ -41,7 +37,7 @@ const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
     handleChange={({ generateNextSQON }) =>
       onValueChange({ sqon: generateNextSQON(sqon) })
     }
-    {...{ ...rest, stats, field, WrapperComponent }}
+    {...{ ...rest, stats, field }}
   />
 );
 const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
@@ -56,7 +52,7 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
     handleValueClick={({ generateNextSQON }) =>
       onValueChange({ sqon: generateNextSQON(sqon) })
     }
-    {...{ ...rest, WrapperComponent }}
+    {...{ ...rest }}
   />
 );
 
@@ -121,9 +117,50 @@ export default class FacetView extends React.Component {
             ...agg,
             key: path,
             field: path,
-            displayName: title,
             onValueChange,
             sqon,
+            WrapperComponent: ({ collapsible, children }) => (
+              <div
+                className={css`
+                  margin-top: 10px;
+                `}
+              >
+                <div
+                  className={css`
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    font-weight: bold;
+                    background-color: #e7e8ed;
+                    padding: 5px 20px;
+                  `}
+                >
+                  <div
+                    className={css`
+                      color: #a42c90;
+                    `}
+                  >
+                    {title}
+                  </div>
+                  <div
+                    className={css`
+                      color: #2b388f;
+                    `}
+                  >
+                    {pathDisplayNames
+                      .slice(0, pathDisplayNames.length - 1)
+                      .join(' >> ')}
+                  </div>
+                </div>
+                <div
+                  className={css`
+                    padding: 10px;
+                  `}
+                >
+                  {children}
+                </div>
+              </div>
+            ),
           });
         })}
       </div>
