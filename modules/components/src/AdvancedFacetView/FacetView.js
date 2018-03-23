@@ -145,6 +145,7 @@ export default class FacetView extends React.Component {
                   <div
                     className={css`
                       color: #2b388f;
+                      text-align: right;
                     `}
                   >
                     {pathDisplayNames
