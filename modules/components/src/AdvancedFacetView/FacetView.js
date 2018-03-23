@@ -65,6 +65,7 @@ export default class FacetView extends React.Component {
             sqon,
             WrapperComponent: ({ collapsible, children }) => (
               <div
+                id={serializeToDomId(path)}
                 className={css`
                   margin-top: 10px;
                 `}
