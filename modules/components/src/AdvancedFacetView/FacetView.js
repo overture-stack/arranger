@@ -1,9 +1,9 @@
 import React from 'react';
-import FacetViewNode from './FacetViewNode';
 import { debounce, toPairs } from 'lodash';
 import { css } from 'emotion';
 import AggsWrapper from '../Aggs/AggsWrapper';
 import aggComponents from './aggComponents';
+import TextHighlight from '../TextHighlight';
 
 const serializeToDomId = path => path.split('.').join('__');
 
@@ -35,6 +35,7 @@ export default class FacetView extends React.Component {
       searchboxSelectionObservable,
       valueCharacterLimit,
       extendedMapping,
+      searchString,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
@@ -60,6 +61,7 @@ export default class FacetView extends React.Component {
             key: path,
             field: path,
             onValueChange,
+            searchString,
             sqon,
             WrapperComponent: ({ collapsible, children }) => (
               <div
@@ -82,7 +84,10 @@ export default class FacetView extends React.Component {
                       color: #a42c90;
                     `}
                   >
-                    {title}
+                    <TextHighlight
+                      content={title}
+                      highlightText={searchString}
+                    />
                   </div>
                   <div
                     className={css`

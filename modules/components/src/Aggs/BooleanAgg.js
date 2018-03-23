@@ -8,6 +8,7 @@ import {
   removeSQON,
 } from '../SQONView/utils';
 import './BooleanAgg.css';
+import TextHighlight from '../TextHighlight';
 
 export default ({
   field,
@@ -17,6 +18,7 @@ export default ({
   collapsible,
   WrapperComponent,
   displayName,
+  searchString,
   ...rest
 }) => {
   const trueBucket = buckets.find(({ key }) => key === '1');
@@ -79,7 +81,7 @@ export default ({
           style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(true)}
         >
-          Yes
+          <TextHighlight content={'Yes'} highlightText={searchString} />
           {trueBucket && (
             <span
               className={`bucket-count`}
@@ -98,7 +100,7 @@ export default ({
           style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(false)}
         >
-          No
+          <TextHighlight content={'No'} highlightText={searchString} />
           {falseBucket && (
             <span
               className={`bucket-count`}

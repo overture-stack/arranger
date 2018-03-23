@@ -172,6 +172,7 @@ export default class AdvancedFacetView extends React.Component {
               sqon={sqon}
               onValueChange={handleFacetViewValueChange}
               aggregations={aggregations}
+              searchString={searchBoxValue}
               displayTreeData={
                 withValueOnly
                   ? filterOutNonValue({

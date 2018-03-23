@@ -5,6 +5,7 @@ import './AggregationCard.css';
 
 import { removeSQON, toggleSQON } from '../SQONView/utils';
 import AggsWrapper from './AggsWrapper';
+import TextHighlight from '../TextHighlight';
 import ToggleButton from '../ToggleButton';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
@@ -83,6 +84,7 @@ class TermAggs extends React.Component {
       valueCharacterLimit,
       observableValueInFocus = null,
       WrapperComponent,
+      searchString,
     } = this.props;
     const { showingMore } = this.state;
     const dotField = field.replace(/__/g, '.');
@@ -149,9 +151,12 @@ class TermAggs extends React.Component {
                     id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                     name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   />
-                  {truncate(bucket.name, {
-                    length: valueCharacterLimit || Infinity,
-                  })}
+                  <TextHighlight
+                    content={truncate(bucket.name, {
+                      length: valueCharacterLimit || Infinity,
+                    })}
+                    highlightText={searchString}
+                  />
                   {/* <OverflowTooltippedLabel
                           htmlFor={`input-${props.title}-${bucket.name.replace(
                             /\s/g,
