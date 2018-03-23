@@ -124,6 +124,7 @@ export default class AdvancedFacetView extends React.Component {
             <div className="treeView">
               <NestedTreeView
                 searchString={searchBoxValue}
+                defaultCollapsed={({ depth }) => depth !== 0}
                 dataSource={
                   withValueOnly
                     ? filterOutNonValue({
