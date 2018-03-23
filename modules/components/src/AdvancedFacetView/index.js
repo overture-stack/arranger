@@ -96,32 +96,32 @@ export default class AdvancedFacetView extends React.Component {
         </div>
         <div className="facetViewWrapper">
           <div className="panel treeViewPanel">
-            <div className="panelHeading">
-              <span className="fieldsShown">
-                {withValueOnly
-                  ? keys(
-                      filterOutNonValue({
-                        aggregations,
-                      }).aggregationsWithValue,
-                    ).length
-                  : Object.keys(aggregations).length}{' '}
-                fields
-              </span>
-              <span
-                className="valueOnlyCheck"
-                style={{ cursor: 'pointer' }}
-                onClick={() =>
-                  this.setState({
-                    selectedPath: displayTreeData[0]?.path,
-                    withValueOnly: !withValueOnly,
-                  })
-                }
-              >
-                <input type="checkBox" checked={withValueOnly} />
-                Show only fields with value
-              </span>
-            </div>
             <div className="treeView">
+              <div className="panelHeading">
+                <span className="fieldsShown">
+                  {withValueOnly
+                    ? keys(
+                        filterOutNonValue({
+                          aggregations,
+                        }).aggregationsWithValue,
+                      ).length
+                    : Object.keys(aggregations).length}{' '}
+                  fields
+                </span>
+                <span
+                  className="valueOnlyCheck"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() =>
+                    this.setState({
+                      selectedPath: displayTreeData[0]?.path,
+                      withValueOnly: !withValueOnly,
+                    })
+                  }
+                >
+                  <input type="checkBox" checked={withValueOnly} />
+                  Show only fields with value
+                </span>
+              </div>
               <NestedTreeView
                 searchString={searchBoxValue}
                 defaultCollapsed={({ depth }) => depth !== 0}
