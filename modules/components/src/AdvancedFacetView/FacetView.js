@@ -1,7 +1,66 @@
 import React from 'react';
 import FacetViewNode from './FacetViewNode';
-import { debounce } from 'lodash';
+import { debounce, toPairs } from 'lodash';
 import { css } from 'emotion';
+import { TermAgg, RangeAgg, BooleanAgg } from '../Aggs';
+import { inCurrentSQON } from '../SQONView/utils';
+import { currentFieldValue } from '../SQONView/utils';
+
+const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
+  <TermAgg
+    {...rest}
+    handleValueClick={({ generateNextSQON }) => {
+      onValueChange({ sqon: generateNextSQON(sqon) });
+    }}
+    isActive={d =>
+      inCurrentSQON({
+        value: d.value,
+        dotField: d.field,
+        currentSQON: sqon,
+      })
+    }
+  />
+);
+const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
+  <RangeAgg
+    value={{
+      min:
+        currentFieldValue({ sqon, dotField: field, op: '>=' }) ||
+        stats?.min ||
+        0,
+      max:
+        currentFieldValue({ sqon, dotField: field, op: '<=' }) ||
+        stats?.max ||
+        0,
+    }}
+    handleChange={({ generateNextSQON }) =>
+      onValueChange({ sqon: generateNextSQON(sqon) })
+    }
+    {...{ ...rest, stats, field }}
+  />
+);
+const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
+  <BooleanAgg
+    isActive={d =>
+      inCurrentSQON({
+        value: d.value,
+        dotField: d.field,
+        currentSQON: sqon,
+      })
+    }
+    handleValueClick={({ generateNextSQON }) =>
+      onValueChange({ sqon: generateNextSQON(sqon) })
+    }
+    {...rest}
+  />
+);
+
+const aggComponents = {
+  keyword: composedTermAgg,
+  long: composedRangeAgg,
+  float: composedRangeAgg,
+  boolean: composedBooleanAgg,
+};
 
 const serializeToDomId = path => path.split('.').join('__');
 
@@ -28,7 +87,7 @@ export default class FacetView extends React.Component {
       aggregations,
       displayTreeData,
       onValueChange,
-      sqon = {},
+      sqon = null,
       constructEntryId,
       searchboxSelectionObservable,
       valueCharacterLimit,
@@ -52,21 +111,21 @@ export default class FacetView extends React.Component {
             path =>
               extendedMapping.find(({ field }) => field === path)?.displayName,
           );
+          const agg = aggregations[path];
           return (
             <div
               key={path}
               className={css`
                 padding: 10px;
-                border: solid 1px red;
               `}
             >
-              <div>{title}</div>
-              <div>
-                {pathDisplayNames
-                  .slice(0, pathDisplayNames.length - 1)
-                  .join(' >> ')}
-              </div>
-              <div>{type}</div>
+              {aggComponents[type]?.({
+                ...agg,
+                field: path,
+                displayName: title,
+                onValueChange,
+                sqon,
+              })}
             </div>
           );
         })}
