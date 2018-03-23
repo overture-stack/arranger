@@ -5,8 +5,6 @@ import ReactTablePagination from 'react-table/lib/pagination';
 
 import './style.css';
 
-const MAX_PAGES_SHOWING = 10;
-
 export default class CustomPagination extends ReactTablePagination {
   onPreviousPageClick = () => {
     const { canPrevious, page } = this.props;
@@ -43,12 +41,14 @@ export default class CustomPagination extends ReactTablePagination {
       className,
       canPrevious,
       canNext,
+      maxPagesOptions = 10,
     } = this.props;
+
     const firstPage = Math.max(
-      Math.min(page - MAX_PAGES_SHOWING / 2, pages - MAX_PAGES_SHOWING),
+      Math.min(page - maxPagesOptions / 2, pages - maxPagesOptions),
       0,
     );
-    const lastPage = Math.min(firstPage + 10, pages);
+    const lastPage = Math.min(firstPage + maxPagesOptions, pages);
     return (
       <div
         className={classnames(className, '-pagination')}
