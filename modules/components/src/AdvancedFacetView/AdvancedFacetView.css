@@ -27,10 +27,14 @@
 .facetViewWrapper .treeViewPanel .treeView {
   overflow-y: scroll;
   flex: 1;
+  margin-right: 5px;
+  margin-top: 10px;
 }
 
 .facetViewWrapper .facetsPanel {
   flex: 2;
+  margin-left: 5px;
+  margin-top: 10px;
 }
 
 .facetViewWrapper .facetsPanel .facetView {
