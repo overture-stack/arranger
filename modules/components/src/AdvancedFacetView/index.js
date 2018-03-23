@@ -2,6 +2,7 @@ import React from 'react';
 import { keys } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
+import { css } from 'emotion';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Value } from '../SQONView';
 import './AdvancedFacetView.css';
@@ -142,8 +143,19 @@ export default class AdvancedFacetView extends React.Component {
               />
             </div>
           </div>
-          <div className="panel facetsPanel">
-            <div className={`panelHeading`}>
+          <div
+            className={`panel facetsPanel ${css`
+              position: relative;
+            `}`}
+          >
+            <div
+              className={`panelHeading ${css`
+                position: absolute;
+                left: 0px;
+                right: 0px;
+                height: 50px;
+              `}`}
+            >
               <SearchBox
                 {...{
                   withValueOnly,
@@ -163,25 +175,35 @@ export default class AdvancedFacetView extends React.Component {
                 }}
               />
             </div>
-            <FacetView
-              extendedMapping={extendedMapping}
-              valueCharacterLimit={valueCharacterLimit}
-              searchboxSelectionObservable={searchBoxSelection$}
-              constructEntryId={this.constructFilterId}
-              ref={view => (this.facetView = view)}
-              sqon={sqon}
-              onValueChange={handleFacetViewValueChange}
-              aggregations={aggregations}
-              searchString={searchBoxValue}
-              displayTreeData={
-                withValueOnly
-                  ? filterOutNonValue({
-                      displayTreeData,
-                      aggregations,
-                    }).displayTreeDataWithValue
-                  : displayTreeData
-              }
-            />
+            <div
+              className={`${css`
+                position: absolute;
+                top: 50px;
+                left: 0px;
+                right: 0px;
+                bottom: 0px;
+              `}`}
+            >
+              <FacetView
+                extendedMapping={extendedMapping}
+                valueCharacterLimit={valueCharacterLimit}
+                searchboxSelectionObservable={searchBoxSelection$}
+                constructEntryId={this.constructFilterId}
+                ref={view => (this.facetView = view)}
+                sqon={sqon}
+                onValueChange={handleFacetViewValueChange}
+                aggregations={aggregations}
+                searchString={searchBoxValue}
+                displayTreeData={
+                  withValueOnly
+                    ? filterOutNonValue({
+                        displayTreeData,
+                        aggregations,
+                      }).displayTreeDataWithValue
+                    : displayTreeData
+                }
+              />
+            </div>
           </div>
         </div>
       </div>

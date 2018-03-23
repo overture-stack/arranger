@@ -69,7 +69,6 @@ export default ({
           className={`booleanAggOption bucket-item ${
             isNeitherActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={handleAnyClick}
         >
           Any
@@ -78,7 +77,6 @@ export default ({
           className={`booleanAggOption bucket-item ${
             isTrueActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(true)}
         >
           <TextHighlight content={'Yes'} highlightText={searchString} />
@@ -97,7 +95,6 @@ export default ({
           className={`booleanAggOption bucket-item ${
             isFalseActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(false)}
         >
           <TextHighlight content={'No'} highlightText={searchString} />
