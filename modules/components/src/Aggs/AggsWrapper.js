@@ -7,10 +7,12 @@ export default ({
   collapsible = true,
   displayName,
   filters,
-  wrapperComponent,
-}) =>
-  wrapperComponent ? (
-    <wrapperComponent>{children}</wrapperComponent>
+  WrapperComponent,
+}) => {
+  return WrapperComponent ? (
+    <WrapperComponent {...{ collapsible, displayName }}>
+      {children}
+    </WrapperComponent>
   ) : (
     <Component initialState={{ isCollapsed: false }}>
       {({ setState, state: { isCollapsed } }) => (
@@ -43,3 +45,4 @@ export default ({
       )}
     </Component>
   );
+};
