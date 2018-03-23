@@ -21,11 +21,11 @@ export default ({
   const dotField = field.replace(/__/g, '.');
 
   const isTrueActive = isActive({
-    value: true,
+    value: 'true',
     field: dotField,
   });
   const isFalseActive = isActive({
-    value: false,
+    value: 'false',
     field: dotField,
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
@@ -42,7 +42,7 @@ export default ({
                 op: 'in',
                 content: {
                   field: dotField,
-                  value: [isTrue],
+                  value: [String(isTrue)],
                 },
               },
             ],
