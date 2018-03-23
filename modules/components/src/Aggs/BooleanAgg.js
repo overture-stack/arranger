@@ -14,6 +14,9 @@ export default ({
   buckets,
   handleValueClick = () => {},
   isActive = () => false,
+  collapsible,
+  WrapperComponent,
+  displayName,
   ...rest
 }) => {
   const trueBucket = buckets.find(({ key }) => key === '1');
@@ -58,7 +61,7 @@ export default ({
     });
 
   return (
-    <AggsWrapper {...{ buckets, ...rest }}>
+    <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
       <div className={`booleanFacetWrapper`}>
         <div
           className={`booleanAggOption bucket-item ${

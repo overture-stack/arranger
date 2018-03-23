@@ -107,10 +107,11 @@ class RangeAgg extends Component {
       buckets = [],
       collapsible = true,
       handleChange = () => {},
+      WrapperComponent,
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     return (
-      <AggsWrapper {...{ displayName }}>
+      <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
         {[!_.isNil(min), !_.isNil(max)].every(Boolean) && (
           <div className="range-wrapper">
             <div className="unit-wrapper">

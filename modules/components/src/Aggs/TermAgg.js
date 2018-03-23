@@ -82,6 +82,7 @@ class TermAggs extends React.Component {
       constructEntryId = ({ value }) => value,
       valueCharacterLimit,
       observableValueInFocus = null,
+      WrapperComponent,
     } = this.props;
     const { showingMore } = this.state;
     const dotField = field.replace(/__/g, '.');
@@ -89,7 +90,7 @@ class TermAggs extends React.Component {
       externalIsExclude({ field: dotField }) || this.state.isExclude;
     return (
       <AggsWrapper
-        {...{ displayName, collapsible }}
+        {...{ displayName, WrapperComponent, collapsible }}
         filters={[
           ...(showExcludeOption
             ? [

@@ -5,10 +5,14 @@ import { css } from 'emotion';
 import { TermAgg, RangeAgg, BooleanAgg } from '../Aggs';
 import { inCurrentSQON } from '../SQONView/utils';
 import { currentFieldValue } from '../SQONView/utils';
+import AggsWrapper from '../Aggs/AggsWrapper';
+
+const WrapperComponent = props => (
+  <AggsWrapper {...{ ...props, collapsible: false }} />
+);
 
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
-    {...rest}
     handleValueClick={({ generateNextSQON }) => {
       onValueChange({ sqon: generateNextSQON(sqon) });
     }}
@@ -19,6 +23,7 @@ const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
+    {...{ ...rest, WrapperComponent }}
   />
 );
 const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
@@ -36,7 +41,7 @@ const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
     handleChange={({ generateNextSQON }) =>
       onValueChange({ sqon: generateNextSQON(sqon) })
     }
-    {...{ ...rest, stats, field }}
+    {...{ ...rest, stats, field, WrapperComponent }}
   />
 );
 const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
@@ -51,7 +56,7 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
     handleValueClick={({ generateNextSQON }) =>
       onValueChange({ sqon: generateNextSQON(sqon) })
     }
-    {...rest}
+    {...{ ...rest, WrapperComponent }}
   />
 );
 
@@ -112,22 +117,14 @@ export default class FacetView extends React.Component {
               extendedMapping.find(({ field }) => field === path)?.displayName,
           );
           const agg = aggregations[path];
-          return (
-            <div
-              key={path}
-              className={css`
-                padding: 10px;
-              `}
-            >
-              {aggComponents[type]?.({
-                ...agg,
-                field: path,
-                displayName: title,
-                onValueChange,
-                sqon,
-              })}
-            </div>
-          );
+          return aggComponents[type]?.({
+            ...agg,
+            key: path,
+            field: path,
+            displayName: title,
+            onValueChange,
+            sqon,
+          });
         })}
       </div>
     );
