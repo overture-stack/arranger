@@ -6,6 +6,7 @@ import './AggregationCard.css';
 import { removeSQON, toggleSQON } from '../SQONView/utils';
 import AggsWrapper from './AggsWrapper';
 import TextHighlight from '../TextHighlight';
+import './TermAgg.css';
 import ToggleButton from '../ToggleButton';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
@@ -124,9 +125,6 @@ class TermAggs extends React.Component {
                 id={constructEntryId({ value: bucket.name })}
                 key={bucket.name}
                 className="bucket-item"
-                style={{
-                  display: 'flex',
-                }}
                 content={{
                   field: dotField,
                   value: bucket.name,
@@ -152,9 +150,11 @@ class TermAggs extends React.Component {
                     name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   />
                   <TextHighlight
-                    content={truncate(bucket.name, {
-                      length: valueCharacterLimit || Infinity,
-                    })}
+                    content={
+                      truncate(bucket.name, {
+                        length: valueCharacterLimit || Infinity,
+                      }) + ' '
+                    }
                     highlightText={searchString}
                   />
                   {/* <OverflowTooltippedLabel
@@ -177,16 +177,15 @@ class TermAggs extends React.Component {
                 )}
               </Content>
             ))}
-
-          {buckets.length > maxTerms && (
-            <div
-              className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
-              onClick={() => this.setState({ showingMore: !showingMore })}
-            >
-              {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
-            </div>
-          )}
         </div>
+        {buckets.length > maxTerms && (
+          <div
+            className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
+            onClick={() => this.setState({ showingMore: !showingMore })}
+          >
+            {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
+          </div>
+        )}
       </AggsWrapper>
     );
   }
