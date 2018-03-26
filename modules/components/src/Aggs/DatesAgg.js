@@ -189,14 +189,12 @@ class DatesAgg extends React.Component {
 
     const { localRange, inputRangeValues, focusedInput } = this.state;
 
-    const initialRange = this.getInitialRange(this.props);
-
     const getInitialVisibleMonth = () => {
       return (
         focusedInput &&
         (focusedInput === START_DATE_INPUT
-          ? initialRange.startDate || Moment()
-          : initialRange.endDate || Moment())
+          ? localRange.startDate || Moment()
+          : localRange.endDate || Moment())
       );
     };
 
@@ -258,7 +256,7 @@ class DatesAgg extends React.Component {
                   onClick={() => {
                     this.setState({
                       inputRangeValues: {},
-                      localRange: { ...initialRange },
+                      localRange: this.getInitialRange(this.props),
                     });
                     this.setInputFocus(null);
                   }}
