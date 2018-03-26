@@ -200,11 +200,11 @@ class DatesAgg extends React.Component {
 
     return (
       <AggsWrapper {...{ displayName, collapsible }}>
-        <div className={`inputRow`}>
+        <div className={`datesAgg_inputRow`}>
           <input
             ref={el => (this.startDateInput = el)}
             onFocus={() => this.setInputFocus(START_DATE_INPUT)}
-            className={`dateInput`}
+            className={`datesAgg_dateInput`}
             value={
               inputRangeValues.startDate
                 ? inputRangeValues.startDate
@@ -223,7 +223,7 @@ class DatesAgg extends React.Component {
           <input
             ref={el => (this.endDateInput = el)}
             onFocus={() => this.setInputFocus(END_DATE_INPUT)}
-            className={`dateInput`}
+            className={`datesAgg_dateInput`}
             value={
               inputRangeValues.endDate
                 ? inputRangeValues.endDate
@@ -250,9 +250,9 @@ class DatesAgg extends React.Component {
                 hideKeyboardShortcutsPanel
                 keepOpenOnDateSelect
               />
-              <div className={`calendarNavbar`}>
+              <div className={`datesAgg_calendarNavbar`}>
                 <div
-                  className={`cancelButton`}
+                  className={`datesAgg_cancelButton`}
                   onClick={() => {
                     this.setState({
                       inputRangeValues: {},
@@ -264,7 +264,7 @@ class DatesAgg extends React.Component {
                   cancel
                 </div>
                 <div
-                  className={`submitButton`}
+                  className={`datesAgg_submitButton`}
                   onClick={() => {
                     this.onDatesSet(localRange);
                     this.setInputFocus(null);

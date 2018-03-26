@@ -1,4 +1,4 @@
-.dateInput {
+.datesAgg_dateInput {
   width: 119px;
   height: 30px;
   border-radius: 10px;
@@ -6,7 +6,7 @@
   border: solid 1px #cacbcf;
   padding-left: 10px;
 }
-.inputRow {
+.datesAgg_inputRow {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
@@ -14,7 +14,7 @@
   height: 40px;
   position: relative;
 }
-.calendarNavbar {
+.datesAgg_calendarNavbar {
   height: 40px;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
@@ -25,7 +25,7 @@
   align-items: center;
   padding: 20px;
 }
-.cancelButton {
+.datesAgg_cancelButton {
   font-family: Montserrat;
   font-size: 14px;
   font-weight: 300;
@@ -36,7 +36,7 @@
   color: #009bb8;
   cursor: pointer;
 }
-.submitButton {
+.datesAgg_submitButton {
   border-radius: 100px;
   background-color: #009bb8;
   border: solid 1px #cacbcf;
