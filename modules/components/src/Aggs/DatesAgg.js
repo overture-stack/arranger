@@ -62,7 +62,7 @@ class DatesAgg extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      localRange: { ...this.getInitialRange(props) }, // the moment objects passed into DayPickerRangeController
+      localRange: this.getInitialRange(props), // the moment objects passed into DayPickerRangeController
       inputRangeValues: {
         // the strings to render in the inputs
         startDate: null,
@@ -74,7 +74,7 @@ class DatesAgg extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     this.setState({
-      localRange: { ...this.getInitialRange(nextProps) },
+      localRange: this.getInitialRange(nextProps),
     });
   }
 
@@ -83,13 +83,11 @@ class DatesAgg extends React.Component {
     startDateFromSqon = () => null,
     endDateFromSqon = () => null,
   }) => {
-    const bucketWithMoment = buckets.map(({ key_as_string, ...rest }) => ({
-      ...rest,
-      key_as_string,
-      moment: bucketDateToMoment(key_as_string),
-    }));
-    const minBucket = minBy(bucketWithMoment, ({ moment }) => moment.valueOf());
-    const maxBucket = maxBy(bucketWithMoment, ({ moment }) => moment.valueOf());
+    const bucketMoments = buckets.map(({ key_as_string, ...rest }) =>
+      bucketDateToMoment(key_as_string),
+    );
+    const minDate = minBy(bucketMoments, moment => moment.valueOf());
+    const maxDate = maxBy(bucketMoments, moment => moment.valueOf());
 
     const startFromSqon = startDateFromSqon({
       getDateFromSqon: this.getDateFromSqon(START_DATE_INPUT),
@@ -99,10 +97,8 @@ class DatesAgg extends React.Component {
     });
     return {
       startDate:
-        (startFromSqon && bucketDateToMoment(startFromSqon)) ||
-        minBucket?.moment,
-      endDate:
-        (startFromSqon && bucketDateToMoment(endFromSqon)) || maxBucket?.moment,
+        (startFromSqon && bucketDateToMoment(startFromSqon)) || minDate,
+      endDate: (startFromSqon && bucketDateToMoment(endFromSqon)) || maxDate,
     };
   };
 
