@@ -174,6 +174,7 @@ class DatesAgg extends React.Component {
       collapsible = true,
       datePickerPosition = 'BOTTOM_LEFT',
       numberOfMonths = 2,
+      WrapperComponent,
     } = this.props;
 
     const { localRange, inputRangeValues, focusedInput } = this.state;
@@ -188,7 +189,7 @@ class DatesAgg extends React.Component {
     };
 
     return (
-      <AggsWrapper {...{ displayName, collapsible }}>
+      <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
         <div className={`datesAgg_inputRow`}>
           <input
             ref={el => (this.startDateInput = el)}
@@ -226,7 +227,11 @@ class DatesAgg extends React.Component {
             }
           />
           {focusedInput && (
-            <div className={DATE_PICKER_POSITIONS[datePickerPosition]}>
+            <div
+              className={`datesAgg_dateRangePicker ${
+                DATE_PICKER_POSITIONS[datePickerPosition]
+              }`}
+            >
               <DayPickerRangeController
                 focusedInput={focusedInput}
                 numberOfMonths={numberOfMonths}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TermAgg, RangeAgg, BooleanAgg } from '../Aggs';
+import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from '../Aggs';
 import { currentFieldValue } from '../SQONView/utils';
 import { inCurrentSQON } from '../SQONView/utils';
 
@@ -55,9 +55,26 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
   />
 );
 
+const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
+  <DatesAgg
+    handleDateChange={({ generateNextSQON = () => {} } = {}) =>
+      onValueChange({ sqon: generateNextSQON(sqon) })
+    }
+    getActiveValue={({ op, field }) =>
+      currentFieldValue({
+        op,
+        dotField: field,
+        sqon,
+      })
+    }
+    {...{ ...rest }}
+  />
+);
+
 export default {
   keyword: composedTermAgg,
   long: composedRangeAgg,
   float: composedRangeAgg,
   boolean: composedBooleanAgg,
+  date: composedDatesAgg,
 };

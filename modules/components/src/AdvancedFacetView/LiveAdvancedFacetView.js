@@ -121,7 +121,7 @@ const removeFieldTypesFromMapping = ({
   return output;
 };
 
-const defaultFieldTypesToExclude = ['id', 'text', 'date'];
+const defaultFieldTypesToExclude = ['id', 'text'];
 
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
