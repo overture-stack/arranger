@@ -126,10 +126,10 @@ class DatesAgg extends React.Component {
   };
 
   handleInputValueChange = ({ value, input }) => {
+    const { inputRangeValues, localRange } = this.state;
     const newMoment = inputDateToMoment(value);
     const isValidInputDateString =
-      newMoment.isValid() &&
-      sumBy(value.split('/'), str => str.length === 2) === 3;
+      newMoment.isValid() && value.match(/^\d\d\/\d\d\/\d\d$/);
     if (!isValidInputDateString) {
       this.setState({
         inputRangeValues: { ...inputRangeValues, [input]: value },
