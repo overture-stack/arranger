@@ -89,3 +89,32 @@
 .facetViewWrapper .bucket .bucket-item:nth-child(4) {
   border-bottom: solid 1px #e0e1e6;
 }
+
+.facetViewWrapper .facetContainer {
+  margin-top: 10px;
+}
+.facetViewWrapper .facetContainer .header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  font-weight: bold;
+  background-color: #e7e8ed;
+  padding: 5px 20px;
+}
+.facetViewWrapper .facetContainer .header .title {
+  color: #a42c90;
+}
+.facetViewWrapper .facetContainer .header .breadscrumb {
+  color: #2b388f;
+  text-align: right;
+}
+.facetViewWrapper
+  .facetContainer
+  .header
+  .breadscrumb
+  .breadscrumb-item:not(:last-child):after {
+  content: ' » ';
+}
+.facetViewWrapper .facetContainer .content {
+  padding: 10px;
+}

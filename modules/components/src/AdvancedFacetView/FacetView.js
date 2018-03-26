@@ -64,50 +64,25 @@ export default class FacetView extends React.Component {
             searchString,
             sqon,
             WrapperComponent: ({ collapsible, children }) => (
-              <div
-                id={serializeToDomId(path)}
-                className={css`
-                  margin-top: 10px;
-                `}
-              >
-                <div
-                  className={css`
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
-                    font-weight: bold;
-                    background-color: #e7e8ed;
-                    padding: 5px 20px;
-                  `}
-                >
-                  <div
-                    className={css`
-                      color: #a42c90;
-                    `}
-                  >
+              <div id={serializeToDomId(path)} className={`facetContainer`}>
+                <div className={`header`}>
+                  <div className={`title`}>
                     <TextHighlight
                       content={title}
                       highlightText={searchString}
                     />
                   </div>
-                  <div
-                    className={css`
-                      color: #2b388f;
-                      text-align: right;
-                    `}
-                  >
+                  <div className={`breadscrumb`}>
                     {pathDisplayNames
                       .slice(0, pathDisplayNames.length - 1)
-                      .join(' >> ')}
+                      .map((pathName, index, arr) => (
+                        <span key={index} className={`breadscrumb-item`}>
+                          {pathName}
+                        </span>
+                      ))}
                   </div>
                 </div>
-                <div
-                  className={css`
-                    padding: 10px;
-                  `}
-                >
-                  {children}
-                </div>
+                <div className={`content`}>{children}</div>
               </div>
             ),
           });
