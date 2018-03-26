@@ -13,6 +13,10 @@
   flex-direction: row;
 }
 
+.facetViewWrapper .panel {
+  position: relative;
+}
+
 .facetViewWrapper .treeViewPanel {
   flex: 1;
   display: flex;
@@ -42,8 +46,23 @@
   overflow-y: scroll;
 }
 
+.facetViewWrapper .facetsPanel .facets {
+  position: absolute;
+  top: 50px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+
 .facetViewWrapper .facetsPanel .facetView .facetViewNode {
   padding-left: 20px;
+}
+
+.facetViewWrapper .facetsPanel .panelHeading {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  height: 50px;
 }
 
 .facetViewWrapper {

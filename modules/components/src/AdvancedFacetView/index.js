@@ -143,19 +143,8 @@ export default class AdvancedFacetView extends React.Component {
               />
             </div>
           </div>
-          <div
-            className={`panel facetsPanel ${css`
-              position: relative;
-            `}`}
-          >
-            <div
-              className={`panelHeading ${css`
-                position: absolute;
-                left: 0px;
-                right: 0px;
-                height: 50px;
-              `}`}
-            >
+          <div className={`panel facetsPanel`}>
+            <div className={`panelHeading`}>
               <SearchBox
                 {...{
                   withValueOnly,
@@ -175,15 +164,7 @@ export default class AdvancedFacetView extends React.Component {
                 }}
               />
             </div>
-            <div
-              className={`${css`
-                position: absolute;
-                top: 50px;
-                left: 0px;
-                right: 0px;
-                bottom: 0px;
-              `}`}
-            >
+            <div className={`facets`}>
               <FacetView
                 extendedMapping={extendedMapping}
                 valueCharacterLimit={valueCharacterLimit}
