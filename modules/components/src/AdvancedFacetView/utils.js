@@ -1,4 +1,4 @@
-import { keys } from 'lodash';
+import { keys, orderBy } from 'lodash';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
@@ -83,8 +83,22 @@ const filterOutNonValue = ({
   }
 };
 
+const orderDisplayTreeData = displayTreeData => [
+  ...orderBy(displayTreeData.filter(({ children }) => !children), 'title'),
+  ...orderBy(
+    displayTreeData
+      .filter(({ children }) => children)
+      .map(({ children, ...rest }) => ({
+        ...rest,
+        children: orderDisplayTreeData(children),
+      })),
+    'title',
+  ),
+];
+
 export {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   elasticMappingToDisplayTreeData,
+  orderDisplayTreeData,
 };

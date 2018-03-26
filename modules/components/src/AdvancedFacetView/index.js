@@ -1,5 +1,5 @@
 import React from 'react';
-import { keys, orderBy } from 'lodash';
+import { keys } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
 import mappingUtils from '@arranger/mapping-utils';
@@ -11,20 +11,11 @@ import State from '../State';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
 import Input from '../Input';
 import SearchBox from './SearchBox';
-import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
-
-const orderDisplayTreeData = displayTreeData => [
-  ...orderBy(displayTreeData.filter(({ children }) => !children), 'title'),
-  ...orderBy(
-    displayTreeData
-      .filter(({ children }) => children)
-      .map(({ children, ...rest }) => ({
-        ...rest,
-        children: orderDisplayTreeData(children),
-      })),
-    'title',
-  ),
-];
+import {
+  filterOutNonValue,
+  injectExtensionToElasticMapping,
+  orderDisplayTreeData,
+} from './utils.js';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
