@@ -10,6 +10,7 @@ import {
   replaceSQON,
   toggleSQON,
   removeSQON,
+  getActiveValue,
 } from '../SQONView/utils';
 import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
@@ -117,12 +118,11 @@ class DatesAgg extends React.Component {
 
   getDateFromSqon = dateToGet => sqon => {
     const { field } = this.props;
-    return sqon?.content
-      ?.filter(({ content: { field: sqonField } }) => {
-        return sqonField === field;
-      })
-      ?.find(({ op }) => op === (dateToGet === START_DATE_INPUT ? '>=' : '<='))
-      ?.content.value;
+    return getActiveValue({
+      op: dateToGet === START_DATE_INPUT ? '>=' : '<=',
+      field,
+      sqon,
+    });
   };
 
   handleInputValueChange = ({ value, input }) => {

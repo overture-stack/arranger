@@ -203,9 +203,6 @@ storiesOf('Aggs', module)
               buckets={require('./dummyData/datesBucketsSample.json')}
               startDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
               endDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
-              handleClearClick={({ generateNextSQON }) => {
-                setState({ sqon: generateNextSQON(sqon) });
-              }}
               handleDateChange={({ generateNextSQON = () => {} } = {}) =>
                 setState({ sqon: generateNextSQON(sqon) })
               }
