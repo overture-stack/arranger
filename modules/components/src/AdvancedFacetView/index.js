@@ -1,5 +1,5 @@
 import React from 'react';
-import { keys } from 'lodash';
+import { keys, debounce } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
 import { css } from 'emotion';
@@ -152,10 +152,13 @@ export default class AdvancedFacetView extends React.Component {
                   extendedMapping,
                   aggregations,
                   constructEntryId: this.constructFilterId,
-                  onValueChange: ({ value }) =>
-                    this.setState({
-                      searchBoxValue: value,
-                    }),
+                  onValueChange: debounce(
+                    ({ value }) =>
+                      this.setState({
+                        searchBoxValue: value,
+                      }),
+                    500,
+                  ),
                   onFieldSelect: ({ field, value }) => {
                     scrollFacetViewToPath(field);
                     this.setState({ selectedPath: field });
