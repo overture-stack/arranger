@@ -14,28 +14,18 @@ import {
   orderDisplayTreeData,
 } from './utils.js';
 
-const orderDisplayTreeData = displayTreeData => {
-  const setWithChildrenOrdered = displayTreeData.map(
-    ({ children, ...rest }) => ({
-      ...rest,
-      ...(children
-        ? {
-            children: orderDisplayTreeData(children),
-          }
-        : {}),
-    }),
-  );
-  return [
-    ...orderBy(
-      setWithChildrenOrdered.filter(({ children }) => !children),
-      'title',
-    ),
-    ...orderBy(
-      setWithChildrenOrdered.filter(({ children }) => children),
-      'title',
-    ),
-  ];
-};
+const orderDisplayTreeData = displayTreeData => [
+  ...orderBy(displayTreeData.filter(({ children }) => !children), 'title'),
+  ...orderBy(
+    displayTreeData
+      .filter(({ children }) => children)
+      .map(({ children, ...rest }) => ({
+        ...rest,
+        children: orderDisplayTreeData(children),
+      })),
+    'title',
+  ),
+];
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
