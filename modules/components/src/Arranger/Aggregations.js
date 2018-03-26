@@ -24,7 +24,7 @@ const Aggregations = ({
               index={graphqlField}
               sqon={sqon}
               aggs={aggsState.aggs.filter(x => x.active)}
-              render={data =>
+              render={({ data }) =>
                 data &&
                 aggsState.aggs
                   .filter(x => x.active)

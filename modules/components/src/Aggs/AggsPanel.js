@@ -1,6 +1,4 @@
 import React from 'react';
-import { stringify } from 'query-string';
-import { capitalize } from 'lodash';
 import { inCurrentFilters } from '../SQONView/utils';
 import Location from '../Location';
 import TermAgg from './TermAgg';
@@ -11,8 +9,8 @@ export default ({ index, aggs = [], ...props }) =>
     <AggsQuery
       index={index}
       aggs={aggs}
-      render={data =>
-        !data ? (
+      render={({ data, loading }) =>
+        loading ? (
           'loading'
         ) : (
           <div className="remainder">
