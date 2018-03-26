@@ -54,7 +54,7 @@ export default class AdvancedFacetView extends React.Component {
       injectExtensionToElasticMapping(elasticMapping, extendedMapping),
     );
     const scrollFacetViewToPath = path => {
-      this.facetView.scrollToPath(path);
+      this.facetView.scrollToPath({ path });
     };
     const handleFacetViewValueChange = ({ sqon }) => {
       onSqonFieldChange({ sqon });

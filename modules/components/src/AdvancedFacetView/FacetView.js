@@ -1,6 +1,7 @@
 import React from 'react';
 import { debounce, toPairs } from 'lodash';
 import { css } from 'emotion';
+import { Subject } from 'rxjs';
 import AggsWrapper from '../Aggs/AggsWrapper';
 import aggComponents from './aggComponents';
 import TextHighlight from '../TextHighlight';
@@ -18,13 +19,17 @@ const flattenDisplayTreeData = displayTreeData => {
 };
 
 export default class FacetView extends React.Component {
-  scrollToPath = path => {
+  scrollToPath = ({ path, behavior = 'smooth', block = 'start' }) => {
     const targetElementId = serializeToDomId(path);
     const targetElement = this.root.querySelector(`#${targetElementId}`);
     if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      targetElement.scrollIntoView({ behavior, block });
     }
   };
+  $updated = new Subject();
+  componentDidUpdate() {
+    this.$updated.next();
+  }
   render() {
     const {
       aggregations,
@@ -60,7 +65,13 @@ export default class FacetView extends React.Component {
             ...agg,
             key: path,
             field: path,
-            onValueChange,
+            onValueChange: ({ sqon }) => {
+              onValueChange({ sqon });
+              const updateSubs = this.$updated.subscribe(() => {
+                this.scrollToPath({ path, block: 'nearest' });
+                updateSubs.unsubscribe();
+              });
+            },
             searchString,
             sqon,
             WrapperComponent: ({ collapsible, children }) => (
