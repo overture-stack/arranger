@@ -301,7 +301,15 @@ export const removeSQON: TRemoveSQON = (field, sqon) => {
     : null;
 };
 
-export const getActiveValue = ({ op, field, sqon }) =>
+export const getActiveValue = ({
+  op,
+  field,
+  sqon,
+}: {
+  sqon: TGroupContent,
+  field: string,
+  op: string,
+}): mixed =>
   sqon?.content
     ?.filter(({ content: { field: sqonField } }) => {
       return sqonField === field;
