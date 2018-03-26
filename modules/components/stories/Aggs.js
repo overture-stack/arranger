@@ -3,13 +3,20 @@ import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
 import {
+  DatesAgg,
   BooleanAgg,
   EditAggs,
   TermAgg,
   RangeAgg,
   AggsPanel,
 } from '../src/Aggs';
-import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
+import {
+  inCurrentSQON,
+  replaceSQON,
+  toggleSQON,
+  currentFieldValue,
+} from '../src/SQONView/utils';
+import Component from 'react-component-component';
 
 import State from '../src/State';
 import './Aggs.css';
@@ -174,6 +181,46 @@ storiesOf('Aggs', module)
         </div>
       )}
     />
+  ))
+  .add('DatesAgg', () => (
+    <div className="term-agg-wrapper">
+      <DatesAgg
+        field="disease_type"
+        displayName="Disease Type"
+        buckets={require('./dummyData/datesBucketsSample.json')}
+        handleValueClick={action('Term Agg Selection')}
+      />
+    </div>
+  ))
+  .add('DatesAggWithSQON', () => (
+    <Component initialState={{ sqon: null }}>
+      {({ state: { sqon }, setState }) => (
+        <div>
+          <div>SQON: {JSON.stringify(sqon)}</div>
+          <div
+            css={`
+              width: 300px;
+            `}
+          >
+            <DatesAgg
+              field="disease_type"
+              displayName="Disease Type"
+              buckets={require('./dummyData/datesBucketsSample.json')}
+              handleDateChange={({ generateNextSQON = () => {} } = {}) =>
+                setState({ sqon: generateNextSQON(sqon) })
+              }
+              getActiveValue={({ op, field }) =>
+                currentFieldValue({
+                  op,
+                  dotField: field,
+                  sqon,
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
+    </Component>
   ))
   .add('RangeAgg', () => (
     <RangeAgg

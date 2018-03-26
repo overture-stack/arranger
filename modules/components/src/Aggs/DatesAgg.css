@@ -1,0 +1,68 @@
+.datesAgg_dateInput {
+  width: 119px;
+  height: 30px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: solid 1px #cacbcf;
+  padding-left: 10px;
+}
+.datesAgg_inputRow {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  height: 40px;
+  position: relative;
+}
+.datesAgg_calendarNavbar {
+  height: 40px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  background-color: #edeef1;
+  border: solid 1px #e0e1e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+.datesAgg_cancelButton {
+  font-family: Montserrat;
+  font-size: 14px;
+  font-weight: 300;
+  font-style: normal;
+  font-stretch: normal;
+  letter-spacing: 0.2px;
+  text-align: center;
+  color: #009bb8;
+  cursor: pointer;
+}
+.datesAgg_submitButton {
+  border-radius: 100px;
+  background-color: #009bb8;
+  border: solid 1px #cacbcf;
+  color: white;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+}
+.CalendarDay__selected_span,
+.CalendarDay__selected_span:hover,
+.CalendarDay__selected_span:active {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+  color: white;
+}
+.CalendarDay__hovered_span,
+.CalendarDay__hovered_span:hover,
+.CalendarDay__hovered_span:active {
+  color: white;
+  background: #404c9a;
+  border: 1px solid #5a6293;
+}
