@@ -24,3 +24,7 @@
   background: #e5f7fd;
   border-color: '#00afed';
 }
+
+.booleanAggOption {
+  cursor: pointer;
+}
