@@ -10,7 +10,12 @@ import {
   RangeAgg,
   AggsPanel,
 } from '../src/Aggs';
-import { inCurrentSQON, replaceSQON, toggleSQON } from '../src/SQONView/utils';
+import {
+  inCurrentSQON,
+  replaceSQON,
+  toggleSQON,
+  currentFieldValue,
+} from '../src/SQONView/utils';
 import Component from 'react-component-component';
 
 import State from '../src/State';
@@ -201,10 +206,15 @@ storiesOf('Aggs', module)
               field="disease_type"
               displayName="Disease Type"
               buckets={require('./dummyData/datesBucketsSample.json')}
-              startDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
-              endDateFromSqon={({ getDateFromSqon }) => getDateFromSqon(sqon)}
               handleDateChange={({ generateNextSQON = () => {} } = {}) =>
                 setState({ sqon: generateNextSQON(sqon) })
+              }
+              getActiveValue={({ op, field }) =>
+                currentFieldValue({
+                  op,
+                  dotField: field,
+                  sqon,
+                })
               }
             />
           </div>

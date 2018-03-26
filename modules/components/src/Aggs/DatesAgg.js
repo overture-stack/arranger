@@ -10,7 +10,6 @@ import {
   replaceSQON,
   toggleSQON,
   removeSQON,
-  getActiveValue,
 } from '../SQONView/utils';
 import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
@@ -79,22 +78,21 @@ class DatesAgg extends React.Component {
     });
   }
 
-  getInitialRange = ({
-    buckets = [],
-    startDateFromSqon = () => null,
-    endDateFromSqon = () => null,
-  }) => {
+  getInitialRange = ({ buckets = [], getActiveValue = () => ({}) }) => {
+    const { field } = this.props;
     const bucketMoments = buckets.map(({ key_as_string, ...rest }) =>
       bucketDateToMoment(key_as_string),
     );
     const minDate = minBy(bucketMoments, moment => moment.valueOf());
     const maxDate = maxBy(bucketMoments, moment => moment.valueOf());
 
-    const startFromSqon = startDateFromSqon({
-      getDateFromSqon: this.getDateFromSqon(START_DATE_INPUT),
+    const startFromSqon = getActiveValue({
+      op: '>=',
+      field,
     });
-    const endFromSqon = endDateFromSqon({
-      getDateFromSqon: this.getDateFromSqon(END_DATE_INPUT),
+    const endFromSqon = getActiveValue({
+      op: '<=',
+      field,
     });
     return {
       startDate:
@@ -113,15 +111,6 @@ class DatesAgg extends React.Component {
         this.startDateInput.blur();
         this.endDateInput.blur();
       }
-    });
-  };
-
-  getDateFromSqon = dateToGet => sqon => {
-    const { field } = this.props;
-    return getActiveValue({
-      op: dateToGet === START_DATE_INPUT ? '>=' : '<=',
-      field,
-      sqon,
     });
   };
 
