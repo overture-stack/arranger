@@ -68,7 +68,11 @@ export default class FacetView extends React.Component {
             onValueChange: ({ sqon }) => {
               onValueChange({ sqon });
               const updateSubs = this.$updated.subscribe(() => {
-                this.scrollToPath({ path, block: 'nearest' });
+                this.scrollToPath({
+                  path,
+                  block: 'nearest',
+                  behavior: 'instant',
+                });
                 updateSubs.unsubscribe();
               });
             },
