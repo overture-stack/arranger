@@ -64,6 +64,20 @@ class TermAggs extends React.Component {
 
   state = { showingMore: false, isExclude: false };
 
+  componentWillReceiveProps(nextProps) {
+    const { searchString, buckets = [] } = nextProps;
+    if (
+      searchString &&
+      buckets.some(b => {
+        return (b.key_as_string || b.key).match(new RegExp(searchString, 'i'));
+      })
+    ) {
+      this.setState({
+        showingMore: true,
+      });
+    }
+  }
+
   render() {
     const {
       field = '',
