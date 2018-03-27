@@ -1,7 +1,6 @@
 import React from 'react';
-import { debounce, toPairs } from 'lodash';
+import { debounce, toPairs, isEqual } from 'lodash';
 import { css } from 'emotion';
-import { Subject } from 'rxjs';
 import AggsWrapper from '../Aggs/AggsWrapper';
 import aggComponents from './aggComponents';
 import TextHighlight from '../TextHighlight';
@@ -19,6 +18,9 @@ const flattenDisplayTreeData = displayTreeData => {
 };
 
 export default class FacetView extends React.Component {
+  state = {
+    focusedPath: null,
+  };
   scrollToPath = ({ path, behavior = 'smooth', block = 'start' }) => {
     const targetElementId = serializeToDomId(path);
     const targetElement = this.root.querySelector(`#${targetElementId}`);
@@ -26,9 +28,19 @@ export default class FacetView extends React.Component {
       targetElement.scrollIntoView({ behavior, block });
     }
   };
-  $updated = new Subject();
-  componentDidUpdate() {
-    this.$updated.next();
+  componentDidUpdate({ sqon: lastSqon }, { focusedPath: lastFocusedPath }) {
+    const { focusedPath } = this.state;
+    const { sqon } = this.props;
+    if (!isEqual(lastSqon, sqon) && focusedPath) {
+      this.scrollToPath({
+        path: focusedPath,
+        block: 'start',
+        behavior: 'smooth',
+      });
+      this.setState({
+        focusedPath: null,
+      });
+    }
   }
   render() {
     const {
@@ -66,15 +78,14 @@ export default class FacetView extends React.Component {
             key: path,
             field: path,
             onValueChange: ({ sqon }) => {
-              onValueChange({ sqon });
-              const updateSubs = this.$updated.subscribe(() => {
-                this.scrollToPath({
-                  path,
-                  block: 'nearest',
-                  behavior: 'instant',
-                });
-                updateSubs.unsubscribe();
-              });
+              this.setState(
+                {
+                  focusedPath: path,
+                },
+                () => {
+                  onValueChange({ sqon });
+                },
+              );
             },
             searchString,
             sqon,
