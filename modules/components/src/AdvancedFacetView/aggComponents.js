@@ -16,7 +16,7 @@ const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
-    {...{ ...rest }}
+    {...rest}
   />
 );
 
@@ -51,7 +51,7 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
     handleValueClick={({ generateNextSQON }) =>
       onValueChange({ sqon: generateNextSQON(sqon) })
     }
-    {...{ ...rest }}
+    {...rest}
   />
 );
 
@@ -67,7 +67,7 @@ const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
         sqon,
       })
     }
-    {...{ ...rest }}
+    {...rest}
   />
 );
 
