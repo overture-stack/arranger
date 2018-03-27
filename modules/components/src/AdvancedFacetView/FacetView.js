@@ -89,7 +89,7 @@ export default class FacetView extends React.Component {
                   </div>
                   <div className={`breadscrumb`}>
                     {pathDisplayNames
-                      .slice(0, pathDisplayNames.length - 1)
+                      .slice(0, -1)
                       .map((pathName, index, arr) => (
                         <span key={index} className={`breadscrumb-item`}>
                           {pathName}
