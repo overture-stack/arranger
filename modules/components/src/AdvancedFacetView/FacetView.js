@@ -28,7 +28,7 @@ export default class FacetView extends React.Component {
       targetElement.scrollIntoView({ behavior, block });
     }
   };
-  componentDidUpdate({ sqon: lastSqon }, { focusedPath: lastFocusedPath }) {
+  componentDidUpdate({ sqon: lastSqon }) {
     const { focusedPath } = this.state;
     const { sqon } = this.props;
     if (!isEqual(lastSqon, sqon) && focusedPath) {
