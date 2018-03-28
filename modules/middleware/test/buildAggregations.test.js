@@ -1,7 +1,7 @@
 import buildAggregations from '../src/buildAggregations.js';
 import buildQuery from '../src/buildQuery';
 
-test('build_aggregations should handle nested aggregations', () => {
+test('buildAggregations should handle nested aggregations', () => {
   const nestedFields = [
     'annotations',
     'associated_entities',
@@ -142,7 +142,7 @@ test('build_aggregations should handle nested aggregations', () => {
   expect(actualOutput).toEqual(expectedOutput);
 });
 
-test('build_aggregations should handle nested aggregations with filters on same field', () => {
+test('buildAggregations should handle nested aggregations with filters on same field', () => {
   const nestedFields = ['participants'];
   const input = {
     query: {
@@ -195,7 +195,7 @@ test('build_aggregations should handle nested aggregations with filters on same 
   expect(actualOutput).toEqual(expectedOutput);
 });
 
-test('build_aggregations should handle `aggregations_filter_themselves` variable set to false', () => {
+test('buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
   let input = {
     nestedFields: [],
     graphqlFields: {
@@ -261,7 +261,7 @@ test('build_aggregations should handle `aggregations_filter_themselves` variable
   expect(actualOutput).toEqual(expected);
 });
 
-test('build_aggregations should handle `aggregations_filter_themselves` variable set to true', () => {
+test('buildAggregations should handle `aggregations_filter_themselves` variable set to true', () => {
   let input = {
     nestedFields: [],
     graphqlFields: {
@@ -298,4 +298,30 @@ test('build_aggregations should handle `aggregations_filter_themselves` variable
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expected);
+});
+
+test('buildAggregations should handle queries not in a group', () => {
+  const nestedFields = [];
+  const input = {
+    query: buildQuery({
+      nestedFields,
+      filters: { op: 'in', content: { field: 'case', value: [1] } },
+    }),
+    nestedFields,
+    graphqlFields: {
+      access: { buckets: { key: {} } },
+      case: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: false,
+  };
+
+  const expectedOutput = {
+    access: { terms: { field: 'access', size: 300000 } },
+    'case:global': {
+      aggs: { case: { terms: { field: 'case', size: 300000 } } },
+      global: {},
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
 });
