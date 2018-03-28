@@ -8,7 +8,7 @@ export default class extends React.Component {
   }
 
   render() {
-    console.log('render highlight!!!');
+    // console.log('render highlight!!!');
     const { content, highlightText } = this.props;
     const regex = new RegExp(highlightText, 'i');
     const matchResult = content.match(regex);
