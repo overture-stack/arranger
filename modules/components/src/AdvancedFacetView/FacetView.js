@@ -43,7 +43,7 @@ export default class FacetView extends React.Component {
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
-    //performance optimization
+    // performance optimization
     return !isEqual(nextProps, this.props);
   }
   render() {
