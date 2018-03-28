@@ -4,13 +4,13 @@ import { get } from 'lodash';
 import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 
-type TCreateConnectionResolversArgs = {
+type TcreateConnectionResolversArgs = {
   type: Object,
 };
-type TCreateConnectionResolvers = (
-  args: TCreateConnectionResolversArgs,
+type TcreateConnectionResolvers = (
+  args: TcreateConnectionResolversArgs,
 ) => Object;
-let createConnectionResolvers: TCreateConnectionResolvers = ({
+let createConnectionResolvers: TcreateConnectionResolvers = ({
   type,
   indexPrefix,
 }) => ({
