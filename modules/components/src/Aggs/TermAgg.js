@@ -1,5 +1,5 @@
 import React from 'react';
-import { orderBy, truncate } from 'lodash';
+import { orderBy, truncate, isEqual } from 'lodash';
 
 import './AggregationCard.css';
 
@@ -76,6 +76,10 @@ class TermAggs extends React.Component {
         showingMore: true,
       });
     }
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return !isEqual(nextProps, this.props) || !isEqual(nextState, this.state);
   }
 
   render() {
