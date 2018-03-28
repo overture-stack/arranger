@@ -6,7 +6,7 @@ function getAllData({
   projectId,
   index,
   variables = null,
-  size = 10000,
+  chunkSize = 1000,
   fields = '',
   mock,
 }) {
@@ -30,7 +30,7 @@ function getAllData({
     .then(({ data }) => {
       const total = data[index].hits.total;
       stream.write({ data: null, total });
-      const steps = Array(Math.ceil(total / size)).fill();
+      const steps = Array(Math.ceil(total / chunkSize)).fill();
 
       return Promise.all(
         steps.map((x, i) => {
@@ -52,8 +52,8 @@ function getAllData({
               `,
               variables: {
                 ...variables,
-                first: size,
-                offset: i * size,
+                first: chunkSize,
+                offset: i * chunkSize,
               },
             })
             .then(({ data }) => stream.write({ data, total }));
