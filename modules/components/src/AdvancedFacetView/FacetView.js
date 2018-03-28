@@ -42,6 +42,10 @@ export default class FacetView extends React.Component {
       });
     }
   }
+  shouldComponentUpdate(nextProps, nextState) {
+    //performance optimization
+    return !isEqual(nextProps, this.props);
+  }
   render() {
     const {
       aggregations,
@@ -49,8 +53,6 @@ export default class FacetView extends React.Component {
       onValueChange,
       sqon = null,
       constructEntryId,
-      searchboxSelectionObservable,
-      valueCharacterLimit,
       extendedMapping,
       searchString,
     } = this.props;
