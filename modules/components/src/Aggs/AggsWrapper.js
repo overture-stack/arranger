@@ -2,7 +2,12 @@ import React from 'react';
 import Component from 'react-component-component';
 import './AggregationCard.css';
 
-export default ({ children, collapsible = true, displayName }) => (
+export default ({
+  children,
+  collapsible = true,
+  displayName,
+  additionalOptions,
+}) => (
   <Component initialState={{ isCollapsed: false }}>
     {({ setState, state: { isCollapsed } }) => (
       <div className="aggregation-card">
@@ -19,6 +24,9 @@ export default ({ children, collapsible = true, displayName }) => (
             <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
           )}
         </div>
+        {additionalOptions && (
+          <div className="additional-options">{additionalOptions}</div>
+        )}
         {!isCollapsed && (
           <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>
             {children}
