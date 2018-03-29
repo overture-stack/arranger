@@ -1,5 +1,5 @@
 import through2 from 'through2';
-import { get, flatten, cloneDeep } from 'lodash';
+import { get, flatten } from 'lodash';
 import jsonPath from 'jsonpath';
 
 function getAllValue(data) {
@@ -14,9 +14,8 @@ function getAllValue(data) {
 
 function getValue(row, column) {
   if (column.jsonPath) {
-    // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
     return jsonPath
-      .query(cloneDeep(row), column.jsonPath)
+      .query(row, column.jsonPath)
       .map(getAllValue)
       .reduce((a, b) => a.concat(b), [])
       .join(', ');

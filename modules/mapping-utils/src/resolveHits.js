@@ -36,7 +36,7 @@ let resolveNested = ({ node, nestedFields, parent = '' }) => {
 
 export default type => async (
   obj,
-  { first = 10, offset = 0, filters, score, sort },
+  { first = 10, offset = 0, filters, score, sort, searchAfter },
   { es },
   info,
 ) => {
@@ -73,6 +73,10 @@ export default type => async (
     });
   }
 
+  if (searchAfter) {
+    body.search_after = searchAfter;
+  }
+
   let { hits } = await es.search({
     index: type.index,
     type: type.es_type,
@@ -83,14 +87,17 @@ export default type => async (
     body,
   });
 
-  let nodes = hits.hits.map(x => {
+  let edges = hits.hits.map(x => {
     let source = x._source;
     let nested_nodes = resolveNested({ node: source, nestedFields });
-    return { id: x._id, ...source, ...nested_nodes };
+    return {
+      searchAfter: x.sort || [],
+      node: { id: x._id, ...source, ...nested_nodes },
+    };
   });
 
   return {
-    hits: nodes,
+    edges,
     total: hits.total,
   };
 };

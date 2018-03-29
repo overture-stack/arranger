@@ -1,3 +1,4 @@
+// @flow
 import { get } from 'lodash';
 
 import resolveAggregations from './resolveAggregations';
@@ -49,12 +50,6 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     },
     hits: resolveHits(type),
     aggregations: resolveAggregations(type),
-  },
-  [type.name + 'Connection']: {
-    edges: edges => edges.hits,
-  },
-  [type.name + 'Edge']: {
-    node: node => node,
   },
 });
 

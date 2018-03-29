@@ -1,5 +1,6 @@
 import { PassThrough } from 'stream';
-
+import jsonPath from 'jsonpath';
+import { cloneDeep } from 'lodash';
 import { getProject } from './projects';
 
 function getAllData({
@@ -9,9 +10,13 @@ function getAllData({
   chunkSize = 1000,
   fields = '',
   mock,
+  sort = [],
 }) {
   const stream = new PassThrough({ objectMode: true });
   const project = getProject(projectId);
+  const sortWithId = sort.find(s => s.field === '_id')
+    ? sort
+    : [...sort, { field: '_id' }];
 
   project
     .runQuery({
@@ -32,33 +37,43 @@ function getAllData({
       stream.write({ data: null, total });
       const steps = Array(Math.ceil(total / chunkSize)).fill();
 
-      return Promise.all(
-        steps.map((x, i) => {
-          return project
-            .runQuery({
-              mock,
-              query: `
-                query ($sqon: JSON, $first: Int, $offset: Int) {
-                  ${index} {
-                    hits(first: $first, offset: $offset, filters: $sqon) {
-                      edges {
-                        node {
-                          ${fields}
-                        }
-                      }
+      return steps.reduce(async previous => {
+        const searchAfter =
+          jsonPath.query(
+            (await previous) || {},
+            `$["${index}"].hits.edges[-1:].searchAfter`,
+          )[0] || null;
+
+        const response = await project.runQuery({
+          mock,
+          query: `
+            query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: JSON) {
+              ${index} {
+                hits(first: $first, offset: $offset, filters: $sqon, sort: $sort, searchAfter: $searchAfter) {
+                  edges {
+                    searchAfter
+                    node {
+                      ${fields}
                     }
                   }
                 }
-              `,
-              variables: {
-                ...variables,
-                first: chunkSize,
-                offset: i * chunkSize,
-              },
-            })
-            .then(({ data }) => stream.write({ data, total }));
-        }),
-      );
+              }
+            }
+          `,
+          variables: {
+            ...variables,
+            first: chunkSize,
+            sort: sortWithId,
+            searchAfter,
+          },
+        });
+        // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
+        const data = cloneDeep(response.data);
+
+        stream.write({ data, total });
+
+        return data;
+      }, Promise.resolve());
     })
     .then(() => stream.end());
 
