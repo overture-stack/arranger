@@ -23,7 +23,6 @@ export default ({ total, data, handleChange, onFilterChange }) => (
     allowTogglingColumns={false}
     allowTSVExport={false}
     customTypes={{
-      boolean: props => (props.value ? 'Yes' : 'No'),
       checkbox: props => {
         return (
           <div
@@ -41,7 +40,6 @@ export default ({ total, data, handleChange, onFilterChange }) => (
           </div>
         );
       },
-      component: ({ value: Component }) => <Component />,
       input: props => {
         return (
           <div
@@ -79,7 +77,7 @@ export default ({ total, data, handleChange, onFilterChange }) => (
         },
         {
           show: true,
-          Header: 'Show',
+          Header: 'Default',
           type: 'checkbox',
           sortable: true,
           canChangeShow: true,
