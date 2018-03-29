@@ -1,4 +1,5 @@
 import elasticsearch from 'elasticsearch';
+import express from 'express';
 import { ES_LOG } from '../utils/config';
 import getFields from './getFields';
 import addType from './addType';
@@ -12,9 +13,10 @@ import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
 
-export default ({ app, io }) => {
+export default ({ io }) => {
+  const router = express.Router();
   // create es client
-  app.use('/projects', async (req, res, next) => {
+  router.use('/', async (req, res, next) => {
     let { eshost } = req.body;
     let host = eshost || req.get('ES_HOST');
     req.context = req.context || {};
@@ -30,18 +32,17 @@ export default ({ app, io }) => {
     next();
   });
 
-  app.use(
-    '/projects/:id/types/:index/fields/:field/update',
-    updateField({ io }),
-  );
-  app.use('/projects/:id/types/:index/delete', deleteType);
-  app.use('/projects/:id/types/:index/fields', getFields);
-  app.use('/projects/:id/types/add', addType);
-  app.use('/projects/:id/spinUp', spinUp({ io }));
-  app.use('/projects/:id/teardown', teardown);
-  app.use('/projects/:id/types', getTypes);
-  app.use('/projects/:id/delete', deleteProject);
-  app.use('/projects/:id/update', updateProject);
-  app.use('/projects/add', addProject);
-  app.use('/projects', getProjects);
+  router.use('/:id/types/:index/fields/:field/update', updateField({ io }));
+  router.use('/:id/types/:index/delete', deleteType);
+  router.use('/:id/types/:index/fields', getFields);
+  router.use('/:id/types/add', addType);
+  router.use('/:id/spinUp', spinUp({ io }));
+  router.use('/:id/teardown', teardown);
+  router.use('/:id/types', getTypes);
+  router.use('/:id/delete', deleteProject);
+  router.use('/:id/update', updateProject);
+  router.use('/add', addProject);
+  router.use('/', getProjects);
+
+  return router;
 };

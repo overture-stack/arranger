@@ -1,11 +1,7 @@
 import mapHits from '../utils/mapHits';
 
-export default async (req, res) => {
-  let { es } = req.context;
-
-  let projects = [];
-
-  let arrangerconfig = {
+export async function fetchProjects({ es }) {
+  let arrangerConfig = {
     projectsIndex: {
       index: 'arranger-projects',
       type: 'arranger-projects',
@@ -14,20 +10,21 @@ export default async (req, res) => {
   };
 
   try {
-    projects = await es.search(arrangerconfig.projectsIndex);
-  } catch (error) {
+    const projects = await es.search(arrangerConfig.projectsIndex);
+    return {
+      projects: mapHits(projects),
+      total: projects.hits.total,
+    };
+  } catch (searchError) {
     try {
-      await es.indices.create({
-        index: arrangerconfig.projectsIndex.index,
-      });
-      return res.json({ projects });
-    } catch (error) {
-      return res.json({ error: error.message });
+      await es.indices.create({ index: arrangerConfig.projectsIndex.index });
+      return { projects: [], total: 0 };
+    } catch (createError) {
+      return { error: createError.message };
     }
   }
+}
 
-  return res.json({
-    projects: mapHits(projects),
-    total: projects.hits.total,
-  });
+export default async (req, res) => {
+  res.send(await fetchProjects(req.context));
 };

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('babel-polyfill');
 require('dotenv').config();
 require('@babel/register')({
   presets: ['@babel/env'],
@@ -8,5 +9,4 @@ require('@babel/register')({
   ],
 });
 
-let server = require('./src/index').default();
-server.listen();
+require('./src').App();

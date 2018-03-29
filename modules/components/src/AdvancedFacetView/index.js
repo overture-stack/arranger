@@ -2,14 +2,11 @@ import React from 'react';
 import { keys } from 'lodash';
 import { Subject } from 'rxjs';
 import { truncate } from 'lodash';
-import mappingUtils from '@arranger/mapping-utils';
 import NestedTreeView from '../NestedTreeView';
-import SQONView, { Bubble, Field, Op, Value } from '../SQONView';
+import SQONView, { Bubble, Field, Value } from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
-import State from '../State';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
-import Input from '../Input';
 import SearchBox from './SearchBox';
 import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
 
@@ -22,12 +19,7 @@ export default class AdvancedFacetView extends React.Component {
     };
   }
   fieldMappingFromPath = path => {
-    const {
-      elasticMapping = {},
-      extendedMapping = [],
-      aggregations = {},
-      sqon = {},
-    } = this.props;
+    const { elasticMapping = {} } = this.props;
     return (
       path
         .split('.')
