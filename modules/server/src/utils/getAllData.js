@@ -47,7 +47,7 @@ function getAllData({
         const response = await project.runQuery({
           mock,
           query: `
-            query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: String) {
+            query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: JSON) {
               ${index} {
                 hits(first: $first, offset: $offset, filters: $sqon, sort: $sort, searchAfter: $searchAfter) {
                   edges {

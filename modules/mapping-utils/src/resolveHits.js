@@ -74,7 +74,7 @@ export default type => async (
   }
 
   if (searchAfter) {
-    body.search_after = JSON.parse(searchAfter);
+    body.search_after = searchAfter;
   }
 
   let { hits } = await es.search({
@@ -90,9 +90,8 @@ export default type => async (
   let edges = hits.hits.map(x => {
     let source = x._source;
     let nested_nodes = resolveNested({ node: source, nestedFields });
-
     return {
-      searchAfter: JSON.stringify(x.sort || []),
+      searchAfter: x.sort || [],
       node: { id: x._id, ...source, ...nested_nodes },
     };
   });

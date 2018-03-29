@@ -19,7 +19,7 @@ export default ({ type, fields = '' }) => `
       after: String
       first: Int
       last: Int
-      searchAfter: String
+      searchAfter: JSON
     ): ${type.name}Connection
 
     aggregations(
@@ -40,7 +40,7 @@ export default ({ type, fields = '' }) => `
   }
 
   type ${type.name}Edge {
-    searchAfter: String
+    searchAfter: JSON
     node: ${type.name}Node
   }
 
