@@ -8,12 +8,14 @@ import SQONView, { Bubble, Field, Value } from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
-import SearchBox from './SearchBox';
+import Input from '../Input';
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
 } from './utils.js';
+import TextInput from '../Input';
+import SearchIcon from 'react-icons/lib/fa/search';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -22,8 +24,9 @@ export default class AdvancedFacetView extends React.Component {
     this.state = {
       selectedPath: null,
       withValueOnly: true,
-      searchBoxValue: null,
+      searchTerm: null,
       displayTreeData: null,
+      searchBoxDisplayValue: '',
     };
   }
   fieldMappingFromPath = path => {
@@ -72,6 +75,24 @@ export default class AdvancedFacetView extends React.Component {
     }
   }
 
+  setSearchTerm = debounce(
+    value =>
+      this.setState({
+        searchTerm: value,
+      }),
+    500,
+  );
+
+  handleSearchboxValueChange = value =>
+    this.setState(
+      {
+        searchBoxDisplayValue: value,
+      },
+      () => {
+        this.setSearchTerm(this.state.searchBoxDisplayValue);
+      },
+    );
+
   render() {
     const {
       elasticMapping = {},
@@ -84,8 +105,9 @@ export default class AdvancedFacetView extends React.Component {
     const {
       selectedPath,
       withValueOnly,
-      searchBoxValue,
+      searchTerm,
       displayTreeData,
+      searchBoxDisplayValue,
     } = this.state;
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
@@ -155,7 +177,7 @@ export default class AdvancedFacetView extends React.Component {
                   </span>
                 </div>
                 <NestedTreeView
-                  searchString={searchBoxValue}
+                  searchString={searchTerm}
                   defaultCollapsed={({ depth }) => depth !== 0}
                   dataSource={
                     withValueOnly
@@ -176,21 +198,15 @@ export default class AdvancedFacetView extends React.Component {
             </div>
             <div className={`panel facetsPanel`}>
               <div className={`panelHeading`}>
-                <SearchBox
-                  {...{
-                    withValueOnly,
-                    elasticMapping,
-                    extendedMapping,
-                    aggregations,
-                    constructEntryId: this.constructFilterId,
-                    onValueChange: debounce(
-                      ({ value }) =>
-                        this.setState({
-                          searchBoxValue: value,
-                        }),
-                      500,
-                    ),
-                  }}
+                <TextInput
+                  icon={<SearchIcon />}
+                  className="filterInput"
+                  type="text"
+                  placeholder="Filter"
+                  value={searchBoxDisplayValue || ''}
+                  onChange={e =>
+                    this.handleSearchboxValueChange(e.target.value)
+                  }
                 />
               </div>
               <div className={`facets`}>
@@ -202,7 +218,7 @@ export default class AdvancedFacetView extends React.Component {
                   sqon={sqon}
                   onValueChange={this.handleFacetViewValueChange}
                   aggregations={aggregations}
-                  searchString={searchBoxValue}
+                  searchString={searchTerm}
                   displayTreeData={
                     withValueOnly
                       ? filterOutNonValue({
