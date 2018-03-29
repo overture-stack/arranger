@@ -142,7 +142,7 @@ div {
   color: #404c9a;
 }
 .aggregation-card .title-wrapper,
-.aggregation-card .additional-options {
+.aggregation-card .filter {
   border-bottom: solid 1px #e0e1e6;
 }
 .aggregation-card .title-wrapper.collapsed {
@@ -155,7 +155,7 @@ div {
   font-size: 0.9rem;
   font-family: 'Open Sans', sans-serif;
 }
-.aggregation-card .additional-options {
+.aggregation-card .filter {
   padding: 7px 0;
   display: flex;
   justify-content: center;
@@ -210,7 +210,7 @@ div {
 
 .aggregation-card .bucket-item,
 .aggregation-card .input-range__label,
-.aggregation-card .additional-options {
+.aggregation-card .filter {
   font-size: 0.8rem;
 }
 

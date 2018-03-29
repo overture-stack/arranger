@@ -90,20 +90,22 @@ class TermAggs extends React.Component {
     return (
       <AggsWrapper
         {...{ displayName, collapsible }}
-        additionalOptions={
-          showExcludeOption && (
-            <IncludeExcludeButton
-              {...{
-                dotField,
-                isActive,
-                isExclude,
-                handleIncludeExcludeChange,
-                buckets: decoratedBuckets,
-                updateIsExclude: x => this.setState({ isExclude: x }),
-              }}
-            />
-          )
-        }
+        filters={[
+          ...(showExcludeOption
+            ? [
+                <IncludeExcludeButton
+                  {...{
+                    dotField,
+                    isActive,
+                    isExclude,
+                    handleIncludeExcludeChange,
+                    buckets: decoratedBuckets,
+                    updateIsExclude: x => this.setState({ isExclude: x }),
+                  }}
+                />,
+              ]
+            : []),
+        ]}
       >
         <div className={`bucket`}>
           {orderBy(decoratedBuckets, 'doc_count', 'desc')

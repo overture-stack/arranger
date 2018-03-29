@@ -5,7 +5,7 @@
   align-items: center;
   cursor: pointer;
 }
-.aggregation-card .additional-options {
+.aggregation-card .filter {
   display: flex;
   flex-direction: row;
 }
