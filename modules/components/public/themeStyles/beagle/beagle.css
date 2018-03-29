@@ -140,6 +140,9 @@ div {
 .aggregation-card .title-wrapper {
   padding-bottom: 7px;
   color: #404c9a;
+}
+.aggregation-card .title-wrapper,
+.aggregation-card .filter {
   border-bottom: solid 1px #e0e1e6;
 }
 .aggregation-card .title-wrapper.collapsed {
@@ -151,6 +154,17 @@ div {
   font-weight: bolder;
   font-size: 0.9rem;
   font-family: 'Open Sans', sans-serif;
+}
+.aggregation-card .filter {
+  padding: 7px 0;
+  display: flex;
+  justify-content: center;
+}
+.aggregation-card input[type='checkbox'] {
+  pointer-events: none;
+  margin-right: 5px;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 .aggregation-card .bucket {
   padding-top: 5px;
@@ -195,7 +209,8 @@ div {
 }
 
 .aggregation-card .bucket-item,
-.aggregation-card .input-range__label {
+.aggregation-card .input-range__label,
+.aggregation-card .filter {
   font-size: 0.8rem;
 }
 
@@ -435,11 +450,11 @@ div {
   padding-right: 10px;
 }
 
-.tableToolbar .group>:first-child {
+.tableToolbar .group > :first-child {
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
 }
-.tableToolbar .group>:last-child {
+.tableToolbar .group > :last-child {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
 }

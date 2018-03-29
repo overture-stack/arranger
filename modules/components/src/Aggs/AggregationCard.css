@@ -5,6 +5,10 @@
   align-items: center;
   cursor: pointer;
 }
+.aggregation-card .filter {
+  display: flex;
+  flex-direction: row;
+}
 .aggregation-card .arrow:after {
   content: '›';
 }
