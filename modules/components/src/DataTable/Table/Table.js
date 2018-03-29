@@ -118,6 +118,7 @@ class DataTable extends React.Component {
       propsData,
       loading: propsLoading,
       style,
+      maxPagesOptions,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selectedTableRows, pages, loading } = this.state;
@@ -152,7 +153,9 @@ class DataTable extends React.Component {
         columns={columns}
         defaultPageSize={defaultPageSize}
         className="-striped -highlight"
-        PaginationComponent={CustomPagination}
+        PaginationComponent={props => (
+          <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
+        )}
         {...checkboxProps}
         {...fetchFromServerProps}
       />

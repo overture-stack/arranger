@@ -32,6 +32,7 @@ class DataTable extends React.Component {
       onColumnsChange = () => {},
       columnDropdownText,
       exportTSVText,
+      maxPagesOptions,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -65,6 +66,7 @@ class DataTable extends React.Component {
           onSortedChange={sort => this.setState({ sort, page: 0 })}
           defaultPageSize={pageSize}
           loading={loading}
+          maxPagesOptions={maxPagesOptions}
         />
       </>
     );
