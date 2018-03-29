@@ -9,6 +9,7 @@ import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
 import Input from '../Input';
+import Component from 'react-component-component';
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
@@ -83,16 +84,6 @@ export default class AdvancedFacetView extends React.Component {
       }),
     500,
   );
-
-  handleSearchboxValueChange = value =>
-    this.setState(
-      {
-        searchBoxDisplayValue: value,
-      },
-      () => {
-        this.setSearchTerm(this.state.searchBoxDisplayValue);
-      },
-    );
 
   render() {
     const {
@@ -199,16 +190,24 @@ export default class AdvancedFacetView extends React.Component {
             </div>
             <div className={`panel facetsPanel`}>
               <div className={`panelHeading`}>
-                <TextInput
-                  icon={<SearchIcon />}
-                  className="filterInput"
-                  type="text"
-                  placeholder="Filter"
-                  value={searchBoxDisplayValue || ''}
-                  onChange={e =>
-                    this.handleSearchboxValueChange(e.target.value)
-                  }
-                />
+                {/* using a thin local state here for rendering performance optimization */}
+                <Component initialState={{ value: searchTerm || '' }}>
+                  {({ state: { value }, setState }) => (
+                    <TextInput
+                      icon={<SearchIcon />}
+                      className="filterInput"
+                      type="text"
+                      placeholder="Filter"
+                      value={value}
+                      onChange={e => {
+                        const value = e.target.value;
+                        setState({ value }, () => {
+                          this.setSearchTerm(value);
+                        });
+                      }}
+                    />
+                  )}
+                </Component>
               </div>
               <div className={`facets`}>
                 <FacetView
