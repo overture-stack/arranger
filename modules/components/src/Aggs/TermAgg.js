@@ -1,5 +1,5 @@
 import React from 'react';
-import { orderBy, truncate, isEqual } from 'lodash';
+import { orderBy, truncate, isEqual, isEmpty } from 'lodash';
 
 import './AggregationCard.css';
 
@@ -113,7 +113,7 @@ class TermAggs extends React.Component {
       <AggsWrapper
         {...{ displayName, WrapperComponent, collapsible }}
         filters={[
-          ...(showExcludeOption
+          ...(showExcludeOption && !isEmpty(decoratedBuckets)
             ? [
                 <IncludeExcludeButton
                   {...{

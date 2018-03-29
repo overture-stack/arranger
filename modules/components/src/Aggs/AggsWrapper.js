@@ -30,7 +30,8 @@ export default ({
               <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
             )}
           </div>
-          {filters &&
+          {!isCollapsed &&
+            filters &&
             filters.map((x, i) => (
               <div key={i} className="filter">
                 {x}
