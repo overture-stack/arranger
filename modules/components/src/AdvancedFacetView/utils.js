@@ -101,13 +101,13 @@ const filterDisplayTreeDataBySearchTerm = ({
   searchTerm,
   aggregations,
 }) => {
-  const shouldBeIncluded = node => {
-    const inTitle = node.title.match(new RegExp(searchTerm, 'i'));
-    const inBuckets = aggregations[node.path]?.buckets?.some(
+  const shouldBeIncluded = ({ title, path, children }) => {
+    const inTitle = title.match(new RegExp(searchTerm, 'i'));
+    const inBuckets = aggregations[path]?.buckets?.some(
       ({ key_as_string, key }) =>
         (key_as_string || key).match(new RegExp(searchTerm, 'i')),
     );
-    const inChildren = node.children && node.children.some(shouldBeIncluded);
+    const inChildren = children && children.some(shouldBeIncluded);
     return inTitle || inBuckets || inChildren;
   };
 
