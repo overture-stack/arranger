@@ -8,6 +8,10 @@
   flex-direction: column;
 }
 
+.advancedFacetViewWrapper .loadingScreen {
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .facetViewWrapper {
   display: flex;
   flex-direction: row;
