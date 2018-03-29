@@ -6,6 +6,7 @@
 .tree-view_item {
   /* immediate child of .tree-view, for styling convenience */
   pointer-events: none;
+  position: relative;
 }
 
 .tree-view_item .label {
@@ -14,7 +15,7 @@
 
 /* style for the children nodes container */
 .tree-view_children {
-  margin-left: 16px;
+  /* padding-left: 16px; */
 }
 
 .tree-view_children-collapsed {
@@ -23,40 +24,55 @@
 
 .tree-view_arrow {
   cursor: pointer;
-  margin-right: 6px;
   display: inline-block;
   user-select: none;
   pointer-events: all;
+  position: absolute;
+  margin-left: 5px;
+  top: 4px;
+  transform: rotate(90deg);
 }
 
 .tree-view_arrow:after {
-  content: '▾';
+  font-size: 17px;
+  content: '›';
 }
 
 /* rotate the triangle to close it */
 .tree-view_arrow-collapsed {
-  transform: rotate(-90deg);
+  transform: rotate(0deg);
 }
 
-.tree-view .header {
-  color: #2b388f;
-}
-
-.tree-view_children.leaf {
-  margin-top: 5px;
-  margin-bottom: 5px;
+.NestedTreeViewNode {
+  padding-top: 7px;
+  padding-bottom: 7px;
   cursor: pointer;
+  font-size: 13px;
 }
-.tree-view_children.leaf.selected {
-  background: #e7e8ed;
+
+.NestedTreeViewNode.selected {
+  background: #e7e8ed73;
 }
-.tree-view_children.leaf.header {
-  color: #2b388f;
-  padding-left: 3px;
+
+.NestedTreeViewNode.nested .label {
+  color: #404c9a;
 }
-.tree-view_children.leaf.selected {
-  background: #e7e8ed;
+
+.NestedTreeViewNode.leaf {
+  color: #a42c90;
 }
-.tree-view_item.selected {
-  background: #e7e8ed;
+
+.NestedTreeViewNode.depth_0 {
+  background-color: #e7e8ed;
+  text-transform: uppercase;
+  color: #404c9a;
+}
+
+.NestedTreeViewNode.depth_0 .tree-view_arrow {
+  position: absolute;
+  right: 20px;
+}
+
+.NestedTreeViewNode.depth_1 {
+  border-top: solid 1px #e0e1e6;
 }

@@ -8,7 +8,11 @@ import './AdvancedFacetView.css';
 import FacetView from './FacetView';
 import { replaceSQON, toggleSQON } from '../SQONView/utils';
 import SearchBox from './SearchBox';
-import { filterOutNonValue, injectExtensionToElasticMapping } from './utils.js';
+import {
+  filterOutNonValue,
+  injectExtensionToElasticMapping,
+  orderDisplayTreeData,
+} from './utils.js';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -16,6 +20,7 @@ export default class AdvancedFacetView extends React.Component {
     this.state = {
       selectedPath: null,
       withValueOnly: true,
+      searchBoxValue: null,
     };
   }
   fieldMappingFromPath = path => {
@@ -43,10 +48,9 @@ export default class AdvancedFacetView extends React.Component {
       onSqonFieldChange = () => {},
       valueCharacterLimit = 30,
     } = this.props;
-    const { selectedPath, withValueOnly } = this.state;
-    const displayTreeData = injectExtensionToElasticMapping(
-      elasticMapping,
-      extendedMapping,
+    const { selectedPath, withValueOnly, searchBoxValue } = this.state;
+    const displayTreeData = orderDisplayTreeData(
+      injectExtensionToElasticMapping(elasticMapping, extendedMapping),
     );
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath(path);
@@ -104,6 +108,10 @@ export default class AdvancedFacetView extends React.Component {
             extendedMapping,
             aggregations,
             constructEntryId: this.constructFilterId,
+            onValueChange: ({ value }) =>
+              this.setState({
+                searchBoxValue: value,
+              }),
             onFieldSelect: ({ field, value }) => {
               scrollFacetViewToPath(field);
               this.setState({ selectedPath: field });
@@ -173,6 +181,7 @@ export default class AdvancedFacetView extends React.Component {
             </div>
             <div className="treeView">
               <NestedTreeView
+                searchString={searchBoxValue}
                 dataSource={
                   withValueOnly
                     ? filterOutNonValue({

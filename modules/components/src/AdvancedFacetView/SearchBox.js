@@ -196,6 +196,7 @@ export default class extends React.Component {
         extendedMapping,
         aggregations,
         onFieldSelect = () => {},
+        onValueChange = () => {},
       },
       state: { currentValue, isDropdownShown, highlightedField },
       getCombinedFilteredList,
@@ -224,60 +225,17 @@ export default class extends React.Component {
               },
               () => {
                 const newFilteredList = getCombinedFilteredList();
-                this.setState({
-                  highlightedField: newFilteredList?.[0]?.field,
-                });
+                this.setState(
+                  {
+                    highlightedField: newFilteredList?.[0]?.field,
+                  },
+                  () => onValueChange({ value: this.state.currentValue }),
+                );
               },
             )
           }
           onKeyDown={handleKeyPress}
         />
-        {filteredList?.length && isDropdownShown ? (
-          <div className={`resultList shown`}>
-            {filteredList?.map(
-              ({ displayName: fieldDisplayName, value, field, id }) => {
-                return (
-                  <div
-                    key={id}
-                    ref={el => (this.dropdownRefs[id] = el)}
-                    onMouseEnter={e => this.setState({ highlightedField: id })}
-                    className={`resultItem ${
-                      highlightedField === id ? 'highlighted' : ''
-                    }`}
-                    onClick={() => {
-                      this.setState({
-                        currentValue: value || fieldDisplayName,
-                      });
-                      onFieldSelect({ field, value });
-                    }}
-                  >
-                    {value ? (
-                      <>
-                        <span className="field">{`${fieldDisplayName}: `}</span>
-                        <span className="title">
-                          <TextHighlight
-                            content={value}
-                            highlightText={currentValue}
-                          />
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="title">
-                          <TextHighlight
-                            content={fieldDisplayName}
-                            highlightText={currentValue}
-                          />
-                        </span>
-                        <span className="field">{`(${field})`}</span>
-                      </>
-                    )}
-                  </div>
-                );
-              },
-            )}
-          </div>
-        ) : null}
       </div>
     );
   }

@@ -10,6 +10,7 @@ class TreeView extends React.PureComponent {
     itemClassName: PropTypes.string,
     childrenClassName: PropTypes.string,
     treeViewClassName: PropTypes.string,
+    treeViewClassName: PropTypes.func,
   };
 
   constructor(props) {
@@ -18,15 +19,14 @@ class TreeView extends React.PureComponent {
     this.state = {
       collapsed: props.defaultCollapsed,
     };
-    this.handleClick = this.handleClick.bind(this);
   }
 
-  handleClick(...args) {
+  handleClick = (...args) => {
     this.setState({ collapsed: !this.state.collapsed });
     if (this.props.onClick) {
       this.props.onClick(...args);
     }
-  }
+  };
 
   render() {
     const {
@@ -38,6 +38,7 @@ class TreeView extends React.PureComponent {
       nodeLabel,
       children,
       defaultCollapsed,
+      renderArrow = ({ props, state }) => {},
       ...rest
     } = this.props;
 
@@ -48,7 +49,11 @@ class TreeView extends React.PureComponent {
       containerClassName += ' tree-view_children-collapsed';
     }
 
-    const arrow = (
+    const arrow = renderArrow({
+      props: { ...rest, className: className + ' ' + arrowClassName },
+      state: this.state,
+      handleClick: this.handleClick,
+    }) || (
       <div
         {...rest}
         className={className + ' ' + arrowClassName}
