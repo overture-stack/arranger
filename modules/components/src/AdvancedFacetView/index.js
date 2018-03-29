@@ -13,34 +13,10 @@ import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
+  filterDisplayTreeDataBySearchTerm,
 } from './utils.js';
 import TextInput from '../Input';
 import SearchIcon from 'react-icons/lib/fa/search';
-
-const filterDisplayTreeDataBySearchTerm = ({
-  displayTree,
-  searchTerm,
-  aggregations,
-}) => {
-  const shouldBeIncluded = node => {
-    console.log(aggregations);
-    const output =
-      node.title.match(new RegExp(searchTerm, 'i')) ||
-      (node.children && node.children.some(shouldBeIncluded));
-    return output;
-  };
-
-  return searchTerm && searchTerm.length
-    ? displayTree?.filter(shouldBeIncluded).map(({ children, ...rest }) => ({
-        ...rest,
-        children: filterDisplayTreeDataBySearchTerm({
-          displayTree: children,
-          searchTerm,
-          aggregations,
-        }),
-      }))
-    : displayTree;
-};
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
