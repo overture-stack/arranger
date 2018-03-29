@@ -17,6 +17,31 @@ import {
 import TextInput from '../Input';
 import SearchIcon from 'react-icons/lib/fa/search';
 
+const filterDisplayTreeDataBySearchTerm = ({
+  displayTree,
+  searchTerm,
+  aggregations,
+}) => {
+  const shouldBeIncluded = node => {
+    console.log(aggregations);
+    const output =
+      node.title.match(new RegExp(searchTerm, 'i')) ||
+      (node.children && node.children.some(shouldBeIncluded));
+    return output;
+  };
+
+  return searchTerm && searchTerm.length
+    ? displayTree?.filter(shouldBeIncluded).map(({ children, ...rest }) => ({
+        ...rest,
+        children: filterDisplayTreeDataBySearchTerm({
+          displayTree: children,
+          searchTerm,
+          aggregations,
+        }),
+      }))
+    : displayTree;
+};
+
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
@@ -112,6 +137,14 @@ export default class AdvancedFacetView extends React.Component {
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
     };
+    const visibleDisplayTreeData = withValueOnly
+      ? filterOutNonValue({
+          extendedMapping,
+          displayTreeData,
+          aggregations,
+        }).displayTreeDataWithValue
+      : displayTreeData;
+
     return (
       displayTreeData && (
         <div className="advancedFacetViewWrapper">
@@ -179,15 +212,7 @@ export default class AdvancedFacetView extends React.Component {
                 <NestedTreeView
                   searchString={searchTerm}
                   defaultCollapsed={({ depth }) => depth !== 0}
-                  dataSource={
-                    withValueOnly
-                      ? filterOutNonValue({
-                          extendedMapping,
-                          displayTreeData,
-                          aggregations,
-                        }).displayTreeDataWithValue
-                      : displayTreeData
-                  }
+                  dataSource={visibleDisplayTreeData}
                   selectedPath={selectedPath}
                   onLeafSelect={path => {
                     scrollFacetViewToPath(path);
@@ -219,14 +244,11 @@ export default class AdvancedFacetView extends React.Component {
                   onValueChange={this.handleFacetViewValueChange}
                   aggregations={aggregations}
                   searchString={searchTerm}
-                  displayTreeData={
-                    withValueOnly
-                      ? filterOutNonValue({
-                          displayTreeData,
-                          aggregations,
-                        }).displayTreeDataWithValue
-                      : displayTreeData
-                  }
+                  displayTreeData={filterDisplayTreeDataBySearchTerm({
+                    displayTree: visibleDisplayTreeData,
+                    aggregations,
+                    searchTerm: searchTerm,
+                  })}
                 />
               </div>
             </div>
