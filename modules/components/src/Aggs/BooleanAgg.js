@@ -19,18 +19,30 @@ export default ({
   WrapperComponent,
   displayName,
   searchString,
+  valueKeys = {
+    true: 'true',
+    false: 'false',
+  },
+  displayKeys = {
+    true: 'Yes',
+    false: 'No',
+  },
   ...rest
 }) => {
-  const trueBucket = buckets.find(({ key }) => key === '1');
-  const falseBucket = buckets.find(({ key }) => key === '0');
+  const trueBucket = buckets.find(
+    ({ key_as_string }) => key_as_string === valueKeys.true,
+  );
+  const falseBucket = buckets.find(
+    ({ key_as_string }) => key_as_string === valueKeys.false,
+  );
   const dotField = field.replace(/__/g, '.');
 
   const isTrueActive = isActive({
-    value: 'true',
+    value: valueKeys.true,
     field: dotField,
   });
   const isFalseActive = isActive({
-    value: 'false',
+    value: valueKeys.false,
     field: dotField,
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
@@ -47,7 +59,7 @@ export default ({
                 op: 'in',
                 content: {
                   field: dotField,
-                  value: [String(isTrue)],
+                  value: [valueKeys[isTrue ? 'true' : 'false']],
                 },
               },
             ],
@@ -79,7 +91,10 @@ export default ({
           }`}
           onClick={() => handleTrueFalseClick(true)}
         >
-          <TextHighlight content={'Yes'} highlightText={searchString} />
+          <TextHighlight
+            content={displayKeys.true}
+            highlightText={searchString}
+          />
           {trueBucket && (
             <span
               className={`bucket-count`}
@@ -97,7 +112,10 @@ export default ({
           }`}
           onClick={() => handleTrueFalseClick(false)}
         >
-          <TextHighlight content={'No'} highlightText={searchString} />
+          <TextHighlight
+            content={displayKeys.false}
+            highlightText={searchString}
+          />
           {falseBucket && (
             <span
               className={`bucket-count`}
