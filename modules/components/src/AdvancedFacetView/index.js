@@ -18,20 +18,8 @@ import {
 } from './utils.js';
 import TextInput from '../Input';
 import FaFilter from 'react-icons/lib/fa/filter';
-import Spinner from 'react-spinkit';
+import LoadingScreen from '../LoadingScreen';
 import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
-
-const spinner = (
-  <Spinner
-    fadeIn="none"
-    name="circle"
-    color="#a9adc0"
-    style={{
-      width: 30,
-      height: 30,
-    }}
-  />
-);
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -247,7 +235,6 @@ export default class AdvancedFacetView extends React.Component {
                         type="text"
                         placeholder="Filter"
                         value={value || ''}
-                        showClearButton={true}
                         onChange={({ target: { value } }) => {
                           setState({ value }, () => {
                             this.setSearchTerm(value);
@@ -287,22 +274,7 @@ export default class AdvancedFacetView extends React.Component {
             </div>
           </>
         )}
-        {isLoading && (
-          <div
-            className={`loadingScreen ${css`
-              position: absolute;
-              left: 0px;
-              right: 0px;
-              top: 0px;
-              bottom: 0px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            `}`}
-          >
-            {spinner}
-          </div>
-        )}
+        {isLoading && <LoadingScreen />}
       </div>
     );
   }
