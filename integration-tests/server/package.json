@@ -5,7 +5,7 @@
     "test": "mocha --require @babel/register"
   },
   "dependencies": {
-    "@arranger/server": "^0.3.0",
+    "@arranger/server": "^0.3.1",
     "body-parser": "^1.18.2",
     "elasticsearch": "^14.0.0"
   },
@@ -19,5 +19,5 @@
     "mocha": "^5.0.4",
     "regenerator-runtime": "^0.11.1"
   },
-  "version": "0.3.0"
+  "version": "0.3.1"
 }
