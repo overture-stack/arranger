@@ -19,6 +19,7 @@ import {
 import TextInput from '../Input';
 import FaFilter from 'react-icons/lib/fa/filter';
 import Spinner from 'react-spinkit';
+import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
 
 const spinner = (
   <Spinner
@@ -41,7 +42,6 @@ export default class AdvancedFacetView extends React.Component {
       withValueOnly: true,
       searchTerm: null,
       displayTreeData: null,
-      searchBoxDisplayValue: '',
       isLoading: true,
     };
   }
@@ -135,7 +135,6 @@ export default class AdvancedFacetView extends React.Component {
       withValueOnly,
       searchTerm,
       displayTreeData,
-      searchBoxDisplayValue,
       isLoading,
     } = this.state;
     const scrollFacetViewToPath = path => {
@@ -239,10 +238,22 @@ export default class AdvancedFacetView extends React.Component {
                     {({ state: { value }, setState }) => (
                       <TextInput
                         icon={<FaFilter />}
+                        rightIcon={
+                          <FaTimesCircleO
+                            onClick={() => {
+                              setState({ value: null }, () => {
+                                this.setState({
+                                  searchTerm: null,
+                                });
+                              });
+                            }}
+                          />
+                        }
                         className="filterInput"
                         type="text"
                         placeholder="Filter"
-                        value={value}
+                        value={value || ''}
+                        showClearButton={true}
                         onChange={e => {
                           const value = e.target.value;
                           setState({ value }, () => {
