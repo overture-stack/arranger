@@ -167,7 +167,7 @@ storiesOf('Portal', module).add('Portal', () => (
                 <>
                   <DetectNewVersion {...props} />
                   <DemoHeader update={update} />
-                  <Portal {...{ ...props, graphqlField: index, projectId }} />
+                  <Portal {...{ ...props, graphqlField, projectId }} />
                 </>
               );
             }}
