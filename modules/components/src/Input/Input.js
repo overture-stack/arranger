@@ -24,6 +24,7 @@ export default props => (
           style={{ border: 'none', flex: 1 }}
           {...omit(props, 'style')}
         />
+        <span className="inputRightIcon">{props.rightIcon}</span>
       </div>
     )}
   />

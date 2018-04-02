@@ -329,6 +329,10 @@ div {
   margin-right: 10px;
   color: #a9adc0;
 }
+.inputWrapper .inputRightIcon {
+  color: #a9adc0;
+  font-size: 20px;
+}
 .inputWrapper {
   background: white;
   border-radius: 10px;
