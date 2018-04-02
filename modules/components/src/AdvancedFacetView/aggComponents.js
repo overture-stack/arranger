@@ -48,9 +48,9 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
-    handleValueClick={({ generateNextSQON }) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
+    handleValueClick={({ generateNextSQON }) => {
+      onValueChange({ sqon: generateNextSQON(sqon) });
+    }}
     {...rest}
   />
 );
