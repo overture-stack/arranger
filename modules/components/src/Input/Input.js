@@ -3,13 +3,13 @@ import React from 'react';
 import State from '../State';
 import './Input.css';
 
-export default props => (
+export default ({ style, icon, rightIcon, ...rest }) => (
   <State
     initial={{ isFocused: false }}
     render={({ update, isFocused }) => (
       <div
         style={{
-          ...props.style,
+          ...style,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -17,14 +17,14 @@ export default props => (
         }}
         className={`inputWrapper ${isFocused ? 'focused' : ''}`}
       >
-        <span className="inputIcon">{props.icon}</span>
+        <span className="inputIcon">{icon}</span>
         <input
           onFocus={() => update({ isFocused: true })}
           onBlur={() => update({ isFocused: false })}
           style={{ border: 'none', flex: 1 }}
-          {...omit(props, 'style')}
+          {...rest}
         />
-        <span className="inputRightIcon">{props.rightIcon}</span>
+        <span className="inputRightIcon">{rightIcon}</span>
       </div>
     )}
   />
