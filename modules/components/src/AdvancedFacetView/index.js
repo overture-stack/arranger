@@ -17,7 +17,7 @@ import {
   filterDisplayTreeDataBySearchTerm,
 } from './utils.js';
 import TextInput from '../Input';
-import SearchIcon from 'react-icons/lib/fa/search';
+import FaFilter from 'react-icons/lib/fa/filter';
 import Spinner from 'react-spinkit';
 
 const spinner = (
@@ -238,7 +238,7 @@ export default class AdvancedFacetView extends React.Component {
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
                       <TextInput
-                        icon={<SearchIcon />}
+                        icon={<FaFilter />}
                         className="filterInput"
                         type="text"
                         placeholder="Filter"
