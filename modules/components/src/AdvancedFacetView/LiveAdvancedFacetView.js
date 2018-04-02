@@ -71,7 +71,7 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
     variables: { sqon },
     ...fetchConfig,
   }).then(data => ({
-    aggregations: Object.keys(data[index].aggregations).reduce(
+    aggregations: Object.keys(data[index].aggregations || {}).reduce(
       (agg, key) => ({
         ...agg,
         [serializeToPath(key)]: data[index].aggregations[key],
@@ -121,7 +121,7 @@ const removeFieldTypesFromMapping = ({
   return output;
 };
 
-const defaultFieldTypesToExclude = ['id', 'text', 'date'];
+const defaultFieldTypesToExclude = ['id', 'text'];
 
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
@@ -191,6 +191,7 @@ export default class LiveAdvancedFacetView extends React.Component {
         aggregations={this.state.aggregations}
         onSqonFieldChange={this.onSqonFieldChange}
         sqon={this.state.sqon}
+        statComponent={this.props.statComponent}
       />
     );
   }

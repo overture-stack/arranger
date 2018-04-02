@@ -96,9 +96,37 @@ const orderDisplayTreeData = displayTreeData => [
   ),
 ];
 
+const filterDisplayTreeDataBySearchTerm = ({
+  displayTree,
+  searchTerm,
+  aggregations,
+}) => {
+  const shouldBeIncluded = ({ title, path, children }) => {
+    const inTitle = title.match(new RegExp(searchTerm, 'i'));
+    const inBuckets = aggregations[path]?.buckets?.some(
+      ({ key_as_string, key }) =>
+        (key_as_string || key).match(new RegExp(searchTerm, 'i')),
+    );
+    const inChildren = children && children.some(shouldBeIncluded);
+    return inTitle || inBuckets || inChildren;
+  };
+
+  return searchTerm && searchTerm.length
+    ? displayTree?.filter(shouldBeIncluded).map(({ children, ...rest }) => ({
+        ...rest,
+        children: filterDisplayTreeDataBySearchTerm({
+          displayTree: children,
+          searchTerm,
+          aggregations,
+        }),
+      }))
+    : displayTree;
+};
+
 export {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   elasticMappingToDisplayTreeData,
   orderDisplayTreeData,
+  filterDisplayTreeDataBySearchTerm,
 };

@@ -12,6 +12,8 @@ const NestedTreeView = ({
   onLeafSelect = () => {},
   selectedPath = '',
   searchString = null,
+  defaultCollapsed = ({ depth }) => true,
+  shouldCollapse = () => undefined,
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
     const selectedPathArray =
@@ -35,7 +37,14 @@ const NestedTreeView = ({
             <TextHighlight content={title} highlightText={searchString} />
           </div>
         }
-        defaultCollapsed={true}
+        defaultCollapsed={defaultCollapsed({
+          depth,
+          title,
+          id,
+          children,
+          path,
+        })}
+        collapsed={shouldCollapse({ depth, title, id, children, path })}
         itemClassName={`NestedTreeViewNode nested ${depthClass} ${selectedClass} ${css`
           padding-left: ${indentationPx * depth}px;
         `}`}
@@ -48,6 +57,8 @@ const NestedTreeView = ({
           dataSource={children}
           depth={depth + 1}
           searchString={searchString}
+          defaultCollapsed={defaultCollapsed}
+          shouldCollapse={shouldCollapse}
         />
       </ReactTreeView>
     ) : (

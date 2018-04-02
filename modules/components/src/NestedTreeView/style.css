@@ -76,3 +76,7 @@
 .NestedTreeViewNode.depth_1 {
   border-top: solid 1px #e0e1e6;
 }
+
+.NestedTreeViewItem.depth_1 {
+  border-top: solid 1px #e0e1e6;
+}

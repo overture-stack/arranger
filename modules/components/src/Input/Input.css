@@ -17,3 +17,10 @@
   justify-content: center;
   align-items: center;
 }
+
+.inputWrapper .inputRightIcon {
+  color: lightgrey;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

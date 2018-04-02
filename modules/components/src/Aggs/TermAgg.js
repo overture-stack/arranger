@@ -1,10 +1,12 @@
 import React from 'react';
-import { orderBy, truncate } from 'lodash';
+import { orderBy, truncate, isEqual } from 'lodash';
 
 import './AggregationCard.css';
 
 import { removeSQON, toggleSQON } from '../SQONView/utils';
 import AggsWrapper from './AggsWrapper';
+import TextHighlight from '../TextHighlight';
+import './TermAgg.css';
 import ToggleButton from '../ToggleButton';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
@@ -62,6 +64,24 @@ class TermAggs extends React.Component {
 
   state = { showingMore: false, isExclude: false };
 
+  componentWillReceiveProps(nextProps) {
+    const { searchString, buckets = [] } = nextProps;
+    if (
+      searchString &&
+      buckets.some(b => {
+        return (b.key_as_string || b.key).match(new RegExp(searchString, 'i'));
+      })
+    ) {
+      this.setState({
+        showingMore: true,
+      });
+    }
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    return !isEqual(nextProps, this.props) || !isEqual(nextState, this.state);
+  }
+
   render() {
     const {
       field = '',
@@ -82,6 +102,8 @@ class TermAggs extends React.Component {
       constructEntryId = ({ value }) => value,
       valueCharacterLimit,
       observableValueInFocus = null,
+      WrapperComponent,
+      searchString,
     } = this.props;
     const { showingMore } = this.state;
     const dotField = field.replace(/__/g, '.');
@@ -89,7 +111,7 @@ class TermAggs extends React.Component {
       externalIsExclude({ field: dotField }) || this.state.isExclude;
     return (
       <AggsWrapper
-        {...{ displayName, collapsible }}
+        {...{ displayName, WrapperComponent, collapsible }}
         filters={[
           ...(showExcludeOption
             ? [
@@ -121,9 +143,6 @@ class TermAggs extends React.Component {
                 id={constructEntryId({ value: bucket.name })}
                 key={bucket.name}
                 className="bucket-item"
-                style={{
-                  display: 'flex',
-                }}
                 content={{
                   field: dotField,
                   value: bucket.name,
@@ -148,9 +167,14 @@ class TermAggs extends React.Component {
                     id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                     name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   />
-                  {truncate(bucket.name, {
-                    length: valueCharacterLimit || Infinity,
-                  })}
+                  <TextHighlight
+                    content={
+                      truncate(bucket.name, {
+                        length: valueCharacterLimit || Infinity,
+                      }) + ' '
+                    }
+                    highlightText={searchString}
+                  />
                   {/* <OverflowTooltippedLabel
                           htmlFor={`input-${props.title}-${bucket.name.replace(
                             /\s/g,
@@ -171,16 +195,15 @@ class TermAggs extends React.Component {
                 )}
               </Content>
             ))}
-
-          {buckets.length > maxTerms && (
-            <div
-              className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
-              onClick={() => this.setState({ showingMore: !showingMore })}
-            >
-              {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
-            </div>
-          )}
         </div>
+        {buckets.length > maxTerms && (
+          <div
+            className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
+            onClick={() => this.setState({ showingMore: !showingMore })}
+          >
+            {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
+          </div>
+        )}
       </AggsWrapper>
     );
   }

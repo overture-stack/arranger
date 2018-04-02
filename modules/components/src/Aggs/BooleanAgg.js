@@ -8,24 +8,41 @@ import {
   removeSQON,
 } from '../SQONView/utils';
 import './BooleanAgg.css';
+import TextHighlight from '../TextHighlight';
 
 export default ({
   field,
   buckets,
   handleValueClick = () => {},
   isActive = () => false,
+  collapsible,
+  WrapperComponent,
+  displayName,
+  searchString,
+  valueKeys = {
+    true: 'true',
+    false: 'false',
+  },
+  displayKeys = {
+    true: 'Yes',
+    false: 'No',
+  },
   ...rest
 }) => {
-  const trueBucket = buckets.find(({ key }) => key === '1');
-  const falseBucket = buckets.find(({ key }) => key === '0');
+  const trueBucket = buckets.find(
+    ({ key_as_string }) => key_as_string === valueKeys.true,
+  );
+  const falseBucket = buckets.find(
+    ({ key_as_string }) => key_as_string === valueKeys.false,
+  );
   const dotField = field.replace(/__/g, '.');
 
   const isTrueActive = isActive({
-    value: true,
+    value: valueKeys.true,
     field: dotField,
   });
   const isFalseActive = isActive({
-    value: false,
+    value: valueKeys.false,
     field: dotField,
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
@@ -42,7 +59,7 @@ export default ({
                 op: 'in',
                 content: {
                   field: dotField,
-                  value: [isTrue],
+                  value: [valueKeys[isTrue ? 'true' : 'false']],
                 },
               },
             ],
@@ -58,13 +75,12 @@ export default ({
     });
 
   return (
-    <AggsWrapper {...{ buckets, ...rest }}>
+    <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
       <div className={`booleanFacetWrapper`}>
         <div
           className={`booleanAggOption bucket-item ${
             isNeitherActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={handleAnyClick}
         >
           Any
@@ -73,10 +89,12 @@ export default ({
           className={`booleanAggOption bucket-item ${
             isTrueActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(true)}
         >
-          Yes
+          <TextHighlight
+            content={displayKeys.true}
+            highlightText={searchString}
+          />
           {trueBucket && (
             <span
               className={`bucket-count`}
@@ -92,10 +110,12 @@ export default ({
           className={`booleanAggOption bucket-item ${
             isFalseActive ? 'active' : ''
           }`}
-          style={{ paddingTop: 0 }}
           onClick={() => handleTrueFalseClick(false)}
         >
-          No
+          <TextHighlight
+            content={displayKeys.false}
+            highlightText={searchString}
+          />
           {falseBucket && (
             <span
               className={`bucket-count`}

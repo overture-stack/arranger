@@ -46,6 +46,10 @@
   font-size: 14px;
 }
 
+.datesAgg_dateRangePicker {
+  z-index: 1;
+}
+
 .CalendarDay__selected,
 .CalendarDay__selected:active,
 .CalendarDay__selected:hover {
