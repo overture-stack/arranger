@@ -217,6 +217,12 @@ export default class AdvancedFacetView extends React.Component {
                   <NestedTreeView
                     searchString={searchTerm}
                     defaultCollapsed={({ depth }) => depth !== 0}
+                    shouldCollapse={() => {
+                      // if there's a searchTerm, expand everything. Else, don't control
+                      return searchTerm && searchTerm.length
+                        ? false
+                        : undefined;
+                    }}
                     dataSource={visibleDisplayTreeData}
                     selectedPath={selectedPath}
                     onLeafSelect={path => {
