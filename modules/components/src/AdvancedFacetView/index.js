@@ -129,6 +129,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       onSqonFieldChange = () => {},
       valueCharacterLimit = 30,
+      statComponent,
     } = this.props;
     const {
       selectedPath,
@@ -263,6 +264,15 @@ export default class AdvancedFacetView extends React.Component {
                       />
                     )}
                   </Component>
+                  <div
+                    className={css`
+                      display: flex;
+                      flex: 1;
+                      height: 100%;
+                    `}
+                  >
+                    {statComponent}
+                  </div>
                 </div>
                 <div className={`facets`}>
                   <FacetView

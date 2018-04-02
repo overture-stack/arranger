@@ -1,4 +1,5 @@
 import React from 'react';
+import { css } from 'emotion';
 import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import AdvancedFacetView from '../src/AdvancedFacetView';
@@ -37,6 +38,18 @@ storiesOf('AdvancedFacetView', module)
   .add('AdvancedFacetViewLive', () => (
     <LiveAdvancedFacetView
       {...{
+        statComponent: (
+          <div
+            className={css`
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex: 1;
+            `}
+          >
+            (Stat components to be inserted here from portal)
+          </div>
+        ),
         projectId: process.env['STORYBOOK_AFV_PROJECT_ID'],
         index: process.env['STORYBOOK_AFV_ACTIVE_INDEX'],
         onSqonChange: ({ sqon }) => console.log(sqon),
@@ -52,20 +65,6 @@ storiesOf('AdvancedFacetView', module)
             },
           ],
         },
-      }}
-    />
-  ))
-  .add('AdvancedFacetView', () => (
-    <AdvancedFacetView
-      elasticMapping={elasticMockMapping}
-      aggregations={mockAggregations}
-      extendedMapping={[]}
-      sqon={{
-        op: 'and',
-        content: [
-          { op: '>=', content: { field: 'age_at_diagnosis', value: 17 } },
-          { op: '<=', content: { field: 'age_at_diagnosis', value: 26 } },
-        ],
       }}
     />
   ));

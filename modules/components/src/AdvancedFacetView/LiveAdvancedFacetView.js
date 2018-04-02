@@ -191,6 +191,7 @@ export default class LiveAdvancedFacetView extends React.Component {
         aggregations={this.state.aggregations}
         onSqonFieldChange={this.onSqonFieldChange}
         sqon={this.state.sqon}
+        statComponent={this.props.statComponent}
       />
     );
   }
