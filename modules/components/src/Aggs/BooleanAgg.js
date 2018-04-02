@@ -9,6 +9,7 @@ import {
 } from '../SQONView/utils';
 import './BooleanAgg.css';
 import TextHighlight from '../TextHighlight';
+import ToggleButton from '../ToggleButton';
 
 export default ({
   field,
@@ -47,87 +48,100 @@ export default ({
   });
   const isNeitherActive = !isTrueActive && !isFalseActive;
 
-  const handleTrueFalseClick = isTrue =>
-    handleValueClick({
-      bucket: isTrue ? trueBucket : falseBucket,
-      generateNextSQON: sqon =>
-        replaceSQON(
-          {
-            op: 'and',
-            content: [
-              {
-                op: 'in',
-                content: {
-                  field: dotField,
-                  value: [valueKeys[isTrue ? 'true' : 'false']],
+  const handleChange = isTrue => {
+    console.log(handleValueClick);
+    if (isTrue !== undefined) {
+      handleValueClick({
+        bucket: isTrue ? trueBucket : falseBucket,
+        generateNextSQON: sqon =>
+          replaceSQON(
+            {
+              op: 'and',
+              content: [
+                {
+                  op: 'in',
+                  content: {
+                    field: dotField,
+                    value: [valueKeys[isTrue ? 'true' : 'false']],
+                  },
                 },
-              },
-            ],
-          },
-          sqon,
-        ),
-    });
-
-  const handleAnyClick = () =>
-    handleValueClick({
-      bucket: null,
-      generateNextSQON: sqon => removeSQON(dotField, sqon),
-    });
+              ],
+            },
+            sqon,
+          ),
+      });
+    } else {
+      handleValueClick({
+        bucket: null,
+        generateNextSQON: sqon => removeSQON(dotField, sqon),
+      });
+    }
+  };
 
   return (
     <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
-      <div className={`booleanFacetWrapper`}>
-        <div
-          className={`booleanAggOption bucket-item ${
-            isNeitherActive ? 'active' : ''
-          }`}
-          onClick={handleAnyClick}
-        >
-          Any
-        </div>
-        <div
-          className={`booleanAggOption bucket-item ${
-            isTrueActive ? 'active' : ''
-          }`}
-          onClick={() => handleTrueFalseClick(true)}
-        >
-          <TextHighlight
-            content={displayKeys.true}
-            highlightText={searchString}
-          />
-          {trueBucket && (
-            <span
-              className={`bucket-count`}
-              style={{
-                marginLeft: 2,
-              }}
-            >
-              {trueBucket.doc_count}
-            </span>
-          )}
-        </div>
-        <div
-          className={`booleanAggOption bucket-item ${
-            isFalseActive ? 'active' : ''
-          }`}
-          onClick={() => handleTrueFalseClick(false)}
-        >
-          <TextHighlight
-            content={displayKeys.false}
-            highlightText={searchString}
-          />
-          {falseBucket && (
-            <span
-              className={`bucket-count`}
-              style={{
-                marginLeft: 2,
-              }}
-            >
-              {falseBucket.doc_count}
-            </span>
-          )}
-        </div>
-      </div>
+      <ToggleButton
+        {...{
+          value: isTrueActive
+            ? valueKeys.true
+            : isFalseActive ? valueKeys.false : undefined,
+          options: [
+            {
+              value: undefined,
+              title: 'any',
+            },
+            {
+              value: valueKeys.true,
+              title: (
+                <>
+                  <TextHighlight
+                    content={displayKeys.true}
+                    highlightText={searchString}
+                  />
+                  {trueBucket && (
+                    <span
+                      className={`bucket-count`}
+                      style={{
+                        marginLeft: 2,
+                      }}
+                    >
+                      {trueBucket.doc_count}
+                    </span>
+                  )}
+                </>
+              ),
+            },
+            {
+              value: valueKeys.false,
+              title: (
+                <>
+                  <TextHighlight
+                    content={displayKeys.false}
+                    highlightText={searchString}
+                  />
+                  {falseBucket && (
+                    <span
+                      className={`bucket-count`}
+                      style={{
+                        marginLeft: 2,
+                      }}
+                    >
+                      {falseBucket.doc_count}
+                    </span>
+                  )}
+                </>
+              ),
+            },
+          ],
+          onChange: ({ value }) => {
+            handleChange(
+              value === valueKeys.true
+                ? true
+                : value === valueKeys.false ? false : undefined,
+            );
+          },
+        }}
+      />
     </AggsWrapper>
   );
 };
