@@ -100,7 +100,7 @@ export default class FacetView extends React.Component {
                       highlightText={searchString}
                     />
                   </div>
-                  <div className={`breadscrumb`}>
+                  <div className={`breadscrumbs`}>
                     {pathDisplayNames
                       .slice(0, -1)
                       .map((pathName, index, arr) => (

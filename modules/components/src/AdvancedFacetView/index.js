@@ -1,7 +1,7 @@
 import React from 'react';
 import { keys, debounce, isEqual } from 'lodash';
 import { Subject } from 'rxjs';
-import { truncate } from 'lodash';
+import { truncate, pick } from 'lodash';
 import { css } from 'emotion';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Value } from '../SQONView';
@@ -36,7 +36,6 @@ const spinner = (
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
     super(props);
-    const { elasticMapping, extendedMapping } = props;
     this.state = {
       selectedPath: null,
       withValueOnly: true,
@@ -87,14 +86,8 @@ export default class AdvancedFacetView extends React.Component {
 
   componentDidUpdate(prevProps, prevState, { shouldEndLoading }) {
     const shouldRecomputeDisplayTree = !isEqual(
-      {
-        elasticMapping: this.props.elasticMapping,
-        extendedMapping: this.props.extendedMapping,
-      },
-      {
-        elasticMapping: prevProps.elasticMapping,
-        extendedMapping: prevProps.extendedMapping,
-      },
+      pick(this.props, ['elasticMapping', 'extendedMapping']),
+      pick(prevProps, ['elasticMapping', 'extendedMapping']),
     );
     if (shouldRecomputeDisplayTree) {
       this.setState({
@@ -255,8 +248,7 @@ export default class AdvancedFacetView extends React.Component {
                         placeholder="Filter"
                         value={value || ''}
                         showClearButton={true}
-                        onChange={e => {
-                          const value = e.target.value;
+                        onChange={({ target: { value } }) => {
                           setState({ value }, () => {
                             this.setSearchTerm(value);
                           });

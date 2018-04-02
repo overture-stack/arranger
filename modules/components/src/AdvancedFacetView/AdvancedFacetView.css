@@ -128,14 +128,14 @@
 .facetViewWrapper .facetContainer .header .title {
   color: #a42c90;
 }
-.facetViewWrapper .facetContainer .header .breadscrumb {
+.facetViewWrapper .facetContainer .header .breadscrumbs {
   color: #2b388f;
   text-align: right;
 }
 .facetViewWrapper
   .facetContainer
   .header
-  .breadscrumb
+  .breadscrumbs
   .breadscrumb-item:not(:last-child):after {
   content: ' » ';
 }
