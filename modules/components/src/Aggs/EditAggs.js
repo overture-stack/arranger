@@ -13,9 +13,9 @@ export default ({ aggs = [], handleChange = noop }) => (
         onFilterChange={searchTerm => update({ searchTerm })}
         handleChange={x =>
           handleChange({
-            field: x.field,
-            key: 'active',
-            value: !x.active,
+            field: x.row.field,
+            key: x.key,
+            value: typeof x.value === 'undefined' ? !x.row[x.key] : x.value,
           })
         }
       />

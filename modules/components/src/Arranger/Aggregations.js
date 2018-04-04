@@ -17,17 +17,17 @@ const Aggregations = ({
         projectId={projectId}
         graphqlField={graphqlField}
         render={aggsState => {
+          const aggs = aggsState.aggs.filter(x => x.show);
           return (
             <AggsQuery
               debounceTime={300}
               projectId={projectId}
               index={graphqlField}
               sqon={sqon}
-              aggs={aggsState.aggs.filter(x => x.active)}
+              aggs={aggs}
               render={({ data }) =>
                 data &&
-                aggsState.aggs
-                  .filter(x => x.active)
+                aggs
                   .map(agg => ({
                     ...agg,
                     ...data[graphqlField].aggregations[agg.field],

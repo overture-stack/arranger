@@ -5,6 +5,7 @@ import api from '../utils/api';
 let aggFields = `
   state {
     field
+    show
     active
     type
   }

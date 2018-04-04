@@ -6,5 +6,6 @@ export default mapping =>
     .map(([field, type]) => ({
       field,
       type,
-      active: false,
+      show: false,
+      active: true,
     }));
