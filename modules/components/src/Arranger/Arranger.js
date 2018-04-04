@@ -1,12 +1,11 @@
 import React from 'react';
-import { get } from 'lodash';
-import io from 'socket.io-client';
+import { get, pick } from 'lodash';
 import ioStream from 'socket.io-stream';
 
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
 import api from '../utils/api';
-import { ARRANGER_API } from '../utils/config';
+import initSocket from '../utils/initSocket';
 
 const streamData = ({ streamSocket }) => (type, projectId) => ({
   columns,
@@ -59,12 +58,9 @@ class Arranger extends React.Component {
   constructor(props) {
     super(props);
 
-    let socket =
-      props.socket ||
-      io(
-        props.socketConnectionString || ARRANGER_API,
-        props.socketOptions || {},
-      );
+    let socket = initSocket(
+      pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
+    );
     let streamSocket = ioStream(socket);
 
     this.state = {

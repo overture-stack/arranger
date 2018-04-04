@@ -22,47 +22,52 @@ class DetectNewVersion extends React.Component {
       </span>
     ),
   };
+  onInit = () => {
+    if (!toast.isActive(this.serverOnlineToastID)) {
+      this.serverOnlineToastID = toast('The server is online.', {
+        className: {
+          background: 'black',
+        },
+        position: toast.POSITION.BOTTOM_RIGHT,
+      });
+    }
+  };
+  onRestart = () => {
+    if (!toast.isActive(this.serverRestartingToastID)) {
+      this.serverRestartingToastID = toast(
+        'The server is restarting. Please standby.',
+        {
+          className: {
+            background: 'black',
+          },
+          position: toast.POSITION.BOTTOM_RIGHT,
+        },
+      );
+    }
+  };
+
+  onEvent = () => {
+    if (!toast.isActive(this.refreshToastID)) {
+      this.setState({ shouldRefresh: true });
+      this.refreshToastID = toast(this.props.Message, {
+        className: {
+          background: 'black',
+        },
+        position: toast.POSITION.BOTTOM_RIGHT,
+      });
+    }
+  };
 
   componentDidMount() {
-    let serverOnlineToastID = null;
-    this.props.socket.on('server::init', () => {
-      if (!toast.isActive(serverOnlineToastID)) {
-        serverOnlineToastID = toast('The server is online.', {
-          className: {
-            background: 'black',
-          },
-          position: toast.POSITION.BOTTOM_RIGHT,
-        });
-      }
-    });
+    this.props.socket.on('server::init', this.onInit);
+    this.props.socket.on('server::serverRestarting', this.onRestart);
+    this.props.socket.on(this.props.event, this.onEvent);
+  }
 
-    let serverRestartingToastID = null;
-    this.props.socket.on('server::serverRestarting', () => {
-      if (!toast.isActive(serverRestartingToastID)) {
-        serverRestartingToastID = toast(
-          'The server is restarting. Please standby.',
-          {
-            className: {
-              background: 'black',
-            },
-            position: toast.POSITION.BOTTOM_RIGHT,
-          },
-        );
-      }
-    });
-
-    let refreshToastID;
-    this.props.socket.on(this.props.event, () => {
-      if (!toast.isActive(refreshToastID)) {
-        this.setState({ shouldRefresh: true });
-        refreshToastID = toast(this.props.Message, {
-          className: {
-            background: 'black',
-          },
-          position: toast.POSITION.BOTTOM_RIGHT,
-        });
-      }
-    });
+  componentWillUnmount() {
+    this.props.socket.off('server::init', this.onInit);
+    this.props.socket.off('server::serverRestarting', this.onRestart);
+    this.props.socket.off(this.props.event, this.onEvent);
   }
 
   render() {
