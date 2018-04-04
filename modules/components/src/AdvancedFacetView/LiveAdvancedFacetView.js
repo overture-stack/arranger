@@ -1,4 +1,5 @@
 import React from 'react';
+import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
@@ -13,32 +14,29 @@ const fetchGraphqlQuery = async ({ query, projectId, variables = null }) =>
     },
   }).then(data => data.data);
 
-const fetchData = async fetchConfig =>
+const fetchMappingData = async fetchConfig =>
   fetchGraphqlQuery({
-    ...fetchConfig,
-    query: `
-      {
-        ${fetchConfig.index} {
-          mapping
-          extended
-          aggsState {
-            state {
-              field
-              active
-            }
+    query: `{
+      ${fetchConfig.index} {
+        mapping,
+        extended,
+        aggsState {
+          state {
+            field, active
           }
         }
       }
-    `,
+    }`,
+    ...fetchConfig,
   }).then(data => data[fetchConfig.index]);
 
 const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
   const fetchConfig = { projectId, index };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
-
-  const allAggsNames = extended.map(entry => serializeToGraphQl(entry.field));
-
+  const allAggsNames = extended
+    .map(entry => entry.field)
+    .map(serializeToGraphQl);
   const getAggregationQuery = () =>
     allAggsNames
       .map(aggName => {
@@ -83,85 +81,130 @@ const removeFieldTypesFromMapping = ({
   mapping,
   extended,
   parentField = null,
+  fieldTypesToExclude = [],
 }) => {
-  return Object.entries(mapping).reduce((acc, [key, val]) => {
-    const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
-    const keepField = extended.find(ex => ex.field === currentField);
-    const toSpread = keepField
-      ? {
-          ...(val.properties
-            ? {
-                [key]: {
-                  ...val,
-                  properties: removeFieldTypesFromMapping({
-                    mapping: val.properties,
-                    extended,
-                    parentField: currentField,
-                  }),
-                },
-              }
-            : {
-                [key]: val,
-              }),
-        }
-      : {};
-    return {
-      ...acc,
-      ...toSpread,
-    };
-  }, {});
+  const output = {
+    ...Object.entries(mapping).reduce((acc, [key, val]) => {
+      const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
+      const isId = fieldTypesToExclude.some(
+        type => type === extended.find(ex => ex.field === currentField)?.type,
+      );
+      const toSpread = !isId
+        ? {
+            ...(val.properties
+              ? {
+                  [key]: {
+                    ...val,
+                    properties: removeFieldTypesFromMapping({
+                      mapping: val.properties,
+                      extended,
+                      parentField: currentField,
+                      fieldTypesToExclude,
+                    }),
+                  },
+                }
+              : {
+                  [key]: val,
+                }),
+          }
+        : {};
+      return {
+        ...acc,
+        ...toSpread,
+      };
+    }, {}),
+  };
+  return output;
 };
 
 const defaultFieldTypesToExclude = ['id', 'text'];
+
 export default class LiveAdvancedFacetView extends React.Component {
-  state = {
-    mapping: {},
-    extended: [],
-    aggregations: null,
+  constructor(props) {
+    super(props);
+    const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
+    this.state = {
+      mapping: {},
+      extended: [],
+      aggsState: {},
+      aggregations: null,
+      sqon: sqon || null,
+    };
+    this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
+  }
+
+  filterExtendedForFetchingAggs = ({ extended, aggsState }) => {
+    console.log('aggsState: ', aggsState);
+    return extended.filter(
+      // filtering out fields that do not have aggs
+      e => {
+        return (
+          !this.blackListedAggTypes.some(type => type === e.type) &&
+          aggsState.state.some(
+            s => s.field.split('__').join('.') === e.field && s.active,
+          )
+        );
+      },
+    );
   };
 
   componentDidMount() {
-    fetchData(this.props).then(({ mapping, extended, aggsState }) => {
-      const filteredExtended = extended.filter(e => {
-        const state = aggsState.state.find(s => s.field === e.field);
-        return state && state.active;
-      });
-
-      this.setState({
-        extended: filteredExtended,
-        mapping: removeFieldTypesFromMapping({
-          mapping,
-          extended: filteredExtended,
-        }),
-      });
-
-      return fetchAggregationData({
-        extended: filteredExtended,
-        ...this.props,
-      }).then(({ aggregations }) => {
-        this.setState({ aggregations });
-      });
-    });
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (!isEqual(nextProps.sqon, this.props.sqon)) {
+    const { projectId, index } = this.props;
+    const { sqon } = this.state;
+    const fetchConfig = { projectId, index, sqon };
+    fetchMappingData(fetchConfig).then(({ extended, mapping, aggsState }) =>
       fetchAggregationData({
-        ...nextProps,
-        extended: this.state.extended,
-      }).then(({ aggregations }) => this.setState({ aggregations }));
+        extended: this.filterExtendedForFetchingAggs({ extended, aggsState }),
+        ...fetchConfig,
+      }).then(({ aggregations }) => {
+        const { fieldTypesToExclude = defaultFieldTypesToExclude } = this.props;
+        this.setState({
+          mapping: removeFieldTypesFromMapping({
+            mapping,
+            extended,
+            fieldTypesToExclude,
+          }),
+          aggsState,
+          extended,
+          aggregations,
+        });
+      }),
+    );
+  }
+  componentWillReceiveProps({ sqon }) {
+    if (!isEqual(sqon, this.state.sqon)) {
+      this.setState({ sqon });
     }
   }
-
+  onSqonFieldChange = ({ sqon }) => {
+    const { onSqonChange = () => {}, projectId, index } = this.props;
+    const { aggsState } = this.state;
+    fetchAggregationData({
+      ...this.props,
+      extended: this.filterExtendedForFetchingAggs({
+        extended: this.state.extended,
+        aggsState,
+      }),
+      sqon,
+    }).then(({ aggregations }) =>
+      this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
+    );
+  };
   render() {
+    const {
+      sqon,
+      fieldTypesToExclude = defaultFieldTypesToExclude,
+    } = this.props;
     return (
       <AdvancedFacetView
         elasticMapping={this.state.mapping}
-        extendedMapping={this.state.extended}
+        extendedMapping={this.state.extended.filter(
+          ex => !fieldTypesToExclude.some(type => ex.type === type),
+        )}
         aggregations={this.state.aggregations}
+        onSqonFieldChange={this.onSqonFieldChange}
+        sqon={this.state.sqon}
         statComponent={this.props.statComponent}
-        onSqonFieldChange={this.props.onSqonChange}
-        sqon={this.props.sqon}
       />
     );
   }
