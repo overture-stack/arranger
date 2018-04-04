@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es:/usr/share/elasticsearch/data
+    networks:
+      - es
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.minimum_master_nodes=1"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    healthcheck:
+      test: "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"
+      interval: 1m30s
+      timeout: 50s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.1
+    ports:
+      - "5601:5601"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    networks:
+      - es
+    depends_on:
+      - elasticsearch
+    environment:
+      LOGGING_QUIET: "true"
+
+volumes:
+  es:
+    driver: local
+
+networks:
+  es:
