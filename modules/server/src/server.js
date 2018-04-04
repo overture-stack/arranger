@@ -26,6 +26,7 @@ export default async ({
   router.use(bodyParser.json({ limit: '50mb' }));
 
   sockets({ io });
+
   router.use(await watchGit({ io }));
 
   router.use('/:projectId', (req, res, next) => {
