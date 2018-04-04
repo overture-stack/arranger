@@ -346,8 +346,12 @@ test('buildAggregations should handle queries not in a group', () => {
 
   const expectedOutput = {
     access: { terms: { field: 'access', size: 300000 } },
+    'access:missing': { missing: { field: 'access' } },
     'case:global': {
-      aggs: { case: { terms: { field: 'case', size: 300000 } } },
+      aggs: {
+        case: { terms: { field: 'case', size: 300000 } },
+        'case:missing': { missing: { field: 'case' } },
+      },
       global: {},
     },
   };
