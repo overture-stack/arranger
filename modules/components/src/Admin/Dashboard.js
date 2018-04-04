@@ -1,12 +1,8 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { debounce, startCase } from 'lodash';
-import io from 'socket.io-client';
+import { debounce, startCase, pick } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
-import urlParse from 'url-parse';
-import urlJoin from 'url-join';
-import resolveURL from 'resolve-url';
 
 // TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
 // import GraphiQL from 'graphiql';
@@ -20,8 +16,9 @@ import State from '../State';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import { ES_HOST, ARRANGER_API } from '../utils/config';
+import { ES_HOST } from '../utils/config';
 import api from '../utils/api';
+import initSocket from '../utils/initSocket';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 
@@ -29,15 +26,9 @@ class Dashboard extends React.Component {
   constructor(props) {
     super(props);
 
-    let socket =
-      props.socket ||
-      io(
-        props.socketConnectionString ||
-          urlParse(resolveURL(ARRANGER_API)).origin,
-        props.socketOptions || {
-          path: urlJoin(urlParse(ARRANGER_API).pathname, 'socket.io'),
-        },
-      );
+    let socket = initSocket(
+      pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
+    );
 
     this.state = {
       eshost: ES_HOST,
