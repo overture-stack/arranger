@@ -100,7 +100,7 @@ function download({ url, params, method = 'GET' }) {
     ? Math.abs(hashString(JSON.stringify(params) + downloadToken)).toString(16)
     : null;
 
-  let fields = toHtml('params', { ...params, ...getAlwaysAddHeaders() });
+  let fields = toHtml('params', { ...getAlwaysAddHeaders(), ...params });
 
   if (cookieKey) {
     Cookies.set(cookieKey, downloadToken);
