@@ -65,15 +65,10 @@ export default class extends Component {
       let { data: { [this.props.graphqlField]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
-          variables: {
-            fields: config.columns
-              .filter(column => column.canChangeShow || column.show)
-              .map(column => column.field),
-          },
           query: `
-          query($fields: [String]){
+          query{
             ${this.props.graphqlField} {
-              extended(fields: $fields)
+              extended
             }
           }
         `,
