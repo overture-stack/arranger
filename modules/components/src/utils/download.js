@@ -1,5 +1,6 @@
 import { attempt, uniqueId } from 'lodash';
 import Cookies from 'js-cookie';
+import { getAlwaysAddHeaders } from './api';
 
 function getIFrameBody(iframe) {
   const document = iframe.contentWindow || iframe.contentDocument;
@@ -99,7 +100,7 @@ function download({ url, params, method = 'GET' }) {
     ? Math.abs(hashString(JSON.stringify(params) + downloadToken)).toString(16)
     : null;
 
-  let fields = toHtml('params', params);
+  let fields = toHtml('params', { ...getAlwaysAddHeaders(), ...params });
 
   if (cookieKey) {
     Cookies.set(cookieKey, downloadToken);
