@@ -2,6 +2,7 @@ import React from 'react';
 
 import { AggsState, AggsQuery, TermAgg } from '../Aggs';
 import { inCurrentSQON } from '../SQONView/utils';
+import aggComponents from '../Aggs/aggComponentsMap.js';
 
 const Aggregations = ({
   setSQON,
@@ -35,23 +36,14 @@ const Aggregations = ({
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                   }))
-                  .map(agg => (
-                    // TODO: switch on agg type
-                    <TermAgg
-                      key={agg.field}
-                      {...agg}
-                      handleValueClick={({ generateNextSQON }) =>
-                        setSQON(generateNextSQON(sqon))
-                      }
-                      isActive={d =>
-                        inCurrentSQON({
-                          value: d.value,
-                          dotField: d.field,
-                          currentSQON: sqon,
-                        })
-                      }
-                    />
-                  ))
+                  .map(agg =>
+                    aggComponents[agg.type]?.({
+                      onValueChange: ({ sqon }) => setSQON(sqon),
+                      key: agg.field,
+                      sqon,
+                      ...agg,
+                    }),
+                  )
               }
             />
           );

@@ -2,7 +2,7 @@ import React from 'react';
 import { debounce, toPairs, isEqual } from 'lodash';
 import { css } from 'emotion';
 import AggsWrapper from '../Aggs/AggsWrapper';
-import aggComponents from './aggComponents';
+import aggComponentsMap from '../Aggs/aggComponentsMap';
 import TextHighlight from '../TextHighlight';
 
 const serializeToDomId = path => path.split('.').join('__');
@@ -75,7 +75,7 @@ export default class FacetView extends React.Component {
               extendedMapping.find(({ field }) => field === path)?.displayName,
           );
           const agg = aggregations[path];
-          return aggComponents[type]?.({
+          return aggComponentsMap[type]?.({
             ...agg,
             key: path,
             field: path,
