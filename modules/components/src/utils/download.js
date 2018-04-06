@@ -94,7 +94,7 @@ function createIFrame({ method, url, fields }) {
   return iFrame;
 }
 
-function download({ url, params, method = 'GET', customBody = {} }) {
+function download({ url, params, method = 'GET', body = {} }) {
   // a cookie value that the server will remove as a download-ready indicator
   const downloadToken = uniqueId(`${+new Date()}-`);
   const cookieKey = navigator.cookieEnabled
@@ -109,7 +109,7 @@ function download({ url, params, method = 'GET', customBody = {} }) {
     ...httpHeaders,
   });
 
-  const customBodyHtml = Object.entries(customBody).map(([key, value]) =>
+  const bodyHtml = Object.entries(body).map(([key, value]) =>
     toHtml(key, value),
   );
 
@@ -118,7 +118,7 @@ function download({ url, params, method = 'GET', customBody = {} }) {
     fields += `${headers}${toHtml('downloadCookieKey', cookieKey)}${toHtml(
       'downloadCookiePath',
       '/',
-    )}${customBodyHtml.join('')}`;
+    )}${bodyHtml.join('')}`;
   }
 
   const iFrame = createIFrame({ method, url, fields });
