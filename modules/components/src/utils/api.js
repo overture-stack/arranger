@@ -1,5 +1,6 @@
 import { ARRANGER_API } from './config';
 import urlJoin from 'url-join';
+import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 const api = ({ endpoint = '', body, headers }) =>
@@ -27,6 +28,7 @@ export const fetchExtendedMapping = ({ graphqlField, projectId }) =>
 
 export const addHeaders = headers => {
   alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
+  addDownloadHttpHeaders(headers);
 };
 
 export const getAlwaysAddHeaders = () => alwaysSendHeaders;

@@ -1,6 +1,7 @@
 import { attempt, uniqueId } from 'lodash';
 import Cookies from 'js-cookie';
-import { getAlwaysAddHeaders } from './api';
+
+let httpHeaders = {};
 
 function getIFrameBody(iframe) {
   const document = iframe.contentWindow || iframe.contentDocument;
@@ -93,21 +94,31 @@ function createIFrame({ method, url, fields }) {
   return iFrame;
 }
 
-function download({ url, params, method = 'GET' }) {
+function download({ url, params, method = 'GET', body = {} }) {
   // a cookie value that the server will remove as a download-ready indicator
   const downloadToken = uniqueId(`${+new Date()}-`);
   const cookieKey = navigator.cookieEnabled
     ? Math.abs(hashString(JSON.stringify(params) + downloadToken)).toString(16)
     : null;
 
-  let fields = toHtml('params', { ...getAlwaysAddHeaders(), ...params });
+  let fields = toHtml('params', {
+    ...params,
+  });
+
+  let headers = toHtml('httpHeaders', {
+    ...httpHeaders,
+  });
+
+  const bodyHtml = Object.entries(body).map(([key, value]) =>
+    toHtml(key, value),
+  );
 
   if (cookieKey) {
     Cookies.set(cookieKey, downloadToken);
-    fields += `${toHtml('downloadCookieKey', cookieKey)}${toHtml(
+    fields += `${headers}${toHtml('downloadCookieKey', cookieKey)}${toHtml(
       'downloadCookiePath',
       '/',
-    )}`;
+    )}${bodyHtml.join('')}`;
   }
 
   const iFrame = createIFrame({ method, url, fields });
@@ -116,5 +127,9 @@ function download({ url, params, method = 'GET' }) {
     ? progressChecker(iFrame, cookieKey, downloadToken)
     : Promise.reject('no cookies');
 }
+
+export const addDownloadHttpHeaders = headers => {
+  httpHeaders = { ...httpHeaders, ...headers };
+};
 
 export default download;
