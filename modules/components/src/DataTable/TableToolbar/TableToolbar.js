@@ -48,8 +48,8 @@ const TableToolbar = ({
   >
     <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
       Showing {(page * pageSize + 1).toLocaleString()} -{' '}
-      {Math.min((page + 1) * pageSize, total).toLocaleString()} {type} of{' '}
-      {total?.toLocaleString()}
+      {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
+      {total?.toLocaleString()} {type}
     </div>
     <div className="group">
       <TextFilter
