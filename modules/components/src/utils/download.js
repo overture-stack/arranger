@@ -2,6 +2,8 @@ import { attempt, uniqueId } from 'lodash';
 import Cookies from 'js-cookie';
 import { getAlwaysAddHeaders } from './api';
 
+let httpHeaders = {};
+
 function getIFrameBody(iframe) {
   const document = iframe.contentWindow || iframe.contentDocument;
   return (document.document || document).body;
@@ -100,7 +102,10 @@ function download({ url, params, method = 'GET' }) {
     ? Math.abs(hashString(JSON.stringify(params) + downloadToken)).toString(16)
     : null;
 
-  let fields = toHtml('params', { ...getAlwaysAddHeaders(), ...params });
+  let fields = toHtml('params', {
+    arrangerHttpHeaders: httpHeaders,
+    ...params,
+  });
 
   if (cookieKey) {
     Cookies.set(cookieKey, downloadToken);
@@ -116,5 +121,9 @@ function download({ url, params, method = 'GET' }) {
     ? progressChecker(iFrame, cookieKey, downloadToken)
     : Promise.reject('no cookies');
 }
+
+export const addDownloadHttpHeaders = headers => {
+  httpHeaders = { ...httpHeaders, ...headers };
+};
 
 export default download;
