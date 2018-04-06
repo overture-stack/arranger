@@ -102,13 +102,16 @@ function download({ url, params, method = 'GET' }) {
     : null;
 
   let fields = toHtml('params', {
-    arrangerHttpHeaders: httpHeaders,
     ...params,
+  });
+
+  let headers = toHtml('httpHeaders', {
+    ...httpHeaders,
   });
 
   if (cookieKey) {
     Cookies.set(cookieKey, downloadToken);
-    fields += `${toHtml('downloadCookieKey', cookieKey)}${toHtml(
+    fields += `${headers}${toHtml('downloadCookieKey', cookieKey)}${toHtml(
       'downloadCookiePath',
       '/',
     )}`;
