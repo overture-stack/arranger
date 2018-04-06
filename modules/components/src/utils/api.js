@@ -1,6 +1,6 @@
 import { ARRANGER_API } from './config';
 import urlJoin from 'url-join';
-import { addDownloadHttpHeaders } from '.download';
+import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 const api = ({ endpoint = '', body, headers }) =>

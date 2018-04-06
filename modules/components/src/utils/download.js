@@ -1,6 +1,5 @@
 import { attempt, uniqueId } from 'lodash';
 import Cookies from 'js-cookie';
-import { getAlwaysAddHeaders } from './api';
 
 let httpHeaders = {};
 
