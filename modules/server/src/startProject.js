@@ -25,6 +25,30 @@ async function getTypes({ id, es }) {
   }
 }
 
+const initializeSets = async ({ es }) => {
+  if (!await es.indices.exists({ index: 'arranger-sets' })) {
+    await es.indices.create({
+      index: 'arranger-sets',
+      body: {
+        mappings: {
+          'arranger-sets': {
+            properties: {
+              userId: { type: 'keyword' },
+              sqon: { type: 'object' },
+              ids: { type: 'keyword' },
+              setId: { type: 'keyword' },
+              type: { type: 'keyword' },
+              path: { type: 'keyword' },
+              size: { type: 'long' },
+              createdAt: { type: 'date' },
+            },
+          },
+        },
+      },
+    });
+  }
+};
+
 export default async function startProjectApp({ es, id, io }) {
   if (!id) throw new Error('project empty');
 
@@ -143,6 +167,8 @@ export default async function startProjectApp({ es, id, io }) {
         ]
       : [];
   });
+
+  await initializeSets({ es });
 
   let body = flattenDeep(
     await Promise.all([...createAggsState, ...createColumnsState]),
