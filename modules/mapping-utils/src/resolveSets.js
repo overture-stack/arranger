@@ -13,30 +13,30 @@ const retrieveSetIds = async ({
   path,
   SCROLL_TIME = '1m',
   BULK_SIZE = 1000,
-}) =>
-  new Promise((resolve, reject) => {
-    const handleResult = ({ ids = [] }) => (err, response) => {
-      err && reject(err);
-      const newIds = [...ids, ...mapIds({ response, path })];
-      response.hits.total === newIds.length
-        ? resolve(uniq(newIds))
-        : es.scroll(
-            { scroll: SCROLL_TIME, scrollId: response._scroll_id },
-            handleResult({ ids: newIds }),
-          );
-    };
-    es.search(
-      {
-        index,
-        type,
-        sort: ['_id'],
-        scroll: SCROLL_TIME,
-        size: BULK_SIZE,
-        body: { ...(!isEmpty(query) && { query }) },
-      },
-      handleResult({}),
-    );
+}) => {
+  const handleResult = async ({ scrollId, total, ids = [] }) => {
+    if (ids.length === total) return uniq(ids);
+    const response = await es.scroll({ scroll: SCROLL_TIME, scrollId });
+    return handleResult({
+      total,
+      scrollId: response._scroll_id,
+      ids: [...ids, ...mapIds({ response, path })],
+    });
+  };
+  const response = await es.search({
+    index,
+    type,
+    sort: ['_id'],
+    scroll: SCROLL_TIME,
+    size: BULK_SIZE,
+    body: { ...(!isEmpty(query) && { query }) },
   });
+  return handleResult({
+    scrollId: response._scroll_id,
+    ids: mapIds({ response, path }),
+    total: response.hits.total,
+  });
+};
 
 export const saveSet = ({ types }) => async (
   obj,
