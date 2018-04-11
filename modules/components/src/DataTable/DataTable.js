@@ -60,7 +60,7 @@ class DataTable extends React.Component {
           total={total}
           page={page}
           pageSize={pageSize}
-          type={toolbarDisplayType}
+          type={toolbarDisplayType || config.type}
           columnDropdownText={columnDropdownText}
           exportTSVText={exportTSVText}
         />
