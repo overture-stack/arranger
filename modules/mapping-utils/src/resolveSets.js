@@ -2,40 +2,36 @@ import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
 import { buildQuery } from '@arranger/middleware';
 
-const mapIds = ({ response, path }) =>
-  response.hits.hits.map(x => get(x, `_source.${path.split('__').join('.')}`));
-
 const retrieveSetIds = async ({
   es,
   index,
   type,
   query,
   path,
-  SCROLL_TIME = '1m',
   BULK_SIZE = 1000,
 }) => {
-  const handleResult = async ({ scrollId, total, ids = [] }) => {
-    if (ids.length === total) return uniq(ids);
-    const response = await es.scroll({ scroll: SCROLL_TIME, scrollId });
-    return handleResult({
-      total,
-      scrollId: response._scroll_id,
-      ids: [...ids, ...mapIds({ response, path })],
+  const search = async ({ searchAfter }) => {
+    const response = await es.search({
+      index,
+      type,
+      sort: ['_id'],
+      size: BULK_SIZE,
+      body: {
+        ...(!isEmpty(query) && { query }),
+        ...(searchAfter && { search_after: searchAfter }),
+      },
     });
+    const ids = response.hits.hits.map(x =>
+      get(x, `_source.${path.split('__').join('.')}`),
+    );
+    return { ids, searchAfter: ids.slice(-1), total: response.hits.total };
   };
-  const response = await es.search({
-    index,
-    type,
-    sort: ['_id'],
-    scroll: SCROLL_TIME,
-    size: BULK_SIZE,
-    body: { ...(!isEmpty(query) && { query }) },
-  });
-  return handleResult({
-    scrollId: response._scroll_id,
-    ids: mapIds({ response, path }),
-    total: response.hits.total,
-  });
+  const handleResult = async ({ searchAfter, total, ids = [] }) => {
+    if (ids.length === total) return uniq(ids);
+    const { ids: newIds, ...response } = await search({ searchAfter });
+    return handleResult({ ...response, ids: [...ids, ...newIds] });
+  };
+  return handleResult(await search({}));
 };
 
 export const saveSet = ({ types }) => async (
