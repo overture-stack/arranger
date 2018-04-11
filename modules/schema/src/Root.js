@@ -47,7 +47,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   type Mutation {
     saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
-    saveSet(index: String! userId: String! sqon: JSON! path: String!): Set
+    saveSet(type: String! userId: String! sqon: JSON! path: String!): Set
   }
 
   schema {
