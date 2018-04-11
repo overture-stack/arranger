@@ -43,11 +43,10 @@ export const saveSet = ({ types }) => async (
   { index, userId, sqon, path },
   { es, projectId, io },
 ) => {
-  const finalSqon = sqon || {};
   const { nested_fields: nestedFields, es_type } = types.find(
     ([, type]) => type.index === index,
   )[1];
-  const query = buildQuery({ nestedFields, filters: finalSqon });
+  const query = buildQuery({ nestedFields, filters: sqon || {} });
   const ids = await retrieveSetIds({
     es,
     index,
@@ -61,10 +60,10 @@ export const saveSet = ({ types }) => async (
     createdAt: Date.now(),
     ids,
     path,
-    size: ids.length,
-    sqon: finalSqon,
-    type: index,
+    sqon,
     userId,
+    size: ids.length,
+    type: index,
   };
 
   await es.index({
