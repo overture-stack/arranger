@@ -181,14 +181,7 @@ function getGroupFilter({ nestedFields, filter: { content, op } }) {
   return wrappers[op](esFilters);
 }
 
-function getSetFilter({ nestedFields, filter }) {
-  const { content } = filter;
-
-  const setId = (Array.isArray(content.value)
-    ? content.value[0]
-    : content.value
-  ).replace('set_id:', '');
-
+function getSetFilter({ nestedFields, filter, filter: { content } }) {
   return wrapFilter({
     filter,
     nestedFields,
@@ -198,7 +191,7 @@ function getSetFilter({ nestedFields, filter }) {
         [content.field]: {
           index: 'arranger-sets',
           type: 'arranger-sets',
-          id: setId,
+          id: _.flatMap([content.value])[0].replace('set_id:', ''),
           path: 'ids',
         },
       },
