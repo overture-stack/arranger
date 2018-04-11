@@ -1,6 +1,7 @@
 import React from 'react';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
+import pluralize from 'pluralize';
 
 import { currentFilterValue } from '../../SQONView/utils';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
@@ -20,6 +21,32 @@ const enhance = compose(
     if (!currentFilterValue(sqon)) setFilterVal('');
   }),
 );
+
+class Showing extends React.Component {
+  state = {
+    type: null,
+  };
+  componentWillReceiveProps({ fetchParam, fetchData }) {
+    const { type } = this.props;
+    if (fetchParam && fetchData) {
+      fetchData(fetchParam).then(({ data }) =>
+        this.setState({
+          type: pluralize(type, data.length),
+        }),
+      );
+    }
+  }
+  render() {
+    const { page, pageSize, total, type, fetchParam, fetchData } = this.props;
+    return (
+      <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+        Showing {(page * pageSize + 1).toLocaleString()} -{' '}
+        {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
+        {total?.toLocaleString()} {this.state.type || type}
+      </div>
+    );
+  }
+}
 
 const TableToolbar = ({
   columns,
@@ -41,16 +68,14 @@ const TableToolbar = ({
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
   sqon,
+  fetchParam,
+  fetchData,
 }) => (
   <div
     style={{ display: 'flex', flex: 'none', ...style }}
     className="tableToolbar"
   >
-    <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-      Showing {(page * pageSize + 1).toLocaleString()} -{' '}
-      {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
-      {total?.toLocaleString()} {type}
-    </div>
+    <Showing {...{ page, pageSize, total, type, fetchParam, fetchData }} />
     <div className="group">
       <TextFilter
         value={filterVal}

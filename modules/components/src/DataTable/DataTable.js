@@ -8,6 +8,7 @@ class DataTable extends React.Component {
     this.state = {
       pageSize: 20,
       sort: props.config.defaultSorted || [],
+      fetchParam: null,
     };
   }
   componentWillReceiveProps(nextProps) {
@@ -34,7 +35,14 @@ class DataTable extends React.Component {
       exportTSVText,
       maxPagesOptions,
     } = this.props;
-    const { page, pageSize, total } = this.state;
+    const { page, pageSize, total, fetchParam } = this.state;
+
+    const onTableFetchData = fetchData
+      ? fetchParam => {
+          this.setState({ fetchParam });
+          return fetchData(fetchParam);
+        }
+      : null;
 
     return (
       <>
@@ -54,13 +62,15 @@ class DataTable extends React.Component {
           type={config.type}
           columnDropdownText={columnDropdownText}
           exportTSVText={exportTSVText}
+          fetchParam={fetchParam}
+          fetchData={fetchData}
         />
         <Table
           style={tableStyle}
           propsData={data}
           sqon={sqon}
           config={config}
-          fetchData={fetchData}
+          fetchData={onTableFetchData}
           setSelectedTableRows={setSelectedTableRows}
           onPaginationChange={state => this.setState(state)}
           onSortedChange={sort => this.setState({ sort, page: 0 })}
