@@ -1,7 +1,6 @@
 import React from 'react';
 import { isEqual } from 'lodash';
 import { Table, TableToolbar } from './';
-import { Subject } from 'rxjs';
 
 class DataTable extends React.Component {
   constructor(props) {
@@ -9,16 +8,7 @@ class DataTable extends React.Component {
     this.state = {
       pageSize: 20,
       sort: props.config.defaultSorted || [],
-      toolbarDisplayType: null,
     };
-    const { config: { type } } = props;
-
-    this.$fetchedData = new Subject();
-    this.$fetchedData.subscribe(({ data }) => {
-      this.setState({
-        toolbarDisplayType: type + (data.length > 1 ? 's' : ''),
-      });
-    });
   }
   componentWillReceiveProps(nextProps) {
     if (!isEqual(nextProps.sqon, this.props.sqon)) {
@@ -44,7 +34,8 @@ class DataTable extends React.Component {
       exportTSVText,
       maxPagesOptions,
     } = this.props;
-    const { page, pageSize, total, toolbarDisplayType } = this.state;
+    const { page, pageSize, total } = this.state;
+
     return (
       <>
         <TableToolbar
@@ -60,7 +51,7 @@ class DataTable extends React.Component {
           total={total}
           page={page}
           pageSize={pageSize}
-          type={toolbarDisplayType}
+          type={config.type}
           columnDropdownText={columnDropdownText}
           exportTSVText={exportTSVText}
         />
@@ -76,7 +67,6 @@ class DataTable extends React.Component {
           defaultPageSize={pageSize}
           loading={loading}
           maxPagesOptions={maxPagesOptions}
-          $fetchedData={this.$fetchedData}
         />
       </>
     );

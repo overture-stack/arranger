@@ -49,7 +49,7 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
-    const { fetchData, config, sqon, $fetchedData } = this.props;
+    const { fetchData, config, sqon } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
@@ -85,7 +85,6 @@ class DataTable extends React.Component {
             selectedTableRows,
           ),
         );
-        $fetchedData.next({ data });
       })
       .catch(err => {
         console.error(err);
