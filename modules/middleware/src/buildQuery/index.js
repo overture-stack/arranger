@@ -181,6 +181,31 @@ function getGroupFilter({ nestedFields, filter: { content, op } }) {
   return wrappers[op](esFilters);
 }
 
+function getSetFilter({ nestedFields, filter }) {
+  const { content } = filter;
+
+  const setId = (Array.isArray(content.value)
+    ? content.value[0]
+    : content.value
+  ).replace('set_id:', '');
+
+  return wrapFilter({
+    filter,
+    nestedFields,
+    esFilter: {
+      terms: {
+        boost: 0,
+        [content.field]: {
+          index: 'arranger-sets',
+          type: 'arranger-sets',
+          id: setId,
+          path: 'ids',
+        },
+      },
+    },
+  });
+}
+
 function opSwitch({ nestedFields, filter }) {
   const { op, content: { value } } = filter;
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
@@ -188,6 +213,8 @@ function opSwitch({ nestedFields, filter }) {
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
     if (`${value[0]}`.includes('*')) {
       return getRegexFilter({ nestedFields, filter });
+    } else if (`${value[0]}`.includes('set_id:')) {
+      return getSetFilter({ nestedFields, filter });
     } else {
       return getTermFilter({ nestedFields, filter });
     }
