@@ -10,7 +10,7 @@ const retrieveSetIds = async ({
   path,
   BULK_SIZE = 1000,
 }) => {
-  const search = async ({ searchAfter }) => {
+  const search = async ({ searchAfter } = {}) => {
     const response = await es.search({
       index,
       type,
@@ -31,7 +31,7 @@ const retrieveSetIds = async ({
     const { ids: newIds, ...response } = await search({ searchAfter });
     return handleResult({ ...response, ids: [...ids, ...newIds] });
   };
-  return handleResult(await search({}));
+  return handleResult(await search());
 };
 
 export const saveSet = ({ types }) => async (
