@@ -3,6 +3,7 @@ import express from 'express';
 import socketIO from 'socket.io';
 import { Server } from 'http';
 import addProject from './addProject';
+import saveSet from './saveSet';
 import Arranger from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
 
@@ -23,5 +24,7 @@ describe('@arranger/server', () => {
     }),
   );
 
-  addProject({ server: http, port, esHost, api, projectId });
+  const env = { server: http, port, esHost, api, projectId };
+  addProject(env);
+  saveSet(env); // TODO
 });

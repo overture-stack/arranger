@@ -1,17 +1,22 @@
 import GraphQLJSON from 'graphql-type-json';
+import { GraphQLDate } from 'graphql-scalars';
 import uuid from 'uuid/v4';
-import { startCase, zip } from 'lodash';
+import { startCase } from 'lodash';
+
 import {
   createConnectionResolvers,
+  saveSet,
   mappingToFields,
 } from '@arranger/mapping-utils';
-// import { typeDefs as MutationTypeDefs } from './Mutation';
+
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
+import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
 import { typeDefs as StateTypeDefs } from './State';
 
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   scalar JSON
+  scalar Date
 
   ${scalarTypes.map(([type]) => `scalar ${type}`)}
 
@@ -42,6 +47,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   type Mutation {
     saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
+    saveSet(type: String! userId: String! sqon: JSON! path: String!): Set
   }
 
   schema {
@@ -52,8 +58,8 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
 export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
   RootTypeDefs({ types, rootTypes, scalarTypes }),
-  // MutationTypeDefs,
   AggregationsTypeDefs,
+  SetTypeDefs,
   SortTypeDefs,
   StateTypeDefs,
   ...types.map(([key, type]) => mappingToFields({ key, type, parent: '' })),
@@ -64,6 +70,7 @@ let resolveObject = () => ({});
 export let resolvers = ({ types, rootTypes, scalarTypes }) => {
   return {
     JSON: GraphQLJSON,
+    Date: GraphQLDate,
     Root: {
       viewer: resolveObject,
       ...[...types, ...rootTypes].reduce(
@@ -162,6 +169,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
 
         return data.hits.hits[0]._source;
       },
+      saveSet: saveSet({ types }),
     },
   };
 };
