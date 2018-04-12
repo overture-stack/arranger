@@ -726,7 +726,11 @@ class Dashboard extends React.Component {
                                   {this.state.activeField?.field}
                                 </label>
                               </div>
-                              {Object.entries(this.state.activeField || {})
+                              {Object.entries(
+                                console.log(this.state.activeField) ||
+                                  this.state.activeField ||
+                                  {},
+                              )
                                 .filter(([key]) => key !== 'field')
                                 .map(([key, val]) => (
                                   <div key={key} className="type-container">
