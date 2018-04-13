@@ -341,11 +341,8 @@ div {
 /**************************************/
 /****** styling for quick search ******/
 /**************************************/
-.quick-search {
-  margin: 0 0 5px 5px;
-}
 .quick-search-pinned-value {
-  margin-bottom: 2px;
+  margin-bottom: 10px;
 }
 .quick-search-pinned-value > * {
   display: inline-flex;
