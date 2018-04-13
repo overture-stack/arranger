@@ -31,7 +31,7 @@ describe('dataToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2';
+    const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -66,7 +66,7 @@ describe('dataToTSV accessor columns', () => {
       emptyValue: 'empty',
     };
 
-    const expected = 'Test1\tTest2\n1\ttxt1\n2\tempty';
+    const expected = 'Test1\tTest2\n1\ttxt1\n2\tempty\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -101,7 +101,7 @@ describe('dataToTSV accessor columns', () => {
       },
     };
 
-    const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2';
+    const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
     const stream = PassThrough();
     let actual = '';
     stream
@@ -180,7 +180,7 @@ describe('dataToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\t3, 4\n2\t1, 2';
+    const expected = 'Test1\tTest2\n1\t3, 4\n2\t1, 2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -255,7 +255,7 @@ describe('dataToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\t3\n1\t4\n2\t1\n2\t2';
+    const expected = 'Test1\tTest2\n1\t3\n1\t4\n2\t1\n2\t2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
