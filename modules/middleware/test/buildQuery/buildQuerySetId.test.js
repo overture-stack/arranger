@@ -1,5 +1,5 @@
 import buildQuery from '../../src/buildQuery';
-test.skip('buildQuery sets', () => {
+test('buildQuery sets', () => {
   const nestedFields = ['files', 'files.foo'];
 
   const tests = [
@@ -14,8 +14,8 @@ test.skip('buildQuery sets', () => {
       output: {
         terms: {
           case_id: {
-            index: 'case_set',
-            type: 'case_set',
+            index: 'arranger-sets',
+            type: 'arranger-sets',
             id: 'aaa',
             path: 'ids',
           },
@@ -33,9 +33,9 @@ test.skip('buildQuery sets', () => {
       },
       output: {
         terms: {
-          'gene.ssm.ssm_id': {
-            index: 'ssm_set',
-            type: 'ssm_set',
+          'ssms.ssm_id': {
+            index: 'arranger-sets',
+            type: 'arranger-sets',
             id: 'aaa',
             path: 'ids',
           },
@@ -60,8 +60,8 @@ test.skip('buildQuery sets', () => {
                 {
                   terms: {
                     'files.file_id': {
-                      index: 'file_set',
-                      type: 'file_set',
+                      index: 'arranger-sets',
+                      type: 'arranger-sets',
                       id: 'aaa',
                       path: 'ids',
                     },
