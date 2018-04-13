@@ -7,3 +7,4 @@ export { default as DetectNewVersion } from './DetectNewVersion';
 export {
   default as AdvancedFacetView,
 } from '../AdvancedFacetView/LiveAdvancedFacetView';
+export { default as QuickSearch } from './QuickSearch';

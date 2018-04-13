@@ -13,9 +13,10 @@ class Query extends Component {
   }
   componentWillReceiveProps(next) {
     if (
-      !isEqual(this.props.query, next.query) ||
-      !isEqual(this.props.variables, next.variables) ||
-      (next.shouldFetch && !this.props.shouldFetch)
+      next.shouldFetch &&
+      (!this.props.shouldFetch ||
+        !isEqual(this.props.query, next.query) ||
+        !isEqual(this.props.variables, next.variables))
     ) {
       this.fetch(next);
     }

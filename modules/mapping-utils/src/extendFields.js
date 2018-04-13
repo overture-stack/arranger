@@ -8,6 +8,7 @@ export default mapping =>
     displayName: startCase(field.replace(/\./g, ' ')),
     active: false,
     isArray: false,
+    primaryKey: false,
     quickSearchEnabled: false,
     unit: null,
   }));
