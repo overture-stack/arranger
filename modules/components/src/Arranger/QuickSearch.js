@@ -161,6 +161,7 @@ const enhance = compose(
 
 const inputRef = React.createRef();
 const QuickSearch = ({
+  className,
   sqon,
   setSQON,
   primaryKeyField,
@@ -177,7 +178,7 @@ const QuickSearch = ({
   PinnedValueComponent = SQONBubble,
 }) =>
   primaryKeyField && quickSearchFields?.length ? (
-    <div className="quick-search">
+    <div className={`quick-search ${className}`}>
       <div className="quick-search-pinned-values">
         {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
           <div className="quick-search-pinned-value">
