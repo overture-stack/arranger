@@ -1,11 +1,8 @@
-import urlJoin from 'url-join';
-
-import { ARRANGER_API, PROJECT_ID } from '../../utils/config';
 import download from '../../utils/download';
 
-export default async function({ files = [], fileName, options = {} }) {
+export default async function({ url, files = [], fileName, options = {} }) {
   return download({
-    url: urlJoin(ARRANGER_API, `/${PROJECT_ID}/download`),
+    url,
     method: 'POST',
     ...options,
     params: {

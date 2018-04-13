@@ -19,6 +19,7 @@ const Table = ({
         return (
           <DataTable
             {...props}
+            projectId={projectId}
             sqon={sqon}
             config={{
               ...columnState.state,
