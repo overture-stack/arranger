@@ -42,6 +42,7 @@ const TableToolbar = ({
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
   sqon,
+  downloadUrl,
 }) => {
   const isPlural =
     total > 1 &&
@@ -94,6 +95,7 @@ const TableToolbar = ({
               }}
               onClick={() => {
                 saveTSV({
+                  url: downloadUrl,
                   files: [
                     {
                       fileName: `${type}-table.tsv`,

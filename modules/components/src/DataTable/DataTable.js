@@ -1,5 +1,8 @@
 import React from 'react';
 import { isEqual } from 'lodash';
+import urlJoin from 'url-join';
+
+import { ARRANGER_API, PROJECT_ID } from '../utils/config';
 import { Table, TableToolbar } from './';
 
 class DataTable extends React.Component {
@@ -33,6 +36,8 @@ class DataTable extends React.Component {
       columnDropdownText,
       exportTSVText,
       maxPagesOptions,
+      projectId = PROJECT_ID,
+      downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -54,6 +59,7 @@ class DataTable extends React.Component {
           type={config.type}
           columnDropdownText={columnDropdownText}
           exportTSVText={exportTSVText}
+          downloadUrl={downloadUrl}
         />
         <Table
           style={tableStyle}
