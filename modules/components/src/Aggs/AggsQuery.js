@@ -1,9 +1,17 @@
 import React from 'react';
 import { capitalize } from 'lodash';
 import Query from '../Query';
+import defaultApi from '../utils/api';
 
-export default ({ index = '', aggs = [], sqon = null, ...props }) =>
-  !index || !aggs.length ? (
+export default ({
+  index = '',
+  aggs = [],
+  sqon = null,
+  api = defaultApi,
+  ...props
+}) => {
+  console.log('api: ', api);
+  return !index || !aggs.length ? (
     ''
   ) : (
     <Query
@@ -57,6 +65,7 @@ export default ({ index = '', aggs = [], sqon = null, ...props }) =>
           }
         }
       `}
-      {...props}
+      {...{ api, ...props }}
     />
   );
+};
