@@ -11,7 +11,7 @@ import TextHighlight from '../../TextHighlight';
 import QuickSearchQuery from './QuickSearchQuery';
 
 const currentValues = ({ sqon, primaryKeyField }) =>
-  currentFieldValue({ sqon, dotField: primaryKeyField.field, op: 'in' });
+  currentFieldValue({ sqon, dotField: primaryKeyField?.field, op: 'in' });
 
 const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
   setSQON(
@@ -64,110 +64,107 @@ const QuickSearch = ({
       loading,
       primaryKeyField,
       searchResultIndexLookup,
-    }) =>
-      enabled ? (
-        <div className={`quick-search ${className}`}>
-          <div className="quick-search-pinned-values">
-            {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
-              <div className="quick-search-pinned-value">
-                <PinnedValueComponent
-                  onClick={() =>
-                    toggleValue({ sqon, setSQON, primaryKeyField, primaryKey })
-                  }
-                >
-                  {primaryKey}
-                </PinnedValueComponent>
-              </div>
-            ))}
-          </div>
-          <TextInput
-            icon={loading ? LoadingIcon : Icon}
-            type="text"
-            value={value}
-            componentRef={inputRef}
-            placeholder={placeholder}
-            onChange={({ target: { value } }) => setValue(value || '')}
-          />
-
-          <div
-            className={css`
-              position: relative;
-            `}
-          >
-            {searchResults?.some(x => x.results?.length) && (
-              <div
-                className={`quick-search-results ${css`
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  margin: 0;
-                  padding: 0;
-                  z-index: 1;
-                  background: white;
-                  width: ${inputRef.current?.getBoundingClientRect()?.width}px;
-                `}`}
+    }) => (
+      <div className={`quick-search ${className}`}>
+        <div className="quick-search-pinned-values">
+          {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
+            <div className="quick-search-pinned-value">
+              <PinnedValueComponent
+                onClick={() =>
+                  toggleValue({ sqon, setSQON, primaryKeyField, primaryKey })
+                }
               >
-                {flatMap(
-                  searchResults.map(
-                    ({
-                      results,
-                      displayName,
-                      index = searchResultIndexLookup[displayName] % 5 + 1,
-                    }) =>
-                      results.map(({ primaryKey, result, matchedString }) => (
+                {primaryKey}
+              </PinnedValueComponent>
+            </div>
+          ))}
+        </div>
+        <TextInput
+          disabled={!enabled}
+          icon={loading ? LoadingIcon : Icon}
+          type="text"
+          value={value}
+          componentRef={inputRef}
+          placeholder={placeholder}
+          onChange={({ target: { value } }) => setValue(value || '')}
+        />
+
+        <div
+          className={css`
+            position: relative;
+          `}
+        >
+          {searchResults?.some(x => x.results?.length) && (
+            <div
+              className={`quick-search-results ${css`
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+                padding: 0;
+                z-index: 1;
+                background: white;
+                width: ${inputRef.current?.getBoundingClientRect()?.width}px;
+              `}`}
+            >
+              {flatMap(
+                searchResults.map(
+                  ({
+                    results,
+                    displayName,
+                    index = searchResultIndexLookup[displayName] % 5 + 1,
+                  }) =>
+                    results.map(({ primaryKey, result, matchedString }) => (
+                      <div
+                        key={result}
+                        className={`quick-search-result ${css`
+                          cursor: pointer;
+                        `}`}
+                        onClick={() => {
+                          setValue('');
+                          if (
+                            !currentValues({
+                              sqon,
+                              primaryKeyField,
+                            })?.includes(primaryKey)
+                          ) {
+                            toggleValue({
+                              sqon,
+                              setSQON,
+                              primaryKeyField,
+                              primaryKey,
+                            });
+                          }
+                        }}
+                      >
                         <div
-                          key={result}
-                          className={`quick-search-result ${css`
-                            cursor: pointer;
-                          `}`}
-                          onClick={() => {
-                            setValue('');
-                            if (
-                              !currentValues({
-                                sqon,
-                                primaryKeyField,
-                              })?.includes(primaryKey)
-                            ) {
-                              toggleValue({
-                                sqon,
-                                setSQON,
-                                primaryKeyField,
-                                primaryKey,
-                              });
-                            }
-                          }}
+                          className={`quick-search-result-entity quick-search-result-entity-${index}`}
                         >
-                          <div
-                            className={`quick-search-result-entity quick-search-result-entity-${index}`}
-                          >
-                            <div>{displayName.slice(0, 2).toUpperCase()}</div>
+                          <div>{displayName.slice(0, 2).toUpperCase()}</div>
+                        </div>
+                        <div className="quick-search-result-details">
+                          <div className="quick-search-result-key">
+                            {primaryKey}
                           </div>
-                          <div className="quick-search-result-details">
-                            <div className="quick-search-result-key">
-                              {primaryKey}
-                            </div>
-                            <div className="quick-search-result-value">
-                              <TextHighlight
-                                highlightClassName={`quick-search-result-value-highlight ${css`
-                                  font-weight: bold;
-                                `}`}
-                                highlightText={matchedString}
-                                content={result}
-                              />
-                            </div>
+                          <div className="quick-search-result-value">
+                            <TextHighlight
+                              highlightClassName={`quick-search-result-value-highlight ${css`
+                                font-weight: bold;
+                              `}`}
+                              highlightText={matchedString}
+                              content={result}
+                            />
                           </div>
                         </div>
-                      )),
-                  ),
-                )}
-              </div>
-            )}
-          </div>
+                      </div>
+                    )),
+                ),
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        <div />
-      )
-    }
+      </div>
+    )}
   />
 );
 
