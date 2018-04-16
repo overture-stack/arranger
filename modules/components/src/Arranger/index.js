@@ -8,3 +8,4 @@ export {
   default as AdvancedFacetView,
 } from '../AdvancedFacetView/LiveAdvancedFacetView';
 export { default as QuickSearch } from './QuickSearch';
+export { default as MatchBox } from './MatchBox';

@@ -402,6 +402,17 @@ div {
 .quick-search-result-entity-5 {
   background-color: #d8202f;
 }
+
+/**************************************/
+/******* styling for match box  *******/
+/**************************************/
+.match-box-id-form > * {
+  margin-bottom: 1.5em;
+}
+.match-box-id-form textarea {
+  min-height: 100px;
+}
+
 /**************************************/
 /***** styling for the dropdown  ******/
 /**************************************/
