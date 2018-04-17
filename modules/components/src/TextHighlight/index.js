@@ -8,8 +8,13 @@ export default class extends React.Component {
   }
 
   render() {
-    // console.log('render highlight!!!');
-    const { content, highlightText } = this.props;
+    const {
+      content,
+      highlightText,
+      highlightClassName = css`
+        background: #f7ed9c;
+      `,
+    } = this.props;
     const regex = new RegExp(highlightText, 'i');
     const matchResult = content.match(regex);
     const foundIndex = matchResult?.index;
@@ -23,13 +28,7 @@ export default class extends React.Component {
     return (
       <span className="textHighlight">
         {seg1}
-        <span
-          className={css`
-            background: #f7ed9c;
-          `}
-        >
-          {foundQuery}
-        </span>
+        <span className={highlightClassName}>{foundQuery}</span>
         {seg2}
       </span>
     );

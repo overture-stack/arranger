@@ -339,6 +339,70 @@ div {
 }
 
 /**************************************/
+/****** styling for quick search ******/
+/**************************************/
+.quick-search-pinned-value {
+  margin-bottom: 10px;
+}
+.quick-search-pinned-value > * {
+  display: inline-flex;
+}
+.quick-search-results {
+  box-shadow: 1px 1px 1px 0px rgba(0, 0, 0, 0.43);
+}
+.quick-search-result {
+  display: flex;
+  align-items: center;
+  background: white;
+}
+.quick-search-result:hover {
+  box-shadow: inset 0px 0px 15px 0px rgba(0, 0, 0, 0.1);
+}
+.quick-search-result:hover,
+.quick-search-result:nth-child(even) {
+  background-color: #f4f5f8;
+}
+.quick-search-result-entity {
+  border-radius: 50%;
+  width: 14%;
+  margin: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-search-result-entity:before {
+  content: '';
+  float: left;
+  padding-top: 100%;
+}
+.quick-search-result-details {
+  overflow: hidden;
+}
+.quick-search-result-key {
+  font-size: 0.9em;
+}
+.quick-search-result-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+.quick-search-result-entity-1 {
+  background-color: #a42c90;
+}
+.quick-search-result-entity-2 {
+  background-color: #00afed;
+}
+.quick-search-result-entity-3 {
+  background-color: #ff9324;
+}
+.quick-search-result-entity-4 {
+  background-color: #009bb8;
+}
+.quick-search-result-entity-5 {
+  background-color: #d8202f;
+}
+/**************************************/
 /***** styling for the dropdown  ******/
 /**************************************/
 .dropDownHeader {

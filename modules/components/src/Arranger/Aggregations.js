@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { AggsState, AggsQuery, TermAgg } from '../Aggs';
-import { inCurrentSQON } from '../SQONView/utils';
+import { AggsState, AggsQuery } from '../Aggs';
 import aggComponents from '../Aggs/aggComponentsMap.js';
 
 const Aggregations = ({
