@@ -86,11 +86,10 @@ const QuickSearch = ({
           value={value}
           componentRef={inputRef}
           placeholder={placeholder}
-          onChange={({ target: { value } }) => setValue(value || '')}
+          onChange={({ target: { value = '' } }) => setValue(value)}
         />
-
         <div
-          className={css`
+          css={`
             position: relative;
           `}
         >
