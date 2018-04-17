@@ -10,6 +10,7 @@ const Aggregations = ({
   graphqlField,
   className = '',
   style,
+  api,
 }) => {
   return (
     <div className={`aggregations ${className}`} style={style}>
@@ -20,6 +21,7 @@ const Aggregations = ({
           const aggs = aggsState.aggs.filter(x => x.show);
           return (
             <AggsQuery
+              api={api}
               debounceTime={300}
               projectId={projectId}
               index={graphqlField}

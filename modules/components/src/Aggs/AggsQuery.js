@@ -10,7 +10,6 @@ export default ({
   api = defaultApi,
   ...props
 }) => {
-  console.log('api: ', api);
   return !index || !aggs.length ? (
     ''
   ) : (
