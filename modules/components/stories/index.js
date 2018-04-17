@@ -5,3 +5,4 @@ import './SQONView';
 import './Aggs';
 import './Treeview';
 import './AdvancedFacetView';
+import './Tabs';

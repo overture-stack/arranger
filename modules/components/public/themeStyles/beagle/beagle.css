@@ -412,6 +412,9 @@ div {
 .match-box-id-form textarea {
   min-height: 100px;
 }
+.match-box-results-table {
+  margin-bottom: 20px;
+}
 
 /**************************************/
 /***** styling for the dropdown  ******/
@@ -553,4 +556,27 @@ div {
 
 .facetViewWrapper .bucket .bucket-item:last-child:not(.col_3):not(.only_row) {
   border-right: solid 1px #e0e1e6;
+}
+
+/*********************************************/
+/************* styling for tabs **************/
+/*********************************************/
+.tabs-title {
+  border: solid 1px #d4d6dd;
+  border-bottom: none;
+  cursor: pointer;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  padding: 10px 20px;
+  margin-right: 10px;
+  background-color: #f4f5f8;
+  color: #2b388f;
+}
+.tabs-title.active-tab {
+  border: none;
+  background-color: #404c9a;
+  color: white;
+}
+.tabs-table .rt-th {
+  color: #2b388f;
 }

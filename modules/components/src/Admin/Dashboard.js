@@ -731,7 +731,54 @@ class Dashboard extends React.Component {
                                 .map(([key, val]) => (
                                   <div key={key} className="type-container">
                                     {startCase(key)}:
-                                    {key === 'unit' ? (
+                                    {key === 'matchBoxKeyField' ? (
+                                      this.state.activeField?.type ===
+                                        'nested' && (
+                                        <select
+                                          value={val || ''}
+                                          onChange={async e => {
+                                            update({ val });
+                                            let r = await api({
+                                              endpoint: `/projects/${
+                                                match.params.projectId
+                                              }/types/${
+                                                match.params.index
+                                              }/fields/${
+                                                this.state.activeField?.field
+                                              }/update`,
+                                              body: {
+                                                eshost: this.state.eshost,
+                                                key,
+                                                value: e.target.value,
+                                              },
+                                            });
+                                            let activeField = r.fields.find(
+                                              x =>
+                                                x.field ===
+                                                this.state.activeField.field,
+                                            );
+
+                                            this.setState({
+                                              fields: r.fields,
+                                              activeField,
+                                            });
+                                          }}
+                                        >
+                                          <option value="" />
+                                          {this.state.fields
+                                            .filter(x =>
+                                              x.field.includes(
+                                                this.state.activeField.field,
+                                              ),
+                                            )
+                                            .map(x => (
+                                              <option value={x.field}>
+                                                {x.field}
+                                              </option>
+                                            ))}
+                                        </select>
+                                      )
+                                    ) : key === 'unit' ? (
                                       <State
                                         initial={{
                                           val,
