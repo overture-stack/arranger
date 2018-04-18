@@ -28,9 +28,9 @@ export default class extends Component {
     const { api = defaultApi } = this.props;
     try {
       let { data } = await api({
-        endpoint: `/${this.props.projectId}/graphql`,
+        endpoint: `/${this.props.projectId}/graphql/aggsStateQuery`,
         body: {
-          query: `
+          query: `query aggsStateQuery
             {
               ${graphqlField} {
                 aggsState {
