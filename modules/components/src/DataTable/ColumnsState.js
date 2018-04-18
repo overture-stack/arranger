@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 
-import api from '../utils/api';
+import defaultApi from '../utils/api';
 
 let columnFields = `
   state {
@@ -45,6 +45,7 @@ export default class extends Component {
   }
 
   fetchColumnsState = debounce(async ({ graphqlField }) => {
+    const { api = defaultApi } = this.props;
     try {
       let { data } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
@@ -86,6 +87,7 @@ export default class extends Component {
   }, 300);
 
   save = debounce(async state => {
+    const { api = defaultApi } = this.props;
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
       body: {
