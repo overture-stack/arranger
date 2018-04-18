@@ -22,8 +22,6 @@ const retrieveSetIds = async ({
       size: BULK_SIZE,
       body,
     });
-    console.log(JSON.stringify(body, null, 2));
-    console.log(JSON.stringify(response.hits.total, null, 2));
     const ids = response.hits.hits.map(x =>
       get(x, `_source.${path.split('__').join('.')}`),
     );
