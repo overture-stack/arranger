@@ -2,6 +2,8 @@ import { Component } from 'react';
 import { debounce } from 'lodash';
 import api from '../utils/api';
 
+import { decorateFieldWithColumnsState } from '../Arranger/QuickSearch/QuickSearchQuery';
+
 let matchBoxFields = `
   state {
     displayName
@@ -13,7 +15,7 @@ let matchBoxFields = `
 `;
 
 class MatchBoxState extends Component {
-  state = { extended: [], matchBoxFields: [], temp: [] };
+  state = { extended: [], columnsState: {}, matchBoxState: [], temp: [] };
 
   async componentDidMount() {
     this.fetchMatchBoxState(this.props);
@@ -27,14 +29,32 @@ class MatchBoxState extends Component {
 
   fetchMatchBoxState = debounce(async ({ graphqlField }) => {
     try {
-      let { data } = await api({
+      let {
+        data: {
+          [graphqlField]: {
+            extended,
+            matchBoxState: { state: matchBoxState },
+            columnsState: { state: columnsState },
+          },
+        },
+      } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
             {
               ${graphqlField} {
+                extended
                 matchBoxState {
                   ${matchBoxFields}
+                }
+                columnsState {
+                  state {
+                    columns {
+                      field
+                      query
+                      jsonPath
+                    }
+                  }
                 }
               }
             }
@@ -42,23 +62,11 @@ class MatchBoxState extends Component {
         },
       });
 
-      let { data: { [this.props.graphqlField]: { extended } } } = await api({
-        endpoint: `/${this.props.projectId}/graphql`,
-        body: {
-          query: `
-          query{
-            ${this.props.graphqlField} {
-              extended
-            }
-          }
-        `,
-        },
-      });
-
       this.setState({
+        matchBoxState,
+        temp: matchBoxState,
         extended,
-        matchBoxState: data[graphqlField].matchBoxState.state,
-        temp: data[graphqlField].matchBoxState.state,
+        columnsState,
       });
     } catch (e) {}
   }, 300);
@@ -100,7 +108,27 @@ class MatchBoxState extends Component {
     return this.props.render({
       update: this.update,
       matchBoxState: this.state.temp,
-      activeFields: this.state.temp?.filter(x => x.isActive),
+      primaryKeyField: this.state.extended?.find(x => x.primaryKey),
+      activeFields: this.state.temp?.filter(x => x.isActive)?.map(x => {
+        return {
+          ...x,
+          keyField: {
+            field: x.keyField,
+            ...decorateFieldWithColumnsState({
+              columnsState: this.state.columnsState,
+              field: x.keyField,
+            }),
+          },
+          searchFields: x.searchFields.map(y => ({
+            field: y,
+            entityName: x.displayName,
+            ...decorateFieldWithColumnsState({
+              columnsState: this.state.columnsState,
+              field: y,
+            }),
+          })),
+        };
+      }),
       extended: this.state.extended,
     });
   }

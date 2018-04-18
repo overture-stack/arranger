@@ -1,6 +1,8 @@
-import { capitalize, uniqBy } from 'lodash';
+import { capitalize, uniq } from 'lodash';
 import { compose, withProps } from 'recompose';
 import { withQuery } from '../../Query';
+
+import { decorateFieldWithColumnsState } from './QuickSearchQuery';
 
 const nestedField = ({ field, nestedFields }) =>
   nestedFields.find(
@@ -41,29 +43,23 @@ const enhance = compose(
       quickSearchFields = data?.[index]?.extended
         ?.filter(x => x.quickSearchEnabled)
         ?.map(({ field }) =>
-          data?.[index]?.columnsState?.state?.columns?.find(
-            y => y.field === field,
-          ),
+          decorateFieldWithColumnsState({
+            columnsState: data?.[index]?.columnsState?.state,
+            field,
+          }),
         )
         ?.map(x => ({
           ...x,
-          displayName:
+          entityName:
             nestedField({ field: x, nestedFields })?.displayName || index,
-          nestedPath: nestedField({ field: x, nestedFields })?.field || '',
-          gqlField: x.field.split('.').join('__'),
-          query: x.query || x.field,
-          jsonPath: x.jsonPath || `$.${x.field}`,
         })) || [],
     }) => ({
       quickSearchFields,
-      quickSearchEntities: uniqBy(
-        quickSearchFields.map(({ nestedPath, displayName }) => ({
-          nestedPath,
-          displayName,
-        })),
-        'nestedPath',
-      ),
-      primaryKeyField: data?.[index]?.extended?.find(x => x.primaryKey),
+      quickSearchEntities: uniq(quickSearchFields.map(x => x.entityName)),
+      primaryKeyField: decorateFieldWithColumnsState({
+        columnsState: data?.[index]?.columnsState?.state,
+        field: data?.[index]?.extended?.find(x => x.primaryKey)?.field,
+      }),
       nestedFields,
     }),
   ),
@@ -74,13 +70,11 @@ const QuickSearchFieldsQuery = ({
   quickSearchFields,
   quickSearchEntities,
   primaryKeyField,
-  nestedFields,
 }) =>
   render({
     quickSearchFields,
     quickSearchEntities,
     primaryKeyField,
-    nestedFields,
     enabled: primaryKeyField && quickSearchFields?.length,
   });
 

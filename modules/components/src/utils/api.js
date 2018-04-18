@@ -10,6 +10,8 @@ const api = ({ endpoint = '', body, headers }) =>
     body: JSON.stringify(body),
   }).then(r => r.json());
 
+export const graphql = body => api({ endpoint: 'graphql', body });
+
 export const fetchExtendedMapping = ({ graphqlField, projectId }) =>
   api({
     endpoint: `/${projectId}/graphql`,

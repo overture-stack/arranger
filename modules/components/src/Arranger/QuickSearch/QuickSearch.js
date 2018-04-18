@@ -50,24 +50,21 @@ const QuickSearch = ({
 }) => (
   <QuickSearchFieldsQuery
     {...props}
-    render={({ primaryKeyField, enabled, ...quickSearchFields }) => (
+    render={({
+      primaryKeyField,
+      enabled,
+      quickSearchFields,
+      quickSearchEntities,
+      entityIndexLookup = quickSearchEntities.reduce(
+        (obj, x, i) => ({ ...obj, [x]: i }),
+        {},
+      ),
+    }) => (
       <QuickSearchQuery
         {...props}
-        {...{ primaryKeyField, ...quickSearchFields }}
+        {...{ primaryKeyField, quickSearchFields }}
         searchText={value}
-        mapResults={({ resultsByEntity }) => ({
-          searchResultIndexLookup:
-            resultsByEntity &&
-            uniq(resultsByEntity.map(x => x.entity)).reduce(
-              (obj, x, i) => ({ ...obj, [x]: i }),
-              {},
-            ),
-        })}
-        render={({
-          results: searchResults,
-          loading,
-          searchResultIndexLookup,
-        }) => (
+        render={({ results: searchResults, loading }) => (
           <div className={`quick-search ${className}`}>
             <div className="quick-search-pinned-values">
               {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
@@ -116,11 +113,11 @@ const QuickSearch = ({
               >
                 {searchResults?.map(
                   ({
-                    entity,
+                    entityName,
                     result,
                     primaryKey,
                     input,
-                    index = searchResultIndexLookup[entity] % 5 + 1,
+                    index = entityIndexLookup[entityName] % 5 + 1,
                   }) => (
                     <div
                       key={result}
@@ -147,7 +144,7 @@ const QuickSearch = ({
                       <div
                         className={`quick-search-result-entity quick-search-result-entity-${index}`}
                       >
-                        <div>{entity.slice(0, 2).toUpperCase()}</div>
+                        <div>{entityName.slice(0, 2).toUpperCase()}</div>
                       </div>
                       <div className="quick-search-result-details">
                         <div className="quick-search-result-key">

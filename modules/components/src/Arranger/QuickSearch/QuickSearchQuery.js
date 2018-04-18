@@ -7,13 +7,49 @@ import splitString from '../../utils/splitString';
 
 const isValidValue = value => value?.trim()?.length > 1;
 
+export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
+  const columnsStateField = columnsState?.columns?.find(y => y.field === field);
+  return columnsStateField
+    ? {
+        ...columnsStateField,
+        gqlField: field.split('.').join('__'),
+        query: columnsStateField.query || field,
+        jsonPath: columnsStateField.jsonPath || `$.${field}`,
+      }
+    : {};
+};
+
 const enhance = compose(
-  withProps(({ searchText }) => ({
-    searchTextParts: splitString({ str: searchText, split: ['\\s', ','] }),
-  })),
-  withQuery(
+  withProps(
     ({
       exact,
+      quickSearchFields,
+      searchText,
+      searchTextParts = splitString({ str: searchText, split: ['\\s', ','] }),
+    }) => ({
+      searchTextParts,
+      sqon: {
+        op: 'or',
+        content: exact
+          ? quickSearchFields?.map(({ field }) => ({
+              op: 'in',
+              content: {
+                field,
+                value: searchTextParts,
+              },
+            }))
+          : searchTextParts.map(x => ({
+              op: 'filter',
+              content: {
+                value: x,
+                fields: quickSearchFields?.map(x => x.field),
+              },
+            })),
+      },
+    }),
+  ),
+  withQuery(
+    ({
       projectId,
       index,
       primaryKeyField,
@@ -21,6 +57,7 @@ const enhance = compose(
       searchText,
       searchTextParts,
       size = 5,
+      sqon,
     }) => ({
       debounceTime: 300,
       shouldFetch: isValidValue(searchText) && quickSearchFields.length,
@@ -33,7 +70,7 @@ const enhance = compose(
               total
               edges {
                 node {
-                  primaryKey: ${primaryKeyField?.field}
+                  primaryKey: ${primaryKeyField?.query}
                   ${quickSearchFields
                     ?.map(f => `${f.gqlField}: ${f.query}`)
                     ?.join('\n')}
@@ -43,44 +80,28 @@ const enhance = compose(
           }
         }
       `,
-      variables: {
-        size,
-        sqon: {
-          op: 'or',
-          content: exact
-            ? quickSearchFields?.map(({ field }) => ({
-                op: 'in',
-                content: {
-                  field,
-                  value: searchTextParts,
-                },
-              }))
-            : searchTextParts.map(x => ({
-                op: 'filter',
-                content: {
-                  value: x,
-                  fields: quickSearchFields?.map(x => x.field),
-                },
-              })),
-        },
-      },
+      variables: { size, sqon },
     }),
   ),
   withProps(
     ({
       index,
+      exact,
       searchText,
       searchTextParts,
-      nestedFields,
+      primaryKeyField,
       quickSearchFields,
       rawSearchResults: { data, loading },
-      a = console.log(data),
       searchResultsByEntity = quickSearchFields?.map(x => ({
         ...x,
         results: data?.[index]?.hits?.edges
           ?.map(
             ({
-              node: { primaryKey, ...node },
+              node,
+              primaryKey = jp.query(
+                { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
+                primaryKeyField.jsonPath,
+              )[0],
               result = jp.query(
                 { [x.field.split('.')[0]]: node[x.gqlField] },
                 x.jsonPath,
@@ -88,8 +109,10 @@ const enhance = compose(
             }) => ({
               primaryKey,
               result,
-              displayName: x.displayName,
-              input: searchTextParts.find(y => result?.includes(y)),
+              entityName: x.entityName,
+              input: searchTextParts.find(
+                y => (exact ? result === y : result?.includes(y)),
+              ),
             }),
           )
           ?.filter(x => isValidValue(searchText) && x.input),
@@ -100,9 +123,9 @@ const enhance = compose(
       searchResults: flatMap(
         searchResultsByEntity
           ?.filter(x => x?.results?.length)
-          ?.map(({ displayName, field, results }) =>
+          ?.map(({ entityName, field, results }) =>
             results?.map(({ input, primaryKey, result }) => ({
-              entity: displayName,
+              entityName,
               field,
               input,
               primaryKey,
@@ -117,15 +140,17 @@ const enhance = compose(
 const QuickSearchQuery = ({
   render,
   mapResults = () => ({}),
+  sqon,
   searchResults,
   searchResultsByEntity,
   searchResultsLoading,
   searchTextParts,
   props = {
+    searchTextParts,
+    sqon,
     results: searchResults,
     resultsByEntity: searchResultsByEntity,
     loading: searchResultsLoading,
-    searchTextParts,
   },
 }) => render({ ...props, ...mapResults(props) });
 

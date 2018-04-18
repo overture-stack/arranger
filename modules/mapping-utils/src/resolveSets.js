@@ -11,16 +11,19 @@ const retrieveSetIds = async ({
   BULK_SIZE = 1000,
 }) => {
   const search = async ({ searchAfter } = {}) => {
+    const body = {
+      ...(!isEmpty(query) && { query }),
+      ...(searchAfter && { search_after: searchAfter }),
+    };
     const response = await es.search({
       index,
       type,
       sort: ['_id'],
       size: BULK_SIZE,
-      body: {
-        ...(!isEmpty(query) && { query }),
-        ...(searchAfter && { search_after: searchAfter }),
-      },
+      body,
     });
+    console.log(JSON.stringify(body, null, 2));
+    console.log(JSON.stringify(response.hits.total, null, 2));
     const ids = response.hits.hits.map(x =>
       get(x, `_source.${path.split('__').join('.')}`),
     );

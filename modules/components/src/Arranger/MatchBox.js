@@ -1,25 +1,29 @@
 import React from 'react';
-import { capitalize, difference, uniq } from 'lodash';
+import { capitalize, difference, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from 'emotion';
-import pluralize from 'pluralize';
 
 import Input from '../Input';
 import Tabs, { TabsTable } from '../Tabs';
 import Select, { Option } from '../Select';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
-import QuickSearchFieldsQuery from './QuickSearch/QuickSearchFieldsQuery';
+import saveSet from '../utils/saveSet';
+import { toggleSQON } from '../SQONView/utils';
 
 const enhance = compose(
-  withState('entityPath', 'setEntityPath', false),
+  withState('activeEntityField', 'setActiveEntityField', null),
+  withState('searchTextLoading', 'setSearchTextLoading', false),
   withState('searchText', 'setSearchText', ''),
   withHandlers({
-    onEntityChange: ({ setEntityPath }) => ({ target: { value } }) =>
-      setEntityPath(value),
+    onEntityChange: ({ setActiveEntityField }) => ({ target: { value } }) =>
+      setActiveEntityField(value),
     onTextChange: ({ setSearchText }) => ({ target: { value } }) =>
       setSearchText(value),
-    onFileUpload: ({ setSearchText }) => async ({ target }) => {
+    onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({
+      target,
+    }) => {
+      setSearchTextLoading(true);
       let files = [];
       for (let i = 0; i < target.files.length; i++)
         files = [...files, target.files[i]];
@@ -35,37 +39,47 @@ const enhance = compose(
         ),
       );
       setSearchText((contents || []).reduce((str, c) => `${str}${c}\n`, ``));
+      setSearchTextLoading(false);
     },
   }),
 );
 
 const inputRef = React.createRef();
 const MatchBox = ({
+  sqon,
+  setSQON,
   matchHeaderText,
   instructionText = `Type or copy-and-paste a list of comma delimited identifiers, or choose a file of identifiers to upload`,
   placeholderText = `e.g. Id\ne.g. Id`,
   entitySelectText = `Select the entity to upload`,
   entitySelectPlaceholder = `Select an Entity`,
+  browseButtonText = `Browse`,
   ButtonComponent = 'button',
+  LoadingComponent = <div>...</div>,
   children,
-  entityPath,
   searchText,
   searchTextParts,
+  searchTextLoading,
   onTextChange,
   onFileUpload,
   onEntityChange,
+  activeEntityField,
   ...props
 }) => (
   <div className="match-box">
     <MatchBoxState
       {...props}
-      render={({ activeFields, a = console.log(activeFields) }) => (
+      render={({
+        primaryKeyField,
+        activeFields,
+        activeField = activeFields.find(x => x.field === activeEntityField),
+      }) => (
         <div>
           <div className="match-box-select-entity-form">
             <div>{entitySelectText}</div>
             <Select onChange={onEntityChange}>
-              <Option value={false}>{entitySelectPlaceholder}</Option>
-              {activeFields.map(({ displayName, field }) => (
+              <Option value={null}>{entitySelectPlaceholder}</Option>
+              {activeFields.map(({ field, displayName }) => (
                 <Option key={field} value={field}>
                   {capitalize(displayName)}
                 </Option>
@@ -75,7 +89,7 @@ const MatchBox = ({
           <div className="match-box-id-form">
             <div>{instructionText}</div>
             <Input
-              disabled={typeof entityPath !== 'string'}
+              disabled={!activeField}
               Component="textarea"
               placeholder={placeholderText}
               value={searchText}
@@ -100,43 +114,36 @@ const MatchBox = ({
                 onChange={onFileUpload}
               />
               <ButtonComponent
-                disabled={typeof entityPath !== 'string'}
+                disabled={!activeField}
                 type="submit"
                 onClick={() => inputRef.current.click()}
               >
-                Browse
+                {searchTextLoading ? LoadingComponent : browseButtonText}
               </ButtonComponent>
             </div>
           </div>
-          {/* <QuickSearchQuery
+          <QuickSearchQuery
             exact
             size={9999999}
             {...props}
             searchText={searchText}
-            primaryKeyField={primaryKeyField}
-            quickSearchFields={quickSearchFields?.filter(
-              x => x.nestedPath === entityPath,
-            )}
+            primaryKeyField={activeField?.keyField}
+            quickSearchFields={activeField?.searchFields}
             mapResults={({ results, searchTextParts }) => ({
-              uniqueIds: uniq(results.map(x => x.primaryKey)),
+              results: uniqBy(results, 'primaryKey'),
               unmatchedKeys: difference(
                 searchTextParts,
                 results.map(x => x.input),
               ),
             })}
-            render={({
-              results,
-              uniqueIds,
-              unmatchedKeys,
-              a = console.log(results),
-            }) => (
+            render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
               <div className="match-box-results-table">
                 {matchHeaderText}
                 <Tabs
                   tabs={[
                     {
                       key: 'matched',
-                      title: `Matched (${uniqueIds.length})`,
+                      title: `Matched (${results.length})`,
                       content: (
                         <TabsTable
                           columns={[
@@ -152,11 +159,13 @@ const MatchBox = ({
                           ]}
                           data={
                             results.length
-                              ? results.map(({ input, entity, result }) => ({
-                                  inputId: input,
-                                  matchedEntity: pluralize(entity, 1),
-                                  entityId: result,
-                                }))
+                              ? results.map(
+                                  ({ input, entityName, primaryKey }) => ({
+                                    inputId: input,
+                                    matchedEntity: entityName,
+                                    entityId: primaryKey,
+                                  }),
+                                )
                               : [
                                   {
                                     inputId: '',
@@ -189,10 +198,45 @@ const MatchBox = ({
                     },
                   ]}
                 />
-                {children({ ids: uniqueIds })}
+                {children({
+                  hasResults: results?.length,
+                  saveSet: async ({ userId, api }) => {
+                    const { data: { data: { saveSet: data } } } = await saveSet(
+                      {
+                        sqon: quickSearchSqon,
+                        type: props.graphqlField,
+                        userId,
+                        path: primaryKeyField.field,
+                        api,
+                      },
+                    );
+                    if (setSQON) {
+                      setSQON(
+                        toggleSQON(
+                          {
+                            op: 'and',
+                            content: [
+                              {
+                                op: 'in',
+                                content: {
+                                  field: primaryKeyField?.field,
+                                  value: [].concat(
+                                    `set_id:${data.setId}` || [],
+                                  ),
+                                },
+                              },
+                            ],
+                          },
+                          sqon,
+                        ),
+                      );
+                    }
+                    return data;
+                  },
+                })}
               </div>
             )}
-          /> */}
+          />
         </div>
       )}
     />
