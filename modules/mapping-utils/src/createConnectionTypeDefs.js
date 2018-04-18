@@ -10,6 +10,8 @@ export default ({ type, fields = '' }) => `
 
     columnsState: ColumnsState
 
+    matchBoxState: MatchBoxState
+
     hits(
       score: String
       offset: Int

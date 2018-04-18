@@ -10,7 +10,5 @@ export default mapping =>
     isArray: false,
     primaryKey: false,
     quickSearchEnabled: false,
-    matchBoxKeyField: '',
-    matchBoxSearchFields: [],
     unit: null,
   }));

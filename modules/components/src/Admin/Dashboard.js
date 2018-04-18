@@ -21,6 +21,7 @@ import api from '../utils/api';
 import initSocket from '../utils/initSocket';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
+import MatchBoxTab from './Tabs/MatchBoxTab';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -662,6 +663,19 @@ class Dashboard extends React.Component {
                             text-transform: uppercase;
                             cursor: pointer;
                             padding: 0 6px;
+                            color: ${tab === 'matchbox'
+                              ? 'black'
+                              : 'rgb(128, 30, 148)'};
+                          `}
+                          onClick={() => update({ tab: 'matchbox' })}
+                        >
+                          Match Box
+                        </a>
+                        <a
+                          css={`
+                            text-transform: uppercase;
+                            cursor: pointer;
+                            padding: 0 6px;
                             color: ${tab === 'aggs'
                               ? 'black'
                               : 'rgb(128, 30, 148)'};
@@ -731,54 +745,7 @@ class Dashboard extends React.Component {
                                 .map(([key, val]) => (
                                   <div key={key} className="type-container">
                                     {startCase(key)}:
-                                    {key === 'matchBoxKeyField' ? (
-                                      this.state.activeField?.type ===
-                                        'nested' && (
-                                        <select
-                                          value={val || ''}
-                                          onChange={async e => {
-                                            update({ val });
-                                            let r = await api({
-                                              endpoint: `/projects/${
-                                                match.params.projectId
-                                              }/types/${
-                                                match.params.index
-                                              }/fields/${
-                                                this.state.activeField?.field
-                                              }/update`,
-                                              body: {
-                                                eshost: this.state.eshost,
-                                                key,
-                                                value: e.target.value,
-                                              },
-                                            });
-                                            let activeField = r.fields.find(
-                                              x =>
-                                                x.field ===
-                                                this.state.activeField.field,
-                                            );
-
-                                            this.setState({
-                                              fields: r.fields,
-                                              activeField,
-                                            });
-                                          }}
-                                        >
-                                          <option value="" />
-                                          {this.state.fields
-                                            .filter(x =>
-                                              x.field.includes(
-                                                this.state.activeField.field,
-                                              ),
-                                            )
-                                            .map(x => (
-                                              <option value={x.field}>
-                                                {x.field}
-                                              </option>
-                                            ))}
-                                        </select>
-                                      )
-                                    ) : key === 'unit' ? (
+                                    {key === 'unit' ? (
                                       <State
                                         initial={{
                                           val,
@@ -936,6 +903,18 @@ class Dashboard extends React.Component {
                                 ))}
                             </section>
                           </div>
+                        )}
+                        {tab === 'matchbox' && (
+                          <MatchBoxTab
+                            projectId={match.params.projectId}
+                            graphqlField={
+                              this.state.projects
+                                .find(x => x.id === match.params.projectId)
+                                .types.types.find(
+                                  x => x.index === match.params.index,
+                                ).name
+                            }
+                          />
                         )}
                         {tab === 'aggs' && (
                           <AggregationsTab

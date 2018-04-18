@@ -7,6 +7,7 @@ import pluralize from 'pluralize';
 import Input from '../Input';
 import Tabs, { TabsTable } from '../Tabs';
 import Select, { Option } from '../Select';
+import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import QuickSearchFieldsQuery from './QuickSearch/QuickSearchFieldsQuery';
 
@@ -56,22 +57,18 @@ const MatchBox = ({
   ...props
 }) => (
   <div className="match-box">
-    <QuickSearchFieldsQuery
+    <MatchBoxState
       {...props}
-      render={({
-        primaryKeyField,
-        enabled,
-        quickSearchFields,
-        quickSearchEntities,
-        a = console.log(quickSearchFields),
-      }) => (
+      render={({ activeFields, a = console.log(activeFields) }) => (
         <div>
           <div className="match-box-select-entity-form">
             <div>{entitySelectText}</div>
             <Select onChange={onEntityChange}>
               <Option value={false}>{entitySelectPlaceholder}</Option>
-              {quickSearchEntities.map(({ displayName, nestedPath }) => (
-                <Option value={nestedPath}>{capitalize(displayName)}</Option>
+              {activeFields.map(({ displayName, field }) => (
+                <Option key={field} value={field}>
+                  {capitalize(displayName)}
+                </Option>
               ))}
             </Select>
           </div>
@@ -111,7 +108,7 @@ const MatchBox = ({
               </ButtonComponent>
             </div>
           </div>
-          <QuickSearchQuery
+          {/* <QuickSearchQuery
             exact
             size={9999999}
             {...props}
@@ -195,7 +192,7 @@ const MatchBox = ({
                 {children({ ids: uniqueIds })}
               </div>
             )}
-          />
+          /> */}
         </div>
       )}
     />
