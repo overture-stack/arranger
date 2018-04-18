@@ -3,10 +3,15 @@ import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
-import apiFetch from '../utils/api';
+import defaultApi from '../utils/api';
 
-const fetchGraphqlQuery = async ({ query, projectId, variables = null }) =>
-  apiFetch({
+const fetchGraphqlQuery = async ({
+  query,
+  projectId,
+  variables = null,
+  api = defaultApi,
+}) =>
+  api({
     endpoint: `/${projectId}/graphql`,
     body: {
       query: query,
@@ -30,8 +35,14 @@ const fetchMappingData = async fetchConfig =>
     ...fetchConfig,
   }).then(data => data[fetchConfig.index]);
 
-const fetchAggregationData = async ({ sqon, extended, projectId, index }) => {
-  const fetchConfig = { projectId, index };
+const fetchAggregationData = async ({
+  sqon,
+  extended,
+  projectId,
+  index,
+  api,
+}) => {
+  const fetchConfig = { projectId, index, api };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
   const allAggsNames = extended
@@ -149,9 +160,9 @@ export default class LiveAdvancedFacetView extends React.Component {
   };
 
   componentDidMount() {
-    const { projectId, index } = this.props;
+    const { projectId, index, api } = this.props;
     const { sqon } = this.state;
-    const fetchConfig = { projectId, index, sqon };
+    const fetchConfig = { projectId, index, sqon, api };
     fetchMappingData(fetchConfig).then(({ extended, mapping, aggsState }) =>
       fetchAggregationData({
         extended: this.filterExtendedForFetchingAggs({ extended, aggsState }),
