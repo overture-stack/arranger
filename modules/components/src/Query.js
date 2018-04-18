@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { isEqual, debounce } from 'lodash';
 import path from 'path';
-import api from './utils/api';
+import defaultApi from './utils/api';
 import { defaultProps } from 'recompose';
 
 class Query extends Component {
@@ -26,6 +26,7 @@ class Query extends Component {
   }
   fetch = debounce(
     async ({ projectId, query, variables, name, ...options }) => {
+      const { api = defaultApi } = this.props;
       this.setState({ loading: true });
       try {
         let { data, errors } = await api({

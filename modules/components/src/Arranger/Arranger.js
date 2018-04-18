@@ -4,7 +4,7 @@ import ioStream from 'socket.io-stream';
 
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
-import api from '../utils/api';
+import defaultApi from '../utils/api';
 import initSocket from '../utils/initSocket';
 
 const streamData = ({ streamSocket }) => (type, projectId) => ({
@@ -40,20 +40,6 @@ const streamData = ({ streamSocket }) => (type, projectId) => ({
   });
 };
 
-const fetchData = projectId => {
-  return options => {
-    return api({
-      endpoint: `/${projectId}/graphql`,
-      body: columnsToGraphql(options),
-    }).then(r => {
-      const hits = get(r, `data.${options.config.type}.hits`) || {};
-      const data = get(hits, 'edges', []).map(e => e.node);
-      const total = hits.total || 0;
-      return { total, data };
-    });
-  };
-};
-
 class Arranger extends React.Component {
   constructor(props) {
     super(props);
@@ -70,6 +56,21 @@ class Arranger extends React.Component {
       streamSocket,
     };
   }
+
+  fetchData = projectId => {
+    return options => {
+      const { api = defaultApi } = this.props;
+      return api({
+        endpoint: `/${projectId}/graphql`,
+        body: columnsToGraphql(options),
+      }).then(r => {
+        const hits = get(r, `data.${options.config.type}.hits`) || {};
+        const data = get(hits, 'edges', []).map(e => e.node);
+        const total = hits.total || 0;
+        return { total, data };
+      });
+    };
+  };
 
   componentWillMount() {
     const hasChildren =
@@ -102,10 +103,12 @@ class Arranger extends React.Component {
       children,
       render,
       component,
+      api = defaultApi,
     } = this.props;
     const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
+      api,
       socket: this.state.socket,
       sqon,
       selectedTableRows,
@@ -113,7 +116,7 @@ class Arranger extends React.Component {
       index,
       graphqlField,
       streamData: streamData({ streamSocket: this.state.streamSocket }),
-      fetchData,
+      fetchData: this.fetchData,
       setSQON: sqon => this.setState({ sqon }),
       setSelectedTableRows: selectedTableRows =>
         this.setState({ selectedTableRows }),

@@ -9,16 +9,18 @@ const Table = ({
   setSQON,
   sqon,
   fieldTypesForFilter = ['text', 'keyword'],
+  api,
   ...props
 }) => {
   return (
     <ColumnsState
       projectId={projectId}
       graphqlField={graphqlField}
+      api={api}
       render={columnState => {
         return (
           <DataTable
-            {...props}
+            {...{ ...props, api }}
             projectId={projectId}
             sqon={sqon}
             config={{
