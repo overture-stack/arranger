@@ -15,6 +15,7 @@ const Aggregations = ({
   return (
     <div className={`aggregations ${className}`} style={style}>
       <AggsState
+        api={api}
         projectId={projectId}
         graphqlField={graphqlField}
         render={aggsState => {
