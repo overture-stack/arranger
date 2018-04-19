@@ -32,7 +32,8 @@
   justify-content: space-between;
 }
 
-.facetViewWrapper .treeViewPanel .treeView {
+.facetViewWrapper .treeViewPanel {
+  background-color: #fafafc;
   overflow-y: scroll;
   flex: 1;
   margin-right: 5px;
