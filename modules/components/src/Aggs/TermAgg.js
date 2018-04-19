@@ -59,7 +59,7 @@ const IncludeExcludeButton = ({
   />
 );
 
-class TermAggs extends React.Component {
+class TermAgg extends React.Component {
   // needs ref
 
   state = { showingMore: false, isExclude: false };
@@ -129,53 +129,54 @@ class TermAggs extends React.Component {
             : []),
         ]}
       >
-        <div className={`bucket`}>
-          {orderBy(decoratedBuckets, 'doc_count', 'desc')
-            .slice(0, showingMore ? Infinity : maxTerms)
-            .map(bucket => (
-              <Content
-                ref={el =>
-                  (this.refs = {
-                    ...this.refs,
-                    [constructEntryId({ value: bucket.name })]: el,
-                  })
-                }
-                id={constructEntryId({ value: bucket.name })}
-                key={bucket.name}
-                className="bucket-item"
-                content={{
-                  field: dotField,
-                  value: bucket.name,
-                }}
-                onClick={() =>
-                  handleValueClick({
-                    bucket,
-                    isExclude,
-                    generateNextSQON: sqon =>
-                      generateNextSQON({ isExclude, dotField, bucket, sqon }),
-                  })
-                }
-              >
-                <span className="bucket-link" merge="toggle">
-                  <input
-                    readOnly
-                    type="checkbox"
-                    checked={isActive({
-                      field: dotField,
-                      value: bucket.name,
-                    })}
-                    id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                    name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                  />
-                  <TextHighlight
-                    content={
-                      truncate(bucket.name, {
-                        length: valueCharacterLimit || Infinity,
-                      }) + ' '
-                    }
-                    highlightText={searchString}
-                  />
-                  {/* <OverflowTooltippedLabel
+        <>
+          <div className={`bucket`}>
+            {orderBy(decoratedBuckets, 'doc_count', 'desc')
+              .slice(0, showingMore ? Infinity : maxTerms)
+              .map(bucket => (
+                <Content
+                  ref={el =>
+                    (this.refs = {
+                      ...this.refs,
+                      [constructEntryId({ value: bucket.name })]: el,
+                    })
+                  }
+                  id={constructEntryId({ value: bucket.name })}
+                  key={bucket.name}
+                  className="bucket-item"
+                  content={{
+                    field: dotField,
+                    value: bucket.name,
+                  }}
+                  onClick={() =>
+                    handleValueClick({
+                      bucket,
+                      isExclude,
+                      generateNextSQON: sqon =>
+                        generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                    })
+                  }
+                >
+                  <span className="bucket-link" merge="toggle">
+                    <input
+                      readOnly
+                      type="checkbox"
+                      checked={isActive({
+                        field: dotField,
+                        value: bucket.name,
+                      })}
+                      id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                      name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                    />
+                    <TextHighlight
+                      content={
+                        truncate(bucket.name, {
+                          length: valueCharacterLimit || Infinity,
+                        }) + ' '
+                      }
+                      highlightText={searchString}
+                    />
+                    {/* <OverflowTooltippedLabel
                           htmlFor={`input-${props.title}-${bucket.name.replace(
                             /\s/g,
                             '-',
@@ -187,26 +188,27 @@ class TermAggs extends React.Component {
                         >
                           {bucket.name}
                         </OverflowTooltippedLabel> */}
-                </span>
-                {bucket.doc_count && (
-                  <span className="bucket-count">
-                    {bucket.doc_count.toLocaleString()}
                   </span>
-                )}
-              </Content>
-            ))}
-        </div>
-        {buckets.length > maxTerms && (
-          <div
-            className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
-            onClick={() => this.setState({ showingMore: !showingMore })}
-          >
-            {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
+                  {bucket.doc_count && (
+                    <span className="bucket-count">
+                      {bucket.doc_count.toLocaleString()}
+                    </span>
+                  )}
+                </Content>
+              ))}
           </div>
-        )}
+          {buckets.length > maxTerms ? (
+            <div
+              className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
+              onClick={() => this.setState({ showingMore: !showingMore })}
+            >
+              {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
+            </div>
+          ) : null}
+        </>
       </AggsWrapper>
     );
   }
 }
 
-export default TermAggs;
+export default TermAgg;
