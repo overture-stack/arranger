@@ -35,7 +35,7 @@ class TreeView extends React.PureComponent {
       itemClassName = '',
       treeViewClassName = '',
       childrenClassName = '',
-      nodeLabel,
+      nodeLabel = '',
       children,
       defaultCollapsed,
       renderArrow = ({ props, state }) => {},
@@ -65,7 +65,7 @@ class TreeView extends React.PureComponent {
       <div className={'tree-view ' + treeViewClassName}>
         <div className={'tree-view_item ' + itemClassName}>
           {arrow}
-          {nodeLabel}
+          {nodeLabel({ open: this.handleClick })}
         </div>
         <div className={containerClassName + ' ' + childrenClassName}>
           {collapsed ? null : children}
