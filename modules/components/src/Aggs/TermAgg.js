@@ -104,6 +104,7 @@ class TermAgg extends React.Component {
       observableValueInFocus = null,
       WrapperComponent,
       searchString,
+      constructBucketItemClassName = () => '',
     } = this.props;
     const { showingMore } = this.state;
     const dotField = field.replace(/__/g, '.');
@@ -133,7 +134,7 @@ class TermAgg extends React.Component {
           <div className={`bucket`}>
             {orderBy(decoratedBuckets, 'doc_count', 'desc')
               .slice(0, showingMore ? Infinity : maxTerms)
-              .map(bucket => (
+              .map((bucket, i, array) => (
                 <Content
                   ref={el =>
                     (this.refs = {
@@ -143,7 +144,12 @@ class TermAgg extends React.Component {
                   }
                   id={constructEntryId({ value: bucket.name })}
                   key={bucket.name}
-                  className="bucket-item"
+                  className={`bucket-item ${constructBucketItemClassName({
+                    bucket,
+                    i,
+                    showingBuckets: array,
+                    showingMore,
+                  }) || ''}`}
                   content={{
                     field: dotField,
                     value: bucket.name,

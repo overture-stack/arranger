@@ -99,20 +99,22 @@
   flex-wrap: wrap;
 }
 
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 1),
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 2),
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 3) {
-  border-bottom: solid 1px #e0e1e6;
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 1):not(:last-child),
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 2):not(:last-child),
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 3):not(:last-child) {
   border-right: solid 1px #e0e1e6;
 }
-.facetViewWrapper .bucket .bucket-item:nth-child(4n) {
+
+.facetViewWrapper .bucket .bucket-item:not(.last_row) {
   border-bottom: solid 1px #e0e1e6;
 }
-.facetViewWrapper .bucket .bucket-item:nth-child(1),
-.facetViewWrapper .bucket .bucket-item:nth-child(2),
-.facetViewWrapper .bucket .bucket-item:nth-child(3),
-.facetViewWrapper .bucket .bucket-item:nth-child(4) {
-  border-bottom: solid 1px #e0e1e6;
+
+.facetViewWrapper .bucket .bucket-item.only_row {
+  border-bottom: none;
+}
+
+.facetViewWrapper .bucket .bucket-item:last-child:not(.col_3):not(.only_row) {
+  border-right: solid 1px #e0e1e6;
 }
 
 .facetViewWrapper .facetContainer {
