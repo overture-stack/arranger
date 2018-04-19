@@ -41,6 +41,7 @@ const TableToolbar = ({
   style,
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
+  exportTSVFilename = `${type}-table.tsv`,
   sqon,
   downloadUrl,
 }) => {
@@ -98,7 +99,7 @@ const TableToolbar = ({
                   url: downloadUrl,
                   files: [
                     {
-                      fileName: `${type}-table.tsv`,
+                      fileName: exportTSVFilename,
                       sqon,
                       index: type,
                       columns,
