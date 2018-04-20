@@ -501,9 +501,45 @@ div {
 .facetViewWrapper .panel {
   border: solid 1px #d4d6dd;
 }
+.facetViewWrapper .treeViewPanel {
+  background-color: #fafafc;
+}
 .facetViewWrapper .treeViewPanel .panelHeading .valueOnlyCheck {
   text-align: right;
 }
 .facetViewWrapper .treeViewPanel .panelHeading .fieldsShown {
   font-weight: bold;
+}
+
+.facetViewWrapper .facetContainer .header {
+  background-color: #e7e8ed;
+}
+
+.facetViewWrapper .facetContainer .header .title {
+  color: #a42c90;
+}
+
+.facetViewWrapper .facetContainer .header .breadscrumbs {
+  color: #2b388f;
+}
+
+.facetViewWrapper .bucket-count {
+  border-radius: 5px;
+  background-color: #e7e8ed;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 1):not(:last-child),
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 2):not(:last-child),
+.facetViewWrapper .bucket .bucket-item:nth-child(4n + 3):not(:last-child) {
+  border-right: solid 1px #e0e1e6;
+}
+
+.facetViewWrapper .bucket .bucket-item:not(.last_row) {
+  border-bottom: solid 1px #e0e1e6;
+}
+
+.facetViewWrapper .bucket .bucket-item:last-child:not(.col_3):not(.only_row) {
+  border-right: solid 1px #e0e1e6;
 }
