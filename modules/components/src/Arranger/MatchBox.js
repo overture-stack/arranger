@@ -1,5 +1,5 @@
 import React from 'react';
-import { capitalize, difference, uniqBy } from 'lodash';
+import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from 'emotion';
 
@@ -53,6 +53,13 @@ const MatchBox = ({
   placeholderText = `e.g. Id\ne.g. Id`,
   entitySelectText = `Select the entity to upload`,
   entitySelectPlaceholder = `Select an Entity`,
+  matchedTabTitle = `Matched`,
+  unmatchedTabTitle = `Unmatched`,
+  matchTableColumnHeaders = {
+    inputId: `Input Id`,
+    matchedEntity: `Matched Entity`,
+    entityId: `Entity Id`,
+  },
   browseButtonText = `Browse`,
   ButtonComponent = 'button',
   LoadingComponent = <div>...</div>,
@@ -143,20 +150,15 @@ const MatchBox = ({
                   tabs={[
                     {
                       key: 'matched',
-                      title: `Matched (${results.length})`,
+                      title: `${matchedTabTitle} (${results.length})`,
                       content: (
                         <TabsTable
-                          columns={[
-                            {
-                              Header: 'Input Id',
-                              accessor: 'inputId',
-                            },
-                            {
-                              Header: `Matched Entity`,
-                              accessor: 'matchedEntity',
-                            },
-                            { Header: 'Entity Id', accessor: 'entityId' },
-                          ]}
+                          columns={['inputId', 'matchedEntity', 'entityId'].map(
+                            x => ({
+                              Header: matchTableColumnHeaders[x],
+                              accessor: x,
+                            }),
+                          )}
                           data={
                             results.length
                               ? results.map(
@@ -179,12 +181,12 @@ const MatchBox = ({
                     },
                     {
                       key: 'unmatched',
-                      title: `Unmatched (${unmatchedKeys.length})`,
+                      title: `${unmatchedTabTitle} (${unmatchedKeys.length})`,
                       content: (
                         <TabsTable
                           columns={[
                             {
-                              Header: 'Input Id',
+                              Header: matchTableColumnHeaders.inputId,
                               accessor: 'inputId',
                             },
                           ]}
@@ -200,15 +202,20 @@ const MatchBox = ({
                 />
                 {children({
                   hasResults: results?.length,
-                  saveSet: async ({ userId, api }) => {
-                    const { data: { data: { saveSet: data } } } = await saveSet(
-                      {
+                  saveSet: async ({
+                    userId,
+                    api,
+                    dataPath = 'data.data.saveSet',
+                  }) => {
+                    const data = get(
+                      await saveSet({
                         sqon: quickSearchSqon,
                         type: props.graphqlField,
                         userId,
                         path: primaryKeyField.field,
                         api,
-                      },
+                      }),
+                      dataPath,
                     );
                     if (setSQON) {
                       setSQON(
