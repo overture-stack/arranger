@@ -79,7 +79,8 @@ export default class FacetView extends React.Component {
             ...agg,
             ...(type === 'keyword'
               ? (() => {
-                  const maxTerms = 8;
+                  const columns = 4;
+                  const maxTerms = columns * 2;
                   return {
                     maxTerms,
                     constructBucketItemClassName: ({
@@ -88,14 +89,12 @@ export default class FacetView extends React.Component {
                       i,
                       showingMore,
                     }) =>
-                      `row_${Math.floor(i / 4)} col_${i % 4} ${
-                        Math.floor(i / 4) ===
-                        Math.floor((showingBuckets.length - 1) / 4)
+                      `row_${Math.floor(i / columns)} col_${i % columns} ${
+                        Math.floor(i / columns) ===
+                        Math.floor((showingBuckets.length - 1) / columns)
                           ? 'last_row'
                           : ''
-                      } ${
-                        showingBuckets.length <= maxTerms / 2 ? 'only_row' : ''
-                      }`,
+                      } ${showingBuckets.length <= columns ? 'only_row' : ''}`,
                   };
                 })()
               : {}),
