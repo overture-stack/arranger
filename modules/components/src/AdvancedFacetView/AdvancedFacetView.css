@@ -32,7 +32,7 @@
   justify-content: space-between;
 }
 
-.facetViewWrapper .treeViewPanel .treeView {
+.facetViewWrapper .treeViewPanel {
   overflow-y: scroll;
   flex: 1;
   margin-right: 5px;
@@ -75,10 +75,6 @@
 }
 
 .facetViewWrapper .bucket-count {
-  border-radius: 5px;
-  background-color: #e7e8ed;
-  padding-left: 5px;
-  padding-right: 5px;
   display: inline-block;
 }
 
@@ -98,20 +94,8 @@
   flex-wrap: wrap;
 }
 
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 1),
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 2),
-.facetViewWrapper .bucket .bucket-item:nth-child(4n + 3) {
-  border-bottom: solid 1px #e0e1e6;
-  border-right: solid 1px #e0e1e6;
-}
-.facetViewWrapper .bucket .bucket-item:nth-child(4n) {
-  border-bottom: solid 1px #e0e1e6;
-}
-.facetViewWrapper .bucket .bucket-item:nth-child(1),
-.facetViewWrapper .bucket .bucket-item:nth-child(2),
-.facetViewWrapper .bucket .bucket-item:nth-child(3),
-.facetViewWrapper .bucket .bucket-item:nth-child(4) {
-  border-bottom: solid 1px #e0e1e6;
+.facetViewWrapper .bucket .bucket-item.only_row {
+  border-bottom: none;
 }
 
 .facetViewWrapper .facetContainer {
@@ -122,14 +106,10 @@
   flex-direction: row;
   justify-content: space-between;
   font-weight: bold;
-  background-color: #e7e8ed;
   padding: 5px 20px;
 }
-.facetViewWrapper .facetContainer .header .title {
-  color: #a42c90;
-}
+
 .facetViewWrapper .facetContainer .header .breadscrumbs {
-  color: #2b388f;
   text-align: right;
 }
 .facetViewWrapper

@@ -23,7 +23,7 @@ const NestedTreeView = ({
     return children ? (
       <ReactTreeView
         key={path}
-        nodeLabel={
+        nodeLabel={({ open }) => (
           <div
             className={`label ${css`
               display: inline-block;
@@ -32,11 +32,12 @@ const NestedTreeView = ({
             `}`}
             onClick={e => {
               onLeafSelect(id || title);
+              open();
             }}
           >
             <TextHighlight content={title} highlightText={searchString} />
           </div>
-        }
+        )}
         defaultCollapsed={defaultCollapsed({
           depth,
           title,

@@ -77,6 +77,27 @@ export default class FacetView extends React.Component {
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({
             ...agg,
+            ...(type === 'keyword'
+              ? (() => {
+                  const columns = 4;
+                  const maxTerms = columns * 2;
+                  return {
+                    maxTerms,
+                    constructBucketItemClassName: ({
+                      bucket,
+                      showingBuckets,
+                      i,
+                      showingMore,
+                    }) =>
+                      `row_${Math.floor(i / columns)} col_${i % columns} ${
+                        Math.floor(i / columns) ===
+                        Math.floor((showingBuckets.length - 1) / columns)
+                          ? 'last_row'
+                          : ''
+                      } ${showingBuckets.length <= columns ? 'only_row' : ''}`,
+                  };
+                })()
+              : {}),
             key: path,
             field: path,
             onValueChange: ({ sqon }) => {
