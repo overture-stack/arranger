@@ -49,4 +49,22 @@ export let typeDefs = `
     index: String
     states: [ColumnsState]
   }
+
+  type MatchBoxField {
+    displayName: String
+    field: String
+    isActive: Boolean
+    keyField: String
+    searchFields: [String]
+  }
+
+  type MatchBoxState {
+    state: [MatchBoxField]
+    timestamp: String
+  }
+
+  type MatchBoxStates {
+    index: String
+    states: [MatchBoxState]
+  }
 `;

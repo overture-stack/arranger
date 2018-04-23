@@ -7,6 +7,7 @@ import {
   addMappingsToTypes,
   mappingToAggsState,
   mappingToColumnsState,
+  mappingToMatchBoxState,
 } from '@arranger/mapping-utils';
 import { fetchMappings } from './utils/fetchMappings';
 import mapHits from './utils/mapHits';
@@ -168,10 +169,30 @@ export default async function startProjectApp({ es, id, io }) {
       : [];
   });
 
+  const createMatchBoxState = typesWithMappings.map(async ([type, props]) => {
+    const index = `${props.indexPrefix}-matchbox-state`;
+    const count = await es
+      .count({ index, type: index })
+      .then(d => d.count, () => 0);
+    return count === 0
+      ? [
+          { index: { _index: index, _type: index, _id: uuid() } },
+          JSON.stringify({
+            timestamp: new Date().toISOString(),
+            state: mappingToMatchBoxState(props),
+          }),
+        ]
+      : [];
+  });
+
   await initializeSets({ es });
 
   let body = flattenDeep(
-    await Promise.all([...createAggsState, ...createColumnsState]),
+    await Promise.all([
+      ...createAggsState,
+      ...createColumnsState,
+      ...createMatchBoxState,
+    ]),
   );
 
   // TODO: don't add new ui states if decomissioned

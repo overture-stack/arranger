@@ -2,7 +2,14 @@ import React from 'react';
 import State from '../State';
 import './Input.css';
 
-export default ({ style, icon, rightIcon, componentRef, ...props }) => (
+export default ({
+  style,
+  icon,
+  rightIcon,
+  componentRef,
+  Component = 'input',
+  ...props
+}) => (
   <State
     initial={{ isFocused: false }}
     render={({ update, isFocused }) => (
@@ -18,7 +25,7 @@ export default ({ style, icon, rightIcon, componentRef, ...props }) => (
         className={`inputWrapper ${isFocused ? 'focused' : ''}`}
       >
         <span className="inputIcon">{icon}</span>
-        <input
+        <Component
           onFocus={() => update({ isFocused: true })}
           onBlur={() => update({ isFocused: false })}
           style={{ border: 'none', flex: 1 }}

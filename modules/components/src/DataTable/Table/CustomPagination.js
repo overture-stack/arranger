@@ -53,10 +53,10 @@ export default class CustomPagination extends ReactTablePagination {
       <div
         className={classnames(className, '-pagination')}
         style={{
-          ...this.props.paginationStyle,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          ...this.props.paginationStyle,
         }}
       >
         {showPageSizeOptions && (
