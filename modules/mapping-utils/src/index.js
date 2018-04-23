@@ -8,6 +8,7 @@ export { default as mappingToAggsType } from './mappingToAggsType';
 export { default as mappingToAggsState } from './mappingToAggsState';
 export { default as esToAggTypeMap } from './esToAggTypeMap';
 export { default as mappingToColumnsState } from './mappingToColumnsState';
+export { default as mappingToMatchBoxState } from './mappingToMatchBoxState';
 export { default as mappingToNestedTypes } from './mappingToNestedTypes';
 export {
   default as mappingToScalarFields,

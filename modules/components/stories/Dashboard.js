@@ -12,5 +12,4 @@ storiesOf('Dashboard', module)
     <BrowserRouter>
       <Dashboard />
     </BrowserRouter>
-  ))
-  .add('x', () => <div>x</div>);
+  ));

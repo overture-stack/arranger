@@ -47,6 +47,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   type Mutation {
     saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
+    saveMatchBoxState(graphqlField: String! state: JSON!): MatchBoxState
     saveSet(type: String! userId: String! sqon: JSON! path: String!): Set
   }
 
@@ -159,6 +160,37 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         let data = await es.search({
           index: `${type.indexPrefix}-columns-state`,
           type: `${type.indexPrefix}-columns-state`,
+          body: {
+            sort: [{ timestamp: { order: 'desc' } }],
+            size: 1,
+          },
+        });
+
+        io?.emit('server::refresh');
+
+        return data.hits.hits[0]._source;
+      },
+      saveMatchBoxState: async (
+        obj,
+        { graphqlField, state },
+        { es, projectId, io },
+      ) => {
+        // TODO: validate / make proper input type
+        const type = types.find(([, type]) => type.name === graphqlField)[1];
+        await es.create({
+          index: `${type.indexPrefix}-matchbox-state`,
+          type: `${type.indexPrefix}-matchbox-state`,
+          id: uuid(),
+          body: {
+            timestamp: new Date().toISOString(),
+            state,
+          },
+          refresh: true,
+        });
+
+        let data = await es.search({
+          index: `${type.indexPrefix}-matchbox-state`,
+          type: `${type.indexPrefix}-matchbox-state`,
           body: {
             sort: [{ timestamp: { order: 'desc' } }],
             size: 1,

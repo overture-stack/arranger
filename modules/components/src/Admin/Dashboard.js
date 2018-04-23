@@ -21,6 +21,7 @@ import api from '../utils/api';
 import initSocket from '../utils/initSocket';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
+import MatchBoxTab from './Tabs/MatchBoxTab';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -662,6 +663,19 @@ class Dashboard extends React.Component {
                             text-transform: uppercase;
                             cursor: pointer;
                             padding: 0 6px;
+                            color: ${tab === 'matchbox'
+                              ? 'black'
+                              : 'rgb(128, 30, 148)'};
+                          `}
+                          onClick={() => update({ tab: 'matchbox' })}
+                        >
+                          Match Box
+                        </a>
+                        <a
+                          css={`
+                            text-transform: uppercase;
+                            cursor: pointer;
+                            padding: 0 6px;
                             color: ${tab === 'aggs'
                               ? 'black'
                               : 'rgb(128, 30, 148)'};
@@ -889,6 +903,18 @@ class Dashboard extends React.Component {
                                 ))}
                             </section>
                           </div>
+                        )}
+                        {tab === 'matchbox' && (
+                          <MatchBoxTab
+                            projectId={match.params.projectId}
+                            graphqlField={
+                              this.state.projects
+                                .find(x => x.id === match.params.projectId)
+                                .types.types.find(
+                                  x => x.index === match.params.index,
+                                ).name
+                            }
+                          />
                         )}
                         {tab === 'aggs' && (
                           <AggregationsTab

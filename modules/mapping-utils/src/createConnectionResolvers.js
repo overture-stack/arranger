@@ -48,6 +48,18 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
 
       return get(data, 'hits.hits[0]._source', null);
     },
+    matchBoxState: async (obj, t, { es, projectId }) => {
+      let data = await es.search({
+        index: `${type.indexPrefix}-matchbox-state`,
+        type: `${type.indexPrefix}-matchbox-state`,
+        body: {
+          sort: [{ timestamp: { order: 'desc' } }],
+          size: 1,
+        },
+      });
+
+      return get(data, 'hits.hits[0]._source', null);
+    },
     hits: resolveHits(type),
     aggregations: resolveAggregations(type),
   },
