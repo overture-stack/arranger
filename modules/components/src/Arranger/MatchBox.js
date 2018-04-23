@@ -5,7 +5,6 @@ import { css } from 'emotion';
 
 import Input from '../Input';
 import Tabs, { TabsTable } from '../Tabs';
-import Select, { Option } from '../Select';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
@@ -24,11 +23,8 @@ const enhance = compose(
       target,
     }) => {
       setSearchTextLoading(true);
-      let files = [];
-      for (let i = 0; i < target.files.length; i++)
-        files = [...files, target.files[i]];
       const contents = await Promise.all(
-        files.map(
+        [...target.files].map(
           f =>
             new Promise((resolve, reject) => {
               const reader = new FileReader();
@@ -84,14 +80,14 @@ const MatchBox = ({
         <div>
           <div className="match-box-select-entity-form">
             <div>{entitySelectText}</div>
-            <Select onChange={onEntityChange}>
-              <Option value={null}>{entitySelectPlaceholder}</Option>
+            <select onChange={onEntityChange}>
+              <option value={null}>{entitySelectPlaceholder}</option>
               {activeFields.map(({ field, displayName }) => (
-                <Option key={field} value={field}>
+                <option key={field} value={field}>
                   {capitalize(displayName)}
-                </Option>
+                </option>
               ))}
-            </Select>
+            </select>
           </div>
           <div className="match-box-id-form">
             <div>{instructionText}</div>
@@ -131,7 +127,7 @@ const MatchBox = ({
           </div>
           <QuickSearchQuery
             exact
-            size={9999999}
+            size={9999999} // TODO: pagination - this will currently choke on large input
             {...props}
             searchText={searchText}
             primaryKeyField={activeField?.keyField}

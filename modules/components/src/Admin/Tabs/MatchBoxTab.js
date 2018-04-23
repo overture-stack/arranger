@@ -1,12 +1,11 @@
 import React from 'react';
+import Component from 'react-component-component';
 
 import { MatchBoxState } from '../../MatchBox';
-import State from '../../State';
 
 export default ({ projectId, graphqlField }) => (
-  <State
-    initial={{ activeFieldField: null }}
-    render={({ activeFieldField, update: updateActiveField }) => (
+  <Component initialState={{ activeFieldField: null }}>
+    {({ state: { activeFieldField }, setState }) => (
       <MatchBoxState
         projectId={projectId}
         graphqlField={graphqlField}
@@ -33,9 +32,7 @@ export default ({ projectId, graphqlField }) => (
                     css={`
                       cursor: pointer;
                     `}
-                    onClick={() =>
-                      updateActiveField({ activeFieldField: x.field })
-                    }
+                    onClick={() => setState({ activeFieldField: x.field })}
                   >
                     {x.isActive ? <span>✓</span> : <span>✗</span>}
                     {x.isActive ? x.displayName : x.field || x.displayName}
@@ -155,5 +152,5 @@ export default ({ projectId, graphqlField }) => (
         }}
       />
     )}
-  />
+  </Component>
 );
