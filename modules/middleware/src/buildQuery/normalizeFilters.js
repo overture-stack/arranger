@@ -21,7 +21,7 @@ function groupingOptimizer({ op, content }) {
 }
 
 function isSpecialFilter(value) {
-  return `${value}`.includes('*') || `${value}`.includes('set_id:');
+  return ['*', 'set_id:'].some(x => `${value}`.includes(x));
 }
 
 function normalizeFilters(filter) {
