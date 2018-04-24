@@ -14,6 +14,7 @@ import mapHits from './utils/mapHits';
 import { getProject, setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
+import { setsMapping } from '@arranger/schema';
 
 async function getTypes({ id, es }) {
   const index = `arranger-projects-${id}`;
@@ -33,16 +34,7 @@ const initializeSets = async ({ es }) => {
       body: {
         mappings: {
           'arranger-sets': {
-            properties: {
-              userId: { type: 'keyword' },
-              sqon: { type: 'object' },
-              ids: { type: 'keyword' },
-              setId: { type: 'keyword' },
-              type: { type: 'keyword' },
-              path: { type: 'keyword' },
-              size: { type: 'long' },
-              createdAt: { type: 'date' },
-            },
+            properties: setsMapping,
           },
         },
       },

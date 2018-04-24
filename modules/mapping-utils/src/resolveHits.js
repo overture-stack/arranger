@@ -24,7 +24,7 @@ let resolveNested = ({ node, nestedFields, parent = '' }) => {
               total: hits.length,
             },
           }
-        : typeof hits === 'object'
+        : typeof hits === 'object' && hits
           ? Object.assign(
               hits.constructor(),
               resolveNested({ node: hits, nestedFields, parent: fullPath }),

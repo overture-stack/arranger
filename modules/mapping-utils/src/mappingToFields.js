@@ -23,7 +23,12 @@ let mappingToFields = ({ type, parent }) => {
       type,
       fields: [
         mappingToScalarFields(type.mapping, type.extendedFields, parent),
-        mappingToNestedFields(type.name, type.mapping, parent, type.extendedFields),
+        mappingToNestedFields(
+          type.name,
+          type.mapping,
+          parent,
+          type.extendedFields,
+        ),
         type.customFields,
       ],
     }),

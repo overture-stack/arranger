@@ -72,9 +72,3 @@ export const saveSet = ({ types }) => async (
 
   return body;
 };
-
-const resolveSets = async () => {
-  console.log('resolve Sets');
-};
-
-export default resolveSets;
