@@ -1,19 +1,11 @@
-import { attempt, uniqueId } from 'lodash';
-import Cookies from 'js-cookie';
+import uuid from 'uuid';
+import initSocket from './initSocket';
 
 let httpHeaders = {};
 
 function getIFrameBody(iframe) {
   const document = iframe.contentWindow || iframe.contentDocument;
   return (document.document || document).body;
-}
-
-function getIframeResponse(iFrame) {
-  return JSON.parse(getIFrameBody(iFrame).querySelector('pre').innerText);
-}
-
-function hashString(s) {
-  return s.split('').reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0);
 }
 
 function toHtml(key, value) {
@@ -26,49 +18,6 @@ function toHtml(key, value) {
         : value
     }"
   />`;
-}
-
-function progressChecker(iFrame, cookieKey, downloadToken) {
-  const checkCookie = () => downloadToken === Cookies.get(cookieKey);
-  const interval = 1000;
-  let intervalId = null;
-
-  function cleanUp() {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-    // TODO: iframe was being removed before download was initialize. figure out better way to check
-    // iFrame.parentNode.removeChild(iFrame);
-  }
-
-  return Object.assign(
-    new Promise((resolve, reject) => {
-      function checkStatus() {
-        const cookieExists = checkCookie();
-
-        if (iFrame.__frame__loaded) {
-          // The downloadToken cookie is removed before the server sends the response
-          if (cookieExists) {
-            Cookies.remove(cookieKey);
-            cleanUp();
-            throw attempt(getIframeResponse(iFrame));
-          } else {
-            // A download should be now initiated.
-            cleanUp();
-            resolve();
-          }
-        } else if (!cookieExists) {
-          // In case the download is initiated without triggering the iFrame to reload
-          cleanUp();
-          resolve();
-        }
-      }
-
-      intervalId = setInterval(checkStatus, interval);
-    }),
-    { cancel: cleanUp },
-  );
 }
 
 function createIFrame({ method, url, fields }) {
@@ -95,37 +44,25 @@ function createIFrame({ method, url, fields }) {
 }
 
 function download({ url, params, method = 'GET', body = {} }) {
-  // a cookie value that the server will remove as a download-ready indicator
-  const downloadToken = uniqueId(`${+new Date()}-`);
-  const cookieKey = navigator.cookieEnabled
-    ? Math.abs(hashString(JSON.stringify(params) + downloadToken)).toString(16)
-    : null;
+  const downloadKey = uuid();
+  let io = initSocket();
 
-  let fields = toHtml('params', {
-    ...params,
+  const resolveOnDownload = new Promise((resolve, reject) => {
+    io.on(`server::download::${downloadKey}`, () => {
+      io.off(`server::download::${downloadKey}`);
+      resolve();
+    });
   });
 
-  let headers = toHtml('httpHeaders', {
-    ...httpHeaders,
+  createIFrame({
+    method,
+    url,
+    fields: Object.entries({ params, httpHeaders, ...body, downloadKey })
+      .map(([key, value]) => toHtml(key, value))
+      .join('\n'),
   });
 
-  const bodyHtml = Object.entries(body).map(([key, value]) =>
-    toHtml(key, value),
-  );
-
-  if (cookieKey) {
-    Cookies.set(cookieKey, downloadToken);
-    fields += `${headers}${toHtml('downloadCookieKey', cookieKey)}${toHtml(
-      'downloadCookiePath',
-      '/',
-    )}${bodyHtml.join('')}`;
-  }
-
-  const iFrame = createIFrame({ method, url, fields });
-
-  return cookieKey
-    ? progressChecker(iFrame, cookieKey, downloadToken)
-    : Promise.reject('no cookies');
+  return resolveOnDownload;
 }
 
 export const addDownloadHttpHeaders = headers => {

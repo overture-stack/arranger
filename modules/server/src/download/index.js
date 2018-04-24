@@ -8,7 +8,7 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 
-export default function({ projectId }) {
+export default function({ projectId, io }) {
   function makeTSV(args) {
     return getAllData({
       projectId,
@@ -57,7 +57,7 @@ export default function({ projectId }) {
   router.use(bodyParser.urlencoded({ extended: true }));
 
   router.post('/', async function(req, res) {
-    const { params, downloadCookieKey, downloadCookiePath } = req.body;
+    const { params, downloadKey } = req.body;
     const { files, fileName = 'file.tar.gz', mock, chunkSize } = JSON.parse(
       params,
     );
@@ -84,8 +84,9 @@ export default function({ projectId }) {
         'Content-disposition',
         `attachment; filename=${responseFileName}`,
       );
-      res.clearCookie(downloadCookieKey, { path: downloadCookiePath });
-      output.pipe(res);
+      output
+        .pipe(res)
+        .on('finish', () => io.emit(`server::download::${downloadKey}`));
     }
   });
 

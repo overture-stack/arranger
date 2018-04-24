@@ -218,7 +218,7 @@ export default async function startProjectApp({ es, id, io }) {
       : noSchemaHandler,
   );
 
-  projectApp.use(`/download`, download({ projectId: id }));
+  projectApp.use(`/download`, download({ projectId: id, io }));
 
   setProject({ app: projectApp, schema, mockSchema, es, io, id });
 
