@@ -87,6 +87,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         ...acc,
         ...createConnectionResolvers({
           type,
+          createStateResolvers: type.createState || true,
         }),
       }),
       {},

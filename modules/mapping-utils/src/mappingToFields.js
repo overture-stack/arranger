@@ -31,6 +31,7 @@ let mappingToFields = ({ type, parent }) => {
         ),
         type.customFields,
       ],
+      createStateTypeDefs: type.createState || true,
     }),
   ].join();
 };

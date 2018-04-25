@@ -29,6 +29,7 @@ module.exports = ({
         es_type: 'arranger-sets',
         index: 'arranger-sets',
         name: 'sets',
+        createState: false,
         nestedFields: [],
         nested_fields: [],
         indexPrefix: '',
