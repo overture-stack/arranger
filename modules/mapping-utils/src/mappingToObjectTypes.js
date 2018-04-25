@@ -2,8 +2,6 @@ import { capitalize } from 'lodash';
 import mappingToNestedFields from './mappingToNestedFields';
 import mappingToScalarFields from './mappingToScalarFields';
 import mappingToNestedTypes from './mappingToNestedTypes';
-import mappingToFields from './mappingToFields';
-import createConnectionTypeDefs from './createConnectionTypeDefs';
 
 let mappingToObjectTypes = (type, mapping, parent, extendedFields) => {
   return Object.entries(mapping)
@@ -20,14 +18,14 @@ let mappingToObjectTypes = (type, mapping, parent, extendedFields) => {
           type + capitalize(field),
           metadata.properties,
           [parent, field].filter(Boolean).join('.'),
-          extendedFields
+          extendedFields,
         ).join('\n')}
         type ${type + capitalize(field)} {
           ${mappingToNestedFields(
             type + capitalize(field),
             metadata.properties,
             [parent, field].filter(Boolean).join('.'),
-            extendedFields
+            extendedFields,
           )}
           ${mappingToScalarFields(
             metadata.properties,

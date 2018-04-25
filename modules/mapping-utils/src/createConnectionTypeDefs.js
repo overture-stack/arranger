@@ -1,16 +1,22 @@
 import mappingToAggsType from './mappingToAggsType';
 
-export default ({ type, fields = '' }) => `
+export default ({ type, fields = '', createStateTypeDefs = true }) => `
   type ${type.name} {
     mapping: JSON
 
     extended(fields: [String]): JSON
 
-    aggsState: AggsState
+    ${
+      createStateTypeDefs
+        ? `
+        aggsState: AggsState
 
-    columnsState: ColumnsState
+        columnsState: ColumnsState
 
-    matchBoxState: MatchBoxState
+        matchBoxState: MatchBoxState
+      `
+        : ''
+    }
 
     hits(
       score: String
