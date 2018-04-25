@@ -1,12 +1,6 @@
-import React, { Component } from 'react';
+import React from 'react';
 import AggsWrapper from './AggsWrapper.js';
-import { css } from 'emotion';
-import {
-  toggleSQON,
-  inCurrentSQON,
-  replaceSQON,
-  removeSQON,
-} from '../SQONView/utils';
+import { replaceSQON, removeSQON } from '../SQONView/utils';
 import './BooleanAgg.css';
 import TextHighlight from '../TextHighlight';
 import ToggleButton from '../ToggleButton';
@@ -24,10 +18,19 @@ export default ({
     true: 'true',
     false: 'false',
   },
-  displayKeys = {
+  defaultDisplayKeys = {
+    any: 'Any',
     true: 'Yes',
     false: 'No',
   },
+  displayValues: extendedDisplayKeys = {},
+  displayKeys = Object.keys(defaultDisplayKeys).reduce(
+    (obj, x) => ({
+      ...obj,
+      [x]: extendedDisplayKeys[x] || defaultDisplayKeys[x],
+    }),
+    {},
+  ),
   ...rest
 }) => {
   const trueBucket = buckets.find(
@@ -46,10 +49,8 @@ export default ({
     value: valueKeys.false,
     field: dotField,
   });
-  const isNeitherActive = !isTrueActive && !isFalseActive;
 
   const handleChange = isTrue => {
-    console.log(handleValueClick);
     if (isTrue !== undefined) {
       handleValueClick({
         bucket: isTrue ? trueBucket : falseBucket,
@@ -84,11 +85,13 @@ export default ({
         {...{
           value: isTrueActive
             ? valueKeys.true
-            : isFalseActive ? valueKeys.false : undefined,
+            : isFalseActive
+              ? valueKeys.false
+              : undefined,
           options: [
             {
               value: undefined,
-              title: 'any',
+              title: displayKeys.any,
             },
             {
               value: valueKeys.true,
@@ -137,7 +140,9 @@ export default ({
             handleChange(
               value === valueKeys.true
                 ? true
-                : value === valueKeys.false ? false : undefined,
+                : value === valueKeys.false
+                  ? false
+                  : undefined,
             );
           },
         }}

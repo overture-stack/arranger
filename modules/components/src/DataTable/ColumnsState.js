@@ -175,6 +175,7 @@ export default class extends Component {
             Header: extendedField?.displayName || column.field,
             extendedType: extendedField?.type,
             show: column.field in toggled ? toggled[column.field] : column.show,
+            extendedDisplayValues: extendedField?.displayValues,
           };
         }),
       },

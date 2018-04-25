@@ -1,6 +1,8 @@
 import React from 'react';
-import { intersection, xor, noop } from 'lodash';
+import { get, intersection, isEmpty, xor, noop } from 'lodash';
 import { compose, defaultProps } from 'recompose';
+import jsonpath from 'jsonpath/jsonpath.min';
+
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
 
@@ -150,7 +152,25 @@ class DataTable extends React.Component {
         }
         data={propsData?.data || data}
         defaultSorted={defaultSorted}
-        columns={columns}
+        columns={columns.map(
+          c => ({
+            ...c,
+            ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
+              ? {
+                  accessor: x => {
+                    const values = c.accessor
+                      ? [get(x, c.accessor)]
+                      : jsonpath.query(x, c.jsonPath);
+                    return values
+                      .map(x => c.extendedDisplayValues[x] || x)
+                      .join(', ');
+                  },
+                  id: c.field,
+                }
+              : {}),
+          }),
+          {},
+        )}
         defaultPageSize={defaultPageSize}
         className="-striped -highlight"
         PaginationComponent={props => (

@@ -9,18 +9,23 @@ export const CurrentSQON = ({
   setSQON,
   extendedMapping,
   translateSQONValue = x => x,
+  findExtendedMappingField = field =>
+    extendedMapping?.find(e => e.field === field),
   ...props
 }) => (
   <SQONView
     sqon={sqon}
     FieldCrumb={({ field, nextSQON, ...props }) => (
       <Field {...{ field, ...props }}>
-        {extendedMapping?.find(e => e.field === field)?.displayName || field}
+        {findExtendedMappingField(field)?.displayName || field}
       </Field>
     )}
-    ValueCrumb={({ value, nextSQON, ...props }) => (
+    ValueCrumb={({ field, value, nextSQON, ...props }) => (
       <Value onClick={() => setSQON(nextSQON)} {...props}>
-        {translateSQONValue(value)}
+        {translateSQONValue(
+          (findExtendedMappingField(field)?.displayValues || {})[value] ||
+            value,
+        )}
       </Value>
     )}
     Clear={({ nextSQON }) => (

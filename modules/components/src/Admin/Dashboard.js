@@ -522,7 +522,11 @@ class Dashboard extends React.Component {
           <Switch>
             <Route
               path="/graphiql/:projectId"
-              render={({ match: { params: { projectId } } }) => (
+              render={({
+                match: {
+                  params: { projectId },
+                },
+              }) => (
                 <Component
                   initialState={{ projectId }}
                   shouldUpdate={({ state }) => state.projectId !== projectId}
@@ -568,7 +572,9 @@ class Dashboard extends React.Component {
               exact
               path={'/:id'}
               render={({
-                match: { params: { id: projectId } },
+                match: {
+                  params: { id: projectId },
+                },
                 history,
                 location,
               }) => (
@@ -631,7 +637,9 @@ class Dashboard extends React.Component {
               exact
               path={'/:projectId/:index'}
               render={({
-                match: { params: { projectId, index } },
+                match: {
+                  params: { projectId, index },
+                },
                 history,
                 location,
                 graphqlField = projects
@@ -765,11 +773,43 @@ class Dashboard extends React.Component {
                                       ),
                                     });
                                   };
+                                  const updateBooleanDisplayValue = k => e =>
+                                    updateActiveField({
+                                      ...val,
+                                      [k]: e.target.value,
+                                    });
                                   return (
                                     <div key={key} className="type-container">
                                       {startCase(key)}:
                                       {key === 'displayValues' ? (
-                                        <div>Hey display val</div>
+                                        activeField.type === 'boolean' ? (
+                                          <div>
+                                            <label>Any: </label>
+                                            <input
+                                              type="text"
+                                              onChange={updateBooleanDisplayValue(
+                                                'any',
+                                              )}
+                                              value={val.any}
+                                            />
+                                            <label>True: </label>
+                                            <input
+                                              type="text"
+                                              onChange={updateBooleanDisplayValue(
+                                                'true',
+                                              )}
+                                              value={val.true}
+                                            />
+                                            <label>False: </label>
+                                            <input
+                                              type="text"
+                                              onChange={updateBooleanDisplayValue(
+                                                'false',
+                                              )}
+                                              value={val.false}
+                                            />
+                                          </div>
+                                        ) : null
                                       ) : key === 'unit' ? (
                                         <State
                                           initial={{

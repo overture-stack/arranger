@@ -212,7 +212,8 @@ div {
 
 .aggregation-card .bucket-item,
 .aggregation-card .input-range__label,
-.aggregation-card .filter {
+.aggregation-card .filter,
+.aggregation-card .toggle-button {
   font-size: 0.8rem;
 }
 

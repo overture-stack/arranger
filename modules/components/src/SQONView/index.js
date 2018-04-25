@@ -157,6 +157,7 @@ const SQON = ({
                 {(isExpanded(valueSQON) ? value : take(value, 2)).map(
                   (value, i) =>
                     ValueCrumb({
+                      field,
                       key: value,
                       value,
                       className: isSingleValue ? 'sqon-value-single' : '',
