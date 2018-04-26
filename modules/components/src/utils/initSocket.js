@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 
 import { ARRANGER_API } from '../utils/config';
 
-export default ({ socket, socketConnectionString, socketOptions }) => {
+export default ({ socket, socketConnectionString, socketOptions } = {}) => {
   const arrangerUrl = urlParse(resolveURL(ARRANGER_API));
 
   return (
