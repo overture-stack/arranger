@@ -40,7 +40,6 @@ let mappingToNestedTypes = (type, mapping, parent, extendedFields) => {
               extendedFields,
             ),
           ],
-          createStateTypeDefs: 'createState' in type ? type.createState : true,
         })}
       `,
     );
