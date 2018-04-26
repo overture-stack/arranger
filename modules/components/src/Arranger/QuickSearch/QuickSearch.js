@@ -46,6 +46,7 @@ const QuickSearch = ({
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
+  translateSQONValue = x => x,
   ...props
 }) => (
   <QuickSearchFieldsQuery
@@ -79,7 +80,7 @@ const QuickSearch = ({
                       })
                     }
                   >
-                    {primaryKey}
+                    {translateSQONValue(primaryKey)}
                   </PinnedValueComponent>
                 </div>
               ))}

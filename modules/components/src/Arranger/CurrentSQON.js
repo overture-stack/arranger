@@ -4,7 +4,13 @@ import Component from 'react-component-component';
 import SQONView, { Value, Bubble, Field } from '../SQONView';
 import { fetchExtendedMapping } from '../utils/api';
 
-export const CurrentSQON = ({ sqon, setSQON, extendedMapping, ...props }) => (
+export const CurrentSQON = ({
+  sqon,
+  setSQON,
+  extendedMapping,
+  translateSQONValue = x => x,
+  ...props
+}) => (
   <SQONView
     sqon={sqon}
     FieldCrumb={({ field, nextSQON, ...props }) => (
@@ -14,7 +20,7 @@ export const CurrentSQON = ({ sqon, setSQON, extendedMapping, ...props }) => (
     )}
     ValueCrumb={({ value, nextSQON, ...props }) => (
       <Value onClick={() => setSQON(nextSQON)} {...props}>
-        {value}
+        {translateSQONValue(value)}
       </Value>
     )}
     Clear={({ nextSQON }) => (
@@ -25,7 +31,13 @@ export const CurrentSQON = ({ sqon, setSQON, extendedMapping, ...props }) => (
   />
 );
 
-const CurrentSQONState = ({ sqon, setSQON, graphqlField, projectId }) => {
+const CurrentSQONState = ({
+  sqon,
+  setSQON,
+  graphqlField,
+  projectId,
+  ...props
+}) => {
   return (
     <Component
       initialState={{ extendedMapping: null }}
@@ -38,7 +50,7 @@ const CurrentSQONState = ({ sqon, setSQON, graphqlField, projectId }) => {
       }
     >
       {({ state: { extendedMapping } }) => (
-        <CurrentSQON {...{ sqon, setSQON, extendedMapping }} />
+        <CurrentSQON {...{ sqon, setSQON, extendedMapping, ...props }} />
       )}
     </Component>
   );
