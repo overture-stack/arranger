@@ -9,7 +9,12 @@ let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
 export default type => async (
   obj,
-  { offset = 0, filters, aggregations_filter_themselves },
+  {
+    offset = 0,
+    filters,
+    aggregations_filter_themselves,
+    include_missing = true,
+  },
   { es },
   info,
 ) => {
@@ -30,8 +35,10 @@ export default type => async (
     _source: false,
     body,
   });
-
-  const aggregations = flattenAggregations(response.aggregations);
+  const aggregations = flattenAggregations({
+    aggregations: response.aggregations,
+    includeMissing: include_missing,
+  });
 
   return Object.entries(aggregations).reduce(toGraphqlField, {});
 };
