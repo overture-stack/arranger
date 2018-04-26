@@ -644,7 +644,7 @@ class Dashboard extends React.Component {
                 location,
                 graphqlField = projects
                   .find(x => x.id === projectId)
-                  .types.types.find(x => x.index === index).name,
+                  ?.types?.types?.find(x => x.index === index)?.name,
               }) => (
                 <State
                   initial={{ tab: 'fields', filterText: '' }}
