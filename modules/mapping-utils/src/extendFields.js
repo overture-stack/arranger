@@ -11,4 +11,5 @@ export default mapping =>
     primaryKey: false,
     quickSearchEnabled: false,
     unit: null,
+    displayValues: {},
   }));

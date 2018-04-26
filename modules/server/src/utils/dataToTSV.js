@@ -13,14 +13,17 @@ function getAllValue(data) {
 }
 
 function getValue(row, column) {
+  const valueFromExtended = value =>
+    (column.extendedDisplayValues || {})[value] || value;
   if (column.jsonPath) {
     return jsonPath
       .query(row, column.jsonPath)
       .map(getAllValue)
       .reduce((a, b) => a.concat(b), [])
+      .map(valueFromExtended)
       .join(', ');
   } else if (column.accessor) {
-    return get(row, column.accessor);
+    return valueFromExtended(get(row, column.accessor));
   } else {
     return '';
   }
