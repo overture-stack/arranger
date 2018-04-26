@@ -271,7 +271,7 @@ test('flattenAggregations', () => {
     },
   ];
   tests.forEach(({ input, output }) => {
-    const actualOutput = flattenAggregations(input);
+    const actualOutput = flattenAggregations({ aggregations: input });
     expect(actualOutput).toEqual(output);
   });
 });
