@@ -15,7 +15,7 @@ export const setsMapping = {
   createdAt: { type: 'date' },
 };
 
-module.exports = ({
+export default ({
   types = [],
   rootTypes = [],
   scalarTypes = [],
