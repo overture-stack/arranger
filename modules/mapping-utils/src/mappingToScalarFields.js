@@ -8,6 +8,7 @@ export let esToGraphqlTypeMap = {
   double: 'Float',
   integer: 'Float',
   float: 'Float',
+  object: 'JSON',
 };
 
 const maybeArray = (field, extendedFields, type, parent) => {
