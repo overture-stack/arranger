@@ -77,4 +77,5 @@ export default {
   float: composedRangeAgg,
   boolean: composedBooleanAgg,
   date: composedDatesAgg,
+  integer: composedRangeAgg,
 };
