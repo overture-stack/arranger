@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import moment from 'moment';
 import * as CONSTANTS from '../constants';
 
 export function mergePath(target, [key, ...path], data) {
@@ -45,4 +46,11 @@ export function wrapBool(op, value) {
       [op]: Array.isArray(value) ? value : [value],
     },
   };
+}
+
+export function toEsRangeValue(value) {
+  if (moment(value, 'YYYY-MM-DD HH:mm:ss.SSSSSS').isValid()) {
+    return moment(value, 'YYYY-MM-DD HH:mm:ss.SSSSSS');
+  }
+  return value;
 }

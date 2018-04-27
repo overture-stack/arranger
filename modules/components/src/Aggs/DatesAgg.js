@@ -9,7 +9,7 @@ import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
 import './DatesAgg.css';
 
-const BUCKET_DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
+const BUCKET_DATE_FORMAT = 'YYYY-MM-DD';
 const bucketDateToMoment = dateString => Moment(dateString, BUCKET_DATE_FORMAT);
 const momentToBucketDate = moment => moment?.format(BUCKET_DATE_FORMAT);
 
