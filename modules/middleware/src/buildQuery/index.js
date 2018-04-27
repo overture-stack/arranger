@@ -135,8 +135,8 @@ function getRangeFilter({ nestedFields, filter }) {
       range: {
         [field]: {
           boost: 0,
-          [op]: ([GT_OP, GTE_OP].includes(op) ? _.max : _.min)(
-            toEsRangeValue(value),
+          [op]: toEsRangeValue(
+            [GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value),
           ),
         },
       },
