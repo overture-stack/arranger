@@ -128,7 +128,7 @@ const TermAgg = ({
   return (
     <AggsWrapper
       {...{ displayName, WrapperComponent, collapsible }}
-      stickyHeader={showingMore || true}
+      stickyHeader={true}
       ActionIcon={
         <DefaultSearchIcon
           onClick={() => setShowingSearch(!stateShowingSearch)}
