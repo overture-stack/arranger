@@ -127,8 +127,8 @@ const TermAgg = ({
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   return (
     <AggsWrapper
+      stickyHeader
       {...{ displayName, WrapperComponent, collapsible }}
-      stickyHeader={true}
       ActionIcon={
         <DefaultSearchIcon
           onClick={() => setShowingSearch(!stateShowingSearch)}
