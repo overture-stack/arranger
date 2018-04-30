@@ -8,6 +8,7 @@ const retrieveSetIds = async ({
   type,
   query,
   path,
+  sort,
   BULK_SIZE = 1000,
 }) => {
   const search = async ({ searchAfter } = {}) => {
@@ -18,12 +19,14 @@ const retrieveSetIds = async ({
     const response = await es.search({
       index,
       type,
-      sort: ['_id'],
+      // https://github.com/elastic/elasticsearch-js/issues/148#issuecomment-323848693
+      // strings not obj for sort eg ['name:desc']
+      sort: sort || ['_id'],
       size: BULK_SIZE,
       body,
     });
     const ids = response.hits.hits.map(x =>
-      get(x, `_source.${path.split('__').join('.')}`),
+      get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
     return { ids, searchAfter: ids.slice(-1), total: response.hits.total };
   };
@@ -37,7 +40,7 @@ const retrieveSetIds = async ({
 
 export const saveSet = ({ types }) => async (
   obj,
-  { type, userId, sqon, path },
+  { type, userId, sqon, path, sort },
   { es, projectId, io },
 ) => {
   const { nested_fields: nestedFields, es_type, index } = types.find(
@@ -50,6 +53,7 @@ export const saveSet = ({ types }) => async (
     type: es_type,
     query,
     path,
+    sort,
   });
 
   const body = {

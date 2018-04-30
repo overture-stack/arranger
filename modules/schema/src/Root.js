@@ -48,7 +48,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
     saveMatchBoxState(graphqlField: String! state: JSON!): MatchBoxState
-    saveSet(type: String! userId: String sqon: JSON! path: String!): Set
+    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [String]): Set
   }
 
   schema {
