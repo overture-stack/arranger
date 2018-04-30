@@ -13,7 +13,7 @@ export default ({
   collapsible,
   WrapperComponent,
   displayName,
-  searchString,
+  highlightText,
   valueKeys = {
     true: 'true',
     false: 'false',
@@ -99,7 +99,7 @@ export default ({
                 <>
                   <TextHighlight
                     content={displayKeys.true}
-                    highlightText={searchString}
+                    highlightText={highlightText}
                   />
                   {trueBucket && (
                     <span
@@ -120,7 +120,7 @@ export default ({
                 <>
                   <TextHighlight
                     content={displayKeys.false}
-                    highlightText={searchString}
+                    highlightText={highlightText}
                   />
                   {falseBucket && (
                     <span

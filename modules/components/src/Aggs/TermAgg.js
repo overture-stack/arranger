@@ -1,5 +1,8 @@
 import React from 'react';
-import { orderBy, truncate, isEqual, isEmpty } from 'lodash';
+import { compose, withState } from 'recompose';
+import { orderBy, truncate, isEmpty } from 'lodash';
+import DefaultSearchIcon from 'react-icons/lib/fa/search';
+import { css } from 'emotion';
 
 import './AggregationCard.css';
 
@@ -9,6 +12,7 @@ import TextHighlight from '../TextHighlight';
 import './TermAgg.css';
 import ToggleButton from '../ToggleButton';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
+import Input from '../Input';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -60,162 +64,186 @@ const IncludeExcludeButton = ({
   />
 );
 
-class TermAgg extends React.Component {
-  // needs ref
+const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
+  <div
+    className={`showMore-wrapper ${isMore ? 'more' : 'less'}`}
+    onClick={onClick}
+  >
+    {isMore ? `${howManyMore} More` : 'Less'}
+  </div>
+);
 
-  state = { showingMore: false, isExclude: false };
+const enhance = compose(
+  withState('stateShowingMore', 'setShowingMore', false),
+  withState('stateIsExclude', 'setIsExclude', false),
+  withState('stateShowingSearch', 'setShowingSearch', false),
+  withState('searchText', 'setSearchText', ''),
+);
 
-  componentWillReceiveProps(nextProps) {
-    const { searchString, buckets = [] } = nextProps;
-    if (
-      searchString &&
-      buckets.some(b => {
-        return (b.key_as_string || b.key).match(new RegExp(searchString, 'i'));
-      })
-    ) {
-      this.setState({
-        showingMore: true,
-      });
-    }
-  }
+const TermAgg = ({
+  field = '',
+  displayName = 'Unnamed Field',
+  buckets = [],
+  handleValueClick = () => {},
+  isActive = () => {},
+  Content = 'div',
+  SearchIcon = DefaultSearchIcon,
+  maxTerms = 5,
+  collapsible = true,
+  isExclude: externalIsExclude = () => {},
+  showExcludeOption = false,
+  handleIncludeExcludeChange = () => {},
+  constructEntryId = ({ value }) => value,
+  valueCharacterLimit,
+  observableValueInFocus = null,
+  WrapperComponent,
+  highlightText,
+  constructBucketItemClassName = () => '',
+  searchPlaceholder = 'Search',
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !isEqual(nextProps, this.props) || !isEqual(nextState, this.state);
-  }
-
-  render() {
-    const {
-      field = '',
-      displayName = 'Unnamed Field',
-      buckets = [],
-      decoratedBuckets = buckets.map(b => ({
-        ...b,
-        name: b.key_as_string || b.key,
-      })),
-      handleValueClick = () => {},
-      isActive = () => {},
-      Content = 'div',
-      maxTerms = 5,
-      collapsible = true,
-      isExclude: externalIsExclude = () => {},
-      showExcludeOption = false,
-      handleIncludeExcludeChange = () => {},
-      constructEntryId = ({ value }) => value,
-      valueCharacterLimit,
-      observableValueInFocus = null,
-      WrapperComponent,
-      searchString,
-      constructBucketItemClassName = () => '',
-    } = this.props;
-    const { showingMore } = this.state;
-    const dotField = field.replace(/__/g, '.');
-    const isExclude =
-      externalIsExclude({ field: dotField }) || this.state.isExclude;
-    return (
-      <AggsWrapper
-        {...{ displayName, WrapperComponent, collapsible }}
-        filters={[
-          ...(showExcludeOption && !isEmpty(decoratedBuckets)
-            ? [
-                <IncludeExcludeButton
-                  {...{
-                    dotField,
-                    isActive,
-                    isExclude,
-                    handleIncludeExcludeChange,
-                    buckets: decoratedBuckets,
-                    updateIsExclude: x => this.setState({ isExclude: x }),
-                  }}
-                />,
-              ]
-            : []),
-        ]}
-      >
-        <>
-          <div className={`bucket`}>
-            {orderBy(decoratedBuckets, 'doc_count', 'desc')
-              .slice(0, showingMore ? Infinity : maxTerms)
-              .map((bucket, i, array) => (
-                <Content
-                  ref={el =>
-                    (this.refs = {
-                      ...this.refs,
-                      [constructEntryId({ value: bucket.name })]: el,
-                    })
+  // Internal State
+  stateShowingMore,
+  setShowingMore,
+  stateIsExclude,
+  setIsExclude,
+  stateShowingSearch,
+  setShowingSearch,
+  searchText,
+  setSearchText,
+}) => {
+  const decoratedBuckets = orderBy(
+    buckets
+      .map(b => ({ ...b, name: b.key_as_string || b.key }))
+      .filter(b => !searchText || b.name.match(new RegExp(searchText, 'i'))),
+    'doc_count',
+    'desc',
+  );
+  const dotField = field.replace(/__/g, '.');
+  const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
+  const hasSearchHit =
+    highlightText &&
+    decoratedBuckets.some(x => x.name.match(new RegExp(highlightText, 'i')));
+  const showingMore = stateShowingMore || hasSearchHit;
+  const isMoreEnabled = decoratedBuckets.length > maxTerms;
+  return (
+    <AggsWrapper
+      {...{ displayName, WrapperComponent, collapsible }}
+      stickyHeader={showingMore || true}
+      ActionIcon={
+        <DefaultSearchIcon
+          onClick={() => setShowingSearch(!stateShowingSearch)}
+        />
+      }
+      filters={[
+        ...(stateShowingSearch
+          ? [
+              <>
+                <Input
+                  className={css`
+                    flex-grow: 1;
+                  `}
+                  type="text"
+                  value={searchText}
+                  placeholder={searchPlaceholder}
+                  icon={<DefaultSearchIcon />}
+                  onChange={({ target: { value } }) =>
+                    setSearchText(value || '')
                   }
-                  id={constructEntryId({ value: bucket.name })}
-                  key={bucket.name}
-                  className={`bucket-item ${constructBucketItemClassName({
-                    bucket,
-                    i,
-                    showingBuckets: array,
-                    showingMore,
-                  }) || ''}`}
-                  content={{
-                    field: dotField,
-                    value: bucket.name,
-                  }}
-                  onClick={() =>
-                    handleValueClick({
-                      bucket,
-                      isExclude,
-                      generateNextSQON: sqon =>
-                        generateNextSQON({ isExclude, dotField, bucket, sqon }),
-                    })
-                  }
-                >
-                  <span className="bucket-link" merge="toggle">
-                    <input
-                      readOnly
-                      type="checkbox"
-                      checked={isActive({
-                        field: dotField,
-                        value: bucket.name,
-                      })}
-                      id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                      name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                />
+                {showingMore &&
+                  isMoreEnabled && (
+                    <MoreOrLessButton
+                      isMore={false}
+                      onClick={() => setShowingMore(false)}
                     />
-                    <TextHighlight
-                      content={
-                        truncate(internalTranslateSQONValue(bucket.name), {
-                          length: valueCharacterLimit || Infinity,
-                        }) + ' '
-                      }
-                      highlightText={searchString}
-                    />
-                    {/* <OverflowTooltippedLabel
-                          htmlFor={`input-${props.title}-${bucket.name.replace(
-                            /\s/g,
-                            '-',
-                          )}`}
-                          style={{
-                            marginLeft: '0.3rem',
-                            verticalAlign: 'middle',
-                          }}
-                        >
-                          {bucket.name}
-                        </OverflowTooltippedLabel> */}
-                  </span>
-                  {bucket.doc_count && (
-                    <span className="bucket-count">
-                      {bucket.doc_count.toLocaleString()}
-                    </span>
                   )}
-                </Content>
-              ))}
-          </div>
-          {buckets.length > maxTerms ? (
-            <div
-              className={`showMore-wrapper ${showingMore ? 'less' : 'more'}`}
-              onClick={() => this.setState({ showingMore: !showingMore })}
-            >
-              {showingMore ? 'Less' : `${buckets.length - maxTerms} More`}
-            </div>
-          ) : null}
-        </>
-      </AggsWrapper>
-    );
-  }
-}
+              </>,
+            ]
+          : []),
+        ...(showExcludeOption && !isEmpty(decoratedBuckets)
+          ? [
+              <IncludeExcludeButton
+                {...{
+                  dotField,
+                  isActive,
+                  isExclude,
+                  handleIncludeExcludeChange,
+                  buckets: decoratedBuckets,
+                  updateIsExclude: setIsExclude,
+                }}
+              />,
+            ]
+          : []),
+      ]}
+    >
+      <>
+        <div className={`bucket`}>
+          {decoratedBuckets
+            .slice(0, showingMore ? Infinity : maxTerms)
+            .map((bucket, i, array) => (
+              <Content
+                id={constructEntryId({ value: bucket.name })}
+                key={bucket.name}
+                className={`bucket-item ${constructBucketItemClassName({
+                  bucket,
+                  i,
+                  showingBuckets: array,
+                  showingMore,
+                }) || ''}`}
+                content={{
+                  field: dotField,
+                  value: bucket.name,
+                }}
+                onClick={() =>
+                  handleValueClick({
+                    bucket,
+                    isExclude,
+                    generateNextSQON: sqon =>
+                      generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                  })
+                }
+              >
+                <span className="bucket-link" merge="toggle">
+                  <input
+                    readOnly
+                    type="checkbox"
+                    checked={isActive({
+                      field: dotField,
+                      value: bucket.name,
+                    })}
+                    id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                    name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                  />
+                  <TextHighlight
+                    content={
+                      truncate(internalTranslateSQONValue(bucket.name), {
+                        length: valueCharacterLimit || Infinity,
+                      }) + ' '
+                    }
+                    highlightText={highlightText}
+                  />
+                </span>
+                {bucket.doc_count && (
+                  <span className="bucket-count">
+                    {bucket.doc_count.toLocaleString()}
+                  </span>
+                )}
+              </Content>
+            ))}
+        </div>
+        {isMoreEnabled && (
+          <MoreOrLessButton
+            isMore={!showingMore}
+            onClick={() => {
+              setShowingMore(!showingMore);
+              setShowingSearch(!showingMore);
+            }}
+            howManyMore={decoratedBuckets.length - maxTerms}
+          />
+        )}
+      </>
+    </AggsWrapper>
+  );
+};
 
-export default TermAgg;
+export default enhance(TermAgg);
