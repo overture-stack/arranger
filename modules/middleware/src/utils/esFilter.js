@@ -49,10 +49,10 @@ export function wrapBool(op, value) {
 }
 
 export function toEsRangeValue(value) {
-  if (moment(value, CONSTANTS.ES_DATE_FORMAT).isValid()) {
-    return moment(value, CONSTANTS.ES_DATE_FORMAT).format(
-      CONSTANTS.ES_DATE_FORMAT,
-    );
-  }
-  return value;
+  const m = moment(
+    value,
+    [CONSTANTS.DATE_FORMAT, CONSTANTS.ES_DATE_FORMAT],
+    true,
+  );
+  return m.isValid() ? m.format(CONSTANTS.ES_DATE_FORMAT) : value;
 }

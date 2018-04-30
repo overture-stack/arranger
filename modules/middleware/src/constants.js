@@ -25,6 +25,7 @@ export const OP_ALIASES = {
   '=': IN_OP,
   '!=': NOT_IN_OP,
 };
+export const DATE_FORMAT = 'YYYY-MM-DD';
 
 export const ARRAY_CONTENT = [
   IN_OP,

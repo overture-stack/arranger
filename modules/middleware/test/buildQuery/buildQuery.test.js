@@ -720,6 +720,98 @@ test('buildQuery "<=" and "=>"', () => {
         },
       },
     },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: '>=',
+              content: {
+                field: 'cases.clinical.date_of_birth',
+                value: ['2017-01-01'],
+              },
+            },
+            {
+              op: '<=',
+              content: {
+                field: 'cases.clinical.date_of_birth',
+                value: ['2017-12-01'],
+              },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              range: {
+                'cases.clinical.date_of_birth': {
+                  gte: '2017-01-01 00:00:00.000000',
+                  boost: 0,
+                },
+              },
+            },
+            {
+              range: {
+                'cases.clinical.date_of_birth': {
+                  lte: '2017-12-01 00:00:00.000000',
+                  boost: 0,
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: '>=',
+              content: {
+                field: 'cases.clinical.date_of_birth',
+                value: ['2017-01-01 00:00:00.000000'],
+              },
+            },
+            {
+              op: '<=',
+              content: {
+                field: 'cases.clinical.date_of_birth',
+                value: ['2017-12-01 00:00:00.000000'],
+              },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              range: {
+                'cases.clinical.date_of_birth': {
+                  gte: '2017-01-01 00:00:00.000000',
+                  boost: 0,
+                },
+              },
+            },
+            {
+              range: {
+                'cases.clinical.date_of_birth': {
+                  lte: '2017-12-01 00:00:00.000000',
+                  boost: 0,
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
   ];
 
   tests.forEach(({ input, output }) => {
