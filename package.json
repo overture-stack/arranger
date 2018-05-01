@@ -6,6 +6,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "start": "npm run bootstrap && npm run lerna -- run --parallel watch",
+    "website": "cd website && npm start",
     "bootstrap": "lerna bootstrap --hoist",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
@@ -15,7 +16,8 @@
     "storybook": "cd modules/components && npm run storybook",
     "dashboard": "cd modules/components && npm run dashboard",
     "portal": "cd modules/components && npm run portal",
-    "netlify-build": "npm i && npm run bootstrap -- --scope=@arranger/components --include-filtered-dependencies && cd modules/components && npm run build-storybook"
+    "netlify-build":
+      "npm i && npm run bootstrap -- --scope=@arranger/components --include-filtered-dependencies && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.1",
