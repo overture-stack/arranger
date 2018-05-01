@@ -1,13 +1,12 @@
-.aggregation-card .title-wrapper {
+.aggregation-card .title-wrapper,
+.aggregation-card .filter {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
 }
-.aggregation-card .filter {
-  display: flex;
-  flex-direction: row;
+.aggregation-card .header {
+  background: white;
 }
 .aggregation-card .arrow:after {
   content: '›';
@@ -18,6 +17,10 @@
 .aggregation-card .arrow {
   transform: rotate(90deg);
   transition: all 0.5s;
+  cursor: pointer;
+}
+.aggregation-card .action-icon {
+  cursor: pointer;
 }
 .aggregation-card .showMore-wrapper {
   display: flex;

@@ -137,7 +137,11 @@ div {
 .aggregation-card:nth-child(5n + 5) {
   border-left-color: #d8202f;
 }
+.aggregation-card .header {
+  margin-top: -10px;
+}
 .aggregation-card .title-wrapper {
+  padding-top: 10px;
   padding-bottom: 7px;
   color: #404c9a;
 }
@@ -154,17 +158,20 @@ div {
   font-weight: bolder;
   font-size: 0.9rem;
   font-family: 'Open Sans', sans-serif;
+  margin-left: 5px;
 }
 .aggregation-card .filter {
   padding: 7px 0;
-  display: flex;
-  justify-content: center;
 }
 .aggregation-card input[type='checkbox'] {
   pointer-events: none;
   margin-right: 5px;
   flex-shrink: 0;
   vertical-align: middle;
+}
+.aggregation-card .filter .showMore-wrapper {
+  margin-left: 5px;
+  margin-top: 0px;
 }
 .aggregation-card .bucket {
   padding-top: 5px;

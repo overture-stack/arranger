@@ -3,6 +3,7 @@ import State from '../State';
 import './Input.css';
 
 export default ({
+  className,
   style,
   icon,
   rightIcon,
@@ -22,7 +23,7 @@ export default ({
           overflow: 'hidden',
         }}
         ref={componentRef}
-        className={`inputWrapper ${isFocused ? 'focused' : ''}`}
+        className={`inputWrapper ${isFocused ? 'focused' : ''} ${className}`}
       >
         <span className="inputIcon">{icon}</span>
         <Component

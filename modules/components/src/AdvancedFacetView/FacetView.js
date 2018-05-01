@@ -110,7 +110,7 @@ export default class FacetView extends React.Component {
                 },
               );
             },
-            searchString,
+            highlightText: searchString,
             sqon,
             WrapperComponent: ({ collapsible, children }) => (
               <div id={serializeToDomId(path)} className={`facetContainer`}>
