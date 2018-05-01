@@ -35,6 +35,31 @@ test('buildQuery "and" and "or" ops', () => {
         bool: { should: [{ terms: { boost: 0, project_code: ['ACC'] } }] },
       },
     },
+    {
+      input: {
+        nestedFields: [],
+        filters: {
+          op: 'or',
+          content: [
+            {
+              op: 'in',
+              content: { field: 'project_code', value: ['__missing__'] },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          should: [
+            {
+              bool: {
+                must_not: [{ exists: { boost: 0, field: 'project_code' } }],
+              },
+            },
+          ],
+        },
+      },
+    },
   ];
 
   tests.forEach(({ input, output }) => {
@@ -549,122 +574,6 @@ test('buildQuery "=" and "!=" ops', () => {
         },
       },
       output: { terms: { case_count: [24601], boost: 0 } },
-    },
-  ];
-
-  tests.forEach(({ input, output }) => {
-    const actualOutput = buildQuery(input);
-    expect(actualOutput).toEqual(output);
-  });
-});
-
-test('buildQuery missing', () => {
-  const tests = [
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: 'missing',
-          content: {
-            field: 'cases.clinical.gender',
-            value: false,
-          },
-        },
-      },
-      output: { exists: { boost: 0, field: 'cases.clinical.gender' } },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: 'and',
-          content: [
-            {
-              op: 'missing',
-              content: {
-                field: 'cases.clinical.gender',
-                value: true,
-              },
-            },
-            {
-              op: 'missing',
-              content: {
-                field: 'cases.clinical.gender',
-                value: false,
-              },
-            },
-          ],
-        },
-      },
-      output: {
-        bool: {
-          must: [
-            {
-              bool: {
-                must_not: [
-                  { exists: { boost: 0, field: 'cases.clinical.gender' } },
-                ],
-              },
-            },
-            { exists: { boost: 0, field: 'cases.clinical.gender' } },
-          ],
-        },
-      },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: 'or',
-          content: [
-            {
-              op: 'missing',
-              content: {
-                field: 'cases.clinical.gender',
-                value: true,
-              },
-            },
-            {
-              op: 'missing',
-              content: {
-                field: 'cases.clinical.gender',
-                value: false,
-              },
-            },
-          ],
-        },
-      },
-      output: {
-        bool: {
-          should: [
-            {
-              bool: {
-                must_not: [
-                  { exists: { boost: 0, field: 'cases.clinical.gender' } },
-                ],
-              },
-            },
-            { exists: { boost: 0, field: 'cases.clinical.gender' } },
-          ],
-        },
-      },
-    },
-    {
-      input: {
-        nestedFields: [],
-        filters: {
-          op: 'missing',
-          content: {
-            field: 'cases.clinical.gender',
-            value: true,
-          },
-        },
-      },
-      output: {
-        bool: {
-          must_not: [{ exists: { boost: 0, field: 'cases.clinical.gender' } }],
-        },
-      },
     },
   ];
 

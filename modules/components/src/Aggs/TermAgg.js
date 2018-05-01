@@ -8,6 +8,7 @@ import AggsWrapper from './AggsWrapper';
 import TextHighlight from '../TextHighlight';
 import './TermAgg.css';
 import ToggleButton from '../ToggleButton';
+import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -176,7 +177,7 @@ class TermAgg extends React.Component {
                     />
                     <TextHighlight
                       content={
-                        truncate(bucket.name, {
+                        truncate(internalTranslateSQONValue(bucket.name), {
                           length: valueCharacterLimit || Infinity,
                         }) + ' '
                       }

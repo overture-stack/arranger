@@ -6,6 +6,9 @@ import {
   NOT_OP,
   OP_ALIASES,
   ARRAY_CONTENT,
+  REGEX,
+  SET_ID,
+  MISSING,
 } from '../constants';
 
 function groupingOptimizer({ op, content }) {
@@ -21,7 +24,7 @@ function groupingOptimizer({ op, content }) {
 }
 
 function isSpecialFilter(value) {
-  return ['*', 'set_id:'].some(x => `${value}`.includes(x));
+  return [REGEX, SET_ID, MISSING].some(x => `${value}`.includes(x));
 }
 
 function normalizeFilters(filter) {

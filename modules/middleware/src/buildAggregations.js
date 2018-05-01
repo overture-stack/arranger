@@ -32,7 +32,10 @@ function removeFieldFromQuery({ field, query }) {
   const nestedQuery = get(nested, ES_QUERY);
   const bool = get(query, ES_BOOL);
 
-  if (['terms', 'range'].some(k => get(query, [k, field]))) {
+  if (
+    ['terms', 'range'].some(k => get(query, [k, field])) ||
+    get(query, ['exists', 'field']) === field
+  ) {
     return null;
   } else if (nestedQuery) {
     const cleaned = removeFieldFromQuery({ field, query: nestedQuery });

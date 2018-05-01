@@ -81,7 +81,7 @@ test('flattenAggregations', () => {
         status: {
           buckets: [
             { key: 'legacy', doc_count: 34 },
-            { key: '_missing', doc_count: 1 },
+            { key: '__missing__', doc_count: 1 },
           ],
         },
       },
@@ -134,7 +134,7 @@ test('flattenAggregations', () => {
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
       },
@@ -165,7 +165,7 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
       },
@@ -203,13 +203,13 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
       },
@@ -258,13 +258,13 @@ test('flattenAggregations', () => {
         'samples.portions.amount': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
           buckets: [
             { key: 'a', doc_count: 7 },
-            { key: '_missing', doc_count: 5 },
+            { key: '__missing__', doc_count: 5 },
           ],
         },
       },

@@ -1,6 +1,5 @@
 import React from 'react';
 import { css } from 'emotion';
-import { uniq } from 'lodash';
 import { compose, withState } from 'recompose';
 import SearchIcon from 'react-icons/lib/fa/search';
 
@@ -10,6 +9,7 @@ import TextInput from '../../Input';
 import TextHighlight from '../../TextHighlight';
 import QuickSearchQuery from './QuickSearchQuery';
 import QuickSearchFieldsQuery from './QuickSearchFieldsQuery';
+import internalTranslateSQONValue from '../../utils/translateSQONValue';
 
 const currentValues = ({ sqon, primaryKeyField }) =>
   currentFieldValue({ sqon, dotField: primaryKeyField?.field, op: 'in' });
@@ -80,7 +80,9 @@ const QuickSearch = ({
                       })
                     }
                   >
-                    {translateSQONValue(primaryKey)}
+                    {compose(translateSQONValue, internalTranslateSQONValue)(
+                      primaryKey,
+                    )}
                   </PinnedValueComponent>
                 </div>
               ))}

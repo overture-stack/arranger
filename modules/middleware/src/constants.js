@@ -6,11 +6,15 @@ export const FILTER_OP = 'filter';
 export const AND_OP = 'and';
 export const OR_OP = 'or';
 export const NOT_OP = 'not';
-export const MISSING_OP = 'missing';
 export const GT_OP = 'gt';
 export const GTE_OP = 'gte';
 export const LT_OP = 'lt';
 export const LTE_OP = 'lte';
+
+// special values
+export const REGEX = '*';
+export const MISSING = '__missing__';
+export const SET_ID = 'set_id:';
 
 // sqon op aliases
 export const OP_ALIASES = {
