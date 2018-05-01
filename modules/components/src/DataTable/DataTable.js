@@ -13,9 +13,16 @@ class DataTable extends React.Component {
       sort: props.config.defaultSorted || [],
     };
   }
+
   componentWillReceiveProps(nextProps) {
     if (!isEqual(nextProps.sqon, this.props.sqon)) {
       this.setState({ page: 0 });
+    }
+    // call onSortedChange here because in componentDidMount config.defaultSorted is null
+    if (
+      !isEqual(nextProps.config.defaultSorted, this.props.config.defaultSorted)
+    ) {
+      this.props.onSortedChange(nextProps.config.defaultSorted);
     }
   }
   render() {
@@ -39,6 +46,7 @@ class DataTable extends React.Component {
       maxPagesOptions,
       projectId = PROJECT_ID,
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
+      onSortedChange = () => {},
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -71,7 +79,10 @@ class DataTable extends React.Component {
           fetchData={fetchData}
           setSelectedTableRows={setSelectedTableRows}
           onPaginationChange={state => this.setState(state)}
-          onSortedChange={sort => this.setState({ sort, page: 0 })}
+          onSortedChange={sort => {
+            this.setState({ sort, page: 0 });
+            onSortedChange(sort);
+          }}
           defaultPageSize={pageSize}
           loading={loading}
           maxPagesOptions={maxPagesOptions}
