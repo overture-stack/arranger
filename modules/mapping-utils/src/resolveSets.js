@@ -16,19 +16,32 @@ const retrieveSetIds = async ({
       ...(!isEmpty(query) && { query }),
       ...(searchAfter && { search_after: searchAfter }),
     };
+    console.log(body);
     const response = await es.search({
       index,
       type,
       // https://github.com/elastic/elasticsearch-js/issues/148#issuecomment-323848693
       // strings not obj for sort eg ['name:desc']
-      sort: sort || ['_id'],
+      sort: sort.map(({ field, order }) => `${field}:${order}`),
       size: BULK_SIZE,
       body,
     });
     const ids = response.hits.hits.map(x =>
       get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
-    return { ids, searchAfter: ids.slice(-1), total: response.hits.total };
+
+    const sortColValues = sort.map(({ field }) =>
+      response.hits.hits.map(x => x._source[field] || x[field]),
+    );
+
+    return {
+      ids,
+      searchAfter: sortColValues.reduce(
+        (acc, vals) => [...acc, ...vals.slice(-1)],
+        [],
+      ),
+      total: response.hits.total,
+    };
   };
   const handleResult = async ({ searchAfter, total, ids = [] }) => {
     if (ids.length === total) return uniq(ids);

@@ -77,6 +77,7 @@ export default type => async (
     body.search_after = searchAfter;
   }
 
+  console.log(body);
   let { hits } = await es.search({
     index: type.index,
     type: type.es_type,

@@ -47,6 +47,7 @@ class DataTable extends React.Component {
       projectId = PROJECT_ID,
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
       onSortedChange = () => {},
+      alwaysSorted = [],
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -86,6 +87,7 @@ class DataTable extends React.Component {
           defaultPageSize={pageSize}
           loading={loading}
           maxPagesOptions={maxPagesOptions}
+          alwaysSorted={alwaysSorted}
         />
       </>
     );
