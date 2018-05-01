@@ -217,11 +217,38 @@ div {
   content: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+ICA8Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iNiIgZmlsbD0iIzkwMjc4ZSIgLz4gIDxsaW5lIHgxPSIyIiB5MT0iNiIgeDI9IjEwIiB5Mj0iNiIgc3R5bGU9InN0cm9rZTp3aGl0ZTsgc3Ryb2tlLXdpZHRoOjIiIC8+PC9zdmc+);
 }
 
+.DateInput_input,
 .aggregation-card .bucket-item,
 .aggregation-card .input-range__label,
 .aggregation-card .filter,
 .aggregation-card .toggle-button {
   font-size: 0.8rem;
+}
+
+.DateInput_input {
+  font-family: inherit;
+  color: inherit;
+}
+
+.CalendarDay__selected,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+}
+.CalendarDay__selected_span,
+.CalendarDay__selected_span:hover,
+.CalendarDay__selected_span:active {
+  background: #404c9a;
+  border: 1px solid #5a6293;
+  color: white;
+}
+.CalendarDay__hovered_span,
+.CalendarDay__hovered_span:hover,
+.CalendarDay__hovered_span:active {
+  color: white;
+  background: #404c9a;
+  border: 1px solid #5a6293;
 }
 
 /**************************************/

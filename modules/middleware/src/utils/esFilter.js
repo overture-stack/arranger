@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { parse, format } from 'date-fns';
 import * as CONSTANTS from '../constants';
 
 export function mergePath(target, [key, ...path], data) {
@@ -45,4 +46,11 @@ export function wrapBool(op, value) {
       [op]: Array.isArray(value) ? value : [value],
     },
   };
+}
+
+export function toEsRangeValue(value) {
+  const dateValue = parse(value);
+  return format(dateValue, CONSTANTS.DATE_FORMAT) === value
+    ? format(dateValue, CONSTANTS.ES_DATE_FORMAT)
+    : value;
 }

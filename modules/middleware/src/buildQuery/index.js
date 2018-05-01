@@ -33,6 +33,7 @@ import {
   mergePath,
   wrapShould,
   wrapMust,
+  toEsRangeValue,
 } from '../utils/esFilter';
 
 function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
@@ -134,7 +135,9 @@ function getRangeFilter({ nestedFields, filter }) {
       range: {
         [field]: {
           boost: 0,
-          [op]: [GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value),
+          [op]: toEsRangeValue(
+            [GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value),
+          ),
         },
       },
     },
