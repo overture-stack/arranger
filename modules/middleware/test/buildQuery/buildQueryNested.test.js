@@ -187,9 +187,9 @@ test('buildQuery "missing" nested', () => {
             {
               content: {
                 field: 'files.analysis.metadata.read_groups.is_paired_end',
-                value: false,
+                value: ['__missing__'],
               },
-              op: 'missing',
+              op: 'in',
             },
           ],
           op: 'and',
@@ -217,6 +217,8 @@ test('buildQuery "missing" nested', () => {
                           'files.experimental_strategy': ['WXS'],
                         },
                       },
+                    ],
+                    must_not: [
                       {
                         exists: {
                           field:
@@ -1264,9 +1266,9 @@ test('buildQuery "=" and "!=" nested', () => {
             {
               content: {
                 field: 'files.analysis.metadata.read_groups.is_paired_end',
-                value: true,
+                value: ['__missing__'],
               },
-              op: 'missing',
+              op: 'in',
             },
           ],
           op: 'and',

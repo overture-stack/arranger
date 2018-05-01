@@ -35,6 +35,7 @@ export default type => async (
     _source: false,
     body,
   });
+  console.log(JSON.stringify(body, null, 2));
   const aggregations = flattenAggregations({
     aggregations: response.aggregations,
     includeMissing: include_missing,

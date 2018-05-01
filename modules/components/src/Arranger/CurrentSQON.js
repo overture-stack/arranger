@@ -1,8 +1,10 @@
 import React from 'react';
+import { compose } from 'recompose';
 import Component from 'react-component-component';
 
 import SQONView, { Value, Bubble, Field } from '../SQONView';
 import { fetchExtendedMapping } from '../utils/api';
+import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
   sqon,
@@ -22,7 +24,7 @@ export const CurrentSQON = ({
     )}
     ValueCrumb={({ field, value, nextSQON, ...props }) => (
       <Value onClick={() => setSQON(nextSQON)} {...props}>
-        {translateSQONValue(
+        {compose(translateSQONValue, internalTranslateSQONValue)(
           (findExtendedMappingField(field)?.displayValues || {})[value] ||
             value,
         )}

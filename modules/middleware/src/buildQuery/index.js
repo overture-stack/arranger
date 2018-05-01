@@ -18,9 +18,11 @@ import {
   ES_PHRASE_PREFIX,
   OR_OP,
   AND_OP,
-  MISSING_OP,
   FILTER_OP,
   NOT_OP,
+  REGEX,
+  SET_ID,
+  MISSING,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -47,8 +49,13 @@ function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
 }
 
 function getRegexFilter({ nestedFields, filter }) {
-  const { op, content: { field, value: [value] } } = filter;
-
+  const {
+    op,
+    content: {
+      field,
+      value: [value],
+    },
+  } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -60,8 +67,10 @@ function getRegexFilter({ nestedFields, filter }) {
 }
 
 function getTermFilter({ nestedFields, filter }) {
-  const { op, content: { value, field } } = filter;
-
+  const {
+    op,
+    content: { value, field },
+  } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -102,19 +111,22 @@ function getFuzzyFilter({ nestedFields, filter }) {
 }
 
 function getMissingFilter({ nestedFields, filter }) {
-  const { content: { value, field } } = filter;
-
+  const {
+    content: { field },
+  } = filter;
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
     filter,
-    isNot: value,
+    isNot: true,
   });
 }
 
 function getRangeFilter({ nestedFields, filter }) {
-  const { op, content: { field, value } } = filter;
-
+  const {
+    op,
+    content: { field, value },
+  } = filter;
   return wrapFilter({
     filter,
     nestedFields,
@@ -200,21 +212,24 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
 }
 
 function opSwitch({ nestedFields, filter }) {
-  const { op, content: { value } } = filter;
+  const {
+    op,
+    content: { value },
+  } = filter;
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
-    if (`${value[0]}`.includes('*')) {
+    if (`${value[0]}`.includes(REGEX)) {
       return getRegexFilter({ nestedFields, filter });
-    } else if (`${value[0]}`.includes('set_id:')) {
+    } else if (`${value[0]}`.includes(SET_ID)) {
       return getSetFilter({ nestedFields, filter });
+    } else if (`${value[0]}`.includes(MISSING)) {
+      return getMissingFilter({ nestedFields, filter });
     } else {
       return getTermFilter({ nestedFields, filter });
     }
   } else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
     return getRangeFilter({ nestedFields, filter });
-  } else if (MISSING_OP === op) {
-    return getMissingFilter({ nestedFields, filter });
   } else if (FILTER_OP === op) {
     return getFuzzyFilter({ nestedFields, filter });
   } else {

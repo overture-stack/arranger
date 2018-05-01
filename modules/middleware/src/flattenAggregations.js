@@ -1,5 +1,5 @@
 import { get } from 'lodash';
-import { HISTOGRAM, STATS } from './constants';
+import { HISTOGRAM, STATS, MISSING } from './constants';
 
 function flattenAggregations({ aggregations, includeMissing = true }) {
   return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
@@ -16,7 +16,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
       const missing = get(aggregations, [`${field}:missing`]);
       const buckets = [
         ...value.buckets,
-        ...(includeMissing && missing ? [{ ...missing, key: '_missing' }] : []),
+        ...(includeMissing && missing ? [{ ...missing, key: MISSING }] : []),
       ];
       return {
         ...prunedAggs,

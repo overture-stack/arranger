@@ -32,7 +32,10 @@ function removeFieldFromQuery({ field, query }) {
   const nestedQuery = get(nested, ES_QUERY);
   const bool = get(query, ES_BOOL);
 
-  if (['terms', 'range'].some(k => get(query, [k, field]))) {
+  if (
+    ['terms', 'range'].some(k => get(query, [k, field])) ||
+    get(query, ['exists', 'field']) === field
+  ) {
     return null;
   } else if (nestedQuery) {
     const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
@@ -112,6 +115,10 @@ function wrapWithFilters({
     const cleanedQuery = removeFieldFromQuery({ field, query });
     // TODO: better way to figure out that the field wasn't found
     if (!isEqual(cleanedQuery || {}, query || {})) {
+      console.log('---------------------------------------');
+      console.log(JSON.stringify(cleanedQuery, null, 2));
+      console.log(JSON.stringify(query, null, 2));
+      console.log('---------------------------------------');
       return createGlobalAggregation({
         field,
         aggregation: createFilteredAggregation({
