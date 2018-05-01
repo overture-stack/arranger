@@ -115,10 +115,6 @@ function wrapWithFilters({
     const cleanedQuery = removeFieldFromQuery({ field, query });
     // TODO: better way to figure out that the field wasn't found
     if (!isEqual(cleanedQuery || {}, query || {})) {
-      console.log('---------------------------------------');
-      console.log(JSON.stringify(cleanedQuery, null, 2));
-      console.log(JSON.stringify(query, null, 2));
-      console.log('---------------------------------------');
       return createGlobalAggregation({
         field,
         aggregation: createFilteredAggregation({
