@@ -90,17 +90,16 @@ export function columnsToHeader({ columns }) {
 }
 
 export function dataToTSV({ data, index, uniqueBy, columns, emptyValue }) {
-  return (
-    flatten(
-      get(data, `data['${index}'].hits.edges`, []).map(row => {
-        return getRows({
-          row: row.node,
-          paths: (uniqueBy || '').split('[].').filter(Boolean),
-          columns: columns,
-        }).map(row => row.map(r => r || emptyValue).join('\t'));
-      }),
-    ).join('\n') + '\n'
+  const results = flatten(
+    get(data, `data['${index}'].hits.edges`, []).map(row => {
+      return getRows({
+        row: row.node,
+        paths: (uniqueBy || '').split('[].').filter(Boolean),
+        columns: columns,
+      }).map(row => row.map(r => r || emptyValue).join('\t'));
+    }),
   );
+  return results.length ? results.join('\n') + '\n' : '';
 }
 
 export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
