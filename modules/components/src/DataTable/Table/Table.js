@@ -56,7 +56,6 @@ class DataTable extends React.Component {
 
     this.setState({ loading: true, lastState: state });
 
-    console.log(alwaysSorted);
     fetchData?.({
       config,
       sqon,

@@ -16,13 +16,13 @@ const retrieveSetIds = async ({
       ...(!isEmpty(query) && { query }),
       ...(searchAfter && { search_after: searchAfter }),
     };
-    console.log(body);
+
     const response = await es.search({
       index,
       type,
-      // https://github.com/elastic/elasticsearch-js/issues/148#issuecomment-323848693
-      // strings not obj for sort eg ['name:desc']
-      sort: sort.map(({ field, order }) => `${field}:${order}`),
+      sort: sort.map(
+        ({ field, order }) => `${field}${order ? `:${order}` : ''}`,
+      ),
       size: BULK_SIZE,
       body,
     });
@@ -66,7 +66,7 @@ export const saveSet = ({ types }) => async (
     type: es_type,
     query,
     path,
-    sort,
+    sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
   });
 
   const body = {
