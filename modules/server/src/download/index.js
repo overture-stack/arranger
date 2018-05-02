@@ -16,7 +16,7 @@ export default function({ projectId, io }) {
       ...columnsToGraphql({
         sqon: args.sqon,
         config: { columns: args.columns, type: args.index },
-        sort: [],
+        sort: args.sort || [],
         first: 1000,
       }),
     }).pipe(dataToTSV(args));
