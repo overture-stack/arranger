@@ -154,7 +154,7 @@ class DataTable extends React.Component {
         data={propsData?.data || data}
         defaultSorted={defaultSorted}
         columns={columns.map(
-          c => ({
+          ({ Cell, ...c }) => ({
             ...c,
             ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
               ? {
@@ -163,12 +163,12 @@ class DataTable extends React.Component {
                       ? [get(x, c.accessor)]
                       : jsonpath.query(x, c.jsonPath);
                     return values
-                      .map(x => c.extendedDisplayValues[x] || x)
+                      .map(x => c.extendedDisplayValues[`${x}`] || x)
                       .join(', ');
                   },
                   id: c.field,
                 }
-              : {}),
+              : { Cell }),
           }),
           {},
         )}
