@@ -22,7 +22,7 @@ class DataTable extends React.Component {
     if (
       !isEqual(nextProps.config.defaultSorted, this.props.config.defaultSorted)
     ) {
-      this.props.onSortedChange(nextProps.config.defaultSorted);
+      this.props.onSortedChange?.(nextProps.config.defaultSorted);
     }
   }
   render() {
