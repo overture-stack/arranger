@@ -76,7 +76,7 @@ export default async (req, res) => {
   }
 
   res.json({
-    fields: extendFields({ fields: mapHits(fields), includeOriginal: true }),
+    fields: extendFields(mapHits(fields)),
     total: fields.hits.total,
   });
 };

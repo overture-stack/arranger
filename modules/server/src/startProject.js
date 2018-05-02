@@ -71,7 +71,7 @@ export default async function startProjectApp({ es, id, io }) {
         size: fields.hits.total,
       });
 
-      fields = extendFields({ fields: mapHits(fields), includeOriginal: true });
+      fields = extendFields(mapHits(fields));
 
       return { ...type, indexPrefix, fields };
     }),
