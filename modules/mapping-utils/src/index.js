@@ -16,7 +16,7 @@ export {
 } from './mappingToScalarFields';
 export { default as getNestedFields } from './getNestedFields';
 export { default as flattenMapping } from './flattenMapping';
-export { default as extendFields } from './extendFields';
+export { default as extendMapping, extendFields } from './extendMapping';
 export {
   default as mappingToDisplayTreeData,
 } from './mappingToDisplayTreeData';

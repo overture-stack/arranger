@@ -1,8 +1,8 @@
 import { startCase } from 'lodash';
 import flattenMapping from './flattenMapping';
 
-export default mapping =>
-  flattenMapping(mapping).map(({ field, type }) => ({
+export const extendFields = ({ fields, includeOriginal = false }) =>
+  fields.map(({ field, type, ...rest }) => ({
     field,
     type,
     displayName: startCase(field.replace(/\./g, ' ')),
@@ -12,4 +12,7 @@ export default mapping =>
     quickSearchEnabled: false,
     unit: null,
     displayValues: {},
+    ...(includeOriginal && { ...rest }),
   }));
+
+export default mapping => extendFields({ fields: flattenMapping(mapping) });

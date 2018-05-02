@@ -4,6 +4,7 @@ import { flattenDeep, get } from 'lodash';
 import express from 'express';
 import makeSchema from '@arranger/schema';
 import {
+  extendFields,
   addMappingsToTypes,
   mappingToAggsState,
   mappingToColumnsState,
@@ -28,7 +29,7 @@ async function getTypes({ id, es }) {
 }
 
 const initializeSets = async ({ es }) => {
-  if (!await es.indices.exists({ index: 'arranger-sets' })) {
+  if (!(await es.indices.exists({ index: 'arranger-sets' }))) {
     await es.indices.create({
       index: 'arranger-sets',
       body: {
@@ -70,11 +71,9 @@ export default async function startProjectApp({ es, id, io }) {
         size: fields.hits.total,
       });
 
-      return {
-        ...type,
-        indexPrefix,
-        fields: mapHits(fields),
-      };
+      fields = extendFields({ fields: mapHits(fields), includeOriginal: true });
+
+      return { ...type, indexPrefix, fields };
     }),
   );
 

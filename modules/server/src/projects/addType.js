@@ -1,5 +1,5 @@
 import { flattenDeep } from 'lodash';
-import { extendFields } from '@arranger/mapping-utils';
+import { extendMapping } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
@@ -76,7 +76,7 @@ export default async (req, res) => {
 
       let mapping = mappings[alias || index].mappings[index].properties;
 
-      let fields = extendFields(mapping);
+      let fields = extendMapping(mapping);
 
       let body = flattenDeep(
         fields.map(x => [
