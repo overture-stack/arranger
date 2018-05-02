@@ -1,7 +1,5 @@
 import React from 'react';
-import { debounce, toPairs, isEqual } from 'lodash';
-import { css } from 'emotion';
-import AggsWrapper from '../Aggs/AggsWrapper';
+import { isEqual } from 'lodash';
 import aggComponentsMap from '../Aggs/aggComponentsMap';
 import TextHighlight from '../TextHighlight';
 
@@ -52,7 +50,6 @@ export default class FacetView extends React.Component {
       displayTreeData,
       onValueChange,
       sqon = null,
-      constructEntryId,
       extendedMapping,
       searchString,
     } = this.props;

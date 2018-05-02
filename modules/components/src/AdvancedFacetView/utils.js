@@ -1,26 +1,33 @@
-import { keys, orderBy } from 'lodash';
+import { keys, orderBy, partition } from 'lodash';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
-const injectExtensionToElasticMapping = (elasticMapping, extendedMapping) => {
+const injectExtensionToElasticMapping = ({
+  elasticMapping,
+  extendedMapping,
+  rootTypeName,
+}) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
   const extend = node => {
-    const extension = extendedMapping.find(
-      extension => extension.field === node.path,
-    );
+    const extension = extendedMapping.find(x => x.field === node.path);
     return {
       ...node,
-      ...(extension
-        ? {
-            title: extension.displayName || node.title,
-            type: extension.type || node.title,
-          }
-        : {}),
-      ...(node.children ? { children: node.children.map(extend) } : {}),
+      ...(extension && {
+        title: extension.displayName || node.title,
+        type: extension.type || node.title,
+      }),
+      ...(node.children && { children: node.children.map(extend) }),
     };
   };
-  return rawDisplayData.map(extend);
+  const [rootFields, nestedFields] = partition(
+    rawDisplayData.map(extend),
+    x => !x.children,
+  );
+  return [
+    ...[{ title: rootTypeName || 'Root', children: rootFields, isRoot: true }],
+    ...nestedFields,
+  ];
 };
 
 const filterOutNonValue = ({
@@ -45,49 +52,32 @@ const filterOutNonValue = ({
       : keysWithValue.indexOf(node.path) > -1;
   };
   const applyFilterToDisplayNodeCollection = collection =>
-    collection.filter(doesDisplayNodeHaveValue).map(
-      node =>
-        node.children
-          ? {
-              ...node,
-              children: applyFilterToDisplayNodeCollection(node.children),
-            }
-          : node,
-    );
-  if (displayTreeData) {
-    const displayTreeDataWithValue = applyFilterToDisplayNodeCollection(
-      displayTreeData,
-    );
-    return {
-      displayTreeDataWithValue,
-      aggregationsWithValue,
-      ...(extendedMapping
-        ? {
-            extendedMappingWithValue: extendedMapping?.filter?.(
-              ({ field }) => aggregationsWithValue[field],
-            ),
-          }
-        : {}),
-    };
-  } else {
-    return {
-      aggregationsWithValue,
-      ...(extendedMapping
-        ? {
-            extendedMappingWithValue: extendedMapping?.filter?.(
-              ({ field }) => aggregationsWithValue[field],
-            ),
-          }
-        : {}),
-    };
-  }
+    collection.filter(doesDisplayNodeHaveValue).map(node => ({
+      ...node,
+      ...(node.children && {
+        children: applyFilterToDisplayNodeCollection(node.children),
+      }),
+    }));
+  return {
+    aggregationsWithValue,
+    ...(displayTreeData && {
+      displayTreeDataWithValue: applyFilterToDisplayNodeCollection(
+        displayTreeData,
+      ),
+    }),
+    ...(extendedMapping && {
+      extendedMappingWithValue: extendedMapping?.filter?.(
+        x => aggregationsWithValue[x.field],
+      ),
+    }),
+  };
 };
 
 const orderDisplayTreeData = displayTreeData => [
-  ...orderBy(displayTreeData.filter(({ children }) => !children), 'title'),
+  ...orderBy(displayTreeData.filter(x => !x.children || x.isRoot), 'title'),
   ...orderBy(
     displayTreeData
-      .filter(({ children }) => children)
+      .filter(x => !!x.children && !x.isRoot)
       .map(({ children, ...rest }) => ({
         ...rest,
         children: orderDisplayTreeData(children),
@@ -103,9 +93,8 @@ const filterDisplayTreeDataBySearchTerm = ({
 }) => {
   const shouldBeIncluded = ({ title, path, children }) => {
     const inTitle = title.match(new RegExp(searchTerm, 'i'));
-    const inBuckets = aggregations[path]?.buckets?.some(
-      ({ key_as_string, key }) =>
-        (key_as_string || key).match(new RegExp(searchTerm, 'i')),
+    const inBuckets = aggregations[path]?.buckets?.some(x =>
+      (x.key_as_string || x.key).match(new RegExp(searchTerm, 'i')),
     );
     const inChildren = children && children.some(shouldBeIncluded);
     return inTitle || inBuckets || inChildren;

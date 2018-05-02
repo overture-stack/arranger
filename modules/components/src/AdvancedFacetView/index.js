@@ -1,21 +1,18 @@
 import React from 'react';
 import { keys, debounce, isEqual } from 'lodash';
-import { Subject } from 'rxjs';
 import { truncate, pick } from 'lodash';
 import { css } from 'emotion';
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Value } from '../SQONView';
 import './AdvancedFacetView.css';
 import FacetView from './FacetView';
-import { replaceSQON, toggleSQON } from '../SQONView/utils';
-import Input from '../Input';
 import Component from 'react-component-component';
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm,
-} from './utils.js';
+} from './utils';
 import TextInput from '../Input';
 import FaFilter from 'react-icons/lib/fa/filter';
 import LoadingScreen from '../LoadingScreen';
@@ -41,7 +38,9 @@ export default class AdvancedFacetView extends React.Component {
           (parentNode, nextPath) =>
             parentNode[nextPath]
               ? parentNode[nextPath]
-              : parentNode.properties ? parentNode.properties[nextPath] : {},
+              : parentNode.properties
+                ? parentNode.properties[nextPath]
+                : {},
           elasticMapping,
         ) || {}
     );
@@ -51,14 +50,7 @@ export default class AdvancedFacetView extends React.Component {
 
   handleSqonChange = ({ sqon }) => {
     const { onSqonFieldChange = () => {} } = this.props;
-    this.setState(
-      {
-        isLoading: true,
-      },
-      () => {
-        onSqonFieldChange({ sqon });
-      },
-    );
+    this.setState({ isLoading: true }, () => onSqonFieldChange({ sqon }));
   };
 
   getSnapshotBeforeUpdate(prevProps, prevState) {
@@ -67,9 +59,7 @@ export default class AdvancedFacetView extends React.Component {
       prevProps.aggregations,
     );
     const sqonChanged = !isEqual(this.props.sqon, prevProps.sqon);
-    return {
-      shouldEndLoading: aggChanged || sqonChanged,
-    };
+    return { shouldEndLoading: aggChanged || sqonChanged };
   }
 
   componentDidUpdate(prevProps, prevState, { shouldEndLoading }) {
@@ -78,12 +68,14 @@ export default class AdvancedFacetView extends React.Component {
       pick(prevProps, ['elasticMapping', 'extendedMapping']),
     );
     if (shouldRecomputeDisplayTree) {
+      const { rootTypeName, elasticMapping, extendedMapping } = this.props;
       this.setState({
         displayTreeData: orderDisplayTreeData(
-          injectExtensionToElasticMapping(
-            this.props.elasticMapping,
-            this.props.extendedMapping,
-          ),
+          injectExtensionToElasticMapping({
+            rootTypeName,
+            elasticMapping,
+            extendedMapping,
+          }),
         ),
       });
     }
@@ -104,13 +96,12 @@ export default class AdvancedFacetView extends React.Component {
 
   render() {
     const {
-      elasticMapping = {},
       extendedMapping = [],
       aggregations = {},
       sqon,
-      onSqonFieldChange = () => {},
       valueCharacterLimit = 30,
       statComponent,
+      rootTypeName,
     } = this.props;
     const {
       selectedPath,

@@ -1,18 +1,6 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 class TreeView extends React.PureComponent {
-  propTypes: {
-    collapsed: PropTypes.bool,
-    defaultCollapsed: PropTypes.bool,
-    nodeLabel: PropTypes.node.isRequired,
-    className: PropTypes.string,
-    itemClassName: PropTypes.string,
-    childrenClassName: PropTypes.string,
-    treeViewClassName: PropTypes.string,
-    treeViewClassName: PropTypes.func,
-  };
-
   constructor(props) {
     super(props);
 
