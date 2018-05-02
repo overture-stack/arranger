@@ -20,9 +20,7 @@ const retrieveSetIds = async ({
     const response = await es.search({
       index,
       type,
-      sort: sort.map(
-        ({ field, order }) => `${field}${order ? `:${order}` : ''}`,
-      ),
+      sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
       body,
     });
@@ -30,16 +28,15 @@ const retrieveSetIds = async ({
       get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
 
-    const sortColValues = sort.map(({ field }) =>
-      response.hits.hits.map(x => x._source[field] || x[field]),
-    );
+    const nextSearchAfter = sort
+      .map(({ field }) =>
+        response.hits.hits.map(x => x._source[field] || x[field]),
+      )
+      .reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
 
     return {
       ids,
-      searchAfter: sortColValues.reduce(
-        (acc, vals) => [...acc, ...vals.slice(-1)],
-        [],
-      ),
+      searchAfter: nextSearchAfter,
       total: response.hits.total,
     };
   };

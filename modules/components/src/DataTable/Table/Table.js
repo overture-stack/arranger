@@ -60,15 +60,13 @@ class DataTable extends React.Component {
       config,
       sqon,
       queryName: 'Table',
-      sort: state.sorted.length
-        ? [
-            ...state.sorted.map(sort => ({
-              field: sort.id,
-              order: sort.desc ? 'desc' : 'asc',
-            })),
-            ...alwaysSorted,
-          ]
-        : alwaysSorted,
+      sort: [
+        ...state.sorted.map(sort => ({
+          field: sort.id,
+          order: sort.desc ? 'desc' : 'asc',
+        })),
+        ...alwaysSorted,
+      ],
       offset: state.page * state.pageSize,
       first: state.pageSize,
     })
