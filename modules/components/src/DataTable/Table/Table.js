@@ -51,7 +51,7 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
-    const { fetchData, config, sqon } = this.props;
+    const { fetchData, config, sqon, alwaysSorted = [] } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
@@ -60,12 +60,13 @@ class DataTable extends React.Component {
       config,
       sqon,
       queryName: 'Table',
-      sort: state.sorted.length
-        ? state.sorted.map(sort => ({
-            field: sort.id,
-            order: sort.desc ? 'desc' : 'asc',
-          }))
-        : null,
+      sort: [
+        ...state.sorted.map(sort => ({
+          field: sort.id,
+          order: sort.desc ? 'desc' : 'asc',
+        })),
+        ...alwaysSorted,
+      ],
       offset: state.page * state.pageSize,
       first: state.pageSize,
     })

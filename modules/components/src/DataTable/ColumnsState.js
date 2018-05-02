@@ -7,7 +7,7 @@ let columnFields = `
   state {
     type
     keyField
-    defaultSorted{
+    defaultSorted {
       id
       desc
     }

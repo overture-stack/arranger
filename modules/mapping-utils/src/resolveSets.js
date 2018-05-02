@@ -8,6 +8,7 @@ const retrieveSetIds = async ({
   type,
   query,
   path,
+  sort,
   BULK_SIZE = 1000,
 }) => {
   const search = async ({ searchAfter } = {}) => {
@@ -15,17 +16,29 @@ const retrieveSetIds = async ({
       ...(!isEmpty(query) && { query }),
       ...(searchAfter && { search_after: searchAfter }),
     };
+
     const response = await es.search({
       index,
       type,
-      sort: ['_id'],
+      sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
       body,
     });
     const ids = response.hits.hits.map(x =>
-      get(x, `_source.${path.split('__').join('.')}`),
+      get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
-    return { ids, searchAfter: ids.slice(-1), total: response.hits.total };
+
+    const nextSearchAfter = sort
+      .map(({ field }) =>
+        response.hits.hits.map(x => x._source[field] || x[field]),
+      )
+      .reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
+
+    return {
+      ids,
+      searchAfter: nextSearchAfter,
+      total: response.hits.total,
+    };
   };
   const handleResult = async ({ searchAfter, total, ids = [] }) => {
     if (ids.length === total) return uniq(ids);
@@ -37,7 +50,7 @@ const retrieveSetIds = async ({
 
 export const saveSet = ({ types }) => async (
   obj,
-  { type, userId, sqon, path },
+  { type, userId, sqon, path, sort },
   { es, projectId, io },
 ) => {
   const { nested_fields: nestedFields, es_type, index } = types.find(
@@ -50,6 +63,7 @@ export const saveSet = ({ types }) => async (
     type: es_type,
     query,
     path,
+    sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
   });
 
   const body = {

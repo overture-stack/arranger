@@ -1,10 +1,18 @@
 import { graphql } from './api';
 
-export default ({ type, path, userId, sqon = {}, returnIds = false, api }) =>
+export default ({
+  type,
+  path,
+  userId,
+  sqon = {},
+  returnIds = false,
+  api,
+  sort = [],
+}) =>
   (api || graphql)({
     query: `
-      mutation saveSet($type: String! $userId: String! $sqon: JSON! $path: String!) {
-        saveSet(type: $type, userId: $userId, sqon: $sqon, path: $path) {
+      mutation saveSet($type: String! $userId: String $sqon: JSON! $path: String!, $sort: [Sort]) {
+        saveSet(type: $type, userId: $userId, sqon: $sqon, path: $path, sort: $sort) {
           setId
           createdAt
           path
@@ -16,5 +24,5 @@ export default ({ type, path, userId, sqon = {}, returnIds = false, api }) =>
         }
       }
     `,
-    variables: { sqon, type, userId, path },
+    variables: { sqon, type, userId, path, sort },
   });
