@@ -51,7 +51,13 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
-    const { fetchData, config, sqon, alwaysSorted = [] } = this.props;
+    const {
+      fetchData,
+      config,
+      sqon,
+      alwaysSorted = [],
+      keepSelectedOnPageChange,
+    } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
@@ -82,12 +88,14 @@ class DataTable extends React.Component {
           loading: false,
         });
 
-        this.setSelectedTableRows(
-          intersection(
-            data.map(item => item[this.props.config.keyField]),
-            selectedTableRows,
-          ),
-        );
+        if (!keepSelectedOnPageChange) {
+          this.setSelectedTableRows(
+            intersection(
+              data.map(item => item[this.props.config.keyField]),
+              selectedTableRows,
+            ),
+          );
+        }
       })
       .catch(err => {
         console.error(err);

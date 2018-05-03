@@ -49,6 +49,7 @@ class DataTable extends React.Component {
       onSortedChange = () => {},
       alwaysSorted = [],
       initalSelectedTableRows = [],
+      keepSelectedOnPageChange = false,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -90,6 +91,7 @@ class DataTable extends React.Component {
           maxPagesOptions={maxPagesOptions}
           alwaysSorted={alwaysSorted}
           initalSelectedTableRows={initalSelectedTableRows}
+          keepSelectedOnPageChange={keepSelectedOnPageChange}
         />
       </>
     );
