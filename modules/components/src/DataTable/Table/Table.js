@@ -17,7 +17,7 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedTableRows: [],
+      selectedTableRows: props.initalSelectedTableRows || [],
       data: [],
       pages: -1,
       loading: false,
