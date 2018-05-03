@@ -28,7 +28,7 @@ export default class extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      config: { keyField: 'id', columns: [], type: props.graphqlField },
+      config: null,
       extended: [],
       toggled: {},
     };
@@ -63,7 +63,11 @@ export default class extends Component {
       });
 
       const config = data[graphqlField].columnsState.state;
-      let { data: { [this.props.graphqlField]: { extended } } } = await api({
+      let {
+        data: {
+          [this.props.graphqlField]: { extended },
+        },
+      } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
@@ -161,24 +165,30 @@ export default class extends Component {
   render() {
     let { config, extended, toggled } = this.state;
 
-    return this.props.render({
-      update: this.update,
-      add: this.add,
-      toggle: this.toggle,
-      saveOrder: this.saveOrder,
-      state: {
-        ...config,
-        columns: config.columns.map(column => {
-          const extendedField = extended.find(e => e.field === column.field);
-          return {
-            ...column,
-            Header: extendedField?.displayName || column.field,
-            extendedType: extendedField?.type,
-            show: column.field in toggled ? toggled[column.field] : column.show,
-            extendedDisplayValues: extendedField?.displayValues,
-          };
-        }),
-      },
-    });
+    return config
+      ? this.props.render({
+          loading: false,
+          update: this.update,
+          add: this.add,
+          toggle: this.toggle,
+          saveOrder: this.saveOrder,
+          state: {
+            ...config,
+            columns: config.columns.map(column => {
+              const extendedField = extended.find(
+                e => e.field === column.field,
+              );
+              return {
+                ...column,
+                Header: extendedField?.displayName || column.field,
+                extendedType: extendedField?.type,
+                show:
+                  column.field in toggled ? toggled[column.field] : column.show,
+                extendedDisplayValues: extendedField?.displayValues,
+              };
+            }),
+          },
+        })
+      : this.props.render({ loading: true });
   }
 }

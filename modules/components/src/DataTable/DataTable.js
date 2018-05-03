@@ -48,6 +48,8 @@ class DataTable extends React.Component {
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
       onSortedChange = () => {},
       alwaysSorted = [],
+      initalSelectedTableRows = [],
+      keepSelectedOnPageChange = false,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -88,6 +90,8 @@ class DataTable extends React.Component {
           loading={loading}
           maxPagesOptions={maxPagesOptions}
           alwaysSorted={alwaysSorted}
+          initalSelectedTableRows={initalSelectedTableRows}
+          keepSelectedOnPageChange={keepSelectedOnPageChange}
         />
       </>
     );

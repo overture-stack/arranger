@@ -1,6 +1,7 @@
 import React from 'react';
 
 import DataTable, { ColumnsState } from '../DataTable';
+import Spinner from 'react-spinkit';
 
 const Table = ({
   projectId,
@@ -18,7 +19,9 @@ const Table = ({
       graphqlField={graphqlField}
       api={api}
       render={columnState => {
-        return (
+        return columnState.loading ? (
+          <Spinner fadeIn="full" name="circle" />
+        ) : (
           <DataTable
             {...{ ...props, api }}
             projectId={projectId}
