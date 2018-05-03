@@ -101,7 +101,6 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       valueCharacterLimit = 30,
       statComponent,
-      rootTypeName,
     } = this.props;
     const {
       selectedPath,

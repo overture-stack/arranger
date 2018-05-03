@@ -1,5 +1,4 @@
 import React from 'react';
-import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
@@ -145,7 +144,6 @@ export default class LiveAdvancedFacetView extends React.Component {
   }
 
   filterExtendedForFetchingAggs = ({ extended, aggsState }) => {
-    console.log('aggsState: ', aggsState);
     return extended.filter(
       // filtering out fields that do not have aggs
       e => {
