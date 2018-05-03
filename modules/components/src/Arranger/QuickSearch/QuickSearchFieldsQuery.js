@@ -38,10 +38,12 @@ const enhance = compose(
   withProps(
     ({
       index,
+      whitelist,
       extendedFields: { data, loading, error },
       nestedFields = data?.[index]?.extended?.filter(x => x.type === 'nested'),
       quickSearchFields = data?.[index]?.extended
         ?.filter(x => x.quickSearchEnabled)
+        ?.filter(x => (whitelist ? whitelist.includes(x.field) : true))
         ?.map(({ field }) =>
           decorateFieldWithColumnsState({
             columnsState: data?.[index]?.columnsState?.state,
