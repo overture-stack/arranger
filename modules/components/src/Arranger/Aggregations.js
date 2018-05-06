@@ -11,9 +11,12 @@ const Aggregations = ({
   className = '',
   style,
   api,
+  Wrapper = props => (
+    <div {...props} className={`aggregations ${className}`} style={style} />
+  ),
 }) => {
   return (
-    <div className={`aggregations ${className}`} style={style}>
+    <Wrapper>
       <AggsState
         api={api}
         projectId={projectId}
@@ -51,7 +54,7 @@ const Aggregations = ({
           );
         }}
       />
-    </div>
+    </Wrapper>
   );
 };
 
