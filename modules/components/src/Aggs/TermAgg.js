@@ -102,6 +102,13 @@ const TermAgg = ({
   searchPlaceholder = 'Search',
   containerRef,
   aggWrapperRef = React.createRef(),
+  aggHeaderRef = React.createRef(),
+  scrollToAgg = () => {
+    if (containerRef?.current)
+      containerRef.current.scrollTop =
+        aggWrapperRef.current.offsetTop -
+        aggHeaderRef.current.getBoundingClientRect().height;
+  },
 
   // Internal State
   stateShowingMore,
@@ -130,6 +137,7 @@ const TermAgg = ({
   return (
     <AggsWrapper
       componentRef={aggWrapperRef}
+      headerRef={aggHeaderRef}
       stickyHeader
       {...{ displayName, WrapperComponent, collapsible }}
       ActionIcon={
@@ -159,10 +167,8 @@ const TermAgg = ({
                       isMore={false}
                       onClick={() => {
                         setShowingMore(false);
-                        if (containerRef?.current) {
-                          containerRef.current.scrollTop =
-                            aggWrapperRef.current.offsetTop;
-                        }
+                        setShowingSearch(false);
+                        scrollToAgg();
                       }}
                     />
                   )}
@@ -246,6 +252,7 @@ const TermAgg = ({
             onClick={() => {
               setShowingMore(!showingMore);
               setShowingSearch(!showingMore);
+              if (showingMore) scrollToAgg();
             }}
             howManyMore={decoratedBuckets.length - maxTerms}
           />
