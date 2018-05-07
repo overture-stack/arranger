@@ -12,19 +12,15 @@ class DataTable extends React.Component {
       pageSize: 20,
       sort: props.config.defaultSorted || [],
     };
+    props.onSortedChange?.(props.config.defaultSorted);
   }
 
   componentWillReceiveProps(nextProps) {
     if (!isEqual(nextProps.sqon, this.props.sqon)) {
       this.setState({ page: 0 });
     }
-    // call onSortedChange here because in componentDidMount config.defaultSorted is null
-    if (
-      !isEqual(nextProps.config.defaultSorted, this.props.config.defaultSorted)
-    ) {
-      this.props.onSortedChange?.(nextProps.config.defaultSorted);
-    }
   }
+
   render() {
     const {
       config,
