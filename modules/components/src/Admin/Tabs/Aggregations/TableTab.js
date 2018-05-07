@@ -13,30 +13,36 @@ export default ({ projectId, graphqlField }) => (
           flexDirection: 'row',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <EditColumns
-            handleChange={columnsState.update}
-            addColumn={columnsState.add}
-            {...columnsState}
-          />
-        </div>
-        <div>
-          <strong>Columns order</strong>
-          <DraggableListOrderer
-            {...{
-              itemsList: columnsState.state.columns.map(
-                ({ show, ...rest }) => ({
-                  active: show,
-                  ...rest,
-                }),
-              ),
-              projectId,
-              graphqlField,
-              onOrderChange: newItemList =>
-                columnsState.saveOrder(newItemList.map(({ field }) => field)),
-            }}
-          />
-        </div>
+        {!columnsState.loading && (
+          <React.Fragment>
+            <div style={{ flex: 1 }}>
+              <EditColumns
+                handleChange={columnsState.update}
+                addColumn={columnsState.add}
+                {...columnsState}
+              />
+            </div>
+            <div>
+              <strong>Columns order</strong>
+              <DraggableListOrderer
+                {...{
+                  itemsList: columnsState.state.columns.map(
+                    ({ show, ...rest }) => ({
+                      active: show,
+                      ...rest,
+                    }),
+                  ),
+                  projectId,
+                  graphqlField,
+                  onOrderChange: newItemList =>
+                    columnsState.saveOrder(
+                      newItemList.map(({ field }) => field),
+                    ),
+                }}
+              />
+            </div>
+          </React.Fragment>
+        )}
       </div>
     )}
   />
