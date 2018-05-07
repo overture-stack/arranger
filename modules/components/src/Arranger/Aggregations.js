@@ -16,6 +16,7 @@ const Aggregations = ({
   style,
   api,
   Wrapper = BaseWrapper,
+  containerRef,
 }) => {
   return (
     <Wrapper style={style} className={className}>
@@ -42,15 +43,12 @@ const Aggregations = ({
                     ...data[graphqlField].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
+                    onValueChange: ({ sqon }) => setSQON(sqon),
+                    key: agg.field,
+                    sqon,
+                    containerRef,
                   }))
-                  .map(agg =>
-                    aggComponents[agg.type]?.({
-                      onValueChange: ({ sqon }) => setSQON(sqon),
-                      key: agg.field,
-                      sqon,
-                      ...agg,
-                    }),
-                  )
+                  .map(agg => aggComponents[agg.type]?.(agg))
               }
             />
           );

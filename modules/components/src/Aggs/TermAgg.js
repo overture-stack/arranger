@@ -100,6 +100,8 @@ const TermAgg = ({
   highlightText,
   constructBucketItemClassName = () => '',
   searchPlaceholder = 'Search',
+  containerRef,
+  aggWrapperRef = React.createRef(),
 
   // Internal State
   stateShowingMore,
@@ -127,6 +129,7 @@ const TermAgg = ({
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   return (
     <AggsWrapper
+      componentRef={aggWrapperRef}
       stickyHeader
       {...{ displayName, WrapperComponent, collapsible }}
       ActionIcon={
@@ -154,7 +157,13 @@ const TermAgg = ({
                   isMoreEnabled && (
                     <MoreOrLessButton
                       isMore={false}
-                      onClick={() => setShowingMore(false)}
+                      onClick={() => {
+                        setShowingMore(false);
+                        if (containerRef?.current) {
+                          containerRef.current.scrollTop =
+                            aggWrapperRef.current.offsetTop;
+                        }
+                      }}
                     />
                   )}
               </>,
