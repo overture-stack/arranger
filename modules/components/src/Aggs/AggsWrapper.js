@@ -16,7 +16,9 @@ export default ({
   headerRef,
 }) => {
   return WrapperComponent ? (
-    <WrapperComponent {...{ collapsible, displayName, componentRef }}>
+    <WrapperComponent
+      {...{ collapsible, displayName, componentRef, headerRef }}
+    >
       {children}
     </WrapperComponent>
   ) : (
