@@ -1,6 +1,8 @@
 import { keys, orderBy, partition } from 'lodash';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 
+import strToReg from '../utils/strToReg';
+
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
 const injectExtensionToElasticMapping = ({
@@ -92,9 +94,9 @@ const filterDisplayTreeDataBySearchTerm = ({
   aggregations,
 }) => {
   const shouldBeIncluded = ({ title, path, children }) => {
-    const inTitle = title.match(new RegExp(searchTerm, 'i'));
+    const inTitle = title.match(strToReg(searchTerm));
     const inBuckets = aggregations[path]?.buckets?.some(x =>
-      (x.key_as_string || x.key).match(new RegExp(searchTerm, 'i')),
+      (x.key_as_string || x.key).match(strToReg(searchTerm)),
     );
     const inChildren = children && children.some(shouldBeIncluded);
     return inTitle || inBuckets || inChildren;

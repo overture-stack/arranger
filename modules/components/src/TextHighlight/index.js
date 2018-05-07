@@ -2,6 +2,8 @@ import React from 'react';
 import { css } from 'emotion';
 import { isEqual } from 'lodash';
 
+import strToReg from '../utils/strToReg';
+
 export default class extends React.Component {
   shouldComponentUpdate(nextProps) {
     return !isEqual(nextProps, this.props);
@@ -15,7 +17,7 @@ export default class extends React.Component {
         background: #f7ed9c;
       `,
     } = this.props;
-    const regex = new RegExp(highlightText, 'i');
+    const regex = strToReg(highlightText);
     const matchResult = content.match(regex);
     const foundIndex = matchResult?.index;
     const seg1 = content.substring(0, foundIndex);
