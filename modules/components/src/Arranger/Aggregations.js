@@ -3,6 +3,10 @@ import React from 'react';
 import { AggsState, AggsQuery } from '../Aggs';
 import aggComponents from '../Aggs/aggComponentsMap.js';
 
+const BaseWrapper = ({ className, ...props }) => (
+  <div {...props} className={`aggregations ${className}`} />
+);
+
 const Aggregations = ({
   setSQON,
   sqon,
@@ -11,12 +15,10 @@ const Aggregations = ({
   className = '',
   style,
   api,
-  Wrapper = props => (
-    <div {...props} className={`aggregations ${className}`} style={style} />
-  ),
+  Wrapper = BaseWrapper,
 }) => {
   return (
-    <Wrapper>
+    <Wrapper style={style} className={className}>
       <AggsState
         api={api}
         projectId={projectId}
