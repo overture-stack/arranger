@@ -63,11 +63,7 @@ export default class extends Component {
       });
 
       const config = data[graphqlField].columnsState.state;
-      let {
-        data: {
-          [this.props.graphqlField]: { extended },
-        },
-      } = await api({
+      let { data: { [this.props.graphqlField]: { extended } } } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
@@ -164,7 +160,6 @@ export default class extends Component {
 
   render() {
     let { config, extended, toggled } = this.state;
-
     return config
       ? this.props.render({
           loading: false,
@@ -189,6 +184,6 @@ export default class extends Component {
             }),
           },
         })
-      : this.props.render({ loading: true });
+      : this.props.render({ loading: true, state: { config: null } });
   }
 }

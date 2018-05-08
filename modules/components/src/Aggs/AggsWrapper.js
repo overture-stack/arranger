@@ -12,16 +12,21 @@ export default ({
   filters,
   WrapperComponent,
   ActionIcon = null,
+  componentRef,
+  headerRef,
 }) => {
   return WrapperComponent ? (
-    <WrapperComponent {...{ collapsible, displayName }}>
+    <WrapperComponent
+      {...{ collapsible, displayName, componentRef, headerRef }}
+    >
       {children}
     </WrapperComponent>
   ) : (
     <Component initialState={{ isCollapsed: false }}>
       {({ setState, state: { isCollapsed } }) => (
-        <div className="aggregation-card">
+        <div className="aggregation-card" ref={componentRef}>
           <div
+            ref={headerRef}
             className={`header ${css`
               position: ${stickyHeader ? `sticky` : `relative`};
               top: 0px;
