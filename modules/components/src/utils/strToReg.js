@@ -1,8 +1,15 @@
-export default (str, { whitelist = `[^\\w\\d\\s]`, modifiers = 'i' } = {}) =>
+export default (
+  str,
+  {
+    whitelist = `\\w\\d\\s`,
+    modifiers = 'i',
+    blacklist = `[^${whitelist}]`,
+  } = {},
+) =>
   new RegExp(
     (str || '')
       .split('\\')
       .join('')
-      .replace(/${whitelist}/g, ''),
+      .replace(/${blacklist}/g, ''),
     modifiers,
   );
