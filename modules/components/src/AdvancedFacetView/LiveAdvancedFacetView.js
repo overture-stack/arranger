@@ -127,7 +127,7 @@ const removeFieldTypesFromMapping = ({
   return output;
 };
 
-const defaultFieldTypesToExclude = ['text'];
+const defaultFieldTypesToExclude = ['id', 'text'];
 
 export default class LiveAdvancedFacetView extends React.Component {
   constructor(props) {
@@ -143,19 +143,13 @@ export default class LiveAdvancedFacetView extends React.Component {
     this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
   }
 
-  filterExtendedForFetchingAggs = ({ extended, aggsState }) => {
-    return extended.filter(
-      // filtering out fields that do not have aggs
-      e => {
-        return (
-          !this.blackListedAggTypes.some(type => type === e.type) &&
-          aggsState.state.some(
-            s => s.field.split('__').join('.') === e.field && s.active,
-          )
-        );
-      },
+  filterExtendedForFetchingAggs = ({ extended, aggsState }) =>
+    extended.filter(
+      e =>
+        !this.blackListedAggTypes.includes(e.type) &&
+        aggsState.state.find(s => s.field.split('__').join('.') === e.field)
+          ?.active,
     );
-  };
 
   componentDidMount() {
     const { projectId, index, api } = this.props;
