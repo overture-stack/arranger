@@ -16,8 +16,6 @@ const NestedTreeView = ({
   shouldCollapse = () => undefined,
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
-    const selectedPathArray =
-      selectedPath?.split('.').filter(str => str.length) || [];
     const selectedClass = selectedPath === (id || title) ? 'selected' : '';
     const depthClass = `depth_${depth}`;
     return children ? (
@@ -51,10 +49,8 @@ const NestedTreeView = ({
         `}`}
       >
         <NestedTreeView
-          onLeafSelect={selectedPath => {
-            onLeafSelect(`${id || title}.${selectedPath}`);
-          }}
-          selectedPath={selectedPathArray.slice(1).join('.')}
+          onLeafSelect={onLeafSelect}
+          selectedPath={selectedPath}
           dataSource={children}
           depth={depth + 1}
           searchString={searchString}
@@ -64,9 +60,7 @@ const NestedTreeView = ({
       </ReactTreeView>
     ) : (
       <div
-        onClick={() => {
-          onLeafSelect(id || title);
-        }}
+        onClick={() => onLeafSelect(path)}
         key={path}
         className={`NestedTreeViewNode tree-view_children leaf
           ${depthClass}

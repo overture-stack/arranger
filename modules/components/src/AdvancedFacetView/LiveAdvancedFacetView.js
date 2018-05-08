@@ -1,5 +1,4 @@
 import React from 'react';
-import { omit } from 'lodash';
 import { esToAggTypeMap } from '@arranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
@@ -145,7 +144,6 @@ export default class LiveAdvancedFacetView extends React.Component {
   }
 
   filterExtendedForFetchingAggs = ({ extended, aggsState }) => {
-    console.log('aggsState: ', aggsState);
     return extended.filter(
       // filtering out fields that do not have aggs
       e => {
@@ -188,7 +186,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     }
   }
   onSqonFieldChange = ({ sqon }) => {
-    const { onSqonChange = () => {}, projectId, index } = this.props;
+    const { onSqonChange = () => {} } = this.props;
     const { aggsState } = this.state;
     fetchAggregationData({
       ...this.props,
@@ -203,11 +201,12 @@ export default class LiveAdvancedFacetView extends React.Component {
   };
   render() {
     const {
-      sqon,
+      graphqlField,
       fieldTypesToExclude = defaultFieldTypesToExclude,
     } = this.props;
     return (
       <AdvancedFacetView
+        rootTypeName={graphqlField}
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended.filter(
           ex => !fieldTypesToExclude.some(type => ex.type === type),
