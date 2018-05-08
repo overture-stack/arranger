@@ -13,6 +13,7 @@ import './TermAgg.css';
 import ToggleButton from '../ToggleButton';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
 import Input from '../Input';
+import strToReg from '../utils/strToReg';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -123,7 +124,7 @@ const TermAgg = ({
   const decoratedBuckets = orderBy(
     buckets
       .map(b => ({ ...b, name: b.key_as_string || b.key }))
-      .filter(b => !searchText || b.name.match(new RegExp(searchText, 'i'))),
+      .filter(b => !searchText || b.name.match(strToReg(searchText))),
     'doc_count',
     'desc',
   );
@@ -131,7 +132,7 @@ const TermAgg = ({
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
   const hasSearchHit =
     highlightText &&
-    decoratedBuckets.some(x => x.name.match(new RegExp(highlightText, 'i')));
+    decoratedBuckets.some(x => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   return (
