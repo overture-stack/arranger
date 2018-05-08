@@ -14,7 +14,7 @@ export default ({ projectId, graphqlField }) => (
         }}
       >
         {!columnsState.loading && (
-          <React.Fragment>
+          <>
             <div style={{ flex: 1 }}>
               <EditColumns
                 handleChange={columnsState.update}
@@ -41,7 +41,7 @@ export default ({ projectId, graphqlField }) => (
                 }}
               />
             </div>
-          </React.Fragment>
+          </>
         )}
       </div>
     )}
