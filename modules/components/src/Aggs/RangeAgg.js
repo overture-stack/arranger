@@ -20,6 +20,19 @@ const supportedConversionFromUnit = unit =>
 
 const round = x => Math.round(x * 100) / 100;
 
+const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
+  <div
+    {...props}
+    css={`
+      position: absolute;
+      ${isLeft ? `left` : `right`}: 0;
+      top: ${isTop ? `-` : ``}1.2rem;
+    `}
+  >
+    {children}
+  </div>
+);
+
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
@@ -132,6 +145,10 @@ class RangeAgg extends Component {
                   ))}
             </div>
             <div className="input-range-wrapper">
+              <RangeLabel isTop isLeft>
+                {this.formatRangeLabel(value.min)}
+              </RangeLabel>
+              <RangeLabel isTop>{this.formatRangeLabel(value.max)}</RangeLabel>
               <InputRange
                 draggableTrack
                 step={step}
@@ -142,6 +159,8 @@ class RangeAgg extends Component {
                 onChange={x => this.setValue(x)}
                 onChangeComplete={this.onChangeComplete}
               />
+              <RangeLabel isLeft>{this.formatRangeLabel(min)}</RangeLabel>
+              <RangeLabel>{this.formatRangeLabel(max)}</RangeLabel>
             </div>
           </div>
         )}
