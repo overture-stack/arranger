@@ -26,8 +26,8 @@ class DatesAgg extends React.Component {
   initializeState = ({ buckets = [], getActiveValue = () => ({}) }) => {
     const { field } = this.props;
     const bucketMoments = buckets.map(x => bucketDateToMoment(x.key_as_string));
-    const minDate = minBy(bucketMoments, x => x.valueOf()).subtract(1, 'days');
-    const maxDate = maxBy(bucketMoments, x => x.valueOf()).add(1, 'days');
+    const minDate = minBy(bucketMoments, x => x.valueOf())?.subtract(1, 'days');
+    const maxDate = maxBy(bucketMoments, x => x.valueOf())?.add(1, 'days');
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
     return {
