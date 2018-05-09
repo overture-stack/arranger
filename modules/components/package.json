@@ -1,21 +1,18 @@
 {
   "name": "@arranger/components",
-  "version": "0.3.32",
+  "version": "0.3.33",
   "description": "Data Portal Components",
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "prepare":
-      "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
+    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
     "watch": "babel src --out-dir dist --copy-files --watch",
     "build-storybook": "build-storybook -s ./public",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
-    "dashboard":
-      "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-    "portal":
-      "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
+    "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
+    "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
     "test": "jest",
     "flow": "flow"
   },
@@ -62,7 +59,7 @@
     "react-dom": "^16.3.0"
   },
   "dependencies": {
-    "@arranger/mapping-utils": "^0.3.32",
+    "@arranger/mapping-utils": "^0.3.33",
     "ajv": "^6.1.1",
     "babel-polyfill": "^6.26.0",
     "classnames": "^2.2.5",
@@ -99,8 +96,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
-        "<rootDir>/__mocks__/fileMock.js",
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     }
   }
