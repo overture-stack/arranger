@@ -5,7 +5,6 @@ import { inCurrentSQON } from '../SQONView/utils';
 
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
-    maxTerms={8}
     handleValueClick={({ generateNextSQON }) => {
       onValueChange({ sqon: generateNextSQON(sqon) });
     }}
