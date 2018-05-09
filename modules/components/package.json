@@ -74,6 +74,7 @@
     "moment": "^2.21.0",
     "pluralize": "^7.0.0",
     "react-component-component": "^1.0.1",
+    "react-datepicker": "^1.4.1",
     "react-dates": "^16.3.6",
     "react-grid-layout": "^0.16.5",
     "react-icons": "^2.2.7",

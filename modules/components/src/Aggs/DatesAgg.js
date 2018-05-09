@@ -1,10 +1,10 @@
 import React from 'react';
 import Moment from 'moment';
-import { DateRangePicker } from 'react-dates';
-import 'react-dates/initialize';
-import 'react-dates/lib/css/_datepicker.css';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { maxBy, minBy } from 'lodash';
-import { replaceSQON } from '../SQONView/utils';
+
+import { removeSQON, replaceSQON } from '../SQONView/utils';
 import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
 import './DatesAgg.css';
@@ -16,55 +16,61 @@ const momentToBucketDate = moment => moment?.format(BUCKET_DATE_FORMAT);
 class DatesAgg extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      ...this.getInitialRange(props),
-      focusedInput: null, // must be set with this.setInputFocus to bind with dom state
-    };
+    this.state = this.initializeState(props);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.setState(this.getInitialRange(nextProps));
+    this.setState(this.initializeState(nextProps));
   }
 
-  getInitialRange = ({ buckets = [], getActiveValue = () => ({}) }) => {
+  initializeState = ({ buckets = [], getActiveValue = () => ({}) }) => {
     const { field } = this.props;
     const bucketMoments = buckets.map(x => bucketDateToMoment(x.key_as_string));
-    const minDate = minBy(bucketMoments, moment => moment.valueOf());
-    const maxDate = maxBy(bucketMoments, moment => moment.valueOf());
+    const minDate = minBy(bucketMoments, x => x.valueOf()).subtract(1, 'days');
+    const maxDate = maxBy(bucketMoments, x => x.valueOf()).add(1, 'days');
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
     return {
-      startDate: startFromSqon ? bucketDateToMoment(startFromSqon) : minDate,
-      endDate: endFromSqon ? bucketDateToMoment(endFromSqon) : maxDate,
+      minDate,
+      maxDate,
+      startDate: startFromSqon ? bucketDateToMoment(startFromSqon) : null,
+      endDate: endFromSqon ? bucketDateToMoment(endFromSqon) : null,
     };
   };
 
-  updateSqon = ({ startDate, endDate } = {}) => {
+  updateSqon = () => {
+    const { startDate, endDate } = this.state;
     const { field, handleDateChange } = this.props;
-    if (handleDateChange && field && startDate && endDate) {
+    if (handleDateChange && field) {
+      const content = [
+        ...(startDate
+          ? [
+              {
+                op: '>=',
+                content: {
+                  field,
+                  value: momentToBucketDate(startDate.startOf('day')),
+                },
+              },
+            ]
+          : []),
+        ...(endDate
+          ? [
+              {
+                op: '<=',
+                content: {
+                  field,
+                  value: momentToBucketDate(endDate.endOf('day')),
+                },
+              },
+            ]
+          : []),
+      ];
       handleDateChange({
         generateNextSQON: sqon =>
           replaceSQON(
-            {
-              op: 'and',
-              content: [
-                {
-                  op: '>=',
-                  content: {
-                    field,
-                    value: momentToBucketDate(startDate.startOf('day')),
-                  },
-                },
-                {
-                  op: '<=',
-                  content: {
-                    field,
-                    value: momentToBucketDate(endDate.endOf('day')),
-                  },
-                },
-              ],
-            },
-            sqon,
+            content.length ? { op: 'and', content } : null,
+            removeSQON(field, sqon),
           ),
       });
     }
@@ -74,30 +80,37 @@ class DatesAgg extends React.Component {
     const {
       displayName = 'Date Range',
       collapsible = true,
-      numberOfMonths = 2,
       WrapperComponent,
     } = this.props;
-    const { startDate, endDate, focusedInput } = this.state;
+    const { minDate, maxDate, startDate, endDate } = this.state;
     return (
       <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
-        <div className={`datesAgg_inputRow`}>
-          <DateRangePicker
-            small
-            noBorder
-            startDate={startDate}
-            startDateId="start_date_id"
-            endDate={endDate}
-            endDateId="end_date_id"
-            onDatesChange={range => {
-              this.setState(range);
-              this.updateSqon(range);
-            }}
-            focusedInput={focusedInput}
-            onFocusChange={focusedInput => this.setState({ focusedInput })}
-            numberOfMonths={numberOfMonths}
-            isOutsideRange={() => false}
-            hideKeyboardShortcutsPanel
-            withPortal
+        <div
+          css={`
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+          `}
+        >
+          <DatePicker
+            {...{ minDate, maxDate }}
+            isClearable
+            openToDate={minDate}
+            popperPlacement="top-start"
+            disabledKeyboardNavigation
+            placeholderText="Start Date"
+            selected={startDate}
+            onChange={x => this.setState({ startDate: x }, this.updateSqon)}
+          />
+          <DatePicker
+            {...{ minDate, maxDate }}
+            isClearable
+            openToDate={maxDate}
+            popperPlacement="top-start"
+            disabledKeyboardNavigation
+            placeholderText="End Date"
+            selected={endDate}
+            onChange={x => this.setState({ endDate: x }, this.updateSqon)}
           />
         </div>
       </AggsWrapper>
