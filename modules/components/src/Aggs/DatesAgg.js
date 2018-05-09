@@ -81,6 +81,7 @@ class DatesAgg extends React.Component {
       displayName = 'Date Range',
       collapsible = true,
       WrapperComponent,
+      facetView = false,
     } = this.props;
     const { minDate, maxDate, startDate, endDate } = this.state;
     return (
@@ -96,7 +97,7 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             isClearable
             openToDate={minDate}
-            popperPlacement="top-start"
+            popperPlacement={facetView ? 'bottom-start' : 'top-start'}
             disabledKeyboardNavigation
             placeholderText="Start Date"
             selected={startDate}
@@ -106,7 +107,7 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             isClearable
             openToDate={maxDate}
-            popperPlacement="top-start"
+            popperPlacement={facetView ? 'bottom-end' : 'top-start'}
             disabledKeyboardNavigation
             placeholderText="End Date"
             selected={endDate}

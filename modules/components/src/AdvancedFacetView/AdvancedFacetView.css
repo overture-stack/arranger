@@ -56,6 +56,15 @@
   left: 0px;
   right: 0px;
   bottom: 0px;
+  overflow: hidden;
+}
+
+.facetViewWrapper
+  .facetsPanel
+  .facets
+  .react-datepicker-popper[data-placement='bottom-end']
+  .react-datepicker__triangle {
+  left: 200px !important;
 }
 
 .facetViewWrapper .facetsPanel .facetView .facetViewNode {
