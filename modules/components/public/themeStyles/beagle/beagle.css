@@ -562,6 +562,7 @@ div {
   color: #2b388f;
 }
 
+.aggregation-card .toggle-button .bucket-count,
 .facetViewWrapper .bucket-count {
   border-radius: 5px;
   background-color: #e7e8ed;
