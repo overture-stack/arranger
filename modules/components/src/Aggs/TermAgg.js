@@ -1,6 +1,6 @@
 import React from 'react';
 import { compose, withState } from 'recompose';
-import { orderBy, truncate, isEmpty } from 'lodash';
+import { isEmpty, orderBy, partition, truncate } from 'lodash';
 import DefaultSearchIcon from 'react-icons/lib/fa/search';
 import { css } from 'emotion';
 
@@ -74,6 +74,20 @@ const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
   </div>
 );
 
+const decorateBuckets = ({ buckets, searchText }) => {
+  const namedFilteredBuckets = buckets
+    .map(b => ({ ...b, name: b.key_as_string || b.key }))
+    .filter(
+      b =>
+        !searchText ||
+        internalTranslateSQONValue(b.name).match(strToReg(searchText)),
+    );
+  const [missing, notMissing] = partition(namedFilteredBuckets, {
+    name: '__missing__',
+  });
+  return [...orderBy(notMissing, 'doc_count', 'desc'), ...missing];
+};
+
 const enhance = compose(
   withState('stateShowingMore', 'setShowingMore', false),
   withState('stateIsExclude', 'setIsExclude', false),
@@ -121,13 +135,7 @@ const TermAgg = ({
   searchText,
   setSearchText,
 }) => {
-  const decoratedBuckets = orderBy(
-    buckets
-      .map(b => ({ ...b, name: b.key_as_string || b.key }))
-      .filter(b => !searchText || b.name.match(strToReg(searchText))),
-    'doc_count',
-    'desc',
-  );
+  const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
   const hasSearchHit =
