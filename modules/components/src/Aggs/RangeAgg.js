@@ -12,7 +12,11 @@ import './RangeAgg.css';
 
 const SUPPORTED_CONVERSIONS = {
   time: ['d', 'year'],
+  digital: ['GB'],
 };
+
+const supportedConversionFromUnit = unit =>
+  unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
 
 const round = x => Math.round(x * 100) / 100;
 
@@ -25,7 +29,7 @@ class RangeAgg extends Component {
       min,
       max,
       unit: unit,
-      displayUnit: unit,
+      displayUnit: supportedConversionFromUnit(unit)?.[0],
       value: {
         min: !_.isNil(value) ? value.min || min : min,
         max: !_.isNil(value) ? value.max || max : max,
@@ -101,25 +105,27 @@ class RangeAgg extends Component {
   render() {
     let {
       step,
-      field = '',
-      Content = 'div',
       displayName = 'Unnamed Field',
-      buckets = [],
       collapsible = true,
-      handleChange = () => {},
       WrapperComponent,
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
+    const supportedConversions = supportedConversionFromUnit(unit);
     return (
-      <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
+      <AggsWrapper
+        displayName={`${displayName}${
+          displayUnit ? ` (${convert().describe(displayUnit).plural})` : ``
+        }`}
+        {...{ WrapperComponent, collapsible }}
+      >
         {[!_.isNil(min), !_.isNil(max)].every(Boolean) && (
           <div className="range-wrapper">
             <div className="unit-wrapper">
-              {unit &&
-                SUPPORTED_CONVERSIONS[convert().describe(unit).measure]
-                  .map(x => convert().describe(x))
-                  .map(x => ({ ...x, active: x.abbr === displayUnit }))
-                  .map(({ abbr, plural, active }) => (
+              {supportedConversions?.length > 1 &&
+                supportedConversions
+                  ?.map(x => convert().describe(x))
+                  ?.map(x => ({ ...x, active: x.abbr === displayUnit }))
+                  ?.map(({ abbr, plural, active }) => (
                     <span key={abbr}>
                       <input
                         type="radio"
