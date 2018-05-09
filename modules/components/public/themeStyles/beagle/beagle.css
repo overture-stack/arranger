@@ -225,11 +225,19 @@ div {
   font-size: 0.8rem;
 }
 
+.facetContainer .react-datepicker-wrapper input,
 .aggregation-card .react-datepicker-wrapper input {
   padding: 5px;
-  width: 100px;
   border-radius: 10px;
   border: 1px solid #cacbcf;
+}
+
+.facetContainer .react-datepicker-wrapper input {
+  width: 130px;
+}
+
+.aggregation-card .react-datepicker-wrapper input {
+  width: 100px;
 }
 
 /**************************************/

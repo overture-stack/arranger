@@ -29,10 +29,6 @@ const attachBucketToNode = mappingNode => ({
       }),
 });
 
-const mockAggregations = (window.mockAggregations = injectMockBuckets(
-  elasticMockMapping,
-));
-
 storiesOf('AdvancedFacetView', module)
   .addDecorator(themeDecorator)
   .add('AdvancedFacetViewLive', () => (
