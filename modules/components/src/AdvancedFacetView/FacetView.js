@@ -55,7 +55,7 @@ export default class FacetView extends React.Component {
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
-        {flattenDisplayTreeData(displayTreeData).map(({ title, path }) => {
+        {flattenDisplayTreeData(displayTreeData).map(({ path }) => {
           const metaData = extendedMapping.find(({ field }) => field === path);
           const { type } = metaData || {};
           const paths = path
@@ -73,6 +73,7 @@ export default class FacetView extends React.Component {
           );
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({
+            ...metaData,
             ...agg,
             ...(type === 'keyword'
               ? (() => {
@@ -109,12 +110,12 @@ export default class FacetView extends React.Component {
             },
             highlightText: searchString,
             sqon,
-            WrapperComponent: ({ collapsible, children }) => (
+            WrapperComponent: ({ displayName, collapsible, children }) => (
               <div id={serializeToDomId(path)} className={`facetContainer`}>
                 <div className={`header`}>
                   <div className={`title`}>
                     <TextHighlight
-                      content={title}
+                      content={displayName}
                       highlightText={searchString}
                     />
                   </div>
