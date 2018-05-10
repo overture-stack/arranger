@@ -20,12 +20,24 @@ const supportedConversionFromUnit = unit =>
 
 const round = x => Math.round(x * 100) / 100;
 
+const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
+  <div
+    {...props}
+    css={`
+      position: absolute;
+      ${isLeft ? `left` : `right`}: 0;
+      top: ${isTop ? `-` : ``}1.2rem;
+    `}
+  >
+    {children}
+  </div>
+);
+
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let { field, stats: { min, max }, unit, value } = props;
+    let { stats: { min, max }, unit, value } = props;
     this.state = {
-      field,
       min,
       max,
       unit: unit,
@@ -38,29 +50,21 @@ class RangeAgg extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    let { field, stats: { min, max } } = this.props;
-    const { value: externalVal } = nextProps;
+    const { stats: { min, max }, value: externalVal } = nextProps;
     let { value } = this.state;
     this.setState({
-      field,
       min,
       max,
       value: {
-        min: Math.max(
-          !_.isNil(externalVal?.min) ? externalVal.min : value.min,
-          min,
-        ),
-        max: Math.min(
-          !_.isNil(externalVal?.max) ? externalVal.max : value.max,
-          max,
-        ),
+        min: Math.max(externalVal?.min || value.min, min),
+        max: Math.min(externalVal?.max || value.max, max),
       },
     });
   }
 
   onChangeComplete = () => {
-    let { handleChange } = this.props;
-    let { field, value } = this.state;
+    let { field, handleChange } = this.props;
+    let { value } = this.state;
     const [min, max] = [value.min, value.max].map(x => round(x));
     handleChange?.({
       field,
@@ -141,6 +145,10 @@ class RangeAgg extends Component {
                   ))}
             </div>
             <div className="input-range-wrapper">
+              <RangeLabel isTop isLeft>
+                {this.formatRangeLabel(value.min)}
+              </RangeLabel>
+              <RangeLabel isTop>{this.formatRangeLabel(value.max)}</RangeLabel>
               <InputRange
                 draggableTrack
                 step={step}
@@ -151,6 +159,8 @@ class RangeAgg extends Component {
                 onChange={x => this.setValue(x)}
                 onChangeComplete={this.onChangeComplete}
               />
+              <RangeLabel isLeft>{this.formatRangeLabel(min)}</RangeLabel>
+              <RangeLabel>{this.formatRangeLabel(max)}</RangeLabel>
             </div>
           </div>
         )}
