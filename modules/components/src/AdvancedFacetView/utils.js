@@ -39,7 +39,9 @@ const filterOutNonValue = ({
 }) => {
   const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
     const keyHasValue =
-      aggregations[key]?.buckets?.length > 0 ||
+      aggregations[key]?.buckets?.filter(
+        x => (x.key_as_string || x.key) !== '__missing__',
+      )?.length > 0 ||
       aggregations[key]?.stats?.min ||
       aggregations[key]?.stats?.max;
     return {
