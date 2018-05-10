@@ -29,7 +29,7 @@ async function getTypes({ id, es }) {
 }
 
 const initializeSets = async ({ es }) => {
-  if (!(await es.indices.exists({ index: 'arranger-sets' }))) {
+  if (!await es.indices.exists({ index: 'arranger-sets' })) {
     await es.indices.create({
       index: 'arranger-sets',
       body: {

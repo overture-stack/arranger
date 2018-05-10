@@ -7,15 +7,16 @@ import getIndexPrefix from '../utils/getIndexPrefix';
 export default async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
-  let { index, name } = req.body;
+  let { index, name, type } = req.body;
 
-  if (!id || !index || !name) {
+  if (!id || !index || !name || !type) {
     return res.json({ error: 'missing fields' });
   }
 
   // indices must be lower cased
   id = id.toLowerCase();
   index = index.toLowerCase();
+  type = type.toLowerCase();
 
   let arrangerConfig = {
     projectsIndex: {
@@ -30,6 +31,7 @@ export default async (req, res) => {
       refresh: true,
       id: index,
       body: {
+        type,
         index,
         name,
         active: true,
