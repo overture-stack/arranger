@@ -1,6 +1,6 @@
 {
   "name": "faker",
-  "version": "0.3.34",
+  "version": "0.3.35",
   "private": true,
   "scripts": {
     "start": "node -r babel-register src/index"
