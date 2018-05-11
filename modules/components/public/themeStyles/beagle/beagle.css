@@ -606,3 +606,31 @@ div {
 .tabs-table .rt-th {
   color: #2b388f;
 }
+
+/*********************************************/
+/************* styling for stats *************/
+/*********************************************/
+.stats-container {
+  border: solid 1px #e0e1e6;
+  padding: 14px 0;
+  background: #fff;
+}
+.stats-container .stats-line {
+  width: 1px;
+  height: 35px;
+  background-color: #d4d6dd;
+}
+.stats-container .stat-container .stat-content {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #343434;
+  margin-right: 6px;
+}
+.stats-container .stat-container .stat-label {
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.54;
+  letter-spacing: 0.2px;
+  color: #74757d;
+}
