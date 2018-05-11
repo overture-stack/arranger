@@ -11,6 +11,35 @@ let aggFields = `
   }
 `;
 
+export const queryFromAgg = ({ field, type }) =>
+  type === 'Aggregations'
+    ? `
+        ${field} {
+          buckets {
+            doc_count
+            key_as_string
+            key
+          }
+        }
+      `
+    : `
+      ${field} {
+        stats {
+          max
+          min
+          count
+          avg
+          sum
+        }
+        histogram(interval: 1.0) {
+          buckets {
+            doc_count
+            key
+          }
+        }
+      }
+      `;
+
 export default class extends Component {
   state = { aggs: [], temp: [] };
 
@@ -100,7 +129,11 @@ export default class extends Component {
   render() {
     return this.props.render({
       update: this.update,
-      aggs: this.state.temp,
+      aggs: this.state.temp.map(x => ({
+        ...x,
+        query: queryFromAgg(x),
+        isTerms: x.type === 'Aggregations',
+      })),
       saveOrder: this.saveOrder,
     });
   }

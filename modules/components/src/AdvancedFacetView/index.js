@@ -2,21 +2,26 @@ import React from 'react';
 import { keys, debounce, isEqual } from 'lodash';
 import { truncate, pick } from 'lodash';
 import { css } from 'emotion';
+import Component from 'react-component-component';
+
+import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
+import FaFilter from 'react-icons/lib/fa/filter';
+
 import NestedTreeView from '../NestedTreeView';
 import SQONView, { Bubble, Field, Value } from '../SQONView';
-import './AdvancedFacetView.css';
 import FacetView from './FacetView';
-import Component from 'react-component-component';
+import TextInput from '../Input';
+import LoadingScreen from '../LoadingScreen';
+import Stats from '../Stats';
+
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm,
 } from './utils';
-import TextInput from '../Input';
-import FaFilter from 'react-icons/lib/fa/filter';
-import LoadingScreen from '../LoadingScreen';
-import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
+
+import './AdvancedFacetView.css';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -38,9 +43,7 @@ export default class AdvancedFacetView extends React.Component {
           (parentNode, nextPath) =>
             parentNode[nextPath]
               ? parentNode[nextPath]
-              : parentNode.properties
-                ? parentNode.properties[nextPath]
-                : {},
+              : parentNode.properties ? parentNode.properties[nextPath] : {},
           elasticMapping,
         ) || {}
     );
@@ -100,7 +103,8 @@ export default class AdvancedFacetView extends React.Component {
       aggregations = {},
       sqon,
       valueCharacterLimit = 30,
-      statComponent,
+      statsConfig,
+      ...props
     } = this.props;
     const {
       selectedPath,
@@ -233,15 +237,26 @@ export default class AdvancedFacetView extends React.Component {
                       />
                     )}
                   </Component>
-                  <div
-                    className={css`
-                      display: flex;
-                      flex: 1;
-                      height: 100%;
-                    `}
-                  >
-                    {statComponent}
-                  </div>
+                  {statsConfig && (
+                    <div
+                      className={css`
+                        display: flex;
+                        flex: 1;
+                        height: 100%;
+                      `}
+                    >
+                      <Stats
+                        small
+                        transparent
+                        {...props}
+                        {...{ sqon }}
+                        stats={statsConfig}
+                        className={css`
+                          flex-grow: 1;
+                        `}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className={`facets`}>
                   <FacetView

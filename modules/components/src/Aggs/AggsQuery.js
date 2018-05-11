@@ -2,6 +2,7 @@ import React from 'react';
 import { capitalize } from 'lodash';
 import Query from '../Query';
 import defaultApi from '../utils/api';
+import { queryFromAgg } from './AggsState';
 
 export default ({
   index = '',
@@ -31,35 +32,7 @@ export default ({
               aggregations_filter_themselves: false
               filters: $sqon
             ){
-              ${aggs.map(({ field, type }) => {
-                return type === 'Aggregations'
-                  ? `
-                    ${field} {
-                      buckets {
-                        doc_count
-                        key_as_string
-                        key
-                      }
-                    }
-                  `
-                  : `
-                  ${field} {
-                    stats {
-                      max
-                      min
-                      count
-                      avg
-                      sum
-                    }
-                    histogram(interval: 1.0) {
-                      buckets {
-                        doc_count
-                        key
-                      }
-                    }
-                  }
-                  `;
-              })}
+              ${aggs.map(x => x.query || queryFromAgg(x))}
             }
           }
         }

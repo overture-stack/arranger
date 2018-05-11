@@ -195,12 +195,13 @@ export default class LiveAdvancedFacetView extends React.Component {
   };
   render() {
     const {
-      graphqlField,
       fieldTypesToExclude = defaultFieldTypesToExclude,
+      ...props
     } = this.props;
     return (
       <AdvancedFacetView
-        rootTypeName={graphqlField}
+        {...props}
+        rootTypeName={props.graphqlField}
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended.filter(
           ex => !fieldTypesToExclude.some(type => ex.type === type),
@@ -208,7 +209,6 @@ export default class LiveAdvancedFacetView extends React.Component {
         aggregations={this.state.aggregations}
         onSqonFieldChange={this.onSqonFieldChange}
         sqon={this.state.sqon}
-        statComponent={this.props.statComponent}
       />
     );
   }
