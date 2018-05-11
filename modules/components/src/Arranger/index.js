@@ -9,4 +9,4 @@ export {
 } from '../AdvancedFacetView/LiveAdvancedFacetView';
 export { default as QuickSearch } from './QuickSearch';
 export { default as MatchBox } from './MatchBox';
-export { default as Stats } from './Stats';
+export { default as Stats, CombinedStatsQuery } from './Stats';

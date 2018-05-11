@@ -5,7 +5,7 @@ import { AggsState } from '../Aggs';
 import Query from '../Query';
 import { accessor, underscoreField } from './Stats';
 
-export const CombinedStatsQuery = ({
+const CombinedStatsQuery = ({
   api,
   projectId,
   graphqlField,
@@ -67,3 +67,5 @@ export const CombinedStatsQuery = ({
     }}
   />
 );
+
+export default CombinedStatsQuery;
