@@ -549,6 +549,9 @@ div {
 .facetViewWrapper .treeViewPanel .panelHeading .fieldsShown {
   font-weight: bold;
 }
+.facetViewWrapper .facetsPanel .panelHeading .filterInput {
+  margin-right: 10px;
+}
 
 .facetViewWrapper .facetContainer .header {
   background-color: #e7e8ed;
@@ -615,10 +618,20 @@ div {
   padding: 14px 0;
   background: #fff;
 }
+.stats-container.transparent {
+  border: none;
+  background: transparent;
+}
 .stats-container .stats-line {
   width: 1px;
   height: 35px;
   background-color: #d4d6dd;
+}
+.stats-container .stat-container {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
 }
 .stats-container .stat-container .stat-content {
   font-size: 18px;
@@ -633,4 +646,10 @@ div {
   line-height: 1.54;
   letter-spacing: 0.2px;
   color: #74757d;
+}
+.stats-container.small .stat-container .stat-content {
+  font-size: 14px;
+}
+.stats-container.small .stat-container .stat-label {
+  font-size: 10px;
 }

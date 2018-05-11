@@ -93,14 +93,7 @@ const Stat = ({
   ...props
 }) => {
   return (
-    <div
-      className="stat-container"
-      css={`
-        display: flex;
-        flex-grow: 1;
-        justify-content: center;
-      `}
-    >
+    <div className="stat-container">
       {icon}
       <div className="stat-content">
         <QueryComponent
@@ -120,11 +113,17 @@ export default ({
   stats,
   className,
   render,
+  small,
+  transparent,
   LoadingSpinnerComponent = LoadingSpinner,
   ...props
 }) => (
   <div
-    className="stats-container"
+    className={`
+      stats-container
+      ${small ? `small` : ``}
+      ${transparent ? `transparent` : ``}
+    `}
     css={`
       display: flex;
       align-items: center;
