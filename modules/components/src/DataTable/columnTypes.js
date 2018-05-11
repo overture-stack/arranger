@@ -3,13 +3,18 @@ import { isNil } from 'lodash';
 import filesize from 'filesize';
 import { getSingleValue } from './utils';
 import jsonPath from 'jsonpath/jsonpath.min';
+
 const Number = props => <div style={{ textAlign: 'right' }}>{props.value}</div>;
+const FileSize = ({ options = {}, ...props }) => (
+  <Number value={filesize(props.value || 0, options).toUpperCase()} />
+);
 
 export default {
   number: Number,
-  bits: props => (
-    <Number value={filesize(props.value || 0, { base: 10 }).toUpperCase()} />
+  bits: ({ value, ...props }) => (
+    <FileSize {...props} value={(value || 0) / 8} />
   ),
+  bytes: props => <FileSize {...props} />,
   boolean: ({ value }) => (!isNil(value) ? `${value}` : ``),
   list: props => {
     const values = jsonPath.query(props.original, props.column.jsonPath);
