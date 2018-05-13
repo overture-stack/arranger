@@ -220,8 +220,8 @@ const TermAgg = ({
                 }}
                 onClick={() =>
                   handleValueClick({
-                    dotField,
-                    bucket,
+                    field: dotField,
+                    value: bucket,
                     isExclude,
                     generateNextSQON: sqon =>
                       generateNextSQON({ isExclude, dotField, bucket, sqon }),

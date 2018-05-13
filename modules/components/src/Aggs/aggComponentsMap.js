@@ -2,19 +2,20 @@ import React from "react";
 import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from "../Aggs";
 import { currentFieldValue } from "../SQONView/utils";
 import { inCurrentSQON } from "../SQONView/utils";
+import { fieldInCurrentSQON } from "../SQONView/utils";
 
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
-    handleValueClick={({ generateNextSQON, bucket, dotField }) => {
+    handleValueClick={({ generateNextSQON, value, field }) => {
       onValueChange({
         sqon: generateNextSQON(sqon),
-        value: { 
-          dotField, 
-          bucket,
+        value: {
+          field,
+          value,
           active: inCurrentSQON({
-            value: bucket.name,
-            dotField,
-            currentSQON: generateNextSQON(sqon),
+            value: value.name,
+            field,
+            currentSQON: generateNextSQON(sqon)
           })
         }
       });
@@ -42,9 +43,25 @@ const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
         stats?.max ||
         0
     }}
-    handleChange={({ generateNextSQON }) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
+    handleChange={({
+      generateNextSQON,
+      field: { displayName, displayUnit, field },
+      value
+    }) => {
+      const nextSQON = generateNextSQON(sqon);
+
+      onValueChange({
+        sqon: nextSQON,
+        value: {
+          field: `${displayName} (${displayUnit})`,
+          value,
+          active: fieldInCurrentSQON({
+            currentSQON: nextSQON.content,
+            field: field
+          })
+        }
+      });
+    }}
     {...{ ...rest, stats, field }}
   />
 );
