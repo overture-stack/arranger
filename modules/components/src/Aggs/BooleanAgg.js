@@ -1,9 +1,9 @@
-import React from 'react';
-import AggsWrapper from './AggsWrapper.js';
-import { replaceSQON, removeSQON } from '../SQONView/utils';
-import './BooleanAgg.css';
-import TextHighlight from '../TextHighlight';
-import ToggleButton from '../ToggleButton';
+import React from "react";
+import AggsWrapper from "./AggsWrapper.js";
+import { replaceSQON, removeSQON } from "../SQONView/utils";
+import "./BooleanAgg.css";
+import TextHighlight from "../TextHighlight";
+import ToggleButton from "../ToggleButton";
 
 export default ({
   field,
@@ -15,66 +15,72 @@ export default ({
   displayName,
   highlightText,
   valueKeys = {
-    true: 'true',
-    false: 'false',
+    true: "true",
+    false: "false"
   },
   defaultDisplayKeys = {
-    any: 'Any',
-    true: 'Yes',
-    false: 'No',
+    any: "Any",
+    true: "Yes",
+    false: "No"
   },
   displayValues: extendedDisplayKeys = {},
   displayKeys = Object.keys(defaultDisplayKeys).reduce(
     (obj, x) => ({
       ...obj,
-      [x]: extendedDisplayKeys[x] || defaultDisplayKeys[x],
+      [x]: extendedDisplayKeys[x] || defaultDisplayKeys[x]
     }),
-    {},
+    {}
   ),
   ...rest
 }) => {
   const trueBucket = buckets.find(
-    ({ key_as_string }) => key_as_string === valueKeys.true,
+    ({ key_as_string }) => key_as_string === valueKeys.true
   );
   const falseBucket = buckets.find(
-    ({ key_as_string }) => key_as_string === valueKeys.false,
+    ({ key_as_string }) => key_as_string === valueKeys.false
   );
-  const dotField = field.replace(/__/g, '.');
+
+  const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
+
+  const dotField = field.replace(/__/g, ".");
 
   const isTrueActive = isActive({
     value: valueKeys.true,
-    field: dotField,
+    field: dotField
   });
   const isFalseActive = isActive({
     value: valueKeys.false,
-    field: dotField,
+    field: dotField
   });
 
-  const handleChange = isTrue => {
+  const handleChange = (isTrue, field) => {
     if (isTrue !== undefined) {
       handleValueClick({
         bucket: isTrue ? trueBucket : falseBucket,
+        value: isTrue ? trueBucket : falseBucket || missingKeyBucket,
+        field,
         generateNextSQON: sqon =>
           replaceSQON(
             {
-              op: 'and',
+              op: "and",
               content: [
                 {
-                  op: 'in',
+                  op: "in",
                   content: {
                     field: dotField,
-                    value: [valueKeys[isTrue ? 'true' : 'false']],
-                  },
-                },
-              ],
+                    value: [valueKeys[isTrue ? "true" : "false"]]
+                  }
+                }
+              ]
             },
-            sqon,
-          ),
+            sqon
+          )
       });
     } else {
       handleValueClick({
-        bucket: null,
-        generateNextSQON: sqon => removeSQON(dotField, sqon),
+        value: "Any",
+        field,
+        generateNextSQON: sqon => removeSQON(dotField, sqon)
       });
     }
   };
@@ -85,13 +91,11 @@ export default ({
         {...{
           value: isTrueActive
             ? valueKeys.true
-            : isFalseActive
-              ? valueKeys.false
-              : undefined,
+            : isFalseActive ? valueKeys.false : undefined,
           options: [
             {
               value: undefined,
-              title: displayKeys.any,
+              title: displayKeys.any
             },
             {
               value: valueKeys.true,
@@ -105,14 +109,14 @@ export default ({
                     <span
                       className={`bucket-count`}
                       style={{
-                        marginLeft: 2,
+                        marginLeft: 2
                       }}
                     >
                       {trueBucket.doc_count}
                     </span>
                   )}
                 </>
-              ),
+              )
             },
             {
               value: valueKeys.false,
@@ -126,25 +130,24 @@ export default ({
                     <span
                       className={`bucket-count`}
                       style={{
-                        marginLeft: 2,
+                        marginLeft: 2
                       }}
                     >
                       {falseBucket.doc_count}
                     </span>
                   )}
                 </>
-              ),
-            },
+              )
+            }
           ],
           onChange: ({ value }) => {
             handleChange(
               value === valueKeys.true
                 ? true
-                : value === valueKeys.false
-                  ? false
-                  : undefined,
+                : value === valueKeys.false ? false : undefined,
+              dotField
             );
-          },
+          }
         }}
       />
     </AggsWrapper>
