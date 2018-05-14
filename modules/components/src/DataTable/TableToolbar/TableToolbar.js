@@ -107,10 +107,7 @@ const TableToolbar = ({
                 saveTSV({
                   url: downloadUrl,
                   files,
-                  callback: ({ downloadKey }) => {
-                    onTSVExported({ downloadKey, files });
-                  },
-                });
+                }).then(downloadKey => onTSVExported({ downloadKey, files }));
               }}
             >
               {exportTSVText}

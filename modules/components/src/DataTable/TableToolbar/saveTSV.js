@@ -21,6 +21,5 @@ export default async function({
       }),
       ...options.params,
     },
-    callback,
   });
 }

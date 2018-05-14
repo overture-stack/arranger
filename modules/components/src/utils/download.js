@@ -55,9 +55,8 @@ function download({
 
   const resolveOnDownload = new Promise((resolve, reject) => {
     io.on(`server::download::${downloadKey}`, () => {
-      callback({ downloadKey });
       io.off(`server::download::${downloadKey}`);
-      resolve();
+      resolve({ downloadKey });
     });
   });
 
