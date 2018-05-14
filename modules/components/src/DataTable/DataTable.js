@@ -39,6 +39,7 @@ class DataTable extends React.Component {
       columnDropdownText,
       exportTSVText,
       exportTSVFilename,
+      onTableExport = () => {},
       maxPagesOptions,
       projectId = PROJECT_ID,
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
@@ -68,6 +69,7 @@ class DataTable extends React.Component {
           columnDropdownText={columnDropdownText}
           exportTSVText={exportTSVText}
           exportTSVFilename={exportTSVFilename}
+          onTSVExported={onTableExport}
           downloadUrl={downloadUrl}
         />
         <Table

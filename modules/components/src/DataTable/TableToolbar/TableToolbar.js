@@ -42,6 +42,7 @@ const TableToolbar = ({
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
+  onTSVExported,
   sqon,
   downloadUrl,
 }) => {
@@ -95,16 +96,20 @@ const TableToolbar = ({
                 minHeight: 16,
               }}
               onClick={() => {
+                const files = [
+                  {
+                    fileName: exportTSVFilename,
+                    sqon,
+                    index: type,
+                    columns,
+                  },
+                ];
                 saveTSV({
                   url: downloadUrl,
-                  files: [
-                    {
-                      fileName: exportTSVFilename,
-                      sqon,
-                      index: type,
-                      columns,
-                    },
-                  ],
+                  files,
+                  callback: ({ downloadKey }) => {
+                    onTSVExported({ downloadKey, files });
+                  },
                 });
               }}
             >

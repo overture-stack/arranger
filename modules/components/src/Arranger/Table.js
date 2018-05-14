@@ -10,6 +10,7 @@ const Table = ({
   setSQON,
   sqon,
   fieldTypesForFilter = ['text', 'keyword'],
+  onTableExport = () => {},
   api,
   ...props
 }) => {
@@ -32,6 +33,7 @@ const Table = ({
             }}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
+            onTableExport={onTableExport}
             onFilterChange={({ generateNextSQON }) => {
               setSQON(
                 generateNextSQON({

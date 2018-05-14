@@ -1,6 +1,12 @@
 import download from '../../utils/download';
 
-export default async function({ url, files = [], fileName, options = {} }) {
+export default async function({
+  url,
+  files = [],
+  fileName,
+  options = {},
+  callback = () => {},
+}) {
   return download({
     url,
     method: 'POST',
@@ -15,5 +21,6 @@ export default async function({ url, files = [], fileName, options = {} }) {
       }),
       ...options.params,
     },
+    callback,
   });
 }

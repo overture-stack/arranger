@@ -43,12 +43,19 @@ function createIFrame({ method, url, fields }) {
   return iFrame;
 }
 
-function download({ url, params, method = 'GET', body = {} }) {
+function download({
+  url,
+  params,
+  method = 'GET',
+  body = {},
+  callback = () => {},
+}) {
   const downloadKey = uuid();
   let io = initSocket();
 
   const resolveOnDownload = new Promise((resolve, reject) => {
     io.on(`server::download::${downloadKey}`, () => {
+      callback({ downloadKey });
       io.off(`server::download::${downloadKey}`);
       resolve();
     });
