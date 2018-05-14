@@ -95,9 +95,20 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
 
 const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
   <DatesAgg
-    handleDateChange={({ generateNextSQON = () => {} } = {}) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
+    handleDateChange={({ generateNextSQON = () => {}, field, value } = {}) => {
+      const nextSQON = generateNextSQON(sqon);
+      onValueChange({
+        sqon: nextSQON,
+        value: {
+          field,
+          value,
+          active: fieldInCurrentSQON({
+            currentSQON: nextSQON ? nextSQON.content : [],
+            field: field
+          })
+        }
+      });
+    }}
     getActiveValue={({ op, field }) =>
       currentFieldValue({
         op,
