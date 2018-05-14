@@ -89,13 +89,13 @@ export default class AdvancedFacetView extends React.Component {
     }
   }
 
-  setSearchTerm = debounce(
-    value =>
-      this.setState({
-        searchTerm: value,
-      }),
-    500,
-  );
+  setSearchTerm = debounce(value => {
+    const { onFilterChange = () => {} } = this.props;
+    onFilterChange(value);
+    this.setState({
+      searchTerm: value,
+    });
+  }, 500);
 
   render() {
     const {
