@@ -104,6 +104,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       valueCharacterLimit = 30,
       statsConfig,
+      onFacetNavigation = () => {},
       ...props
     } = this.props;
     const {
@@ -115,6 +116,7 @@ export default class AdvancedFacetView extends React.Component {
     } = this.state;
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
+      onFacetNavigation(path);
     };
     const visibleDisplayTreeData = withValueOnly
       ? filterOutNonValue({
