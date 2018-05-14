@@ -39,6 +39,9 @@ export default ({
   const falseBucket = buckets.find(
     ({ key_as_string }) => key_as_string === valueKeys.false,
   );
+
+  const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
+
   const dotField = field.replace(/__/g, '.');
 
   const isTrueActive = isActive({
@@ -50,10 +53,12 @@ export default ({
     field: dotField,
   });
 
-  const handleChange = isTrue => {
+  const handleChange = (isTrue, field) => {
     if (isTrue !== undefined) {
       handleValueClick({
         bucket: isTrue ? trueBucket : falseBucket,
+        value: isTrue ? trueBucket : falseBucket || missingKeyBucket,
+        field,
         generateNextSQON: sqon =>
           replaceSQON(
             {
@@ -73,7 +78,8 @@ export default ({
       });
     } else {
       handleValueClick({
-        bucket: null,
+        value: 'Any',
+        field,
         generateNextSQON: sqon => removeSQON(dotField, sqon),
       });
     }
@@ -85,9 +91,7 @@ export default ({
         {...{
           value: isTrueActive
             ? valueKeys.true
-            : isFalseActive
-              ? valueKeys.false
-              : undefined,
+            : isFalseActive ? valueKeys.false : undefined,
           options: [
             {
               value: undefined,
@@ -140,9 +144,8 @@ export default ({
             handleChange(
               value === valueKeys.true
                 ? true
-                : value === valueKeys.false
-                  ? false
-                  : undefined,
+                : value === valueKeys.false ? false : undefined,
+              dotField,
             );
           },
         }}
