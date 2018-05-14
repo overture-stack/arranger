@@ -16,7 +16,7 @@ const NestedTreeView = ({
   shouldCollapse = () => undefined,
 }) =>
   dataSource.map(({ title, id, children, path }, i) => {
-    const selectedClass = selectedPath === (id || title) ? 'selected' : '';
+    const selectedClass = selectedPath === path ? 'selected' : '';
     const depthClass = `depth_${depth}`;
     return children ? (
       <ReactTreeView
