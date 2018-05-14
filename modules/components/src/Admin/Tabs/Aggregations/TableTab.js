@@ -26,7 +26,7 @@ export default ({ projectId, graphqlField }) => (
               <strong>Columns order</strong>
               <DraggableListOrderer
                 {...{
-                  itemsList: columnsState.state.columns.map(
+                  itemsList: columnsState.state?.columns?.map(
                     ({ show, ...rest }) => ({
                       active: show,
                       ...rest,
