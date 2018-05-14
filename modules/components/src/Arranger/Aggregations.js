@@ -8,6 +8,7 @@ const BaseWrapper = ({ className, ...props }) => (
 );
 
 const Aggregations = ({
+  onTermSelected = () => {},
   setSQON,
   sqon,
   projectId,
@@ -43,7 +44,10 @@ const Aggregations = ({
                     ...data[graphqlField].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
-                    onValueChange: ({ sqon }) => setSQON(sqon),
+                    onValueChange: ({ sqon, value }) => {
+                      setSQON(sqon);
+                      onTermSelected(value);
+                    },
                     key: agg.field,
                     sqon,
                     containerRef,

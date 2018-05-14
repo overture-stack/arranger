@@ -67,6 +67,8 @@ class DatesAgg extends React.Component {
           : []),
       ];
       handleDateChange({
+        field,
+        value: content,
         generateNextSQON: sqon =>
           replaceSQON(
             content.length ? { op: 'and', content } : null,
