@@ -98,13 +98,14 @@ export default class FacetView extends React.Component {
               : {}),
             key: path,
             field: path,
-            onValueChange: ({ sqon }) => {
+            onValueChange: ({ sqon, value }) => {
+              console.log(value)
               this.setState(
                 {
                   focusedPath: path,
                 },
                 () => {
-                  onValueChange({ sqon });
+                  onValueChange({ sqon, value });
                 },
               );
             },
