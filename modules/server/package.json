@@ -49,12 +49,12 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.40",
-    "@babel/core": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
-    "@babel/preset-env": "^7.0.0-beta.40",
-    "@babel/register": "^7.0.0-beta.40",
+    "@babel/cli": "^7.0.0-beta.41",
+    "@babel/core": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.41",
+    "@babel/preset-env": "^7.0.0-beta.41",
+    "@babel/register": "^7.0.0-beta.41",
     "jest": "^22.3.0",
     "nodemon": "^1.13.3"
   }
