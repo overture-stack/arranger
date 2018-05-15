@@ -64,6 +64,7 @@ export default type => async (
         .reduce(
           (deepestPath, path) =>
             deepestPath.length > path.length ? deepestPath : path,
+          '',
         );
 
       return {
@@ -73,7 +74,7 @@ export default type => async (
             : order === 'asc' ? '_first' : '_last',
           order,
           ...rest,
-          ...(nested_path ? { nested: { path: nested_path } } : {}),
+          ...(nested_path?.length ? { nested: { path: nested_path } } : {}),
         },
       };
     });
