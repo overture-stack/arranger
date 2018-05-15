@@ -4,6 +4,7 @@ import DataTable, { ColumnsState } from '../DataTable';
 import Spinner from 'react-spinkit';
 
 const Table = ({
+  onFilterChange = () => {},
   projectId,
   graphqlField,
   fetchData,
@@ -34,7 +35,8 @@ const Table = ({
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
             onTableExport={onTableExport}
-            onFilterChange={({ generateNextSQON }) => {
+            onFilterChange={({ generateNextSQON, value }) => {
+              onFilterChange(value);
               setSQON(
                 generateNextSQON({
                   sqon,
