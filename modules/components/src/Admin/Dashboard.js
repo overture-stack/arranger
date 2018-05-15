@@ -43,6 +43,7 @@ class Dashboard extends React.Component {
 
       newTypeIndex: '',
       newTypeName: '',
+      newTypeEsType: '',
       types: [],
       typesTotal: 0,
       activeType: null,
@@ -372,6 +373,7 @@ class Dashboard extends React.Component {
         eshost: this.state.eshost,
         index: this.state.newTypeIndex,
         name: this.state.newTypeName,
+        type: this.state.newTypeEsType,
       },
     });
 
@@ -390,6 +392,7 @@ class Dashboard extends React.Component {
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
+        newTypeEsType: '',
         error: null,
       });
     }
@@ -522,11 +525,7 @@ class Dashboard extends React.Component {
           <Switch>
             <Route
               path="/graphiql/:projectId"
-              render={({
-                match: {
-                  params: { projectId },
-                },
-              }) => (
+              render={({ match: { params: { projectId } } }) => (
                 <Component
                   initialState={{ projectId }}
                   shouldUpdate={({ state }) => state.projectId !== projectId}
@@ -572,9 +571,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:id'}
               render={({
-                match: {
-                  params: { id: projectId },
-                },
+                match: { params: { id: projectId } },
                 history,
                 location,
               }) => (
@@ -626,6 +623,15 @@ class Dashboard extends React.Component {
                             this.setState({ newTypeIndex: e.target.value })
                           }
                         />
+                      </div>
+                      <div>
+                        <input
+                          placeholder="type"
+                          value={this.state.newTypeEsType}
+                          onChange={e =>
+                            this.setState({ newTypeEsType: e.target.value })
+                          }
+                        />
                         <button onClick={this.addType}>+</button>
                       </div>
                     </>
@@ -637,9 +643,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:projectId/:index'}
               render={({
-                match: {
-                  params: { projectId, index },
-                },
+                match: { params: { projectId, index } },
                 history,
                 location,
                 graphqlField = projects
