@@ -44,11 +44,13 @@ export default class CustomPagination extends ReactTablePagination {
       maxPagesOptions = 10,
     } = this.props;
 
-    const firstPage = Math.max(
-      Math.min(page - maxPagesOptions / 2, pages - maxPagesOptions),
-      0,
+    const firstPage = Math.floor(
+      Math.max(
+        Math.min(page - maxPagesOptions / 2, pages - maxPagesOptions),
+        0,
+      ),
     );
-    const lastPage = Math.min(firstPage + maxPagesOptions, pages);
+    const lastPage = Math.floor(Math.min(firstPage + maxPagesOptions, pages));
     return (
       <div
         className={classnames(className, '-pagination')}
