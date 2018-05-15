@@ -44,9 +44,9 @@ const Aggregations = ({
                     ...data[graphqlField].extended.find(
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
-                    onValueChange: ({ sqon, value, field }) => {
+                    onValueChange: ({ sqon, value }) => {
+                      onTermSelected(value);
                       setSQON(sqon);
-                      onTermSelected(field, value);
                     },
                     key: agg.field,
                     sqon,

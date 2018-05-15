@@ -7,16 +7,17 @@ import { fieldInCurrentSQON } from '../SQONView/utils';
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
     handleValueClick={({ generateNextSQON, value, field }) => {
+      let nextSQON = generateNextSQON(sqon);
+      const active = fieldInCurrentSQON({
+        currentSQON: nextSQON ? nextSQON.content : [],
+        field,
+      });
       onValueChange({
-        sqon: generateNextSQON(sqon),
+        sqon: nextSQON,
         value: {
           field,
           value,
-          active: inCurrentSQON({
-            value: value.name,
-            field,
-            currentSQON: generateNextSQON(sqon),
-          }),
+          active,
         },
       });
     }}
