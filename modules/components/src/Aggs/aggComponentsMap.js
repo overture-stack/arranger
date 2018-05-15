@@ -2,11 +2,23 @@ import React from 'react';
 import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from '../Aggs';
 import { currentFieldValue } from '../SQONView/utils';
 import { inCurrentSQON } from '../SQONView/utils';
+import { fieldInCurrentSQON } from '../SQONView/utils';
 
 const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
   <TermAgg
-    handleValueClick={({ generateNextSQON }) => {
-      onValueChange({ sqon: generateNextSQON(sqon) });
+    handleValueClick={({ generateNextSQON, value, field }) => {
+      onValueChange({
+        sqon: generateNextSQON(sqon),
+        value: {
+          field,
+          value,
+          active: inCurrentSQON({
+            value: value.name,
+            field,
+            currentSQON: generateNextSQON(sqon),
+          }),
+        },
+      });
     }}
     isActive={d =>
       inCurrentSQON({
@@ -31,9 +43,25 @@ const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
         stats?.max ||
         0,
     }}
-    handleChange={({ generateNextSQON }) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
+    handleChange={({
+      generateNextSQON,
+      field: { displayName, displayUnit, field },
+      value,
+    }) => {
+      const nextSQON = generateNextSQON(sqon);
+
+      onValueChange({
+        sqon: nextSQON,
+        value: {
+          field: `${displayName} (${displayUnit})`,
+          value,
+          active: fieldInCurrentSQON({
+            currentSQON: nextSQON.content,
+            field: field,
+          }),
+        },
+      });
+    }}
     {...{ ...rest, stats, field }}
   />
 );
@@ -47,8 +75,19 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
-    handleValueClick={({ generateNextSQON }) => {
-      onValueChange({ sqon: generateNextSQON(sqon) });
+    handleValueClick={({ generateNextSQON, value, field }) => {
+      const nextSQON = generateNextSQON(sqon);
+      onValueChange({
+        sqon: nextSQON,
+        value: {
+          value,
+          field,
+          active: fieldInCurrentSQON({
+            currentSQON: nextSQON ? nextSQON.content : [],
+            field: field,
+          }),
+        },
+      });
     }}
     {...rest}
   />
@@ -56,9 +95,20 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
 
 const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
   <DatesAgg
-    handleDateChange={({ generateNextSQON = () => {} } = {}) =>
-      onValueChange({ sqon: generateNextSQON(sqon) })
-    }
+    handleDateChange={({ generateNextSQON = () => {}, field, value } = {}) => {
+      const nextSQON = generateNextSQON(sqon);
+      onValueChange({
+        sqon: nextSQON,
+        value: {
+          field,
+          value,
+          active: fieldInCurrentSQON({
+            currentSQON: nextSQON ? nextSQON.content : [],
+            field: field,
+          }),
+        },
+      });
+    }}
     getActiveValue={({ op, field }) =>
       currentFieldValue({
         op,
