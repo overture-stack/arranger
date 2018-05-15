@@ -63,7 +63,6 @@ export default function columnsToGraphql({
             return Object.assign(
               {},
               s,
-              { missing: 'first' },
               nested ? { field: `${nested[1]}${nested[2]}` } : {},
             );
           }
