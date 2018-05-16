@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { buildQuery } from '@arranger/middleware';
+import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
@@ -102,7 +102,7 @@ export default type => async (
         x.sort?.map(
           x =>
             Number.isInteger(x) && !Number.isSafeInteger(x)
-              ? `-9223372036854775808`
+              ? ES_CONSTANTS.ES_MAX_LONG
               : x,
         ) || [],
       node: { id: x._id, ...source, ...nested_nodes },

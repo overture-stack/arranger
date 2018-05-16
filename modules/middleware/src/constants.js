@@ -50,6 +50,7 @@ export const ES_FIELDS = 'fields';
 export const ES_TYPE = 'type';
 export const ES_PHRASE_PREFIX = 'phrase_prefix';
 export const ES_DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
+export const ES_MAX_LONG = `-9223372036854775808`;
 
 export const BUCKETS = 'buckets';
 export const STATS = 'stats';
