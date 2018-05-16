@@ -130,7 +130,7 @@ class DataTable extends React.Component {
       loading: propsLoading,
       style,
       maxPagesOptions,
-      hasCheckbox = true,
+      hasCheckbox,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selectedTableRows, pages, loading } = this.state;
