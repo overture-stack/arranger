@@ -1,6 +1,6 @@
 import React from 'react';
 import { keys, debounce, isEqual } from 'lodash';
-import { truncate, pick } from 'lodash';
+import { pick } from 'lodash';
 import { css } from 'emotion';
 import Component from 'react-component-component';
 
@@ -8,7 +8,7 @@ import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
 import FaFilter from 'react-icons/lib/fa/filter';
 
 import NestedTreeView from '../NestedTreeView';
-import SQONView, { Bubble, Field, Value } from '../SQONView';
+import { CurrentSQON } from '../Arranger/CurrentSQON';
 import FacetView from './FacetView';
 import TextInput from '../Input';
 import LoadingScreen from '../LoadingScreen';
@@ -102,8 +102,8 @@ export default class AdvancedFacetView extends React.Component {
       extendedMapping = [],
       aggregations = {},
       sqon,
-      valueCharacterLimit = 30,
       statsConfig,
+      translateSQONValue = () => {},
       ...props
     } = this.props;
     const {
@@ -129,36 +129,9 @@ export default class AdvancedFacetView extends React.Component {
         {displayTreeData && (
           <>
             <div>
-              <SQONView
-                sqon={sqon}
-                valueCharacterLimit={valueCharacterLimit}
-                FieldCrumb={({ field, ...props }) => (
-                  <Field {...{ field, ...props }}>
-                    {extendedMapping.find(e => e.field === field)?.displayName}
-                  </Field>
-                )}
-                ValueCrumb={({ value, nextSQON, ...props }) => (
-                  <Value
-                    onClick={() => {
-                      this.handleSqonChange({ sqon: nextSQON });
-                    }}
-                    {...props}
-                  >
-                    {truncate(value, {
-                      length: valueCharacterLimit || Infinity,
-                    })}
-                  </Value>
-                )}
-                Clear={({ nextSQON }) => (
-                  <Bubble
-                    className="sqon-clear"
-                    onClick={() => {
-                      this.handleSqonChange({ sqon: nextSQON });
-                    }}
-                  >
-                    Clear
-                  </Bubble>
-                )}
+              <CurrentSQON
+                {...{ sqon, extendedMapping, translateSQONValue }}
+                setSQON={sqon => this.handleSqonChange({ sqon })}
               />
             </div>
             <div className="facetViewWrapper">
@@ -261,7 +234,6 @@ export default class AdvancedFacetView extends React.Component {
                 <div className={`facets`}>
                   <FacetView
                     extendedMapping={extendedMapping}
-                    valueCharacterLimit={valueCharacterLimit}
                     constructEntryId={this.constructFilterId}
                     ref={view => (this.facetView = view)}
                     sqon={sqon}
