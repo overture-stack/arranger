@@ -4,7 +4,12 @@ import { compose } from 'recompose';
 
 const enhance = compose(
   withFormik({
-    mapPropsToValues: ({ dataTypes }) => ({ query: '', type: '', id: '' }),
+    mapPropsToValues: ({ dataTypes }) => ({
+      query: '',
+      type: '',
+      id: '',
+      accessor: '',
+    }),
     handleSubmit: async (values, { props: { addColumn }, setSubmitting }) => {
       await addColumn({ ...values, id: values.field });
       setSubmitting(false);
@@ -24,6 +29,7 @@ const AddCustomColumn = ({ values, submitForm, style }) => {
       <Field name="field" placeholder="field" value={values.field} />
       <Field name="type" placeholder="type" value={values.type} />
       <Field name="query" placeholder="query" value={values.query} />
+      <Field name="accessor" placeholder="accessor" value={values.accessor} />
       <label>
         show:
         <Field type="checkbox" value={values.show} name="show" />
