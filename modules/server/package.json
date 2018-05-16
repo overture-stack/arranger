@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.3.38",
+  "version": "0.3.39",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -10,7 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
+    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon --inspect $DEPS server/index.js",
     "run-prod": "node index.js",
     "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
     "test": "jest"
@@ -26,9 +26,9 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/mapping-utils": "^0.3.38",
-    "@arranger/middleware": "^0.3.38",
-    "@arranger/schema": "^0.3.38",
+    "@arranger/mapping-utils": "^0.3.39",
+    "@arranger/middleware": "^0.3.39",
+    "@arranger/schema": "^0.3.39",
     "apollo-server-express": "^1.3.1",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
@@ -49,12 +49,12 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.40",
-    "@babel/core": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
-    "@babel/preset-env": "^7.0.0-beta.40",
-    "@babel/register": "^7.0.0-beta.40",
+    "@babel/cli": "^7.0.0-beta.41",
+    "@babel/core": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.41",
+    "@babel/preset-env": "^7.0.0-beta.41",
+    "@babel/register": "^7.0.0-beta.41",
     "jest": "^22.3.0",
     "nodemon": "^1.13.3"
   }
