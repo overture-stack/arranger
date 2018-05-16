@@ -98,7 +98,13 @@ export default type => async (
     let source = x._source;
     let nested_nodes = resolveNested({ node: source, nestedFields });
     return {
-      searchAfter: x.sort || [],
+      searchAfter:
+        x.sort?.map(
+          x =>
+            Number.isInteger(x) && !Number.isSafeInteger(x)
+              ? `-9223372036854775808`
+              : x,
+        ) || [],
       node: { id: x._id, ...source, ...nested_nodes },
     };
   });
