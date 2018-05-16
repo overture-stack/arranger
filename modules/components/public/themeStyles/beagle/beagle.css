@@ -430,15 +430,37 @@ div {
 /**************************************/
 /******* styling for match box  *******/
 /**************************************/
+.match-box {
+  display: flex;
+  flex-direction: column;
+}
 .match-box-id-form > * {
   margin-bottom: 1.5em;
 }
 .match-box-id-form textarea {
   min-height: 100px;
 }
-.match-box-select-entity-form,
-.match-box-results-table {
+.match-box-select-entity-form {
   margin-bottom: 20px;
+}
+.match-box-results-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.match-box .tabs {
+  display: flex;
+  flex-direction: column;
+}
+.match-box .tabs .tabs-content {
+  display: flex;
+  flex-direction: column;
+}
+.match-box .tabs .tabs-titles {
+  display: block;
+}
+.match-box .tabs .tabs-titles .tabs-title {
+  float: left;
 }
 
 /**************************************/

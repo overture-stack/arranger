@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from 'emotion';
@@ -77,9 +77,11 @@ const MatchBox = ({
         activeFields,
         activeField = activeFields.find(x => x.field === activeEntityField),
       }) => (
-        <div>
+        <Fragment>
           <div className="match-box-select-entity-form">
-            <div>{entitySelectText}</div>
+            <div className="match-box-entity-select-text">
+              {entitySelectText}
+            </div>
             <select onChange={onEntityChange}>
               <option value={null}>{entitySelectPlaceholder}</option>
               {activeFields.map(({ field, displayName }) => (
@@ -90,7 +92,7 @@ const MatchBox = ({
             </select>
           </div>
           <div className="match-box-id-form">
-            <div>{instructionText}</div>
+            <div className="match-box-selection-text">{instructionText}</div>
             <Input
               disabled={!activeField}
               Component="textarea"
@@ -240,7 +242,7 @@ const MatchBox = ({
               </div>
             )}
           />
-        </div>
+        </Fragment>
       )}
     />
   </div>
