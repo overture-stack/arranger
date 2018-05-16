@@ -10,6 +10,7 @@ export const CurrentSQON = ({
   sqon,
   setSQON,
   extendedMapping,
+  onClear = () => {},
   translateSQONValue = x => x,
   findExtendedMappingField = field =>
     extendedMapping?.find(e => e.field === field),
@@ -31,7 +32,13 @@ export const CurrentSQON = ({
       </Value>
     )}
     Clear={({ nextSQON }) => (
-      <Bubble className="sqon-clear" onClick={() => setSQON(nextSQON)}>
+      <Bubble
+        className="sqon-clear"
+        onClick={() => {
+          onClear();
+          setSQON(nextSQON);
+        }}
+      >
         Clear
       </Bubble>
     )}
