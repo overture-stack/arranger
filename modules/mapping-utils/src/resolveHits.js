@@ -102,7 +102,7 @@ export default type => async (
         x.sort?.map(
           x =>
             Number.isInteger(x) && !Number.isSafeInteger(x)
-              ? ES_CONSTANTS.ES_MAX_LONG
+              ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
               : x,
         ) || [],
       node: { id: x._id, ...source, ...nested_nodes },
