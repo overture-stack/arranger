@@ -93,11 +93,19 @@ export default ({
         },
         {
           show: true,
-          Header: 'decomission',
+          Header: 'Decomission',
           type: 'component',
           sortable: false,
           canChangeShow: false,
           accessor: 'teardown',
+        },
+        {
+          show: true,
+          Header: 'Export',
+          type: 'component',
+          sortable: false,
+          canChangeShow: false,
+          accessor: 'export',
         },
       ],
     }}

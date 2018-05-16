@@ -5,6 +5,7 @@ import getFields from './getFields';
 import addType from './addType';
 import spinUp from './spinUp';
 import teardown from './teardown';
+import exportProject from './export';
 import getTypes from './getTypes';
 import updateProject from './updateProject';
 import deleteProject from './deleteProject';
@@ -38,6 +39,7 @@ export default ({ io, graphqlOptions }) => {
   router.use('/:id/types/add', addType);
   router.use('/:id/spinUp', spinUp({ io, graphqlOptions }));
   router.use('/:id/teardown', teardown);
+  router.use('/:id/export', exportProject);
   router.use('/:id/types', getTypes);
   router.use('/:id/delete', deleteProject);
   router.use('/:id/update', updateProject);

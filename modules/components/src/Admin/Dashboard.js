@@ -222,6 +222,17 @@ class Dashboard extends React.Component {
               💤
             </div>
           ),
+          export: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.export({ id: x.id })}
+            >
+              📥
+            </div>
+          ),
           endpointStatus: () => (
             <div
               css={`
@@ -418,6 +429,17 @@ class Dashboard extends React.Component {
     });
   };
 
+  export = async ({ id }) => {
+    console.log('id', id);
+    await api({
+      endpoint: `/projects/${id}/export`,
+      body: {
+        eshost: this.state.eshost,
+        id,
+      },
+    });
+  };
+
   redeployServer = async () => {
     await api({
       endpoint: `/restartServer`,
@@ -525,11 +547,7 @@ class Dashboard extends React.Component {
           <Switch>
             <Route
               path="/graphiql/:projectId"
-              render={({
-                match: {
-                  params: { projectId },
-                },
-              }) => (
+              render={({ match: { params: { projectId } } }) => (
                 <Component
                   initialState={{ projectId }}
                   shouldUpdate={({ state }) => state.projectId !== projectId}
@@ -575,9 +593,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:id'}
               render={({
-                match: {
-                  params: { id: projectId },
-                },
+                match: { params: { id: projectId } },
                 history,
                 location,
               }) => (
@@ -649,9 +665,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:projectId/:index'}
               render={({
-                match: {
-                  params: { projectId, index },
-                },
+                match: { params: { projectId, index } },
                 history,
                 location,
                 graphqlField = projects
