@@ -1,15 +1,5 @@
-export default (
-  str,
-  {
-    whitelist = `\\w\\d\\s`,
-    modifiers = 'i',
-    blacklist = `[^${whitelist}]`,
-  } = {},
-) =>
-  new RegExp(
-    (str || '')
-      .split('\\')
-      .join('')
-      .replace(/${blacklist}/g, ''),
-    modifiers,
-  );
+const escapeStrForRegex = str =>
+  (str || '').replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
+
+export default (str, { modifiers = 'i' } = {}) =>
+  new RegExp(escapeStrForRegex(str), modifiers);
