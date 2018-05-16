@@ -2,8 +2,6 @@ import React from 'react';
 import { css } from 'emotion';
 import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
-import AdvancedFacetView from '../src/AdvancedFacetView';
-import elasticMockMapping from '../src/AdvancedFacetView/elasticMockMapping';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 
 const injectMockBuckets = node =>
