@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { buildQuery } from '@arranger/middleware';
+import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
@@ -98,7 +98,13 @@ export default type => async (
     let source = x._source;
     let nested_nodes = resolveNested({ node: source, nestedFields });
     return {
-      searchAfter: x.sort || [],
+      searchAfter:
+        x.sort?.map(
+          x =>
+            Number.isInteger(x) && !Number.isSafeInteger(x)
+              ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+              : x,
+        ) || [],
       node: { id: x._id, ...source, ...nested_nodes },
     };
   });
