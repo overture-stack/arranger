@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from 'emotion';
@@ -9,6 +9,31 @@ import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
 import { toggleSQON } from '../SQONView/utils';
+
+const layoutStyle = css`
+  &.match-box {
+    display: flex;
+    flex-direction: column;
+    .match-box-results-table {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs .tabs-content {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs .tabs-titles {
+      display: block;
+    }
+    .tabs .tabs-titles .tabs-title {
+      float: left;
+    }
+  }
+`;
 
 const enhance = compose(
   withState('activeEntityField', 'setActiveEntityField', null),
@@ -69,7 +94,7 @@ const MatchBox = ({
   activeEntityField,
   ...props
 }) => (
-  <div className="match-box">
+  <div className={`match-box ${layoutStyle}`}>
     <MatchBoxState
       {...props}
       render={({
@@ -77,9 +102,11 @@ const MatchBox = ({
         activeFields,
         activeField = activeFields.find(x => x.field === activeEntityField),
       }) => (
-        <div>
+        <Fragment>
           <div className="match-box-select-entity-form">
-            <div>{entitySelectText}</div>
+            <div className="match-box-entity-select-text">
+              {entitySelectText}
+            </div>
             <select onChange={onEntityChange}>
               <option value={null}>{entitySelectPlaceholder}</option>
               {activeFields.map(({ field, displayName }) => (
@@ -90,7 +117,7 @@ const MatchBox = ({
             </select>
           </div>
           <div className="match-box-id-form">
-            <div>{instructionText}</div>
+            <div className="match-box-selection-text">{instructionText}</div>
             <Input
               disabled={!activeField}
               Component="textarea"
@@ -240,7 +267,7 @@ const MatchBox = ({
               </div>
             )}
           />
-        </div>
+        </Fragment>
       )}
     />
   </div>

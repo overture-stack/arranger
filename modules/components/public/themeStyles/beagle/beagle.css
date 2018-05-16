@@ -436,8 +436,7 @@ div {
 .match-box-id-form textarea {
   min-height: 100px;
 }
-.match-box-select-entity-form,
-.match-box-results-table {
+.match-box-select-entity-form {
   margin-bottom: 20px;
 }
 
