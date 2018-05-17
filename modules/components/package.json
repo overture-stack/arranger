@@ -7,12 +7,15 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
+    "prepare":
+      "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
     "watch": "babel src --out-dir dist --copy-files --watch",
     "build-storybook": "build-storybook -s ./public",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
-    "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-    "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
+    "dashboard":
+      "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
+    "portal":
+      "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
     "test": "jest",
     "flow": "flow"
   },
@@ -27,15 +30,15 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.40",
-    "@babel/core": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
-    "@babel/preset-env": "^7.0.0-beta.40",
-    "@babel/preset-flow": "^7.0.0-beta.40",
-    "@babel/preset-react": "^7.0.0-beta.40",
-    "@babel/register": "^7.0.0-beta.40",
+    "@babel/cli": "^7.0.0-beta.41",
+    "@babel/core": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.41",
+    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.41",
+    "@babel/preset-env": "^7.0.0-beta.41",
+    "@babel/preset-flow": "^7.0.0-beta.41",
+    "@babel/preset-react": "^7.0.0-beta.41",
+    "@babel/register": "^7.0.0-beta.41",
     "@storybook/addon-actions": "^3.3.8",
     "@storybook/addon-options": "^3.3.11",
     "@storybook/react": "^3.3.3",
@@ -96,7 +99,8 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
+        "<rootDir>/__mocks__/fileMock.js",
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     }
   }
