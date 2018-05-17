@@ -1,11 +1,11 @@
 import startProject from '../startProject';
 
-export default ({ io }) => async (req, res) => {
+export default ({ io, graphqlMiddleware }) => async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
 
   try {
-    startProject({ es, id, io });
+    startProject({ es, id, io, graphqlMiddleware });
   } catch (err) {
     return res.json({ error: err.message });
   }

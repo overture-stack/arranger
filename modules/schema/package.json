@@ -28,6 +28,7 @@
     "@arranger/middleware": "^0.3.48",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
+    "graphql-middleware": "^1.2.1",
     "graphql-scalars": "^0.1.5",
     "graphql-tools": "^2.14.1",
     "graphql-type-json": "^0.1.4",

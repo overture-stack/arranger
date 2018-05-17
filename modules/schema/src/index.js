@@ -1,4 +1,6 @@
 import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
+import { applyMiddleware } from 'graphql-middleware';
+
 import {
   typeDefs as generateTypeDefs,
   resolvers as generateResolvers,
@@ -19,6 +21,7 @@ export default ({
   types = [],
   rootTypes = [],
   scalarTypes = [],
+  middleware = [],
   mock = false,
 } = {}) => {
   const typesWithSets = [
@@ -71,5 +74,5 @@ export default ({
     });
   }
 
-  return schema;
+  return middleware?.length ? applyMiddleware(schema, ...middleware) : schema;
 };
