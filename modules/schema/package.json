@@ -28,6 +28,7 @@
     "@arranger/middleware": "^0.3.48",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
+    "graphql-middleware": "^1.2.1",
     "graphql-scalars": "^0.1.5",
     "graphql-tools": "^2.14.1",
     "graphql-type-json": "^0.1.4",
@@ -35,12 +36,12 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-beta.40",
-    "@babel/core": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.40",
-    "@babel/plugin-proposal-optional-chaining": "^7.0.0-beta.40",
-    "@babel/preset-env": "^7.0.0-beta.40",
-    "@babel/register": "^7.0.0-beta.40",
+    "@babel/cli": "7.0.0-beta.40",
+    "@babel/core": "7.0.0-beta.40",
+    "@babel/plugin-proposal-object-rest-spread": "7.0.0-beta.40",
+    "@babel/plugin-proposal-optional-chaining": "7.0.0-beta.40",
+    "@babel/preset-env": "7.0.0-beta.40",
+    "@babel/register": "7.0.0-beta.40",
     "graphql": "^0.12.3"
   }
 }

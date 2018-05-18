@@ -29,7 +29,7 @@ async function getTypes({ id, es }) {
 }
 
 const initializeSets = async ({ es }) => {
-  if (!(await es.indices.exists({ index: 'arranger-sets' }))) {
+  if (!await es.indices.exists({ index: 'arranger-sets' })) {
     await es.indices.create({
       index: 'arranger-sets',
       body: {
@@ -43,7 +43,12 @@ const initializeSets = async ({ es }) => {
   }
 };
 
-export default async function startProjectApp({ es, id, io }) {
+export default async function startProjectApp({
+  es,
+  id,
+  io,
+  graphqlMiddleware = [],
+}) {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -94,7 +99,11 @@ export default async function startProjectApp({ es, id, io }) {
     mappings: mappings.map(m => m.mapping),
   });
 
-  let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
+  let schema = makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    middleware: graphqlMiddleware,
+  });
 
   let mockSchema = makeSchema({
     types: typesWithMappings,
