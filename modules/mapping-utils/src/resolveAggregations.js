@@ -29,7 +29,12 @@ const resolveSetIdsFromEs = es => setId =>
 
 const getSetIdsFromSqon = ({ content }) =>
   (isArray(content)
-    ? flattenDeep(content.map(getSetIdsFromSqon))
+    ? flattenDeep(
+        content.reduce(
+          (acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon)],
+          [],
+        ),
+      )
     : isArray(content.value)
       ? content.value.filter(value => value.indexOf('set_id:') === 0)
       : [...(content.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
