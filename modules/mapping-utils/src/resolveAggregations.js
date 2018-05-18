@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { flattenDeep, isArray } from 'lodash';
+import { flattenDeep, isArray, zipObject } from 'lodash';
 import { CONSTANTS } from '@arranger/middleware';
 
 import {
@@ -63,13 +63,11 @@ const resolveSetsInSqon = ({ sqon, es }) => {
   const setIds = getSetIdsFromSqon(sqon || {});
   return setIds.length
     ? Promise.all(setIds.map(resolveSetIdsFromEs(es))).then(searchResult => {
-        const setIdsToValueMap = setIds.reduce(
-          (collection, id, i) => ({
-            ...collection,
-            [`set_id:${id}`]: searchResult[i],
-          }),
-          {},
+        const setIdsToValueMap = zipObject(
+          setIds.map(id => `set_id:${id}`),
+          searchResult,
         );
+        console.log('setIdsToValueMap: ', setIdsToValueMap);
         return injectIdsIntoSqon({ sqon, setIdsToValueMap });
       })
     : sqon;
