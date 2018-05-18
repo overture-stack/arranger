@@ -74,5 +74,5 @@ export default ({
     });
   }
 
-  return middleware?.length ? applyMiddleware(schema, ...middleware) : schema;
+  return applyMiddleware(schema, ...middleware);
 };
