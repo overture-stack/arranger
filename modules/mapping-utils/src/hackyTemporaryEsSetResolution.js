@@ -22,12 +22,12 @@ const resolveSetIdsFromEs = es => setId =>
       flattenDeep(hits.map(({ _source: { ids } }) => ids)),
     );
 
-const getSetIdsFromSqon = ({ content } = {}) =>
+const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
   (isArray(content)
     ? flattenDeep(
         content.reduce(
-          (acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon)],
-          [],
+          (acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon, collection)],
+          collection,
         ),
       )
     : isArray(content?.value)
