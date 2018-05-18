@@ -1,5 +1,6 @@
 import getFields from 'graphql-fields';
 import { flattenDeep, isArray } from 'lodash';
+import { CONSTANTS } from '@arranger/middleware';
 
 import {
   buildQuery,
@@ -9,19 +10,11 @@ import {
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-const getSetIdsFromSqon = ({ content }) =>
-  (isArray(content)
-    ? flattenDeep(content.map(getSetIdsFromSqon))
-    : isArray(content.value)
-      ? content.value.filter(value => value.indexOf('set_id:') === 0)
-      : [...(content.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
-  ).map(setId => setId.replace('set_id:', ''));
-
 const resolveSetIdsFromEs = es => setId =>
   es
     .search({
-      index: 'arranger-sets',
-      type: 'arranger-sets',
+      index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+      type: CONSTANTS.ES_ARRANGER_SET_TYPE,
       body: {
         query: {
           bool: {
@@ -33,6 +26,14 @@ const resolveSetIdsFromEs = es => setId =>
     .then(({ hits: { hits } }) =>
       flattenDeep(hits.map(({ _source: { ids } }) => ids)),
     );
+
+const getSetIdsFromSqon = ({ content }) =>
+  (isArray(content)
+    ? flattenDeep(content.map(getSetIdsFromSqon))
+    : isArray(content.value)
+      ? content.value.filter(value => value.indexOf('set_id:') === 0)
+      : [...(content.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
+  ).map(setId => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
   ...sqon,
