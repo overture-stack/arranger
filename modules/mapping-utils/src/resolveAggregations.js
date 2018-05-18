@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { flattenDeep } from 'lodash';
+import { flattenDeep, isArray } from 'lodash';
 
 import {
   buildQuery,
@@ -9,20 +9,15 @@ import {
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-const getSetIdsFromSqon = ({ content }) => {
-  return (content || [])
-    .reduce((setIds, { content: subContent }) => {
-      return [
-        ...setIds,
-        ...(subContent.value || []).filter(
-          value => value.indexOf('set_id:') === 0,
-        ),
-      ];
-    }, [])
-    .map(setId => setId.replace('set_id:', ''));
-};
+const getSetIdsFromSqon = ({ content }) =>
+  (isArray(content)
+    ? flattenDeep(content.map(getSetIdsFromSqon))
+    : isArray(content.value)
+      ? content.value.filter(value => value.indexOf('set_id:') === 0)
+      : [...(content.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
+  ).map(setId => setId.replace('set_id:', ''));
 
-const resolveValuesFromSetId = es => setId =>
+const resolveSetIdsFromEs = es => setId =>
   es
     .search({
       index: 'arranger-sets',
@@ -35,40 +30,43 @@ const resolveValuesFromSetId = es => setId =>
         },
       },
     })
-    .then(({ hits: { hits } }) => hits.map(({ _source: { ids } }) => ids));
+    .then(({ hits: { hits } }) =>
+      flattenDeep(hits.map(({ _source: { ids } }) => ids)),
+    );
+
+const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
+  ...sqon,
+  content: sqon.content.map(op => ({
+    ...op,
+    content: !isArray(op.content)
+      ? {
+          ...op.content,
+          value: isArray(op.content.value)
+            ? flattenDeep(
+                op.content.value.map(
+                  value => setIdsToValueMap[value] || op.content.value,
+                ),
+              )
+            : setIdsToValueMap[op.content.value] || op.content.value,
+        }
+      : injectIdsIntoSqon({ sqon: op, setIdsToValueMap }).content,
+  })),
+});
 
 const resolveSetsInSqon = ({ sqon, es }) => {
   const setIds = getSetIdsFromSqon(sqon || {});
-  if (setIds.length) {
-    return Promise.all(setIds.map(resolveValuesFromSetId(es))).then(
-      searchResult => {
+  return setIds.length
+    ? Promise.all(setIds.map(resolveSetIdsFromEs(es))).then(searchResult => {
         const setIdsToValueMap = setIds.reduce(
           (collection, id, i) => ({
             ...collection,
-            [`set_id:${id}`]: flattenDeep(searchResult),
+            [`set_id:${id}`]: searchResult[i],
           }),
           {},
         );
-        console.log('sqon: ');
-        const output = {
-          ...sqon,
-          content: sqon.content.map(op => ({
-            ...op,
-            content: {
-              ...op.content,
-              value:
-                flattenDeep(
-                  op.content.value.map(value => setIdsToValueMap[value]),
-                ) || op.content.value,
-            },
-          })),
-        };
-        return output;
-      },
-    );
-  } else {
-    return sqon;
-  }
+        return injectIdsIntoSqon({ sqon, setIdsToValueMap });
+      })
+    : sqon;
 };
 
 export default type => async (
@@ -84,9 +82,10 @@ export default type => async (
 ) => {
   const nestedFields = type.nested_fields;
 
+  // due to this problem in Elasticsearch 6.2 https://github.com/elastic/elasticsearch/issues/27782,
+  // we have to resolve set ids into actual ids. As this is an aggregations specific issue,
+  // we are placing this here until the issue is resolved by Elasticsearch in version 6.3
   const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
-
-  console.log('resolvedFilter: ', JSON.stringify(resolvedFilter));
 
   const query = buildQuery({ nestedFields, filters: resolvedFilter });
   const aggs = buildAggregations({
