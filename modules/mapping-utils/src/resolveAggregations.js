@@ -27,7 +27,7 @@ const resolveSetIdsFromEs = es => setId =>
       flattenDeep(hits.map(({ _source: { ids } }) => ids)),
     );
 
-const getSetIdsFromSqon = ({ content }) =>
+const getSetIdsFromSqon = ({ content } = {}) =>
   (isArray(content)
     ? flattenDeep(
         content.reduce(
@@ -35,9 +35,9 @@ const getSetIdsFromSqon = ({ content }) =>
           [],
         ),
       )
-    : isArray(content.value)
-      ? content.value.filter(value => value.indexOf('set_id:') === 0)
-      : [...(content.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
+    : isArray(content?.value)
+      ? content?.value.filter(value => value.indexOf('set_id:') === 0)
+      : [...(content?.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
   ).map(setId => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
