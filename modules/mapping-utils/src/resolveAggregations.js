@@ -67,7 +67,6 @@ const resolveSetsInSqon = ({ sqon, es }) => {
           setIds.map(id => `set_id:${id}`),
           searchResult,
         );
-        console.log('setIdsToValueMap: ', setIdsToValueMap);
         return injectIdsIntoSqon({ sqon, setIdsToValueMap });
       })
     : sqon;
