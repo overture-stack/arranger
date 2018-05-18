@@ -1,6 +1,6 @@
 import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import { applyMiddleware } from 'graphql-middleware';
-
+import { CONSTANTS } from '@arranger/middleware';
 import {
   typeDefs as generateTypeDefs,
   resolvers as generateResolvers,
@@ -29,8 +29,8 @@ export default ({
     [
       'sets',
       {
-        es_type: 'arranger-sets',
-        index: 'arranger-sets',
+        es_type: CONSTANTS.ES_ARRANGER_SET_INDEX,
+        index: CONSTANTS.ES_ARRANGER_SET_TYPE,
         name: 'sets',
         createState: false,
         nestedFields: [],
