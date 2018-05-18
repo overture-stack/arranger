@@ -16,6 +16,7 @@ import { getProject, setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
+import { CONSTANTS } from '@arranger/middleware';
 
 async function getTypes({ id, es }) {
   const index = `arranger-projects-${id}`;
@@ -29,12 +30,12 @@ async function getTypes({ id, es }) {
 }
 
 const initializeSets = async ({ es }) => {
-  if (!await es.indices.exists({ index: 'arranger-sets' })) {
+  if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
     await es.indices.create({
-      index: 'arranger-sets',
+      index: CONSTANTS.ES_ARRANGER_SET_INDEX,
       body: {
         mappings: {
-          'arranger-sets': {
+          [CONSTANTS.ES_ARRANGER_SET_TYPE]: {
             properties: setsMapping,
           },
         },

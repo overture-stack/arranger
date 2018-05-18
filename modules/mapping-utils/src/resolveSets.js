@@ -1,6 +1,7 @@
 import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
 import { buildQuery } from '@arranger/middleware';
+import { CONSTANTS } from '@arranger/middleware';
 
 const retrieveSetIds = async ({
   es,
@@ -78,8 +79,8 @@ export const saveSet = ({ types }) => async (
   };
 
   await es.index({
-    index: 'arranger-sets',
-    type: 'arranger-sets',
+    index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+    type: CONSTANTS.ES_ARRANGER_SET_TYPE,
     id: body.setId,
     body,
   });

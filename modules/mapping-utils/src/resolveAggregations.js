@@ -1,9 +1,11 @@
 import getFields from 'graphql-fields';
+
 import {
   buildQuery,
   buildAggregations,
   flattenAggregations,
 } from '@arranger/middleware';
+import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
@@ -19,7 +21,13 @@ export default type => async (
   info,
 ) => {
   const nestedFields = type.nested_fields;
-  const query = buildQuery({ nestedFields, filters });
+
+  // due to this problem in Elasticsearch 6.2 https://github.com/elastic/elasticsearch/issues/27782,
+  // we have to resolve set ids into actual ids. As this is an aggregations specific issue,
+  // we are placing this here until the issue is resolved by Elasticsearch in version 6.3
+  const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
+
+  const query = buildQuery({ nestedFields, filters: resolvedFilter });
   const aggs = buildAggregations({
     query,
     graphqlFields: getFields(info),

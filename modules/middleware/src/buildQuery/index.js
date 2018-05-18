@@ -16,6 +16,8 @@ import {
   ES_FIELDS,
   ES_TYPE,
   ES_PHRASE_PREFIX,
+  ES_ARRANGER_SET_INDEX,
+  ES_ARRANGER_SET_TYPE,
   OR_OP,
   AND_OP,
   FILTER_OP,
@@ -50,13 +52,7 @@ function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
 }
 
 function getRegexFilter({ nestedFields, filter }) {
-  const {
-    op,
-    content: {
-      field,
-      value: [value],
-    },
-  } = filter;
+  const { op, content: { field, value: [value] } } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -68,10 +64,7 @@ function getRegexFilter({ nestedFields, filter }) {
 }
 
 function getTermFilter({ nestedFields, filter }) {
-  const {
-    op,
-    content: { value, field },
-  } = filter;
+  const { op, content: { value, field } } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -112,9 +105,7 @@ function getFuzzyFilter({ nestedFields, filter }) {
 }
 
 function getMissingFilter({ nestedFields, filter }) {
-  const {
-    content: { field },
-  } = filter;
+  const { content: { field } } = filter;
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
@@ -124,10 +115,7 @@ function getMissingFilter({ nestedFields, filter }) {
 }
 
 function getRangeFilter({ nestedFields, filter }) {
-  const {
-    op,
-    content: { field, value },
-  } = filter;
+  const { op, content: { field, value } } = filter;
   return wrapFilter({
     filter,
     nestedFields,
@@ -204,8 +192,8 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
       terms: {
         boost: 0,
         [content.field]: {
-          index: 'arranger-sets',
-          type: 'arranger-sets',
+          index: ES_ARRANGER_SET_INDEX,
+          type: ES_ARRANGER_SET_TYPE,
           id: _.flatMap([content.value])[0].replace('set_id:', ''),
           path: 'ids',
         },
@@ -215,10 +203,7 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
 }
 
 function opSwitch({ nestedFields, filter }) {
-  const {
-    op,
-    content: { value },
-  } = filter;
+  const { op, content: { value } } = filter;
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
