@@ -192,8 +192,8 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
       terms: {
         boost: 0,
         [content.field]: {
-          index: CONSTANTS.ES_ARRANGER_SET_INDEX,
-          type: CONSTANTS.ES_ARRANGER_SET_TYPE,
+          index: ES_ARRANGER_SET_INDEX,
+          type: ES_ARRANGER_SET_TYPE,
           id: _.flatMap([content.value])[0].replace('set_id:', ''),
           path: 'ids',
         },
