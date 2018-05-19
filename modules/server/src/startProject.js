@@ -48,7 +48,7 @@ export default async function startProjectApp({
   es,
   id,
   io,
-  graphqlMiddleware = [],
+  graphqlOptions = {},
 }) {
   if (!id) throw new Error('project empty');
 
@@ -103,7 +103,7 @@ export default async function startProjectApp({
   let schema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
-    middleware: graphqlMiddleware,
+    middleware: graphqlOptions.middleware || [],
   });
 
   let mockSchema = makeSchema({
@@ -223,7 +223,21 @@ export default async function startProjectApp({
   projectApp.use(
     `/graphql`,
     schema
-      ? graphqlExpress({ schema, context: { es, projectId: id, io } })
+      ? graphqlExpress(async (request, response, graphQLParams) => {
+          const externalContext =
+            typeof graphqlOptions.context === 'function'
+              ? await graphqlOptions.context(request, response, graphQLParams)
+              : graphqlOptions.context;
+          return {
+            schema,
+            context: {
+              es,
+              projectId: id,
+              io,
+              ...(externalContext || {}),
+            },
+          };
+        })
       : noSchemaHandler,
   );
 

@@ -13,7 +13,7 @@ import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
 
-export default ({ io, graphqlMiddleware }) => {
+export default ({ io, graphqlOptions }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
@@ -36,7 +36,7 @@ export default ({ io, graphqlMiddleware }) => {
   router.use('/:id/types/:index/delete', deleteType);
   router.use('/:id/types/:index/fields', getFields);
   router.use('/:id/types/add', addType);
-  router.use('/:id/spinUp', spinUp({ io, graphqlMiddleware }));
+  router.use('/:id/spinUp', spinUp({ io, graphqlOptions }));
   router.use('/:id/teardown', teardown);
   router.use('/:id/types', getTypes);
   router.use('/:id/delete', deleteProject);
