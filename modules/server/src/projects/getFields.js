@@ -43,15 +43,24 @@ export default async (req, res) => {
         index: arrangerConfig.projectsIndex.index,
       });
 
+      const projectInfoIndex = `arranger-projects-${id}`;
+      const projectInfo = await es.search({
+        index: projectInfoIndex,
+        type: projectInfoIndex,
+        size: 0,
+        _source: false,
+      });
+      const esType = projectInfo?.hits?.hits?._source?.name || index;
+
       let aliases = await es.cat.aliases({ format: 'json' });
       let alias = aliases?.find(x => x.alias === index)?.index;
 
       let mappings = await es.indices.getMapping({
         index: alias || index,
-        type: index,
+        type: esType,
       });
 
-      let mapping = mappings[alias || index].mappings[index].properties;
+      let mapping = mappings[alias || index].mappings[esType].properties;
 
       let fields = extendMapping(mapping);
 
