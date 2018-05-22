@@ -17,6 +17,11 @@ import { typeDefs as StateTypeDefs } from './State';
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   scalar JSON
   scalar Date
+  enum EsRefresh {
+    TRUE
+    FALSE
+    WAIT_FOR
+  }
 
   ${scalarTypes.map(([type]) => `scalar ${type}`)}
 
@@ -48,7 +53,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
     saveMatchBoxState(graphqlField: String! state: JSON!): MatchBoxState
-    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort]): Set
+    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
   }
 
   schema {

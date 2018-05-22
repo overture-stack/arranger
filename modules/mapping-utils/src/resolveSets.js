@@ -51,7 +51,7 @@ const retrieveSetIds = async ({
 
 export const saveSet = ({ types }) => async (
   obj,
-  { type, userId, sqon, path, sort },
+  { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId, io },
 ) => {
   const { nested_fields: nestedFields, es_type, index } = types.find(
@@ -82,6 +82,7 @@ export const saveSet = ({ types }) => async (
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     type: CONSTANTS.ES_ARRANGER_SET_TYPE,
     id: body.setId,
+    refresh: refresh.toLowerCase(),
     body,
   });
 
