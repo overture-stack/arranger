@@ -86,10 +86,10 @@ export default async function startProjectApp({
   let typesWithMappings = addMappingsToTypes({
     types: extended.map(type => {
       return [
-        type.index,
+        type.name,
         {
           index: type.index,
-          es_type: type.index,
+          es_type: type.name,
           name: type.name,
           extendedFields: type.fields,
           customFields: ``,

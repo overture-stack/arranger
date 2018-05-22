@@ -71,10 +71,10 @@ export default async (req, res) => {
 
       let mappings = await es.indices.getMapping({
         index: alias || index,
-        type: index,
+        type: name,
       });
 
-      let mapping = mappings[alias || index].mappings[index].properties;
+      let mapping = mappings[alias || index].mappings[name].properties;
 
       let fields = extendMapping(mapping);
 
