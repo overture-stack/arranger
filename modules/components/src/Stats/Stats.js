@@ -4,6 +4,7 @@ import { get } from 'lodash';
 
 import Query from '../Query';
 import { AggsState } from '../Aggs';
+import formatNumber from '../utils/formatNumber';
 
 export const underscoreField = str => (str || '').split('.').join('__');
 
@@ -98,7 +99,9 @@ const Stat = ({
       <div className="stat-content">
         <QueryComponent
           {...props}
-          render={x => (x.loading ? <LoadingSpinnerComponent /> : x.value)}
+          render={x =>
+            x.loading ? <LoadingSpinnerComponent /> : formatNumber(x.value)
+          }
         />
       </div>
       <div className="stat-label">{label}</div>
