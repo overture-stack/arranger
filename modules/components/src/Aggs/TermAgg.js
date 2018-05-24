@@ -14,6 +14,7 @@ import ToggleButton from '../ToggleButton';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
 import Input from '../Input';
 import strToReg from '../utils/strToReg';
+import formatNumber from '../utils/formatNumber';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -250,7 +251,7 @@ const TermAgg = ({
                 </span>
                 {bucket.doc_count && (
                   <span className="bucket-count">
-                    {bucket.doc_count.toLocaleString()}
+                    {formatNumber(bucket.doc_count)}
                   </span>
                 )}
               </Content>

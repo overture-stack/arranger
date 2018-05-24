@@ -8,6 +8,7 @@ import Tabs, { TabsTable } from '../Tabs';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
+import formatNumber from '../utils/saveSet';
 import { toggleSQON } from '../SQONView/utils';
 
 const layoutStyle = css`
@@ -173,7 +174,9 @@ const MatchBox = ({
                   tabs={[
                     {
                       key: 'matched',
-                      title: `${matchedTabTitle} (${results.length})`,
+                      title: `${matchedTabTitle} (${formatNumber(
+                        results.length,
+                      )})`,
                       content: (
                         <TabsTable
                           columns={['inputId', 'matchedEntity', 'entityId'].map(
@@ -204,7 +207,9 @@ const MatchBox = ({
                     },
                     {
                       key: 'unmatched',
-                      title: `${unmatchedTabTitle} (${unmatchedKeys.length})`,
+                      title: `${unmatchedTabTitle} (${formatNumber(
+                        unmatchedKeys.length,
+                      )})`,
                       content: (
                         <TabsTable
                           columns={[
