@@ -1,18 +1,19 @@
-import React, { Component } from "react";
-import InputRange from "react-input-range";
-import convert from "convert-units";
-import _ from "lodash";
+import React, { Component } from 'react';
+import InputRange from 'react-input-range';
+import convert from 'convert-units';
+import _ from 'lodash';
 
-import { replaceSQON } from "../SQONView/utils";
-import AggsWrapper from "./AggsWrapper";
+import { replaceSQON } from '../SQONView/utils';
+import AggsWrapper from './AggsWrapper';
+import formatNumber from '../utils/formatNumber';
 
-import "react-input-range/lib/css/index.css";
-import "./AggregationCard.css";
-import "./RangeAgg.css";
+import 'react-input-range/lib/css/index.css';
+import './AggregationCard.css';
+import './RangeAgg.css';
 
 const SUPPORTED_CONVERSIONS = {
-  time: ["d", "year"],
-  digital: ["GB"]
+  time: ['d', 'year'],
+  digital: ['GB'],
 };
 
 const supportedConversionFromUnit = unit =>
@@ -36,7 +37,11 @@ const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let { stats: { min, max }, unit, value } = props;
+    let {
+      stats: { min, max },
+      unit,
+      value,
+    } = props;
     this.state = {
       min,
       max,
@@ -44,21 +49,24 @@ class RangeAgg extends Component {
       displayUnit: supportedConversionFromUnit(unit)?.[0],
       value: {
         min: !_.isNil(value) ? value.min || min : min,
-        max: !_.isNil(value) ? value.max || max : max
-      }
+        max: !_.isNil(value) ? value.max || max : max,
+      },
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { stats: { min, max }, value: externalVal } = nextProps;
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    const {
+      stats: { min, max },
+      value: externalVal,
+    } = nextProps;
     let { value } = this.state;
     this.setState({
       min,
       max,
       value: {
         min: Math.max(externalVal?.min || value.min, min),
-        max: Math.min(externalVal?.max || value.max, max)
-      }
+        max: Math.min(externalVal?.max || value.max, max),
+      },
     });
   }
 
@@ -79,14 +87,14 @@ class RangeAgg extends Component {
       generateNextSQON: sqon =>
         replaceSQON(
           {
-            op: "and",
+            op: 'and',
             content: [
-              { op: ">=", content: { field, value: min } },
-              { op: "<=", content: { field, value: max } }
-            ]
+              { op: '>=', content: { field, value: min } },
+              { op: '<=', content: { field, value: max } },
+            ],
           },
-          sqon
-        )
+          sqon,
+        ),
     });
   };
 
@@ -103,21 +111,23 @@ class RangeAgg extends Component {
     const { formatLabel } = this.props;
     if (formatLabel) return formatLabel(value, type);
     const { unit, displayUnit } = this.state;
-    return unit && displayUnit
-      ? Math.round(
-          convert(value)
-            .from(unit)
-            .to(displayUnit) * 100
-        ) / 100
-      : value;
+    return formatNumber(
+      unit && displayUnit
+        ? Math.round(
+            convert(value)
+              .from(unit)
+              .to(displayUnit) * 100,
+          ) / 100
+        : value,
+    );
   };
 
   render() {
     let {
       step,
-      displayName = "Unnamed Field",
+      displayName = 'Unnamed Field',
       collapsible = true,
-      WrapperComponent
+      WrapperComponent,
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     const supportedConversions = supportedConversionFromUnit(unit);

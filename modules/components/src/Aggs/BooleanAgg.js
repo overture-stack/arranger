@@ -136,7 +136,7 @@ export default ({
                         marginLeft: 2,
                       }}
                     >
-                      {falseBucket.doc_count}
+                      {formatNumber(falseBucket.doc_count)}
                     </span>
                   )}
                 </>
