@@ -131,7 +131,7 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
 const Portal = ({ style, ...props }) => {
   return (
     <div style={{ display: 'flex', ...style }}>
-      <Aggregations {...props} />
+      <Aggregations style={{ width: 300 }} {...props} />
       <div
         css={`
           position: relative;
