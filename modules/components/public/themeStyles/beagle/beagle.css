@@ -107,9 +107,6 @@ div {
 /***********************************/
 /** styling for the aggregations ***/
 /***********************************/
-.aggregations {
-  width: 300px;
-}
 
 .aggregation-card {
   padding: 10px;
