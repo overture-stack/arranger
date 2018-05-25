@@ -1,6 +1,6 @@
 import columnTypes from './columnTypes';
 import { withProps } from 'recompose';
-import { isNil } from 'lodash';
+import { isNil, sortBy } from 'lodash';
 
 export function getSingleValue(data) {
   if (typeof data === 'object' && data) {
@@ -30,11 +30,11 @@ export function normalizeColumns({
       ...(!column.accessor && !column.id ? { id: column.field } : {}),
     }))
     .filter(x => x.show || x.canChangeShow);
-  return customColumns.reduce(
-    (arr, { index, content }) => [
-      ...arr.slice(0, index),
+  return sortBy(customColumns, 'index').reduce(
+    (arr, { index, content }, i) => [
+      ...arr.slice(0, index + i),
       content,
-      ...arr.slice(index),
+      ...arr.slice(index + i),
     ],
     mappedColumns,
   );
