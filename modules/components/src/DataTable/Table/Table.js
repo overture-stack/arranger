@@ -2,7 +2,10 @@ import React from 'react';
 import { get, intersection, isEmpty, xor, noop } from 'lodash';
 import { compose, defaultProps } from 'recompose';
 import jsonpath from 'jsonpath/jsonpath.min';
+import DetectScrollbarSize from 'react-scrollbar-size';
+import ResizeObserver from 'resize-observer-polyfill';
 
+import createStyle from './style';
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
 
@@ -22,6 +25,7 @@ class DataTable extends React.Component {
       pages: -1,
       loading: false,
       lastState: null,
+      scrollbarSize: {},
     };
   }
 
@@ -103,6 +107,28 @@ class DataTable extends React.Component {
       });
   };
 
+  adjustForScrollbar = () => {
+    const { verticalScrollbarShown } = this.state;
+    const {
+      scrollHeight: tableBodyScrollHeight,
+      clientHeight: tableBodyClientHeight,
+    } = this.domWrapper.querySelector('.rt-tbody');
+    const newVerticalScrollbarShownState =
+      tableBodyScrollHeight > tableBodyClientHeight;
+    if (!(verticalScrollbarShown === newVerticalScrollbarShownState)) {
+      this.setState({
+        verticalScrollbarShown: tableBodyScrollHeight > tableBodyClientHeight,
+      });
+    }
+  };
+
+  componentDidMount() {
+    const ro = new ResizeObserver(entries => {
+      this.adjustForScrollbar();
+    });
+    ro.observe(this.domWrapper);
+  }
+
   componentDidUpdate(lastProps) {
     if (
       !this.state.loading &&
@@ -113,6 +139,8 @@ class DataTable extends React.Component {
     ) {
       this.onFetchData(this.state.lastState);
     }
+
+    this.adjustForScrollbar();
 
     // TODO: in receive props? better if else ladder?
     if (this.props.sqon !== lastProps.sqon) {
@@ -132,7 +160,14 @@ class DataTable extends React.Component {
       maxPagesOptions,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
-    const { data, selectedTableRows, pages, loading } = this.state;
+    const {
+      data,
+      selectedTableRows,
+      pages,
+      loading,
+      scrollbarSize,
+      verticalScrollbarShown,
+    } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -149,45 +184,59 @@ class DataTable extends React.Component {
       selectType: 'checkbox',
       keyField,
     };
-
     return (
-      <ReactTable
-        minRows={0}
-        style={style}
-        onSortedChange={onSortedChange}
-        onPageChange={page => this.props.onPaginationChange({ page })}
-        onPageSizeChange={(pageSize, page) =>
-          this.props.onPaginationChange({ pageSize, page })
-        }
-        data={propsData?.data || data}
-        defaultSorted={defaultSorted}
-        columns={columns.map(
-          ({ Cell, ...c }) => ({
-            ...c,
-            ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
-              ? {
-                  accessor: x => {
-                    const values = c.accessor
-                      ? [get(x, c.accessor)]
-                      : jsonpath.query(x, c.jsonPath);
-                    return values
-                      .map(x => c.extendedDisplayValues[`${x}`] || x)
-                      .join(', ');
-                  },
-                  id: c.field,
-                }
-              : { Cell }),
-          }),
-          {},
-        )}
-        defaultPageSize={defaultPageSize}
-        className="-striped -highlight"
-        PaginationComponent={props => (
-          <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
-        )}
-        {...checkboxProps}
-        {...fetchFromServerProps}
-      />
+      <div
+        ref={el => (this.domWrapper = el)}
+        style={{
+          width: '100%',
+          display: 'flex',
+        }}
+      >
+        <DetectScrollbarSize
+          onLoad={scrollbarSize => this.setState({ scrollbarSize })}
+          onChange={scrollbarSize => this.setState({ scrollbarSize })}
+        />
+        <ReactTable
+          minRows={0}
+          className={`-striped -highlight ${createStyle({
+            scrollbarSize,
+            verticalScrollbarShown,
+          })}`}
+          style={style}
+          onSortedChange={onSortedChange}
+          onPageChange={page => this.props.onPaginationChange({ page })}
+          onPageSizeChange={(pageSize, page) =>
+            this.props.onPaginationChange({ pageSize, page })
+          }
+          data={propsData?.data || data}
+          defaultSorted={defaultSorted}
+          columns={columns.map(
+            ({ Cell, ...c }) => ({
+              ...c,
+              ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
+                ? {
+                    accessor: x => {
+                      const values = c.accessor
+                        ? [get(x, c.accessor)]
+                        : jsonpath.query(x, c.jsonPath);
+                      return values
+                        .map(x => c.extendedDisplayValues[`${x}`] || x)
+                        .join(', ');
+                    },
+                    id: c.field,
+                  }
+                : { Cell }),
+            }),
+            {},
+          )}
+          defaultPageSize={defaultPageSize}
+          PaginationComponent={props => (
+            <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
+          )}
+          {...checkboxProps}
+          {...fetchFromServerProps}
+        />
+      </div>
     );
   }
 }

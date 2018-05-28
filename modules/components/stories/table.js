@@ -183,6 +183,8 @@ storiesOf('Table', module)
         right: '0px',
         top: '50px',
         bottom: '0px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {story()}
