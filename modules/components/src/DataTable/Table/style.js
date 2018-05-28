@@ -9,6 +9,7 @@ export default ({
   }
   &.ReactTable {
     width: 100%;
+    box-sizing: border-box;
   }
   .-pageJump {
     border: solid 1px lightgrey;
