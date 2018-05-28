@@ -8,7 +8,7 @@ import Tabs, { TabsTable } from '../Tabs';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
-import formatNumber from '../utils/saveSet';
+import formatNumber from '../utils/formatNumber';
 import { toggleSQON } from '../SQONView/utils';
 
 const layoutStyle = css`
