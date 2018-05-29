@@ -160,13 +160,7 @@ class DataTable extends React.Component {
       keyField,
     };
     return (
-      <div
-        ref={el => (this.domWrapper = el)}
-        style={{
-          width: '100%',
-          display: 'flex',
-        }}
-      >
+      <>
         <DetectScrollbarSize
           onLoad={scrollbarSize => this.setState({ scrollbarSize })}
           onChange={scrollbarSize => this.setState({ scrollbarSize })}
@@ -211,7 +205,7 @@ class DataTable extends React.Component {
           {...checkboxProps}
           {...fetchFromServerProps}
         />
-      </div>
+      </>
     );
   }
 }
