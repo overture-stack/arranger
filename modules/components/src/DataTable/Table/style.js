@@ -28,5 +28,3 @@ export default ({ scrollbarSize: { scrollbarWidth } } = {}) => css`
     color: #f0f1f6;
   }
 `;
-
-// export default ({ ...props }) => css``;
