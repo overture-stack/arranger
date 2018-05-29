@@ -5,7 +5,7 @@ export default ({
   verticalScrollbarShown,
 } = {}) => css`
   &.ReactTable .rt-thead.-header {
-    padding-right: ${verticalScrollbarShown ? scrollbarWidth : 0}px;
+    padding-right: ${scrollbarWidth}px;
   }
   &.ReactTable {
     width: 100%;

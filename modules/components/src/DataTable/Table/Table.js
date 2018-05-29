@@ -3,7 +3,6 @@ import { get, intersection, isEmpty, xor, noop } from 'lodash';
 import { compose, defaultProps } from 'recompose';
 import jsonpath from 'jsonpath/jsonpath.min';
 import DetectScrollbarSize from 'react-scrollbar-size';
-import ResizeObserver from 'resize-observer-polyfill';
 
 import createStyle from './style';
 import ReactTable from './EnhancedReactTable';
@@ -107,28 +106,6 @@ class DataTable extends React.Component {
       });
   };
 
-  adjustForScrollbar = () => {
-    const { verticalScrollbarShown } = this.state;
-    const {
-      scrollHeight: tableBodyScrollHeight,
-      clientHeight: tableBodyClientHeight,
-    } = this.domWrapper.querySelector('.rt-tbody');
-    const newVerticalScrollbarShownState =
-      tableBodyScrollHeight > tableBodyClientHeight;
-    if (!(verticalScrollbarShown === newVerticalScrollbarShownState)) {
-      this.setState({
-        verticalScrollbarShown: tableBodyScrollHeight > tableBodyClientHeight,
-      });
-    }
-  };
-
-  componentDidMount() {
-    const ro = new ResizeObserver(entries => {
-      this.adjustForScrollbar();
-    });
-    ro.observe(this.domWrapper);
-  }
-
   componentDidUpdate(lastProps) {
     if (
       !this.state.loading &&
@@ -139,8 +116,6 @@ class DataTable extends React.Component {
     ) {
       this.onFetchData(this.state.lastState);
     }
-
-    this.adjustForScrollbar();
 
     // TODO: in receive props? better if else ladder?
     if (this.props.sqon !== lastProps.sqon) {
