@@ -7,7 +7,10 @@ import getIndexPrefix from '../utils/getIndexPrefix';
 export default async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
-  let { index, name, esType } = req.body;
+  let { index, name } = req.body;
+
+  const esType =
+    req.body.esType && req.body.esType.length ? req.body.esType : index;
 
   if (!id || !index || !name) {
     return res.json({ error: 'missing fields' });
@@ -70,14 +73,12 @@ export default async (req, res) => {
       let aliases = await es.cat.aliases({ format: 'json' });
       let alias = aliases?.find(x => x.alias === index)?.index;
 
-      const type = esType && esType.length ? esType : index;
-
       let mappings = await es.indices.getMapping({
         index: alias || index,
-        type,
+        type: esType,
       });
 
-      let mapping = mappings[alias || index].mappings[type].properties;
+      let mapping = mappings[alias || index].mappings[esType].properties;
 
       let fields = extendMapping(mapping);
 

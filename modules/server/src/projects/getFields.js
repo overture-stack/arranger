@@ -50,7 +50,7 @@ export default async (req, res) => {
         size: 0,
         _source: false,
       });
-      const esType = projectInfo?.hits?.hits?._source?.esType || index;
+      const esType = projectInfo?.hits?.hits?._source?.esType;
 
       let aliases = await es.cat.aliases({ format: 'json' });
       let alias = aliases?.find(x => x.alias === index)?.index;

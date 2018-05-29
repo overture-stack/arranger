@@ -16,8 +16,6 @@ export let fetchMapping = async ({ index, esType, es }) => {
 
 export let fetchMappings = ({ types, es }) => {
   return Promise.all(
-    types.map(({ index, name, esType }) =>
-      fetchMapping({ index, esType: esType || index, es }),
-    ),
+    types.map(({ index, name, esType }) => fetchMapping({ index, esType, es })),
   );
 };

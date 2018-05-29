@@ -89,7 +89,7 @@ export default async function startProjectApp({
         type.name,
         {
           index: type.index,
-          es_type: type.esType || type.index,
+          es_type: type.esType,
           name: type.name,
           extendedFields: type.fields,
           customFields: ``,
