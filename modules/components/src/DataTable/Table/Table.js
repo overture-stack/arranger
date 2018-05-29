@@ -141,7 +141,6 @@ class DataTable extends React.Component {
       pages,
       loading,
       scrollbarSize,
-      verticalScrollbarShown,
     } = this.state;
 
     const fetchFromServerProps = {
@@ -167,10 +166,7 @@ class DataTable extends React.Component {
         />
         <ReactTable
           minRows={0}
-          className={`-striped -highlight ${createStyle({
-            scrollbarSize,
-            verticalScrollbarShown,
-          })}`}
+          className={`-striped -highlight ${createStyle({ scrollbarSize })}`}
           style={style}
           onSortedChange={onSortedChange}
           onPageChange={page => this.props.onPaginationChange({ page })}

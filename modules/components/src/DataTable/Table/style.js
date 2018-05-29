@@ -1,9 +1,6 @@
 import { css } from 'emotion';
 
-export default ({
-  scrollbarSize: { scrollbarWidth },
-  verticalScrollbarShown,
-} = {}) => css`
+export default ({ scrollbarSize: { scrollbarWidth } } = {}) => css`
   &.ReactTable .rt-thead.-header {
     padding-right: ${scrollbarWidth}px;
   }
