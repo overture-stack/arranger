@@ -245,28 +245,23 @@ const MatchBox = ({
                       }),
                       dataPath,
                     );
-                    if (setSQON) {
-                      setSQON(
-                        toggleSQON(
+                    const nextSQON = toggleSQON(
+                      {
+                        op: 'and',
+                        content: [
                           {
-                            op: 'and',
-                            content: [
-                              {
-                                op: 'in',
-                                content: {
-                                  field: primaryKeyField?.field,
-                                  value: [].concat(
-                                    `set_id:${data.setId}` || [],
-                                  ),
-                                },
-                              },
-                            ],
+                            op: 'in',
+                            content: {
+                              field: primaryKeyField?.field,
+                              value: [].concat(`set_id:${data.setId}` || []),
+                            },
                           },
-                          sqon,
-                        ),
-                      );
-                    }
-                    return data;
+                        ],
+                      },
+                      sqon,
+                    );
+                    setSQON?.(nextSQON);
+                    return { ...data, nextSQON };
                   },
                 })}
               </div>
