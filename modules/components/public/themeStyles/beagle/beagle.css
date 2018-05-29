@@ -12,11 +12,6 @@ div {
 /* styling for the table component */
 /***********************************/
 
-.scroll-react-table .ReactTable .rt-thead,
-.scroll-react-table .ReactTable .rt-tbody {
-  overflow-y: scroll;
-}
-
 .scroll-react-table .ReactTable {
   flex-grow: 1;
 }

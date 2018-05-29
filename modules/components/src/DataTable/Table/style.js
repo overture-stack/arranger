@@ -10,6 +10,10 @@ export default ({
   &.ReactTable {
     width: 100%;
     box-sizing: border-box;
+    .rt-tbody {
+      overflow-y: scroll;
+      overflow-x: hidden;
+    }
   }
   .-pageJump {
     border: solid 1px lightgrey;
