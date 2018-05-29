@@ -142,19 +142,6 @@ function fetchDummyData({ config, sort, offset, first }) {
   });
 }
 
-function streamDummyData({ sort, first, onData, onEnd }) {
-  for (let i = 0; i < dummyData.length; i += first) {
-    onData({
-      total: dummyData.length,
-      data: (sort
-        ? orderBy(dummyData, sort.map(s => s.field), sort.map(s => s.order))
-        : dummyData
-      ).slice(i, i + first),
-    });
-  }
-  onEnd();
-}
-
 const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   <DataTable
     config={tableConfig}
@@ -183,6 +170,8 @@ storiesOf('Table', module)
         right: '0px',
         top: '50px',
         bottom: '0px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {story()}

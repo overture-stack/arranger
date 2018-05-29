@@ -2,7 +2,9 @@ import React from 'react';
 import { get, intersection, isEmpty, xor, noop } from 'lodash';
 import { compose, defaultProps } from 'recompose';
 import jsonpath from 'jsonpath/jsonpath.min';
+import DetectScrollbarSize from 'react-scrollbar-size';
 
+import createStyle from './style';
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
 
@@ -22,6 +24,7 @@ class DataTable extends React.Component {
       pages: -1,
       loading: false,
       lastState: null,
+      scrollbarSize: {},
     };
   }
 
@@ -132,7 +135,13 @@ class DataTable extends React.Component {
       maxPagesOptions,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
-    const { data, selectedTableRows, pages, loading } = this.state;
+    const {
+      data,
+      selectedTableRows,
+      pages,
+      loading,
+      scrollbarSize,
+    } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -149,45 +158,50 @@ class DataTable extends React.Component {
       selectType: 'checkbox',
       keyField,
     };
-
     return (
-      <ReactTable
-        minRows={0}
-        style={style}
-        onSortedChange={onSortedChange}
-        onPageChange={page => this.props.onPaginationChange({ page })}
-        onPageSizeChange={(pageSize, page) =>
-          this.props.onPaginationChange({ pageSize, page })
-        }
-        data={propsData?.data || data}
-        defaultSorted={defaultSorted}
-        columns={columns.map(
-          ({ Cell, ...c }) => ({
-            ...c,
-            ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
-              ? {
-                  accessor: x => {
-                    const values = c.accessor
-                      ? [get(x, c.accessor)]
-                      : jsonpath.query(x, c.jsonPath);
-                    return values
-                      .map(x => c.extendedDisplayValues[`${x}`] || x)
-                      .join(', ');
-                  },
-                  id: c.field,
-                }
-              : { Cell }),
-          }),
-          {},
-        )}
-        defaultPageSize={defaultPageSize}
-        className="-striped -highlight"
-        PaginationComponent={props => (
-          <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
-        )}
-        {...checkboxProps}
-        {...fetchFromServerProps}
-      />
+      <>
+        <DetectScrollbarSize
+          onLoad={scrollbarSize => this.setState({ scrollbarSize })}
+          onChange={scrollbarSize => this.setState({ scrollbarSize })}
+        />
+        <ReactTable
+          minRows={0}
+          className={`-striped -highlight ${createStyle({ scrollbarSize })}`}
+          style={style}
+          onSortedChange={onSortedChange}
+          onPageChange={page => this.props.onPaginationChange({ page })}
+          onPageSizeChange={(pageSize, page) =>
+            this.props.onPaginationChange({ pageSize, page })
+          }
+          data={propsData?.data || data}
+          defaultSorted={defaultSorted}
+          columns={columns.map(
+            ({ Cell, ...c }) => ({
+              ...c,
+              ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
+                ? {
+                    accessor: x => {
+                      const values = c.accessor
+                        ? [get(x, c.accessor)]
+                        : jsonpath.query(x, c.jsonPath);
+                      return values
+                        .map(x => c.extendedDisplayValues[`${x}`] || x)
+                        .join(', ');
+                    },
+                    id: c.field,
+                  }
+                : { Cell }),
+            }),
+            {},
+          )}
+          defaultPageSize={defaultPageSize}
+          PaginationComponent={props => (
+            <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
+          )}
+          {...checkboxProps}
+          {...fetchFromServerProps}
+        />
+      </>
     );
   }
 }
