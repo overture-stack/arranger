@@ -253,7 +253,7 @@ const MatchBox = ({
                             op: 'in',
                             content: {
                               field: primaryKeyField?.field,
-                              value: [].concat(`set_id:${data.setId}` || []),
+                              value: [`set_id:${data.setId}`],
                             },
                           },
                         ],
