@@ -46,12 +46,14 @@ class DataTable extends React.Component {
       alwaysSorted = [],
       initalSelectedTableRows = [],
       keepSelectedOnPageChange = false,
+      filterInputPlaceholder,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
     return (
       <>
         <TableToolbar
+          filterInputPlaceholder={filterInputPlaceholder}
           onFilterChange={onFilterChange}
           style={toolbarStyle}
           propsData={data}
