@@ -3,6 +3,7 @@ import Component from 'react-component-component';
 import { debounce, startCase, pick } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
+import urlJoin from 'url-join';
 
 // TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
 // import GraphiQL from 'graphiql';
@@ -18,10 +19,12 @@ import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
 import { ES_HOST } from '../utils/config';
 import api from '../utils/api';
+import download from '../utils/download';
 import initSocket from '../utils/initSocket';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
+import { ARRANGER_API } from '../utils/config';
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -430,9 +433,9 @@ class Dashboard extends React.Component {
   };
 
   export = async ({ id }) => {
-    console.log('id', id);
-    await api({
-      endpoint: `/projects/${id}/export`,
+    download({
+      url: urlJoin(ARRANGER_API, `projects`, id, 'export'),
+      method: 'POST',
       body: {
         eshost: this.state.eshost,
         id,
