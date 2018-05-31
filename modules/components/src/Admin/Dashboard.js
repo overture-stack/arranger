@@ -43,6 +43,7 @@ class Dashboard extends React.Component {
 
       newTypeIndex: '',
       newTypeName: '',
+      newTypeEsType: '',
       types: [],
       typesTotal: 0,
       activeType: null,
@@ -371,6 +372,7 @@ class Dashboard extends React.Component {
       body: {
         eshost: this.state.eshost,
         index: this.state.newTypeIndex,
+        esType: this.state.newTypeEsType,
         name: this.state.newTypeName,
       },
     });
@@ -390,6 +392,7 @@ class Dashboard extends React.Component {
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
+        newTypeEsType: '',
         error: null,
       });
     }
@@ -611,7 +614,7 @@ class Dashboard extends React.Component {
                     <>
                       <div>
                         <input
-                          placeholder="Type name"
+                          placeholder="Name"
                           value={this.state.newTypeName}
                           onChange={e =>
                             this.setState({ newTypeName: e.target.value })
@@ -624,6 +627,15 @@ class Dashboard extends React.Component {
                           value={this.state.newTypeIndex}
                           onChange={e =>
                             this.setState({ newTypeIndex: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <input
+                          placeholder="ES type"
+                          value={this.state.newTypeEsType}
+                          onChange={e =>
+                            this.setState({ newTypeEsType: e.target.value })
                           }
                         />
                         <button onClick={this.addType}>+</button>

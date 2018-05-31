@@ -29,7 +29,15 @@ export default ({ total, data, customActions, projectId, onLinkClick }) => (
       columns: [
         {
           show: true,
-          Header: 'Index',
+          Header: 'Display Name',
+          type: 'text',
+          sortable: true,
+          canChangeShow: true,
+          accessor: 'name',
+        },
+        {
+          show: true,
+          Header: 'ES Index',
           type: 'entity',
           sortable: true,
           canChangeShow: true,
@@ -37,11 +45,11 @@ export default ({ total, data, customActions, projectId, onLinkClick }) => (
         },
         {
           show: true,
-          Header: 'Display Name',
+          Header: 'ES Type',
           type: 'text',
           sortable: true,
           canChangeShow: true,
-          accessor: 'name',
+          accessor: 'esType',
         },
         {
           show: true,

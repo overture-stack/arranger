@@ -11,15 +11,11 @@ export let fetchMapping = async ({ index, esType, es }) => {
       // TODO: return something more useful than false
       return false;
     })
-    .then(val => {
-      return { index: index, mapping: val, alias };
-    });
+    .then(val => ({ index: index, mapping: val, alias }));
 };
 
 export let fetchMappings = ({ types, es }) => {
   return Promise.all(
-    types.map(({ index, name }) => {
-      return fetchMapping({ index, esType: name, es });
-    }),
+    types.map(({ index, name, esType }) => fetchMapping({ index, esType, es })),
   );
 };
