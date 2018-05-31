@@ -1,5 +1,6 @@
 import elasticsearch from 'elasticsearch';
 import express from 'express';
+
 import { ES_LOG } from '../utils/config';
 import getFields from './getFields';
 import addType from './addType';
