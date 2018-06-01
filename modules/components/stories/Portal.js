@@ -131,7 +131,15 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
 const Portal = ({ style, ...props }) => {
   return (
     <div style={{ display: 'flex', ...style }}>
-      <Aggregations style={{ width: 300 }} {...props} />
+      <Aggregations
+        style={{ width: 300 }}
+        componentProps={{
+          getTermAggProps: () => ({
+            maxTerms: 3,
+          }),
+        }}
+        {...props}
+      />
       <div
         css={`
           position: relative;
