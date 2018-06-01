@@ -22,11 +22,16 @@ export const generateNextSQON = value => ({ sqon, fields, entity }) =>
     sqon,
   );
 
-const TextFilter = ({ value, onChange, Icon = SearchIcon }) => (
+const TextFilter = ({
+  value,
+  onChange,
+  Icon = SearchIcon,
+  placeholder = 'Filter',
+}) => (
   <TextInput
     icon={<Icon />}
     type="text"
-    placeholder="Filter"
+    placeholder={placeholder}
     value={value}
     onChange={({ target: { value } }) => {
       onChange({

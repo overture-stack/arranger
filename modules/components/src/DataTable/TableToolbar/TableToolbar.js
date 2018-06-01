@@ -33,6 +33,7 @@ const TableToolbar = ({
   page = 0,
   pageSize = 0,
   propsData,
+  filterInputPlaceholder = 'Filter',
   total = propsData?.total || 0,
   type = '',
   allowTogglingColumns = true,
@@ -62,6 +63,7 @@ const TableToolbar = ({
       <div className="group">
         <TextFilter
           value={filterVal}
+          placeholder={filterInputPlaceholder}
           onChange={({ value, generateNextSQON }) => {
             setFilterVal(value);
             debouncedOnFilterChange({ value, generateNextSQON });

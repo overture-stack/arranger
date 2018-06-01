@@ -190,6 +190,7 @@ storiesOf('Table', module)
   .add('Data Table', () => (
     <DataTable
       config={dummyConfig}
+      filterInputPlaceholder={'Filter table'}
       customTypes={{
         list: props => {
           const values = jsonPath.query(props.original, props.column.jsonPath);
