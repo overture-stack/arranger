@@ -17,17 +17,7 @@ import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
-
-async function getTypes({ id, es }) {
-  const index = `arranger-projects-${id}`;
-
-  try {
-    return await es.search({ index, type: index });
-  } catch (error) {
-    await es.indices.create({ index });
-    return null;
-  }
-}
+import getTypes from './utils/getTypes';
 
 const initializeSets = async ({ es }) => {
   if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
