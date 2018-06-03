@@ -26,6 +26,12 @@ import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
 import { ARRANGER_API } from '../utils/config';
 
+const Emoji = ({ label = '', content, ...props }) => (
+  <span aria-label={label} role="img" {...props}>
+    {content}
+  </span>
+);
+
 class Dashboard extends React.Component {
   constructor(props) {
     super(props);
@@ -163,7 +169,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.deleteProject({ id: x.id })}
             >
-              🔥
+              <Emoji content="🔥" />
             </div>
           ),
           active: () => (
@@ -173,7 +179,7 @@ class Dashboard extends React.Component {
                 text-align: center;
               `}
             >
-              <span
+              <Emoji
                 onClick={() =>
                   this.updateProjectField({
                     id: x.id,
@@ -184,9 +190,8 @@ class Dashboard extends React.Component {
                 css={`
                   border-bottom: ${x.active ? '2px solid green' : 'none'};
                 `}
-              >
-                ✅
-              </span>{' '}
+                content="✅"
+              />{' '}
               <span
                 onClick={() =>
                   this.updateProjectField({
@@ -211,7 +216,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.spinup({ id: x.id })}
             >
-              ⚡️
+              <Emoji content="⚡️" />
             </div>
           ),
           teardown: () => (
@@ -222,7 +227,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.teardown({ id: x.id })}
             >
-              💤
+              <Emoji content="💤" />
             </div>
           ),
           export: () => (
@@ -233,7 +238,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.export({ id: x.id })}
             >
-              📥
+              <Emoji content="📥" />
             </div>
           ),
           endpointStatus: () => (
@@ -502,7 +507,7 @@ class Dashboard extends React.Component {
                 flex: none;
               `}
             >
-              ⚠️ {error}
+              <Emoji content="⚠️" /> {error}
             </div>
           )}
 
@@ -625,7 +630,7 @@ class Dashboard extends React.Component {
                             this.deleteType({ projectId, index: x.index })
                           }
                         >
-                          🔥
+                          <Emoji content="🔥" />
                         </div>
                       ),
                     }))}
