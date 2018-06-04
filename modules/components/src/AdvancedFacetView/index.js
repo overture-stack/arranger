@@ -111,36 +111,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       statsConfig,
       translateSQONValue = () => {},
-      FilterInputComponent = ({
-        setSearchTerm,
-        searchTerm,
-        setState,
-        value,
-      }) => (
-        <TextInput
-          icon={<FaFilter />}
-          rightIcon={
-            <FaTimesCircleO
-              onClick={() => {
-                setState({ value: null }, () => {
-                  this.setState({
-                    searchTerm: null,
-                  });
-                });
-              }}
-            />
-          }
-          className="filterInput"
-          type="text"
-          placeholder="Filter"
-          value={value || ''}
-          onChange={({ target: { value } }) => {
-            setState({ value }, () => {
-              setSearchTerm(value);
-            });
-          }}
-        />
-      ),
+      FilterInputComponent = TextInput,
       ...props
     } = this.props;
     const scrollFacetViewToPath = path => {
@@ -216,11 +187,26 @@ export default class AdvancedFacetView extends React.Component {
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
                       <FilterInputComponent
-                        {...{
-                          setState,
-                          value,
-                          searchTerm,
-                          setSearchTerm: this.setSearchTerm,
+                        icon={<FaFilter />}
+                        rightIcon={
+                          <FaTimesCircleO
+                            onClick={() => {
+                              setState({ value: null }, () => {
+                                this.setState({
+                                  searchTerm: null,
+                                });
+                              });
+                            }}
+                          />
+                        }
+                        className="filterInput"
+                        type="text"
+                        placeholder="Filter"
+                        value={value || ''}
+                        onChange={({ target: { value } }) => {
+                          setState({ value }, () => {
+                            this.setSearchTerm(value);
+                          });
                         }}
                       />
                     )}

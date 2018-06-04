@@ -45,7 +45,7 @@ const TableToolbar = ({
   exportTSVFilename = `${type}-table.tsv`,
   sqon,
   downloadUrl,
-  FilterInputComponent = TextFilter,
+  FilterInputComponent,
 }) => {
   const isPlural =
     total > 1 &&

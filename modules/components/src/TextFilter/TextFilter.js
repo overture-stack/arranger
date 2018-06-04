@@ -35,7 +35,8 @@ const TextFilter = ({
     type="text"
     placeholder={placeholder}
     value={value}
-    onChange={({ target: { value } }) => {
+    onChange={e => {
+      const { target: { value } } = e;
       onChange({
         value,
         generateNextSQON: generateNextSQON(value),

@@ -12,6 +12,7 @@ const Table = ({
   sqon,
   fieldTypesForFilter = ['text', 'keyword'],
   api,
+  FilterInputComponent,
   ...props
 }) => {
   return (
@@ -25,6 +26,7 @@ const Table = ({
         ) : (
           <DataTable
             {...{ ...props, api }}
+            FilterInputComponent={FilterInputComponent}
             projectId={projectId}
             sqon={sqon}
             config={{

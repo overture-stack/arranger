@@ -171,6 +171,7 @@ const TermAgg = ({
                   onChange={({ target: { value } }) =>
                     setSearchText(value || '')
                   }
+                  setSearchText={setSearchText}
                 />
                 {showingMore &&
                   isMoreEnabled && (
