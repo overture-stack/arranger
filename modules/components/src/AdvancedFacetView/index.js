@@ -99,20 +99,50 @@ export default class AdvancedFacetView extends React.Component {
 
   render() {
     const {
-      extendedMapping = [],
-      aggregations = {},
-      sqon,
-      statsConfig,
-      translateSQONValue = () => {},
-      ...props
-    } = this.props;
-    const {
       selectedPath,
       withValueOnly,
       searchTerm,
       displayTreeData,
       isLoading,
     } = this.state;
+    const {
+      extendedMapping = [],
+      aggregations = {},
+      sqon,
+      statsConfig,
+      translateSQONValue = () => {},
+      FilterInputComponent = ({
+        setSearchTerm,
+        searchTerm,
+        setState,
+        value,
+      }) => (
+        <TextInput
+          icon={<FaFilter />}
+          rightIcon={
+            <FaTimesCircleO
+              onClick={() => {
+                setState({ value: null }, () => {
+                  this.setState({
+                    searchTerm: null,
+                  });
+                });
+              }}
+            />
+          }
+          className="filterInput"
+          type="text"
+          placeholder="Filter"
+          value={value || ''}
+          onChange={({ target: { value } }) => {
+            setState({ value }, () => {
+              setSearchTerm(value);
+            });
+          }}
+        />
+      ),
+      ...props
+    } = this.props;
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
     };
@@ -185,27 +215,12 @@ export default class AdvancedFacetView extends React.Component {
                   {/* using a thin local state here for rendering performance optimization */}
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
-                      <TextInput
-                        icon={<FaFilter />}
-                        rightIcon={
-                          <FaTimesCircleO
-                            onClick={() => {
-                              setState({ value: null }, () => {
-                                this.setState({
-                                  searchTerm: null,
-                                });
-                              });
-                            }}
-                          />
-                        }
-                        className="filterInput"
-                        type="text"
-                        placeholder="Filter"
-                        value={value || ''}
-                        onChange={({ target: { value } }) => {
-                          setState({ value }, () => {
-                            this.setSearchTerm(value);
-                          });
+                      <FilterInputComponent
+                        {...{
+                          setState,
+                          value,
+                          searchTerm,
+                          setSearchTerm: this.setSearchTerm,
                         }}
                       />
                     )}
