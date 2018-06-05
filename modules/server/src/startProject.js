@@ -18,6 +18,7 @@ import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
+import replaceBy from './utils/replaceBy';
 
 const initializeSets = async ({ es }) => {
   if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
@@ -84,6 +85,7 @@ export default async function startProjectApp({
           extendedFields: type.fields,
           customFields: ``,
           indexPrefix: type.indexPrefix,
+          config: type.config || {},
         },
       ];
     }),
@@ -112,7 +114,11 @@ export default async function startProjectApp({
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
             timestamp: new Date().toISOString(),
-            state: mappingToAggsState(props.mapping),
+            state: replaceBy(
+              mappingToAggsState(props.mapping),
+              props.config['aggs-state'],
+              (x, y) => x.field === y.field,
+            ),
           }),
         ]
       : [];
@@ -153,7 +159,12 @@ export default async function startProjectApp({
                 { id: columns[0].id || columns[0].accessor, desc: false },
               ],
               ...(get(existing, 'state') || {}),
-              columns: [...existingColumns, ...newColumns],
+              ...(props.config['columns-state'] || {}),
+              columns: replaceBy(
+                [...existingColumns, ...newColumns],
+                props.config['columns-state']?.columns,
+                (x, y) => x.field === y.field,
+              ),
             },
           }),
         ]
@@ -170,7 +181,11 @@ export default async function startProjectApp({
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
             timestamp: new Date().toISOString(),
-            state: mappingToMatchBoxState(props),
+            state: replaceBy(
+              mappingToMatchBoxState(props),
+              props.config['matchbox-state'],
+              (x, y) => x.field === y.field,
+            ),
           }),
         ]
       : [];

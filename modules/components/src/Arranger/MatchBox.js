@@ -9,6 +9,7 @@ import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
 import formatNumber from '../utils/formatNumber';
+import parseInputFiles from '../utils/parseInputFiles';
 import { toggleSQON } from '../SQONView/utils';
 
 const layoutStyle = css`
@@ -46,21 +47,15 @@ const enhance = compose(
     onTextChange: ({ setSearchText }) => ({ target: { value } }) =>
       setSearchText(value),
     onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({
-      target,
+      target: { files },
     }) => {
       setSearchTextLoading(true);
-      const contents = await Promise.all(
-        [...target.files].map(
-          f =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = e => reject(e);
-              reader.readAsText(f);
-            }),
-        ),
+      const contents = await parseInputFiles({ files });
+      setSearchText(
+        (contents || [])
+          .map(f => f.content)
+          .reduce((str, c) => `${str}${c}\n`, ``),
       );
-      setSearchText((contents || []).reduce((str, c) => `${str}${c}\n`, ``));
       setSearchTextLoading(false);
     },
   }),

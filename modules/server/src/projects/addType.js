@@ -1,13 +1,13 @@
-import { flattenDeep } from 'lodash';
 import { extendMapping } from '@arranger/mapping-utils';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
+import initializeExtendedFields from '../utils/initializeExtendedFields';
 
 export default async (req, res) => {
   let { es } = req.context;
   let { id } = req.params;
-  let { index, name } = req.body;
+  let { index, name, config: rawConfig = {} } = req.body;
 
   const esType =
     req.body.esType && req.body.esType.length ? req.body.esType : index;
@@ -20,12 +20,21 @@ export default async (req, res) => {
   id = id.toLowerCase();
   index = index.toLowerCase();
 
+  const indexPrefix = getIndexPrefix({ projectId: id, index });
   let arrangerConfig = {
     projectsIndex: {
       index: `arranger-projects-${id}`,
       type: `arranger-projects-${id}`,
     },
   };
+
+  const config = rawConfig.reduce(
+    (obj, c) => ({
+      ...obj,
+      [c.name.replace('.json', '')]: c.content,
+    }),
+    {},
+  );
 
   try {
     await es.create({
@@ -36,6 +45,7 @@ export default async (req, res) => {
         index,
         name,
         esType,
+        config,
         active: true,
         timestamp: new Date().toISOString(),
       },
@@ -64,7 +74,6 @@ export default async (req, res) => {
   let mappings = await fetchMappings({ es, types: hits });
 
   if (hits.some(x => mappings.find(y => y.index === x.index).mapping)) {
-    const indexPrefix = getIndexPrefix({ projectId: id, index });
     try {
       await es.indices.create({
         index: indexPrefix,
@@ -82,21 +91,9 @@ export default async (req, res) => {
 
       let fields = extendMapping(mapping);
 
-      let body = flattenDeep(
-        fields.map(x => [
-          {
-            index: {
-              _index: indexPrefix,
-              _type: indexPrefix,
-              _id: x.field,
-            },
-          },
-          JSON.stringify(x),
-        ]),
-      );
-
-      await es.bulk({ body });
+      await initializeExtendedFields({ indexPrefix, config, fields, es });
     } catch (error) {
+      console.log(error);
       return res.json({ error: error.message });
     }
   }
