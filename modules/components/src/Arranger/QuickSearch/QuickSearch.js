@@ -47,6 +47,7 @@ const QuickSearch = ({
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
   translateSQONValue = x => x,
+  InputComponent = TextInput,
   ...props
 }) => (
   <QuickSearchFieldsQuery
@@ -87,7 +88,7 @@ const QuickSearch = ({
                 </div>
               ))}
             </div>
-            <TextInput
+            <InputComponent
               disabled={!enabled}
               icon={loading ? LoadingIcon : Icon}
               type="text"
@@ -111,7 +112,7 @@ const QuickSearch = ({
                   padding: 0;
                   z-index: 1;
                   background: white;
-                  width: ${inputRef.current?.getBoundingClientRect()?.width}px;
+                  width: 100%;
                 `}`}
               >
                 {searchResults?.map(

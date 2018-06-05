@@ -45,6 +45,7 @@ const TableToolbar = ({
   exportTSVFilename = `${type}-table.tsv`,
   sqon,
   downloadUrl,
+  InputComponent,
 }) => {
   const isPlural =
     total > 1 &&
@@ -62,6 +63,7 @@ const TableToolbar = ({
       </div>
       <div className="group">
         <TextFilter
+          InputComponent={InputComponent}
           value={filterVal}
           placeholder={filterInputPlaceholder}
           onChange={({ value, generateNextSQON }) => {

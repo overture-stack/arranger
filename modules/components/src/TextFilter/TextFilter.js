@@ -27,18 +27,22 @@ const TextFilter = ({
   onChange,
   Icon = SearchIcon,
   placeholder = 'Filter',
+  InputComponent = TextInput,
+  ...props
 }) => (
-  <TextInput
+  <InputComponent
     icon={<Icon />}
     type="text"
     placeholder={placeholder}
     value={value}
-    onChange={({ target: { value } }) => {
+    onChange={e => {
+      const { target: { value } } = e;
       onChange({
         value,
         generateNextSQON: generateNextSQON(value),
       });
     }}
+    {...props}
   />
 );
 

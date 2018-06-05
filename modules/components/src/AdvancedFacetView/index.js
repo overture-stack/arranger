@@ -99,20 +99,21 @@ export default class AdvancedFacetView extends React.Component {
 
   render() {
     const {
-      extendedMapping = [],
-      aggregations = {},
-      sqon,
-      statsConfig,
-      translateSQONValue = () => {},
-      ...props
-    } = this.props;
-    const {
       selectedPath,
       withValueOnly,
       searchTerm,
       displayTreeData,
       isLoading,
     } = this.state;
+    const {
+      extendedMapping = [],
+      aggregations = {},
+      sqon,
+      statsConfig,
+      translateSQONValue = () => {},
+      InputComponent = TextInput,
+      ...props
+    } = this.props;
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
     };
@@ -185,7 +186,7 @@ export default class AdvancedFacetView extends React.Component {
                   {/* using a thin local state here for rendering performance optimization */}
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
-                      <TextInput
+                      <InputComponent
                         icon={<FaFilter />}
                         rightIcon={
                           <FaTimesCircleO
