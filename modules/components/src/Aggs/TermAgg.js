@@ -135,7 +135,7 @@ const TermAgg = ({
   setShowingSearch,
   searchText,
   setSearchText,
-  FilterInputComponent = props => <Input {...props} />,
+  FilterInputComponent = Input,
 }) => {
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
