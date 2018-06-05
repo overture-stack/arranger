@@ -35,6 +35,15 @@ const initializeSets = async ({ es }) => {
   }
 };
 
+const mergeFieldsFromConfig = (generatedFields, configFields) => {
+  const a = generatedFields || [];
+  const b = configFields || [];
+  return [
+    ...b.filter(x => a.find(y => y.field === x.field)),
+    ...a.filter(x => !b.find(y => y.field === x.field)),
+  ];
+};
+
 export default async function startProjectApp({
   es,
   id,
@@ -114,10 +123,9 @@ export default async function startProjectApp({
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
             timestamp: new Date().toISOString(),
-            state: replaceBy(
+            state: mergeFieldsFromConfig(
               mappingToAggsState(props.mapping),
               props.config['aggs-state'],
-              (x, y) => x.field === y.field,
             ),
           }),
         ]
@@ -160,10 +168,9 @@ export default async function startProjectApp({
               ],
               ...(get(existing, 'state') || {}),
               ...(props.config['columns-state'] || {}),
-              columns: replaceBy(
+              columns: mergeFieldsFromConfig(
                 [...existingColumns, ...newColumns],
                 props.config['columns-state']?.columns,
-                (x, y) => x.field === y.field,
               ),
             },
           }),
