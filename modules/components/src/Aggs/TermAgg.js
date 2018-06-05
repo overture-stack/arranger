@@ -135,7 +135,7 @@ const TermAgg = ({
   setShowingSearch,
   searchText,
   setSearchText,
-  FilterInputComponent = Input,
+  InputComponent = Input,
 }) => {
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
@@ -160,7 +160,7 @@ const TermAgg = ({
         ...(stateShowingSearch
           ? [
               <>
-                <FilterInputComponent
+                <InputComponent
                   className={css`
                     flex-grow: 1;
                   `}

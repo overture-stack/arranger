@@ -47,7 +47,7 @@ class DataTable extends React.Component {
       initalSelectedTableRows = [],
       keepSelectedOnPageChange = false,
       filterInputPlaceholder,
-      FilterInputComponent,
+      InputComponent,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -72,7 +72,7 @@ class DataTable extends React.Component {
           exportTSVText={exportTSVText}
           exportTSVFilename={exportTSVFilename}
           downloadUrl={downloadUrl}
-          FilterInputComponent={FilterInputComponent}
+          InputComponent={InputComponent}
         />
         <Table
           style={tableStyle}

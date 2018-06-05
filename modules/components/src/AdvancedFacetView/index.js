@@ -111,7 +111,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       statsConfig,
       translateSQONValue = () => {},
-      FilterInputComponent = TextInput,
+      InputComponent = TextInput,
       ...props
     } = this.props;
     const scrollFacetViewToPath = path => {
@@ -186,7 +186,7 @@ export default class AdvancedFacetView extends React.Component {
                   {/* using a thin local state here for rendering performance optimization */}
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
-                      <FilterInputComponent
+                      <InputComponent
                         icon={<FaFilter />}
                         rightIcon={
                           <FaTimesCircleO
