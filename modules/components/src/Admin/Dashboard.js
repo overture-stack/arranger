@@ -27,13 +27,13 @@ import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
 
-const FancyLabel = ({ children, className, ...props }) => (
+export const FancyLabel = ({ children, className, ...props }) => (
   <label className={`fancy-label ${className}`} {...props}>
     {children}
   </label>
 );
 
-const Emoji = ({ label = '', content, ...props }) => (
+export const Emoji = ({ label = '', content, ...props }) => (
   <span aria-label={label} role="img" {...props}>
     {content}
   </span>
