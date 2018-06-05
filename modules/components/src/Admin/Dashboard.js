@@ -17,14 +17,21 @@ import State from '../State';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import { ES_HOST } from '../utils/config';
+import { ARRANGER_API, ES_HOST } from '../utils/config';
 import api from '../utils/api';
 import download from '../utils/download';
 import initSocket from '../utils/initSocket';
+import parseInputFiles from '../utils/parseInputFiles';
+
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
-import { ARRANGER_API } from '../utils/config';
+
+const FancyLabel = ({ children, className, ...props }) => (
+  <label className={`fancy-label ${className}`} {...props}>
+    {children}
+  </label>
+);
 
 const Emoji = ({ label = '', content, ...props }) => (
   <span aria-label={label} role="img" {...props}>
@@ -33,6 +40,8 @@ const Emoji = ({ label = '', content, ...props }) => (
 );
 
 class Dashboard extends React.Component {
+  fileRef = React.createRef();
+
   constructor(props) {
     super(props);
 
@@ -53,6 +62,7 @@ class Dashboard extends React.Component {
       newTypeIndex: '',
       newTypeName: '',
       newTypeEsType: '',
+      newTypeConfig: [],
       types: [],
       typesTotal: 0,
       activeType: null,
@@ -393,6 +403,7 @@ class Dashboard extends React.Component {
         index: this.state.newTypeIndex,
         esType: this.state.newTypeEsType,
         name: this.state.newTypeName,
+        config: this.state.newTypeConfig,
       },
     });
 
@@ -405,6 +416,7 @@ class Dashboard extends React.Component {
         this.state.projects,
       );
 
+      this.fileRef.current.value = null;
       this.setState({
         types,
         projects: projectsWithTypes,
@@ -412,6 +424,7 @@ class Dashboard extends React.Component {
         newTypeIndex: '',
         newTypeName: '',
         newTypeEsType: '',
+        newTypeConfig: [],
         error: null,
       });
     }
@@ -662,6 +675,27 @@ class Dashboard extends React.Component {
                             this.setState({ newTypeEsType: e.target.value })
                           }
                         />
+                      </div>
+                      <div>
+                        <label className="input-file">
+                          Config. Files
+                          <input
+                            type="file"
+                            multiple
+                            ref={this.fileRef}
+                            accept="*.json"
+                            onChange={async e =>
+                              this.setState({
+                                newTypeConfig: (await parseInputFiles({
+                                  files: e.target.files,
+                                })).map(f => ({
+                                  name: f.name,
+                                  content: JSON.parse(f.content),
+                                })),
+                              })
+                            }
+                          />
+                        </label>
                         <button onClick={this.addType}>+</button>
                       </div>
                     </>
@@ -757,9 +791,9 @@ class Dashboard extends React.Component {
                           >
                             <section>
                               <div style={{ padding: 5 }}>
-                                <label className="projects">
+                                <FancyLabel className="projects">
                                   FIELDS ({this.state.fieldsTotal})
-                                </label>
+                                </FancyLabel>
                               </div>
                               {this.state.fields
                                 .filter(x => x.field.includes(filterText))
@@ -781,9 +815,9 @@ class Dashboard extends React.Component {
                             </section>
                             <section>
                               <div style={{ padding: 5 }}>
-                                <label className="projects">
+                                <FancyLabel className="projects">
                                   {activeField?.field}
-                                </label>
+                                </FancyLabel>
                               </div>
                               {Object.entries(activeField || {})
                                 .filter(([key]) => key !== 'field')
@@ -818,7 +852,7 @@ class Dashboard extends React.Component {
                                       {key === 'displayValues' ? (
                                         activeField.type === 'boolean' ? (
                                           <div>
-                                            <label>Any: </label>
+                                            <FancyLabel>Any: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(
@@ -826,7 +860,7 @@ class Dashboard extends React.Component {
                                               )}
                                               value={val.any}
                                             />
-                                            <label>True: </label>
+                                            <FancyLabel>True: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(
@@ -834,7 +868,7 @@ class Dashboard extends React.Component {
                                               )}
                                               value={val.true}
                                             />
-                                            <label>False: </label>
+                                            <FancyLabel>False: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(

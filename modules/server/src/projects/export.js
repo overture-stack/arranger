@@ -1,4 +1,4 @@
-import { groupBy } from 'lodash';
+import { groupBy, mapKeys } from 'lodash';
 import zlib from 'zlib';
 import tar from 'tar-stream';
 
@@ -20,43 +20,61 @@ const getAllResults = async ({ es, search, results = [] }) => {
     : nextResults;
 };
 
+const mapState = (key, state) => {
+  const source = state.map(x => x._source);
+  if (key === 'extended') {
+    return source;
+  } else if (['aggs-state', 'columns-state', 'matchbox-state'].includes(key)) {
+    return source[0].state;
+  } else {
+    console.log(
+      `[export] - WARNING - no import strategy for config state '${key}'`,
+    );
+    return source;
+  }
+};
+
 const jamTypeStateInPack = async ({ type, pack, id, es }) => {
   const indexPrefix = `arranger-projects-${id}`;
-  const fileName = ({ key, typeKey = key.replace(`${indexPrefix}-`, '') }) =>
-    typeKey === type ? `extended` : typeKey.replace(`${type}-`, '');
 
   let results;
   try {
-    results = groupBy(
-      await getAllResults({
-        es,
-        search: {
-          index: `${indexPrefix}-${type}*`,
-          size: 500,
-          sort: ['_index:asc', '_id:asc'],
-        },
-      }),
-      '_index',
+    results = mapKeys(
+      groupBy(
+        await getAllResults({
+          es,
+          search: {
+            index: `${indexPrefix}-${type}*`,
+            size: 500,
+            sort: ['_index:asc', '_id:asc'],
+          },
+        }),
+        '_index',
+      ),
+      (_, k) => k.replace(`${indexPrefix}-`, ''),
     );
   } catch (err) {
     results = {};
   }
 
   await Promise.all(
-    Object.keys(results).map(
-      key =>
-        new Promise((res, rej) =>
-          pack.entry(
-            {
-              name: `arranger-project-${id}/${type}/${fileName({
-                key,
-              })}.json`,
-            },
-            JSON.stringify(results[key], null, 2),
-            err => (err ? rej(err) : res()),
+    Object.keys(results)
+      .map(key => ({
+        key,
+        fileKey: key === type ? `extended` : key.replace(`${type}-`, ''),
+      }))
+      .map(
+        ({ key, fileKey }) =>
+          new Promise((res, rej) =>
+            pack.entry(
+              {
+                name: `arranger-project-${id}/${type}/${fileKey}.json`,
+              },
+              JSON.stringify(mapState(fileKey, results[key]), null, 2),
+              err => (err ? rej(err) : res()),
+            ),
           ),
-        ),
-    ),
+      ),
   );
 };
 

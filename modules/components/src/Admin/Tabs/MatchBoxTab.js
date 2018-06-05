@@ -1,6 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
 
+import { FancyLabel } from '../Dashboard';
 import { MatchBoxState } from '../../MatchBox';
 
 export default ({ projectId, graphqlField }) => (
@@ -42,11 +43,11 @@ export default ({ projectId, graphqlField }) => (
               {activeField && (
                 <section>
                   <div>
-                    <label>Field: </label>
+                    <FancyLabel>Field: </FancyLabel>
                     <span>{activeField.field}</span>
                   </div>
                   <div>
-                    <label>Display Name: </label>
+                    <FancyLabel>Display Name: </FancyLabel>
                     <input
                       type="text"
                       placeholder="Display Name"
@@ -61,7 +62,7 @@ export default ({ projectId, graphqlField }) => (
                     />
                   </div>
                   <div>
-                    <label>Active: </label>
+                    <FancyLabel>Active: </FancyLabel>
                     <input
                       type="checkbox"
                       checked={activeField.isActive}
@@ -75,7 +76,7 @@ export default ({ projectId, graphqlField }) => (
                     />
                   </div>
                   <div>
-                    <label>Key Field:</label>
+                    <FancyLabel>Key Field:</FancyLabel>
                     <select
                       value={activeField.keyField}
                       onChange={({ target: { value } }) =>
@@ -103,7 +104,7 @@ export default ({ projectId, graphqlField }) => (
                     </select>
                   </div>
                   <div>
-                    <label>Search Fields:</label>
+                    <FancyLabel>Search Fields:</FancyLabel>
                     <select
                       value={''}
                       onChange={({ target: { value } }) =>
