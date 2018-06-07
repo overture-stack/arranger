@@ -93,7 +93,7 @@ export default async (req, res) => {
 
       await initializeExtendedFields({ indexPrefix, config, fields, es });
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return res.json({ error: error.message });
     }
   }
