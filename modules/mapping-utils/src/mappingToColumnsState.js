@@ -5,6 +5,9 @@ export default mapping => {
   return mappingToColumnsType(mapping).map(({ field, type }) => {
     const id = field.replace(/hits\.edges\[\d*\].node\./g, '');
 
+    const sourceField = Object.keys(mapping).find(key =>
+      (mapping[key].copy_to || []).includes(field),
+    );
     return {
       show: false,
       type,
@@ -13,10 +16,10 @@ export default mapping => {
       field: id,
       ...(type === 'list'
         ? {
-            query: toQuery({ accessor: field }),
-            jsonPath: `$.${field.replace(/\[\d*\]/g, '[*]')}`,
+            query: toQuery({ accessor: sourceField || field }),
+            jsonPath: `$.${(sourceField || field).replace(/\[\d*\]/g, '[*]')}`,
           }
-        : { accessor: field }),
+        : { accessor: sourceField || field }),
     };
   });
 };

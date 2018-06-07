@@ -13,7 +13,7 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
     ? {
         ...columnsStateField,
         gqlField: field.split('.').join('__'),
-        query: columnsStateField.query || field,
+        query: columnsStateField.query || columnsStateField.accessor,
         jsonPath: columnsStateField.jsonPath || `$.${field}`,
       }
     : {};
