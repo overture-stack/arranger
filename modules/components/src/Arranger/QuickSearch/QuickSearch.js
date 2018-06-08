@@ -48,6 +48,7 @@ const QuickSearch = ({
   PinnedValueComponent = SQONBubble,
   translateSQONValue = x => x,
   InputComponent = TextInput,
+  renderFound,
   ...props
 }) => (
   <QuickSearchFieldsQuery
@@ -66,8 +67,10 @@ const QuickSearch = ({
         {...props}
         {...{ primaryKeyField, quickSearchFields }}
         searchText={value}
-        render={({ results: searchResults, loading }) => (
+        render={({ results: searchResults, rawData, loading }) => (
           <div className={`quick-search ${className}`}>
+            {console.log('-------------')}
+            {console.log(rawData)}
             <div className="quick-search-pinned-values">
               {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
                 <div className="quick-search-pinned-value">
@@ -115,6 +118,12 @@ const QuickSearch = ({
                   width: 100%;
                 `}`}
               >
+                {rawData &&
+                  renderFound &&
+                  renderFound({
+                    rawData,
+                    primaryKeyField,
+                  })}
                 {searchResults?.map(
                   ({
                     entityName,

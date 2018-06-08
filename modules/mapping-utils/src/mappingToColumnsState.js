@@ -5,21 +5,33 @@ export default mapping => {
   return mappingToColumnsType(mapping).map(({ field, type }) => {
     const id = field.replace(/hits\.edges\[\d*\].node\./g, '');
 
-    const sourceField = Object.keys(mapping).find(key =>
-      (mapping[key].copy_to || []).includes(field),
-    );
+    let sourceFields = [];
+    const findCopyTo = (m, path = '') =>
+      Object.keys(m).forEach(
+        k =>
+          m[k].type === 'nested'
+            ? findCopyTo(m[k].properties, k)
+            : (m[k].copy_to || []).includes(field) &&
+              sourceFields.push(path ? `${path}.hits.edges.node.${k}` : k),
+      );
+    findCopyTo(mapping);
     return {
       show: false,
       type,
       sortable: type !== 'list',
       canChangeShow: type !== 'list',
       field: id,
-      ...(type === 'list'
+      sourceFields,
+      ...(type === 'list' || sourceFields.length
         ? {
-            query: toQuery({ accessor: sourceField || field }),
-            jsonPath: `$.${(sourceField || field).replace(/\[\d*\]/g, '[*]')}`,
+            query: sourceFields.length
+              ? `${sourceFields
+                  .map(sField => toQuery({ accessor: sField }))
+                  .join(' ')}`
+              : toQuery({ accessor: field }),
+            jsonPath: `$.${field.replace(/\[\d*\]/g, '[*]')}`,
           }
-        : { accessor: sourceField || field }),
+        : { accessor: field }),
     };
   });
 };
