@@ -1,5 +1,5 @@
 import React from 'react';
-import SearchIcon from 'react-icons/lib/fa/search';
+import FilterIcon from 'react-icons/lib/fa/filter';
 
 import TextInput from '../Input';
 import { replaceFilterSQON } from '../SQONView/utils';
@@ -25,7 +25,7 @@ export const generateNextSQON = value => ({ sqon, fields, entity }) =>
 const TextFilter = ({
   value,
   onChange,
-  Icon = SearchIcon,
+  Icon = FilterIcon,
   placeholder = 'Filter',
   InputComponent = TextInput,
   ...props
