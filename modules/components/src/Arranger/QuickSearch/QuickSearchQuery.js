@@ -1,9 +1,29 @@
-import { capitalize, flatMap } from 'lodash';
+import { capitalize, flatMap, isArray, isObject } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
 
 import { withQuery } from '../../Query';
 import splitString from '../../utils/splitString';
+
+export const findMatchingValues = ({ item, searchText }) => {
+  let value;
+  Object.keys(item || {}).some(function(k) {
+    if (
+      !isObject(item[k]) &&
+      item[k] &&
+      item[k].toLowerCase().indexOf(searchText.toLowerCase()) !== -1
+    ) {
+      value = item[k];
+      return true;
+    }
+    if (item[k] && isObject(item[k])) {
+      value = findMatchingValues({ item: item[k], searchText });
+      return value !== undefined;
+    }
+    return false;
+  });
+  return value;
+};
 
 const isValidValue = value => value?.trim()?.length > 1;
 
@@ -25,7 +45,11 @@ const enhance = compose(
       exact,
       quickSearchFields,
       searchText,
-      searchTextParts = splitString({ str: searchText, split: ['\\s', ','] }),
+      searchTextDelimiters,
+      searchTextParts = splitString({
+        str: searchText,
+        split: searchTextDelimiters,
+      }),
     }) => ({
       searchTextParts,
       sqon: {
@@ -93,28 +117,6 @@ const enhance = compose(
       quickSearchFields,
       rawSearchResults: { data, loading },
       searchResultsByEntity = quickSearchFields?.map(x => {
-        console.log(x);
-        console.log(data?.[index]?.hits?.edges);
-        console.log(
-          data?.[index]?.hits?.edges?.map(
-            ({
-              node,
-              primaryKey = jp.query(
-                { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
-                primaryKeyField.jsonPath,
-              )[0],
-              ...rest
-            }) => {
-              console.log(rest[x.gqlField]);
-              console.log(rest[x.gqlField]);
-              return {
-                node,
-                primaryKey,
-                result: rest[x.gqlField],
-              };
-            },
-          ),
-        );
         return {
           ...x,
           results: data?.[index]?.hits?.edges
@@ -125,24 +127,32 @@ const enhance = compose(
                   { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
                   primaryKeyField.jsonPath,
                 )[0],
-                result = jp.query(
-                  { [x.field.split('.')[0]]: node[x.gqlField] },
-                  x.jsonPath,
-                )[0],
-              }) => ({
-                primaryKey,
-                result,
-                entityName: x.entityName,
-                input: searchTextParts.find(
-                  y => (exact ? result === y : result?.includes(y)),
-                ),
-              }),
+                ...rest
+              }) => {
+                console.log(rest[x.gqlField]);
+                const foundResultAndInput = searchTextParts.reduce(
+                  (acc, part) => {
+                    const foundValue = findMatchingValues({
+                      item: rest[x.gqlField],
+                      searchText: part,
+                    });
+                    if (foundValue) {
+                      return { input: part, result: foundValue };
+                    }
+                  },
+                  { input: '', result: '' },
+                );
+                return {
+                  primaryKey,
+                  entityName: x.entityName,
+                  ...foundResultAndInput,
+                };
+              },
             )
             ?.filter(x => isValidValue(searchText) && x.input),
         };
       }) || [],
     }) => ({
-      rawData: data,
       searchResultsByEntity,
       searchResultsLoading: loading,
       searchResults: flatMap(
@@ -170,10 +180,8 @@ const QuickSearchQuery = ({
   searchResultsByEntity,
   searchResultsLoading,
   searchTextParts,
-  rawData,
   props = {
     searchTextParts,
-    rawData,
     sqon,
     results: searchResults,
     resultsByEntity: searchResultsByEntity,
