@@ -120,34 +120,39 @@ const enhance = compose(
         return {
           ...x,
           results: data?.[index]?.hits?.edges
-            ?.map(
-              ({
-                node,
-                primaryKey = jp.query(
-                  { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
-                  primaryKeyField.jsonPath,
-                )[0],
-                ...rest
-              }) => {
-                console.log(rest[x.gqlField]);
-                const foundResultAndInput = searchTextParts.reduce(
-                  (acc, part) => {
-                    const foundValue = findMatchingValues({
-                      item: rest[x.gqlField],
-                      searchText: part,
-                    });
-                    if (foundValue) {
-                      return { input: part, result: foundValue };
-                    }
-                  },
-                  { input: '', result: '' },
-                );
-                return {
-                  primaryKey,
-                  entityName: x.entityName,
-                  ...foundResultAndInput,
-                };
+            ?.reduce(
+              (
+                flatResults,
+                {
+                  node,
+                  primaryKey = jp.query(
+                    { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
+                    primaryKeyField.jsonPath,
+                  )[0],
+                  ...rest
+                },
+              ) => {
+                const foundResults = searchTextParts.reduce((acc, part) => {
+                  const foundValue = findMatchingValues({
+                    item: rest[x.gqlField],
+                    searchText: part,
+                  });
+                  if (foundValue) {
+                    return [...acc, { input: part, result: foundValue }];
+                  }
+                  return acc;
+                }, []);
+                return [
+                  ...flatResults,
+                  ...foundResults.map(({ input, result }) => ({
+                    primaryKey,
+                    entityName: x.entityName,
+                    input,
+                    result,
+                  })),
+                ];
               },
+              [],
             )
             ?.filter(x => isValidValue(searchText) && x.input),
         };
