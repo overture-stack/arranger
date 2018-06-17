@@ -17,7 +17,9 @@ export default function() {
   return Arranger({ io }).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
-      rainbow(`⚡️ Listening on port ${PORT} ⚡️`);
+      if (process.env.I_HATE_FUN) {
+        console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
+      } else rainbow(`⚡️ Listening on port ${PORT} ⚡️`);
     });
   });
 }
