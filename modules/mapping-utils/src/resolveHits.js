@@ -4,60 +4,73 @@ import Parallel from 'paralleljs';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
-let resolveNested = ({ node, nestedFields, parent = '' }) => {
-  if (typeof node !== 'object' || !node) return node;
-
-  return Object.entries(node).reduce((acc, [field, hits]) => {
-    // TODO: inner hits query if necessary
-    const fullPath = joinParent(parent, field);
-
-    return {
-      ...acc,
-      [field]: nestedFields.includes(fullPath)
-        ? {
-            hits: {
-              edges: hits.map(node => ({
-                node: {
-                  ...node,
-                  ...resolveNested({ node, nestedFields, parent: fullPath }),
-                },
-              })),
-              total: hits.length,
-            },
-          }
-        : typeof hits === 'object' && hits
-          ? Object.assign(
-              hits.constructor(),
-              resolveNested({ node: hits, nestedFields, parent: fullPath }),
-            )
-          : resolveNested({ node: hits, nestedFields, parent: fullPath }),
-    };
-  }, {});
-};
-
 const hitsToEdges = ({ hits, nestedFields }) => {
-  return new Parallel(hits.hits)
-    .spawn(data => {
-      console.log('data: ', data);
-      return data.map(x => {
-        let source = x._source;
-        let nested_nodes = resolveNested({ node: source, nestedFields });
-        return {
-          searchAfter:
-            x.sort?.map(
-              x =>
-                Number.isInteger(x) && !Number.isSafeInteger(x)
-                  ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
-                  : x,
-            ) || [],
-          node: { id: x._id, ...source, ...nested_nodes },
-        };
+  return new Promise(resolve => {
+    new Parallel({ hits, nestedFields })
+      .spawn(({ hits, nestedFields }) => {
+        console.log('data: ', hits);
+        return hits.hits.map(x => {
+          let resolveNested = ({ node, nestedFields, parent = '' }) => {
+            if (typeof node !== 'object' || !node) return node;
+
+            return Object.entries(node).reduce((acc, [field, hits]) => {
+              // TODO: inner hits query if necessary
+              const fullPath = joinParent(parent, field);
+
+              return {
+                ...acc,
+                [field]: nestedFields.includes(fullPath)
+                  ? {
+                      hits: {
+                        edges: hits.map(node => ({
+                          node: {
+                            ...node,
+                            ...resolveNested({
+                              node,
+                              nestedFields,
+                              parent: fullPath,
+                            }),
+                          },
+                        })),
+                        total: hits.length,
+                      },
+                    }
+                  : typeof hits === 'object' && hits
+                    ? Object.assign(
+                        hits.constructor(),
+                        resolveNested({
+                          node: hits,
+                          nestedFields,
+                          parent: fullPath,
+                        }),
+                      )
+                    : resolveNested({
+                        node: hits,
+                        nestedFields,
+                        parent: fullPath,
+                      }),
+              };
+            }, {});
+          };
+          let source = x._source;
+          let nested_nodes = resolveNested({ node: source, nestedFields });
+          return {
+            searchAfter:
+              x.sort?.map(
+                x =>
+                  Number.isInteger(x) && !Number.isSafeInteger(x)
+                    ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                    : x,
+              ) || [],
+            node: { id: x._id, ...source, ...nested_nodes },
+          };
+        });
+      })
+      .then(output => {
+        console.log('output: ', output);
+        resolve(output);
       });
-    })
-    .then(output => {
-      console.log('output: ', output);
-      return output;
-    });
+  });
 };
 export default type => async (
   obj,
