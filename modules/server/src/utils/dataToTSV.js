@@ -90,7 +90,6 @@ export function columnsToHeader({ columns }) {
 }
 
 export function dataToTSV({ data, index, uniqueBy, columns, emptyValue }) {
-  console.time('dataToTSV');
   const results = flatten(
     get(data, `data['${index}'].hits.edges`, []).map(row => {
       return getRows({
@@ -100,9 +99,7 @@ export function dataToTSV({ data, index, uniqueBy, columns, emptyValue }) {
       }).map(row => row.map(r => r || emptyValue).join('\t'));
     }),
   );
-  const output = results.length ? results.join('\n') + '\n' : '';
-  console.timeEnd('dataToTSV');
-  return output;
+  return results.length ? results.join('\n') + '\n' : '';
 }
 
 export default function({ columns, index, uniqueBy, emptyValue = '--' }) {

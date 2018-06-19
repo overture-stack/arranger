@@ -12,14 +12,12 @@ function getAllData({
   mock,
   sort = [],
 }) {
-  console.time('getAllData');
   const stream = new PassThrough({ objectMode: true });
   const project = getProject(projectId);
   const sortWithId = sort.find(s => s.field === '_id')
     ? sort
     : [...sort, { field: '_id' }];
 
-  console.time('Query!!!');
   project
     .runQuery({
       mock,
@@ -35,8 +33,6 @@ function getAllData({
       variables,
     })
     .then(({ data }) => {
-      console.timeEnd('Query!!!');
-
       const total = data[index].hits.total;
       stream.write({ data: null, total });
       const steps = Array(Math.ceil(total / chunkSize)).fill();
@@ -47,57 +43,39 @@ function getAllData({
             (await previous) || {},
             `$["${index}"].hits.edges[-1:].searchAfter`,
           )[0] || null;
-
-        console.time('runQuery');
-        const query = `
-          query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: JSON) {
-            ${index} {
-              hits(first: $first, offset: $offset, filters: $sqon, sort: $sort, searchAfter: $searchAfter) {
-                edges {
-                  searchAfter
-                  node {
-                    ${fields}
+        const response = await project.runQuery({
+          mock,
+          query: `
+            query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: JSON) {
+              ${index} {
+                hits(first: $first, offset: $offset, filters: $sqon, sort: $sort, searchAfter: $searchAfter) {
+                  edges {
+                    searchAfter
+                    node {
+                      ${fields}
+                    }
                   }
                 }
               }
             }
-          }
-        `;
-        const variables = {
-          ...variables,
-          first: chunkSize,
-          sort: sortWithId,
-          searchAfter,
-        };
-        console.log(JSON.stringify({ query, variables }));
-        const response = await project.runQuery({
-          mock,
-          query,
-          variables,
+          `,
+          variables: {
+            ...variables,
+            first: chunkSize,
+            sort: sortWithId,
+            searchAfter,
+          },
         });
-        console.timeEnd('runQuery');
 
         // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
-        console.time('cloneDeep');
         const data = cloneDeep(response.data);
-        console.timeEnd('cloneDeep');
 
         stream.write({ data, total });
 
         return data;
       }, Promise.resolve());
     })
-    .then(() => {
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.log('STREAM END!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      stream.end();
-
-      console.timeEnd('getAllData');
-    });
+    .then(() => stream.end());
   return stream;
 }
 
