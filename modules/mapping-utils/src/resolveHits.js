@@ -2,76 +2,83 @@ import getFields from 'graphql-fields';
 import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
 import Parallel from 'paralleljs';
 
-let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
-
-const hitsToEdges = ({ hits, nestedFields }) => {
+export const hitsToEdges = ({ hits, nestedFields }) => {
+  //Parallel.spawn output has a .then but it's not returning an actual promise
   return new Promise(resolve => {
     new Parallel({ hits, nestedFields })
       .spawn(({ hits, nestedFields }) => {
-        console.log('data: ', hits);
+        /*
+          everthing inside spawn is executed in a separate threat, so we have
+          to use good old ES5 and require for run-time dependecy bundling.
+        */
+        const { isObject } = require('lodash');
         return hits.hits.map(x => {
+          let joinParent = (parent, field) =>
+            parent ? `${parent}.${field}` : field;
           let resolveNested = ({ node, nestedFields, parent = '' }) => {
-            if (typeof node !== 'object' || !node) return node;
+            if (!isObject(node) || !node) return node;
 
-            return Object.entries(node).reduce((acc, [field, hits]) => {
+            return Object.entries(node).reduce((acc, pair) => {
+              const field = pair[0];
+              const hits = pair[1];
               // TODO: inner hits query if necessary
               const fullPath = joinParent(parent, field);
-
-              return {
-                ...acc,
-                [field]: nestedFields.includes(fullPath)
-                  ? {
-                      hits: {
-                        edges: hits.map(node => ({
-                          node: {
-                            ...node,
-                            ...resolveNested({
-                              node,
-                              nestedFields,
-                              parent: fullPath,
-                            }),
-                          },
-                        })),
-                        total: hits.length,
-                      },
-                    }
-                  : typeof hits === 'object' && hits
-                    ? Object.assign(
-                        hits.constructor(),
-                        resolveNested({
-                          node: hits,
-                          nestedFields,
-                          parent: fullPath,
-                        }),
-                      )
-                    : resolveNested({
+              const resolvedNested = {};
+              resolvedNested[field] = nestedFields.includes(fullPath)
+                ? {
+                    hits: {
+                      edges: hits.map(node => ({
+                        node: Object.assign(
+                          {},
+                          node,
+                          resolveNested({
+                            node,
+                            nestedFields,
+                            parent: fullPath,
+                          }),
+                        ),
+                      })),
+                      total: hits.length,
+                    },
+                  }
+                : isObject(hits) && hits
+                  ? Object.assign(
+                      hits.constructor(),
+                      resolveNested({
                         node: hits,
                         nestedFields,
                         parent: fullPath,
                       }),
-              };
+                    )
+                  : resolveNested({
+                      node: hits,
+                      nestedFields,
+                      parent: fullPath,
+                    });
+              return Object.assign({}, acc, resolvedNested);
             }, {});
           };
           let source = x._source;
           let nested_nodes = resolveNested({ node: source, nestedFields });
           return {
-            searchAfter:
-              x.sort?.map(
-                x =>
-                  Number.isInteger(x) && !Number.isSafeInteger(x)
-                    ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
-                    : x,
-              ) || [],
-            node: { id: x._id, ...source, ...nested_nodes },
+            searchAfter: x.sort
+              ? x.sort.map(
+                  x =>
+                    Number.isInteger(x) && !Number.isSafeInteger(x)
+                      ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                      : x,
+                )
+              : [],
+            node: Object.assign({ id: x._id }, source, nested_nodes),
           };
         });
       })
-      .then(output => {
-        console.log('output: ', output);
-        resolve(output);
+      .then(edges => {
+        resolve(edges);
       });
   });
 };
+
 export default type => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
@@ -133,7 +140,7 @@ export default type => async (
   });
 
   return {
-    edges: hitsToEdges({ hits, nestedFields }),
+    edges: () => hitsToEdges({ hits, nestedFields }),
     total: () => hits.total,
   };
 };
