@@ -1,5 +1,6 @@
 import getFields from 'graphql-fields';
 import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
+import Parallel from 'paralleljs';
 
 let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
@@ -34,6 +35,30 @@ let resolveNested = ({ node, nestedFields, parent = '' }) => {
   }, {});
 };
 
+const hitsToEdges = ({ hits, nestedFields }) => {
+  return new Parallel(hits.hits)
+    .spawn(data => {
+      console.log('data: ', data);
+      return data.map(x => {
+        let source = x._source;
+        let nested_nodes = resolveNested({ node: source, nestedFields });
+        return {
+          searchAfter:
+            x.sort?.map(
+              x =>
+                Number.isInteger(x) && !Number.isSafeInteger(x)
+                  ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                  : x,
+            ) || [],
+          node: { id: x._id, ...source, ...nested_nodes },
+        };
+      });
+    })
+    .then(output => {
+      console.log('output: ', output);
+      return output;
+    });
+};
 export default type => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
@@ -94,23 +119,8 @@ export default type => async (
     body,
   });
 
-  let edges = hits.hits.map(x => {
-    let source = x._source;
-    let nested_nodes = resolveNested({ node: source, nestedFields });
-    return {
-      searchAfter:
-        x.sort?.map(
-          x =>
-            Number.isInteger(x) && !Number.isSafeInteger(x)
-              ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
-              : x,
-        ) || [],
-      node: { id: x._id, ...source, ...nested_nodes },
-    };
-  });
-
   return {
-    edges,
-    total: hits.total,
+    edges: hitsToEdges({ hits, nestedFields }),
+    total: () => hits.total,
   };
 };
