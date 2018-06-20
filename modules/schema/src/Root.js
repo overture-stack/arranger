@@ -2,6 +2,7 @@ import GraphQLJSON from 'graphql-type-json';
 import { GraphQLDate } from 'graphql-scalars';
 import uuid from 'uuid/v4';
 import { startCase } from 'lodash';
+import Parallel from 'paralleljs';
 
 import {
   createConnectionResolvers,
@@ -93,6 +94,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
         ...createConnectionResolvers({
           type,
           createStateResolvers: 'createState' in type ? type.createState : true,
+          Parallel,
         }),
       }),
       {},

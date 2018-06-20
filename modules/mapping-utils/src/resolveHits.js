@@ -1,8 +1,7 @@
 import getFields from 'graphql-fields';
 import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
-import Parallel from 'paralleljs';
 
-export const hitsToEdges = ({ hits, nestedFields }) => {
+export const hitsToEdges = ({ hits, nestedFields, Parallel }) => {
   //Parallel.spawn output has a .then but it's not returning an actual promise
   return new Promise(resolve => {
     new Parallel({ hits, nestedFields })
@@ -79,7 +78,7 @@ export const hitsToEdges = ({ hits, nestedFields }) => {
   });
 };
 
-export default type => async (
+export default ({ type, Parallel }) => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
   { es },
@@ -140,7 +139,7 @@ export default type => async (
   });
 
   return {
-    edges: () => hitsToEdges({ hits, nestedFields }),
+    edges: () => hitsToEdges({ hits, nestedFields, Parallel }),
     total: () => hits.total,
   };
 };
