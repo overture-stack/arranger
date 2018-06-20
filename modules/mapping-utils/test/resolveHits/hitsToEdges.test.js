@@ -8,3 +8,9 @@ test('hitsToEdges should be acurate', async () => {
   const edges = await hitsToEdges({ hits, nestedFields, Parallel });
   expect(edges).toEqual(expectedEdges);
 });
+
+test('hitsToEdges should not block process', async () => {
+  let complete = false;
+  hitsToEdges({ hits, nestedFields, Parallel }).then(() => (complete = true));
+  expect(complete).toEqual(false);
+});
