@@ -42,6 +42,7 @@ const QuickSearch = ({
   setSQON,
   value,
   setValue,
+  searchTextDelimiters = ['\\s', ','],
   placeholder = 'Quick Search',
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
@@ -65,6 +66,7 @@ const QuickSearch = ({
       <QuickSearchQuery
         {...props}
         {...{ primaryKeyField, quickSearchFields }}
+        searchTextDelimiters={searchTextDelimiters}
         searchText={value}
         render={({ results: searchResults, loading }) => (
           <div className={`quick-search ${className}`}>
@@ -116,15 +118,18 @@ const QuickSearch = ({
                 `}`}
               >
                 {searchResults?.map(
-                  ({
-                    entityName,
-                    result,
-                    primaryKey,
-                    input,
-                    index = entityIndexLookup[entityName] % 5 + 1,
-                  }) => (
+                  (
+                    {
+                      entityName,
+                      result,
+                      primaryKey,
+                      input,
+                      index = entityIndexLookup[entityName] % 5 + 1,
+                    },
+                    i,
+                  ) => (
                     <div
-                      key={result}
+                      key={`${result}-${i}`}
                       className={`quick-search-result ${css`
                         cursor: pointer;
                       `}`}
