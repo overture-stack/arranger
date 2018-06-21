@@ -43,7 +43,6 @@ function getAllData({
             (await previous) || {},
             `$["${index}"].hits.edges[-1:].searchAfter`,
           )[0] || null;
-
         const response = await project.runQuery({
           mock,
           query: `
@@ -67,6 +66,7 @@ function getAllData({
             searchAfter,
           },
         });
+
         // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
         const data = cloneDeep(response.data);
 
@@ -76,7 +76,6 @@ function getAllData({
       }, Promise.resolve());
     })
     .then(() => stream.end());
-
   return stream;
 }
 

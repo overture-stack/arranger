@@ -10,9 +10,11 @@
     "access": "public"
   },
   "scripts": {
-    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon --inspect $DEPS server/index.js",
+    "start":
+      "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
-    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "prepare":
+      "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
     "test": "jest"
   },
   "repository": {

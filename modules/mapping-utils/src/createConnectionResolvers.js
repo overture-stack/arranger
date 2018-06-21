@@ -14,6 +14,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
   type,
   indexPrefix,
   createStateResolvers = true,
+  Parallel,
 }) => ({
   [type.name]: {
     mapping: () => {
@@ -65,7 +66,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
           },
         }
       : {}),
-    hits: resolveHits(type),
+    hits: resolveHits({ type, Parallel }),
     aggregations: resolveAggregations(type),
   },
 });

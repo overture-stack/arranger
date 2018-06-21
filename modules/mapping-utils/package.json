@@ -42,6 +42,7 @@
     "@babel/preset-flow": "7.0.0-beta.40",
     "@babel/register": "7.0.0-beta.40",
     "babel-jest": "^22.2.2",
-    "jest": "^22.3.0"
+    "jest": "^22.3.0",
+    "paralleljs": "^0.2.1"
   }
 }
