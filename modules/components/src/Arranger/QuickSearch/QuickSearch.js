@@ -43,6 +43,7 @@ const QuickSearch = ({
   value,
   setValue,
   placeholder = 'Quick Search',
+  searchTextDelimiters = ['\\s', ','],
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
@@ -66,8 +67,11 @@ const QuickSearch = ({
         {...props}
         {...{ primaryKeyField, quickSearchFields }}
         searchText={value}
+        searchTextDelimiters={searchTextDelimiters}
         render={({ results: searchResults, loading }) => (
           <div className={`quick-search ${className}`}>
+            {console.log('-------------')}
+            {console.log(searchResults)}
             <div className="quick-search-pinned-values">
               {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
                 <div className="quick-search-pinned-value">

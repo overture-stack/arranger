@@ -1,9 +1,29 @@
-import { capitalize, flatMap } from 'lodash';
+import { capitalize, flatMap, isArray, isObject } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
 
 import { withQuery } from '../../Query';
 import splitString from '../../utils/splitString';
+
+export const findMatchingValues = ({ item, searchText }) => {
+  let value;
+  Object.keys(item || {}).some(function(k) {
+    if (
+      !isObject(item[k]) &&
+      item[k] &&
+      item[k].toLowerCase().indexOf(searchText.toLowerCase()) !== -1
+    ) {
+      value = item[k];
+      return true;
+    }
+    if (item[k] && isObject(item[k])) {
+      value = findMatchingValues({ item: item[k], searchText });
+      return value !== undefined;
+    }
+    return false;
+  });
+  return value;
+};
 
 const isValidValue = value => value?.trim()?.length > 1;
 
@@ -13,7 +33,7 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
     ? {
         ...columnsStateField,
         gqlField: field.split('.').join('__'),
-        query: columnsStateField.query || field,
+        query: columnsStateField.query || columnsStateField.accessor,
         jsonPath: columnsStateField.jsonPath || `$.${field}`,
       }
     : {};
@@ -25,7 +45,11 @@ const enhance = compose(
       exact,
       quickSearchFields,
       searchText,
-      searchTextParts = splitString({ str: searchText, split: ['\\s', ','] }),
+      searchTextDelimiters,
+      searchTextParts = splitString({
+        str: searchText,
+        split: searchTextDelimiters,
+      }),
     }) => ({
       searchTextParts,
       sqon: {
@@ -71,10 +95,10 @@ const enhance = compose(
               edges {
                 node {
                   primaryKey: ${primaryKeyField?.query}
-                  ${quickSearchFields
-                    ?.map(f => `${f.gqlField}: ${f.query}`)
-                    ?.join('\n')}
                 }
+                ${quickSearchFields
+                  ?.map(f => `${f.gqlField}: node { ${f.query} }`)
+                  ?.join('\n')}
               }
             }
           }
@@ -92,31 +116,47 @@ const enhance = compose(
       primaryKeyField,
       quickSearchFields,
       rawSearchResults: { data, loading },
-      searchResultsByEntity = quickSearchFields?.map(x => ({
-        ...x,
-        results: data?.[index]?.hits?.edges
-          ?.map(
-            ({
-              node,
-              primaryKey = jp.query(
-                { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
-                primaryKeyField.jsonPath,
-              )[0],
-              result = jp.query(
-                { [x.field.split('.')[0]]: node[x.gqlField] },
-                x.jsonPath,
-              )[0],
-            }) => ({
-              primaryKey,
-              result,
-              entityName: x.entityName,
-              input: searchTextParts.find(
-                y => (exact ? result === y : result?.includes(y)),
-              ),
-            }),
-          )
-          ?.filter(x => isValidValue(searchText) && x.input),
-      })) || [],
+      searchResultsByEntity = quickSearchFields?.map(x => {
+        return {
+          ...x,
+          results: data?.[index]?.hits?.edges
+            ?.reduce(
+              (
+                flatResults,
+                {
+                  node,
+                  primaryKey = jp.query(
+                    { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
+                    primaryKeyField.jsonPath,
+                  )[0],
+                  ...rest
+                },
+              ) => {
+                const foundResults = searchTextParts.reduce((acc, part) => {
+                  const foundValue = findMatchingValues({
+                    item: rest[x.gqlField],
+                    searchText: part,
+                  });
+                  if (foundValue) {
+                    return [...acc, { input: part, result: foundValue }];
+                  }
+                  return acc;
+                }, []);
+                return [
+                  ...flatResults,
+                  ...foundResults.map(({ input, result }) => ({
+                    primaryKey,
+                    entityName: x.entityName,
+                    input,
+                    result,
+                  })),
+                ];
+              },
+              [],
+            )
+            ?.filter(x => isValidValue(searchText) && x.input),
+        };
+      }) || [],
     }) => ({
       searchResultsByEntity,
       searchResultsLoading: loading,

@@ -25,6 +25,7 @@ const enhance = compose(
           columnsState {
             state {
               columns {
+                accessor
                 field
                 query
                 jsonPath
