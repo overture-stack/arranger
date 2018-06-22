@@ -12,6 +12,7 @@ const enhance = compose(
   defaultProps({
     setSelectedTableRows: noop,
     onPaginationChange: noop,
+    selectedTableRows: null,
   }),
 );
 
@@ -19,7 +20,8 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedTableRows: props.initalSelectedTableRows || [],
+      selectedTableRows:
+        props.selectedTableRows || props.initalSelectedTableRows || [],
       data: [],
       pages: -1,
       loading: false,
@@ -28,14 +30,21 @@ class DataTable extends React.Component {
     };
   }
 
-  setSelectedTableRows(selectedTableRows) {
+  static getDerivedStateFromProps(nextProps, prevState) {
+    return {
+      ...prevState,
+      selectedTableRows:
+        nextProps.selectedTableRows || prevState.selectedTableRows,
+    };
+  }
+
+  setSelectedTableRows = selectedTableRows => {
     this.props.setSelectedTableRows(selectedTableRows);
     this.setState({ selectedTableRows });
-  }
+  };
 
   toggleSelectedTableRow = key => {
     const selectedTableRows = xor(this.state.selectedTableRows, [key]);
-
     this.setSelectedTableRows(selectedTableRows);
   };
 
@@ -83,7 +92,6 @@ class DataTable extends React.Component {
         if (total !== this.state.total) {
           this.props.onPaginationChange({ total });
         }
-
         this.setState({
           data,
           total,
