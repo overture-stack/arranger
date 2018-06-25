@@ -18,7 +18,7 @@ export const hitsToEdges = ({
   hits,
   nestedFields,
   Parallel,
-  copyToSourceFields,
+  copyToSourceFields = {},
 }) => {
   //Parallel.spawn output has a .then but it's not returning an actual promise
   return new Promise(resolve => {
