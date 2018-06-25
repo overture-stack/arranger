@@ -1,19 +1,67 @@
 import getFields from 'graphql-fields';
 import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
 
-export const hitsToEdges = ({ hits, nestedFields, Parallel }) => {
+const findCopyToSourceFields = (mapping, path = '', results = {}) => {
+  Object.entries(mapping).forEach(([k, v]) => {
+    if (v.type === 'nested') {
+      findCopyToSourceFields(v.properties, k, results);
+    } else if (Object.keys(v).includes('copy_to')) {
+      const fullPath = path ? `${path}.${k}` : k;
+      const copy_to = v.copy_to[0];
+      results[copy_to] = [...(results[copy_to] || []), fullPath];
+    }
+  });
+  return results;
+};
+
+export const hitsToEdges = ({
+  hits,
+  nestedFields,
+  Parallel,
+  copyToSourceFields = {},
+}) => {
   //Parallel.spawn output has a .then but it's not returning an actual promise
   return new Promise(resolve => {
-    new Parallel({ hits, nestedFields })
-      .spawn(({ hits, nestedFields }) => {
+    new Parallel({ hits, nestedFields, copyToSourceFields })
+      .spawn(({ hits, nestedFields, copyToSourceFields }) => {
         /*
-          everthing inside spawn is executed in a separate threat, so we have
+          everthing inside spawn is executed in a separate thread, so we have
           to use good old ES5 and require for run-time dependecy bundling.
         */
-        const { isObject } = require('lodash');
+        const { isObject, flattenDeep } = require('lodash');
+        const jp = require('jsonpath/jsonpath.min');
+
+        const resolveCopiedTo = ({ node }) => {
+          const foundValues = Object.entries(copyToSourceFields).reduce(
+            (acc, pair) => {
+              const copyToField = pair[0];
+              const sourceField = pair[1];
+              let found = {};
+              found[copyToField] = flattenDeep(
+                sourceField.map(path =>
+                  jp.query(
+                    node,
+                    path
+                      .split('.')
+                      .reduce(
+                        (acc, part, index) =>
+                          index === 0 ? `$.${part}` : `${acc}..${part}`,
+                        '',
+                      ),
+                  ),
+                ),
+              );
+              return found;
+            },
+            {},
+          );
+          return foundValues;
+        };
+
         return hits.hits.map(x => {
           let joinParent = (parent, field) =>
             parent ? `${parent}.${field}` : field;
+
           let resolveNested = ({ node, nestedFields, parent = '' }) => {
             if (!isObject(node) || !node) return node;
 
@@ -59,6 +107,7 @@ export const hitsToEdges = ({ hits, nestedFields, Parallel }) => {
           };
           let source = x._source;
           let nested_nodes = resolveNested({ node: source, nestedFields });
+          let copied_to_nodes = resolveCopiedTo({ node: source });
           return {
             searchAfter: x.sort
               ? x.sort.map(
@@ -68,7 +117,12 @@ export const hitsToEdges = ({ hits, nestedFields, Parallel }) => {
                       : x,
                 )
               : [],
-            node: Object.assign({ id: x._id }, source, nested_nodes),
+            node: Object.assign(
+              { id: x._id },
+              source,
+              nested_nodes,
+              copied_to_nodes,
+            ),
           };
         });
       })
@@ -128,18 +182,24 @@ export default ({ type, Parallel }) => async (
     body.search_after = searchAfter;
   }
 
+  const copyToSourceFields = findCopyToSourceFields(type.mapping);
+
   let { hits } = await es.search({
     index: type.index,
     type: type.es_type,
     size: first,
     from: offset,
-    _source: fields.edges && Object.keys(fields.edges.node),
+    _source: [
+      ...((fields.edges && Object.keys(fields.edges.node)) || []),
+      ...Object.values(copyToSourceFields),
+    ],
     track_scores: !!score,
     body,
   });
 
   return {
-    edges: () => hitsToEdges({ hits, nestedFields, Parallel }),
+    edges: () =>
+      hitsToEdges({ hits, nestedFields, Parallel, copyToSourceFields }),
     total: () => hits.total,
   };
 };
