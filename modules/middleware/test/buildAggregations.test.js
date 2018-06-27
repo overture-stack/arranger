@@ -44,8 +44,17 @@ test('buildAggregations should handle nested aggregations', () => {
   };
 
   const expectedOutput = {
-    access: { terms: { field: 'access', size: 300000 } },
-    'access:missing': { missing: { field: 'access' } },
+    'access:filtered': {
+      filter: {
+        bool: {
+          must: [],
+        },
+      },
+      aggs: {
+        access: { terms: { field: 'access', size: 300000 } },
+        'access:missing': { missing: { field: 'access' } },
+      },
+    },
     'cases.samples.portions.is_ffpe:nested': {
       nested: { path: 'cases' },
       aggs: {

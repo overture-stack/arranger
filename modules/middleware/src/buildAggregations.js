@@ -87,7 +87,7 @@ function createTermAggregation({ field, isNested }) {
   };
 }
 
-function createAggregation({ field, graphqlField = {}, isNested = false }) {
+const createAggregation = ({ field, graphqlField = {}, isNested = false }) => {
   const type = [BUCKETS, STATS, HISTOGRAM].find(t => graphqlField[t]);
   if (type === BUCKETS) {
     return createTermAggregation({ field, isNested });
@@ -96,7 +96,7 @@ function createAggregation({ field, graphqlField = {}, isNested = false }) {
   } else {
     return {};
   }
-}
+};
 
 function getNestedPathsInField({ field, nestedFields }) {
   return field
@@ -138,11 +138,20 @@ export default function({
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
       const nestedPaths = getNestedPathsInField({ field, nestedFields });
-      const fieldAggregation = createAggregation({
-        field,
-        graphqlField,
-        isNested: nestedPaths.length,
-      });
+      const fieldAggregation = {
+        [`${field}:${AGGS_WRAPPER_FILTERED}`]: {
+          filter: {
+            bool: {
+              must: [],
+            },
+          },
+          aggs: createAggregation({
+            field,
+            graphqlField,
+            isNested: nestedPaths.length,
+          }),
+        },
+      };
 
       const aggregation = nestedPaths.reverse().reduce(
         (aggs, path) => ({
