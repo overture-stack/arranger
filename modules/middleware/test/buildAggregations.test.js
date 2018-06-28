@@ -365,41 +365,45 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
   expect(actualOutput).toEqual(expected);
 });
 
-// test('buildAggregations should handle queries not in a group', () => {
-//   const nestedFields = [];
-//   const input = {
-//     query: buildQuery({
-//       nestedFields,
-//       filters: { op: 'in', content: { field: 'case', value: [1] } },
-//     }),
-//     nestedFields,
-//     graphqlFields: {
-//       access: { buckets: { key: {} } },
-//       case: { buckets: { key: {} } },
-//     },
-//     aggregationsFilterThemselves: false,
-//   };
-//
-//   const expectedOutput = {
-//     'access:filtered': {
-//       filter: {
-//         bool: {
-//           must: [{ terms: { access: [1] } }],
-//         },
-//       },
-//       aggs: {
-//         access: { terms: { field: 'access', size: 300000 } },
-//         'access:missing': { missing: { field: 'access' } },
-//       },
-//     },
-//     'case:global': {
-//       aggs: {
-//         case: { terms: { field: 'case', size: 300000 } },
-//         'case:missing': { missing: { field: 'case' } },
-//       },
-//       global: {},
-//     },
-//   };
-//   const actualOutput = buildAggregations(input);
-//   expect(actualOutput).toEqual(expectedOutput);
-// });
+test('buildAggregations should handle queries not in a group', () => {
+  const nestedFields = [];
+  const input = {
+    sqon: {
+      op: 'and',
+      content: [{ op: 'in', content: { field: 'case', value: [1] } }],
+    },
+    nestedFields,
+    graphqlFields: {
+      access: { buckets: { key: {} } },
+      case: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: false,
+  };
+
+  const expectedOutput = {
+    'access:filtered': {
+      filter: {
+        bool: {
+          must: [{ terms: { case: [1], boost: 0 } }],
+        },
+      },
+      aggs: {
+        access: { terms: { field: 'access', size: 300000 } },
+        'access:missing': { missing: { field: 'access' } },
+      },
+    },
+    'case:filtered': {
+      filter: {
+        bool: {
+          must: [],
+        },
+      },
+      aggs: {
+        case: { terms: { field: 'case', size: 300000 } },
+        'case:missing': { missing: { field: 'case' } },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
