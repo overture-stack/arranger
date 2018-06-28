@@ -11,6 +11,8 @@ import {
   HISTOGRAM,
   BUCKETS,
 } from './constants';
+import normalizeFilters from './buildQuery/normalizeFilters';
+import { opSwitch } from './buildQuery';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
@@ -131,7 +133,8 @@ function wrapWithFilters({
 export default function({
   graphqlFields,
   nestedFields,
-  query,
+  query = {},
+  sqon,
   aggregationsFilterThemselves,
 }) {
   return Object.entries(graphqlFields).reduce(
@@ -142,7 +145,15 @@ export default function({
         [`${field}:${AGGS_WRAPPER_FILTERED}`]: {
           filter: {
             bool: {
-              must: [],
+              must: sqon
+                ? sqon.content
+                    .filter(
+                      ({ content }) =>
+                        aggregationsFilterThemselves || content.field !== field,
+                    )
+                    .map(normalizeFilters)
+                    .map(filter => opSwitch({ nestedFields, filter }))
+                : [],
             },
           },
           aggs: createAggregation({
