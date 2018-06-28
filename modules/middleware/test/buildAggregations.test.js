@@ -28,7 +28,7 @@ test('buildAggregations should handle nested aggregations', () => {
   ];
 
   const input = {
-    query: buildQuery({ nestedFields, filters: {} }),
+    sqon: null,
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },
@@ -44,8 +44,17 @@ test('buildAggregations should handle nested aggregations', () => {
   };
 
   const expectedOutput = {
-    access: { terms: { field: 'access', size: 300000 } },
-    'access:missing': { missing: { field: 'access' } },
+    'access:filtered': {
+      filter: {
+        bool: {
+          must: [],
+        },
+      },
+      aggs: {
+        access: { terms: { field: 'access', size: 300000 } },
+        'access:missing': { missing: { field: 'access' } },
+      },
+    },
     'cases.samples.portions.is_ffpe:nested': {
       nested: { path: 'cases' },
       aggs: {
@@ -55,15 +64,24 @@ test('buildAggregations should handle nested aggregations', () => {
             'cases.samples.portions.is_ffpe:nested': {
               nested: { path: 'cases.samples.portions' },
               aggs: {
-                'cases.samples.portions.is_ffpe:missing': {
-                  aggs: { rn: { reverse_nested: {} } },
-                  missing: { field: 'cases.samples.portions.is_ffpe' },
-                },
-                'cases.samples.portions.is_ffpe': {
-                  aggs: { rn: { reverse_nested: {} } },
-                  terms: {
-                    field: 'cases.samples.portions.is_ffpe',
-                    size: 300000,
+                'cases.samples.portions.is_ffpe:filtered': {
+                  filter: {
+                    bool: {
+                      must: [],
+                    },
+                  },
+                  aggs: {
+                    'cases.samples.portions.is_ffpe:missing': {
+                      aggs: { rn: { reverse_nested: {} } },
+                      missing: { field: 'cases.samples.portions.is_ffpe' },
+                    },
+                    'cases.samples.portions.is_ffpe': {
+                      aggs: { rn: { reverse_nested: {} } },
+                      terms: {
+                        field: 'cases.samples.portions.is_ffpe',
+                        size: 300000,
+                      },
+                    },
                   },
                 },
               },
@@ -89,19 +107,28 @@ test('buildAggregations should handle nested aggregations', () => {
                         path: 'cases.samples.portions.slides.annotations',
                       },
                       aggs: {
-                        'cases.samples.portions.slides.annotations.notes:missing': {
-                          aggs: { rn: { reverse_nested: {} } },
-                          missing: {
-                            field:
-                              'cases.samples.portions.slides.annotations.notes',
+                        'cases.samples.portions.slides.annotations.notes:filtered': {
+                          filter: {
+                            bool: {
+                              must: [],
+                            },
                           },
-                        },
-                        'cases.samples.portions.slides.annotations.notes': {
-                          aggs: { rn: { reverse_nested: {} } },
-                          terms: {
-                            field:
-                              'cases.samples.portions.slides.annotations.notes',
-                            size: 300000,
+                          aggs: {
+                            'cases.samples.portions.slides.annotations.notes:missing': {
+                              aggs: { rn: { reverse_nested: {} } },
+                              missing: {
+                                field:
+                                  'cases.samples.portions.slides.annotations.notes',
+                              },
+                            },
+                            'cases.samples.portions.slides.annotations.notes': {
+                              aggs: { rn: { reverse_nested: {} } },
+                              terms: {
+                                field:
+                                  'cases.samples.portions.slides.annotations.notes',
+                                size: 300000,
+                              },
+                            },
                           },
                         },
                       },
@@ -131,19 +158,28 @@ test('buildAggregations should handle nested aggregations', () => {
                         path: 'cases.samples.portions.slides.annotations',
                       },
                       aggs: {
-                        'cases.samples.portions.slides.annotations.category:missing': {
-                          aggs: { rn: { reverse_nested: {} } },
-                          missing: {
-                            field:
-                              'cases.samples.portions.slides.annotations.category',
+                        'cases.samples.portions.slides.annotations.category:filtered': {
+                          filter: {
+                            bool: {
+                              must: [],
+                            },
                           },
-                        },
-                        'cases.samples.portions.slides.annotations.category': {
-                          aggs: { rn: { reverse_nested: {} } },
-                          terms: {
-                            field:
-                              'cases.samples.portions.slides.annotations.category',
-                            size: 300000,
+                          aggs: {
+                            'cases.samples.portions.slides.annotations.category:missing': {
+                              aggs: { rn: { reverse_nested: {} } },
+                              missing: {
+                                field:
+                                  'cases.samples.portions.slides.annotations.category',
+                              },
+                            },
+                            'cases.samples.portions.slides.annotations.category': {
+                              aggs: { rn: { reverse_nested: {} } },
+                              terms: {
+                                field:
+                                  'cases.samples.portions.slides.annotations.category',
+                                size: 300000,
+                              },
+                            },
                           },
                         },
                       },
@@ -164,28 +200,14 @@ test('buildAggregations should handle nested aggregations', () => {
 test('buildAggregations should handle nested aggregations with filters on same field', () => {
   const nestedFields = ['participants'];
   const input = {
-    query: {
-      bool: {
-        must: [
-          {
-            nested: {
-              path: 'participants',
-              query: {
-                bool: {
-                  must: [
-                    {
-                      terms: {
-                        'participants.kf_id': ['PT_87QW2JKA'],
-                        boost: 0,
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        ],
-      },
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: { field: 'participants.kf_id', value: ['PT_87QW2JKA'] },
+        },
+      ],
     },
     nestedFields,
     graphqlFields: {
@@ -195,11 +217,15 @@ test('buildAggregations should handle nested aggregations with filters on same f
   };
 
   const expectedOutput = {
-    'participants.kf_id:global': {
-      global: {},
+    'participants.kf_id:nested': {
+      nested: { path: 'participants' },
       aggs: {
-        'participants.kf_id:nested': {
-          nested: { path: 'participants' },
+        'participants.kf_id:filtered': {
+          filter: {
+            bool: {
+              must: [],
+            },
+          },
           aggs: {
             'participants.kf_id:missing': {
               aggs: { rn: { reverse_nested: {} } },
@@ -235,54 +261,41 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
+    sqon: {
+      op: 'and',
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
+    },
     aggregationsFilterThemselves: false,
   };
 
   let expected = {
-    'acl:global': {
+    'acl:filtered': {
       aggs: {
-        'acl:filtered': {
-          aggs: {
-            'acl:missing': {
-              missing: { field: 'acl' },
-            },
-            acl: { terms: { field: 'acl', size: 300000 } },
-          },
-          filter: {
-            bool: {
-              must: [
-                { range: { mdx: { boost: 0, gte: 100 } } },
-                { range: { mdx: { boost: 0, lte: 200 } } },
-              ],
-            },
-          },
+        'acl:missing': {
+          missing: { field: 'acl' },
+        },
+        acl: { terms: { field: 'acl', size: 300000 } },
+      },
+      filter: {
+        bool: {
+          must: [
+            { range: { mdx: { boost: 0, gte: 100 } } },
+            { range: { mdx: { boost: 0, lte: 200 } } },
+          ],
         },
       },
-      global: {},
     },
-    'mdx:global': {
-      aggs: {
-        'mdx:filtered': {
-          aggs: { 'mdx:stats': { stats: { field: 'mdx' } } },
-          filter: {
-            bool: {
-              must: [{ terms: { acl: ['phs000178'], boost: 0 } }],
-            },
-          },
+    'mdx:filtered': {
+      aggs: { 'mdx:stats': { stats: { field: 'mdx' } } },
+      filter: {
+        bool: {
+          must: [{ terms: { acl: ['phs000178'], boost: 0 } }],
         },
       },
-      global: {},
     },
   };
   const actualOutput = buildAggregations(input);
@@ -306,24 +319,47 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
+    sqon: {
+      op: 'and',
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
+    },
     aggregationsFilterThemselves: true,
   };
 
   let expected = {
-    acl: { terms: { field: 'acl', size: 300000 } },
-    'acl:missing': { missing: { field: 'acl' } },
-    'mdx:stats': { stats: { field: 'mdx' } },
+    'acl:filtered': {
+      filter: {
+        bool: {
+          must: [
+            { terms: { acl: ['phs000178'], boost: 0 } },
+            { range: { mdx: { boost: 0, gte: 100 } } },
+            { range: { mdx: { boost: 0, lte: 200 } } },
+          ],
+        },
+      },
+      aggs: {
+        acl: { terms: { field: 'acl', size: 300000 } },
+        'acl:missing': { missing: { field: 'acl' } },
+      },
+    },
+    'mdx:filtered': {
+      filter: {
+        bool: {
+          must: [
+            { terms: { acl: ['phs000178'], boost: 0 } },
+            { range: { mdx: { boost: 0, gte: 100 } } },
+            { range: { mdx: { boost: 0, lte: 200 } } },
+          ],
+        },
+      },
+      aggs: {
+        'mdx:stats': { stats: { field: 'mdx' } },
+      },
+    },
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expected);
@@ -332,10 +368,10 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 test('buildAggregations should handle queries not in a group', () => {
   const nestedFields = [];
   const input = {
-    query: buildQuery({
-      nestedFields,
-      filters: { op: 'in', content: { field: 'case', value: [1] } },
-    }),
+    sqon: {
+      op: 'and',
+      content: [{ op: 'in', content: { field: 'case', value: [1] } }],
+    },
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },
@@ -345,14 +381,27 @@ test('buildAggregations should handle queries not in a group', () => {
   };
 
   const expectedOutput = {
-    access: { terms: { field: 'access', size: 300000 } },
-    'access:missing': { missing: { field: 'access' } },
-    'case:global': {
+    'access:filtered': {
+      filter: {
+        bool: {
+          must: [{ terms: { case: [1], boost: 0 } }],
+        },
+      },
+      aggs: {
+        access: { terms: { field: 'access', size: 300000 } },
+        'access:missing': { missing: { field: 'access' } },
+      },
+    },
+    'case:filtered': {
+      filter: {
+        bool: {
+          must: [],
+        },
+      },
       aggs: {
         case: { terms: { field: 'case', size: 300000 } },
         'case:missing': { missing: { field: 'case' } },
       },
-      global: {},
     },
   };
   const actualOutput = buildAggregations(input);

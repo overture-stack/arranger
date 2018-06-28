@@ -29,6 +29,7 @@ export default type => async (
 
   const query = buildQuery({ nestedFields, filters: resolvedFilter });
   const aggs = buildAggregations({
+    sqon: resolvedFilter,
     query,
     graphqlFields: getFields(info),
     nestedFields,
