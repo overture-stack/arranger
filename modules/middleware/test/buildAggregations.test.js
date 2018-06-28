@@ -302,59 +302,69 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
   expect(actualOutput).toEqual(expected);
 });
 
-// test('buildAggregations should handle `aggregations_filter_themselves` variable set to true', () => {
-//   let input = {
-//     nestedFields: [],
-//     graphqlFields: {
-//       mdx: {
-//         stats: {
-//           min: {},
-//           max: {},
-//         },
-//       },
-//       acl: {
-//         buckets: {
-//           key: {},
-//           doc_count: {},
-//         },
-//       },
-//     },
-//     query: buildQuery({
-//       nestedFields: [],
-//       filters: {
-//         op: 'and',
-//         content: [
-//           { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-//           { op: '>=', content: { field: 'mdx', value: 100 } },
-//           { op: '<=', content: { field: 'mdx', value: 200 } },
-//         ],
-//       },
-//     }),
-//     aggregationsFilterThemselves: true,
-//   };
-//
-//   let expected = {
-//     'acl:filtered': {
-//       filter: {
-//         bool: {
-//           must: [
-//             { terms: { acl: ['phs000178'] } },
-//             { range: { acl: { boost: 0, gte: 100 } } },
-//             { range: { acl: { boost: 0, lte: 200 } } },
-//           ],
-//         },
-//       },
-//       aggs: {
-//         acl: { terms: { field: 'acl', size: 300000 } },
-//         'acl:missing': { missing: { field: 'acl' } },
-//         'mdx:stats': { stats: { field: 'mdx' } },
-//       },
-//     },
-//   };
-//   const actualOutput = buildAggregations(input);
-//   expect(actualOutput).toEqual(expected);
-// });
-//
+test('buildAggregations should handle `aggregations_filter_themselves` variable set to true', () => {
+  let input = {
+    nestedFields: [],
+    graphqlFields: {
+      mdx: {
+        stats: {
+          min: {},
+          max: {},
+        },
+      },
+      acl: {
+        buckets: {
+          key: {},
+          doc_count: {},
+        },
+      },
+    },
+    sqon: {
+      op: 'and',
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
+    },
+    aggregationsFilterThemselves: true,
+  };
+
+  let expected = {
+    'acl:filtered': {
+      filter: {
+        bool: {
+          must: [
+            { terms: { acl: ['phs000178'], boost: 0 } },
+            { range: { mdx: { boost: 0, gte: 100 } } },
+            { range: { mdx: { boost: 0, lte: 200 } } },
+          ],
+        },
+      },
+      aggs: {
+        acl: { terms: { field: 'acl', size: 300000 } },
+        'acl:missing': { missing: { field: 'acl' } },
+      },
+    },
+    'mdx:filtered': {
+      filter: {
+        bool: {
+          must: [
+            { terms: { acl: ['phs000178'], boost: 0 } },
+            { range: { mdx: { boost: 0, gte: 100 } } },
+            { range: { mdx: { boost: 0, lte: 200 } } },
+          ],
+        },
+      },
+      aggs: {
+        'mdx:stats': { stats: { field: 'mdx' } },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expected);
+});
+
 // test('buildAggregations should handle queries not in a group', () => {
 //   const nestedFields = [];
 //   const input = {
