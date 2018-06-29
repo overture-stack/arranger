@@ -142,14 +142,13 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters }) => {
               [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
                 filter: {
                   bool: {
-                    must: [
-                      opSwitch({
-                        nestedFields: [],
-                        filter: normalizeFilters(
-                          nestedSqonFilters[aggContent.nested.path],
-                        ),
-                      }),
-                    ],
+                    must: nestedSqonFilters[aggContent.nested.path].map(
+                      sqonFilter =>
+                        opSwitch({
+                          nestedFields: [],
+                          filter: normalizeFilters(sqonFilter),
+                        }),
+                    ),
                   },
                 },
                 aggs: injectNestedFiltersToAggs({
@@ -199,7 +198,7 @@ export default function({
       const parentPath = splitted.slice(0, splitted.length - 1).join('.');
       return {
         ...acc,
-        [parentPath]: filter,
+        [parentPath]: [...(acc[parentPath] || []), filter],
       };
     }, {});
   const aggs = Object.entries(graphqlFields).reduce(
