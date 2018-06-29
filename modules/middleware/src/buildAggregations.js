@@ -1,5 +1,7 @@
 import { get, isEqual } from 'lodash';
-import buildQuery from './buildQuery';
+import buildQuery, { opSwitch } from './buildQuery';
+import normalizeFilters from './buildQuery/normalizeFilters';
+import { cloneDeep } from 'lodash';
 import {
   AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
@@ -128,6 +130,54 @@ function wrapWithFilters({
   return aggregation;
 }
 
+const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters }) => {
+  return Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
+    if (aggContent.nested) {
+      if (nestedSqonFilters[aggContent.nested.path]) {
+        return {
+          ...acc,
+          [aggName]: {
+            ...aggContent,
+            aggs: {
+              [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
+                filter: {
+                  bool: {
+                    must: [
+                      opSwitch({
+                        nestedFields: [],
+                        filter: normalizeFilters(
+                          nestedSqonFilters[aggContent.nested.path],
+                        ),
+                      }),
+                    ],
+                  },
+                },
+                aggs: injectNestedFiltersToAggs({
+                  aggs: aggContent.aggs,
+                  nestedSqonFilters,
+                }),
+              },
+            },
+          },
+        };
+      } else {
+        return {
+          ...acc,
+          [aggName]: {
+            ...aggContent,
+            aggs: injectNestedFiltersToAggs({
+              aggs: aggContent.aggs,
+              nestedSqonFilters,
+            }),
+          },
+        };
+      }
+    } else {
+      return acc;
+    }
+  }, cloneDeep(aggs));
+};
+
 export default function({
   sqon,
   graphqlFields,
@@ -135,7 +185,24 @@ export default function({
   aggregationsFilterThemselves,
 }) {
   const query = buildQuery({ nestedFields, filters: sqon });
-  return Object.entries(graphqlFields).reduce(
+  const nestedSqonFilters = (sqon?.content || [])
+    .filter(({ content }) => {
+      const splitted = content.field.split('.');
+      return content.field && splitted.length
+        ? nestedFields.includes(
+            splitted.slice(0, splitted.length - 1).join('.'),
+          )
+        : false;
+    })
+    .reduce((acc, filter) => {
+      const splitted = filter.content.field.split('.');
+      const parentPath = splitted.slice(0, splitted.length - 1).join('.');
+      return {
+        ...acc,
+        [parentPath]: filter,
+      };
+    }, {});
+  const aggs = Object.entries(graphqlFields).reduce(
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
       const nestedPaths = getNestedPathsInField({ field, nestedFields });
@@ -164,4 +231,11 @@ export default function({
     },
     {},
   );
+
+  const filteredAggregations = injectNestedFiltersToAggs({
+    aggs,
+    nestedSqonFilters,
+  });
+
+  return filteredAggregations;
 }
