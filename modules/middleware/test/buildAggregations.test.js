@@ -164,6 +164,15 @@ test('buildAggregations should handle nested aggregations', () => {
 test('buildAggregations should handle nested aggregations with filters on same field', () => {
   const nestedFields = ['participants'];
   const input = {
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: { field: 'participants.kf_id', value: ['PT_87QW2JKA'] },
+        },
+      ],
+    },
     query: {
       bool: {
         must: [
@@ -220,6 +229,14 @@ test('buildAggregations should handle nested aggregations with filters on same f
 
 test('buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
   let input = {
+    sqon: {
+      op: 'and',
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
+    },
     nestedFields: [],
     graphqlFields: {
       mdx: {
@@ -235,17 +252,6 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
     aggregationsFilterThemselves: false,
   };
 
@@ -306,17 +312,14 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
+    sqon: {
+      op: 'and',
+      content: [
+        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+        { op: '>=', content: { field: 'mdx', value: 100 } },
+        { op: '<=', content: { field: 'mdx', value: 200 } },
+      ],
+    },
     aggregationsFilterThemselves: true,
   };
 
@@ -332,10 +335,7 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 test('buildAggregations should handle queries not in a group', () => {
   const nestedFields = [];
   const input = {
-    query: buildQuery({
-      nestedFields,
-      filters: { op: 'in', content: { field: 'case', value: [1] } },
-    }),
+    sqon: { op: 'in', content: { field: 'case', value: [1] } },
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },

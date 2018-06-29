@@ -1,5 +1,5 @@
 import { get, isEqual } from 'lodash';
-
+import buildQuery from './buildQuery';
 import {
   AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
@@ -129,11 +129,12 @@ function wrapWithFilters({
 }
 
 export default function({
+  sqon,
   graphqlFields,
   nestedFields,
-  query,
   aggregationsFilterThemselves,
 }) {
+  const query = buildQuery({ nestedFields, filters: sqon });
   return Object.entries(graphqlFields).reduce(
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
