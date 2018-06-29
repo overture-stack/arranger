@@ -440,3 +440,136 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expectedOutput);
 });
+
+test('buildAggregations should drop nested sqon filters down to appropriate aggregation filters', () => {
+  const input = {
+    nestedFields: ['participants', 'participants.diagnoses'],
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: {
+            field: 'participants.diagnoses.mondo_id_diagnosis',
+            value: ['MONDO:0021637'],
+          },
+        },
+        {
+          op: 'in',
+          content: {
+            field: 'participants.diagnoses.source_text_diagnosis',
+            value: ['MONDO:0021637'],
+          },
+        },
+      ],
+    },
+    graphqlFields: {
+      participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: false,
+  };
+  const expectedOutput = {
+    'participants.diagnoses.source_text_diagnosis:global': {
+      global: {},
+      aggs: {
+        'participants.diagnoses.source_text_diagnosis:filtered': {
+          filter: {
+            bool: {
+              must: [
+                {
+                  nested: {
+                    path: 'participants',
+                    query: {
+                      bool: {
+                        must: [
+                          {
+                            nested: {
+                              path: 'participants.diagnoses',
+                              query: {
+                                bool: {
+                                  must: [
+                                    {
+                                      terms: {
+                                        'participants.diagnoses.mondo_id_diagnosis': [
+                                          'MONDO:0021637',
+                                        ],
+                                        boost: 0,
+                                      },
+                                    },
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          aggs: {
+            'participants.diagnoses.source_text_diagnosis:nested': {
+              nested: {
+                path: 'participants',
+              },
+              aggs: {
+                'participants.diagnoses.source_text_diagnosis:nested': {
+                  nested: {
+                    path: 'participants.diagnoses',
+                  },
+                  aggs: {
+                    'participants.diagnoses:filtered': {
+                      filter: {
+                        bool: {
+                          must: [
+                            {
+                              terms: {
+                                'participants.diagnoses.mondo_id_diagnosis': [
+                                  'MONDO:0021637',
+                                ],
+                                boost: 0,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      aggs: {
+                        'participants.diagnoses.source_text_diagnosis': {
+                          aggs: {
+                            rn: {
+                              reverse_nested: {},
+                            },
+                          },
+                          terms: {
+                            field:
+                              'participants.diagnoses.source_text_diagnosis',
+                            size: 300000,
+                          },
+                        },
+                        'participants.diagnoses.source_text_diagnosis:missing': {
+                          aggs: {
+                            rn: {
+                              reverse_nested: {},
+                            },
+                          },
+                          missing: {
+                            field:
+                              'participants.diagnoses.source_text_diagnosis',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
