@@ -130,7 +130,11 @@ function wrapWithFilters({
   return aggregation;
 }
 
-const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters }) => {
+const injectNestedFiltersToAggs = ({
+  aggs,
+  nestedSqonFilters,
+  aggregationsFilterThemselves,
+}) => {
   return Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
     if (aggContent.nested) {
       if (nestedSqonFilters[aggContent.nested.path]) {
@@ -142,18 +146,24 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters }) => {
               [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
                 filter: {
                   bool: {
-                    must: nestedSqonFilters[aggContent.nested.path].map(
-                      sqonFilter =>
+                    must: nestedSqonFilters[aggContent.nested.path]
+                      .filter(
+                        sqonFilter =>
+                          aggregationsFilterThemselves ||
+                          aggName.split(':')[0] !== sqonFilter.content.field,
+                      )
+                      .map(sqonFilter =>
                         opSwitch({
                           nestedFields: [],
                           filter: normalizeFilters(sqonFilter),
                         }),
-                    ),
+                      ),
                   },
                 },
                 aggs: injectNestedFiltersToAggs({
                   aggs: aggContent.aggs,
                   nestedSqonFilters,
+                  aggregationsFilterThemselves,
                 }),
               },
             },
@@ -167,6 +177,7 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters }) => {
             aggs: injectNestedFiltersToAggs({
               aggs: aggContent.aggs,
               nestedSqonFilters,
+              aggregationsFilterThemselves,
             }),
           },
         };
@@ -234,6 +245,7 @@ export default function({
   const filteredAggregations = injectNestedFiltersToAggs({
     aggs,
     nestedSqonFilters,
+    aggregationsFilterThemselves,
   });
 
   return filteredAggregations;
