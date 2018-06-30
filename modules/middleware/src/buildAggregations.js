@@ -1,7 +1,6 @@
 import { get, isEqual } from 'lodash';
 import buildQuery, { opSwitch } from './buildQuery';
 import normalizeFilters from './buildQuery/normalizeFilters';
-import { cloneDeep } from 'lodash';
 import {
   AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
