@@ -136,18 +136,20 @@ const injectNestedFiltersToAggs = ({
   aggregationsFilterThemselves,
 }) => {
   return Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
+    const downToNextLevel = () => ({
+      ...acc,
+      [aggName]: {
+        ...aggContent,
+        aggs: injectNestedFiltersToAggs({
+          aggs: aggContent.aggs,
+          nestedSqonFilters,
+          aggregationsFilterThemselves,
+        }),
+      },
+    });
+
     if (aggContent.global || aggContent.filter) {
-      return {
-        ...acc,
-        [aggName]: {
-          ...aggContent,
-          aggs: injectNestedFiltersToAggs({
-            aggs: aggContent.aggs,
-            nestedSqonFilters,
-            aggregationsFilterThemselves,
-          }),
-        },
-      };
+      return downToNextLevel();
     } else if (aggContent.nested) {
       if (nestedSqonFilters[aggContent.nested.path]) {
         return {
@@ -182,17 +184,7 @@ const injectNestedFiltersToAggs = ({
           },
         };
       } else {
-        return {
-          ...acc,
-          [aggName]: {
-            ...aggContent,
-            aggs: injectNestedFiltersToAggs({
-              aggs: aggContent.aggs,
-              nestedSqonFilters,
-              aggregationsFilterThemselves,
-            }),
-          },
-        };
+        return downToNextLevel();
       }
     } else {
       return acc;
