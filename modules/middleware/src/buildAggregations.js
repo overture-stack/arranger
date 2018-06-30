@@ -129,6 +129,11 @@ function wrapWithFilters({
   return aggregation;
 }
 
+/*
+ * due to this problem: https://github.com/kids-first/kf-portal-ui/issues/488
+ * queries that are on a term that shares a parent with a aggregation field
+ * needs to be dropped down to the aggregation level as a filter.
+ */
 export const injectNestedFiltersToAggs = ({
   aggs,
   nestedSqonFilters,
