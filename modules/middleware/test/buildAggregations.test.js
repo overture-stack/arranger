@@ -210,13 +210,22 @@ test('buildAggregations should handle nested aggregations with filters on same f
         'participants.kf_id:nested': {
           nested: { path: 'participants' },
           aggs: {
-            'participants.kf_id:missing': {
-              aggs: { rn: { reverse_nested: {} } },
-              missing: { field: 'participants.kf_id' },
-            },
-            'participants.kf_id': {
-              aggs: { rn: { reverse_nested: {} } },
-              terms: { field: 'participants.kf_id', size: 300000 },
+            'participants:filtered': {
+              filter: {
+                bool: {
+                  must: [],
+                },
+              },
+              aggs: {
+                'participants.kf_id:missing': {
+                  aggs: { rn: { reverse_nested: {} } },
+                  missing: { field: 'participants.kf_id' },
+                },
+                'participants.kf_id': {
+                  aggs: { rn: { reverse_nested: {} } },
+                  terms: { field: 'participants.kf_id', size: 300000 },
+                },
+              },
             },
           },
         },
@@ -441,7 +450,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
   expect(actualOutput).toEqual(expectedOutput);
 });
 
-test('buildAggregations should drop nested sqon filters down to appropriate aggregation filters', () => {
+test('buildAggregations can drop nested sqon filters down to filters excluding aggregations that would filter themselves', () => {
   const input = {
     nestedFields: ['participants', 'participants.diagnoses'],
     sqon: {
@@ -561,6 +570,100 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
                         },
                       },
                     },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
+
+test('buildAggregations can drop nested sqon filters down to filters including aggregations that would filter themselves', () => {
+  const input = {
+    nestedFields: ['participants', 'participants.diagnoses'],
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: {
+            field: 'participants.diagnoses.mondo_id_diagnosis',
+            value: ['MONDO:0021637'],
+          },
+        },
+        {
+          op: 'in',
+          content: {
+            field: 'participants.diagnoses.source_text_diagnosis',
+            value: ['MONDO:0021637'],
+          },
+        },
+      ],
+    },
+    graphqlFields: {
+      participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: true,
+  };
+  const expectedOutput = {
+    'participants.diagnoses.source_text_diagnosis:nested': {
+      nested: {
+        path: 'participants',
+      },
+      aggs: {
+        'participants.diagnoses.source_text_diagnosis:nested': {
+          nested: {
+            path: 'participants.diagnoses',
+          },
+          aggs: {
+            'participants.diagnoses:filtered': {
+              filter: {
+                bool: {
+                  must: [
+                    {
+                      terms: {
+                        'participants.diagnoses.mondo_id_diagnosis': [
+                          'MONDO:0021637',
+                        ],
+                        boost: 0,
+                      },
+                    },
+                    {
+                      terms: {
+                        'participants.diagnoses.source_text_diagnosis': [
+                          'MONDO:0021637',
+                        ],
+                        boost: 0,
+                      },
+                    },
+                  ],
+                },
+              },
+              aggs: {
+                'participants.diagnoses.source_text_diagnosis': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  terms: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
+                    size: 300000,
+                  },
+                },
+                'participants.diagnoses.source_text_diagnosis:missing': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  missing: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
                   },
                 },
               },

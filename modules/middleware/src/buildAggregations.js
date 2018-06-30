@@ -136,7 +136,19 @@ const injectNestedFiltersToAggs = ({
   aggregationsFilterThemselves,
 }) => {
   return Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
-    if (aggContent.nested) {
+    if (aggContent.global || aggContent.filter) {
+      return {
+        ...acc,
+        [aggName]: {
+          ...aggContent,
+          aggs: injectNestedFiltersToAggs({
+            aggs: aggContent.aggs,
+            nestedSqonFilters,
+            aggregationsFilterThemselves,
+          }),
+        },
+      };
+    } else if (aggContent.nested) {
       if (nestedSqonFilters[aggContent.nested.path]) {
         return {
           ...acc,
