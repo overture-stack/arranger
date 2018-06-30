@@ -130,7 +130,7 @@ function wrapWithFilters({
   return aggregation;
 }
 
-const injectNestedFiltersToAggs = ({
+export const injectNestedFiltersToAggs = ({
   aggs,
   nestedSqonFilters,
   aggregationsFilterThemselves,
@@ -189,7 +189,7 @@ const injectNestedFiltersToAggs = ({
     } else {
       return acc;
     }
-  }, cloneDeep(aggs));
+  }, aggs);
 };
 
 export default function({
