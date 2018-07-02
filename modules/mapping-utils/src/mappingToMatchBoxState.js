@@ -4,7 +4,7 @@ const defaults = {
   searchFields: [],
 };
 
-export default ({ name, extendedFields, ...mapping }) => [
+export default ({ name, extendedFields }) => [
   {
     displayName: name,
     field: '',

@@ -42,11 +42,13 @@ const QuickSearch = ({
   setSQON,
   value,
   setValue,
+  searchTextDelimiters = ['\\s', ','],
   placeholder = 'Quick Search',
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
   translateSQONValue = x => x,
+  InputComponent = TextInput,
   ...props
 }) => (
   <QuickSearchFieldsQuery
@@ -64,6 +66,7 @@ const QuickSearch = ({
       <QuickSearchQuery
         {...props}
         {...{ primaryKeyField, quickSearchFields }}
+        searchTextDelimiters={searchTextDelimiters}
         searchText={value}
         render={({ results: searchResults, loading }) => (
           <div className={`quick-search ${className}`}>
@@ -87,7 +90,7 @@ const QuickSearch = ({
                 </div>
               ))}
             </div>
-            <TextInput
+            <InputComponent
               disabled={!enabled}
               icon={loading ? LoadingIcon : Icon}
               type="text"
@@ -111,19 +114,22 @@ const QuickSearch = ({
                   padding: 0;
                   z-index: 1;
                   background: white;
-                  width: ${inputRef.current?.getBoundingClientRect()?.width}px;
+                  width: 100%;
                 `}`}
               >
                 {searchResults?.map(
-                  ({
-                    entityName,
-                    result,
-                    primaryKey,
-                    input,
-                    index = entityIndexLookup[entityName] % 5 + 1,
-                  }) => (
+                  (
+                    {
+                      entityName,
+                      result,
+                      primaryKey,
+                      input,
+                      index = entityIndexLookup[entityName] % 5 + 1,
+                    },
+                    i,
+                  ) => (
                     <div
-                      key={result}
+                      key={`${result}-${i}`}
                       className={`quick-search-result ${css`
                         cursor: pointer;
                       `}`}

@@ -1,6 +1,7 @@
 import { capitalize, flatMap } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
+import { head, isArray } from 'lodash';
 
 import { withQuery } from '../../Query';
 import splitString from '../../utils/splitString';
@@ -19,13 +20,22 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
     : {};
 };
 
+const isMatching = ({ value = '', searchText = '', exact = false }) =>
+  exact
+    ? value === searchText
+    : value.toLowerCase().includes(searchText.toLowerCase());
+
 const enhance = compose(
   withProps(
     ({
       exact,
       quickSearchFields,
+      searchTextDelimiters,
       searchText,
-      searchTextParts = splitString({ str: searchText, split: ['\\s', ','] }),
+      searchTextParts = splitString({
+        str: searchText,
+        split: searchTextDelimiters,
+      }),
     }) => ({
       searchTextParts,
       sqon: {
@@ -108,10 +118,24 @@ const enhance = compose(
               )[0],
             }) => ({
               primaryKey,
-              result,
               entityName: x.entityName,
-              input: searchTextParts.find(
-                y => (exact ? result === y : result?.includes(y)),
+              ...searchTextParts.reduce(
+                (acc, part) => {
+                  if (isArray(result)) {
+                    const r = result.find(r =>
+                      isMatching({ value: r, searchText: part, exact }),
+                    );
+                    if (r) {
+                      return { input: part, result: r };
+                    }
+                    return acc;
+                  }
+                  if (isMatching({ value: result, searchText: part, exact })) {
+                    return { input: part, result };
+                  }
+                  return acc;
+                },
+                { input: '', result: '' },
               ),
             }),
           )

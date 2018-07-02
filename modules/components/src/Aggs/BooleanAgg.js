@@ -4,6 +4,7 @@ import { replaceSQON, removeSQON } from '../SQONView/utils';
 import './BooleanAgg.css';
 import TextHighlight from '../TextHighlight';
 import ToggleButton from '../ToggleButton';
+import formatNumber from '../utils/formatNumber';
 
 export default ({
   field,
@@ -91,7 +92,9 @@ export default ({
         {...{
           value: isTrueActive
             ? valueKeys.true
-            : isFalseActive ? valueKeys.false : undefined,
+            : isFalseActive
+              ? valueKeys.false
+              : undefined,
           options: [
             {
               value: undefined,
@@ -112,7 +115,7 @@ export default ({
                         marginLeft: 2,
                       }}
                     >
-                      {trueBucket.doc_count}
+                      {formatNumber(trueBucket.doc_count)}
                     </span>
                   )}
                 </>
@@ -133,7 +136,7 @@ export default ({
                         marginLeft: 2,
                       }}
                     >
-                      {falseBucket.doc_count}
+                      {formatNumber(falseBucket.doc_count)}
                     </span>
                   )}
                 </>
@@ -144,7 +147,9 @@ export default ({
             handleChange(
               value === valueKeys.true
                 ? true
-                : value === valueKeys.false ? false : undefined,
+                : value === valueKeys.false
+                  ? false
+                  : undefined,
               dotField,
             );
           },

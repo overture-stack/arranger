@@ -1,5 +1,7 @@
 ![Arranger: Data Portal Generation](https://i.imgur.com/Qb9KBqJ.png)
 
+[![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
+
 🚧 _This project is alpha. We will make an announcement upon entering beta_ 🚧
 
 ### Quickstart

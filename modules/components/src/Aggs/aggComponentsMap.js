@@ -4,7 +4,12 @@ import { currentFieldValue } from '../SQONView/utils';
 import { inCurrentSQON } from '../SQONView/utils';
 import { fieldInCurrentSQON } from '../SQONView/utils';
 
-const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
+const composedTermAgg = ({
+  sqon,
+  onValueChange,
+  getTermAggProps = () => ({}),
+  ...rest
+}) => (
   <TermAgg
     handleValueClick={({ generateNextSQON, value, field }) => {
       let nextSQON = generateNextSQON(sqon);
@@ -28,11 +33,18 @@ const composedTermAgg = ({ sqon, onValueChange, ...rest }) => (
         currentSQON: sqon,
       })
     }
-    {...rest}
+    {...{ ...rest, ...getTermAggProps() }}
   />
 );
 
-const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
+const composedRangeAgg = ({
+  sqon,
+  onValueChange,
+  field,
+  stats,
+  getRangeAggProps = () => ({}),
+  ...rest
+}) => (
   <RangeAgg
     value={{
       min:
@@ -63,11 +75,17 @@ const composedRangeAgg = ({ sqon, onValueChange, field, stats, ...rest }) => (
         },
       });
     }}
-    {...{ ...rest, stats, field }}
+    {...{ ...rest, stats, field, ...getRangeAggProps() }}
   />
 );
 
-const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
+const composedBooleanAgg = ({
+  sqon,
+  onValueChange,
+  componentProps,
+  getBooleanAggProps = () => ({}),
+  ...rest
+}) => (
   <BooleanAgg
     isActive={d =>
       inCurrentSQON({
@@ -90,11 +108,16 @@ const composedBooleanAgg = ({ sqon, onValueChange, ...rest }) => (
         },
       });
     }}
-    {...rest}
+    {...{ ...rest, ...getBooleanAggProps() }}
   />
 );
 
-const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
+const composedDatesAgg = ({
+  sqon,
+  onValueChange,
+  getDatesAggProps = () => ({}),
+  ...rest
+}) => (
   <DatesAgg
     handleDateChange={({ generateNextSQON = () => {}, field, value } = {}) => {
       const nextSQON = generateNextSQON(sqon);
@@ -117,7 +140,7 @@ const composedDatesAgg = ({ sqon, onValueChange, ...rest }) => (
         sqon,
       })
     }
-    {...rest}
+    {...{ ...rest, ...getDatesAggProps() }}
   />
 );
 

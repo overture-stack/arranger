@@ -5,7 +5,7 @@ import urlJoin from 'url-join';
 import { ARRANGER_API, PROJECT_ID } from '../utils/config';
 import { Table, TableToolbar } from './';
 
-class DataTable extends React.Component {
+class DataTableWithToolbar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -27,6 +27,7 @@ class DataTable extends React.Component {
       fetchData,
       setSelectedTableRows,
       sqon,
+      selectedTableRows = null,
       allowTogglingColumns = true,
       allowTSVExport = true,
       customActions = null,
@@ -46,12 +47,15 @@ class DataTable extends React.Component {
       alwaysSorted = [],
       initalSelectedTableRows = [],
       keepSelectedOnPageChange = false,
+      filterInputPlaceholder,
+      InputComponent,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
     return (
       <>
         <TableToolbar
+          filterInputPlaceholder={filterInputPlaceholder}
           onFilterChange={onFilterChange}
           style={toolbarStyle}
           propsData={data}
@@ -69,6 +73,7 @@ class DataTable extends React.Component {
           exportTSVText={exportTSVText}
           exportTSVFilename={exportTSVFilename}
           downloadUrl={downloadUrl}
+          InputComponent={InputComponent}
         />
         <Table
           style={tableStyle}
@@ -88,9 +93,10 @@ class DataTable extends React.Component {
           alwaysSorted={alwaysSorted}
           initalSelectedTableRows={initalSelectedTableRows}
           keepSelectedOnPageChange={keepSelectedOnPageChange}
+          selectedTableRows={selectedTableRows}
         />
       </>
     );
   }
 }
-export default DataTable;
+export default DataTableWithToolbar;

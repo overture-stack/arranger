@@ -18,6 +18,12 @@ const Aggregations = ({
   api,
   Wrapper = BaseWrapper,
   containerRef,
+  componentProps = {
+    getTermAggProps: () => ({}),
+    getRangeAggProps: () => ({}),
+    getBooleanAggProps: () => ({}),
+    getDatesAggProps: () => ({}),
+  },
 }) => {
   return (
     <Wrapper style={style} className={className}>
@@ -52,7 +58,9 @@ const Aggregations = ({
                     sqon,
                     containerRef,
                   }))
-                  .map(agg => aggComponents[agg.type]?.(agg))
+                  .map(agg =>
+                    aggComponents[agg.type]?.({ ...agg, ...componentProps }),
+                  )
               }
             />
           );

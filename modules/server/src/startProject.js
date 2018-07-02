@@ -16,25 +16,17 @@ import { getProject, setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
-
-async function getTypes({ id, es }) {
-  const index = `arranger-projects-${id}`;
-
-  try {
-    return await es.search({ index, type: index });
-  } catch (error) {
-    await es.indices.create({ index });
-    return null;
-  }
-}
+import { CONSTANTS } from '@arranger/middleware';
+import getTypes from './utils/getTypes';
+import replaceBy from './utils/replaceBy';
 
 const initializeSets = async ({ es }) => {
-  if (!(await es.indices.exists({ index: 'arranger-sets' }))) {
+  if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
     await es.indices.create({
-      index: 'arranger-sets',
+      index: CONSTANTS.ES_ARRANGER_SET_INDEX,
       body: {
         mappings: {
-          'arranger-sets': {
+          [CONSTANTS.ES_ARRANGER_SET_TYPE]: {
             properties: setsMapping,
           },
         },
@@ -43,7 +35,21 @@ const initializeSets = async ({ es }) => {
   }
 };
 
-export default async function startProjectApp({ es, id, io }) {
+const mergeFieldsFromConfig = (generatedFields, configFields) => {
+  const a = generatedFields || [];
+  const b = configFields || [];
+  return [
+    ...b.filter(x => a.find(y => y.field === x.field)),
+    ...a.filter(x => !b.find(y => y.field === x.field)),
+  ];
+};
+
+export default async function startProjectApp({
+  es,
+  id,
+  io,
+  graphqlOptions = {},
+}) {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -80,21 +86,26 @@ export default async function startProjectApp({ es, id, io }) {
   let typesWithMappings = addMappingsToTypes({
     types: extended.map(type => {
       return [
-        type.index,
+        type.name,
         {
           index: type.index,
-          es_type: type.index,
+          es_type: type.esType,
           name: type.name,
           extendedFields: type.fields,
           customFields: ``,
           indexPrefix: type.indexPrefix,
+          config: type.config || {},
         },
       ];
     }),
     mappings: mappings.map(m => m.mapping),
   });
 
-  let schema = makeSchema({ types: typesWithMappings, rootTypes: [] });
+  let schema = makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    middleware: graphqlOptions.middleware || [],
+  });
 
   let mockSchema = makeSchema({
     types: typesWithMappings,
@@ -112,7 +123,10 @@ export default async function startProjectApp({ es, id, io }) {
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
             timestamp: new Date().toISOString(),
-            state: mappingToAggsState(props.mapping),
+            state: mergeFieldsFromConfig(
+              mappingToAggsState(props.mapping),
+              props.config['aggs-state'],
+            ),
           }),
         ]
       : [];
@@ -153,7 +167,11 @@ export default async function startProjectApp({ es, id, io }) {
                 { id: columns[0].id || columns[0].accessor, desc: false },
               ],
               ...(get(existing, 'state') || {}),
-              columns: [...existingColumns, ...newColumns],
+              ...(props.config['columns-state'] || {}),
+              columns: mergeFieldsFromConfig(
+                [...existingColumns, ...newColumns],
+                props.config['columns-state']?.columns,
+              ),
             },
           }),
         ]
@@ -170,7 +188,11 @@ export default async function startProjectApp({ es, id, io }) {
           { index: { _index: index, _type: index, _id: uuid() } },
           JSON.stringify({
             timestamp: new Date().toISOString(),
-            state: mappingToMatchBoxState(props),
+            state: replaceBy(
+              mappingToMatchBoxState(props),
+              props.config['matchbox-state'],
+              (x, y) => x.field === y.field,
+            ),
           }),
         ]
       : [];
@@ -213,7 +235,21 @@ export default async function startProjectApp({ es, id, io }) {
   projectApp.use(
     `/graphql`,
     schema
-      ? graphqlExpress({ schema, context: { es, projectId: id, io } })
+      ? graphqlExpress(async (request, response, graphQLParams) => {
+          const externalContext =
+            typeof graphqlOptions.context === 'function'
+              ? await graphqlOptions.context(request, response, graphQLParams)
+              : graphqlOptions.context;
+          return {
+            schema,
+            context: {
+              es,
+              projectId: id,
+              io,
+              ...(externalContext || {}),
+            },
+          };
+        })
       : noSchemaHandler,
   );
 

@@ -1,4 +1,8 @@
 import buildQuery from '../../src/buildQuery';
+import {
+  ES_ARRANGER_SET_INDEX,
+  ES_ARRANGER_SET_TYPE,
+} from '../../src/constants';
 test('buildQuery sets', () => {
   const nestedFields = ['files', 'files.foo'];
 
@@ -14,8 +18,8 @@ test('buildQuery sets', () => {
       output: {
         terms: {
           case_id: {
-            index: 'arranger-sets',
-            type: 'arranger-sets',
+            index: ES_ARRANGER_SET_INDEX,
+            type: ES_ARRANGER_SET_TYPE,
             id: 'aaa',
             path: 'ids',
           },
@@ -34,8 +38,8 @@ test('buildQuery sets', () => {
       output: {
         terms: {
           'ssms.ssm_id': {
-            index: 'arranger-sets',
-            type: 'arranger-sets',
+            index: ES_ARRANGER_SET_INDEX,
+            type: ES_ARRANGER_SET_TYPE,
             id: 'aaa',
             path: 'ids',
           },
@@ -60,8 +64,8 @@ test('buildQuery sets', () => {
                 {
                   terms: {
                     'files.file_id': {
-                      index: 'arranger-sets',
-                      type: 'arranger-sets',
+                      index: ES_ARRANGER_SET_INDEX,
+                      type: ES_ARRANGER_SET_TYPE,
                       id: 'aaa',
                       path: 'ids',
                     },

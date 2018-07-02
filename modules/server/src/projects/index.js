@@ -1,10 +1,12 @@
 import elasticsearch from 'elasticsearch';
 import express from 'express';
+
 import { ES_LOG } from '../utils/config';
 import getFields from './getFields';
 import addType from './addType';
 import spinUp from './spinUp';
 import teardown from './teardown';
+import exportProject from './export';
 import getTypes from './getTypes';
 import updateProject from './updateProject';
 import deleteProject from './deleteProject';
@@ -13,7 +15,7 @@ import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
 
-export default ({ io }) => {
+export default ({ io, graphqlOptions }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
@@ -36,8 +38,9 @@ export default ({ io }) => {
   router.use('/:id/types/:index/delete', deleteType);
   router.use('/:id/types/:index/fields', getFields);
   router.use('/:id/types/add', addType);
-  router.use('/:id/spinUp', spinUp({ io }));
+  router.use('/:id/spinUp', spinUp({ io, graphqlOptions }));
   router.use('/:id/teardown', teardown);
+  router.use('/:id/export', exportProject);
   router.use('/:id/types', getTypes);
   router.use('/:id/delete', deleteProject);
   router.use('/:id/update', updateProject);

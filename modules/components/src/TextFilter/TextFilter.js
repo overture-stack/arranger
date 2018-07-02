@@ -22,18 +22,27 @@ export const generateNextSQON = value => ({ sqon, fields, entity }) =>
     sqon,
   );
 
-const TextFilter = ({ value, onChange, Icon = SearchIcon }) => (
-  <TextInput
+const TextFilter = ({
+  value,
+  onChange,
+  Icon = SearchIcon,
+  placeholder = 'Filter',
+  InputComponent = TextInput,
+  ...props
+}) => (
+  <InputComponent
     icon={<Icon />}
     type="text"
-    placeholder="Filter"
+    placeholder={placeholder}
     value={value}
-    onChange={({ target: { value } }) => {
+    onChange={e => {
+      const { target: { value } } = e;
       onChange({
         value,
         generateNextSQON: generateNextSQON(value),
       });
     }}
+    {...props}
   />
 );
 

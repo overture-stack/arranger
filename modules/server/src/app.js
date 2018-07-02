@@ -1,7 +1,6 @@
 import express from 'express';
 import socketIO from 'socket.io';
 import { Server } from 'http';
-import { rainbow } from 'chalk-animation';
 import cors from 'cors';
 
 import { PORT } from './utils/config';
@@ -17,7 +16,7 @@ export default function() {
   return Arranger({ io }).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
-      rainbow(`⚡️ Listening on port ${PORT} ⚡️`);
+      console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
     });
   });
 }

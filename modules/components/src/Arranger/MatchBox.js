@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from 'emotion';
@@ -8,7 +8,34 @@ import Tabs, { TabsTable } from '../Tabs';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
+import formatNumber from '../utils/formatNumber';
+import parseInputFiles from '../utils/parseInputFiles';
 import { toggleSQON } from '../SQONView/utils';
+
+const layoutStyle = css`
+  &.match-box {
+    display: flex;
+    flex-direction: column;
+    .match-box-results-table {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs .tabs-content {
+      display: flex;
+      flex-direction: column;
+    }
+    .tabs .tabs-titles {
+      display: block;
+    }
+    .tabs .tabs-titles .tabs-title {
+      float: left;
+    }
+  }
+`;
 
 const enhance = compose(
   withState('activeEntityField', 'setActiveEntityField', null),
@@ -20,21 +47,15 @@ const enhance = compose(
     onTextChange: ({ setSearchText }) => ({ target: { value } }) =>
       setSearchText(value),
     onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({
-      target,
+      target: { files },
     }) => {
       setSearchTextLoading(true);
-      const contents = await Promise.all(
-        [...target.files].map(
-          f =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = e => reject(e);
-              reader.readAsText(f);
-            }),
-        ),
+      const contents = await parseInputFiles({ files });
+      setSearchText(
+        (contents || [])
+          .map(f => f.content)
+          .reduce((str, c) => `${str}${c}\n`, ``),
       );
-      setSearchText((contents || []).reduce((str, c) => `${str}${c}\n`, ``));
       setSearchTextLoading(false);
     },
   }),
@@ -69,7 +90,7 @@ const MatchBox = ({
   activeEntityField,
   ...props
 }) => (
-  <div className="match-box">
+  <div className={`match-box ${layoutStyle}`}>
     <MatchBoxState
       {...props}
       render={({
@@ -77,9 +98,11 @@ const MatchBox = ({
         activeFields,
         activeField = activeFields.find(x => x.field === activeEntityField),
       }) => (
-        <div>
+        <Fragment>
           <div className="match-box-select-entity-form">
-            <div>{entitySelectText}</div>
+            <div className="match-box-entity-select-text">
+              {entitySelectText}
+            </div>
             <select onChange={onEntityChange}>
               <option value={null}>{entitySelectPlaceholder}</option>
               {activeFields.map(({ field, displayName }) => (
@@ -90,7 +113,7 @@ const MatchBox = ({
             </select>
           </div>
           <div className="match-box-id-form">
-            <div>{instructionText}</div>
+            <div className="match-box-selection-text">{instructionText}</div>
             <Input
               disabled={!activeField}
               Component="textarea"
@@ -146,7 +169,9 @@ const MatchBox = ({
                   tabs={[
                     {
                       key: 'matched',
-                      title: `${matchedTabTitle} (${results.length})`,
+                      title: `${matchedTabTitle} (${formatNumber(
+                        results.length,
+                      )})`,
                       content: (
                         <TabsTable
                           columns={['inputId', 'matchedEntity', 'entityId'].map(
@@ -177,7 +202,9 @@ const MatchBox = ({
                     },
                     {
                       key: 'unmatched',
-                      title: `${unmatchedTabTitle} (${unmatchedKeys.length})`,
+                      title: `${unmatchedTabTitle} (${formatNumber(
+                        unmatchedKeys.length,
+                      )})`,
                       content: (
                         <TabsTable
                           columns={[
@@ -213,34 +240,29 @@ const MatchBox = ({
                       }),
                       dataPath,
                     );
-                    if (setSQON) {
-                      setSQON(
-                        toggleSQON(
+                    const nextSQON = toggleSQON(
+                      {
+                        op: 'and',
+                        content: [
                           {
-                            op: 'and',
-                            content: [
-                              {
-                                op: 'in',
-                                content: {
-                                  field: primaryKeyField?.field,
-                                  value: [].concat(
-                                    `set_id:${data.setId}` || [],
-                                  ),
-                                },
-                              },
-                            ],
+                            op: 'in',
+                            content: {
+                              field: primaryKeyField?.field,
+                              value: [`set_id:${data.setId}`],
+                            },
                           },
-                          sqon,
-                        ),
-                      );
-                    }
-                    return data;
+                        ],
+                      },
+                      sqon,
+                    );
+                    setSQON?.(nextSQON);
+                    return { ...data, nextSQON };
                   },
                 })}
               </div>
             )}
           />
-        </div>
+        </Fragment>
       )}
     />
   </div>
