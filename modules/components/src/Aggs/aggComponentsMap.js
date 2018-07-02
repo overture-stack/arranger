@@ -14,7 +14,7 @@ const composedTermAgg = ({
     handleValueClick={({ generateNextSQON, value, field }) => {
       let nextSQON = generateNextSQON(sqon);
       const active = fieldInCurrentSQON({
-        currentSQON: nextSQON ? nextSQON.content : [],
+        currentSQON: nextSQON?.content || [],
         field,
       });
       onValueChange({
