@@ -22,10 +22,10 @@ class DatesAgg extends React.Component {
     this.setState(this.initializeState(nextProps));
   }
 
-  initializeState = ({ stats = {}, getActiveValue = () => ({}) }) => {
+  initializeState = ({ stats = {}, getActiveValue = () => null }) => {
     const { field } = this.props;
-    const minDate = Moment(stats.min).subtract(1, 'days');
-    const maxDate = Moment(stats.max).add(1, 'days');
+    const minDate = stats.min && Moment(stats.min).subtract(1, 'days');
+    const maxDate = stats.max && Moment(stats.max).add(1, 'days');
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
     return {
