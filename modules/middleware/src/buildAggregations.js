@@ -203,6 +203,7 @@ export default function({
   aggregationsFilterThemselves,
   query,
 }) {
+  // TODO: support nested sqon operations
   const nestedSqonFilters = (sqon?.content || [])
     .filter(({ content }) => {
       const splitted = content.field.split('.');
