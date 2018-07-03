@@ -110,7 +110,7 @@ export default class AdvancedFacetView extends React.Component {
       aggregations = {},
       sqon,
       statsConfig,
-      translateSQONValue = () => {},
+      translateSQONValue,
       onFacetNavigation = () => {},
       InputComponent = TextInput,
       ...props
