@@ -1,5 +1,5 @@
 import { get, isEqual } from 'lodash';
-import buildQuery, { opSwitch } from './buildQuery';
+import { opSwitch } from './buildQuery';
 import normalizeFilters from './buildQuery/normalizeFilters';
 import {
   AGGS_WRAPPER_GLOBAL,
