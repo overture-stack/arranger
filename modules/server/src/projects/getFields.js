@@ -1,7 +1,11 @@
 import { flattenDeep } from 'lodash';
+
 import { extendFields, extendMapping } from '@arranger/mapping-utils';
+
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
+import initializeExtendedFields from '../utils/initializeExtendedFields';
+import { fetchMapping } from '../utils/fetchMappings';
 
 export default async (req, res) => {
   let { es } = req.context;
@@ -43,34 +47,34 @@ export default async (req, res) => {
         index: arrangerConfig.projectsIndex.index,
       });
 
+      const projectInfoIndex = `arranger-projects-${id}`;
+      const projectInfo = await es.search({
+        index: projectInfoIndex,
+        type: projectInfoIndex,
+      });
+      const { esType, config } =
+        projectInfo?.hits?.hits?.find(x => x._id === index)?._source || {};
+
       let aliases = await es.cat.aliases({ format: 'json' });
       let alias = aliases?.find(x => x.alias === index)?.index;
 
-      let mappings = await es.indices.getMapping({
+      const response = await fetchMapping({
         index: alias || index,
-        type: index,
+        esType,
+        es,
+      });
+      let mappingFields = response ? extendMapping(response.mapping) : [];
+
+      const fields = await initializeExtendedFields({
+        indexPrefix,
+        fields: mappingFields,
+        config,
+        es,
       });
 
-      let mapping = mappings[alias || index].mappings[index].properties;
-
-      let fields = extendMapping(mapping);
-
-      let body = flattenDeep(
-        fields.map(x => [
-          {
-            index: {
-              _index: arrangerConfig.projectsIndex.index,
-              _type: arrangerConfig.projectsIndex.index,
-              _id: x.field,
-            },
-          },
-          JSON.stringify(x),
-        ]),
-      );
-
-      await es.bulk({ body });
       return res.json({ fields, total: fields.length });
     } catch (error) {
+      console.error(error);
       return res.json({ error: error.message });
     }
   }

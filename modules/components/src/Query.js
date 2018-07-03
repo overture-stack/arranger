@@ -5,7 +5,8 @@ import defaultApi from './utils/api';
 import { defaultProps } from 'recompose';
 
 class Query extends Component {
-  state = { data: null, error: null, loading: false };
+  state = { data: null, error: null, loading: this.props.shouldFetch };
+
   componentDidMount() {
     if (this.props.shouldFetch) {
       this.fetch(this.props);

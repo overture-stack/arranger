@@ -9,12 +9,16 @@
   padding: 10px;
 }
 
-.dashboard label {
+.dashboard .fancy-label {
   letter-spacing: 1px;
   border-bottom: 1px solid;
   margin-bottom: 5px;
   display: inline-block;
   color: #5a8f94;
+}
+
+.dashboard .input-file {
+  font-size: 12px;
 }
 
 .dashboard .title-arranger {

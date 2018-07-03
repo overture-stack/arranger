@@ -1,6 +1,7 @@
 import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
 import { buildQuery } from '@arranger/middleware';
+import { CONSTANTS } from '@arranger/middleware';
 
 const retrieveSetIds = async ({
   es,
@@ -50,7 +51,7 @@ const retrieveSetIds = async ({
 
 export const saveSet = ({ types }) => async (
   obj,
-  { type, userId, sqon, path, sort },
+  { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId, io },
 ) => {
   const { nested_fields: nestedFields, es_type, index } = types.find(
@@ -78,9 +79,10 @@ export const saveSet = ({ types }) => async (
   };
 
   await es.index({
-    index: 'arranger-sets',
-    type: 'arranger-sets',
+    index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+    type: CONSTANTS.ES_ARRANGER_SET_TYPE,
     id: body.setId,
+    refresh: refresh.toLowerCase(),
     body,
   });
 

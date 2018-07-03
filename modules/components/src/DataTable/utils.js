@@ -1,6 +1,6 @@
 import columnTypes from './columnTypes';
 import { withProps } from 'recompose';
-import { isNil } from 'lodash';
+import { isNil, sortBy } from 'lodash';
 
 export function getSingleValue(data) {
   if (typeof data === 'object' && data) {
@@ -10,13 +10,17 @@ export function getSingleValue(data) {
   }
 }
 
-export function normalizeColumns(columns = [], customTypes) {
+export function normalizeColumns({
+  columns = [],
+  customTypes,
+  customColumns = [],
+}) {
   const types = {
     ...columnTypes,
     ...customTypes,
   };
-  return columns.map(function(column) {
-    return {
+  const mappedColumns = columns
+    .map(column => ({
       ...column,
       show: typeof column.show === 'boolean' ? column.show : true,
       Cell: column.Cell || types[column.type],
@@ -24,15 +28,27 @@ export function normalizeColumns(columns = [], customTypes) {
         ? !!(customTypes || {})[column.type]
         : column.hasCustomType,
       ...(!column.accessor && !column.id ? { id: column.field } : {}),
-    };
-  });
+    }))
+    .filter(x => x.show || x.canChangeShow);
+  return sortBy(customColumns, 'index').reduce(
+    (arr, { index, content }, i) => [
+      ...arr.slice(0, index + i),
+      content,
+      ...arr.slice(index + i),
+    ],
+    mappedColumns,
+  );
 }
 
 export const withNormalizedColumns = withProps(
-  ({ config = {}, customTypes }) => ({
+  ({ config = {}, customTypes, customColumns }) => ({
     config: {
       ...config,
-      columns: normalizeColumns(config.columns, customTypes),
+      columns: normalizeColumns({
+        columns: config.columns,
+        customTypes,
+        customColumns,
+      }),
     },
   }),
 );

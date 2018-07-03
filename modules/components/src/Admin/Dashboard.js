@@ -3,6 +3,7 @@ import Component from 'react-component-component';
 import { debounce, startCase, pick } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import convert from 'convert-units';
+import urlJoin from 'url-join';
 
 // TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
 // import GraphiQL from 'graphiql';
@@ -16,14 +17,31 @@ import State from '../State';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
 import TypesTable from './TypesTable';
-import { ES_HOST } from '../utils/config';
+import { ARRANGER_API, ES_HOST } from '../utils/config';
 import api from '../utils/api';
+import download from '../utils/download';
 import initSocket from '../utils/initSocket';
+import parseInputFiles from '../utils/parseInputFiles';
+
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
 
+export const FancyLabel = ({ children, className, ...props }) => (
+  <label className={`fancy-label ${className}`} {...props}>
+    {children}
+  </label>
+);
+
+export const Emoji = ({ label = '', content, ...props }) => (
+  <span aria-label={label} role="img" {...props}>
+    {content}
+  </span>
+);
+
 class Dashboard extends React.Component {
+  fileRef = React.createRef();
+
   constructor(props) {
     super(props);
 
@@ -43,6 +61,8 @@ class Dashboard extends React.Component {
 
       newTypeIndex: '',
       newTypeName: '',
+      newTypeEsType: '',
+      newTypeConfig: [],
       types: [],
       typesTotal: 0,
       activeType: null,
@@ -159,7 +179,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.deleteProject({ id: x.id })}
             >
-              🔥
+              <Emoji content="🔥" />
             </div>
           ),
           active: () => (
@@ -169,7 +189,7 @@ class Dashboard extends React.Component {
                 text-align: center;
               `}
             >
-              <span
+              <Emoji
                 onClick={() =>
                   this.updateProjectField({
                     id: x.id,
@@ -180,9 +200,8 @@ class Dashboard extends React.Component {
                 css={`
                   border-bottom: ${x.active ? '2px solid green' : 'none'};
                 `}
-              >
-                ✅
-              </span>{' '}
+                content="✅"
+              />{' '}
               <span
                 onClick={() =>
                   this.updateProjectField({
@@ -207,7 +226,7 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.spinup({ id: x.id })}
             >
-              ⚡️
+              <Emoji content="⚡️" />
             </div>
           ),
           teardown: () => (
@@ -218,7 +237,18 @@ class Dashboard extends React.Component {
               `}
               onClick={() => this.teardown({ id: x.id })}
             >
-              💤
+              <Emoji content="💤" />
+            </div>
+          ),
+          export: () => (
+            <div
+              css={`
+                cursor: pointer;
+                text-align: center;
+              `}
+              onClick={() => this.export({ id: x.id })}
+            >
+              <Emoji content="📥" />
             </div>
           ),
           endpointStatus: () => (
@@ -371,7 +401,9 @@ class Dashboard extends React.Component {
       body: {
         eshost: this.state.eshost,
         index: this.state.newTypeIndex,
+        esType: this.state.newTypeEsType,
         name: this.state.newTypeName,
+        config: this.state.newTypeConfig,
       },
     });
 
@@ -384,12 +416,15 @@ class Dashboard extends React.Component {
         this.state.projects,
       );
 
+      this.fileRef.current.value = null;
       this.setState({
         types,
         projects: projectsWithTypes,
         typesTotal: total,
         newTypeIndex: '',
         newTypeName: '',
+        newTypeEsType: '',
+        newTypeConfig: [],
         error: null,
       });
     }
@@ -408,6 +443,17 @@ class Dashboard extends React.Component {
   teardown = async ({ id }) => {
     await api({
       endpoint: `/projects/${id}/teardown`,
+      body: {
+        eshost: this.state.eshost,
+        id,
+      },
+    });
+  };
+
+  export = async ({ id }) => {
+    download({
+      url: urlJoin(ARRANGER_API, `projects`, id, 'export'),
+      method: 'POST',
       body: {
         eshost: this.state.eshost,
         id,
@@ -474,7 +520,7 @@ class Dashboard extends React.Component {
                 flex: none;
               `}
             >
-              ⚠️ {error}
+              <Emoji content="⚠️" /> {error}
             </div>
           )}
 
@@ -522,11 +568,7 @@ class Dashboard extends React.Component {
           <Switch>
             <Route
               path="/graphiql/:projectId"
-              render={({
-                match: {
-                  params: { projectId },
-                },
-              }) => (
+              render={({ match: { params: { projectId } } }) => (
                 <Component
                   initialState={{ projectId }}
                   shouldUpdate={({ state }) => state.projectId !== projectId}
@@ -572,9 +614,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:id'}
               render={({
-                match: {
-                  params: { id: projectId },
-                },
+                match: { params: { id: projectId } },
                 history,
                 location,
               }) => (
@@ -603,7 +643,7 @@ class Dashboard extends React.Component {
                             this.deleteType({ projectId, index: x.index })
                           }
                         >
-                          🔥
+                          <Emoji content="🔥" />
                         </div>
                       ),
                     }))}
@@ -611,7 +651,7 @@ class Dashboard extends React.Component {
                     <>
                       <div>
                         <input
-                          placeholder="Type name"
+                          placeholder="Name"
                           value={this.state.newTypeName}
                           onChange={e =>
                             this.setState({ newTypeName: e.target.value })
@@ -626,6 +666,36 @@ class Dashboard extends React.Component {
                             this.setState({ newTypeIndex: e.target.value })
                           }
                         />
+                      </div>
+                      <div>
+                        <input
+                          placeholder="ES type"
+                          value={this.state.newTypeEsType}
+                          onChange={e =>
+                            this.setState({ newTypeEsType: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="input-file">
+                          Config. Files
+                          <input
+                            type="file"
+                            multiple
+                            ref={this.fileRef}
+                            accept="*.json"
+                            onChange={async e =>
+                              this.setState({
+                                newTypeConfig: (await parseInputFiles({
+                                  files: e.target.files,
+                                })).map(f => ({
+                                  name: f.name,
+                                  content: JSON.parse(f.content),
+                                })),
+                              })
+                            }
+                          />
+                        </label>
                         <button onClick={this.addType}>+</button>
                       </div>
                     </>
@@ -637,9 +707,7 @@ class Dashboard extends React.Component {
               exact
               path={'/:projectId/:index'}
               render={({
-                match: {
-                  params: { projectId, index },
-                },
+                match: { params: { projectId, index } },
                 history,
                 location,
                 graphqlField = projects
@@ -723,9 +791,9 @@ class Dashboard extends React.Component {
                           >
                             <section>
                               <div style={{ padding: 5 }}>
-                                <label className="projects">
+                                <FancyLabel className="projects">
                                   FIELDS ({this.state.fieldsTotal})
-                                </label>
+                                </FancyLabel>
                               </div>
                               {this.state.fields
                                 .filter(x => x.field.includes(filterText))
@@ -747,9 +815,9 @@ class Dashboard extends React.Component {
                             </section>
                             <section>
                               <div style={{ padding: 5 }}>
-                                <label className="projects">
+                                <FancyLabel className="projects">
                                   {activeField?.field}
-                                </label>
+                                </FancyLabel>
                               </div>
                               {Object.entries(activeField || {})
                                 .filter(([key]) => key !== 'field')
@@ -784,7 +852,7 @@ class Dashboard extends React.Component {
                                       {key === 'displayValues' ? (
                                         activeField.type === 'boolean' ? (
                                           <div>
-                                            <label>Any: </label>
+                                            <FancyLabel>Any: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(
@@ -792,7 +860,7 @@ class Dashboard extends React.Component {
                                               )}
                                               value={val.any}
                                             />
-                                            <label>True: </label>
+                                            <FancyLabel>True: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(
@@ -800,7 +868,7 @@ class Dashboard extends React.Component {
                                               )}
                                               value={val.true}
                                             />
-                                            <label>False: </label>
+                                            <FancyLabel>False: </FancyLabel>
                                             <input
                                               type="text"
                                               onChange={updateBooleanDisplayValue(

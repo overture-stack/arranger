@@ -17,7 +17,7 @@ export default class extends React.Component {
         background: #f7ed9c;
       `,
     } = this.props;
-    const regex = strToReg(highlightText);
+    const regex = strToReg(highlightText, { modifiers: 'i' });
     const matchResult = content.match(regex);
     const foundIndex = matchResult?.index;
     const seg1 = content.substring(0, foundIndex);
