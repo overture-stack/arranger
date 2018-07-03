@@ -138,9 +138,9 @@ export const injectNestedFiltersToAggs = ({
   aggs,
   nestedSqonFilters,
   aggregationsFilterThemselves,
-}) => {
-  return Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
-    const downToNextLevel = () => ({
+}) =>
+  Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
+    const skipToNextLevel = () => ({
       ...acc,
       [aggName]: {
         ...aggContent,
@@ -151,50 +151,50 @@ export const injectNestedFiltersToAggs = ({
         }),
       },
     });
-
-    if (aggContent.global || aggContent.filter) {
-      return downToNextLevel();
-    } else if (aggContent.nested) {
-      if (nestedSqonFilters[aggContent.nested.path]) {
-        return {
-          ...acc,
-          [aggName]: {
-            ...aggContent,
-            aggs: {
-              [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
-                filter: {
-                  bool: {
-                    must: nestedSqonFilters[aggContent.nested.path]
-                      .filter(
-                        sqonFilter =>
-                          aggregationsFilterThemselves ||
-                          aggName.split(':')[0] !== sqonFilter.content.field,
-                      )
-                      .map(sqonFilter =>
-                        opSwitch({
-                          nestedFields: [],
-                          filter: normalizeFilters(sqonFilter),
-                        }),
-                      ),
-                  },
-                },
-                aggs: injectNestedFiltersToAggs({
-                  aggs: aggContent.aggs,
-                  nestedSqonFilters,
-                  aggregationsFilterThemselves,
-                }),
+    const wrapInFilterAgg = () => ({
+      ...acc,
+      [aggName]: {
+        ...aggContent,
+        aggs: {
+          [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
+            filter: {
+              bool: {
+                must: nestedSqonFilters[aggContent.nested.path]
+                  .filter(
+                    sqonFilter =>
+                      aggregationsFilterThemselves ||
+                      aggName.split(':')[0] !== sqonFilter.content.field,
+                  )
+                  .map(sqonFilter =>
+                    opSwitch({
+                      nestedFields: [],
+                      filter: normalizeFilters(sqonFilter),
+                    }),
+                  ),
               },
             },
+            aggs: injectNestedFiltersToAggs({
+              aggs: aggContent.aggs,
+              nestedSqonFilters,
+              aggregationsFilterThemselves,
+            }),
           },
-        };
+        },
+      },
+    });
+
+    if (aggContent.global || aggContent.filter) {
+      return skipToNextLevel();
+    } else if (aggContent.nested) {
+      if (nestedSqonFilters[aggContent.nested.path]) {
+        return wrapInFilterAgg();
       } else {
-        return downToNextLevel();
+        return skipToNextLevel();
       }
     } else {
       return acc;
     }
   }, aggs);
-};
 
 export default function({
   sqon,
