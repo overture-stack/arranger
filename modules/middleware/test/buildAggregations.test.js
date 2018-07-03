@@ -388,7 +388,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
         op: 'in',
         content: {
           field: 'participants.diagnoses.mondo_id_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
     ],
@@ -421,7 +421,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
                     {
                       terms: {
                         'participants.diagnoses.mondo_id_diagnosis': [
-                          'MONDO:0021637',
+                          'SOME_VALUE',
                         ],
                         boost: 0,
                       },
@@ -470,14 +470,14 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
         op: 'in',
         content: {
           field: 'participants.diagnoses.mondo_id_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
           field: 'participants.diagnoses.source_text_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
     ],
@@ -515,7 +515,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                                     {
                                       terms: {
                                         'participants.diagnoses.mondo_id_diagnosis': [
-                                          'MONDO:0021637',
+                                          'SOME_VALUE',
                                         ],
                                         boost: 0,
                                       },
@@ -551,7 +551,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                             {
                               terms: {
                                 'participants.diagnoses.mondo_id_diagnosis': [
-                                  'MONDO:0021637',
+                                  'SOME_VALUE',
                                 ],
                                 boost: 0,
                               },
@@ -606,14 +606,14 @@ test('buildAggregations can drop nested sqon filters down to filters including a
         op: 'in',
         content: {
           field: 'participants.diagnoses.mondo_id_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
           field: 'participants.diagnoses.source_text_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
     ],
@@ -646,7 +646,7 @@ test('buildAggregations can drop nested sqon filters down to filters including a
                     {
                       terms: {
                         'participants.diagnoses.mondo_id_diagnosis': [
-                          'MONDO:0021637',
+                          'SOME_VALUE',
                         ],
                         boost: 0,
                       },
@@ -654,7 +654,7 @@ test('buildAggregations can drop nested sqon filters down to filters including a
                     {
                       terms: {
                         'participants.diagnoses.source_text_diagnosis': [
-                          'MONDO:0021637',
+                          'SOME_VALUE',
                         ],
                         boost: 0,
                       },
@@ -737,14 +737,14 @@ test('injectNestedFiltersToAggs should not be mutative', () => {
         op: 'in',
         content: {
           field: 'participants.diagnoses.mondo_id_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
           field: 'participants.diagnoses.source_text_diagnosis',
-          value: ['MONDO:0021637'],
+          value: ['SOME_VALUE'],
         },
       },
     ],
