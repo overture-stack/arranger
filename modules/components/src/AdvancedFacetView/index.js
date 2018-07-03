@@ -89,13 +89,13 @@ export default class AdvancedFacetView extends React.Component {
     }
   }
 
-  setSearchTerm = debounce(
-    value =>
-      this.setState({
-        searchTerm: value,
-      }),
-    500,
-  );
+  setSearchTerm = debounce(value => {
+    const { onFilterChange = () => {} } = this.props;
+    onFilterChange(value);
+    this.setState({
+      searchTerm: value,
+    });
+  }, 500);
 
   render() {
     const {
@@ -111,11 +111,13 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       statsConfig,
       translateSQONValue = () => {},
+      onFacetNavigation = () => {},
       InputComponent = TextInput,
       ...props
     } = this.props;
     const scrollFacetViewToPath = path => {
       this.facetView.scrollToPath({ path });
+      onFacetNavigation(path);
     };
     const visibleDisplayTreeData = withValueOnly
       ? filterOutNonValue({
