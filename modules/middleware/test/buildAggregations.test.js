@@ -240,15 +240,17 @@ test('buildAggregations should handle nested aggregations with filters on same f
 });
 
 test('buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { field: 'mdx', value: 100 } },
+      { op: '<=', content: { field: 'mdx', value: 200 } },
+    ],
+  };
   let input = {
-    sqon: {
-      op: 'and',
-      content: [
-        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-        { op: '>=', content: { field: 'mdx', value: 100 } },
-        { op: '<=', content: { field: 'mdx', value: 200 } },
-      ],
-    },
+    sqon,
+    query: buildQuery({ nestedFields: [], filters: sqon }),
     nestedFields: [],
     graphqlFields: {
       mdx: {
@@ -308,6 +310,14 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 });
 
 test('buildAggregations should handle `aggregations_filter_themselves` variable set to true', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { field: 'mdx', value: 100 } },
+      { op: '<=', content: { field: 'mdx', value: 200 } },
+    ],
+  };
   let input = {
     nestedFields: [],
     graphqlFields: {
@@ -324,14 +334,8 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    sqon: {
-      op: 'and',
-      content: [
-        { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-        { op: '>=', content: { field: 'mdx', value: 100 } },
-        { op: '<=', content: { field: 'mdx', value: 200 } },
-      ],
-    },
+    sqon,
+    query: buildQuery({ nestedFields: [], filters: sqon }),
     aggregationsFilterThemselves: true,
   };
 
@@ -346,11 +350,13 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 
 test('buildAggregations should handle queries not in a group', () => {
   const nestedFields = [];
+  const sqon = {
+    op: 'and',
+    content: [{ op: 'in', content: { field: 'case', value: [1] } }],
+  };
   const input = {
-    sqon: {
-      op: 'and',
-      content: [{ op: 'in', content: { field: 'case', value: [1] } }],
-    },
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },
@@ -375,20 +381,23 @@ test('buildAggregations should handle queries not in a group', () => {
 });
 
 test('buildAggregations should drop nested sqon filters down to appropriate aggregation filters', () => {
-  const input = {
-    nestedFields: ['participants', 'participants.diagnoses'],
-    sqon: {
-      op: 'and',
-      content: [
-        {
-          op: 'in',
-          content: {
-            field: 'participants.diagnoses.mondo_id_diagnosis',
-            value: ['MONDO:0021637'],
-          },
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['MONDO:0021637'],
         },
-      ],
-    },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
+  const input = {
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },
@@ -454,27 +463,30 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
 });
 
 test('buildAggregations can drop nested sqon filters down to filters excluding aggregations that would filter themselves', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['MONDO:0021637'],
+        },
+      },
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.source_text_diagnosis',
+          value: ['MONDO:0021637'],
+        },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
   const input = {
-    nestedFields: ['participants', 'participants.diagnoses'],
-    sqon: {
-      op: 'and',
-      content: [
-        {
-          op: 'in',
-          content: {
-            field: 'participants.diagnoses.mondo_id_diagnosis',
-            value: ['MONDO:0021637'],
-          },
-        },
-        {
-          op: 'in',
-          content: {
-            field: 'participants.diagnoses.source_text_diagnosis',
-            value: ['MONDO:0021637'],
-          },
-        },
-      ],
-    },
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },
@@ -587,27 +599,30 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
 });
 
 test('buildAggregations can drop nested sqon filters down to filters including aggregations that would filter themselves', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['MONDO:0021637'],
+        },
+      },
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.source_text_diagnosis',
+          value: ['MONDO:0021637'],
+        },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
   const input = {
-    nestedFields: ['participants', 'participants.diagnoses'],
-    sqon: {
-      op: 'and',
-      content: [
-        {
-          op: 'in',
-          content: {
-            field: 'participants.diagnoses.mondo_id_diagnosis',
-            value: ['MONDO:0021637'],
-          },
-        },
-        {
-          op: 'in',
-          content: {
-            field: 'participants.diagnoses.source_text_diagnosis',
-            value: ['MONDO:0021637'],
-          },
-        },
-      ],
-    },
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },

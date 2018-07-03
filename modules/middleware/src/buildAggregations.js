@@ -201,8 +201,8 @@ export default function({
   graphqlFields,
   nestedFields,
   aggregationsFilterThemselves,
+  query,
 }) {
-  const query = buildQuery({ nestedFields, filters: sqon });
   const nestedSqonFilters = (sqon?.content || [])
     .filter(({ content }) => {
       const splitted = content.field.split('.');
