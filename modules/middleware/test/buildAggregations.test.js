@@ -1,5 +1,8 @@
-import buildAggregations from '../src/buildAggregations.js';
+import buildAggregations, {
+  injectNestedFiltersToAggs,
+} from '../src/buildAggregations.js';
 import buildQuery from '../src/buildQuery';
+import { cloneDeep } from 'lodash';
 
 test('buildAggregations should handle nested aggregations', () => {
   const nestedFields = [
@@ -164,6 +167,15 @@ test('buildAggregations should handle nested aggregations', () => {
 test('buildAggregations should handle nested aggregations with filters on same field', () => {
   const nestedFields = ['participants'];
   const input = {
+    sqon: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: { field: 'participants.kf_id', value: ['PT_87QW2JKA'] },
+        },
+      ],
+    },
     query: {
       bool: {
         must: [
@@ -201,13 +213,22 @@ test('buildAggregations should handle nested aggregations with filters on same f
         'participants.kf_id:nested': {
           nested: { path: 'participants' },
           aggs: {
-            'participants.kf_id:missing': {
-              aggs: { rn: { reverse_nested: {} } },
-              missing: { field: 'participants.kf_id' },
-            },
-            'participants.kf_id': {
-              aggs: { rn: { reverse_nested: {} } },
-              terms: { field: 'participants.kf_id', size: 300000 },
+            'participants:filtered': {
+              filter: {
+                bool: {
+                  must: [],
+                },
+              },
+              aggs: {
+                'participants.kf_id:missing': {
+                  aggs: { rn: { reverse_nested: {} } },
+                  missing: { field: 'participants.kf_id' },
+                },
+                'participants.kf_id': {
+                  aggs: { rn: { reverse_nested: {} } },
+                  terms: { field: 'participants.kf_id', size: 300000 },
+                },
+              },
             },
           },
         },
@@ -219,7 +240,17 @@ test('buildAggregations should handle nested aggregations with filters on same f
 });
 
 test('buildAggregations should handle `aggregations_filter_themselves` variable set to false', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { field: 'mdx', value: 100 } },
+      { op: '<=', content: { field: 'mdx', value: 200 } },
+    ],
+  };
   let input = {
+    sqon,
+    query: buildQuery({ nestedFields: [], filters: sqon }),
     nestedFields: [],
     graphqlFields: {
       mdx: {
@@ -235,17 +266,6 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
     aggregationsFilterThemselves: false,
   };
 
@@ -290,6 +310,14 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 });
 
 test('buildAggregations should handle `aggregations_filter_themselves` variable set to true', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { field: 'mdx', value: 100 } },
+      { op: '<=', content: { field: 'mdx', value: 200 } },
+    ],
+  };
   let input = {
     nestedFields: [],
     graphqlFields: {
@@ -306,17 +334,8 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         },
       },
     },
-    query: buildQuery({
-      nestedFields: [],
-      filters: {
-        op: 'and',
-        content: [
-          { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-          { op: '>=', content: { field: 'mdx', value: 100 } },
-          { op: '<=', content: { field: 'mdx', value: 200 } },
-        ],
-      },
-    }),
+    sqon,
+    query: buildQuery({ nestedFields: [], filters: sqon }),
     aggregationsFilterThemselves: true,
   };
 
@@ -331,11 +350,13 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
 
 test('buildAggregations should handle queries not in a group', () => {
   const nestedFields = [];
+  const sqon = {
+    op: 'and',
+    content: [{ op: 'in', content: { field: 'case', value: [1] } }],
+  };
   const input = {
-    query: buildQuery({
-      nestedFields,
-      filters: { op: 'in', content: { field: 'case', value: [1] } },
-    }),
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
     nestedFields,
     graphqlFields: {
       access: { buckets: { key: {} } },
@@ -357,4 +378,379 @@ test('buildAggregations should handle queries not in a group', () => {
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expectedOutput);
+});
+
+test('buildAggregations should drop nested sqon filters down to appropriate aggregation filters', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
+  const input = {
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
+    graphqlFields: {
+      participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: false,
+  };
+  const expectedOutput = {
+    'participants.diagnoses.source_text_diagnosis:nested': {
+      nested: {
+        path: 'participants',
+      },
+      aggs: {
+        'participants.diagnoses.source_text_diagnosis:nested': {
+          nested: {
+            path: 'participants.diagnoses',
+          },
+          aggs: {
+            'participants.diagnoses:filtered': {
+              filter: {
+                bool: {
+                  must: [
+                    {
+                      terms: {
+                        'participants.diagnoses.mondo_id_diagnosis': [
+                          'SOME_VALUE',
+                        ],
+                        boost: 0,
+                      },
+                    },
+                  ],
+                },
+              },
+              aggs: {
+                'participants.diagnoses.source_text_diagnosis': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  terms: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
+                    size: 300000,
+                  },
+                },
+                'participants.diagnoses.source_text_diagnosis:missing': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  missing: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
+
+test('buildAggregations can drop nested sqon filters down to filters excluding aggregations that would filter themselves', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.source_text_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
+  const input = {
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
+    graphqlFields: {
+      participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: false,
+  };
+  const expectedOutput = {
+    'participants.diagnoses.source_text_diagnosis:global': {
+      global: {},
+      aggs: {
+        'participants.diagnoses.source_text_diagnosis:filtered': {
+          filter: {
+            bool: {
+              must: [
+                {
+                  nested: {
+                    path: 'participants',
+                    query: {
+                      bool: {
+                        must: [
+                          {
+                            nested: {
+                              path: 'participants.diagnoses',
+                              query: {
+                                bool: {
+                                  must: [
+                                    {
+                                      terms: {
+                                        'participants.diagnoses.mondo_id_diagnosis': [
+                                          'SOME_VALUE',
+                                        ],
+                                        boost: 0,
+                                      },
+                                    },
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          aggs: {
+            'participants.diagnoses.source_text_diagnosis:nested': {
+              nested: {
+                path: 'participants',
+              },
+              aggs: {
+                'participants.diagnoses.source_text_diagnosis:nested': {
+                  nested: {
+                    path: 'participants.diagnoses',
+                  },
+                  aggs: {
+                    'participants.diagnoses:filtered': {
+                      filter: {
+                        bool: {
+                          must: [
+                            {
+                              terms: {
+                                'participants.diagnoses.mondo_id_diagnosis': [
+                                  'SOME_VALUE',
+                                ],
+                                boost: 0,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      aggs: {
+                        'participants.diagnoses.source_text_diagnosis': {
+                          aggs: {
+                            rn: {
+                              reverse_nested: {},
+                            },
+                          },
+                          terms: {
+                            field:
+                              'participants.diagnoses.source_text_diagnosis',
+                            size: 300000,
+                          },
+                        },
+                        'participants.diagnoses.source_text_diagnosis:missing': {
+                          aggs: {
+                            rn: {
+                              reverse_nested: {},
+                            },
+                          },
+                          missing: {
+                            field:
+                              'participants.diagnoses.source_text_diagnosis',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
+
+test('buildAggregations can drop nested sqon filters down to filters including aggregations that would filter themselves', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.source_text_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+    ],
+  };
+  const nestedFields = ['participants', 'participants.diagnoses'];
+  const input = {
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
+    graphqlFields: {
+      participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
+    },
+    aggregationsFilterThemselves: true,
+  };
+  const expectedOutput = {
+    'participants.diagnoses.source_text_diagnosis:nested': {
+      nested: {
+        path: 'participants',
+      },
+      aggs: {
+        'participants.diagnoses.source_text_diagnosis:nested': {
+          nested: {
+            path: 'participants.diagnoses',
+          },
+          aggs: {
+            'participants.diagnoses:filtered': {
+              filter: {
+                bool: {
+                  must: [
+                    {
+                      terms: {
+                        'participants.diagnoses.mondo_id_diagnosis': [
+                          'SOME_VALUE',
+                        ],
+                        boost: 0,
+                      },
+                    },
+                    {
+                      terms: {
+                        'participants.diagnoses.source_text_diagnosis': [
+                          'SOME_VALUE',
+                        ],
+                        boost: 0,
+                      },
+                    },
+                  ],
+                },
+              },
+              aggs: {
+                'participants.diagnoses.source_text_diagnosis': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  terms: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
+                    size: 300000,
+                  },
+                },
+                'participants.diagnoses.source_text_diagnosis:missing': {
+                  aggs: {
+                    rn: {
+                      reverse_nested: {},
+                    },
+                  },
+                  missing: {
+                    field: 'participants.diagnoses.source_text_diagnosis',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});
+
+test('injectNestedFiltersToAggs should not be mutative', () => {
+  const aggs = {
+    nested: {
+      path: 'participants',
+    },
+    aggs: {
+      'participants.diagnoses.source_text_diagnosis:nested': {
+        nested: {
+          path: 'participants.diagnoses',
+        },
+        aggs: {
+          'participants.diagnoses.source_text_diagnosis': {
+            aggs: {
+              rn: {
+                reverse_nested: {},
+              },
+            },
+            terms: {
+              field: 'participants.diagnoses.source_text_diagnosis',
+              size: 300000,
+            },
+          },
+          'participants.diagnoses.source_text_diagnosis:missing': {
+            aggs: {
+              rn: {
+                reverse_nested: {},
+              },
+            },
+            missing: {
+              field: 'participants.diagnoses.source_text_diagnosis',
+            },
+          },
+        },
+      },
+    },
+  };
+  const nestedSqonFilters = {
+    'participants.diagnoses': [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.mondo_id_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.source_text_diagnosis',
+          value: ['SOME_VALUE'],
+        },
+      },
+    ],
+  };
+  const expectedOriginalAggs = cloneDeep(aggs);
+  injectNestedFiltersToAggs({ aggs, nestedSqonFilters });
+
+  expect(aggs).toEqual(expectedOriginalAggs);
 });

@@ -202,7 +202,7 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
   });
 }
 
-function opSwitch({ nestedFields, filter }) {
+export const opSwitch = ({ nestedFields, filter }) => {
   const { op, content: { value } } = filter;
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
@@ -223,7 +223,7 @@ function opSwitch({ nestedFields, filter }) {
   } else {
     throw new Error('unknown op');
   }
-}
+};
 
 export default function({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
