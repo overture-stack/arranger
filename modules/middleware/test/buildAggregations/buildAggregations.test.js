@@ -1,8 +1,5 @@
-import buildAggregations, {
-  injectNestedFiltersToAggs,
-} from '../src/buildAggregations.js';
-import buildQuery from '../src/buildQuery';
-import { cloneDeep } from 'lodash';
+import buildAggregations from '../../src/buildAggregations';
+import buildQuery from '../../src/buildQuery';
 
 test('buildAggregations should handle nested aggregations', () => {
   const nestedFields = [
@@ -693,64 +690,4 @@ test('buildAggregations can drop nested sqon filters down to filters including a
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expectedOutput);
-});
-
-test('injectNestedFiltersToAggs should not be mutative', () => {
-  const aggs = {
-    nested: {
-      path: 'participants',
-    },
-    aggs: {
-      'participants.diagnoses.source_text_diagnosis:nested': {
-        nested: {
-          path: 'participants.diagnoses',
-        },
-        aggs: {
-          'participants.diagnoses.source_text_diagnosis': {
-            aggs: {
-              rn: {
-                reverse_nested: {},
-              },
-            },
-            terms: {
-              field: 'participants.diagnoses.source_text_diagnosis',
-              size: 300000,
-            },
-          },
-          'participants.diagnoses.source_text_diagnosis:missing': {
-            aggs: {
-              rn: {
-                reverse_nested: {},
-              },
-            },
-            missing: {
-              field: 'participants.diagnoses.source_text_diagnosis',
-            },
-          },
-        },
-      },
-    },
-  };
-  const nestedSqonFilters = {
-    'participants.diagnoses': [
-      {
-        op: 'in',
-        content: {
-          field: 'participants.diagnoses.mondo_id_diagnosis',
-          value: ['SOME_VALUE'],
-        },
-      },
-      {
-        op: 'in',
-        content: {
-          field: 'participants.diagnoses.source_text_diagnosis',
-          value: ['SOME_VALUE'],
-        },
-      },
-    ],
-  };
-  const expectedOriginalAggs = cloneDeep(aggs);
-  injectNestedFiltersToAggs({ aggs, nestedSqonFilters });
-
-  expect(aggs).toEqual(expectedOriginalAggs);
 });

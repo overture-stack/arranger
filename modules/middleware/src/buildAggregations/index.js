@@ -1,6 +1,6 @@
 import { get, isEqual } from 'lodash';
-import { opSwitch } from './buildQuery';
-import normalizeFilters from './buildQuery/normalizeFilters';
+import injectNestedFiltersToAggs from './injectNestedFiltersToAggs';
+import getNestedSqonFilters from './getNestedSqonFilters';
 import {
   AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
@@ -11,7 +11,7 @@ import {
   STATS,
   HISTOGRAM,
   BUCKETS,
-} from './constants';
+} from '../constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
@@ -129,73 +129,6 @@ function wrapWithFilters({
   return aggregation;
 }
 
-/*
- * due to this problem: https://github.com/kids-first/kf-portal-ui/issues/488
- * queries that are on a term that shares a parent with a aggregation field
- * needs to be dropped down to the aggregation level as a filter.
- */
-export const injectNestedFiltersToAggs = ({
-  aggs,
-  nestedSqonFilters,
-  aggregationsFilterThemselves,
-}) =>
-  Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
-    const skipToNextLevel = () => ({
-      ...acc,
-      [aggName]: {
-        ...aggContent,
-        aggs: injectNestedFiltersToAggs({
-          aggs: aggContent.aggs,
-          nestedSqonFilters,
-          aggregationsFilterThemselves,
-        }),
-      },
-    });
-    const wrapInFilterAgg = () => ({
-      ...acc,
-      [aggName]: {
-        ...aggContent,
-        aggs: {
-          [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
-            filter: {
-              bool: {
-                must: nestedSqonFilters[aggContent.nested.path]
-                  .filter(
-                    sqonFilter =>
-                      aggregationsFilterThemselves ||
-                      aggName.split(':')[0] !== sqonFilter.content.field,
-                  )
-                  .map(sqonFilter =>
-                    opSwitch({
-                      nestedFields: [],
-                      filter: normalizeFilters(sqonFilter),
-                    }),
-                  ),
-              },
-            },
-            aggs: injectNestedFiltersToAggs({
-              aggs: aggContent.aggs,
-              nestedSqonFilters,
-              aggregationsFilterThemselves,
-            }),
-          },
-        },
-      },
-    });
-
-    if (aggContent.global || aggContent.filter) {
-      return skipToNextLevel();
-    } else if (aggContent.nested) {
-      if (nestedSqonFilters[aggContent.nested.path]) {
-        return wrapInFilterAgg();
-      } else {
-        return skipToNextLevel();
-      }
-    } else {
-      return acc;
-    }
-  }, aggs);
-
 export default function({
   sqon,
   graphqlFields,
@@ -204,23 +137,7 @@ export default function({
   query,
 }) {
   // TODO: support nested sqon operations
-  const nestedSqonFilters = (sqon?.content || [])
-    .filter(({ content }) => {
-      const splitted = content.field.split('.');
-      return content.field && splitted.length
-        ? nestedFields.includes(
-            splitted.slice(0, splitted.length - 1).join('.'),
-          )
-        : false;
-    })
-    .reduce((acc, filter) => {
-      const splitted = filter.content.field.split('.');
-      const parentPath = splitted.slice(0, splitted.length - 1).join('.');
-      return {
-        ...acc,
-        [parentPath]: [...(acc[parentPath] || []), filter],
-      };
-    }, {});
+  const nestedSqonFilters = getNestedSqonFilters({ sqon, nestedFields });
   const aggs = Object.entries(graphqlFields).reduce(
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
