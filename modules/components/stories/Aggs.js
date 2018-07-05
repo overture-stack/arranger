@@ -183,6 +183,7 @@ storiesOf('Aggs', module)
         field="disease_type"
         displayName="Disease Type"
         stats={{
+          // expects linux timestamp
           min: 1529539200125,
           max: 1529539259913,
         }}
