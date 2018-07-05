@@ -9,7 +9,6 @@ let aggFields = `
     field
     show
     active
-    type
   }
 `;
 
