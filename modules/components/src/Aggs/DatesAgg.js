@@ -2,16 +2,15 @@ import React from 'react';
 import Moment from 'moment';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { maxBy, minBy } from 'lodash';
 
 import { removeSQON, replaceSQON } from '../SQONView/utils';
 import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
 import './DatesAgg.css';
 
-const BUCKET_DATE_FORMAT = 'YYYY-MM-DD';
-const bucketDateToMoment = dateString => Moment(dateString, BUCKET_DATE_FORMAT);
-const momentToBucketDate = moment => moment?.format(BUCKET_DATE_FORMAT);
+const SQON_DATE_FORMAT = 'YYYY-MM-DD';
+const dateFromSqon = dateString => Moment(dateString, SQON_DATE_FORMAT);
+const momentToSqonDate = moment => moment?.format(SQON_DATE_FORMAT);
 
 class DatesAgg extends React.Component {
   constructor(props) {
@@ -23,18 +22,17 @@ class DatesAgg extends React.Component {
     this.setState(this.initializeState(nextProps));
   }
 
-  initializeState = ({ buckets = [], getActiveValue = () => ({}) }) => {
+  initializeState = ({ stats = {}, getActiveValue = () => null }) => {
     const { field } = this.props;
-    const bucketMoments = buckets.map(x => bucketDateToMoment(x.key_as_string));
-    const minDate = minBy(bucketMoments, x => x.valueOf())?.subtract(1, 'days');
-    const maxDate = maxBy(bucketMoments, x => x.valueOf())?.add(1, 'days');
+    const minDate = stats.min && Moment(stats.min).subtract(1, 'days');
+    const maxDate = stats.max && Moment(stats.max).add(1, 'days');
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
     return {
       minDate,
       maxDate,
-      startDate: startFromSqon ? bucketDateToMoment(startFromSqon) : null,
-      endDate: endFromSqon ? bucketDateToMoment(endFromSqon) : null,
+      startDate: startFromSqon ? dateFromSqon(startFromSqon) : null,
+      endDate: endFromSqon ? dateFromSqon(endFromSqon) : null,
     };
   };
 
@@ -49,7 +47,7 @@ class DatesAgg extends React.Component {
                 op: '>=',
                 content: {
                   field,
-                  value: momentToBucketDate(startDate.startOf('day')),
+                  value: momentToSqonDate(startDate.startOf('day')),
                 },
               },
             ]
@@ -60,7 +58,7 @@ class DatesAgg extends React.Component {
                 op: '<=',
                 content: {
                   field,
-                  value: momentToBucketDate(endDate.endOf('day')),
+                  value: momentToSqonDate(endDate.endOf('day')),
                 },
               },
             ]

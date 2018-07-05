@@ -1,6 +1,8 @@
 import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 import defaultApi from '../utils/api';
+import { get } from 'lodash';
+import { esToAggTypeMap } from '@arranger/mapping-utils';
 
 let aggFields = `
   state {
@@ -40,8 +42,13 @@ export const queryFromAgg = ({ field, type }) =>
       }
       `;
 
+const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
+  const mappingPath = field.split('__').join('.properties.');
+  return esToAggTypeMap[get(mapping, mappingPath)?.type];
+};
+
 export default class extends Component {
-  state = { aggs: [], temp: [] };
+  state = { aggs: [], temp: [], mapping: {} };
 
   async componentDidMount() {
     this.fetchAggsState(this.props);
@@ -62,6 +69,7 @@ export default class extends Component {
           query: `query aggsStateQuery
             {
               ${graphqlField} {
+                mapping
                 aggsState {
                   ${aggFields}
                 }
@@ -74,6 +82,7 @@ export default class extends Component {
       this.setState({
         aggs: data[graphqlField].aggsState.state,
         temp: data[graphqlField].aggsState.state,
+        mapping: data[graphqlField].mapping,
       });
     } catch (e) {
       // this.setState({ })
@@ -127,10 +136,12 @@ export default class extends Component {
   };
 
   render() {
+    const { mapping } = this.state;
     return this.props.render({
       update: this.update,
       aggs: this.state.temp.map(x => ({
         ...x,
+        type: getMappingTypeOfField({ field: x.field, mapping }) || x.type,
         query: queryFromAgg(x),
         isTerms: x.type === 'Aggregations',
       })),
