@@ -21,4 +21,4 @@ export let typeDefs = `
   type Aggregations {
     buckets: [Bucket]
   }
-`
+`;

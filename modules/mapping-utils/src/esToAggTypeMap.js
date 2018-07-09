@@ -3,7 +3,7 @@ export default {
   object: 'Aggregations',
   text: 'Aggregations',
   boolean: 'Aggregations',
-  date: 'Aggregations',
+  date: 'NumericAggregations',
   keyword: 'Aggregations',
   id: 'Aggregations',
   long: 'NumericAggregations',

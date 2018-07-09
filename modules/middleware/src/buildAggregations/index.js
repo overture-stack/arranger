@@ -1,5 +1,6 @@
 import { get, isEqual } from 'lodash';
-
+import injectNestedFiltersToAggs from './injectNestedFiltersToAggs';
+import getNestedSqonFilters from './getNestedSqonFilters';
 import {
   AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
@@ -10,7 +11,7 @@ import {
   STATS,
   HISTOGRAM,
   BUCKETS,
-} from './constants';
+} from '../constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
@@ -129,12 +130,15 @@ function wrapWithFilters({
 }
 
 export default function({
+  sqon,
   graphqlFields,
   nestedFields,
-  query,
   aggregationsFilterThemselves,
+  query,
 }) {
-  return Object.entries(graphqlFields).reduce(
+  // TODO: support nested sqon operations
+  const nestedSqonFilters = getNestedSqonFilters({ sqon, nestedFields });
+  const aggs = Object.entries(graphqlFields).reduce(
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
       const nestedPaths = getNestedPathsInField({ field, nestedFields });
@@ -163,4 +167,12 @@ export default function({
     },
     {},
   );
+
+  const filteredAggregations = injectNestedFiltersToAggs({
+    aggs,
+    nestedSqonFilters,
+    aggregationsFilterThemselves,
+  });
+
+  return filteredAggregations;
 }
