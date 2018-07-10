@@ -51,8 +51,8 @@ const Aggregations = ({
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                     onValueChange: ({ sqon, value }) => {
-                      setSQON(sqon);
                       onTermSelected(value);
+                      setSQON(sqon);
                     },
                     key: agg.field,
                     sqon,
