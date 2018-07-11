@@ -138,12 +138,19 @@ export default class extends Component {
     const { mapping } = this.state;
     return this.props.render({
       update: this.update,
-      aggs: this.state.temp.map(x => ({
-        ...x,
-        type: getMappingTypeOfField({ field: x.field, mapping }) || x.type,
-        query: queryFromAgg(x),
-        isTerms: x.type === 'Aggregations',
-      })),
+      aggs: this.state.temp.map(x => {
+        const type =
+          getMappingTypeOfField({ field: x.field, mapping }) || x.type;
+        return {
+          ...x,
+          type,
+          query: queryFromAgg({
+            ...x,
+            type,
+          }),
+          isTerms: type === 'Aggregations',
+        };
+      }),
       saveOrder: this.saveOrder,
     });
   }
