@@ -1,18 +1,18 @@
-import React from 'react';
-import { compose } from 'recompose';
-import Component from 'react-component-component';
-import { truncate } from 'lodash';
+import React from "react";
+import { compose } from "recompose";
+import Component from "react-component-component";
+import { truncate } from "lodash";
 
-import SQONView, { Value, Bubble, Field } from '../SQONView';
-import { fetchExtendedMapping } from '../utils/api';
-import internalTranslateSQONValue from '../utils/translateSQONValue';
+import SQONView, { Value, Bubble, Field } from "../SQONView";
+import { fetchExtendedMapping } from "../utils/api";
+import internalTranslateSQONValue from "../utils/translateSQONValue";
 
 export const CurrentSQON = ({
   sqon,
   setSQON,
   extendedMapping,
   valueCharacterLimit = 30,
-  onClear = () => {},
+  onClear,
   translateSQONValue = x => x,
   findExtendedMappingField = field =>
     extendedMapping?.find(e => e.field === field),
@@ -30,9 +30,9 @@ export const CurrentSQON = ({
         {truncate(
           compose(translateSQONValue, internalTranslateSQONValue)(
             (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              value,
+              value
           ),
-          { length: valueCharacterLimit || Infinity },
+          { length: valueCharacterLimit || Infinity }
         )}
       </Value>
     )}
@@ -40,7 +40,7 @@ export const CurrentSQON = ({
       <Bubble
         className="sqon-clear"
         onClick={() => {
-          onClear();
+          onClear?.();
           setSQON(nextSQON);
         }}
       >
@@ -64,7 +64,7 @@ const CurrentSQONState = ({
         fetchExtendedMapping({ graphqlField, projectId }).then(
           ({ extendedMapping }) => {
             return setState({ extendedMapping });
-          },
+          }
         )
       }
     >

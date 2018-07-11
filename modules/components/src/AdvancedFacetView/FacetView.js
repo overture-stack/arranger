@@ -1,25 +1,25 @@
-import React from 'react';
-import { isEqual } from 'lodash';
-import aggComponentsMap from '../Aggs/aggComponentsMap';
-import TextHighlight from '../TextHighlight';
+import React from "react";
+import { isEqual } from "lodash";
+import aggComponentsMap from "../Aggs/aggComponentsMap";
+import TextHighlight from "../TextHighlight";
 
-const serializeToDomId = path => path.split('.').join('__');
+const serializeToDomId = path => path.split(".").join("__");
 
 const flattenDisplayTreeData = displayTreeData => {
   return displayTreeData.reduce(
     (acc, node) => [
       ...acc,
-      ...(node.children ? flattenDisplayTreeData(node.children) : [node]),
+      ...(node.children ? flattenDisplayTreeData(node.children) : [node])
     ],
-    [],
+    []
   );
 };
 
 export default class FacetView extends React.Component {
   state = {
-    focusedPath: null,
+    focusedPath: null
   };
-  scrollToPath = ({ path, behavior = 'smooth', block = 'start' }) => {
+  scrollToPath = ({ path, behavior = "smooth", block = "start" }) => {
     const targetElementId = serializeToDomId(path);
     const targetElement = this.root.querySelector(`#${targetElementId}`);
     if (targetElement) {
@@ -32,11 +32,11 @@ export default class FacetView extends React.Component {
     if (!isEqual(lastSqon, sqon) && focusedPath) {
       this.scrollToPath({
         path: focusedPath,
-        block: 'start',
-        behavior: 'smooth',
+        block: "start",
+        behavior: "smooth"
       });
       this.setState({
-        focusedPath: null,
+        focusedPath: null
       });
     }
   }
@@ -52,6 +52,7 @@ export default class FacetView extends React.Component {
       sqon = null,
       extendedMapping,
       searchString,
+      onTermSelected
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
@@ -59,23 +60,23 @@ export default class FacetView extends React.Component {
           const metaData = extendedMapping.find(({ field }) => field === path);
           const { type } = metaData || {};
           const paths = path
-            .split('.')
+            .split(".")
             .reduce(
               (acc, node, i, paths) => [
                 ...acc,
-                [...paths.slice(0, i), node].join('.'),
+                [...paths.slice(0, i), node].join(".")
               ],
-              [],
+              []
             );
           const pathDisplayNames = paths.map(
             path =>
-              extendedMapping.find(({ field }) => field === path)?.displayName,
+              extendedMapping.find(({ field }) => field === path)?.displayName
           );
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({
             ...metaData,
             ...agg,
-            ...(type === 'keyword'
+            ...(type === "keyword"
               ? (() => {
                   const columns = 4;
                   const maxTerms = columns * 2;
@@ -85,14 +86,14 @@ export default class FacetView extends React.Component {
                       bucket,
                       showingBuckets,
                       i,
-                      showingMore,
+                      showingMore
                     }) =>
                       `row_${Math.floor(i / columns)} col_${i % columns} ${
                         Math.floor(i / columns) ===
                         Math.floor((showingBuckets.length - 1) / columns)
-                          ? 'last_row'
-                          : ''
-                      } ${showingBuckets.length <= columns ? 'only_row' : ''}`,
+                          ? "last_row"
+                          : ""
+                      } ${showingBuckets.length <= columns ? "only_row" : ""}`
                   };
                 })()
               : {}),
@@ -101,11 +102,12 @@ export default class FacetView extends React.Component {
             onValueChange: ({ sqon, value }) => {
               this.setState(
                 {
-                  focusedPath: path,
+                  focusedPath: path
                 },
                 () => {
                   onValueChange({ sqon, value });
-                },
+                  onTermSelected?.(value);
+                }
               );
             },
             highlightText: searchString,
@@ -132,7 +134,7 @@ export default class FacetView extends React.Component {
                 </div>
                 <div className={`content`}>{children}</div>
               </div>
-            ),
+            )
           });
         })}
       </div>
