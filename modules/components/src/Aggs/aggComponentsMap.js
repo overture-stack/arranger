@@ -1,8 +1,8 @@
-import React from 'react';
-import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from '../Aggs';
-import { currentFieldValue } from '../SQONView/utils';
-import { inCurrentSQON } from '../SQONView/utils';
-import { fieldInCurrentSQON } from '../SQONView/utils';
+import React from "react";
+import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from "../Aggs";
+import { currentFieldValue } from "../SQONView/utils";
+import { inCurrentSQON } from "../SQONView/utils";
+import { fieldInCurrentSQON } from "../SQONView/utils";
 
 const composedTermAgg = ({
   sqon,
@@ -15,22 +15,22 @@ const composedTermAgg = ({
       let nextSQON = generateNextSQON(sqon);
       const active = fieldInCurrentSQON({
         currentSQON: nextSQON?.content || [],
-        field,
+        field
       });
       onValueChange({
         sqon: nextSQON,
         value: {
           field,
           value,
-          active,
-        },
+          active
+        }
       });
     }}
     isActive={d =>
       inCurrentSQON({
         value: d.value,
         dotField: d.field,
-        currentSQON: sqon,
+        currentSQON: sqon
       })
     }
     {...{ ...rest, ...getTermAggProps() }}
@@ -48,18 +48,18 @@ const composedRangeAgg = ({
   <RangeAgg
     value={{
       min:
-        currentFieldValue({ sqon, dotField: field, op: '>=' }) ||
+        currentFieldValue({ sqon, dotField: field, op: ">=" }) ||
         stats?.min ||
         0,
       max:
-        currentFieldValue({ sqon, dotField: field, op: '<=' }) ||
+        currentFieldValue({ sqon, dotField: field, op: "<=" }) ||
         stats?.max ||
-        0,
+        0
     }}
     handleChange={({
       generateNextSQON,
       field: { displayName, displayUnit, field },
-      value,
+      value
     }) => {
       const nextSQON = generateNextSQON(sqon);
 
@@ -70,9 +70,9 @@ const composedRangeAgg = ({
           value,
           active: fieldInCurrentSQON({
             currentSQON: nextSQON.content,
-            field: field,
-          }),
-        },
+            field: field
+          })
+        }
       });
     }}
     {...{ ...rest, stats, field, ...getRangeAggProps() }}
@@ -91,7 +91,7 @@ const composedBooleanAgg = ({
       inCurrentSQON({
         value: d.value,
         dotField: d.field,
-        currentSQON: sqon,
+        currentSQON: sqon
       })
     }
     handleValueClick={({ generateNextSQON, value, field }) => {
@@ -103,9 +103,9 @@ const composedBooleanAgg = ({
           field,
           active: fieldInCurrentSQON({
             currentSQON: nextSQON ? nextSQON.content : [],
-            field: field,
-          }),
-        },
+            field: field
+          })
+        }
       });
     }}
     {...{ ...rest, ...getBooleanAggProps() }}
@@ -128,16 +128,16 @@ const composedDatesAgg = ({
           value,
           active: fieldInCurrentSQON({
             currentSQON: nextSQON ? nextSQON.content : [],
-            field: field,
-          }),
-        },
+            field: field
+          })
+        }
       });
     }}
     getActiveValue={({ op, field }) =>
       currentFieldValue({
         op,
         dotField: field,
-        sqon,
+        sqon
       })
     }
     {...{ ...rest, ...getDatesAggProps() }}
@@ -150,5 +150,5 @@ export default {
   float: composedRangeAgg,
   boolean: composedBooleanAgg,
   date: composedDatesAgg,
-  integer: composedRangeAgg,
+  integer: composedRangeAgg
 };
