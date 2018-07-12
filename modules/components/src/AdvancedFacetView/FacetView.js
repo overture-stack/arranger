@@ -1,9 +1,9 @@
-import React from "react";
-import { isEqual } from "lodash";
-import aggComponentsMap from "../Aggs/aggComponentsMap";
-import TextHighlight from "../TextHighlight";
+import React from 'react';
+import { isEqual } from 'lodash';
+import aggComponentsMap from '../Aggs/aggComponentsMap';
+import TextHighlight from '../TextHighlight';
 
-const serializeToDomId = path => path.split(".").join("__");
+const serializeToDomId = path => path.split('.').join('__');
 
 const flattenDisplayTreeData = displayTreeData => {
   return displayTreeData.reduce(
@@ -19,7 +19,7 @@ export default class FacetView extends React.Component {
   state = {
     focusedPath: null
   };
-  scrollToPath = ({ path, behavior = "smooth", block = "start" }) => {
+  scrollToPath = ({ path, behavior = 'smooth', block = 'start' }) => {
     const targetElementId = serializeToDomId(path);
     const targetElement = this.root.querySelector(`#${targetElementId}`);
     if (targetElement) {
@@ -32,8 +32,8 @@ export default class FacetView extends React.Component {
     if (!isEqual(lastSqon, sqon) && focusedPath) {
       this.scrollToPath({
         path: focusedPath,
-        block: "start",
-        behavior: "smooth"
+        block: 'start',
+        behavior: 'smooth'
       });
       this.setState({
         focusedPath: null
@@ -60,11 +60,11 @@ export default class FacetView extends React.Component {
           const metaData = extendedMapping.find(({ field }) => field === path);
           const { type } = metaData || {};
           const paths = path
-            .split(".")
+            .split('.')
             .reduce(
               (acc, node, i, paths) => [
                 ...acc,
-                [...paths.slice(0, i), node].join(".")
+                [...paths.slice(0, i), node].join('.')
               ],
               []
             );
@@ -76,7 +76,7 @@ export default class FacetView extends React.Component {
           return aggComponentsMap[type]?.({
             ...metaData,
             ...agg,
-            ...(type === "keyword"
+            ...(type === 'keyword'
               ? (() => {
                   const columns = 4;
                   const maxTerms = columns * 2;
@@ -91,9 +91,9 @@ export default class FacetView extends React.Component {
                       `row_${Math.floor(i / columns)} col_${i % columns} ${
                         Math.floor(i / columns) ===
                         Math.floor((showingBuckets.length - 1) / columns)
-                          ? "last_row"
-                          : ""
-                      } ${showingBuckets.length <= columns ? "only_row" : ""}`
+                          ? 'last_row'
+                          : ''
+                      } ${showingBuckets.length <= columns ? 'only_row' : ''}`
                   };
                 })()
               : {}),

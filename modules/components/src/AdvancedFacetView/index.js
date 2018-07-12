@@ -1,27 +1,27 @@
-import React from "react";
-import { keys, debounce, isEqual } from "lodash";
-import { pick } from "lodash";
-import { css } from "emotion";
-import Component from "react-component-component";
+import React from 'react';
+import { keys, debounce, isEqual } from 'lodash';
+import { pick } from 'lodash';
+import { css } from 'emotion';
+import Component from 'react-component-component';
 
-import FaTimesCircleO from "react-icons/lib/fa/times-circle-o";
-import FaFilter from "react-icons/lib/fa/filter";
+import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
+import FaFilter from 'react-icons/lib/fa/filter';
 
-import NestedTreeView from "../NestedTreeView";
-import { CurrentSQON } from "../Arranger/CurrentSQON";
-import FacetView from "./FacetView";
-import TextInput from "../Input";
-import LoadingScreen from "../LoadingScreen";
-import Stats from "../Stats";
+import NestedTreeView from '../NestedTreeView';
+import { CurrentSQON } from '../Arranger/CurrentSQON';
+import FacetView from './FacetView';
+import TextInput from '../Input';
+import LoadingScreen from '../LoadingScreen';
+import Stats from '../Stats';
 
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm
-} from "./utils";
+} from './utils';
 
-import "./AdvancedFacetView.css";
+import './AdvancedFacetView.css';
 
 export default class AdvancedFacetView extends React.Component {
   constructor(props) {
@@ -38,7 +38,7 @@ export default class AdvancedFacetView extends React.Component {
     const { elasticMapping = {} } = this.props;
     return (
       path
-        .split(".")
+        .split('.')
         .reduce(
           (parentNode, nextPath) =>
             parentNode[nextPath]
@@ -67,8 +67,8 @@ export default class AdvancedFacetView extends React.Component {
 
   componentDidUpdate(prevProps, prevState, { shouldEndLoading }) {
     const shouldRecomputeDisplayTree = !isEqual(
-      pick(this.props, ["elasticMapping", "extendedMapping"]),
-      pick(prevProps, ["elasticMapping", "extendedMapping"])
+      pick(this.props, ['elasticMapping', 'extendedMapping']),
+      pick(prevProps, ['elasticMapping', 'extendedMapping'])
     );
     if (shouldRecomputeDisplayTree) {
       const { rootTypeName, elasticMapping, extendedMapping } = this.props;
@@ -150,12 +150,12 @@ export default class AdvancedFacetView extends React.Component {
                               aggregations
                             }).aggregationsWithValue
                           ).length
-                        : Object.keys(aggregations).length}{" "}
+                        : Object.keys(aggregations).length}{' '}
                       fields
                     </span>
                     <span
                       className="valueOnlyCheck"
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: 'pointer' }}
                       onClick={() =>
                         this.setState({
                           selectedPath: displayTreeData[0]?.path,
@@ -188,7 +188,7 @@ export default class AdvancedFacetView extends React.Component {
               <div className={`panel facetsPanel`}>
                 <div className={`panelHeading`}>
                   {/* using a thin local state here for rendering performance optimization */}
-                  <Component initialState={{ value: searchTerm || "" }}>
+                  <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
                       <InputComponent
                         icon={<FaFilter />}
@@ -206,7 +206,7 @@ export default class AdvancedFacetView extends React.Component {
                         className="filterInput"
                         type="text"
                         placeholder="Filter"
-                        value={value || ""}
+                        value={value || ''}
                         onChange={({ target: { value } }) => {
                           setState({ value }, () => {
                             this.setSearchTerm(value);

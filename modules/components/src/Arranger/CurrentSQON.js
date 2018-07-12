@@ -1,11 +1,11 @@
-import React from "react";
-import { compose } from "recompose";
-import Component from "react-component-component";
-import { truncate } from "lodash";
+import React from 'react';
+import { compose } from 'recompose';
+import Component from 'react-component-component';
+import { truncate } from 'lodash';
 
-import SQONView, { Value, Bubble, Field } from "../SQONView";
-import { fetchExtendedMapping } from "../utils/api";
-import internalTranslateSQONValue from "../utils/translateSQONValue";
+import SQONView, { Value, Bubble, Field } from '../SQONView';
+import { fetchExtendedMapping } from '../utils/api';
+import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
   sqon,
