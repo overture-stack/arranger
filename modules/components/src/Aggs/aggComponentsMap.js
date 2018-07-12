@@ -1,8 +1,8 @@
-import React from "react";
-import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from "../Aggs";
-import { currentFieldValue } from "../SQONView/utils";
-import { inCurrentSQON } from "../SQONView/utils";
-import { fieldInCurrentSQON } from "../SQONView/utils";
+import React from 'react';
+import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from '../Aggs';
+import { currentFieldValue } from '../SQONView/utils';
+import { inCurrentSQON } from '../SQONView/utils';
+import { fieldInCurrentSQON } from '../SQONView/utils';
 
 const composedTermAgg = ({
   sqon,
@@ -48,11 +48,11 @@ const composedRangeAgg = ({
   <RangeAgg
     value={{
       min:
-        currentFieldValue({ sqon, dotField: field, op: ">=" }) ||
+        currentFieldValue({ sqon, dotField: field, op: '>=' }) ||
         stats?.min ||
         0,
       max:
-        currentFieldValue({ sqon, dotField: field, op: "<=" }) ||
+        currentFieldValue({ sqon, dotField: field, op: '<=' }) ||
         stats?.max ||
         0
     }}
