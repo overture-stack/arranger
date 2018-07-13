@@ -113,7 +113,9 @@ export const hitsToEdges = ({
               ? x.sort.map(
                   x =>
                     Number.isInteger(x) && !Number.isSafeInteger(x)
-                      ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                      ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
+                        // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                        `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
                       : x,
                 )
               : [],
