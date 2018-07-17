@@ -120,7 +120,7 @@ export const hitsToEdges = ({
                 )
               : [],
             node: Object.assign(
-              source,
+              source, // we're not afraid of mutating source here!
               { id: x._id },
               nested_nodes,
               copied_to_nodes,
