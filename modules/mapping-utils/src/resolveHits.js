@@ -102,7 +102,7 @@ export const hitsToEdges = ({
                       nestedFields,
                       parent: fullPath,
                     });
-              return Object.assign({}, acc, resolvedNested);
+              return Object.assign(acc, resolvedNested);
             }, {});
           };
           let source = x._source;
@@ -120,8 +120,8 @@ export const hitsToEdges = ({
                 )
               : [],
             node: Object.assign(
-              { id: x._id },
               source,
+              { id: x._id },
               nested_nodes,
               copied_to_nodes,
             ),
@@ -200,8 +200,18 @@ export default ({ type, Parallel }) => async (
   });
 
   return {
-    edges: () =>
-      hitsToEdges({ hits, nestedFields, Parallel, copyToSourceFields }),
+    edges: () => {
+      console.time('hitsToEdges');
+      return hitsToEdges({
+        hits,
+        nestedFields,
+        Parallel,
+        copyToSourceFields,
+      }).then(result => {
+        console.timeEnd('hitsToEdges');
+        return result;
+      });
+    },
     total: () => hits.total,
   };
 };
