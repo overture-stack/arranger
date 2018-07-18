@@ -10,9 +10,9 @@ import dataToTSV from '../utils/dataToTSV';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
 export default function({ projectId, io }) {
+  console.log('DOWNLOAD_STREAM_BUFFER_SIZE: ', DOWNLOAD_STREAM_BUFFER_SIZE);
   function makeTSV(args) {
     return getAllData({
-      chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
       projectId,
       ...args,
       ...columnsToGraphql({
@@ -21,6 +21,7 @@ export default function({ projectId, io }) {
         sort: args.sort || [],
         first: DOWNLOAD_STREAM_BUFFER_SIZE,
       }),
+      chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
     }).pipe(dataToTSV(args));
   }
 
