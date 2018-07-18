@@ -147,9 +147,7 @@ export const hitsToEdges = ({
                 };
               });
             })
-            .then(edges => {
-              resolve(edges);
-            });
+            .then(resolve);
         }),
     ),
   ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk)));
@@ -207,6 +205,8 @@ export default ({ type, Parallel }) => async (
 
   const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
+  const timer = `elasticsearch_${Date.now()}`;
+  console.time(timer);
   let { hits } = await es.search({
     index: type.index,
     type: type.es_type,
@@ -219,6 +219,7 @@ export default ({ type, Parallel }) => async (
     track_scores: !!score,
     body,
   });
+  console.timeEnd(timer);
 
   return {
     edges: () => {

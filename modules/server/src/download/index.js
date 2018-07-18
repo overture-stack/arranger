@@ -7,17 +7,21 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
+import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
+
+const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
 
 export default function({ projectId, io }) {
   function makeTSV(args) {
     return getAllData({
+      chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
       projectId,
       ...args,
       ...columnsToGraphql({
         sqon: args.sqon,
         config: { columns: args.columns, type: args.index },
         sort: args.sort || [],
-        first: 1000,
+        first: DOWNLOAD_STREAM_BUFFER_SIZE,
       }),
     }).pipe(dataToTSV(args));
   }
