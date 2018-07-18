@@ -57,6 +57,7 @@ export default function({ projectId, io }) {
   router.use(bodyParser.urlencoded({ extended: true }));
 
   router.post('/', async function(req, res) {
+    console.time('download');
     const { params, downloadKey } = req.body;
     const { files, fileName = 'file.tar.gz', mock, chunkSize } = JSON.parse(
       params,
@@ -84,9 +85,10 @@ export default function({ projectId, io }) {
         'Content-disposition',
         `attachment; filename=${responseFileName}`,
       );
-      output
-        .pipe(res)
-        .on('finish', () => io.emit(`server::download::${downloadKey}`));
+      output.pipe(res).on('finish', () => {
+        console.timeEnd('download');
+        io.emit(`server::download::${downloadKey}`);
+      });
     }
   });
 
