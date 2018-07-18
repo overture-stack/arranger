@@ -1,5 +1,6 @@
 import getFields from 'graphql-fields';
 import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
+import { chunk } from 'lodash';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
   Object.entries(mapping).forEach(([k, v]) => {
@@ -21,117 +22,124 @@ export const hitsToEdges = ({
   copyToSourceFields = {},
 }) => {
   //Parallel.spawn output has a .then but it's not returning an actual promise
-  return new Promise(resolve => {
-    new Parallel({ hits, nestedFields, copyToSourceFields })
-      .spawn(({ hits, nestedFields, copyToSourceFields }) => {
-        /*
-          everthing inside spawn is executed in a separate thread, so we have
-          to use good old ES5 and require for run-time dependecy bundling.
-        */
-        const { isObject, flattenDeep } = require('lodash');
-        const jp = require('jsonpath/jsonpath.min');
+  return Promise.all(
+    chunk(hits.hits, 1000).map(
+      chunk =>
+        new Promise(resolve => {
+          new Parallel({ hits: chunk, nestedFields, copyToSourceFields })
+            .spawn(({ hits, nestedFields, copyToSourceFields }) => {
+              /*
+                everthing inside spawn is executed in a separate thread, so we have
+                to use good old ES5 and require for run-time dependecy bundling.
+              */
+              const { isObject, flattenDeep } = require('lodash');
+              const jp = require('jsonpath/jsonpath.min');
 
-        const resolveCopiedTo = ({ node }) => {
-          const foundValues = Object.entries(copyToSourceFields).reduce(
-            (acc, pair) => {
-              const copyToField = pair[0];
-              const sourceField = pair[1];
-              let found = {};
-              found[copyToField] = flattenDeep(
-                sourceField.map(path =>
-                  jp.query(
-                    node,
-                    path
-                      .split('.')
-                      .reduce(
-                        (acc, part, index) =>
-                          index === 0 ? `$.${part}` : `${acc}..${part}`,
-                        '',
-                      ),
-                  ),
-                ),
-              );
-              return found;
-            },
-            {},
-          );
-          return foundValues;
-        };
-
-        return hits.hits.map(x => {
-          let joinParent = (parent, field) =>
-            parent ? `${parent}.${field}` : field;
-
-          let resolveNested = ({ node, nestedFields, parent = '' }) => {
-            if (!isObject(node) || !node) return node;
-
-            return Object.entries(node).reduce((acc, pair) => {
-              const field = pair[0];
-              const hits = pair[1];
-              // TODO: inner hits query if necessary
-              const fullPath = joinParent(parent, field);
-              const resolvedNested = {};
-              resolvedNested[field] = nestedFields.includes(fullPath)
-                ? {
-                    hits: {
-                      edges: hits.map(node => ({
-                        node: Object.assign(
-                          {},
+              const resolveCopiedTo = ({ node }) => {
+                const foundValues = Object.entries(copyToSourceFields).reduce(
+                  (acc, pair) => {
+                    const copyToField = pair[0];
+                    const sourceField = pair[1];
+                    let found = {};
+                    found[copyToField] = flattenDeep(
+                      sourceField.map(path =>
+                        jp.query(
                           node,
-                          resolveNested({
-                            node,
+                          path
+                            .split('.')
+                            .reduce(
+                              (acc, part, index) =>
+                                index === 0 ? `$.${part}` : `${acc}..${part}`,
+                              '',
+                            ),
+                        ),
+                      ),
+                    );
+                    return found;
+                  },
+                  {},
+                );
+                return foundValues;
+              };
+
+              return hits.map(x => {
+                let joinParent = (parent, field) =>
+                  parent ? `${parent}.${field}` : field;
+
+                let resolveNested = ({ node, nestedFields, parent = '' }) => {
+                  if (!isObject(node) || !node) return node;
+
+                  return Object.entries(node).reduce((acc, pair) => {
+                    const field = pair[0];
+                    const hits = pair[1];
+                    // TODO: inner hits query if necessary
+                    const fullPath = joinParent(parent, field);
+                    acc[field] = nestedFields.includes(fullPath)
+                      ? {
+                          hits: {
+                            edges: hits.map(node => ({
+                              node: Object.assign(
+                                {},
+                                node,
+                                resolveNested({
+                                  node,
+                                  nestedFields,
+                                  parent: fullPath,
+                                }),
+                              ),
+                            })),
+                            total: hits.length,
+                          },
+                        }
+                      : isObject(hits) && hits
+                        ? Object.assign(
+                            hits.constructor(),
+                            resolveNested({
+                              node: hits,
+                              nestedFields,
+                              parent: fullPath,
+                            }),
+                          )
+                        : resolveNested({
+                            node: hits,
                             nestedFields,
                             parent: fullPath,
-                          }),
-                        ),
-                      })),
-                      total: hits.length,
-                    },
-                  }
-                : isObject(hits) && hits
-                  ? Object.assign(
-                      hits.constructor(),
-                      resolveNested({
-                        node: hits,
-                        nestedFields,
-                        parent: fullPath,
-                      }),
-                    )
-                  : resolveNested({
-                      node: hits,
-                      nestedFields,
-                      parent: fullPath,
-                    });
-              return Object.assign(acc, resolvedNested);
-            }, {});
-          };
-          let source = x._source;
-          let nested_nodes = resolveNested({ node: source, nestedFields });
-          let copied_to_nodes = resolveCopiedTo({ node: source });
-          return {
-            searchAfter: x.sort
-              ? x.sort.map(
-                  x =>
-                    Number.isInteger(x) && !Number.isSafeInteger(x)
-                      ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
-                        // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
-                        `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
-                      : x,
-                )
-              : [],
-            node: Object.assign(
-              source, // we're not afraid of mutating source here!
-              { id: x._id },
-              nested_nodes,
-              copied_to_nodes,
-            ),
-          };
-        });
-      })
-      .then(edges => {
-        resolve(edges);
-      });
-  });
+                          });
+                    return acc;
+                  }, {});
+                };
+                let source = x._source;
+                let nested_nodes = resolveNested({
+                  node: source,
+                  nestedFields,
+                });
+                let copied_to_nodes = resolveCopiedTo({ node: source });
+                return {
+                  searchAfter: x.sort
+                    ? x.sort.map(
+                        x =>
+                          Number.isInteger(x) && !Number.isSafeInteger(x)
+                            ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
+                              // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                              `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
+                            : x,
+                      )
+                    : [],
+                  node: Object.assign(
+                    source, // we're not afraid of mutating source here!
+                    { id: x._id },
+                    nested_nodes,
+                    copied_to_nodes,
+                  ),
+                };
+              });
+            })
+            .then(edges => {
+              resolve(edges);
+            });
+        }),
+    ),
+  ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk)));
 };
 
 export default ({ type, Parallel }) => async (
@@ -201,14 +209,15 @@ export default ({ type, Parallel }) => async (
 
   return {
     edges: () => {
-      console.time('hitsToEdges');
+      const time = Date.now();
+      console.time(`hitsToEdges_${time}`);
       return hitsToEdges({
         hits,
         nestedFields,
         Parallel,
         copyToSourceFields,
       }).then(result => {
-        console.timeEnd('hitsToEdges');
+        console.timeEnd(`hitsToEdges_${time}`);
         return result;
       });
     },
