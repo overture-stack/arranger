@@ -20,10 +20,18 @@ export const hitsToEdges = ({
   nestedFields,
   Parallel,
   copyToSourceFields = {},
+  systemCores = process?.env?.SYSTEM_CORES || 2,
 }) => {
   //Parallel.spawn output has a .then but it's not returning an actual promise
+  const dataSize = hits.hits.length;
+  const chunks = chunk(
+    hits.hits,
+    dataSize > 1000
+      ? dataSize / systemCores + dataSize % systemCores
+      : dataSize,
+  );
   return Promise.all(
-    chunk(hits.hits, 1000).map(
+    chunks.map(
       chunk =>
         new Promise(resolve => {
           new Parallel({ hits: chunk, nestedFields, copyToSourceFields })
@@ -218,6 +226,7 @@ export default ({ type, Parallel }) => async (
         copyToSourceFields,
       }).then(result => {
         console.timeEnd(`hitsToEdges_${time}`);
+        console.log('result.length: ', result.length);
         return result;
       });
     },
