@@ -22,7 +22,11 @@ export const hitsToEdges = ({
   copyToSourceFields = {},
   systemCores = process?.env?.SYSTEM_CORES || 2,
 }) => {
-  //Parallel.spawn output has a .then but it's not returning an actual promise
+  /*
+    If there's a large request, we'll trigger ludicrous mode and do some parallel
+    map-reduce based on # of cores available. Otherwise, only one child-process
+    is spawn for compute
+  */
   const dataSize = hits.hits.length;
   const chunks = chunk(
     hits.hits,
@@ -33,6 +37,7 @@ export const hitsToEdges = ({
   return Promise.all(
     chunks.map(
       chunk =>
+        //Parallel.spawn output has a .then but it's not returning an actual promise
         new Promise(resolve => {
           new Parallel({ hits: chunk, nestedFields, copyToSourceFields })
             .spawn(({ hits, nestedFields, copyToSourceFields }) => {
