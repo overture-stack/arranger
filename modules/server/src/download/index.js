@@ -9,8 +9,6 @@ import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
-const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
-
 export default function({ projectId, io }) {
   function makeTSV(args) {
     return getAllData({
