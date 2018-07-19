@@ -22,8 +22,8 @@ const Aggregations = ({
     getTermAggProps: () => ({}),
     getRangeAggProps: () => ({}),
     getBooleanAggProps: () => ({}),
-    getDatesAggProps: () => ({})
-  }
+    getDatesAggProps: () => ({}),
+  },
 }) => {
   return (
     <Wrapper style={style} className={className}>
@@ -48,7 +48,7 @@ const Aggregations = ({
                     ...agg,
                     ...data[graphqlField].aggregations[agg.field],
                     ...data[graphqlField].extended.find(
-                      x => x.field.replace(/\./g, '__') === agg.field
+                      x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                     onValueChange: ({ sqon, value }) => {
                       onTermSelected?.(value);
@@ -56,10 +56,10 @@ const Aggregations = ({
                     },
                     key: agg.field,
                     sqon,
-                    containerRef
+                    containerRef,
                   }))
                   .map(agg =>
-                    aggComponents[agg.type]?.({ ...agg, ...componentProps })
+                    aggComponents[agg.type]?.({ ...agg, ...componentProps }),
                   )
               }
             />

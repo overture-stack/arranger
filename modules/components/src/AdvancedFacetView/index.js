@@ -18,7 +18,7 @@ import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
-  filterDisplayTreeDataBySearchTerm
+  filterDisplayTreeDataBySearchTerm,
 } from './utils';
 
 import './AdvancedFacetView.css';
@@ -31,7 +31,7 @@ export default class AdvancedFacetView extends React.Component {
       withValueOnly: true,
       searchTerm: null,
       displayTreeData: null,
-      isLoading: true
+      isLoading: true,
     };
   }
   fieldMappingFromPath = path => {
@@ -44,7 +44,7 @@ export default class AdvancedFacetView extends React.Component {
             parentNode[nextPath]
               ? parentNode[nextPath]
               : parentNode.properties ? parentNode.properties[nextPath] : {},
-          elasticMapping
+          elasticMapping,
         ) || {}
     );
   };
@@ -59,7 +59,7 @@ export default class AdvancedFacetView extends React.Component {
   getSnapshotBeforeUpdate(prevProps, prevState) {
     const aggChanged = !isEqual(
       this.props.aggregations,
-      prevProps.aggregations
+      prevProps.aggregations,
     );
     const sqonChanged = !isEqual(this.props.sqon, prevProps.sqon);
     return { shouldEndLoading: aggChanged || sqonChanged };
@@ -68,7 +68,7 @@ export default class AdvancedFacetView extends React.Component {
   componentDidUpdate(prevProps, prevState, { shouldEndLoading }) {
     const shouldRecomputeDisplayTree = !isEqual(
       pick(this.props, ['elasticMapping', 'extendedMapping']),
-      pick(prevProps, ['elasticMapping', 'extendedMapping'])
+      pick(prevProps, ['elasticMapping', 'extendedMapping']),
     );
     if (shouldRecomputeDisplayTree) {
       const { rootTypeName, elasticMapping, extendedMapping } = this.props;
@@ -77,14 +77,14 @@ export default class AdvancedFacetView extends React.Component {
           injectExtensionToElasticMapping({
             rootTypeName,
             elasticMapping,
-            extendedMapping
-          })
-        )
+            extendedMapping,
+          }),
+        ),
       });
     }
     if (shouldEndLoading) {
       this.setState({
-        isLoading: false
+        isLoading: false,
       });
     }
   }
@@ -93,7 +93,7 @@ export default class AdvancedFacetView extends React.Component {
     const { onFilterChange = () => {} } = this.props;
     onFilterChange(value);
     this.setState({
-      searchTerm: value
+      searchTerm: value,
     });
   }, 500);
 
@@ -103,7 +103,7 @@ export default class AdvancedFacetView extends React.Component {
       withValueOnly,
       searchTerm,
       displayTreeData,
-      isLoading
+      isLoading,
     } = this.state;
     const {
       extendedMapping = [],
@@ -125,7 +125,7 @@ export default class AdvancedFacetView extends React.Component {
       ? filterOutNonValue({
           extendedMapping,
           displayTreeData,
-          aggregations
+          aggregations,
         }).displayTreeDataWithValue
       : displayTreeData;
 
@@ -147,8 +147,8 @@ export default class AdvancedFacetView extends React.Component {
                       {withValueOnly
                         ? keys(
                             filterOutNonValue({
-                              aggregations
-                            }).aggregationsWithValue
+                              aggregations,
+                            }).aggregationsWithValue,
                           ).length
                         : Object.keys(aggregations).length}{' '}
                       fields
@@ -159,7 +159,7 @@ export default class AdvancedFacetView extends React.Component {
                       onClick={() =>
                         this.setState({
                           selectedPath: displayTreeData[0]?.path,
-                          withValueOnly: !withValueOnly
+                          withValueOnly: !withValueOnly,
                         })
                       }
                     >
@@ -197,7 +197,7 @@ export default class AdvancedFacetView extends React.Component {
                             onClick={() => {
                               setState({ value: null }, () => {
                                 this.setState({
-                                  searchTerm: null
+                                  searchTerm: null,
                                 });
                               });
                             }}
@@ -248,7 +248,7 @@ export default class AdvancedFacetView extends React.Component {
                     displayTreeData={filterDisplayTreeDataBySearchTerm({
                       displayTree: visibleDisplayTreeData,
                       aggregations,
-                      searchTerm: searchTerm
+                      searchTerm: searchTerm,
                     })}
                     onTermSelected={onTermSelected}
                   />

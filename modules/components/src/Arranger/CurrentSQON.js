@@ -30,9 +30,9 @@ export const CurrentSQON = ({
         {truncate(
           compose(translateSQONValue, internalTranslateSQONValue)(
             (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              value
+              value,
           ),
-          { length: valueCharacterLimit || Infinity }
+          { length: valueCharacterLimit || Infinity },
         )}
       </Value>
     )}
@@ -64,7 +64,7 @@ const CurrentSQONState = ({
         fetchExtendedMapping({ graphqlField, projectId }).then(
           ({ extendedMapping }) => {
             return setState({ extendedMapping });
-          }
+          },
         )
       }
     >
