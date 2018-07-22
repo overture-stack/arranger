@@ -19,6 +19,7 @@ import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
 import replaceBy from './utils/replaceBy';
+import { broadcastServerRefresh } from './sockets';
 
 const initializeSets = async ({ es }) => {
   if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
@@ -48,6 +49,7 @@ export default async function startProjectApp({
   es,
   id,
   io,
+  ioSocket,
   graphqlOptions = {},
 }) {
   if (!id) throw new Error('project empty');
@@ -253,11 +255,13 @@ export default async function startProjectApp({
       : noSchemaHandler,
   );
 
-  projectApp.use(`/download`, download({ projectId: id, io }));
+  projectApp.use(`/download`, download({ projectId: id, io, ioSocket }));
 
-  setProject({ app: projectApp, schema, mockSchema, es, io, id });
+  setProject({ app: projectApp, schema, mockSchema, es, io, ioSocket, id });
 
-  io.emit('server::refresh');
+  console.log('ioSocket: ', ioSocket);
+
+  broadcastServerRefresh({ io, ioSocket });
 
   return projectApp;
 }

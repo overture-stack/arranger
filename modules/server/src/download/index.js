@@ -7,6 +7,7 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
+import { broadcastDownloadComplete } from '../sockets';
 
 export default function({ projectId, io }) {
   function makeTSV(args) {
@@ -86,7 +87,7 @@ export default function({ projectId, io }) {
       );
       output
         .pipe(res)
-        .on('finish', () => io.emit(`server::download::${downloadKey}`));
+        .on('finish', () => broadcastDownloadComplete({ io, downloadKey }));
     }
   });
 

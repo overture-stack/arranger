@@ -9,9 +9,15 @@ import startProject from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
-let startSingleProject = async ({ io, projectId, es, graphqlOptions }) => {
+let startSingleProject = async ({
+  io,
+  ioSocket,
+  projectId,
+  es,
+  graphqlOptions,
+}) => {
   try {
-    await startProject({ es, io, id: projectId, graphqlOptions });
+    await startProject({ es, io, ioSocket, id: projectId, graphqlOptions });
   } catch (error) {
     console.warn(error.message);
   }
@@ -20,6 +26,7 @@ let startSingleProject = async ({ io, projectId, es, graphqlOptions }) => {
 export default async ({
   projectId = PROJECT_ID,
   esHost = ES_HOST,
+  ioSocket,
   io,
   graphqlOptions = {},
 } = {}) => {
@@ -27,8 +34,8 @@ export default async ({
   router.use(bodyParser.urlencoded({ extended: false }));
   router.use(bodyParser.json({ limit: '50mb' }));
 
-  sockets({ io });
-  router.use(await watchGit({ io }));
+  sockets({ io, ioSocket });
+  router.use(await watchGit({ io, ioSocket }));
 
   router.use('/:projectId', (req, res, next) => {
     let projects = getProjects();
@@ -42,11 +49,11 @@ export default async ({
     next();
   });
 
-  router.use('/projects', projectsRoutes({ io, graphqlOptions }));
+  router.use('/projects', projectsRoutes({ io, ioSocket, graphqlOptions }));
   if (esHost) {
     const es = new elasticsearch.Client({ host: esHost });
     if (projectId) {
-      startSingleProject({ io, projectId, es, graphqlOptions });
+      startSingleProject({ io, ioSocket, projectId, es, graphqlOptions });
     } else {
       const { projects = [] } = await fetchProjects({ es });
 
@@ -58,6 +65,7 @@ export default async ({
             try {
               await startSingleProject({
                 io,
+                ioSocket,
                 projectId: project.id,
                 es,
                 graphqlOptions,

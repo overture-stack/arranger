@@ -48,6 +48,7 @@ function download({ url, params, method = 'GET', body = {} }) {
   let io = initSocket();
 
   const resolveOnDownload = new Promise((resolve, reject) => {
+    io.emit(`client::download::request`, { downloadKey });
     io.on(`server::download::${downloadKey}`, () => {
       io.off(`server::download::${downloadKey}`);
       resolve();

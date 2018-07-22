@@ -1,5 +1,6 @@
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
+import { broadcastServerRefresh } from '../sockets';
 
 export default ({ io }) => async (req, res) => {
   let { es } = req.context;
@@ -25,7 +26,7 @@ export default ({ io }) => async (req, res) => {
       },
     });
 
-    io.emit('server::refresh');
+    broadcastServerRefresh({ io });
   } catch (error) {
     return res.json({ error: error.message });
   }
