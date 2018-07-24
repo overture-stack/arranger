@@ -1,19 +1,19 @@
-import React from 'react';
+import React from "react";
 
-import { AggsState, AggsQuery } from '../Aggs';
-import aggComponents from '../Aggs/aggComponentsMap.js';
+import { AggsState, AggsQuery } from "../Aggs";
+import aggComponents from "../Aggs/aggComponentsMap.js";
 
 const BaseWrapper = ({ className, ...props }) => (
   <div {...props} className={`aggregations ${className}`} />
 );
 
 const Aggregations = ({
-  onTermSelected,
+  onValueChange = () => {},
   setSQON,
   sqon,
   projectId,
   graphqlField,
-  className = '',
+  className = "",
   style,
   api,
   Wrapper = BaseWrapper,
@@ -48,10 +48,10 @@ const Aggregations = ({
                     ...agg,
                     ...data[graphqlField].aggregations[agg.field],
                     ...data[graphqlField].extended.find(
-                      x => x.field.replace(/\./g, '__') === agg.field
+                      x => x.field.replace(/\./g, "__") === agg.field
                     ),
                     onValueChange: ({ sqon, value }) => {
-                      onTermSelected?.(value);
+                      onValueChange(value);
                       setSQON(sqon);
                     },
                     key: agg.field,
