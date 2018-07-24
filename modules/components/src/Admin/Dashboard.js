@@ -77,6 +77,7 @@ class Dashboard extends React.Component {
   componentDidMount() {
     require('./Dashboard.css');
 
+    console.log('getProjects!!!');
     this.getProjects({ eshost: this.state.eshost });
 
     this.state.socket.io.on('connect_error', error => {

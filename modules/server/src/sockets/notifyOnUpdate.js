@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import { PORT, PING_MS } from '../utils/config';
 
-export default ({ socket }) => {
+const setUp = socket => {
   socket.on('disconnect', () => {
     clearInterval(socket.monitorIntervalId);
   });
@@ -9,6 +9,7 @@ export default ({ socket }) => {
   socket.emit('server::init');
 
   socket.on('arranger::monitorProjects', ({ projects = [] }) => {
+    console.log('yo!!!');
     let pingProject = async () => {
       let statuses = await Promise.all(
         projects.map(x =>
@@ -25,4 +26,8 @@ export default ({ socket }) => {
     pingProject();
     socket.monitorIntervalId = setInterval(pingProject, PING_MS);
   });
+};
+
+export default ({ socket }) => {
+  setUp(socket);
 };

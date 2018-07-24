@@ -13,6 +13,8 @@ export const broadcastDownloadComplete = ({ io, downloadKey }) =>
     downloadKey,
   });
 
+export { default as notifyOnUpdate } from './notifyOnUpdate';
+
 export default ({ io, ...args }) => {
   io.on('connection', socket => {
     streamData({ ...args, socket });

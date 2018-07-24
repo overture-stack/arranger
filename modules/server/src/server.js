@@ -2,7 +2,7 @@ import elasticsearch from 'elasticsearch';
 import express from 'express';
 import bodyParser from 'body-parser';
 import projectsRoutes from './projects';
-import sockets from './sockets';
+import sockets, { notifyOnUpdate } from './sockets';
 import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
@@ -34,7 +34,8 @@ export default async ({
   router.use(bodyParser.urlencoded({ extended: false }));
   router.use(bodyParser.json({ limit: '50mb' }));
 
-  sockets({ io, ioSocket });
+  sockets({ io });
+  notifyOnUpdate({ socket: ioSocket });
   router.use(await watchGit({ io, ioSocket }));
 
   router.use('/:projectId', (req, res, next) => {
