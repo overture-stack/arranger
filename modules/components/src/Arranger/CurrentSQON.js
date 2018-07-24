@@ -1,11 +1,11 @@
-import React from "react";
-import { compose } from "recompose";
-import Component from "react-component-component";
-import { truncate } from "lodash";
+import React from 'react';
+import { compose } from 'recompose';
+import Component from 'react-component-component';
+import { truncate } from 'lodash';
 
-import SQONView, { Value, Bubble, Field } from "../SQONView";
-import { fetchExtendedMapping } from "../utils/api";
-import internalTranslateSQONValue from "../utils/translateSQONValue";
+import SQONView, { Value, Bubble, Field } from '../SQONView';
+import { fetchExtendedMapping } from '../utils/api';
+import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
   sqon,
@@ -30,9 +30,9 @@ export const CurrentSQON = ({
         {truncate(
           compose(translateSQONValue, internalTranslateSQONValue)(
             (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              value
+              value,
           ),
-          { length: valueCharacterLimit || Infinity }
+          { length: valueCharacterLimit || Infinity },
         )}
       </Value>
     )}
@@ -64,7 +64,7 @@ const CurrentSQONState = ({
         fetchExtendedMapping({ graphqlField, projectId }).then(
           ({ extendedMapping }) => {
             return setState({ extendedMapping });
-          }
+          },
         )
       }
     >
