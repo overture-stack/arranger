@@ -8,7 +8,7 @@ const BaseWrapper = ({ className, ...props }) => (
 );
 
 const Aggregations = ({
-  onTermSelected = () => {},
+  onValueChange = () => {},
   setSQON,
   sqon,
   projectId,
@@ -51,7 +51,7 @@ const Aggregations = ({
                       x => x.field.replace(/\./g, '__') === agg.field,
                     ),
                     onValueChange: ({ sqon, value }) => {
-                      onTermSelected(value);
+                      onValueChange(value);
                       setSQON(sqon);
                     },
                     key: agg.field,

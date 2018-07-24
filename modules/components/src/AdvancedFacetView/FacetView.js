@@ -52,6 +52,7 @@ export default class FacetView extends React.Component {
       sqon = null,
       extendedMapping,
       searchString,
+      onTermSelected,
     } = this.props;
     return (
       <div className="facetView" ref={el => (this.root = el)}>
@@ -105,6 +106,7 @@ export default class FacetView extends React.Component {
                 },
                 () => {
                   onValueChange({ sqon, value });
+                  onTermSelected?.(value);
                 },
               );
             },

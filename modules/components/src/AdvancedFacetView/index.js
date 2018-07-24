@@ -112,6 +112,8 @@ export default class AdvancedFacetView extends React.Component {
       statsConfig,
       translateSQONValue,
       onFacetNavigation = () => {},
+      onTermSelected,
+      onClear,
       InputComponent = TextInput,
       ...props
     } = this.props;
@@ -133,7 +135,7 @@ export default class AdvancedFacetView extends React.Component {
           <>
             <div>
               <CurrentSQON
-                {...{ sqon, extendedMapping, translateSQONValue }}
+                {...{ sqon, extendedMapping, translateSQONValue, onClear }}
                 setSQON={sqon => this.handleSqonChange({ sqon })}
               />
             </div>
@@ -248,6 +250,7 @@ export default class AdvancedFacetView extends React.Component {
                       aggregations,
                       searchTerm: searchTerm,
                     })}
+                    onTermSelected={onTermSelected}
                   />
                 </div>
               </div>
