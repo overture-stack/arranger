@@ -205,8 +205,6 @@ export default ({ type, Parallel }) => async (
 
   const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
-  const timer = `elasticsearch_${Date.now()}`;
-  console.time(timer);
   let { hits } = await es.search({
     index: type.index,
     type: type.es_type,
@@ -219,23 +217,15 @@ export default ({ type, Parallel }) => async (
     track_scores: !!score,
     body,
   });
-  console.timeEnd(timer);
 
   return {
-    edges: () => {
-      const time = Date.now();
-      console.time(`hitsToEdges_${time}`);
-      return hitsToEdges({
+    edges: () =>
+      hitsToEdges({
         hits,
         nestedFields,
         Parallel,
         copyToSourceFields,
-      }).then(result => {
-        console.timeEnd(`hitsToEdges_${time}`);
-        console.log('result.length: ', result.length);
-        return result;
-      });
-    },
+      }),
     total: () => hits.total,
   };
 };

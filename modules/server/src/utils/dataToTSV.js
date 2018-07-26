@@ -106,8 +106,6 @@ export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
   let isFirst = true;
 
   return through2.obj(function(data, enc, callback) {
-    const timer = `dataToTSV_${Date.now()}`;
-    console.time(timer);
     if (isFirst) {
       isFirst = false;
       this.push(columnsToHeader({ columns }));
@@ -117,7 +115,6 @@ export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
 
     if (rows) {
       this.push(rows);
-      console.timeEnd(timer);
     }
 
     callback();
