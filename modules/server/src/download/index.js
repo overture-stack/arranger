@@ -10,7 +10,6 @@ import dataToTSV from '../utils/dataToTSV';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
 export default function({ projectId, io }) {
-  console.log('DOWNLOAD_STREAM_BUFFER_SIZE: ', DOWNLOAD_STREAM_BUFFER_SIZE);
   function makeTSV(args) {
     return getAllData({
       projectId,
