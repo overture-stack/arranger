@@ -7,8 +7,10 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
+import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
 export default function({ projectId, io }) {
+  console.log('DOWNLOAD_STREAM_BUFFER_SIZE: ', DOWNLOAD_STREAM_BUFFER_SIZE);
   function makeTSV(args) {
     return getAllData({
       projectId,
@@ -17,8 +19,9 @@ export default function({ projectId, io }) {
         sqon: args.sqon,
         config: { columns: args.columns, type: args.index },
         sort: args.sort || [],
-        first: 1000,
+        first: DOWNLOAD_STREAM_BUFFER_SIZE,
       }),
+      chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
     }).pipe(dataToTSV(args));
   }
 
@@ -84,9 +87,9 @@ export default function({ projectId, io }) {
         'Content-disposition',
         `attachment; filename=${responseFileName}`,
       );
-      output
-        .pipe(res)
-        .on('finish', () => io.emit(`server::download::${downloadKey}`));
+      output.pipe(res).on('finish', () => {
+        io.emit(`server::download::${downloadKey}`);
+      });
     }
   });
 
