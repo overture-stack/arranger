@@ -1,7 +1,17 @@
 {
   "plugins": [
     "@babel/plugin-proposal-optional-chaining",
-    "@babel/plugin-proposal-object-rest-spread"
+    "@babel/plugin-proposal-object-rest-spread",
+    [
+      "file-loader",
+      {
+        "name": "[hash].[ext]",
+        "extensions": ["go"],
+        "publicPath": "/dist/goUtils",
+        "outputPath": "/dist/goUtils",
+        "context": ""
+      }
+    ]
   ],
   "presets": ["@babel/env"]
 }
