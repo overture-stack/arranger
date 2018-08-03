@@ -16,7 +16,7 @@
     "url": "git+https://github.com/overture-stack/arranger.git"
   },
   "author": "OICR",
-  "license": "ISC",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/overture-stack/arranger/issues"
   },
