@@ -9,7 +9,7 @@
   "scripts": {
     "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist",
     "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist",
-    "test": "jest --env=node"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
