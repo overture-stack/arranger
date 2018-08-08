@@ -2,7 +2,7 @@
   "name": "integration-tests-import",
   "private": "true",
   "scripts": {
-    "test": "jest"
+    "test": "jest --env=node"
   },
   "jest": {
     "testEnvironment": "node",

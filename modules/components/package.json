@@ -16,7 +16,7 @@
       "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
     "portal":
       "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-    "test": "jest",
+    "test": "jest --env=node",
     "flow": "flow"
   },
   "repository": {
