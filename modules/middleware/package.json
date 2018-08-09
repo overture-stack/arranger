@@ -1,6 +1,6 @@
 {
   "name": "@arranger/middleware",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "description": "Arranger Middleware",
   "main": "dist/index.js",
   "publishConfig": {
@@ -53,5 +53,8 @@
     "morgan": "^1.9.0",
     "utf8": "^3.0.0",
     "winston": "^2.4.0"
+  },
+  "jest": {
+    "testURL": "http://localhost/"
   }
 }

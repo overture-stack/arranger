@@ -59,15 +59,21 @@ class DetectNewVersion extends React.Component {
   };
 
   componentDidMount() {
-    this.props.socket.on('server::init', this.onInit);
-    this.props.socket.on('server::serverRestarting', this.onRestart);
-    this.props.socket.on(this.props.event, this.onEvent);
+    const { socket } = this.props;
+    if (socket) {
+      socket.on('server::init', this.onInit);
+      socket.on('server::serverRestarting', this.onRestart);
+      socket.on(this.props.event, this.onEvent);
+    }
   }
 
   componentWillUnmount() {
-    this.props.socket.off('server::init', this.onInit);
-    this.props.socket.off('server::serverRestarting', this.onRestart);
-    this.props.socket.off(this.props.event, this.onEvent);
+    const { socket } = this.props;
+    if (socket) {
+      socket.off('server::init', this.onInit);
+      socket.off('server::serverRestarting', this.onRestart);
+      socket.off(this.props.event, this.onEvent);
+    }
   }
 
   render() {

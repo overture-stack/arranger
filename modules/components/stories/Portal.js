@@ -167,6 +167,7 @@ storiesOf('Portal', module).add('Portal', () => (
       render={({ index, graphqlField, projectId, update }) => {
         return index && projectId ? (
           <Arranger
+            disableSocket
             index={index}
             graphqlField={graphqlField}
             projectId={projectId}

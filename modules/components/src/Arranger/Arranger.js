@@ -6,48 +6,61 @@ import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphq
 
 import defaultApi from '../utils/api';
 import initSocket from '../utils/initSocket';
+import { DISABLE_SOCKET } from '../utils/config';
 
-const streamData = ({ streamSocket }) => (type, projectId) => ({
-  columns,
-  sort,
-  first,
-  onData,
-  onEnd,
-  sqon,
-}) => {
-  return new Promise(resolve => {
-    const stream = ioStream.createStream();
+const streamData = ({ streamSocket }) => {
+  return (type, projectId) => ({
+    columns,
+    sort,
+    first,
+    onData,
+    onEnd,
+    sqon,
+  }) => {
+    return new Promise(resolve => {
+      if (streamSocket) {
+        const stream = ioStream.createStream();
 
-    stream.on('data', chunk => {
-      const { data, total } = JSON.parse(chunk);
-      onData({
-        total,
-        data: data[type].hits.edges.map(e => e.node),
-      });
+        stream.on('data', chunk => {
+          const { data, total } = JSON.parse(chunk);
+          onData({
+            total,
+            data: data[type].hits.edges.map(e => e.node),
+          });
+        });
+
+        stream.on('end', () => {
+          onEnd();
+          resolve();
+        });
+        streamSocket.emit('client::stream', stream, {
+          index: type,
+          projectId,
+          size: first,
+          ...columnsToGraphql({ sqon, config: { columns, type }, sort, first }),
+        });
+      } else {
+        console.warn(
+          'No socket available. This warning can be safely dismissed if `disableSocket` was set on arranger',
+        );
+        resolve();
+      }
     });
-
-    stream.on('end', () => {
-      onEnd();
-      resolve();
-    });
-
-    streamSocket.emit('client::stream', stream, {
-      index: type,
-      projectId,
-      size: first,
-      ...columnsToGraphql({ sqon, config: { columns, type }, sort, first }),
-    });
-  });
+  };
 };
 
 class Arranger extends React.Component {
   constructor(props) {
     super(props);
 
-    let socket = initSocket(
-      pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
-    );
-    let streamSocket = ioStream(socket);
+    const { disableSocket = DISABLE_SOCKET } = props;
+
+    let socket =
+      !disableSocket &&
+      initSocket(
+        pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
+      );
+    let streamSocket = !disableSocket && ioStream(socket);
 
     this.state = {
       selectedTableRows: [],
