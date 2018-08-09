@@ -57,6 +57,9 @@ function download({ url, params, method = 'GET', body = {} }) {
       });
     });
   } else {
+    console.warn(
+      'No socket available. This warning can be safely dismissed if DISABLE_SOCKET environment variable was set to true',
+    );
     resolveOnDownload = () => Promise.resolve();
   }
 
