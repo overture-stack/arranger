@@ -1,5 +1,6 @@
 import uuid from 'uuid';
 import initSocket from './initSocket';
+import { DISABLE_SOCKET } from './config';
 
 let httpHeaders = {};
 
@@ -45,14 +46,19 @@ function createIFrame({ method, url, fields }) {
 
 function download({ url, params, method = 'GET', body = {} }) {
   const downloadKey = uuid();
-  let io = initSocket();
 
-  const resolveOnDownload = new Promise((resolve, reject) => {
-    io.on(`server::download::${downloadKey}`, () => {
-      io.off(`server::download::${downloadKey}`);
-      resolve();
+  let resolveOnDownload;
+  if (!DISABLE_SOCKET) {
+    let io = initSocket();
+    resolveOnDownload = new Promise((resolve, reject) => {
+      io.on(`server::download::${downloadKey}`, () => {
+        io.off(`server::download::${downloadKey}`);
+        resolve();
+      });
     });
-  });
+  } else {
+    resolveOnDownload = () => Promise.resolve();
+  }
 
   createIFrame({
     method,

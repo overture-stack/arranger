@@ -21,3 +21,4 @@ export const PROJECT_ID = getValue('PROJECT_ID', '');
 export const ACTIVE_INDEX = getValue('ACTIVE_INDEX', '');
 export const ACTIVE_INDEX_NAME = getValue('ACTIVE_INDEX_NAME', '');
 export const PORTAL_NAME = getValue('PORTAL_NAME', 'Data Portal');
+export const DISABLE_SOCKET = getValue('DISABLE_SOCKET', 'false') === 'true';
