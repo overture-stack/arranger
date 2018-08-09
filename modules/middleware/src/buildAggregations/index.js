@@ -44,14 +44,14 @@ function removeFieldFromQuery({ field, query }) {
       cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } }
     );
   } else if (bool) {
-    const filtered = Object.entries(bool).reduce((bool, [type, values]) => {
+    const filtered = Object.entries(bool).reduce((acc, [type, values]) => {
       const filteredValues = values
         .map(value => removeFieldFromQuery({ field, query: value }))
         .filter(Boolean);
-
-      return filteredValues.length > 0
-        ? { ...bool, [type]: filteredValues }
-        : bool;
+      if (filteredValues.length > 0) {
+        acc[type] = filteredValues;
+      }
+      return acc;
     }, {});
 
     return Object.keys(filtered).length > 0 ? { [ES_BOOL]: filtered } : null;
@@ -155,15 +155,15 @@ export default function({
         fieldAggregation,
       );
 
-      return {
-        ...aggregations,
-        ...wrapWithFilters({
+      return Object.assign(
+        aggregations,
+        wrapWithFilters({
           query,
           field,
           aggregation,
           aggregationsFilterThemselves,
         }),
-      };
+      );
     },
     {},
   );

@@ -1,6 +1,7 @@
 import { opSwitch } from '../buildQuery';
 import normalizeFilters from '../buildQuery/normalizeFilters';
 import { AGGS_WRAPPER_FILTERED } from '../constants';
+import { cloneDeep } from 'lodash';
 
 /*
  * due to this problem: https://github.com/kids-first/kf-portal-ui/issues/488
@@ -13,20 +14,19 @@ const injectNestedFiltersToAggs = ({
   aggregationsFilterThemselves,
 }) =>
   Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
-    const skipToNextLevel = () => ({
-      ...acc,
-      [aggName]: {
+    const skipToNextLevel = () => {
+      acc[aggName] = {
         ...aggContent,
         aggs: injectNestedFiltersToAggs({
           aggs: aggContent.aggs,
           nestedSqonFilters,
           aggregationsFilterThemselves,
         }),
-      },
-    });
-    const wrapInFilterAgg = () => ({
-      ...acc,
-      [aggName]: {
+      };
+      return acc;
+    };
+    const wrapInFilterAgg = () => {
+      acc[aggName] = {
         ...aggContent,
         aggs: {
           [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
@@ -53,8 +53,9 @@ const injectNestedFiltersToAggs = ({
             }),
           },
         },
-      },
-    });
+      };
+      return acc;
+    };
 
     if (aggContent.global || aggContent.filter) {
       return skipToNextLevel();

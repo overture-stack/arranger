@@ -14,12 +14,9 @@ import {
 function groupingOptimizer({ op, content }) {
   return {
     op,
-    content: content
-      .map(normalizeFilters)
-      .reduce(
-        (filters, f) => [...filters, ...(f.op === op ? f.content : [f])],
-        [],
-      ),
+    content: content.map(normalizeFilters).reduce((filters, f) => {
+      return filters.concat(f.op === op ? f.content : [f]);
+    }, []),
   };
 }
 
