@@ -5,12 +5,11 @@
     "test": "jest"
   },
   "jest": {
-    "setupFiles": [
-      "jest-localstorage-mock"
-    ],
+    "setupFiles": ["jest-localstorage-mock"],
     "moduleNameMapper": {
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
-    }
+    },
+    "testURL": "http://localhost/"
   },
   "dependencies": {
     "@arranger/components": "^0.4.14"
