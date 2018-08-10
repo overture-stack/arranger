@@ -150,7 +150,7 @@ export const hitsToEdges = ({
             .then(resolve);
         }),
     ),
-  ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk)));
+  ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
 export default ({ type, Parallel }) => async (
