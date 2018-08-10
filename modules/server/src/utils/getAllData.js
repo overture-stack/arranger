@@ -11,12 +11,15 @@ function getAllData({
   fields = '',
   mock,
   sort = [],
+  columns = [],
 }) {
   const stream = new PassThrough({ objectMode: true });
   const project = getProject(projectId);
   const sortWithId = sort.find(s => s.field === '_id')
     ? sort
     : [...sort, { field: '_id' }];
+
+  const esFields = columns.map(({ field }) => field);
 
   project
     .runQuery({

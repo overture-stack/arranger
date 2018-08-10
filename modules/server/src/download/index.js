@@ -1,16 +1,70 @@
+import { PassThrough } from 'stream';
 import express from 'express';
 import zlib from 'zlib';
 import bodyParser from 'body-parser';
 import tar from 'tar-stream';
-import { defaults } from 'lodash';
+import { defaults, take } from 'lodash';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
+import { getProject } from '../utils/projects';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
 export default function({ projectId, io }) {
-  function makeTSV(args) {
+  const makeTsvWithEsData = ({
+    es,
+    file: { index, columns, sort, sqon, ...restFile },
+    chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
+    ...rest
+  }) => {
+    const stream = new PassThrough({ objectMode: true });
+    getProject(projectId)
+      .runQuery({
+        query: `
+          query ($sqon: JSON) {
+            ${index} {
+              hits(filters: $sqon) {
+                total
+              }
+            }
+          }
+        `,
+        variables: { sqon },
+      })
+      .then(({ data }) => {
+        const total = data[index].hits.total;
+        const steps = Array(Math.ceil(total / chunkSize)).fill();
+        return es
+          .search({
+            index: `arranger-projects-${projectId}`,
+            type: `arranger-projects-${projectId}`,
+          })
+          .then(({ hits: { hits } }) => hits.map(({ _source }) => _source))
+          .then(
+            hits =>
+              hits
+                .map(({ index, name, esType }) => ({
+                  index,
+                  name,
+                  esType,
+                }))
+                .filter(({ name }) => name === index)[0],
+          )
+          .then(({ index: esIndex, name, esType } = {}) =>
+            es.search({
+              index: esIndex,
+              type: esType,
+              size: DOWNLOAD_STREAM_BUFFER_SIZE,
+            }),
+          )
+          .then(({ hits: { hits } }) => hits.map(({ _source }) => _source));
+      })
+      .then(console.log)
+      .catch(console.error);
+  };
+
+  const makeTSV = args => {
     return getAllData({
       projectId,
       ...args,
@@ -22,9 +76,9 @@ export default function({ projectId, io }) {
       }),
       chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
     }).pipe(dataToTSV(args));
-  }
+  };
 
-  function multipleFiles({ files, mock, chunkSize }) {
+  function multipleFiles({ files, mock, chunkSize, es }) {
     const pack = tar.pack();
 
     Promise.all(
@@ -33,6 +87,12 @@ export default function({ projectId, io }) {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
           const fileStream = makeTSV(defaults(file, { mock, chunkSize }));
+          const newFileStream = makeTsvWithEsData({
+            es,
+            file,
+            mock,
+            chunkSize,
+          });
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
@@ -59,6 +119,7 @@ export default function({ projectId, io }) {
   router.use(bodyParser.urlencoded({ extended: true }));
 
   router.post('/', async function(req, res) {
+    const es = req.context.es;
     const { params, downloadKey } = req.body;
     const { files, fileName = 'file.tar.gz', mock, chunkSize } = JSON.parse(
       params,
@@ -73,10 +134,16 @@ export default function({ projectId, io }) {
 
       if (files.length === 1) {
         output = makeTSV(defaults(files[0], { mock, chunkSize }));
+        const newFileStream = makeTsvWithEsData({
+          es,
+          file: files[0],
+          mock,
+          chunkSize,
+        });
         responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
       } else {
-        output = multipleFiles({ files, mock, chunkSize });
+        output = multipleFiles({ files, mock, chunkSize, es });
         responseFileName = fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'); // make sure file ends with '.tar.gz'
         contentType = 'application/gzip';
       }
