@@ -81,9 +81,14 @@ function getFuzzyFilter({ nestedFields, filter }) {
 
   // group queries by their nesting level
   const sortedNested = nestedFields.slice().sort((a, b) => b.length - a.length);
-  const nestedMap = fields.reduce((map, field) => {
+  const nestedMap = fields.reduce((acc, field) => {
     const group = sortedNested.find(y => field.includes(y)) || '';
-    return { ...map, [group]: [...(map[group] || []), field] };
+    if (acc[group]) {
+      acc[group].push(field);
+    } else {
+      acc[group] = [field];
+    }
+    return acc;
   }, {});
 
   // construct one multi match per nested group
