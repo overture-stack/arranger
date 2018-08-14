@@ -24,7 +24,7 @@ export default async ({
   graphqlOptions = {},
 } = {}) => {
   const router = express.Router();
-  router.use(bodyParser.urlencoded({ extended: false }));
+  router.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
   router.use(bodyParser.json({ limit: '50mb' }));
 
   sockets({ io });
