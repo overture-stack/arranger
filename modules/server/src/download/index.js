@@ -3,7 +3,7 @@ import express from 'express';
 import zlib from 'zlib';
 import bodyParser from 'body-parser';
 import tar from 'tar-stream';
-import { defaults, get } from 'lodash';
+import { defaults, get, isEqual } from 'lodash';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 import { buildQuery } from '@arranger/middleware';
 import through2 from 'through2';
@@ -92,6 +92,8 @@ export default function({ projectId, io }) {
 
     const query = buildQuery({ nestedFields, filters: sqon });
 
+    console.log('query: ', query);
+
     getProject(projectId)
       .runQuery({
         query: `
@@ -112,22 +114,22 @@ export default function({ projectId, io }) {
         return steps.reduce(async previous => {
           const previousHits = await previous;
           console.time(`EsQuery`);
-          const esConfig = {
-            index: esIndex,
-            type: esType,
-            size: chunkSize,
-            body: {
-              query,
-              sort: esSort,
-              ...(previousHits
-                ? {
-                    search_after: previousHits[previousHits.length - 1].sort,
-                  }
-                : {}),
-            },
-          };
-          const hits = await es.search(esConfig).then(toHits);
-          console.log('esConfig: ', JSON.stringify(esConfig));
+          const hits = await es
+            .search({
+              index: esIndex,
+              type: esType,
+              size: chunkSize,
+              body: {
+                sort: esSort,
+                ...(previousHits
+                  ? {
+                      search_after: previousHits[previousHits.length - 1].sort,
+                    }
+                  : {}),
+                ...(Object.entries(query).length ? { query } : {}),
+              },
+            })
+            .then(toHits);
           console.timeEnd(`EsQuery`);
           stream.write({ hits, total });
           return hits;
