@@ -3,22 +3,91 @@ import express from 'express';
 import zlib from 'zlib';
 import bodyParser from 'body-parser';
 import tar from 'tar-stream';
-import { defaults, take } from 'lodash';
+import { defaults, get } from 'lodash';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
+import { buildQuery } from '@arranger/middleware';
+import through2 from 'through2';
 
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 import { getProject } from '../utils/projects';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 
+const esHitsToTsv = ({
+  es,
+  file: { columns, fileName },
+  mock,
+  chunkSize,
+  emptyValue = '--',
+}) => {
+  let isFirst = true;
+  return through2.obj(function({ hits, total }, enc, callback) {
+    const pipe = this;
+    const rowModels = hits.map(({ _source }) =>
+      columns.reduce((acc, { field, Header }) => {
+        acc.push({ Header, field, value: get(_source, field) || emptyValue });
+        return acc;
+      }, []),
+    );
+    if (isFirst) {
+      isFirst = false;
+      const headerRow = `${columns.map(({ Header }) => Header).join('\t')}\n`;
+      pipe.push(headerRow);
+    }
+    for (let rowModel of rowModels) {
+      // console.log('rowModel: ', rowModel);
+      const row = `${rowModel.map(({ value }) => value).join('\t')}\n`;
+      if (row) {
+        console.log(row);
+        pipe.push(row);
+      }
+    }
+
+    callback();
+    // rowModels.forEach(rowModel => {
+    //   const row = `${rowModel.map(({ value }) => value).join('\t')}\n`;
+    //   console.log(row);
+    //   pipe.push(row);
+    // });
+  });
+};
+
 export default function({ projectId, io }) {
-  const makeTsvWithEsData = ({
+  const makeTsvWithEsData = async ({
     es,
     file: { index, columns, sort, sqon, ...restFile },
     chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
     ...rest
   }) => {
     const stream = new PassThrough({ objectMode: true });
+    const toHits = ({ hits: { hits } }) => hits;
+    const esSort = sort.map(({ field, order }) => ({ [field]: order }));
+
+    const { esIndex, name, esType, extended } = await es
+      .search({
+        index: `arranger-projects-${projectId}`,
+        type: `arranger-projects-${projectId}`,
+      })
+      .then(toHits)
+      .then(hits => hits.map(({ _source }) => _source))
+      .then(
+        hits =>
+          hits
+            .map(({ index: esIndex, name, esType, config: { extended } }) => ({
+              esIndex,
+              name,
+              esType,
+              extended,
+            }))
+            .filter(({ name }) => name === index)[0],
+      );
+
+    const nestedFields = extended
+      .map(({ field }) => field)
+      .filter(field => field.includes('.'));
+
+    const query = buildQuery({ nestedFields, filters: sqon });
+
     getProject(projectId)
       .runQuery({
         query: `
@@ -35,33 +104,33 @@ export default function({ projectId, io }) {
       .then(({ data }) => {
         const total = data[index].hits.total;
         const steps = Array(Math.ceil(total / chunkSize)).fill();
-        return es
-          .search({
-            index: `arranger-projects-${projectId}`,
-            type: `arranger-projects-${projectId}`,
-          })
-          .then(({ hits: { hits } }) => hits.map(({ _source }) => _source))
-          .then(
-            hits =>
-              hits
-                .map(({ index, name, esType }) => ({
-                  index,
-                  name,
-                  esType,
-                }))
-                .filter(({ name }) => name === index)[0],
-          )
-          .then(({ index: esIndex, name, esType } = {}) =>
-            es.search({
+
+        // async reduce because each cycle is dependent on result of the previous
+        return steps.reduce(async previous => {
+          const previousHits = await previous;
+          const hits = await es
+            .search({
               index: esIndex,
               type: esType,
-              size: DOWNLOAD_STREAM_BUFFER_SIZE,
-            }),
-          )
-          .then(({ hits: { hits } }) => hits.map(({ _source }) => _source));
+              size: chunkSize,
+              body: {
+                query,
+                sort: esSort,
+                ...(previousHits
+                  ? {
+                      search_after: previousHits[previousHits.length - 1].sort,
+                    }
+                  : {}),
+              },
+            })
+            .then(toHits);
+          stream.write({ hits, total });
+          return hits;
+        }, Promise.resolve());
       })
-      .then(console.log)
+      .then(() => stream.end())
       .catch(console.error);
+    return stream;
   };
 
   const makeTSV = args => {
@@ -134,12 +203,16 @@ export default function({ projectId, io }) {
 
       if (files.length === 1) {
         output = makeTSV(defaults(files[0], { mock, chunkSize }));
-        const newFileStream = makeTsvWithEsData({
+        const tsvArgs = {
           es,
           file: files[0],
           mock,
           chunkSize,
-        });
+        };
+        const newFileStream = await makeTsvWithEsData(tsvArgs);
+        newFileStream.pipe(esHitsToTsv(tsvArgs));
+        output = newFileStream;
+
         responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
       } else {

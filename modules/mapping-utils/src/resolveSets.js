@@ -1,7 +1,6 @@
 import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
-import { buildQuery } from '@arranger/middleware';
-import { CONSTANTS } from '@arranger/middleware';
+import { CONSTANTS, buildQuery } from '@arranger/middleware';
 
 const retrieveSetIds = async ({
   es,
