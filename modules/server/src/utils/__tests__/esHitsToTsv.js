@@ -7,8 +7,8 @@ describe('dataToTSV accessor columns', () => {
       index: 'file',
       data: {
         hits: [
-          { _source: { node: { test1: 1, test2: 'txt1' } } },
-          { _source: { node: { test1: 2, test2: 'txt2' } } },
+          { _source: { test1: 1, test2: 'txt1' } },
+          { _source: { test1: 2, test2: 'txt2' } },
         ],
         total: 5,
       },
