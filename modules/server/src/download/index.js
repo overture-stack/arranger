@@ -12,54 +12,15 @@ import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 import { getProject } from '../utils/projects';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
-
-const esHitsToTsv = ({
-  es,
-  file: { columns, fileName },
-  mock,
-  chunkSize,
-  emptyValue = '--',
-}) => {
-  let isFirst = true;
-  let chunkCounts = 0;
-  return through2.obj(function({ hits, total }, enc, callback) {
-    console.time(`esHitsToTsv_${chunkCounts}`);
-    const pipe = this;
-    const rowModels = hits.map(({ _source }) =>
-      columns.reduce((acc, { field, Header }) => {
-        acc.push({ Header, field, value: get(_source, field) || emptyValue });
-        return acc;
-      }, []),
-    );
-    if (isFirst) {
-      isFirst = false;
-      const headerRow = `${columns.map(({ Header }) => Header).join('\t')}\n`;
-      pipe.push(headerRow);
-    }
-    for (let rowModel of rowModels) {
-      // console.log('rowModel: ', rowModel);
-      const row = `${rowModel.map(({ value }) => value).join('\t')}\n`;
-      if (row) {
-        // console.log(row);
-        pipe.push(row);
-      }
-    }
-
-    callback();
-    console.timeEnd(`esHitsToTsv_${chunkCounts}`);
-    chunkCounts++;
-    // rowModels.forEach(rowModel => {
-    //   const row = `${rowModel.map(({ value }) => value).join('\t')}\n`;
-    //   console.log(row);
-    //   pipe.push(row);
-    // });
-  });
-};
+import esHitsToTsv from './esHitsToTsv';
 
 export default function({ projectId, io }) {
   const makeTsvWithEsData = async ({
     es,
-    file: { index, columns, sort, sqon, ...restFile },
+    index,
+    columns,
+    sort,
+    sqon,
     chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
     ...rest
   }) => {
@@ -91,8 +52,6 @@ export default function({ projectId, io }) {
       .map(({ field }) => field);
 
     const query = buildQuery({ nestedFields, filters: sqon });
-
-    console.log('query: ', query);
 
     getProject(projectId)
       .runQuery({
@@ -162,13 +121,9 @@ export default function({ projectId, io }) {
         return new Promise((resolve, reject) => {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
-          const fileStream = makeTSV(defaults(file, { mock, chunkSize }));
-          const newFileStream = makeTsvWithEsData({
-            es,
-            file,
-            mock,
-            chunkSize,
-          });
+          const makeTsvArgs = defaults(file, { mock, chunkSize });
+          const fileStream = makeTSV(makeTsvArgs);
+          const newFileStream = makeTsvWithEsData({ es, ...makeTsvArgs });
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
@@ -210,16 +165,12 @@ export default function({ projectId, io }) {
       let contentType;
 
       if (files.length === 1) {
-        output = makeTSV(defaults(files[0], { mock, chunkSize }));
-        const tsvArgs = {
+        const makeTsvArgs = defaults(files[0], { mock, chunkSize });
+        output = makeTSV(makeTsvArgs);
+        const newFileStream = (await makeTsvWithEsData({
+          ...makeTsvArgs,
           es,
-          file: files[0],
-          mock,
-          chunkSize,
-        };
-        const newFileStream = (await makeTsvWithEsData(tsvArgs)).pipe(
-          esHitsToTsv(tsvArgs),
-        );
+        })).pipe(esHitsToTsv(makeTsvArgs));
         output = newFileStream;
 
         responseFileName = files[0].fileName || 'file.tsv';
