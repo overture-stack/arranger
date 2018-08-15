@@ -47,7 +47,11 @@ const getRows = args => {
   });
 };
 
-const dataToTSV = ({
+export const columnsToHeader = ({ columns }) => {
+  return `${columns.map(({ Header }) => Header).join('\t')}\n`;
+};
+
+export const dataToTSV = ({
   data: { hits, total },
   index,
   uniqueBy,
@@ -74,7 +78,7 @@ export default ({ index, columns, uniqueBy, emptyValue = '--' }) => {
     const pipe = this;
     if (isFirst) {
       isFirst = false;
-      const headerRow = `${columns.map(({ Header }) => Header).join('\t')}\n`;
+      const headerRow = columnsToHeader({ columns });
       pipe.push(headerRow);
     }
 
