@@ -1,104 +1,17 @@
-import { PassThrough } from 'stream';
 import express from 'express';
 import zlib from 'zlib';
 import bodyParser from 'body-parser';
 import tar from 'tar-stream';
-import { defaults, get, isEqual } from 'lodash';
+import { defaults } from 'lodash';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
-import { buildQuery } from '@arranger/middleware';
-import through2 from 'through2';
 
 import getAllData from '../utils/getAllData';
+import getAllEsData from '../utils/getAllEsData';
 import dataToTSV from '../utils/dataToTSV';
-import { getProject } from '../utils/projects';
 import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
-import esHitsToTsv from './esHitsToTsv';
+import esHitsToTsv from '../utils/esHitsToTsv';
 
 export default function({ projectId, io }) {
-  const makeTsvWithEsData = async ({
-    es,
-    index,
-    columns,
-    sort,
-    sqon,
-    chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
-    ...rest
-  }) => {
-    const stream = new PassThrough({ objectMode: true });
-    const toHits = ({ hits: { hits } }) => hits;
-    const esSort = sort.map(({ field, order }) => ({ [field]: order }));
-
-    const { esIndex, name, esType, extended } = await es
-      .search({
-        index: `arranger-projects-${projectId}`,
-        type: `arranger-projects-${projectId}`,
-      })
-      .then(toHits)
-      .then(hits => hits.map(({ _source }) => _source))
-      .then(
-        hits =>
-          hits
-            .map(({ index: esIndex, name, esType, config: { extended } }) => ({
-              esIndex,
-              name,
-              esType,
-              extended,
-            }))
-            .filter(({ name }) => name === index)[0],
-      );
-
-    const nestedFields = extended
-      .filter(({ type }) => type === 'nested')
-      .map(({ field }) => field);
-
-    const query = buildQuery({ nestedFields, filters: sqon });
-
-    getProject(projectId)
-      .runQuery({
-        query: `
-          query ($sqon: JSON) {
-            ${index} {
-              hits(filters: $sqon) {
-                total
-              }
-            }
-          }
-        `,
-        variables: { sqon },
-      })
-      .then(({ data }) => {
-        const total = data[index].hits.total;
-        const steps = Array(Math.ceil(total / chunkSize)).fill();
-        // async reduce because each cycle is dependent on result of the previous
-        return steps.reduce(async previous => {
-          const previousHits = await previous;
-          console.time(`EsQuery`);
-          const hits = await es
-            .search({
-              index: esIndex,
-              type: esType,
-              size: chunkSize,
-              body: {
-                sort: esSort,
-                ...(previousHits
-                  ? {
-                      search_after: previousHits[previousHits.length - 1].sort,
-                    }
-                  : {}),
-                ...(Object.entries(query).length ? { query } : {}),
-              },
-            })
-            .then(toHits);
-          console.timeEnd(`EsQuery`);
-          stream.write({ hits, total });
-          return hits;
-        }, Promise.resolve());
-      })
-      .then(() => stream.end())
-      .catch(console.error);
-    return stream;
-  };
-
   const makeTSV = args => {
     return getAllData({
       projectId,
@@ -123,7 +36,11 @@ export default function({ projectId, io }) {
           let data = '';
           const makeTsvArgs = defaults(file, { mock, chunkSize });
           const fileStream = makeTSV(makeTsvArgs);
-          const newFileStream = makeTsvWithEsData({ es, ...makeTsvArgs });
+          const newFileStream = getAllEsData({
+            projectId,
+            es,
+            ...makeTsvArgs,
+          });
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
@@ -167,9 +84,10 @@ export default function({ projectId, io }) {
       if (files.length === 1) {
         const makeTsvArgs = defaults(files[0], { mock, chunkSize });
         output = makeTSV(makeTsvArgs);
-        const newFileStream = (await makeTsvWithEsData({
-          ...makeTsvArgs,
+        const newFileStream = (await getAllEsData({
+          projectId,
           es,
+          ...makeTsvArgs,
         })).pipe(esHitsToTsv(makeTsvArgs));
         output = newFileStream;
 

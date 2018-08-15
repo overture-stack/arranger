@@ -1,6 +1,6 @@
 import { get } from 'lodash';
 import through2 from 'through2';
-import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
+import { DOWNLOAD_STREAM_BUFFER_SIZE } from './config';
 
 const getRow = ({ rowModel }) =>
   `${rowModel.map(({ value }) => value).join('\t')}\n`;
