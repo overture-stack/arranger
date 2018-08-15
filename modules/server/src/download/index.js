@@ -35,12 +35,15 @@ export default function({ projectId, io }) {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
           const makeTsvArgs = defaults(file, { mock, chunkSize });
-          const fileStream = makeTSV(makeTsvArgs);
+          let fileStream = makeTSV(makeTsvArgs);
+
           const newFileStream = getAllEsData({
             projectId,
             es,
             ...makeTsvArgs,
-          });
+          }).pipe(esHitsToTsv(makeTsvArgs));
+          fileStream = newFileStream;
+
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
             pack.entry(
