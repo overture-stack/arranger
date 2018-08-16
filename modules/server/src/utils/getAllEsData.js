@@ -7,8 +7,8 @@ export default async ({
   projectId,
   es,
   index,
-  columns,
-  sort,
+  columns = [],
+  sort = [],
   sqon,
   chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
   ...rest
