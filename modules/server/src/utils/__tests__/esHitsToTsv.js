@@ -167,12 +167,6 @@ describe('esHitsToTSV accessor columns', () => {
                 {
                   nestedValue: 4,
                 },
-                {
-                  nestedValue: 1,
-                },
-                {
-                  nestedValue: 2,
-                },
               ],
             },
           },
@@ -180,12 +174,6 @@ describe('esHitsToTSV accessor columns', () => {
             _source: {
               test1: 2,
               test2: [
-                {
-                  nestedValue: 3,
-                },
-                {
-                  nestedValue: 4,
-                },
                 {
                   nestedValue: 1,
                 },

@@ -38,6 +38,7 @@ function getRows(args) {
     columns,
     entities = [],
   } = args;
+  console.log('entities: ', JSON.stringify(entities, null, 2));
   if (pathIndex >= paths.length - 1) {
     return [
       columns.map(column => {

@@ -41,7 +41,6 @@ const getRows = args => {
     columns,
     entities = [],
   } = args;
-  console.log('paths: ', paths);
   if (pathIndex >= paths.length - 1) {
     return [
       columns.map(column => {
@@ -54,7 +53,7 @@ const getRows = args => {
           return getValue(entity.data, {
             ...column,
             jsonPath: column.jsonPath.replace(
-              `${entity.path.join('[*].')}[*].`,
+              `${entity.path.join('.hits.edges[*].node.')}.hits.edges[*].node.`,
               '',
             ),
           });
@@ -98,17 +97,16 @@ export const dataToTSV = ({
   columns,
   emptyValue,
 }) =>
-  hits
-    .map(row => {
+  flatten(
+    hits.map(row => {
       return getRows({
         row: row._source,
         paths: (uniqueBy || '').split('[].').filter(Boolean),
         columns: columns,
         emptyValue,
-      });
-    })
-    .map(row => row.map(r => r || emptyValue).join('\t'))
-    .join('\n') + '\n';
+      }).map(row => row.map(r => r || emptyValue).join('\t'));
+    }),
+  ).join('\n') + '\n';
 
 export default ({ index, columns, uniqueBy, emptyValue = '--' }) => {
   let isFirst = true;
