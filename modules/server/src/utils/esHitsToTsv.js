@@ -52,10 +52,7 @@ const getRows = args => {
         if (entity) {
           return getValue(entity.data, {
             ...column,
-            jsonPath: column.jsonPath.replace(
-              `${entity.path.join('.hits.edges[*].node.')}.hits.edges[*].node.`,
-              '',
-            ),
+            jsonPath: column.field.replace(`${entity.path.join('.')}.`, ''),
           });
         } else {
           return getValue(row, column);

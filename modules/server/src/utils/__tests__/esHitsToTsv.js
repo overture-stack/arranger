@@ -140,7 +140,7 @@ describe('esHitsToTSV accessor columns', () => {
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          field: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
@@ -193,7 +193,7 @@ describe('esHitsToTSV accessor columns', () => {
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          field: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
