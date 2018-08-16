@@ -109,6 +109,7 @@ export default ({ index, columns, uniqueBy, emptyValue = '--' }) => {
   let isFirst = true;
   let chunkCounts = 0;
   return through2.obj(function({ hits, total }, enc, callback) {
+    console.log('hits: ', hits);
     console.time(`esHitsToTsv_${chunkCounts}`);
     const pipe = this;
     if (isFirst) {

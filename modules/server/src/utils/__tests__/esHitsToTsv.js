@@ -79,13 +79,11 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const data = {
-      data: {
-        hits: [
-          { _source: { test1: 1, test2: 'txt1' } },
-          { _source: { test1: 2, test2: 'txt2' } },
-        ],
-        total: 5,
-      },
+      hits: [
+        { _source: { test1: 1, test2: 'txt1' } },
+        { _source: { test1: 2, test2: 'txt2' } },
+      ],
+      total: 5,
     };
 
     const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
