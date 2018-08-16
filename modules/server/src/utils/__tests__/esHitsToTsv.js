@@ -154,7 +154,7 @@ describe('esHitsToTSV accessor columns', () => {
   it('should accept uniqueBy', () => {
     const config = {
       index: 'file',
-      uniqueBy: 'test2.hits.edges[].node.nestedValue',
+      uniqueBy: 'test2[].nestedValue',
       data: {
         hits: [
           {

@@ -41,10 +41,50 @@ const getRows = args => {
     columns,
     entities = [],
   } = args;
-  return columns.map(column => {
-    const value = getValue(row, column);
-    return value;
-  });
+  console.log('paths: ', paths);
+  if (pathIndex >= paths.length - 1) {
+    return [
+      columns.map(column => {
+        const entity = entities
+          .slice()
+          .reverse()
+          .find(entity => column.field.indexOf(entity.field) === 0);
+
+        if (entity) {
+          return getValue(entity.data, {
+            ...column,
+            jsonPath: column.jsonPath.replace(
+              `${entity.path.join('[*].')}[*].`,
+              '',
+            ),
+          });
+        } else {
+          return getValue(row, column);
+        }
+      }),
+    ];
+  } else {
+    const currentPath = paths[pathIndex];
+    return flatten(
+      (get(data, currentPath) || []).map(node => {
+        return getRows({
+          ...args,
+          data: node,
+          pathIndex: pathIndex + 1,
+          entities: [
+            ...entities,
+            {
+              path: paths.slice(0, pathIndex + 1),
+              field: paths.slice(0, pathIndex + 1).join(''),
+              // TODO: don't assume hits.edges.node.
+              // .replace(/(\.hits.edges(node)?)/g, ''),
+              data: node,
+            },
+          ],
+        });
+      }),
+    );
+  }
 };
 
 export const columnsToHeader = ({ columns }) => {
