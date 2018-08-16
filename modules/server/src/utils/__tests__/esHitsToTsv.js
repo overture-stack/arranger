@@ -1,7 +1,7 @@
 import dataToTSVStream, { dataToTSV, columnsToHeader } from '../esHitsToTsv';
 import { PassThrough } from 'stream';
 
-describe('dataToTSV accessor columns', () => {
+describe('esHitsToTSV accessor columns', () => {
   it('should handle string accessors', () => {
     const config = {
       index: 'file',
@@ -35,12 +35,10 @@ describe('dataToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        hits: {
-          _source: [
-            { node: { test1: 1, test2: 'txt1' } },
-            { node: { test1: 2 } },
-          ],
-        },
+        hits: [
+          { _source: { test1: 1, test2: 'txt1' } },
+          { _source: { test1: 2 } },
+        ],
         total: 5,
       },
       columns: [
@@ -82,12 +80,10 @@ describe('dataToTSV accessor columns', () => {
 
     const data = {
       data: {
-        hits: {
-          _source: [
-            { node: { test1: 1, test2: 'txt1' } },
-            { node: { test1: 2, test2: 'txt2' } },
-          ],
-        },
+        hits: [
+          { _source: { test1: 1, test2: 'txt1' } },
+          { _source: { test1: 2, test2: 'txt2' } },
+        ],
         total: 5,
       },
     };
@@ -106,56 +102,35 @@ describe('dataToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
                 {
-                  node: {
-                    test1: 1,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 3,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 4,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 3,
                 },
                 {
-                  node: {
-                    test1: 2,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 1,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 2,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 4,
                 },
               ],
             },
           },
-        },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 1,
+                },
+                {
+                  nestedValue: 2,
+                },
+              ],
+            },
+          },
+        ],
+        total: 5,
       },
       columns: [
         {
@@ -181,56 +156,46 @@ describe('dataToTSV accessor columns', () => {
       index: 'file',
       uniqueBy: 'test2.hits.edges[].node.nestedValue',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
                 {
-                  node: {
-                    test1: 1,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 3,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 4,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 3,
                 },
                 {
-                  node: {
-                    test1: 2,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 1,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 2,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 4,
+                },
+                {
+                  nestedValue: 1,
+                },
+                {
+                  nestedValue: 2,
                 },
               ],
             },
           },
-        },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 3,
+                },
+                {
+                  nestedValue: 4,
+                },
+                {
+                  nestedValue: 1,
+                },
+                {
+                  nestedValue: 2,
+                },
+              ],
+            },
+          },
+        ],
       },
       columns: [
         {
