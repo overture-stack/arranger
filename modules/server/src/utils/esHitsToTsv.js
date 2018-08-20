@@ -17,10 +17,7 @@ const getValue = (row, column) => {
     (column.extendedDisplayValues || {})[value] || value;
   if (column.jsonPath) {
     return jsonPath
-      .query(
-        row,
-        column.jsonPath.replace('.hits.edges', '').replace('[*].node', '[*]'),
-      )
+      .query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))
       .map(getAllValue)
       .reduce((a, b) => a.concat(b), [])
       .map(valueFromExtended)

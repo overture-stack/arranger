@@ -201,4 +201,72 @@ describe('esHitsToTSV accessor columns', () => {
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
+
+  it('should handle deep nested fields', () => {
+    const config = {
+      index: 'file',
+      data: {
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
+                {
+                  nestedValue: 3,
+                },
+                {
+                  nestedValue: 4,
+                },
+              ],
+            },
+          },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 1,
+                  nesting: [
+                    {
+                      nestedValue: 1,
+                    },
+                    {
+                      nestedValue: 2,
+                    },
+                  ],
+                },
+                {
+                  nestedValue: 2,
+                  nesting: [
+                    {
+                      nestedValue: 1,
+                    },
+                    {
+                      nestedValue: 2,
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+      columns: [
+        {
+          Header: 'Test1',
+          field: 'test1',
+          accessor: 'test1',
+        },
+        {
+          Header: 'Test2',
+          field: 'test2.nestedValue.nesting.nestedValue',
+          jsonPath:
+            '$.test2.hits.edges[*].node.nesting.hits.edges[*].node.nestedValue',
+        },
+      ],
+    };
+    const expected = 'Test1\tTest2\n1\t\n2\t1, 2, 1, 2\n';
+
+    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+  });
 });
