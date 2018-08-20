@@ -31,17 +31,17 @@ export default function({ projectId, io }) {
 
     Promise.all(
       files.map((file, i) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
           const makeTsvArgs = defaults(file, { mock, chunkSize });
           let fileStream = makeTSV(makeTsvArgs);
 
-          const newFileStream = getAllEsData({
+          const newFileStream = (await getAllEsData({
             projectId,
             es,
             ...makeTsvArgs,
-          }).pipe(esHitsToTsv(makeTsvArgs));
+          })).pipe(esHitsToTsv(makeTsvArgs));
           fileStream = newFileStream;
 
           fileStream.on('data', chunk => (data += chunk));
