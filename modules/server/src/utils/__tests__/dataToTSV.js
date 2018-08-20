@@ -1,21 +1,16 @@
 import dataToTSVStream, { dataToTSV, columnsToHeader } from '../dataToTSV';
 import { PassThrough } from 'stream';
 
-describe('dataToTSV accessor columns', () => {
+describe('esHitsToTSV accessor columns', () => {
   it('should handle string accessors', () => {
     const config = {
       index: 'file',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
-                { node: { test1: 1, test2: 'txt1' } },
-                { node: { test1: 2, test2: 'txt2' } },
-              ],
-            },
-          },
-        },
+        hits: [
+          { _source: { test1: 1, test2: 'txt1' } },
+          { _source: { test1: 2, test2: 'txt2' } },
+        ],
+        total: 5,
       },
       columns: [
         {
@@ -40,16 +35,11 @@ describe('dataToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
-                { node: { test1: 1, test2: 'txt1' } },
-                { node: { test1: 2 } },
-              ],
-            },
-          },
-        },
+        hits: [
+          { _source: { test1: 1, test2: 'txt1' } },
+          { _source: { test1: 2 } },
+        ],
+        total: 5,
       },
       columns: [
         {
@@ -89,16 +79,11 @@ describe('dataToTSV accessor columns', () => {
     };
 
     const data = {
-      data: {
-        file: {
-          hits: {
-            edges: [
-              { node: { test1: 1, test2: 'txt1' } },
-              { node: { test1: 2, test2: 'txt2' } },
-            ],
-          },
-        },
-      },
+      hits: [
+        { _source: { test1: 1, test2: 'txt1' } },
+        { _source: { test1: 2, test2: 'txt2' } },
+      ],
+      total: 5,
     };
 
     const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
@@ -115,56 +100,35 @@ describe('dataToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
                 {
-                  node: {
-                    test1: 1,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 3,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 4,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 3,
                 },
                 {
-                  node: {
-                    test1: 2,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 1,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 2,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 4,
                 },
               ],
             },
           },
-        },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 1,
+                },
+                {
+                  nestedValue: 2,
+                },
+              ],
+            },
+          },
+        ],
+        total: 5,
       },
       columns: [
         {
@@ -174,7 +138,7 @@ describe('dataToTSV accessor columns', () => {
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          field: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
@@ -190,56 +154,34 @@ describe('dataToTSV accessor columns', () => {
       index: 'file',
       uniqueBy: 'test2.hits.edges[].node.nestedValue',
       data: {
-        data: {
-          file: {
-            hits: {
-              edges: [
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
                 {
-                  node: {
-                    test1: 1,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 3,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 4,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 3,
                 },
                 {
-                  node: {
-                    test1: 2,
-                    test2: {
-                      hits: {
-                        edges: [
-                          {
-                            node: {
-                              nestedValue: 1,
-                            },
-                          },
-                          {
-                            node: {
-                              nestedValue: 2,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  },
+                  nestedValue: 4,
                 },
               ],
             },
           },
-        },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 1,
+                },
+                {
+                  nestedValue: 2,
+                },
+              ],
+            },
+          },
+        ],
       },
       columns: [
         {
@@ -249,13 +191,81 @@ describe('dataToTSV accessor columns', () => {
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          field: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
     };
 
     const expected = 'Test1\tTest2\n1\t3\n1\t4\n2\t1\n2\t2\n';
+
+    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+  });
+
+  it('should handle deep nested fields', () => {
+    const config = {
+      index: 'file',
+      data: {
+        hits: [
+          {
+            _source: {
+              test1: 1,
+              test2: [
+                {
+                  nestedValue: 3,
+                },
+                {
+                  nestedValue: 4,
+                },
+              ],
+            },
+          },
+          {
+            _source: {
+              test1: 2,
+              test2: [
+                {
+                  nestedValue: 1,
+                  nesting: [
+                    {
+                      nestedValue: 1,
+                    },
+                    {
+                      nestedValue: 2,
+                    },
+                  ],
+                },
+                {
+                  nestedValue: 2,
+                  nesting: [
+                    {
+                      nestedValue: 1,
+                    },
+                    {
+                      nestedValue: 2,
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+      columns: [
+        {
+          Header: 'Test1',
+          field: 'test1',
+          accessor: 'test1',
+        },
+        {
+          Header: 'Test2',
+          field: 'test2.nestedValue.nesting.nestedValue',
+          jsonPath:
+            '$.test2.hits.edges[*].node.nesting.hits.edges[*].node.nestedValue',
+        },
+      ],
+    };
+    const expected = 'Test1\tTest2\n1\t\n2\t1, 2, 1, 2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });

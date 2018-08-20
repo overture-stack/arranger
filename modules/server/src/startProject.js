@@ -215,6 +215,12 @@ export default async function startProjectApp({
 
   const projectApp = express.Router();
 
+  projectApp.use(`/`, (req, res, next) => {
+    req.context = req.context || {};
+    req.context.es = es;
+    next();
+  });
+
   projectApp.get(`/ping`, (req, res) => res.send('ok'));
 
   let noSchemaHandler = (req, res) =>
