@@ -19,8 +19,6 @@ function getAllData({
     ? sort
     : [...sort, { field: '_id' }];
 
-  const esFields = columns.map(({ field }) => field);
-
   project
     .runQuery({
       mock,
