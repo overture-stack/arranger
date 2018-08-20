@@ -19,7 +19,9 @@ export default async ({
 }) => {
   const stream = new PassThrough({ objectMode: true });
   const toHits = ({ hits: { hits } }) => hits;
-  const esSort = sort.map(({ field, order }) => ({ [field]: order }));
+  const esSort = sort
+    .map(({ field, order }) => ({ [field]: order }))
+    .concat({ _id: 'asc' });
 
   const { esIndex, esType, extended } = await es
     .search({
