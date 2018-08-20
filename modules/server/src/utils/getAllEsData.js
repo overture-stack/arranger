@@ -17,7 +17,7 @@ export default async ({
   const toHits = ({ hits: { hits } }) => hits;
   const esSort = sort.map(({ field, order }) => ({ [field]: order }));
 
-  const { esIndex, name, esType, extended } = await es
+  const { esIndex, esType, extended } = await es
     .search({
       index: `arranger-projects-${projectId}`,
       type: `arranger-projects-${projectId}`,

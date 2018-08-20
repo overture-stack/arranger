@@ -3,28 +3,17 @@ import zlib from 'zlib';
 import bodyParser from 'body-parser';
 import tar from 'tar-stream';
 import { defaults } from 'lodash';
-import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
-import getAllData from '../utils/getAllData';
 import getAllEsData from '../utils/getAllEsData';
-import dataToTSV from '../utils/dataToTSV';
-import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 import esHitsToTsv from '../utils/esHitsToTsv';
 
 export default function({ projectId, io }) {
-  const makeTSV = args => {
-    return getAllData({
+  const makeTSV = ({ es, projectId }) => async args =>
+    (await getAllEsData({
       projectId,
+      es,
       ...args,
-      ...columnsToGraphql({
-        sqon: args.sqon,
-        config: { columns: args.columns, type: args.index },
-        sort: args.sort || [],
-        first: DOWNLOAD_STREAM_BUFFER_SIZE,
-      }),
-      chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
-    }).pipe(dataToTSV(args));
-  };
+    })).pipe(esHitsToTsv(args));
 
   function multipleFiles({ files, mock, chunkSize, es }) {
     const pack = tar.pack();
@@ -35,14 +24,8 @@ export default function({ projectId, io }) {
           // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
           let data = '';
           const makeTsvArgs = defaults(file, { mock, chunkSize });
-          let fileStream = makeTSV(makeTsvArgs);
 
-          const newFileStream = (await getAllEsData({
-            projectId,
-            es,
-            ...makeTsvArgs,
-          })).pipe(esHitsToTsv(makeTsvArgs));
-          fileStream = newFileStream;
+          const fileStream = await makeTSV({ es, projectId })(makeTsvArgs);
 
           fileStream.on('data', chunk => (data += chunk));
           fileStream.on('end', () => {
@@ -86,13 +69,7 @@ export default function({ projectId, io }) {
 
       if (files.length === 1) {
         const makeTsvArgs = defaults(files[0], { mock, chunkSize });
-        output = makeTSV(makeTsvArgs);
-        const newFileStream = (await getAllEsData({
-          projectId,
-          es,
-          ...makeTsvArgs,
-        })).pipe(esHitsToTsv(makeTsvArgs));
-        output = newFileStream;
+        output = await makeTSV({ es, projectId })(makeTsvArgs);
 
         responseFileName = files[0].fileName || 'file.tsv';
         contentType = 'text/plain';
