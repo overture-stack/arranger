@@ -1,8 +1,8 @@
-import through2 from 'through2';
 import { get, flatten } from 'lodash';
+import through2 from 'through2';
 import jsonPath from 'jsonpath';
 
-function getAllValue(data) {
+const getAllValue = data => {
   if (typeof data === 'object') {
     return Object.values(data || {})
       .map(getAllValue)
@@ -10,14 +10,14 @@ function getAllValue(data) {
   } else {
     return data;
   }
-}
+};
 
-function getValue(row, column) {
+const getValue = (row, column) => {
   const valueFromExtended = value =>
     (column.extendedDisplayValues || {})[value] || value;
   if (column.jsonPath) {
     return jsonPath
-      .query(row, column.jsonPath)
+      .query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))
       .map(getAllValue)
       .reduce((a, b) => a.concat(b), [])
       .map(valueFromExtended)
@@ -27,9 +27,9 @@ function getValue(row, column) {
   } else {
     return '';
   }
-}
+};
 
-function getRows(args) {
+const getRows = args => {
   const {
     row,
     data = row,
@@ -49,10 +49,7 @@ function getRows(args) {
         if (entity) {
           return getValue(entity.data, {
             ...column,
-            jsonPath: column.jsonPath.replace(
-              `${entity.path.join('[*].')}[*].`,
-              '',
-            ),
+            jsonPath: column.field.replace(`${entity.path.join('.')}.`, ''),
           });
         } else {
           return getValue(row, column);
@@ -71,11 +68,9 @@ function getRows(args) {
             ...entities,
             {
               path: paths.slice(0, pathIndex + 1),
-              field: paths
-                .slice(0, pathIndex + 1)
-                .join('')
-                // TODO: don't assume hits.edges.node.
-                .replace(/(\.hits.edges(node)?)/g, ''),
+              field: paths.slice(0, pathIndex + 1).join(''),
+              // TODO: don't assume hits.edges.node.
+              // .replace(/(\.hits.edges(node)?)/g, ''),
               data: node,
             },
           ],
@@ -83,40 +78,56 @@ function getRows(args) {
       }),
     );
   }
-}
+};
 
-export function columnsToHeader({ columns }) {
-  return columns.map(column => column.Header).join('\t') + '\n';
-}
+export const columnsToHeader = ({ columns }) => {
+  return `${columns.map(({ Header }) => Header).join('\t')}\n`;
+};
 
-export function dataToTSV({ data, index, uniqueBy, columns, emptyValue }) {
-  const results = flatten(
-    get(data, `data['${index}'].hits.edges`, []).map(row => {
+export const dataToTSV = ({
+  data: { hits, total },
+  index,
+  uniqueBy,
+  columns,
+  emptyValue,
+}) =>
+  flatten(
+    hits.map(row => {
       return getRows({
-        row: row.node,
+        row: row._source,
         paths: (uniqueBy || '').split('[].').filter(Boolean),
         columns: columns,
+        emptyValue,
       }).map(row => row.map(r => r || emptyValue).join('\t'));
     }),
-  );
-  return results.length ? results.join('\n') + '\n' : '';
-}
+  ).join('\n') + '\n';
 
-export default function({ columns, index, uniqueBy, emptyValue = '--' }) {
+export default ({ index, columns, uniqueBy, emptyValue = '--' }) => {
   let isFirst = true;
-
-  return through2.obj(function(data, enc, callback) {
+  let chunkCounts = 0;
+  return through2.obj(function({ hits, total }, enc, callback) {
+    console.time(`esHitsToTsv_${chunkCounts}`);
+    const pipe = this;
     if (isFirst) {
       isFirst = false;
-      this.push(columnsToHeader({ columns }));
+      const headerRow = columnsToHeader({ columns });
+      pipe.push(headerRow);
     }
 
-    const rows = dataToTSV({ data, index, uniqueBy, columns, emptyValue });
+    const rows = dataToTSV({
+      data: { hits, total },
+      index,
+      uniqueBy,
+      columns,
+      emptyValue,
+    });
 
     if (rows) {
       this.push(rows);
     }
 
     callback();
+    console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+    chunkCounts++;
   });
-}
+};

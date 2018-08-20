@@ -4,16 +4,16 @@ import bodyParser from 'body-parser';
 import tar from 'tar-stream';
 import { defaults } from 'lodash';
 
-import getAllEsData from '../utils/getAllEsData';
-import esHitsToTsv from '../utils/esHitsToTsv';
+import getAllData from '../utils/getAllData';
+import dataToTSV from '../utils/dataToTSV';
 
 export default function({ projectId, io }) {
   const makeTSV = ({ es, projectId }) => async args =>
-    (await getAllEsData({
+    (await getAllData({
       projectId,
       es,
       ...args,
-    })).pipe(esHitsToTsv(args));
+    })).pipe(dataToTSV(args));
 
   function multipleFiles({ files, mock, chunkSize, es }) {
     const pack = tar.pack();

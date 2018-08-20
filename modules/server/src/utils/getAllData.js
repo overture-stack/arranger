@@ -1,27 +1,53 @@
 import { PassThrough } from 'stream';
-import jsonPath from 'jsonpath';
-import { cloneDeep } from 'lodash';
+import {
+  buildQuery,
+  esToSafeJsInt,
+  CONSTANTS as ES_CONSTANTS,
+} from '@arranger/middleware';
+import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
 import { getProject } from './projects';
 
-function getAllData({
+export default async ({
   projectId,
+  es,
   index,
-  variables = null,
-  chunkSize = 1000,
-  fields = '',
-  mock,
-  sort = [],
   columns = [],
-}) {
+  sort = [],
+  sqon,
+  chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
+  ...rest
+}) => {
   const stream = new PassThrough({ objectMode: true });
-  const project = getProject(projectId);
-  const sortWithId = sort.find(s => s.field === '_id')
-    ? sort
-    : [...sort, { field: '_id' }];
+  const toHits = ({ hits: { hits } }) => hits;
+  const esSort = sort.map(({ field, order }) => ({ [field]: order }));
 
-  project
+  const { esIndex, esType, extended } = await es
+    .search({
+      index: `arranger-projects-${projectId}`,
+      type: `arranger-projects-${projectId}`,
+    })
+    .then(toHits)
+    .then(hits => hits.map(({ _source }) => _source))
+    .then(
+      hits =>
+        hits
+          .map(({ index: esIndex, name, esType, config: { extended } }) => ({
+            esIndex,
+            name,
+            esType,
+            extended,
+          }))
+          .filter(({ name }) => name === index)[0],
+    );
+
+  const nestedFields = extended
+    .filter(({ type }) => type === 'nested')
+    .map(({ field }) => field);
+
+  const query = buildQuery({ nestedFields, filters: sqon });
+
+  getProject(projectId)
     .runQuery({
-      mock,
       query: `
         query ($sqon: JSON) {
           ${index} {
@@ -31,53 +57,39 @@ function getAllData({
           }
         }
       `,
-      variables,
+      variables: { sqon },
     })
     .then(({ data }) => {
       const total = data[index].hits.total;
-      stream.write({ data: null, total });
       const steps = Array(Math.ceil(total / chunkSize)).fill();
-
+      // async reduce because each cycle is dependent on result of the previous
       return steps.reduce(async previous => {
-        const searchAfter =
-          jsonPath.query(
-            (await previous) || {},
-            `$["${index}"].hits.edges[-1:].searchAfter`,
-          )[0] || null;
-        const response = await project.runQuery({
-          mock,
-          query: `
-            query ($sqon: JSON, $first: Int, $offset: Int, $sort: [Sort], $searchAfter: JSON) {
-              ${index} {
-                hits(first: $first, offset: $offset, filters: $sqon, sort: $sort, searchAfter: $searchAfter) {
-                  edges {
-                    searchAfter
-                    node {
-                      ${fields}
-                    }
+        const previousHits = await previous;
+        console.time(`EsQuery`);
+        const hits = await es
+          .search({
+            index: esIndex,
+            type: esType,
+            size: chunkSize,
+            body: {
+              sort: esSort,
+              ...(previousHits
+                ? {
+                    search_after: previousHits[
+                      previousHits.length - 1
+                    ].sort.map(esToSafeJsInt),
                   }
-                }
-              }
-            }
-          `,
-          variables: {
-            ...variables,
-            first: chunkSize,
-            sort: sortWithId,
-            searchAfter,
-          },
-        });
-
-        // jsonPath checks the constructor and graphql is setting that to undefined. Cloning adds the constructor back
-        const data = cloneDeep(response.data);
-
-        stream.write({ data, total });
-
-        return data;
+                : {}),
+              ...(Object.entries(query).length ? { query } : {}),
+            },
+          })
+          .then(toHits);
+        console.timeEnd(`EsQuery`);
+        stream.write({ hits, total });
+        return hits;
       }, Promise.resolve());
     })
-    .then(() => stream.end());
+    .then(() => stream.end())
+    .catch(console.error);
   return stream;
-}
-
-export default getAllData;
+};
