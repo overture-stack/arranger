@@ -95,7 +95,7 @@ export const dataToTSV = ({
     hits.map(row => {
       return getRows({
         row: row._source,
-        paths: (uniqueBy || '').split('[].').filter(Boolean),
+        paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
         columns: columns,
         emptyValue,
       }).map(row => row.map(r => r || emptyValue).join('\t'));
