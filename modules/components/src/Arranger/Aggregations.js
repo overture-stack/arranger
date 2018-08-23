@@ -58,7 +58,6 @@ export const AggregationsList = ({
   },
   aggs = [],
   debounceTime,
-  index,
 }) => (
   <AggsQuery
     api={api}
@@ -67,8 +66,8 @@ export const AggregationsList = ({
     index={graphqlField}
     sqon={sqon}
     aggs={aggs}
-    render={({ data }) =>
-      AggregationsListDisplay({
+    render={({ data }) => {
+      return AggregationsListDisplay({
         data,
         onValueChange,
         aggs,
@@ -77,8 +76,8 @@ export const AggregationsList = ({
         sqon,
         containerRef,
         componentProps,
-      })
-    }
+      });
+    }}
   />
 );
 
@@ -119,30 +118,9 @@ const Aggregations = ({
               api={api}
               debounceTime={300}
               projectId={projectId}
-              index={graphqlField}
+              graphqlField={graphqlField}
               sqon={sqon}
               aggs={aggs}
-              render={({ data }) =>
-                data &&
-                aggs
-                  .map(agg => ({
-                    ...agg,
-                    ...data[graphqlField].aggregations[agg.field],
-                    ...data[graphqlField].extended.find(
-                      x => x.field.replace(/\./g, '__') === agg.field,
-                    ),
-                    onValueChange: ({ sqon, value }) => {
-                      onValueChange(value);
-                      setSQON(sqon);
-                    },
-                    key: agg.field,
-                    sqon,
-                    containerRef,
-                  }))
-                  .map(agg =>
-                    aggComponents[agg.type]?.({ ...agg, ...componentProps }),
-                  )
-              }
             />
           );
         }}
