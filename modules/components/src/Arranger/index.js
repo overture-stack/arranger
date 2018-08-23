@@ -1,6 +1,10 @@
 export { default as Arranger } from './Arranger';
 export { default as GetProjects } from './GetProjects';
-export { default as Aggregations } from './Aggregations';
+export {
+  default as Aggregations,
+  AggregationsListDisplay,
+  AggregationsList,
+} from './Aggregations';
 export { default as CurrentSQON } from './CurrentSQON';
 export { default as Table } from './Table';
 export { default as DetectNewVersion } from './DetectNewVersion';
