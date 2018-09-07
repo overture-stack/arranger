@@ -228,7 +228,7 @@ const MatchBox = ({
                   saveSet: async ({
                     userId,
                     api,
-                    dataPath = 'data.data.saveSet',
+                    dataPath = 'data.saveSet.saveSet',
                   }) => {
                     const data = get(
                       await saveSet({
