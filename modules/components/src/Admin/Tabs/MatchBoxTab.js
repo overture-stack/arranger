@@ -1,7 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
 
-import { FancyLabel } from '../Dashboard';
+import { FancyLabel } from '../uiComponents';
 import { MatchBoxState } from '../../MatchBox';
 
 export default ({ projectId, graphqlField }) => (
