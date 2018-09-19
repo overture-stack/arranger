@@ -41,9 +41,6 @@ export default type => async (
   console.log('query: ', JSON.stringify(query));
 
   const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
-
-  const now = Date.now();
-  console.time(`await_es_${now}`);
   const response = await es.search({
     index: type.index,
     type: type.es_type,
@@ -51,15 +48,10 @@ export default type => async (
     _source: false,
     body,
   });
-  console.timeEnd(`await_es_${now}`);
-
-  const time = `flattenAggregations_${Date.now()}`;
-  console.time(time);
   const aggregations = flattenAggregations({
     aggregations: response.aggregations,
     includeMissing: include_missing,
   });
-  console.timeEnd(time);
 
   return Object.entries(aggregations).reduce(toGraphqlField, {});
 };

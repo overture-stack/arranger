@@ -37,11 +37,7 @@ const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let {
-      stats: { min, max },
-      unit,
-      value,
-    } = props;
+    let { stats: { min, max }, unit, value } = props;
     this.state = {
       min,
       max,
@@ -55,10 +51,7 @@ class RangeAgg extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const {
-      stats: { min, max },
-      value: externalVal,
-    } = nextProps;
+    const { stats: { min, max }, value: externalVal } = nextProps;
     let { value } = this.state;
     this.setState({
       min,

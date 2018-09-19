@@ -18,6 +18,10 @@ const FIELD_TYPES = [
   'text',
 ];
 
+const NUMERIC_TYPES = ['integer', 'short', 'long', 'float', 'double'];
+const INTEGER_TYPES = ['integer', 'short', 'long'];
+const FLOATING_POINT_TYPES = ['float', 'double'];
+
 export default ({
   projectId,
   graphqlField,
@@ -160,18 +164,35 @@ export default ({
                   >
                     {FIELD_TYPES.map(type => <option>{type}</option>)}
                   </select>
+                ) : key === 'rangeStep' ? (
+                  NUMERIC_TYPES.includes(activeField.type) && (
+                    <input
+                      type="number"
+                      step={
+                        INTEGER_TYPES.includes(activeField.type) ? 1 : 0.0000001
+                      }
+                      value={val}
+                      onChange={e => updateActiveField(e.target.value)}
+                    />
+                  )
                 ) : typeof val === 'string' ? (
                   <input
                     type="text"
                     value={val}
                     onChange={e => updateActiveField(e.target.value)}
                   />
+                ) : typeof val === 'boolean' ? (
+                  <input
+                    type="checkbox"
+                    checked={val}
+                    onChange={e => updateActiveField(e.target.checked)}
+                  />
                 ) : (
-                  typeof val === 'boolean' && (
+                  typeof val === 'number' && (
                     <input
-                      type="checkbox"
-                      checked={val}
-                      onChange={e => updateActiveField(e.target.checked)}
+                      type="number"
+                      value={val}
+                      onChange={e => updateActiveField(e.target.value)}
                     />
                   )
                 )}
