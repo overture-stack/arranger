@@ -99,6 +99,11 @@ export default class FacetView extends React.Component {
               : {}),
             key: path,
             field: path,
+            getRangeAggProps: () => {
+              return {
+                step: metaData.rangeStep,
+              };
+            },
             onValueChange: ({ sqon, value }) => {
               this.setState(
                 {

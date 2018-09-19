@@ -1,8 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { debounce, startCase, pick } from 'lodash';
+import { debounce, pick } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
-import convert from 'convert-units';
 import urlJoin from 'url-join';
 
 // TODO: importing this causes "multiple versions" of graphql to be loaded and throw error
@@ -26,18 +25,8 @@ import parseInputFiles from '../utils/parseInputFiles';
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
 import TableTab from './Tabs/Aggregations/TableTab';
 import MatchBoxTab from './Tabs/MatchBoxTab';
-
-export const FancyLabel = ({ children, className, ...props }) => (
-  <label className={`fancy-label ${className}`} {...props}>
-    {children}
-  </label>
-);
-
-export const Emoji = ({ label = '', content, ...props }) => (
-  <span aria-label={label} role="img" {...props}>
-    {content}
-  </span>
-);
+import FieldsTab from './Tabs/FieldsTab';
+import { Emoji } from './uiComponents';
 
 class Dashboard extends React.Component {
   fileRef = React.createRef();
@@ -716,271 +705,108 @@ class Dashboard extends React.Component {
               }) => (
                 <State
                   initial={{ tab: 'fields', filterText: '' }}
-                  render={({ update, tab, filterText }) => (
-                    <div
-                      css={`
-                        display: flex;
-                        flex-direction: column;
-                      `}
-                    >
-                      <div>
-                        <a
-                          css={`
-                            text-transform: uppercase;
-                            cursor: pointer;
-                            padding: 0 6px;
-                            color: ${tab === 'fields'
-                              ? 'black'
-                              : 'rgb(128, 30, 148)'};
-                          `}
-                          onClick={() => update({ tab: 'fields' })}
-                        >
-                          Fields
-                        </a>
-                        <a
-                          css={`
-                            text-transform: uppercase;
-                            cursor: pointer;
-                            padding: 0 6px;
-                            color: ${tab === 'matchbox'
-                              ? 'black'
-                              : 'rgb(128, 30, 148)'};
-                          `}
-                          onClick={() => update({ tab: 'matchbox' })}
-                        >
-                          Match Box
-                        </a>
-                        <a
-                          css={`
-                            text-transform: uppercase;
-                            cursor: pointer;
-                            padding: 0 6px;
-                            color: ${tab === 'aggs'
-                              ? 'black'
-                              : 'rgb(128, 30, 148)'};
-                          `}
-                          onClick={() => update({ tab: 'aggs' })}
-                        >
-                          Aggregations
-                        </a>
-                        <a
-                          css={`
-                            text-transform: uppercase;
-                            padding: 0 6px;
-                            cursor: pointer;
-                            color: ${tab === 'columns'
-                              ? 'black'
-                              : 'rgb(128, 30, 148)'};
-                          `}
-                          onClick={() => update({ tab: 'columns' })}
-                        >
-                          Table
-                        </a>
-                        <input
-                          placeholder="filter fields.."
-                          value={filterText}
-                          onChange={e => update({ filterText: e.target.value })}
-                        />
-                      </div>
-                      <>
-                        {tab === 'fields' && (
-                          <div
+                  render={({ update, tab, filterText }) => {
+                    return (
+                      <div
+                        css={`
+                          display: flex;
+                          flex-direction: column;
+                        `}
+                      >
+                        <div>
+                          <a
                             css={`
-                              display: flex;
+                              text-transform: uppercase;
+                              cursor: pointer;
+                              padding: 0 6px;
+                              color: ${tab === 'fields'
+                                ? 'black'
+                                : 'rgb(128, 30, 148)'};
                             `}
+                            onClick={() => update({ tab: 'fields' })}
                           >
-                            <section>
-                              <div style={{ padding: 5 }}>
-                                <FancyLabel className="projects">
-                                  FIELDS ({this.state.fieldsTotal})
-                                </FancyLabel>
-                              </div>
-                              {this.state.fields
-                                .filter(x => x.field.includes(filterText))
-                                .map(x => (
-                                  <div
-                                    key={x.field}
-                                    className={`field-item ${
-                                      x.field === activeField?.field
-                                        ? 'active'
-                                        : ''
-                                    }`}
-                                    onClick={() => {
-                                      this.setState({ activeField: x });
-                                    }}
-                                  >
-                                    {x.field}
-                                  </div>
-                                ))}
-                            </section>
-                            <section>
-                              <div style={{ padding: 5 }}>
-                                <FancyLabel className="projects">
-                                  {activeField?.field}
-                                </FancyLabel>
-                              </div>
-                              {Object.entries(activeField || {})
-                                .filter(([key]) => key !== 'field')
-                                .filter(
-                                  ([key]) =>
-                                    key !== 'displayValues' ||
-                                    activeField.type === 'boolean',
-                                )
-                                .map(([key, val]) => {
-                                  const updateActiveField = async value => {
-                                    let r = await api({
-                                      endpoint: `/projects/${projectId}/types/${index}/fields/${
-                                        activeField.field
-                                      }/update`,
-                                      body: { eshost, key, value },
-                                    });
-                                    this.setState({
-                                      fields: r.fields,
-                                      activeField: r.fields.find(
-                                        x => x.field === activeField.field,
-                                      ),
-                                    });
-                                  };
-                                  const updateBooleanDisplayValue = k => e =>
-                                    updateActiveField({
-                                      ...val,
-                                      [k]: e.target.value,
-                                    });
-                                  return (
-                                    <div key={key} className="type-container">
-                                      {startCase(key)}:
-                                      {key === 'displayValues' ? (
-                                        activeField.type === 'boolean' ? (
-                                          <div>
-                                            <FancyLabel>Any: </FancyLabel>
-                                            <input
-                                              type="text"
-                                              onChange={updateBooleanDisplayValue(
-                                                'any',
-                                              )}
-                                              value={val.any}
-                                            />
-                                            <FancyLabel>True: </FancyLabel>
-                                            <input
-                                              type="text"
-                                              onChange={updateBooleanDisplayValue(
-                                                'true',
-                                              )}
-                                              value={val.true}
-                                            />
-                                            <FancyLabel>False: </FancyLabel>
-                                            <input
-                                              type="text"
-                                              onChange={updateBooleanDisplayValue(
-                                                'false',
-                                              )}
-                                              value={val.false}
-                                            />
-                                          </div>
-                                        ) : null
-                                      ) : key === 'unit' ? (
-                                        <State
-                                          initial={{
-                                            val,
-                                            measure: val
-                                              ? convert().describe(val).measure
-                                              : '',
-                                          }}
-                                          val={val}
-                                          onReceiveProps={({
-                                            props,
-                                            state,
-                                            update,
-                                          }) => {
-                                            if (props.val !== state.val) {
-                                              update({
-                                                val,
-                                                measure: val
-                                                  ? convert().describe(val)
-                                                      .measure
-                                                  : '',
-                                              });
-                                            }
-                                          }}
-                                          render={({ measure, update }) => (
-                                            <div>
-                                              <select
-                                                value={measure}
-                                                onChange={e =>
-                                                  update({
-                                                    measure: e.target.value,
-                                                  })
-                                                }
-                                              >
-                                                {[
-                                                  '',
-                                                  ...convert().measures(),
-                                                ].map(x => (
-                                                  <option key={x}>{x}</option>
-                                                ))}
-                                              </select>
-                                              {measure && (
-                                                <select
-                                                  value={val || ''}
-                                                  onChange={e => {
-                                                    update({ val });
-                                                    updateActiveField(
-                                                      e.target.value,
-                                                    );
-                                                  }}
-                                                >
-                                                  {[
-                                                    '',
-                                                    ...convert().possibilities(
-                                                      measure,
-                                                    ),
-                                                  ].map(x => (
-                                                    <option key={x}>{x}</option>
-                                                  ))}
-                                                </select>
-                                              )}
-                                            </div>
-                                          )}
-                                        />
-                                      ) : typeof val === 'string' ? (
-                                        <input
-                                          type="text"
-                                          value={val}
-                                          onChange={e =>
-                                            updateActiveField(e.target.value)
-                                          }
-                                        />
-                                      ) : (
-                                        typeof val === 'boolean' && (
-                                          <input
-                                            type="checkbox"
-                                            checked={val}
-                                            onChange={e =>
-                                              updateActiveField(
-                                                e.target.checked,
-                                              )
-                                            }
-                                          />
-                                        )
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                            </section>
-                          </div>
-                        )}
-                        {tab === 'matchbox' && (
-                          <MatchBoxTab {...{ projectId, graphqlField }} />
-                        )}
-                        {tab === 'aggs' && (
-                          <AggregationsTab {...{ projectId, graphqlField }} />
-                        )}
-                        {tab === 'columns' && (
-                          <TableTab {...{ projectId, graphqlField }} />
-                        )}
-                      </>
-                    </div>
-                  )}
+                            Fields
+                          </a>
+                          <a
+                            css={`
+                              text-transform: uppercase;
+                              cursor: pointer;
+                              padding: 0 6px;
+                              color: ${tab === 'matchbox'
+                                ? 'black'
+                                : 'rgb(128, 30, 148)'};
+                            `}
+                            onClick={() => update({ tab: 'matchbox' })}
+                          >
+                            Match Box
+                          </a>
+                          <a
+                            css={`
+                              text-transform: uppercase;
+                              cursor: pointer;
+                              padding: 0 6px;
+                              color: ${tab === 'aggs'
+                                ? 'black'
+                                : 'rgb(128, 30, 148)'};
+                            `}
+                            onClick={() => update({ tab: 'aggs' })}
+                          >
+                            Aggregations
+                          </a>
+                          <a
+                            css={`
+                              text-transform: uppercase;
+                              padding: 0 6px;
+                              cursor: pointer;
+                              color: ${tab === 'columns'
+                                ? 'black'
+                                : 'rgb(128, 30, 148)'};
+                            `}
+                            onClick={() => update({ tab: 'columns' })}
+                          >
+                            Table
+                          </a>
+                          <input
+                            placeholder="filter fields.."
+                            value={filterText}
+                            onChange={e =>
+                              update({ filterText: e.target.value })
+                            }
+                          />
+                        </div>
+                        <>
+                          {tab === 'fields' && (
+                            <FieldsTab
+                              {...{
+                                projectId,
+                                graphqlField,
+                                state: this.state,
+                                filterText,
+                                activeField,
+                                index,
+                                eshost,
+                                fieldsTotal: this.state.fieldsTotal,
+                                setState: this.setState.bind(this),
+                                fields: this.state.fields,
+                                setActiveField: activeField =>
+                                  this.setState({ activeField }),
+                                setFields: fields => this.setState({ fields }),
+                              }}
+                            />
+                          )}
+                          {tab === 'matchbox' && (
+                            <MatchBoxTab {...{ projectId, graphqlField }} />
+                          )}
+                          {tab === 'aggs' && (
+                            <AggregationsTab {...{ projectId, graphqlField }} />
+                          )}
+                          {tab === 'columns' && (
+                            <TableTab {...{ projectId, graphqlField }} />
+                          )}
+                        </>
+                      </div>
+                    );
+                  }}
                 />
               )}
             />
