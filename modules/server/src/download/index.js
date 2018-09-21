@@ -7,7 +7,7 @@ import { defaults } from 'lodash';
 import getAllData from '../utils/getAllData';
 import dataToTSV from '../utils/dataToTSV';
 
-export default function({ projectId, io }) {
+export default function({ projectId }) {
   const makeTSV = ({ es, projectId }) => async args =>
     (await getAllData({
       projectId,
@@ -55,7 +55,7 @@ export default function({ projectId, io }) {
   router.post('/', async function(req, res) {
     console.time('download');
     const es = req.context.es;
-    const { params, downloadKey } = req.body;
+    const { params } = req.body;
     const { files, fileName = 'file.tar.gz', mock, chunkSize } = JSON.parse(
       params,
     );
@@ -85,7 +85,6 @@ export default function({ projectId, io }) {
         `attachment; filename=${responseFileName}`,
       );
       output.pipe(res).on('finish', () => {
-        io.emit(`server::download::${downloadKey}`);
         console.timeEnd('download');
       });
     }

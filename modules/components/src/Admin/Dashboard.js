@@ -1,6 +1,6 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { debounce, pick } from 'lodash';
+import { debounce } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import urlJoin from 'url-join';
 
@@ -11,7 +11,6 @@ import urlJoin from 'url-join';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
-import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
@@ -19,7 +18,6 @@ import TypesTable from './TypesTable';
 import { ARRANGER_API, ES_HOST } from '../utils/config';
 import api from '../utils/api';
 import download from '../utils/download';
-import initSocket from '../utils/initSocket';
 import parseInputFiles from '../utils/parseInputFiles';
 
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
@@ -33,10 +31,6 @@ class Dashboard extends React.Component {
 
   constructor(props) {
     super(props);
-
-    let socket = initSocket(
-      pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
-    );
 
     this.state = {
       eshost: ES_HOST,
@@ -59,7 +53,6 @@ class Dashboard extends React.Component {
       fields: [],
       fieldsTotal: 0,
       activeField: null,
-      socket,
     };
   }
 
@@ -67,18 +60,6 @@ class Dashboard extends React.Component {
     require('./Dashboard.css');
 
     this.getProjects({ eshost: this.state.eshost });
-
-    this.state.socket.io.on('connect_error', error => {
-      this.setState({ error: error.message });
-    });
-
-    this.state.socket.io.on('reconnect', a => {
-      this.setState({ error: null });
-    });
-
-    this.state.socket.on('server::projectsStatus', projectStates => {
-      this.setState({ projectStates });
-    });
   }
 
   getProjects = debounce(async ({ eshost }) => {
@@ -115,11 +96,6 @@ class Dashboard extends React.Component {
         fieldsTotal: 0,
         activeField: null,
         activeType: null,
-      });
-
-      this.state.socket.emit('arranger::monitorProjects', {
-        projects,
-        eshost,
       });
     }
   }, 300);
@@ -458,7 +434,7 @@ class Dashboard extends React.Component {
 
   render() {
     let headerHeight = 38;
-    let { activeField, error, eshost, projects, socket } = this.state;
+    let { activeField, error, eshost, projects } = this.state;
     return (
       <BrowserRouter basename={this.props.basename || ''}>
         <div
@@ -468,27 +444,6 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
-          <DetectNewVersion
-            socket={socket}
-            event="server::newServerVersion"
-            Message={() => {
-              return (
-                <div>
-                  A newer version of the Arranger server is available.
-                  <span
-                    css={`
-                      cursor: pointer;
-                      color: rgb(154, 232, 229);
-                      font-weight: bold;
-                    `}
-                    onClick={this.redeployServer}
-                  >
-                    &nbsp;DEPLOY
-                  </span>
-                </div>
-              );
-            }}
-          />
           <Header
             css={`
               flex: none;

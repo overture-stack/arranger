@@ -119,7 +119,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       saveAggsState: async (
         obj,
         { graphqlField, state },
-        { es, projectId, io },
+        { es, projectId },
       ) => {
         // TODO: validate / make proper input type
         const type = types.find(([, type]) => type.name === graphqlField)[1];
@@ -142,15 +142,13 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             size: 1,
           },
         });
-
-        io?.emit('server::refresh');
 
         return data.hits.hits[0]._source;
       },
       saveColumnsState: async (
         obj,
         { graphqlField, state },
-        { es, projectId, io },
+        { es, projectId },
       ) => {
         // TODO: validate / make proper input type
         const type = types.find(([, type]) => type.name === graphqlField)[1];
@@ -173,15 +171,13 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             size: 1,
           },
         });
-
-        io?.emit('server::refresh');
 
         return data.hits.hits[0]._source;
       },
       saveMatchBoxState: async (
         obj,
         { graphqlField, state },
-        { es, projectId, io },
+        { es, projectId },
       ) => {
         // TODO: validate / make proper input type
         const type = types.find(([, type]) => type.name === graphqlField)[1];
@@ -204,8 +200,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
             size: 1,
           },
         });
-
-        io?.emit('server::refresh');
 
         return data.hits.hits[0]._source;
       },

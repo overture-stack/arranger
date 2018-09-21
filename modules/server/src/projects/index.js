@@ -15,7 +15,7 @@ import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
 
-export default ({ io, graphqlOptions }) => {
+export default ({ graphqlOptions }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
@@ -34,11 +34,11 @@ export default ({ io, graphqlOptions }) => {
     next();
   });
 
-  router.use('/:id/types/:index/fields/:field/update', updateField({ io }));
+  router.use('/:id/types/:index/fields/:field/update', updateField({}));
   router.use('/:id/types/:index/delete', deleteType);
   router.use('/:id/types/:index/fields', getFields);
   router.use('/:id/types/add', addType);
-  router.use('/:id/spinUp', spinUp({ io, graphqlOptions }));
+  router.use('/:id/spinUp', spinUp({ graphqlOptions }));
   router.use('/:id/teardown', teardown);
   router.use('/:id/export', exportProject);
   router.use('/:id/types', getTypes);

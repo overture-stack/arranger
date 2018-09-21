@@ -41,8 +41,6 @@
     "graphql": "^0.11.0",
     "jsonpath": "^1.0.0",
     "node-fetch": "^2.0.0",
-    "socket.io": "^2.0.4",
-    "socket.io-stream": "^0.9.1",
     "tar-stream": "^1.5.5",
     "through2": "^2.0.3",
     "url-join": "^4.0.0",
@@ -56,7 +54,7 @@
     "@babel/preset-env": "7.0.0-beta.40",
     "@babel/register": "7.0.0-beta.40",
     "jest": "^22.3.0",
-    "nodemon": "^1.13.3"
+    "nodemon": "^1.18.4"
   },
   "jest": {
     "testURL": "http://localhost/"

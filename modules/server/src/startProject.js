@@ -44,12 +44,7 @@ const mergeFieldsFromConfig = (generatedFields, configFields) => {
   ];
 };
 
-export default async function startProjectApp({
-  es,
-  id,
-  io,
-  graphqlOptions = {},
-}) {
+export default async function startProjectApp({ es, id, graphqlOptions = {} }) {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -251,7 +246,6 @@ export default async function startProjectApp({
             context: {
               es,
               projectId: id,
-              io,
               ...(externalContext || {}),
             },
           };
@@ -259,11 +253,9 @@ export default async function startProjectApp({
       : noSchemaHandler,
   );
 
-  projectApp.use(`/download`, download({ projectId: id, io }));
+  projectApp.use(`/download`, download({ projectId: id }));
 
-  setProject({ app: projectApp, schema, mockSchema, es, io, id });
-
-  io.emit('server::refresh');
+  setProject({ app: projectApp, schema, mockSchema, es, id });
 
   return projectApp;
 }

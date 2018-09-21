@@ -7,7 +7,6 @@ export {
 } from './Aggregations';
 export { default as CurrentSQON } from './CurrentSQON';
 export { default as Table } from './Table';
-export { default as DetectNewVersion } from './DetectNewVersion';
 export {
   default as AdvancedFacetView,
 } from '../AdvancedFacetView/LiveAdvancedFacetView';
