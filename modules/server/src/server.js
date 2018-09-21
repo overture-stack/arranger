@@ -3,7 +3,6 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import projectsRoutes from './projects';
 import sockets from './sockets';
-import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
@@ -28,7 +27,6 @@ export default async ({
   router.use(bodyParser.json({ limit: '50mb' }));
 
   sockets({ io });
-  router.use(await watchGit({ io }));
 
   router.use('/:projectId', (req, res, next) => {
     let projects = getProjects();
