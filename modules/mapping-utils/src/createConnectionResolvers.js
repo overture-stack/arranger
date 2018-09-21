@@ -3,6 +3,7 @@ import { get } from 'lodash';
 
 import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
+import { fetchMapping } from './utils/fetchMapping';
 
 type TcreateConnectionResolversArgs = {
   type: Object,
@@ -17,8 +18,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
   Parallel,
 }) => ({
   [type.name]: {
-    mapping: () => {
-      // TODO: stitch extended mapping
+    mapping: (obj, { indices }, { es, projectId }) => {
+      // const mapping = await fetchMapping({es, })
       return type.mapping;
     },
     extended: (obj, { fields }) => {
