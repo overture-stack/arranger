@@ -11,6 +11,7 @@ type TcreateConnectionResolversArgs = {
 type TcreateConnectionResolvers = (
   args: TcreateConnectionResolversArgs,
 ) => Object;
+
 let createConnectionResolvers: TcreateConnectionResolvers = ({
   type,
   indexPrefix,
@@ -18,9 +19,12 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
   Parallel,
 }) => ({
   [type.name]: {
-    mapping: (obj, { indices }, { es, projectId }) => {
-      // const mapping = await fetchMapping({es, })
-      return type.mapping;
+    mapping: async (obj, { indices }, { es, projectId }) => {
+      const { index, es_type: esType } = type;
+      const { mapping: esMapping } = await fetchMapping({ index, esType, es });
+      const mappings =
+        esMapping[Object.keys(esMapping)[0]].mappings[esType].properties;
+      return mappings;
     },
     extended: (obj, { fields }) => {
       return fields
