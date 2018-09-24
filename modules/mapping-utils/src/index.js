@@ -15,6 +15,8 @@ export {
   esToGraphqlTypeMap,
 } from './mappingToScalarFields';
 export { fetchMapping } from './utils/fetchMapping';
+export { default as loadExtendedFields } from './utils/loadExtendedFields';
+export { default as mapHits } from './utils/mapHits';
 export { default as getNestedFields } from './getNestedFields';
 export { default as flattenMapping } from './flattenMapping';
 export { default as extendMapping, extendFields } from './extendMapping';

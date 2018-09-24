@@ -1,8 +1,9 @@
-import { flattenDeep } from 'lodash';
+import {
+  extendFields,
+  extendMapping,
+  loadExtendedFields,
+} from '@arranger/mapping-utils';
 
-import { extendFields, extendMapping } from '@arranger/mapping-utils';
-
-import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
 import initializeExtendedFields from '../utils/initializeExtendedFields';
 import { fetchMapping } from '../utils/fetchMappings';
@@ -19,30 +20,21 @@ export default async (req, res) => {
   id = id.toLowerCase();
   index = index.toLowerCase();
   const indexPrefix = getIndexPrefix({ projectId: id, index });
-  let arrangerConfig = {
-    projectsIndex: {
-      index: indexPrefix,
-      type: indexPrefix,
-    },
-  };
-
-  let fields = [];
 
   try {
-    fields = await es.search({
-      index: indexPrefix,
-      type: indexPrefix,
-      size: 0,
-      _source: false,
-    });
-
-    fields = await es.search({
-      index: indexPrefix,
-      type: indexPrefix,
-      size: fields.hits.total,
+    const fields = await loadExtendedFields({ projectId: id, index, es });
+    res.json({
+      fields: extendFields(fields),
+      total: fields.length,
     });
   } catch (error) {
     try {
+      const arrangerConfig = {
+        projectsIndex: {
+          index: indexPrefix,
+          type: indexPrefix,
+        },
+      };
       await es.indices.create({
         index: arrangerConfig.projectsIndex.index,
       });
@@ -78,9 +70,4 @@ export default async (req, res) => {
       return res.json({ error: error.message });
     }
   }
-
-  res.json({
-    fields: extendFields(mapHits(fields)),
-    total: fields.hits.total,
-  });
 };

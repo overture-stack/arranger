@@ -4,6 +4,7 @@ import { get } from 'lodash';
 import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 import { fetchMapping } from './utils/fetchMapping';
+import loadExtendedFields from './utils/loadExtendedFields';
 
 type TcreateConnectionResolversArgs = {
   type: Object,
@@ -26,10 +27,12 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
         esMapping[Object.keys(esMapping)[0]].mappings[esType].properties;
       return mappings;
     },
-    extended: (obj, { fields }) => {
+    extended: async (obj, { fields }, { es, projectId }) => {
+      const { index } = type;
+      const extendedFields = await loadExtendedFields({ es, projectId, index });
       return fields
-        ? type.extendedFields.filter(x => fields.includes(x.field))
-        : type.extendedFields;
+        ? extendedFields.filter(x => fields.includes(x.field))
+        : extendedFields;
     },
     ...(createStateResolvers
       ? {
