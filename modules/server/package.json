@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
+    "@arranger/admin": "^0.5.1",
     "@arranger/mapping-utils": "^0.5.1",
     "@arranger/middleware": "^0.5.1",
     "@arranger/schema": "^0.5.1",
