@@ -1,28 +1,3 @@
-[![TypeScript version][ts-badge]][typescript-30]
-[![Node.js version][nodejs-badge]][nodejs]
-[![APLv2][license-badge]][LICENSE]
-[![Build Status][travis-badge]][travis-ci]
-[![PRs Welcome][prs-badge]][prs]
-[![Donate][donate-badge]][donate]
-
-[![Watch on GitHub][github-watch-badge]][github-watch]
-[![Star on GitHub][github-star-badge]][github-star]
-[![Tweet][twitter-badge]][twitter]
-
-# node-typescript-boilerplate
-
-Minimalistic boilerplate to jump-start a [Node.js][nodejs] project in [TypeScript][typescript] [3.0][typescript-30].
-
-What's included:
-
-+ [TypeScript][typescript] [3.0][typescript-30],
-+ [TSLint 5][tslint] with [Microsoft rules][tslint-microsoft-contrib],
-+ [Jest][jest] unit testing and code coverage,
-+ Type definitions for Node.js v8 and Jest,
-+ [Prettier][prettier] to enforces a consistent code style (but it's optional),
-+ [NPM scripts for common operations](#available-scripts),
-+ a simple example of TypeScript code and unit test,
-+ .editorconfig for consistent file format.
 
 ## Quick start
 

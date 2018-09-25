@@ -1,4 +1,5 @@
-export const AggsStateTypeDefs = `
+const adminTypeDefs = `
+
   type AggState {
     field: String
     type: String @deprecated(reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with @Arranger/components. Projects created with 0.4.6 will return null for this query")
@@ -15,9 +16,7 @@ export const AggsStateTypeDefs = `
     index: String
     states: [AggsState]
   }
-`
 
-export const ColumnStateTypeDefs = `
   type ColumnSort {
     id: String
     desc: Boolean
@@ -50,31 +49,4 @@ export const ColumnStateTypeDefs = `
   type ColumnsStates {
     index: String
     states: [ColumnsState]
-  }
-`
-
-export const MatchBoxStateTypeDefs = `
-  type MatchBoxField {
-    displayName: String
-    field: String
-    isActive: Boolean
-    keyField: String
-    searchFields: [String]
-  }
-
-  type MatchBoxState {
-    state: [MatchBoxField]
-    timestamp: String
-  }
-
-  type MatchBoxStates {
-    index: String
-    states: [MatchBoxState]
-  }
-`
-
-export const typeDefs = `
-  ${AggsStateTypeDefs}
-  ${ColumnStateTypeDefs}
-  ${MatchBoxStateTypeDefs}
-`;
+  }`
