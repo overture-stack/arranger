@@ -1,4 +1,6 @@
 import { ApolloServer, gql } from 'apollo-server-express';
+import { makeExecutableSchema, mergeSchemas } from 'graphql-tools';
+import { createSchema as createAggsStateSchema } from './AggsState';
 
 // Construct a schema, using GraphQL schema language
 const typeDefs = gql`
@@ -13,5 +15,10 @@ const resolvers = {
     hello: () => 'Hello world!',
   },
 };
+const rootSchema = makeExecutableSchema({ typeDefs, resolvers });
 
-export default () => new ApolloServer({ typeDefs, resolvers });
+const mergedSchema = mergeSchemas({
+  schemas: [rootSchema, createAggsStateSchema()],
+});
+
+export default () => new ApolloServer({ schema: mergedSchema });
