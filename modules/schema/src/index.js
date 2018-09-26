@@ -5,9 +5,17 @@ import {
   typeDefs as generateTypeDefs,
   resolvers as generateResolvers,
 } from './Root';
-import { AggsStateTypeDefs, ColumnStateTypeDefs, MatchBoxStateTypeDefs } from './State';
+import {
+  AggsStateTypeDefs,
+  ColumnStateTypeDefs,
+  MatchBoxStateTypeDefs,
+} from './State';
 
-export const StateTypeDefs = { AggsStateTypeDefs, ColumnStateTypeDefs, MatchBoxStateTypeDefs }
+export const StateTypeDefs = {
+  AggsStateTypeDefs,
+  ColumnStateTypeDefs,
+  MatchBoxStateTypeDefs,
+};
 
 export const setsMapping = {
   userId: { type: 'keyword' },

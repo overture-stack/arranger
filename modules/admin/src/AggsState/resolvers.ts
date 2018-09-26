@@ -4,14 +4,14 @@ interface AggStateInput {
   show: boolean;
 }
 
-interface SaveAggsStateArgs {
+interface ISaveAggsStateMutationInput {
   graphlField: string;
   state: AggStateInput;
 }
 
 const saveAggsState = (
   obj,
-  { state, graphlField }: SaveAggsStateArgs,
+  { state, graphlField }: ISaveAggsStateMutationInput,
   context,
   info,
 ) => {

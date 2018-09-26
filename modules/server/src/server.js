@@ -27,7 +27,9 @@ export default async ({
   router.use(bodyParser.json({ limit: '50mb' }));
 
   // The GraphQL endpoint
-  adminGraphql().applyMiddleware({ app: router, path: '/admin/graphql' });
+  const adminPath = '/admin/graphql';
+  adminGraphql().applyMiddleware({ app: router, path: adminPath });
+  console.log(`Admin API available at: [arranger_root]${adminPath}`);
 
   router.use('/:projectId', (req, res, next) => {
     let projects = getProjects();

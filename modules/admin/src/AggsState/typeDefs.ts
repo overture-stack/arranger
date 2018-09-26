@@ -1,31 +1,18 @@
 import { gql } from 'apollo-server';
+import { StateTypeDefs } from '@arranger/schema';
 
 export default gql`
-  type AggState {
-    field: String
-    type: String
-      @deprecated(
-        reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with @Arranger/components. Projects created with 0.4.6 will return null for this query"
-      )
-    active: Boolean
-    show: Boolean
-  }
+  ${StateTypeDefs.AggsStateTypeDefs}
 
-  type AggsState {
-    timestamp: String
-    state: [AggState]
-  }
-
-  input AggStateInput {
-    field: String
-    active: Boolean
-    show: Boolean
-  }
-
-  type Mutation {
-    saveAggsState(graphlField: String!, state: AggStateInput!): AggsState
-  }
+  ########### ROOTS ###########
   type Query {
-    aggsState: AggsState
+    aggsState(projectId: String!, graphqlField: String!): AggsState
+  }
+  type Mutation {
+    saveAggsState(
+      projectId: String!
+      graphlField: String!
+      state: AggStateInput!
+    ): AggsState
   }
 `;

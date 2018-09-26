@@ -1,17 +1,17 @@
-interface AggStateInput {
+interface IColumnStateInput {
   field: string;
   active: boolean;
   show: boolean;
 }
 
-interface SaveAggsStateArgs {
+interface IColumnsStateMutationInput {
   graphlField: string;
-  state: AggStateInput;
+  state: IColumnStateInput;
 }
 
-const saveAggsState = (
+const saveColumnsState = (
   obj,
-  { state, graphlField }: SaveAggsStateArgs,
+  { state, graphlField }: IColumnsStateMutationInput,
   context,
   info,
 ) => {
@@ -23,7 +23,7 @@ const saveAggsState = (
 
 export default {
   Query: {
-    aggsState: async stuff => {
+    columnsState: async stuff => {
       return {
         state: {
           field: 'test',
@@ -35,6 +35,6 @@ export default {
     },
   },
   Mutation: {
-    saveAggsState: saveAggsState,
+    saveColumnsState: saveColumnsState,
   },
 };
