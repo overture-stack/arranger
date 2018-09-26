@@ -1,14 +1,20 @@
-import { ApolloServer, gql } from 'apollo-server-express';
+import { ApolloServer } from 'apollo-server-express';
 import { mergeSchemas, addMockFunctionsToSchema } from 'graphql-tools';
 import { createSchema as createAggsStateSchema } from './AggsState';
 import { createSchema as createColumnsStateSchema } from './ColumnsState';
+import { createSchema as createIndexSchema } from './IndexSchema';
 
 const createSchema = async () => {
   const typeDefs = `
+    extend type Index {
+      aggsState: AggsState
+      columnsState: ColumnsState
+    }
+
     type Project {
       id: String!
-      aggsState(graphqlField: String!): AggsState
-      columnsState(graphqlField: String!): ColumnsState
+      index(grapqlField: String!): Index
+      indices: [Index]
     }
 
     type Query {
@@ -24,9 +30,10 @@ const createSchema = async () => {
 
   const aggsStateSchema = await createAggsStateSchema();
   const collumnsStateSchema = await createColumnsStateSchema();
+  const indexSchema = await createIndexSchema();
 
   const mergedSchema = mergeSchemas({
-    schemas: [aggsStateSchema, collumnsStateSchema, typeDefs],
+    schemas: [aggsStateSchema, collumnsStateSchema, indexSchema, typeDefs],
   });
   addMockFunctionsToSchema({ schema: mergedSchema });
   return mergedSchema;
