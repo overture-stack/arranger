@@ -28,7 +28,7 @@ export default async ({
 
   // The GraphQL endpoint
   const adminPath = '/admin/graphql';
-  adminGraphql().applyMiddleware({ app: router, path: adminPath });
+  (await adminGraphql()).applyMiddleware({ app: router, path: adminPath });
   console.log(`Admin API available at: [arranger_root]${adminPath}`);
 
   router.use('/:projectId', (req, res, next) => {

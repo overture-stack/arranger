@@ -1,13 +1,13 @@
 import { gql } from 'apollo-server';
 import { StateTypeDefs } from '@arranger/schema';
 
-export default gql`
+export default async () => gql`
   ${StateTypeDefs.AggsStateTypeDefs}
 
-  ########### ROOTS ###########
   type Query {
     aggsState(projectId: String!, graphqlField: String!): AggsState
   }
+
   type Mutation {
     saveAggsState(
       projectId: String!

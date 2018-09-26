@@ -3,8 +3,14 @@ import { mergeSchemas } from 'graphql-tools';
 import { createSchema as createAggsStateSchema } from './AggsState';
 import { createSchema as createColumnsStateSchema } from './ColumnsState';
 
-const mergedSchema = mergeSchemas({
-  schemas: [createAggsStateSchema(), createColumnsStateSchema()],
-});
+const createSchema = async () => {
+  const aggsStateSchema = await createAggsStateSchema();
+  const collumnsStateSchema = await createColumnsStateSchema();
 
-export default () => new ApolloServer({ schema: mergedSchema });
+  const mergedSchema = mergeSchemas({
+    schemas: [aggsStateSchema, collumnsStateSchema],
+  });
+  return mergedSchema;
+};
+
+export default async () => new ApolloServer({ schema: await createSchema() });
