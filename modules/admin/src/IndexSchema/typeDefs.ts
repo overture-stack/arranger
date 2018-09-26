@@ -4,19 +4,19 @@ export default async () => gql`
   type Index {
     hasMapping: Boolean!
     graphqlField: String!
-    projectName: String!
+    projectId: String!
   }
   type Query {
-    index(projectName: String!, graphqlField: String!): Index
-    indices(projectName: String!): [Index]
+    index(projectId: String!, graphqlField: String!): Index
+    indices(projectId: String!): [Index]
   }
   type Mutation {
     newIndex(
-      projectName: String!
+      projectId: String!
       graphqlField: String!
       esIndex: String!
       esType: String!
     ): Index
-    deleteIndex(projectName: String!, graphqlField: String!): Index
+    deleteIndex(projectId: String!, graphqlField: String!): Index
   }
 `;

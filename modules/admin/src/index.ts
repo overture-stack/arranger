@@ -23,8 +23,8 @@ const createSchema = async () => {
     }
 
     type Mutation {
-      newProject(name: String!): Project
-      deleteProject(name: String!): Project
+      newProject(id: String!): Project
+      deleteProject(id: String!): Project
     }
   `;
 
