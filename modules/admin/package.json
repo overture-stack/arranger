@@ -38,10 +38,12 @@
   "author": "Minh Ha",
   "license": "APLv2",
   "dependencies": {
+    "@types/elasticsearch": "^5.0.26",
     "apollo-link-http": "^1.5.5",
     "apollo-server": "^2.1.0",
     "apollo-server-express": "^2.1.0",
     "convert-units": "^2.3.4",
+    "date-fns": "^1.29.0",
     "elasticsearch": "^15.1.1",
     "express": "^4.16.3",
     "graphql": "^14.0.2",

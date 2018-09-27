@@ -1,9 +1,13 @@
 import { ApolloServer } from 'apollo-server-express';
 import { mergeSchemas, addMockFunctionsToSchema } from 'graphql-tools';
-import { createSchema as createAggsStateSchema } from './AggsState';
-import { createSchema as createColumnsStateSchema } from './ColumnsState';
-import { createSchema as createIndexSchema } from './IndexSchema';
-import { createSchema as createExtendedMappingSchema } from './ExtendedMapping';
+import { Client } from 'elasticsearch';
+
+import { createClient as createElasticsearchClient } from './services/elasticsearch';
+import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
+import { createSchema as createIndexSchema } from './schemas/IndexSchema';
+import { createSchema as createAggsStateSchema } from './schemas/AggsState';
+import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
+import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
 
 const createSchema = async () => {
   const typeDefs = `
@@ -13,23 +17,13 @@ const createSchema = async () => {
       extended(field: String): [ExtendedFieldMapping]
     }
 
-    type Project {
-      id: String!
+    extend type Project {
       index(grapqlField: String!): Index
       indices: [Index]
     }
-
-    type Query {
-      projects: [Project]
-      project(id: String!): Project
-    }
-
-    type Mutation {
-      newProject(id: String!): Project
-      deleteProject(id: String!): Project
-    }
   `;
 
+  const projectSchema = await createProjectSchema();
   const aggsStateSchema = await createAggsStateSchema();
   const collumnsStateSchema = await createColumnsStateSchema();
   const extendedMappingShema = await createExtendedMappingSchema();
@@ -37,15 +31,30 @@ const createSchema = async () => {
 
   const mergedSchema = mergeSchemas({
     schemas: [
+      projectSchema,
+      indexSchema,
       aggsStateSchema,
       collumnsStateSchema,
       extendedMappingShema,
-      indexSchema,
       typeDefs,
     ],
   });
-  addMockFunctionsToSchema({ schema: mergedSchema });
+  addMockFunctionsToSchema({ schema: mergedSchema, preserveResolvers: true });
   return mergedSchema;
 };
 
-export default async () => new ApolloServer({ schema: await createSchema() });
+export interface AdminApiConfig {
+  esHost: string;
+}
+export interface QueryContext {
+  es: Client;
+}
+export default async (config: AdminApiConfig) => {
+  const esClient = createElasticsearchClient(config.esHost);
+  return new ApolloServer({
+    schema: await createSchema(),
+    context: ({ req }) => ({
+      es: esClient,
+    }),
+  });
+};
