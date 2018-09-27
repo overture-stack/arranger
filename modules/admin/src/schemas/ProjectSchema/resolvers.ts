@@ -35,8 +35,9 @@ export default {
       { es }: QueryContext,
       info: GraphQLResolveInfo,
     ): Promise<IArrangerProject> => {
-      return addArrangerProject(es)(id).catch(err => {
-        throw err;
+      return addArrangerProject(es)(id).catch((err: Error) => {
+        err.message = 'potential project ID conflict';
+        return Promise.reject(err);
       });
     },
     deleteProject: async (

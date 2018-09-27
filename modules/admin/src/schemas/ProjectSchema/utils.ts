@@ -46,7 +46,10 @@ export const addArrangerProject = (es: Client): Function => async (
       body: newProject,
     })
     .then(() => newProject)
-    .catch(Promise.reject);
+    .catch((err: Error) => {
+      err.message = 'potential project ID conflict';
+      return Promise.reject(err);
+    });
 };
 
 export const removeArrangerProject = (es: Client): Function => async (
