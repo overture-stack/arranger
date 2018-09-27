@@ -4,9 +4,12 @@ import {
   getArrangerProjects,
   addArrangerProject,
   removeArrangerProject,
-  IProjectQueryInput,
   IArrangerProject,
 } from './utils';
+
+export interface IProjectQueryInput {
+  id: string;
+}
 
 const projectsQueryResolver = async (
   _,

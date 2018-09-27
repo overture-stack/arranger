@@ -4,10 +4,6 @@ import { serializeToEsId } from '../../services';
 export const ARRANGER_PROJECT_INDEX = 'arranger-projects';
 export const ARRANGER_PROJECT_TYPE = 'arranger-projects';
 
-export interface IProjectQueryInput {
-  id: string;
-}
-
 export interface IArrangerProject {
   id: string;
   active: boolean;
