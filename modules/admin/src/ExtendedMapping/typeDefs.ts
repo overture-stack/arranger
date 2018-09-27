@@ -16,30 +16,30 @@ export default async () => gql`
     float
   }
   enum NumericTypeUnit {
-    ${convert().measure()}
+    ${convert().measures()}
   }
 
-  type ExtendedMapping {
+  type ExtendedFieldMapping {
     field: String!
-    type: ExtendedFieldType
+    type: ExtendedFieldType!
     displayName: String!
     active: Boolean!
     isArray: Boolean!
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
     unit: NumericTypeUnit
-    displayValues: JSON
+    displayValues: String!
     rangeStep: Float
   }
   type Query {
-    extendedMapping(
+    extendedFieldMappings(
       projectId: String!
       graphqlField: String!
       field: String
-    ): [ExtendedMapping]
+    ): [ExtendedFieldMapping]
   }
 
-  input ExtendedMappingInput {
+  input ExtendedFieldMappingInput {
     type: ExtendedFieldType
     displayName: String!
     active: Boolean!
@@ -47,7 +47,7 @@ export default async () => gql`
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
     unit: NumericTypeUnit
-    displayValues: JSON
+    displayValues: String!
     rangeStep: Float
   }
 
@@ -56,7 +56,7 @@ export default async () => gql`
       projectId: String!
       graphqlField: String!
       field: String!
-      extendedMappingInput: ExtendedMappingInput!
-    ): ExtendedMapping
+      extendedFieldMappingInput: ExtendedFieldMappingInput!
+    ): ExtendedFieldMapping
   }
 `;

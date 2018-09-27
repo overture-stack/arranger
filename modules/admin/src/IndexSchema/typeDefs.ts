@@ -8,7 +8,6 @@ export default async () => gql`
   }
   type Query {
     index(projectId: String!, graphqlField: String!): Index
-    indices(projectId: String!): [Index]
   }
   type Mutation {
     newIndex(

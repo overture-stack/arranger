@@ -10,6 +10,7 @@ const createSchema = async () => {
     extend type Index {
       aggsState: AggsState
       columnsState: ColumnsState
+      extended(field: String): [ExtendedFieldMapping]
     }
 
     type Project {
