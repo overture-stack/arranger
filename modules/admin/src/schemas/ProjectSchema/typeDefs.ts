@@ -4,7 +4,7 @@ export default async () => gql`
   type Project {
     id: String!
     active: Boolean!
-    timestamp: Date!
+    timestamp: String!
   }
 
   type Query {

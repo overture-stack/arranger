@@ -1,41 +1,12 @@
 import { QueryContext } from '../../index';
-import { Client } from 'elasticsearch';
 import { GraphQLResolveInfo } from 'graphql';
-
-export const ARRANGER_PROJECT_INDEX = 'arranger-projects';
-export const ARRANGER_PROJECT_TYPE = 'arranger-projects';
-
-export interface ProjectQueryInput {
-  id: string;
-}
-
-export interface ArrangerProject {
-  id: string;
-  active: boolean;
-  timestamp: string;
-}
-
-const getArrangerProjects = async (
-  es: Client,
-): Promise<Array<ArrangerProject>> => {
-  const {
-    hits: { hits },
-  } = await es.search({
-    index: ARRANGER_PROJECT_INDEX,
-    type: ARRANGER_PROJECT_TYPE,
-  });
-  return hits.map(({ _source }) => _source as ArrangerProject);
-};
-
-// const addArrangerProject = async (es: Client) => (
-//   id: string,
-// ): Promise<Array<ArrangerProject>> => {
-//   const newArrangerProject:ArrangerProject = {
-//     id, active: true, timestamp:
-//   }
-//   es.create({ index: ARRANGER_PROJECT_INDEX, type: ARRANGER_PROJECT_TYPE, id, body:  });
-//   return [];
-// };
+import {
+  getArrangerProjects,
+  addArrangerProject,
+  removeArrangerProject,
+  IProjectQueryInput,
+  IArrangerProject,
+} from './utils';
 
 export default {
   Query: {
@@ -44,39 +15,37 @@ export default {
       args,
       { es }: QueryContext,
       info: GraphQLResolveInfo,
-    ): Promise<Array<ArrangerProject>> => {
+    ): Promise<Array<IArrangerProject>> => {
       return getArrangerProjects(es);
     },
     project: async (
       _,
-      { id }: ProjectQueryInput,
+      { id }: IProjectQueryInput,
       { es }: QueryContext,
       info: GraphQLResolveInfo,
-    ) => {
+    ): Promise<IArrangerProject> => {
       const projects = await getArrangerProjects(es);
       return projects.find(({ id: _id }) => id === _id);
     },
   },
   Mutation: {
-    newProject: (
+    newProject: async (
       _,
-      { id }: ProjectQueryInput,
+      { id }: IProjectQueryInput,
       { es }: QueryContext,
       info: GraphQLResolveInfo,
-    ) => {
-      return {
-        id,
-      };
+    ): Promise<IArrangerProject> => {
+      return addArrangerProject(es)(id).catch(err => {
+        throw err;
+      });
     },
-    deleteProject: (
+    deleteProject: async (
       _,
-      { id }: ProjectQueryInput,
+      { id }: IProjectQueryInput,
       { es }: QueryContext,
       info: GraphQLResolveInfo,
     ) => {
-      return {
-        id,
-      };
+      return removeArrangerProject(es)(id);
     },
   },
 };
