@@ -8,45 +8,48 @@ import {
   IArrangerProject,
 } from './utils';
 
-export default {
+const projectsQueryResolver = async (
+  _,
+  args,
+  { es }: QueryContext,
+  info: GraphQLResolveInfo,
+): Promise<Array<IArrangerProject>> => getArrangerProjects(es);
+
+const singleProjectQueryResolver = async (
+  _,
+  { id }: IProjectQueryInput,
+  { es }: QueryContext,
+  info: GraphQLResolveInfo,
+): Promise<IArrangerProject> => {
+  const projects = await getArrangerProjects(es);
+  return projects.find(({ id: _id }) => id === _id);
+};
+
+const newProjectMutationResolver = async (
+  _,
+  { id }: IProjectQueryInput,
+  { es }: QueryContext,
+  info: GraphQLResolveInfo,
+): Promise<IArrangerProject> =>
+  addArrangerProject(es)(id).catch((err: Error) => {
+    err.message = 'potential project ID conflict';
+    return Promise.reject(err);
+  });
+
+const deleteProjectMutationResolver = async (
+  _,
+  { id }: IProjectQueryInput,
+  { es }: QueryContext,
+  info: GraphQLResolveInfo,
+) => removeArrangerProject(es)(id);
+
+export const createResolvers = async () => ({
   Query: {
-    projects: async (
-      _,
-      args,
-      { es }: QueryContext,
-      info: GraphQLResolveInfo,
-    ): Promise<Array<IArrangerProject>> => {
-      return getArrangerProjects(es);
-    },
-    project: async (
-      _,
-      { id }: IProjectQueryInput,
-      { es }: QueryContext,
-      info: GraphQLResolveInfo,
-    ): Promise<IArrangerProject> => {
-      const projects = await getArrangerProjects(es);
-      return projects.find(({ id: _id }) => id === _id);
-    },
+    projects: projectsQueryResolver,
+    project: singleProjectQueryResolver,
   },
   Mutation: {
-    newProject: async (
-      _,
-      { id }: IProjectQueryInput,
-      { es }: QueryContext,
-      info: GraphQLResolveInfo,
-    ): Promise<IArrangerProject> => {
-      return addArrangerProject(es)(id).catch((err: Error) => {
-        err.message = 'potential project ID conflict';
-        return Promise.reject(err);
-      });
-    },
-    deleteProject: async (
-      _,
-      { id }: IProjectQueryInput,
-      { es }: QueryContext,
-      info: GraphQLResolveInfo,
-    ) => {
-      return removeArrangerProject(es)(id);
-    },
+    newProject: newProjectMutationResolver,
+    deleteProject: deleteProjectMutationResolver,
   },
-};
+});

@@ -32,7 +32,7 @@ export const getArrangerProjects = async (
   return hits.map(({ _source }) => _source as IArrangerProject);
 };
 
-export const addArrangerProject = (es: Client): Function => async (
+export const addArrangerProject = (es: Client) => async (
   id: string,
 ): Promise<IArrangerProject> => {
   //id must be lower case
@@ -49,7 +49,7 @@ export const addArrangerProject = (es: Client): Function => async (
     .catch(Promise.reject);
 };
 
-export const removeArrangerProject = (es: Client): Function => async (
+export const removeArrangerProject = (es: Client) => async (
   id: string,
 ): Promise<IArrangerProject> => {
   const existingProject = (await getArrangerProjects(es)).find(
