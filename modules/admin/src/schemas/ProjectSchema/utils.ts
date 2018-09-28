@@ -1,8 +1,8 @@
 import { Client } from 'elasticsearch';
 import { serializeToEsId } from '../../services';
+import { constants } from '../../services/constants';
 
-export const ARRANGER_PROJECT_INDEX = 'arranger-projects';
-export const ARRANGER_PROJECT_TYPE = 'arranger-projects';
+const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
 export interface IArrangerProject {
   id: string;

@@ -5,3 +5,17 @@ export const createClient = (esHost: string) =>
     host: esHost,
     log: 'trace',
   });
+
+export const getEsMapping = (es: Client) => async ({
+  esIndex,
+  esType,
+}: {
+  esIndex: string;
+  esType: string;
+}): Promise<any> => {
+  const response = await es.indices.getMapping({
+    index: esIndex,
+    type: esType,
+  });
+  return response;
+};
