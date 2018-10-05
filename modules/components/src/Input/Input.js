@@ -31,6 +31,7 @@ export default ({
           onBlur={() => update({ isFocused: false })}
           style={{ border: 'none', flex: 1 }}
           {...props}
+          autoFocus
         />
         <span className="inputRightIcon">{rightIcon}</span>
       </div>
