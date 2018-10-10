@@ -28,7 +28,7 @@
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-react": "^7.6.1",
     "lerna": "^2.6.0",
-    "npm-link-shared": "^0.5.2",
+    "npm-link-shared": "^0.5.3",
     "prettier": "^1.9.2"
   },
   "prettier": {
