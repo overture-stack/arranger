@@ -15,7 +15,7 @@ import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
 
-export default ({ graphqlOptions }) => {
+export default ({ graphqlOptions, enableAdmin }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
@@ -34,18 +34,20 @@ export default ({ graphqlOptions }) => {
     next();
   });
 
-  router.use('/:id/types/:index/fields/:field/update', updateField({}));
-  router.use('/:id/types/:index/delete', deleteType);
   router.use('/:id/types/:index/fields', getFields);
-  router.use('/:id/types/add', addType);
-  router.use('/:id/spinUp', spinUp({ graphqlOptions }));
-  router.use('/:id/teardown', teardown);
-  router.use('/:id/export', exportProject);
   router.use('/:id/types', getTypes);
-  router.use('/:id/delete', deleteProject);
-  router.use('/:id/update', updateProject);
-  router.use('/add', addProject);
   router.use('/', getProjects);
+  if (enableAdmin) {
+    router.use('/:id/types/:index/fields/:field/update', updateField({}));
+    router.use('/:id/types/:index/delete', deleteType);
+    router.use('/:id/types/add', addType);
+    router.use('/:id/spinUp', spinUp({ graphqlOptions }));
+    router.use('/:id/teardown', teardown);
+    router.use('/:id/export', exportProject);
+    router.use('/:id/delete', deleteProject);
+    router.use('/:id/update', updateProject);
+    router.use('/add', addProject);
+  }
 
   return router;
 };

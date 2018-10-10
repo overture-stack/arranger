@@ -44,7 +44,12 @@ const mergeFieldsFromConfig = (generatedFields, configFields) => {
   ];
 };
 
-export default async function startProjectApp({ es, id, graphqlOptions = {} }) {
+export default async function startProjectApp({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+}) {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -100,6 +105,7 @@ export default async function startProjectApp({ es, id, graphqlOptions = {} }) {
     types: typesWithMappings,
     rootTypes: [],
     middleware: graphqlOptions.middleware || [],
+    enableAdmin,
   });
 
   let mockSchema = makeSchema({

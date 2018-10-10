@@ -15,7 +15,7 @@ import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
 import { typeDefs as StateTypeDefs } from './State';
 
-let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
+let RootTypeDefs = ({ types, rootTypes, scalarTypes, enableAdmin }) => `
   scalar JSON
   scalar Date
   enum EsRefresh {
@@ -51,10 +51,15 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
   type Mutation {
-    saveAggsState(graphqlField: String! state: JSON!): AggsState
+    ${
+      enableAdmin
+        ? `saveAggsState(graphqlField: String! state: JSON!): AggsState
     saveColumnsState(graphqlField: String! state: JSON!): ColumnsState
     saveMatchBoxState(graphqlField: String! state: JSON!): MatchBoxState
-    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
+    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set`
+        : `
+    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set`
+    }
   }
 
   schema {
@@ -63,8 +68,8 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   }
 `;
 
-export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
-  RootTypeDefs({ types, rootTypes, scalarTypes }),
+export let typeDefs = ({ types, rootTypes, scalarTypes, enableAdmin }) => [
+  RootTypeDefs({ types, rootTypes, scalarTypes, enableAdmin }),
   AggregationsTypeDefs,
   SetTypeDefs,
   SortTypeDefs,
