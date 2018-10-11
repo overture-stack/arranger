@@ -60,6 +60,7 @@ export default async ({
                 projectId: project.id,
                 es,
                 graphqlOptions,
+                enableAdmin,
               });
             } catch (error) {
               console.warn(error.message);
