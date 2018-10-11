@@ -62,6 +62,7 @@ export default ({
     types: typesWithSets,
     rootTypes,
     scalarTypes,
+    enableAdmin,
   });
 
   let schema = makeExecutableSchema({
