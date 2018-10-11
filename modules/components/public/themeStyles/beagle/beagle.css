@@ -147,6 +147,10 @@ div {
   padding-bottom: 0px;
   border-bottom: none;
 }
+.aggregation-card .title-arrow-wrapper {
+  display: flex;
+  cursor: pointer;
+}
 .aggregation-card .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
