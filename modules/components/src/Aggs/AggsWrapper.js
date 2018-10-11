@@ -34,19 +34,15 @@ export default ({
           >
             <div className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}>
               <div
-                css={`
-                  display: flex;
-                `}
+                className="title-control"
+                onClick={
+                  collapsible
+                    ? () => setState({ isCollapsed: !isCollapsed })
+                    : () => {}
+                }
               >
                 {collapsible && (
-                  <span
-                    className={`arrow ${isCollapsed ? 'collapsed' : ''}`}
-                    onClick={
-                      collapsible
-                        ? () => setState({ isCollapsed: !isCollapsed })
-                        : () => {}
-                    }
-                  />
+                  <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
                 )}
                 <span className="title">{displayName}</span>
               </div>
