@@ -147,7 +147,7 @@ div {
   padding-bottom: 0px;
   border-bottom: none;
 }
-.aggregation-card .title-arrow-wrapper {
+.aggregation-card .title-control {
   display: flex;
   cursor: pointer;
 }

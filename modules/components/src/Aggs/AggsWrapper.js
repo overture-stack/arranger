@@ -34,7 +34,7 @@ export default ({
           >
             <div className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}>
               <div
-                className="title-arrow-wrapper"
+                className="title-control"
                 onClick={
                   collapsible
                     ? () => setState({ isCollapsed: !isCollapsed })
