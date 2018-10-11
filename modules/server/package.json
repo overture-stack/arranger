@@ -15,7 +15,8 @@
     "run-prod": "node index.js",
     "prepare":
       "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
-    "test": "jest"
+    "test": "jest",
+    "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist"
   },
   "repository": {
     "type": "git",

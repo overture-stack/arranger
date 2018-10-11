@@ -26,6 +26,9 @@ export default async ({
   graphqlOptions = {},
   enableAdmin = false,
 } = {}) => {
+  enableAdmin
+    ? console.log('Application started in ADMIN mode!!')
+    : console.log('Application started in read-only mode.');
   const router = express.Router();
   router.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
   router.use(bodyParser.json({ limit: '50mb' }));
