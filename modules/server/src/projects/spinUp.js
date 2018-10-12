@@ -10,6 +10,5 @@ export default ({ graphqlOptions, enableAdmin }) => async (req, res) => {
     return res.json({ error: err.message });
   }
 
-  console.log(`graphql server running at /${id}/graphql`);
   res.json({ message: `graphql server running at /${id}/graphql` });
 };

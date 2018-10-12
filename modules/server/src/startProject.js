@@ -222,7 +222,7 @@ export default async function startProjectApp({
     next();
   });
 
-  projectApp.get(`/ping`, (req, res) => res.send('ok'));
+  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
 
   let noSchemaHandler = (req, res) =>
     res.json({
@@ -262,6 +262,7 @@ export default async function startProjectApp({
   projectApp.use(`/download`, download({ projectId: id }));
 
   setProject({ app: projectApp, schema, mockSchema, es, id });
+  console.log(`graphql server running at /${id}/graphql`);
 
   return projectApp;
 }

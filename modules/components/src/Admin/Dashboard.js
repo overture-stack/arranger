@@ -26,6 +26,9 @@ import MatchBoxTab from './Tabs/MatchBoxTab';
 import FieldsTab from './Tabs/FieldsTab';
 import { Emoji } from './uiComponents';
 
+const ARRANGED_STATUS = 'arranged';
+const DECOMMISSION_STATUS = 'decommissioned';
+
 class Dashboard extends React.Component {
   fileRef = React.createRef();
 
@@ -81,7 +84,6 @@ class Dashboard extends React.Component {
 
     if (!error) {
       let projectsWithTypes = await this.addTypesToProjects(projects);
-
       const activeProject = window.location.pathname.split('/')[2];
       this.setState({
         projects: projectsWithTypes,
@@ -97,6 +99,25 @@ class Dashboard extends React.Component {
         activeField: null,
         activeType: null,
       });
+      let that = this;
+      projectsWithTypes.forEach(x =>
+        api({
+          endpoint: `/${x.id}/ping`,
+          method: 'GET',
+        })
+          .then(response =>
+            that.updateProjectState({
+              id: x.id,
+              status:
+                response.status === 'ok'
+                  ? ARRANGED_STATUS
+                  : DECOMMISSION_STATUS,
+            }),
+          )
+          .catch(err => {
+            that.updateProjectState({ id: x.id, status: DECOMMISSION_STATUS });
+          }),
+      );
     }
   }, 300);
 
@@ -125,6 +146,15 @@ class Dashboard extends React.Component {
         error: null,
       });
     }
+  };
+
+  updateProjectState = async ({ id, status }) => {
+    this.setState(state => ({
+      projectStates: state.projectStates
+        .filter(x => x.id !== id)
+        .concat([{ id, status: status }]),
+      error: null,
+    }));
   };
 
   addTypesToProjects = projects =>
@@ -224,7 +254,7 @@ class Dashboard extends React.Component {
               `}
             >
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                400 && (
+                DECOMMISSION_STATUS && (
                 <span
                   css={`
                     color: rgb(164, 21, 46);
@@ -235,7 +265,7 @@ class Dashboard extends React.Component {
                 </span>
               )}
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                200 && (
+                ARRANGED_STATUS && (
                 <span
                   css={`
                     display: flex;
@@ -396,23 +426,41 @@ class Dashboard extends React.Component {
   };
 
   spinup = async ({ id }) => {
-    await api({
-      endpoint: `/projects/${id}/spinup`,
-      body: {
-        eshost: this.state.eshost,
-        id,
-      },
-    });
+    try {
+      let { message, error } = await api({
+        endpoint: `/projects/${id}/spinup`,
+        body: {
+          eshost: this.state.eshost,
+          id,
+        },
+      });
+      if (message) {
+        this.updateProjectState({ id, status: ARRANGED_STATUS });
+      } else if (error) {
+        this.setState({ error: `Error while arranging ${id}. ${error}` });
+      }
+    } catch (err) {
+      this.setState({ error: `Error while arranging ${id}. ${err}` });
+    }
   };
 
   teardown = async ({ id }) => {
-    await api({
-      endpoint: `/projects/${id}/teardown`,
-      body: {
-        eshost: this.state.eshost,
-        id,
-      },
-    });
+    try {
+      let { message, error } = await api({
+        endpoint: `/projects/${id}/teardown`,
+        body: {
+          eshost: this.state.eshost,
+          id,
+        },
+      });
+      if (message) {
+        this.updateProjectState({ id, status: DECOMMISSION_STATUS });
+      } else if (error) {
+        this.setState({ error: `Error while decommissioning ${id}. ${error}` });
+      }
+    } catch (err) {
+      this.setState({ error: `Error while decommissioning ${id}. ${err}` });
+    }
   };
 
   export = async ({ id }) => {

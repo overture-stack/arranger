@@ -104,7 +104,6 @@ export default class extends Component {
       `,
       },
     });
-    console.log(data);
     this.setState({
       config: data.saveColumnsState.state,
     });

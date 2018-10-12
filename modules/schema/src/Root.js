@@ -133,7 +133,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes, enableAdmin }) => {
                 const type = types.find(
                   ([, type]) => type.name === graphqlField,
                 )[1];
-                console.log(type);
                 await es.create({
                   index: `${type.indexPrefix}-aggs-state`,
                   type: `${type.indexPrefix}-aggs-state`,
@@ -153,7 +152,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes, enableAdmin }) => {
                     size: 1,
                   },
                 });
-                console.log(data);
                 return data.hits.hits[0]._source;
               },
               saveColumnsState: async (
