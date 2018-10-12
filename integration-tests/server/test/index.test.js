@@ -1,6 +1,5 @@
 import 'babel-polyfill';
 import express from 'express';
-import socketIO from 'socket.io';
 import { Server } from 'http';
 import addProject from './addProject';
 import saveSet from './saveSet';
@@ -13,13 +12,12 @@ const projectId = 'TEST-PROJECT';
 
 const app = express();
 const http = Server(app);
-const io = socketIO(http);
 
 const api = ajax(`http://localhost:${port}`);
 
 describe('@arranger/server', () => {
   before(() =>
-    Arranger({ io, esHost }).then(router => {
+    Arranger({ esHost, enableAdmin: true }).then(router => {
       app.use(router);
     }),
   );

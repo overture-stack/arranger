@@ -21,7 +21,6 @@ export function setProject(project) {
         schema,
         es: project.es,
         projectId: project.id,
-        io: project.io,
       },
       variables,
     });

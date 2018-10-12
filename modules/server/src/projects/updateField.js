@@ -1,7 +1,7 @@
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';
 
-export default ({ io }) => async (req, res) => {
+export default () => async (req, res) => {
   let { es } = req.context;
   let { id, index, field } = req.params;
   let { key, value } = req.body;
@@ -24,8 +24,6 @@ export default ({ io }) => async (req, res) => {
         },
       },
     });
-
-    io.emit('server::refresh');
   } catch (error) {
     return res.json({ error: error.message });
   }

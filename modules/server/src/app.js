@@ -1,5 +1,4 @@
 import express from 'express';
-import socketIO from 'socket.io';
 import { Server } from 'http';
 import cors from 'cors';
 
@@ -10,10 +9,10 @@ const app = express();
 app.use(cors());
 
 const http = Server(app);
-const io = socketIO(http);
 
 export default function() {
-  return Arranger({ io }).then(router => {
+  // Always run test server as admin
+  return Arranger({enableAdmin:true}).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
       console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);

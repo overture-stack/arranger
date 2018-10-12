@@ -51,7 +51,7 @@ const retrieveSetIds = async ({
 export const saveSet = ({ types }) => async (
   obj,
   { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
-  { es, projectId, io },
+  { es, projectId },
 ) => {
   const { nested_fields: nestedFields, es_type, index } = types.find(
     ([, x]) => x.name === type,

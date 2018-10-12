@@ -47,8 +47,8 @@ const mergeFieldsFromConfig = (generatedFields, configFields) => {
 export default async function startProjectApp({
   es,
   id,
-  io,
   graphqlOptions = {},
+  enableAdmin,
 }) {
   if (!id) throw new Error('project empty');
 
@@ -105,6 +105,7 @@ export default async function startProjectApp({
     types: typesWithMappings,
     rootTypes: [],
     middleware: graphqlOptions.middleware || [],
+    enableAdmin,
   });
 
   let mockSchema = makeSchema({
@@ -221,7 +222,7 @@ export default async function startProjectApp({
     next();
   });
 
-  projectApp.get(`/ping`, (req, res) => res.send('ok'));
+  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
 
   let noSchemaHandler = (req, res) =>
     res.json({
@@ -251,7 +252,6 @@ export default async function startProjectApp({
             context: {
               es,
               projectId: id,
-              io,
               ...(externalContext || {}),
             },
           };
@@ -259,11 +259,10 @@ export default async function startProjectApp({
       : noSchemaHandler,
   );
 
-  projectApp.use(`/download`, download({ projectId: id, io }));
+  projectApp.use(`/download`, download({ projectId: id }));
 
-  setProject({ app: projectApp, schema, mockSchema, es, io, id });
-
-  io.emit('server::refresh');
+  setProject({ app: projectApp, schema, mockSchema, es, id });
+  console.log(`graphql server running at /${id}/graphql`);
 
   return projectApp;
 }
