@@ -99,14 +99,13 @@ class Dashboard extends React.Component {
         activeField: null,
         activeType: null,
       });
-      let that = this;
       projectsWithTypes.forEach(x =>
         api({
           endpoint: `/${x.id}/ping`,
           method: 'GET',
         })
           .then(response =>
-            that.updateProjectState({
+            this.updateProjectState({
               id: x.id,
               status:
                 response.status === 'ok'
@@ -115,7 +114,7 @@ class Dashboard extends React.Component {
             }),
           )
           .catch(err => {
-            that.updateProjectState({ id: x.id, status: DECOMMISSION_STATUS });
+            this.updateProjectState({ id: x.id, status: DECOMMISSION_STATUS });
           }),
       );
     }
