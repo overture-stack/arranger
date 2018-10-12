@@ -1,72 +1,17 @@
 import React from 'react';
 import { get, pick } from 'lodash';
-import ioStream from 'socket.io-stream';
 
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
 import defaultApi from '../utils/api';
-import initSocket from '../utils/initSocket';
-import { DISABLE_SOCKET } from '../utils/config';
-
-const streamData = ({ streamSocket }) => {
-  return (type, projectId) => ({
-    columns,
-    sort,
-    first,
-    onData,
-    onEnd,
-    sqon,
-  }) => {
-    return new Promise(resolve => {
-      if (streamSocket) {
-        const stream = ioStream.createStream();
-
-        stream.on('data', chunk => {
-          const { data, total } = JSON.parse(chunk);
-          onData({
-            total,
-            data: data[type].hits.edges.map(e => e.node),
-          });
-        });
-
-        stream.on('end', () => {
-          onEnd();
-          resolve();
-        });
-        streamSocket.emit('client::stream', stream, {
-          index: type,
-          projectId,
-          size: first,
-          ...columnsToGraphql({ sqon, config: { columns, type }, sort, first }),
-        });
-      } else {
-        console.warn(
-          'No socket available. This warning can be safely dismissed if `disableSocket` was set on arranger',
-        );
-        resolve();
-      }
-    });
-  };
-};
 
 class Arranger extends React.Component {
   constructor(props) {
     super(props);
 
-    const { disableSocket = DISABLE_SOCKET } = props;
-
-    let socket =
-      !disableSocket &&
-      initSocket(
-        pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
-      );
-    let streamSocket = !disableSocket && ioStream(socket);
-
     this.state = {
       selectedTableRows: [],
       sqon: null,
-      socket,
-      streamSocket,
     };
   }
 
@@ -122,13 +67,11 @@ class Arranger extends React.Component {
 
     const childProps = {
       api,
-      socket: this.state.socket,
       sqon,
       selectedTableRows,
       projectId,
       index,
       graphqlField,
-      streamData: streamData({ streamSocket: this.state.streamSocket }),
       fetchData: this.fetchData,
       setSQON: sqon => this.setState({ sqon }),
       setSelectedTableRows: selectedTableRows =>

@@ -1,12 +1,10 @@
 ![Arranger: Data Portal Generation](https://i.imgur.com/Qb9KBqJ.png)
 
-
 <p align="center">
   <img alt="BETA" src="http://www.overture.bio/img/progress-horizontal-BETA.svg" width="320" />
 </p>
 
 [![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
-
 
 ### Quickstart
 
@@ -19,7 +17,7 @@ npm i
 npm run bootstrap
 
 # watch modules and rebuild on change
-npm start
+npm run watch
 
 # run tests for all modules
 npm test

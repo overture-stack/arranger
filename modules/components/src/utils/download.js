@@ -1,6 +1,4 @@
 import uuid from 'uuid';
-import initSocket from './initSocket';
-import { DISABLE_SOCKET } from './config';
 
 let httpHeaders = {};
 
@@ -47,21 +45,7 @@ function createIFrame({ method, url, fields }) {
 function download({ url, params, method = 'GET', body = {} }) {
   const downloadKey = uuid();
 
-  let resolveOnDownload;
-  if (!DISABLE_SOCKET) {
-    let io = initSocket();
-    resolveOnDownload = new Promise((resolve, reject) => {
-      io.on(`server::download::${downloadKey}`, () => {
-        io.off(`server::download::${downloadKey}`);
-        resolve();
-      });
-    });
-  } else {
-    console.warn(
-      'No socket available. This warning can be safely dismissed if DISABLE_SOCKET environment variable was set to true',
-    );
-    resolveOnDownload = () => Promise.resolve();
-  }
+  const resolveOnDownload = () => Promise.resolve();
 
   createIFrame({
     method,

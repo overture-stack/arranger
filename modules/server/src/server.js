@@ -2,16 +2,19 @@ import elasticsearch from 'elasticsearch';
 import express from 'express';
 import bodyParser from 'body-parser';
 import projectsRoutes from './projects';
-import sockets from './sockets';
-import watchGit from './watchGit';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
-let startSingleProject = async ({ io, projectId, es, graphqlOptions }) => {
+let startSingleProject = async ({
+  projectId,
+  es,
+  graphqlOptions,
+  enableAdmin,
+}) => {
   try {
-    await startProject({ es, io, id: projectId, graphqlOptions });
+    await startProject({ es, id: projectId, graphqlOptions, enableAdmin });
   } catch (error) {
     console.warn(error.message);
   }
@@ -20,15 +23,15 @@ let startSingleProject = async ({ io, projectId, es, graphqlOptions }) => {
 export default async ({
   projectId = PROJECT_ID,
   esHost = ES_HOST,
-  io,
   graphqlOptions = {},
+  enableAdmin = false,
 } = {}) => {
+  enableAdmin
+    ? console.log('Application started in ADMIN mode!!')
+    : console.log('Application started in read-only mode.');
   const router = express.Router();
   router.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
   router.use(bodyParser.json({ limit: '50mb' }));
-
-  sockets({ io });
-  router.use(await watchGit({ io }));
 
   router.use('/:projectId', (req, res, next) => {
     let projects = getProjects();
@@ -42,11 +45,11 @@ export default async ({
     next();
   });
 
-  router.use('/projects', projectsRoutes({ io, graphqlOptions }));
+  router.use('/projects', projectsRoutes({ graphqlOptions, enableAdmin }));
   if (esHost) {
     const es = new elasticsearch.Client({ host: esHost });
     if (projectId) {
-      startSingleProject({ io, projectId, es, graphqlOptions });
+      startSingleProject({ projectId, es, graphqlOptions, enableAdmin });
     } else {
       const { projects = [] } = await fetchProjects({ es });
 
@@ -57,10 +60,10 @@ export default async ({
           .map(async project => {
             try {
               await startSingleProject({
-                io,
                 projectId: project.id,
                 es,
                 graphqlOptions,
+                enableAdmin,
               });
             } catch (error) {
               console.warn(error.message);

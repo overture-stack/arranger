@@ -1,6 +1,6 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { debounce, pick } from 'lodash';
+import { debounce } from 'lodash';
 import { BrowserRouter, Route, Link, Redirect, Switch } from 'react-router-dom';
 import urlJoin from 'url-join';
 
@@ -11,7 +11,6 @@ import urlJoin from 'url-join';
 import CaretDownIcon from 'react-icons/lib/fa/caret-down';
 import CaretUpIcon from 'react-icons/lib/fa/caret-up';
 
-import DetectNewVersion from '../Arranger/DetectNewVersion';
 import State from '../State';
 import Header from './Header';
 import ProjectsTable from './ProjectsTable';
@@ -19,7 +18,6 @@ import TypesTable from './TypesTable';
 import { ARRANGER_API, ES_HOST } from '../utils/config';
 import api from '../utils/api';
 import download from '../utils/download';
-import initSocket from '../utils/initSocket';
 import parseInputFiles from '../utils/parseInputFiles';
 
 import AggregationsTab from './Tabs/Aggregations/AggregationsTab';
@@ -28,15 +26,14 @@ import MatchBoxTab from './Tabs/MatchBoxTab';
 import FieldsTab from './Tabs/FieldsTab';
 import { Emoji } from './uiComponents';
 
+const ARRANGED_STATUS = 'arranged';
+const DECOMMISSION_STATUS = 'decommissioned';
+
 class Dashboard extends React.Component {
   fileRef = React.createRef();
 
   constructor(props) {
     super(props);
-
-    let socket = initSocket(
-      pick(props, ['socket', 'socketConnectionString', 'socketOptions']),
-    );
 
     this.state = {
       eshost: ES_HOST,
@@ -59,7 +56,6 @@ class Dashboard extends React.Component {
       fields: [],
       fieldsTotal: 0,
       activeField: null,
-      socket,
     };
   }
 
@@ -67,18 +63,6 @@ class Dashboard extends React.Component {
     require('./Dashboard.css');
 
     this.getProjects({ eshost: this.state.eshost });
-
-    this.state.socket.io.on('connect_error', error => {
-      this.setState({ error: error.message });
-    });
-
-    this.state.socket.io.on('reconnect', a => {
-      this.setState({ error: null });
-    });
-
-    this.state.socket.on('server::projectsStatus', projectStates => {
-      this.setState({ projectStates });
-    });
   }
 
   getProjects = debounce(async ({ eshost }) => {
@@ -100,7 +84,6 @@ class Dashboard extends React.Component {
 
     if (!error) {
       let projectsWithTypes = await this.addTypesToProjects(projects);
-
       const activeProject = window.location.pathname.split('/')[2];
       this.setState({
         projects: projectsWithTypes,
@@ -116,11 +99,24 @@ class Dashboard extends React.Component {
         activeField: null,
         activeType: null,
       });
-
-      this.state.socket.emit('arranger::monitorProjects', {
-        projects,
-        eshost,
-      });
+      projectsWithTypes.forEach(x =>
+        api({
+          endpoint: `/${x.id}/ping`,
+          method: 'GET',
+        })
+          .then(response =>
+            this.updateProjectState({
+              id: x.id,
+              status:
+                response.status === 'ok'
+                  ? ARRANGED_STATUS
+                  : DECOMMISSION_STATUS,
+            }),
+          )
+          .catch(err => {
+            this.updateProjectState({ id: x.id, status: DECOMMISSION_STATUS });
+          }),
+      );
     }
   }, 300);
 
@@ -149,6 +145,15 @@ class Dashboard extends React.Component {
         error: null,
       });
     }
+  };
+
+  updateProjectState = async ({ id, status }) => {
+    this.setState(state => ({
+      projectStates: state.projectStates
+        .filter(x => x.id !== id)
+        .concat([{ id, status: status }]),
+      error: null,
+    }));
   };
 
   addTypesToProjects = projects =>
@@ -248,7 +253,7 @@ class Dashboard extends React.Component {
               `}
             >
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                400 && (
+                DECOMMISSION_STATUS && (
                 <span
                   css={`
                     color: rgb(164, 21, 46);
@@ -259,7 +264,7 @@ class Dashboard extends React.Component {
                 </span>
               )}
               {this.state.projectStates.find(p => p.id === x.id)?.status ===
-                200 && (
+                ARRANGED_STATUS && (
                 <span
                   css={`
                     display: flex;
@@ -420,23 +425,41 @@ class Dashboard extends React.Component {
   };
 
   spinup = async ({ id }) => {
-    await api({
-      endpoint: `/projects/${id}/spinup`,
-      body: {
-        eshost: this.state.eshost,
-        id,
-      },
-    });
+    try {
+      let { message, error } = await api({
+        endpoint: `/projects/${id}/spinup`,
+        body: {
+          eshost: this.state.eshost,
+          id,
+        },
+      });
+      if (message) {
+        this.updateProjectState({ id, status: ARRANGED_STATUS });
+      } else if (error) {
+        this.setState({ error: `Error while arranging ${id}. ${error}` });
+      }
+    } catch (err) {
+      this.setState({ error: `Error while arranging ${id}. ${err}` });
+    }
   };
 
   teardown = async ({ id }) => {
-    await api({
-      endpoint: `/projects/${id}/teardown`,
-      body: {
-        eshost: this.state.eshost,
-        id,
-      },
-    });
+    try {
+      let { message, error } = await api({
+        endpoint: `/projects/${id}/teardown`,
+        body: {
+          eshost: this.state.eshost,
+          id,
+        },
+      });
+      if (message) {
+        this.updateProjectState({ id, status: DECOMMISSION_STATUS });
+      } else if (error) {
+        this.setState({ error: `Error while decommissioning ${id}. ${error}` });
+      }
+    } catch (err) {
+      this.setState({ error: `Error while decommissioning ${id}. ${err}` });
+    }
   };
 
   export = async ({ id }) => {
@@ -458,7 +481,7 @@ class Dashboard extends React.Component {
 
   render() {
     let headerHeight = 38;
-    let { activeField, error, eshost, projects, socket } = this.state;
+    let { activeField, error, eshost, projects } = this.state;
     return (
       <BrowserRouter basename={this.props.basename || ''}>
         <div
@@ -468,27 +491,6 @@ class Dashboard extends React.Component {
             flex-direction: column;
           `}
         >
-          <DetectNewVersion
-            socket={socket}
-            event="server::newServerVersion"
-            Message={() => {
-              return (
-                <div>
-                  A newer version of the Arranger server is available.
-                  <span
-                    css={`
-                      cursor: pointer;
-                      color: rgb(154, 232, 229);
-                      font-weight: bold;
-                    `}
-                    onClick={this.redeployServer}
-                  >
-                    &nbsp;DEPLOY
-                  </span>
-                </div>
-              );
-            }}
-          />
           <Header
             css={`
               flex: none;
