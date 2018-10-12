@@ -1,4 +1,5 @@
 import React from 'react';
+import { sortBy } from 'lodash';
 
 import { AggsState, AggsQuery } from '../Aggs';
 import aggComponents from '../Aggs/aggComponentsMap.js';
@@ -21,24 +22,43 @@ export const AggregationsListDisplay = ({
     getBooleanAggProps: () => ({}),
     getDatesAggProps: () => ({}),
   },
-}) =>
-  data &&
-  aggs
-    .map(agg => ({
-      ...agg,
-      ...data[graphqlField].aggregations[agg.field],
-      ...data[graphqlField].extended.find(
-        x => x.field.replace(/\./g, '__') === agg.field,
-      ),
-      onValueChange: ({ sqon, value }) => {
-        onValueChange(value);
-        setSQON(sqon);
+  getCustomItems = ({ aggs }) => [], // Array<{index: number, component: Component | Function}>
+}) => {
+  const aggComponentInstances =
+    data &&
+    aggs
+      .map(agg => ({
+        ...agg,
+        ...data[graphqlField].aggregations[agg.field],
+        ...data[graphqlField].extended.find(
+          x => x.field.replace(/\./g, '__') === agg.field,
+        ),
+        onValueChange: ({ sqon, value }) => {
+          onValueChange(value);
+          setSQON(sqon);
+        },
+        key: agg.field,
+        sqon,
+        containerRef,
+      }))
+      .map(agg => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
+  if (aggComponentInstances) {
+    // sort the list by the index specified for each component to prevent order bumping
+    const componentListToInsert = sortBy(getCustomItems({ aggs }), 'index');
+    // go through the list of inserts and inject them by splitting and joining
+    const inserted = componentListToInsert.reduce(
+      (acc, { index, component }) => {
+        const firstChunk = acc.slice(0, index);
+        const secondChunk = acc.slice(index, acc.length);
+        return [...firstChunk, component(), ...secondChunk];
       },
-      key: agg.field,
-      sqon,
-      containerRef,
-    }))
-    .map(agg => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
+      aggComponentInstances,
+    );
+    return inserted;
+  } else {
+    return aggComponentInstances;
+  }
+};
 
 export const AggregationsList = ({
   onValueChange = () => {},
@@ -58,6 +78,7 @@ export const AggregationsList = ({
   },
   aggs = [],
   debounceTime,
+  getCustomItems,
 }) => (
   <AggsQuery
     api={api}
@@ -66,8 +87,8 @@ export const AggregationsList = ({
     index={graphqlField}
     sqon={sqon}
     aggs={aggs}
-    render={({ data }) => {
-      return AggregationsListDisplay({
+    render={({ data }) =>
+      AggregationsListDisplay({
         data,
         onValueChange,
         aggs,
@@ -76,8 +97,9 @@ export const AggregationsList = ({
         sqon,
         containerRef,
         componentProps,
-      });
-    }}
+        getCustomItems,
+      })
+    }
   />
 );
 
