@@ -4,6 +4,8 @@ import { sortBy } from 'lodash';
 import { AggsState, AggsQuery } from '../Aggs';
 import aggComponents from '../Aggs/aggComponentsMap.js';
 
+export { AggsWrapper } from '../Aggs';
+
 const BaseWrapper = ({ className, ...props }) => (
   <div {...props} className={`aggregations ${className}`} />
 );

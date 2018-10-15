@@ -4,6 +4,7 @@ export {
   default as Aggregations,
   AggregationsListDisplay,
   AggregationsList,
+  AggsWrapper,
 } from './Aggregations';
 export { default as CurrentSQON } from './CurrentSQON';
 export { default as Table } from './Table';

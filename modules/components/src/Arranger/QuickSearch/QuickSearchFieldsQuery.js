@@ -55,15 +55,17 @@ const enhance = compose(
           entityName:
             nestedField({ field: x, nestedFields })?.displayName || index,
         })) || [],
-    }) => ({
-      quickSearchFields,
-      quickSearchEntities: uniq(quickSearchFields.map(x => x.entityName)),
-      primaryKeyField: decorateFieldWithColumnsState({
-        columnsState: data?.[index]?.columnsState?.state,
-        field: data?.[index]?.extended?.find(x => x.primaryKey)?.field,
-      }),
-      nestedFields,
-    }),
+    }) => {
+      return {
+        quickSearchFields,
+        quickSearchEntities: uniq(quickSearchFields.map(x => x.entityName)),
+        primaryKeyField: decorateFieldWithColumnsState({
+          columnsState: data?.[index]?.columnsState?.state,
+          field: data?.[index]?.extended?.find(x => x.primaryKey)?.field,
+        }),
+        nestedFields,
+      };
+    },
   ),
 );
 
