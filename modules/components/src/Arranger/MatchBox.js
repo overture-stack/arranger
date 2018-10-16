@@ -38,7 +38,7 @@ const layoutStyle = css`
 `;
 
 const enhance = compose(
-  withState('activeEntityField', 'setActiveEntityField'),
+  withState('activeEntityField', 'setActiveEntityField', null),
   withState('searchTextLoading', 'setSearchTextLoading', false),
   withState('searchText', 'setSearchText', ''),
   withHandlers({
@@ -90,46 +90,30 @@ const MatchBox = ({
   onEntityChange,
   activeEntityField,
   uploadableFields = null,
-  setActiveEntityField,
   ...props
 }) => (
   <div className={`match-box ${layoutStyle}`}>
     <MatchBoxState
       {...props}
-      // onInitialLoaded={({ activeFields }) => {
-      //   if (uploadableFields && uploadableFields.length === 1) {
-      //     const activeField = activeFields.find(
-      //       ({ keyField: { field } }) => field === uploadableFields[0],
-      //     );
-      //     setActiveEntityField(activeField.field);
-      //   }
-      // }}
       render={({
         primaryKeyField,
         activeFields,
         activeField = activeFields.find(x => x.field === activeEntityField),
       }) => (
         <Fragment>
-          {/* {uploadableFields && uploadableFields.length > 1 ? ( */}
           <div className="match-box-select-entity-form">
             <div className="match-box-entity-select-text">
               {entitySelectText}
             </div>
             <select onChange={onEntityChange}>
               <option value={null}>{entitySelectPlaceholder}</option>
-              {activeFields
-                .filter(
-                  ({ keyField: { field } }) =>
-                    uploadableFields ? uploadableFields.includes(field) : true,
-                )
-                .map(({ field, displayName }) => (
-                  <option key={field} value={field}>
-                    {capitalize(displayName)}
-                  </option>
-                ))}
+              {activeFields.map(({ field, displayName }) => (
+                <option key={field} value={field}>
+                  {capitalize(displayName)}
+                </option>
+              ))}
             </select>
           </div>
-          {/* ) : null} */}
           <div className="match-box-id-form">
             <div className="match-box-selection-text">{instructionText}</div>
             <Input
@@ -172,7 +156,7 @@ const MatchBox = ({
             {...props}
             searchText={searchText}
             primaryKeyField={activeField?.keyField}
-            quickuploadableFields={activeField?.uploadableFields}
+            quickSearchFields={activeField?.searchFields}
             mapResults={({ results, searchTextParts }) => ({
               results: uniqBy(results, 'primaryKey'),
               unmatchedKeys: difference(
