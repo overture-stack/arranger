@@ -86,6 +86,9 @@ export default ({
     }
   };
 
+  console.log('field', field, 'true bucket', trueBucket);
+  console.log('field', field, 'false bucket', falseBucket);
+
   return (
     <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
       <ToggleButton
@@ -102,6 +105,7 @@ export default ({
             },
             {
               value: valueKeys.true,
+              disabled: trueBucket === undefined || trueBucket?.doc_count <= 0,
               title: (
                 <>
                   <TextHighlight
@@ -123,6 +127,8 @@ export default ({
             },
             {
               value: valueKeys.false,
+              disabled:
+                falseBucket === undefined || falseBucket?.doc_count <= 0,
               title: (
                 <>
                   <TextHighlight
