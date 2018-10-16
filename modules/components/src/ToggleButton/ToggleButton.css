@@ -26,3 +26,9 @@
   background: #e5f7fd;
   border-color: '#00afed';
 }
+
+.toggle-button-option.disabled {
+  background-color: #ededf2;
+  cursor: default;
+  pointer-events: none;
+}
