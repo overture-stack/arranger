@@ -83,9 +83,10 @@ const QuickSearch = ({
                       })
                     }
                   >
-                    {compose(translateSQONValue, internalTranslateSQONValue)(
-                      primaryKey,
-                    )}
+                    {compose(
+                      translateSQONValue,
+                      internalTranslateSQONValue,
+                    )(primaryKey)}
                   </PinnedValueComponent>
                 </div>
               ))}
@@ -124,7 +125,7 @@ const QuickSearch = ({
                       result,
                       primaryKey,
                       input,
-                      index = entityIndexLookup[entityName] % 5 + 1,
+                      index = (entityIndexLookup[entityName] % 5) + 1,
                     },
                     i,
                   ) => (

@@ -43,7 +43,14 @@ const enhance = compose(
       nestedFields = data?.[index]?.extended?.filter(x => x.type === 'nested'),
       quickSearchFields = data?.[index]?.extended
         ?.filter(x => x.quickSearchEnabled)
-        ?.filter(x => (whitelist ? whitelist.includes(x.field) : true))
+        ?.filter(x => {
+          const { field: parentField = '' } = //defaults to "" because a root field's parent would evaluate to such
+            nestedField({
+              nestedFields,
+              field: x,
+            }) || {};
+          return whitelist ? whitelist.includes(parentField) : true;
+        })
         ?.map(({ field }) =>
           decorateFieldWithColumnsState({
             columnsState: data?.[index]?.columnsState?.state,
