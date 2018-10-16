@@ -33,7 +33,7 @@ export default ({
           {...props}
           autoFocus
         />
-        <span className="inputRightIcon">{rightIcon}</span>
+        <span className="inputIcon">{rightIcon}</span>
       </div>
     )}
   />
