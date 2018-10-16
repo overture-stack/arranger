@@ -5,6 +5,7 @@ export default ({ value, options = [], onChange = () => {} }) => (
   <div className="toggle-button">
     {options.map(x => {
       const isDisabled = x ? x.disabled : false;
+
       return (
         <div
           key={x.value}

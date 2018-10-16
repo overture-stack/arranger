@@ -28,7 +28,12 @@
 }
 
 .toggle-button-option.disabled {
-  background-color: #ededf2;
+  color: #343434;
+  background-color: #e5e6ec;
   cursor: default;
   pointer-events: none;
+}
+
+.toggle-button-option.disabled > .button-count {
+  background-color: #cacbcf;
 }
