@@ -2,6 +2,8 @@ import React from 'react';
 import { compose, withState } from 'recompose';
 import { isEmpty, orderBy, partition, truncate } from 'lodash';
 import DefaultSearchIcon from 'react-icons/lib/fa/search';
+import FaTimesCircleO from 'react-icons/lib/fa/times-circle';
+
 import { css } from 'emotion';
 
 import './AggregationCard.css';
@@ -168,6 +170,7 @@ const TermAgg = ({
                   value={searchText}
                   placeholder={searchPlaceholder}
                   icon={<DefaultSearchIcon />}
+                  rightIcon={<FaTimesCircleO />}
                   onChange={({ target: { value } }) =>
                     setSearchText(value || '')
                   }
