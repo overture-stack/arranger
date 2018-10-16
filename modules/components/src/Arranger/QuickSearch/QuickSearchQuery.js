@@ -70,7 +70,7 @@ const enhance = compose(
       sqon,
     }) => ({
       debounceTime: 300,
-      shouldFetch: isValidValue(searchText) && quickSearchFields.length,
+      shouldFetch: isValidValue(searchText) && (quickSearchFields || []).length,
       projectId,
       key: 'rawSearchResults',
       query: `
