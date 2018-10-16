@@ -62,6 +62,31 @@ const enhance = compose(
   }),
 );
 
+const EntitySelectionSection = ({
+  entitySelectText,
+  onEntityChange,
+  entitySelectPlaceholder,
+  activeFields,
+  uploadableFields,
+}) => (
+  <div className="match-box-select-entity-form">
+    <div className="match-box-entity-select-text">{entitySelectText}</div>
+    <select onChange={onEntityChange}>
+      <option value={null}>{entitySelectPlaceholder}</option>
+      {activeFields
+        .filter(
+          ({ keyField: { field } }) =>
+            uploadableFields ? uploadableFields.includes(field) : true,
+        )
+        .map(({ field, displayName }) => (
+          <option key={field} value={field}>
+            {capitalize(displayName)}
+          </option>
+        ))}
+    </select>
+  </div>
+);
+
 const inputRef = React.createRef();
 const MatchBox = ({
   sqon,
@@ -121,26 +146,15 @@ const MatchBox = ({
         }) => (
           <Fragment>
             {!selectableEntityType ? null : (
-              <div className="match-box-select-entity-form">
-                <div className="match-box-entity-select-text">
-                  {entitySelectText}
-                </div>
-                <select onChange={onEntityChange}>
-                  <option value={null}>{entitySelectPlaceholder}</option>
-                  {activeFields
-                    .filter(
-                      ({ keyField: { field } }) =>
-                        uploadableFields
-                          ? uploadableFields.includes(field)
-                          : true,
-                    )
-                    .map(({ field, displayName }) => (
-                      <option key={field} value={field}>
-                        {capitalize(displayName)}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <EntitySelectionSection
+                {...{
+                  entitySelectText,
+                  onEntityChange,
+                  entitySelectPlaceholder,
+                  activeFields,
+                  uploadableFields,
+                }}
+              />
             )}
             <div className="match-box-id-form">
               <div className="match-box-selection-text">{instructionText}</div>
