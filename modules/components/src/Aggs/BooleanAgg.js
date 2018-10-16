@@ -41,12 +41,7 @@ export default ({
     ({ key_as_string }) => key_as_string === valueKeys.false,
   );
 
-  console.log('field', field, 'trueBucket', trueBucket);
-  console.log('field', field, 'falseBucket', falseBucket);
-
   const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
-
-  console.log('field', field, 'missingBucket', missingKeyBucket);
 
   const dotField = field.replace(/__/g, '.');
 
@@ -63,15 +58,6 @@ export default ({
     trueBucket === undefined || trueBucket?.doc_count <= 0;
   const isFalseBucketDisabled =
     falseBucket === undefined || falseBucket?.doc_count <= 0;
-
-  console.log(
-    'field',
-    field,
-    'isTrueDisabled',
-    isTrueBucketDisabled,
-    'isFalseDisabeld',
-    isFalseBucketDisabled,
-  );
 
   const handleChange = (isTrue, field) => {
     if (isTrue !== undefined) {
@@ -104,9 +90,6 @@ export default ({
       });
     }
   };
-
-  console.log('field', field, 'true bucket', trueBucket);
-  console.log('field', field, 'false bucket', falseBucket);
 
   return (
     <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
