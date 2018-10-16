@@ -90,184 +90,215 @@ const MatchBox = ({
   onEntityChange,
   activeEntityField,
   uploadableFields = null,
+  setActiveEntityField,
   ...props
-}) => (
-  <div className={`match-box ${layoutStyle}`}>
-    <MatchBoxState
-      {...props}
-      render={({
-        primaryKeyField,
-        activeFields,
-        activeField = activeFields.find(x => x.field === activeEntityField),
-      }) => (
-        <Fragment>
-          <div className="match-box-select-entity-form">
-            <div className="match-box-entity-select-text">
-              {entitySelectText}
-            </div>
-            <select onChange={onEntityChange}>
-              <option value={null}>{entitySelectPlaceholder}</option>
-              {activeFields.map(({ field, displayName }) => (
-                <option key={field} value={field}>
-                  {capitalize(displayName)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="match-box-id-form">
-            <div className="match-box-selection-text">{instructionText}</div>
-            <Input
-              disabled={!activeField}
-              Component="textarea"
-              placeholder={placeholderText}
-              value={searchText}
-              onChange={onTextChange}
-            />
-            <div
-              className={css`
-                display: flex;
-                justify-content: flex-end;
-              `}
-            >
-              <input
-                type="file"
-                className={css`
-                  position: absolute;
-                  top: -10000px;
-                  left: 0px;
-                `}
-                accept=".tsv,.csv,text/*"
-                ref={inputRef}
-                multiple
-                onChange={onFileUpload}
-              />
-              <ButtonComponent
-                disabled={!activeField}
-                type="submit"
-                onClick={() => inputRef.current.click()}
-              >
-                {searchTextLoading ? LoadingComponent : browseButtonText}
-              </ButtonComponent>
-            </div>
-          </div>
-          <QuickSearchQuery
-            exact
-            size={9999999} // TODO: pagination - this will currently choke on large input
-            {...props}
-            searchText={searchText}
-            primaryKeyField={activeField?.keyField}
-            quickSearchFields={activeField?.searchFields}
-            mapResults={({ results, searchTextParts }) => ({
-              results: uniqBy(results, 'primaryKey'),
-              unmatchedKeys: difference(
-                searchTextParts,
-                results.map(x => x.input),
-              ),
-            })}
-            render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
-              <div className="match-box-results-table">
-                {matchHeaderText}
-                <Tabs
-                  tabs={[
-                    {
-                      key: 'matched',
-                      title: `${matchedTabTitle} (${formatNumber(
-                        results.length,
-                      )})`,
-                      content: (
-                        <TabsTable
-                          columns={['inputId', 'matchedEntity', 'entityId'].map(
-                            x => ({
-                              Header: matchTableColumnHeaders[x],
-                              accessor: x,
-                            }),
-                          )}
-                          data={
-                            results.length
-                              ? results.map(
-                                  ({ input, entityName, primaryKey }) => ({
-                                    inputId: input,
-                                    matchedEntity: entityName,
-                                    entityId: primaryKey,
-                                  }),
-                                )
-                              : [
-                                  {
-                                    inputId: '',
-                                    matchedEntity: '',
-                                    entityId: '',
-                                  },
-                                ]
-                          }
-                        />
-                      ),
-                    },
-                    {
-                      key: 'unmatched',
-                      title: `${unmatchedTabTitle} (${formatNumber(
-                        unmatchedKeys.length,
-                      )})`,
-                      content: (
-                        <TabsTable
-                          columns={[
-                            {
-                              Header: matchTableColumnHeaders.inputId,
-                              accessor: 'inputId',
-                            },
-                          ]}
-                          data={
-                            unmatchedKeys?.length
-                              ? unmatchedKeys.map(x => ({ inputId: x }))
-                              : [{ inputId: '' }]
-                          }
-                        />
-                      ),
-                    },
-                  ]}
-                />
-                {children({
-                  hasResults: results?.length,
-                  saveSet: async ({
-                    userId,
-                    api,
-                    dataPath = 'data.data.saveSet',
-                  }) => {
-                    const data = get(
-                      await saveSet({
-                        sqon: quickSearchSqon,
-                        type: props.graphqlField,
-                        userId,
-                        path: primaryKeyField.field,
-                        api,
-                      }),
-                      dataPath,
-                    );
-                    const nextSQON = toggleSQON(
-                      {
-                        op: 'and',
-                        content: [
-                          {
-                            op: 'in',
-                            content: {
-                              field: primaryKeyField?.field,
-                              value: [`set_id:${data.setId}`],
-                            },
-                          },
-                        ],
-                      },
-                      sqon,
-                    );
-                    setSQON?.(nextSQON);
-                    return { ...data, nextSQON };
-                  },
-                })}
+}) => {
+  const selectableEntityType = !(
+    uploadableFields && (uploadableFields || []).length === 1
+  );
+  return (
+    <div className={`match-box ${layoutStyle}`}>
+      <MatchBoxState
+        {...props}
+        onInitialLoaded={({ activeFields }) => {
+          if (!selectableEntityType) {
+            const activeFieldToSet = activeFields.find(
+              ({ keyField: { field } }) => uploadableFields[0] === field,
+            );
+            if (activeFieldToSet) {
+              setActiveEntityField(activeFieldToSet.field);
+            } else {
+              throw new Error(
+                `no no active field found by the path ${uploadableFields[0]}`,
+              );
+            }
+          }
+        }}
+        render={({
+          primaryKeyField,
+          activeFields,
+          activeField = activeFields.find(x => x.field === activeEntityField),
+        }) => (
+          <Fragment>
+            {!selectableEntityType ? null : (
+              <div className="match-box-select-entity-form">
+                <div className="match-box-entity-select-text">
+                  {entitySelectText}
+                </div>
+                <select onChange={onEntityChange}>
+                  <option value={null}>{entitySelectPlaceholder}</option>
+                  {activeFields
+                    .filter(
+                      ({ keyField: { field } }) =>
+                        uploadableFields
+                          ? uploadableFields.includes(field)
+                          : true,
+                    )
+                    .map(({ field, displayName }) => (
+                      <option key={field} value={field}>
+                        {capitalize(displayName)}
+                      </option>
+                    ))}
+                </select>
               </div>
             )}
-          />
-        </Fragment>
-      )}
-    />
-  </div>
-);
+            <div className="match-box-id-form">
+              <div className="match-box-selection-text">{instructionText}</div>
+              <Input
+                disabled={!activeField}
+                Component="textarea"
+                placeholder={placeholderText}
+                value={searchText}
+                onChange={onTextChange}
+              />
+              <div
+                className={css`
+                  display: flex;
+                  justify-content: flex-end;
+                `}
+              >
+                <input
+                  type="file"
+                  className={css`
+                    position: absolute;
+                    top: -10000px;
+                    left: 0px;
+                  `}
+                  accept=".tsv,.csv,text/*"
+                  ref={inputRef}
+                  multiple
+                  onChange={onFileUpload}
+                />
+                <ButtonComponent
+                  disabled={!activeField}
+                  type="submit"
+                  onClick={() => inputRef.current.click()}
+                >
+                  {searchTextLoading ? LoadingComponent : browseButtonText}
+                </ButtonComponent>
+              </div>
+            </div>
+            <QuickSearchQuery
+              exact
+              size={9999999} // TODO: pagination - this will currently choke on large input
+              {...props}
+              searchText={searchText}
+              primaryKeyField={activeField?.keyField}
+              quickSearchFields={activeField?.searchFields}
+              mapResults={({ results, searchTextParts }) => ({
+                results: uniqBy(results, 'primaryKey'),
+                unmatchedKeys: difference(
+                  searchTextParts,
+                  results.map(x => x.input),
+                ),
+              })}
+              render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
+                <div className="match-box-results-table">
+                  {matchHeaderText}
+                  <Tabs
+                    tabs={[
+                      {
+                        key: 'matched',
+                        title: `${matchedTabTitle} (${formatNumber(
+                          results.length,
+                        )})`,
+                        content: (
+                          <TabsTable
+                            columns={[
+                              'inputId',
+                              'matchedEntity',
+                              'entityId',
+                            ].map(x => ({
+                              Header: matchTableColumnHeaders[x],
+                              accessor: x,
+                            }))}
+                            data={
+                              results.length
+                                ? results.map(
+                                    ({ input, entityName, primaryKey }) => ({
+                                      inputId: input,
+                                      matchedEntity: entityName,
+                                      entityId: primaryKey,
+                                    }),
+                                  )
+                                : [
+                                    {
+                                      inputId: '',
+                                      matchedEntity: '',
+                                      entityId: '',
+                                    },
+                                  ]
+                            }
+                          />
+                        ),
+                      },
+                      {
+                        key: 'unmatched',
+                        title: `${unmatchedTabTitle} (${formatNumber(
+                          unmatchedKeys.length,
+                        )})`,
+                        content: (
+                          <TabsTable
+                            columns={[
+                              {
+                                Header: matchTableColumnHeaders.inputId,
+                                accessor: 'inputId',
+                              },
+                            ]}
+                            data={
+                              unmatchedKeys?.length
+                                ? unmatchedKeys.map(x => ({ inputId: x }))
+                                : [{ inputId: '' }]
+                            }
+                          />
+                        ),
+                      },
+                    ]}
+                  />
+                  {children({
+                    hasResults: results?.length,
+                    saveSet: async ({
+                      userId,
+                      api,
+                      dataPath = 'data.data.saveSet',
+                    }) => {
+                      const data = get(
+                        await saveSet({
+                          sqon: quickSearchSqon,
+                          type: props.graphqlField,
+                          userId,
+                          path: primaryKeyField.field,
+                          api,
+                        }),
+                        dataPath,
+                      );
+                      const nextSQON = toggleSQON(
+                        {
+                          op: 'and',
+                          content: [
+                            {
+                              op: 'in',
+                              content: {
+                                field: primaryKeyField?.field,
+                                value: [`set_id:${data.setId}`],
+                              },
+                            },
+                          ],
+                        },
+                        sqon,
+                      );
+                      setSQON?.(nextSQON);
+                      return { ...data, nextSQON };
+                    },
+                  })}
+                </div>
+              )}
+            />
+          </Fragment>
+        )}
+      />
+    </div>
+  );
+};
 
 export default enhance(MatchBox);
