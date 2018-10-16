@@ -41,7 +41,12 @@ export default ({
     ({ key_as_string }) => key_as_string === valueKeys.false,
   );
 
+  console.log('field', field, 'trueBucket', trueBucket);
+  console.log('field', field, 'falseBucket', falseBucket);
+
   const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
+
+  console.log('field', field, 'missingBucket', missingKeyBucket);
 
   const dotField = field.replace(/__/g, '.');
 
@@ -53,6 +58,20 @@ export default ({
     value: valueKeys.false,
     field: dotField,
   });
+
+  const isTrueBucketDisabled =
+    trueBucket === undefined || trueBucket?.doc_count <= 0;
+  const isFalseBucketDisabled =
+    falseBucket === undefined || falseBucket?.doc_count <= 0;
+
+  console.log(
+    'field',
+    field,
+    'isTrueDisabled',
+    isTrueBucketDisabled,
+    'isFalseDisabeld',
+    isFalseBucketDisabled,
+  );
 
   const handleChange = (isTrue, field) => {
     if (isTrue !== undefined) {
@@ -105,46 +124,45 @@ export default ({
             },
             {
               value: valueKeys.true,
-              disabled: trueBucket === undefined || trueBucket?.doc_count <= 0,
+              disabled: isTrueBucketDisabled,
               title: (
                 <>
                   <TextHighlight
                     content={displayKeys.true}
                     highlightText={highlightText}
                   />
-                  {trueBucket && (
-                    <span
-                      className={`bucket-count`}
-                      style={{
-                        marginLeft: 2,
-                      }}
-                    >
-                      {formatNumber(trueBucket.doc_count)}
-                    </span>
-                  )}
+                  <span
+                    className={`bucket-count`}
+                    style={{
+                      marginLeft: 2,
+                    }}
+                  >
+                    {formatNumber(
+                      isTrueBucketDisabled ? 0 : trueBucket.doc_count,
+                    )}
+                  </span>
                 </>
               ),
             },
             {
               value: valueKeys.false,
-              disabled:
-                falseBucket === undefined || falseBucket?.doc_count <= 0,
+              disabled: isFalseBucketDisabled,
               title: (
                 <>
                   <TextHighlight
                     content={displayKeys.false}
                     highlightText={highlightText}
                   />
-                  {falseBucket && (
-                    <span
-                      className={`bucket-count`}
-                      style={{
-                        marginLeft: 2,
-                      }}
-                    >
-                      {formatNumber(falseBucket.doc_count)}
-                    </span>
-                  )}
+                  <span
+                    className={`bucket-count`}
+                    style={{
+                      marginLeft: 2,
+                    }}
+                  >
+                    {formatNumber(
+                      isFalseBucketDisabled ? 0 : falseBucket.doc_count,
+                    )}
+                  </span>
                 </>
               ),
             },
