@@ -9,6 +9,7 @@ export default ({
   rightIcon,
   componentRef,
   Component = 'input',
+  clearInput,
   ...props
 }) => (
   <State
@@ -33,7 +34,9 @@ export default ({
           {...props}
           autoFocus
         />
-        <span className="inputIcon">{rightIcon}</span>
+        <span className="inputIcon" onClick={clearInput}>
+          {rightIcon}
+        </span>
       </div>
     )}
   />

@@ -175,6 +175,7 @@ const TermAgg = ({
                     setSearchText(value || '')
                   }
                   setSearchText={setSearchText}
+                  clearInput={() => setSearchText('')}
                 />
                 {showingMore &&
                   isMoreEnabled && (
