@@ -1,6 +1,6 @@
 {
   "name": "@arranger/middleware",
-  "version": "0.5.12",
+  "version": "0.5.13",
   "description": "Arranger Middleware",
   "main": "dist/index.js",
   "publishConfig": {
