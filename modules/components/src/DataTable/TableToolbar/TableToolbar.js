@@ -46,6 +46,7 @@ const TableToolbar = ({
   sqon,
   downloadUrl,
   InputComponent,
+  showFilterInput = true,
 }) => {
   const isPlural =
     total > 1 &&
@@ -62,15 +63,17 @@ const TableToolbar = ({
         {total?.toLocaleString()} {pluralize(type, isPlural ? 2 : 1)}
       </div>
       <div className="group">
-        <TextFilter
-          InputComponent={InputComponent}
-          value={filterVal}
-          placeholder={filterInputPlaceholder}
-          onChange={({ value, generateNextSQON }) => {
-            setFilterVal(value);
-            debouncedOnFilterChange({ value, generateNextSQON });
-          }}
-        />
+        {!showFilterInput ? null : (
+          <TextFilter
+            InputComponent={InputComponent}
+            value={filterVal}
+            placeholder={filterInputPlaceholder}
+            onChange={({ value, generateNextSQON }) => {
+              setFilterVal(value);
+              debouncedOnFilterChange({ value, generateNextSQON });
+            }}
+          />
+        )}
       </div>
       <div className="group">
         {allowTogglingColumns && (
