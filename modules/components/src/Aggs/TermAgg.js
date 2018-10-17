@@ -170,7 +170,7 @@ const TermAgg = ({
                   value={searchText}
                   placeholder={searchPlaceholder}
                   icon={<DefaultSearchIcon />}
-                  rightIcon={<FaTimesCircleO />}
+                  rightIcon={searchText.length > 0 ? <FaTimesCircleO /> : null}
                   onChange={({ target: { value } }) =>
                     setSearchText(value || '')
                   }
