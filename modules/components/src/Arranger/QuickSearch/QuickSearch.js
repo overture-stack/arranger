@@ -35,6 +35,40 @@ const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
 
 const enhance = compose(withState('value', 'setValue', ''));
 
+const DropdownItem = ({
+  entityName,
+  optionIndex,
+  inputValue,
+  result,
+  primaryKey,
+  onClick = () => {},
+}) => (
+  <div
+    className={`quick-search-result ${css`
+      cursor: pointer;
+    `}`}
+    onClick={onClick}
+  >
+    <div
+      className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}
+    >
+      <div>{entityName.slice(0, 2).toUpperCase()}</div>
+    </div>
+    <div className="quick-search-result-details">
+      <div className="quick-search-result-key">{primaryKey}</div>
+      <div className="quick-search-result-value">
+        <TextHighlight
+          highlightClassName={`quick-search-result-value-highlight ${css`
+            font-weight: bold;
+          `}`}
+          highlightText={inputValue}
+          content={result}
+        />
+      </div>
+    </div>
+  </div>
+);
+
 const inputRef = React.createRef();
 const QuickSearch = ({
   className,
@@ -49,6 +83,7 @@ const QuickSearch = ({
   PinnedValueComponent = SQONBubble,
   translateSQONValue = x => x,
   InputComponent = TextInput,
+  DropdownItemComponent = DropdownItem,
   ...props
 }) => (
   <QuickSearchFieldsQuery
@@ -100,7 +135,6 @@ const QuickSearch = ({
               placeholder={placeholder}
               onChange={({ target: { value } }) => setValue(value || '')}
             />
-
             <div
               className={css`
                 position: relative;
@@ -129,11 +163,13 @@ const QuickSearch = ({
                     },
                     i,
                   ) => (
-                    <div
+                    <DropdownItemComponent
+                      entityName={entityName}
+                      optionIndex={index}
+                      primaryKey={primaryKey}
                       key={`${result}-${i}`}
-                      className={`quick-search-result ${css`
-                        cursor: pointer;
-                      `}`}
+                      result={result}
+                      inputValue={input}
                       onClick={() => {
                         setValue('');
                         if (
@@ -150,27 +186,7 @@ const QuickSearch = ({
                           });
                         }
                       }}
-                    >
-                      <div
-                        className={`quick-search-result-entity quick-search-result-entity-${index}`}
-                      >
-                        <div>{entityName.slice(0, 2).toUpperCase()}</div>
-                      </div>
-                      <div className="quick-search-result-details">
-                        <div className="quick-search-result-key">
-                          {primaryKey}
-                        </div>
-                        <div className="quick-search-result-value">
-                          <TextHighlight
-                            highlightClassName={`quick-search-result-value-highlight ${css`
-                              font-weight: bold;
-                            `}`}
-                            highlightText={input}
-                            content={result}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    />
                   ),
                 )}
               </div>

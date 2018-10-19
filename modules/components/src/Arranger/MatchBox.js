@@ -92,7 +92,7 @@ const MatchBox = ({
   sqon,
   setSQON,
   matchHeaderText,
-  instructionText = `Type or copy-and-paste a list of comma delimited identifiers, or choose a file of identifiers to upload`,
+  instructionText = `Type or copy-and-paste a list of comma delimited identifiers`,
   placeholderText = `e.g. Id\ne.g. Id`,
   entitySelectText = `Select the entity to upload`,
   entitySelectPlaceholder = `Select an Entity`,
@@ -110,6 +110,7 @@ const MatchBox = ({
   searchText,
   searchTextParts,
   searchTextLoading,
+  uploadInstructionText = 'Or choose file to upload',
   onTextChange,
   onFileUpload,
   onEntityChange,
@@ -165,10 +166,12 @@ const MatchBox = ({
                 value={searchText}
                 onChange={onTextChange}
               />
+              <div className="match-box-upload-instruction-text">
+                {uploadInstructionText}
+              </div>
               <div
                 className={css`
                   display: flex;
-                  justify-content: flex-end;
                 `}
               >
                 <input
@@ -208,67 +211,75 @@ const MatchBox = ({
               })}
               render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
                 <div className="match-box-results-table">
-                  {matchHeaderText}
-                  <Tabs
-                    tabs={[
-                      {
-                        key: 'matched',
-                        title: `${matchedTabTitle} (${formatNumber(
-                          results.length,
-                        )})`,
-                        content: (
-                          <TabsTable
-                            columns={[
-                              'inputId',
-                              'matchedEntity',
-                              'entityId',
-                            ].map(x => ({
-                              Header: matchTableColumnHeaders[x],
-                              accessor: x,
-                            }))}
-                            data={
-                              results.length
-                                ? results.map(
-                                    ({ input, entityName, primaryKey }) => ({
-                                      inputId: input,
-                                      matchedEntity: entityName,
-                                      entityId: primaryKey,
-                                    }),
-                                  )
-                                : [
-                                    {
-                                      inputId: '',
-                                      matchedEntity: '',
-                                      entityId: '',
-                                    },
-                                  ]
-                            }
-                          />
-                        ),
-                      },
-                      {
-                        key: 'unmatched',
-                        title: `${unmatchedTabTitle} (${formatNumber(
-                          unmatchedKeys.length,
-                        )})`,
-                        content: (
-                          <TabsTable
-                            columns={[
-                              {
-                                Header: matchTableColumnHeaders.inputId,
-                                accessor: 'inputId',
-                              },
-                            ]}
-                            data={
-                              unmatchedKeys?.length
-                                ? unmatchedKeys.map(x => ({ inputId: x }))
-                                : [{ inputId: '' }]
-                            }
-                          />
-                        ),
-                      },
-                    ]}
-                  />
+                  {!!searchText.length && (
+                    <Fragment>
+                      {matchHeaderText}
+                      <Tabs
+                        tabs={[
+                          {
+                            key: 'matched',
+                            title: `${matchedTabTitle} (${formatNumber(
+                              results.length,
+                            )})`,
+                            content: (
+                              <TabsTable
+                                columns={[
+                                  'inputId',
+                                  'matchedEntity',
+                                  'entityId',
+                                ].map(x => ({
+                                  Header: matchTableColumnHeaders[x],
+                                  accessor: x,
+                                }))}
+                                data={
+                                  results.length
+                                    ? results.map(
+                                        ({
+                                          input,
+                                          entityName,
+                                          primaryKey,
+                                        }) => ({
+                                          inputId: input,
+                                          matchedEntity: entityName,
+                                          entityId: primaryKey,
+                                        }),
+                                      )
+                                    : [
+                                        {
+                                          inputId: '',
+                                          matchedEntity: '',
+                                          entityId: '',
+                                        },
+                                      ]
+                                }
+                              />
+                            ),
+                          },
+                          {
+                            key: 'unmatched',
+                            title: `${unmatchedTabTitle} (${formatNumber(
+                              unmatchedKeys.length,
+                            )})`,
+                            content: (
+                              <TabsTable
+                                columns={[
+                                  {
+                                    Header: matchTableColumnHeaders.inputId,
+                                    accessor: 'inputId',
+                                  },
+                                ]}
+                                data={
+                                  unmatchedKeys?.length
+                                    ? unmatchedKeys.map(x => ({ inputId: x }))
+                                    : [{ inputId: '' }]
+                                }
+                              />
+                            ),
+                          },
+                        ]}
+                      />
+                    </Fragment>
+                  )}
                   {children({
                     hasResults: results?.length,
                     saveSet: async ({
