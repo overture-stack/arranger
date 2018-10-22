@@ -31,8 +31,8 @@ const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
         ),
       )
     : isArray(content?.value)
-      ? content?.value.filter(value => value.indexOf('set_id:') === 0)
-      : [...(content?.value.indexOf?.('set_id:') === 0 ? [content.value] : [])]
+      ? content?.value.filter(value => value?.indexOf('set_id:') === 0)
+      : [...(content?.value?.indexOf?.('set_id:') === 0 ? [content.value] : [])]
   ).map(setId => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
