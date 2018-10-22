@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import Spinner from 'react-spinkit';
 import { get } from 'lodash';
 
@@ -137,10 +137,9 @@ export default ({
       {...{ api, projectId, graphqlField }}
       render={aggsState =>
         stats.map((stat, i) => (
-          <>
+          <Fragment key={stat.label}>
             {i > 0 && <div key={i} className="stats-line" />}
             <Stat
-              key={stat.label}
               {...{
                 aggsState,
                 api,
@@ -151,7 +150,7 @@ export default ({
               {...props}
               {...stat}
             />
-          </>
+          </Fragment>
         ))
       }
     />
