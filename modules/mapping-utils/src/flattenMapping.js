@@ -7,10 +7,21 @@ let flattenMapping = (properties, parent = '') => {
     Object.entries(properties).map(
       ([field, data]) =>
         !data.properties
-          ? {
-              field: joinWith()(parent) + field,
-              type: field.includes('id') ? 'id' : data.type,
-            }
+          ? data.fields
+            ? [
+                {
+                  field: joinWith()(parent) + field,
+                  type: field.includes('id') ? 'id' : data.type,
+                },
+                ...Object.entries(data.fields).map(([subField, data]) => ({
+                  field: joinWith()(joinWith()(parent) + field) + subField,
+                  type: 'analyzed',
+                })),
+              ]
+            : {
+                field: joinWith()(parent) + field,
+                type: field.includes('id') ? 'id' : data.type,
+              }
           : [
               {
                 field: joinWith()(parent) + field,

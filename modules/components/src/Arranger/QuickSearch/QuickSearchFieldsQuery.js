@@ -7,11 +7,11 @@ import { decorateFieldWithColumnsState } from './QuickSearchQuery';
 const nestedField = ({ field, nestedFields }) =>
   nestedFields.find(
     x =>
-      x.field ===
-      field.field
-        .split('.')
-        .slice(0, -1)
-        .join('.'),
+      x?.field ===
+      field?.field
+        ?.split('.')
+        ?.slice(0, -1)
+        ?.join('.'),
   );
 
 const enhance = compose(
@@ -49,19 +49,25 @@ const enhance = compose(
               nestedFields,
               field: x,
             }) || {};
-          return whitelist ? whitelist.includes(parentField) : true;
+          return whitelist
+            ? whitelist.includes(parentField)
+            : x.type === 'analyzed';
         })
-        ?.map(({ field }) =>
-          decorateFieldWithColumnsState({
+        ?.map(({ field, type }) => {
+          return decorateFieldWithColumnsState({
             columnsState: data?.[index]?.columnsState?.state,
             field,
-          }),
-        )
-        ?.map(x => ({
-          ...x,
-          entityName:
-            nestedField({ field: x, nestedFields })?.displayName || index,
-        })) || [],
+            isAnalyzedField: type === 'analyzed',
+          });
+        })
+        ?.map(x => {
+          console.log('x: ', x);
+          return {
+            ...x,
+            entityName:
+              nestedField({ field: x, nestedFields })?.displayName || index,
+          };
+        }) || [],
     }) => {
       return {
         quickSearchFields,

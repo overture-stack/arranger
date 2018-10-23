@@ -8,7 +8,11 @@ import splitString from '../../utils/splitString';
 
 const isValidValue = value => value?.trim()?.length > 1;
 
-export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
+export const decorateFieldWithColumnsState = ({
+  columnsState,
+  field,
+  isAnalyzedField,
+}) => {
   const columnsStateField = columnsState?.columns?.find(y => y.field === field);
   return columnsStateField
     ? {
@@ -17,7 +21,14 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
         query: columnsStateField.query || field,
         jsonPath: columnsStateField.jsonPath || `$.${field}`,
       }
-    : {};
+    : isAnalyzedField
+      ? {
+          field,
+          gqlField: field.split('.').join('__'),
+          query: field?.split('.')[0] || field,
+          jsonPath: `$.${field}`,
+        }
+      : {};
 };
 
 const isMatching = ({ value = '', searchText = '', exact = false }) =>
