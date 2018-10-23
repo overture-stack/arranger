@@ -2,6 +2,7 @@ import React from 'react';
 import { css } from 'emotion';
 import { compose, withState } from 'recompose';
 import SearchIcon from 'react-icons/lib/fa/search';
+import Component from 'react-component-component';
 
 import { Value as SQONBubble } from '../../SQONView';
 import { currentFieldValue, toggleSQON } from '../../SQONView/utils';
@@ -104,94 +105,109 @@ const QuickSearch = ({
         searchTextDelimiters={searchTextDelimiters}
         searchText={value}
         render={({ results: searchResults, loading }) => (
-          <div className={`quick-search ${className}`}>
-            <div className="quick-search-pinned-values">
-              {currentValues({ sqon, primaryKeyField })?.map(primaryKey => (
-                <div className="quick-search-pinned-value">
-                  <PinnedValueComponent
-                    onClick={() =>
-                      toggleValue({
-                        sqon,
-                        setSQON,
-                        primaryKeyField,
-                        primaryKey,
-                      })
-                    }
+          <Component initialState={{ dropDownExpanded: false }}>
+            {({ state: { dropDownExpanded }, setState }) => {
+              const showDropdown = () => setState({ dropDownExpanded: true });
+              const hideDropdown = () => setState({ dropDownExpanded: false });
+              return (
+                <div className={`quick-search ${className}`}>
+                  <div className="quick-search-pinned-values">
+                    {currentValues({
+                      sqon,
+                      primaryKeyField,
+                    })?.map(primaryKey => (
+                      <div className="quick-search-pinned-value">
+                        <PinnedValueComponent
+                          onClick={() =>
+                            toggleValue({
+                              sqon,
+                              setSQON,
+                              primaryKeyField,
+                              primaryKey,
+                            })
+                          }
+                        >
+                          {compose(
+                            translateSQONValue,
+                            internalTranslateSQONValue,
+                          )(primaryKey)}
+                        </PinnedValueComponent>
+                      </div>
+                    ))}
+                  </div>
+                  <InputComponent
+                    disabled={!enabled}
+                    icon={loading ? LoadingIcon : Icon}
+                    onBlur={hideDropdown}
+                    onFocus={showDropdown}
+                    type="text"
+                    value={value}
+                    componentRef={inputRef}
+                    placeholder={placeholder}
+                    onChange={({ target: { value } }) => setValue(value || '')}
+                  />
+                  <div
+                    className={css`
+                      position: relative;
+                    `}
                   >
-                    {compose(
-                      translateSQONValue,
-                      internalTranslateSQONValue,
-                    )(primaryKey)}
-                  </PinnedValueComponent>
+                    {!dropDownExpanded ? null : (
+                      <div
+                        className={`quick-search-results ${css`
+                          position: absolute;
+                          top: 0;
+                          left: 0;
+                          margin: 0;
+                          padding: 0;
+                          z-index: 1;
+                          background: white;
+                          width: 100%;
+                        `}`}
+                      >
+                        {searchResults?.map(
+                          (
+                            {
+                              entityName,
+                              result,
+                              primaryKey,
+                              input,
+                              index = (entityIndexLookup[entityName] % 5) + 1,
+                            },
+                            i,
+                          ) => (
+                            <DropdownItemComponent
+                              entityName={entityName}
+                              optionIndex={index}
+                              primaryKey={primaryKey}
+                              key={`${result}-${i}`}
+                              result={result}
+                              inputValue={input}
+                              onClick={() => {
+                                setValue('');
+                                if (
+                                  !currentValues({
+                                    sqon,
+                                    primaryKeyField,
+                                  })?.includes(primaryKey)
+                                ) {
+                                  toggleValue({
+                                    sqon,
+                                    setSQON,
+                                    primaryKeyField,
+                                    primaryKey,
+                                  });
+                                }
+                              }}
+                            />
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
-            <InputComponent
-              disabled={!enabled}
-              icon={loading ? LoadingIcon : Icon}
-              type="text"
-              value={value}
-              componentRef={inputRef}
-              placeholder={placeholder}
-              onChange={({ target: { value } }) => setValue(value || '')}
-            />
-            <div
-              className={css`
-                position: relative;
-              `}
-            >
-              <div
-                className={`quick-search-results ${css`
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  margin: 0;
-                  padding: 0;
-                  z-index: 1;
-                  background: white;
-                  width: 100%;
-                `}`}
-              >
-                {searchResults?.map(
-                  (
-                    {
-                      entityName,
-                      result,
-                      primaryKey,
-                      input,
-                      index = (entityIndexLookup[entityName] % 5) + 1,
-                    },
-                    i,
-                  ) => (
-                    <DropdownItemComponent
-                      entityName={entityName}
-                      optionIndex={index}
-                      primaryKey={primaryKey}
-                      key={`${result}-${i}`}
-                      result={result}
-                      inputValue={input}
-                      onClick={() => {
-                        setValue('');
-                        if (
-                          !currentValues({
-                            sqon,
-                            primaryKeyField,
-                          })?.includes(primaryKey)
-                        ) {
-                          toggleValue({
-                            sqon,
-                            setSQON,
-                            primaryKeyField,
-                            primaryKey,
-                          });
-                        }
-                      }}
-                    />
-                  ),
-                )}
-              </div>
-            </div>
-          </div>
+              );
+            }}
+          </Component>
         )}
       />
     )}
