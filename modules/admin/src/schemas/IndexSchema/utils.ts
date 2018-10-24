@@ -4,11 +4,18 @@ import { getArrangerProjects } from '../ProjectSchema/utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { serializeToGqlField, timestamp } from '../../services';
 import { IIndexQueryInput, INewIndexInput } from './resolvers';
+import { GraphQLResolveInfo } from 'graphql';
+import { QueryContext } from '../..';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
 type Resolver<T> =
-  | ((a: any, b: any, c: any, d: any) => Promise<T> | T)
+  | ((
+      a: {},
+      args: {},
+      c: QueryContext,
+      d: GraphQLResolveInfo,
+    ) => Promise<T> | T)
   | T
   | Promise<T>;
 
