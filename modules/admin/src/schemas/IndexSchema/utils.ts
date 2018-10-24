@@ -30,7 +30,7 @@ const mappingExistsOn = (es: Client) => async ({
 }: {
   esIndex: string;
   esType: string;
-}): boolean => {
+}): Promise<boolean> => {
   try {
     await getEsMapping(es)({ esIndex, esType });
     return true;
