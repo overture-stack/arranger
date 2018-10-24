@@ -1,10 +1,10 @@
 import { GraphQLResolveInfo } from 'graphql';
 import { QueryContext } from '../../index';
 import {
-  getArrangerProjects,
   addArrangerProject,
-  removeArrangerProject,
+  getArrangerProjects,
   IArrangerProject,
+  removeArrangerProject,
 } from './utils';
 
 export interface IProjectQueryInput {
