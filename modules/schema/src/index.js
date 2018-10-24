@@ -79,6 +79,10 @@ export default ({
   let schema = makeExecutableSchema({
     typeDefs,
     resolvers,
+    resolverValidationOptions: {
+      // this disables a warning which we are ok with (https://github.com/prisma/prisma/issues/2225)
+      requireResolversForResolveType: false,
+    },
   });
 
   if (mock) {
