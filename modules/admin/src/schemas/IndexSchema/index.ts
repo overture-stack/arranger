@@ -7,6 +7,6 @@ export const createSchema = async () => {
     typeDefs: await typeDefs(),
     resolvers,
   });
-  addMockFunctionsToSchema({ schema });
+  // addMockFunctionsToSchema({ schema });
   return schema;
 };

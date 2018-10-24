@@ -2,12 +2,13 @@ import { gql } from 'apollo-server';
 
 export default async () => gql`
   type Index {
+    id: ID!
     hasMapping: Boolean!
     graphqlField: String!
     projectId: String!
   }
   type Query {
-    index(projectId: String!, graphqlField: String!): Index
+    index(projectId: ID!, graphqlField: String!): Index
   }
   type Mutation {
     newIndex(
@@ -16,6 +17,6 @@ export default async () => gql`
       esIndex: String!
       esType: String!
     ): Index
-    deleteIndex(projectId: String!, graphqlField: String!): Index
+    deleteIndex(projectId: ID!, graphqlField: ID!): Index
   }
 `;
