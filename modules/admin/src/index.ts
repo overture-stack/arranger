@@ -1,7 +1,6 @@
-import { ApolloServer } from 'apollo-server-express';
 import { addMockFunctionsToSchema, mergeSchemas } from 'graphql-tools';
+import { ApolloServer } from 'apollo-server-express';
 import { Client } from 'elasticsearch';
-
 import { createClient as createElasticsearchClient } from './services/elasticsearch';
 import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
 import { createSchema as createIndexSchema } from './schemas/IndexSchema';

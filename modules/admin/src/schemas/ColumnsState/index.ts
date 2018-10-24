@@ -1,6 +1,6 @@
-import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
-import typeDefs from './typeDefs';
 import resolvers from './resolvers';
+import typeDefs from './typeDefs';
+import { addMockFunctionsToSchema, makeExecutableSchema } from 'graphql-tools';
 
 export const createSchema = async () => {
   const schema = makeExecutableSchema({

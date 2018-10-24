@@ -1,9 +1,8 @@
 import { Client } from 'elasticsearch';
-
 import { constants } from '../../services/constants';
-import { serializeToGqlField, timestamp } from '../../services';
-import { getEsMapping } from '../../services/elasticsearch';
 import { getArrangerProjects } from '../ProjectSchema/utils';
+import { getEsMapping } from '../../services/elasticsearch';
+import { serializeToGqlField, timestamp } from '../../services';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 

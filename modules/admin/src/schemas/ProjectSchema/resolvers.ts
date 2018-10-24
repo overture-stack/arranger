@@ -1,5 +1,5 @@
-import { QueryContext } from '../../index';
 import { GraphQLResolveInfo } from 'graphql';
+import { QueryContext } from '../../index';
 import {
   getArrangerProjects,
   addArrangerProject,

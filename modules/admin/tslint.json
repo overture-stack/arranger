@@ -4,6 +4,7 @@
  */
 
 {
+  "extends": ["tslint-config-prettier"],
   "rules": {
     "mocha-no-side-effect-code": false,
     "missing-jsdoc": false,

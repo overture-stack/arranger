@@ -1,6 +1,6 @@
 import { Client } from 'elasticsearch';
-import { serializeToEsId } from '../../services';
 import { constants } from '../../services/constants';
+import { serializeToEsId } from '../../services';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 

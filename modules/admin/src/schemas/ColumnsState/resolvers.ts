@@ -1,5 +1,5 @@
-import { QueryContext } from '../..';
 import { GraphQLResolveInfo } from 'graphql';
+import { QueryContext } from '../..';
 
 interface IColumnStateInput {
   field: string;
