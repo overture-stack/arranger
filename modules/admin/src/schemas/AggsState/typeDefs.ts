@@ -1,5 +1,5 @@
 import { gql } from 'apollo-server';
-import { StateTypeDefs } from '@arranger/schema';
+import { StateTypeDefs } from '@arranger/schema/dist';
 
 export default async () => gql`
   ${StateTypeDefs.AggsStateTypeDefs}
