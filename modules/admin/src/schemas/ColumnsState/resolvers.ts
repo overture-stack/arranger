@@ -1,3 +1,6 @@
+import { QueryContext } from '../..';
+import { GraphQLResolveInfo } from 'graphql';
+
 interface IColumnStateInput {
   field: string;
   active: boolean;
@@ -10,10 +13,10 @@ interface IColumnsStateMutationInput {
 }
 
 const saveColumnsState = (
-  obj,
+  obj: {},
   { state, graphlField }: IColumnsStateMutationInput,
-  context,
-  info,
+  context: QueryContext,
+  info: GraphQLResolveInfo,
 ) => {
   return {
     state: { field: 'test', active: true, show: false },
@@ -23,7 +26,7 @@ const saveColumnsState = (
 
 export default {
   Query: {
-    columnsState: async stuff => {
+    columnsState: async (stuff: {}) => {
       return {
         state: {
           field: 'test',

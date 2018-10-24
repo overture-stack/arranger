@@ -24,11 +24,21 @@
     "tsutils": "~3.0.0",
     "typescript": "~3.0.1"
   },
+  "watch": {
+    "lint": {
+      "patterns": [
+        "src"
+      ],
+      "extensions": "ts",
+      "quiet": false
+    }
+  },
   "scripts": {
     "clean": "rimraf coverage build tmp",
     "build": "tsc -p tsconfig.release.json",
     "watch": "tsc -w -p tsconfig.release.json",
     "lint": "tslint -t stylish --project \"tsconfig.json\"",
+    "watch:lint": "npm-watch lint",
     "pretest": "npm run lint",
     "test": "npm run test-only",
     "test-only": "jest --coverage",

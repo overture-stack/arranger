@@ -52,8 +52,8 @@ export const createNewIndex = (es: Client) => async (
   esIndex: string,
   esType: string,
 ): Promise<IIndexModel> => {
-  const arrangerProject = (await getArrangerProjects(es)).find(
-    project => project.id === projectId,
+  const arrangerProject: {} = (await getArrangerProjects(es)).find(
+    (project: { id: string }) => project.id === projectId,
   );
   const serializedGqlField = serializeToGqlField(graphqlField);
   if (arrangerProject) {

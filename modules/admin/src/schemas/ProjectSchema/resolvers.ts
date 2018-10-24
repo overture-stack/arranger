@@ -12,24 +12,24 @@ export interface IProjectQueryInput {
 }
 
 const projectsQueryResolver = async (
-  _,
-  args,
+  _: {},
+  args: {},
   { es }: QueryContext,
   info: GraphQLResolveInfo,
 ): Promise<Array<IArrangerProject>> => getArrangerProjects(es);
 
 const singleProjectQueryResolver = async (
-  _,
+  _: {},
   { id }: IProjectQueryInput,
   { es }: QueryContext,
   info: GraphQLResolveInfo,
 ): Promise<IArrangerProject> => {
   const projects = await getArrangerProjects(es);
-  return projects.find(({ id: _id }) => id === _id);
+  return projects.find(({ id: _id }: { id: String }) => id === _id);
 };
 
 const newProjectMutationResolver = async (
-  _,
+  _: {},
   { id }: IProjectQueryInput,
   { es }: QueryContext,
   info: GraphQLResolveInfo,
@@ -40,7 +40,7 @@ const newProjectMutationResolver = async (
   });
 
 const deleteProjectMutationResolver = async (
-  _,
+  _: {},
   { id }: IProjectQueryInput,
   { es }: QueryContext,
   info: GraphQLResolveInfo,

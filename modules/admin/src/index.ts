@@ -1,5 +1,5 @@
 import { ApolloServer } from 'apollo-server-express';
-import { mergeSchemas, addMockFunctionsToSchema } from 'graphql-tools';
+import { addMockFunctionsToSchema, mergeSchemas } from 'graphql-tools';
 import { Client } from 'elasticsearch';
 
 import { createClient as createElasticsearchClient } from './services/elasticsearch';
@@ -53,7 +53,7 @@ export default async (config: AdminApiConfig) => {
   const esClient = createElasticsearchClient(config.esHost);
   return new ApolloServer({
     schema: await createSchema(),
-    context: ({ req }) => ({
+    context: (): QueryContext => ({
       es: esClient,
     }),
   });

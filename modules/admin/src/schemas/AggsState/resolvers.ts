@@ -1,3 +1,6 @@
+import { GraphQLResolveInfo } from 'graphql';
+import { QueryContext } from '../..';
+
 interface AggStateInput {
   field: string;
   active: boolean;
@@ -10,10 +13,10 @@ interface ISaveAggsStateMutationInput {
 }
 
 const saveAggsState = (
-  obj,
+  obj: {},
   { state, graphlField }: ISaveAggsStateMutationInput,
-  context,
-  info,
+  context: QueryContext,
+  info: GraphQLResolveInfo,
 ) => {
   return {
     state: { field: 'test', active: true, show: false },
@@ -23,7 +26,7 @@ const saveAggsState = (
 
 export default {
   Query: {
-    aggsState: async stuff => {
+    aggsState: async (stuff: {}) => {
       return {
         state: {
           field: 'test',

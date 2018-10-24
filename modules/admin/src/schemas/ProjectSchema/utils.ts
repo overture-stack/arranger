@@ -25,7 +25,9 @@ export const getArrangerProjects = async (
     index: ARRANGER_PROJECT_INDEX,
     type: ARRANGER_PROJECT_TYPE,
   });
-  return hits.map(({ _source }) => _source as IArrangerProject);
+  return hits.map(
+    ({ _source }: { _source: any }) => _source as IArrangerProject,
+  );
 };
 
 export const addArrangerProject = (es: Client) => async (
@@ -49,7 +51,7 @@ export const removeArrangerProject = (es: Client) => async (
   id: string,
 ): Promise<IArrangerProject> => {
   const existingProject = (await getArrangerProjects(es)).find(
-    ({ id: _id }) => id === _id,
+    ({ id: _id }: { id: string }) => id === _id,
   );
   if (existingProject) {
     await es.delete({
