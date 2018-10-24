@@ -11,7 +11,8 @@ app.use(cors());
 const http = Server(app);
 
 export default function() {
-  return Arranger().then(router => {
+  // Always run test server as admin
+  return Arranger({enableAdmin:true}).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
       console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);

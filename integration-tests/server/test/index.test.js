@@ -17,7 +17,7 @@ const api = ajax(`http://localhost:${port}`);
 
 describe('@arranger/server', () => {
   before(() =>
-    Arranger({ esHost }).then(router => {
+    Arranger({ esHost, enableAdmin: true }).then(router => {
       app.use(router);
     }),
   );

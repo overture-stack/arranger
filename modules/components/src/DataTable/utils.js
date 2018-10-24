@@ -14,6 +14,7 @@ export function normalizeColumns({
   columns = [],
   customTypes,
   customColumns = [],
+  customTypeConfigs = {},
 }) {
   const types = {
     ...columnTypes,
@@ -28,6 +29,7 @@ export function normalizeColumns({
         ? !!(customTypes || {})[column.type]
         : column.hasCustomType,
       ...(!column.accessor && !column.id ? { id: column.field } : {}),
+      ...(customTypeConfigs[column.type] || {}),
     }))
     .filter(x => x.show || x.canChangeShow);
   return sortBy(customColumns, 'index').reduce(
@@ -41,13 +43,14 @@ export function normalizeColumns({
 }
 
 export const withNormalizedColumns = withProps(
-  ({ config = {}, customTypes, customColumns }) => ({
+  ({ config = {}, customTypes, customColumns, customTypeConfigs }) => ({
     config: {
       ...config,
       columns: normalizeColumns({
         columns: config.columns,
         customTypes,
         customColumns,
+        customTypeConfigs,
       }),
     },
   }),

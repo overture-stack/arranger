@@ -13,6 +13,7 @@ const Table = ({
   fieldTypesForFilter = ['text', 'keyword'],
   api,
   InputComponent,
+  showFilterInput = true,
   ...props
 }) => {
   return (
@@ -25,7 +26,7 @@ const Table = ({
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
-            {...{ ...props, api }}
+            {...{ ...props, api, showFilterInput }}
             InputComponent={InputComponent}
             projectId={projectId}
             sqon={sqon}

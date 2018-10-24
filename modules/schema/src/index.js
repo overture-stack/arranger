@@ -34,6 +34,7 @@ export default ({
   scalarTypes = [],
   middleware = [],
   mock = false,
+  enableAdmin,
 } = {}) => {
   const typesWithSets = [
     ...types,
@@ -66,11 +67,13 @@ export default ({
     types: typesWithSets,
     rootTypes,
     scalarTypes,
+    enableAdmin,
   });
   let resolvers = generateResolvers({
     types: typesWithSets,
     rootTypes,
     scalarTypes,
+    enableAdmin,
   });
 
   let schema = makeExecutableSchema({

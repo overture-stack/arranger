@@ -3,9 +3,9 @@ import urlJoin from 'url-join';
 import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
-const api = ({ endpoint = '', body, headers }) =>
+const api = ({ endpoint = '', body, headers, method }) =>
   fetch(urlJoin(ARRANGER_API, endpoint), {
-    method: 'POST',
+    method: method || 'POST',
     headers: { ...alwaysSendHeaders, ...headers },
     body: JSON.stringify(body),
   }).then(r => r.json());

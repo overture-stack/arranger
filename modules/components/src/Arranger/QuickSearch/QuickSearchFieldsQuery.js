@@ -43,7 +43,14 @@ const enhance = compose(
       nestedFields = data?.[index]?.extended?.filter(x => x.type === 'nested'),
       quickSearchFields = data?.[index]?.extended
         ?.filter(x => x.quickSearchEnabled)
-        ?.filter(x => (whitelist ? whitelist.includes(x.field) : true))
+        ?.filter(x => {
+          const { field: parentField = '' } = //defaults to "" because a root field's parent would evaluate to such
+            nestedField({
+              nestedFields,
+              field: x,
+            }) || {};
+          return whitelist ? whitelist.includes(parentField) : true;
+        })
         ?.map(({ field }) =>
           decorateFieldWithColumnsState({
             columnsState: data?.[index]?.columnsState?.state,
@@ -55,15 +62,17 @@ const enhance = compose(
           entityName:
             nestedField({ field: x, nestedFields })?.displayName || index,
         })) || [],
-    }) => ({
-      quickSearchFields,
-      quickSearchEntities: uniq(quickSearchFields.map(x => x.entityName)),
-      primaryKeyField: decorateFieldWithColumnsState({
-        columnsState: data?.[index]?.columnsState?.state,
-        field: data?.[index]?.extended?.find(x => x.primaryKey)?.field,
-      }),
-      nestedFields,
-    }),
+    }) => {
+      return {
+        quickSearchFields,
+        quickSearchEntities: uniq(quickSearchFields.map(x => x.entityName)),
+        primaryKeyField: decorateFieldWithColumnsState({
+          columnsState: data?.[index]?.columnsState?.state,
+          field: data?.[index]?.extended?.find(x => x.primaryKey)?.field,
+        }),
+        nestedFields,
+      };
+    },
   ),
 );
 

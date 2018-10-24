@@ -47,6 +47,7 @@ class DataTableWithToolbar extends React.Component {
       alwaysSorted = [],
       initalSelectedTableRows = [],
       keepSelectedOnPageChange = false,
+      showFilterInput = true,
       filterInputPlaceholder,
       InputComponent,
     } = this.props;
@@ -74,6 +75,7 @@ class DataTableWithToolbar extends React.Component {
           exportTSVFilename={exportTSVFilename}
           downloadUrl={downloadUrl}
           InputComponent={InputComponent}
+          showFilterInput={showFilterInput}
         />
         <Table
           style={tableStyle}

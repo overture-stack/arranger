@@ -57,6 +57,46 @@ const bolleanAggs = [
       },
     ],
   },
+  {
+    field: 'sequencing_experiments__is_paired_end_0',
+    displayName: 'Is Paired Ende',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        key: '0',
+        doc_count: 0,
+        key_as_string: 'false',
+      },
+      {
+        key: '1',
+        doc_count: 961,
+        key_as_string: 'true',
+      },
+    ],
+  },
+  {
+    field: 'sequencing_experiments__is_paired_end_1',
+    displayName: 'Is Paired Ende',
+    active: false,
+    type: 'Aggregations',
+    allowedValues: [],
+    restricted: false,
+    buckets: [
+      {
+        key: '0',
+        doc_count: 2312,
+        key_as_string: 'false',
+      },
+      {
+        key: '1',
+        doc_count: 0,
+        key_as_string: 'true',
+      },
+    ],
+  },
 ];
 
 let aggs = [

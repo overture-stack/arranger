@@ -5,7 +5,6 @@ import {
   Aggregations,
   CurrentSQON,
   Table,
-  DetectNewVersion,
 } from '@arranger/components';
 
 test('importing @arranger modules', () => {
@@ -15,5 +14,4 @@ test('importing @arranger modules', () => {
   expect(Aggregations).toBeDefined();
   expect(CurrentSQON).toBeDefined();
   expect(Table).toBeDefined();
-  expect(DetectNewVersion).toBeDefined();
 });
