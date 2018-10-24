@@ -7,6 +7,11 @@ export interface IIndexQueryInput {
   graphqlField: string;
 }
 
+export interface IIndexRemovalQueryInput {
+  projectId: string;
+  graphqlField: string;
+}
+
 export interface INewIndexInput {
   projectId: string;
   graphqlField: string;

@@ -17,6 +17,6 @@ export default async () => gql`
       esIndex: String!
       esType: String!
     ): Index
-    deleteIndex(projectId: ID!, graphqlField: ID!): Index
+    deleteIndex(projectId: ID!, graphqlField: String!): Index
   }
 `;

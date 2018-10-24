@@ -7,6 +7,11 @@ import { IIndexQueryInput, INewIndexInput } from './resolvers';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
+type Resolver<T> =
+  | ((a: any, b: any, c: any, d: any) => Promise<T> | T)
+  | T
+  | Promise<T>;
+
 interface IProjectIndexConfigs {
   'aggs-state': Array<{}>;
   'columns-state': {};
@@ -23,12 +28,12 @@ interface IProjectIndexMetadata {
 }
 
 interface IIndexGqlModel {
-  id: string;
-  hasMapping: boolean;
-  graphqlField: string;
-  projectId: string;
-  esIndex: string;
-  esType: string;
+  id: Resolver<string>;
+  hasMapping: Resolver<boolean>;
+  graphqlField: Resolver<string>;
+  projectId: Resolver<string>;
+  esIndex: Resolver<string>;
+  esType: Resolver<string>;
 }
 
 const mappingExistsOn = (es: Client) => async ({
@@ -64,10 +69,11 @@ export const getProjectIndex = (es: Client) => async ({
     .map(
       async (metadata: IProjectIndexMetadata): Promise<IIndexGqlModel> => ({
         id: `${projectId}-${graphqlField}`,
-        hasMapping: await mappingExistsOn(es)({
-          esIndex: metadata.index,
-          esType: metadata.esType,
-        }),
+        hasMapping: () =>
+          mappingExistsOn(es)({
+            esIndex: metadata.index,
+            esType: metadata.esType,
+          }),
         graphqlField: metadata.name,
         projectId: projectId,
         esIndex: metadata.index,
