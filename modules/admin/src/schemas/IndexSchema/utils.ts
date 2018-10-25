@@ -39,24 +39,22 @@ export const getProjectIndex = (es: Client) => async ({
     type: `${ARRANGER_PROJECT_TYPE}-${projectId}`,
   });
   const metadataCollection = hits.map(
-    ({ _source }: any) => _source as IProjectIndexMetadata,
+    ({ _source }) => _source as IProjectIndexMetadata,
   );
   return metadataCollection
-    .filter(({ name }: IProjectIndexMetadata) => graphqlField === name)
-    .map(
-      async (metadata: IProjectIndexMetadata): Promise<IIndexGqlModel> => ({
-        id: `${projectId}-${graphqlField}`,
-        hasMapping: () =>
-          mappingExistsOn(es)({
-            esIndex: metadata.index,
-            esType: metadata.esType,
-          }),
-        graphqlField: metadata.name,
-        projectId: projectId,
-        esIndex: metadata.index,
-        esType: metadata.esType,
-      }),
-    )[0];
+    .filter(({ name }) => graphqlField === name)
+    .map(async metadata => ({
+      id: `${projectId}-${graphqlField}`,
+      hasMapping: () =>
+        mappingExistsOn(es)({
+          esIndex: metadata.index,
+          esType: metadata.esType,
+        }),
+      graphqlField: metadata.name,
+      projectId: projectId,
+      esIndex: metadata.index,
+      esType: metadata.esType,
+    }))[0];
 };
 
 export const removeProjectIndex = (es: Client) => async ({
@@ -73,7 +71,7 @@ export const createNewIndex = (es: Client) => async ({
   esType,
 }: INewIndexInput): Promise<IIndexGqlModel> => {
   const arrangerProject: {} = (await getArrangerProjects(es)).find(
-    (project: { id: string }) => project.id === projectId,
+    project => project.id === projectId,
   );
   if (arrangerProject) {
     const serializedGqlField = serializeToGqlField(graphqlField);

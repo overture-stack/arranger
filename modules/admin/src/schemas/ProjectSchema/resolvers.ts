@@ -1,14 +1,10 @@
 import {
   addArrangerProject,
   getArrangerProjects,
-  IArrangerProject,
   removeArrangerProject,
 } from './utils';
+import { IArrangerProject, IProjectQueryInput } from './types';
 import { Resolver } from '../types';
-
-export interface IProjectQueryInput {
-  id: string;
-}
 
 const projectsQueryResolver: Resolver<Array<IArrangerProject>> = async (
   _,

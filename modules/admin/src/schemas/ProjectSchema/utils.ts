@@ -1,14 +1,9 @@
 import { Client } from 'elasticsearch';
 import { constants } from '../../services/constants';
 import { serializeToEsId } from '../../services';
+import { IArrangerProject } from './types';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
-
-export interface IArrangerProject {
-  id: string;
-  active: boolean;
-  timestamp: string;
-}
 
 export const newArrangerProject = (id: string): IArrangerProject => ({
   id: serializeToEsId(id),
@@ -25,9 +20,7 @@ export const getArrangerProjects = async (
     index: ARRANGER_PROJECT_INDEX,
     type: ARRANGER_PROJECT_TYPE,
   });
-  return hits.map(
-    ({ _source }: { _source: any }) => _source as IArrangerProject,
-  );
+  return hits.map(({ _source }) => _source as IArrangerProject);
 };
 
 export const addArrangerProject = (es: Client) => async (
@@ -51,7 +44,7 @@ export const removeArrangerProject = (es: Client) => async (
   id: string,
 ): Promise<IArrangerProject> => {
   const existingProject = (await getArrangerProjects(es)).find(
-    ({ id: _id }: { id: string }) => id === _id,
+    ({ id: _id }) => id === _id,
   );
   if (existingProject) {
     await es.delete({
