@@ -35,6 +35,7 @@ export const addArrangerProject = (es: Client) => async (
       type: ARRANGER_PROJECT_TYPE,
       id: _id,
       body: newProject,
+      refresh: true,
     })
     .then(() => newProject)
     .catch(Promise.reject);

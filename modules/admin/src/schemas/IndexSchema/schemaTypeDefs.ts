@@ -6,6 +6,8 @@ export default async () => gql`
     hasMapping: Boolean!
     graphqlField: String!
     projectId: String!
+    esIndex: String!
+    esType: String!
   }
   type Query {
     index(projectId: ID!, graphqlField: String!): Index

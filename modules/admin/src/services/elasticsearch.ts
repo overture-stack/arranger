@@ -3,7 +3,7 @@ import { Client } from 'elasticsearch';
 export const createClient = (esHost: string) =>
   new Client({
     host: esHost,
-    log: 'trace',
+    // log: 'trace',
   });
 
 export const getEsMapping = (es: Client) => async ({

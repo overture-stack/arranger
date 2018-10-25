@@ -83,7 +83,7 @@ export const removeProjectIndex = (es: Client) => async ({
   });
   await es.delete({
     ...getProjectMetadataEsLocation(projectId),
-    id: graphqlField,
+    id: removedIndexMetadata.esIndex as string,
   });
   return removedIndexMetadata;
 };
@@ -113,6 +113,7 @@ export const createNewIndex = (es: Client) => async ({
       ...getProjectMetadataEsLocation(projectId),
       id: esIndex,
       body: metadataContent,
+      refresh: true,
     });
 
     return getProjectIndex(es)({
