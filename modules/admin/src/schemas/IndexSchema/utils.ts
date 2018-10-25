@@ -6,12 +6,22 @@ import { serializeToGqlField, timestamp } from '../../services';
 import {
   IIndexGqlModel,
   IIndexQueryInput,
-  IIndexRemovalQueryInput,
+  IIndexRemovalMutationInput,
   INewIndexInput,
   IProjectIndexMetadata,
 } from './types';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
+
+const getProjectMetadataEsLocation = (
+  projectId: string,
+): {
+  index: string;
+  type: string;
+} => ({
+  index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
+  type: `${ARRANGER_PROJECT_TYPE}-${projectId}`,
+});
 
 const mappingExistsOn = (es: Client) => async ({
   esIndex,
@@ -28,40 +38,54 @@ const mappingExistsOn = (es: Client) => async ({
   }
 };
 
-export const getProjectIndex = (es: Client) => async ({
-  projectId,
-  graphqlField,
-}: IIndexQueryInput): Promise<IIndexGqlModel> => {
+const getProjectMetadata = (es: Client) => async (
+  projectId: string,
+): Promise<IIndexGqlModel[]> => {
   const {
     hits: { hits },
   } = await es.search({
-    index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
-    type: `${ARRANGER_PROJECT_TYPE}-${projectId}`,
+    ...getProjectMetadataEsLocation(projectId),
   });
   const metadataCollection = hits.map(
     ({ _source }) => _source as IProjectIndexMetadata,
   );
-  return metadataCollection
-    .filter(({ name }) => graphqlField === name)
-    .map(async metadata => ({
-      id: `${projectId}-${graphqlField}`,
-      hasMapping: () =>
-        mappingExistsOn(es)({
-          esIndex: metadata.index,
-          esType: metadata.esType,
-        }),
+  return Promise.all(
+    metadataCollection.map(async metadata => ({
+      id: `${projectId}-${metadata.name}`,
+      hasMapping: mappingExistsOn(es)({
+        esIndex: metadata.index,
+        esType: metadata.esType,
+      }),
       graphqlField: metadata.name,
       projectId: projectId,
       esIndex: metadata.index,
       esType: metadata.esType,
-    }))[0];
+    })),
+  );
+};
+
+export const getProjectIndex = (es: Client) => async ({
+  projectId,
+  graphqlField,
+}: IIndexQueryInput): Promise<IIndexGqlModel> => {
+  return (await getProjectMetadata(es)(projectId)).filter(
+    ({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
+  )[0];
 };
 
 export const removeProjectIndex = (es: Client) => async ({
   projectId,
   graphqlField,
-}: IIndexRemovalQueryInput): Promise<IIndexGqlModel> => {
-  return null;
+}: IIndexRemovalMutationInput): Promise<IIndexGqlModel> => {
+  const removedIndexMetadata = await getProjectIndex(es)({
+    projectId,
+    graphqlField,
+  });
+  await es.delete({
+    ...getProjectMetadataEsLocation(projectId),
+    id: graphqlField,
+  });
+  return removedIndexMetadata;
 };
 
 export const createNewIndex = (es: Client) => async ({
@@ -86,8 +110,7 @@ export const createNewIndex = (es: Client) => async ({
     };
 
     await es.create({
-      index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
-      type: `${ARRANGER_PROJECT_TYPE}-${projectId}`,
+      ...getProjectMetadataEsLocation(projectId),
       id: esIndex,
       body: metadataContent,
     });

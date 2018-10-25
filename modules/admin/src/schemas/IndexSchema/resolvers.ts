@@ -1,5 +1,10 @@
-import { createNewIndex, getProjectIndex } from './utils';
-import { IIndexGqlModel, IIndexQueryInput, INewIndexInput } from './types';
+import { createNewIndex, getProjectIndex, removeProjectIndex } from './utils';
+import {
+  IIndexGqlModel,
+  IIndexQueryInput,
+  INewIndexInput,
+  IIndexRemovalMutationInput,
+} from './types';
 import { Resolver } from '../types';
 
 const indexQueryResolver: Resolver<IIndexGqlModel, IIndexQueryInput> = async (
@@ -14,11 +19,17 @@ const newIndexMutationResolver: Resolver<
   INewIndexInput
 > = async (_, args, { es }, info) => createNewIndex(es)(args);
 
+const removeIndexMutationResolver: Resolver<
+  IIndexGqlModel,
+  IIndexRemovalMutationInput
+> = async (_, args, { es }, info) => removeProjectIndex(es)(args);
+
 export default {
   Query: {
     index: indexQueryResolver,
   },
   Mutation: {
     newIndex: newIndexMutationResolver,
+    deleteIndex: removeIndexMutationResolver,
   },
 };

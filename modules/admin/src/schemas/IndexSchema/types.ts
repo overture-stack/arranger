@@ -29,7 +29,7 @@ export interface IIndexQueryInput {
   graphqlField: string;
 }
 
-export interface IIndexRemovalQueryInput {
+export interface IIndexRemovalMutationInput {
   projectId: string;
   graphqlField: string;
 }
