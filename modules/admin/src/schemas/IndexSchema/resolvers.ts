@@ -1,37 +1,18 @@
-import { QueryContext } from '../..';
-import { GraphQLResolveInfo } from 'graphql';
 import { createNewIndex, getProjectIndex } from './utils';
+import { IIndexGqlModel, IIndexQueryInput, INewIndexInput } from './types';
+import { Resolver } from '../types';
 
-export interface IIndexQueryInput {
-  projectId: string;
-  graphqlField: string;
-}
-
-export interface IIndexRemovalQueryInput {
-  projectId: string;
-  graphqlField: string;
-}
-
-export interface INewIndexInput {
-  projectId: string;
-  graphqlField: string;
-  esIndex: string;
-  esType: string;
-}
-
-const indexQueryResolver = async (
-  _: {},
-  args: IIndexQueryInput,
-  { es }: QueryContext,
-  info: GraphQLResolveInfo,
+const indexQueryResolver: Resolver<IIndexGqlModel, IIndexQueryInput> = async (
+  _,
+  args,
+  { es },
+  info,
 ) => getProjectIndex(es)(args);
 
-const newIndexMutationResolver = async (
-  _: {},
-  args: INewIndexInput,
-  { es }: QueryContext,
-  info: GraphQLResolveInfo,
-) => createNewIndex(es)(args);
+const newIndexMutationResolver: Resolver<
+  IIndexGqlModel,
+  INewIndexInput
+> = async (_, args, { es }, info) => createNewIndex(es)(args);
 
 export default {
   Query: {

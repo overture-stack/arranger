@@ -3,45 +3,15 @@ import { constants } from '../../services/constants';
 import { getArrangerProjects } from '../ProjectSchema/utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { serializeToGqlField, timestamp } from '../../services';
-import { IIndexQueryInput, INewIndexInput } from './resolvers';
-import { GraphQLResolveInfo } from 'graphql';
-import { QueryContext } from '../..';
+import {
+  IIndexGqlModel,
+  IIndexQueryInput,
+  IIndexRemovalQueryInput,
+  INewIndexInput,
+  IProjectIndexMetadata,
+} from './types';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
-
-type Resolver<T> =
-  | ((
-      a: {},
-      args: {},
-      c: QueryContext,
-      d: GraphQLResolveInfo,
-    ) => Promise<T> | T)
-  | T
-  | Promise<T>;
-
-interface IProjectIndexConfigs {
-  'aggs-state': Array<{}>;
-  'columns-state': {};
-  extended: Array<{}>;
-}
-
-interface IProjectIndexMetadata {
-  index: string;
-  name: string;
-  esType: string;
-  config: IProjectIndexConfigs;
-  active: boolean;
-  timestamp: string;
-}
-
-interface IIndexGqlModel {
-  id: Resolver<string>;
-  hasMapping: Resolver<boolean>;
-  graphqlField: Resolver<string>;
-  projectId: Resolver<string>;
-  esIndex: Resolver<string>;
-  esType: Resolver<string>;
-}
 
 const mappingExistsOn = (es: Client) => async ({
   esIndex,
@@ -87,6 +57,13 @@ export const getProjectIndex = (es: Client) => async ({
         esType: metadata.esType,
       }),
     )[0];
+};
+
+export const removeProjectIndex = (es: Client) => async ({
+  projectId,
+  graphqlField,
+}: IIndexRemovalQueryInput): Promise<IIndexGqlModel> => {
+  return null;
 };
 
 export const createNewIndex = (es: Client) => async ({

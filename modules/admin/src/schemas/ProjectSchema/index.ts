@@ -1,4 +1,4 @@
-import typeDefs from './typeDefs';
+import typeDefs from './schemaTypeDefs';
 import { addMockFunctionsToSchema, makeExecutableSchema } from 'graphql-tools';
 import { createResolvers } from './resolvers';
 

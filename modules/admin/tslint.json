@@ -24,7 +24,7 @@
     "typedef": [
       true,
       "parameter",
-      "arrow-parameter",
+      // "arrow-parameter",
       "property-declaration",
       "member-variable-declaration"
     ]
