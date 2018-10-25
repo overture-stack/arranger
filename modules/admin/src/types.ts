@@ -1,10 +1,17 @@
 import { GraphQLResolveInfo } from 'graphql';
-import { QueryContext } from '../types';
 import { MergeInfo } from 'graphql-tools';
+import { Client } from 'elasticsearch';
+
+export interface AdminApiConfig {
+  esHost: string;
+}
+export interface QueryContext {
+  es: Client;
+}
 
 export type ResolverOutput<T> = T | Promise<T>;
 
-export type Resolver<Output, Args = Object> =
+export type MergeResolver<Output, Args = Object> =
   | ((
       a: any,
       args: Args,
@@ -12,3 +19,8 @@ export type Resolver<Output, Args = Object> =
       d: GraphQLResolveInfo & { mergeInfo: MergeInfo },
     ) => ResolverOutput<Output>)
   | ResolverOutput<Output>;
+
+export interface MergeSchema<TOutput, TInput = any> {
+  fragment: string;
+  resolve: MergeResolver<TOutput, TInput>;
+}
