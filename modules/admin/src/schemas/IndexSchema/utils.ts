@@ -1,8 +1,11 @@
 import { Client } from 'elasticsearch';
+
+import { createExtendedMapping } from '../ExtendedMapping/utils';
 import { constants } from '../../services/constants';
 import { getArrangerProjects } from '../ProjectSchema/utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { serializeToGqlField, timestamp } from '../../services';
+import { EsIndexLocation } from '../types';
 import {
   IIndexGqlModel,
   IIndexQueryInput,
@@ -26,10 +29,7 @@ const getProjectMetadataEsLocation = (
 const mappingExistsOn = (es: Client) => async ({
   esIndex,
   esType,
-}: {
-  esIndex: string;
-  esType: string;
-}): Promise<boolean> => {
+}: EsIndexLocation): Promise<boolean> => {
   try {
     await getEsMapping(es)({ esIndex, esType });
     return true;
@@ -38,19 +38,22 @@ const mappingExistsOn = (es: Client) => async ({
   }
 };
 
-const getProjectMetadata = (es: Client) => async (
+export const getProjectStorageMetadata = (es: Client) => async (
   projectId: string,
-): Promise<IIndexGqlModel[]> => {
+): Promise<Array<IProjectIndexMetadata>> => {
   const {
     hits: { hits },
   } = await es.search({
     ...getProjectMetadataEsLocation(projectId),
   });
-  const metadataCollection = hits.map(
-    ({ _source }) => _source as IProjectIndexMetadata,
-  );
-  return Promise.all(
-    metadataCollection.map(async metadata => ({
+  return hits.map(({ _source }) => _source as IProjectIndexMetadata);
+};
+
+const getProjectMetadata = (es: Client) => async (
+  projectId: string,
+): Promise<IIndexGqlModel[]> =>
+  Promise.all(
+    (await getProjectStorageMetadata(es)(projectId)).map(async metadata => ({
       id: `${projectId}-${metadata.name}`,
       hasMapping: mappingExistsOn(es)({
         esIndex: metadata.index,
@@ -62,6 +65,51 @@ const getProjectMetadata = (es: Client) => async (
       esType: metadata.esType,
     })),
   );
+
+export const createNewIndex = (es: Client) => async ({
+  projectId,
+  graphqlField,
+  esIndex,
+  esType,
+}: INewIndexInput): Promise<IIndexGqlModel> => {
+  const arrangerProject: {} = (await getArrangerProjects(es)).find(
+    project => project.id === projectId,
+  );
+  if (arrangerProject) {
+    const serializedGqlField = serializeToGqlField(graphqlField);
+
+    const extendedMapping = await createExtendedMapping(es)({
+      esIndex,
+      esType,
+    });
+
+    const metadataContent: IProjectIndexMetadata = {
+      index: esIndex,
+      name: serializedGqlField,
+      esType: esType,
+      timestamp: timestamp(),
+      active: true,
+      config: {
+        'aggs-state': [],
+        'columns-state': {},
+        extended: extendedMapping,
+      },
+    };
+
+    await es.create({
+      ...getProjectMetadataEsLocation(projectId),
+      id: esIndex,
+      body: metadataContent,
+      refresh: true,
+    });
+
+    return getProjectIndex(es)({
+      projectId,
+      graphqlField: serializedGqlField,
+    });
+  } else {
+    throw new Error(`no project with ID ${projectId} was found`);
+  }
 };
 
 export const getProjectIndex = (es: Client) => async ({
@@ -86,41 +134,4 @@ export const removeProjectIndex = (es: Client) => async ({
     id: removedIndexMetadata.esIndex as string,
   });
   return removedIndexMetadata;
-};
-
-export const createNewIndex = (es: Client) => async ({
-  projectId,
-  graphqlField,
-  esIndex,
-  esType,
-}: INewIndexInput): Promise<IIndexGqlModel> => {
-  const arrangerProject: {} = (await getArrangerProjects(es)).find(
-    project => project.id === projectId,
-  );
-  if (arrangerProject) {
-    const serializedGqlField = serializeToGqlField(graphqlField);
-
-    const metadataContent: IProjectIndexMetadata = {
-      index: esIndex,
-      name: serializedGqlField,
-      esType: esType,
-      timestamp: timestamp(),
-      active: true,
-      config: { 'aggs-state': [], 'columns-state': {}, extended: [] },
-    };
-
-    await es.create({
-      ...getProjectMetadataEsLocation(projectId),
-      id: esIndex,
-      body: metadataContent,
-      refresh: true,
-    });
-
-    return getProjectIndex(es)({
-      projectId,
-      graphqlField: serializedGqlField,
-    });
-  } else {
-    throw new Error(`no project with ID ${projectId} was found`);
-  }
 };

@@ -28,7 +28,7 @@ export default async () => gql`
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
     unit: NumericTypeUnit
-    displayValues: String!
+    displayValues: JSON!
     rangeStep: Float
   }
   type Query {
@@ -47,7 +47,7 @@ export default async () => gql`
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
     unit: NumericTypeUnit
-    displayValues: String!
+    displayValues: JSON
     rangeStep: Float
   }
 
