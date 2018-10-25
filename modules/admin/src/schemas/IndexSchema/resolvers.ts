@@ -2,8 +2,8 @@ import { createNewIndex, getProjectIndex, removeProjectIndex } from './utils';
 import {
   IIndexGqlModel,
   IIndexQueryInput,
-  INewIndexInput,
   IIndexRemovalMutationInput,
+  INewIndexInput,
 } from './types';
 import { Resolver } from '../types';
 
