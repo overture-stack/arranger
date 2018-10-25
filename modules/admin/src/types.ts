@@ -5,7 +5,7 @@ import { Client } from 'elasticsearch';
 export interface AdminApiConfig {
   esHost: string;
 }
-export interface QueryContext {
+export interface IQueryContext {
   es: Client;
 }
 
@@ -15,12 +15,12 @@ export type MergeResolver<Output, Args = Object> =
   | ((
       a: any,
       args: Args,
-      c: QueryContext,
+      c: IQueryContext,
       d: GraphQLResolveInfo & { mergeInfo: MergeInfo },
     ) => ResolverOutput<Output>)
   | ResolverOutput<Output>;
 
-export interface MergeSchema<TOutput, TInput = any> {
+export interface IMergeSchema<TOutput, TInput = any> {
   fragment: string;
   resolve: MergeResolver<TOutput, TInput>;
 }

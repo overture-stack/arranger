@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo } from 'graphql';
-import { QueryContext } from '../../types';
+import { IQueryContext } from '../../types';
 
 interface IColumnStateInput {
   field: string;
@@ -15,7 +15,7 @@ interface IColumnsStateMutationInput {
 const saveColumnsState = (
   obj: {},
   { state, graphlField }: IColumnsStateMutationInput,
-  context: QueryContext,
+  context: IQueryContext,
   info: GraphQLResolveInfo,
 ) => {
   return {

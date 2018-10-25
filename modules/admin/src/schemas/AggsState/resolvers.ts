@@ -1,5 +1,5 @@
 import { GraphQLResolveInfo } from 'graphql';
-import { QueryContext } from '../../types';
+import { IQueryContext } from '../../types';
 
 interface AggStateInput {
   field: string;
@@ -15,7 +15,7 @@ interface ISaveAggsStateMutationInput {
 const saveAggsState = (
   obj: {},
   { state, graphlField }: ISaveAggsStateMutationInput,
-  context: QueryContext,
+  context: IQueryContext,
   info: GraphQLResolveInfo,
 ) => {
   return {

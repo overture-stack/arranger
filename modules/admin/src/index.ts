@@ -13,8 +13,11 @@ import { createSchema as createAggsStateSchema } from './schemas/AggsState';
 import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
 import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
 import mergedTypeDefs from './schemaTypeDefs';
-import { AdminApiConfig, QueryContext } from './types';
-import { createIndexByProjectResolver } from './resolvers';
+import { AdminApiConfig, IQueryContext } from './types';
+import {
+  createIndexByProjectResolver,
+  createIndicesByProjectResolver,
+} from './resolvers';
 
 const createSchema = async () => {
   const typeDefs = mergedTypeDefs;
@@ -37,6 +40,7 @@ const createSchema = async () => {
     resolvers: {
       Project: {
         index: createIndexByProjectResolver(indexSchema),
+        indices: createIndicesByProjectResolver(indexSchema),
       },
     } as IResolversParameter,
   });
@@ -48,7 +52,7 @@ export default async (config: AdminApiConfig) => {
   const esClient = createElasticsearchClient(config.esHost);
   return new ApolloServer({
     schema: await createSchema(),
-    context: (): QueryContext => ({
+    context: (): IQueryContext => ({
       es: esClient,
     }),
   });
