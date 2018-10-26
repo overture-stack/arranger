@@ -1,8 +1,8 @@
 import { Resolver } from '../types';
-import GraphQLJSON from 'graphql-type-json';
+import * as GraphQLJSON from 'graphql-type-json';
 import {
-  I_GqlExtendedFieldMapping,
   I_ExtendedFieldsMappingsQueryArgs,
+  I_GqlExtendedFieldMapping,
 } from './types';
 import { getExtendedMapping } from './utils';
 

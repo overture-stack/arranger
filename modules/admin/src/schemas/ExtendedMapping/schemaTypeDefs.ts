@@ -2,6 +2,7 @@ import { gql } from 'apollo-server';
 import * as convert from 'convert-units';
 
 export default async () => gql`
+  scalar JSON
   enum ExtendedFieldType {
     string
     object
