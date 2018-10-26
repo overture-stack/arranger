@@ -1,43 +1,29 @@
-import { GraphQLResolveInfo } from 'graphql';
-import { IQueryContext } from '../../types';
+import { Resolver } from '../types';
+import {
+  I_ColumnSetState,
+  I_ColumnStateQueryInput,
+  I_SaveColumnsStateMutationInput,
+} from './types';
 
-interface IColumnStateInput {
-  field: string;
-  active: boolean;
-  show: boolean;
-}
+const saveColumnStateMutationResolver: Resolver<
+  I_ColumnSetState,
+  I_SaveColumnsStateMutationInput
+> = (_, args, { es }) => {
+  return null;
+};
 
-interface IColumnsStateMutationInput {
-  graphlField: string;
-  state: IColumnStateInput;
-}
-
-const saveColumnsState = (
-  obj: {},
-  { state, graphlField }: IColumnsStateMutationInput,
-  context: IQueryContext,
-  info: GraphQLResolveInfo,
-) => {
-  return {
-    state: { field: 'test', active: true, show: false },
-    timestamp: 'sdfgdgfhs',
-  };
+const columnStateQueryResolver: Resolver<
+  I_ColumnSetState,
+  I_ColumnStateQueryInput
+> = (_, args, { es }) => {
+  return null;
 };
 
 export default {
   Query: {
-    columnsState: async (stuff: {}) => {
-      return {
-        state: {
-          field: 'test',
-          active: true,
-          show: false,
-        },
-        timestamp: 'sdfgdgfhs',
-      };
-    },
+    columnsState: columnStateQueryResolver,
   },
   Mutation: {
-    saveColumnsState: saveColumnsState,
+    saveColumnsState: saveColumnStateMutationResolver,
   },
 };

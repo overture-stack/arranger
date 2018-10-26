@@ -15,6 +15,6 @@ export default async () => gql`
       projectId: String!
       graphqlField: String!
       state: ColumnStateInput!
-    ): ColumnsState
+    ): ColumnSetState
   }
 `;

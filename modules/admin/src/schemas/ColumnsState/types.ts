@@ -1,16 +1,22 @@
 /***************/
 /* input types */
 /***************/
+export interface I_ColumnStateQueryInput {
+  projectId: string;
+  graphqlField: string;
+}
+
+export interface I_SaveColumnsStateMutationInput {
+  projectId: string;
+  graphqlField: string;
+  state: I_ColumnStateInput;
+}
+
 export interface I_ColumnStateInput {
   type: string;
   keyField: string;
   defaultSorted: [I_ColumnSort];
   columns: [I_Column];
-}
-
-export interface I_ColumnStateQueryInput {
-  projectId: string;
-  graphqlField: string;
 }
 
 export interface I_ColumnSortInput {
