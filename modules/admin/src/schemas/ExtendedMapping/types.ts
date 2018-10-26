@@ -68,5 +68,12 @@ export interface I_ExtendedFieldMappingInput {
 export interface I_ExtendedFieldsMappingsQueryArgs {
   projectId: string;
   graphqlField: string;
+  field?: string;
+}
+
+export interface I_UpdateExtendedMappingMutationArgs {
+  projectId: string;
+  graphqlField: string;
   field: string;
+  extendedFieldMappingInput: I_ExtendedFieldMappingInput;
 }

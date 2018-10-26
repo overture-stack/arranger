@@ -1,4 +1,5 @@
 import { Client } from 'elasticsearch';
+import { UserInputError } from 'apollo-server';
 
 import { createExtendedMapping } from '../ExtendedMapping/utils';
 import { constants } from '../../services/constants';
@@ -16,7 +17,7 @@ import {
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
-const getProjectMetadataEsLocation = (
+export const getProjectMetadataEsLocation = (
   projectId: string,
 ): {
   index: string;
@@ -41,12 +42,16 @@ const mappingExistsOn = (es: Client) => async ({
 export const getProjectStorageMetadata = (es: Client) => async (
   projectId: string,
 ): Promise<Array<IProjectIndexMetadata>> => {
-  const {
-    hits: { hits },
-  } = await es.search({
-    ...getProjectMetadataEsLocation(projectId),
-  });
-  return hits.map(({ _source }) => _source as IProjectIndexMetadata);
+  try {
+    const {
+      hits: { hits },
+    } = await es.search({
+      ...getProjectMetadataEsLocation(projectId),
+    });
+    return hits.map(({ _source }) => _source as IProjectIndexMetadata);
+  } catch (err) {
+    throw new UserInputError(`cannot find project of id ${projectId}`, err);
+  }
 };
 
 const getProjectMetadata = (es: Client) => async (
@@ -108,7 +113,7 @@ export const createNewIndex = (es: Client) => async ({
       graphqlField: serializedGqlField,
     });
   } else {
-    throw new Error(`no project with ID ${projectId} was found`);
+    throw new UserInputError(`no project with ID ${projectId} was found`);
   }
 };
 
@@ -116,22 +121,35 @@ export const getProjectIndex = (es: Client) => async ({
   projectId,
   graphqlField,
 }: IIndexQueryInput): Promise<IIndexGqlModel> => {
-  return (await getProjectMetadata(es)(projectId)).filter(
-    ({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
-  )[0];
+  try {
+    const output = (await getProjectMetadata(es)(projectId)).find(
+      ({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
+    );
+    return output;
+  } catch {
+    throw new UserInputError(
+      `could not find index ${graphqlField} of project ${projectId}`,
+    );
+  }
 };
 
 export const removeProjectIndex = (es: Client) => async ({
   projectId,
   graphqlField,
 }: IIndexRemovalMutationInput): Promise<IIndexGqlModel> => {
-  const removedIndexMetadata = await getProjectIndex(es)({
-    projectId,
-    graphqlField,
-  });
-  await es.delete({
-    ...getProjectMetadataEsLocation(projectId),
-    id: removedIndexMetadata.esIndex as string,
-  });
-  return removedIndexMetadata;
+  try {
+    const removedIndexMetadata = await getProjectIndex(es)({
+      projectId,
+      graphqlField,
+    });
+    await es.delete({
+      ...getProjectMetadataEsLocation(projectId),
+      id: removedIndexMetadata.esIndex as string,
+    });
+    return removedIndexMetadata;
+  } catch (err) {
+    throw new UserInputError(
+      `could not remove index ${graphqlField} of project ${projectId}`,
+    );
+  }
 };
