@@ -2,7 +2,7 @@ import { gql } from 'apollo-server';
 
 export default async () => gql`
   type Project {
-    id: String!
+    id: ID!
     active: Boolean!
     timestamp: String!
   }

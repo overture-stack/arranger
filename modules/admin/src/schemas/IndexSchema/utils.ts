@@ -59,7 +59,7 @@ const getProjectMetadata = (es: Client) => async (
 ): Promise<IIndexGqlModel[]> =>
   Promise.all(
     (await getProjectStorageMetadata(es)(projectId)).map(async metadata => ({
-      id: `${projectId}-${metadata.name}`,
+      id: `${projectId}::${metadata.name}`,
       hasMapping: mappingExistsOn(es)({
         esIndex: metadata.index,
         esType: metadata.esType,
