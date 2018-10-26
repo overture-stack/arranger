@@ -41,6 +41,7 @@ enum E_NumericTypeUnit {
 }
 
 export interface I_GqlExtendedFieldMapping {
+  gqlId: Resolver<string>;
   field: Resolver<string>;
   type: Resolver<E_ExtendedFieldType>;
   displayName: Resolver<string>;

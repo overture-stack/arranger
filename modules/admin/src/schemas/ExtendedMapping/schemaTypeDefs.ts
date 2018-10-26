@@ -21,6 +21,7 @@ export default async () => gql`
   }
 
   type ExtendedFieldMapping {
+    gqlId: ID!
     field: String!
     type: ExtendedFieldType!
     displayName: String!

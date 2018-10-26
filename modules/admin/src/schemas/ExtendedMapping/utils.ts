@@ -38,14 +38,29 @@ export const getExtendedMapping = (es: Client) => async ({
   graphqlField,
   field,
 }: I_ExtendedFieldsMappingsQueryArgs): Promise<I_GqlExtendedFieldMapping[]> => {
+  const assertOutputType = (i: any): I_GqlExtendedFieldMapping => ({
+    gqlId: `${projectId}::${graphqlField}::${i.field}`,
+    field: i.field,
+    type: i.type,
+    displayName: i.displayName,
+    active: i.active,
+    isArray: i.isArray,
+    primaryKey: i.primaryKey,
+    quickSearchEnabled: i.quickSearchEnabled,
+    unit: i.unit,
+    displayValues: i.displayValues,
+    rangeStep: i.rangeStep,
+  });
   const indexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
     metaData => metaData.name === graphqlField,
   );
   if (indexMetadata) {
     if (field) {
-      return indexMetadata.config.extended.filter(ex => field === ex.field);
+      return indexMetadata.config.extended
+        .filter(ex => field === ex.field)
+        .map(assertOutputType);
     } else {
-      return indexMetadata.config.extended;
+      return indexMetadata.config.extended.map(assertOutputType);
     }
   } else {
     throw new UserInputError(
