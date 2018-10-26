@@ -4,8 +4,10 @@ import { StateTypeDefs } from '@arranger/schema/dist';
 export default async () => gql`
   ${StateTypeDefs.ColumnStateTypeDefs}
 
+  union ColumnSetState = ColumnsState
+
   type Query {
-    columnsState(projectId: String!, graphqlField: String!): ColumnsState
+    columnsState(projectId: String!, graphqlField: String!): ColumnSetState
   }
 
   type Mutation {
