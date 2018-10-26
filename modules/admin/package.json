@@ -35,14 +35,15 @@
   "scripts": {
     "clean": "rimraf coverage build tmp",
     "build": "tsc -p tsconfig.release.json",
-    "watch": "tsc -w -p tsconfig.release.json",
+    "watch": "rm-rf dist && tsc -w -p tsconfig.release.json",
     "lint": "tslint -t stylish --project \"tsconfig.json\"",
     "watch:lint": "npm-watch lint",
     "pretest": "npm run lint",
     "test": "npm run test-only",
     "test-only": "jest --coverage",
     "test:watch": "jest --watch",
-    "watch:run": "nodemon ./build/src"
+    "watch:run": "nodemon ./build/src",
+    "prepare": "rm-rf dist && npm run build"
   },
   "author": "Minh Ha",
   "license": "APLv2",
