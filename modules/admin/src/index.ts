@@ -17,6 +17,7 @@ import { AdminApiConfig, IQueryContext } from './types';
 import {
   createIndexByProjectResolver,
   createIndicesByProjectResolver,
+  createExtendedMappingsByIndexResolver,
 } from './resolvers';
 
 const createSchema = async () => {
@@ -41,6 +42,9 @@ const createSchema = async () => {
       Project: {
         index: createIndexByProjectResolver(indexSchema),
         indices: createIndicesByProjectResolver(indexSchema),
+      },
+      Index: {
+        extended: createExtendedMappingsByIndexResolver(extendedMappingShema),
       },
     } as IResolversParameter,
   });

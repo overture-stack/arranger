@@ -20,7 +20,7 @@ export type MergeResolver<Output, Args = Object> =
     ) => ResolverOutput<Output>)
   | ResolverOutput<Output>;
 
-export interface IMergeSchema<TOutput, TInput = any> {
+export interface I_MergeSchema<TOutput, TInput = any> {
   fragment: string;
   resolve: MergeResolver<TOutput, TInput>;
 }
