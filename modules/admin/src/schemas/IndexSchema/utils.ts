@@ -1,11 +1,11 @@
 import { Client } from 'elasticsearch';
 import { UserInputError } from 'apollo-server';
 
-import { createExtendedMapping } from '../ExtendedMapping/utils';
-import { constants } from '../../services/constants';
-import { getArrangerProjects } from '../ProjectSchema/utils';
 import { getEsMapping } from '../../services/elasticsearch';
+import { constants } from '../../services/constants';
 import { serializeToGqlField, timestamp } from '../../services';
+import { createExtendedMapping } from '../ExtendedMapping/utils';
+import { getArrangerProjects } from '../ProjectSchema/utils';
 import { EsIndexLocation } from '../types';
 import {
   IIndexGqlModel,
