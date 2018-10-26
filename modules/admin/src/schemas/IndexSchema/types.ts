@@ -1,9 +1,10 @@
 import { Resolver } from '../types';
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
+import { I_ColumnSetState } from '../ColumnsState/types';
 
 export interface IProjectIndexConfigs {
   'aggs-state': Array<{}>;
-  'columns-state': {};
+  'columns-state': I_ColumnSetState;
   extended: Array<I_GqlExtendedFieldMapping>;
 }
 

@@ -15,9 +15,9 @@ import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedM
 import mergedTypeDefs from './schemaTypeDefs';
 import { AdminApiConfig, IQueryContext } from './types';
 import {
+  createExtendedMappingsByIndexResolver,
   createIndexByProjectResolver,
   createIndicesByProjectResolver,
-  createExtendedMappingsByIndexResolver,
 } from './resolvers';
 
 const createSchema = async () => {

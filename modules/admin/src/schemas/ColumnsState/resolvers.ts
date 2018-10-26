@@ -4,6 +4,14 @@ import {
   I_ColumnStateQueryInput,
   I_SaveColumnsStateMutationInput,
 } from './types';
+import { getColumnSetState } from './utils';
+
+const columnStateQueryResolver: Resolver<
+  I_ColumnSetState,
+  I_ColumnStateQueryInput
+> = (_, args, { es }) => {
+  return getColumnSetState(es)(args);
+};
 
 const saveColumnStateMutationResolver: Resolver<
   I_ColumnSetState,
@@ -11,14 +19,6 @@ const saveColumnStateMutationResolver: Resolver<
 > = (_, args, { es }) => {
   return null;
 };
-
-const columnStateQueryResolver: Resolver<
-  I_ColumnSetState,
-  I_ColumnStateQueryInput
-> = (_, args, { es }) => {
-  return null;
-};
-
 export default {
   Query: {
     columnsState: columnStateQueryResolver,
