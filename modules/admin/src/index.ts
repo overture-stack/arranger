@@ -18,6 +18,7 @@ import {
   createExtendedMappingsByIndexResolver,
   createIndexByProjectResolver,
   createIndicesByProjectResolver,
+  createColumnsStateByIndexResolver,
 } from './resolvers';
 
 const createSchema = async () => {
@@ -45,6 +46,7 @@ const createSchema = async () => {
       },
       Index: {
         extended: createExtendedMappingsByIndexResolver(extendedMappingShema),
+        columnsState: createColumnsStateByIndexResolver(collumnsStateSchema),
       },
     } as IResolversParameter,
   });

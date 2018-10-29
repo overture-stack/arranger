@@ -3,7 +3,7 @@ import { gql } from 'apollo-server';
 export default gql`
   extend type Index {
     aggsState: AggsState
-    columnsState: ColumnsState
+    columnsState: ColumnSetState
     extended(field: String): [ExtendedFieldMapping]
   }
 
