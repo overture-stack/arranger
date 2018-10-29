@@ -14,6 +14,7 @@ import {
   INewIndexInput,
   IProjectIndexMetadata,
 } from './types';
+import { createColumnSetState } from '../ColumnsState/utils';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
@@ -71,12 +72,10 @@ const getProjectMetadata = (es: Client) => async (
     })),
   );
 
-export const createNewIndex = (es: Client) => async ({
-  projectId,
-  graphqlField,
-  esIndex,
-  esType,
-}: INewIndexInput): Promise<IIndexGqlModel> => {
+export const createNewIndex = (es: Client) => async (
+  args: INewIndexInput,
+): Promise<IIndexGqlModel> => {
+  const { projectId, graphqlField, esIndex, esType } = args;
   const arrangerProject: {} = (await getArrangerProjects(es)).find(
     project => project.id === projectId,
   );
@@ -96,7 +95,10 @@ export const createNewIndex = (es: Client) => async ({
       active: true,
       config: {
         'aggs-state': [],
-        'columns-state': {},
+        'columns-state': await createColumnSetState(es)({
+          esIndex,
+          esType,
+        }),
         extended: extendedMapping,
       },
     };

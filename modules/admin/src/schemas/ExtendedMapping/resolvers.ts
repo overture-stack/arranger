@@ -8,7 +8,7 @@ import {
 import { getExtendedMapping, updateFieldExtendedMapping } from './utils';
 
 const extendedMappingQueryResolver: Resolver<
-  Array<I_GqlExtendedFieldMapping>,
+  I_GqlExtendedFieldMapping[],
   I_ExtendedFieldsMappingsQueryArgs
 > = (_, { projectId, graphqlField, field }, { es }) => {
   return getExtendedMapping(es)({ projectId, graphqlField, field });

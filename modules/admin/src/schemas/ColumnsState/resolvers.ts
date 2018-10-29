@@ -19,7 +19,14 @@ const saveColumnStateMutationResolver: Resolver<
 > = (_, args, { es }) => {
   return null;
 };
+
+// this is a hack to rename "ColumnsState" to "ColumnSetState" in graphql because juggling "ColumnsState" and "ColumnState" is just too much
+const ColumnSetStateTypeResolver = {
+  __resolveType: () => 'ColumnsState',
+};
+
 export default {
+  ColumnSetState: ColumnSetStateTypeResolver,
   Query: {
     columnsState: columnStateQueryResolver,
   },

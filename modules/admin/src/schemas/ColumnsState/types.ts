@@ -39,7 +39,7 @@ export interface I_ColumnInput {
 /****************/
 /* output types */
 /****************/
-interface I_Column {
+export interface I_Column {
   show: boolean;
   type: string;
   sortable: boolean;
@@ -59,8 +59,8 @@ export interface I_ColumnSort {
 export interface I_ColumnState {
   type: string;
   keyField: string;
-  defaultSorted: [I_ColumnSort];
-  columns: [I_Column];
+  defaultSorted: I_ColumnSort[];
+  columns: I_Column[];
 }
 
 export interface I_ColumnSetState {
