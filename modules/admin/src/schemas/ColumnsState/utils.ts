@@ -1,10 +1,19 @@
 import { Client } from 'elasticsearch';
-import { I_Column, I_ColumnSetState, I_ColumnStateQueryInput } from './types';
-import { getProjectStorageMetadata } from '../IndexSchema/utils';
+import {
+  I_Column,
+  I_ColumnSetState,
+  I_ColumnStateQueryInput,
+  I_SaveColumnsStateMutationInput,
+} from './types';
+import {
+  getProjectStorageMetadata,
+  updateProjectIndexMetadata,
+} from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
 import { mappingToColumnsState } from '@arranger/mapping-utils';
 import { timestamp } from '../../services';
 import { getEsMapping } from '../../services/elasticsearch';
+import { IProjectIndexMetadata } from '../IndexSchema/types';
 
 export const getColumnSetState = (es: Client) => async (
   args: I_ColumnStateQueryInput,
@@ -37,4 +46,27 @@ export const createColumnSetState = (es: Client) => async ({
     },
     timestamp: timestamp(),
   };
+};
+
+export const saveColumnState = (es: Client) => async ({
+  graphqlField,
+  projectId,
+  state,
+}: I_SaveColumnsStateMutationInput): Promise<I_ColumnSetState> => {
+  const currentProjectMetadata = await getProjectStorageMetadata(es)(projectId);
+  const currentIndexMetadata = currentProjectMetadata.find(
+    i => i.name === graphqlField,
+  );
+  const newMetadata: IProjectIndexMetadata = {
+    ...currentIndexMetadata,
+    config: {
+      ...currentIndexMetadata.config,
+      'columns-state': {
+        timestamp: timestamp(),
+        state,
+      },
+    },
+  };
+  await updateProjectIndexMetadata(es)({ projectId, metaData: newMetadata });
+  return getColumnSetState(es)({ projectId, graphqlField });
 };

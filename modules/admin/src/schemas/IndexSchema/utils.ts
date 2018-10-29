@@ -119,6 +119,25 @@ export const createNewIndex = (es: Client) => async (
   }
 };
 
+// pretty bad, since we're just taking anything right now, but at least graphQl will ensure `metaData` is typed in runtime
+export const updateProjectIndexMetadata = (es: Client) => async ({
+  projectId,
+  metaData,
+}: {
+  projectId: string;
+  metaData: IProjectIndexMetadata;
+}): Promise<IProjectIndexMetadata> => {
+  await es.update({
+    ...getProjectMetadataEsLocation(projectId),
+    id: metaData.index,
+    body: {
+      doc: metaData,
+    },
+    refresh: true,
+  });
+  return metaData;
+};
+
 export const getProjectIndex = (es: Client) => async ({
   projectId,
   graphqlField,

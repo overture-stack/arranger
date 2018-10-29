@@ -4,7 +4,7 @@ import {
   I_ColumnStateQueryInput,
   I_SaveColumnsStateMutationInput,
 } from './types';
-import { getColumnSetState } from './utils';
+import { getColumnSetState, saveColumnState } from './utils';
 
 const columnStateQueryResolver: Resolver<
   I_ColumnSetState,
@@ -17,7 +17,7 @@ const saveColumnStateMutationResolver: Resolver<
   I_ColumnSetState,
   I_SaveColumnsStateMutationInput
 > = (_, args, { es }) => {
-  return null;
+  return saveColumnState(es)(args);
 };
 
 // this is a hack to rename "ColumnsState" to "ColumnSetState" in graphql because juggling "ColumnsState" and "ColumnState" is just too much
