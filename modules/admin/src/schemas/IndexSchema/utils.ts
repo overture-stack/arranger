@@ -15,6 +15,7 @@ import {
   IProjectIndexMetadata,
 } from './types';
 import { createColumnSetState } from '../ColumnsState/utils';
+import { createAggsSetState } from '../AggsState/utils';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
@@ -94,7 +95,7 @@ export const createNewIndex = (es: Client) => async (
       timestamp: timestamp(),
       active: true,
       config: {
-        'aggs-state': [],
+        'aggs-state': await createAggsSetState(es)({ esIndex, esType }),
         'columns-state': await createColumnSetState(es)({
           esIndex,
           esType,

@@ -12,7 +12,7 @@ export default async () => gql`
     saveAggsState(
       projectId: String!
       graphlField: String!
-      state: AggStateInput!
-    ): AggsState
+      state: [AggStateInput]!
+    ): [AggsState]
   }
 `;

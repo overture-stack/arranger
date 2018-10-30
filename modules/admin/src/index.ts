@@ -15,10 +15,10 @@ import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedM
 import mergedTypeDefs from './schemaTypeDefs';
 import { AdminApiConfig, IQueryContext } from './types';
 import {
+  createColumnsStateByIndexResolver,
   createExtendedMappingsByIndexResolver,
   createIndexByProjectResolver,
   createIndicesByProjectResolver,
-  createColumnsStateByIndexResolver,
 } from './resolvers';
 
 const createSchema = async () => {

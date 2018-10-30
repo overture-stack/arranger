@@ -95,15 +95,15 @@ export default class extends Component {
       body: {
         variables: { state },
         query: `
-        mutation($state: JSON!) {
-          saveAggsState(
-            state: $state
-            graphqlField: "${this.props.graphqlField}"
-          ) {
-            ${aggFields}
+          mutation($state: JSON!) {
+            saveAggsState(
+              state: $state
+              graphqlField: "${this.props.graphqlField}"
+            ) {
+              ${aggFields}
+            }
           }
-        }
-      `,
+        `,
       },
     });
 
