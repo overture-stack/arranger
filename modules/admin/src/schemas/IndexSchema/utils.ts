@@ -56,7 +56,7 @@ export const getProjectStorageMetadata = (es: Client) => async (
   }
 };
 
-const getProjectMetadata = (es: Client) => async (
+export const getProjectMetadata = (es: Client) => async (
   projectId: string,
 ): Promise<IIndexGqlModel[]> =>
   Promise.all(

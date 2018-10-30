@@ -4,6 +4,7 @@ import { IIndexGqlModel } from './schemas/IndexSchema/types';
 import { I_GqlExtendedFieldMapping } from './schemas/ExtendedMapping/types';
 import { I_ColumnSetState } from './schemas/ColumnsState/types';
 import { I_AggsSetState } from './schemas/AggsState/types';
+import { getProjectMetadata } from './schemas/IndexSchema/utils';
 
 export const createIndexByProjectResolver = (
   rootSchema: GraphQLSchema,
@@ -25,8 +26,8 @@ export const createIndicesByProjectResolver = (
   rootSchema: GraphQLSchema,
 ): I_MergeSchema<IIndexGqlModel[], {}> => ({
   fragment: `... on Project { id }`,
-  resolve: ({ id: projectId }, args, context, info) => {
-    return [];
+  resolve: ({ id: projectId }, args, { es }, info) => {
+    return getProjectMetadata(es)(projectId);
   },
 });
 

@@ -1,4 +1,4 @@
-enum EsTypes {
+export enum EsTypes {
   keyword = 'keyword',
   long = 'long',
   integer = 'integer',
