@@ -1,11 +1,3 @@
-import { Client } from 'elasticsearch';
-
-export const createClient = (esHost: string) =>
-  new Client({
-    host: esHost,
-    // log: 'trace',
-  });
-
 enum EsTypes {
   keyword = 'keyword',
   long = 'long',
@@ -35,17 +27,51 @@ enum EsTypes {
   join = 'join',
 }
 
-interface EsFieldMapping {
+interface FieldMappingBase {
   type: EsTypes;
+}
+
+interface ScalarFieldMapping extends FieldMappingBase {
+  type:
+    | EsTypes.keyword
+    | EsTypes.long
+    | EsTypes.integer
+    | EsTypes.short
+    | EsTypes.byte
+    | EsTypes.double
+    | EsTypes.float
+    | EsTypes.half_float
+    | EsTypes.scaled_float
+    | EsTypes.boolean
+    | EsTypes.binary;
   fields?: {
-    [key: string]: EsFieldMapping;
+    [key: string]: { [key: string]: {} };
   };
-  properties?: {
+}
+
+interface DateFieldMapping extends FieldMappingBase {
+  type: EsTypes.date;
+  format: string;
+}
+
+interface NestedFieldMapping extends FieldMappingBase {
+  type: EsTypes.nested;
+  properties: {
     [key: string]: EsFieldMapping;
   };
 }
 
-interface EsMapping {
+interface ObjectTypeMapping {
+  [key: string]: ScalarFieldMapping;
+}
+
+type EsFieldMapping =
+  | ObjectTypeMapping
+  | NestedFieldMapping
+  | DateFieldMapping
+  | ScalarFieldMapping;
+
+export interface EsMapping {
   [key: string]: {
     mappings: {
       [key: string]: {
@@ -59,17 +85,3 @@ interface EsMapping {
     };
   };
 }
-
-export const getEsMapping = (es: Client) => async ({
-  esIndex,
-  esType,
-}: {
-  esIndex: string;
-  esType: string;
-}): Promise<EsMapping> => {
-  const response = await es.indices.getMapping({
-    index: esIndex,
-    type: esType,
-  });
-  return response;
-};

@@ -2,9 +2,9 @@ import { Client } from 'elasticsearch';
 import { mappingToAggsState } from '@arranger/mapping-utils';
 import {
   I_AggsSetState,
+  I_AggsState,
   I_AggsStateQueryInput,
   I_SaveAggsStateMutationInput,
-  I_AggsState,
 } from './types';
 import { timestamp } from '../../services';
 import { getProjectStorageMetadata } from '../IndexSchema/utils';
