@@ -3,6 +3,7 @@ import { I_MergeSchema } from './types';
 import { IIndexGqlModel } from './schemas/IndexSchema/types';
 import { I_GqlExtendedFieldMapping } from './schemas/ExtendedMapping/types';
 import { I_ColumnSetState } from './schemas/ColumnsState/types';
+import { I_AggsSetState } from './schemas/AggsState/types';
 
 export const createIndexByProjectResolver = (
   rootSchema: GraphQLSchema,
@@ -54,6 +55,22 @@ export const createColumnsStateByIndexResolver = (
       schema: collumnsStateSchema,
       operation: 'query',
       fieldName: 'columnsState',
+      args: { projectId, graphqlField },
+      context,
+      info,
+    });
+  },
+});
+
+export const createAggsStateByIndexResolver = (
+  aggsStateSchema: GraphQLSchema,
+): I_MergeSchema<I_AggsSetState> => ({
+  fragment: `... on Index { projectId graphqlField }`,
+  resolve: ({ projectId, graphqlField }, {}, context, info) => {
+    return info.mergeInfo.delegateToSchema({
+      schema: aggsStateSchema,
+      operation: 'query',
+      fieldName: 'aggsState',
       args: { projectId, graphqlField },
       context,
       info,

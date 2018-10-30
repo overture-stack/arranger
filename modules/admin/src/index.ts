@@ -15,6 +15,7 @@ import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedM
 import mergedTypeDefs from './schemaTypeDefs';
 import { AdminApiConfig, IQueryContext } from './types';
 import {
+  createAggsStateByIndexResolver,
   createColumnsStateByIndexResolver,
   createExtendedMappingsByIndexResolver,
   createIndexByProjectResolver,
@@ -47,6 +48,7 @@ const createSchema = async () => {
       Index: {
         extended: createExtendedMappingsByIndexResolver(extendedMappingShema),
         columnsState: createColumnsStateByIndexResolver(collumnsStateSchema),
+        aggsState: createAggsStateByIndexResolver(aggsStateSchema),
       },
     } as IResolversParameter,
   });
