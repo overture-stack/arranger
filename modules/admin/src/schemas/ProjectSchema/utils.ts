@@ -52,6 +52,7 @@ export const removeArrangerProject = (es: Client) => async (
       index: ARRANGER_PROJECT_INDEX,
       type: ARRANGER_PROJECT_TYPE,
       id: id,
+      refresh: true,
     });
     return existingProject;
   } else {

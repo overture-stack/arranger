@@ -167,6 +167,7 @@ export const removeProjectIndex = (es: Client) => async ({
     await es.delete({
       ...getProjectMetadataEsLocation(projectId),
       id: removedIndexMetadata.esIndex as string,
+      refresh: true,
     });
     return removedIndexMetadata;
   } catch (err) {

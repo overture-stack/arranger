@@ -102,6 +102,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
           },
         },
       },
+      refresh: true,
     });
 
     return newIndexExtendedMappingFields.find(
