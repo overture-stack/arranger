@@ -5,6 +5,7 @@ export default gql`
     aggsState: AggsState
     columnsState: ColumnSetState
     extended(field: String): [ExtendedFieldMapping]
+    matchBoxState: MatchBoxState
   }
 
   extend type Project {

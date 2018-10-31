@@ -12,6 +12,7 @@ enum E_ExtendedFieldType {
   double = 'double',
   integer = 'integer',
   float = 'float',
+  nested = 'nested',
 }
 
 enum E_NumericTypeUnit {

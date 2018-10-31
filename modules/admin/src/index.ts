@@ -10,6 +10,7 @@ import { createClient as createElasticsearchClient } from './services/elasticsea
 import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
 import { createSchema as createIndexSchema } from './schemas/IndexSchema';
 import { createSchema as createAggsStateSchema } from './schemas/AggsState';
+import { createSchema as createMatchboxStateSchema } from './schemas/MatchboxState';
 import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
 import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
 import mergedTypeDefs from './schemaTypeDefs';
@@ -20,6 +21,7 @@ import {
   createExtendedMappingsByIndexResolver,
   createIndexByProjectResolver,
   createIndicesByProjectResolver,
+  createMatchBoxStateByIndexResolver,
 } from './resolvers';
 
 const createSchema = async () => {
@@ -29,6 +31,7 @@ const createSchema = async () => {
   const aggsStateSchema = await createAggsStateSchema();
   const collumnsStateSchema = await createColumnsStateSchema();
   const extendedMappingShema = await createExtendedMappingSchema();
+  const matchBoxStateSchema = await createMatchboxStateSchema();
   const indexSchema = await createIndexSchema();
 
   const mergedSchema = mergeSchemas({
@@ -38,6 +41,7 @@ const createSchema = async () => {
       aggsStateSchema,
       collumnsStateSchema,
       extendedMappingShema,
+      matchBoxStateSchema,
       print(typeDefs),
     ],
     resolvers: {
@@ -49,6 +53,7 @@ const createSchema = async () => {
         extended: createExtendedMappingsByIndexResolver(extendedMappingShema),
         columnsState: createColumnsStateByIndexResolver(collumnsStateSchema),
         aggsState: createAggsStateByIndexResolver(aggsStateSchema),
+        matchBoxState: createMatchBoxStateByIndexResolver(matchBoxStateSchema),
       },
     } as IResolversParameter,
   });

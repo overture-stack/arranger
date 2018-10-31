@@ -15,6 +15,7 @@ export default async () => gql`
     double
     integer
     float
+    nested
   }
   enum NumericTypeUnit {
     ${convert().measures()}

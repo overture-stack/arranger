@@ -4,19 +4,20 @@ import {
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
 } from './types';
+import { getMatchBoxState, saveMatchBoxState } from './utils';
 
 const matchBoxStateQueryResolver: Resolver<
   I_MatchBoxState,
   I_MatchBoxStateQueryInput
 > = (_, args, { es }, info) => {
-  return null;
+  return getMatchBoxState(es)(args);
 };
 
 const saveMatchBoxStateMutationResolver: Resolver<
   I_MatchBoxState,
   I_SaveMatchBoxStateMutationInput
 > = (_, args, { es }, info) => {
-  return null;
+  return saveMatchBoxState(es)(args);
 };
 
 export default {

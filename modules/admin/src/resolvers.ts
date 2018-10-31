@@ -5,6 +5,7 @@ import { I_GqlExtendedFieldMapping } from './schemas/ExtendedMapping/types';
 import { I_ColumnSetState } from './schemas/ColumnsState/types';
 import { I_AggsSetState } from './schemas/AggsState/types';
 import { getProjectMetadata } from './schemas/IndexSchema/utils';
+import { I_MatchBoxState } from './schemas/MatchboxState/types';
 
 export const createIndexByProjectResolver = (
   rootSchema: GraphQLSchema,
@@ -72,6 +73,22 @@ export const createAggsStateByIndexResolver = (
       schema: aggsStateSchema,
       operation: 'query',
       fieldName: 'aggsState',
+      args: { projectId, graphqlField },
+      context,
+      info,
+    });
+  },
+});
+
+export const createMatchBoxStateByIndexResolver = (
+  matchBoxSchema: GraphQLSchema,
+): I_MergeSchema<I_MatchBoxState> => ({
+  fragment: `... on Index { projectId graphqlField }`,
+  resolve: ({ projectId, graphqlField }, {}, context, info) => {
+    return info.mergeInfo.delegateToSchema({
+      schema: matchBoxSchema,
+      operation: 'query',
+      fieldName: 'matchBoxState',
       args: { projectId, graphqlField },
       context,
       info,

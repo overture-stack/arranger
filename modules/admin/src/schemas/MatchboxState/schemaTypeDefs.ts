@@ -9,7 +9,7 @@ export default async () => gql`
     field: String
     isActive: Boolean
     keyField: String
-    searchFields: String[]
+    searchFields: [String]
   }
 
   type Query {
