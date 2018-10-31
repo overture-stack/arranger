@@ -43,7 +43,7 @@ const mappingExistsOn = (es: Client) => async ({
 
 export const getProjectStorageMetadata = (es: Client) => async (
   projectId: string,
-): Promise<Array<IProjectIndexMetadata>> => {
+): Promise<IProjectIndexMetadata[]> => {
   try {
     const {
       hits: { hits },
