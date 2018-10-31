@@ -4,14 +4,15 @@ import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import { EsIndexLocation } from '../types';
 import {
-  getProjectMetadataEsLocation,
   getProjectStorageMetadata,
+  updateProjectIndexMetadata,
 } from '../IndexSchema/utils';
 import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
   I_UpdateExtendedMappingMutationArgs,
 } from './types';
+import { IProjectIndexMetadata } from '../IndexSchema/types';
 
 export const createExtendedMapping = (es: Client) => async ({
   esIndex,
@@ -92,17 +93,17 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
           : field,
     );
 
-    await es.update({
-      ...getProjectMetadataEsLocation(projectId),
-      id: currentIndexMetadata.index,
-      body: {
-        doc: {
-          config: {
-            extended: newIndexExtendedMappingFields,
-          },
-        },
+    const newProjectIndexMetadata: IProjectIndexMetadata = {
+      ...currentIndexMetadata,
+      config: {
+        ...currentIndexMetadata.config,
+        extended: newIndexExtendedMappingFields,
       },
-      refresh: true,
+    };
+
+    await updateProjectIndexMetadata(es)({
+      projectId,
+      metaData: newProjectIndexMetadata,
     });
 
     return newIndexExtendedMappingFields.find(

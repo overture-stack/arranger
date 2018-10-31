@@ -120,7 +120,7 @@ export const createNewIndex = (es: Client) => async (
   }
 };
 
-// pretty bad, since we're just taking anything right now, but at least graphQl will ensure `metaData` is typed in runtime
+// pretty bad, since we're just taking anything right now in run time, but at least graphQl will ensure `metaData` is typed in runtime
 export const updateProjectIndexMetadata = (es: Client) => async ({
   projectId,
   metaData,
