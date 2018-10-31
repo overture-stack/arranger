@@ -102,6 +102,7 @@ class DatesAgg extends React.Component {
             placeholderText="Start Date"
             selected={startDate}
             onChange={x => this.setState({ startDate: x }, this.updateSqon)}
+            aria-label={`Pick start date`}
           />
           <DatePicker
             {...{ minDate, maxDate }}
@@ -112,6 +113,7 @@ class DatesAgg extends React.Component {
             placeholderText="End Date"
             selected={endDate}
             onChange={x => this.setState({ endDate: x }, this.updateSqon)}
+            aria-label={`Pick end date`}
           />
         </div>
       </AggsWrapper>

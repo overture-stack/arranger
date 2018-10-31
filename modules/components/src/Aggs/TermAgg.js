@@ -172,6 +172,7 @@ const TermAgg = ({
                     setSearchText(value || '')
                   }
                   setSearchText={setSearchText}
+                  aria-label={`Search data`}
                 />
                 {showingMore &&
                   isMoreEnabled && (
@@ -239,6 +240,7 @@ const TermAgg = ({
                       field: dotField,
                       value: bucket.name,
                     })}
+                    aria-label={`Select ${bucket.name}`}
                     id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                     name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   />

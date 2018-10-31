@@ -165,6 +165,7 @@ const MatchBox = ({
                 placeholder={placeholderText}
                 value={searchText}
                 onChange={onTextChange}
+                aria-label={`Match box`}
               />
               <div className="match-box-upload-instruction-text">
                 {uploadInstructionText}
@@ -181,6 +182,7 @@ const MatchBox = ({
                     top: -10000px;
                     left: 0px;
                   `}
+                  aria-label={`File upload`}
                   accept=".tsv,.csv,text/*"
                   ref={inputRef}
                   multiple

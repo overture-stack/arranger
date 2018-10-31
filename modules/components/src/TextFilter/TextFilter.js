@@ -36,12 +36,15 @@ const TextFilter = ({
     placeholder={placeholder}
     value={value}
     onChange={e => {
-      const { target: { value } } = e;
+      const {
+        target: { value },
+      } = e;
       onChange({
         value,
         generateNextSQON: generateNextSQON(value),
       });
     }}
+    aria-label={`Data filter`}
     {...props}
   />
 );
