@@ -2,11 +2,13 @@ import { Resolver } from '../types';
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
 import { I_ColumnSetState } from '../ColumnsState/types';
 import { I_AggsSetState } from '../AggsState/types';
+import { I_MatchBoxState } from '../MatchboxState/types';
 
 export interface IProjectIndexConfigs {
   'aggs-state': I_AggsSetState;
   'columns-state': I_ColumnSetState;
-  extended: Array<I_GqlExtendedFieldMapping>;
+  'matchbox-state': I_MatchBoxState;
+  extended: I_GqlExtendedFieldMapping[];
 }
 
 export interface IProjectIndexMetadata {

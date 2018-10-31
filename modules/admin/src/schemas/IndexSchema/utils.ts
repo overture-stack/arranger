@@ -16,6 +16,7 @@ import {
 } from './types';
 import { createColumnSetState } from '../ColumnsState/utils';
 import { createAggsSetState } from '../AggsState/utils';
+import { createMatchboxState } from '../MatchboxState/utils';
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
@@ -99,6 +100,10 @@ export const createNewIndex = (es: Client) => async (
         'columns-state': await createColumnSetState(es)({
           esIndex,
           esType,
+        }),
+        'matchbox-state': createMatchboxState({
+          graphqlField,
+          extendedFields: extendedMapping,
         }),
         extended: extendedMapping,
       },
