@@ -2,9 +2,9 @@ import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '@arrang
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
 import {
   I_MatchBoxField,
+  I_MatchBoxState,
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
-  I_MatchBoxState,
 } from './types';
 import { Client } from 'elasticsearch';
 import {
