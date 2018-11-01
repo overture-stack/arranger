@@ -1,18 +1,18 @@
 import {
   EsTypes,
+  EsFieldMapping,
+  EsMapping,
   FieldMappingBase,
-  ScalarFieldMapping,
   DateFieldMapping,
   NestedFieldMapping,
   ObjectTypeMapping,
-  EsFieldMapping,
-  EsMapping,
-} from './services/elasticsearch/types';
+  ScalarFieldMapping,
+} from './src/services/elasticsearch/types';
 
 import {
   IProjectQueryInput,
   IArrangerProject,
-} from './schemas/ProjectSchema/types';
+} from './src/schemas/ProjectSchema/types';
 
 import {
   I_ProjectIndexConfigsUpdateDoc,
@@ -23,14 +23,14 @@ import {
   INewIndexInput,
   IProjectIndexConfigs,
   IProjectIndexMetadata,
-} from './schemas/IndexSchema/types';
+} from './src/schemas/IndexSchema/types';
 
 import {
   I_ExtendedFieldMappingInput,
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
   I_UpdateExtendedMappingMutationArgs,
-} from './schemas/ExtendedMapping/types';
+} from './src/schemas/ExtendedMapping/types';
 
 import {
   I_Column,
@@ -42,7 +42,7 @@ import {
   I_ColumnSort,
   I_ColumnSortInput,
   I_ColumnStateInput,
-} from './schemas/ColumnsState/types';
+} from './src/schemas/ColumnsState/types';
 
 import {
   I_AggsSetState,
@@ -50,7 +50,7 @@ import {
   I_AggsStateInput,
   I_AggsStateQueryInput,
   I_SaveAggsStateMutationInput,
-} from './schemas/AggsState/types';
+} from './src/schemas/AggsState/types';
 
 import {
   I_MatchBoxField,
@@ -58,7 +58,7 @@ import {
   I_MatchBoxState,
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
-} from './schemas/MatchboxState/types';
+} from './src/schemas/MatchboxState/types';
 
 export {
   EsTypes,
