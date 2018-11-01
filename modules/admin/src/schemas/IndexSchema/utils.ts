@@ -13,6 +13,7 @@ import {
   IIndexRemovalMutationInput,
   INewIndexInput,
   IProjectIndexMetadata,
+  I_ProjectIndexMetadataUpdateDoc,
 } from './types';
 import { createColumnSetState } from '../ColumnsState/utils';
 import { createAggsSetState } from '../AggsState/utils';
@@ -131,7 +132,7 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
   metaData,
 }: {
   projectId: string;
-  metaData: IProjectIndexMetadata;
+  metaData: I_ProjectIndexMetadataUpdateDoc;
 }): Promise<IProjectIndexMetadata> => {
   await es.update({
     ...getProjectMetadataEsLocation(projectId),
@@ -141,7 +142,10 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
     },
     refresh: true,
   });
-  return metaData;
+  const output = (await getProjectStorageMetadata(es)(projectId)).find(
+    i => i.name === metaData.name,
+  );
+  return output;
 };
 
 export const getProjectIndex = (es: Client) => async ({

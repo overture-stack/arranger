@@ -20,6 +20,22 @@ export interface IProjectIndexMetadata {
   timestamp: string;
 }
 
+export interface I_ProjectIndexConfigsUpdateDoc {
+  'aggs-state'?: I_AggsSetState;
+  'columns-state'?: I_ColumnSetState;
+  'matchbox-state'?: I_MatchBoxState;
+  extended?: I_GqlExtendedFieldMapping[];
+}
+
+export interface I_ProjectIndexMetadataUpdateDoc {
+  index: string;
+  name: string;
+  // esType?: string;
+  config?: I_ProjectIndexConfigsUpdateDoc;
+  active?: boolean;
+  // timestamp?: string;
+}
+
 export interface IIndexGqlModel {
   id: Resolver<string>;
   hasMapping: Resolver<boolean>;

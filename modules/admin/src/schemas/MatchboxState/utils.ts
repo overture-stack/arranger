@@ -57,9 +57,9 @@ export const saveMatchBoxState = (es: Client) => async ({
   await updateProjectIndexMetadata(es)({
     projectId,
     metaData: {
-      ...currentMetadata,
+      index: currentMetadata.index,
+      name: currentMetadata.name,
       config: {
-        ...currentMetadata.config,
         'matchbox-state': newMatchboxState,
       },
     },

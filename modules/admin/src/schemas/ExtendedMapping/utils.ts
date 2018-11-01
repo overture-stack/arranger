@@ -12,7 +12,6 @@ import {
   I_GqlExtendedFieldMapping,
   I_UpdateExtendedMappingMutationArgs,
 } from './types';
-import { IProjectIndexMetadata } from '../IndexSchema/types';
 
 export const createExtendedMapping = (es: Client) => async ({
   esIndex,
@@ -93,17 +92,15 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
           : field,
     );
 
-    const newProjectIndexMetadata: IProjectIndexMetadata = {
-      ...currentIndexMetadata,
-      config: {
-        ...currentIndexMetadata.config,
-        extended: newIndexExtendedMappingFields,
-      },
-    };
-
     await updateProjectIndexMetadata(es)({
       projectId,
-      metaData: newProjectIndexMetadata,
+      metaData: {
+        index: currentIndexMetadata.index,
+        name: currentIndexMetadata.index,
+        config: {
+          extended: newIndexExtendedMappingFields,
+        },
+      },
     });
 
     return newIndexExtendedMappingFields.find(
