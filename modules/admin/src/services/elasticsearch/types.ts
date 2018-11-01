@@ -27,11 +27,11 @@ export enum EsTypes {
   join = 'join',
 }
 
-interface FieldMappingBase {
+export interface FieldMappingBase {
   type: EsTypes;
 }
 
-interface ScalarFieldMapping extends FieldMappingBase {
+export interface ScalarFieldMapping extends FieldMappingBase {
   type:
     | EsTypes.keyword
     | EsTypes.long
@@ -49,23 +49,23 @@ interface ScalarFieldMapping extends FieldMappingBase {
   };
 }
 
-interface DateFieldMapping extends FieldMappingBase {
+export interface DateFieldMapping extends FieldMappingBase {
   type: EsTypes.date;
   format: string;
 }
 
-interface NestedFieldMapping extends FieldMappingBase {
+export interface NestedFieldMapping extends FieldMappingBase {
   type: EsTypes.nested;
   properties: {
     [key: string]: EsFieldMapping;
   };
 }
 
-interface ObjectTypeMapping {
+export interface ObjectTypeMapping {
   [key: string]: ScalarFieldMapping;
 }
 
-type EsFieldMapping =
+export type EsFieldMapping =
   | ObjectTypeMapping
   | NestedFieldMapping
   | DateFieldMapping
