@@ -8,12 +8,12 @@ import { createExtendedMapping } from '../ExtendedMapping/utils';
 import { getArrangerProjects } from '../ProjectSchema/utils';
 import { EsIndexLocation } from '../types';
 import {
+  I_ProjectIndexMetadataUpdateDoc,
   IIndexGqlModel,
   IIndexQueryInput,
   IIndexRemovalMutationInput,
   INewIndexInput,
   IProjectIndexMetadata,
-  I_ProjectIndexMetadataUpdateDoc,
 } from './types';
 import { createColumnSetState } from '../ColumnsState/utils';
 import { createAggsSetState } from '../AggsState/utils';
