@@ -1,1 +1,2 @@
-export default x => x.hits.hits.map(x => x._source);
+import { mapHits } from '@arranger/mapping-utils';
+export default mapHits;
