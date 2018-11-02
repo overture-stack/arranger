@@ -1,4 +1,22 @@
 import * as React from 'react';
+import { EsMapping, EsTypes } from '@arranger/admin';
+
+const something: EsMapping = {
+  asdf: {
+    mappings: {
+      asdf: {
+        properties: {
+          sdfg: {
+            type: EsTypes.nested,
+            properties: {},
+          },
+        },
+      },
+    },
+  },
+};
+
+console.log('something: ', something);
 
 const App = () => {
   return (
