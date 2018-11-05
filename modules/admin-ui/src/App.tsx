@@ -1,33 +1,43 @@
 import * as React from 'react';
-import { EsMapping, EsTypes } from '@arranger/admin';
+import { Provider } from 'react-redux';
+import { BrowserRouter, Route } from 'react-router-dom';
+import ApolloClient from 'apollo-boost';
+import { ApolloProvider } from 'react-apollo';
+import { Store } from 'redux';
+import { ThemeProvider } from 'mineral-ui/themes';
 
-const something: EsMapping = {
-  asdf: {
-    mappings: {
-      asdf: {
-        properties: {
-          sdfg: {
-            type: EsTypes.nested,
-            properties: {},
-          },
-        },
-      },
-    },
-  },
-};
+import localStore from './store';
+import VersionsDashboard from './pages/VersionDashboard';
+import Header from './components/Header';
 
-console.log('something: ', something);
+const App = ({
+  basename = '',
+  store = localStore,
+}: {
+  basename?: string;
+  store?: Store;
+}) => {
+  const client = new ApolloClient({
+    uri:
+      process.env.REACT_APP_ARRANGER_ADMIN_ROOT ||
+      'http://localhost:5050/admin/graphql',
+  });
 
-const App = () => {
+  const RoutedVersionDashboard = () => <VersionsDashboard />;
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1 className="App-title">Welcome to React</h1>
-      </header>
-      <p className="App-intro">
-        To get started, edit <code>src/App.tsx</code> and save to reload.
-      </p>
-    </div>
+    <Provider store={store}>
+      <ApolloProvider client={client}>
+        <BrowserRouter basename={basename}>
+          <ThemeProvider>
+            <div>
+              <Header />
+              <Route path="/" render={RoutedVersionDashboard} />
+            </div>
+          </ThemeProvider>
+        </BrowserRouter>
+      </ApolloProvider>
+    </Provider>
   );
 };
 
