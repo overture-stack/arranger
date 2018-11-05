@@ -1,5 +1,10 @@
 import * as React from 'react';
 import Link from 'mineral-ui/Link';
+import styled from 'react-emotion';
+
+const StyledLink = styled(Link)`
+  cursor: pointer;
+`;
 
 export interface TableCellRenderProp {
   props: {
@@ -24,7 +29,7 @@ export default ({
   const onLinkClick = () => onClick(props);
   return (
     <td>
-      <Link onClick={onLinkClick}>{props.props.children}</Link>
+      <StyledLink onClick={onLinkClick}>{props.props.children}</StyledLink>
     </td>
   );
 };
