@@ -9,12 +9,21 @@ export interface IReduxAction {
   payload: any;
 }
 
-const initialState = {
+export interface State {
+  currentProject: string;
+}
+
+const initialState: State = {
   currentProject: '',
 };
 
-const reducers = (state = initialState, action: IReduxAction) => {
+const reducers = (state = initialState, action: IReduxAction): State => {
   switch (action.type) {
+    case ActionType.PROJECT_SELECT:
+      return {
+        ...state,
+        currentProject: action.payload.projectId,
+      };
     default:
       return state;
   }
