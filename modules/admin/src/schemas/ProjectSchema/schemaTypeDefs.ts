@@ -14,6 +14,6 @@ export default async () => gql`
 
   type Mutation {
     newProject(id: String!): Project
-    deleteProject(id: String!): Project
+    deleteProject(id: String!): [Project]
   }
 `;
