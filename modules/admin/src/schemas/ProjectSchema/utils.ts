@@ -43,7 +43,7 @@ export const addArrangerProject = (es: Client) => async (
 
 export const removeArrangerProject = (es: Client) => async (
   id: string,
-): Promise<IArrangerProject> => {
+): Promise<IArrangerProject[]> => {
   const existingProject = (await getArrangerProjects(es)).find(
     ({ id: _id }) => id === _id,
   );
@@ -54,7 +54,7 @@ export const removeArrangerProject = (es: Client) => async (
       id: id,
       refresh: true,
     });
-    return existingProject;
+    return getArrangerProjects(es);
   } else {
     return Promise.reject(`No project with id ${id} was found`);
   }

@@ -5,11 +5,11 @@ import 'react-table/react-table.css';
 import { compose } from 'recompose';
 import { THoc } from 'src/utils';
 import { connect } from 'react-redux';
-import Table from 'mineral-ui/Table';
-import {
-  default as ClickableCell,
-  TableCellRenderProp,
-} from '../../components/ClickableTableCell';
+import Table, { TableRow, TableCell } from 'mineral-ui/Table';
+import Link from 'mineral-ui/Link';
+import styled from 'react-emotion';
+
+import ProjectDeleteButton from './DeleteButton';
 
 /************************
  * provides graphql query
@@ -62,7 +62,7 @@ const withClientState: THoc<{}, TPropsFromRedux> = connect(
   }),
 );
 
-/************************
+/*************************
  * Visual Component
  *************************/
 type TVersionDashboardDisplayInjectedProps = IPropsFromGql & TPropsFromRedux;
@@ -75,20 +75,36 @@ const Renderable: React.ComponentType<
     id: project.id,
     indexCount: project.indices.length,
   }));
-  const onCellClick = (props: TableCellRenderProp) =>
-    onVersionSelect(props.props.children as string);
-  const CustomCell = (props: TableCellRenderProp) => (
-    <ClickableCell props={props} onClick={onCellClick} />
-  );
+
+  const rows = columnsData.map(entry => ({
+    row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
+      const StyledLink = styled(Link)`
+        cursor: pointer;
+      `;
+      return (
+        <TableRow>
+          <TableCell onClick={onIdClick}>
+            <StyledLink>{data.id}</StyledLink>
+          </TableCell>
+          <TableCell>{data.indexCount}</TableCell>
+          <TableCell>
+            <ProjectDeleteButton projectId={data.id} />
+          </TableCell>
+        </TableRow>
+      );
+    },
+  }));
+
   return (
     <Table
       title="Project versions"
-      sortable={true}
+      rowKey="id"
       columns={[
-        { content: 'Project Id', key: 'id', cell: CustomCell },
+        { content: 'Project Id', key: 'id' },
         { content: 'Index Counts', key: 'indexCount' },
+        { content: 'Delete', key: 'delete' },
       ]}
-      data={columnsData}
+      data={rows}
     />
   );
 };
