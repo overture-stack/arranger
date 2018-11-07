@@ -10,14 +10,19 @@ import { FormField } from 'mineral-ui/Form';
 import TextInput from 'mineral-ui/TextInput';
 import Button from 'mineral-ui/Button';
 import Grid, { GridItem } from 'mineral-ui/Grid';
-import { IRenderableProps, INewIndexInput } from './types';
+import { ILayoutProps, INewIndexInput } from './types';
 
 const StyledCard = styled(Card)`
   width: 1000px;
   max-width: 100%;
 `;
 
-const Layout: React.ComponentType<IRenderableProps> = props => {
+interface IIndexConfigArgs {
+  position: number;
+  index: INewIndexInput;
+}
+
+const Layout: React.ComponentType<ILayoutProps> = props => {
   const {
     formState: {
       mutations: { setProjectId, addIndex, setIndexConfig, removeIndex },
@@ -31,7 +36,8 @@ const Layout: React.ComponentType<IRenderableProps> = props => {
     setProjectId(e.currentTarget.value);
   const onSubmit = () =>
     addProject({
-      variables: { projectId, indexConfig: indices },
+      projectId,
+      indexConfigs: indices,
     }).then(onCancel);
 
   const onIndexAddClick = () =>
@@ -41,11 +47,6 @@ const Layout: React.ComponentType<IRenderableProps> = props => {
       esIndex: '',
       esType: '',
     });
-
-  interface IIndexConfigArgs {
-    position: number;
-    index: INewIndexInput;
-  }
 
   const onIndexGraphqlFieldChange = (arg: IIndexConfigArgs) => (
     e: React.SyntheticEvent<HTMLInputElement>,
@@ -101,7 +102,7 @@ const Layout: React.ComponentType<IRenderableProps> = props => {
               <GridItem>
                 <FormField
                   input={TextInput}
-                  label="ES index"
+                  label="ES Index"
                   size="medium"
                   value={index.esIndex}
                   onChange={onIndexEsIndexChange({ position, index })}
@@ -128,6 +129,7 @@ const Layout: React.ComponentType<IRenderableProps> = props => {
             </Grid>
           </React.Fragment>
         ))}
+        <CardDivider />
         <Grid>
           <GridItem>
             <Button onClick={onIndexAddClick} size="medium">

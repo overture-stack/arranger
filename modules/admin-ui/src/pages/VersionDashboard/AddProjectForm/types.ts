@@ -1,5 +1,3 @@
-import { MutationFn } from 'react-apollo';
-
 /********
  * Server data types
  ********/
@@ -16,10 +14,11 @@ export interface IMutationResponseData {
 }
 export interface IMutationVariables {
   projectId: string;
-  indexConfig: INewIndexInput[];
+  indexConfigs: INewIndexInput[];
 }
 export interface IPropsWithMutation {
-  addProject: MutationFn<IMutationResponseData, IMutationVariables>;
+  // addProject: MutationFn<IMutationResponseData, IMutationVariables>;
+  addProject: (args: IMutationVariables) => Promise<void>;
 }
 
 /********
@@ -51,4 +50,4 @@ export interface IInjectedProps extends IFormStateProps, IPropsWithMutation {}
 export interface IExternalProps {
   onCancel: () => void;
 }
-export interface IRenderableProps extends IInjectedProps, IExternalProps {}
+export interface ILayoutProps extends IInjectedProps, IExternalProps {}
