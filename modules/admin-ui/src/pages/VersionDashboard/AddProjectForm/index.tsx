@@ -80,29 +80,17 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
   );
 };
 
-/*****************
- * Provides server mutation to add indices
- *****************/
-// const withIndexAddmutation: THoc<
-//   {},
-//   I
-// >
-
-/*****************
- * Provides server mutation to add index
- *****************/
-const withAddProjectMutation: THoc<
-  {},
-  IPropsWithMutation
-> = Wrapped => props => {
-  const ADD_PROJECT_MUTATION = gql`
-    mutation($projectId: String!) {
-      newProject(id: $projectId) {
-        id
-      }
-    }
-  `;
-  const ADD_PROJECT_INDEX_MUTATION = gql`
+/******************
+ * Provides server mutation to add multiple indices given a project
+ ******************/
+const ProjectIndicesMutationProvider: React.ComponentType<{
+  children: (
+    {
+      createNewProjectIndex,
+    }: { createNewProjectIndex: MutationFn<{}, INewIndexInput> },
+  ) => React.ReactNode;
+}> = ({ children }) => {
+  const MUTATION = gql`
     mutation(
       $projectId: String!
       $graphqlField: String!
@@ -115,6 +103,29 @@ const withAddProjectMutation: THoc<
         esIndex: $esIndex
         esType: $esType
       ) {
+        id
+      }
+    }
+  `;
+  return (
+    <Mutation mutation={MUTATION}>
+      {(applyMutation: MutationFn<{}, INewIndexInput>) =>
+        children({ createNewProjectIndex: applyMutation })
+      }
+    </Mutation>
+  );
+};
+
+/*****************
+ * Provides server transaction to add index
+ *****************/
+const withAddProjectMutation: THoc<
+  {},
+  IPropsWithMutation
+> = Wrapped => props => {
+  const NEW_PROJECT_MUTATION = gql`
+    mutation($projectId: String!) {
+      newProject(id: $projectId) {
         id
       }
     }
@@ -136,21 +147,28 @@ const withAddProjectMutation: THoc<
     });
   };
   return (
-    <Mutation mutation={ADD_PROJECT_MUTATION} update={updateCache}>
-      {createNewProject => (
-        <Mutation mutation={ADD_PROJECT_INDEX_MUTATION}>
-          {createNewProjectIndex => {
-            const addProject: MutationFn<
-              IMutationResponseData,
-              IMutationVariables
-            > = createNewProject;
-            // const addProject = (args: IMutationVariables) => {
-            //   return createNewProject({variables: args});
-            // };
-            return <Wrapped addProject={addProject} {...props} />;
-          }}
-        </Mutation>
-      )}
+    <Mutation mutation={NEW_PROJECT_MUTATION} update={updateCache}>
+      {createNewProject => {
+        return (
+          <ProjectIndicesMutationProvider>
+            {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
+              const addProject = async (args: IMutationVariables) => {
+                await createNewProject({
+                  variables: {
+                    projectId: args.projectId,
+                  },
+                });
+                args.indexConfigs.forEach(async indexConfig => {
+                  await createNewProjectIndex({
+                    variables: indexConfig,
+                  });
+                });
+              };
+              return <Wrapped addProject={addProject} {...props} />;
+            }}
+          </ProjectIndicesMutationProvider>
+        );
+      }}
     </Mutation>
   );
 };
