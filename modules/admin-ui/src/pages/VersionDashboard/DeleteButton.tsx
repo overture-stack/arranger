@@ -48,11 +48,7 @@ export default ({ projectId }: { projectId: string }) => {
     });
 
   return (
-    <Mutation
-      mutation={DELETE_PROJECT_MUTATION}
-      variables={{ projectId }}
-      update={updateCache}
-    >
+    <Mutation mutation={DELETE_PROJECT_MUTATION} update={updateCache}>
       {(deleteProject, { loading }) => (
         <Button
           variant="danger"
