@@ -1,3 +1,47 @@
+/****************
+ * Index data import struct
+ ****************/
+export interface IIndexConfigImportData {
+  aggsState?: Array<{
+    active: boolean;
+    field: string;
+    show: boolean;
+  }>;
+  columnsState?: {
+    type: string;
+    keyField: string;
+    defaultSorted: Array<{ id: string; desc: boolean }>;
+    columns: Array<{
+      accessor: string;
+      canChangeShow: boolean;
+      field: string;
+      jsonPath: string | null;
+      query: string | null;
+      show: boolean;
+      sortable: boolean;
+      type: string;
+    }>;
+  };
+  extended?: Array<{
+    active: boolean;
+    displayName: string;
+    displayValues: { [key: string]: string };
+    field: string;
+    isArray: boolean;
+    primaryKey: boolean;
+    quickSearchEnabled: boolean;
+    type: string;
+    unit: string | null;
+  }>;
+  matchboxState?: Array<{
+    displayName: string;
+    field: string;
+    isActive: boolean;
+    keyField: string;
+    searchFields: Array<string>;
+  }>;
+}
+
 /********
  * Server data types
  ********/
