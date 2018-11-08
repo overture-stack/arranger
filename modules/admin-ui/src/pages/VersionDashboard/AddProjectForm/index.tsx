@@ -30,6 +30,45 @@ interface IIndexConfigArgs {
   index: INewIndexInput;
 }
 
+const CONFIG_FILENAMES: {
+  aggsState: string;
+  columnsState: string;
+  extended: string;
+  matchboxState: string;
+} = {
+  aggsState: 'aggs-state.json',
+  columnsState: 'columns-state.json',
+  extended: 'extended.json',
+  matchboxState: 'matchbox-state.json',
+};
+
+const readFile = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    var reader = new FileReader();
+    reader.readAsText(file, 'UTF-8');
+    reader.onload = function(evt: any) {
+      resolve(evt.target.result);
+    };
+    reader.onerror = function(evt) {
+      reject();
+    };
+  });
+
+const extractAndValidate = (files: FileList) => {
+  const fileNames = Array.prototype.map.call(files, (file: File) => {
+    return file.name;
+  }) as string[];
+  const allValidNames =
+    fileNames.filter(name => Object.values(CONFIG_FILENAMES).includes(name))
+      .length === fileNames.length;
+  if (!allValidNames) {
+    throw new Error(
+      `File name must be one of: ${Object.values(CONFIG_FILENAMES).join(', ')}`,
+    );
+  }
+  return fileNames;
+};
+
 const Layout: React.ComponentType<ILayoutProps> = props => {
   const {
     formState: {
@@ -37,6 +76,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         setProjectId,
         addIndex,
         setIndexMutationInput,
+        setIndexConfig,
         removeIndex,
         setError,
       },
@@ -69,7 +109,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         esIndex: '',
         esType: '',
       },
-      config: {},
+      config: null,
     });
 
   const onIndexGraphqlFieldChange = (arg: IIndexConfigArgs) => (
@@ -95,6 +135,31 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
       ...arg.index,
       esType: e.currentTarget.value,
     });
+
+  const onFileUpload = ({ position }: { position: number }) => async (
+    e: React.SyntheticEvent<HTMLInputElement>,
+  ) => {
+    const files = e.currentTarget.files;
+    if (files) {
+      try {
+        const fileNames = extractAndValidate(files);
+        const fileContents = await Promise.all(Array.prototype.map.call(
+          files,
+          readFile,
+        ) as Array<Promise<string>>);
+        const dataContents = fileContents.map(s => JSON.parse(s));
+        files[0].name;
+        const filesCollection = fileNames.reduce(
+          (acc, name, i) => ({ ...acc, [name]: dataContents[i] }),
+          {},
+        );
+        console.log('filesCollection: ', filesCollection);
+      } catch (err) {
+        setIndexConfig(position)(null);
+        setError(err);
+      }
+    }
+  };
 
   const onIndexConfigRemoveClick = (position: number) => () =>
     removeIndex(position);
@@ -162,7 +227,13 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
                 />
               </GridItem>
               <GridItem span={2}>
-                <input type="file" />
+                <input
+                  type="file"
+                  onChange={onFileUpload({
+                    position,
+                  })}
+                  multiple={true}
+                />
               </GridItem>
               <GridItem span={1}>
                 <Button
