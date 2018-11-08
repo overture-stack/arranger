@@ -62,7 +62,7 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
             });
           },
           setIndexConfig: (indexPosition: number) => (
-            indexConfig: IProjectIndexConfig,
+            indexConfig: IProjectIndexConfig | null,
           ) => {
             setState({
               ...state,
@@ -83,7 +83,7 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               setTimeout(() => {
                 setState({ ...state, error: null });
                 resolve(error);
-              }, 3000);
+              }, 5000);
             });
           },
         };
