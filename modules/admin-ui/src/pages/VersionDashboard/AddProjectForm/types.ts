@@ -27,6 +27,7 @@ export interface IPropsWithMutation {
 export interface ILocalFormState {
   projectId: string;
   indices: INewIndexInput[];
+  error: Error | null;
 }
 export interface ILocalFormMutations {
   setProjectId: (id: string) => void;
@@ -35,6 +36,7 @@ export interface ILocalFormMutations {
   setIndexConfig: (
     indexPosition: number,
   ) => (indexConfig: INewIndexInput) => void;
+  setError: (error: Error) => Promise<Error>;
 }
 export interface IFormStateProps {
   formState: {
