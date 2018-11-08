@@ -36,7 +36,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
       mutations: {
         setProjectId,
         addIndex,
-        setIndexConfig,
+        setIndexMutationInput,
         removeIndex,
         setError,
       },
@@ -63,16 +63,19 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
 
   const onIndexAddClick = () =>
     addIndex({
-      projectId,
-      graphqlField: '',
-      esIndex: '',
-      esType: '',
+      newIndexMutationInput: {
+        projectId,
+        graphqlField: '',
+        esIndex: '',
+        esType: '',
+      },
+      config: {},
     });
 
   const onIndexGraphqlFieldChange = (arg: IIndexConfigArgs) => (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) =>
-    setIndexConfig(arg.position)({
+    setIndexMutationInput(arg.position)({
       ...arg.index,
       graphqlField: e.currentTarget.value,
     });
@@ -80,7 +83,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
   const onIndexEsIndexChange = (arg: IIndexConfigArgs) => (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) =>
-    setIndexConfig(arg.position)({
+    setIndexMutationInput(arg.position)({
       ...arg.index,
       esIndex: e.currentTarget.value,
     });
@@ -88,7 +91,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
   const onIndexEsTypeChange = (arg: IIndexConfigArgs) => (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) =>
-    setIndexConfig(arg.position)({
+    setIndexMutationInput(arg.position)({
       ...arg.index,
       esType: e.currentTarget.value,
     });
@@ -118,38 +121,50 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         {indices.map((index, position) => (
           <React.Fragment key={position}>
             <CardDivider />
-            <Grid alignItems="center">
-              <GridItem>
+            <Grid alignItems="center" columns={12}>
+              <GridItem span={3}>
                 <FormField
-                  required={!index.graphqlField.length}
+                  required={!index.newIndexMutationInput.graphqlField.length}
                   input={TextInput}
                   label="Name (aka. Graphql Field)"
                   size="medium"
-                  value={index.graphqlField}
-                  onChange={onIndexGraphqlFieldChange({ position, index })}
+                  value={index.newIndexMutationInput.graphqlField}
+                  onChange={onIndexGraphqlFieldChange({
+                    position,
+                    index: index.newIndexMutationInput,
+                  })}
                 />
               </GridItem>
-              <GridItem>
+              <GridItem span={3}>
                 <FormField
-                  required={!index.esIndex.length}
+                  required={!index.newIndexMutationInput.esIndex.length}
                   input={TextInput}
                   label="ES Index"
                   size="medium"
-                  value={index.esIndex}
-                  onChange={onIndexEsIndexChange({ position, index })}
+                  value={index.newIndexMutationInput.esIndex}
+                  onChange={onIndexEsIndexChange({
+                    position,
+                    index: index.newIndexMutationInput,
+                  })}
                 />
               </GridItem>
-              <GridItem>
+              <GridItem span={3}>
                 <FormField
-                  required={!index.esType.length}
+                  required={!index.newIndexMutationInput.esType.length}
                   input={TextInput}
                   label="ES type"
                   size="medium"
-                  value={index.esType}
-                  onChange={onIndexEsTypeChange({ index, position })}
+                  value={index.newIndexMutationInput.esType}
+                  onChange={onIndexEsTypeChange({
+                    position,
+                    index: index.newIndexMutationInput,
+                  })}
                 />
               </GridItem>
-              <GridItem>
+              <GridItem span={2}>
+                <input type="file" />
+              </GridItem>
+              <GridItem span={1}>
                 <Button
                   size="medium"
                   variant="danger"
