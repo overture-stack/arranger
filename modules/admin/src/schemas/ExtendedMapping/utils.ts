@@ -39,7 +39,7 @@ export const getExtendedMapping = (es: Client) => async ({
   field,
 }: I_ExtendedFieldsMappingsQueryArgs): Promise<I_GqlExtendedFieldMapping[]> => {
   const assertOutputType = (i: any): I_GqlExtendedFieldMapping => ({
-    gqlId: `${projectId}::${graphqlField}::${i.field}`,
+    gqlId: `${projectId}::${graphqlField}::extended::${i.field}`,
     field: i.field,
     type: i.type,
     displayName: i.displayName,
