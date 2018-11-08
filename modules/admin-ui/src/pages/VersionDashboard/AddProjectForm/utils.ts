@@ -1,4 +1,6 @@
 import { readFile } from 'src/utils';
+import { invert } from 'lodash';
+import { IIndexConfigImportData } from './types';
 
 const CONFIG_FILENAMES: {
   aggsState: string;
@@ -35,8 +37,9 @@ export const getFileContentCollection = async (files: FileList) => {
   ) as Array<Promise<string>>);
   const dataContents = fileContents.map(s => JSON.parse(s));
   files[0].name;
-  const filesCollection = fileNames.reduce(
-    (acc, name, i) => ({ ...acc, [name]: dataContents[i] }),
+  const configTypesMap = invert(CONFIG_FILENAMES);
+  const filesCollection: IIndexConfigImportData = fileNames.reduce(
+    (acc, name, i) => ({ ...acc, [configTypesMap[name]]: dataContents[i] }),
     {},
   );
   return filesCollection;
