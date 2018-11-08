@@ -1,6 +1,8 @@
 import express from 'express';
 import { Server } from 'http';
 import cors from 'cors';
+import adminGraphql from '@arranger/admin/dist';
+import { ES_HOST } from './utils/config';
 
 import { PORT } from './utils/config';
 import Arranger from './server';
@@ -10,9 +12,15 @@ app.use(cors());
 
 const http = Server(app);
 
-export default function() {
+export default async function() {
+  // the admin app
+  const adminPath = '/admin/graphql';
+  const adminApp = await adminGraphql({ esHost: ES_HOST });
+  adminApp.applyMiddleware({ app, path: adminPath });
+  console.log(`🚀 Admin API available at: [arranger_root]${adminPath}`);
+
   // Always run test server as admin
-  return Arranger({enableAdmin:true}).then(router => {
+  return Arranger({ enableAdmin: true }).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
       console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);

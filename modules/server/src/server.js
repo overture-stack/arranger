@@ -1,6 +1,8 @@
 import elasticsearch from 'elasticsearch';
 import express from 'express';
 import bodyParser from 'body-parser';
+
+import adminGraphql from '@arranger/admin/dist';
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
 import startProject from './startProject';
@@ -33,6 +35,7 @@ export default async ({
   router.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
   router.use(bodyParser.json({ limit: '50mb' }));
 
+  // The GraphQL endpoint
   router.use('/:projectId', (req, res, next) => {
     let projects = getProjects();
     if (!projects.length) return next();
