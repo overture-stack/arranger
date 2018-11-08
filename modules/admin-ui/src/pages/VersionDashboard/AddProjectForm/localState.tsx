@@ -4,9 +4,11 @@ import Component from 'react-component-component';
 import { THoc } from 'src/utils';
 import {
   INewIndexInput,
+  INewIndexArgs,
   ILocalFormState,
   ILocalFormMutations,
   IFormStateProps,
+  IProjectIndexConfig,
 } from './types';
 
 /******************
@@ -29,12 +31,9 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
       }) => {
         const mutations: ILocalFormMutations = {
           setProjectId: id => {
-            setState({
-              ...state,
-              projectId: id,
-            });
+            setState({ ...state, projectId: id });
           },
-          addIndex: (indexConfig: INewIndexInput) => {
+          addIndex: (indexConfig: INewIndexArgs) => {
             setState({
               ...state,
               indices: state.indices.concat(indexConfig),
@@ -46,18 +45,34 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               indices: state.indices.filter((x, i) => i !== indexPosition),
             });
           },
-          setIndexConfig: (indexPosition: number) => (
+          setIndexMutationInput: (indexPosition: number) => (
             config: INewIndexInput,
           ) => {
             setState({
               ...state,
               indices: state.indices.map(
-                (_config, i) =>
+                (args, i): typeof args =>
                   i !== indexPosition
-                    ? _config
+                    ? args
                     : {
-                        ...config,
-                        graphqlField: config.graphqlField.split('-').join('_'),
+                        ...args,
+                        newIndexMutationInput: config,
+                      },
+              ),
+            });
+          },
+          setIndexConfig: (indexPosition: number) => (
+            indexConfig: IProjectIndexConfig,
+          ) => {
+            setState({
+              ...state,
+              indices: state.indices.map(
+                (args, i): typeof args =>
+                  i !== indexPosition
+                    ? args
+                    : {
+                        ...args,
+                        config: indexConfig,
                       },
               ),
             });

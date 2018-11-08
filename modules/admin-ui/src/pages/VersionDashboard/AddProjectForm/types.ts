@@ -2,6 +2,7 @@
  * Server data types
  ********/
 export interface INewIndexInput {
+  // TODO: this should be imported from '@arranger/admin
   projectId: string;
   graphqlField: string;
   esIndex: string;
@@ -14,28 +15,35 @@ export interface IMutationResponseData {
 }
 export interface IMutationVariables {
   projectId: string;
-  indexConfigs: INewIndexInput[];
+  indexConfigs: INewIndexArgs[];
 }
 export interface IPropsWithMutation {
-  // addProject: MutationFn<IMutationResponseData, IMutationVariables>;
   addProject: (args: IMutationVariables) => Promise<void>;
 }
 
 /********
  * Local state types
  ********/
+export interface IProjectIndexConfig {}
+export interface INewIndexArgs {
+  newIndexMutationInput: INewIndexInput;
+  config: IProjectIndexConfig;
+}
 export interface ILocalFormState {
   projectId: string;
-  indices: INewIndexInput[];
+  indices: INewIndexArgs[];
   error: Error | null;
 }
 export interface ILocalFormMutations {
   setProjectId: (id: string) => void;
-  addIndex: (indexConfig: INewIndexInput) => void;
+  addIndex: (indexConfig: INewIndexArgs) => void;
   removeIndex: (indexPosition: number) => void;
+  setIndexMutationInput: (
+    indexPosition: number,
+  ) => (mutationInput: INewIndexInput) => void;
   setIndexConfig: (
     indexPosition: number,
-  ) => (indexConfig: INewIndexInput) => void;
+  ) => (indexConfig: IProjectIndexConfig) => void;
   setError: (error: Error) => Promise<Error>;
 }
 export interface IFormStateProps {

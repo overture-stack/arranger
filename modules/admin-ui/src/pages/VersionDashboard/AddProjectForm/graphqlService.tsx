@@ -62,10 +62,10 @@ const validateMutationVariables = async (
   const missingIndexField = !variables.indexConfigs.reduce(
     (acc, config) =>
       acc &&
-      !!config.projectId.length &&
-      !!config.esIndex.length &&
-      !!config.esType.length &&
-      !!config.graphqlField.length,
+      !!config.newIndexMutationInput.projectId.length &&
+      !!config.newIndexMutationInput.esIndex.length &&
+      !!config.newIndexMutationInput.esType.length &&
+      !!config.newIndexMutationInput.graphqlField.length,
     true,
   );
   if (hasDuplicateIndexName) {
@@ -109,7 +109,7 @@ const withAddProjectMutation: THoc<
               });
               args.indexConfigs.forEach(async indexConfig => {
                 await createNewProjectIndex({
-                  variables: indexConfig,
+                  variables: indexConfig.newIndexMutationInput,
                 });
               });
             };
