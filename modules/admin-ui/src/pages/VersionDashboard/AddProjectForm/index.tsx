@@ -19,6 +19,7 @@ import Grid, { GridItem } from 'mineral-ui/Grid';
 import Text from 'mineral-ui/Text';
 import { ILayoutProps, INewIndexInput } from './types';
 import Alert from 'src/components/Alert';
+import { getFileContentCollection } from './utils';
 
 const StyledCard = styled(Card)`
   width: 1000px;
@@ -29,45 +30,6 @@ interface IIndexConfigArgs {
   position: number;
   index: INewIndexInput;
 }
-
-const CONFIG_FILENAMES: {
-  aggsState: string;
-  columnsState: string;
-  extended: string;
-  matchboxState: string;
-} = {
-  aggsState: 'aggs-state.json',
-  columnsState: 'columns-state.json',
-  extended: 'extended.json',
-  matchboxState: 'matchbox-state.json',
-};
-
-const readFile = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    var reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
-    reader.onload = function(evt: any) {
-      resolve(evt.target.result);
-    };
-    reader.onerror = function(evt) {
-      reject();
-    };
-  });
-
-const extractAndValidate = (files: FileList) => {
-  const fileNames = Array.prototype.map.call(files, (file: File) => {
-    return file.name;
-  }) as string[];
-  const allValidNames =
-    fileNames.filter(name => Object.values(CONFIG_FILENAMES).includes(name))
-      .length === fileNames.length;
-  if (!allValidNames) {
-    throw new Error(
-      `File name must be one of: ${Object.values(CONFIG_FILENAMES).join(', ')}`,
-    );
-  }
-  return fileNames;
-};
 
 const Layout: React.ComponentType<ILayoutProps> = props => {
   const {
@@ -142,23 +104,14 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
     const files = e.currentTarget.files;
     if (files) {
       try {
-        const fileNames = extractAndValidate(files);
-        const fileContents = await Promise.all(Array.prototype.map.call(
-          files,
-          readFile,
-        ) as Array<Promise<string>>);
-        const dataContents = fileContents.map(s => JSON.parse(s));
-        files[0].name;
-        const filesCollection = fileNames.reduce(
-          (acc, name, i) => ({ ...acc, [name]: dataContents[i] }),
-          {},
-        );
-        console.log('filesCollection: ', filesCollection);
+        const filesCollection = await getFileContentCollection(files);
+        return filesCollection;
       } catch (err) {
         setIndexConfig(position)(null);
         setError(err);
       }
     }
+    return;
   };
 
   const onIndexConfigRemoveClick = (position: number) => () =>
