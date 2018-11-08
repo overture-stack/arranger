@@ -13,6 +13,7 @@ export const ModalOverlay: React.ComponentType = ({ children }) => {
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
   `;
   return (
     <Portal>
