@@ -16,6 +16,7 @@ import { ApolloError } from 'apollo-boost';
 import ProjectDeleteButton from './DeleteButton';
 import AddProjectForm from './AddProjectForm/index';
 import { ModalOverlay } from 'src/components/Modal';
+import ExportButton from './ExportButton';
 
 /************************
  * provides graphql query
@@ -45,7 +46,12 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
   `;
 
   return props => (
-    <Query query={query} partialRefetch={true} displayName="ProjectsQuery">
+    <Query
+      query={query}
+      partialRefetch={true}
+      displayName="ProjectsQuery"
+      fetchPolicy={'no-cache'}
+    >
       {({ data, loading, error }: QueryResult<IGqlQueryData>) => {
         if (loading) {
           return 'loading...';
@@ -130,16 +136,15 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const { projects = [] } = data;
 
-  const columnsData = sortBy(
-    projects.map(project => ({
-      id: project.id,
-      timestamp: project.timestamp,
-      indexCount: (project.indices || []).length,
-    })),
-    'timestamp',
-  );
+  const columnsData = projects.map(project => ({
+    id: project.id,
+    timestamp: project.timestamp,
+    indexCount: (project.indices || []).length,
+  }));
 
-  const rows = columnsData.map(entry => ({
+  const sorted: typeof columnsData = sortBy(columnsData, 'timestamp');
+
+  const rows = sorted.map(entry => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
       const StyledLink = styled(Link)`
         cursor: pointer;
@@ -151,6 +156,9 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
           </TableCell>
           <TableCell>{data.indexCount}</TableCell>
           <TableCell>{entry.timestamp}</TableCell>
+          <TableCell>
+            <ExportButton projectId={entry.id} />
+          </TableCell>
           <TableCell>
             <ProjectDeleteButton projectId={data.id} />
           </TableCell>
@@ -171,6 +179,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
           { content: 'Project Id', key: 'id' },
           { content: 'Index Counts', key: 'indexCount' },
           { content: 'Created', key: 'timestamp' },
+          { content: 'Export configurations', key: 'export' },
           { content: 'Delete', key: 'delete' },
         ]}
         data={rows}

@@ -3,7 +3,6 @@ import Component from 'react-component-component';
 import gql from 'graphql-tag';
 import { compose } from 'recompose';
 import { Mutation, MutationFn } from 'react-apollo';
-import { DataProxy } from 'apollo-cache';
 
 import { THoc } from 'src/utils';
 import Layout from './layout';
@@ -12,7 +11,6 @@ import {
   ILocalFormState,
   ILocalFormMutations,
   IFormStateProps,
-  IMutationResponseData,
   IPropsWithMutation,
   IExternalProps,
   IMutationVariables,
@@ -130,45 +128,27 @@ const withAddProjectMutation: THoc<
       }
     }
   `;
-  const updateCache = (
-    cache: DataProxy,
-    response: { data: IMutationResponseData },
-  ) => {
-    const UPDATE_QUERY = gql`
-      {
-        projects {
-          id
-        }
-      }
-    `;
-    cache.writeQuery({
-      query: UPDATE_QUERY,
-      data: { projects: response.data.newProject },
-    });
-  };
   return (
-    <Mutation mutation={NEW_PROJECT_MUTATION} update={updateCache}>
-      {createNewProject => {
-        return (
-          <ProjectIndicesMutationProvider>
-            {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
-              const addProject = async (args: IMutationVariables) => {
-                await createNewProject({
-                  variables: {
-                    projectId: args.projectId,
-                  },
+    <Mutation mutation={NEW_PROJECT_MUTATION}>
+      {createNewProject => (
+        <ProjectIndicesMutationProvider>
+          {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
+            const addProject = async (args: IMutationVariables) => {
+              await createNewProject({
+                variables: {
+                  projectId: args.projectId,
+                },
+              });
+              args.indexConfigs.forEach(async indexConfig => {
+                await createNewProjectIndex({
+                  variables: indexConfig,
                 });
-                args.indexConfigs.forEach(async indexConfig => {
-                  await createNewProjectIndex({
-                    variables: indexConfig,
-                  });
-                });
-              };
-              return <Wrapped addProject={addProject} {...props} />;
-            }}
-          </ProjectIndicesMutationProvider>
-        );
-      }}
+              });
+            };
+            return <Wrapped addProject={addProject} {...props} />;
+          }}
+        </ProjectIndicesMutationProvider>
+      )}
     </Mutation>
   );
 };

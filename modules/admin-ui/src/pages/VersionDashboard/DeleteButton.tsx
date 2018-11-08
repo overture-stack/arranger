@@ -25,19 +25,19 @@ export default ({ projectId }: { projectId: string }) => {
     cache: DataProxy,
     { data }: { data: IMutationResponse },
   ) => {
-    const UPDATE_QUERY = gql`
-      {
-        projects {
-          id
-        }
-      }
-    `;
-    cache.writeQuery({
-      query: UPDATE_QUERY,
-      data: {
-        projects: data.deleteProject,
-      },
-    });
+    // const UPDATE_QUERY = gql`
+    //   {
+    //     projects {
+    //       id
+    //     }
+    //   }
+    // `;
+    // cache.writeQuery({
+    //   query: UPDATE_QUERY,
+    //   data: {
+    //     projects: data.deleteProject,
+    //   },
+    // });
   };
 
   const handleClick = (deleteProject: MutationFn<IMutationResponse>) => () =>
