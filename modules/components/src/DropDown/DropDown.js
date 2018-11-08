@@ -60,6 +60,7 @@ class DropDown extends React.Component {
         }) => (
           <div className="dropDownHeader">
             <button
+              aria-label={`Show columns to select`}
               className="dropDownButton"
               {...getButtonProps({ onClick: this.handleToggleMenu })}
             >
@@ -85,6 +86,8 @@ class DropDown extends React.Component {
                       readOnly
                       type="checkbox"
                       checked={selectedItem.indexOf(item) > -1}
+                      aria-label={`Select column ${item.id ||
+                        itemToString(item)}`}
                     />
                   </div>
                 ))}

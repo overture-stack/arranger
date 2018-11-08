@@ -11,6 +11,7 @@ function toHtml(key, value) {
   return `<input
     type="hidden"
     name="${key}"
+    aria-label="${key}"
     value="${
       typeof value === 'object'
         ? JSON.stringify(value).replace(/"/g, '&quot;')

@@ -14,7 +14,8 @@
     "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
     "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
     "test": "jest",
-    "flow": "flow"
+    "flow": "flow",
+    "lint": "eslint src/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "eslint-plugin-flowtype": "^2.42.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-react": "^7.6.1",
+    "eslint-plugin-jsx-a11y": "^6.1.2",
     "flow-bin": "^0.62.0",
     "jest": "^22.3.0",
     "prettier": "^1.9.2",

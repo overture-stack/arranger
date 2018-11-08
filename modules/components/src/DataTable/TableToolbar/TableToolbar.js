@@ -78,6 +78,7 @@ const TableToolbar = ({
       <div className="group">
         {allowTogglingColumns && (
           <DropDown
+            aria-label={`Select columns`}
             itemToString={i => i.Header}
             items={canChangeShowColumns}
             onChange={item => {

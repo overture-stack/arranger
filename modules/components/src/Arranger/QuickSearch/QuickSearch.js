@@ -145,6 +145,7 @@ const QuickSearch = ({
                     componentRef={inputRef}
                     placeholder={placeholder}
                     onChange={({ target: { value } }) => setValue(value || '')}
+                    aria-label={`Quick search`}
                   />
                   <div
                     className={css`
@@ -180,6 +181,7 @@ const QuickSearch = ({
                               optionIndex={index}
                               primaryKey={primaryKey}
                               key={`${result}-${i}`}
+                              aria-label={`${result}-${i}`}
                               result={result}
                               inputValue={input}
                               onClick={() => {

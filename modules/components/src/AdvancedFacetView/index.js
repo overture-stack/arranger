@@ -43,7 +43,9 @@ export default class AdvancedFacetView extends React.Component {
           (parentNode, nextPath) =>
             parentNode[nextPath]
               ? parentNode[nextPath]
-              : parentNode.properties ? parentNode.properties[nextPath] : {},
+              : parentNode.properties
+                ? parentNode.properties[nextPath]
+                : {},
           elasticMapping,
         ) || {}
     );
@@ -163,7 +165,11 @@ export default class AdvancedFacetView extends React.Component {
                         })
                       }
                     >
-                      <input type="checkBox" checked={withValueOnly} />
+                      <input
+                        type="checkBox"
+                        checked={withValueOnly}
+                        aria-label={`Show only fields with value`}
+                      />
                       Show only fields with value
                     </span>
                   </div>
@@ -192,6 +198,7 @@ export default class AdvancedFacetView extends React.Component {
                     {({ state: { value }, setState }) => (
                       <InputComponent
                         icon={<FaFilter />}
+                        aria-label={`Data filter`}
                         rightIcon={
                           <FaTimesCircleO
                             onClick={() => {
