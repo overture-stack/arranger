@@ -105,7 +105,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
     if (files) {
       try {
         const filesCollection = await getFileContentCollection(files);
-        return filesCollection;
+        return setIndexConfig(position)(filesCollection);
       } catch (err) {
         setIndexConfig(position)(null);
         setError(err);
