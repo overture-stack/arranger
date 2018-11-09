@@ -74,6 +74,10 @@ export const RT_IndexConfigImportDataRunType = Record({
 
 export interface IIndexConfigImportData
   extends Static<typeof RT_IndexConfigImportDataRunType> {}
+export interface IAggsState extends Static<typeof RT_AggsState> {}
+export interface IColumnsState extends Static<typeof RT_ColumnsState> {}
+export interface IExtendedMapping extends Static<typeof RT_ExtendedMapping> {}
+export interface IMatchboxState extends Static<typeof RT_MatchboxState> {}
 
 /********
  * Local state types
