@@ -2,6 +2,7 @@ import * as React from 'react';
 import gql from 'graphql-tag';
 import { Mutation, MutationFn } from 'react-apollo';
 import { uniqBy } from 'lodash';
+import { ApolloConsumer } from 'react-apollo';
 
 import { THoc } from 'src/utils';
 import {
@@ -10,7 +11,12 @@ import {
   IPropsWithMutation,
   IMutationVariables,
   INewIndexArgs,
+  IAggsState,
+  IColumnsState,
+  IExtendedMapping,
+  IMatchboxState,
 } from './types';
+import { ApolloClient } from 'apollo-boost';
 
 /******************
  * Provides server mutation to add multiple indices given a project
@@ -46,6 +52,31 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
       }
     </Mutation>
   );
+};
+
+const saveAggsState = (client: ApolloClient<{}>) => (
+  projectId: string,
+  graphqlField: string,
+) => async (state: IAggsState): Promise<{}> => {
+  return {};
+};
+const saveColumnsState = (client: ApolloClient<{}>) => (
+  projectId: string,
+  graphqlField: string,
+) => async (state: IColumnsState): Promise<{}> => {
+  return {};
+};
+const saveExtendedMapping = (client: ApolloClient<{}>) => (
+  projectId: string,
+  graphqlField: string,
+) => async (state: IExtendedMapping): Promise<{}> => {
+  return {};
+};
+const saveMatboxState = (client: ApolloClient<{}>) => (
+  projectId: string,
+  graphqlField: string,
+) => async (state: IMatchboxState): Promise<{}> => {
+  return {};
 };
 
 /******************
@@ -118,30 +149,80 @@ const withAddProjectMutation: THoc<
     }
   `;
   return (
-    <Mutation mutation={NEW_PROJECT_MUTATION}>
-      {createNewProject => (
-        <ProjectIndicesMutationProvider>
-          {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
-            const addProject = async (args: IMutationVariables) => {
-              const { indexConfigs, projectId } = args;
-              await validateProjectConfigData(indexConfigs);
-              await validateMutationVariables(args);
-              await createNewProject({
-                variables: {
-                  projectId,
-                },
-              });
-              indexConfigs.forEach(async indexConfig => {
-                await createNewProjectIndex({
-                  variables: indexConfig.newIndexMutationInput,
-                });
-              });
-            };
-            return <Wrapped addProject={addProject} {...props} />;
-          }}
-        </ProjectIndicesMutationProvider>
+    <ApolloConsumer>
+      {client => (
+        <Mutation mutation={NEW_PROJECT_MUTATION}>
+          {createNewProject => (
+            <ProjectIndicesMutationProvider>
+              {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
+                const addProject = async (args: IMutationVariables) => {
+                  const { indexConfigs, projectId } = args;
+                  // make sure to keep all validations up top before going ahead with the process
+                  await validateProjectConfigData(indexConfigs);
+                  await validateMutationVariables(args);
+
+                  // starting the process
+                  await createNewProject({
+                    variables: {
+                      projectId,
+                    },
+                  });
+                  indexConfigs.forEach(async indexConfig => {
+                    const { config } = indexConfig;
+                    await createNewProjectIndex({
+                      variables: indexConfig.newIndexMutationInput,
+                    });
+                    if (config) {
+                      const {
+                        aggsState,
+                        columnsState,
+                        matchboxState,
+                        extended,
+                      } = config;
+                      const configPromises: Array<Promise<{}>> = [];
+                      if (aggsState) {
+                        configPromises.push(
+                          saveAggsState(client)(
+                            projectId,
+                            indexConfig.newIndexMutationInput.graphqlField,
+                          )(aggsState),
+                        );
+                      }
+                      if (columnsState) {
+                        configPromises.push(
+                          saveColumnsState(client)(
+                            projectId,
+                            indexConfig.newIndexMutationInput.graphqlField,
+                          )(columnsState),
+                        );
+                      }
+                      if (matchboxState) {
+                        configPromises.push(
+                          saveMatboxState(client)(
+                            projectId,
+                            indexConfig.newIndexMutationInput.graphqlField,
+                          )(matchboxState),
+                        );
+                      }
+                      if (extended) {
+                        configPromises.push(
+                          saveExtendedMapping(client)(
+                            projectId,
+                            indexConfig.newIndexMutationInput.graphqlField,
+                          )(extended),
+                        );
+                      }
+                      await configPromises;
+                    }
+                  });
+                };
+                return <Wrapped addProject={addProject} {...props} />;
+              }}
+            </ProjectIndicesMutationProvider>
+          )}
+        </Mutation>
       )}
-    </Mutation>
+    </ApolloConsumer>
   );
 };
 
