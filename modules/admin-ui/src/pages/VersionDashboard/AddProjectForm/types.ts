@@ -1,74 +1,98 @@
+import {
+  Boolean,
+  String,
+  Array as RT_Array,
+  Record,
+  Union,
+  Dictionary,
+  Static,
+  Undefined,
+  Null,
+} from 'runtypes';
+
+export const RT_IndexConfigImportDataRunType = Record({
+  aggsState: Union(
+    Undefined,
+    RT_Array(
+      Record({
+        active: Boolean,
+        field: String,
+        show: Boolean,
+      }),
+    ),
+  ),
+  columnsState: Union(
+    Undefined,
+    Record({
+      type: String,
+      keyField: String,
+      defaultSorted: RT_Array(Record({ id: String, desc: Boolean })),
+      columns: RT_Array(
+        Record({
+          accessor: String,
+          canChangeShow: Boolean,
+          field: String,
+          jsonPath: Union(Null, String),
+          query: Union(Null, String),
+          show: Boolean,
+          sortable: Boolean,
+          type: String,
+        }),
+      ),
+    }),
+  ),
+  extended: Union(
+    Undefined,
+    RT_Array(
+      Record({
+        active: Boolean,
+        displayName: String,
+        displayValues: Dictionary(String, 'string'),
+        field: String,
+        isArray: Boolean,
+        primaryKey: Boolean,
+        quickSearchEnabled: Boolean,
+        type: String,
+        unit: Union(Null, String),
+      }),
+    ),
+  ),
+  matchboxState: Union(
+    Undefined,
+    RT_Array(
+      Record({
+        displayName: String,
+        field: String,
+        isActive: Boolean,
+        keyField: String,
+        searchFields: RT_Array(String),
+      }),
+    ),
+  ),
+});
+
+export interface Something {
+  accessor: string;
+  canChangeShow: boolean;
+  field: string;
+  jsonPath: null | string;
+  query: null | string;
+  show: boolean;
+  sortable: boolean;
+  type: string;
+}
+[];
+
 /****************
  * Index data import struct
  ****************/
-export interface IIndexConfigImportData {
-  aggsState?: Array<{
-    active: boolean;
-    field: string;
-    show: boolean;
-  }>;
-  columnsState?: {
-    type: string;
-    keyField: string;
-    defaultSorted: Array<{ id: string; desc: boolean }>;
-    columns: Array<{
-      accessor: string;
-      canChangeShow: boolean;
-      field: string;
-      jsonPath: string | null;
-      query: string | null;
-      show: boolean;
-      sortable: boolean;
-      type: string;
-    }>;
-  };
-  extended?: Array<{
-    active: boolean;
-    displayName: string;
-    displayValues: { [key: string]: string };
-    field: string;
-    isArray: boolean;
-    primaryKey: boolean;
-    quickSearchEnabled: boolean;
-    type: string;
-    unit: string | null;
-  }>;
-  matchboxState?: Array<{
-    displayName: string;
-    field: string;
-    isActive: boolean;
-    keyField: string;
-    searchFields: Array<string>;
-  }>;
-}
-
-/********
- * Server data types
- ********/
-export interface INewIndexInput {
-  // TODO: this should be imported from '@arranger/admin
-  projectId: string;
-  graphqlField: string;
-  esIndex: string;
-  esType: string;
-}
-export interface IMutationResponseData {
-  newProject: {
-    id: string;
-  }[];
-}
-export interface IMutationVariables {
-  projectId: string;
-  indexConfigs: INewIndexArgs[];
-}
-export interface IPropsWithMutation {
-  addProject: (args: IMutationVariables) => Promise<void>;
-}
+export interface IIndexConfigImportData
+  extends Static<typeof RT_IndexConfigImportDataRunType> {}
 
 /********
  * Local state types
  ********/
-export interface IProjectIndexConfig {}
+export interface IProjectIndexConfig extends IIndexConfigImportData {}
 export interface INewIndexArgs {
   newIndexMutationInput: INewIndexInput;
   config: IProjectIndexConfig | null;
@@ -95,6 +119,29 @@ export interface IFormStateProps {
     state: ILocalFormState;
     mutations: ILocalFormMutations;
   };
+}
+
+/********
+ * Server data types
+ ********/
+export interface INewIndexInput {
+  // TODO: this should be imported from '@arranger/admin
+  projectId: string;
+  graphqlField: string;
+  esIndex: string;
+  esType: string;
+}
+export interface IMutationResponseData {
+  newProject: {
+    id: string;
+  }[];
+}
+export interface IMutationVariables {
+  projectId: string;
+  indexConfigs: INewIndexArgs[];
+}
+export interface IPropsWithMutation {
+  addProject: (args: IMutationVariables) => Promise<void>;
 }
 
 /*******

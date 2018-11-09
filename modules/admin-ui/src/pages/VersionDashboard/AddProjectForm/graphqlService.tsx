@@ -5,6 +5,7 @@ import { uniqBy } from 'lodash';
 
 import { THoc } from 'src/utils';
 import {
+  RT_IndexConfigImportDataRunType,
   INewIndexInput,
   IPropsWithMutation,
   IMutationVariables,
@@ -101,13 +102,31 @@ const withAddProjectMutation: THoc<
         <ProjectIndicesMutationProvider>
           {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
             const addProject = async (args: IMutationVariables) => {
+              const { indexConfigs, projectId } = args;
+              indexConfigs.forEach(indexConfig => {
+                if (indexConfig.config) {
+                  try {
+                    RT_IndexConfigImportDataRunType.check(indexConfig.config);
+                  } catch (err) {
+                    if (indexConfig.config.columnsState) {
+                      console.log(indexConfig.config.columnsState);
+                    }
+                    console.log('validation error: ', err);
+                    throw new Error(
+                      `Invalid files were imported for index "${
+                        indexConfig.newIndexMutationInput.graphqlField
+                      }"`,
+                    );
+                  }
+                }
+              });
               await validateMutationVariables(args);
               await createNewProject({
                 variables: {
-                  projectId: args.projectId,
+                  projectId,
                 },
               });
-              args.indexConfigs.forEach(async indexConfig => {
+              indexConfigs.forEach(async indexConfig => {
                 await createNewProjectIndex({
                   variables: indexConfig.newIndexMutationInput,
                 });

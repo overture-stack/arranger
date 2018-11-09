@@ -38,9 +38,9 @@ export const getFileContentCollection = async (files: FileList) => {
   const dataContents = fileContents.map(s => JSON.parse(s));
   files[0].name;
   const configTypesMap = invert(CONFIG_FILENAMES);
-  const filesCollection: IIndexConfigImportData = fileNames.reduce(
+  const filesCollection = fileNames.reduce(
     (acc, name, i) => ({ ...acc, [configTypesMap[name]]: dataContents[i] }),
     {},
   );
-  return filesCollection;
+  return filesCollection as IIndexConfigImportData;
 };
