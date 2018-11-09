@@ -11,13 +11,13 @@ import { Resolver } from '../types';
 const saveAggsStateMutationResolver: Resolver<
   I_AggsSetState,
   I_SaveAggsStateMutationInput
-> = (
+> = async (
   obj: {},
   args,
   { es }: IQueryContext,
   info: GraphQLResolveInfo,
 ): Promise<I_AggsSetState> => {
-  return saveAggsSetState(es)(args);
+  return await saveAggsSetState(es)(args);
 };
 
 const aggsStateQueryResolver: Resolver<

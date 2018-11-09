@@ -53,10 +53,12 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
 
   const onSubmit = async () => {
     try {
+      console.time('addProject');
       await addProject({
         projectId,
         indexConfigs: indices,
       });
+      console.timeEnd('addProject');
       onCancel();
     } catch (err) {
       setError(err);

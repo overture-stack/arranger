@@ -77,7 +77,9 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
 }: I_UpdateExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping> => {
   const currentIndexMetadata = (await getProjectStorageMetadata(es)(
     projectId,
-  )).find(metaData => metaData.name === graphqlField);
+  )).find(metaData => {
+    return metaData.name === graphqlField;
+  });
 
   if (currentIndexMetadata) {
     const indexExtendedMappingFields = await getExtendedMapping(es)({
@@ -96,7 +98,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
       projectId,
       metaData: {
         index: currentIndexMetadata.index,
-        name: currentIndexMetadata.index,
+        name: currentIndexMetadata.name,
         config: {
           extended: newIndexExtendedMappingFields,
         },

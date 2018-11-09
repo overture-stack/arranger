@@ -31,7 +31,17 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
       }) => {
         const mutations: ILocalFormMutations = {
           setProjectId: id => {
-            setState({ ...state, projectId: id });
+            setState({
+              ...state,
+              projectId: id,
+              indices: state.indices.map(i => ({
+                ...i,
+                newIndexMutationInput: {
+                  ...i.newIndexMutationInput,
+                  projectId: id,
+                },
+              })),
+            });
           },
           addIndex: (indexConfig: INewIndexArgs) => {
             setState({

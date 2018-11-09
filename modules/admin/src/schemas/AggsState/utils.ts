@@ -7,7 +7,10 @@ import {
   I_SaveAggsStateMutationInput,
 } from './types';
 import { timestamp } from '../../services';
-import { getProjectStorageMetadata } from '../IndexSchema/utils';
+import {
+  getProjectStorageMetadata,
+  updateProjectIndexMetadata,
+} from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
 import { getEsMapping } from '../../services/elasticsearch';
 
@@ -36,16 +39,28 @@ export const saveAggsSetState = (es: Client) => async (
   args: I_SaveAggsStateMutationInput,
 ): Promise<I_AggsSetState> => {
   const { graphqlField, projectId, state } = args;
-  const currentAggsState = (await getAggsSetState(es)({
-    graphqlField,
-    projectId,
-  })).state;
+  const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
+    i => i.name === graphqlField,
+  );
+  const currentAggsState = currentMetadata.config['aggs-state'];
   const newAggsSetState: I_AggsSetState = {
     timestamp: timestamp(),
-    state: currentAggsState.map(item => ({
+    state: currentAggsState.state.map(item => ({
       ...(state.find(_item => _item.field === item.field) || item),
       type: item.type,
     })),
   };
+
+  await updateProjectIndexMetadata(es)({
+    projectId,
+    metaData: {
+      index: currentMetadata.index,
+      name: currentMetadata.name,
+      config: {
+        'aggs-state': newAggsSetState,
+      },
+    },
+  });
+
   return newAggsSetState;
 };

@@ -11,8 +11,8 @@ export default async () => gql`
   type Mutation {
     saveAggsState(
       projectId: String!
-      graphlField: String!
+      graphqlField: String!
       state: [AggStateInput]!
-    ): [AggsState]
+    ): AggsState
   }
 `;
