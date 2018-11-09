@@ -29,14 +29,14 @@ export const RT_IndexConfigImportDataRunType = Record({
       defaultSorted: RT_Array(Record({ id: String, desc: Boolean })),
       columns: RT_Array(
         Record({
-          accessor: String,
-          canChangeShow: Boolean,
           field: String,
+          accessor: Union(Undefined, String),
+          show: Boolean,
+          type: String,
+          sortable: Boolean,
+          canChangeShow: Boolean,
           jsonPath: Union(Null, String),
           query: Union(Null, String),
-          show: Boolean,
-          sortable: Boolean,
-          type: String,
         }),
       ),
     }),
@@ -70,18 +70,6 @@ export const RT_IndexConfigImportDataRunType = Record({
     ),
   ),
 });
-
-export interface Something {
-  accessor: string;
-  canChangeShow: boolean;
-  field: string;
-  jsonPath: null | string;
-  query: null | string;
-  show: boolean;
-  sortable: boolean;
-  type: string;
-}
-[];
 
 /****************
  * Index data import struct
