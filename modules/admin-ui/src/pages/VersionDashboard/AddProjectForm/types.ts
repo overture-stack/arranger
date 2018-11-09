@@ -10,70 +10,66 @@ import {
   Null,
 } from 'runtypes';
 
-export const RT_IndexConfigImportDataRunType = Record({
-  aggsState: Union(
-    Undefined,
-    RT_Array(
-      Record({
-        active: Boolean,
-        field: String,
-        show: Boolean,
-      }),
-    ),
-  ),
-  columnsState: Union(
-    Undefined,
-    Record({
-      type: String,
-      keyField: String,
-      defaultSorted: RT_Array(Record({ id: String, desc: Boolean })),
-      columns: RT_Array(
-        Record({
-          field: String,
-          accessor: Union(Undefined, String),
-          show: Boolean,
-          type: String,
-          sortable: Boolean,
-          canChangeShow: Boolean,
-          jsonPath: Union(Null, String),
-          query: Union(Null, String),
-        }),
-      ),
-    }),
-  ),
-  extended: Union(
-    Undefined,
-    RT_Array(
-      Record({
-        active: Boolean,
-        displayName: String,
-        displayValues: Dictionary(String, 'string'),
-        field: String,
-        isArray: Boolean,
-        primaryKey: Boolean,
-        quickSearchEnabled: Boolean,
-        type: String,
-        unit: Union(Null, String),
-      }),
-    ),
-  ),
-  matchboxState: Union(
-    Undefined,
-    RT_Array(
-      Record({
-        displayName: String,
-        field: String,
-        isActive: Boolean,
-        keyField: String,
-        searchFields: RT_Array(String),
-      }),
-    ),
-  ),
+/****************
+ * Index data import struct, using runtypes for runtime type validation
+ ****************/
+const RT_Column = Record({
+  field: String,
+  accessor: Union(Undefined, Union(Null, String)),
+  show: Boolean,
+  type: String,
+  sortable: Boolean,
+  canChangeShow: Boolean,
+  jsonPath: Union(Null, String),
+  query: Union(Null, String),
 });
 
-/****************
- * Index data import struct
- ****************/
+const RT_ColumnsState = Record({
+  type: String,
+  keyField: String,
+  defaultSorted: RT_Array(Record({ id: String, desc: Boolean })),
+  columns: RT_Array(RT_Column),
+});
+
+const RT_AggsState = RT_Array(
+  Record({
+    active: Boolean,
+    field: String,
+    show: Boolean,
+  }),
+);
+
+const RT_ExtendedMapping = RT_Array(
+  Record({
+    active: Boolean,
+    displayName: String,
+    displayValues: Dictionary(String, 'string'),
+    field: String,
+    isArray: Boolean,
+    primaryKey: Boolean,
+    quickSearchEnabled: Boolean,
+    type: String,
+    unit: Union(Null, String),
+  }),
+);
+
+const RT_Matchbox = Record({
+  displayName: String,
+  field: String,
+  isActive: Boolean,
+  keyField: Union(Null, String),
+  searchFields: RT_Array(String),
+});
+
+const RT_MatchboxState = RT_Array(RT_Matchbox);
+
+export const RT_IndexConfigImportDataRunType = Record({
+  aggsState: Union(Undefined, RT_AggsState),
+  columnsState: Union(Undefined, RT_ColumnsState),
+  extended: Union(Undefined, RT_ExtendedMapping),
+  matchboxState: Union(Undefined, RT_MatchboxState),
+});
+
 export interface IIndexConfigImportData
   extends Static<typeof RT_IndexConfigImportDataRunType> {}
 

@@ -9,6 +9,7 @@ import {
   INewIndexInput,
   IPropsWithMutation,
   IMutationVariables,
+  INewIndexArgs,
 } from './types';
 
 /******************
@@ -85,6 +86,23 @@ const validateMutationVariables = async (
   }
 };
 
+const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
+  indexConfigs.forEach(indexConfig => {
+    if (indexConfig.config) {
+      const { config, newIndexMutationInput } = indexConfig;
+      try {
+        RT_IndexConfigImportDataRunType.check(config);
+      } catch (err) {
+        throw new Error(
+          `Invalid files were imported for index "${
+            newIndexMutationInput.graphqlField
+          }"`,
+        );
+      }
+    }
+  });
+};
+
 const withAddProjectMutation: THoc<
   {},
   IPropsWithMutation
@@ -103,23 +121,7 @@ const withAddProjectMutation: THoc<
           {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
             const addProject = async (args: IMutationVariables) => {
               const { indexConfigs, projectId } = args;
-              indexConfigs.forEach(indexConfig => {
-                if (indexConfig.config) {
-                  try {
-                    RT_IndexConfigImportDataRunType.check(indexConfig.config);
-                  } catch (err) {
-                    if (indexConfig.config.columnsState) {
-                      console.log(indexConfig.config.columnsState);
-                    }
-                    console.log('validation error: ', err);
-                    throw new Error(
-                      `Invalid files were imported for index "${
-                        indexConfig.newIndexMutationInput.graphqlField
-                      }"`,
-                    );
-                  }
-                }
-              });
+              await validateProjectConfigData(indexConfigs);
               await validateMutationVariables(args);
               await createNewProject({
                 variables: {
