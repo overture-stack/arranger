@@ -1,8 +1,18 @@
 import * as React from 'react';
+import * as JSZip from 'jszip';
+import saveAs from 'file-saver';
 import { Query } from 'react-apollo';
 import gql from 'graphql-tag';
-
 import Button from 'mineral-ui/Button';
+import { Static } from 'runtypes';
+import {
+  RT_ExtendedMapping,
+  RT_AggsState,
+  RT_ColumnsState,
+  RT_MatchboxState,
+} from './AddProjectForm/types';
+import { CONFIG_FILENAMES } from './AddProjectForm/utils';
+
 const ALL_DATA_QUERY = gql`
   query($projectId: String!) {
     project(id: $projectId) {
@@ -75,12 +85,65 @@ const ALL_DATA_QUERY = gql`
   }
 `;
 
-const download = (content, fileName, contentType) => {
-  const a = document.createElement('a');
-  const file = new Blob([content], { type: contentType });
-  a.href = URL.createObjectURL(file);
-  a.download = fileName;
-  a.click();
+interface IGqlData {
+  project: {
+    id: string;
+    indices: Array<{
+      id: string;
+      hasMapping: boolean;
+      graphqlField: string;
+      projectId: string;
+      esIndex: string;
+      esType: string;
+
+      extended: Array<Static<typeof RT_ExtendedMapping>>;
+
+      aggsState: {
+        timestamp: string;
+        state: Array<Static<typeof RT_AggsState>>;
+      };
+      columnsState: {
+        timestamp: string;
+        state: Static<typeof RT_ColumnsState>;
+      };
+      matchBoxState: {
+        timestamp: string;
+        state: Array<Static<typeof RT_MatchboxState>>;
+      };
+    }>;
+  };
+}
+
+const download = (content: IGqlData) => {
+  return new Promise(resolve => {
+    const { project } = content;
+    const zip = new JSZip();
+    const rootName = `arranger-project-${project.id}`;
+    const rootFolder = zip.folder(rootName);
+    project.indices.forEach(index => {
+      const indexFolder = rootFolder.folder(index.esIndex);
+      indexFolder.file(
+        CONFIG_FILENAMES.aggsState,
+        JSON.stringify(index.aggsState.state, null, 2),
+      );
+      indexFolder.file(
+        CONFIG_FILENAMES.columnsState,
+        JSON.stringify(index.columnsState.state, null, 2),
+      );
+      indexFolder.file(
+        CONFIG_FILENAMES.extended,
+        JSON.stringify(index.extended, null, 2),
+      );
+      indexFolder.file(
+        CONFIG_FILENAMES.matchboxState,
+        JSON.stringify(index.matchBoxState.state, null, 2),
+      );
+    });
+    zip.generateAsync({ type: 'blob' }).then(content => {
+      saveAs(content, `${rootName}.zip`);
+      resolve();
+    });
+  });
 };
 
 const ExportButton: React.ComponentType<{ projectId: string }> = ({
@@ -93,12 +156,9 @@ const ExportButton: React.ComponentType<{ projectId: string }> = ({
       fetchPolicy={'no-cache'}
     >
       {({ data, loading, error }) => {
-        const onClick = () =>
-          download(
-            JSON.stringify(data, null, 2),
-            `arranger_project_${projectId}.json`,
-            'text/plain',
-          );
+        const onClick = () => {
+          return download(data);
+        };
         return (
           <Button size="medium" disabled={loading || error} onClick={onClick}>
             {loading ? 'LOADING...' : 'Export'}
@@ -108,38 +168,5 @@ const ExportButton: React.ComponentType<{ projectId: string }> = ({
     </Query>
   );
 };
-
-{
-  /* <Component initialState={{ loading: false }}>
-  {({ state: { loading }, setState }) => (
-    <ApolloConsumer>
-      {client => {
-        const onClick = (client: ApolloClient<{}>) => async () => {
-          setState({ loading: true });
-          const { data } = await client.query({
-            query: ALL_DATA_QUERY,
-            variables: { projectId },
-          });
-          download(
-            JSON.stringify(data, null, 2),
-            `arranger_project_${projectId}.json`,
-            'text/plain',
-          );
-          setState({ loading: false });
-        };
-        return (
-          <Button
-            disabled={loading}
-            size="medium"
-            onClick={onClick(client)}
-          >
-            {loading ? 'LOADING...' : 'Export'}
-          </Button>
-        );
-      }}
-    </ApolloConsumer>
-  )}
-</Component> */
-}
 
 export default ExportButton;

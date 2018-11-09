@@ -2,7 +2,7 @@ import { readFile } from 'src/utils';
 import { invert } from 'lodash';
 import { IIndexConfigImportData } from './types';
 
-const CONFIG_FILENAMES: {
+export const CONFIG_FILENAMES: {
   aggsState: string;
   columnsState: string;
   extended: string;
