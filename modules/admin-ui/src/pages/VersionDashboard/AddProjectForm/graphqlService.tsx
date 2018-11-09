@@ -48,9 +48,9 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
   );
 };
 
-/*****************
- * Provides server transaction to add index
- *****************/
+/******************
+ * Data validators
+ ******************/
 const validateMutationVariables = async (
   variables: IMutationVariables,
 ): Promise<void> => {
@@ -103,6 +103,9 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
   });
 };
 
+/*****************
+ * Provides server transaction to add index
+ *****************/
 const withAddProjectMutation: THoc<
   {},
   IPropsWithMutation
