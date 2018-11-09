@@ -8,12 +8,13 @@ import {
   Static,
   Undefined,
   Null,
+  Number,
 } from 'runtypes';
 
 /****************
  * Index data import struct, using runtypes for runtime type validation
  ****************/
-const RT_Column = Record({
+export const RT_Column = Record({
   field: String,
   accessor: Union(Undefined, Union(Null, String)),
   show: Boolean,
@@ -24,14 +25,14 @@ const RT_Column = Record({
   query: Union(Null, String),
 });
 
-const RT_ColumnsState = Record({
+export const RT_ColumnsState = Record({
   type: String,
   keyField: String,
   defaultSorted: RT_Array(Record({ id: String, desc: Boolean })),
   columns: RT_Array(RT_Column),
 });
 
-const RT_AggsState = RT_Array(
+export const RT_AggsState = RT_Array(
   Record({
     active: Boolean,
     field: String,
@@ -39,7 +40,7 @@ const RT_AggsState = RT_Array(
   }),
 );
 
-const RT_ExtendedMapping = RT_Array(
+export const RT_ExtendedMapping = RT_Array(
   Record({
     active: Boolean,
     displayName: String,
@@ -50,10 +51,11 @@ const RT_ExtendedMapping = RT_Array(
     quickSearchEnabled: Boolean,
     type: String,
     unit: Union(Null, String),
+    rangeStep: Union(Null, Union(Undefined, Number)),
   }),
 );
 
-const RT_Matchbox = Record({
+export const RT_Matchbox = Record({
   displayName: String,
   field: String,
   isActive: Boolean,
@@ -61,7 +63,7 @@ const RT_Matchbox = Record({
   searchFields: RT_Array(String),
 });
 
-const RT_MatchboxState = RT_Array(RT_Matchbox);
+export const RT_MatchboxState = RT_Array(RT_Matchbox);
 
 export const RT_IndexConfigImportDataRunType = Record({
   aggsState: Union(Undefined, RT_AggsState),
