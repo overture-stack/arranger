@@ -43,7 +43,7 @@ export const saveAggsSetState = (es: Client) => async (
     i => i.name === graphqlField,
   );
   const currentAggsState = currentMetadata.config['aggs-state'];
-  const newAggsSetState: I_AggsSetState = {
+  const newAggsSetState: typeof currentAggsState = {
     timestamp: timestamp(),
     state: currentAggsState.state.map(item => ({
       ...(state.find(_item => _item.field === item.field) || item),

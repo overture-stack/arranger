@@ -16,7 +16,7 @@ export interface I_ColumnStateInput {
   type: string;
   keyField: string;
   defaultSorted: [I_ColumnSort];
-  columns: [I_Column];
+  columns: I_Column[];
 }
 
 export interface I_ColumnSortInput {

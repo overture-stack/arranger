@@ -11,7 +11,7 @@ import {
 } from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
 import { mappingToColumnsState } from '@arranger/mapping-utils';
-import { timestamp } from '../../services';
+import { timestamp, replaceBy } from '../../services';
 import { getEsMapping } from '../../services/elasticsearch';
 
 export const getColumnSetState = (es: Client) => async (
@@ -56,6 +56,14 @@ export const saveColumnState = (es: Client) => async ({
   const currentIndexMetadata = currentProjectMetadata.find(
     i => i.name === graphqlField,
   );
+  const mergedState: typeof state = {
+    ...state,
+    columns: replaceBy(
+      currentIndexMetadata.config['columns-state'].state.columns,
+      state.columns,
+      (oldCol, newCol) => oldCol.field === newCol.field,
+    ),
+  };
   await updateProjectIndexMetadata(es)({
     projectId,
     metaData: {
@@ -64,7 +72,7 @@ export const saveColumnState = (es: Client) => async ({
       config: {
         'columns-state': {
           timestamp: timestamp(),
-          state,
+          state: mergedState,
         },
       },
     },
