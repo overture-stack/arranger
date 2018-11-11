@@ -54,6 +54,19 @@ export default async () => gql`
     rangeStep: Float
   }
 
+  input ExtendedMappingSetFieldInput {
+    field: string!
+    type: ExtendedFieldType
+    displayName: String!
+    active: Boolean!
+    isArray: Boolean!
+    primaryKey: Boolean!
+    quickSearchEnabled: Boolean!
+    unit: NumericTypeUnit
+    displayValues: JSON
+    rangeStep: Float
+  }
+
   type Mutation {
     updateExtendedMapping(
       projectId: String!
@@ -61,5 +74,10 @@ export default async () => gql`
       field: String!
       extendedFieldMappingInput: ExtendedFieldMappingInput!
     ): ExtendedFieldMapping
+    saveExtendedMapping(
+      projectId: String!
+      graphqlField: String!
+      extendedFieldMappingInput: [ExtendedMappingSetFieldInput]
+    ): [ExtendedFieldMapping]
   }
 `;

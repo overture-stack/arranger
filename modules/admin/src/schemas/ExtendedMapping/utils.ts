@@ -1,5 +1,6 @@
 import { Client } from 'elasticsearch';
 import { extendMapping } from '@arranger/mapping-utils';
+import { omit } from 'lodash';
 import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import { EsIndexLocation } from '../types';
@@ -11,7 +12,9 @@ import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
   I_UpdateExtendedMappingMutationArgs,
+  I_SaveExtendedMappingMutationArgs,
 } from './types';
+import { replaceBy } from '../../services';
 
 export const createExtendedMapping = (es: Client) => async ({
   esIndex,
@@ -113,4 +116,35 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
       `no index found under name ${graphqlField} for project ${projectId}`,
     );
   }
+};
+
+export const saveExtendedMapping = (es: Client) => async (
+  args: I_SaveExtendedMappingMutationArgs,
+): Promise<I_GqlExtendedFieldMapping[]> => {
+  const { projectId, graphqlField, extendedFieldMappingInput } = args;
+  const currentIndexMetadata = (await getProjectStorageMetadata(es)(
+    projectId,
+  )).find(entry => entry.name === graphqlField);
+  const {
+    config: { extended: currentStoredExtendedMapping },
+  } = currentIndexMetadata;
+
+  const newExtendedMapping: I_GqlExtendedFieldMapping[] = replaceBy(
+    currentStoredExtendedMapping,
+    extendedFieldMappingInput,
+    (el1, el2) => el1.field === el2.field,
+  );
+
+  await updateProjectIndexMetadata(es)({
+    projectId,
+    metaData: {
+      index: currentIndexMetadata.index,
+      name: currentIndexMetadata.name,
+      config: {
+        extended: newExtendedMapping,
+      },
+    },
+  });
+
+  return newExtendedMapping;
 };
