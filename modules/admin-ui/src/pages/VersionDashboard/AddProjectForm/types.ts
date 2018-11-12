@@ -91,6 +91,7 @@ export interface ILocalFormState {
   projectId: string;
   indices: INewIndexArgs[];
   error: Error | null;
+  isloading: boolean;
 }
 export interface ILocalFormMutations {
   setProjectId: (id: string) => void;
@@ -103,6 +104,7 @@ export interface ILocalFormMutations {
     indexPosition: number,
   ) => (indexConfig: IProjectIndexConfig | null) => void;
   setError: (error: Error) => Promise<Error>;
+  setLoadingState: (isLoading: boolean) => void;
 }
 export interface IFormStateProps {
   formState: {
@@ -139,6 +141,7 @@ export interface IPropsWithMutation {
  *******/
 export interface IInjectedProps extends IFormStateProps, IPropsWithMutation {}
 export interface IExternalProps {
+  onProjectAdded: (...any) => any;
   onCancel: () => void;
 }
 export interface ILayoutProps extends IInjectedProps, IExternalProps {}

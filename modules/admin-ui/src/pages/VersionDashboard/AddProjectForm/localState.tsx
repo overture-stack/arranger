@@ -19,6 +19,7 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
     projectId: '',
     indices: [],
     error: null,
+    isloading: false,
   };
   return (
     <Component initialState={initialState}>
@@ -96,6 +97,8 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               }, 5000);
             });
           },
+          setLoadingState: isLoading =>
+            setState({ ...state, isloading: isLoading }),
         };
         const childrenProps: IFormStateProps = {
           formState: { state, mutations: mutations },

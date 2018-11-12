@@ -7,7 +7,13 @@ import Button from 'mineral-ui/Button';
 /*************************
  * The Delete button
  *************************/
-export default ({ projectId }: { projectId: string }) => {
+export default ({
+  projectId,
+  onProjectRemoved,
+}: {
+  projectId: string;
+  onProjectRemoved: () => void;
+}) => {
   interface IMutationResponse {
     deleteProject: { id: string };
   }
@@ -25,7 +31,7 @@ export default ({ projectId }: { projectId: string }) => {
       variables: {
         projectId,
       },
-    });
+    }).then(() => onProjectRemoved());
 
   return (
     <Mutation mutation={DELETE_PROJECT_MUTATION}>
