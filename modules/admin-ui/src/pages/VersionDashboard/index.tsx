@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Component from 'react-component-component';
-import { Query, QueryResult } from 'react-apollo';
+import { Query, QueryResult, OperationVariables } from 'react-apollo';
 import gql from 'graphql-tag';
 import 'react-table/react-table.css';
 import { compose } from 'recompose';
@@ -11,7 +11,7 @@ import { sortBy } from 'lodash';
 import Link from 'mineral-ui/Link';
 import Button from 'mineral-ui/Button';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
-import { ApolloError } from 'apollo-boost';
+import { ApolloError, ApolloQueryResult } from 'apollo-boost';
 import { Link as RouterLink } from 'react-router-dom';
 
 import ProjectDeleteButton from './DeleteButton';
@@ -32,6 +32,9 @@ interface IGqlQueryData {
 interface IPropsFromGql {
   data: IGqlQueryData;
   error: ApolloError | undefined;
+  refetch: (
+    variables?: OperationVariables | undefined,
+  ) => Promise<ApolloQueryResult<IGqlQueryData>>;
 }
 const withQuery: THoc<{}, IPropsFromGql> = Component => {
   const query = gql`
@@ -47,18 +50,18 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
   `;
 
   return props => (
-    <Query
-      query={query}
-      partialRefetch={true}
-      displayName="ProjectsQuery"
-      fetchPolicy={'no-cache'}
-    >
-      {({ data, loading, error }: QueryResult<IGqlQueryData>) => {
+    <Query query={query} partialRefetch={true} displayName="ProjectsQuery">
+      {({ data, loading, error, refetch }: QueryResult<IGqlQueryData>) => {
         if (loading) {
           return 'loading...';
         }
         return (
-          <Component {...props} data={data as IGqlQueryData} error={error} />
+          <Component
+            {...props}
+            data={data as IGqlQueryData}
+            error={error}
+            refetch={refetch}
+          />
         );
       }}
     </Query>
@@ -132,6 +135,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     data,
     onVersionSelect,
     localState: { state: { isAddingProject }, mutations: { setAddingProject } },
+    refetch,
     // error,
   } = props;
 
@@ -150,6 +154,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
       const StyledLink = styled(Link)`
         cursor: pointer;
       `;
+      const onProjectRemoved = () => refetch();
       return (
         <TableRow>
           <TableCell>
@@ -163,7 +168,10 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
             <ExportButton projectId={entry.id} />
           </TableCell>
           <TableCell>
-            <ProjectDeleteButton projectId={data.id} />
+            <ProjectDeleteButton
+              projectId={data.id}
+              onProjectRemoved={onProjectRemoved}
+            />
           </TableCell>
         </TableRow>
       );
@@ -172,6 +180,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const onAddButtonClick = () => setAddingProject(!isAddingProject);
   const onCancelAddProject = () => setAddingProject(false);
+  const onProjectAdded = () => refetch().then(() => setAddingProject(false));
 
   return (
     <div>
@@ -190,7 +199,10 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
       <div>
         {isAddingProject && (
           <ModalOverlay>
-            <AddProjectForm onCancel={onCancelAddProject} />
+            <AddProjectForm
+              onCancel={onCancelAddProject}
+              onProjectAdded={onProjectAdded}
+            />
           </ModalOverlay>
         )}
         <Button onClick={onAddButtonClick} size="medium" primary={true}>

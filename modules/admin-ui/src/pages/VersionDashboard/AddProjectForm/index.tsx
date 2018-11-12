@@ -1,10 +1,5 @@
-import { compose } from 'recompose';
-
-import { IExternalProps } from './types';
-import withLocalFormState from './localState';
-import withAddProjectMutation from './graphqlService';
-
 import * as React from 'react';
+import { compose } from 'recompose';
 import styled from 'react-emotion';
 import Card, {
   CardBlock,
@@ -17,13 +12,17 @@ import TextInput from 'mineral-ui/TextInput';
 import Button from 'mineral-ui/Button';
 import Grid, { GridItem } from 'mineral-ui/Grid';
 import Text from 'mineral-ui/Text';
-import { ILayoutProps, INewIndexInput } from './types';
+
+import { ILayoutProps, INewIndexInput, IExternalProps } from './types';
 import Alert from 'src/components/Alert';
 import { getFileContentCollection } from './utils';
+import withLocalFormState from './localState';
+import withAddProjectMutation from './graphqlService';
 
 const StyledCard = styled(Card)`
   width: 1000px;
   max-width: 100%;
+  position: relative;
 `;
 
 interface IIndexConfigArgs {
@@ -41,11 +40,13 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         setIndexConfig,
         removeIndex,
         setError,
+        setLoadingState,
       },
-      state: { projectId, indices, error },
+      state: { projectId, indices, error, isloading },
     },
     onCancel,
     addProject,
+    onProjectAdded,
   } = props;
 
   const onProjectIdInputChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
@@ -53,14 +54,14 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
 
   const onSubmit = async () => {
     try {
-      console.time('addProject');
+      setLoadingState(true);
       await addProject({
         projectId,
         indexConfigs: indices,
       });
-      console.timeEnd('addProject');
-      onCancel();
+      onProjectAdded();
     } catch (err) {
+      setLoadingState(false);
       setError(err);
     }
   };
@@ -131,6 +132,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
       )}
       <CardBlock>
         <FormField
+          disabled={isloading}
           required={!projectId.length}
           input={TextInput}
           label="Project ID"
@@ -144,6 +146,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
             <Grid alignItems="center" columns={12}>
               <GridItem span={3}>
                 <FormField
+                  disabled={isloading}
                   required={!index.newIndexMutationInput.graphqlField.length}
                   input={TextInput}
                   label="Name (aka. Graphql Field)"
@@ -157,6 +160,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
               </GridItem>
               <GridItem span={3}>
                 <FormField
+                  disabled={isloading}
                   required={!index.newIndexMutationInput.esIndex.length}
                   input={TextInput}
                   label="ES Index"
@@ -170,6 +174,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
               </GridItem>
               <GridItem span={3}>
                 <FormField
+                  disabled={isloading}
                   required={!index.newIndexMutationInput.esType.length}
                   input={TextInput}
                   label="ES type"
@@ -195,6 +200,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
                   size="medium"
                   variant="danger"
                   onClick={onIndexConfigRemoveClick(position)}
+                  disabled={isloading}
                 >
                   Remove
                 </Button>
@@ -205,17 +211,23 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         <CardDivider />
         <Grid>
           <GridItem>
-            <Button onClick={onIndexAddClick} size="medium">
+            <Button
+              onClick={onIndexAddClick}
+              size="medium"
+              disabled={isloading}
+            >
               Add Index
             </Button>
           </GridItem>
         </Grid>
         <CardDivider />
         <CardActions>
-          <Button onClick={onSubmit} primary={true}>
+          <Button onClick={onSubmit} primary={true} disabled={isloading}>
             Add
           </Button>
-          <Button onClick={onCancel}>Cancel</Button>
+          <Button onClick={onCancel} disabled={isloading}>
+            Cancel
+          </Button>
         </CardActions>
       </CardBlock>
     </StyledCard>

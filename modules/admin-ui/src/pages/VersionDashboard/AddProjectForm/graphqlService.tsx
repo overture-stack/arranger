@@ -184,14 +184,16 @@ const saveMatboxState = (client: ApolloClient<{}>) => (
 const validateMutationVariables = async (
   variables: IMutationVariables,
 ): Promise<void> => {
+  const { indexConfigs, projectId } = variables;
   const hasDuplicateIndexName =
     uniqBy(
-      variables.indexConfigs,
-      (config: INewIndexInput) => config.graphqlField,
-    ).length !== variables.indexConfigs.length;
-  const missingIndices = !variables.indexConfigs.length;
-  const missingProjectId = !variables.projectId.length;
-  const missingIndexField = !variables.indexConfigs.reduce(
+      indexConfigs,
+      (config: typeof indexConfigs[0]) =>
+        config.newIndexMutationInput.graphqlField,
+    ).length !== indexConfigs.length;
+  const missingIndices = !indexConfigs.length;
+  const missingProjectId = !projectId.length;
+  const missingIndexField = !indexConfigs.reduce(
     (acc, config) =>
       acc &&
       !!config.newIndexMutationInput.projectId.length &&
@@ -200,6 +202,10 @@ const validateMutationVariables = async (
       !!config.newIndexMutationInput.graphqlField.length,
     true,
   );
+  console.log(
+    uniqBy(indexConfigs, (config: INewIndexInput) => config.graphqlField),
+  );
+  console.log(variables);
   if (hasDuplicateIndexName) {
     throw new Error(
       'Cannot use multiple indices with the same name (aka graphqlField)',
