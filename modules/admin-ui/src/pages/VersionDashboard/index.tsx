@@ -12,6 +12,7 @@ import Link from 'mineral-ui/Link';
 import Button from 'mineral-ui/Button';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
 import { ApolloError } from 'apollo-boost';
+import { Link as RouterLink } from 'react-router-dom';
 
 import ProjectDeleteButton from './DeleteButton';
 import AddProjectForm from './AddProjectForm/index';
@@ -151,8 +152,10 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
       `;
       return (
         <TableRow>
-          <TableCell onClick={onIdClick}>
-            <StyledLink>{data.id}</StyledLink>
+          <TableCell>
+            <RouterLink to={`/project/${data.id}`}>
+              <StyledLink>{data.id}</StyledLink>
+            </RouterLink>
           </TableCell>
           <TableCell>{data.indexCount}</TableCell>
           <TableCell>{entry.timestamp}</TableCell>
