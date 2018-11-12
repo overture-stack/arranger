@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
+import { ConnectedRouter } from 'connected-react-router';
 import ApolloClient from 'apollo-boost';
 import { ApolloProvider } from 'react-apollo';
 import { Store } from 'redux';
+import { createBrowserHistory } from 'history';
 import { ThemeProvider } from 'mineral-ui/themes';
 
-import localStore from './store';
-import VersionsDashboard from './pages/VersionDashboard';
+import { createLocalStore } from './store';
 import Header from './components/Header';
+import VersionsDashboard from './pages/VersionDashboard';
+import ProjectIndicesDashboard from './pages/ProjectIndicesDashboard';
+
+const history = createBrowserHistory();
+const localStore = createLocalStore({ history });
 
 const App = ({
   basename = '',
@@ -24,18 +30,28 @@ const App = ({
   });
 
   const RoutedVersionDashboard = () => <VersionsDashboard />;
+  const RoutedProjectIndicesDashboard = ({ match }) => (
+    <ProjectIndicesDashboard projectId={match.params.projectId} />
+  );
 
   return (
     <Provider store={store}>
       <ApolloProvider client={client}>
-        <BrowserRouter basename={basename}>
+        <ConnectedRouter history={history}>
           <ThemeProvider>
             <div>
               <Header />
-              <Route path="/" render={RoutedVersionDashboard} />
+              <Route exact={true} path="/" render={RoutedVersionDashboard} />
+              <Route
+                exact={true}
+                path="/project/:projectId/"
+                render={RoutedProjectIndicesDashboard}
+              />
             </div>
           </ThemeProvider>
-        </BrowserRouter>
+        </ConnectedRouter>
+        {/* <BrowserRouter basename={basename}>
+        </BrowserRouter> */}
       </ApolloProvider>
     </Provider>
   );

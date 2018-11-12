@@ -1,4 +1,6 @@
-import { createStore } from 'redux';
+import { createStore, combineReducers } from 'redux';
+import { connectRouter } from 'connected-react-router';
+import { History } from 'history';
 
 enum ActionType {
   PROJECT_SELECT = 'PROJECT_SELECT',
@@ -17,7 +19,7 @@ const initialState: State = {
   currentProject: '',
 };
 
-const reducers = (state = initialState, action: IReduxAction): State => {
+const mainReducers = (state = initialState, action: IReduxAction): State => {
   switch (action.type) {
     case ActionType.PROJECT_SELECT:
       return {
@@ -29,8 +31,9 @@ const reducers = (state = initialState, action: IReduxAction): State => {
   }
 };
 
-export default createStore(
-  reducers,
-  window['__REDUX_DEVTOOLS_EXTENSION__'] &&
-    window['__REDUX_DEVTOOLS_EXTENSION__'](),
-);
+export const createLocalStore = ({ history }: { history: History }) =>
+  createStore(
+    combineReducers({ mainReducers, router: connectRouter(history) }),
+    window['__REDUX_DEVTOOLS_EXTENSION__'] &&
+      window['__REDUX_DEVTOOLS_EXTENSION__'](),
+  );

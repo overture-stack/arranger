@@ -106,39 +106,37 @@ const saveExtendedMapping = (client: ApolloClient<{}>) => (
       $projectId: String!
       $graphqlField: String!
       $field: String!
-      $extendedFieldMappingInput: ExtendedFieldMappingInput!
+      $extendedMapping: [ExtendedFieldSetMappingInput]!
     ) {
-      updateExtendedMapping(
+      saveExtendedMapping(
         projectId: $projectId
         graphqlField: $graphqlField
         field: $field
-        extendedFieldMappingInput: $extendedFieldMappingInput
+        extendedMapping: $extendedMapping
       ) {
         field
       }
     }
   `;
-  for (var s of state) {
-    await client.mutate({
-      mutation: MUTATION,
-      variables: {
-        projectId,
-        graphqlField,
-        field: s.field,
-        extendedFieldMappingInput: pick(s, [
-          'type',
-          'displayName',
-          'active',
-          'isArray',
-          'primaryKey',
-          'quickSearchEnabled',
-          'unit',
-          'displayValues',
-          'rangeStep',
-        ]),
-      },
-    });
-  }
+  await client.mutate({
+    mutation: MUTATION,
+    variables: {
+      projectId,
+      graphqlField,
+      extendedMapping: pick(state, [
+        'field',
+        'type',
+        'displayName',
+        'active',
+        'isArray',
+        'primaryKey',
+        'quickSearchEnabled',
+        'unit',
+        'displayValues',
+        'rangeStep',
+      ]),
+    },
+  });
   return {};
 };
 
