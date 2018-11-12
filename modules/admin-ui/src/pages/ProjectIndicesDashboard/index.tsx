@@ -59,29 +59,39 @@ const Component: React.ComponentType<
 const mapStateToProps = state => ({});
 const mapDispatchToProps = dispatch => ({});
 
-const Container = ({ children }) => {
-  const Render: React.ComponentType<{
-    projectId: string;
-    getProjectData: any;
-  }> = ({ projectId, getProjectData }) => {
-    <Component
-      initialState={{ loading: false }}
-      didMount={({ setState }) => {
-        getProjectData(projectId).then(({ data }) =>
-          setState({ loading: false, data }),
-        );
-      }}
-    >
-      {({ state }) => {
-        return children({ state });
-      }}
-    </Component>;
-  };
-  return compose(
-    connect(mapStateToProps, mapDispatchToProps),
-    withProjectDataGetter,
-  )(Render);
-};
+// const Container = ({ children }) => {
+//   const Render: React.ComponentType<{
+//     projectId: string;
+//     getProjectData: any;
+//   }> = ({ projectId, getProjectData }) => (
+//     <Component
+//       initialState={{ loading: false, data: null }}
+//       didMount={({ setState }) => {
+//         getProjectData(projectId).then(({ data }) =>
+//           setState({ loading: false, data }),
+//         );
+//       }}
+//     >
+//       {({ state }) => {
+//         return children({ state, projectId });
+//       }}
+//     </Component>;
+//   );
+//   return compose(
+//     connect(mapStateToProps, mapDispatchToProps),
+//     withProjectDataGetter,
+//   )(Render);
+// };
+
+// export default () => {
+//   return (
+//     <Container projectId={projectId}>
+//       {({state: {loading, }}) => (
+//         <div>{state.}</div>
+//       )}
+//     </Container>
+//   )
+// }
 
 export default compose<{}, IExternalProps>(
   connect(mapStateToProps, mapDispatchToProps),

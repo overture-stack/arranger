@@ -21,8 +21,8 @@ export const RT_Column = Record({
   type: String,
   sortable: Boolean,
   canChangeShow: Boolean,
-  jsonPath: Union(Null, String),
-  query: Union(Null, String),
+  jsonPath: Union(Undefined, Union(Null, String)),
+  query: Union(Undefined, Union(Null, String)),
 });
 
 export const RT_ColumnsState = Record({

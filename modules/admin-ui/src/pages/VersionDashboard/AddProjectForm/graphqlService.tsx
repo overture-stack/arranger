@@ -105,39 +105,38 @@ const saveExtendedMapping = (client: ApolloClient<{}>) => (
     mutation(
       $projectId: String!
       $graphqlField: String!
-      $field: String!
-      $extendedMapping: [ExtendedFieldSetMappingInput]!
+      $extendedMapping: [ExtendedMappingSetFieldInput]!
     ) {
       saveExtendedMapping(
         projectId: $projectId
         graphqlField: $graphqlField
-        field: $field
-        extendedMapping: $extendedMapping
+        input: $extendedMapping
       ) {
         field
       }
     }
   `;
-  await client.mutate({
+  return await client.mutate({
     mutation: MUTATION,
     variables: {
       projectId,
       graphqlField,
-      extendedMapping: pick(state, [
-        'field',
-        'type',
-        'displayName',
-        'active',
-        'isArray',
-        'primaryKey',
-        'quickSearchEnabled',
-        'unit',
-        'displayValues',
-        'rangeStep',
-      ]),
+      extendedMapping: state.map(s =>
+        pick(s, [
+          'field',
+          'type',
+          'displayName',
+          'active',
+          'isArray',
+          'primaryKey',
+          'quickSearchEnabled',
+          'unit',
+          'displayValues',
+          'rangeStep',
+        ]),
+      ),
     },
   });
-  return {};
 };
 
 const saveMatboxState = (client: ApolloClient<{}>) => (
