@@ -1,6 +1,5 @@
 import { Client } from 'elasticsearch';
 import { extendMapping } from '@arranger/mapping-utils';
-import { omit } from 'lodash';
 import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import { EsIndexLocation } from '../types';
@@ -121,7 +120,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
 export const saveExtendedMapping = (es: Client) => async (
   args: I_SaveExtendedMappingMutationArgs,
 ): Promise<I_GqlExtendedFieldMapping[]> => {
-  const { projectId, graphqlField, extendedFieldMappingInput } = args;
+  const { projectId, graphqlField, input } = args;
   const currentIndexMetadata = (await getProjectStorageMetadata(es)(
     projectId,
   )).find(entry => entry.name === graphqlField);
@@ -131,7 +130,7 @@ export const saveExtendedMapping = (es: Client) => async (
 
   const newExtendedMapping: I_GqlExtendedFieldMapping[] = replaceBy(
     currentStoredExtendedMapping,
-    extendedFieldMappingInput,
+    input,
     (el1, el2) => el1.field === el2.field,
   );
 

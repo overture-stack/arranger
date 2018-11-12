@@ -17,9 +17,9 @@ export default async () => gql`
     float
     nested
   }
-  enum NumericTypeUnit {
-    ${convert().measures()}
-  }
+  # enum NumericTypeUnit {
+  #   ${convert().measures()}
+  # }
 
   type ExtendedFieldMapping {
     gqlId: ID!
@@ -30,7 +30,7 @@ export default async () => gql`
     isArray: Boolean!
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
-    unit: NumericTypeUnit
+    unit: String
     displayValues: JSON!
     rangeStep: Float
   }
@@ -49,20 +49,20 @@ export default async () => gql`
     isArray: Boolean!
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
-    unit: NumericTypeUnit
+    unit: String
     displayValues: JSON
     rangeStep: Float
   }
 
   input ExtendedMappingSetFieldInput {
-    field: string!
+    field: String!
     type: ExtendedFieldType
     displayName: String!
     active: Boolean!
     isArray: Boolean!
     primaryKey: Boolean!
     quickSearchEnabled: Boolean!
-    unit: NumericTypeUnit
+    unit: String
     displayValues: JSON
     rangeStep: Float
   }
@@ -77,7 +77,7 @@ export default async () => gql`
     saveExtendedMapping(
       projectId: String!
       graphqlField: String!
-      extendedFieldMappingInput: [ExtendedMappingSetFieldInput]
+      input: [ExtendedMappingSetFieldInput]!
     ): [ExtendedFieldMapping]
   }
 `;

@@ -97,5 +97,5 @@ export interface I_UpdateExtendedMappingMutationArgs {
 export interface I_SaveExtendedMappingMutationArgs {
   projectId: string;
   graphqlField: string;
-  extendedFieldMappingInput: Array<I_ExtendedMappingSetFieldInput>;
+  input: Array<I_ExtendedMappingSetFieldInput>;
 }
