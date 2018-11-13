@@ -6,9 +6,7 @@ import 'react-table/react-table.css';
 import { compose } from 'recompose';
 import { THoc } from 'src/utils';
 import { connect } from 'react-redux';
-import styled from 'react-emotion';
 import { sortBy } from 'lodash';
-import Link from 'mineral-ui/Link';
 import Button from 'mineral-ui/Button';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
 import { ApolloError, ApolloQueryResult } from 'apollo-boost';
@@ -18,6 +16,7 @@ import ProjectDeleteButton from './DeleteButton';
 import AddProjectForm from './AddProjectForm/index';
 import { ModalOverlay } from 'src/components/Modal';
 import ExportButton from './ExportButton';
+import Link from 'src/components/Link';
 
 /************************
  * provides graphql query
@@ -151,15 +150,12 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const rows = sorted.map(entry => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
-      const StyledLink = styled(Link)`
-        cursor: pointer;
-      `;
       const onProjectRemoved = () => refetch();
       return (
         <TableRow>
           <TableCell>
-            <RouterLink to={`/project/${data.id}`}>
-              <StyledLink>{data.id}</StyledLink>
+            <RouterLink to={`/${data.id}`}>
+              <Link>{data.id}</Link>
             </RouterLink>
           </TableCell>
           <TableCell>{data.indexCount}</TableCell>
@@ -188,7 +184,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
         title="Project versions"
         rowKey="id"
         columns={[
-          { content: 'Project Id', key: 'id' },
+          { content: 'Project ID', key: 'id' },
           { content: 'Index Counts', key: 'indexCount' },
           { content: 'Created', key: 'timestamp' },
           { content: 'Export configurations', key: 'export' },

@@ -15,10 +15,12 @@ export const Overlay = styled('div')`
   z-index: 1;
 `;
 
-export const ModalOverlay: React.ComponentType = ({ children }) => {
+export const ModalOverlay: React.ComponentType<
+  React.HtmlHTMLAttributes<HTMLDivElement>
+> = ({ children, ...props }) => {
   return (
     <Portal>
-      <Overlay>{children}</Overlay>
+      <Overlay {...props}>{children}</Overlay>
     </Portal>
   );
 };

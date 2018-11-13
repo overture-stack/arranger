@@ -12,6 +12,7 @@ import { createLocalStore } from './store';
 import Header from './components/Header';
 import VersionsDashboard from './pages/VersionDashboard';
 import ProjectIndicesDashboard from './pages/ProjectIndicesDashboard';
+import ConfigEditorDashboard from './pages/ConfigEditorDashboard';
 
 const history = createBrowserHistory();
 const localStore = createLocalStore({ history });
@@ -34,6 +35,15 @@ const App = ({
     <ProjectIndicesDashboard projectId={match.params.projectId} />
   );
 
+  const RoutedConfigEditor = ({ match }) => {
+    return (
+      <ConfigEditorDashboard
+        projectId={match.params.projectId}
+        graphqlField={match.params.indexId}
+      />
+    );
+  };
+
   return (
     <Provider store={store}>
       <ApolloProvider client={client}>
@@ -44,14 +54,17 @@ const App = ({
               <Route exact={true} path="/" render={RoutedVersionDashboard} />
               <Route
                 exact={true}
-                path="/project/:projectId/"
+                path="/:projectId/"
                 render={RoutedProjectIndicesDashboard}
+              />
+              <Route
+                exact={true}
+                path="/:projectId/:indexId"
+                render={RoutedConfigEditor}
               />
             </div>
           </ThemeProvider>
         </ConnectedRouter>
-        {/* <BrowserRouter basename={basename}>
-        </BrowserRouter> */}
       </ApolloProvider>
     </Provider>
   );
