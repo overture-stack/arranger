@@ -1,39 +1,23 @@
 import { createStore, combineReducers } from 'redux';
 import { connectRouter } from 'connected-react-router';
 import { History } from 'history';
+import configEditor, { IProjectConfigEditorState } from './configEditorReducer';
 
-enum ActionType {
-  PROJECT_SELECT = 'PROJECT_SELECT',
-}
-
-export interface IReduxAction {
+export interface IReduxAction<ActionType, P = any> {
   type: ActionType;
-  payload: any;
+  payload: P;
 }
 
-export interface State {
-  currentProject: string;
+export interface IGlobalState {
+  configEditor: IProjectConfigEditorState;
 }
-
-const initialState: State = {
-  currentProject: '',
-};
-
-const mainReducers = (state = initialState, action: IReduxAction): State => {
-  switch (action.type) {
-    case ActionType.PROJECT_SELECT:
-      return {
-        ...state,
-        currentProject: action.payload.projectId,
-      };
-    default:
-      return state;
-  }
-};
 
 export const createLocalStore = ({ history }: { history: History }) =>
   createStore(
-    combineReducers({ mainReducers, router: connectRouter(history) }),
+    combineReducers({
+      configEditor,
+      router: connectRouter(history),
+    }),
     window['__REDUX_DEVTOOLS_EXTENSION__'] &&
       window['__REDUX_DEVTOOLS_EXTENSION__'](),
   );
