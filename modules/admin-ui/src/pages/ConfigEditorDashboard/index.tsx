@@ -40,7 +40,7 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
         return (
           <div>
             {[projectId, graphqlField].map(path => (
-              <Link>{path && `/${path}`}</Link>
+              <Link>{path && ` >> ${path}`}</Link>
             ))}
             <Tabs defaultSelectedTabIndex={0} label="Project Index Config">
               <Tab title="Fields">
