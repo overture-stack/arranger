@@ -31,6 +31,7 @@ class Arranger extends React.Component {
   };
 
   componentWillMount() {
+    console.log('ARRANGER MOUNTED!!!!');
     const hasChildren =
       this.props.children && React.Children.count(this.props.children) !== 0;
 

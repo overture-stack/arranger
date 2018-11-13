@@ -42,13 +42,13 @@ const DropdownItem = ({
   inputValue,
   result,
   primaryKey,
-  onClick = () => {},
+  onMouseDown = () => {},
 }) => (
   <div
     className={`quick-search-result ${css`
       cursor: pointer;
     `}`}
-    onClick={onClick}
+    onMouseDown={onMouseDown}
   >
     <div
       className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}
@@ -184,7 +184,8 @@ const QuickSearch = ({
                               aria-label={`${result}-${i}`}
                               result={result}
                               inputValue={input}
-                              onClick={() => {
+                              onMouseDown={() => {
+                                // onMouseDown because the input's onBlur would prevent onClick from triggering
                                 setValue('');
                                 if (
                                   !currentValues({
