@@ -9,10 +9,10 @@ import TextInput from 'mineral-ui/TextInput';
 import Grid, { GridItem } from 'mineral-ui/Grid';
 import Select from 'mineral-ui/Select';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
-import Card, { CardTitle, CardBlock, CardDivider } from 'mineral-ui/Card';
-import Checkbox from 'mineral-ui/Checkbox';
 import styled from 'react-emotion';
-import { ActionType } from 'src/store/configEditorReducer';
+
+import { Dispatch } from 'redux';
+import ExtendedFieldEditor from './components/ExtendedFieldEditor';
 
 /***************
  * redux container
@@ -42,21 +42,29 @@ const mapStateToProps = (
     }
   }
 };
-const mapDispatchtoProps = dispatch => ({
-  onFieldDisplayNameChange: (field: string) => (displayName: string) =>
-    dispatch({
-      type: ActionType.EXTENDED_MAPPING_DISPLAY_NAME_CHANGE,
-      payload: {
-        field,
-        value: displayName,
-      },
-    }),
-});
+interface IReduxDispatchProps {}
+const mapDispatchtoProps = (
+  dispatch: Dispatch,
+  ownProps: IExternalProps,
+): IReduxDispatchProps => ({});
 
 /************************
  * local state model
  ************************/
-const EXTENDED_FIELD_TYPES = {
+export const EXTENDED_FIELD_TYPES: {
+  string: 'string';
+  object: 'object';
+  text: 'text';
+  boolean: 'boolean';
+  date: 'date';
+  keyword: 'keyword';
+  id: 'id';
+  long: 'long';
+  double: 'double';
+  integer: 'integer';
+  float: 'float';
+  nested: 'nested';
+} = {
   string: 'string',
   object: 'object',
   text: 'text',
@@ -107,11 +115,11 @@ const SelectableTableRow = styled(TableRow)`
   }) => (selected ? theme.color_theme_30 : 'auto')};
 `;
 
-interface IInjectedProps extends IReduxStateProps {}
+interface IInjectedProps extends IReduxStateProps, IReduxDispatchProps {}
 const Dashboard: React.ComponentType<IExternalProps> = connect(
   mapStateToProps,
   mapDispatchtoProps,
-)(({ extendedMapping }: IInjectedProps) => {
+)(({ extendedMapping, graphqlField }: IInjectedProps & IExternalProps) => {
   if (!extendedMapping) {
     return null;
   }
@@ -123,7 +131,10 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
     field: '',
     type: null,
   };
-  const initialState: ILocalState = { filter: emptyFilter, selectedField: '' };
+  const initialState: ILocalState = {
+    filter: emptyFilter,
+    selectedField: extendedMapping[0].field,
+  };
 
   const booleanFilterOptions = [
     { text: 'none', value: null },
@@ -152,11 +163,12 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
       },
     });
 
-  const setSelectedField = ({ state, setState }: IStateContainer) => (
-    field: string,
-  ) => () => {
-    setState({ ...state, selectedField: field });
+  const setSelectedField = (s: IStateContainer) => (field: string) => () => {
+    s.setState({ ...s.state, selectedField: field });
   };
+
+  const getSelectedField = (s: IStateContainer) =>
+    extendedMapping.find(entry => entry.field === s.state.selectedField);
 
   const getFilteredFields = (state: ILocalState): typeof extendedMapping =>
     sortBy(
@@ -187,10 +199,13 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
       {(stateContainer: IStateContainer) => {
         const { state } = stateContainer;
         const filteredExtendedMapping = getFilteredFields(state);
-        const selectedField = extendedMapping.find(
-          entry => entry.field === state.selectedField,
-        );
-        const fieldTableColumns = [{ content: 'Fields', key: 'field' }];
+        const selectedField = getSelectedField(stateContainer);
+        const fieldTableColumns = [
+          {
+            content: `Fields (${filteredExtendedMapping.length})`,
+            key: 'field',
+          },
+        ];
         const fieldTableRows = filteredExtendedMapping.map(entry => ({
           row: () => {
             return (
@@ -300,46 +315,10 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
             </GridItem>
             <GridItem span={5}>
               {selectedField && (
-                <Card>
-                  <CardTitle>Field: {selectedField.field}</CardTitle>
-                  <CardDivider />
-                  <CardBlock>
-                    <FormField
-                      input={TextInput}
-                      label="Display Name"
-                      value={selectedField.displayName}
-                      size="medium"
-                    />
-                  </CardBlock>
-                  <CardBlock>
-                    <Checkbox
-                      name="Active"
-                      label="Active"
-                      checked={selectedField.active}
-                    />
-                  </CardBlock>
-                  <CardBlock>
-                    <Checkbox
-                      name="Quicksearch enabled"
-                      label="Quicksearch enabled"
-                      checked={selectedField.quickSearchEnabled}
-                    />
-                  </CardBlock>
-                  <CardBlock>
-                    <Checkbox
-                      name="Is primary key"
-                      label="Is primary key"
-                      checked={selectedField.primaryKey}
-                    />
-                  </CardBlock>
-                  <CardBlock>
-                    <Checkbox
-                      name="Is array"
-                      label="Is array"
-                      checked={selectedField.isArray}
-                    />
-                  </CardBlock>
-                </Card>
+                <ExtendedFieldEditor
+                  graphqlField={graphqlField}
+                  fieldData={selectedField}
+                />
               )}
             </GridItem>
           </Grid>
@@ -350,14 +329,3 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
 });
 
 export default Dashboard;
-
-// field: String!;
-// type: ExtendedFieldType!;
-// displayName: String!;
-// active: Boolean!;
-// isArray: Boolean!;
-// primaryKey: Boolean!;
-// quickSearchEnabled: Boolean!;
-// unit: String;
-// displayValues: JSON!;
-// rangeStep: Float;

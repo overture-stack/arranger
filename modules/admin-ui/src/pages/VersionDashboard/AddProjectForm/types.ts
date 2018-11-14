@@ -40,20 +40,20 @@ export const RT_AggsState = RT_Array(
   }),
 );
 
-export const RT_ExtendedMapping = RT_Array(
-  Record({
-    active: Boolean,
-    displayName: String,
-    displayValues: Dictionary(String, 'string'),
-    field: String,
-    isArray: Boolean,
-    primaryKey: Boolean,
-    quickSearchEnabled: Boolean,
-    type: String,
-    unit: Union(Null, String),
-    rangeStep: Union(Null, Union(Undefined, Number)),
-  }),
-);
+const RT_ExtendedMappingField = Record({
+  active: Boolean,
+  displayName: String,
+  displayValues: Dictionary(String, 'string'),
+  field: String,
+  isArray: Boolean,
+  primaryKey: Boolean,
+  quickSearchEnabled: Boolean,
+  type: String,
+  unit: Union(Null, String),
+  rangeStep: Union(Null, Union(Undefined, Number)),
+});
+
+export const RT_ExtendedMapping = RT_Array(RT_ExtendedMappingField);
 
 export const RT_Matchbox = Record({
   displayName: String,
@@ -77,6 +77,8 @@ export interface IIndexConfigImportData
 export interface IAggsState extends Static<typeof RT_AggsState> {}
 export interface IColumnsState extends Static<typeof RT_ColumnsState> {}
 export interface IExtendedMapping extends Static<typeof RT_ExtendedMapping> {}
+export interface IExtendedMappingField
+  extends Static<typeof RT_ExtendedMappingField> {}
 export interface IMatchboxState extends Static<typeof RT_MatchboxState> {}
 
 /********
