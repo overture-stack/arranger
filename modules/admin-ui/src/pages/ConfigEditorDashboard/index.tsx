@@ -8,12 +8,14 @@ import {
 } from 'src/pages/ProjectIndicesDashboard';
 import { compose } from 'recompose';
 import Tabs, { Tab } from 'mineral-ui/Tabs';
+import Flex, { FlexItem } from 'mineral-ui/Flex';
 // import Link from 'src/components/Link';
 
 import ExtendedMappingEditor from './ExtendedMappingEditor';
 import AggsStateEditor from './AggsStateEditor';
 import ColumnsStateEditor from './ColumnsStateEditor';
 import MatchboxStateEditor from './MatchboxStateEditor';
+import SaveButton from '../SaveButton';
 
 interface IInjectedProps extends IPropsFromRedux, IPropsWithProjectDataGetter {}
 interface IExternalProps {
@@ -37,25 +39,30 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
   return (
     <Component didMount={didMount}>
       {() => (
-        <div>
-          {/* {[projectId, graphqlField].map(path => (
+        <Flex direction="column">
+          <Flex justifyContent="flex-end">
+            <SaveButton />
+          </Flex>
+          <FlexItem>
+            {/* {[projectId, graphqlField].map(path => (
               <Link>{path && ` >> ${path}`}</Link>
             ))} */}
-          <Tabs defaultSelectedTabIndex={0} label="Project Index Config">
-            <Tab title="Fields">
-              <ExtendedMappingEditor graphqlField={graphqlField} />
-            </Tab>
-            <Tab title="Aggs panel">
-              <AggsStateEditor />
-            </Tab>
-            <Tab title="Table">
-              <ColumnsStateEditor />
-            </Tab>
-            <Tab title="Matchbox">
-              <MatchboxStateEditor />
-            </Tab>
-          </Tabs>
-        </div>
+            <Tabs defaultSelectedTabIndex={0} label="Project Index Config">
+              <Tab title="Fields">
+                <ExtendedMappingEditor graphqlField={graphqlField} />
+              </Tab>
+              <Tab title="Aggs panel">
+                <AggsStateEditor />
+              </Tab>
+              <Tab title="Table">
+                <ColumnsStateEditor />
+              </Tab>
+              <Tab title="Matchbox">
+                <MatchboxStateEditor />
+              </Tab>
+            </Tabs>
+          </FlexItem>
+        </Flex>
       )}
     </Component>
   );
