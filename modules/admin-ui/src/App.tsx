@@ -35,14 +35,12 @@ const App = ({
     <ProjectIndicesDashboard projectId={match.params.projectId} />
   );
 
-  const RoutedConfigEditor = ({ match }) => {
-    return (
-      <ConfigEditorDashboard
-        projectId={match.params.projectId}
-        graphqlField={match.params.indexId}
-      />
-    );
-  };
+  const RoutedConfigEditor = ({ match }) => (
+    <ConfigEditorDashboard
+      projectId={match.params.projectId}
+      graphqlField={match.params.indexId}
+    />
+  );
 
   return (
     <Provider store={store}>

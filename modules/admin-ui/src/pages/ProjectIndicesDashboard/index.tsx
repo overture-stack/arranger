@@ -12,6 +12,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { ActionType } from 'src/store/configEditorReducer';
 import { IGlobalState } from 'src/store';
 import Link from 'src/components/Link';
+import SaveButton from '../SaveButton';
+import Flex, { FlexItem } from 'mineral-ui/Flex';
 
 /*****************
  * provides data fetcher
@@ -107,7 +109,7 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
               return (
                 <TableRow>
                   <TableCell>
-                    <RouterLink to={`${projectId}/${index.graphqlField}`}>
+                    <RouterLink to={`/${projectId}/${index.graphqlField}`}>
                       <Link>{index.graphqlField}</Link>
                     </RouterLink>
                   </TableCell>
@@ -120,19 +122,26 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
           }));
 
           return (
-            <Table
-              columns={[
-                {
-                  content: 'Name (aka graphqlField)',
-                  key: 'graphqlField',
-                },
-                { content: 'ES index', key: 'esIndex' },
-                { content: 'ES type', key: 'esType' },
-                { content: 'has mapping', key: 'hasMapping' },
-              ]}
-              title={`Arranger project: ${projectId}`}
-              data={rows}
-            />
+            <Flex direction="column">
+              <Flex justifyContent="flex-end">
+                <SaveButton />
+              </Flex>
+              <FlexItem>
+                <Table
+                  columns={[
+                    {
+                      content: 'Name (aka graphqlField)',
+                      key: 'graphqlField',
+                    },
+                    { content: 'ES index', key: 'esIndex' },
+                    { content: 'ES type', key: 'esType' },
+                    { content: 'has mapping', key: 'hasMapping' },
+                  ]}
+                  title={`Arranger project: ${projectId}`}
+                  data={rows}
+                />
+              </FlexItem>
+            </Flex>
           );
         }
       }}

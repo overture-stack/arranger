@@ -4,7 +4,8 @@ import { IGqlData } from 'src/gql/queries/allProjectData';
 export enum ActionType {
   PROJECT_SELECT = 'PROJECT_SELECT',
   PROJECT_DATA_LOADED = 'PROJECT_DATA_LOADED',
-  'EXTENDED_MAPPING_FIELD_CHANGE' = 'EXTENDED_MAPPING_FIELD_CHANGE',
+  EXTENDED_MAPPING_FIELD_CHANGE = 'EXTENDED_MAPPING_FIELD_CHANGE',
+  PROJECT_EDIT_CLEAR = 'PROJECT_EDIT_CLEAR',
 }
 
 export interface IProjectConfigEditorState {
@@ -38,9 +39,15 @@ const reducer = (
             rangeStep: number;
           };
         }
-      >,
+      >
+    | IReduxAction<ActionType.PROJECT_EDIT_CLEAR, {}>,
 ): IProjectConfigEditorState => {
   switch (action.type) {
+    case ActionType.PROJECT_EDIT_CLEAR:
+      return {
+        ...state,
+        currentProjectData: null,
+      };
     case ActionType.PROJECT_DATA_LOADED:
       return {
         ...state,

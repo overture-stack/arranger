@@ -17,6 +17,7 @@ import AddProjectForm from './AddProjectForm/index';
 import { ModalOverlay } from 'src/components/Modal';
 import ExportButton from './ExportButton';
 import Link from 'src/components/Link';
+import { ActionType } from 'src/store/configEditorReducer';
 
 /************************
  * provides graphql query
@@ -73,13 +74,20 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
 interface IReduxStateProps {}
 interface IReduxDispatchProps {
   onVersionSelect: (version: String) => void;
+  clearEditingProject: () => void;
 }
 interface IPropsFromRedux extends IReduxDispatchProps, IReduxStateProps {}
 const withGlobalState: THoc<{}, IPropsFromRedux> = connect(
   (): IReduxStateProps => ({}),
   (dispatch): IReduxDispatchProps => ({
     onVersionSelect: (projectId: string) => {
-      dispatch({ type: 'PROJECT_SELECT', payload: { projectId } });
+      dispatch({
+        type: ActionType.PROJECT_SELECT,
+        payload: { projectId },
+      });
+    },
+    clearEditingProject: () => {
+      dispatch({ type: ActionType.PROJECT_EDIT_CLEAR, payload: {} });
     },
   }),
 );
@@ -135,6 +143,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     onVersionSelect,
     localState: { state: { isAddingProject }, mutations: { setAddingProject } },
     refetch,
+    clearEditingProject,
     // error,
   } = props;
 
@@ -147,6 +156,14 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   }));
 
   const sorted: typeof columnsData = sortBy(columnsData, 'timestamp');
+
+  const onAddButtonClick = () => setAddingProject(!isAddingProject);
+  const onCancelAddProject = () => setAddingProject(false);
+  const onProjectAdded = () => refetch().then(() => setAddingProject(false));
+
+  const didMount = () => {
+    clearEditingProject();
+  };
 
   const rows = sorted.map(entry => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
@@ -174,38 +191,38 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     },
   }));
 
-  const onAddButtonClick = () => setAddingProject(!isAddingProject);
-  const onCancelAddProject = () => setAddingProject(false);
-  const onProjectAdded = () => refetch().then(() => setAddingProject(false));
-
   return (
-    <div>
-      <Table
-        title="Project versions"
-        rowKey="id"
-        columns={[
-          { content: 'Project ID', key: 'id' },
-          { content: 'Index Counts', key: 'indexCount' },
-          { content: 'Created', key: 'timestamp' },
-          { content: 'Export configurations', key: 'export' },
-          { content: 'Delete', key: 'delete' },
-        ]}
-        data={rows}
-      />
-      <div>
-        {isAddingProject && (
-          <ModalOverlay>
-            <AddProjectForm
-              onCancel={onCancelAddProject}
-              onProjectAdded={onProjectAdded}
-            />
-          </ModalOverlay>
-        )}
-        <Button onClick={onAddButtonClick} size="medium" primary={true}>
-          Add Project
-        </Button>
-      </div>
-    </div>
+    <Component didMount={didMount}>
+      {() => (
+        <div>
+          <Table
+            title="Project versions"
+            rowKey="id"
+            columns={[
+              { content: 'Project ID', key: 'id' },
+              { content: 'Index Counts', key: 'indexCount' },
+              { content: 'Created', key: 'timestamp' },
+              { content: 'Export configurations', key: 'export' },
+              { content: 'Delete', key: 'delete' },
+            ]}
+            data={rows}
+          />
+          <div>
+            {isAddingProject && (
+              <ModalOverlay>
+                <AddProjectForm
+                  onCancel={onCancelAddProject}
+                  onProjectAdded={onProjectAdded}
+                />
+              </ModalOverlay>
+            )}
+            <Button onClick={onAddButtonClick} size="medium" primary={true}>
+              Add Project
+            </Button>
+          </div>
+        </div>
+      )}
+    </Component>
   );
 };
 
