@@ -53,10 +53,10 @@ const mapStateToProps = (
 // quickSearchEnabled: Boolean!;
 // type: ExtendedFieldType!;
 // isArray: Boolean!;
+// rangeStep: Float;
 
 // unit: String;
 // displayValues: JSON!;
-// rangeStep: Float;
 
 interface IReduxDispatchProps {
   onFieldDisplayNameChange: (
@@ -176,9 +176,8 @@ const Component: React.ComponentType<
   onFieldIsArrayStateChange,
   onFieldRangeStepChange,
 }) => {
-  const onDisplayNameChange = (field: IExtendedMappingField) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => onFieldDisplayNameChange(field)(e.currentTarget.value);
+  const onDisplayNameChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
+    onFieldDisplayNameChange(fieldData)(e.currentTarget.value);
 
   const onTypeChange = e => onFieldTypeChange(fieldData)(e.value);
 
