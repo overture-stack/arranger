@@ -4,7 +4,7 @@ import { IGqlData } from 'src/gql/queries/allProjectData';
 export enum ActionType {
   PROJECT_SELECT = 'PROJECT_SELECT',
   PROJECT_DATA_LOADED = 'PROJECT_DATA_LOADED',
-  'EXTENDED_MAPPING_DISPLAY_NAME_CHANGE' = 'EXTENDED_MAPPING_DISPLAY_NAME_CHANGE',
+  'EXTENDED_MAPPING_FIELD_CHANGE' = 'EXTENDED_MAPPING_FIELD_CHANGE',
 }
 
 export interface IProjectConfigEditorState {
@@ -22,11 +22,21 @@ const reducer = (
   action:
     | IReduxAction<ActionType.PROJECT_DATA_LOADED, { data: IGqlData }>
     | IReduxAction<
-        ActionType.EXTENDED_MAPPING_DISPLAY_NAME_CHANGE,
+        ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
         {
           graphqlField: string;
-          field: string;
-          value: string;
+          fieldConfig: {
+            field: string;
+            type: string;
+            displayName: string;
+            active: boolean;
+            isArray: boolean;
+            primaryKey: boolean;
+            quickSearchEnabled: boolean;
+            unit: string;
+            displayValues: { [k: string]: string };
+            rangeStep: number;
+          };
         }
       >,
 ): IProjectConfigEditorState => {
@@ -36,10 +46,34 @@ const reducer = (
         ...state,
         currentProjectData: action.payload.data,
       };
-    case ActionType.EXTENDED_MAPPING_DISPLAY_NAME_CHANGE:
-      const { payload: { field, graphqlField, value } } = action;
+    case ActionType.EXTENDED_MAPPING_FIELD_CHANGE:
+      const { payload: { graphqlField, fieldConfig } } = action;
+      if (!state.currentProjectData) {
+        return state;
+      }
       return {
         ...state,
+        currentProjectData: {
+          ...state.currentProjectData,
+          project: {
+            ...state.currentProjectData.project,
+            indices: state.currentProjectData.project.indices.map(index => ({
+              ...(index.graphqlField !== graphqlField
+                ? index
+                : {
+                    ...index,
+                    extended: index.extended.map(field => ({
+                      ...field,
+                      ...(fieldConfig.field !== field.field
+                        ? {}
+                        : {
+                            ...fieldConfig,
+                          }),
+                    })),
+                  }),
+            })),
+          },
+        },
       };
     default:
       return state;

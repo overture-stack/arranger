@@ -8,7 +8,7 @@ import {
 } from 'src/pages/ProjectIndicesDashboard';
 import { compose } from 'recompose';
 import Tabs, { Tab } from 'mineral-ui/Tabs';
-import Link from 'src/components/Link';
+// import Link from 'src/components/Link';
 
 import ExtendedMappingEditor from './ExtendedMappingEditor';
 import AggsStateEditor from './AggsStateEditor';
@@ -36,29 +36,27 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
   };
   return (
     <Component didMount={didMount}>
-      {() => {
-        return (
-          <div>
-            {[projectId, graphqlField].map(path => (
+      {() => (
+        <div>
+          {/* {[projectId, graphqlField].map(path => (
               <Link>{path && ` >> ${path}`}</Link>
-            ))}
-            <Tabs defaultSelectedTabIndex={0} label="Project Index Config">
-              <Tab title="Fields">
-                <ExtendedMappingEditor graphqlField={graphqlField} />
-              </Tab>
-              <Tab title="Aggs panel">
-                <AggsStateEditor />
-              </Tab>
-              <Tab title="Table">
-                <ColumnsStateEditor />
-              </Tab>
-              <Tab title="Matchbox">
-                <MatchboxStateEditor />
-              </Tab>
-            </Tabs>
-          </div>
-        );
-      }}
+            ))} */}
+          <Tabs defaultSelectedTabIndex={0} label="Project Index Config">
+            <Tab title="Fields">
+              <ExtendedMappingEditor graphqlField={graphqlField} />
+            </Tab>
+            <Tab title="Aggs panel">
+              <AggsStateEditor />
+            </Tab>
+            <Tab title="Table">
+              <ColumnsStateEditor />
+            </Tab>
+            <Tab title="Matchbox">
+              <MatchboxStateEditor />
+            </Tab>
+          </Tabs>
+        </div>
+      )}
     </Component>
   );
 };

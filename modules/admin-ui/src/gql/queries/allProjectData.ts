@@ -78,31 +78,34 @@ export const QUERY = gql`
     }
   }
 `;
+
+export interface IGqlProjectIndexMetadata {
+  id: string;
+  hasMapping: boolean;
+  graphqlField: string;
+  projectId: string;
+  esIndex: string;
+  esType: string;
+
+  extended: Static<typeof RT_ExtendedMapping>;
+
+  aggsState: {
+    timestamp: string;
+    state: Static<typeof RT_AggsState>;
+  };
+  columnsState: {
+    timestamp: string;
+    state: Static<typeof RT_ColumnsState>;
+  };
+  matchBoxState: {
+    timestamp: string;
+    state: Static<typeof RT_MatchboxState>;
+  };
+}
+
 export interface IGqlData {
   project: {
     id: string;
-    indices: Array<{
-      id: string;
-      hasMapping: boolean;
-      graphqlField: string;
-      projectId: string;
-      esIndex: string;
-      esType: string;
-
-      extended: Static<typeof RT_ExtendedMapping>;
-
-      aggsState: {
-        timestamp: string;
-        state: Static<typeof RT_AggsState>;
-      };
-      columnsState: {
-        timestamp: string;
-        state: Static<typeof RT_ColumnsState>;
-      };
-      matchBoxState: {
-        timestamp: string;
-        state: Static<typeof RT_MatchboxState>;
-      };
-    }>;
+    indices: Array<IGqlProjectIndexMetadata>;
   };
 }

@@ -9,10 +9,7 @@ import { ApolloQueryResult } from 'apollo-boost';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
 import { Link as RouterLink } from 'react-router-dom';
 
-import {
-  ActionType,
-  IProjectDataLoadedAction,
-} from 'src/store/configEditorReducer';
+import { ActionType } from 'src/store/configEditorReducer';
 import { IGlobalState } from 'src/store';
 import Link from 'src/components/Link';
 
@@ -67,7 +64,7 @@ const mapStateToProps = (state: IGlobalState): IReduxStateProps => ({
 });
 const mapDispatchToProps = (dispatch): IReduxDispatchProps => ({
   onDataLoaded: data => {
-    const action: IProjectDataLoadedAction = {
+    const action = {
       type: ActionType.PROJECT_DATA_LOADED,
       payload: { data },
     };
