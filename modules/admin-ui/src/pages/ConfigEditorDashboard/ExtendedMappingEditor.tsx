@@ -207,123 +207,123 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
           },
         ];
         const fieldTableRows = filteredExtendedMapping.map(entry => ({
-          row: () => {
-            return (
-              <SelectableTableRow
-                selected={state.selectedField === entry.field}
-                onClick={setSelectedField(stateContainer)(entry.field)}
-              >
-                <TableCell>{entry.field}</TableCell>
-              </SelectableTableRow>
-            );
-          },
+          row: () => (
+            <SelectableTableRow
+              selected={state.selectedField === entry.field}
+              onClick={setSelectedField(stateContainer)(entry.field)}
+            >
+              <TableCell>{entry.field}</TableCell>
+            </SelectableTableRow>
+          ),
         }));
         return (
-          <Grid alignItems="top" columns={12}>
-            <GridItem span={7}>
-              <Grid alignItems="flex-end" columns={14}>
-                <GridItem span={4}>
-                  <FormField
-                    input={TextInput}
-                    label="Field filter"
-                    value={state.filter.field}
-                    size="small"
-                    onChange={onFieldFilterChange(stateContainer)}
-                  />
-                </GridItem>
-                <GridItem span={2}>
-                  <FormField
-                    input={Select}
-                    label="Type"
-                    size="small"
-                    selectedItem={{
-                      text: state.filter.type || '',
-                      value: state.filter.type,
-                    }}
-                    onChange={onFilterOptionSelect(stateContainer)('type')}
-                    data={[
-                      { text: 'none', value: null },
-                      ...Object.values(EXTENDED_FIELD_TYPES).map(val => ({
-                        text: val,
-                        value: val,
-                      })),
-                    ]}
-                  />
-                </GridItem>
-                <GridItem span={2}>
-                  <FormField
-                    input={Select}
-                    label="Is active"
-                    size="small"
-                    data={booleanFilterOptions}
-                    selectedItem={{
-                      text: state.filter.active || '',
-                      value: state.filter.active,
-                    }}
-                    onChange={onFilterOptionSelect(stateContainer)('active')}
-                  />
-                </GridItem>
-                <GridItem span={2}>
-                  <FormField
-                    input={Select}
-                    label="Is array"
-                    size="small"
-                    data={booleanFilterOptions}
-                    selectedItem={{
-                      text: state.filter.isArray,
-                      value: state.filter.isArray,
-                    }}
-                    onChange={onFilterOptionSelect(stateContainer)('isArray')}
-                  />
-                </GridItem>
-                <GridItem span={2}>
-                  <FormField
-                    input={Select}
-                    label="Is primary key"
-                    size="small"
-                    data={booleanFilterOptions}
-                    selectedItem={{
-                      text: state.filter.primaryKey || '',
-                      value: state.filter.primaryKey,
-                    }}
-                    onChange={onFilterOptionSelect(stateContainer)(
-                      'primaryKey',
-                    )}
-                  />
-                </GridItem>
-                <GridItem span={2}>
-                  <FormField
-                    input={Select}
-                    label="Quicksearch enabled"
-                    size="small"
-                    data={booleanFilterOptions}
-                    selectedItem={{
-                      text: state.filter.quickSearchEnabled || '',
-                      value: state.filter.quickSearchEnabled,
-                    }}
-                    onChange={onFilterOptionSelect(stateContainer)(
-                      'quickSearchEnabled',
-                    )}
-                  />
-                </GridItem>
-              </Grid>
-              <Table
-                title={`Fields`}
-                hideTitle={true}
-                rowKey="field"
-                columns={fieldTableColumns}
-                data={fieldTableRows}
-              />
-            </GridItem>
-            <GridItem span={5}>
-              {selectedField && (
-                <ExtendedFieldEditor
-                  graphqlField={graphqlField}
-                  fieldData={selectedField}
+          <div style={{ minHeight: '800px' }}>
+            <Grid alignItems="top" columns={12}>
+              <GridItem span={7}>
+                <Grid alignItems="flex-end" columns={14}>
+                  <GridItem span={4}>
+                    <FormField
+                      input={TextInput}
+                      label="Field filter"
+                      value={state.filter.field}
+                      size="small"
+                      onChange={onFieldFilterChange(stateContainer)}
+                    />
+                  </GridItem>
+                  <GridItem span={2}>
+                    <FormField
+                      input={Select}
+                      label="Type"
+                      size="small"
+                      selectedItem={{
+                        text: state.filter.type || '',
+                        value: state.filter.type,
+                      }}
+                      onChange={onFilterOptionSelect(stateContainer)('type')}
+                      data={[
+                        { text: 'none', value: null },
+                        ...Object.values(EXTENDED_FIELD_TYPES).map(val => ({
+                          text: val,
+                          value: val,
+                        })),
+                      ]}
+                    />
+                  </GridItem>
+                  <GridItem span={2}>
+                    <FormField
+                      input={Select}
+                      label="Is active"
+                      size="small"
+                      data={booleanFilterOptions}
+                      selectedItem={{
+                        text: state.filter.active || '',
+                        value: state.filter.active,
+                      }}
+                      onChange={onFilterOptionSelect(stateContainer)('active')}
+                    />
+                  </GridItem>
+                  <GridItem span={2}>
+                    <FormField
+                      input={Select}
+                      label="Is array"
+                      size="small"
+                      data={booleanFilterOptions}
+                      selectedItem={{
+                        text: state.filter.isArray,
+                        value: state.filter.isArray,
+                      }}
+                      onChange={onFilterOptionSelect(stateContainer)('isArray')}
+                    />
+                  </GridItem>
+                  <GridItem span={2}>
+                    <FormField
+                      input={Select}
+                      label="Is primary key"
+                      size="small"
+                      data={booleanFilterOptions}
+                      selectedItem={{
+                        text: state.filter.primaryKey || '',
+                        value: state.filter.primaryKey,
+                      }}
+                      onChange={onFilterOptionSelect(stateContainer)(
+                        'primaryKey',
+                      )}
+                    />
+                  </GridItem>
+                  <GridItem span={2}>
+                    <FormField
+                      input={Select}
+                      label="Quicksearch enabled"
+                      size="small"
+                      data={booleanFilterOptions}
+                      selectedItem={{
+                        text: state.filter.quickSearchEnabled || '',
+                        value: state.filter.quickSearchEnabled,
+                      }}
+                      onChange={onFilterOptionSelect(stateContainer)(
+                        'quickSearchEnabled',
+                      )}
+                    />
+                  </GridItem>
+                </Grid>
+                <Table
+                  title={`Fields`}
+                  hideTitle={true}
+                  rowKey="field"
+                  columns={fieldTableColumns}
+                  data={fieldTableRows}
                 />
-              )}
-            </GridItem>
-          </Grid>
+              </GridItem>
+              <GridItem span={5}>
+                {selectedField && (
+                  <ExtendedFieldEditor
+                    graphqlField={graphqlField}
+                    fieldData={selectedField}
+                  />
+                )}
+              </GridItem>
+            </Grid>
+          </div>
         );
       }}
     </Component>
