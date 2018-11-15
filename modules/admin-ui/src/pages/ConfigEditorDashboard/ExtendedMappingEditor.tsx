@@ -308,6 +308,8 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
                 </GridItem>
               </Grid>
               <Table
+                title={`Fields`}
+                hideTitle={true}
                 rowKey="field"
                 columns={fieldTableColumns}
                 data={fieldTableRows}
