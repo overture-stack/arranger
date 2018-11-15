@@ -163,6 +163,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const didMount = () => {
     clearEditingProject();
+    refetch();
   };
 
   const rows = sorted.map(entry => ({

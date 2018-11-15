@@ -12,7 +12,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { ActionType } from 'src/store/configEditorReducer';
 import { IGlobalState } from 'src/store';
 import Link from 'src/components/Link';
-import SaveButton from '../SaveButton';
+import ProjectActionButtons from '../ProjectActionButtons';
 import Flex, { FlexItem } from 'mineral-ui/Flex';
 
 /*****************
@@ -124,20 +124,17 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
           return (
             <Flex direction="column">
               <Flex justifyContent="flex-end">
-                <SaveButton />
+                <ProjectActionButtons />
               </Flex>
               <FlexItem>
                 <Table
+                  title={`Arranger project: ${projectId}`}
                   columns={[
-                    {
-                      content: 'Name (aka graphqlField)',
-                      key: 'graphqlField',
-                    },
+                    { content: 'Name (aka graphqlField)', key: 'graphqlField' },
                     { content: 'ES index', key: 'esIndex' },
                     { content: 'ES type', key: 'esType' },
                     { content: 'has mapping', key: 'hasMapping' },
                   ]}
-                  title={`Arranger project: ${projectId}`}
                   data={rows}
                 />
               </FlexItem>

@@ -278,6 +278,7 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
 /*****************
  * Provides server transaction to add index
  *****************/
+export interface IPropsWithMutation extends IPropsWithMutation {}
 const withAddProjectMutation: THoc<
   {},
   IPropsWithMutation
