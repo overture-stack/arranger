@@ -130,6 +130,7 @@ export default compose<
               <FormField
                 label="Project ID"
                 size="medium"
+                disabled={s.state.loading}
                 required={!s.state.projectId.length}
                 input={TextInput}
                 value={s.state.projectId}
@@ -138,10 +139,16 @@ export default compose<
             </CardBlock>
             <CardDivider />
             <CardActions>
-              <Button primary={true} onClick={onSaveConfirmed(s)}>
+              <Button
+                disabled={s.state.loading}
+                primary={true}
+                onClick={onSaveConfirmed(s)}
+              >
                 Save
               </Button>
-              <Button onClick={onActionCanceled}>Cancel</Button>
+              <Button disabled={s.state.loading} onClick={onActionCanceled}>
+                Cancel
+              </Button>
             </CardActions>
           </Card>
         )}
