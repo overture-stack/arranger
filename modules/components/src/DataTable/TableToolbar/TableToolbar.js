@@ -43,6 +43,7 @@ const TableToolbar = ({
   columnDropdownText = 'Show columns',
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
+  exporter = saveTSV,
   sqon,
   downloadUrl,
   InputComponent,
@@ -103,7 +104,7 @@ const TableToolbar = ({
                 minHeight: 16,
               }}
               onClick={() => {
-                saveTSV({
+                exporter({
                   url: downloadUrl,
                   files: [
                     {
