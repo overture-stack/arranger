@@ -42,7 +42,7 @@ export default ({
           onClick={handleClick(deleteProject)}
           disabled={loading}
         >
-          delete
+          Delete
         </Button>
       )}
     </Mutation>

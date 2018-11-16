@@ -65,7 +65,7 @@ export default () => {
               <Card>
                 <CardBlock>
                   <Text>All unsaved configuration will be lost.</Text>
-                  <Text>Are you sure you want to exit without waving?</Text>
+                  <Text>Are you sure you want to exit without saving?</Text>
                 </CardBlock>
                 <CardDivider />
                 <CardActions>
