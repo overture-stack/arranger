@@ -44,7 +44,7 @@
     "test-only": "jest --coverage",
     "test:watch": "jest --watch",
     "watch:run": "nodemon ./build/src",
-    "prepare": "rm -rf dist && npm run build"
+    "prepare": "npm run build"
   },
   "author": "Minh Ha",
   "license": "APLv2",

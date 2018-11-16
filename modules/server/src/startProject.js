@@ -44,12 +44,13 @@ const mergeFieldsFromConfig = (generatedFields, configFields) => {
   ];
 };
 
-export default async function startProjectApp({
+export const createProjectEndpoint = async ({
   es,
   id,
   graphqlOptions = {},
   enableAdmin,
-}) {
+  typesWithMappings,
+}) => {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -58,64 +59,80 @@ export default async function startProjectApp({
   const types = await getTypes({ id, es });
 
   if (!types) return;
-  let hits = mapHits(types);
-  let mappings = await fetchMappings({ es, types: hits });
-
-  let extended = await Promise.all(
-    hits.map(async type => {
-      const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
-      const size = (await es.search({
-        index: indexPrefix,
-        type: indexPrefix,
-        size: 0,
-        _source: false,
-      })).hits.total;
-
-      const fields = extendFields(
-        mapHits(
-          await es.search({
-            index: indexPrefix,
-            type: indexPrefix,
-            size: size,
-          }),
-        ),
-      );
-
-      return { ...type, indexPrefix, fields };
-    }),
-  );
-
-  let typesWithMappings = addMappingsToTypes({
-    types: extended.map(type => {
-      return [
-        type.name,
-        {
-          index: type.index,
-          es_type: type.esType,
-          name: type.name,
-          extendedFields: type.fields,
-          customFields: ``,
-          indexPrefix: type.indexPrefix,
-          config: type.config || {},
-        },
-      ];
-    }),
-    mappings: mappings.map(m => m.mapping),
-  });
-
-  let schema = makeSchema({
+  const schema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
     middleware: graphqlOptions.middleware || [],
     enableAdmin,
   });
 
-  let mockSchema = makeSchema({
+  const mockSchema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
     mock: true,
   });
 
+  await initializeSets({ es });
+
+  const projectApp = express.Router();
+
+  projectApp.use(`/`, (req, res, next) => {
+    req.context = req.context || {};
+    req.context.es = es;
+    next();
+  });
+
+  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
+
+  const noSchemaHandler = (req, res) =>
+    res.json({
+      error:
+        'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
+    });
+
+  projectApp.use(
+    `/mock/graphql`,
+    mockSchema
+      ? graphqlExpress({
+          schema: mockSchema,
+        })
+      : noSchemaHandler,
+  );
+
+  projectApp.use(
+    `/graphql`,
+    schema
+      ? graphqlExpress(async (request, response, graphQLParams) => {
+          const externalContext =
+            typeof graphqlOptions.context === 'function'
+              ? await graphqlOptions.context(request, response, graphQLParams)
+              : graphqlOptions.context;
+          return {
+            schema,
+            context: {
+              es,
+              projectId: id,
+              ...(externalContext || {}),
+            },
+          };
+        })
+      : noSchemaHandler,
+  );
+
+  projectApp.use(`/download`, download({ projectId: id }));
+
+  setProject({ app: projectApp, schema, mockSchema, es, id });
+  console.log(`graphql server running at /${id}/graphql`);
+
+  return projectApp;
+};
+
+const initializeStates = async ({
+  mappings,
+  typesWithMappings,
+  es,
+  projectId,
+}) => {
   const createAggsState = typesWithMappings.map(async ([type, props]) => {
     const index = `${props.indexPrefix}-aggs-state`;
     const count = await es
@@ -201,8 +218,6 @@ export default async function startProjectApp({
       : [];
   });
 
-  await initializeSets({ es });
-
   let body = flattenDeep(
     await Promise.all([
       ...createAggsState,
@@ -212,59 +227,89 @@ export default async function startProjectApp({
   );
 
   // TODO: don't add new ui states if decomissioned
-  if (!getProject(id) && body.length > 0) {
+  if (!getProject(projectId) && body.length > 0) {
     await es.bulk({ body });
   }
+};
 
-  const projectApp = express.Router();
+export default async function startProjectApp({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+}) {
+  if (!id) throw new Error('project empty');
 
-  projectApp.use(`/`, (req, res, next) => {
-    req.context = req.context || {};
-    req.context.es = es;
-    next();
+  // indices must be lower cased
+  id = id.toLowerCase();
+
+  const types = await getTypes({ id, es });
+
+  if (!types) return;
+  const hits = mapHits(types);
+  const mappings = await fetchMappings({ es, types: hits });
+
+  const extended = await Promise.all(
+    hits.map(async type => {
+      const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
+      try {
+        const size = (await es.search({
+          index: indexPrefix,
+          type: indexPrefix,
+          size: 0,
+          _source: false,
+        })).hits.total;
+
+        const fields = extendFields(
+          mapHits(
+            await es.search({
+              index: indexPrefix,
+              type: indexPrefix,
+              size: size,
+            }),
+          ),
+        );
+
+        return { ...type, indexPrefix, fields };
+      } catch (err) {
+        const fields = type.config.extended;
+        return { ...type, indexPrefix, fields };
+      }
+    }),
+  );
+  const typesWithMappings = addMappingsToTypes({
+    types: extended.map(type => {
+      return [
+        type.name,
+        {
+          index: type.index,
+          es_type: type.esType,
+          name: type.name,
+          extendedFields: type.fields,
+          customFields: ``,
+          indexPrefix: type.indexPrefix,
+          config: type.config || {},
+        },
+      ];
+    }),
+    mappings: mappings.map(m => m.mapping),
   });
 
-  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
+  await Promise.all([
+    initializeSets({ es }),
+    // initializeStates({ // this should no longer be handled by the search api
+    //   es,
+    //   projectId: id,
+    //   typesWithMappings,
+    //   mappings,
+    // }),
+  ]);
 
-  let noSchemaHandler = (req, res) =>
-    res.json({
-      error:
-        'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
-    });
-
-  projectApp.use(
-    `/mock/graphql`,
-    mockSchema
-      ? graphqlExpress({
-          schema: mockSchema,
-        })
-      : noSchemaHandler,
-  );
-
-  projectApp.use(
-    `/graphql`,
-    schema
-      ? graphqlExpress(async (request, response, graphQLParams) => {
-          const externalContext =
-            typeof graphqlOptions.context === 'function'
-              ? await graphqlOptions.context(request, response, graphQLParams)
-              : graphqlOptions.context;
-          return {
-            schema,
-            context: {
-              es,
-              projectId: id,
-              ...(externalContext || {}),
-            },
-          };
-        })
-      : noSchemaHandler,
-  );
-
-  projectApp.use(`/download`, download({ projectId: id }));
-
-  setProject({ app: projectApp, schema, mockSchema, es, id });
-  console.log(`graphql server running at /${id}/graphql`);
-
-  return projectApp;
+  return await createProjectEndpoint({
+    es,
+    id,
+    graphqlOptions,
+    enableAdmin,
+    typesWithMappings,
+  });
 }
