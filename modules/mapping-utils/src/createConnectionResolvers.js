@@ -37,40 +37,64 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     ...(createStateResolvers
       ? {
           aggsState: async (obj, { indices }, { es, projectId }) => {
-            const data = await es.search({
-              index: `${type.indexPrefix}-aggs-state`,
-              type: `${type.indexPrefix}-aggs-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-                size: 1,
-              },
-            });
-
-            return get(data, 'hits.hits[0]._source', null);
+            try {
+              const data = await es.search({
+                index: `${type.indexPrefix}-aggs-state`,
+                type: `${type.indexPrefix}-aggs-state`,
+                body: {
+                  sort: [{ timestamp: { order: 'desc' } }],
+                  size: 1,
+                },
+              });
+              return get(data, 'hits.hits[0]._source', null);
+            } catch (err) {
+              const metaData = await es.search({
+                index: `arranger-projects-${projectId}`,
+                type: `arranger-projects-${projectId}`,
+              });
+              const config = get(metaData, 'hits.hits[0]._source.config');
+              return config['aggs-state'];
+            }
           },
           columnsState: async (obj, t, { es, projectId }) => {
-            let data = await es.search({
-              index: `${type.indexPrefix}-columns-state`,
-              type: `${type.indexPrefix}-columns-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-                size: 1,
-              },
-            });
-
-            return get(data, 'hits.hits[0]._source', null);
+            try {
+              const data = await es.search({
+                index: `${type.indexPrefix}-columns-state`,
+                type: `${type.indexPrefix}-columns-state`,
+                body: {
+                  sort: [{ timestamp: { order: 'desc' } }],
+                  size: 1,
+                },
+              });
+              return get(data, 'hits.hits[0]._source', null);
+            } catch (err) {
+              const metaData = await es.search({
+                index: `arranger-projects-${projectId}`,
+                type: `arranger-projects-${projectId}`,
+              });
+              const config = get(metaData, 'hits.hits[0]._source.config');
+              return config['columns-state'];
+            }
           },
           matchBoxState: async (obj, t, { es, projectId }) => {
-            let data = await es.search({
-              index: `${type.indexPrefix}-matchbox-state`,
-              type: `${type.indexPrefix}-matchbox-state`,
-              body: {
-                sort: [{ timestamp: { order: 'desc' } }],
-                size: 1,
-              },
-            });
-
-            return get(data, 'hits.hits[0]._source', null);
+            try {
+              let data = await es.search({
+                index: `${type.indexPrefix}-matchbox-state`,
+                type: `${type.indexPrefix}-matchbox-state`,
+                body: {
+                  sort: [{ timestamp: { order: 'desc' } }],
+                  size: 1,
+                },
+              });
+              return get(data, 'hits.hits[0]._source', null);
+            } catch (err) {
+              const metaData = await es.search({
+                index: `arranger-projects-${projectId}`,
+                type: `arranger-projects-${projectId}`,
+              });
+              const config = get(metaData, 'hits.hits[0]._source.config');
+              return config['matchbox-state'];
+            }
           },
         }
       : {}),
