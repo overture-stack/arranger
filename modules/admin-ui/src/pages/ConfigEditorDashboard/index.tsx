@@ -51,7 +51,7 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
                 <ExtendedMappingEditor graphqlField={graphqlField} />
               </Tab>
               <Tab title="Aggs panel">
-                <AggsStateEditor />
+                <AggsStateEditor graphqlField={graphqlField} />
               </Tab>
               <Tab title="Table">
                 <ColumnsStateEditor />
