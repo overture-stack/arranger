@@ -132,11 +132,12 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
       )}
       <CardBlock>
         <FormField
+          label="Project ID"
+          caption="unique ID to identify this project"
+          size="medium"
           disabled={isloading}
           required={!projectId.length}
           input={TextInput}
-          label="Project ID"
-          size="medium"
           value={projectId}
           onChange={onProjectIdInputChange}
         />
@@ -146,11 +147,12 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
             <Grid alignItems="center" columns={12}>
               <GridItem span={3}>
                 <FormField
+                  label="Name"
+                  caption="Arranger alias for the elasticsearch index"
+                  size="medium"
                   disabled={isloading}
                   required={!index.newIndexMutationInput.graphqlField.length}
                   input={TextInput}
-                  label="Name (aka. Graphql Field)"
-                  size="medium"
                   value={index.newIndexMutationInput.graphqlField}
                   onChange={onIndexGraphqlFieldChange({
                     position,
@@ -160,11 +162,12 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
               </GridItem>
               <GridItem span={3}>
                 <FormField
+                  label="ES Index"
+                  caption="name of index in elasticsearch"
+                  size="medium"
                   disabled={isloading}
                   required={!index.newIndexMutationInput.esIndex.length}
                   input={TextInput}
-                  label="ES Index"
-                  size="medium"
                   value={index.newIndexMutationInput.esIndex}
                   onChange={onIndexEsIndexChange({
                     position,
@@ -174,11 +177,12 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
               </GridItem>
               <GridItem span={3}>
                 <FormField
+                  label="ES type"
+                  caption="name of type in elasticsearch"
+                  size="medium"
                   disabled={isloading}
                   required={!index.newIndexMutationInput.esType.length}
                   input={TextInput}
-                  label="ES type"
-                  size="medium"
                   value={index.newIndexMutationInput.esType}
                   onChange={onIndexEsTypeChange({
                     position,

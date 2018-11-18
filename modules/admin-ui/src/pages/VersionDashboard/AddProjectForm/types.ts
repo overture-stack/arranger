@@ -32,13 +32,13 @@ export const RT_ColumnsState = Record({
   columns: RT_Array(RT_Column),
 });
 
-export const RT_AggsState = RT_Array(
-  Record({
-    active: Boolean,
-    field: String,
-    show: Boolean,
-  }),
-);
+export const RT_AggsStateEntry = Record({
+  active: Boolean,
+  field: String,
+  show: Boolean,
+});
+
+export const RT_AggsState = RT_Array(RT_AggsStateEntry);
 
 const RT_ExtendedMappingField = Record({
   active: Boolean,
@@ -74,6 +74,7 @@ export const RT_IndexConfigImportDataRunType = Record({
 
 export interface IIndexConfigImportData
   extends Static<typeof RT_IndexConfigImportDataRunType> {}
+export interface IAggsStateEntry extends Static<typeof RT_AggsStateEntry> {}
 export interface IAggsState extends Static<typeof RT_AggsState> {}
 export interface IColumnsState extends Static<typeof RT_ColumnsState> {}
 export interface IExtendedMapping extends Static<typeof RT_ExtendedMapping> {}

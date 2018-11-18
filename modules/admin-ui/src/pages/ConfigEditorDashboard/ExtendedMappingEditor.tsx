@@ -13,6 +13,9 @@ import styled from 'react-emotion';
 
 import { Dispatch } from 'redux';
 import ExtendedFieldEditor from './components/ExtendedFieldEditor';
+import { withDebouncedOnChange } from 'src/utils/';
+
+const DebouncedInput = withDebouncedOnChange()(TextInput);
 
 /***************
  * redux container
@@ -223,7 +226,7 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
                 <Grid alignItems="flex-end" columns={14}>
                   <GridItem span={4}>
                     <FormField
-                      input={TextInput}
+                      input={DebouncedInput}
                       label="Field filter"
                       value={state.filter.field}
                       size="small"
