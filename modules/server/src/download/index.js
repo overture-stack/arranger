@@ -5,7 +5,7 @@ import tar from 'tar-stream';
 import { defaults } from 'lodash';
 
 import getAllData from '../utils/getAllData';
-import dataToTSV from '../utils/dataToTSV';
+import dataToExportFormat from '../utils/dataToExportFormat';
 
 export default function({ projectId }) {
   const router = express.Router();
@@ -113,15 +113,15 @@ const getFileStream = async ({
   mock,
   chunkSize,
   file,
-  fileType = 'tsv',
+  fileType,
 }) => {
-  const makeTsvArgs = defaults(file, { mock, chunkSize, fileType });
-  return makeTSV({ es, projectId })(makeTsvArgs);
+  const exportArgs = defaults(file, { mock, chunkSize, fileType });
+  return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
 };
 
-const makeTSV = ({ es, projectId }) => async args =>
+const convertDataToExportFormat = ({ es, projectId, fileType }) => async args =>
   (await getAllData({
     projectId,
     es,
     ...args,
-  })).pipe(dataToTSV(args));
+  })).pipe(dataToExportFormat({ ...args, fileType }));

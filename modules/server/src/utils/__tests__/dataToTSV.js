@@ -1,4 +1,7 @@
-import dataToTSVStream, { dataToTSV, columnsToHeader } from '../dataToTSV';
+import dataToTSVStream, {
+  dataToTSV,
+  columnsToHeader,
+} from '../dataToExportFormat';
 import { PassThrough } from 'stream';
 
 describe('esHitsToTSV accessor columns', () => {

@@ -41,6 +41,7 @@ class DataTableWithToolbar extends React.Component {
       exportTSVText,
       exportTSVFilename,
       exporter,
+      exporterParamsGenerator,
       maxPagesOptions,
       projectId = PROJECT_ID,
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
@@ -75,6 +76,7 @@ class DataTableWithToolbar extends React.Component {
           exportTSVText={exportTSVText}
           exportTSVFilename={exportTSVFilename}
           exporter={exporter}
+          exporterParamsGenerator={exporterParamsGenerator}
           downloadUrl={downloadUrl}
           InputComponent={InputComponent}
           showFilterInput={showFilterInput}
