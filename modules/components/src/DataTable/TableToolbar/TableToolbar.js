@@ -115,7 +115,7 @@ const TableToolbar = ({
                   files: [
                     {
                       fileName: fileName || exportTSVFilename,
-                      fileType: fileType || '.tsv',
+                      fileType: fileType || 'tsv',
                       sqon,
                       index: type,
                       columns,

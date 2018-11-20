@@ -162,8 +162,8 @@ const transformData = ({
 }) =>
   flatten(
     hits.map(row => {
-      return getTransformedRow({ row, columns, uniqueBy, emptyValue }).map(
-        row => rowTransformer(row, emptyValue),
+      return getTransformedRows({ row, columns, uniqueBy, emptyValue }).map(r =>
+        rowTransformer({ row: r, emptyValue }),
       );
     }),
   ).join('\n') + '\n';
@@ -216,7 +216,7 @@ const getRowsInJSON = ({
   });
 };
 
-const getTransformedRow = ({ row, columns, uniqueBy, emptyValue }) =>
+const getTransformedRows = ({ row, columns, uniqueBy, emptyValue }) =>
   getRows({
     row: row._source,
     paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
@@ -227,5 +227,5 @@ const getTransformedRow = ({ row, columns, uniqueBy, emptyValue }) =>
 const rowToTSV = ({ row, emptyValue }) =>
   row.map(r => r || emptyValue).join('\t');
 
-const rowToJSON = columns => ({ row, emptyValue }) =>
+const rowToJSON = ({ accessor }) => ({ row, emptyValue }) =>
   row.map(r => r || emptyValue).join('\t');

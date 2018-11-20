@@ -16,16 +16,25 @@ export default function({ projectId }) {
     const es = req.context.es;
     const { params } = req.body;
     console.time('download');
-    const { output, responseFileName, contentType } = await dataStream({
-      es,
-      projectId,
-      params,
-    });
-    res.set('Content-Type', contentType);
-    res.set('Content-disposition', `attachment; filename=${responseFileName}`);
-    output.pipe(res).on('finish', () => {
-      console.timeEnd('download');
-    });
+    try {
+      const { output, responseFileName, contentType } = await dataStream({
+        es,
+        projectId,
+        params,
+      });
+      res.set('Content-Type', contentType);
+      res.set(
+        'Content-disposition',
+        `attachment; filename=${responseFileName}`,
+      );
+      output.pipe(res).on('finish', () => {
+        console.timeEnd('download');
+      });
+    } catch (err) {
+      res
+        .status(400)
+        .send(err.message || err.details || 'An unknown error occurred.');
+    }
   });
 
   return router;
@@ -42,7 +51,7 @@ export const dataStream = async ({
   );
   if (!files || !files.length) {
     console.warn('no files defined to download');
-    res.status(400).send('files array was missing or empty');
+    throw new Error('files array was missing or empty');
   } else {
     let output;
     let responseFileName;
@@ -115,6 +124,7 @@ const getFileStream = async ({
   file,
   fileType,
 }) => {
+  console.log('FileType:', fileType);
   const exportArgs = defaults(file, { mock, chunkSize, fileType });
   return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
 };
