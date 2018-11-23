@@ -29,7 +29,7 @@ describe('esHitsToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
+    const expected = 'Test1\tTest21\ttxt1\n2\ttxt2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -59,7 +59,7 @@ describe('esHitsToTSV accessor columns', () => {
       emptyValue: 'empty',
     };
 
-    const expected = 'Test1\tTest2\n1\ttxt1\n2\tempty\n';
+    const expected = 'Test1\tTest21\ttxt1\n2\tempty\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -147,7 +147,7 @@ describe('esHitsToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\t3, 4\n2\t1, 2\n';
+    const expected = 'Test1\tTest21\t3, 4\n2\t1, 2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -200,7 +200,7 @@ describe('esHitsToTSV accessor columns', () => {
       ],
     };
 
-    const expected = 'Test1\tTest2\n1\t3\n1\t4\n2\t1\n2\t2\n';
+    const expected = 'Test1\tTest21\t3\n1\t4\n2\t1\n2\t2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });
@@ -268,7 +268,7 @@ describe('esHitsToTSV accessor columns', () => {
         },
       ],
     };
-    const expected = 'Test1\tTest2\n1\t\n2\t1, 2, 1, 2\n';
+    const expected = 'Test1\tTest21\t\n2\t1, 2, 1, 2\n';
 
     expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
   });

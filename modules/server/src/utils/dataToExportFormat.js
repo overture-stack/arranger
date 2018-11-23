@@ -85,19 +85,22 @@ export const columnsToHeader = ({ columns, fileType = 'tsv' }) => {
     ? `${columns.map(({ Header }) => Header).join('\t')}\n`
     : fileType === 'json'
       ? `${JSON.stringify(
-          columns.reduce(
-            (output, { Header, accessor }) => (output[[accessor]] = Header),
-            {},
-          ),
-        )}\n`
+          columns.reduce((output, { Header, accessor }) => {
+            output[[accessor]] = Header;
+            return output;
+          }, {}),
+        )}`
       : '';
 };
 
 export const dataToTSV = args =>
-  transformData({ ...args, rowTransformer: rowToTSV });
+  transformData({ ...args, dataTransformer: transformDataToTSV });
 
-export const dataToJSON = ({ columns, ...args }) =>
-  transformData({ ...args, columns, rowTransformer: rowToJSON(columns) });
+export const dataToJSON = args =>
+  transformData({
+    ...args,
+    dataTransformer: transformDataToJSON,
+  });
 
 export default ({
   index,
@@ -111,38 +114,18 @@ export default ({
   return through2.obj(function({ hits, total }, enc, callback) {
     console.time(`esHitsToTsv_${chunkCounts}`);
     const pipe = this;
-    let rows;
 
-    if (fileType === 'tsv') {
-      rows = getRowsInTSV({
-        index,
-        columns,
-        uniqueBy,
-        emptyValue,
-        hits,
-        total,
-        pipe,
-        isFirst,
-      });
-    } else if (fileType === 'json') {
-      rows = getRowsInJSON({
-        index,
-        columns,
-        uniqueBy,
-        emptyValue,
-        hits,
-        total,
-        pipe,
-        isFirst,
-      });
-    } else {
-      throw new Error('Unsupported file type specified for export.');
-    }
-
-    if (rows) {
-      this.push(rows);
-    }
-
+    dataToStream({
+      index,
+      columns,
+      uniqueBy,
+      emptyValue,
+      hits,
+      total,
+      pipe,
+      isFirst,
+      fileType,
+    });
     if (isFirst) {
       isFirst = false;
     }
@@ -158,74 +141,127 @@ const transformData = ({
   uniqueBy,
   columns,
   emptyValue,
-  rowTransformer,
-}) =>
-  flatten(
-    hits.map(row => {
-      return getTransformedRows({ row, columns, uniqueBy, emptyValue }).map(r =>
-        rowTransformer({ row: r, emptyValue }),
-      );
-    }),
-  ).join('\n') + '\n';
-
-const getRowsInTSV = ({
-  index,
-  columns,
-  uniqueBy,
-  emptyValue = '--',
-  hits,
-  total,
+  dataTransformer,
+  rowSeparator = '\n',
   pipe,
-  isFirst,
 }) => {
-  if (isFirst) {
-    const headerRow = columnsToHeader({ columns, fileType: 'tsv' });
-    pipe.push(headerRow);
-  }
-
-  return dataToTSV({
-    data: { hits, total },
-    index,
-    uniqueBy,
-    columns,
-    emptyValue,
-  });
+  hits
+    .map(row => dataTransformer({ row, uniqueBy, columns, emptyValue, pipe }))
+    .forEach(transformedRow => {
+      pipe.push(`${transformedRow}${rowSeparator}`);
+    });
 };
 
-const getRowsInJSON = ({
-  index,
-  columns,
-  uniqueBy,
-  emptyValue = '--',
-  hits,
-  total,
-  pipe,
-  isFirst,
-}) => {
-  if (isFirst) {
-    const headerRow = columnsToHeader({ columns, fileType: 'json' });
-    pipe.push(headerRow);
-  }
-
-  return dataToJSON({
-    data: { hits, total },
-    index,
-    uniqueBy,
-    columns,
+const transformDataToTSV = ({ row, uniqueBy, columns, emptyValue }) => {
+  return getRows({
+    row: row._source,
+    paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
+    columns: columns,
     emptyValue,
-  });
+  }).map(r => rowToTSV({ row: r, emptyValue }));
 };
 
-const getTransformedRows = ({ row, columns, uniqueBy, emptyValue }) =>
-  getRows({
+const transformDataToJSON = ({ row, uniqueBy, columns, emptyValue }) => {
+  return rowToJSON({
     row: row._source,
     paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
     columns: columns,
     emptyValue,
   });
+};
+
+const dataToStream = ({
+  index,
+  columns,
+  uniqueBy,
+  emptyValue = '--',
+  hits,
+  total,
+  pipe,
+  isFirst,
+  fileType = 'tsv',
+}) => {
+  if (isFirst) {
+    const headerRow = columnsToHeader({ columns, fileType });
+    pipe.push(headerRow);
+  }
+
+  const args = {
+    data: { hits, total },
+    index,
+    uniqueBy,
+    columns,
+    emptyValue,
+    pipe,
+  };
+
+  // transform and stream data
+  if (fileType === 'tsv') {
+    dataToTSV(args);
+  } else if (fileType === 'json') {
+    dataToJSON(args);
+    pipe.on('finish', (...args) => console.log('finish', args));
+  } else {
+    throw new Error('Unsupported file type specified for export.');
+  }
+};
 
 const rowToTSV = ({ row, emptyValue }) =>
   row.map(r => r || emptyValue).join('\t');
 
-const rowToJSON = ({ accessor }) => ({ row, emptyValue }) =>
-  row.map(r => r || emptyValue).join('\t');
+/*
+example args:
+{ row:                                                                                                                                         [250/1767]
+   { name: 'HCM-dddd-0000-C00',                                                                                                                               
+     type: '2-D: Conditionally reprogrammed cells',                                                                                                           
+     growth_rate: 5,                                                                                                                                          
+     files: [],
+     clinical_diagnosis: { clinical_tumor_diagnosis: 'Colorectal cancer' },
+     variants: [ [Object], [Object], [Object] ]
+    },
+  paths: [],
+  columns:
+   [ { field: 'name',
+       accessor: 'name',
+       show: true,
+       type: 'entity',
+       sortable: true,
+       canChangeShow: true,
+       query: null,
+       jsonPath: null,
+       Header: 'Name',
+       extendedType: 'keyword',
+       extendedDisplayValues: {},
+       hasCustomType: true,
+       minWidth: 140 },
+       { field: 'split_ratio',
+       accessor: 'split_ratio',
+       show: true,
+       type: 'string',
+       sortable: true,
+       canChangeShow: true,
+       query: null,
+       jsonPath: null,
+       Header: 'Split Ratio',
+       extendedType: 'keyword',
+       extendedDisplayValues: {},
+       hasCustomType: false } ],
+  emptyValue: '--' }
+*/
+const rowToJSON = args => {
+  const {
+    row,
+    data = row,
+    paths,
+    pathIndex = 0,
+    columns,
+    emptyValue,
+    entities = [],
+  } = args;
+  return `${JSON.stringify(
+    (columns || []).filter(col => col.show).reduce((output, col) => {
+      output[[col.accessor]] = row[col.accessor] || emptyValue;
+      return output;
+    }, {}),
+  )}`;
+};

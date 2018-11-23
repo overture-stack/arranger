@@ -13,6 +13,8 @@ export default function({ projectId }) {
   router.use(bodyParser.urlencoded({ extended: true }));
 
   router.post('/', async function(req, res) {
+    console.log('req', req);
+    console.log('context', req.context);
     const es = req.context.es;
     const { params } = req.body;
     console.time('download');
@@ -20,7 +22,7 @@ export default function({ projectId }) {
       const { output, responseFileName, contentType } = await dataStream({
         es,
         projectId,
-        params,
+        params: JSON.parse(params),
       });
       res.set('Content-Type', contentType);
       res.set(
@@ -46,9 +48,7 @@ export const dataStream = async ({
   params,
   fileType = 'tsv',
 }) => {
-  const { files, fileName = 'file.tar.gz', mock, chunkSize } = JSON.parse(
-    params,
-  );
+  const { files, fileName = 'file.tar.gz', mock, chunkSize } = params;
   if (!files || !files.length) {
     console.warn('no files defined to download');
     throw new Error('files array was missing or empty');
@@ -124,7 +124,6 @@ const getFileStream = async ({
   file,
   fileType,
 }) => {
-  console.log('FileType:', fileType);
   const exportArgs = defaults(file, { mock, chunkSize, fileType });
   return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
 };
