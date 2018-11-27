@@ -44,7 +44,7 @@ const TableToolbar = ({
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
   exporter = saveTSV,
-  exporterParamsGenerator,
+  transformParams = params => params,
   sqon,
   downloadUrl,
   InputComponent,
@@ -105,23 +105,20 @@ const TableToolbar = ({
                 minHeight: 16,
               }}
               onClick={() => {
-                let params = {};
-                if (exporterParamsGenerator) {
-                  params = exporterParamsGenerator();
-                }
-                const { url, fileName, fileType } = params;
-                exporter({
-                  url: url || downloadUrl,
-                  files: [
-                    {
-                      fileName: fileName || exportTSVFilename,
-                      fileType: fileType || 'tsv',
-                      sqon,
-                      index: type,
-                      columns,
-                    },
-                  ],
-                });
+                exporter(
+                  transformParams({
+                    url: downloadUrl,
+                    files: [
+                      {
+                        fileName: exportTSVFilename,
+                        fileType: 'tsv',
+                        sqon,
+                        index: type,
+                        columns,
+                      },
+                    ],
+                  }),
+                );
               }}
             >
               {exportTSVText}
