@@ -82,25 +82,43 @@ const getRows = args => {
 
 export const columnsToHeader = ({ columns, fileType = 'tsv' }) => {
   return fileType === 'tsv'
-    ? `${columns.map(({ Header }) => Header).join('\t')}\n`
+    ? `${columns.map(({ Header }) => Header).join('\t')}`
     : fileType === 'json'
-      ? `${JSON.stringify(
-          columns.reduce((output, { Header, accessor }) => {
-            output[[accessor]] = Header;
-            return output;
-          }, {}),
-        )}`
+      ? columns.reduce((output, { Header, accessor }) => {
+          output[[accessor]] = Header;
+          return output;
+        }, {})
       : '';
 };
 
-export const dataToTSV = args =>
-  transformData({ ...args, dataTransformer: transformDataToTSV });
+export const dataToTSV = ({ isFirst, pipe, columns, ...args }) => {
+  if (isFirst) {
+    const headerRow = columnsToHeader({ columns, fileType: 'tsv' });
+    pushToStream(headerRow, pipe);
+  }
 
-export const dataToJSON = args =>
   transformData({
+    isFirst,
+    pipe,
+    columns,
+    ...args,
+    dataTransformer: transformDataToTSV,
+  });
+};
+export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
+  if (isFirst) {
+    const headerRow = columnsToHeader({ columns, fileType: 'json' });
+    pushToStream(JSON.stringify(headerRow), pipe);
+  }
+
+  transformData({
+    isFirst,
+    pipe,
+    columns,
     ...args,
     dataTransformer: transformDataToJSON,
   });
+};
 
 export default ({
   index,
@@ -111,10 +129,10 @@ export default ({
 }) => {
   let isFirst = true;
   let chunkCounts = 0;
+
   return through2.obj(function({ hits, total }, enc, callback) {
     console.time(`esHitsToTsv_${chunkCounts}`);
-    const pipe = this;
-
+    const outputStream = this;
     dataToStream({
       index,
       columns,
@@ -122,13 +140,15 @@ export default ({
       emptyValue,
       hits,
       total,
-      pipe,
+      pipe: outputStream,
       isFirst,
       fileType,
     });
+
     if (isFirst) {
       isFirst = false;
     }
+
     callback();
     console.timeEnd(`esHitsToTsv_${chunkCounts}`);
     chunkCounts++;
@@ -137,18 +157,18 @@ export default ({
 
 const transformData = ({
   data: { hits, total },
+  data,
   index,
   uniqueBy,
   columns,
   emptyValue,
   dataTransformer,
-  rowSeparator = '\n',
   pipe,
 }) => {
   hits
-    .map(row => dataTransformer({ row, uniqueBy, columns, emptyValue, pipe }))
+    .map(row => dataTransformer({ row, uniqueBy, columns, emptyValue }))
     .forEach(transformedRow => {
-      pipe.push(`${transformedRow}${rowSeparator}`);
+      pushToStream(transformedRow, pipe);
     });
 };
 
@@ -162,12 +182,14 @@ const transformDataToTSV = ({ row, uniqueBy, columns, emptyValue }) => {
 };
 
 const transformDataToJSON = ({ row, uniqueBy, columns, emptyValue }) => {
-  return rowToJSON({
-    row: row._source,
-    paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
-    columns: columns,
-    emptyValue,
-  });
+  return JSON.stringify(
+    rowToJSON({
+      row: row._source,
+      paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
+      columns: columns,
+      emptyValue,
+    }),
+  );
 };
 
 const dataToStream = ({
@@ -181,11 +203,6 @@ const dataToStream = ({
   isFirst,
   fileType = 'tsv',
 }) => {
-  if (isFirst) {
-    const headerRow = columnsToHeader({ columns, fileType });
-    pipe.push(headerRow);
-  }
-
   const args = {
     data: { hits, total },
     index,
@@ -193,6 +210,7 @@ const dataToStream = ({
     columns,
     emptyValue,
     pipe,
+    isFirst,
   };
 
   // transform and stream data
@@ -200,7 +218,6 @@ const dataToStream = ({
     dataToTSV(args);
   } else if (fileType === 'json') {
     dataToJSON(args);
-    pipe.on('finish', (...args) => console.log('finish', args));
   } else {
     throw new Error('Unsupported file type specified for export.');
   }
@@ -258,10 +275,12 @@ const rowToJSON = args => {
     emptyValue,
     entities = [],
   } = args;
-  return `${JSON.stringify(
-    (columns || []).filter(col => col.show).reduce((output, col) => {
-      output[[col.accessor]] = row[col.accessor] || emptyValue;
-      return output;
-    }, {}),
-  )}`;
+  return (columns || []).filter(col => col.show).reduce((output, col) => {
+    output[[col.accessor]] = row[col.accessor] || emptyValue;
+    return output;
+  }, {});
+};
+
+const pushToStream = (line, stream) => {
+  stream.push(`${line}\n`);
 };
