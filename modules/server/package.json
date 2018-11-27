@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "0.5.17",
+  "version": "0.5.18",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -10,11 +10,9 @@
     "access": "public"
   },
   "scripts": {
-    "start":
-      "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
+    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
     "run-prod": "node index.js",
-    "prepare":
-      "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
     "test": "jest",
     "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist"
   },
@@ -29,10 +27,10 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/admin": "^0.5.17",
-    "@arranger/mapping-utils": "^0.5.17",
-    "@arranger/middleware": "^0.5.17",
-    "@arranger/schema": "^0.5.17",
+    "@arranger/admin": "^0.5.18",
+    "@arranger/mapping-utils": "^0.5.18",
+    "@arranger/middleware": "^0.5.18",
+    "@arranger/schema": "^0.5.18",
     "apollo-server-express": "^1.3.1",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",

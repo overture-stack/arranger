@@ -1,6 +1,6 @@
 {
   "name": "@arranger/admin",
-  "version": "0.5.17",
+  "version": "0.5.18",
   "description": "Admin API for the Arranger server in graphql",
   "engineStrict": true,
   "engines": {
@@ -49,8 +49,8 @@
   "author": "Minh Ha",
   "license": "APLv2",
   "dependencies": {
-    "@arranger/mapping-utils": "^0.5.17",
-    "@arranger/schema": "^0.5.17",
+    "@arranger/mapping-utils": "^0.5.18",
+    "@arranger/schema": "^0.5.18",
     "@types/elasticsearch": "^5.0.26",
     "apollo-link-http": "^1.5.5",
     "apollo-server": "^2.1.0",
