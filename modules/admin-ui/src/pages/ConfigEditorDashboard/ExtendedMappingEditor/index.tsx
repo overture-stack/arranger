@@ -10,7 +10,7 @@ import styled from 'react-emotion';
 
 import { Dispatch } from 'redux';
 import ExtendedFieldEditor from 'src/pages/ConfigEditorDashboard/ExtendedMappingEditor/ExtendedFieldEditor';
-import FieldsFilter from './FieldsFilterDisplay';
+import FieldsFilter, { ISelectOption } from './FieldsFilterDisplay';
 
 /***************
  * redux container
@@ -64,10 +64,7 @@ interface IStateContainer {
   state: ILocalState;
   setState: (s: ILocalState) => void;
 }
-interface ISelectOption {
-  text: string;
-  value: null | string;
-}
+
 export const EXTENDED_FIELD_TYPES: {
   string: 'string';
   object: 'object';

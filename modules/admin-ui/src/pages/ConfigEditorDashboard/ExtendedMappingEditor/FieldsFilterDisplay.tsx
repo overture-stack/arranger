@@ -13,6 +13,11 @@ export const BOOLEAN_FILTER_VALUES = {
   false: 'false',
 };
 
+export interface ISelectOption {
+  text: string;
+  value: null | string;
+}
+
 const DebouncedInput = withDebouncedOnChange()(TextInput);
 const booleanFilterOptions = [
   { text: 'none', value: null },
@@ -38,19 +43,19 @@ const MemoizedInputFormField = React.memo(
 const MemoizedSelectFormField = React.memo(
   props => <FormField {...props} />,
   (
-    { selectedItem }: { selectedItem: any },
-    { selectedItem: newselectedItem }: { selectedItem: any },
+    { selectedItem }: { selectedItem: ISelectOption },
+    { selectedItem: newselectedItem }: { selectedItem: ISelectOption },
   ) => selectedItem === newselectedItem,
 );
 
 const FieldsFilter: React.ComponentType<{
   filterState: IFilterState;
-  onFieldFilterChange: any;
-  onTypeSelect: any;
-  onActiveStateSelect: any;
-  onIsArraySelect: any;
-  onPrimaryStateSelect: any;
-  onQuicksearchEnabledSelect: any;
+  onFieldFilterChange: (option: React.SyntheticEvent<HTMLInputElement>) => void;
+  onTypeSelect: (option: ISelectOption) => void;
+  onActiveStateSelect: (option: ISelectOption) => void;
+  onIsArraySelect: (option: ISelectOption) => void;
+  onPrimaryStateSelect: (option: ISelectOption) => void;
+  onQuicksearchEnabledSelect: (option: ISelectOption) => void;
 }> = ({
   filterState,
   onFieldFilterChange,
