@@ -1,5 +1,6 @@
 import getIndexPrefix from './getIndexPrefix';
 import mapHits from './mapHits';
+import { get } from 'lodash';
 
 export default async ({ projectId, index, es }) => {
   const id = projectId.toLowerCase();
@@ -21,6 +22,11 @@ export default async ({ projectId, index, es }) => {
     );
     return fields;
   } catch (err) {
-    throw err;
+    const metaData = await es.search({
+      index: `arranger-projects-${projectId}`,
+      type: `arranger-projects-${projectId}`,
+    });
+    const config = get(metaData, 'hits.hits[0]._source.config');
+    return config.extended;
   }
 };
