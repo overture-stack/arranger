@@ -30,8 +30,13 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const expected = 'Test1\tTest2\n1\ttxt1\n2\ttxt2\n';
+    const stream = PassThrough();
+    let actual = '';
+    stream
+      .on('data', chunk => (actual += chunk))
+      .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
-    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+    dataToTSV({ pipe: stream, ...config });
   });
 
   it('should accept emptyValue', () => {
@@ -60,8 +65,13 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const expected = 'Test1\tTest2\n1\ttxt1\n2\tempty\n';
+    const stream = PassThrough();
+    let actual = '';
+    stream
+      .on('data', chunk => (actual += chunk))
+      .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
-    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+    dataToTSV({ pipe: stream, ...config });
   });
 
   it('should stream', () => {
@@ -148,8 +158,13 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const expected = 'Test1\tTest2\n1\t3, 4\n2\t1, 2\n';
+    const stream = PassThrough();
+    let actual = '';
+    stream
+      .on('data', chunk => (actual += chunk))
+      .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
-    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+    dataToTSV({ pipe: stream, ...config });
   });
 
   it('should accept uniqueBy', () => {
@@ -201,8 +216,13 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const expected = 'Test1\tTest2\n1\t3\n1\t4\n2\t1\n2\t2\n';
+    const stream = PassThrough();
+    let actual = '';
+    stream
+      .on('data', chunk => (actual += chunk))
+      .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
-    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+    dataToTSV({ pipe: stream, ...config });
   });
 
   it('should handle deep nested fields', () => {
@@ -269,7 +289,12 @@ describe('esHitsToTSV accessor columns', () => {
       ],
     };
     const expected = 'Test1\tTest2\n1\t\n2\t1, 2, 1, 2\n';
+    const stream = PassThrough();
+    let actual = '';
+    stream
+      .on('data', chunk => (actual += chunk))
+      .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
-    expect(columnsToHeader(config) + dataToTSV(config)).toBe(expected);
+    dataToTSV({ pipe: stream, ...config });
   });
 });
