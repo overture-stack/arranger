@@ -13,8 +13,6 @@ export default function({ projectId }) {
   router.use(bodyParser.urlencoded({ extended: true }));
 
   router.post('/', async function(req, res) {
-    console.log('req', req);
-    console.log('context', req.context);
     const es = req.context.es;
     const { params } = req.body;
     console.time('download');
