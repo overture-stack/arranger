@@ -6,7 +6,7 @@ import TextInput from 'mineral-ui/TextInput';
 import Select from 'mineral-ui/Select';
 import { connect } from 'react-redux';
 
-import { EXTENDED_FIELD_TYPES } from '../ExtendedMappingEditor';
+import { EXTENDED_FIELD_TYPES } from './';
 import {
   IExtendedMappingField,
   IExtendedMapping,

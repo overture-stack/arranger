@@ -33,10 +33,9 @@ const SortableItem: React.ComponentType<{
 }> = SortableElement(({ item }) => (
   <Card>
     <CardTitle>
+      <DragHandle />
       <Grid columns={24}>
-        <GridItem span={1}>
-          <DragHandle />
-        </GridItem>
+        <GridItem span={1} />
         <GridItem>
           <Text>{`${item.field}`}</Text>
         </GridItem>
