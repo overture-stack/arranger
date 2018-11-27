@@ -105,6 +105,15 @@ export const dataToTSV = ({ isFirst, pipe, columns, ...args }) => {
     dataTransformer: transformDataToTSV,
   });
 };
+
+/**
+ * This should ideally stream data as a JSON list using JSONStream
+ * but as of now; in favor of simplicity; it streams each row as separate JSON object
+ * and it is left up to consuming application to make a well formatted
+ * JSON list from individual JSON objects
+ * See https://github.com/nci-hcmi-catalog/portal/tree/master/api/src/dataExport.js for an example consumer
+ * @param {*} param0
+ */
 export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
   if (isFirst) {
     const headerRow = columnsToHeader({ columns, fileType: 'json' });
