@@ -1,5 +1,6 @@
 import { Client } from 'elasticsearch';
 import { mappingToAggsState } from '@arranger/mapping-utils';
+import { sortBy } from 'ramda';
 import {
   I_AggsSetState,
   I_AggsState,
@@ -43,12 +44,17 @@ export const saveAggsSetState = (es: Client) => async (
     i => i.name === graphqlField,
   );
   const currentAggsState = currentMetadata.config['aggs-state'];
+  const sortByNewOrder = sortBy((i: I_AggsState) =>
+    state.findIndex(_i => _i.field === i.field),
+  );
   const newAggsSetState: typeof currentAggsState = {
     timestamp: timestamp(),
-    state: currentAggsState.state.map(item => ({
-      ...(state.find(_item => _item.field === item.field) || item),
-      type: item.type,
-    })),
+    state: sortByNewOrder(
+      currentAggsState.state.map(item => ({
+        ...(state.find(_item => _item.field === item.field) || item),
+        type: item.type,
+      })),
+    ),
   };
 
   await updateProjectIndexMetadata(es)({

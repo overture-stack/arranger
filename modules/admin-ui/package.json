@@ -51,6 +51,7 @@
   "devDependencies": {
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.2",
+    "@types/ramda": "^0.25.42",
     "@types/react": "^16.7.7",
     "@types/react-dom": "^16.0.9",
     "typescript": "^3.1.5"

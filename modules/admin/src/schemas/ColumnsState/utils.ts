@@ -13,6 +13,7 @@ import { EsIndexLocation } from '../types';
 import { mappingToColumnsState } from '@arranger/mapping-utils';
 import { timestamp, replaceBy } from '../../services';
 import { getEsMapping } from '../../services/elasticsearch';
+import { sortBy } from 'ramda';
 
 export const getColumnSetState = (es: Client) => async (
   args: I_ColumnStateQueryInput,
@@ -56,12 +57,17 @@ export const saveColumnState = (es: Client) => async ({
   const currentIndexMetadata = currentProjectMetadata.find(
     i => i.name === graphqlField,
   );
+  const sortByNewOrder = sortBy((i: I_Column) =>
+    state.columns.findIndex(c => c.field === i.field),
+  );
   const mergedState: typeof state = {
     ...state,
-    columns: replaceBy(
-      currentIndexMetadata.config['columns-state'].state.columns,
-      state.columns,
-      (oldCol, newCol) => oldCol.field === newCol.field,
+    columns: sortByNewOrder(
+      replaceBy(
+        currentIndexMetadata.config['columns-state'].state.columns,
+        state.columns,
+        (oldCol, newCol) => oldCol.field === newCol.field,
+      ),
     ),
   };
   await updateProjectIndexMetadata(es)({
