@@ -1,12 +1,14 @@
 import { IReduxAction } from './index';
 import { IGqlData } from 'src/gql/queries/allProjectData';
 import { arrayMove } from 'react-sortable-hoc';
+import { lensPath, view, set } from 'ramda';
 
 export enum ActionType {
   PROJECT_SELECT = 'PROJECT_SELECT',
   PROJECT_DATA_LOADED = 'PROJECT_DATA_LOADED',
   EXTENDED_MAPPING_FIELD_CHANGE = 'EXTENDED_MAPPING_FIELD_CHANGE',
   AGGS_STATE_FIELD_ORDER_CHANGE = 'AGGS_STATE_FIELD_ORDER_CHANGE',
+  AGGS_STATE_FIELD_PROPERTY_CHANGE = 'AGGS_STATE_FIELD_PROPERTY_CHANGE',
   PROJECT_EDIT_CLEAR = 'PROJECT_EDIT_CLEAR',
 }
 
@@ -17,6 +19,20 @@ const initialState: IProjectConfigEditorState = {
   currentProjectData: null,
 };
 
+const getIndexLens = (state: IProjectConfigEditorState) => (
+  graphqlField: string,
+): IGqlData['project']['indices'][0] =>
+  lensPath([
+    'currentProjectData',
+    'project',
+    'indices',
+    !state.currentProjectData
+      ? 0
+      : state.currentProjectData.project.indices.findIndex(
+          entry => entry.graphqlField === graphqlField,
+        ),
+  ]);
+
 export interface IProjectDataLoadedAction
   extends IReduxAction<ActionType.PROJECT_DATA_LOADED, { data: IGqlData }> {}
 
@@ -26,26 +42,18 @@ export type TReduxAction =
       ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       {
         graphqlField: string;
-        fieldConfig: {
-          field: string;
-          type: string;
-          displayName: string;
-          active: boolean;
-          isArray: boolean;
-          primaryKey: boolean;
-          quickSearchEnabled: boolean;
-          unit: string;
-          displayValues: { [k: string]: string };
-          rangeStep: number;
-        };
+        fieldConfig: IGqlData['project']['indices'][0]['extended'][0];
       }
     >
   | IReduxAction<
       ActionType.AGGS_STATE_FIELD_ORDER_CHANGE,
+      { graphqlField: string; newIndex: number; oldIndex: number }
+    >
+  | IReduxAction<
+      ActionType.AGGS_STATE_FIELD_PROPERTY_CHANGE,
       {
         graphqlField: string;
-        newIndex: number;
-        oldIndex: number;
+        newField: IGqlData['project']['indices'][0]['aggsState']['state'][0];
       }
     >
   | IReduxAction<ActionType.PROJECT_EDIT_CLEAR, {}>;
@@ -54,6 +62,7 @@ const reducer = (
   state = initialState,
   action: TReduxAction,
 ): IProjectConfigEditorState => {
+  const getIndexLensWithState = getIndexLens(state);
   switch (action.type) {
     case ActionType.PROJECT_EDIT_CLEAR: {
       return {
@@ -72,62 +81,56 @@ const reducer = (
         return state;
       }
       const { payload: { graphqlField, fieldConfig } } = action;
-      return {
-        ...state,
-        currentProjectData: {
-          ...state.currentProjectData,
-          project: {
-            ...state.currentProjectData.project,
-            indices: state.currentProjectData.project.indices.map(index => ({
-              ...(index.graphqlField !== graphqlField
-                ? index
-                : {
-                    ...index,
-                    extended: index.extended.map(field => ({
-                      ...field,
-                      ...(fieldConfig.field !== field.field
-                        ? {}
-                        : {
-                            ...fieldConfig,
-                          }),
-                    })),
-                  }),
-            })),
-          },
-        },
-      };
+      const indexLens = getIndexLensWithState(graphqlField);
+      const currentIndex = view(indexLens, state);
+      return set(indexLens)({
+        ...currentIndex,
+        extended: currentIndex.extended.map(field => ({
+          ...field,
+          ...(fieldConfig.field !== field.field
+            ? {}
+            : {
+                ...fieldConfig,
+              }),
+        })),
+      })(state);
     }
     case ActionType.AGGS_STATE_FIELD_ORDER_CHANGE: {
       if (!state.currentProjectData) {
         return state;
       }
       const { payload } = action;
-      return {
-        ...state,
-        currentProjectData: {
-          ...state.currentProjectData,
-          project: {
-            ...state.currentProjectData.project,
-            indices: state.currentProjectData.project.indices.map(
-              projectIndex => ({
-                ...(projectIndex.graphqlField !== payload.graphqlField
-                  ? projectIndex
-                  : {
-                      ...projectIndex,
-                      aggsState: {
-                        ...projectIndex.aggsState,
-                        state: arrayMove(
-                          projectIndex.aggsState.state,
-                          payload.oldIndex,
-                          payload.newIndex,
-                        ),
-                      },
-                    }),
-              }),
-            ),
-          },
+      const indexLens = getIndexLensWithState(payload.graphqlField);
+      const currentIndex = view(indexLens, state);
+      return set(indexLens)({
+        ...currentIndex,
+        aggsState: {
+          ...currentIndex.aggsState,
+          state: arrayMove(
+            currentIndex.aggsState.state,
+            payload.oldIndex,
+            payload.newIndex,
+          ),
         },
-      };
+      })(state);
+    }
+    case ActionType.AGGS_STATE_FIELD_PROPERTY_CHANGE: {
+      if (!state.currentProjectData) {
+        return state;
+      }
+      const { payload } = action;
+      const indexLens = getIndexLensWithState(payload.graphqlField);
+      const currentIndex = view(indexLens, state);
+      return set(indexLens)({
+        ...currentIndex,
+        aggsState: {
+          ...currentIndex.aggsState,
+          state: currentIndex.aggsState.state.map(
+            entry =>
+              entry.field === payload.newField.field ? payload.newField : entry,
+          ),
+        },
+      })(state);
     }
     default:
       return state;

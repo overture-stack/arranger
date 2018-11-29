@@ -15,7 +15,7 @@ export interface IAggsStateEntryWithIndex extends IAggsStateEntry {
 }
 
 export interface IReduxStateProps {
-  aggsState?: IAggsState;
+  aggsState: IAggsState;
 }
 
 export interface IReduxDispatchProps {
@@ -23,6 +23,7 @@ export interface IReduxDispatchProps {
     field: IAggsStateEntryWithIndex,
     newIndex: number,
   ) => void;
+  onFieldPropertyChange: ({ newField: IAggsStateEntryWithIndex }) => void;
 }
 
 export const mapStateToProps = (
@@ -30,7 +31,7 @@ export const mapStateToProps = (
   { graphqlField }: IExternalProps,
 ): IReduxStateProps => {
   if (!state.configEditor.currentProjectData) {
-    return {};
+    return { aggsState: [] };
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
       index => index.graphqlField === graphqlField,
@@ -40,7 +41,7 @@ export const mapStateToProps = (
         aggsState: currentProjectIndexData.aggsState.state,
       };
     } else {
-      return {};
+      return { aggsState: [] };
     }
   }
 };
@@ -49,13 +50,27 @@ export const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   state: IExternalProps,
 ): IReduxDispatchProps => ({
-  onFieldSortChange: (field: IAggsStateEntryWithIndex, newIndex: number) => {
+  onFieldSortChange: (field, newIndex) => {
     dispatch({
       type: ActionType.AGGS_STATE_FIELD_ORDER_CHANGE,
       payload: {
         graphqlField: state.graphqlField,
         oldIndex: field.index,
         newIndex,
+      },
+    });
+  },
+  onFieldPropertyChange: ({ newField }) => {
+    const { active, field, show } = newField;
+    dispatch({
+      type: ActionType.AGGS_STATE_FIELD_PROPERTY_CHANGE,
+      payload: {
+        graphqlField: state.graphqlField,
+        newField: {
+          active,
+          field,
+          show,
+        },
       },
     });
   },
