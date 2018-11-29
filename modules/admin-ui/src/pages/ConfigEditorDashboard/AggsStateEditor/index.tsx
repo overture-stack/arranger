@@ -16,6 +16,10 @@ import {
   IReduxDispatchProps,
   IAggsStateEntryWithIndex,
 } from './ReduxContainer';
+import {
+  BOOLEAN_FILTER_VALUES,
+  ISelectOption,
+} from '../ExtendedMappingEditor/FieldsFilterDisplay';
 
 /***************
  * main component
@@ -23,6 +27,14 @@ import {
 interface IExternalProps {
   graphqlField: string;
 }
+
+const booleanFilterOptions = [
+  { text: 'none', value: null },
+  ...Object.values(BOOLEAN_FILTER_VALUES).map(val => ({
+    text: val,
+    value: val,
+  })),
+];
 
 const DebouncedInput = withDebouncedOnChange()(TextInput);
 export default connect(mapStateToProps, mapDispatchToProps)(
@@ -37,6 +49,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
 
     interface ILocalState {
       fieldFilter: string;
+      active: string | null;
+      show: string | null;
     }
 
     interface IStateContainer {
@@ -46,12 +60,15 @@ export default connect(mapStateToProps, mapDispatchToProps)(
 
     const initialState: ILocalState = {
       fieldFilter: '',
+      active: null,
+      show: null,
     };
 
     const onFieldFilterChange = (s: IStateContainer) => (
       e: React.SyntheticEvent<HTMLInputElement>,
     ) =>
       s.setState({
+        ...s.state,
         fieldFilter: e.currentTarget.value,
       });
 
@@ -63,8 +80,13 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     );
 
     const getFilteredFields = (s: IStateContainer) => {
-      return aggsStateWithIndex.filter(i =>
-        i.field.includes(s.state.fieldFilter),
+      return aggsStateWithIndex.filter(
+        i =>
+          i.field.includes(s.state.fieldFilter) &&
+          (s.state.active !== null
+            ? String(i.active) === s.state.active
+            : true) &&
+          (s.state.show !== null ? String(i.show) === s.state.show : true),
       );
     };
 
@@ -75,6 +97,24 @@ export default connect(mapStateToProps, mapDispatchToProps)(
       const unfilteredNewIndex = currentItemAtNewIndex.index;
       const fieldtoMove = filteredFields[data.oldIndex];
       onFieldSortChange(fieldtoMove, unfilteredNewIndex);
+    };
+
+    const onFieldActiveFilterChange = (s: IStateContainer) => ({
+      value,
+    }: ISelectOption) => {
+      s.setState({
+        ...s.state,
+        active: value,
+      });
+    };
+
+    const onFieldShowFilterChange = (s: IStateContainer) => ({
+      value,
+    }: ISelectOption) => {
+      s.setState({
+        ...s.state,
+        show: value,
+      });
     };
 
     return (
@@ -98,7 +138,12 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     input={Select}
                     label="Active"
                     size="small"
-                    data={[]}
+                    data={booleanFilterOptions}
+                    selectedItem={{
+                      text: s.state.active || '',
+                      value: s.state.active,
+                    }}
+                    onChange={onFieldActiveFilterChange(s)}
                   />
                 </GridItem>
                 <GridItem>
@@ -106,7 +151,12 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     input={Select}
                     label="Show"
                     size="small"
-                    data={[]}
+                    data={booleanFilterOptions}
+                    selectedItem={{
+                      text: s.state.show || '',
+                      value: s.state.show,
+                    }}
+                    onChange={onFieldShowFilterChange(s)}
                   />
                 </GridItem>
               </Grid>
