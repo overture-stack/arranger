@@ -54,7 +54,7 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
                 <AggsStateEditor graphqlField={graphqlField} />
               </Tab>
               <Tab title="Table">
-                <ColumnsStateEditor />
+                <ColumnsStateEditor graphqlField={graphqlField} />
               </Tab>
               <Tab title="Matchbox">
                 <MatchboxStateEditor />

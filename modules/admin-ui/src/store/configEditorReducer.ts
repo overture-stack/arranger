@@ -8,6 +8,7 @@ export enum ActionType {
   PROJECT_DATA_LOADED = 'PROJECT_DATA_LOADED',
   EXTENDED_MAPPING_FIELD_CHANGE = 'EXTENDED_MAPPING_FIELD_CHANGE',
   AGGS_STATE_FIELD_ORDER_CHANGE = 'AGGS_STATE_FIELD_ORDER_CHANGE',
+  COLUMNS_STATE_FIELD_ORDER_CHANGE = 'COLUMNS_STATE_FIELD_ORDER_CHANGE',
   AGGS_STATE_FIELD_PROPERTY_CHANGE = 'AGGS_STATE_FIELD_PROPERTY_CHANGE',
   PROJECT_EDIT_CLEAR = 'PROJECT_EDIT_CLEAR',
 }
@@ -33,6 +34,9 @@ const getIndexLens = (state: IProjectConfigEditorState) => (
           entry => entry.graphqlField === graphqlField,
         ),
   ]);
+export const viewProjectIndex = (state: IProjectConfigEditorState) => (
+  graphqlField: string,
+): TProjectIndex => view(getIndexLens(state)(graphqlField), state);
 
 export interface IProjectDataLoadedAction
   extends IReduxAction<ActionType.PROJECT_DATA_LOADED, { data: IGqlData }> {}
@@ -51,6 +55,10 @@ export type TReduxAction =
       { graphqlField: string; newIndex: number; oldIndex: number }
     >
   | IReduxAction<
+      ActionType.COLUMNS_STATE_FIELD_ORDER_CHANGE,
+      { graphqlField: string; newIndex: number; oldIndex: number }
+    >
+  | IReduxAction<
       ActionType.AGGS_STATE_FIELD_PROPERTY_CHANGE,
       {
         graphqlField: string;
@@ -63,11 +71,10 @@ const reducer = (
   state = initialState,
   action: TReduxAction,
 ): IProjectConfigEditorState => {
-  const getIndexLensWithState = getIndexLens(state);
-  const viewProjectIndex = (graphqlField: string): TProjectIndex =>
-    view(getIndexLensWithState(graphqlField), state);
-  const setProjectIndex = (graphqlField: string) => (data: TProjectIndex) =>
-    set(getIndexLensWithState(graphqlField), data, state);
+  const setProjectIndex = (state: IProjectConfigEditorState) => (
+    graphqlField: string,
+  ) => (data: TProjectIndex) =>
+    set(getIndexLens(state)(graphqlField), data, state);
 
   switch (action.type) {
     case ActionType.PROJECT_EDIT_CLEAR: {
@@ -87,8 +94,8 @@ const reducer = (
         return state;
       }
       const { payload: { graphqlField, fieldConfig } } = action;
-      const currentIndex = viewProjectIndex(graphqlField);
-      return setProjectIndex(graphqlField)({
+      const currentIndex = viewProjectIndex(state)(graphqlField);
+      return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
         extended: currentIndex.extended.map(field => ({
           ...field,
@@ -105,8 +112,8 @@ const reducer = (
         return state;
       }
       const { payload: { graphqlField, newIndex, oldIndex } } = action;
-      const currentIndex = viewProjectIndex(graphqlField);
-      return setProjectIndex(graphqlField)({
+      const currentIndex = viewProjectIndex(state)(graphqlField);
+      return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
         aggsState: {
           ...currentIndex.aggsState,
@@ -119,14 +126,35 @@ const reducer = (
         return state;
       }
       const { payload: { graphqlField, newField } } = action;
-      const currentIndex = viewProjectIndex(graphqlField);
-      return setProjectIndex(graphqlField)({
+      const currentIndex = viewProjectIndex(state)(graphqlField);
+      return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
         aggsState: {
           ...currentIndex.aggsState,
           state: currentIndex.aggsState.state.map(
             entry => (entry.field === newField.field ? newField : entry),
           ),
+        },
+      });
+    }
+    case ActionType.COLUMNS_STATE_FIELD_ORDER_CHANGE: {
+      if (!state.currentProjectData) {
+        return state;
+      }
+      const { payload: { graphqlField, newIndex, oldIndex } } = action;
+      const currentIndex = viewProjectIndex(state)(graphqlField);
+      return setProjectIndex(state)(graphqlField)({
+        ...currentIndex,
+        columnsState: {
+          ...currentIndex.columnsState,
+          state: {
+            ...currentIndex.columnsState.state,
+            columns: arrayMove(
+              currentIndex.columnsState.state.columns,
+              oldIndex,
+              newIndex,
+            ),
+          },
         },
       });
     }

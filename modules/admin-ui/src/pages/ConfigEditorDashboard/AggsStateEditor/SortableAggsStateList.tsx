@@ -1,16 +1,11 @@
 import * as React from 'react';
 import Card, { CardTitle } from 'mineral-ui/Card';
 import Text from 'mineral-ui/Text';
-import IconMenu from 'mineral-ui-icons/IconMenu';
 import Grid, { GridItem } from 'mineral-ui/Grid';
 import Checkbox from 'mineral-ui/Checkbox';
 import { FormField } from 'mineral-ui/Form';
 import Select from 'mineral-ui/Select';
-import {
-  SortableContainer,
-  SortableElement,
-  SortableHandle,
-} from 'react-sortable-hoc';
+import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import { connect } from 'react-redux';
 import { compose } from 'recompose';
 import { range } from 'lodash';
@@ -24,6 +19,7 @@ import {
 import { IAggsStateEntryWithIndex } from './ReduxContainer';
 import { isEqual } from 'apollo-utilities';
 import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
+import { DragHandle } from '../SortableList';
 
 export interface ISortEventData {
   oldIndex: number;
@@ -37,7 +33,6 @@ interface ISortableItemExternalProps {
   allItems: Array<IAggsStateEntryWithIndex>;
   graphqlField: string;
 }
-const DragHandle = SortableHandle(() => <IconMenu size="large" color="gray" />);
 
 const SortableItem = compose<
   ISortableItemExternalProps & IReduxStateProps & IReduxDispatchProps,
@@ -123,23 +118,18 @@ const SortableItem = compose<
 interface IExternalProps {
   graphqlField: string;
   items: Array<IAggsStateEntryWithIndex>;
-  useDragHandle?: boolean;
   onSortEnd: (any) => any;
 }
-export default compose<IExternalProps, IExternalProps>(SortableContainer)(
-  ({ items, graphqlField }) => {
-    return (
-      <div>
-        {items.map((item, index) => (
-          <SortableItem
-            graphqlField={graphqlField}
-            allItems={items}
-            key={`item-${index}`}
-            item={item}
-            index={index}
-          />
-        ))}
-      </div>
-    );
-  },
-);
+export default SortableContainer(({ items, graphqlField }: IExternalProps) => (
+  <div>
+    {items.map((item, index) => (
+      <SortableItem
+        graphqlField={graphqlField}
+        allItems={items}
+        key={`item-${index}`}
+        item={item}
+        index={index}
+      />
+    ))}
+  </div>
+));
