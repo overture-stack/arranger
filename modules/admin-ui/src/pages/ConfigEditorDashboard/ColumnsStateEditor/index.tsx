@@ -42,14 +42,16 @@ export default connect(mapStateToProps, mapDispatchToProps)(
       sortable: string | null;
     }
     interface IFilterStateContainer {
-      state: IFilterState;
-      setState: (s: IFilterState) => void;
+      state: { filter: IFilterState };
+      setState: (s: IFilterStateContainer['state']) => void;
     }
     const { columns } = columnsState;
-    const initialState: IFilterState = {
-      fieldFilter: '',
-      show: null,
-      sortable: null,
+    const initialState: IFilterStateContainer['state'] = {
+      filter: {
+        fieldFilter: '',
+        show: null,
+        sortable: null,
+      },
     };
     const columnsWithIndex: TColumnWithIndex[] = columns.map((col, index) => ({
       ...col,
@@ -71,7 +73,10 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     ) => {
       s.setState({
         ...s.state,
-        fieldFilter: e.currentTarget.value,
+        filter: {
+          ...s.state.filter,
+          fieldFilter: e.currentTarget.value,
+        },
       });
     };
     const onColumnShowFilterSelect = (s: IFilterStateContainer) => (
@@ -79,7 +84,10 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     ) => {
       s.setState({
         ...s.state,
-        show: o.value,
+        filter: {
+          ...s.state.filter,
+          show: o.value,
+        },
       });
     };
     const onColumnSortableFilterSelect = (s: IFilterStateContainer) => (
@@ -87,16 +95,21 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     ) => {
       s.setState({
         ...s.state,
-        sortable: o.value,
+        filter: {
+          ...s.state.filter,
+          sortable: o.value,
+        },
       });
     };
     const getFilteredColumns = (s: IFilterStateContainer) =>
       columnsWithIndex.filter(
         c =>
-          c.field.includes(s.state.fieldFilter) &&
-          (s.state.show !== null ? String(c.show) === s.state.show : true) &&
-          (s.state.sortable !== null
-            ? String(c.sortable) === s.state.sortable
+          c.field.includes(s.state.filter.fieldFilter) &&
+          (s.state.filter.show !== null
+            ? String(c.show) === s.state.filter.show
+            : true) &&
+          (s.state.filter.sortable !== null
+            ? String(c.sortable) === s.state.filter.sortable
             : true),
       );
     return (
@@ -111,7 +124,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     label="Field"
                     size="small"
                     input={DebouncedInput}
-                    value={s.state.fieldFilter}
+                    value={s.state.filter.fieldFilter}
                     onChange={onFieldFilterChange(s)}
                   />
                 </GridItem>
@@ -123,8 +136,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     data={booleanFilterOptions}
                     onChange={onColumnShowFilterSelect(s)}
                     selectedItem={{
-                      text: s.state.show || '',
-                      value: s.state.show,
+                      text: s.state.filter.show || '',
+                      value: s.state.filter.show,
                     }}
                   />
                 </GridItem>
@@ -136,8 +149,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     data={booleanFilterOptions}
                     onChange={onColumnSortableFilterSelect(s)}
                     selectedItem={{
-                      text: s.state.sortable || '',
-                      value: s.state.sortable,
+                      text: s.state.filter.sortable || '',
+                      value: s.state.filter.sortable,
                     }}
                   />
                 </GridItem>

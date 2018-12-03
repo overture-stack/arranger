@@ -53,12 +53,23 @@ const SortableItem = compose<
   const onFieldShowStatuschange = (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) => {
-    onColumnPropertyChange({ ...item, show: e.currentTarget.checked });
+    if (item.canChangeShow) {
+      onColumnPropertyChange({ ...item, show: e.currentTarget.checked });
+    }
   };
   const onFieldSortableStatuschange = (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) => {
     onColumnPropertyChange({ ...item, sortable: e.currentTarget.checked });
+  };
+  const onFieldShowMutabilityChange = (
+    e: React.SyntheticEvent<HTMLInputElement>,
+  ) => {
+    onColumnPropertyChange({
+      ...item,
+      canChangeShow: e.currentTarget.checked,
+      show: false,
+    });
   };
   return (
     <Card>
@@ -85,10 +96,19 @@ const SortableItem = compose<
           </GridItem>
           <GridItem span={2}>
             <Checkbox
-              name="Show"
-              label="Show"
+              name="Active"
+              label="Active"
+              checked={item.canChangeShow}
+              onChange={onFieldShowMutabilityChange}
+            />
+          </GridItem>
+          <GridItem span={2}>
+            <Checkbox
+              name="Default"
+              label="Default"
               checked={item.show}
               onChange={onFieldShowStatuschange}
+              disabled={!item.canChangeShow}
             />
           </GridItem>
           <GridItem span={2}>
