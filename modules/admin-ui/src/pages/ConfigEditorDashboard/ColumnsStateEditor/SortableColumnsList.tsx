@@ -6,10 +6,9 @@ import Card, { CardTitle } from 'mineral-ui/Card';
 import Grid, { GridItem } from 'mineral-ui/Grid';
 import Text from 'mineral-ui/Text';
 import Checkbox from 'mineral-ui/Checkbox';
-import { range, isEqual } from 'lodash';
 import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import { compose } from 'recompose';
-import { curry, __ } from 'ramda'; //doc: https://ramdajs.com/docs/#curry
+import { equals, range, curry, __ } from 'ramda'; //doc: https://ramdajs.com/docs/#curry
 
 import { TColumnWithIndex } from './';
 import { DragHandle } from '../SortableList';
@@ -37,7 +36,7 @@ const SortableItem = compose<
   connect(mapStateToProps, mapDispatchToProps),
   SortableElement,
   curry(React.memo)(__, (lastProps, nextProps) =>
-    isEqual(lastProps.item, nextProps.item),
+    equals(lastProps.item, nextProps.item),
   ),
 )(({ item, columnsState, onFieldSortChange, onColumnPropertyChange }) => {
   if (!columnsState) {
@@ -70,9 +69,9 @@ const SortableItem = compose<
           </GridItem>
           <GridItem span={2}>
             <FormField
-              input={Select}
               label="Position"
               size="small"
+              input={Select}
               data={positionOptions}
               onChange={onPositionSelect}
               selectedItem={{

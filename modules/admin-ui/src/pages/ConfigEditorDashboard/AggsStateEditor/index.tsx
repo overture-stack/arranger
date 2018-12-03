@@ -28,7 +28,7 @@ interface IExternalProps {
   graphqlField: string;
 }
 
-const booleanFilterOptions = [
+export const booleanFilterOptions = [
   { text: 'none', value: null },
   ...Object.values(BOOLEAN_FILTER_VALUES).map(val => ({
     text: val,
@@ -46,24 +46,20 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     if (!aggsState) {
       return <div>LOADING...</div>;
     }
-
     interface ILocalState {
       fieldFilter: string;
       active: string | null;
       show: string | null;
     }
-
     interface IStateContainer {
       state: ILocalState;
       setState: (s: ILocalState) => void;
     }
-
     const initialState: ILocalState = {
       fieldFilter: '',
       active: null,
       show: null,
     };
-
     const onFieldFilterChange = (s: IStateContainer) => (
       e: React.SyntheticEvent<HTMLInputElement>,
     ) =>
@@ -71,14 +67,12 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         ...s.state,
         fieldFilter: e.currentTarget.value,
       });
-
     const aggsStateWithIndex: Array<IAggsStateEntryWithIndex> = aggsState.map(
       (s, i) => ({
         ...s,
         index: i,
       }),
     );
-
     const getFilteredFields = (s: IStateContainer) =>
       aggsStateWithIndex.filter(
         i =>
@@ -88,7 +82,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(
             : true) &&
           (s.state.show !== null ? String(i.show) === s.state.show : true),
       );
-
     const onSortEnd = (filteredFields: IAggsStateEntryWithIndex[]) => (
       data: ISortEventData,
     ) => {
@@ -97,7 +90,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(
       const fieldtoMove = filteredFields[data.oldIndex];
       onFieldSortChange(fieldtoMove, unfilteredNewIndex);
     };
-
     const onFieldActiveFilterChange = (s: IStateContainer) => ({
       value,
     }: ISelectOption) =>
@@ -105,7 +97,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         ...s.state,
         active: value,
       });
-
     const onFieldShowFilterChange = (s: IStateContainer) => ({
       value,
     }: ISelectOption) =>
@@ -113,7 +104,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         ...s.state,
         show: value,
       });
-
     return (
       <Component initialState={initialState}>
         {(s: IStateContainer) => {

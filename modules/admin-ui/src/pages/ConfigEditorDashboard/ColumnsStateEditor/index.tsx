@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { IColumnsState } from 'src/pages/VersionDashboard/AddProjectForm/types';
 import { FormField } from 'mineral-ui/Form';
 import Grid, { GridItem } from 'mineral-ui/Grid';
+import Select from 'mineral-ui/Select';
 import TextInput from 'mineral-ui/TextInput';
 import Component from 'react-component-component';
 
@@ -16,6 +17,8 @@ import {
   mapDispatchToProps,
 } from './ReduxContainer';
 import SortableColumnsList from './SortableColumnsList';
+import { booleanFilterOptions } from 'src/pages/ConfigEditorDashboard/AggsStateEditor';
+import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 
 interface IExternalProps extends IReduxExternalProps {}
 
@@ -35,6 +38,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     }
     interface IFilterState {
       fieldFilter: string;
+      show: string | null;
+      sortable: string | null;
     }
     interface IFilterStateContainer {
       state: IFilterState;
@@ -43,6 +48,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     const { columns } = columnsState;
     const initialState: IFilterState = {
       fieldFilter: '',
+      show: null,
+      sortable: null,
     };
     const columnsWithIndex: TColumnWithIndex[] = columns.map((col, index) => ({
       ...col,
@@ -67,8 +74,31 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         fieldFilter: e.currentTarget.value,
       });
     };
+    const onColumnShowFilterSelect = (s: IFilterStateContainer) => (
+      o: ISelectOption,
+    ) => {
+      s.setState({
+        ...s.state,
+        show: o.value,
+      });
+    };
+    const onColumnSortableFilterSelect = (s: IFilterStateContainer) => (
+      o: ISelectOption,
+    ) => {
+      s.setState({
+        ...s.state,
+        sortable: o.value,
+      });
+    };
     const getFilteredColumns = (s: IFilterStateContainer) =>
-      columnsWithIndex.filter(c => c.field.includes(s.state.fieldFilter));
+      columnsWithIndex.filter(
+        c =>
+          c.field.includes(s.state.fieldFilter) &&
+          (s.state.show !== null ? String(c.show) === s.state.show : true) &&
+          (s.state.sortable !== null
+            ? String(c.sortable) === s.state.sortable
+            : true),
+      );
     return (
       <Component initialState={initialState}>
         {(s: IFilterStateContainer) => {
@@ -83,6 +113,32 @@ export default connect(mapStateToProps, mapDispatchToProps)(
                     input={DebouncedInput}
                     value={s.state.fieldFilter}
                     onChange={onFieldFilterChange(s)}
+                  />
+                </GridItem>
+                <GridItem>
+                  <FormField
+                    label="Shown"
+                    size="small"
+                    input={Select}
+                    data={booleanFilterOptions}
+                    onChange={onColumnShowFilterSelect(s)}
+                    selectedItem={{
+                      text: s.state.show || '',
+                      value: s.state.show,
+                    }}
+                  />
+                </GridItem>
+                <GridItem>
+                  <FormField
+                    label="Sortable"
+                    size="small"
+                    input={Select}
+                    data={booleanFilterOptions}
+                    onChange={onColumnSortableFilterSelect(s)}
+                    selectedItem={{
+                      text: s.state.sortable || '',
+                      value: s.state.sortable,
+                    }}
                   />
                 </GridItem>
               </Grid>
