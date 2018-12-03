@@ -22,7 +22,9 @@ import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 
 interface IExternalProps extends IReduxExternalProps {}
 
-export type TColumnWithIndex = IColumnsState['columns'][0] & {
+type ColumnConfig = IColumnsState['columns'][0];
+
+export type TColumnWithIndex = ColumnConfig & {
   index: number;
 };
 
@@ -34,24 +36,35 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     onFieldSortChange,
   }: IExternalProps & IReduxStateProps & IReduxDisplatProps) => {
     if (!columnsState) {
-      return <div>LOADING...</div>;
+      return <div>LOADING... | null </div>;
     }
     interface IFilterState {
       fieldFilter: string;
       show: string | null;
       sortable: string | null;
     }
+    interface ICustomColumnConfig extends ColumnConfig {}
     interface IFilterStateContainer {
-      state: { filter: IFilterState };
+      state: { filter: IFilterState; customColumn: ICustomColumnConfig };
       setState: (s: IFilterStateContainer['state']) => void;
     }
     const { columns } = columnsState;
+
+    /* TODO: implement adding custom columns */
+    const emptyCustomColumn: ICustomColumnConfig = {
+      field: '',
+      canChangeShow: false,
+      show: false,
+      sortable: false,
+      accessor: '',
+      jsonPath: '',
+      query: '',
+      type: '',
+      id: null,
+    };
     const initialState: IFilterStateContainer['state'] = {
-      filter: {
-        fieldFilter: '',
-        show: null,
-        sortable: null,
-      },
+      filter: { fieldFilter: '', show: null, sortable: null },
+      customColumn: emptyCustomColumn,
     };
     const columnsWithIndex: TColumnWithIndex[] = columns.map((col, index) => ({
       ...col,

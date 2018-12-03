@@ -23,6 +23,7 @@ export const RT_Column = Record({
   canChangeShow: Boolean,
   jsonPath: Union(Undefined, Union(Null, String)),
   query: Union(Undefined, Union(Null, String)),
+  id: Union(Null, String),
 });
 
 export const RT_ColumnsState = Record({
