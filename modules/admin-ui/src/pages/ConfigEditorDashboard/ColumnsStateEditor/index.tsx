@@ -44,10 +44,6 @@ type TColumnWithIndex = IColumnsState['columns'][0] & {
   index: number;
 };
 
-interface IFilterState {
-  fieldFilter: string;
-}
-
 const mapStateToProps = (
   state: IGlobalState,
   { graphqlField }: IExternalProps,
@@ -178,6 +174,9 @@ export default connect(mapStateToProps, mapDispatchToProps)(
   }: IExternalProps & IReduxStateProps & IReduxDisplatProps) => {
     if (!columnsState) {
       return <div>LOADING...</div>;
+    }
+    interface IFilterState {
+      fieldFilter: string;
     }
     interface IFilterStateContainer {
       state: IFilterState;
