@@ -38,6 +38,7 @@ interface IReduxDisplatProps {
   onFieldSortChange: (
     e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>,
   ) => void;
+  onColumnPropertyChange: (newColumn: IColumnsState['columns'][0]) => void;
 }
 
 type TColumnWithIndex = IColumnsState['columns'][0] & {
@@ -66,6 +67,15 @@ const mapDispatchToProps = (
       },
     });
   },
+  onColumnPropertyChange: newColumn => {
+    dispatch({
+      type: ActionType.COLUMNS_STATE_COLUMN_PROPERTY_CHANGE,
+      payload: {
+        graphqlField: graphqlField,
+        newField: newColumn,
+      },
+    });
+  },
 });
 
 const SortableItem = compose<
@@ -83,7 +93,7 @@ const SortableItem = compose<
   curry(React.memo)(__, (lastProps, nextProps) =>
     isEqual(lastProps.item, nextProps.item),
   ),
-)(({ item, columnsState, onFieldSortChange }) => {
+)(({ item, columnsState, onFieldSortChange, onColumnPropertyChange }) => {
   if (!columnsState) {
     return <div>LOADING...</div>;
   }
@@ -95,15 +105,15 @@ const SortableItem = compose<
   const onPositionSelect = (o: ISelectOption) => {
     onFieldSortChange({ newIndex: Number(o.value), oldIndex: item.index });
   };
-  const onFieldShowStatuschange = (field: string) => (
+  const onFieldShowStatuschange = (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) => {
-    console.log('field: ', field);
+    onColumnPropertyChange({ ...item, show: e.currentTarget.checked });
   };
-  const onFieldSortableStatuschange = (field: string) => (
+  const onFieldSortableStatuschange = (
     e: React.SyntheticEvent<HTMLInputElement>,
   ) => {
-    console.log('field: ', field);
+    onColumnPropertyChange({ ...item, sortable: e.currentTarget.checked });
   };
   return (
     <Card>
@@ -133,7 +143,7 @@ const SortableItem = compose<
               name="Show"
               label="Show"
               checked={item.show}
-              onChange={onFieldShowStatuschange(item.field)}
+              onChange={onFieldShowStatuschange}
             />
           </GridItem>
           <GridItem span={2}>
@@ -141,7 +151,7 @@ const SortableItem = compose<
               name="Sortable"
               label="Sortable"
               checked={item.sortable}
-              onChange={onFieldSortableStatuschange(item.field)}
+              onChange={onFieldSortableStatuschange}
             />
           </GridItem>
         </Grid>
