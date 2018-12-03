@@ -11,12 +11,16 @@ import { FormField } from 'mineral-ui/Form';
 import Select from 'mineral-ui/Select';
 import Card, { CardTitle } from 'mineral-ui/Card';
 import Grid, { GridItem } from 'mineral-ui/Grid';
+import TextInput from 'mineral-ui/TextInput';
 import Text from 'mineral-ui/Text';
 import Checkbox from 'mineral-ui/Checkbox';
 import { range, isEqual } from 'lodash';
 import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import { compose } from 'recompose';
+import Component from 'react-component-component';
+import { curry, __ } from 'ramda'; //doc: https://ramdajs.com/docs/#curry
 
+import { withDebouncedOnChange } from 'src/utils/';
 import { DragHandle } from '../SortableList';
 import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 import { Dispatch } from 'redux';
@@ -31,7 +35,17 @@ interface IReduxStateProps {
 }
 
 interface IReduxDisplatProps {
-  onFieldSortChange: (e: ISortEventData) => void;
+  onFieldSortChange: (
+    e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>,
+  ) => void;
+}
+
+type TColumnWithIndex = IColumnsState['columns'][0] & {
+  index: number;
+};
+
+interface IFilterState {
+  fieldFilter: string;
 }
 
 const mapStateToProps = (
@@ -46,7 +60,7 @@ const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   { graphqlField }: IExternalProps,
 ): IReduxDisplatProps => ({
-  onFieldSortChange: (sortEvent: ISortEventData) => {
+  onFieldSortChange: sortEvent => {
     dispatch({
       type: ActionType.COLUMNS_STATE_FIELD_ORDER_CHANGE,
       payload: {
@@ -61,102 +75,101 @@ const mapDispatchToProps = (
 const SortableItem = compose<
   IReduxStateProps &
     IReduxDisplatProps & {
-      item: any;
+      item: TColumnWithIndex;
     },
   IExternalProps & {
-    item: any;
+    item: TColumnWithIndex;
     index: number;
   }
->(connect(mapStateToProps, mapDispatchToProps), SortableElement)(
-  React.memo(
-    ({ item, columnsState, onFieldSortChange }) => {
-      if (!columnsState) {
-        return <div>LOADING...</div>;
-      }
-      const { columns } = columnsState;
-      const positionOptions = range(0, columns.length).map(val => ({
-        text: String(val),
-        value: String(val),
-      }));
-      const onPositionSelect = (data: ISelectOption) => {
-        console.log('data: ', data);
-      };
-      const onFieldShowStatuschange = (field: string) => (
-        e: React.SyntheticEvent<HTMLInputElement>,
-      ) => {
-        console.log('field: ', field);
-      };
-      const onFieldSortableStatuschange = (field: string) => (
-        e: React.SyntheticEvent<HTMLInputElement>,
-      ) => {
-        // onFieldSortChange({ collection: null, newIndex: e.currentTarget.value, oldIndex });
-      };
-      return (
-        <Card>
-          <CardTitle>
-            <Grid columns={24}>
-              <GridItem span={2}>
-                <DragHandle />
-              </GridItem>
-              <GridItem span={2}>
-                <FormField
-                  input={Select}
-                  label="Position"
-                  size="small"
-                  data={positionOptions}
-                  onChange={onPositionSelect}
-                  selectedItem={{
-                    text: String(item.index),
-                    value: String(item.index),
-                  }}
-                />
-              </GridItem>
-              <GridItem>
-                <Text>{`${item.field}`}</Text>
-              </GridItem>
-              <GridItem span={2}>
-                <Checkbox
-                  name="Show"
-                  label="Show"
-                  checked={item.show}
-                  onChange={onFieldShowStatuschange(item.field)}
-                />
-              </GridItem>
-              <GridItem span={2}>
-                <Checkbox
-                  name="Sortable"
-                  label="Sortable"
-                  checked={item.sortable}
-                  onChange={onFieldSortableStatuschange(item.field)}
-                />
-              </GridItem>
-            </Grid>
-          </CardTitle>
-        </Card>
-      );
-    },
-    (prev, next) => isEqual(prev.item, next.item),
+>(
+  connect(mapStateToProps, mapDispatchToProps),
+  SortableElement,
+  curry(React.memo)(__, (lastProps, nextProps) =>
+    isEqual(lastProps.item, nextProps.item),
+  ),
+)(({ item, columnsState, onFieldSortChange }) => {
+  if (!columnsState) {
+    return <div>LOADING...</div>;
+  }
+  const { columns } = columnsState;
+  const positionOptions = range(0, columns.length).map(val => ({
+    text: String(val),
+    value: String(val),
+  }));
+  const onPositionSelect = (o: ISelectOption) => {
+    onFieldSortChange({ newIndex: Number(o.value), oldIndex: item.index });
+  };
+  const onFieldShowStatuschange = (field: string) => (
+    e: React.SyntheticEvent<HTMLInputElement>,
+  ) => {
+    console.log('field: ', field);
+  };
+  const onFieldSortableStatuschange = (field: string) => (
+    e: React.SyntheticEvent<HTMLInputElement>,
+  ) => {
+    console.log('field: ', field);
+  };
+  return (
+    <Card>
+      <CardTitle>
+        <Grid columns={24}>
+          <GridItem span={2}>
+            <DragHandle />
+          </GridItem>
+          <GridItem span={2}>
+            <FormField
+              input={Select}
+              label="Position"
+              size="small"
+              data={positionOptions}
+              onChange={onPositionSelect}
+              selectedItem={{
+                text: String(item.index),
+                value: String(item.index),
+              }}
+            />
+          </GridItem>
+          <GridItem>
+            <Text>{`${item.field}`}</Text>
+          </GridItem>
+          <GridItem span={2}>
+            <Checkbox
+              name="Show"
+              label="Show"
+              checked={item.show}
+              onChange={onFieldShowStatuschange(item.field)}
+            />
+          </GridItem>
+          <GridItem span={2}>
+            <Checkbox
+              name="Sortable"
+              label="Sortable"
+              checked={item.sortable}
+              onChange={onFieldSortableStatuschange(item.field)}
+            />
+          </GridItem>
+        </Grid>
+      </CardTitle>
+    </Card>
+  );
+});
+
+const SortableColumnsList = SortableContainer<{ items: any } & IExternalProps>(
+  ({ items, graphqlField }) => (
+    <div>
+      {items.map((item, index) => (
+        <SortableItem
+          item={item}
+          graphqlField={graphqlField}
+          index={index}
+          key={`item-${index}`}
+        />
+      ))}
+    </div>
   ),
 );
 
-const SortableColumnsList = SortableContainer<{ items: any } & IExternalProps>(
-  ({ items, graphqlField }) => {
-    const columnsWithIndex = items.map((col, index) => ({ ...col, index }));
-    return (
-      <div>
-        {columnsWithIndex.map((item, index) => (
-          <SortableItem
-            item={item}
-            graphqlField={graphqlField}
-            index={index}
-            key={`item-${index}`}
-          />
-        ))}
-      </div>
-    );
-  },
-);
-
+const DebouncedInput = withDebouncedOnChange()(TextInput);
 export default connect(mapStateToProps, mapDispatchToProps)(
   ({
     columnsState,
@@ -166,22 +179,66 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     if (!columnsState) {
       return <div>LOADING...</div>;
     }
-
+    interface IFilterStateContainer {
+      state: IFilterState;
+      setState: (s: IFilterState) => void;
+    }
     const { columns } = columnsState;
-
-    const onSortEnd = (data: ISortEventData) => {
-      onFieldSortChange(data);
+    const initialState: IFilterState = {
+      fieldFilter: '',
     };
-
+    const columnsWithIndex: TColumnWithIndex[] = columns.map((col, index) => ({
+      ...col,
+      index,
+    }));
+    const onSortEnd = (filteredFields: TColumnWithIndex[]) => (
+      data: ISortEventData,
+    ) => {
+      const currentItemAtNewIndex = filteredFields[data.newIndex];
+      const unfilteredNewIndex = currentItemAtNewIndex.index;
+      const fieldToMove = filteredFields[data.oldIndex];
+      onFieldSortChange({
+        oldIndex: fieldToMove.index,
+        newIndex: unfilteredNewIndex,
+      });
+    };
+    const onFieldFilterChange = (s: IFilterStateContainer) => (
+      e: React.SyntheticEvent<HTMLInputElement>,
+    ) => {
+      s.setState({
+        ...s.state,
+        fieldFilter: e.currentTarget.value,
+      });
+    };
+    const getFilteredColumns = (s: IFilterStateContainer) =>
+      columnsWithIndex.filter(c => c.field.includes(s.state.fieldFilter));
     return (
-      <div>
-        <SortableColumnsList
-          graphqlField={graphqlField}
-          items={columns}
-          useDragHandle={true}
-          onSortEnd={onSortEnd}
-        />
-      </div>
+      <Component initialState={initialState}>
+        {(s: IFilterStateContainer) => {
+          const filteredFields = getFilteredColumns(s);
+          return (
+            <div>
+              <Grid>
+                <GridItem>
+                  <FormField
+                    label="Field"
+                    size="small"
+                    input={DebouncedInput}
+                    value={s.state.fieldFilter}
+                    onChange={onFieldFilterChange(s)}
+                  />
+                </GridItem>
+              </Grid>
+              <SortableColumnsList
+                graphqlField={graphqlField}
+                items={filteredFields}
+                useDragHandle={true}
+                onSortEnd={onSortEnd(filteredFields)}
+              />
+            </div>
+          );
+        }}
+      </Component>
     );
   },
 );

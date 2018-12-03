@@ -79,8 +79,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(
       }),
     );
 
-    const getFilteredFields = (s: IStateContainer) => {
-      return aggsStateWithIndex.filter(
+    const getFilteredFields = (s: IStateContainer) =>
+      aggsStateWithIndex.filter(
         i =>
           i.field.includes(s.state.fieldFilter) &&
           (s.state.active !== null
@@ -88,7 +88,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(
             : true) &&
           (s.state.show !== null ? String(i.show) === s.state.show : true),
       );
-    };
 
     const onSortEnd = (filteredFields: IAggsStateEntryWithIndex[]) => (
       data: ISortEventData,
@@ -101,21 +100,19 @@ export default connect(mapStateToProps, mapDispatchToProps)(
 
     const onFieldActiveFilterChange = (s: IStateContainer) => ({
       value,
-    }: ISelectOption) => {
+    }: ISelectOption) =>
       s.setState({
         ...s.state,
         active: value,
       });
-    };
 
     const onFieldShowFilterChange = (s: IStateContainer) => ({
       value,
-    }: ISelectOption) => {
+    }: ISelectOption) =>
       s.setState({
         ...s.state,
         show: value,
       });
-    };
 
     return (
       <Component initialState={initialState}>
