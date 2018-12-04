@@ -31,6 +31,7 @@ export const mapStateToProps = (
     ? null
     : viewProjectIndex(state.configEditor)(graphqlField).columnsState.state,
 });
+
 export const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   { graphqlField }: IReduxExternalProps,

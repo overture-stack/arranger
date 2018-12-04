@@ -5,12 +5,12 @@ import { sortBy } from 'lodash';
 import { IGlobalState } from 'src/store';
 import { IExtendedMapping } from '../../VersionDashboard/AddProjectForm/types';
 import Grid, { GridItem } from 'mineral-ui/Grid';
-import Table, { TableRow, TableCell } from 'mineral-ui/Table';
-import styled from 'react-emotion';
+import Table, { TableCell } from 'mineral-ui/Table';
 
 import { Dispatch } from 'redux';
 import ExtendedFieldEditor from 'src/pages/ConfigEditorDashboard/ExtendedMappingEditor/ExtendedFieldEditor';
 import FieldsFilter, { ISelectOption } from './FieldsFilterDisplay';
+import SelectableTableRow from 'src/components/SelectableTableRow';
 
 /***************
  * redux container
@@ -96,16 +96,6 @@ export const EXTENDED_FIELD_TYPES: {
 /**********************
  * rendered component
  *********************/
-const SelectableTableRow = styled(TableRow)`
-  background: ${({
-    selected = false,
-    theme,
-  }: {
-    selected: boolean;
-    theme: any;
-  }) => (selected ? theme.color_theme_30 : 'auto')};
-`;
-
 const FieldsTable = React.memo(Table, ({ data }, { data: nextData }) => {
   const toSelectedState = ({ selected }) => selected;
   const lastSelectedIndex = data.map(toSelectedState).indexOf(true);
@@ -144,9 +134,9 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
       filter: { ...state.filter, field: e.currentTarget.value },
     });
 
-  const onFilterOptionSelect = (s: IStateContainer) => (field: string) => (
-    e: ISelectOption,
-  ) =>
+  const onFilterOptionSelect = (s: IStateContainer) => (
+    field: keyof typeof extendedMapping[0],
+  ) => (e: ISelectOption) =>
     s.setState({
       ...s.state,
       filter: {
@@ -188,10 +178,9 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
 
   return (
     <Component initialState={initialState}>
-      {(stateContainer: IStateContainer) => {
-        const { state } = stateContainer;
-        const filteredExtendedMapping = getFilteredFields(state);
-        const selectedField = getSelectedField(stateContainer);
+      {(s: IStateContainer) => {
+        const filteredExtendedMapping = getFilteredFields(s.state);
+        const selectedField = getSelectedField(s);
         const fieldTableColumns = [
           {
             content: `Fields (${filteredExtendedMapping.length})`,
@@ -199,12 +188,12 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
           },
         ];
         const fieldTableRows = filteredExtendedMapping.map(entry => ({
-          selected: state.selectedField === entry.field,
+          selected: s.state.selectedField === entry.field,
           row: props => {
             return (
               <SelectableTableRow
-                selected={state.selectedField === entry.field}
-                onClick={setSelectedField(stateContainer)(entry.field)}
+                selected={s.state.selectedField === entry.field}
+                onClick={setSelectedField(s)(entry.field)}
               >
                 <TableCell>{entry.field}</TableCell>
               </SelectableTableRow>
@@ -216,21 +205,15 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
             <Grid alignItems="top" columns={12}>
               <GridItem span={7}>
                 <FieldsFilter
-                  filterState={state}
-                  onFieldFilterChange={onFieldFilterChange(stateContainer)}
-                  onTypeSelect={onFilterOptionSelect(stateContainer)('type')}
-                  onActiveStateSelect={onFilterOptionSelect(stateContainer)(
-                    'active',
+                  filterState={s.state}
+                  onFieldFilterChange={onFieldFilterChange(s)}
+                  onTypeSelect={onFilterOptionSelect(s)('type')}
+                  onActiveStateSelect={onFilterOptionSelect(s)('active')}
+                  onIsArraySelect={onFilterOptionSelect(s)('isArray')}
+                  onPrimaryStateSelect={onFilterOptionSelect(s)('primaryKey')}
+                  onQuicksearchEnabledSelect={onFilterOptionSelect(s)(
+                    'quickSearchEnabled',
                   )}
-                  onIsArraySelect={onFilterOptionSelect(stateContainer)(
-                    'isArray',
-                  )}
-                  onPrimaryStateSelect={onFilterOptionSelect(stateContainer)(
-                    'primaryKey',
-                  )}
-                  onQuicksearchEnabledSelect={onFilterOptionSelect(
-                    stateContainer,
-                  )('quickSearchEnabled')}
                 />
                 <FieldsTable
                   title={`Fields`}

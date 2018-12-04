@@ -50,14 +50,14 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
               <Tab title="Fields">
                 <ExtendedMappingEditor graphqlField={graphqlField} />
               </Tab>
-              <Tab title="Aggs panel">
+              <Tab title="Aggs Panel">
                 <AggsStateEditor graphqlField={graphqlField} />
               </Tab>
               <Tab title="Table">
                 <ColumnsStateEditor graphqlField={graphqlField} />
               </Tab>
-              <Tab title="Matchbox">
-                <MatchboxStateEditor />
+              <Tab title="Quick Search">
+                <MatchboxStateEditor graphqlField={graphqlField} />
               </Tab>
             </Tabs>
           </FlexItem>

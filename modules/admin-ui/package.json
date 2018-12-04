@@ -27,7 +27,7 @@
     "react-apollo": "^2.2.4",
     "react-bulma-components": "^2.2.0",
     "react-component-component": "^1.2.1",
-    "react-dom": "^16.6.0",
+    "react-dom": "^v16.7.0-alpha",
     "react-emotion": "^9.2.12",
     "react-portal": "^4.1.5",
     "react-redux": "^5.1.0",
