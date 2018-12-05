@@ -131,6 +131,22 @@ const reducer = (
         },
       });
     }
+    case ActionType.QUICK_SEARCH_CONFIG_PROPERTY_CHANGE: {
+      if (!state.currentProjectData) {
+        return state;
+      }
+      const { payload: { graphqlField, newField } } = action;
+      const currentIndex = viewProjectIndex(state)(graphqlField);
+      return setProjectIndex(state)(graphqlField)({
+        ...currentIndex,
+        matchBoxState: {
+          ...currentIndex.matchBoxState,
+          state: currentIndex.matchBoxState.state.map(s => ({
+            ...(s.field === newField.field ? newField : s),
+          })),
+        },
+      });
+    }
     default:
       return state;
   }

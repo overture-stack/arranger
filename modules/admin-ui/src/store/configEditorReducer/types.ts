@@ -13,6 +13,7 @@ export enum ActionType {
   AGGS_STATE_FIELD_PROPERTY_CHANGE = 'AGGS_STATE_FIELD_PROPERTY_CHANGE',
   COLUMNS_STATE_FIELD_ORDER_CHANGE = 'COLUMNS_STATE_FIELD_ORDER_CHANGE',
   COLUMNS_STATE_COLUMN_PROPERTY_CHANGE = 'COLUMNS_STATE_COLUMN_PROPERTY_CHANGE',
+  QUICK_SEARCH_CONFIG_PROPERTY_CHANGE = 'QUICK_SEARCH_CONFIG_PROPERTY_CHANGE',
   PROJECT_EDIT_CLEAR = 'PROJECT_EDIT_CLEAR',
 }
 
@@ -45,6 +46,13 @@ export type TReduxAction =
       {
         graphqlField: string;
         newField: IGqlData['project']['indices'][0]['columnsState']['state']['columns'][0];
+      }
+    >
+  | IReduxAction<
+      ActionType.QUICK_SEARCH_CONFIG_PROPERTY_CHANGE,
+      {
+        graphqlField: string;
+        newField: IGqlData['project']['indices'][0]['matchBoxState']['state'][0];
       }
     >
   | IReduxAction<ActionType.PROJECT_EDIT_CLEAR, {}>;

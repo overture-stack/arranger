@@ -2,9 +2,9 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import Table, { TableCell } from 'mineral-ui/Table';
 import Grid, { GridItem } from 'mineral-ui/Grid';
-import Card, { CardTitle, CardBlock, CardDivider } from 'mineral-ui/Card';
 import Checkbox from 'mineral-ui/Checkbox';
 
+import SelectableTableRow from 'src/components/SelectableTableRow';
 import {
   mapStateToProps,
   mapDispatchToProps,
@@ -12,68 +12,30 @@ import {
   IReduxExternalProps,
   IReduxStateProps,
 } from './ReduxContainer';
-import SelectableTableRow from 'src/components/SelectableTableRow';
+import QuicksearchFieldConfigEditor from './QuicksearchFieldConfigEditor';
 
-interface IQuicksearchFieldConfigEditorExternalProps
-  extends IReduxExternalProps {
-  field: string;
-}
-const QuicksearchFieldConfigEditor = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(
-  (
-    props: IReduxStateProps &
-      IReduxExternalProps &
-      IQuicksearchFieldConfigEditorExternalProps,
-  ) => {
-    const { field, graphqlField, quicksearchConfigs } = props;
-    const editingField = quicksearchConfigs.find(f => f.field === field);
-    if (!editingField) {
-      return null;
-    }
-    type TDataProperty = keyof typeof editingField;
-    interface IFieldPropertyDelta {
-      property: TDataProperty;
-      value: (typeof editingField)[IFieldPropertyDelta['property']];
-    }
-    const onFieldPropertyChange = (delta: IFieldPropertyDelta) => () => {};
-    return (
-      <Card>
-        <CardTitle>{field && field.length ? field : graphqlField}</CardTitle>
-        <CardBlock>
-          <Checkbox
-            name="Active"
-            label="Active"
-            checked={editingField.isActive}
-            onChange={onFieldPropertyChange({
-              property: 'isActive',
-              value: !editingField.isActive,
-            })}
-          />
-        </CardBlock>
-      </Card>
-    );
-  },
-);
-
-export default connect(mapStateToProps)(
-  (props: IReduxStateProps & IReduxExternalProps) => {
-    const { graphqlField, quicksearchConfigs } = props;
+export default connect(mapStateToProps, mapDispatchToProps)(
+  (props: IReduxStateProps & IReduxDispatchProps & IReduxExternalProps) => {
+    const { graphqlField, quicksearchConfigs, onFieldPropertyChange } = props;
 
     const [selectedField, setSelectedField] = React.useState(
       quicksearchConfigs[0].field,
     );
 
-    const fieldTableColumns = [
-      {
-        content: `Fields (${quicksearchConfigs.length})`,
-        key: 'field',
-      },
+    const fieldTableColumns: Array<{
+      content: string;
+      key: keyof typeof quicksearchConfigs[0];
+    }> = [
+      { content: `Active`, key: 'isActive' },
+      { content: `Fields (${quicksearchConfigs.length})`, key: 'field' },
     ];
 
     const onFieldTableRowClick = (field: string) => () =>
       setSelectedField(field);
+
+    const onActiveStateChange = entry => () => {
+      onFieldPropertyChange({ ...entry, isActive: !entry.isActive });
+    };
 
     return (
       <Grid alignItems="top" columns={12}>
@@ -94,8 +56,14 @@ export default connect(mapStateToProps)(
                       onClick={onFieldTableRowClick(entry.field)}
                     >
                       <TableCell>
+                        <Checkbox
+                          checked={entry.isActive}
+                          onChange={onActiveStateChange(entry)}
+                        />
+                      </TableCell>
+                      <TableCell>
                         {entry.field && entry.field.length
-                          ? entry.field
+                          ? entry.displayName
                           : graphqlField}
                       </TableCell>
                     </SelectableTableRow>

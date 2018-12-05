@@ -1,16 +1,16 @@
 import * as React from 'react';
 import Component from 'react-component-component';
 import { connect } from 'react-redux';
-import { sortBy } from 'lodash';
 import { IGlobalState } from 'src/store';
-import { IExtendedMapping } from '../../VersionDashboard/AddProjectForm/types';
 import Grid, { GridItem } from 'mineral-ui/Grid';
 import Table, { TableCell } from 'mineral-ui/Table';
+import { prop, sortBy } from 'ramda';
 
 import { Dispatch } from 'redux';
 import ExtendedFieldEditor from 'src/pages/ConfigEditorDashboard/ExtendedMappingEditor/ExtendedFieldEditor';
 import FieldsFilter, { ISelectOption } from './FieldsFilterDisplay';
 import SelectableTableRow from 'src/components/SelectableTableRow';
+import { IExtendedMapping } from '../../VersionDashboard/AddProjectForm/types';
 
 /***************
  * redux container
@@ -153,7 +153,7 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
     extendedMapping.find(entry => entry.field === s.state.selectedField);
 
   const getFilteredFields = (state: ILocalState): typeof extendedMapping =>
-    sortBy(
+    sortBy(prop('field'))(
       extendedMapping.filter(field => {
         const { filter } = state;
         return (
@@ -173,7 +173,6 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
             : true)
         );
       }),
-      'field',
     );
 
   return (
