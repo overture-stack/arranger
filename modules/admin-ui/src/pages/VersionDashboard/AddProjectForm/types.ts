@@ -66,7 +66,7 @@ export const RT_Matchbox = Record({
 
 export const RT_MatchboxState = RT_Array(RT_Matchbox);
 
-export const RT_IndexConfigImportDataRunType = Record({
+export const RT_IndexConfigImportData = Record({
   aggsState: Union(Undefined, RT_AggsState),
   columnsState: Union(Undefined, RT_ColumnsState),
   extended: Union(Undefined, RT_ExtendedMapping),
@@ -74,7 +74,7 @@ export const RT_IndexConfigImportDataRunType = Record({
 });
 
 export interface IIndexConfigImportData
-  extends Static<typeof RT_IndexConfigImportDataRunType> {}
+  extends Static<typeof RT_IndexConfigImportData> {}
 export interface IAggsStateEntry extends Static<typeof RT_AggsStateEntry> {}
 export interface IAggsState extends Static<typeof RT_AggsState> {}
 export interface IColumnsState extends Static<typeof RT_ColumnsState> {}

@@ -7,7 +7,7 @@ import { pick } from 'lodash';
 
 import { THoc } from 'src/utils';
 import {
-  RT_IndexConfigImportDataRunType,
+  RT_IndexConfigImportData,
   INewIndexInput,
   IPropsWithMutation,
   IMutationVariables,
@@ -16,6 +16,8 @@ import {
   IColumnsState,
   IExtendedMapping,
   IMatchboxState,
+  RT_AggsState,
+  RT_ColumnsState,
 } from './types';
 import { ApolloClient } from 'apollo-boost';
 
@@ -227,8 +229,14 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
     if (indexConfig.config) {
       const { config, newIndexMutationInput } = indexConfig;
       try {
-        RT_IndexConfigImportDataRunType.check(config);
+        RT_IndexConfigImportData.check(config);
       } catch (err) {
+        try {
+          RT_ColumnsState.check(config.columnsState);
+          console.log('check passed!!!');
+        } catch (err) {
+          console.log('err: ', err);
+        }
         throw new Error(
           `Invalid files were imported for index "${
             newIndexMutationInput.graphqlField
@@ -238,6 +246,48 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
     }
   });
 };
+
+/*****
+ * Pretty much a monkey patch to ensure legacy data works
+ *****/
+const sanitizeIndexConfigs = (
+  indexConfigs: INewIndexArgs[],
+): typeof indexConfigs =>
+  indexConfigs.map(i => ({
+    ...i,
+    config: !i.config
+      ? i.config
+      : {
+          ...i.config,
+          columnsState: !i.config.columnsState
+            ? i.config.columnsState
+            : {
+                ...i.config.columnsState,
+                columns: i.config.columnsState.columns.map(c => {
+                  [
+                    'field',
+                    'accessor',
+                    'show',
+                    'type',
+                    'sortable',
+                    'canChangeShow',
+                    'jsonPath',
+                    'query',
+                    'id',
+                  ].forEach(k => {
+                    if (c[k] === undefined) console.log([k]);
+                  });
+                  return {
+                    ...c,
+                    jsonPath: c.jsonPath || null,
+                    accessor: c.accessor || null,
+                    query: c.query || null,
+                    id: c.id || null,
+                  };
+                }),
+              },
+        },
+  }));
 
 /******************
  * Provides server mutation to add multiple indices given a project
@@ -298,7 +348,10 @@ const withAddProjectMutation: THoc<
             <ProjectIndicesMutationProvider>
               {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
                 const addProject = async (args: IMutationVariables) => {
-                  const { indexConfigs, projectId } = args;
+                  const { indexConfigs: rawIndexConfigs, projectId } = args;
+
+                  const indexConfigs = sanitizeIndexConfigs(rawIndexConfigs);
+
                   // make sure to keep all validations up top before going ahead with the process
                   await validateProjectConfigData(indexConfigs);
                   await validateMutationVariables(args);
