@@ -9,7 +9,7 @@ import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import { connect } from 'react-redux';
 import { compose } from 'recompose';
 import { range } from 'lodash';
-import { curry, __ } from 'ramda'; //doc: https://ramdajs.com/docs/#curry
+import { curry, equals, __ } from 'ramda'; //doc: https://ramdajs.com/docs/#curry
 
 import {
   mapStateToProps,
@@ -18,7 +18,6 @@ import {
   IReduxDispatchProps,
 } from './ReduxContainer';
 import { IAggsStateEntryWithIndex } from './ReduxContainer';
-import { isEqual } from 'apollo-utilities';
 import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 import { DragHandle } from '../SortableList';
 
@@ -42,7 +41,7 @@ const SortableItem = compose<
   SortableElement,
   connect(mapStateToProps, mapDispatchToProps),
   curry(React.memo)(__, (lastProps, nextProps) =>
-    isEqual(lastProps.item, nextProps.item),
+    equals(lastProps.item, nextProps.item),
   ),
 )(({ item, aggsState, onFieldSortChange, onFieldPropertyChange }) => {
   const positionOptions = range(0, aggsState.length).map(val => ({

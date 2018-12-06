@@ -34,7 +34,9 @@ export const createColumnSetState = (es: Client) => async ({
     esType,
   });
   const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings;
-  const columns: I_Column[] = mappingToColumnsState(mapping);
+  const columns: I_Column[] = mappingToColumnsState(
+    mapping[esIndex].properties,
+  );
   return {
     state: {
       type: esType,

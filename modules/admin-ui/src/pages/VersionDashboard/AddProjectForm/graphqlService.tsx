@@ -375,6 +375,10 @@ const withAddProjectMutation: THoc<
                         extended,
                       } = config;
                       if (aggsState) {
+                        console.log(
+                          'indexConfig.newIndexMutationInput.graphqlField: ',
+                          indexConfig.newIndexMutationInput.graphqlField,
+                        );
                         await saveAggsState(client)(
                           projectId,
                           indexConfig.newIndexMutationInput.graphqlField,
