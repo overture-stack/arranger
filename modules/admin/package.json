@@ -65,6 +65,7 @@
     "graphql-type-json": "^0.2.1",
     "jwt-decode": "^2.2.0",
     "node-fetch": "^2.2.0",
+    "qew": "^0.9.13",
     "ramda": "^0.26.1",
     "tslib": "~1.9.3",
     "typegql": "^0.6.0"

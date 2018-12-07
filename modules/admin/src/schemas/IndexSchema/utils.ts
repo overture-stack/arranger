@@ -1,5 +1,6 @@
 import { Client } from 'elasticsearch';
 import { UserInputError } from 'apollo-server';
+import { memoize } from 'lodash';
 
 import { getEsMapping } from '../../services/elasticsearch';
 import { constants } from '../../services/constants';
@@ -18,6 +19,8 @@ import {
 import { createColumnSetState } from '../ColumnsState/utils';
 import { createAggsSetState } from '../AggsState/utils';
 import { createMatchboxState } from '../MatchboxState/utils';
+
+const Qew = require('Qew');
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
@@ -126,7 +129,23 @@ export const createNewIndex = (es: Client) => async (
   }
 };
 
+// because different metadata entities write to the same ES document, update operations need to be queued up to a single concurrency controlled task queue for each project. This factory creates a task queue manager for this purpose.
+const createProjectQueueManager = () => {
+  const queues: {
+    [projectId: string]: any;
+  } = {};
+  return {
+    getQueue: (projectId: string) => {
+      if (!queues[projectId]) {
+        queues[projectId] = new Qew(1);
+      }
+      return queues[projectId];
+    },
+  };
+};
+
 // pretty bad, since we're just taking anything right now in run time, but at least graphQl will ensure `metaData` is typed in runtime
+const projectQueueManager = createProjectQueueManager();
 export const updateProjectIndexMetadata = (es: Client) => async ({
   projectId,
   metaData,
@@ -134,18 +153,22 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
   projectId: string;
   metaData: I_ProjectIndexMetadataUpdateDoc;
 }): Promise<IProjectIndexMetadata> => {
-  await es.update({
-    ...getProjectMetadataEsLocation(projectId),
-    id: metaData.index,
-    body: {
-      doc: metaData,
-    },
-    refresh: true,
+  const queue = projectQueueManager.getQueue(projectId);
+  console.log('queue.tasks: ', queue.tasks.length);
+  return queue.pushProm(async () => {
+    await es.update({
+      ...getProjectMetadataEsLocation(projectId),
+      id: metaData.index,
+      body: {
+        doc: metaData,
+      },
+      refresh: true,
+    });
+    const output = (await getProjectStorageMetadata(es)(projectId)).find(
+      i => i.name === metaData.name,
+    );
+    return output;
   });
-  const output = (await getProjectStorageMetadata(es)(projectId)).find(
-    i => i.name === metaData.name,
-  );
-  return output;
 };
 
 export const getProjectIndex = (es: Client) => async ({

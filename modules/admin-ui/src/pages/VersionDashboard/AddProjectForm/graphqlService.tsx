@@ -356,54 +356,84 @@ const withAddProjectMutation: THoc<
                   await validateProjectConfigData(indexConfigs);
                   await validateMutationVariables(args);
 
-                  // starting the process
+                  /**
+                   * starts the project creation process
+                   */
                   await createNewProject({
                     variables: {
                       projectId,
                     },
                   });
-                  for (var indexConfig of indexConfigs) {
-                    const { config } = indexConfig;
-                    await createNewProjectIndex({
-                      variables: indexConfig.newIndexMutationInput,
-                    });
-                    if (config) {
-                      const {
-                        aggsState,
-                        columnsState,
-                        matchboxState,
-                        extended,
-                      } = config;
-                      if (aggsState) {
-                        console.log(
-                          'indexConfig.newIndexMutationInput.graphqlField: ',
-                          indexConfig.newIndexMutationInput.graphqlField,
+                  await Promise.all(
+                    indexConfigs.map(indexConfig => {
+                      const { config } = indexConfig;
+                      return createNewProjectIndex({
+                        variables: indexConfig.newIndexMutationInput,
+                      });
+                    }),
+                  );
+                  // index creations can happen in parallel
+                  await Promise.all(
+                    indexConfigs.map(async indexConfig => {
+                      const { config } = indexConfig;
+                      if (config) {
+                        const {
+                          aggsState,
+                          columnsState,
+                          matchboxState,
+                          extended,
+                        } = config;
+
+                        return Promise.all(
+                          [
+                            aggsState,
+                            columnsState,
+                            matchboxState,
+                            extended,
+                          ].map(async metadata => {
+                            if (metadata === aggsState) {
+                              if (aggsState) {
+                                return saveAggsState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput
+                                    .graphqlField,
+                                )(aggsState);
+                              }
+                            }
+                            if (metadata === columnsState) {
+                              if (columnsState) {
+                                return saveColumnsState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput
+                                    .graphqlField,
+                                )(columnsState);
+                              }
+                            }
+                            if (metadata === matchboxState) {
+                              if (matchboxState) {
+                                return saveMatboxState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput
+                                    .graphqlField,
+                                )(matchboxState);
+                              }
+                            }
+                            if (metadata === extended) {
+                              if (extended) {
+                                return saveExtendedMapping(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput
+                                    .graphqlField,
+                                )(extended);
+                              }
+                            }
+                            return null;
+                          }),
                         );
-                        await saveAggsState(client)(
-                          projectId,
-                          indexConfig.newIndexMutationInput.graphqlField,
-                        )(aggsState);
                       }
-                      if (columnsState) {
-                        await saveColumnsState(client)(
-                          projectId,
-                          indexConfig.newIndexMutationInput.graphqlField,
-                        )(columnsState);
-                      }
-                      if (matchboxState) {
-                        await saveMatboxState(client)(
-                          projectId,
-                          indexConfig.newIndexMutationInput.graphqlField,
-                        )(matchboxState);
-                      }
-                      if (extended) {
-                        await saveExtendedMapping(client)(
-                          projectId,
-                          indexConfig.newIndexMutationInput.graphqlField,
-                        )(extended);
-                      }
-                    }
-                  }
+                      return;
+                    }),
+                  );
                   return;
                 };
                 return <Wrapped addProject={addProject} {...props} />;

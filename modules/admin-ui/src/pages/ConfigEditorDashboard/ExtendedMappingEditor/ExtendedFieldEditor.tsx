@@ -270,6 +270,7 @@ const Layout: React.ComponentType<
       </CardBlock>
       {isNumericField && (
         <CardBlock>
+          <CardDivider />
           <FormField
             label="Number range step"
             size="medium"
@@ -279,16 +280,15 @@ const Layout: React.ComponentType<
             value={fieldData.rangeStep}
             onChange={onRangeStepChange}
           />
-        </CardBlock>
-      )}
-      {isNumericField && (
-        <CardBlock>
           <FormField label="Unit" />
           <UnitSelector onChange={onUnitChange} selectedItem={fieldData.unit} />
+          <CardDivider />
         </CardBlock>
       )}
       {[EXTENDED_FIELD_TYPES.boolean as string].includes(fieldData.type) && (
         <CardBlock>
+          <CardDivider />
+          <FormField size="medium" label="Display Values" />
           {Object.entries(
             fieldData.displayValues || DEFAULT_BOOLEAN_VALUE_DISPLAY,
           ).map(([valueKey, value]) => (
@@ -300,6 +300,7 @@ const Layout: React.ComponentType<
               onChange={onValueDisplayChange(valueKey)}
             />
           ))}
+          <CardDivider />
         </CardBlock>
       )}
       <CardBlock>
