@@ -365,12 +365,11 @@ const withAddProjectMutation: THoc<
                     },
                   });
                   await Promise.all(
-                    indexConfigs.map(indexConfig => {
-                      const { config } = indexConfig;
-                      return createNewProjectIndex({
+                    indexConfigs.map(indexConfig =>
+                      createNewProjectIndex({
                         variables: indexConfig.newIndexMutationInput,
-                      });
-                    }),
+                      }),
+                    ),
                   );
                   // index creations can happen in parallel
                   await Promise.all(
@@ -391,47 +390,35 @@ const withAddProjectMutation: THoc<
                             matchboxState,
                             extended,
                           ].map(async metadata => {
-                            if (metadata === aggsState) {
-                              if (aggsState) {
-                                return saveAggsState(client)(
-                                  projectId,
-                                  indexConfig.newIndexMutationInput
-                                    .graphqlField,
-                                )(aggsState);
-                              }
+                            if (aggsState && metadata === aggsState) {
+                              return saveAggsState(client)(
+                                projectId,
+                                indexConfig.newIndexMutationInput.graphqlField,
+                              )(aggsState);
                             }
-                            if (metadata === columnsState) {
-                              if (columnsState) {
-                                return saveColumnsState(client)(
-                                  projectId,
-                                  indexConfig.newIndexMutationInput
-                                    .graphqlField,
-                                )(columnsState);
-                              }
+                            if (columnsState && metadata === columnsState) {
+                              return saveColumnsState(client)(
+                                projectId,
+                                indexConfig.newIndexMutationInput.graphqlField,
+                              )(columnsState);
                             }
-                            if (metadata === matchboxState) {
-                              if (matchboxState) {
-                                return saveMatboxState(client)(
-                                  projectId,
-                                  indexConfig.newIndexMutationInput
-                                    .graphqlField,
-                                )(matchboxState);
-                              }
+                            if (matchboxState && metadata === matchboxState) {
+                              return saveMatboxState(client)(
+                                projectId,
+                                indexConfig.newIndexMutationInput.graphqlField,
+                              )(matchboxState);
                             }
-                            if (metadata === extended) {
-                              if (extended) {
-                                return saveExtendedMapping(client)(
-                                  projectId,
-                                  indexConfig.newIndexMutationInput
-                                    .graphqlField,
-                                )(extended);
-                              }
+                            if (extended && metadata === extended) {
+                              return saveExtendedMapping(client)(
+                                projectId,
+                                indexConfig.newIndexMutationInput.graphqlField,
+                              )(extended);
                             }
                             return null;
                           }),
                         );
                       }
-                      return;
+                      return null;
                     }),
                   );
                   return;
