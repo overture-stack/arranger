@@ -193,6 +193,11 @@ div {
   align-items: center;
   margin-left: auto;
 }
+.aggregation-card .bucket .header {
+  font-size: 11px;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
 .showMore-wrapper {
   margin-top: 5px;
   font-size: 0.8rem;
