@@ -10,8 +10,8 @@ import {
 import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
-  I_UpdateExtendedMappingMutationArgs,
   I_SaveExtendedMappingMutationArgs,
+  I_UpdateExtendedMappingMutationArgs,
 } from './types';
 import { replaceBy } from '../../services';
 

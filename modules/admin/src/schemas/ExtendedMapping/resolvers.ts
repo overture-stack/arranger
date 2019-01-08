@@ -3,13 +3,13 @@ import * as GraphQLJSON from 'graphql-type-json';
 import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
-  I_UpdateExtendedMappingMutationArgs,
   I_SaveExtendedMappingMutationArgs,
+  I_UpdateExtendedMappingMutationArgs,
 } from './types';
 import {
   getExtendedMapping,
-  updateFieldExtendedMapping,
   saveExtendedMapping,
+  updateFieldExtendedMapping,
 } from './utils';
 
 const extendedMappingQueryResolver: Resolver<
