@@ -1,6 +1,5 @@
 import { Client } from 'elasticsearch';
 import { UserInputError } from 'apollo-server';
-import { memoize } from 'lodash';
 
 import { getEsMapping } from '../../services/elasticsearch';
 import { constants } from '../../services/constants';
