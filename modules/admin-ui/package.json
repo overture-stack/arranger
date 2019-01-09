@@ -1,9 +1,9 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "dependencies": {
-    "@arranger/admin": "^1.0.0",
+    "@arranger/admin": "^1.0.1",
     "@types/react-redux": "^6.0.9",
     "@types/react-router-dom": "^4.3.1",
     "@types/react-table": "^6.7.14",
@@ -43,13 +43,10 @@
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "test":
-      "echo 'test temporarily taken out, script: react-scripts-ts test --env=jsdom'",
+    "test": "echo 'test temporarily taken out, script: react-scripts-ts test --env=jsdom'",
     "eject": "react-scripts-ts eject",
-    "build-css":
-      "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
-    "watch-css":
-      "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive"
+    "build-css": "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
+    "watch-css": "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive"
   },
   "devDependencies": {
     "@types/jest": "^23.3.9",
