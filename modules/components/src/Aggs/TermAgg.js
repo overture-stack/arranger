@@ -99,7 +99,7 @@ const enhance = compose(
 const TermAgg = ({
   field = '',
   displayName = 'Unnamed Field',
-  headerTitle = '# Files',
+  headerTitle = null,
   buckets = [],
   handleValueClick = () => {},
   isActive = () => {},
@@ -206,9 +206,11 @@ const TermAgg = ({
       ]}
     >
       <>
-        <div className={`header`}>
-          {headerTitle}
-        </div>
+        {headerTitle && (
+          <div className={`header`}>
+            {headerTitle}
+          </div>
+        )}
         <div className={`bucket`}>
           {decoratedBuckets
             .slice(0, showingMore ? Infinity : maxTerms)
