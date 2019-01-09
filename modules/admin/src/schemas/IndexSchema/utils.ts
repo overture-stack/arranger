@@ -18,8 +18,7 @@ import {
 import { createColumnSetState } from '../ColumnsState/utils';
 import { createAggsSetState } from '../AggsState/utils';
 import { createMatchboxState } from '../MatchboxState/utils';
-
-const Qew = require('Qew');
+import Qew = require('qew');
 
 const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
 
