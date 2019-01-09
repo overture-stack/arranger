@@ -1,5 +1,5 @@
 import { gql } from 'apollo-server';
-import { StateTypeDefs } from '@arranger/schema/dist';
+import { StateTypeDefs } from '@arranger/schema';
 
 export default async () => gql`
   ${StateTypeDefs.AggsStateTypeDefs}
@@ -11,8 +11,8 @@ export default async () => gql`
   type Mutation {
     saveAggsState(
       projectId: String!
-      graphlField: String!
+      graphqlField: String!
       state: [AggStateInput]!
-    ): [AggsState]
+    ): AggsState
   }
 `;

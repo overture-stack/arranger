@@ -1,3 +1,5 @@
+// @ts-check
+
 import getIndexPrefix from './getIndexPrefix';
 import mapHits from './mapHits';
 import { get } from 'lodash';
@@ -26,7 +28,9 @@ export default async ({ projectId, index, es }) => {
       index: `arranger-projects-${projectId}`,
       type: `arranger-projects-${projectId}`,
     });
-    const config = get(metaData, 'hits.hits[0]._source.config');
-    return config.extended;
+    const projectIndexData = get(metaData, 'hits.hits').find(
+      ({ _source }) => _source.index === index,
+    )._source;
+    return projectIndexData.config['extended'];
   }
 };

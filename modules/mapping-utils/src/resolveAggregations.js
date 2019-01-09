@@ -36,10 +36,6 @@ export default type => async (
     aggregationsFilterThemselves: aggregations_filter_themselves,
   });
 
-  console.log('aggs: ', JSON.stringify(aggs));
-  console.log('---------');
-  console.log('query: ', JSON.stringify(query));
-
   const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
   const response = await es.search({
     index: type.index,

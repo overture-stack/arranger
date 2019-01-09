@@ -22,7 +22,7 @@ const singleProjectQueryResolver: Resolver<
 };
 
 const newProjectMutationResolver: Resolver<
-  IArrangerProject,
+  IArrangerProject[],
   IProjectQueryInput
 > = async (_, { id }, { es }, info) =>
   addArrangerProject(es)(id).catch((err: Error) => {
@@ -31,7 +31,7 @@ const newProjectMutationResolver: Resolver<
   });
 
 const deleteProjectMutationResolver: Resolver<
-  IArrangerProject,
+  IArrangerProject[],
   IProjectQueryInput
 > = async (_, { id }, { es }, info) => removeArrangerProject(es)(id);
 

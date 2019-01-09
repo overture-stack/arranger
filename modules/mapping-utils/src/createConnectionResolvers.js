@@ -37,6 +37,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     ...(createStateResolvers
       ? {
           aggsState: async (obj, { indices }, { es, projectId }) => {
+            const { index, es_type: esType } = type;
             try {
               const data = await es.search({
                 index: `${type.indexPrefix}-aggs-state`,
@@ -52,11 +53,17 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
                 type: `arranger-projects-${projectId}`,
               });
-              const config = get(metaData, 'hits.hits[0]._source.config');
-              return config['aggs-state'];
+              // const config = get(metaData, 'hits.hits[0]._source.config');
+              const projectIndexData = get(metaData, 'hits.hits').find(
+                ({ _source }) =>
+                  _source.index === index && _source.esType === esType,
+              )._source;
+              console.log('projectIndexData: ', Object.keys(projectIndexData));
+              return projectIndexData.config['aggs-state'];
             }
           },
           columnsState: async (obj, t, { es, projectId }) => {
+            const { index, es_type: esType } = type;
             try {
               const data = await es.search({
                 index: `${type.indexPrefix}-columns-state`,
@@ -72,11 +79,17 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
                 type: `arranger-projects-${projectId}`,
               });
-              const config = get(metaData, 'hits.hits[0]._source.config');
-              return config['columns-state'];
+              // const config = get(metaData, 'hits.hits[0]._source.config');
+              const projectIndexData = get(metaData, 'hits.hits').find(
+                ({ _source }) =>
+                  _source.index === index && _source.esType === esType,
+              )._source;
+              console.log('projectIndexData: ', Object.keys(projectIndexData));
+              return projectIndexData.config['columns-state'];
             }
           },
           matchBoxState: async (obj, t, { es, projectId }) => {
+            const { index, es_type: esType } = type;
             try {
               let data = await es.search({
                 index: `${type.indexPrefix}-matchbox-state`,
@@ -92,8 +105,13 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
                 type: `arranger-projects-${projectId}`,
               });
-              const config = get(metaData, 'hits.hits[0]._source.config');
-              return config['matchbox-state'];
+              // const config = get(metaData, 'hits.hits[0]._source.config');
+              const projectIndexData = get(metaData, 'hits.hits').find(
+                ({ _source }) =>
+                  _source.index === index && _source.esType === esType,
+              )._source;
+              console.log('projectIndexData: ', Object.keys(projectIndexData));
+              return projectIndexData.config['matchbox-state'];
             }
           },
         }

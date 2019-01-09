@@ -11,8 +11,9 @@ import {
 } from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
 import { mappingToColumnsState } from '@arranger/mapping-utils';
-import { timestamp } from '../../services';
+import { replaceBy, timestamp } from '../../services';
 import { getEsMapping } from '../../services/elasticsearch';
+import { sortBy } from 'ramda';
 
 export const getColumnSetState = (es: Client) => async (
   args: I_ColumnStateQueryInput,
@@ -33,7 +34,9 @@ export const createColumnSetState = (es: Client) => async ({
     esType,
   });
   const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings;
-  const columns: I_Column[] = mappingToColumnsState(mapping);
+  const columns: I_Column[] = mappingToColumnsState(
+    mapping[esIndex].properties,
+  );
   return {
     state: {
       type: esType,
@@ -56,6 +59,19 @@ export const saveColumnState = (es: Client) => async ({
   const currentIndexMetadata = currentProjectMetadata.find(
     i => i.name === graphqlField,
   );
+  const sortByNewOrder = sortBy((i: I_Column) =>
+    state.columns.findIndex(c => c.field === i.field),
+  );
+  const mergedState: typeof state = {
+    ...state,
+    columns: sortByNewOrder(
+      replaceBy(
+        currentIndexMetadata.config['columns-state'].state.columns,
+        state.columns,
+        (oldCol, newCol) => oldCol.field === newCol.field,
+      ),
+    ),
+  };
   await updateProjectIndexMetadata(es)({
     projectId,
     metaData: {
@@ -64,7 +80,7 @@ export const saveColumnState = (es: Client) => async ({
       config: {
         'columns-state': {
           timestamp: timestamp(),
-          state,
+          state: mergedState,
         },
       },
     },

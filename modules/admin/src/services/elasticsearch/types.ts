@@ -1,71 +1,102 @@
-export enum EsTypes {
-  keyword = 'keyword',
-  long = 'long',
-  integer = 'integer',
-  short = 'short',
-  byte = 'byte',
-  double = 'double',
-  float = 'float',
-  half_float = 'half_float',
-  scaled_float = 'scaled_float',
-  date = 'date',
-  boolean = 'boolean',
-  binary = 'binary',
-  integer_range = 'integer_range',
-  float_range = 'float_range',
-  long_range = 'long_range',
-  double_range = 'double_range',
-  date_range = 'date_range',
-  object = 'object',
-  nested = 'nested',
-  geo_point = 'geo_point',
-  geo_shape = 'geo_shape',
-  ip = 'ip',
-  completion = 'completion',
-  token_count = 'token_count',
-  murmur3 = 'murmur3',
-  join = 'join',
+interface EsTypeKeys {
+  keyword: string;
+  long: string;
+  integer: string;
+  short: string;
+  byte: string;
+  double: string;
+  float: string;
+  half_float: string;
+  scaled_float: string;
+  date: string;
+  boolean: string;
+  binary: string;
+  integer_range: string;
+  float_range: string;
+  long_range: string;
+  double_range: string;
+  date_range: string;
+  object: string;
+  nested: string;
+  geo_point: string;
+  geo_shape: string;
+  ip: string;
+  completion: string;
+  token_count: string;
+  murmur3: string;
+  join: string;
 }
 
-interface FieldMappingBase {
+export const esTypes: EsTypeKeys = {
+  keyword: 'keyword',
+  long: 'long',
+  integer: 'integer',
+  short: 'short',
+  byte: 'byte',
+  double: 'double',
+  float: 'float',
+  half_float: 'half_float',
+  scaled_float: 'scaled_float',
+  date: 'date',
+  boolean: 'boolean',
+  binary: 'binary',
+  integer_range: 'integer_range',
+  float_range: 'float_range',
+  long_range: 'long_range',
+  double_range: 'double_range',
+  date_range: 'date_range',
+  object: 'object',
+  nested: 'nested',
+  geo_point: 'geo_point',
+  geo_shape: 'geo_shape',
+  ip: 'ip',
+  completion: 'completion',
+  token_count: 'token_count',
+  murmur3: 'murmur3',
+  join: 'join',
+};
+
+export type EsTypes = keyof EsTypeKeys;
+
+export interface FieldMappingBase {
   type: EsTypes;
 }
 
-interface ScalarFieldMapping extends FieldMappingBase {
+export interface ScalarFieldMapping extends FieldMappingBase {
   type:
-    | EsTypes.keyword
-    | EsTypes.long
-    | EsTypes.integer
-    | EsTypes.short
-    | EsTypes.byte
-    | EsTypes.double
-    | EsTypes.float
-    | EsTypes.half_float
-    | EsTypes.scaled_float
-    | EsTypes.boolean
-    | EsTypes.binary;
+    | 'keyword'
+    | 'long'
+    | 'integer'
+    | 'short'
+    | 'byte'
+    | 'double'
+    | 'float'
+    | 'half_float'
+    | 'scaled_float'
+    | 'boolean'
+    | 'binary';
   fields?: {
     [key: string]: { [key: string]: {} };
   };
 }
 
-interface DateFieldMapping extends FieldMappingBase {
-  type: EsTypes.date;
+export interface DateFieldMapping extends FieldMappingBase {
+  type: 'date';
   format: string;
 }
 
-interface NestedFieldMapping extends FieldMappingBase {
-  type: EsTypes.nested;
+export interface NestedFieldMapping extends FieldMappingBase {
+  type: 'nested';
   properties: {
     [key: string]: EsFieldMapping;
   };
 }
 
-interface ObjectTypeMapping {
+export interface ObjectTypeMapping {
   [key: string]: ScalarFieldMapping;
 }
 
-type EsFieldMapping =
+export type EsFieldMapping =
   | ObjectTypeMapping
   | NestedFieldMapping
   | DateFieldMapping

@@ -3,9 +3,14 @@ import * as GraphQLJSON from 'graphql-type-json';
 import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
+  I_SaveExtendedMappingMutationArgs,
   I_UpdateExtendedMappingMutationArgs,
 } from './types';
-import { getExtendedMapping, updateFieldExtendedMapping } from './utils';
+import {
+  getExtendedMapping,
+  saveExtendedMapping,
+  updateFieldExtendedMapping,
+} from './utils';
 
 const extendedMappingQueryResolver: Resolver<
   I_GqlExtendedFieldMapping[],
@@ -19,6 +24,11 @@ const updateExtendedMappingMutationResolver: Resolver<
   I_UpdateExtendedMappingMutationArgs
 > = (_, args, { es }) => updateFieldExtendedMapping(es)(args);
 
+const saveExtendedMappingMutationResolver: Resolver<
+  I_GqlExtendedFieldMapping[],
+  I_SaveExtendedMappingMutationArgs
+> = (_, args, { es }) => saveExtendedMapping(es)(args);
+
 export default {
   JSON: GraphQLJSON,
   Query: {
@@ -26,5 +36,6 @@ export default {
   },
   Mutation: {
     updateExtendedMapping: updateExtendedMappingMutationResolver,
+    saveExtendedMapping: saveExtendedMappingMutationResolver,
   },
 };

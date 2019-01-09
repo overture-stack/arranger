@@ -67,6 +67,20 @@ export interface I_ExtendedFieldMappingInput {
   rangeStep: number;
 }
 
+export interface I_ExtendedMappingSetFieldInput {
+  gqlId: string;
+  field: string;
+  type: E_ExtendedFieldType;
+  displayName: string;
+  active: boolean;
+  isArray: boolean;
+  primaryKey: boolean;
+  quickSearchEnabled: boolean;
+  unit: E_NumericTypeUnit;
+  displayValues: {};
+  rangeStep: number;
+}
+
 export interface I_ExtendedFieldsMappingsQueryArgs {
   projectId: string;
   graphqlField: string;
@@ -78,4 +92,10 @@ export interface I_UpdateExtendedMappingMutationArgs {
   graphqlField: string;
   field: string;
   extendedFieldMappingInput: I_ExtendedFieldMappingInput;
+}
+
+export interface I_SaveExtendedMappingMutationArgs {
+  projectId: string;
+  graphqlField: string;
+  input: Array<I_ExtendedMappingSetFieldInput>;
 }
