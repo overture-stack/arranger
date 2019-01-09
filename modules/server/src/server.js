@@ -62,7 +62,12 @@ export default async ({
   router.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
   router.use(bodyParser.json({ limit: '50mb' }));
 
-  // The GraphQL endpoint
+  // The GraphQL endpoints
+
+  // List all projects
+  router.use('/projects', projectsRoutes({ graphqlOptions, enableAdmin }));
+
+  // Get project by ID
   router.use(
     '/:projectId',
     (req, res, next) => {
@@ -102,8 +107,6 @@ export default async ({
       });
     },
   );
-
-  router.use('/projects', projectsRoutes({ graphqlOptions, enableAdmin }));
 
   return router;
 };
