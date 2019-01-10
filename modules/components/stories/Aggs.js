@@ -184,6 +184,25 @@ storiesOf('Aggs', module)
       />
     </div>
   ))
+  .add('TermAgg with headerTitle', () => (
+    <div className="term-agg-wrapper">
+      <TermAgg
+        field="disease_type"
+        displayName="Disease Type"
+        buckets={[
+          {
+            doc_count: 2,
+            key: 'Acute Myeloid Leukemia',
+          },
+          {
+            doc_count: 10,
+            key: 'Acinar cell neoplasms',
+          },
+        ]}
+        headerTitle="# files"
+      />
+    </div>
+  ))
   .add('TermAggsWithSQON', () => (
     <State
       initial={{ sqon: null }}
