@@ -49,6 +49,7 @@ const TableToolbar = ({
   downloadUrl,
   InputComponent,
   showFilterInput = true,
+  customHeaderContent = null,
 }) => {
   const isPlural =
     total > 1 &&
@@ -64,6 +65,7 @@ const TableToolbar = ({
         {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
         {total?.toLocaleString()} {pluralize(type, isPlural ? 2 : 1)}
       </div>
+      {!customHeaderContent ? null : customHeaderContent}
       <div className="group">
         {!showFilterInput ? null : (
           <TextFilter
