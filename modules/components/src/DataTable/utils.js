@@ -20,18 +20,33 @@ export function normalizeColumns({
     ...columnTypes,
     ...customTypes,
   };
+
   const mappedColumns = columns
-    .map(column => ({
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || types[column.type],
-      hasCustomType: isNil(column.hasCustomType)
-        ? !!(customTypes || {})[column.type]
-        : column.hasCustomType,
-      ...(!column.accessor && !column.id ? { id: column.field } : {}),
-      ...(customTypeConfigs[column.type] || {}),
-    }))
+    .map(column => {
+      const customColIndex = customColumns.findIndex(
+        cc => cc.content.field === column.field,
+      );
+
+      let customCol = {};
+      if (customColIndex > -1) {
+        customCol = customColumns[customColIndex].content;
+        customColumns.splice(customColIndex, 1);
+      }
+
+      return {
+        ...column,
+        show: typeof column.show === 'boolean' ? column.show : true,
+        Cell: column.Cell || types[column.type],
+        hasCustomType: isNil(column.hasCustomType)
+          ? !!(customTypes || {})[column.type]
+          : column.hasCustomType,
+        ...(!column.accessor && !column.id ? { id: column.field } : {}),
+        ...(customTypeConfigs[column.type] || {}),
+        ...customCol,
+      };
+    })
     .filter(x => x.show || x.canChangeShow);
+
   return sortBy(customColumns, 'index').reduce(
     (arr, { index, content }, i) => [
       ...arr.slice(0, index + i),
