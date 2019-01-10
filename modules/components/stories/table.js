@@ -187,6 +187,9 @@ storiesOf('Table', module)
   .add('Toolbar', () => (
     <TableToolbarStory onFilterChange={console.log.bind(console)} />
   ))
+  .add('Toolbar with customHeaderContent', () => (
+    <TableToolbarStory customHeaderContent={(<div style={{backgroundColor: 'red', paddingTop: '4px'}}>Red Box</div>)} />
+  ))
   .add('Data Table', () => (
     <DataTable
       config={dummyConfig}
