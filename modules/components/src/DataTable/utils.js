@@ -23,15 +23,9 @@ export function normalizeColumns({
 
   const mappedColumns = columns
     .map(column => {
-      const customColIndex = customColumns.findIndex(
-        cc => cc.content.field === column.field,
-      );
-
-      let customCol = {};
-      if (customColIndex > -1) {
-        customCol = customColumns[customColIndex].content;
-        customColumns.splice(customColIndex, 1);
-      }
+      const customCol =
+        customColumns.find(cc => cc.content.field === column.field)?.content ||
+        {};
 
       return {
         ...column,
@@ -47,7 +41,12 @@ export function normalizeColumns({
     })
     .filter(x => x.show || x.canChangeShow);
 
-  return sortBy(customColumns, 'index').reduce(
+  // filter out override columns
+  const filteredCustomCols = customColumns.filter(
+    cc => !mappedColumns.some(col => col.field === cc.content.field),
+  );
+
+  return sortBy(filteredCustomCols, 'index').reduce(
     (arr, { index, content }, i) => [
       ...arr.slice(0, index + i),
       content,
