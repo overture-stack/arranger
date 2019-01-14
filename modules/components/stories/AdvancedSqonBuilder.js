@@ -23,7 +23,7 @@ storiesOf('AdvancedSqonBuilder', module)
           ],
         },
         {
-          op: 'and',
+          op: 'or',
           content: [
             {
               op: 'in',
