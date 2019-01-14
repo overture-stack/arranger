@@ -54,9 +54,9 @@ storiesOf('AdvancedSqonBuilder', module)
           ],
         },
       ],
-      selectedIndex: 0,
+      activeSqonIndex: 0,
     };
-    const onSqonsChange = s => ({ sqons }) => {
+    const onChange = s => ({ sqons }) => {
       s.setState({ sqons });
     };
     return (
@@ -64,12 +64,16 @@ storiesOf('AdvancedSqonBuilder', module)
         {s => (
           <AdvancedSqonBuilder
             sqons={s.state.sqons}
-            onSqonsChange={onSqonsChange(s)}
-            activeSqonIndex={s.state.selectedIndex}
+            onChange={onChange(s)}
+            activeSqonIndex={s.state.activeSqonIndex}
             SqonActionComponent={({ sqon }) => (
               <div>
-                <button onClick={() => console.log(sqon)}>DELETE!!!</button>
-                <button onClick={() => console.log(sqon)}>SAVE!!!</button>
+                <button onClick={() => console.log(sqon)}>
+                  custom button 1
+                </button>
+                <button onClick={() => console.log(sqon)}>
+                  custom button 2
+                </button>
               </div>
             )}
           />
