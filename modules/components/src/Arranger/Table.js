@@ -14,6 +14,7 @@ const Table = ({
   api,
   InputComponent,
   showFilterInput = true,
+  customHeaderContent = null,
   ...props
 }) => {
   return (
@@ -26,7 +27,7 @@ const Table = ({
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
-            {...{ ...props, api, showFilterInput }}
+            {...{ ...props, api, showFilterInput, customHeaderContent }}
             InputComponent={InputComponent}
             projectId={projectId}
             sqon={sqon}

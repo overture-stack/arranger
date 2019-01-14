@@ -52,6 +52,7 @@ class DataTableWithToolbar extends React.Component {
       showFilterInput = true,
       filterInputPlaceholder,
       InputComponent,
+      customHeaderContent = null,
     } = this.props;
     const { page, pageSize, total } = this.state;
 
@@ -80,6 +81,7 @@ class DataTableWithToolbar extends React.Component {
           downloadUrl={downloadUrl}
           InputComponent={InputComponent}
           showFilterInput={showFilterInput}
+          customHeaderContent={customHeaderContent}
         />
         <Table
           style={tableStyle}
