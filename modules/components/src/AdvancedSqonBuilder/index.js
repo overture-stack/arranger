@@ -45,7 +45,7 @@ export default ({
         ...sqons,
         {
           op: 'or',
-          content: s.state.selectedSqons.map(sq => sqons.find(s => s === sq)),
+          content: s.state.selectedSqons,
         },
       ],
     });
@@ -56,7 +56,7 @@ export default ({
         ...sqons,
         {
           op: 'and',
-          content: s.state.selectedSqons.map(sq => sqons.find(s => s === sq)),
+          content: s.state.selectedSqons,
         },
       ],
     });
@@ -71,6 +71,7 @@ export default ({
     s.setState({
       selectedSqons: [],
     });
+    onActiveSqonSelect({ index: 0 });
   };
 
   const isActiveSqon = sqon => sqons.indexOf(sqon) === activeSqonIndex;
