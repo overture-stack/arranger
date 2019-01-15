@@ -59,19 +59,23 @@ storiesOf('AdvancedSqonBuilder', module)
     const onChange = s => ({ sqons }) => {
       s.setState({ sqons });
     };
+    const onActiveSqonSelect = s => ({ index }) => {
+      s.setState({ activeSqonIndex: index });
+    };
     return (
       <Component initialState={initialState}>
         {s => (
           <AdvancedSqonBuilder
             sqons={s.state.sqons}
-            onChange={onChange(s)}
             activeSqonIndex={s.state.activeSqonIndex}
-            SqonActionComponent={({ sqon }) => (
+            onChange={onChange(s)}
+            onActiveSqonSelect={onActiveSqonSelect(s)}
+            SqonActionComponent={({ sqon, isActive }) => (
               <div>
-                <button onClick={() => console.log(sqon)}>
+                <button disabled={!isActive} onClick={() => console.log(sqon)}>
                   custom button 1
                 </button>
-                <button onClick={() => console.log(sqon)}>
+                <button disabled={!isActive} onClick={() => console.log(sqon)}>
                   custom button 2
                 </button>
               </div>
