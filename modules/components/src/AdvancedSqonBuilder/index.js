@@ -1,7 +1,7 @@
 import React from 'react';
-import SQONView from '../SQONView';
 import { cloneDeep } from 'apollo-utilities';
 import Component from 'react-component-component';
+import SqonEntry from './SqonEntry';
 
 const BOOLEAN_OPS = ['and', 'or', 'not'];
 
@@ -10,7 +10,7 @@ const FIELD_OP = ['in', 'gte', 'lte'];
 export default ({
   sqons,
   activeSqonIndex,
-  SqonActionComponent = ({ sqon, isActive, isSelected }) => {},
+  SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
   onChange = ({ sqons }) => {},
   onActiveSqonSelect = ({ index }) => {},
 }) => {
@@ -102,70 +102,22 @@ export default ({
             </div>
           </div>
           {sqons.map((sqon, i) => (
-            <div
+            <SqonEntry
               key={i}
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                position: 'relative',
-                background: !isActiveSqon(sqon) ? 'lightgrey' : 'white',
-              }}
-            >
-              <div onClick={onSqonSelectionChange(sqon, s)}>
-                <input
-                  readOnly
-                  type="checkbox"
-                  checked={s.state.selectedSqons.includes(sqon)}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <SingleSqonBuilder
-                  sqon={sqon}
-                  isActive={isActiveSqon(sqon)}
-                  isSelected={s.state.selectedSqons.includes(sqon)}
-                />
-              </div>
-              <div>
-                <button
-                  disabled={!isActiveSqon(sqon)}
-                  onClick={onSqonDuplicate(sqon)}
-                >
-                  dup
-                </button>
-                <button
-                  disabled={!isActiveSqon(sqon)}
-                  onClick={onSqonRemove(sqon)}
-                >
-                  delete
-                </button>
-                <SqonActionComponent
-                  sqon={sqon}
-                  isActive={isActiveSqon(sqon)}
-                />
-              </div>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  pointerEvents: isActiveSqon(sqon) ? 'none' : 'all',
-                }}
-                onClick={onDisabledOverlayClick({ sqonIndex: i })}
-              />
-            </div>
+              sqon={sqon}
+              SqonActionComponent={SqonActionComponent}
+              onSqonSelectionChange={onSqonSelectionChange(sqon, s)}
+              onSqonDuplicate={onSqonDuplicate(sqon)}
+              onSqonRemove={onSqonRemove(sqon)}
+              onDisabledOverlayClick={onDisabledOverlayClick({
+                sqonIndex: i,
+              })}
+              isActiveSqon={isActiveSqon(sqon)}
+              isSelected={s.state.selectedSqons.includes(sqon)}
+            />
           ))}
         </div>
       )}
     </Component>
-  );
-};
-
-const SingleSqonBuilder = ({ sqon }) => {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <div style={{ flex: 1 }}>{JSON.stringify(sqon)}</div>
-    </div>
   );
 };
