@@ -2,30 +2,9 @@ import React from 'react';
 import { cloneDeep } from 'apollo-utilities';
 import Component from 'react-component-component';
 import SqonEntry from './SqonEntry';
+import { resolveSyntheticSqon, removeSqonAtIndex } from './utils';
 
-const BOOLEAN_OPS = ['and', 'or', 'not'];
-
-const FIELD_OP = ['in', 'gte', 'lte'];
-
-/**
- * A synthetic sqon may look like: { "op": "and", "content": [1, 0, 2] }
- * where [1, 0, 2] is a list of index references to other sqons in a list
- * of given sqons. resolveSyntheticSqon resolves a synthetic sqon to an
- * executable sqon.
- **/
-const resolveSyntheticSqon = allSqons => syntheticSqon => {
-  if (BOOLEAN_OPS.includes(syntheticSqon.op)) {
-    return {
-      ...syntheticSqon,
-      content: syntheticSqon.content
-        .map(c => (!isNaN(c) ? allSqons[c] : c))
-        .map(resolveSyntheticSqon(allSqons)),
-    };
-  } else {
-    return syntheticSqon;
-  }
-};
-
+export { resolveSyntheticSqon, removeSqonAtIndex } from './utils';
 export default ({
   sqons,
   activeSqonIndex,
@@ -56,14 +35,16 @@ export default ({
       });
     }
   };
-  const onSqonRemove = sqon => () => {
+  const onSqonRemove = indexToRemove => () => {
     return getSqonDeleteConfirmation({
-      sqon,
-      dependents: sqons.filter(({ content }) =>
-        content.includes(sqons.indexOf(sqon)),
-      ),
+      indexToRemove,
+      dependentIndices: sqons
+        .filter(({ content }) => content.includes(indexToRemove))
+        .map(sq => sqons.indexOf(sq)),
     })
-      .then(() => dispatchSqonListChange(sqons.filter(s => s !== sqon)))
+      .then(() =>
+        dispatchSqonListChange(removeSqonAtIndex(indexToRemove, sqons)),
+      )
       .catch(() => {});
   };
   const onSqonDuplicate = sqon => () => {
@@ -137,11 +118,12 @@ export default ({
           {sqons.map((sqon, i) => (
             <SqonEntry
               key={i}
+              index={i}
               sqon={sqon}
               SqonActionComponent={SqonActionComponent}
               onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
               onSqonDuplicate={onSqonDuplicate(sqon)}
-              onSqonRemove={onSqonRemove(sqon)}
+              onSqonRemove={onSqonRemove(i)}
               onDisabledOverlayClick={onDisabledOverlayClick({
                 sqonIndex: i,
               })}

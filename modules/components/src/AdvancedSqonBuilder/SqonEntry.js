@@ -9,6 +9,7 @@ export default ({
   onDisabledOverlayClick = () => {},
   isActiveSqon = false,
   isSelected = false,
+  index = 0,
 }) => (
   <div
     style={{
@@ -20,6 +21,7 @@ export default ({
   >
     <div onClick={onSqonCheckedChange}>
       <input readOnly type="checkbox" checked={isSelected} />
+      <div>{index}</div>
     </div>
     <div style={{ flex: 1 }}>
       <div style={{ display: 'flex', flexDirection: 'row' }}>

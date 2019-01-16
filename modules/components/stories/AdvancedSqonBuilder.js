@@ -103,8 +103,11 @@ storiesOf('AdvancedSqonBuilder', module)
               activeSqonIndex={s.state.activeSqonIndex}
               onChange={onChange(s)}
               onActiveSqonSelect={onActiveSqonSelect(s)}
-              getSqonDeleteConfirmation={({ sqon, dependents }) =>
-                new Promise((resolve, reject) => {
+              getSqonDeleteConfirmation={({
+                indexToRemove,
+                dependentIndices,
+              }) => {
+                return new Promise((resolve, reject) => {
                   setModal(s)(() => (
                     <DemoModal
                       onOk={() => {
@@ -117,8 +120,8 @@ storiesOf('AdvancedSqonBuilder', module)
                       }}
                     />
                   ));
-                })
-              }
+                });
+              }}
               SqonActionComponent={DemoSqonActionComponent}
             />
             {s.state.ModalComponent ? s.state.ModalComponent() : null}
