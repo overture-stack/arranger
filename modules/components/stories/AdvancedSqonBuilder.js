@@ -5,21 +5,50 @@ import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import AdvancedSqonBuilder from '../src/AdvancedSqonBuilder';
 
+const DemoSqonActionComponent = ({ sqon, isActive }) => (
+  <div>
+    <button disabled={!isActive} onClick={() => console.log(sqon)}>
+      custom button 1
+    </button>
+    <button disabled={!isActive} onClick={() => console.log(sqon)}>
+      custom button 2
+    </button>
+  </div>
+);
+
+const DemoModal = ({ onOk = () => {}, onCancel = () => {} }) => (
+  <div
+    style={{
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: '100%',
+      background: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}
+  >
+    <div style={{ background: 'white' }}>
+      Will remove stuff!
+      <button onClick={onOk}>ok</button>
+      <button onClick={onCancel}>cancel</button>
+    </div>
+  </div>
+);
+
 storiesOf('AdvancedSqonBuilder', module)
   .addDecorator(themeDecorator)
   .add('Builder', () => {
     const initialState = {
+      activeSqonIndex: 0,
+      ModalComponent: null,
       sqons: [
         {
           op: 'and',
           content: [
-            {
-              op: 'in',
-              content: {
-                field: 'kf_id',
-                value: ['GF_9V1MT6CM'],
-              },
-            },
+            { op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } },
           ],
         },
         {
@@ -54,34 +83,46 @@ storiesOf('AdvancedSqonBuilder', module)
           ],
         },
       ],
-      activeSqonIndex: 0,
     };
     const onChange = s => ({ sqons, sqonValues }) => {
-      console.log('sqonValues: ', sqonValues);
       s.setState({ sqons });
     };
     const onActiveSqonSelect = s => ({ index, sqonValue }) => {
       s.setState({ activeSqonIndex: index });
     };
+    const setModal = s => ModalComponent =>
+      s.setState({
+        ModalComponent,
+      });
     return (
       <Component initialState={initialState}>
         {s => (
-          <AdvancedSqonBuilder
-            sqons={s.state.sqons}
-            activeSqonIndex={s.state.activeSqonIndex}
-            onChange={onChange(s)}
-            onActiveSqonSelect={onActiveSqonSelect(s)}
-            SqonActionComponent={({ sqon, isActive }) => (
-              <div>
-                <button disabled={!isActive} onClick={() => console.log(sqon)}>
-                  custom button 1
-                </button>
-                <button disabled={!isActive} onClick={() => console.log(sqon)}>
-                  custom button 2
-                </button>
-              </div>
-            )}
-          />
+          <div style={{ position: 'relative', height: '100%' }}>
+            <AdvancedSqonBuilder
+              sqons={s.state.sqons}
+              activeSqonIndex={s.state.activeSqonIndex}
+              onChange={onChange(s)}
+              onActiveSqonSelect={onActiveSqonSelect(s)}
+              getSqonDeleteConfirmation={({ sqon, dependents }) =>
+                new Promise((resolve, reject) => {
+                  setModal(s)(() => (
+                    <DemoModal
+                      onOk={() => {
+                        setModal(s)(null);
+                        resolve();
+                      }}
+                      onCancel={() => {
+                        setModal(s)(null);
+                        reject();
+                      }}
+                    />
+                  ));
+                })
+              }
+              SqonActionComponent={DemoSqonActionComponent}
+            />
+            {s.state.ModalComponent ? s.state.ModalComponent() : null}
+          </div>
         )}
       </Component>
     );

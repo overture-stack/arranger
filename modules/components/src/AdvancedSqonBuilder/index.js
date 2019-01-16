@@ -32,6 +32,7 @@ export default ({
   SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
   onChange = ({ sqons, sqonValues }) => {},
   onActiveSqonSelect = ({ index }) => {},
+  getSqonDeleteConfirmation = ({ sqon, dependents }) => Promise.resolve(),
 }) => {
   const initialState = {
     selectedSqonIndices: [],
@@ -56,7 +57,14 @@ export default ({
     }
   };
   const onSqonRemove = sqon => () => {
-    dispatchSqonListChange(sqons.filter(s => s !== sqon));
+    return getSqonDeleteConfirmation({
+      sqon,
+      dependents: sqons.filter(({ content }) =>
+        content.includes(sqons.indexOf(sqon)),
+      ),
+    })
+      .then(() => dispatchSqonListChange(sqons.filter(s => s !== sqon)))
+      .catch(() => {});
   };
   const onSqonDuplicate = sqon => () => {
     const index = sqons.findIndex(s => s === sqon);
