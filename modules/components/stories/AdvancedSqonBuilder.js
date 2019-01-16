@@ -56,10 +56,11 @@ storiesOf('AdvancedSqonBuilder', module)
       ],
       activeSqonIndex: 0,
     };
-    const onChange = s => ({ sqons }) => {
+    const onChange = s => ({ sqons, sqonValues }) => {
+      console.log('sqonValues: ', sqonValues);
       s.setState({ sqons });
     };
-    const onActiveSqonSelect = s => ({ index }) => {
+    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
       s.setState({ activeSqonIndex: index });
     };
     return (

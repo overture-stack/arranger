@@ -3,7 +3,7 @@ import React from 'react';
 export default ({
   sqon,
   SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
-  onSqonSelectionChange = () => {},
+  onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
   onSqonRemove = () => {},
   onDisabledOverlayClick = () => {},
@@ -18,7 +18,7 @@ export default ({
       background: !isActiveSqon ? 'lightgrey' : 'white',
     }}
   >
-    <div onClick={onSqonSelectionChange}>
+    <div onClick={onSqonCheckedChange}>
       <input readOnly type="checkbox" checked={isSelected} />
     </div>
     <div style={{ flex: 1 }}>
