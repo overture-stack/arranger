@@ -1,6 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
 //$FlowIgnore
+import { action } from '@storybook/addon-actions';
 import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import AdvancedSqonBuilder from '../src/AdvancedSqonBuilder';
@@ -85,9 +86,11 @@ storiesOf('AdvancedSqonBuilder', module)
       ],
     };
     const onChange = s => ({ sqons, sqonValues }) => {
+      action('sqons change')({ sqons, sqonValues });
       s.setState({ sqons });
     };
     const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+      action('active sqon select')({ index, sqonValue });
       s.setState({ activeSqonIndex: index });
     };
     const setModal = s => ModalComponent =>
