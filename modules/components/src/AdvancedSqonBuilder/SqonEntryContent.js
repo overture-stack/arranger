@@ -1,28 +1,35 @@
 import React from 'react';
-import { resolveSyntheticSqon, BOOLEAN_OPS, FIELD_OP } from './utils';
-import SqonEntry from './SqonEntry';
+import {
+  resolveSyntheticSqon,
+  isReference,
+  isBooleanOp,
+  isFieldOp,
+} from './utils';
 
-const isReference = syntheticSqon => !isNaN(syntheticSqon);
-
-const isValueObj = sqonObj =>
-  typeof sqonObj === 'object' && 'value' in sqonObj && 'field' in sqonObj;
-
-const isBooleanOp = sqonObj =>
-  typeof sqonObj === 'object' && BOOLEAN_OPS.includes(sqonObj.op);
-
-const isFieldOp = sqonObj =>
-  typeof sqonObj === 'object' && FIELD_OP.includes(sqonObj.op);
-
-const BooleanOp = ({ sqon }) => (
+const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
   <span>
-    {'('}
-    {sqon.content.map((c, i) => (
+    <span>{field} </span>
+    <span>{op} </span>
+    <span>{Array.isArray(value) ? value.join(', ') : value}</span>
+  </span>
+);
+
+const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
+
+const BooleanOp = ({ sqon: { op, content } }) => (
+  <span>
+    {content.map((c, i) => (
       <span>
-        <span>{JSON.stringify(c)}</span>
-        {i < sqon.content.length - 1 && <span> {sqon.op} </span>}
+        {isFieldOp(c) ? (
+          <FieldOp sqon={c} />
+        ) : isBooleanOp(c) ? (
+          <BooleanOp sqon={c} />
+        ) : isReference ? (
+          <SqonReference refIndex={c} />
+        ) : null}
+        {i < content.length - 1 && <span> {op} </span>}
       </span>
     ))}
-    {')'}
   </span>
 );
 

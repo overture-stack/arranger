@@ -11,6 +11,10 @@ export {
   resolveSyntheticSqon,
   removeSqonAtIndex,
   duplicateSqonAtIndex,
+  isReference,
+  isValueObj,
+  isBooleanOp,
+  isFieldOp,
 } from './utils';
 export default ({
   syntheticSqons = [],

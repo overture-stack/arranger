@@ -5,6 +5,17 @@ export const BOOLEAN_OPS = ['and', 'or', 'not'];
 export const FIELD_OP = ['in', 'gte', 'lte'];
 
 /**
+ * Utilities for determining the type of sqon object
+ */
+export const isReference = syntheticSqon => !isNaN(syntheticSqon);
+export const isValueObj = sqonObj =>
+  typeof sqonObj === 'object' && 'value' in sqonObj && 'field' in sqonObj;
+export const isBooleanOp = sqonObj =>
+  typeof sqonObj === 'object' && BOOLEAN_OPS.includes(sqonObj.op);
+export const isFieldOp = sqonObj =>
+  typeof sqonObj === 'object' && FIELD_OP.includes(sqonObj.op);
+
+/**
  * A synthetic sqon may look like: { "op": "and", "content": [1, 0, 2] }
  * where [1, 0, 2] is a list of index references to other sqons in a list
  * of given sqons. resolveSyntheticSqon resolves a synthetic sqon to an
