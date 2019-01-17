@@ -17,8 +17,9 @@ export default ({
   activeSqonIndex,
   SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
   onChange = ({ sqons, sqonValues }) => {},
-  onActiveSqonSelect = ({ index }) => {},
-  getSqonDeleteConfirmation = ({ sqon, dependents }) => Promise.resolve(),
+  onActiveSqonSelect = ({ index, sqonValue }) => {},
+  getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
+    Promise.resolve(),
 }) => {
   /**
    * "initialState" is used in 'react-component-component', which provides a
@@ -81,7 +82,7 @@ export default ({
       },
     ]);
   };
-  const onDisabledOverlayClick = ({ sqonIndex }) => () => {
+  const onDisabledOverlayClick = sqonIndex => () => {
     onActiveSqonSelect({
       index: sqonIndex,
       sqonValue: resolveSyntheticSqon(sqons)(sqons[sqonIndex]),
@@ -92,10 +93,8 @@ export default ({
     s.setState({
       selectedSqonIndices: [],
     });
-    onActiveSqonSelect({ index: 0 });
+    onActiveSqonSelect({ index: 0, sqonValue: null });
   };
-
-  const isActiveSqon = sqon => sqons.indexOf(sqon) === activeSqonIndex;
 
   return (
     <Component initialState={initialState}>
@@ -128,15 +127,13 @@ export default ({
               key={i}
               index={i}
               sqon={sqon}
+              isActiveSqon={i === activeSqonIndex}
+              isSelected={s.state.selectedSqonIndices.includes(i)}
               SqonActionComponent={SqonActionComponent}
               onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
               onSqonDuplicate={onSqonDuplicate(i)}
               onSqonRemove={onSqonRemove(i)}
-              onDisabledOverlayClick={onDisabledOverlayClick({
-                sqonIndex: i,
-              })}
-              isActiveSqon={isActiveSqon(sqon)}
-              isSelected={s.state.selectedSqonIndices.includes(i)}
+              onDisabledOverlayClick={onDisabledOverlayClick(i)}
             />
           ))}
         </div>
