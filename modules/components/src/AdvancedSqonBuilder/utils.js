@@ -1,3 +1,4 @@
+import React from 'react';
 import { cloneDeep } from 'lodash';
 
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
@@ -89,3 +90,5 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
         };
   });
 };
+
+export const DisplayNameMapContext = React.createContext({});

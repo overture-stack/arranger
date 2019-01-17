@@ -85,6 +85,12 @@ storiesOf('AdvancedSqonBuilder', module)
         },
       ],
     };
+    const fieldDisplayNameMap = {
+      'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
+      'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
+      'participants.study.short_name': 'Study Short Name',
+      kf_id: 'File ID',
+    };
     const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
       action('sqons change')({ newSyntheticSqons, sqonValues });
       s.setState({ syntheticSqons: newSyntheticSqons });
@@ -104,6 +110,7 @@ storiesOf('AdvancedSqonBuilder', module)
             <AdvancedSqonBuilder
               syntheticSqons={s.state.syntheticSqons}
               activeSqonIndex={s.state.activeSqonIndex}
+              fieldDisplayNameMap={fieldDisplayNameMap}
               onChange={onChange(s)}
               onActiveSqonSelect={onActiveSqonSelect(s)}
               getSqonDeleteConfirmation={({

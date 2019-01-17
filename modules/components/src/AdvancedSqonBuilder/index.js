@@ -6,6 +6,7 @@ import {
   removeSqonAtIndex,
   duplicateSqonAtIndex,
   isEmptySqon,
+  DisplayNameMapContext,
 } from './utils';
 
 export {
@@ -23,6 +24,7 @@ export default ({
   SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
   onChange = ({ newSyntheticSqons, sqonValues }) => {},
   onActiveSqonSelect = ({ index, sqonValue }) => {},
+  fieldDisplayNameMap = {},
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
 }) => {
@@ -114,51 +116,53 @@ export default ({
     });
   };
   return (
-    <Component initialState={initialState}>
-      {s => (
-        <div>
+    <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
+      <Component initialState={initialState}>
+        {s => (
           <div>
             <div>
-              <span>Combine Queries: </span>
-              <span>
-                <button
-                  disabled={!s.state.selectedSqonIndices.length}
-                  onClick={createUnionSqon(s)}
-                >
-                  union
-                </button>
-                <button
-                  disabled={!s.state.selectedSqonIndices.length}
-                  onClick={createIntersectSqon(s)}
-                >
-                  intersect
-                </button>
-              </span>
+              <div>
+                <span>Combine Queries: </span>
+                <span>
+                  <button
+                    disabled={!s.state.selectedSqonIndices.length}
+                    onClick={createUnionSqon(s)}
+                  >
+                    union
+                  </button>
+                  <button
+                    disabled={!s.state.selectedSqonIndices.length}
+                    onClick={createIntersectSqon(s)}
+                  >
+                    intersect
+                  </button>
+                </span>
+              </div>
+              <div>
+                <button onClick={onClearAllClick(s)}>CLEAR ALL</button>
+              </div>
             </div>
+            {syntheticSqons.map((sq, i) => (
+              <SqonEntry
+                key={i}
+                index={i}
+                allSyntheticSqons={syntheticSqons}
+                syntheticSqon={sq}
+                isActiveSqon={i === activeSqonIndex}
+                isSelected={s.state.selectedSqonIndices.includes(i)}
+                SqonActionComponent={SqonActionComponent}
+                onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
+                onSqonDuplicate={onSqonDuplicate(i)}
+                onSqonRemove={onSqonRemove(i)}
+                onDisabledOverlayClick={onDisabledOverlayClick(i)}
+              />
+            ))}
             <div>
-              <button onClick={onClearAllClick(s)}>CLEAR ALL</button>
+              <button onClick={onNewQueryClick}>Start new query</button>
             </div>
           </div>
-          {syntheticSqons.map((sq, i) => (
-            <SqonEntry
-              key={i}
-              index={i}
-              allSyntheticSqons={syntheticSqons}
-              syntheticSqon={sq}
-              isActiveSqon={i === activeSqonIndex}
-              isSelected={s.state.selectedSqonIndices.includes(i)}
-              SqonActionComponent={SqonActionComponent}
-              onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
-              onSqonDuplicate={onSqonDuplicate(i)}
-              onSqonRemove={onSqonRemove(i)}
-              onDisabledOverlayClick={onDisabledOverlayClick(i)}
-            />
-          ))}
-          <div>
-            <button onClick={onNewQueryClick}>Start new query</button>
-          </div>
-        </div>
-      )}
-    </Component>
+        )}
+      </Component>
+    </DisplayNameMapContext.Provider>
   );
 };

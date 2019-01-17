@@ -4,14 +4,24 @@ import {
   isReference,
   isBooleanOp,
   isFieldOp,
+  isEmptySqon,
+  DisplayNameMapContext,
 } from './utils';
 
 const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
-  <span>
-    <span>{field} </span>
-    <span>{op} </span>
-    <span>{Array.isArray(value) ? value.join(', ') : value}</span>
-  </span>
+  <DisplayNameMapContext.Consumer>
+    {fieldDisplayNameMap => (
+      <span>
+        <span style={{ fontWeight: 'bold' }}>
+          {fieldDisplayNameMap[field] || field}{' '}
+        </span>
+        <span>{op} </span>
+        <span style={{ fontStyle: 'italic' }}>
+          {Array.isArray(value) ? value.join(', ') : value}
+        </span>
+      </span>
+    )}
+  </DisplayNameMapContext.Consumer>
 );
 
 const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
@@ -23,13 +33,17 @@ const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
 const BooleanOp = ({ sqon: { op, content } }) => (
   <span>
     {content.map((c, i) => (
-      <span>
+      <span key={i}>
         {isBooleanOp(c) ? (
-          <BooleanOp sqon={c} />
+          <span>
+            (<BooleanOp sqon={c} />)
+          </span>
         ) : isFieldOp(c) ? (
           <FieldOp sqon={c} />
         ) : isReference(c) ? (
           <SqonReference refIndex={c} />
+        ) : isEmptySqon(c) ? (
+          <span>oooooo</span>
         ) : null}
         {i < content.length - 1 && <span> {op} </span>}
       </span>
@@ -42,7 +56,7 @@ export default ({ syntheticSqon, allSyntheticSqons = [] }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <div style={{ flex: 1 }}>
-        {isBooleanOp(syntheticSqon) && <BooleanOp sqon={syntheticSqon} />}
+        {isBooleanOp(syntheticSqon) && <BooleanOp sqon={compiledSqon} />}
       </div>
     </div>
   );
