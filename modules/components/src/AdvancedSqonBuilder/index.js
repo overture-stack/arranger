@@ -20,9 +20,15 @@ export default ({
   onActiveSqonSelect = ({ index }) => {},
   getSqonDeleteConfirmation = ({ sqon, dependents }) => Promise.resolve(),
 }) => {
+  /**
+   * "initialState" is used in 'react-component-component', which provides a
+   * layer of state container, named 's', which consists of:
+   * {state, setState}
+   */
   const initialState = {
     selectedSqonIndices: [],
   };
+
   const dispatchSqonListChange = newSqonList => {
     onChange({
       sqons: newSqonList,
