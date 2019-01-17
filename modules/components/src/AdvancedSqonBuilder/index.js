@@ -1,10 +1,17 @@
 import React from 'react';
-import { cloneDeep } from 'apollo-utilities';
 import Component from 'react-component-component';
 import SqonEntry from './SqonEntry';
-import { resolveSyntheticSqon, removeSqonAtIndex } from './utils';
+import {
+  resolveSyntheticSqon,
+  removeSqonAtIndex,
+  duplicateSqonAtIndex,
+} from './utils';
 
-export { resolveSyntheticSqon, removeSqonAtIndex } from './utils';
+export {
+  resolveSyntheticSqon,
+  removeSqonAtIndex,
+  duplicateSqonAtIndex,
+} from './utils';
 export default ({
   sqons,
   activeSqonIndex,
@@ -49,11 +56,7 @@ export default ({
   };
   const onSqonDuplicate = sqon => () => {
     const index = sqons.findIndex(s => s === sqon);
-    dispatchSqonListChange([
-      ...sqons.slice(0, index),
-      cloneDeep(sqon),
-      ...sqons.slice(index, sqons.length),
-    ]);
+    dispatchSqonListChange(duplicateSqonAtIndex(index, sqons));
   };
   const createUnionSqon = s => () => {
     dispatchSqonListChange([

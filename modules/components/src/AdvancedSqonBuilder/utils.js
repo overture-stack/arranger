@@ -1,3 +1,5 @@
+import { cloneDeep } from 'lodash';
+
 const BOOLEAN_OPS = ['and', 'or', 'not'];
 
 const FIELD_OP = ['in', 'gte', 'lte'];
@@ -41,4 +43,21 @@ export const removeSqonAtIndex = (indexToRemove, sqonList) => {
           s => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
         ),
     }));
+};
+
+/**
+ * Non-mutative duplication of the entry at "indexToRemove" from a list of
+ * synthetic sqons "sqonList".
+ **/
+export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
+  return [
+    ...sqonList.slice(0, indexToDuplicate),
+    cloneDeep(sqonList[indexToDuplicate]),
+    ...sqonList.slice(indexToDuplicate, sqonList.length),
+  ].map(sqon => ({
+    ...sqon,
+    content: sqon.content.map(
+      s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
+    ),
+  }));
 };
