@@ -50,24 +50,23 @@ export const resolveSyntheticSqon = allSqons => syntheticSqon => {
 export const removeSqonAtIndex = (indexToRemove, sqonList) => {
   return sqonList
     .filter((s, i) => i !== indexToRemove) // takes out the removed sqon
-    .map(
-      sq =>
-        isEmptySqon(sq)
-          ? sq
-          : {
-              // removes references to the removed sqon
-              ...sq,
-              content: sq.content
-                .filter(
-                  // removes references
-                  content => content !== indexToRemove,
-                )
-                .map(
-                  // shifts references to indices greater than the removed one
-                  s => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
-                ),
-            },
-    );
+    .map(sqon => {
+      return isEmptySqon(sqon)
+        ? sqon
+        : {
+            // removes references to the removed sqon
+            ...sqon,
+            content: sqon.content
+              .filter(
+                // removes references
+                content => content !== indexToRemove,
+              )
+              .map(
+                // shifts references to indices greater than the removed one
+                s => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
+              ),
+          };
+    });
 };
 
 /**
@@ -79,15 +78,14 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
     ...sqonList.slice(0, indexToDuplicate),
     cloneDeep(sqonList[indexToDuplicate]),
     ...sqonList.slice(indexToDuplicate, sqonList.length),
-  ].map(
-    sqon =>
-      isEmptySqon(sqon)
-        ? sqon
-        : {
-            ...sqon,
-            content: sqon.content.map(
-              s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
-            ),
-          },
-  );
+  ].map(sqon => {
+    return isEmptySqon(sqon)
+      ? sqon
+      : {
+          ...sqon,
+          content: sqon.content.map(
+            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
+          ),
+        };
+  });
 };
