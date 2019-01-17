@@ -16,15 +16,19 @@ const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
 
 const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
 
+/**
+ * BooleanOp handles nested sqons through recursive rendering.
+ * This will be useful for supporting brackets later.
+ */
 const BooleanOp = ({ sqon: { op, content } }) => (
   <span>
     {content.map((c, i) => (
       <span>
-        {isFieldOp(c) ? (
-          <FieldOp sqon={c} />
-        ) : isBooleanOp(c) ? (
+        {isBooleanOp(c) ? (
           <BooleanOp sqon={c} />
-        ) : isReference ? (
+        ) : isFieldOp(c) ? (
+          <FieldOp sqon={c} />
+        ) : isReference(c) ? (
           <SqonReference refIndex={c} />
         ) : null}
         {i < content.length - 1 && <span> {op} </span>}
@@ -33,7 +37,7 @@ const BooleanOp = ({ sqon: { op, content } }) => (
   </span>
 );
 
-const SqonEntryContent = ({ syntheticSqon, allSyntheticSqons = [] }) => {
+export default ({ syntheticSqon, allSyntheticSqons = [] }) => {
   const compiledSqon = resolveSyntheticSqon(allSyntheticSqons)(syntheticSqon);
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -43,5 +47,3 @@ const SqonEntryContent = ({ syntheticSqon, allSyntheticSqons = [] }) => {
     </div>
   );
 };
-
-export default SqonEntryContent;

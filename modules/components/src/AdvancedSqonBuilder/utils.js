@@ -1,8 +1,7 @@
 import { cloneDeep } from 'lodash';
 
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
-
-export const FIELD_OP = ['in', 'gte', 'lte'];
+export const FIELD_OP = ['in', '>=', '<='];
 
 /**
  * Utilities for determining the type of sqon object
