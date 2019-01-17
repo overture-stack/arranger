@@ -1,8 +1,10 @@
 import React from 'react';
+import SqonEntryContent from './SqonEntryContent';
 
 export default ({
-  sqon,
-  SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
+  syntheticSqon,
+  allSyntheticSqons = [],
+  SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
   onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
   onSqonRemove = () => {},
@@ -24,9 +26,10 @@ export default ({
       <div>{index}</div>
     </div>
     <div style={{ flex: 1 }}>
-      <div style={{ display: 'flex', flexDirection: 'row' }}>
-        <div style={{ flex: 1 }}>{JSON.stringify(sqon)}</div>
-      </div>
+      <SqonEntryContent
+        syntheticSqon={syntheticSqon}
+        allSyntheticSqons={allSyntheticSqons}
+      />
     </div>
     <div>
       <button disabled={!isActiveSqon} onClick={onSqonDuplicate}>
@@ -35,7 +38,7 @@ export default ({
       <button disabled={!isActiveSqon} onClick={onSqonRemove}>
         delete
       </button>
-      <SqonActionComponent sqon={sqon} isActive={isActiveSqon} />
+      <SqonActionComponent sqonIndex={index} isActive={isActiveSqon} />
     </div>
     <div
       style={{

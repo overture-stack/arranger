@@ -6,12 +6,12 @@ import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import AdvancedSqonBuilder from '../src/AdvancedSqonBuilder';
 
-const DemoSqonActionComponent = ({ sqon, isActive }) => (
+const DemoSqonActionComponent = ({ sqonIndex, isActive, isSelected }) => (
   <div>
-    <button disabled={!isActive} onClick={() => console.log(sqon)}>
+    <button disabled={!isActive} onClick={() => console.log(sqonIndex)}>
       custom button 1
     </button>
-    <button disabled={!isActive} onClick={() => console.log(sqon)}>
+    <button disabled={!isActive} onClick={() => console.log(sqonIndex)}>
       custom button 2
     </button>
   </div>
@@ -45,7 +45,7 @@ storiesOf('AdvancedSqonBuilder', module)
     const initialState = {
       activeSqonIndex: 0,
       ModalComponent: null,
-      sqons: [
+      syntheticSqons: [
         {
           op: 'and',
           content: [
@@ -85,9 +85,9 @@ storiesOf('AdvancedSqonBuilder', module)
         },
       ],
     };
-    const onChange = s => ({ sqons, sqonValues }) => {
-      action('sqons change')({ sqons, sqonValues });
-      s.setState({ sqons });
+    const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
+      action('sqons change')({ newSyntheticSqons, sqonValues });
+      s.setState({ syntheticSqons: newSyntheticSqons });
     };
     const onActiveSqonSelect = s => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
@@ -102,7 +102,7 @@ storiesOf('AdvancedSqonBuilder', module)
         {s => (
           <div style={{ position: 'relative', height: '100%' }}>
             <AdvancedSqonBuilder
-              sqons={s.state.sqons}
+              syntheticSqons={s.state.syntheticSqons}
               activeSqonIndex={s.state.activeSqonIndex}
               onChange={onChange(s)}
               onActiveSqonSelect={onActiveSqonSelect(s)}

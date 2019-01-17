@@ -13,10 +13,10 @@ export {
   duplicateSqonAtIndex,
 } from './utils';
 export default ({
-  sqons,
-  activeSqonIndex,
-  SqonActionComponent = ({ sqon, isActive, isSelected }) => null,
-  onChange = ({ sqons, sqonValues }) => {},
+  syntheticSqons = [],
+  activeSqonIndex = 0,
+  SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
+  onChange = ({ newSyntheticSqons, sqonValues }) => {},
   onActiveSqonSelect = ({ index, sqonValue }) => {},
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
@@ -32,8 +32,8 @@ export default ({
 
   const dispatchSqonListChange = newSqonList => {
     onChange({
-      sqons: newSqonList,
-      sqonValues: newSqonList.map(resolveSyntheticSqon(sqons)),
+      newSyntheticSqons: newSqonList,
+      sqonValues: newSqonList.map(resolveSyntheticSqon(syntheticSqons)),
     });
   };
   const onSelectedSqonIndicesChange = (index, s) => () => {
@@ -52,21 +52,25 @@ export default ({
   const onSqonRemove = indexToRemove => () => {
     return getSqonDeleteConfirmation({
       indexToRemove,
-      dependentIndices: sqons
+      dependentIndices: syntheticSqons
         .filter(({ content }) => content.includes(indexToRemove))
-        .map(sq => sqons.indexOf(sq)),
+        .map(sq => syntheticSqons.indexOf(sq)),
     })
       .then(() =>
-        dispatchSqonListChange(removeSqonAtIndex(indexToRemove, sqons)),
+        dispatchSqonListChange(
+          removeSqonAtIndex(indexToRemove, syntheticSqons),
+        ),
       )
       .catch(() => {});
   };
   const onSqonDuplicate = indexToDuplicate => () => {
-    dispatchSqonListChange(duplicateSqonAtIndex(indexToDuplicate, sqons));
+    dispatchSqonListChange(
+      duplicateSqonAtIndex(indexToDuplicate, syntheticSqons),
+    );
   };
   const createUnionSqon = s => () => {
     dispatchSqonListChange([
-      ...sqons,
+      ...syntheticSqons,
       {
         op: 'or',
         content: s.state.selectedSqonIndices,
@@ -75,7 +79,7 @@ export default ({
   };
   const createIntersectSqon = s => () => {
     dispatchSqonListChange([
-      ...sqons,
+      ...syntheticSqons,
       {
         op: 'and',
         content: s.state.selectedSqonIndices,
@@ -85,7 +89,9 @@ export default ({
   const onDisabledOverlayClick = sqonIndex => () => {
     onActiveSqonSelect({
       index: sqonIndex,
-      sqonValue: resolveSyntheticSqon(sqons)(sqons[sqonIndex]),
+      sqonValue: resolveSyntheticSqon(syntheticSqons)(
+        syntheticSqons[sqonIndex],
+      ),
     });
   };
   const onClearAllClick = s => () => {
@@ -122,11 +128,12 @@ export default ({
               <button onClick={onClearAllClick(s)}>CLEAR ALL</button>
             </div>
           </div>
-          {sqons.map((sqon, i) => (
+          {syntheticSqons.map((sq, i) => (
             <SqonEntry
               key={i}
               index={i}
-              sqon={sqon}
+              allSyntheticSqons={syntheticSqons}
+              syntheticSqon={sq}
               isActiveSqon={i === activeSqonIndex}
               isSelected={s.state.selectedSqonIndices.includes(i)}
               SqonActionComponent={SqonActionComponent}

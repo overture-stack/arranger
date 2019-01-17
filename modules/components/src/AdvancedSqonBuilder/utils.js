@@ -1,8 +1,8 @@
 import { cloneDeep } from 'lodash';
 
-const BOOLEAN_OPS = ['and', 'or', 'not'];
+export const BOOLEAN_OPS = ['and', 'or', 'not'];
 
-const FIELD_OP = ['in', 'gte', 'lte'];
+export const FIELD_OP = ['in', 'gte', 'lte'];
 
 /**
  * A synthetic sqon may look like: { "op": "and", "content": [1, 0, 2] }
@@ -25,7 +25,7 @@ export const resolveSyntheticSqon = allSqons => syntheticSqon => {
 
 /**
  * Non-mutative removal of the entry at "indexToRemove" from a list of
- * synthetic sqons "sqonList".
+ * synthetic sqons "sqonList" and updates references.
  **/
 export const removeSqonAtIndex = (indexToRemove, sqonList) => {
   return sqonList
@@ -47,7 +47,7 @@ export const removeSqonAtIndex = (indexToRemove, sqonList) => {
 
 /**
  * Non-mutative duplication of the entry at "indexToRemove" from a list of
- * synthetic sqons "sqonList".
+ * synthetic sqons "sqonList" and updates references.
  **/
 export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
   return [
