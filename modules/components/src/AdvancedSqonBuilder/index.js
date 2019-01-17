@@ -5,6 +5,7 @@ import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
   duplicateSqonAtIndex,
+  isEmptySqon,
 } from './utils';
 
 export {
@@ -56,9 +57,14 @@ export default ({
   const onSqonRemove = indexToRemove => () => {
     return getSqonDeleteConfirmation({
       indexToRemove,
-      dependentIndices: syntheticSqons
-        .filter(({ content }) => content.includes(indexToRemove))
-        .map(sq => syntheticSqons.indexOf(sq)),
+      dependentIndices: syntheticSqons.reduce((acc, sq, i) => {
+        if (sq) {
+          if (sq.content.includes(indexToRemove)) {
+            acc.push(i);
+          }
+        }
+        return acc;
+      }, []),
     })
       .then(() =>
         dispatchSqonListChange(
@@ -90,6 +96,15 @@ export default ({
       },
     ]);
   };
+  const onClearAllClick = s => () => {
+    dispatchSqonListChange([]);
+    s.setState({ selectedSqonIndices: [] });
+    onActiveSqonSelect({ index: 0, sqonValue: null });
+  };
+  const onNewQueryClick = () => {
+    dispatchSqonListChange([...syntheticSqons, null]);
+  };
+
   const onDisabledOverlayClick = sqonIndex => () => {
     onActiveSqonSelect({
       index: sqonIndex,
@@ -98,14 +113,6 @@ export default ({
       ),
     });
   };
-  const onClearAllClick = s => () => {
-    dispatchSqonListChange([]);
-    s.setState({
-      selectedSqonIndices: [],
-    });
-    onActiveSqonSelect({ index: 0, sqonValue: null });
-  };
-
   return (
     <Component initialState={initialState}>
       {s => (
@@ -147,6 +154,9 @@ export default ({
               onDisabledOverlayClick={onDisabledOverlayClick(i)}
             />
           ))}
+          <div>
+            <button onClick={onNewQueryClick}>Start new query</button>
+          </div>
         </div>
       )}
     </Component>
