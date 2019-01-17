@@ -109,8 +109,8 @@ storiesOf('AdvancedSqonBuilder', module)
               getSqonDeleteConfirmation={({
                 indexToRemove,
                 dependentIndices,
-              }) => {
-                return new Promise((resolve, reject) => {
+              }) =>
+                new Promise((resolve, reject) => {
                   setModal(s)(() => (
                     <DemoModal
                       onOk={() => {
@@ -123,8 +123,8 @@ storiesOf('AdvancedSqonBuilder', module)
                       }}
                     />
                   ));
-                });
-              }}
+                })
+              }
               SqonActionComponent={DemoSqonActionComponent}
             />
             {s.state.ModalComponent ? s.state.ModalComponent() : null}

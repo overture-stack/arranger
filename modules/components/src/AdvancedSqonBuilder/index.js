@@ -54,9 +54,8 @@ export default ({
       )
       .catch(() => {});
   };
-  const onSqonDuplicate = sqon => () => {
-    const index = sqons.findIndex(s => s === sqon);
-    dispatchSqonListChange(duplicateSqonAtIndex(index, sqons));
+  const onSqonDuplicate = indexToDuplicate => () => {
+    dispatchSqonListChange(duplicateSqonAtIndex(indexToDuplicate, sqons));
   };
   const createUnionSqon = s => () => {
     dispatchSqonListChange([
@@ -125,7 +124,7 @@ export default ({
               sqon={sqon}
               SqonActionComponent={SqonActionComponent}
               onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
-              onSqonDuplicate={onSqonDuplicate(sqon)}
+              onSqonDuplicate={onSqonDuplicate(i)}
               onSqonRemove={onSqonRemove(i)}
               onDisabledOverlayClick={onDisabledOverlayClick({
                 sqonIndex: i,
