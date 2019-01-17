@@ -10,7 +10,7 @@ import {
 
 const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
   <DisplayNameMapContext.Consumer>
-    {fieldDisplayNameMap => (
+    {(fieldDisplayNameMap = {}) => (
       <span>
         <span style={{ fontWeight: 'bold' }}>
           {fieldDisplayNameMap[field] || field}{' '}
