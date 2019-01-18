@@ -53,40 +53,40 @@ const BooleanOp = ({
   contentPath = [],
   onFieldOpRemove = path => {},
   sqon: { op, content },
-}) => (
-  <span className={`booleanOp`}>
-    {content.map((c, i) => {
-      const currentPath = [...contentPath, i];
-      return (
-        <span key={i}>
-          {isBooleanOp(c) ? (
-            <span>
-              <span>(</span>
-              <BooleanOp
-                sqon={c}
-                contentPath={currentPath}
-                onFieldOpRemove={onFieldOpRemove}
-              />
-              <span>)</span>
-            </span>
-          ) : isFieldOp(c) ? (
-            <span>
-              <FieldOp
-                sqon={c}
-                onContentRemove={() => onFieldOpRemove(currentPath)}
-              />
-            </span>
-          ) : isReference(c) ? (
-            <SqonReference refIndex={c} />
-          ) : isEmptySqon(c) ? (
-            <span>oooooo</span>
-          ) : null}
-          {i < content.length - 1 && <span> {op} </span>}
-        </span>
-      );
-    })}
-  </span>
-);
+}) => {
+  const onRemove = path => () => onFieldOpRemove(path);
+  return (
+    <span className={`booleanOp`}>
+      {content.map((c, i) => {
+        const currentPath = [...contentPath, i];
+        return (
+          <span key={i}>
+            {isBooleanOp(c) ? (
+              <span>
+                <span>(</span>
+                <BooleanOp
+                  sqon={c}
+                  contentPath={currentPath}
+                  onFieldOpRemove={onFieldOpRemove}
+                />
+                <span>)</span>
+              </span>
+            ) : isFieldOp(c) ? (
+              <span>
+                <FieldOp sqon={c} onContentRemove={onRemove(currentPath)} />
+              </span>
+            ) : isReference(c) ? (
+              <SqonReference refIndex={c} />
+            ) : isEmptySqon(c) ? (
+              <span>oooooo</span>
+            ) : null}
+            {i < content.length - 1 && <span> {op} </span>}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
 
 export default ({ syntheticSqon, onFieldOpRemove, allSyntheticSqons = [] }) => {
   const compiledSqon = resolveSyntheticSqon(allSyntheticSqons)(syntheticSqon);

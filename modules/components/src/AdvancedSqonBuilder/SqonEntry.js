@@ -12,6 +12,7 @@ export default ({
   isActiveSqon = false,
   isSelected = false,
   index = 0,
+  onFieldOpRemove = console.log,
 }) => (
   <div className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}>
     <div className={`activeStateIndicator`} />
@@ -28,7 +29,7 @@ export default ({
       <SqonEntryContent
         syntheticSqon={syntheticSqon}
         allSyntheticSqons={allSyntheticSqons}
-        onFieldOpRemove={console.log}
+        onFieldOpRemove={onFieldOpRemove}
       />
     </div>
     <div>
