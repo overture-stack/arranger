@@ -16,7 +16,13 @@ export default ({
   <div className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}>
     <div className={`activeStateIndicator`} />
     <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
-      <input readOnly type="checkbox" checked={isSelected} /> #{index}
+      <input
+        readOnly
+        type="checkbox"
+        checked={isSelected}
+        disabled={!isActiveSqon}
+      />{' '}
+      #{index}
     </div>
     <div style={{ flex: 1 }}>
       <SqonEntryContent
