@@ -120,7 +120,7 @@ export default ({
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
         {s => (
-          <div>
+          <div className={`sqonBuilder`}>
             <div>
               <div>
                 <span>Combine Queries: </span>

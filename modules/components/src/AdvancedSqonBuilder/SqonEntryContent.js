@@ -8,17 +8,30 @@ import {
   DisplayNameMapContext,
 } from './utils';
 
+const PillRemoveButton = ({ onClick }) => (
+  <span className={`pillRemoveButton`} onClick={onClick}>
+    ✕
+  </span>
+);
+
+const ValueSelector = ({ value }) => (
+  <span className={'valueDisplay'}>
+    {Array.isArray(value) ? value.join(', ') : value}
+  </span>
+);
+
 const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
   <DisplayNameMapContext.Consumer>
     {(fieldDisplayNameMap = {}) => (
       <span className={`fieldOp`}>
-        <span style={{ fontWeight: 'bold' }}>
-          {fieldDisplayNameMap[field] || field}{' '}
+        <span className={'opContainer'}>
+          <span className={`fieldName`}>
+            {fieldDisplayNameMap[field] || field}{' '}
+          </span>
+          <span className={`opName`}>{op} </span>
         </span>
-        <span>{op} </span>
-        <span style={{ fontStyle: 'italic' }}>
-          {Array.isArray(value) ? value.join(', ') : value}
-        </span>
+        <ValueSelector value={value} />
+        <PillRemoveButton />
       </span>
     )}
   </DisplayNameMapContext.Consumer>
