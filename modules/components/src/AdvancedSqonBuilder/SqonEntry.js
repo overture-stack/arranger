@@ -28,6 +28,7 @@ export default ({
       <SqonEntryContent
         syntheticSqon={syntheticSqon}
         allSyntheticSqons={allSyntheticSqons}
+        onFieldOpRemove={console.log}
       />
     </div>
     <div>

@@ -20,22 +20,28 @@ const ValueSelector = ({ value }) => (
   </span>
 );
 
-const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
-  <DisplayNameMapContext.Consumer>
-    {(fieldDisplayNameMap = {}) => (
-      <span className={`fieldOp`}>
-        <span className={'opContainer'}>
-          <span className={`fieldName`}>
-            {fieldDisplayNameMap[field] || field}{' '}
+const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
+  const { op, content: { field, value } } = sqon;
+  const onRemoveClick = () => {
+    onContentRemove(sqon);
+  };
+  return (
+    <DisplayNameMapContext.Consumer>
+      {(fieldDisplayNameMap = {}) => (
+        <span className={`fieldOp`}>
+          <span className={'opContainer'}>
+            <span className={`fieldName`}>
+              {fieldDisplayNameMap[field] || field}{' '}
+            </span>
+            <span className={`opName`}>{op} </span>
           </span>
-          <span className={`opName`}>{op} </span>
+          <ValueSelector value={value} />
+          <PillRemoveButton onClick={onRemoveClick} />
         </span>
-        <ValueSelector value={value} />
-        <PillRemoveButton />
-      </span>
-    )}
-  </DisplayNameMapContext.Consumer>
-);
+      )}
+    </DisplayNameMapContext.Consumer>
+  );
+};
 
 const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
 
@@ -43,35 +49,57 @@ const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
  * BooleanOp handles nested sqons through recursive rendering.
  * This will be useful for supporting brackets later.
  */
-const BooleanOp = ({ sqon: { op, content } }) => (
+const BooleanOp = ({
+  contentPath = [],
+  onFieldOpRemove = path => {},
+  sqon: { op, content },
+}) => (
   <span className={`booleanOp`}>
-    {content.map((c, i) => (
-      <span key={i}>
-        {isBooleanOp(c) ? (
-          <span>
-            <span>(</span>
-            <BooleanOp sqon={c} />
-            <span>)</span>
-          </span>
-        ) : isFieldOp(c) ? (
-          <FieldOp sqon={c} />
-        ) : isReference(c) ? (
-          <SqonReference refIndex={c} />
-        ) : isEmptySqon(c) ? (
-          <span>oooooo</span>
-        ) : null}
-        {i < content.length - 1 && <span> {op} </span>}
-      </span>
-    ))}
+    {content.map((c, i) => {
+      const currentPath = [...contentPath, i];
+      return (
+        <span key={i}>
+          {isBooleanOp(c) ? (
+            <span>
+              <span>(</span>
+              <BooleanOp
+                sqon={c}
+                contentPath={currentPath}
+                onFieldOpRemove={onFieldOpRemove}
+              />
+              <span>)</span>
+            </span>
+          ) : isFieldOp(c) ? (
+            <span>
+              <FieldOp
+                sqon={c}
+                onContentRemove={() => onFieldOpRemove(currentPath)}
+              />
+            </span>
+          ) : isReference(c) ? (
+            <SqonReference refIndex={c} />
+          ) : isEmptySqon(c) ? (
+            <span>oooooo</span>
+          ) : null}
+          {i < content.length - 1 && <span> {op} </span>}
+        </span>
+      );
+    })}
   </span>
 );
 
-export default ({ syntheticSqon, allSyntheticSqons = [] }) => {
+export default ({ syntheticSqon, onFieldOpRemove, allSyntheticSqons = [] }) => {
   const compiledSqon = resolveSyntheticSqon(allSyntheticSqons)(syntheticSqon);
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <div className={`sqonView`}>
-        {isBooleanOp(syntheticSqon) && <BooleanOp sqon={compiledSqon} />}
+        {isBooleanOp(syntheticSqon) && (
+          <BooleanOp
+            index={0}
+            onFieldOpRemove={onFieldOpRemove}
+            sqon={compiledSqon}
+          />
+        )}
       </div>
     </div>
   );
