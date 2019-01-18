@@ -13,17 +13,10 @@ export default ({
   isSelected = false,
   index = 0,
 }) => (
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'row',
-      position: 'relative',
-      background: !isActiveSqon ? 'lightgrey' : 'white',
-    }}
-  >
-    <div onClick={onSqonCheckedChange}>
-      <input readOnly type="checkbox" checked={isSelected} />
-      <div>{index}</div>
+  <div className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}>
+    <div className={`activeStateIndicator`} />
+    <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
+      <input readOnly type="checkbox" checked={isSelected} /> #{index}
     </div>
     <div style={{ flex: 1 }}>
       <SqonEntryContent

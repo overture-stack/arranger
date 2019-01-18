@@ -8,6 +8,7 @@ import {
   isEmptySqon,
   DisplayNameMapContext,
 } from './utils';
+import './style.css';
 
 export {
   resolveSyntheticSqon,
@@ -46,7 +47,7 @@ export default ({
   const onSelectedSqonIndicesChange = (index, s) => () => {
     if (!s.state.selectedSqonIndices.includes(index)) {
       s.setState({
-        selectedSqonIndices: [...s.state.selectedSqonIndices, index],
+        selectedSqonIndices: [...s.state.selectedSqonIndices, index].sort(),
       });
     } else {
       s.setState({

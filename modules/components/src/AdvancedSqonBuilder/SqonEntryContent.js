@@ -11,7 +11,7 @@ import {
 const FieldOp = ({ sqon: { op, content: { field, value } } }) => (
   <DisplayNameMapContext.Consumer>
     {(fieldDisplayNameMap = {}) => (
-      <span>
+      <span className={`fieldOp`}>
         <span style={{ fontWeight: 'bold' }}>
           {fieldDisplayNameMap[field] || field}{' '}
         </span>
@@ -31,12 +31,14 @@ const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
  * This will be useful for supporting brackets later.
  */
 const BooleanOp = ({ sqon: { op, content } }) => (
-  <span>
+  <span className={`booleanOp`}>
     {content.map((c, i) => (
       <span key={i}>
         {isBooleanOp(c) ? (
           <span>
-            (<BooleanOp sqon={c} />)
+            <span>(</span>
+            <BooleanOp sqon={c} />
+            <span>)</span>
           </span>
         ) : isFieldOp(c) ? (
           <FieldOp sqon={c} />
@@ -55,7 +57,7 @@ export default ({ syntheticSqon, allSyntheticSqons = [] }) => {
   const compiledSqon = resolveSyntheticSqon(allSyntheticSqons)(syntheticSqon);
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <div style={{ flex: 1 }}>
+      <div className={`sqonView`}>
         {isBooleanOp(syntheticSqon) && <BooleanOp sqon={compiledSqon} />}
       </div>
     </div>
