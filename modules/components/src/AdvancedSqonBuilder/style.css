@@ -47,11 +47,6 @@
 }
 
 .sqonView .fieldOp {
-  margin: 1px;
-  display: inline-flex;
-  border: solid 1px lightgrey;
-  border-radius: 7px;
-  background: white;
 }
 .sqonView .fieldOp .fieldName {
 }
@@ -78,4 +73,15 @@
   padding-right: 10px;
   border-left: solid 1px lightgrey;
   cursor: pointer;
+}
+
+.sqonView .pill {
+  margin: 1px;
+  display: inline-flex;
+  border: solid 1px lightgrey;
+  border-radius: 7px;
+  background: white;
+}
+.sqonView .sqonReference {
+  padding: 5px;
 }

@@ -28,7 +28,7 @@ const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
   return (
     <DisplayNameMapContext.Consumer>
       {(fieldDisplayNameMap = {}) => (
-        <span className={`fieldOp`}>
+        <span className={`fieldOp pill`}>
           <span className={'opContainer'}>
             <span className={`fieldName`}>
               {fieldDisplayNameMap[field] || field}{' '}
@@ -43,7 +43,9 @@ const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
   );
 };
 
-const SqonReference = ({ refIndex }) => <span>{refIndex}</span>;
+const SqonReference = ({ refIndex }) => (
+  <span className={`sqonReference pill`}>{refIndex}</span>
+);
 
 /**
  * BooleanOp handles nested sqons through recursive rendering.
@@ -97,7 +99,7 @@ export default ({ syntheticSqon, onFieldOpRemove, allSyntheticSqons = [] }) => {
           <BooleanOp
             index={0}
             onFieldOpRemove={onFieldOpRemove}
-            sqon={compiledSqon}
+            sqon={syntheticSqon}
           />
         )}
       </div>
