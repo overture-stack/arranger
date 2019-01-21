@@ -27,6 +27,9 @@ export default ({
   onChange = ({ newSyntheticSqons, sqonValues }) => {},
   onActiveSqonSelect = ({ index, sqonValue }) => {},
   fieldDisplayNameMap = {},
+  ButtonComponent = ({ className, ...rest }) => (
+    <button className={`button ${className}`} {...rest} />
+  ),
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
 }) => {
@@ -133,22 +136,26 @@ export default ({
               <div>
                 <span>Combine Queries: </span>
                 <span>
-                  <button
-                    disabled={!s.state.selectedSqonIndices.length}
-                    onClick={createUnionSqon(s)}
-                  >
-                    union
-                  </button>
-                  <button
+                  <ButtonComponent
+                    className={`and`}
                     disabled={!s.state.selectedSqonIndices.length}
                     onClick={createIntersectSqon(s)}
                   >
-                    intersect
-                  </button>
+                    and
+                  </ButtonComponent>
+                  <ButtonComponent
+                    className={`or`}
+                    disabled={!s.state.selectedSqonIndices.length}
+                    onClick={createUnionSqon(s)}
+                  >
+                    or
+                  </ButtonComponent>
                 </span>
               </div>
               <div>
-                <button onClick={onClearAllClick(s)}>CLEAR ALL</button>
+                <ButtonComponent onClick={onClearAllClick(s)}>
+                  CLEAR ALL
+                </ButtonComponent>
               </div>
             </div>
             {syntheticSqons.map((sq, i) => (

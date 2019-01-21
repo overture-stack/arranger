@@ -6,6 +6,19 @@
   display: flex;
   justify-content: space-between;
 }
+.sqonBuilder .actionHeaderContainer .button {
+  margin-left: 5px;
+}
+.sqonBuilder .button {
+  border-radius: 100px;
+  box-shadow: none;
+  border: solid 1px lightgrey;
+  color: #008199;
+}
+.sqonBuilder .button:disabled {
+  background: #f4f5f8;
+  color: grey;
+}
 
 .sqonEntry {
   display: flex;
