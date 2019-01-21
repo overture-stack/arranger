@@ -2,6 +2,10 @@
   font-size: 12px;
   padding: 10px;
 }
+.sqonBuilder .actionHeaderContainer {
+  display: flex;
+  justify-content: space-between;
+}
 
 .sqonEntry {
   display: flex;
@@ -79,7 +83,7 @@
   margin: 1px;
   display: inline-flex;
   border: solid 1px lightgrey;
-  border-radius: 7px;
+  border-radius: 10px;
   background: white;
 }
 .sqonView .sqonReferenceIndex {

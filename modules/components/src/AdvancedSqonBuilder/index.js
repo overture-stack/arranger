@@ -129,7 +129,7 @@ export default ({
       <Component initialState={initialState}>
         {s => (
           <div className={`sqonBuilder`}>
-            <div>
+            <div className={`actionHeaderContainer`}>
               <div>
                 <span>Combine Queries: </span>
                 <span>
