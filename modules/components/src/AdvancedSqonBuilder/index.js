@@ -119,7 +119,7 @@ export default ({
   };
   const onFieldOpRemoved = sqonIndex => removedPath => {
     dispatchSqonListChange(
-      syntheticSqons.map(resolveSyntheticSqon(syntheticSqons)).map((sq, i) => {
+      syntheticSqons.map((sq, i) => {
         return i === sqonIndex ? removeSqonPath(removedPath)(sq) : sq;
       }),
     );

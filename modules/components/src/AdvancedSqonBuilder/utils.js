@@ -1,5 +1,7 @@
 import React from 'react';
 import { cloneDeep } from 'lodash';
+import { view, set, lensPath as lens } from 'ramda';
+import { flattenDeep } from 'lodash';
 
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
 export const FIELD_OP = ['in', '>=', '<='];
@@ -32,7 +34,7 @@ export const isFieldOp = sqonObj =>
 export const resolveSyntheticSqon = allSqons => syntheticSqon => {
   if (isEmptySqon(syntheticSqon)) {
     return syntheticSqon;
-  } else if (BOOLEAN_OPS.includes(syntheticSqon.op)) {
+  } else if (isBooleanOp(syntheticSqon)) {
     return {
       ...syntheticSqon,
       content: syntheticSqon.content
@@ -104,10 +106,34 @@ export const getSqonAtPath = paths => sqon => {
     : sqon;
 };
 
+/**
+ * Non-mutative removal of an object at location 'paths' in 'sqon', using lens (refer to https://ramdajs.com/docs/#lens)
+ * @param {[Number]} paths
+ * @param {*} sqon
+ */
 export const removeSqonPath = paths => sqon => {
-  const [currentPath, ...rest] = paths;
-  console.log(getSqonAtPath(paths)(sqon));
-  return sqon;
+  // creates the target lens
+  const lensPath = flattenDeep(paths.map(path => ['content', path]));
+  const targetLens = lens(lensPath);
+
+  // creates lens to the immediate parent of target
+  const parentPath = flattenDeep(
+    paths
+      .slice(paths.length - 2, paths.length - 1)
+      .map(path => ['content', path]),
+  );
+  const parentLens = lens(parentPath);
+
+  // get reference to target and its immediate parent
+  const removeTarget = view(targetLens, sqon);
+  const parent = view(parentLens, sqon);
+
+  // returns the modified structure with removeTarget filtered out
+  return set(
+    parentLens,
+    { ...parent, content: parent.content.filter(c => c !== removeTarget) },
+    sqon,
+  );
 };
 
 export const DisplayNameMapContext = React.createContext({});
