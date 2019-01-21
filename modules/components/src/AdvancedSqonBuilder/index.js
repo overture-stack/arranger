@@ -7,6 +7,7 @@ import {
   duplicateSqonAtIndex,
   isEmptySqon,
   DisplayNameMapContext,
+  removeSqonPath,
 } from './utils';
 import './style.css';
 
@@ -116,6 +117,13 @@ export default ({
       ),
     });
   };
+  const onFieldOpRemoved = sqonIndex => removedPath => {
+    dispatchSqonListChange(
+      syntheticSqons.map(resolveSyntheticSqon(syntheticSqons)).map((sq, i) => {
+        return i === sqonIndex ? removeSqonPath(removedPath)(sq) : sq;
+      }),
+    );
+  };
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
@@ -148,6 +156,7 @@ export default ({
                 key={i}
                 index={i}
                 allSyntheticSqons={syntheticSqons}
+                onFieldOpRemove={onFieldOpRemoved(i)}
                 syntheticSqon={sq}
                 isActiveSqon={i === activeSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}

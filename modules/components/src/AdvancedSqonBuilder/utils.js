@@ -91,4 +91,23 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
   });
 };
 
+/**
+ * Paths are in the format [1, 3, 4, ...] where each number is a
+ * "content" index of the obj of interest in the sqon tree.
+ **/
+export const getSqonAtPath = paths => sqon => {
+  const [currentPath, ...rest] = paths;
+  return isBooleanOp(sqon)
+    ? sqon.content
+        .filter((c, i) => i === currentPath)
+        .map(getSqonAtPath(rest))[0]
+    : sqon;
+};
+
+export const removeSqonPath = paths => sqon => {
+  const [currentPath, ...rest] = paths;
+  console.log(getSqonAtPath(paths)(sqon));
+  return sqon;
+};
+
 export const DisplayNameMapContext = React.createContext({});

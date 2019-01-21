@@ -43,8 +43,11 @@ const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
   );
 };
 
-const SqonReference = ({ refIndex }) => (
-  <span className={`sqonReference pill`}>{refIndex}</span>
+const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
+  <span className={`sqonReference pill`}>
+    <span className={'sqonReferenceIndex'}>#{refIndex}</span>
+    <PillRemoveButton onClick={onRemoveClick} />
+  </span>
 );
 
 /**
@@ -78,7 +81,10 @@ const BooleanOp = ({
                 <FieldOp sqon={c} onContentRemove={onRemove(currentPath)} />
               </span>
             ) : isReference(c) ? (
-              <SqonReference refIndex={c} />
+              <SqonReference
+                refIndex={c}
+                onRemoveClick={onRemove(currentPath)}
+              />
             ) : isEmptySqon(c) ? (
               <span>oooooo</span>
             ) : null}

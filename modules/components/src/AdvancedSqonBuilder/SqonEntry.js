@@ -12,7 +12,7 @@ export default ({
   isActiveSqon = false,
   isSelected = false,
   index = 0,
-  onFieldOpRemove = console.log,
+  onFieldOpRemove = (sqonPath = []) => {},
 }) => (
   <div className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}>
     <div className={`activeStateIndicator`} />
