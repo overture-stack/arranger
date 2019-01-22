@@ -6,16 +6,26 @@ import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import AdvancedSqonBuilder from '../src/AdvancedSqonBuilder';
 
-const DemoSqonActionComponent = ({ sqonIndex, isActive, isSelected }) => (
-  <div>
-    <button disabled={!isActive} onClick={() => console.log(sqonIndex)}>
-      custom button 1
-    </button>
-    <button disabled={!isActive} onClick={() => console.log(sqonIndex)}>
-      custom button 2
-    </button>
-  </div>
-);
+const DemoSqonActionComponent = ({
+  sqonIndex,
+  isActive,
+  isSelected,
+  isHoverring,
+}) =>
+  !(isHoverring || isActive) && (
+    <div
+      style={{
+        position: 'absolute',
+        right: 0,
+        height: '100%',
+      }}
+    >
+      <div>sqonIndex: {String(sqonIndex)}</div>
+      <div>isActive: {String(isActive)}</div>
+      <div>isSelected: {String(isSelected)}</div>
+      <div>isHoverring: {String(isHoverring)}</div>
+    </div>
+  );
 
 const DemoModal = ({ onOk = () => {}, onCancel = () => {} }) => (
   <div

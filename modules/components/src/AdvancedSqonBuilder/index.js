@@ -23,7 +23,8 @@ export {
 export default ({
   syntheticSqons = [],
   activeSqonIndex = 0,
-  SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
+  SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
+    null,
   onChange = ({ newSyntheticSqons, sqonValues }) => {},
   onActiveSqonSelect = ({ index, sqonValue }) => {},
   fieldDisplayNameMap = {},

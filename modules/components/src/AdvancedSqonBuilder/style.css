@@ -14,10 +14,12 @@
   box-shadow: none;
   border: solid 1px lightgrey;
   color: #008199;
+  cursor: pointer;
 }
 .sqonBuilder .button:disabled {
   background: #f4f5f8;
   color: grey;
+  cursor: unset;
 }
 
 .sqonEntry {
@@ -31,6 +33,28 @@
 }
 .sqonEntry.active {
   background: #e4f1e7;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sqonEntry .actionButtonsContainer {
+  position: absolute;
+  right: 0px;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  padding: 5px;
+  border-left: solid 1px lightgrey;
+  animation: fadeIn 0.25s;
 }
 
 .sqonEntry .activeStateIndicator {
