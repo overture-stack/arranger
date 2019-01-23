@@ -10,6 +10,7 @@ import {
   removeSqonPath,
   changeSqonOpAtPath,
 } from './utils';
+import FieldFilter from './FieldFilter';
 import ClickAwayListener from '../utils/ClickAwayListener.js';
 
 const PillRemoveButton = ({ onClick }) => (
@@ -25,21 +26,13 @@ const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
   </span>
 );
 
-const ValueSelector = ({ value }) => (
-  <span className={'valueDisplay'}>
-    {Array.isArray(value) ? value.join(', ') : value}
-  </span>
-);
-
 const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
   const initialState = { isOpen: false };
   const selectionOptions = ['and', 'or'];
   const onClickAway = s => () => {
     s.setState({ isOpen: false });
   };
-  const onClick = s => () => {
-    s.setState({ isOpen: !s.state.isOpen });
-  };
+  const onClick = s => () => s.setState({ isOpen: !s.state.isOpen });
   const onselect = option => () => onChange(option);
   return (
     <Component initialState={initialState}>
@@ -72,27 +65,50 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
   );
 };
 
-const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
+const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
   const {
     op,
     content: { field, value },
   } = sqon;
+  const initialState = { isOpen: false };
+  const onClickAway = s => () => s.setState({ isOpen: false });
+  const toggleDropdown = s => () => s.setState({ isOpen: !s.state.isOpen });
   const onRemoveClick = () => {
     onContentRemove(sqon);
   };
   return (
     <DisplayNameMapContext.Consumer>
       {(fieldDisplayNameMap = {}) => (
-        <span className={`fieldOp pill`}>
-          <span className={'opContainer'}>
-            <span className={`fieldName`}>
-              {fieldDisplayNameMap[field] || field}{' '}
+        <Component initialState={initialState}>
+          {s => (
+            <span className={`fieldOp pill`}>
+              <span className={'opContainer'}>
+                <span className={`fieldName`}>
+                  {fieldDisplayNameMap[field] || field}{' '}
+                </span>
+                <span className={`opName`}>{op} </span>
+              </span>
+              <ClickAwayListener
+                className={'selectionContainer'}
+                handler={onClickAway(s)}
+              >
+                <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
+                  {Array.isArray(value) ? value.join(', ') : value}{' '}
+                </span>
+                <span
+                  onClick={toggleDropdown(s)}
+                  className={`fa fa-chevron-${s.state.isOpen ? 'up' : 'down'}`}
+                />
+                {s.state.isOpen && (
+                  <div className={`fieldFilterContainer`}>
+                    <FieldFilter sqon={fullSyntheticSqon} />
+                  </div>
+                )}
+              </ClickAwayListener>
+              <PillRemoveButton onClick={onRemoveClick} />
             </span>
-            <span className={`opName`}>{op} </span>
-          </span>
-          <ValueSelector value={value} />
-          <PillRemoveButton onClick={onRemoveClick} />
-        </span>
+          )}
+        </Component>
       )}
     </DisplayNameMapContext.Consumer>
   );
@@ -106,10 +122,12 @@ const BooleanOp = ({
   contentPath = [],
   onFieldOpRemove = path => {},
   onChange = (changedPath, newOpName) => {},
-  sqon: { op, content },
+  sqon,
+  fullSyntheticSqon = sqon,
 }) => {
-  const onRemove = path => () => onFieldOpRemove(path);
+  const { op, content } = sqon;
   const onOpChange = newOp => onChange(contentPath, newOp);
+  const onRemove = path => () => onFieldOpRemove(path);
   return (
     <span className={`booleanOp`}>
       {content.map((c, i) => {
@@ -121,6 +139,7 @@ const BooleanOp = ({
                 <span>(</span>
                 <BooleanOp
                   sqon={c}
+                  fullSyntheticSqon={fullSyntheticSqon}
                   contentPath={currentPath}
                   onFieldOpRemove={onFieldOpRemove}
                   onChange={onChange}
@@ -129,7 +148,11 @@ const BooleanOp = ({
               </span>
             ) : isFieldOp(c) ? (
               <span>
-                <FieldOp sqon={c} onContentRemove={onRemove(currentPath)} />
+                <FieldOp
+                  sqon={c}
+                  fullSyntheticSqon={fullSyntheticSqon}
+                  onContentRemove={onRemove(currentPath)}
+                />
               </span>
             ) : isReference(c) ? (
               <SqonReference

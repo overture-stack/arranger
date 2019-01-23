@@ -77,6 +77,7 @@
   padding: 2px;
   border-left: solid 1px lightgrey;
   border-right: solid 1px lightgrey;
+  cursor: pointer;
 }
 .sqonEntry.active .selectionContainer {
   background: white;
@@ -100,13 +101,23 @@
   white-space: nowrap;
   flex: 1;
 }
-.sqonView .fieldOp .valueDisplay {
-  padding: 5px;
+.sqonView .fieldOp .selectionContainer {
+  position: relative;
+  padding: 0px;
   max-width: 150px;
+  width: 150px;
+  padding-right: 5px;
+  display: inline-flex;
+  justify-content: space-between;
+}
+.sqonView .fieldOp .valueDisplay {
+  position: relative;
+  padding: 5px;
   display: inline-block;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  flex: 1;
 }
 .sqonView .pillRemoveButton {
   padding: 5px;
@@ -146,4 +157,13 @@
 }
 .sqonView .logicalOpSelector .menuOption:hover {
   background: lightgray;
+}
+.sqonView .fieldFilterContainer {
+  position: absolute;
+  top: 100%;
+  right: 0px;
+  z-index: 1;
+  background: white;
+  border: solid 1px lightgray;
+  cursor: default;
 }
