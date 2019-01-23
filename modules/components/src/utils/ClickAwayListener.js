@@ -10,7 +10,7 @@ export default class ClickAwayListener extends React.Component {
   clickHandler = e => {
     const { handler = () => {} } = this.props;
     if (!this.ref.current.contains(e.target)) {
-      handler();
+      handler(e);
     }
   };
   componentWillMount() {
@@ -20,11 +20,7 @@ export default class ClickAwayListener extends React.Component {
     document.removeEventListener('click', this.clickHandler);
   }
   render() {
-    const { handler, ...rest } = this.props;
-    return (
-      <span {...rest} ref={this.ref}>
-        {this.props.children}
-      </span>
-    );
+    const { handler, ...rest } = this.props; // omits `handler`
+    return <span {...rest} ref={this.ref} />;
   }
 }
