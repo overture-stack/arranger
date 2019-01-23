@@ -86,8 +86,8 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(
-            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
+          content: sqon.content.map(s =>
+            !isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s,
           ),
         };
   });
@@ -134,6 +134,14 @@ export const removeSqonPath = paths => sqon => {
     { ...parent, content: parent.content.filter(c => c !== removeTarget) },
     sqon,
   );
+};
+
+export const changeSqonOpAtPath = (paths, newOpName) => sqon => {
+  const lensPath = flattenDeep(
+    paths.map(path => ['content', path]).concat(['op']),
+  );
+  const targetLens = lens(lensPath);
+  return set(targetLens, newOpName, sqon);
 };
 
 export const DisplayNameMapContext = React.createContext({});

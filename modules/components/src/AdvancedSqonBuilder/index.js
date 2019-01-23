@@ -121,10 +121,10 @@ export default ({
       ),
     });
   };
-  const onFieldOpRemoved = sqonIndex => removedPath => {
+  const onSqonChange = sqonIndex => newSqon => {
     dispatchSqonListChange(
       syntheticSqons.map((sq, i) => {
-        return i === sqonIndex ? removeSqonPath(removedPath)(sq) : sq;
+        return i === sqonIndex ? newSqon : sq;
       }),
     );
   };
@@ -164,11 +164,11 @@ export default ({
                 key={i}
                 index={i}
                 allSyntheticSqons={syntheticSqons}
-                onFieldOpRemove={onFieldOpRemoved(i)}
                 syntheticSqon={sq}
                 isActiveSqon={i === activeSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 SqonActionComponent={SqonActionComponent}
+                onSqonChange={onSqonChange(i)}
                 onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
                 onSqonDuplicate={onSqonDuplicate(i)}
                 onSqonRemove={onSqonRemove(i)}

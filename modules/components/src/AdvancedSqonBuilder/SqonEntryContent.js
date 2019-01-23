@@ -1,4 +1,5 @@
 import React from 'react';
+import Component from 'react-component-component';
 import {
   resolveSyntheticSqon,
   isReference,
@@ -6,11 +7,21 @@ import {
   isFieldOp,
   isEmptySqon,
   DisplayNameMapContext,
+  removeSqonPath,
+  changeSqonOpAtPath,
 } from './utils';
+import ClickAwayListener from '../utils/ClickAwayListener.js';
 
 const PillRemoveButton = ({ onClick }) => (
   <span className={`pillRemoveButton`} onClick={onClick}>
     ✕
+  </span>
+);
+
+const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
+  <span className={`sqonReference pill`}>
+    <span className={'content sqonReferenceIndex'}>#{refIndex}</span>
+    <PillRemoveButton onClick={onRemoveClick} />
   </span>
 );
 
@@ -20,8 +31,52 @@ const ValueSelector = ({ value }) => (
   </span>
 );
 
+const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
+  const initialState = { isOpen: false };
+  const selectionOptions = ['and', 'or'];
+  const onClickAway = s => () => {
+    s.setState({ isOpen: false });
+  };
+  const onClick = s => () => {
+    s.setState({ isOpen: !s.state.isOpen });
+  };
+  const onselect = option => () => onChange(option);
+  return (
+    <Component initialState={initialState}>
+      {s => (
+        <ClickAwayListener handler={onClickAway(s)}>
+          <span className={'pill logicalOpSelector'} onClick={onClick(s)}>
+            <span className={'content'}>
+              {opName}{' '}
+              <span
+                className={`fa fa-chevron-${s.state.isOpen ? 'up' : 'down'}`}
+              />
+            </span>
+            {s.state.isOpen && (
+              <div className={`menuContainer`}>
+                {selectionOptions.map(option => (
+                  <div
+                    key={option}
+                    onClick={onselect(option)}
+                    className={`menuOption`}
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
+          </span>
+        </ClickAwayListener>
+      )}
+    </Component>
+  );
+};
+
 const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
-  const { op, content: { field, value } } = sqon;
+  const {
+    op,
+    content: { field, value },
+  } = sqon;
   const onRemoveClick = () => {
     onContentRemove(sqon);
   };
@@ -43,13 +98,6 @@ const FieldOp = ({ onContentRemove = () => {}, sqon }) => {
   );
 };
 
-const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
-  <span className={`sqonReference pill`}>
-    <span className={'sqonReferenceIndex'}>#{refIndex}</span>
-    <PillRemoveButton onClick={onRemoveClick} />
-  </span>
-);
-
 /**
  * BooleanOp handles nested sqons through recursive rendering.
  * This will be useful for supporting brackets later.
@@ -57,9 +105,11 @@ const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
 const BooleanOp = ({
   contentPath = [],
   onFieldOpRemove = path => {},
+  onChange = (changedPath, newOpName) => {},
   sqon: { op, content },
 }) => {
   const onRemove = path => () => onFieldOpRemove(path);
+  const onOpChange = newOp => onChange(contentPath, newOp);
   return (
     <span className={`booleanOp`}>
       {content.map((c, i) => {
@@ -73,6 +123,7 @@ const BooleanOp = ({
                   sqon={c}
                   contentPath={currentPath}
                   onFieldOpRemove={onFieldOpRemove}
+                  onChange={onChange}
                 />
                 <span>)</span>
               </span>
@@ -88,7 +139,9 @@ const BooleanOp = ({
             ) : isEmptySqon(c) ? (
               <span>oooooo</span>
             ) : null}
-            {i < content.length - 1 && <span> {op} </span>}
+            {i < content.length - 1 && (
+              <LogicalOpSelector opName={op} onChange={onOpChange} />
+            )}
           </span>
         );
       })}
@@ -96,8 +149,11 @@ const BooleanOp = ({
   );
 };
 
-export default ({ syntheticSqon, onFieldOpRemove, allSyntheticSqons = [] }) => {
-  const compiledSqon = resolveSyntheticSqon(allSyntheticSqons)(syntheticSqon);
+export default ({ syntheticSqon, onSqonChange, allSyntheticSqons = [] }) => {
+  const onFieldOpRemove = removedPath =>
+    onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
+  const onLogicalOpChanged = (changedPath, newOpName) =>
+    onSqonChange(changeSqonOpAtPath(changedPath, newOpName)(syntheticSqon));
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <div className={`sqonView`}>
@@ -105,6 +161,7 @@ export default ({ syntheticSqon, onFieldOpRemove, allSyntheticSqons = [] }) => {
           <BooleanOp
             index={0}
             onFieldOpRemove={onFieldOpRemove}
+            onChange={onLogicalOpChanged}
             sqon={syntheticSqon}
           />
         )}

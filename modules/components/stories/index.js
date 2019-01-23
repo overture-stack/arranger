@@ -6,4 +6,4 @@ import './Aggs';
 import './Treeview';
 import './AdvancedFacetView';
 import './Tabs';
-import './AdvancedSqonBuilder';
+import './AdvancedSqonBuilder/index.js';

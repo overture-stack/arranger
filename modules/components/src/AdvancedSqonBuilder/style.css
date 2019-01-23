@@ -123,6 +123,27 @@
   border-radius: 10px;
   background: white;
 }
-.sqonView .sqonReferenceIndex {
+.sqonView .pill .content {
   padding: 5px;
+}
+
+.sqonView .logicalOpSelector {
+  position: relative;
+  cursor: pointer;
+}
+.sqonView .logicalOpSelector .content {
+  text-transform: uppercase;
+}
+.sqonView .logicalOpSelector .menuContainer {
+  position: absolute;
+  top: 100%;
+  background: white;
+  border: solid 1px lightgrey;
+  z-index: 1;
+}
+.sqonView .logicalOpSelector .menuOption {
+  padding: 5px 10px;
+}
+.sqonView .logicalOpSelector .menuOption:hover {
+  background: lightgray;
 }

@@ -3,8 +3,9 @@ import Component from 'react-component-component';
 //$FlowIgnore
 import { action } from '@storybook/addon-actions';
 import { storiesOf } from '@storybook/react';
-import { themeDecorator } from './decorators';
-import AdvancedSqonBuilder from '../src/AdvancedSqonBuilder';
+import { themeDecorator } from '../decorators';
+import AdvancedSqonBuilder from '../../src/AdvancedSqonBuilder';
+import { sqons as mockSqons } from './mocks';
 
 const DemoSqonActionComponent = ({
   sqonIndex,
@@ -55,45 +56,7 @@ storiesOf('AdvancedSqonBuilder', module)
     const initialState = {
       activeSqonIndex: 0,
       ModalComponent: null,
-      syntheticSqons: [
-        {
-          op: 'and',
-          content: [
-            { op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } },
-          ],
-        },
-        {
-          op: 'or',
-          content: [
-            {
-              op: 'in',
-              content: {
-                field: 'participants.diagnoses.diagnosis_category',
-                value: ['Cancer'],
-              },
-            },
-            {
-              op: 'in',
-              content: {
-                field: 'participants.phenotype.hpo_phenotype_observed_text',
-                value: [
-                  'Abnormality of nervous system physiology (HP:0012638)',
-                ],
-              },
-            },
-            {
-              op: 'in',
-              content: {
-                field: 'participants.study.short_name',
-                value: [
-                  'Ewing Sarcoma: Genetic Risk',
-                  'Pediatric Brain Tumors: CBTTC',
-                ],
-              },
-            },
-          ],
-        },
-      ],
+      syntheticSqons: mockSqons,
     };
     const fieldDisplayNameMap = {
       'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
@@ -149,4 +112,13 @@ storiesOf('AdvancedSqonBuilder', module)
         )}
       </Component>
     );
+  })
+  .add('filters/TermFilter', () => {
+    return <div>add TermFilter</div>;
+  })
+  .add('filters/Booleanfilter', () => {
+    return <div>add Booleanfilter</div>;
+  })
+  .add('filters/RangeFilter', () => {
+    return <div>add RangeFilter</div>;
   });

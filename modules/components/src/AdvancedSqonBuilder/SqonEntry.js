@@ -9,11 +9,11 @@ export default ({
   onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
   onSqonRemove = () => {},
+  onSqonChange = sqon => {},
   onDisabledOverlayClick = () => {},
   isActiveSqon = false,
   isSelected = false,
   index = 0,
-  onFieldOpRemove = (sqonPath = []) => {},
 }) => {
   const initialState = {
     hoverring: false,
@@ -50,7 +50,7 @@ export default ({
             <SqonEntryContent
               syntheticSqon={syntheticSqon}
               allSyntheticSqons={allSyntheticSqons}
-              onFieldOpRemove={onFieldOpRemove}
+              onSqonChange={onSqonChange}
             />
           </div>
           <div
