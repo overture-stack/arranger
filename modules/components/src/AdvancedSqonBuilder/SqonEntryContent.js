@@ -71,16 +71,18 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
     content: { field, value },
   } = sqon;
   const initialState = { isOpen: false };
-  const onClickAway = s => () => s.setState({ isOpen: false });
+  const onClickAway = s => () => {
+    s.setState({ isOpen: false });
+  };
   const toggleDropdown = s => () => s.setState({ isOpen: !s.state.isOpen });
   const onRemoveClick = () => {
     onContentRemove(sqon);
   };
   return (
-    <DisplayNameMapContext.Consumer>
-      {(fieldDisplayNameMap = {}) => (
-        <Component initialState={initialState}>
-          {s => (
+    <Component initialState={initialState}>
+      {s => (
+        <DisplayNameMapContext.Consumer>
+          {(fieldDisplayNameMap = {}) => (
             <span className={`fieldOp pill`}>
               <span className={'opContainer'}>
                 <span className={`fieldName`}>
@@ -104,6 +106,8 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
                     <FieldFilter
                       filterObj={sqon}
                       querySqon={fullSyntheticSqon}
+                      onSubmit={console.log}
+                      onCancel={toggleDropdown(s)}
                     />
                   </div>
                 )}
@@ -111,9 +115,9 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
               <PillRemoveButton onClick={onRemoveClick} />
             </span>
           )}
-        </Component>
+        </DisplayNameMapContext.Consumer>
       )}
-    </DisplayNameMapContext.Consumer>
+    </Component>
   );
 };
 

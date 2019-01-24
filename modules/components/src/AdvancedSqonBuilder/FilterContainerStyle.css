@@ -24,3 +24,6 @@
   border-radius: 100px;
   cursor: pointer;
 }
+.filterContainer .aggregation-card {
+  border: none;
+}
