@@ -163,7 +163,5 @@
   top: 100%;
   right: 0px;
   z-index: 1;
-  background: white;
-  border: solid 1px lightgray;
   cursor: default;
 }

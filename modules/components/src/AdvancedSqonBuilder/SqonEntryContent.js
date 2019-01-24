@@ -101,7 +101,10 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
                 />
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
-                    <FieldFilter sqon={fullSyntheticSqon} />
+                    <FieldFilter
+                      filterObj={sqon}
+                      querySqon={fullSyntheticSqon}
+                    />
                   </div>
                 )}
               </ClickAwayListener>

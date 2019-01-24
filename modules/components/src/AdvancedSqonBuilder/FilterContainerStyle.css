@@ -1,0 +1,26 @@
+.filterContainer {
+  border: solid 1px lightgrey;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+  width: 300px;
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.filterContainer .content {
+  flex: 1;
+  overflow: scroll;
+}
+.filterContainer .Footer {
+  display: flex;
+  background: lightgray;
+  padding: 5px;
+  justify-content: space-between;
+}
+.filterContainer .filterContainerActionButton {
+  border: solid 1px lightgrey;
+  border-radius: 100px;
+  cursor: pointer;
+}
