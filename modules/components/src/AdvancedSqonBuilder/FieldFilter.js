@@ -4,6 +4,7 @@ import { AggsWrapper, TermAgg } from '../Aggs';
 import Component from 'react-component-component';
 import TextFilter from '../TextFilter';
 import { inCurrentSQON } from '../SQONView/utils';
+import { getOperationAtPath, setSqonAtPath } from './utils';
 
 const mockBuckets = [
   { doc_count: 2, key: 'Acute Myeloid Leukemia' },
@@ -43,19 +44,17 @@ const TermAggsWrapper = ({ children }) => (
 );
 
 export default ({
-  filterObj,
-  querySqon,
+  initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
   field,
   value,
   ContainerComponent = FilterContainer,
   InputComponent = TextFilter,
+  sqonPath = [],
 }) => {
-  /**
-   * this component keeps a local sqon to dispatch when submited
-   */
-  const initialState = { searchString: '', localSqon: querySqon };
+  const fieldSqon = getOperationAtPath(sqonPath)(initialSqon);
+  const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
     s.setState({
       searchString: e.value,
@@ -65,12 +64,32 @@ export default ({
     inCurrentSQON({
       value: d.value,
       dotField: d.field,
-      currentSQON: s.state.localSqon,
+      currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
   const onFilterClick = s => ({ generateNextSQON }) => {
     setTimeout(() => {
+      // state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
+      const deltaSqon = generateNextSQON();
+      const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
+      // we're only interested in the new field operation's content value
+      const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+      const existingValue = (currentFieldSqon.content.value || []).find(v =>
+        deltaFiterObjContentValue.includes(v),
+      );
+      const newFieldSqon = {
+        ...currentFieldSqon,
+        content: {
+          ...currentFieldSqon.content,
+          value: [
+            ...(currentFieldSqon.content.value || []).filter(
+              v => v !== existingValue,
+            ),
+            ...(existingValue ? [] : deltaFiterObjContentValue),
+          ],
+        },
+      };
       s.setState({
-        localSqon: generateNextSQON(s.state.localSqon),
+        localSqon: setSqonAtPath(sqonPath, newFieldSqon)(s.state.localSqon),
       });
     }, 0);
   };
@@ -85,7 +104,7 @@ export default ({
           />
           <TermAgg
             WrapperComponent={TermAggsWrapper}
-            field={filterObj.content.field}
+            field={fieldSqon.content.field}
             displayName="Disease Type"
             buckets={mockBuckets.filter(({ key }) =>
               key.includes(s.state.searchString),

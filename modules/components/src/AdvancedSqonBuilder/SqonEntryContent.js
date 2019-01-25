@@ -8,7 +8,8 @@ import {
   isEmptySqon,
   DisplayNameMapContext,
   removeSqonPath,
-  changeSqonOpAtPath,
+  setSqonAtPath,
+  getOperationAtPath,
 } from './utils';
 import FieldFilter from './FieldFilter';
 import ClickAwayListener from '../utils/ClickAwayListener.js';
@@ -65,18 +66,28 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
   );
 };
 
-const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
+const FieldOp = ({
+  onSqonChange = fullSqon => {},
+  onContentRemove = () => {},
+  fullSyntheticSqon,
+  sqonPath = [],
+}) => {
+  const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
   const {
     op,
     content: { field, value },
-  } = sqon;
+  } = fieldOpObj;
   const initialState = { isOpen: false };
   const onClickAway = s => () => {
     s.setState({ isOpen: false });
   };
   const toggleDropdown = s => () => s.setState({ isOpen: !s.state.isOpen });
   const onRemoveClick = () => {
-    onContentRemove(sqon);
+    onContentRemove(fieldOpObj);
+  };
+  const onNewSqonSubmitted = s => newSqon => {
+    onSqonChange(newSqon);
+    toggleDropdown(s)();
   };
   return (
     <Component initialState={initialState}>
@@ -104,9 +115,9 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
                     <FieldFilter
-                      filterObj={sqon}
-                      querySqon={fullSyntheticSqon}
-                      onSubmit={console.log}
+                      sqonPath={sqonPath}
+                      initialSqon={fullSyntheticSqon}
+                      onSubmit={onNewSqonSubmitted(s)}
                       onCancel={toggleDropdown(s)}
                     />
                   </div>
@@ -128,12 +139,17 @@ const FieldOp = ({ onContentRemove = () => {}, sqon, fullSyntheticSqon }) => {
 const BooleanOp = ({
   contentPath = [],
   onFieldOpRemove = path => {},
-  onChange = (changedPath, newOpName) => {},
+  onChange = (changedPath, newOp) => {},
   sqon,
   fullSyntheticSqon = sqon,
 }) => {
   const { op, content } = sqon;
-  const onOpChange = newOp => onChange(contentPath, newOp);
+  const onOpChange = newOpName =>
+    onChange(contentPath, {
+      op: newOpName,
+      content,
+    });
+  const onNewSqonSubmit = newSqon => onChange([], newSqon); // FieldOp dispatches a full sqon on change
   const onRemove = path => () => onFieldOpRemove(path);
   return (
     <span className={`booleanOp`}>
@@ -156,9 +172,10 @@ const BooleanOp = ({
             ) : isFieldOp(c) ? (
               <span>
                 <FieldOp
-                  sqon={c}
+                  sqonPath={currentPath}
                   fullSyntheticSqon={fullSyntheticSqon}
                   onContentRemove={onRemove(currentPath)}
+                  onSqonChange={onNewSqonSubmit}
                 />
               </span>
             ) : isReference(c) ? (
@@ -182,8 +199,8 @@ const BooleanOp = ({
 export default ({ syntheticSqon, onSqonChange, allSyntheticSqons = [] }) => {
   const onFieldOpRemove = removedPath =>
     onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
-  const onLogicalOpChanged = (changedPath, newOpName) =>
-    onSqonChange(changeSqonOpAtPath(changedPath, newOpName)(syntheticSqon));
+  const onLogicalOpChanged = (changedPath, newSqon) =>
+    onSqonChange(setSqonAtPath(changedPath, newSqon)(syntheticSqon));
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <div className={`sqonView`}>

@@ -97,12 +97,12 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
  * Paths are in the format [1, 3, 4, ...] where each number is a
  * "content" index of the obj of interest in the sqon tree.
  **/
-export const getSqonAtPath = paths => sqon => {
+export const getOperationAtPath = paths => sqon => {
   const [currentPath, ...rest] = paths;
   return isBooleanOp(sqon)
     ? sqon.content
         .filter((c, i) => i === currentPath)
-        .map(getSqonAtPath(rest))[0]
+        .map(getOperationAtPath(rest))[0]
     : sqon;
 };
 
@@ -142,6 +142,12 @@ export const changeSqonOpAtPath = (paths, newOpName) => sqon => {
   );
   const targetLens = lens(lensPath);
   return set(targetLens, newOpName, sqon);
+};
+
+export const setSqonAtPath = (paths, newSqon) => sqon => {
+  const lensPath = flattenDeep(paths.map(path => ['content', path]));
+  const targetLens = lens(lensPath);
+  return set(targetLens, newSqon, sqon);
 };
 
 export const DisplayNameMapContext = React.createContext({});
