@@ -1,10 +1,12 @@
 import React from 'react';
+import Component from 'react-component-component';
+import { sortBy } from 'lodash';
 import './FilterContainerStyle.css';
 import { AggsWrapper, TermAgg } from '../../Aggs';
-import Component from 'react-component-component';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import { getOperationAtPath, setSqonAtPath } from '../utils';
+import { lensPath, set } from 'ramda';
 
 const mockBuckets = [
   { doc_count: 2, key: 'Acute Myeloid Leukemia' },
@@ -47,8 +49,6 @@ export default ({
   initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
-  field,
-  value,
   ContainerComponent = FilterContainer,
   InputComponent = TextFilter,
   sqonPath = [],
@@ -94,6 +94,16 @@ export default ({
     }, 0);
   };
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const computeBuckets = (s, buckets) =>
+    sortBy(
+      buckets,
+      bucket =>
+        !inCurrentSQON({
+          value: bucket.key,
+          dotField: fieldSqon.content.field,
+          currentSQON: getOperationAtPath(sqonPath)(initialSqon),
+        }),
+    ).filter(({ key }) => key.includes(s.state.searchString));
   return (
     <Component initialState={initialState}>
       {s => (
@@ -106,9 +116,7 @@ export default ({
             WrapperComponent={TermAggsWrapper}
             field={fieldSqon.content.field}
             displayName="Disease Type"
-            buckets={mockBuckets.filter(({ key }) =>
-              key.includes(s.state.searchString),
-            )}
+            buckets={computeBuckets(s, mockBuckets)}
             handleValueClick={onFilterClick(s)}
             isActive={isFilterActive(s)}
           />
