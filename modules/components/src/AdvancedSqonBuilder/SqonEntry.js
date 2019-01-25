@@ -1,6 +1,7 @@
 import React from 'react';
-import SqonEntryContent from './SqonEntryContent/index';
 import Component from 'react-component-component';
+import BooleanOp from './sqonPieces/BooleanOp';
+import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
 
 export default ({
   syntheticSqon,
@@ -28,6 +29,10 @@ export default ({
       hoverring: false,
     });
   };
+  const onFieldOpRemove = removedPath =>
+    onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
+  const onLogicalOpChanged = (changedPath, newSqon) =>
+    onSqonChange(setSqonAtPath(changedPath, newSqon)(syntheticSqon));
   return (
     <Component initialState={initialState}>
       {s => (
@@ -47,11 +52,18 @@ export default ({
             #{index}
           </div>
           <div style={{ flex: 1 }}>
-            <SqonEntryContent
-              syntheticSqon={syntheticSqon}
-              allSyntheticSqons={allSyntheticSqons}
-              onSqonChange={onSqonChange}
-            />
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+              <div className={`sqonView`}>
+                {isBooleanOp(syntheticSqon) && (
+                  <BooleanOp
+                    index={0}
+                    onFieldOpRemove={onFieldOpRemove}
+                    onChange={onLogicalOpChanged}
+                    sqon={syntheticSqon}
+                  />
+                )}
+              </div>
+            </div>
           </div>
           <div
             style={{
