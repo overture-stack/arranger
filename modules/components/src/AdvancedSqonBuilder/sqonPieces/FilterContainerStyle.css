@@ -9,11 +9,17 @@
   display: flex;
   flex-direction: column;
 }
-.filterContainer .content {
+.filterContainer .filterContent {
   flex: 1;
   overflow: scroll;
   display: flex;
   flex-direction: column;
+}
+.filterContainer .contentSection {
+  padding: 7px;
+}
+.filterContainer .termAggContainer {
+  overflow: scroll;
 }
 .filterContainer .searchInputContainer {
   flex-shrink: 0;
@@ -21,9 +27,9 @@
 .filterContainer .Footer {
   display: flex;
   background: lightgray;
-  padding: 5px;
   justify-content: space-between;
   flex-shrink: 0;
+  padding: 5px;
 }
 .filterContainer .filterContainerActionButton {
   border: solid 1px lightgrey;
@@ -31,8 +37,14 @@
   cursor: pointer;
 }
 .filterContainer .aggregation-card {
+  padding: 0px;
   border: none;
-  overflow: scroll;
 }
 .filterContainer .aggsFilterAction {
+  color: #a42c90;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.filterContainer .aggsFilterAction.selectAll {
+  margin-right: 5px;
 }

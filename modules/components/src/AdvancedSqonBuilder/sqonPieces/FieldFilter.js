@@ -35,7 +35,7 @@ const FilterContainer = ({
   children,
 }) => (
   <div className="filterContainer" children={children}>
-    <div className="content">{children}</div>
+    <div className="filterContent">{children}</div>
     <div className="Footer">
       <button
         onClick={onCancel}
@@ -152,20 +152,19 @@ export default ({
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <div className="searchInputContainer">
+          <div className="contentSection searchInputContainer">
             <InputComponent
               value={s.state.searchString}
               onChange={onSearchChange(s)}
             />
           </div>
-          <div>
+          <div className="contentSection termFilterActionContainer">
             <span
               className={`aggsFilterAction selectAll`}
               onClick={onSelectAllClick(s)}
             >
               Select All
-            </span>{' '}
-            {`  `}
+            </span>
             <span
               className={`aggsFilterAction clear`}
               onClick={onClearClick(s)}
@@ -173,15 +172,17 @@ export default ({
               Clear
             </span>
           </div>
-          <TermAgg
-            WrapperComponent={TermAggsWrapper}
-            field={initialFieldSqon.content.field}
-            displayName="Disease Type"
-            buckets={computeBuckets(s, buckets)}
-            handleValueClick={onFilterClick(s)}
-            isActive={isFilterActive(s)}
-            maxTerms={Infinity}
-          />
+          <div className="contentSection termAggContainer">
+            <TermAgg
+              WrapperComponent={TermAggsWrapper}
+              field={initialFieldSqon.content.field}
+              displayName="Disease Type"
+              buckets={computeBuckets(s, buckets)}
+              handleValueClick={onFilterClick(s)}
+              isActive={isFilterActive(s)}
+              maxTerms={5}
+            />
+          </div>
         </ContainerComponent>
       )}
     </Component>
