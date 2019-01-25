@@ -12,7 +12,7 @@ export const sqons = [
         op: 'in',
         content: {
           field: 'participants.diagnoses.diagnosis_category',
-          value: ['Cancer'],
+          value: ['Cancer', 'Acute Myeloid Leukemia'],
         },
       },
       {
@@ -29,6 +29,7 @@ export const sqons = [
           value: [
             'Ewing Sarcoma: Genetic Risk',
             'Pediatric Brain Tumors: CBTTC',
+            'Acute Myeloid Leukemia',
           ],
         },
       },

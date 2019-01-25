@@ -9,12 +9,15 @@ import { getOperationAtPath, setSqonAtPath } from '../utils';
 import { lensPath, set } from 'ramda';
 
 const mockBuckets = [
-  { doc_count: 2, key: 'Acute Myeloid Leukemia' },
-  { doc_count: 10, key: 'Acinar cell neoplasms' },
-  { doc_count: 10, key: 'asfsfgsdfg' },
-  { doc_count: 10, key: 'dhfgbkjnv' },
-  { doc_count: 10, key: 'ugs;jv' },
-  { doc_count: 10, key: 'e568[ohtdnbf' },
+  { doc_count: 2, key: 'GF_9V1MT6CM' },
+  { doc_count: 10, key: 'Cancer' },
+  { doc_count: 10, key: 'Acute Myeloid Leukemia' },
+  {
+    doc_count: 10,
+    key: 'Abnormality of nervous system physiology (HP:0012638)',
+  },
+  { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
+  { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
 ];
 
 const FilterContainer = ({
@@ -119,6 +122,7 @@ export default ({
             buckets={computeBuckets(s, mockBuckets)}
             handleValueClick={onFilterClick(s)}
             isActive={isFilterActive(s)}
+            maxTerms={Infinity}
           />
         </ContainerComponent>
       )}
