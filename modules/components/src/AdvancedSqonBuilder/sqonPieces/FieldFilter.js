@@ -152,7 +152,7 @@ export default ({
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <div className="searInputContainer">
+          <div className="searchInputContainer">
             <InputComponent
               value={s.state.searchString}
               onChange={onSearchChange(s)}
