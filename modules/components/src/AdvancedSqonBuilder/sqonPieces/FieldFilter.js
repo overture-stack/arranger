@@ -2,11 +2,11 @@ import React from 'react';
 import Component from 'react-component-component';
 import { sortBy } from 'lodash';
 import './FilterContainerStyle.css';
-import { AggsWrapper, TermAgg } from '../../Aggs';
+import { getOperationAtPath, setSqonAtPath } from '../utils';
+import { TermAgg } from '../../Aggs';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
-import { getOperationAtPath, setSqonAtPath } from '../utils';
-import { lensPath, set } from 'ramda';
+import { FilterContainer } from './common';
 
 const mockBuckets = [
   { doc_count: 2, key: 'GF_9V1MT6CM' },
@@ -29,35 +29,11 @@ const mockBuckets = [
   { doc_count: 10, key: 'oisheglsknvd' },
 ];
 
-const FilterContainer = ({
-  onSubmit = () => {},
-  onCancel = () => {},
-  children,
-}) => (
-  <div className="filterContainer" children={children}>
-    <div className="filterContent">{children}</div>
-    <div className="Footer">
-      <button
-        onClick={onCancel}
-        className={'filterContainerActionButton cancel'}
-      >
-        Cancel
-      </button>
-      <button
-        onClick={onSubmit}
-        className={'filterContainerActionButton apply'}
-      >
-        Apply
-      </button>
-    </div>
-  </div>
-);
-
 const TermAggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
-export default ({
+const TermFilter = ({
   initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
@@ -188,3 +164,5 @@ export default ({
     </Component>
   );
 };
+
+export default props => <TermFilter />;
