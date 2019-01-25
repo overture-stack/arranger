@@ -12,12 +12,18 @@
 .filterContainer .content {
   flex: 1;
   overflow: scroll;
+  display: flex;
+  flex-direction: column;
+}
+.filterContainer .searInputContainer {
+  flex-shrink: 0;
 }
 .filterContainer .Footer {
   display: flex;
   background: lightgray;
   padding: 5px;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 .filterContainer .filterContainerActionButton {
   border: solid 1px lightgrey;
@@ -26,4 +32,7 @@
 }
 .filterContainer .aggregation-card {
   border: none;
+  overflow: scroll;
+}
+.filterContainer .aggsFilterAction {
 }

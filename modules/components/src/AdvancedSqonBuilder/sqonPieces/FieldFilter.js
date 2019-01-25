@@ -18,6 +18,15 @@ const mockBuckets = [
   },
   { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
   { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
+
+  { doc_count: 10, key: 'assdfgsdgf' },
+  { doc_count: 10, key: 'dhgsd' },
+  { doc_count: 10, key: 's;obdfu' },
+  { doc_count: 10, key: 'eht;dfnvx' },
+  { doc_count: 10, key: ';uegrsndvdfsd' },
+  { doc_count: 10, key: 'oisegrbfv' },
+  { doc_count: 10, key: '45oihesgdlknv' },
+  { doc_count: 10, key: 'oisheglsknvd' },
 ];
 
 const FilterContainer = ({
@@ -55,13 +64,21 @@ export default ({
   ContainerComponent = FilterContainer,
   InputComponent = TextFilter,
   sqonPath = [],
+  buckets = mockBuckets,
 }) => {
-  const fieldSqon = getOperationAtPath(sqonPath)(initialSqon);
+  /**
+   * initialFieldSqon: {
+   *  op: "in" | ">=" | "<=",
+   *  content: {
+   *    field: string,
+   *    value: string,
+   *  }
+   * }
+   */
+  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
-    s.setState({
-      searchString: e.value,
-    });
+    s.setState({ searchString: e.value });
   };
   const isFilterActive = s => d =>
     inCurrentSQON({
@@ -69,6 +86,41 @@ export default ({
       dotField: d.field,
       currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
+  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const computeBuckets = (s, buckets) =>
+    sortBy(
+      buckets,
+      bucket =>
+        !inCurrentSQON({
+          value: bucket.key,
+          dotField: initialFieldSqon.content.field,
+          currentSQON: getOperationAtPath(sqonPath)(initialSqon),
+        }),
+    ).filter(({ key }) => key.includes(s.state.searchString));
+  const onSelectAllClick = s => () => {
+    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        content: {
+          ...currentFieldSqon.content,
+          value: buckets.map(({ key }) => key),
+        },
+      })(s.state.localSqon),
+    });
+  };
+  const onClearClick = s => () => {
+    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        content: {
+          ...currentFieldSqon.content,
+          value: [],
+        },
+      })(s.state.localSqon),
+    });
+  };
   const onFilterClick = s => ({ generateNextSQON }) => {
     setTimeout(() => {
       // state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
@@ -96,30 +148,36 @@ export default ({
       });
     }, 0);
   };
-  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
-  const computeBuckets = (s, buckets) =>
-    sortBy(
-      buckets,
-      bucket =>
-        !inCurrentSQON({
-          value: bucket.key,
-          dotField: fieldSqon.content.field,
-          currentSQON: getOperationAtPath(sqonPath)(initialSqon),
-        }),
-    ).filter(({ key }) => key.includes(s.state.searchString));
   return (
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <InputComponent
-            value={s.state.searchString}
-            onChange={onSearchChange(s)}
-          />
+          <div className="searInputContainer">
+            <InputComponent
+              value={s.state.searchString}
+              onChange={onSearchChange(s)}
+            />
+          </div>
+          <div>
+            <span
+              className={`aggsFilterAction selectAll`}
+              onClick={onSelectAllClick(s)}
+            >
+              Select All
+            </span>{' '}
+            {`  `}
+            <span
+              className={`aggsFilterAction clear`}
+              onClick={onClearClick(s)}
+            >
+              Clear
+            </span>
+          </div>
           <TermAgg
             WrapperComponent={TermAggsWrapper}
-            field={fieldSqon.content.field}
+            field={initialFieldSqon.content.field}
             displayName="Disease Type"
-            buckets={computeBuckets(s, mockBuckets)}
+            buckets={computeBuckets(s, buckets)}
             handleValueClick={onFilterClick(s)}
             isActive={isFilterActive(s)}
             maxTerms={Infinity}
