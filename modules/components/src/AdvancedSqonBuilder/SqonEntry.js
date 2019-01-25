@@ -1,5 +1,5 @@
 import React from 'react';
-import SqonEntryContent from './SqonEntryContent';
+import SqonEntryContent from './SqonEntryContent/index';
 import Component from 'react-component-component';
 
 export default ({

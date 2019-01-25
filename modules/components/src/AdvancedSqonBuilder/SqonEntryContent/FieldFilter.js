@@ -1,10 +1,10 @@
 import React from 'react';
 import './FilterContainerStyle.css';
-import { AggsWrapper, TermAgg } from '../Aggs';
+import { AggsWrapper, TermAgg } from '../../Aggs';
 import Component from 'react-component-component';
-import TextFilter from '../TextFilter';
-import { inCurrentSQON } from '../SQONView/utils';
-import { getOperationAtPath, setSqonAtPath } from './utils';
+import TextFilter from '../../TextFilter';
+import { inCurrentSQON } from '../../SQONView/utils';
+import { getOperationAtPath, setSqonAtPath } from '../utils';
 
 const mockBuckets = [
   { doc_count: 2, key: 'Acute Myeloid Leukemia' },
