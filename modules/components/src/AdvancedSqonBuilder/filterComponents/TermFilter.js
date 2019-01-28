@@ -33,7 +33,13 @@ const TermAggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
-const TermFilter = ({
+const termFilterOpOptions = [
+  { op: 'in', display: 'any of' },
+  // {op: "", display: "all of"},
+  { op: 'not', display: 'none of' },
+];
+
+export default ({
   initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
@@ -41,6 +47,7 @@ const TermFilter = ({
   InputComponent = TextFilter,
   sqonPath = [],
   buckets = mockBuckets,
+  fieldDisplayNameMap = {},
 }) => {
   /**
    * initialFieldSqon: {
@@ -73,6 +80,18 @@ const TermFilter = ({
           currentSQON: getOperationAtPath(sqonPath)(initialSqon),
         }),
     ).filter(({ key }) => key.includes(s.state.searchString));
+  const onOptionTypeChange = s => e => {
+    // const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    // s.setState({
+    //   localSqon: setSqonAtPath(sqonPath, {
+    //     ...currentFieldSqon,
+    //     content: {
+    //       ...currentFieldSqon.content,
+    //       value: buckets.map(({ key }) => key),
+    //     },
+    //   })(s.state.localSqon),
+    // });
+  };
   const onSelectAllClick = s => () => {
     const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
     s.setState({
@@ -128,6 +147,22 @@ const TermFilter = ({
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
+          <div className="contentSection">
+            <span>
+              {fieldDisplayNameMap[initialFieldSqon.content.field] ||
+                initialFieldSqon.content.field}
+            </span>{' '}
+            is{' '}
+            <span className="select">
+              <select onChange={onOptionTypeChange(s)} isOpen={false}>
+                {termFilterOpOptions.map(option => (
+                  <option key={option.op} value={option.op}>
+                    {option.display}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </div>
           <div className="contentSection searchInputContainer">
             <InputComponent
               value={s.state.searchString}
@@ -164,5 +199,3 @@ const TermFilter = ({
     </Component>
   );
 };
-
-export default props => <TermFilter />;

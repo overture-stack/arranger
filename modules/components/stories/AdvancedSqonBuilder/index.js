@@ -4,8 +4,11 @@ import Component from 'react-component-component';
 import { action } from '@storybook/addon-actions';
 import { storiesOf } from '@storybook/react';
 import { themeDecorator } from '../decorators';
-import AdvancedSqonBuilder from '../../src/AdvancedSqonBuilder';
-import { sqons as mockSqons } from './mocks';
+import AdvancedSqonBuilder, { TermFilter } from '../../src/AdvancedSqonBuilder';
+import {
+  sqons as mockSqons,
+  fieldDisplayMap as mockFieldDisplayMap,
+} from './mocks';
 
 const DemoSqonActionComponent = ({
   sqonIndex,
@@ -58,12 +61,6 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const fieldDisplayNameMap = {
-      'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
-      'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
-      'participants.study.short_name': 'Study Short Name',
-      kf_id: 'File ID',
-    };
     const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
       action('sqons change')({ newSyntheticSqons, sqonValues });
       s.setState({ syntheticSqons: newSyntheticSqons });
@@ -83,7 +80,7 @@ storiesOf('AdvancedSqonBuilder', module)
             <AdvancedSqonBuilder
               syntheticSqons={s.state.syntheticSqons}
               activeSqonIndex={s.state.activeSqonIndex}
-              fieldDisplayNameMap={fieldDisplayNameMap}
+              fieldDisplayNameMap={mockFieldDisplayMap}
               onChange={onChange(s)}
               onActiveSqonSelect={onActiveSqonSelect(s)}
               getSqonDeleteConfirmation={({
@@ -114,7 +111,15 @@ storiesOf('AdvancedSqonBuilder', module)
     );
   })
   .add('filters/TermFilter', () => {
-    return <div>add TermFilter</div>;
+    return (
+      <TermFilter
+        sqonPath={[1]}
+        initialSqon={mockSqons[1]}
+        onSubmit={action('submitted')}
+        onCancel={action('canceled')}
+        fieldDisplayNameMap={mockFieldDisplayMap}
+      />
+    );
   })
   .add('filters/Booleanfilter', () => {
     return <div>add Booleanfilter</div>;

@@ -20,6 +20,7 @@ export {
   isBooleanOp,
   isFieldOp,
 } from './utils';
+export { TermFilter } from './filterComponents/index';
 export default ({
   syntheticSqons = [],
   activeSqonIndex = 0,

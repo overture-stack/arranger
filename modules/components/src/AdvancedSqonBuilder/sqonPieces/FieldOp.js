@@ -1,7 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
 import { DisplayNameMapContext, getOperationAtPath } from '../utils';
-import FieldFilter from './FieldFilter';
+import TermFilter from '../filterComponents/TermFilter';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
 
@@ -53,11 +53,12 @@ export default ({
                 />
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
-                    <FieldFilter
+                    <TermFilter
                       sqonPath={sqonPath}
                       initialSqon={fullSyntheticSqon}
                       onSubmit={onNewSqonSubmitted(s)}
                       onCancel={toggleDropdown(s)}
+                      fieldDisplayNameMap={fieldDisplayNameMap}
                     />
                   </div>
                 )}

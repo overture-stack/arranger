@@ -36,3 +36,10 @@ export const sqons = [
     ],
   },
 ];
+
+export const fieldDisplayMap = {
+  'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
+  'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
+  'participants.study.short_name': 'Study Short Name',
+  kf_id: 'File ID',
+};

@@ -8,6 +8,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  font-size: 12px;
 }
 .filterContainer .filterContent {
   flex: 1;
