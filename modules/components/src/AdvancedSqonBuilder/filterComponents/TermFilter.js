@@ -2,7 +2,11 @@ import React from 'react';
 import Component from 'react-component-component';
 import { sortBy } from 'lodash';
 import './FilterContainerStyle.css';
-import { getOperationAtPath, setSqonAtPath } from '../utils';
+import {
+  getOperationAtPath,
+  setSqonAtPath,
+  FIELD_OP_DISPLAY_NAME,
+} from '../utils';
 import { TermAgg } from '../../Aggs';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
@@ -33,11 +37,7 @@ const TermAggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
-const termFilterOpOptions = [
-  { op: 'in', display: 'any of' },
-  // {op: "", display: "all of"},
-  { op: 'not', display: 'none of' },
-];
+const termFilterOpOptions = ['in', 'not-in'];
 
 export default ({
   initialSqon = null,
@@ -48,6 +48,7 @@ export default ({
   sqonPath = [],
   buckets = mockBuckets,
   fieldDisplayNameMap = {},
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
 }) => {
   /**
    * initialFieldSqon: {
@@ -81,16 +82,13 @@ export default ({
         }),
     ).filter(({ key }) => key.includes(s.state.searchString));
   const onOptionTypeChange = s => e => {
-    // const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
-    // s.setState({
-    //   localSqon: setSqonAtPath(sqonPath, {
-    //     ...currentFieldSqon,
-    //     content: {
-    //       ...currentFieldSqon.content,
-    //       value: buckets.map(({ key }) => key),
-    //     },
-    //   })(s.state.localSqon),
-    // });
+    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        op: e.target.value,
+      })(s.state.localSqon),
+    });
   };
   const onSelectAllClick = s => () => {
     const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
@@ -154,10 +152,10 @@ export default ({
             </span>{' '}
             is{' '}
             <span className="select">
-              <select onChange={onOptionTypeChange(s)} isOpen={false}>
+              <select onChange={onOptionTypeChange(s)}>
                 {termFilterOpOptions.map(option => (
-                  <option key={option.op} value={option.op}>
-                    {option.display}
+                  <option key={option} value={option}>
+                    {opDisplayNameMap[option]}
                   </option>
                 ))}
               </select>

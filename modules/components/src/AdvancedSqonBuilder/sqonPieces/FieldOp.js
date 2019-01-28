@@ -1,6 +1,10 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { DisplayNameMapContext, getOperationAtPath } from '../utils';
+import {
+  DisplayNameMapContext,
+  getOperationAtPath,
+  FIELD_OP_DISPLAY_NAME,
+} from '../utils';
 import TermFilter from '../filterComponents/TermFilter';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
@@ -10,6 +14,7 @@ export default ({
   onContentRemove = () => {},
   fullSyntheticSqon,
   sqonPath = [],
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
 }) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
   const {
@@ -38,7 +43,7 @@ export default ({
                 <span className={`fieldName`}>
                   {fieldDisplayNameMap[field] || field}{' '}
                 </span>
-                <span className={`opName`}>{op} </span>
+                <span className={`opName`}> is {opDisplayNameMap[op]} </span>
               </span>
               <ClickAwayListener
                 className={'selectionContainer'}
@@ -59,6 +64,7 @@ export default ({
                       onSubmit={onNewSqonSubmitted(s)}
                       onCancel={toggleDropdown(s)}
                       fieldDisplayNameMap={fieldDisplayNameMap}
+                      opDisplayNameMap={opDisplayNameMap}
                     />
                   </div>
                 )}

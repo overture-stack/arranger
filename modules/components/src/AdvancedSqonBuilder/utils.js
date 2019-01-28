@@ -4,7 +4,13 @@ import { view, set, lensPath as lens } from 'ramda';
 import { flattenDeep } from 'lodash';
 
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
-export const FIELD_OP = ['in', '>=', '<='];
+export const FIELD_OP = ['in', 'not-in', '>=', '<='];
+export const FIELD_OP_DISPLAY_NAME = {
+  in: 'all of',
+  'not-in': 'not',
+  '>=': 'greater than',
+  '<=': 'less than',
+};
 
 /**
  * Utilities for determining the type of sqon object
