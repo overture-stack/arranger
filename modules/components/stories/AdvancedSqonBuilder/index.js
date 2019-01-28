@@ -9,6 +9,7 @@ import {
   sqons as mockSqons,
   fieldDisplayMap as mockFieldDisplayMap,
 } from './mocks';
+import ProjectsProvider from './ProjectsProvider';
 
 const DemoSqonActionComponent = ({
   sqonIndex,
@@ -110,17 +111,31 @@ storiesOf('AdvancedSqonBuilder', module)
       </Component>
     );
   })
-  .add('filters/TermFilter', () => {
-    return (
-      <TermFilter
-        sqonPath={[1]}
-        initialSqon={mockSqons[1]}
-        onSubmit={action('submitted')}
-        onCancel={action('canceled')}
-        fieldDisplayNameMap={mockFieldDisplayMap}
-      />
-    );
-  })
+  .add('filters/TermFilter', () => (
+    <TermFilter
+      initialSqon={mockSqons[1]}
+      sqonPath={[1]}
+      fieldDisplayNameMap={mockFieldDisplayMap}
+      onSubmit={action('submitted')}
+      onCancel={action('canceled')}
+    />
+  ))
+  .add('filters/TermFilterWithData', () => (
+    <ProjectsProvider>
+      {({ project, index }) => (
+        <TermFilter
+          arrangerProjectId={project}
+          arrangerProjectIndex={index}
+          api={undefined}
+          initialSqon={mockSqons[1]}
+          sqonPath={[1]}
+          fieldDisplayNameMap={mockFieldDisplayMap}
+          onSubmit={action('submitted')}
+          onCancel={action('canceled')}
+        />
+      )}
+    </ProjectsProvider>
+  ))
   .add('filters/Booleanfilter', () => {
     return <div>add Booleanfilter</div>;
   })
