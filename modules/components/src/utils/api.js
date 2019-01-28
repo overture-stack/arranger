@@ -12,7 +12,7 @@ const api = ({ endpoint = '', body, headers, method }) =>
 
 export const graphql = body => api({ endpoint: 'graphql', body });
 
-export const fetchExtendedMapping = ({ graphqlField, projectId }) =>
+export const fetchExtendedMapping = ({ graphqlField, projectId, api = api }) =>
   api({
     endpoint: `/${projectId}/graphql`,
     body: {

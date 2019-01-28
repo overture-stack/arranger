@@ -5,9 +5,54 @@ import {
   getOperationAtPath,
   FIELD_OP_DISPLAY_NAME,
 } from '../utils';
-import TermFilter from '../filterComponents/TermFilter';
+import { TermFilter } from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
+import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
+import { default as defaultApi } from '../../utils/api';
+
+const FieldOpModifier = ({
+  sqonPath,
+  initialSqon,
+  onSubmit,
+  onCancel,
+  fieldDisplayNameMap,
+  opDisplayNameMap,
+  ContainerComponent = undefined,
+  api = defaultApi,
+  projectId = 'june_13',
+  graphqlField = 'file',
+  field,
+}) => (
+  <ExtendedMappingProvider
+    api={api}
+    projectId={projectId}
+    graphqlField={graphqlField}
+  >
+    {({ loading, extendedMapping }) => {
+      const fieldExtendedMapping = (extendedMapping || []).find(
+        ({ field: _field }) => field === _field,
+      );
+      const { type } = fieldExtendedMapping || {};
+      return loading ? (
+        'LOADING...'
+      ) : type === 'keyword' ? (
+        <TermFilter
+          loading={loading}
+          sqonPath={sqonPath}
+          initialSqon={initialSqon}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          fieldDisplayNameMap={fieldDisplayNameMap}
+          opDisplayNameMap={opDisplayNameMap}
+          ContainerComponent={ContainerComponent}
+        />
+      ) : (
+        <div>oops, something is wrong</div>
+      );
+    }}
+  </ExtendedMappingProvider>
+);
 
 export default ({
   onSqonChange = fullSqon => {},
@@ -58,7 +103,8 @@ export default ({
                 />
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
-                    <TermFilter
+                    <FieldOpModifier
+                      field={field}
                       sqonPath={sqonPath}
                       initialSqon={fullSyntheticSqon}
                       onSubmit={onNewSqonSubmitted(s)}
