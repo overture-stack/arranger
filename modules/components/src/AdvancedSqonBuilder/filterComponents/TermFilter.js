@@ -39,7 +39,7 @@ const TermAggsWrapper = ({ children }) => (
 
 const termFilterOpOptions = ['in', 'not-in'];
 
-export default ({
+export const TermFilterUI = ({
   initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
@@ -197,3 +197,7 @@ export default ({
     </Component>
   );
 };
+
+export default ({ children, ...rest }) => (
+  <TermFilterUI {...rest}>{children}</TermFilterUI>
+);
