@@ -12,27 +12,6 @@ import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import { FilterContainer } from './common';
 
-const mockBuckets = [
-  { doc_count: 2, key: 'GF_9V1MT6CM' },
-  { doc_count: 10, key: 'Cancer' },
-  { doc_count: 10, key: 'Acute Myeloid Leukemia' },
-  {
-    doc_count: 10,
-    key: 'Abnormality of nervous system physiology (HP:0012638)',
-  },
-  { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
-  { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
-
-  { doc_count: 10, key: 'assdfgsdgf' },
-  { doc_count: 10, key: 'dhgsd' },
-  { doc_count: 10, key: 's;obdfu' },
-  { doc_count: 10, key: 'eht;dfnvx' },
-  { doc_count: 10, key: ';uegrsndvdfsd' },
-  { doc_count: 10, key: 'oisegrbfv' },
-  { doc_count: 10, key: '45oihesgdlknv' },
-  { doc_count: 10, key: 'oisheglsknvd' },
-];
-
 const TermAggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
@@ -198,6 +177,29 @@ export const TermFilterUI = ({
   );
 };
 
+const mockTermBuckets = [
+  { doc_count: 2, key: 'GF_9V1MT6CM' },
+  { doc_count: 10, key: 'Cancer' },
+  { doc_count: 10, key: 'Acute Myeloid Leukemia' },
+  {
+    doc_count: 10,
+    key: 'Abnormality of nervous system physiology (HP:0012638)',
+  },
+  { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
+  { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
+
+  { doc_count: 10, key: 'assdfgsdgf' },
+  { doc_count: 10, key: 'dhgsd' },
+  { doc_count: 10, key: 's;obdfu' },
+  { doc_count: 10, key: 'eht;dfnvx' },
+  { doc_count: 10, key: ';uegrsndvdfsd' },
+  { doc_count: 10, key: 'oisegrbfv' },
+  { doc_count: 10, key: '45oihesgdlknv' },
+  { doc_count: 10, key: 'oisheglsknvd' },
+];
+
 export default ({ children, ...rest }) => (
-  <TermFilterUI {...rest}>{children}</TermFilterUI>
+  <TermFilterUI buckets={mockTermBuckets} {...rest}>
+    {children}
+  </TermFilterUI>
 );

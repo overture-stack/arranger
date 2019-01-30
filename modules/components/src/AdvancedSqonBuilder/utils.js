@@ -4,12 +4,13 @@ import { view, set, lensPath as lens } from 'ramda';
 import { flattenDeep } from 'lodash';
 
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
-export const FIELD_OP = ['in', 'not-in', '>=', '<='];
+export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between'];
 export const FIELD_OP_DISPLAY_NAME = {
   in: 'all of',
   'not-in': 'not',
   '>=': 'greater than',
   '<=': 'less than',
+  between: 'between',
 };
 
 /**
@@ -92,8 +93,8 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(s =>
-            !isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s,
+          content: sqon.content.map(
+            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
           ),
         };
   });

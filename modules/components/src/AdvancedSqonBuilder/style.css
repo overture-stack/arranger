@@ -165,3 +165,10 @@
   z-index: 1;
   cursor: default;
 }
+.sqonView .nestedOpBracket {
+  font-weight: bold;
+  font-size: 15px;
+  color: #008199;
+  padding-left: 3px;
+  padding-right: 3px;
+}

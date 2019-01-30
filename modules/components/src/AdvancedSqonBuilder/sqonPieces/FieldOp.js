@@ -5,11 +5,42 @@ import {
   getOperationAtPath,
   FIELD_OP_DISPLAY_NAME,
 } from '../utils';
-import { TermFilter } from '../filterComponents/index';
+import { TermFilter, RangeFilter } from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
 import { default as defaultApi } from '../../utils/api';
+
+const mockExtendedMapping = [
+  {
+    field: 'participants.diagnoses.diagnosis_category',
+    type: 'keyword',
+  },
+  {
+    field: 'participants.phenotype.hpo_phenotype_observed_text',
+    type: 'keyword',
+  },
+  {
+    field: 'participants.study.short_name',
+    type: 'keyword',
+  },
+  {
+    field: 'kf_id',
+    type: 'keyword',
+  },
+  {
+    field: 'some_numeric_field',
+    type: 'integer',
+  },
+  {
+    field: 'some_other_numeric_field',
+    type: 'integer',
+  },
+  {
+    field: 'another_numeric_field',
+    type: 'integer',
+  },
+];
 
 const FieldOpModifier = ({
   sqonPath,
@@ -30,14 +61,23 @@ const FieldOpModifier = ({
     graphqlField={graphqlField}
   >
     {({ loading, extendedMapping }) => {
-      const fieldExtendedMapping = (extendedMapping || []).find(
+      const fieldExtendedMapping = (mockExtendedMapping || []).find(
         ({ field: _field }) => field === _field,
       );
       const { type } = fieldExtendedMapping || {};
-      return loading ? (
-        'LOADING...'
-      ) : type === 'keyword' ? (
+      return type === 'keyword' ? (
         <TermFilter
+          loading={loading}
+          sqonPath={sqonPath}
+          initialSqon={initialSqon}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          fieldDisplayNameMap={fieldDisplayNameMap}
+          opDisplayNameMap={opDisplayNameMap}
+          ContainerComponent={ContainerComponent}
+        />
+      ) : ['long', 'float', 'integer'].includes(type) ? (
+        <RangeFilter
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -62,10 +102,7 @@ export default ({
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
 }) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
-  const {
-    op,
-    content: { field, value },
-  } = fieldOpObj;
+  const { op, content: { field, value } } = fieldOpObj;
   const initialState = { isOpen: false };
   const onClickAway = s => () => {
     s.setState({ isOpen: false });

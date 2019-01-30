@@ -55,7 +55,7 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
  * BooleanOp handles nested sqons through recursive rendering.
  * This will be useful for supporting brackets later.
  */
-export default ({
+const BooleanOp = ({
   contentPath = [],
   onFieldOpRemove = path => {},
   onChange = (changedPath, newOp) => {},
@@ -78,7 +78,7 @@ export default ({
           <span key={i}>
             {isBooleanOp(c) ? (
               <span>
-                <span>(</span>
+                <span className="nestedOpBracket">(</span>
                 <BooleanOp
                   sqon={c}
                   fullSyntheticSqon={fullSyntheticSqon}
@@ -86,7 +86,7 @@ export default ({
                   onFieldOpRemove={onFieldOpRemove}
                   onChange={onChange}
                 />
-                <span>)</span>
+                <span className="nestedOpBracket">)</span>
               </span>
             ) : isFieldOp(c) ? (
               <span>
@@ -114,3 +114,4 @@ export default ({
     </span>
   );
 };
+export default BooleanOp;
