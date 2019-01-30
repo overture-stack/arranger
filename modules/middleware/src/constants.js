@@ -1,11 +1,14 @@
-// sqon ops
+// logical ops
+export const AND_OP = 'and';
+export const OR_OP = 'or';
+export const NOT_OP = 'not';
+
+// field ops
+export const ALL_OP = 'all';
 export const IN_OP = 'in';
 export const NOT_IN_OP = 'not-in';
 export const SOME_NOT_IN_OP = 'some-not-in';
 export const FILTER_OP = 'filter';
-export const AND_OP = 'and';
-export const OR_OP = 'or';
-export const NOT_OP = 'not';
 export const GT_OP = 'gt';
 export const GTE_OP = 'gte';
 export const LT_OP = 'lt';
@@ -28,6 +31,7 @@ export const OP_ALIASES = {
 export const DATE_FORMAT = 'YYYY-MM-DD';
 
 export const ARRAY_CONTENT = [
+  ALL_OP,
   IN_OP,
   NOT_IN_OP,
   SOME_NOT_IN_OP,

@@ -9,6 +9,7 @@ import {
   REGEX,
   SET_ID,
   MISSING,
+  ALL_OP,
 } from '../constants';
 
 function groupingOptimizer({ op, content }) {
@@ -62,6 +63,17 @@ function normalizeFilters(filter) {
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
+  } else if ([ALL_OP].includes(op)) {
+    return normalizeFilters({
+      op: AND_OP,
+      content: content.value.map(val => ({
+        op: IN_OP,
+        content: {
+          field: content.field,
+          value: [val],
+        },
+      })),
+    });
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {

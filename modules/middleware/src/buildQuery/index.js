@@ -8,6 +8,7 @@ import {
   LT_OP,
   LTE_OP,
   IN_OP,
+  ALL_OP,
   NOT_IN_OP,
   SOME_NOT_IN_OP,
   ES_MUST,
