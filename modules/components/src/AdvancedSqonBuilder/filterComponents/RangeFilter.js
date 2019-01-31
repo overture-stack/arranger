@@ -7,7 +7,6 @@ import {
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
 } from '../utils';
-import { TermAgg } from '../../Aggs';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import { FilterContainer, AggsWrapper } from './common';
@@ -18,7 +17,7 @@ export const RangeFilterUi = ({
   onSubmit = sqon => {},
   onCancel = () => {},
   fieldDisplayNameMap = {},
-  opDisplayNameMap = {},
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
   stats = null,
 }) => {
