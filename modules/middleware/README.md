@@ -6,7 +6,7 @@ A SQON object consists of nested objects of two types: **Operations** and **Valu
 
 Operation objects apply boolean logic to a list of operation objects. They are of the form:
 
-**Combination Operation** which groups one or more filters
+**Combination Operation (aka, Boolean Operation)** which groups one or more filters
 
 ```
 {
