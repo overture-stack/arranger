@@ -75,6 +75,7 @@
     "lodash": "^4.17.4",
     "moment": "^2.21.0",
     "pluralize": "^7.0.0",
+    "ramda": "^0.26.1",
     "react-component-component": "^1.0.1",
     "react-datepicker": "^1.4.1",
     "react-grid-layout": "^0.16.5",
