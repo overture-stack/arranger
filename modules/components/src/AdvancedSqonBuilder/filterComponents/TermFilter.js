@@ -6,6 +6,7 @@ import {
   getOperationAtPath,
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
+  TERM_OPS,
 } from '../utils';
 import { TermAgg } from '../../Aggs';
 import TextFilter from '../../TextFilter';
@@ -15,8 +16,6 @@ import { FilterContainer } from './common';
 const TermAggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
-
-const termFilterOpOptions = ['in', 'not-in'];
 
 export const TermFilterUI = ({
   initialSqon = null,
@@ -132,7 +131,7 @@ export const TermFilterUI = ({
             is{' '}
             <span className="select">
               <select onChange={onOptionTypeChange(s)}>
-                {termFilterOpOptions.map(option => (
+                {TERM_OPS.map(option => (
                   <option key={option} value={option}>
                     {opDisplayNameMap[option]}
                   </option>

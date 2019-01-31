@@ -3,8 +3,13 @@ import { cloneDeep } from 'lodash';
 import { view, set, lensPath as lens } from 'ramda';
 import { flattenDeep } from 'lodash';
 
+/**
+ * todo: these magic sqon values should be centralized across Arranger
+ */
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
 export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between'];
+export const RANGE_OPS = ['>=', '<=', 'between'];
+export const TERM_OPS = ['in', 'not-in'];
 export const FIELD_OP_DISPLAY_NAME = {
   in: 'all of',
   'not-in': 'not',

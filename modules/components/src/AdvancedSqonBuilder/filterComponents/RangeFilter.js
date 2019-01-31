@@ -6,6 +6,7 @@ import {
   getOperationAtPath,
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
+  RANGE_OPS,
 } from '../utils';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
@@ -24,12 +25,28 @@ export const RangeFilterUi = ({
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
   const initialState = { localSqon: initialSqon };
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const onOptionTypeChange = s => e => {
+    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        op: e.target.value,
+      })(s.state.localSqon),
+    });
+  };
 
   return (
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <div>yooo!</div>
+          <select onChange={onOptionTypeChange(s)}>
+            {RANGE_OPS.map(option => (
+              <option key={option} value={option}>
+                {opDisplayNameMap[option]}
+              </option>
+            ))}
+          </select>
         </ContainerComponent>
       )}
     </Component>
