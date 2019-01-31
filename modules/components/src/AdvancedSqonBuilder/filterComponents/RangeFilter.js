@@ -20,6 +20,7 @@ export const RangeFilterUi = ({
   fieldDisplayNameMap = {},
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
+  InputComponent = TextFilter,
   stats = null,
 }) => {
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
@@ -39,7 +40,6 @@ export const RangeFilterUi = ({
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <div>yooo!</div>
           <select onChange={onOptionTypeChange(s)}>
             {RANGE_OPS.map(option => (
               <option key={option} value={option}>
@@ -47,6 +47,10 @@ export const RangeFilterUi = ({
               </option>
             ))}
           </select>
+          <div>
+            <InputComponent type={'number'} />
+            <InputComponent type={'number'} />
+          </div>
         </ContainerComponent>
       )}
     </Component>
