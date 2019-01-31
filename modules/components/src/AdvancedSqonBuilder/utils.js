@@ -11,7 +11,7 @@ export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between'];
 export const RANGE_OPS = ['>=', '<=', 'between'];
 export const TERM_OPS = ['in', 'not-in'];
 export const FIELD_OP_DISPLAY_NAME = {
-  in: 'all of',
+  in: 'any of',
   'not-in': 'not',
   '>=': 'greater than',
   '<=': 'less than',

@@ -1,6 +1,5 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { sortBy } from 'lodash';
 import './FilterContainerStyle.css';
 import {
   getOperationAtPath,
@@ -8,9 +7,7 @@ import {
   FIELD_OP_DISPLAY_NAME,
   RANGE_OPS,
 } from '../utils';
-import TextFilter from '../../TextFilter';
-import { inCurrentSQON } from '../../SQONView/utils';
-import { FilterContainer, AggsWrapper } from './common';
+import { FilterContainer } from './common';
 
 export const RangeFilterUi = ({
   sqonPath = [],
@@ -20,7 +17,7 @@ export const RangeFilterUi = ({
   fieldDisplayNameMap = {},
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
-  InputComponent = TextFilter,
+  InputComponent = props => <input {...props} />,
   stats = null,
 }) => {
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
@@ -35,21 +32,66 @@ export const RangeFilterUi = ({
       })(s.state.localSqon),
     });
   };
+  const onMinimumChange = s => e => {
+    const currentFieldSqon = getCurrentFieldOp(s);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        content: {
+          ...currentFieldSqon.content,
+          value: [e.target.value, currentFieldSqon.content.value[1]],
+        },
+      })(s.state.localSqon),
+    });
+  };
+  const onMaximumChange = s => e => {
+    const currentFieldSqon = getCurrentFieldOp(s);
+    s.setState({
+      localSqon: setSqonAtPath(sqonPath, {
+        ...currentFieldSqon,
+        content: {
+          ...currentFieldSqon.content,
+          value: [currentFieldSqon.content.value[0], e.target.value],
+        },
+      })(s.state.localSqon),
+    });
+  };
+  const getCurrentFieldOp = s =>
+    getOperationAtPath(sqonPath)(s.state.localSqon);
 
   return (
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <select onChange={onOptionTypeChange(s)}>
-            {RANGE_OPS.map(option => (
-              <option key={option} value={option}>
-                {opDisplayNameMap[option]}
-              </option>
-            ))}
-          </select>
           <div>
-            <InputComponent type={'number'} />
-            <InputComponent type={'number'} />
+            <span>
+              {fieldDisplayNameMap[initialFieldSqon.content.field] ||
+                initialFieldSqon.content.field}
+            </span>{' '}
+            is{' '}
+            <select onChange={onOptionTypeChange(s)}>
+              {RANGE_OPS.map(option => (
+                <option
+                  key={option}
+                  value={option}
+                  selected={getCurrentFieldOp(s).op === option}
+                >
+                  {opDisplayNameMap[option]}
+                </option>
+              ))}
+            </select>
+            <div>
+              <InputComponent
+                value={getCurrentFieldOp(s).content.value[0]}
+                type={'number'}
+                onChange={onMinimumChange(s)}
+              />
+              <InputComponent
+                value={getCurrentFieldOp(s).content.value[1]}
+                type={'number'}
+                onChange={onMaximumChange(s)}
+              />
+            </div>
           </div>
         </ContainerComponent>
       )}
@@ -63,8 +105,25 @@ const mockStats = {
   count: 10,
 };
 
-export default ({ children, ...rest }) => (
-  <RangeFilterUi stats={mockStats} {...rest}>
-    {children}
-  </RangeFilterUi>
+export default ({
+  sqonPath = [],
+  initialSqon = null,
+  onSubmit = sqon => {},
+  onCancel = () => {},
+  fieldDisplayNameMap = {},
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  ContainerComponent = FilterContainer,
+  InputComponent = props => <input {...props} />,
+}) => (
+  <RangeFilterUi
+    sqonPath={sqonPath}
+    initialSqon={initialSqon}
+    onSubmit={onSubmit}
+    onCancel={onCancel}
+    fieldDisplayNameMap={fieldDisplayNameMap}
+    opDisplayNameMap={opDisplayNameMap}
+    ContainerComponent={ContainerComponent}
+    InputComponent={InputComponent}
+    stats={mockStats}
+  />
 );

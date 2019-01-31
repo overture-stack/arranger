@@ -13,7 +13,7 @@ import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import { FilterContainer } from './common';
 
-const TermAggsWrapper = ({ children }) => (
+const AggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
@@ -48,6 +48,8 @@ export const TermFilterUI = ({
       dotField: d.field,
       currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
+  const getCurrentFieldOp = s =>
+    getOperationAtPath(sqonPath)(s.state.localSqon);
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const computeBuckets = (s, buckets) =>
     sortBy(
@@ -60,7 +62,7 @@ export const TermFilterUI = ({
         }),
     ).filter(({ key }) => key.includes(s.state.searchString));
   const onOptionTypeChange = s => e => {
-    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
         ...currentFieldSqon,
@@ -69,7 +71,7 @@ export const TermFilterUI = ({
     });
   };
   const onSelectAllClick = s => () => {
-    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
         ...currentFieldSqon,
@@ -81,7 +83,7 @@ export const TermFilterUI = ({
     });
   };
   const onClearClick = s => () => {
-    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+    const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
         ...currentFieldSqon,
@@ -98,7 +100,7 @@ export const TermFilterUI = ({
       const deltaSqon = generateNextSQON();
       const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
       // we're only interested in the new field operation's content value
-      const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
+      const currentFieldSqon = getCurrentFieldOp(s);
       const existingValue = (currentFieldSqon.content.value || []).find(v =>
         deltaFiterObjContentValue.includes(v),
       );
@@ -132,7 +134,11 @@ export const TermFilterUI = ({
             <span className="select">
               <select onChange={onOptionTypeChange(s)}>
                 {TERM_OPS.map(option => (
-                  <option key={option} value={option}>
+                  <option
+                    key={option}
+                    value={option}
+                    selected={getCurrentFieldOp(s).op === option}
+                  >
                     {opDisplayNameMap[option]}
                   </option>
                 ))}
@@ -161,7 +167,7 @@ export const TermFilterUI = ({
           </div>
           <div className="contentSection termAggContainer">
             <TermAgg
-              WrapperComponent={TermAggsWrapper}
+              WrapperComponent={AggsWrapper}
               field={initialFieldSqon.content.field}
               displayName="Disease Type"
               buckets={computeBuckets(s, buckets)}
@@ -197,8 +203,25 @@ const mockTermBuckets = [
   { doc_count: 10, key: 'oisheglsknvd' },
 ];
 
-export default ({ children, ...rest }) => (
-  <TermFilterUI buckets={mockTermBuckets} {...rest}>
-    {children}
-  </TermFilterUI>
+export default ({
+  initialSqon = null,
+  onSubmit = sqon => {},
+  onCancel = () => {},
+  ContainerComponent = FilterContainer,
+  InputComponent = TextFilter,
+  sqonPath = [],
+  fieldDisplayNameMap = {},
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+}) => (
+  <TermFilterUI
+    initialSqon={initialSqon}
+    onSubmit={onSubmit}
+    onCancel={onCancel}
+    ContainerComponent={ContainerComponent}
+    InputComponent={InputComponent}
+    sqonPath={sqonPath}
+    fieldDisplayNameMap={fieldDisplayNameMap}
+    opDisplayNameMap={opDisplayNameMap}
+    buckets={mockTermBuckets}
+  />
 );

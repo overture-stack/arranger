@@ -23,7 +23,3 @@ export const FilterContainer = ({
     </div>
   </div>
 );
-
-export const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
