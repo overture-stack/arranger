@@ -20,11 +20,4 @@ export { default as TextHighlight } from '../TextHighlight';
 export {
   default as AdvancedSqonBuilder,
   FieldOpModifier,
-  resolveSyntheticSqon,
-  removeSqonAtIndex,
-  duplicateSqonAtIndex,
-  isReference,
-  isValueObj,
-  isBooleanOp,
-  isFieldOp,
 } from '../AdvancedSqonBuilder';

@@ -183,7 +183,7 @@ const AdvancedSqonBuilder = ({
 };
 
 AdvancedSqonBuilder.propTypes = {
-  arrangerProjectId: PropTypes.string.isRequired,
+  arrangerProjectId: PropTypes.string,
   arrangerProjectIndex: PropTypes.string.isRequired,
   syntheticSqons: PropTypes.arrayOf(PropTypes.object),
   activeSqonIndex: PropTypes.number,
