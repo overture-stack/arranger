@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import TermFilter from './TermFilter';
 import RangeFilter from './RangeFilter';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
@@ -8,30 +9,7 @@ import { PROJECT_ID } from '../../utils/config';
 export { default as TermFilter } from './TermFilter';
 export { default as RangeFilter } from './RangeFilter';
 
-const mockExtendedMapping = [
-  {
-    field: 'participants.diagnoses.diagnosis_category',
-    type: 'keyword',
-  },
-  {
-    field: 'participants.phenotype.hpo_phenotype_observed_text',
-    type: 'keyword',
-  },
-  {
-    field: 'participants.study.short_name',
-    type: 'keyword',
-  },
-  {
-    field: 'kf_id',
-    type: 'keyword',
-  },
-  {
-    field: 'size',
-    type: 'integer',
-  },
-];
-
-export default ({
+const FieldOpModifier = ({
   sqonPath,
   initialSqon,
   onSubmit,
@@ -50,12 +28,10 @@ export default ({
     graphqlField={arrangerProjectIndex}
   >
     {({ loading, extendedMapping }) => {
-      console.log('extendedMapping: ', extendedMapping);
       const fieldExtendedMapping = (extendedMapping || []).find(
         ({ field: _field }) => field === _field,
       );
       const { type } = fieldExtendedMapping || {};
-      console.log('fieldExtendedMapping: ', fieldExtendedMapping);
       return ['keyword', 'id'].includes(type) ? (
         <TermFilter
           field={field}
@@ -88,3 +64,19 @@ export default ({
     }}
   </ExtendedMappingProvider>
 );
+
+FieldOpModifier.prototype = {
+  sqonPath: PropTypes.arrayOf(PropTypes.number),
+  initialSqon: PropTypes.object,
+  onSubmit: PropTypes.func,
+  onCancel: PropTypes.func,
+  fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  opDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  ContainerComponent: PropTypes.any,
+  api: PropTypes.func,
+  field: PropTypes.string,
+  arrangerProjectId: PropTypes.string,
+  arrangerProjectIndex: PropTypes.string.isRequired,
+};
+
+export default FieldOpModifier;

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Component from 'react-component-component';
 import { PROJECT_ID } from '../utils/config';
 import SqonEntry from './SqonEntry';
@@ -10,17 +11,7 @@ import {
 } from './utils';
 import './style.css';
 
-export {
-  resolveSyntheticSqon,
-  removeSqonAtIndex,
-  duplicateSqonAtIndex,
-  isReference,
-  isValueObj,
-  isBooleanOp,
-  isFieldOp,
-} from './utils';
-export { default as FieldOpModifier } from './filterComponents/index';
-export default ({
+const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   syntheticSqons = [],
@@ -190,3 +181,29 @@ export default ({
     </DisplayNameMapContext.Provider>
   );
 };
+
+AdvancedSqonBuilder.propTypes = {
+  arrangerProjectId: PropTypes.string.isRequired,
+  arrangerProjectIndex: PropTypes.string.isRequired,
+  syntheticSqons: PropTypes.arrayOf(PropTypes.object),
+  activeSqonIndex: PropTypes.number,
+  FieldOpModifierContainer: PropTypes.any,
+  SqonActionComponent: PropTypes.any,
+  onChange: PropTypes.func,
+  onActiveSqonSelect: PropTypes.func,
+  fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  ButtonComponent: PropTypes.any,
+  getSqonDeleteConfirmation: PropTypes.func,
+};
+
+export default AdvancedSqonBuilder;
+export {
+  resolveSyntheticSqon,
+  removeSqonAtIndex,
+  duplicateSqonAtIndex,
+  isReference,
+  isValueObj,
+  isBooleanOp,
+  isFieldOp,
+} from './utils';
+export { default as FieldOpModifier } from './filterComponents/index';
