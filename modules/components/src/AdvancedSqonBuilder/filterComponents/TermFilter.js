@@ -10,7 +10,7 @@ import {
   FIELD_OP_DISPLAY_NAME,
   TERM_OPS,
 } from '../utils';
-import { TermAgg } from '../../Aggs';
+import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import defaultApi from '../../utils/api';
