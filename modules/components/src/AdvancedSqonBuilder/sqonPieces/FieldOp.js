@@ -5,94 +5,10 @@ import {
   getOperationAtPath,
   FIELD_OP_DISPLAY_NAME,
 } from '../utils';
-import { TermFilter, RangeFilter } from '../filterComponents/index';
+import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
-import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
-import { default as defaultApi } from '../../utils/api';
-
-const mockExtendedMapping = [
-  {
-    field: 'participants.diagnoses.diagnosis_category',
-    type: 'keyword',
-  },
-  {
-    field: 'participants.phenotype.hpo_phenotype_observed_text',
-    type: 'keyword',
-  },
-  {
-    field: 'participants.study.short_name',
-    type: 'keyword',
-  },
-  {
-    field: 'kf_id',
-    type: 'keyword',
-  },
-  {
-    field: 'some_numeric_field',
-    type: 'integer',
-  },
-  {
-    field: 'some_other_numeric_field',
-    type: 'integer',
-  },
-  {
-    field: 'another_numeric_field',
-    type: 'integer',
-  },
-];
-
-const FieldOpModifier = ({
-  sqonPath,
-  initialSqon,
-  onSubmit,
-  onCancel,
-  fieldDisplayNameMap,
-  opDisplayNameMap,
-  ContainerComponent = undefined,
-  api = defaultApi,
-  projectId = 'june_13',
-  graphqlField = 'file',
-  field,
-}) => (
-  <ExtendedMappingProvider
-    api={api}
-    projectId={projectId}
-    graphqlField={graphqlField}
-  >
-    {({ loading, extendedMapping }) => {
-      const fieldExtendedMapping = (mockExtendedMapping || []).find(
-        ({ field: _field }) => field === _field,
-      );
-      const { type } = fieldExtendedMapping || {};
-      return type === 'keyword' ? (
-        <TermFilter
-          loading={loading}
-          sqonPath={sqonPath}
-          initialSqon={initialSqon}
-          onSubmit={onSubmit}
-          onCancel={onCancel}
-          fieldDisplayNameMap={fieldDisplayNameMap}
-          opDisplayNameMap={opDisplayNameMap}
-          ContainerComponent={ContainerComponent}
-        />
-      ) : ['long', 'float', 'integer'].includes(type) ? (
-        <RangeFilter
-          loading={loading}
-          sqonPath={sqonPath}
-          initialSqon={initialSqon}
-          onSubmit={onSubmit}
-          onCancel={onCancel}
-          fieldDisplayNameMap={fieldDisplayNameMap}
-          opDisplayNameMap={opDisplayNameMap}
-          ContainerComponent={ContainerComponent}
-        />
-      ) : (
-        <div>oops, something is wrong</div>
-      );
-    }}
-  </ExtendedMappingProvider>
-);
+import { PROJECT_ID } from '../../utils/config';
 
 export default ({
   onSqonChange = fullSqon => {},
@@ -100,9 +16,15 @@ export default ({
   fullSyntheticSqon,
   sqonPath = [],
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
+  FieldOpModifierContainer = undefined,
 }) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
-  const { op, content: { field, value } } = fieldOpObj;
+  const {
+    op,
+    content: { field, value },
+  } = fieldOpObj;
   const initialState = { isOpen: false };
   const onClickAway = s => () => {
     s.setState({ isOpen: false });
@@ -141,6 +63,8 @@ export default ({
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
                     <FieldOpModifier
+                      arrangerProjectId={arrangerProjectId}
+                      arrangerProjectIndex={arrangerProjectIndex}
                       field={field}
                       sqonPath={sqonPath}
                       initialSqon={fullSyntheticSqon}
@@ -148,6 +72,7 @@ export default ({
                       onCancel={toggleDropdown(s)}
                       fieldDisplayNameMap={fieldDisplayNameMap}
                       opDisplayNameMap={opDisplayNameMap}
+                      ContainerComponent={FieldOpModifierContainer}
                     />
                   </div>
                 )}

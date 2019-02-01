@@ -10,6 +10,7 @@ import {
 import { FilterContainer } from './common';
 
 export const RangeFilterUi = ({
+  field = '',
   sqonPath = [],
   initialSqon = null,
   onSubmit = sqon => {},
@@ -18,9 +19,11 @@ export const RangeFilterUi = ({
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
   InputComponent = props => <input {...props} />,
-  stats = null,
 }) => {
-  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
+  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
+    op: '<=',
+    content: { value: [], field },
+  };
   const initialState = { localSqon: initialSqon };
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const onOptionTypeChange = s => e => {
@@ -99,12 +102,6 @@ export const RangeFilterUi = ({
   );
 };
 
-const mockStats = {
-  max: 20,
-  min: 1,
-  count: 10,
-};
-
 export default ({
   sqonPath = [],
   initialSqon = null,
@@ -114,16 +111,17 @@ export default ({
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
   InputComponent = props => <input {...props} />,
-}) => (
-  <RangeFilterUi
-    sqonPath={sqonPath}
-    initialSqon={initialSqon}
-    onSubmit={onSubmit}
-    onCancel={onCancel}
-    fieldDisplayNameMap={fieldDisplayNameMap}
-    opDisplayNameMap={opDisplayNameMap}
-    ContainerComponent={ContainerComponent}
-    InputComponent={InputComponent}
-    stats={mockStats}
-  />
-);
+}) => {
+  return (
+    <RangeFilterUi
+      ContainerComponent={ContainerComponent}
+      sqonPath={sqonPath}
+      initialSqon={initialSqon}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+      fieldDisplayNameMap={fieldDisplayNameMap}
+      opDisplayNameMap={opDisplayNameMap}
+      InputComponent={InputComponent}
+    />
+  );
+};

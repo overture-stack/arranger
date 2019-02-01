@@ -4,6 +4,7 @@ import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
 import FieldOp from './FieldOp';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
+import { PROJECT_ID } from '../../utils/config';
 
 const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
   <span className={`sqonReference pill`}>
@@ -56,11 +57,14 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
  * This will be useful for supporting brackets later.
  */
 const BooleanOp = ({
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
   contentPath = [],
   onFieldOpRemove = path => {},
   onChange = (changedPath, newOp) => {},
   sqon,
   fullSyntheticSqon = sqon,
+  FieldOpModifierContainer = undefined,
 }) => {
   const { op, content } = sqon;
   const onOpChange = newOpName =>
@@ -80,21 +84,27 @@ const BooleanOp = ({
               <span>
                 <span className="nestedOpBracket">(</span>
                 <BooleanOp
+                  arrangerProjectId={arrangerProjectId}
+                  arrangerProjectIndex={arrangerProjectIndex}
                   sqon={c}
                   fullSyntheticSqon={fullSyntheticSqon}
                   contentPath={currentPath}
                   onFieldOpRemove={onFieldOpRemove}
                   onChange={onChange}
+                  FieldOpModifierContainer={FieldOpModifierContainer}
                 />
                 <span className="nestedOpBracket">)</span>
               </span>
             ) : isFieldOp(c) ? (
               <span>
                 <FieldOp
+                  arrangerProjectId={arrangerProjectId}
+                  arrangerProjectIndex={arrangerProjectIndex}
                   sqonPath={currentPath}
                   fullSyntheticSqon={fullSyntheticSqon}
                   onContentRemove={onRemove(currentPath)}
                   onSqonChange={onNewSqonSubmit}
+                  FieldOpModifierContainer={FieldOpModifierContainer}
                 />
               </span>
             ) : isReference(c) ? (

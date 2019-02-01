@@ -1,13 +1,12 @@
 import React from 'react';
 import Component from 'react-component-component';
+import { PROJECT_ID } from '../utils/config';
 import SqonEntry from './SqonEntry';
 import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
   duplicateSqonAtIndex,
-  isEmptySqon,
   DisplayNameMapContext,
-  removeSqonPath,
 } from './utils';
 import './style.css';
 
@@ -20,10 +19,13 @@ export {
   isBooleanOp,
   isFieldOp,
 } from './utils';
-export { TermFilter } from './filterComponents/index';
+export { default as FieldOpModifier } from './filterComponents/index';
 export default ({
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
   syntheticSqons = [],
   activeSqonIndex = 0,
+  FieldOpModifierContainer = undefined,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
     null,
   onChange = ({ newSyntheticSqons, sqonValues }) => {},
@@ -164,11 +166,14 @@ export default ({
               <SqonEntry
                 key={i}
                 index={i}
+                arrangerProjectId={arrangerProjectId}
+                arrangerProjectIndex={arrangerProjectIndex}
                 allSyntheticSqons={syntheticSqons}
                 syntheticSqon={sq}
                 isActiveSqon={i === activeSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 SqonActionComponent={SqonActionComponent}
+                FieldOpModifierContainer={FieldOpModifierContainer}
                 onSqonChange={onSqonChange(i)}
                 onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
                 onSqonDuplicate={onSqonDuplicate(i)}

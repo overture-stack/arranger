@@ -1,7 +1,9 @@
 import React from 'react';
 import Component from 'react-component-component';
 import { sortBy } from 'lodash';
+
 import './FilterContainerStyle.css';
+import { FilterContainer } from './common';
 import {
   getOperationAtPath,
   setSqonAtPath,
@@ -11,7 +13,9 @@ import {
 import { TermAgg } from '../../Aggs';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
-import { FilterContainer } from './common';
+import defaultApi from '../../utils/api';
+import { PROJECT_ID } from '../../utils/config';
+import Query from '../../Query';
 
 const AggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
@@ -24,9 +28,10 @@ export const TermFilterUI = ({
   ContainerComponent = FilterContainer,
   InputComponent = TextFilter,
   sqonPath = [],
-  buckets = mockBuckets,
+  buckets,
   fieldDisplayNameMap = {},
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  field,
 }) => {
   /**
    * initialFieldSqon: {
@@ -37,7 +42,10 @@ export const TermFilterUI = ({
    *  }
    * }
    */
-  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon);
+  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
+    op: 'in',
+    content: { value: [], field },
+  };
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
     s.setState({ searchString: e.value });
@@ -132,13 +140,12 @@ export const TermFilterUI = ({
             </span>{' '}
             is{' '}
             <span className="select">
-              <select onChange={onOptionTypeChange(s)}>
+              <select
+                onChange={onOptionTypeChange(s)}
+                value={getCurrentFieldOp(s).op}
+              >
                 {TERM_OPS.map(option => (
-                  <option
-                    key={option}
-                    value={option}
-                    selected={getCurrentFieldOp(s).op === option}
-                  >
+                  <option key={option} value={option}>
                     {opDisplayNameMap[option]}
                   </option>
                 ))}
@@ -182,28 +189,12 @@ export const TermFilterUI = ({
   );
 };
 
-const mockTermBuckets = [
-  { doc_count: 2, key: 'GF_9V1MT6CM' },
-  { doc_count: 10, key: 'Cancer' },
-  { doc_count: 10, key: 'Acute Myeloid Leukemia' },
-  {
-    doc_count: 10,
-    key: 'Abnormality of nervous system physiology (HP:0012638)',
-  },
-  { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
-  { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
-
-  { doc_count: 10, key: 'assdfgsdgf' },
-  { doc_count: 10, key: 'dhgsd' },
-  { doc_count: 10, key: 's;obdfu' },
-  { doc_count: 10, key: 'eht;dfnvx' },
-  { doc_count: 10, key: ';uegrsndvdfsd' },
-  { doc_count: 10, key: 'oisegrbfv' },
-  { doc_count: 10, key: '45oihesgdlknv' },
-  { doc_count: 10, key: 'oisheglsknvd' },
-];
-
 export default ({
+  field,
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
+  api = defaultApi,
+
   initialSqon = null,
   onSubmit = sqon => {},
   onCancel = () => {},
@@ -212,16 +203,48 @@ export default ({
   sqonPath = [],
   fieldDisplayNameMap = {},
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-}) => (
-  <TermFilterUI
-    initialSqon={initialSqon}
-    onSubmit={onSubmit}
-    onCancel={onCancel}
-    ContainerComponent={ContainerComponent}
-    InputComponent={InputComponent}
-    sqonPath={sqonPath}
-    fieldDisplayNameMap={fieldDisplayNameMap}
-    opDisplayNameMap={opDisplayNameMap}
-    buckets={mockTermBuckets}
-  />
-);
+}) => {
+  const gqlField = field.split('.').join('__');
+  const query = `query($sqon: JSON){
+    ${arrangerProjectIndex} {
+      aggregations(filters: $sqon) {
+        ${gqlField} {
+          buckets {
+            key
+            doc_count
+          }
+        }
+      }
+    }
+  }`;
+  return (
+    <Query
+      variables={{ sqon: initialSqon }}
+      projectId={arrangerProjectId}
+      api={api}
+      query={query}
+      render={({ data, loading, error }) => (
+        <TermFilterUI
+          ContainerComponent={({ children, ...props }) => (
+            <ContainerComponent {...props} loading={loading}>
+              {children}
+            </ContainerComponent>
+          )}
+          field={field}
+          initialSqon={initialSqon}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          InputComponent={InputComponent}
+          sqonPath={sqonPath}
+          fieldDisplayNameMap={fieldDisplayNameMap}
+          opDisplayNameMap={opDisplayNameMap}
+          buckets={
+            data
+              ? data[arrangerProjectIndex].aggregations[gqlField].buckets
+              : []
+          }
+        />
+      )}
+    />
+  );
+};

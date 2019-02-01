@@ -4,12 +4,36 @@ import Component from 'react-component-component';
 import { action } from '@storybook/addon-actions';
 import { storiesOf } from '@storybook/react';
 import { themeDecorator } from '../decorators';
-import AdvancedSqonBuilder, { TermFilter } from '../../src/AdvancedSqonBuilder';
+import AdvancedSqonBuilder from '../../src/AdvancedSqonBuilder';
+import TermFilter, {
+  TermFilterUI,
+} from '../../src/AdvancedSqonBuilder/filterComponents/TermFilter';
 import {
   sqons as mockSqons,
   fieldDisplayMap as mockFieldDisplayMap,
 } from './mocks';
 import ProjectsProvider from './ProjectsProvider';
+
+const mockTermBuckets = [
+  { doc_count: 2, key: 'GF_9V1MT6CM' },
+  { doc_count: 10, key: 'Cancer' },
+  { doc_count: 10, key: 'Acute Myeloid Leukemia' },
+  {
+    doc_count: 10,
+    key: 'Abnormality of nervous system physiology (HP:0012638)',
+  },
+  { doc_count: 10, key: 'Ewing Sarcoma: Genetic Risk' },
+  { doc_count: 10, key: 'Pediatric Brain Tumors: CBTTC' },
+
+  { doc_count: 10, key: 'assdfgsdgf' },
+  { doc_count: 10, key: 'dhgsd' },
+  { doc_count: 10, key: 's;obdfu' },
+  { doc_count: 10, key: 'eht;dfnvx' },
+  { doc_count: 10, key: ';uegrsndvdfsd' },
+  { doc_count: 10, key: 'oisegrbfv' },
+  { doc_count: 10, key: '45oihesgdlknv' },
+  { doc_count: 10, key: 'oisheglsknvd' },
+];
 
 const DemoSqonActionComponent = ({
   sqonIndex,
@@ -75,44 +99,51 @@ storiesOf('AdvancedSqonBuilder', module)
         ModalComponent,
       });
     return (
-      <Component initialState={initialState}>
-        {s => (
-          <div style={{ position: 'relative', height: '100%' }}>
-            <AdvancedSqonBuilder
-              syntheticSqons={s.state.syntheticSqons}
-              activeSqonIndex={s.state.activeSqonIndex}
-              fieldDisplayNameMap={mockFieldDisplayMap}
-              onChange={onChange(s)}
-              onActiveSqonSelect={onActiveSqonSelect(s)}
-              getSqonDeleteConfirmation={({
-                indexToRemove,
-                dependentIndices,
-              }) =>
-                new Promise((resolve, reject) => {
-                  setModal(s)(() => (
-                    <DemoModal
-                      onOk={() => {
-                        setModal(s)(null);
-                        resolve();
-                      }}
-                      onCancel={() => {
-                        setModal(s)(null);
-                        reject();
-                      }}
-                    />
-                  ));
-                })
-              }
-              SqonActionComponent={DemoSqonActionComponent}
-            />
-            {s.state.ModalComponent ? s.state.ModalComponent() : null}
-          </div>
+      <ProjectsProvider>
+        {({ project, index }) => (
+          <Component initialState={initialState}>
+            {s => (
+              <div style={{ position: 'relative', height: '100%' }}>
+                <AdvancedSqonBuilder
+                  arrangerProjectId={project}
+                  arrangerProjectIndex={index}
+                  syntheticSqons={s.state.syntheticSqons}
+                  activeSqonIndex={s.state.activeSqonIndex}
+                  fieldDisplayNameMap={mockFieldDisplayMap}
+                  onChange={onChange(s)}
+                  onActiveSqonSelect={onActiveSqonSelect(s)}
+                  getSqonDeleteConfirmation={({
+                    indexToRemove,
+                    dependentIndices,
+                  }) =>
+                    new Promise((resolve, reject) => {
+                      setModal(s)(() => (
+                        <DemoModal
+                          onOk={() => {
+                            setModal(s)(null);
+                            resolve();
+                          }}
+                          onCancel={() => {
+                            setModal(s)(null);
+                            reject();
+                          }}
+                        />
+                      ));
+                    })
+                  }
+                  SqonActionComponent={DemoSqonActionComponent}
+                />
+                {s.state.ModalComponent ? s.state.ModalComponent() : null}
+              </div>
+            )}
+          </Component>
         )}
-      </Component>
+      </ProjectsProvider>
     );
   })
   .add('filters/TermFilter', () => (
-    <TermFilter
+    <TermFilterUI
+      buckets={mockTermBuckets}
       initialSqon={mockSqons[1]}
       sqonPath={[1]}
       fieldDisplayNameMap={mockFieldDisplayMap}
@@ -124,11 +155,12 @@ storiesOf('AdvancedSqonBuilder', module)
     <ProjectsProvider>
       {({ project, index }) => (
         <TermFilter
+          field={'kf_id'}
           arrangerProjectId={project}
           arrangerProjectIndex={index}
           api={undefined}
-          initialSqon={mockSqons[1]}
-          sqonPath={[1]}
+          initialSqon={mockSqons[0]}
+          sqonPath={[0]}
           fieldDisplayNameMap={mockFieldDisplayMap}
           onSubmit={action('submitted')}
           onCancel={action('canceled')}

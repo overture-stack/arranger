@@ -2,10 +2,12 @@ import React from 'react';
 import Component from 'react-component-component';
 import BooleanOp from './sqonPieces/BooleanOp';
 import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
+import { PROJECT_ID } from '../utils/config';
 
 export default ({
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
   syntheticSqon,
-  allSyntheticSqons = [],
   SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
   onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
@@ -15,6 +17,7 @@ export default ({
   isActiveSqon = false,
   isSelected = false,
   index = 0,
+  FieldOpModifierContainer = undefined,
 }) => {
   const initialState = {
     hoverring: false,
@@ -56,10 +59,13 @@ export default ({
               <div className={`sqonView`}>
                 {isBooleanOp(syntheticSqon) && (
                   <BooleanOp
+                    arrangerProjectId={arrangerProjectId}
+                    arrangerProjectIndex={arrangerProjectIndex}
                     index={0}
                     onFieldOpRemove={onFieldOpRemove}
                     onChange={onLogicalOpChanged}
                     sqon={syntheticSqon}
+                    FieldOpModifierContainer={FieldOpModifierContainer}
                   />
                 )}
               </div>

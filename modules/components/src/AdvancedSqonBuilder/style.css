@@ -30,6 +30,7 @@
   border: solid 1px lightgrey;
   margin-top: 4px;
   margin-bottom: 4px;
+  padding-right: 100px;
 }
 .sqonEntry.active {
   background: #e4f1e7;
@@ -45,6 +46,7 @@
 }
 .sqonEntry .actionButtonsContainer {
   position: absolute;
+  width: 100px;
   right: 0px;
   height: 100%;
   display: flex;
