@@ -3,6 +3,7 @@ import Component from 'react-component-component';
 import BooleanOp from './sqonPieces/BooleanOp';
 import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
 import { PROJECT_ID } from '../utils/config';
+import defaultApi from '../utils/api';
 
 export default ({
   arrangerProjectId = PROJECT_ID,
@@ -18,6 +19,7 @@ export default ({
   isSelected = false,
   index = 0,
   FieldOpModifierContainer = undefined,
+  api = defaultApi,
 }) => {
   const initialState = {
     hoverring: false,
@@ -66,6 +68,7 @@ export default ({
                     onChange={onLogicalOpChanged}
                     sqon={syntheticSqon}
                     FieldOpModifierContainer={FieldOpModifierContainer}
+                    api={api}
                   />
                 )}
               </div>

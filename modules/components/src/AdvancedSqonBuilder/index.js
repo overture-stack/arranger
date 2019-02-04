@@ -10,6 +10,7 @@ import {
   DisplayNameMapContext,
 } from './utils';
 import './style.css';
+import defaultApi from '../utils/api';
 
 const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
@@ -27,6 +28,7 @@ const AdvancedSqonBuilder = ({
   ),
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
+  api = defaultApi,
 }) => {
   /**
    * "initialState" is used in 'react-component-component', which provides a
@@ -170,6 +172,7 @@ const AdvancedSqonBuilder = ({
                 onSqonDuplicate={onSqonDuplicate(i)}
                 onSqonRemove={onSqonRemove(i)}
                 onDisabledOverlayClick={onDisabledOverlayClick(i)}
+                api={api}
               />
             ))}
             <div>
@@ -194,6 +197,7 @@ AdvancedSqonBuilder.propTypes = {
   fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
   ButtonComponent: PropTypes.any,
   getSqonDeleteConfirmation: PropTypes.func,
+  api: PropTypes.func,
 };
 
 export default AdvancedSqonBuilder;

@@ -9,6 +9,7 @@ import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
+import defaultApi from '../../utils/api';
 
 export default ({
   onSqonChange = fullSqon => {},
@@ -19,12 +20,10 @@ export default ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   FieldOpModifierContainer = undefined,
+  api = defaultApi,
 }) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
-  const {
-    op,
-    content: { field, value },
-  } = fieldOpObj;
+  const { op, content: { field, value } } = fieldOpObj;
   const initialState = { isOpen: false };
   const onClickAway = s => () => {
     s.setState({ isOpen: false });
@@ -73,6 +72,7 @@ export default ({
                       fieldDisplayNameMap={fieldDisplayNameMap}
                       opDisplayNameMap={opDisplayNameMap}
                       ContainerComponent={FieldOpModifierContainer}
+                      api={api}
                     />
                   </div>
                 )}

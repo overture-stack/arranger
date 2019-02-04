@@ -5,6 +5,7 @@ import FieldOp from './FieldOp';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
+import defaultApi from '../../utils/api';
 
 const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
   <span className={`sqonReference pill`}>
@@ -65,6 +66,7 @@ const BooleanOp = ({
   sqon,
   fullSyntheticSqon = sqon,
   FieldOpModifierContainer = undefined,
+  api = defaultApi,
 }) => {
   const { op, content } = sqon;
   const onOpChange = newOpName =>
@@ -92,6 +94,7 @@ const BooleanOp = ({
                   onFieldOpRemove={onFieldOpRemove}
                   onChange={onChange}
                   FieldOpModifierContainer={FieldOpModifierContainer}
+                  api={api}
                 />
                 <span className="nestedOpBracket">)</span>
               </span>
@@ -105,6 +108,7 @@ const BooleanOp = ({
                   onContentRemove={onRemove(currentPath)}
                   onSqonChange={onNewSqonSubmit}
                   FieldOpModifierContainer={FieldOpModifierContainer}
+                  api={api}
                 />
               </span>
             ) : isReference(c) ? (
