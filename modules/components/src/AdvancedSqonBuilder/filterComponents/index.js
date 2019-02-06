@@ -59,7 +59,9 @@ const FieldOpModifier = ({
           ContainerComponent={ContainerComponent}
         />
       ) : (
-        <div>some other component will go here</div>
+        <ContainerComponent>
+          <div>some other component will go here</div>
+        </ContainerComponent>
       );
     }}
   </ExtendedMappingProvider>

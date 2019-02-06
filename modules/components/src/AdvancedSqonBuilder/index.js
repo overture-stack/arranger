@@ -42,7 +42,6 @@ const AdvancedSqonBuilder = ({
   const dispatchSqonListChange = newSqonList => {
     onChange({
       newSyntheticSqons: newSqonList,
-      sqonValues: newSqonList.map(resolveSyntheticSqon(syntheticSqons)),
     });
   };
   const onSelectedSqonIndicesChange = (index, s) => () => {
@@ -112,9 +111,6 @@ const AdvancedSqonBuilder = ({
   const onDisabledOverlayClick = sqonIndex => () => {
     onActiveSqonSelect({
       index: sqonIndex,
-      sqonValue: resolveSyntheticSqon(syntheticSqons)(
-        syntheticSqons[sqonIndex],
-      ),
     });
   };
   const onSqonChange = sqonIndex => newSqon => {
