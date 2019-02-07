@@ -59,8 +59,9 @@ const FieldOpModifier = ({
           ContainerComponent={ContainerComponent}
         />
       ) : (
-        <ContainerComponent>
-          <div>some other component will go here</div>
+        <ContainerComponent onSubmit={onSubmit} onCancel={onCancel}>
+          {/* Placeholder for unhandled types */}
+          <div className="unhandledFieldType">Unhandled field type: {type}</div>
         </ContainerComponent>
       );
     }}
