@@ -1,9 +1,9 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "1.0.5-6",
+  "version": "1.0.5-7",
   "private": true,
   "dependencies": {
-    "@arranger/admin": "^1.0.5-6",
+    "@arranger/admin": "^1.0.5-7",
     "@types/react-redux": "^6.0.9",
     "@types/react-router-dom": "^4.3.1",
     "@types/react-table": "^6.7.14",
