@@ -120,6 +120,9 @@ const AdvancedSqonBuilder = ({
       }),
     );
   };
+  const getActiveExecutableSqon = () => {
+    resolveSyntheticSqon(syntheticSqons)(syntheticSqons[activeSqonIndex]);
+  };
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
@@ -163,6 +166,7 @@ const AdvancedSqonBuilder = ({
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 SqonActionComponent={SqonActionComponent}
                 FieldOpModifierContainer={FieldOpModifierContainer}
+                getActiveExecutableSqon={getActiveExecutableSqon}
                 onSqonChange={onSqonChange(i)}
                 onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
                 onSqonDuplicate={onSqonDuplicate(i)}

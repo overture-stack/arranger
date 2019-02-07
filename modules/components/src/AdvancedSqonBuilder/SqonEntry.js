@@ -9,6 +9,7 @@ export default ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   syntheticSqon,
+  getActiveExecutableSqon,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
   onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
@@ -69,6 +70,7 @@ export default ({
                     sqon={syntheticSqon}
                     FieldOpModifierContainer={FieldOpModifierContainer}
                     api={api}
+                    getActiveExecutableSqon={getActiveExecutableSqon}
                   />
                 )}
               </div>

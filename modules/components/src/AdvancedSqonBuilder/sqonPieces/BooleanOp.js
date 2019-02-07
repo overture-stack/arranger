@@ -67,6 +67,7 @@ const BooleanOp = ({
   fullSyntheticSqon = sqon,
   FieldOpModifierContainer = undefined,
   api = defaultApi,
+  getActiveExecutableSqon,
 }) => {
   const { op, content } = sqon;
   const onOpChange = newOpName =>
@@ -95,6 +96,7 @@ const BooleanOp = ({
                   onChange={onChange}
                   FieldOpModifierContainer={FieldOpModifierContainer}
                   api={api}
+                  getActiveExecutableSqon={getActiveExecutableSqon}
                 />
                 <span className="nestedOpBracket">)</span>
               </span>
@@ -109,6 +111,7 @@ const BooleanOp = ({
                   onSqonChange={onNewSqonSubmit}
                   FieldOpModifierContainer={FieldOpModifierContainer}
                   api={api}
+                  getActiveExecutableSqon={getActiveExecutableSqon}
                 />
               </span>
             ) : isReference(c) ? (

@@ -21,6 +21,7 @@ export default ({
   arrangerProjectIndex,
   FieldOpModifierContainer = undefined,
   api = defaultApi,
+  getActiveExecutableSqon,
 }) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
   const { op, content: { field, value } } = fieldOpObj;
@@ -72,6 +73,7 @@ export default ({
                       fieldDisplayNameMap={fieldDisplayNameMap}
                       opDisplayNameMap={opDisplayNameMap}
                       ContainerComponent={FieldOpModifierContainer}
+                      getActiveExecutableSqon={getActiveExecutableSqon}
                       api={api}
                     />
                   </div>
