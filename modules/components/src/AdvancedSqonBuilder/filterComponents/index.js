@@ -21,7 +21,7 @@ const FieldOpModifier = ({
   field,
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
-  getActiveExecutableSqon,
+  getExecutableSqon,
 }) => (
   <ExtendedMappingProvider
     api={api}
@@ -41,9 +41,7 @@ const FieldOpModifier = ({
           api={api}
           loading={loading}
           sqonPath={sqonPath}
-          initialSqon={
-            getActiveExecutableSqon ? getActiveExecutableSqon() : initialSqon
-          }
+          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}
@@ -54,9 +52,7 @@ const FieldOpModifier = ({
         <RangeFilter
           loading={loading}
           sqonPath={sqonPath}
-          initialSqon={
-            getActiveExecutableSqon ? getActiveExecutableSqon() : initialSqon
-          }
+          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}

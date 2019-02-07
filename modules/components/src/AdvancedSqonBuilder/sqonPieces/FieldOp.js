@@ -73,7 +73,7 @@ export default ({
                       fieldDisplayNameMap={fieldDisplayNameMap}
                       opDisplayNameMap={opDisplayNameMap}
                       ContainerComponent={FieldOpModifierContainer}
-                      getActiveExecutableSqon={getActiveExecutableSqon}
+                      getExecutableSqon={getActiveExecutableSqon}
                       api={api}
                     />
                   </div>
