@@ -3,7 +3,7 @@ import urlJoin from 'url-join';
 import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
-const api = ({ endpoint = '', body, headers, method }) =>
+const defaultApi = ({ endpoint = '', body, headers, method }) =>
   fetch(urlJoin(ARRANGER_API, endpoint), {
     method: method || 'POST',
     headers: { ...alwaysSendHeaders, ...headers },
@@ -12,7 +12,11 @@ const api = ({ endpoint = '', body, headers, method }) =>
 
 export const graphql = body => api({ endpoint: 'graphql', body });
 
-export const fetchExtendedMapping = ({ graphqlField, projectId, api = api }) =>
+export const fetchExtendedMapping = ({
+  graphqlField,
+  projectId,
+  api = defaultApi,
+}) =>
   api({
     endpoint: `/${projectId}/graphql`,
     body: {
