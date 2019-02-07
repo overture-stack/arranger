@@ -39,4 +39,4 @@ export const addHeaders = headers => {
 
 export const getAlwaysAddHeaders = () => alwaysSendHeaders;
 
-export default api;
+export default defaultApi;
