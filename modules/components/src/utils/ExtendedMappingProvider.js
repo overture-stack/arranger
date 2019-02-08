@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Component from 'react-component-component';
 import { default as defaultApi, fetchExtendedMapping } from './api';
 
@@ -30,7 +31,7 @@ const memoizedExtendedMappingField = ({
   return memoHash[key];
 };
 
-export default ({
+const ExtendedMappingProvider = ({
   projectId,
   graphqlField,
   api = defaultApi,
@@ -79,3 +80,14 @@ export default ({
     </Component>
   );
 };
+
+ExtendedMappingProvider.prototype = {
+  api: PropTypes.func,
+  useCache: PropTypes.bool,
+  field: PropTypes.string,
+  projectId: PropTypes.string.isRequired,
+  graphqlField: PropTypes.string.isRequired,
+  children: PropTypes.func.isRequired,
+};
+
+export default ExtendedMappingProvider;
