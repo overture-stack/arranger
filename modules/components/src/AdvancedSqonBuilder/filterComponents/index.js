@@ -28,6 +28,7 @@ const FieldOpModifier = ({
     api={api}
     projectId={arrangerProjectId}
     graphqlField={arrangerProjectIndex}
+    field={field}
   >
     {({ loading, extendedMapping }) => {
       const fieldExtendedMapping = (extendedMapping || []).find(
