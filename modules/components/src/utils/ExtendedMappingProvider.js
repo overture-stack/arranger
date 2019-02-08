@@ -11,27 +11,67 @@ const memoizedExtendedMapping = ({ projectId, graphqlField, api }) => {
   return memoHash[key];
 };
 
+const memoizedExtendedMappingField = ({
+  contentField,
+  projectId,
+  graphqlField,
+  api,
+}) => {
+  const key = `${projectId}/${graphqlField}/${contentField}`;
+  if (!memoHash[key]) {
+    memoHash[key] = memoizedExtendedMapping({
+      projectId,
+      graphqlField,
+      api,
+    }).then(({ extendedMapping }) =>
+      extendedMapping.filter(({ field }) => field === contentField),
+    );
+  }
+  return memoHash[key];
+};
+
 export default ({
   projectId,
   graphqlField,
   api = defaultApi,
   useCache = true,
+  field: contentField,
   children,
 }) => {
   const initialState = { loading: true, extendedMapping: undefined };
   const didMount = async s => {
-    const { extendedMapping } = !useCache
-      ? await fetchExtendedMapping({
-          projectId,
-          graphqlField,
-          api,
-        })
-      : await memoizedExtendedMapping({
-          projectId,
-          graphqlField,
-          api,
-        });
-    s.setState({ loading: false, extendedMapping: extendedMapping });
+    if (contentField) {
+      const extendedMapping = !useCache
+        ? await fetchExtendedMapping({
+            projectId,
+            graphqlField,
+            api,
+          }).then(({ extendedMapping }) =>
+            extendedMapping.filter(({ field }) => {
+              return field === contentField;
+            }),
+          )
+        : await memoizedExtendedMappingField({
+            projectId,
+            graphqlField,
+            api,
+            contentField,
+          });
+      s.setState({ loading: false, extendedMapping: extendedMapping });
+    } else {
+      const { extendedMapping } = !useCache
+        ? await fetchExtendedMapping({
+            projectId,
+            graphqlField,
+            api,
+          })
+        : await memoizedExtendedMapping({
+            projectId,
+            graphqlField,
+            api,
+          });
+      s.setState({ loading: false, extendedMapping: extendedMapping });
+    }
   };
   return (
     <Component initialState={initialState} didMount={didMount}>
