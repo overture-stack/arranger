@@ -60,6 +60,7 @@ export const sqons = [
               { op: '<=', content: { field: 'size', value: 192471969710 } },
             ],
           },
+          0,
         ],
       },
     ],

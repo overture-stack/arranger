@@ -121,7 +121,9 @@ const AdvancedSqonBuilder = ({
     );
   };
   const getActiveExecutableSqon = () => {
-    resolveSyntheticSqon(syntheticSqons)(syntheticSqons[activeSqonIndex]);
+    return resolveSyntheticSqon(syntheticSqons)(
+      syntheticSqons[activeSqonIndex],
+    );
   };
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>

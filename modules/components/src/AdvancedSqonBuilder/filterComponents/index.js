@@ -5,6 +5,7 @@ import RangeFilter from './RangeFilter';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
 import { default as defaultApi } from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
+import { FilterContainer } from './common';
 
 export { default as TermFilter } from './TermFilter';
 export { default as RangeFilter } from './RangeFilter';
@@ -16,7 +17,7 @@ const FieldOpModifier = ({
   onCancel,
   fieldDisplayNameMap,
   opDisplayNameMap,
-  ContainerComponent = undefined,
+  ContainerComponent = FilterContainer,
   api = defaultApi,
   field,
   arrangerProjectId = PROJECT_ID,
@@ -32,6 +33,8 @@ const FieldOpModifier = ({
       const fieldExtendedMapping = (extendedMapping || []).find(
         ({ field: _field }) => field === _field,
       );
+
+      // temporary, needs to handle errors too
       const { type } = fieldExtendedMapping || {};
       return ['keyword', 'id'].includes(type) ? (
         <TermFilter
