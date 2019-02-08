@@ -39,8 +39,10 @@ const AdvancedSqonBuilder = ({
     selectedSqonIndices: [],
   };
 
-  const dispatchSqonListChange = newSqonList => {
+  const dispatchSqonListChange = ({ eventKey, newSqonList, eventDetails }) => {
     onChange({
+      eventKey,
+      eventDetails,
       newSyntheticSqons: newSqonList,
     });
   };
@@ -70,42 +72,76 @@ const AdvancedSqonBuilder = ({
       }, []),
     })
       .then(() =>
-        dispatchSqonListChange(
-          removeSqonAtIndex(indexToRemove, syntheticSqons),
-        ),
+        dispatchSqonListChange({
+          eventKey: 'SQON_REMOVED',
+          eventDetails: {
+            removedIndex: indexToRemove,
+          },
+          newSqonList: removeSqonAtIndex(indexToRemove, syntheticSqons),
+        }),
       )
       .catch(() => {});
   };
   const onSqonDuplicate = indexToDuplicate => () => {
-    dispatchSqonListChange(
-      duplicateSqonAtIndex(indexToDuplicate, syntheticSqons),
-    );
+    dispatchSqonListChange({
+      eventKey: 'SQON_DUPLICATED',
+      eventDetails: {
+        duplicatedIndex: indexToDuplicate,
+      },
+      newSqonList: duplicateSqonAtIndex(indexToDuplicate, syntheticSqons),
+    });
   };
   const createUnionSqon = s => () => {
-    dispatchSqonListChange([
-      ...syntheticSqons,
-      {
-        op: 'or',
-        content: s.state.selectedSqonIndices,
+    dispatchSqonListChange({
+      eventKey: 'NEW_UNION_COMBINATION',
+      eventDetails: {
+        referencedIndices: s.state.selectedSqonIndices,
       },
-    ]);
+      newSqonList: [
+        ...syntheticSqons,
+        {
+          op: 'or',
+          content: s.state.selectedSqonIndices,
+        },
+      ],
+    });
   };
   const createIntersectSqon = s => () => {
-    dispatchSqonListChange([
-      ...syntheticSqons,
-      {
-        op: 'and',
-        content: s.state.selectedSqonIndices,
+    dispatchSqonListChange({
+      eventKey: 'NEW_INTERSECTION_COMBINATION',
+      eventDetails: {
+        referencedIndices: s.state.selectedSqonIndices,
       },
-    ]);
+      newSqonList: [
+        ...syntheticSqons,
+        {
+          op: 'and',
+          content: s.state.selectedSqonIndices,
+        },
+      ],
+    });
   };
   const onClearAllClick = s => () => {
-    dispatchSqonListChange([]);
+    dispatchSqonListChange({
+      eventKey: 'CLEAR_ALL',
+      eventDetails: {},
+      newSqonList: [],
+    });
     s.setState({ selectedSqonIndices: [] });
-    onActiveSqonSelect({ index: 0, sqonValue: null });
+    onActiveSqonSelect({ index: 0 });
   };
   const onNewQueryClick = () => {
-    dispatchSqonListChange([...syntheticSqons, null]);
+    dispatchSqonListChange({
+      eventKey: 'NEW_SQON',
+      eventDetails: {},
+      newSqonList: [
+        ...syntheticSqons,
+        {
+          op: 'and',
+          content: [],
+        },
+      ],
+    });
   };
 
   const onDisabledOverlayClick = sqonIndex => () => {
@@ -114,11 +150,15 @@ const AdvancedSqonBuilder = ({
     });
   };
   const onSqonChange = sqonIndex => newSqon => {
-    dispatchSqonListChange(
-      syntheticSqons.map((sq, i) => {
-        return i === sqonIndex ? newSqon : sq;
-      }),
-    );
+    dispatchSqonListChange({
+      eventKey: 'SQON_CHANGE',
+      eventDetails: {
+        updatedIndex: sqonIndex,
+      },
+      newSqonList: syntheticSqons.map(
+        (sq, i) => (i === sqonIndex ? newSqon : sq),
+      ),
+    });
   };
   const getActiveExecutableSqon = () => {
     return resolveSyntheticSqon(syntheticSqons)(
