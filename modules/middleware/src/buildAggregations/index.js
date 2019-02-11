@@ -8,13 +8,8 @@ import {
   ES_BOOL,
   ES_NESTED,
   ES_QUERY,
-  STATS,
-  HISTOGRAM,
-  BUCKETS,
 } from '../constants';
-
-const MAX_AGGREGATION_SIZE = 300000;
-const HISTOGRAM_INTERVAL_DEFAULT = 1000;
+import createFieldAggregation from './createFieldAggregation';
 
 function createGlobalAggregation({ field, aggregation }) {
   return {
@@ -60,45 +55,6 @@ function removeFieldFromQuery({ field, query }) {
   }
 }
 
-function createNumericAggregation({ type, field, graphqlField }) {
-  const args = get(graphqlField, [type, 'arguments', 0]) || {};
-
-  return {
-    [`${field}:${type}`]: {
-      [type]: {
-        field,
-        ...(type === HISTOGRAM
-          ? { interval: args.interval || HISTOGRAM_INTERVAL_DEFAULT }
-          : {}),
-      },
-    },
-  };
-}
-
-function createTermAggregation({ field, isNested }) {
-  return {
-    [field]: {
-      ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
-      terms: { field, size: MAX_AGGREGATION_SIZE },
-    },
-    [`${field}:missing`]: {
-      ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
-      missing: { field: field },
-    },
-  };
-}
-
-function createAggregation({ field, graphqlField = {}, isNested = false }) {
-  const type = [BUCKETS, STATS, HISTOGRAM].find(t => graphqlField[t]);
-  if (type === BUCKETS) {
-    return createTermAggregation({ field, isNested });
-  } else if ([STATS, HISTOGRAM].includes(type)) {
-    return createNumericAggregation({ type, field, graphqlField });
-  } else {
-    return {};
-  }
-}
-
 function getNestedPathsInField({ field, nestedFields }) {
   return field
     .split('.')
@@ -129,6 +85,9 @@ function wrapWithFilters({
   return aggregation;
 }
 
+/**
+ * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
+ */
 export default function({
   sqon,
   graphqlFields,
@@ -142,7 +101,7 @@ export default function({
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
       const nestedPaths = getNestedPathsInField({ field, nestedFields });
-      const fieldAggregation = createAggregation({
+      const fieldAggregation = createFieldAggregation({
         field,
         graphqlField,
         isNested: nestedPaths.length,

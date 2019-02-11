@@ -28,10 +28,17 @@ export default type => async (
   const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
 
   const query = buildQuery({ nestedFields, filters: resolvedFilter });
+
+  /**
+   * TODO: getFields does not support aliased fields, so we are unable to
+   * serve multiple aggregations of the same type for a given field.
+   * Library issue: https://github.com/robrichard/graphql-fields/issues/18
+   */
+  const graphqlFields = getFields(info, {}, { processArguments: true });
   const aggs = buildAggregations({
     query,
     sqon: resolvedFilter,
-    graphqlFields: getFields(info),
+    graphqlFields,
     nestedFields,
     aggregationsFilterThemselves: aggregations_filter_themselves,
   });
