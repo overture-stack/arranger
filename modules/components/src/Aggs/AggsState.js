@@ -32,12 +32,6 @@ export const queryFromAgg = ({ field, type }) =>
           avg
           sum
         }
-        histogram(interval: 1.0) {
-          buckets {
-            doc_count
-            key
-          }
-        }
       }
       `;
 
