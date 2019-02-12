@@ -1,3 +1,4 @@
+import { omit } from 'lodash';
 import {
   IN_OP,
   NOT_IN_OP,
@@ -9,13 +10,18 @@ import {
   REGEX,
   SET_ID,
   MISSING,
+  ALL_OP,
 } from '../constants';
 
 function groupingOptimizer({ op, content }) {
   return {
     op,
     content: content.map(normalizeFilters).reduce((filters, f) => {
-      return filters.concat(f.op === op ? f.content : [f]);
+      if (f.op === op && !f['__unflat']) {
+        return [...filters, ...f.content];
+      } else {
+        return [...filters, omit(f, '__unflat')];
+      }
     }, []),
   };
 }
@@ -62,6 +68,19 @@ function normalizeFilters(filter) {
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
+  } else if ([ALL_OP].includes(op)) {
+    return {
+      op: AND_OP,
+      // __unflat is a ephemeral mark for groupingOptimizer to not apply grouping
+      ['__unflat']: true,
+      content: filter.content.value.map(val => ({
+        op: IN_OP,
+        content: {
+          field: filter.content.field,
+          value: [val],
+        },
+      })),
+    };
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {

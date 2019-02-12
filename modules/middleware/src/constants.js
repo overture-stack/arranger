@@ -1,6 +1,7 @@
 // sqon ops
 export const IN_OP = 'in';
 export const NOT_IN_OP = 'not-in';
+export const ALL_OP = 'all';
 export const SOME_NOT_IN_OP = 'some-not-in';
 export const FILTER_OP = 'filter';
 export const AND_OP = 'and';
