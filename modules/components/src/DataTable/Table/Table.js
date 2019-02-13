@@ -44,7 +44,9 @@ class DataTable extends React.Component {
   };
 
   toggleSelectedTableRow = key => {
-    const selectedTableRows = xor(this.state.selectedTableRows, [key]);
+    // react-table does some weird stuff and passes `select-${}` for some reason
+    const sanitizedKey = key.split('select-').join('');
+    const selectedTableRows = xor(this.state.selectedTableRows, [sanitizedKey]);
     this.setSelectedTableRows(selectedTableRows);
   };
 
