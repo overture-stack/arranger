@@ -1,11 +1,12 @@
 import normalizeFilters from '../../src/buildQuery/normalizeFilters';
+import { IN_OP, OR_OP, AND_OP, ALL_OP } from '../../src/constants';
 
 test(`it must handle "all" op`, () => {
   const input = {
-    op: 'and',
+    op: AND_OP,
     content: [
       {
-        op: 'all',
+        op: ALL_OP,
         content: {
           field: 'some_field',
           value: ['val1', 'val2', 'val3'],
@@ -14,27 +15,32 @@ test(`it must handle "all" op`, () => {
     ],
   };
   const output = {
-    op: 'and',
+    op: AND_OP,
+    pivot: null,
     content: [
       {
-        op: 'and',
+        op: AND_OP,
+        pivot: null,
         content: [
           {
-            op: 'in',
+            op: IN_OP,
+            pivot: null,
             content: {
               field: 'some_field',
               value: ['val1'],
             },
           },
           {
-            op: 'in',
+            op: IN_OP,
+            pivot: null,
             content: {
               field: 'some_field',
               value: ['val2'],
             },
           },
           {
-            op: 'in',
+            op: IN_OP,
+            pivot: null,
             content: {
               field: 'some_field',
               value: ['val3'],
@@ -47,55 +53,131 @@ test(`it must handle "all" op`, () => {
   expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`it must optimize properly`, () => {
+test(`it must preserve pivots`, () => {
   const input = {
-    op: 'and',
+    op: AND_OP,
     content: [
       {
-        op: 'and',
+        op: IN_OP,
+        pivot: 'nested',
+        content: {
+          field: 'nested.some_field',
+          value: ['val1'],
+        },
+      },
+    ],
+  };
+  const output = {
+    op: AND_OP,
+    pivot: null,
+    content: [
+      {
+        op: IN_OP,
+        pivot: 'nested',
+        content: {
+          field: 'nested.some_field',
+          value: ['val1'],
+        },
+      },
+    ],
+  };
+  expect(normalizeFilters(input)).toEqual(output);
+});
+
+test(`it must handle pivots for "all" op`, () => {
+  const input = {
+    op: AND_OP,
+    content: [
+      {
+        op: ALL_OP,
+        pivot: 'nested',
+        content: {
+          field: 'nested.some_field',
+          value: ['val1', 'val2'],
+        },
+      },
+    ],
+  };
+  const output = {
+    op: AND_OP,
+    pivot: null,
+    content: [
+      {
+        op: AND_OP,
+        pivot: 'nested',
         content: [
           {
-            op: 'in',
+            op: IN_OP,
+            pivot: null,
+            content: {
+              field: 'nested.some_field',
+              value: ['val1'],
+            },
+          },
+          {
+            op: IN_OP,
+            pivot: null,
+            content: {
+              field: 'nested.some_field',
+              value: ['val2'],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  expect(normalizeFilters(input)).toEqual(output);
+});
+
+test(`it must optimize properly`, () => {
+  const input = {
+    op: AND_OP,
+    content: [
+      {
+        op: AND_OP,
+        content: [
+          {
+            op: IN_OP,
             content: {
               field: 'some_field',
               value: ['val3'],
             },
           },
           {
-            op: 'or',
+            op: OR_OP,
             content: [
               {
-                op: 'in',
+                op: IN_OP,
                 content: {
                   field: 'some_field',
                   value: ['val3'],
                 },
               },
               {
-                op: 'and',
+                op: AND_OP,
                 content: [
                   {
-                    op: 'in',
+                    op: IN_OP,
                     content: {
                       field: 'some_field',
                       value: ['val3'],
                     },
                   },
                   {
-                    op: 'and',
+                    op: AND_OP,
                     content: [
                       {
-                        op: 'in',
+                        op: IN_OP,
                         content: {
                           field: 'some_field',
                           value: ['val3'],
                         },
                       },
                       {
-                        op: 'and',
+                        op: AND_OP,
                         content: [
                           {
-                            op: 'all',
+                            op: ALL_OP,
                             content: {
                               field: 'some_field',
                               value: ['val3', 'val3', 'val3'],
@@ -114,61 +196,72 @@ test(`it must optimize properly`, () => {
     ],
   };
   const output = {
-    op: 'and',
+    op: AND_OP,
+    pivot: null,
     content: [
       {
-        op: 'in',
+        op: IN_OP,
+        pivot: null,
         content: {
           field: 'some_field',
           value: ['val3'],
         },
       },
       {
-        op: 'or',
+        op: OR_OP,
+        pivot: null,
         content: [
           {
-            op: 'in',
+            op: IN_OP,
+            pivot: null,
             content: {
               field: 'some_field',
               value: ['val3'],
             },
           },
           {
-            op: 'and',
+            op: AND_OP,
+            pivot: null,
             content: [
               {
-                op: 'in',
+                op: IN_OP,
+                pivot: null,
                 content: {
                   field: 'some_field',
                   value: ['val3'],
                 },
               },
               {
-                op: 'in',
+                op: IN_OP,
+                pivot: null,
                 content: {
                   field: 'some_field',
                   value: ['val3'],
                 },
               },
               {
-                op: 'and',
+                op: AND_OP,
+                pivot: null,
                 content: [
                   {
-                    op: 'in',
+                    op: IN_OP,
+                    pivot: null,
                     content: {
                       field: 'some_field',
                       value: ['val3'],
                     },
                   },
                   {
-                    op: 'in',
+                    op: IN_OP,
+                    pivot: null,
                     content: {
                       field: 'some_field',
                       value: ['val3'],
                     },
                   },
                   {
-                    op: 'in',
+                    op: IN_OP,
+                    pivot: null,
                     content: {
                       field: 'some_field',
                       value: ['val3'],

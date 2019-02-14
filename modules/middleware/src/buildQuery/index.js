@@ -232,5 +232,17 @@ export const opSwitch = ({ nestedFields, filter }) => {
 
 export default function({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
-  return opSwitch({ nestedFields, filter: normalizeFilters(rawFilters) });
+  const output = opSwitch({
+    nestedFields,
+    filter: normalizeFilters(rawFilters),
+  });
+  console.log(
+    'input: ',
+    JSON.stringify({
+      nestedFields,
+      filters: rawFilters,
+    }),
+  );
+  console.log('output: ', JSON.stringify(output));
+  return output;
 }
