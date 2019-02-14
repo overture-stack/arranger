@@ -176,16 +176,21 @@ const wrappers = {
   [NOT_OP]: wrapMustNot,
 };
 function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
-  const esFilters = content
-    .map(filter => opSwitch({ nestedFields, filter }))
-    .reduce(
+  const applyBooleanWrapper = wrappers[op];
+  const esFilters = content.map(filter => opSwitch({ nestedFields, filter }));
+  const isNested = !!esFilters[0].nested;
+  if (isNested && pivot === esFilters[0].nested.path) {
+    return applyBooleanWrapper(esFilters);
+  } else {
+    const flattned = esFilters.reduce(
       (bools, esFilter) =>
         op === AND_OP || op === NOT_OP
           ? collapseNestedFilters({ esFilter, bools })
           : [...bools, esFilter],
       [],
     );
-  return wrappers[op](esFilters);
+    return applyBooleanWrapper(flattned);
+  }
 }
 
 function getSetFilter({ nestedFields, filter, filter: { content } }) {
@@ -208,7 +213,7 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
 
 export const opSwitch = ({ nestedFields, filter }) => {
   const { op, pivot, content: { value } } = filter;
-  if (pivot && !nestedFields.includes(pivot)) {
+  if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
     throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
   }
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {

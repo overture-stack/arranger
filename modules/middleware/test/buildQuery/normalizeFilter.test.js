@@ -90,9 +90,9 @@ test(`it must handle pivots for "all" op`, () => {
     content: [
       {
         op: ALL_OP,
-        pivot: 'nested',
+        pivot: 'nested.nested1',
         content: {
-          field: 'nested.some_field',
+          field: 'nested.nested1.some_field',
           value: ['val1', 'val2'],
         },
       },
@@ -104,13 +104,13 @@ test(`it must handle pivots for "all" op`, () => {
     content: [
       {
         op: AND_OP,
-        pivot: 'nested',
+        pivot: 'nested.nested1',
         content: [
           {
             op: IN_OP,
             pivot: null,
             content: {
-              field: 'nested.some_field',
+              field: 'nested.nested1.some_field',
               value: ['val1'],
             },
           },
@@ -118,7 +118,51 @@ test(`it must handle pivots for "all" op`, () => {
             op: IN_OP,
             pivot: null,
             content: {
-              field: 'nested.some_field',
+              field: 'nested.nested1.some_field',
+              value: ['val2'],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  expect(normalizeFilters(input)).toEqual(output);
+});
+
+test(`it must initialize pivots for "all" op`, () => {
+  const input = {
+    op: AND_OP,
+    content: [
+      {
+        op: ALL_OP,
+        content: {
+          field: 'nested.nested1.some_field',
+          value: ['val1', 'val2'],
+        },
+      },
+    ],
+  };
+  const output = {
+    op: AND_OP,
+    pivot: null,
+    content: [
+      {
+        op: AND_OP,
+        pivot: 'nested.nested1',
+        content: [
+          {
+            op: IN_OP,
+            pivot: null,
+            content: {
+              field: 'nested.nested1.some_field',
+              value: ['val1'],
+            },
+          },
+          {
+            op: IN_OP,
+            pivot: null,
+            content: {
+              field: 'nested.nested1.some_field',
               value: ['val2'],
             },
           },
