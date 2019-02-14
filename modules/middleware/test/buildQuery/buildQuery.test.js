@@ -857,6 +857,17 @@ test('buildQuery "all"', () => {
                     bool: {
                       must: [
                         { terms: { 'files.kf_id': ['GF_JBMG9T1M'], boost: 0 } },
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                nested: {
+                  path: 'files',
+                  query: {
+                    bool: {
+                      must: [
                         { terms: { 'files.kf_id': ['GF_WCYF2AH4'], boost: 0 } },
                       ],
                     },
