@@ -880,7 +880,8 @@ test('buildQuery "all"', () => {
       ],
     },
   };
-  expect(buildQuery(input)).toEqual(output);
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
 });
 
 test('it must reject invalid pivot fields', () => {
