@@ -175,7 +175,7 @@ const wrappers = {
   [OR_OP]: wrapShould,
   [NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ nestedFields, filter: { content, op } }) {
+function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   const esFilters = content
     .map(filter => opSwitch({ nestedFields, filter }))
     .reduce(
@@ -185,7 +185,6 @@ function getGroupFilter({ nestedFields, filter: { content, op } }) {
           : [...bools, esFilter],
       [],
     );
-
   return wrappers[op](esFilters);
 }
 
@@ -208,7 +207,10 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
 }
 
 export const opSwitch = ({ nestedFields, filter }) => {
-  const { op, content: { value } } = filter;
+  const { op, pivot, content: { value } } = filter;
+  if (pivot && !nestedFields.includes(pivot)) {
+    throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
+  }
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
@@ -236,13 +238,5 @@ export default function({ nestedFields, filters: rawFilters }) {
     nestedFields,
     filter: normalizeFilters(rawFilters),
   });
-  console.log(
-    'input: ',
-    JSON.stringify({
-      nestedFields,
-      filters: rawFilters,
-    }),
-  );
-  console.log('output: ', JSON.stringify(output));
   return output;
 }

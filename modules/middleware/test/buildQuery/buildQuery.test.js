@@ -882,3 +882,26 @@ test('buildQuery "all"', () => {
   };
   expect(buildQuery(input)).toEqual(output);
 });
+
+test('it must reject invalid pivot fields', () => {
+  const testFunction = () => {
+    const input = {
+      nestedFields: ['files'],
+      filters: {
+        op: 'and',
+        content: [
+          {
+            op: 'all',
+            pivot: 'asdf',
+            content: {
+              field: 'files.kf_id',
+              value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
+            },
+          },
+        ],
+      },
+    };
+    return buildQuery(input);
+  };
+  expect(testFunction).toThrow();
+});

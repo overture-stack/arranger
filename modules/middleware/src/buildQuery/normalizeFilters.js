@@ -64,7 +64,7 @@ const transformAllOp = filter => {
     op: AND_OP,
     // __unflat is a ephemeral mark for groupingOptimizer to not apply grouping
     ['__unflat']: true,
-    pivot: filter.content.pivot || defaultPivot,
+    pivot: filter.pivot || defaultPivot,
     content: filter.content.value.map(val => ({
       op: IN_OP,
       content: {
