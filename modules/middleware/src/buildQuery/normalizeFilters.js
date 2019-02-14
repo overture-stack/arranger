@@ -30,6 +30,23 @@ function isSpecialFilter(value) {
   return [REGEX, SET_ID, MISSING].some(x => `${value}`.includes(x));
 }
 
+const applyDefaultPivots = filter => {
+  const { content, pivot = null } = filter;
+  const { value } = content;
+  if (value) {
+    return {
+      ...filter,
+      pivot,
+    };
+  } else {
+    return {
+      ...filter,
+      pivot,
+      content: filter.content.map(applyDefaultPivots),
+    };
+  }
+};
+
 function normalizeFilters(filter) {
   const { op, content } = filter;
 
@@ -69,10 +86,11 @@ function normalizeFilters(filter) {
 
     return normalizeFilters({ op: OR_OP, content: filters });
   } else if ([ALL_OP].includes(op)) {
-    return {
+    return applyDefaultPivots({
       op: AND_OP,
       // __unflat is a ephemeral mark for groupingOptimizer to not apply grouping
       ['__unflat']: true,
+      pivot: filter.pivot,
       content: filter.content.value.map(val => ({
         op: IN_OP,
         content: {
@@ -80,7 +98,7 @@ function normalizeFilters(filter) {
           value: [val],
         },
       })),
-    };
+    });
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {
@@ -88,4 +106,4 @@ function normalizeFilters(filter) {
   }
 }
 
-export default normalizeFilters;
+export default filter => applyDefaultPivots(normalizeFilters(filter));

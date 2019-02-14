@@ -819,3 +819,55 @@ test('buildQuery "<=" and "=>"', () => {
     expect(actualOutput).toEqual(output);
   });
 });
+
+test('buildQuery "all"', () => {
+  const input = {
+    nestedFields: [
+      'biospecimens',
+      'diagnoses',
+      'family.family_compositions',
+      'family.family_compositions.family_members',
+      'family.family_compositions.family_members.diagnoses',
+      'files',
+      'files.sequencing_experiments',
+    ],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'all',
+          content: {
+            field: 'files.kf_id',
+            value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          bool: {
+            must: [
+              {
+                nested: {
+                  path: 'files',
+                  query: {
+                    bool: {
+                      must: [
+                        { terms: { 'files.kf_id': ['GF_JBMG9T1M'], boost: 0 } },
+                        { terms: { 'files.kf_id': ['GF_WCYF2AH4'], boost: 0 } },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+  expect(buildQuery(input)).toEqual(output);
+});
