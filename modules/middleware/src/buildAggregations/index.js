@@ -10,6 +10,7 @@ import {
   ES_QUERY,
 } from '../constants';
 import createFieldAggregation from './createFieldAggregation';
+import normalizeFilters from '../buildQuery/normalizeFilters';
 
 function createGlobalAggregation({ field, aggregation }) {
   return {
@@ -95,8 +96,11 @@ export default function({
   aggregationsFilterThemselves,
   query,
 }) {
-  // TODO: support nested sqon operations
-  const nestedSqonFilters = getNestedSqonFilters({ sqon, nestedFields });
+  const normalizedSqon = normalizeFilters(sqon);
+  const nestedSqonFilters = getNestedSqonFilters({
+    sqon: normalizedSqon,
+    nestedFields,
+  });
   const aggs = Object.entries(graphqlFields).reduce(
     (aggregations, [fieldKey, graphqlField]) => {
       const field = fieldKey.replace(/__/g, '.');
