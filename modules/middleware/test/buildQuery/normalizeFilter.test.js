@@ -1,7 +1,13 @@
 import normalizeFilters from '../../src/buildQuery/normalizeFilters';
 import { IN_OP, OR_OP, AND_OP, ALL_OP } from '../../src/constants';
 
-test(`it must handle "all" op`, () => {
+test(`normalizeFilters must handle falsy sqon`, () => {
+  const input = null;
+  const output = null;
+  expect(normalizeFilters(input)).toEqual(output);
+});
+
+test(`normalizeFilters must handle "all" op`, () => {
   const input = {
     op: AND_OP,
     content: [
@@ -53,7 +59,7 @@ test(`it must handle "all" op`, () => {
   expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`it must preserve pivots`, () => {
+test(`normalizeFilters must preserve pivots`, () => {
   const input = {
     op: AND_OP,
     content: [
@@ -84,7 +90,7 @@ test(`it must preserve pivots`, () => {
   expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`it must handle pivots for "all" op`, () => {
+test(`normalizeFilters must handle pivots for "all" op`, () => {
   const input = {
     op: AND_OP,
     content: [
@@ -129,7 +135,7 @@ test(`it must handle pivots for "all" op`, () => {
   expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`it must initialize pivots for "all" op`, () => {
+test(`normalizeFilters must initialize pivots for "all" op`, () => {
   const input = {
     op: AND_OP,
     content: [
@@ -173,7 +179,7 @@ test(`it must initialize pivots for "all" op`, () => {
   expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`it must optimize properly`, () => {
+test(`normalizeFilters must optimize properly`, () => {
   const input = {
     op: AND_OP,
     content: [

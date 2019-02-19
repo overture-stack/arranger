@@ -13,11 +13,13 @@ import {
   ALL_OP,
 } from '../constants';
 
-function groupingOptimizer({ op, content }) {
+function groupingOptimizer({ op, content, pivot }) {
   return {
     op,
+    pivot,
     content: content.map(normalizeFilters).reduce((filters, f) => {
-      if (f.op === op && !f['__unflat']) {
+      const samePivot = f.pivot === pivot || !f.pivot;
+      if (f.op === op && !f['__unflat'] && samePivot) {
         return [...filters, ...f.content];
       } else {
         return [...filters, omit(f, '__unflat')];
@@ -122,4 +124,7 @@ function normalizeFilters(filter) {
   }
 }
 
-export default filter => applyDefaultPivots(normalizeFilters(filter));
+export default filter => {
+  const output = filter ? applyDefaultPivots(normalizeFilters(filter)) : filter;
+  return output;
+};
