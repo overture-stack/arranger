@@ -1,4 +1,17 @@
 import buildQuery from '../../src/buildQuery';
+
+test('buildQuery should handle empty sqon', () => {
+  expect(
+    buildQuery({
+      nestedFields: [],
+      filters: {
+        op: 'and',
+        content: [],
+      },
+    }),
+  ).toEqual({ bool: { must: [] } });
+});
+
 test('buildQuery "and" and "or" ops', () => {
   const tests = [
     {
