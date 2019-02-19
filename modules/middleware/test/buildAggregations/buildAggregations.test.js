@@ -28,6 +28,7 @@ test('buildAggregations should handle nested aggregations', () => {
   ];
 
   const input = {
+    sqon: null,
     query: buildQuery({ nestedFields, filters: {} }),
     nestedFields,
     graphqlFields: {
