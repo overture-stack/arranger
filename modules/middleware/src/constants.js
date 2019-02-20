@@ -11,6 +11,7 @@ export const GT_OP = 'gt';
 export const GTE_OP = 'gte';
 export const LT_OP = 'lt';
 export const LTE_OP = 'lte';
+export const BETWEEN_OP = 'between';
 
 // special values
 export const REGEX = '*';
