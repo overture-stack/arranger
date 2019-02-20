@@ -1,5 +1,13 @@
 import normalizeFilters from '../../src/buildQuery/normalizeFilters';
-import { IN_OP, OR_OP, AND_OP, ALL_OP } from '../../src/constants';
+import {
+  IN_OP,
+  OR_OP,
+  AND_OP,
+  ALL_OP,
+  BETWEEN_OP,
+  GTE_OP,
+  LTE_OP,
+} from '../../src/constants';
 
 test(`normalizeFilters must handle falsy sqon`, () => {
   const input = null;
@@ -51,6 +59,47 @@ test(`normalizeFilters must handle "all" op`, () => {
               field: 'some_field',
               value: ['val3'],
             },
+          },
+        ],
+      },
+    ],
+  };
+  expect(normalizeFilters(input)).toEqual(output);
+});
+
+test(`normalizeFilters must handle "between" op`, () => {
+  const input = {
+    op: AND_OP,
+    content: [
+      {
+        op: BETWEEN_OP,
+        content: {
+          field: 'biospecimens.age_at_event_days',
+          value: ['200', '10000'],
+        },
+      },
+    ],
+  };
+  const output = {
+    op: AND_OP,
+    pivot: null,
+    content: [
+      {
+        op: AND_OP,
+        pivot: 'biospecimens',
+        content: [
+          {
+            op: GTE_OP,
+            content: { field: 'biospecimens.age_at_event_days', value: [200] },
+            pivot: null,
+          },
+          {
+            op: LTE_OP,
+            content: {
+              field: 'biospecimens.age_at_event_days',
+              value: [10000],
+            },
+            pivot: null,
           },
         ],
       },
