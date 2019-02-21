@@ -65,12 +65,30 @@ export const sqons = [
       },
     ],
   },
+  {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'participants.diagnoses.diagnosis_category',
+          value: ['Cancer', 'Acute Myeloid Leukemia'],
+        },
+      },
+      {
+        op: 'in',
+        content: { field: 'is_proband', value: [undefined] }
+      },
+    ],
+  },
 ];
 
 export const fieldDisplayMap = {
   'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
   'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
   'participants.study.short_name': 'Study Short Name',
+  'participants.is_proband' : 'Is Proband',
   kf_id: 'File ID',
   created_at: 'Created At',
+  is_proband: 'Proband',
 };

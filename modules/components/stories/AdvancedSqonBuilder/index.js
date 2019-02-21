@@ -8,6 +8,8 @@ import AdvancedSqonBuilder from '../../src/AdvancedSqonBuilder';
 import TermFilter, {
   TermFilterUI,
 } from '../../src/AdvancedSqonBuilder/filterComponents/TermFilter';
+import { BooleanFilterUI } from '../../src/AdvancedSqonBuilder/filterComponents/BooleanFilter';
+
 import {
   sqons as mockSqons,
   fieldDisplayMap as mockFieldDisplayMap,
@@ -169,7 +171,15 @@ storiesOf('AdvancedSqonBuilder', module)
     </ProjectsProvider>
   ))
   .add('filters/Booleanfilter', () => {
-    return <div>add Booleanfilter</div>;
+    return (<BooleanFilterUI
+      buckets={mockTermBuckets}
+      initialSqon={mockSqons[3]}
+      sqonPath={[1]}
+      field={'is_proband'}
+      fieldDisplayNameMap={mockFieldDisplayMap}
+      onSubmit={action('submitted')}
+      onCancel={action('canceled')}
+    />);
   })
   .add('filters/RangeFilter', () => {
     return <div>add RangeFilter</div>;
