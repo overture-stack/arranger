@@ -1,4 +1,4 @@
-import { runQuery } from 'apollo-server-core';
+import apollo, { runQuery } from 'apollo-server-core';
 
 const projects = {};
 
@@ -13,7 +13,6 @@ export function getProjects() {
 export function setProject(project) {
   project.runQuery = ({ query, variables, mock }) => {
     const schema = mock ? project.mockSchema : project.schema;
-
     return runQuery({
       schema,
       query,
