@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import TermFilter from './TermFilter';
 import RangeFilter from './RangeFilter';
+import BooleanFilter from './BooleanFilter';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
 import { default as defaultApi } from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
@@ -9,6 +10,7 @@ import { FilterContainer } from './common';
 
 export { default as TermFilter } from './TermFilter';
 export { default as RangeFilter } from './RangeFilter';
+export { default as BooleanFilter } from './BooleanFilter';
 
 const FieldOpModifier = ({
   sqonPath,
@@ -57,6 +59,20 @@ const FieldOpModifier = ({
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          fieldDisplayNameMap={fieldDisplayNameMap}
+          opDisplayNameMap={opDisplayNameMap}
+          ContainerComponent={ContainerComponent}
+        />
+      ) : ['boolean'].includes(type) ? (
+        <BooleanFilter
+          api={api}
+          arrangerProjectId={arrangerProjectId}
+          arrangerProjectIndex={arrangerProjectIndex}
+          field={field}
+          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
+          sqonPath={sqonPath}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}

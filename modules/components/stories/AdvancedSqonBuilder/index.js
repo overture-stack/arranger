@@ -37,6 +37,19 @@ const mockTermBuckets = [
   { doc_count: 10, key: 'oisheglsknvd' },
 ];
 
+const mockBooleanBuckets = [
+  {
+    key: '0',
+    doc_count: 2580,
+    key_as_string: 'false',
+  },
+  {
+    key: '1',
+    doc_count: 961,
+    key_as_string: 'true',
+  },
+];
+
 const DemoSqonActionComponent = ({
   sqonIndex,
   isActive,
@@ -170,9 +183,9 @@ storiesOf('AdvancedSqonBuilder', module)
       )}
     </ProjectsProvider>
   ))
-  .add('filters/Booleanfilter', () => {
+  .add('filters/BooleanFilter', () => {
     return (<BooleanFilterUI
-      buckets={mockTermBuckets}
+      buckets={mockBooleanBuckets}
       initialSqon={mockSqons[3]}
       sqonPath={[1]}
       field={'is_proband'}

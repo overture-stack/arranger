@@ -18,11 +18,7 @@ export default ({ children }) => {
       body: '{"eshost":"http://localhost:9200"}',
     })
       .then(res => res.json())
-      .then(data =>
-        s.setState({
-          projects: data.projects,
-        }),
-      )
+      .then(data => { s.setState({ projects: data.projects }); })
       .then(getIndices(s));
   const getIndices = s =>
     fetch(`http://localhost:5050/projects/${s.state.selectedProject}/types`, {
