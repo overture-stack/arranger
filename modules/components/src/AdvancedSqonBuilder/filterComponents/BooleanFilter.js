@@ -5,9 +5,12 @@ import Component from 'react-component-component';
 import {
   getOperationAtPath,
 } from '../utils';
+import defaultApi from '../../utils/api';
+import { PROJECT_ID } from '../../utils/config';
 import BooleanAgg from '../../Aggs/BooleanAgg';
 import { FilterContainer } from './common';
 import './FilterContainerStyle.css';
+import Query from '../../Query';
 
 const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
   return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
@@ -23,9 +26,10 @@ export const BooleanFilterUI = props => {
     onCancel = () => {},
     ContainerComponent = FilterContainer,
     sqonPath = [],
-    initialSqon = null,
-    field = '',
+    initialSqon = {},
+    field,
     fieldDisplayNameMap = {},
+    buckets = [],
   } = props;
 
   const initialState = {
@@ -49,34 +53,22 @@ export const BooleanFilterUI = props => {
 
   const isActive = s => ({ value }) => value === s.state.selectedValue;
 
+  const fieldDisplayName = getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon);
+
   return (
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <React.Fragment>
-            <div key="header" className="contentSection">
-              <span>
-                { `Participant is a ${getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon)}`}
-              </span>
+            <div key="header" className="contentSection headerContainer">
+              <span>{ `Participant is a ${fieldDisplayName}`}</span>
             </div>
-            <div key="body" className="contentSection meowContainer">
+            <div key="body" className="contentSection bodyContainer">
               <BooleanAgg
                 WrapperComponent={AggsWrapper}
                 field={initialFieldSqon.content.field}
-                displayName="Is Proband"
-                // TODO JB - use real data for the buckets
-                buckets={[
-                  {
-                    key: '0',
-                    doc_count: 2580,
-                    key_as_string: 'false',
-                  },
-                  {
-                    key: '1',
-                    doc_count: 961,
-                    key_as_string: 'true',
-                  },
-                ]}
+                displayName={fieldDisplayName}
+                buckets={buckets}
                 handleValueClick={onSelectionChange(s)}
                 isActive={isActive(s)}
               />
@@ -91,4 +83,66 @@ export const BooleanFilterUI = props => {
 BooleanFilterUI.propTypes = {
   onSubmit: PropTypes.func,
   onCancel: PropTypes.func,
+  ContainerComponent: PropTypes.element,
+  sqonPath: PropTypes.array,
+  initialSqon: PropTypes.object,
+  field: PropTypes.string.isRequired,
+  fieldDisplayNameMap: PropTypes.object,
+  buckets: PropTypes.array,
+};
+
+export default ({
+  api = defaultApi,
+  arrangerProjectId = PROJECT_ID,
+  arrangerProjectIndex,
+  initialSqon,
+  sqonPath,
+  field,
+
+  onSubmit,
+  onCancel,
+  fieldDisplayNameMap,
+  opDisplayNameMap,
+  ContainerComponent,
+}) => {
+  const gqlField = field.split('.').join('__');
+  const query = `query($sqon: JSON){
+    ${arrangerProjectIndex} {
+      aggregations(filters: $sqon) {
+        ${gqlField} {
+          buckets {
+            key
+            key_as_string
+            doc_count
+          }
+        }
+      }
+    }
+  }`;
+
+  return (
+    <Query
+      api={api}
+      projectId={arrangerProjectId}
+      query={query}
+      variables={{ sqon: initialSqon }}
+      render={({ data, loading, error }) => (
+        <BooleanFilterUI
+          ContainerComponent={({ children, ...props }) => (
+            <ContainerComponent {...props} loading={loading}>
+              {children}
+            </ContainerComponent>
+          )}
+          field={field}
+          initialSqon={initialSqon}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          sqonPath={sqonPath}
+          fieldDisplayNameMap={fieldDisplayNameMap}
+          opDisplayNameMap={opDisplayNameMap}
+          buckets={data ? data[arrangerProjectIndex].aggregations[gqlField].buckets : []}
+        />
+      )}
+    />
+  );
 };
