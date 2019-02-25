@@ -236,6 +236,7 @@ const AdvancedSqonBuilder = ({
                 onSqonRemove={onSqonRemove(i)}
                 onActivate={onSqonEntryActivate(i)}
                 api={api}
+                disabled={!allowsNewSqon && i === syntheticSqons.length - 1}
               />
             ))}
             <div>

@@ -21,6 +21,7 @@ export default ({
   index = 0,
   FieldOpModifierContainer = undefined,
   api = defaultApi,
+  disabled = false,
 }) => {
   const initialState = {
     hoverring: false,
@@ -54,7 +55,7 @@ export default ({
               readOnly
               type="checkbox"
               checked={isSelected}
-              disabled={!isActiveSqon}
+              disabled={disabled}
             />{' '}
             #{index + 1}
           </div>
@@ -79,10 +80,18 @@ export default ({
           </div>
           {(isActiveSqon || s.state.hoverring) && (
             <div className={`actionButtonsContainer`}>
-              <button className={`button`} onClick={onSqonDuplicate}>
+              <button
+                className={`button`}
+                disabled={disabled}
+                onClick={onSqonDuplicate}
+              >
                 dup
               </button>
-              <button className={`button`} onClick={onSqonRemove}>
+              <button
+                className={`button`}
+                disabled={disabled}
+                onClick={onSqonRemove}
+              >
                 delete
               </button>
             </div>
