@@ -55,7 +55,7 @@ export default ({
               checked={isSelected}
               disabled={!isActiveSqon}
             />{' '}
-            #{index}
+            #{index + 1}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'row' }}>

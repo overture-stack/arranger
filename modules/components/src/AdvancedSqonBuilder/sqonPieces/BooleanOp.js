@@ -9,7 +9,7 @@ import defaultApi from '../../utils/api';
 
 const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
   <span className={`sqonReference pill`}>
-    <span className={'content sqonReferenceIndex'}>#{refIndex}</span>
+    <span className={'content sqonReferenceIndex'}>#{refIndex + 1}</span>
     <PillRemoveButton onClick={onRemoveClick} />
   </span>
 );
