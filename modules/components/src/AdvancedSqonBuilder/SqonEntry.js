@@ -15,7 +15,7 @@ export default ({
   onSqonDuplicate = () => {},
   onSqonRemove = () => {},
   onSqonChange = sqon => {},
-  onDisabledOverlayClick = () => {},
+  onActivate = () => {},
   isActiveSqon = false,
   isSelected = false,
   index = 0,
@@ -46,6 +46,7 @@ export default ({
           onMouseEnter={hoverStart(s)}
           onMouseLeave={hoverEnd(s)}
           className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}
+          onClick={onActivate}
         >
           <div className={`activeStateIndicator`} />
           <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
@@ -76,17 +77,6 @@ export default ({
               </div>
             </div>
           </div>
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-              pointerEvents: isActiveSqon ? 'none' : 'all',
-            }}
-            onClick={onDisabledOverlayClick}
-          />
           {(isActiveSqon || s.state.hoverring) && (
             <div className={`actionButtonsContainer`}>
               <button className={`button`} onClick={onSqonDuplicate}>

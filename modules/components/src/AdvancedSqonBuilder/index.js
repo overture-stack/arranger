@@ -144,10 +144,12 @@ const AdvancedSqonBuilder = ({
     });
   };
 
-  const onDisabledOverlayClick = sqonIndex => () => {
-    onActiveSqonSelect({
-      index: sqonIndex,
-    });
+  const onSqonEntryActivate = sqonIndex => () => {
+    if (sqonIndex !== activeSqonIndex) {
+      onActiveSqonSelect({
+        index: sqonIndex,
+      });
+    }
   };
   const onSqonChange = sqonIndex => newSqon => {
     dispatchSqonListChange({
@@ -213,7 +215,7 @@ const AdvancedSqonBuilder = ({
                 onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
                 onSqonDuplicate={onSqonDuplicate(i)}
                 onSqonRemove={onSqonRemove(i)}
-                onDisabledOverlayClick={onDisabledOverlayClick(i)}
+                onActivate={onSqonEntryActivate(i)}
                 api={api}
               />
             ))}
