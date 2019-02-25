@@ -111,7 +111,7 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    });
+    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const createIntersectSqon = s => () => {
     dispatchSqonListChange({
@@ -126,7 +126,7 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    });
+    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const onClearAllClick = s => () => {
     dispatchSqonListChange({
