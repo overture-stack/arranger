@@ -11,6 +11,7 @@ import {
 } from './utils';
 import './style.css';
 import defaultApi from '../utils/api';
+import { cloneDeep } from 'apollo-utilities';
 
 const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
@@ -20,8 +21,8 @@ const AdvancedSqonBuilder = ({
   FieldOpModifierContainer = undefined,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
     null,
-  onChange = ({ newSyntheticSqons, sqonValues }) => {},
-  onActiveSqonSelect = ({ index, sqonValue }) => {},
+  onChange = ({ newSyntheticSqons }) => {},
+  onActiveSqonSelect = ({ index }) => {},
   fieldDisplayNameMap = {},
   ButtonComponent = ({ className, ...rest }) => (
     <button className={`button ${className}`} {...rest} />
@@ -40,11 +41,14 @@ const AdvancedSqonBuilder = ({
   };
 
   const dispatchSqonListChange = ({ eventKey, newSqonList, eventDetails }) => {
-    onChange({
-      eventKey,
-      eventDetails,
-      newSyntheticSqons: newSqonList,
-    });
+    // wraps in promise to delay to allow delaying to next frame
+    return Promise.resolve(
+      onChange({
+        eventKey,
+        eventDetails,
+        newSyntheticSqons: newSqonList,
+      }),
+    );
   };
   const onSelectedSqonIndicesChange = (index, s) => () => {
     if (!s.state.selectedSqonIndices.includes(index)) {
@@ -88,8 +92,11 @@ const AdvancedSqonBuilder = ({
       eventDetails: {
         duplicatedIndex: indexToDuplicate,
       },
-      newSqonList: duplicateSqonAtIndex(indexToDuplicate, syntheticSqons),
-    });
+      newSqonList: [
+        ...syntheticSqons,
+        cloneDeep(syntheticSqons[indexToDuplicate]),
+      ],
+    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const createUnionSqon = s => () => {
     dispatchSqonListChange({
