@@ -40,6 +40,9 @@ const AdvancedSqonBuilder = ({
     selectedSqonIndices: [],
   };
 
+  const lastSqon = syntheticSqons[Math.max(syntheticSqons.length - 1, 0)];
+  const allowsNewSqon = !(!lastSqon ? false : !lastSqon.content.length);
+
   const dispatchSqonListChange = ({ eventKey, newSqonList, eventDetails }) => {
     // wraps in promise to delay to allow delaying to next frame
     return Promise.resolve(
@@ -82,7 +85,14 @@ const AdvancedSqonBuilder = ({
             removedIndex: indexToRemove,
           },
           newSqonList: removeSqonAtIndex(indexToRemove, syntheticSqons),
-        }),
+        }).then(() =>
+          onActiveSqonSelect({
+            index: Math.min(
+              syntheticSqons.length - 2,
+              Math.max(indexToRemove, 0),
+            ),
+          }),
+        ),
       )
       .catch(() => {});
   };
@@ -128,6 +138,21 @@ const AdvancedSqonBuilder = ({
       ],
     }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
+  const onNewQueryClick = () => {
+    if (allowsNewSqon) {
+      dispatchSqonListChange({
+        eventKey: 'NEW_SQON',
+        eventDetails: {},
+        newSqonList: [
+          ...syntheticSqons,
+          {
+            op: 'and',
+            content: [],
+          },
+        ],
+      }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
+    }
+  };
   const onClearAllClick = s => () => {
     dispatchSqonListChange({
       eventKey: 'CLEAR_ALL',
@@ -136,19 +161,6 @@ const AdvancedSqonBuilder = ({
     });
     s.setState({ selectedSqonIndices: [] });
     onActiveSqonSelect({ index: 0 });
-  };
-  const onNewQueryClick = () => {
-    dispatchSqonListChange({
-      eventKey: 'NEW_SQON',
-      eventDetails: {},
-      newSqonList: [
-        ...syntheticSqons,
-        {
-          op: 'and',
-          content: [],
-        },
-      ],
-    });
   };
 
   const onSqonEntryActivate = sqonIndex => () => {
@@ -227,7 +239,9 @@ const AdvancedSqonBuilder = ({
               />
             ))}
             <div>
-              <button onClick={onNewQueryClick}>Start new query</button>
+              <button disabled={!allowsNewSqon} onClick={onNewQueryClick}>
+                Start new query
+              </button>
             </div>
           </div>
         )}
