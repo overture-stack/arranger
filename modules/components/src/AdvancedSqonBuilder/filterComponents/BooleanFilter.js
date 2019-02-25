@@ -38,8 +38,8 @@ export const BooleanFilterUI = props => {
   };
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
-    op: 'and',
-    content: { value: initialState.selectedValue, field },
+    op: 'in',
+    content: { field, value: [initialState.selectedValue] },
   };
 
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
