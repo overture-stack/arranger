@@ -6,7 +6,6 @@ import SqonEntry from './SqonEntry';
 import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
-  duplicateSqonAtIndex,
   isIndexReferencedInSqon,
   DisplayNameMapContext,
 } from './utils';
