@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { cloneDeep } from 'lodash';
 import Component from 'react-component-component';
 import { PROJECT_ID } from '../utils/config';
 import SqonEntry from './SqonEntry';
@@ -11,7 +12,6 @@ import {
 } from './utils';
 import './style.css';
 import defaultApi from '../utils/api';
-import { cloneDeep } from 'apollo-utilities';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
 
