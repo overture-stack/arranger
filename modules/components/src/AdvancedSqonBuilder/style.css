@@ -43,6 +43,9 @@
   padding-right: 100px;
   min-height: 40px;
 }
+.sqonEntry:hover {
+  background: #e9e9f5;
+}
 .sqonEntry.active {
   background: #e4f1e7;
 }
