@@ -322,5 +322,6 @@ export {
   isValueObj,
   isBooleanOp,
   isFieldOp,
+  isIndexReferencedInSqon,
 } from './utils';
 export { default as FieldOpModifier } from './filterComponents/index';
