@@ -136,7 +136,13 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
+    })
+      .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
+      .then(() =>
+        s.setState({
+          selectedSqonIndices: [],
+        }),
+      );
   };
   const onNewQueryClick = () => {
     if (allowsNewSqon) {
@@ -150,7 +156,13 @@ const AdvancedSqonBuilder = ({
             content: [],
           },
         ],
-      }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
+      })
+        .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
+        .then(() =>
+          s.setState({
+            selectedSqonIndices: [],
+          }),
+        );
     }
   };
   const onClearAllClick = s => () => {
