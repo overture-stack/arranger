@@ -6,11 +6,14 @@ import SqonEntry from './SqonEntry';
 import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
-  duplicateSqonAtIndex,
+  isIndexReferencedInSqon,
   DisplayNameMapContext,
 } from './utils';
 import './style.css';
 import defaultApi from '../utils/api';
+import { cloneDeep } from 'apollo-utilities';
+import FaRegClone from 'react-icons/lib/fa/clone';
+import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
 
 const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
@@ -20,8 +23,8 @@ const AdvancedSqonBuilder = ({
   FieldOpModifierContainer = undefined,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
     null,
-  onChange = ({ newSyntheticSqons, sqonValues }) => {},
-  onActiveSqonSelect = ({ index, sqonValue }) => {},
+  onChange = ({ newSyntheticSqons }) => {},
+  onActiveSqonSelect = ({ index }) => {},
   fieldDisplayNameMap = {},
   ButtonComponent = ({ className, ...rest }) => (
     <button className={`button ${className}`} {...rest} />
@@ -29,6 +32,16 @@ const AdvancedSqonBuilder = ({
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
   api = defaultApi,
+  referenceColors = [
+    '#cbeefb',
+    '#fce8d3',
+    '#eed5e9',
+    '#cbebf1',
+    '#f9d3d4',
+    '#d5d7e9',
+    '#fad9ea',
+    '#f3ebd0',
+  ],
 }) => {
   /**
    * "initialState" is used in 'react-component-component', which provides a
@@ -39,12 +52,24 @@ const AdvancedSqonBuilder = ({
     selectedSqonIndices: [],
   };
 
+  const lastSqon = syntheticSqons[Math.max(syntheticSqons.length - 1, 0)];
+  const selectedSyntheticSqon = syntheticSqons[activeSqonIndex];
+  const allowsNewSqon = !(!lastSqon ? false : !lastSqon.content.length);
+
+  const getColorForReference = referenceIndex =>
+    referenceColors[referenceIndex % referenceColors.length];
+  const isSqonReferenced = sqonIndex =>
+    isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
+
   const dispatchSqonListChange = ({ eventKey, newSqonList, eventDetails }) => {
-    onChange({
-      eventKey,
-      eventDetails,
-      newSyntheticSqons: newSqonList,
-    });
+    // wraps in promise to delay to allow delaying to next frame
+    return Promise.resolve(
+      onChange({
+        eventKey,
+        eventDetails,
+        newSyntheticSqons: newSqonList,
+      }),
+    );
   };
   const onSelectedSqonIndicesChange = (index, s) => () => {
     if (!s.state.selectedSqonIndices.includes(index)) {
@@ -78,7 +103,14 @@ const AdvancedSqonBuilder = ({
             removedIndex: indexToRemove,
           },
           newSqonList: removeSqonAtIndex(indexToRemove, syntheticSqons),
-        }),
+        }).then(() =>
+          onActiveSqonSelect({
+            index: Math.min(
+              syntheticSqons.length - 2,
+              Math.max(indexToRemove, 0),
+            ),
+          }),
+        ),
       )
       .catch(() => {});
   };
@@ -88,8 +120,11 @@ const AdvancedSqonBuilder = ({
       eventDetails: {
         duplicatedIndex: indexToDuplicate,
       },
-      newSqonList: duplicateSqonAtIndex(indexToDuplicate, syntheticSqons),
-    });
+      newSqonList: [
+        ...syntheticSqons,
+        cloneDeep(syntheticSqons[indexToDuplicate]),
+      ],
+    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const createUnionSqon = s => () => {
     dispatchSqonListChange({
@@ -104,7 +139,7 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    });
+    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const createIntersectSqon = s => () => {
     dispatchSqonListChange({
@@ -119,7 +154,34 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    });
+    })
+      .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
+      .then(() =>
+        s.setState({
+          selectedSqonIndices: [],
+        }),
+      );
+  };
+  const onNewQueryClick = () => {
+    if (allowsNewSqon) {
+      dispatchSqonListChange({
+        eventKey: 'NEW_SQON',
+        eventDetails: {},
+        newSqonList: [
+          ...syntheticSqons,
+          {
+            op: 'and',
+            content: [],
+          },
+        ],
+      })
+        .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
+        .then(() =>
+          s.setState({
+            selectedSqonIndices: [],
+          }),
+        );
+    }
   };
   const onClearAllClick = s => () => {
     dispatchSqonListChange({
@@ -130,24 +192,13 @@ const AdvancedSqonBuilder = ({
     s.setState({ selectedSqonIndices: [] });
     onActiveSqonSelect({ index: 0 });
   };
-  const onNewQueryClick = () => {
-    dispatchSqonListChange({
-      eventKey: 'NEW_SQON',
-      eventDetails: {},
-      newSqonList: [
-        ...syntheticSqons,
-        {
-          op: 'and',
-          content: [],
-        },
-      ],
-    });
-  };
 
-  const onDisabledOverlayClick = sqonIndex => () => {
-    onActiveSqonSelect({
-      index: sqonIndex,
-    });
+  const onSqonEntryActivate = sqonIndex => () => {
+    if (sqonIndex !== activeSqonIndex) {
+      onActiveSqonSelect({
+        index: sqonIndex,
+      });
+    }
   };
   const onSqonChange = sqonIndex => newSqon => {
     dispatchSqonListChange({
@@ -160,11 +211,9 @@ const AdvancedSqonBuilder = ({
       ),
     });
   };
-  const getActiveExecutableSqon = () => {
-    return resolveSyntheticSqon(syntheticSqons)(
-      syntheticSqons[activeSqonIndex],
-    );
-  };
+  const getActiveExecutableSqon = () =>
+    resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
+
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
@@ -213,12 +262,33 @@ const AdvancedSqonBuilder = ({
                 onSqonCheckedChange={onSelectedSqonIndicesChange(i, s)}
                 onSqonDuplicate={onSqonDuplicate(i)}
                 onSqonRemove={onSqonRemove(i)}
-                onDisabledOverlayClick={onDisabledOverlayClick(i)}
+                onActivate={onSqonEntryActivate(i)}
                 api={api}
+                disabled={!allowsNewSqon && i === syntheticSqons.length - 1}
+                getColorForReference={getColorForReference}
+                isReferenced={isSqonReferenced(i)}
+                isIndexReferenced={isIndexReferencedInSqon(
+                  selectedSyntheticSqon,
+                )}
               />
             ))}
             <div>
-              <button onClick={onNewQueryClick}>Start new query</button>
+              <button
+                className={`sqonListActionButton removeButton`}
+                disabled={!allowsNewSqon}
+                onClick={onNewQueryClick}
+              >
+                <FaPlusCircle />
+                {` `}Start new query
+              </button>
+              <button
+                className={`sqonListActionButton duplicateButton`}
+                disabled={!selectedSyntheticSqon.content.length}
+                onClick={onSqonDuplicate(activeSqonIndex)}
+              >
+                <FaRegClone />
+                {` `}Duplicate Query
+              </button>
             </div>
           </div>
         )}
@@ -240,6 +310,7 @@ AdvancedSqonBuilder.propTypes = {
   ButtonComponent: PropTypes.any,
   getSqonDeleteConfirmation: PropTypes.func,
   api: PropTypes.func,
+  referenceColors: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default AdvancedSqonBuilder;
@@ -251,5 +322,6 @@ export {
   isValueObj,
   isBooleanOp,
   isFieldOp,
+  isIndexReferencedInSqon,
 } from './utils';
 export { default as FieldOpModifier } from './filterComponents/index';

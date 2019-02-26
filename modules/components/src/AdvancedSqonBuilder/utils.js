@@ -98,8 +98,8 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(s =>
-            !isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s,
+          content: sqon.content.map(
+            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
           ),
         };
   });
@@ -130,9 +130,7 @@ export const removeSqonPath = paths => sqon => {
 
   // creates lens to the immediate parent of target
   const parentPath = flattenDeep(
-    paths
-      .slice(paths.length - 2, paths.length - 1)
-      .map(path => ['content', path]),
+    paths.slice(0, paths.length - 1).map(path => ['content', path]),
   );
   const parentLens = lens(parentPath);
 
@@ -146,6 +144,18 @@ export const removeSqonPath = paths => sqon => {
     { ...parent, content: parent.content.filter(c => c !== removeTarget) },
     sqon,
   );
+};
+
+export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
+  if (isBooleanOp(syntheticSqon)) {
+    return syntheticSqon.content.reduce(
+      (acc, contentSqon) =>
+        acc || isIndexReferencedInSqon(contentSqon)(indexReference),
+      false,
+    );
+  } else {
+    return syntheticSqon === indexReference;
+  }
 };
 
 export const setSqonAtPath = (paths, newSqon) => sqon => {

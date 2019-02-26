@@ -7,9 +7,25 @@ import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
-const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
+const SqonReference = ({
+  refIndex,
+  onRemoveClick = () => {},
+  highlightColor,
+  isHighlighted,
+}) => (
   <span className={`sqonReference pill`}>
-    <span className={'content sqonReferenceIndex'}>#{refIndex}</span>
+    <span
+      className={'content sqonReferenceIndex'}
+      style={
+        !isHighlighted
+          ? {}
+          : {
+              background: highlightColor,
+            }
+      }
+    >
+      #{refIndex + 1}
+    </span>
     <PillRemoveButton onClick={onRemoveClick} />
   </span>
 );
@@ -57,18 +73,22 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
  * BooleanOp handles nested sqons through recursive rendering.
  * This will be useful for supporting brackets later.
  */
-const BooleanOp = ({
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  contentPath = [],
-  onFieldOpRemove = path => {},
-  onChange = (changedPath, newOp) => {},
-  sqon,
-  fullSyntheticSqon = sqon,
-  FieldOpModifierContainer = undefined,
-  api = defaultApi,
-  getActiveExecutableSqon,
-}) => {
+const BooleanOp = props => {
+  const {
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    contentPath = [],
+    onFieldOpRemove = path => {},
+    onChange = (changedPath, newOp) => {},
+    sqon,
+    fullSyntheticSqon = sqon,
+    FieldOpModifierContainer = undefined,
+    api = defaultApi,
+    getActiveExecutableSqon,
+    getColorForReference = () => '',
+    isIndexReferenced = () => false,
+    referencesShouldHighlight = false,
+  } = props;
   const { op, content } = sqon;
   const onOpChange = newOpName =>
     onChange(contentPath, {
@@ -87,16 +107,10 @@ const BooleanOp = ({
               <span>
                 <span className="nestedOpBracket">(</span>
                 <BooleanOp
-                  arrangerProjectId={arrangerProjectId}
-                  arrangerProjectIndex={arrangerProjectIndex}
+                  {...props}
                   sqon={c}
                   fullSyntheticSqon={fullSyntheticSqon}
                   contentPath={currentPath}
-                  onFieldOpRemove={onFieldOpRemove}
-                  onChange={onChange}
-                  FieldOpModifierContainer={FieldOpModifierContainer}
-                  api={api}
-                  getActiveExecutableSqon={getActiveExecutableSqon}
                 />
                 <span className="nestedOpBracket">)</span>
               </span>
@@ -118,6 +132,10 @@ const BooleanOp = ({
               <SqonReference
                 refIndex={c}
                 onRemoveClick={onRemove(currentPath)}
+                highlightColor={getColorForReference(c)}
+                isHighlighted={
+                  referencesShouldHighlight && isIndexReferenced(c)
+                }
               />
             ) : isEmptySqon(c) ? (
               <span>oooooo</span>
