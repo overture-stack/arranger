@@ -22,7 +22,11 @@ export default ({
   FieldOpModifierContainer = undefined,
   api = defaultApi,
   disabled = false,
+  getColorForReference = index => '',
+  isReferenced = false,
+  isIndexReferenced = index => false,
 }) => {
+  const referenceColor = getColorForReference(index);
   const initialState = {
     hoverring: false,
   };
@@ -49,7 +53,16 @@ export default ({
           className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}
           onClick={onActivate}
         >
-          <div className={`activeStateIndicator`} />
+          <div
+            className={`activeStateIndicator`}
+            style={
+              !isReferenced
+                ? {}
+                : {
+                    background: referenceColor,
+                  }
+            }
+          />
           <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
             <input
               readOnly
@@ -73,6 +86,9 @@ export default ({
                     FieldOpModifierContainer={FieldOpModifierContainer}
                     api={api}
                     getActiveExecutableSqon={getActiveExecutableSqon}
+                    getColorForReference={getColorForReference}
+                    isIndexReferenced={isIndexReferenced}
+                    referencesShouldHighlight={isActiveSqon}
                   />
                 )}
               </div>

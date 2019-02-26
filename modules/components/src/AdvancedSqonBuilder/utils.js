@@ -146,6 +146,18 @@ export const removeSqonPath = paths => sqon => {
   );
 };
 
+export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
+  if (isBooleanOp(syntheticSqon)) {
+    return syntheticSqon.content.reduce(
+      (acc, contentSqon) =>
+        acc || isIndexReferencedInSqon(contentSqon)(indexReference),
+      false,
+    );
+  } else {
+    return syntheticSqon === indexReference;
+  }
+};
+
 export const setSqonAtPath = (paths, newSqon) => sqon => {
   const lensPath = flattenDeep(paths.map(path => ['content', path]));
   const targetLens = lens(lensPath);

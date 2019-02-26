@@ -7,9 +7,25 @@ import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
-const SqonReference = ({ refIndex, onRemoveClick = () => {} }) => (
+const SqonReference = ({
+  refIndex,
+  onRemoveClick = () => {},
+  highlightColor,
+  isHighlighted,
+}) => (
   <span className={`sqonReference pill`}>
-    <span className={'content sqonReferenceIndex'}>#{refIndex + 1}</span>
+    <span
+      className={'content sqonReferenceIndex'}
+      style={
+        !isHighlighted
+          ? {}
+          : {
+              background: highlightColor,
+            }
+      }
+    >
+      #{refIndex + 1}
+    </span>
     <PillRemoveButton onClick={onRemoveClick} />
   </span>
 );
@@ -68,6 +84,9 @@ const BooleanOp = ({
   FieldOpModifierContainer = undefined,
   api = defaultApi,
   getActiveExecutableSqon,
+  getColorForReference = () => '',
+  isIndexReferenced = () => false,
+  referencesShouldHighlight = false,
 }) => {
   const { op, content } = sqon;
   const onOpChange = newOpName =>
@@ -97,6 +116,9 @@ const BooleanOp = ({
                   FieldOpModifierContainer={FieldOpModifierContainer}
                   api={api}
                   getActiveExecutableSqon={getActiveExecutableSqon}
+                  getColorForReference={getColorForReference}
+                  isIndexReferenced={isIndexReferenced}
+                  referencesShouldHighlight={referencesShouldHighlight}
                 />
                 <span className="nestedOpBracket">)</span>
               </span>
@@ -118,6 +140,10 @@ const BooleanOp = ({
               <SqonReference
                 refIndex={c}
                 onRemoveClick={onRemove(currentPath)}
+                highlightColor={getColorForReference(c)}
+                isHighlighted={
+                  referencesShouldHighlight && isIndexReferenced(c)
+                }
               />
             ) : isEmptySqon(c) ? (
               <span>oooooo</span>

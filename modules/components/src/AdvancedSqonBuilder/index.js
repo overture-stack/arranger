@@ -7,6 +7,7 @@ import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
   duplicateSqonAtIndex,
+  isIndexReferencedInSqon,
   DisplayNameMapContext,
 } from './utils';
 import './style.css';
@@ -30,6 +31,16 @@ const AdvancedSqonBuilder = ({
   getSqonDeleteConfirmation = ({ indexToRemove, dependentIndices }) =>
     Promise.resolve(),
   api = defaultApi,
+  referenceColors = [
+    '#cbeefb',
+    '#fce8d3',
+    '#eed5e9',
+    '#cbebf1',
+    '#f9d3d4',
+    '#d5d7e9',
+    '#fad9ea',
+    '#f3ebd0',
+  ],
 }) => {
   /**
    * "initialState" is used in 'react-component-component', which provides a
@@ -41,7 +52,13 @@ const AdvancedSqonBuilder = ({
   };
 
   const lastSqon = syntheticSqons[Math.max(syntheticSqons.length - 1, 0)];
+  const selectedSyntheticSqon = syntheticSqons[activeSqonIndex];
   const allowsNewSqon = !(!lastSqon ? false : !lastSqon.content.length);
+
+  const getColorForReference = referenceIndex =>
+    referenceColors[referenceIndex % referenceColors.length];
+  const isSqonReferenced = sqonIndex =>
+    isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
 
   const dispatchSqonListChange = ({ eventKey, newSqonList, eventDetails }) => {
     // wraps in promise to delay to allow delaying to next frame
@@ -193,11 +210,9 @@ const AdvancedSqonBuilder = ({
       ),
     });
   };
-  const getActiveExecutableSqon = () => {
-    return resolveSyntheticSqon(syntheticSqons)(
-      syntheticSqons[activeSqonIndex],
-    );
-  };
+  const getActiveExecutableSqon = () =>
+    resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
+
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
@@ -249,6 +264,11 @@ const AdvancedSqonBuilder = ({
                 onActivate={onSqonEntryActivate(i)}
                 api={api}
                 disabled={!allowsNewSqon && i === syntheticSqons.length - 1}
+                getColorForReference={getColorForReference}
+                isReferenced={isSqonReferenced(i)}
+                isIndexReferenced={isIndexReferencedInSqon(
+                  selectedSyntheticSqon,
+                )}
               />
             ))}
             <div>
@@ -276,6 +296,7 @@ AdvancedSqonBuilder.propTypes = {
   ButtonComponent: PropTypes.any,
   getSqonDeleteConfirmation: PropTypes.func,
   api: PropTypes.func,
+  referenceColors: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default AdvancedSqonBuilder;
