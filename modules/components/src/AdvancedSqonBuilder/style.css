@@ -135,6 +135,7 @@
   border: solid 1px lightgrey;
   border-radius: 10px;
   background: white;
+  overflow: hidden;
 }
 .sqonView .pill .content {
   padding: 5px;
