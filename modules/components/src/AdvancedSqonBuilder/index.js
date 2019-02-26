@@ -12,6 +12,8 @@ import {
 import './style.css';
 import defaultApi from '../utils/api';
 import { cloneDeep } from 'apollo-utilities';
+import FaRegClone from 'react-icons/lib/fa/clone';
+import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
 
 const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
@@ -271,14 +273,21 @@ const AdvancedSqonBuilder = ({
               />
             ))}
             <div>
-              <button disabled={!allowsNewSqon} onClick={onNewQueryClick}>
-                Start new query
+              <button
+                className={`sqonListActionButton removeButton`}
+                disabled={!allowsNewSqon}
+                onClick={onNewQueryClick}
+              >
+                <FaPlusCircle />
+                {` `}Start new query
               </button>
               <button
-                disabled={!allowsNewSqon}
+                className={`sqonListActionButton duplicateButton`}
+                disabled={!selectedSyntheticSqon.content.length}
                 onClick={onSqonDuplicate(activeSqonIndex)}
               >
-                Duplicate Query
+                <FaRegClone />
+                {` `}Duplicate Query
               </button>
             </div>
           </div>

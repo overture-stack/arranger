@@ -1,5 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
+import FaRegClone from 'react-icons/lib/fa/clone';
+import FaTrashAlt from 'react-icons/lib/fa/trash';
 import BooleanOp from './sqonPieces/BooleanOp';
 import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
 import { PROJECT_ID } from '../utils/config';
@@ -97,14 +99,14 @@ export default ({
           {(isActiveSqon || s.state.hoverring) && (
             <div className={`actionButtonsContainer`}>
               <button
-                className={`button`}
+                className={`sqonListActionButton`}
                 disabled={disabled}
                 onClick={onSqonDuplicate}
               >
-                dup
+                <FaRegClone />
               </button>
-              <button className={`button`} onClick={onSqonRemove}>
-                delete
+              <button className={`sqonListActionButton`} onClick={onSqonRemove}>
+                <FaTrashAlt />
               </button>
             </div>
           )}
