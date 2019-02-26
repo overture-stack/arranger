@@ -103,11 +103,7 @@ export default ({
               >
                 dup
               </button>
-              <button
-                className={`button`}
-                disabled={disabled}
-                onClick={onSqonRemove}
-              >
+              <button className={`button`} onClick={onSqonRemove}>
                 delete
               </button>
             </div>

@@ -274,6 +274,12 @@ const AdvancedSqonBuilder = ({
               <button disabled={!allowsNewSqon} onClick={onNewQueryClick}>
                 Start new query
               </button>
+              <button
+                disabled={!allowsNewSqon}
+                onClick={onSqonDuplicate(activeSqonIndex)}
+              >
+                Duplicate Query
+              </button>
             </div>
           </div>
         )}
