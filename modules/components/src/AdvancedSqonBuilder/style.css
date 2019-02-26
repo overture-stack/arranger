@@ -159,6 +159,8 @@
 }
 .sqonView .pill .content {
   padding: 5px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .sqonView .logicalOpSelector {
@@ -167,6 +169,9 @@
 }
 .sqonView .logicalOpSelector .content {
   text-transform: uppercase;
+}
+.sqonView .logicalOpSelector .content .opName {
+  padding-right: 5px;
 }
 .sqonView .logicalOpSelector .menuContainer {
   position: absolute;

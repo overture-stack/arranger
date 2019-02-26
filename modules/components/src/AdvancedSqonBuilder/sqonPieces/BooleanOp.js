@@ -1,5 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
+import FaChevronDown from 'react-icons/lib/fa/chevron-down';
+import FaChevronUp from 'react-icons/lib/fa/chevron-up';
 import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
 import FieldOp from './FieldOp';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
@@ -44,10 +46,8 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
         <ClickAwayListener handler={onClickAway(s)}>
           <span className={'pill logicalOpSelector'} onClick={onClick(s)}>
             <span className={'content'}>
-              {opName}{' '}
-              <span
-                className={`fa fa-chevron-${s.state.isOpen ? 'up' : 'down'}`}
-              />
+              <span className={'opName'}>{opName}</span>{' '}
+              {s.state.isOpen ? <FaChevronUp /> : <FaChevronDown />}
             </span>
             {s.state.isOpen && (
               <div className={`menuContainer`}>

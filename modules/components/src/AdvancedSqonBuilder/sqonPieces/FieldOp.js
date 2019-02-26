@@ -1,5 +1,7 @@
 import React from 'react';
 import Component from 'react-component-component';
+import FaChevronDown from 'react-icons/lib/fa/chevron-down';
+import FaChevronUp from 'react-icons/lib/fa/chevron-up';
 import {
   DisplayNameMapContext,
   getOperationAtPath,
@@ -56,10 +58,11 @@ export default ({
                 <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
                   {Array.isArray(value) ? value.join(', ') : value}{' '}
                 </span>
-                <span
-                  onClick={toggleDropdown(s)}
-                  className={`fa fa-chevron-${s.state.isOpen ? 'up' : 'down'}`}
-                />
+                {s.state.isOpen ? (
+                  <FaChevronUp onClick={toggleDropdown(s)} />
+                ) : (
+                  <FaChevronDown onClick={toggleDropdown(s)} />
+                )}
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
                     <FieldOpModifier
