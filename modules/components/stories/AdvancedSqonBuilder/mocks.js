@@ -76,8 +76,24 @@ export const sqons = [
         },
       },
       {
-        op: 'in',
-        content: { field: 'is_proband', value: [undefined] }
+        op: 'and',
+        content: [
+          {
+            op: 'in',
+            content: {
+              field: 'participants.study.short_name',
+              value: [
+                'Ewing Sarcoma: Genetic Risk',
+                'Pediatric Brain Tumors: CBTTC',
+                'Acute Myeloid Leukemia',
+              ],
+            },
+          },
+          {
+            op: 'in',
+            content: { field: 'is_proband', value: [undefined] }
+          },
+        ]
       },
     ],
   },
