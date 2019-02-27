@@ -897,6 +897,76 @@ test('buildQuery "all"', () => {
   expect(actualOutput).toEqual(output);
 });
 
+test('buildQuery "between"', () => {
+  const input = {
+    nestedFields: ['biospecimens'],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'between',
+          content: {
+            field: 'biospecimens.age_at_event_days',
+            value: [200, '10000'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          bool: {
+            must: [
+              {
+                nested: {
+                  path: 'biospecimens',
+                  query: {
+                    bool: {
+                      must: [
+                        {
+                          range: {
+                            'biospecimens.age_at_event_days': {
+                              boost: 0,
+                              gte: 200,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                nested: {
+                  path: 'biospecimens',
+                  query: {
+                    bool: {
+                      must: [
+                        {
+                          range: {
+                            'biospecimens.age_at_event_days': {
+                              boost: 0,
+                              lte: 10000,
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
 test('it must reject invalid pivot fields', () => {
   const testFunction = () => {
     const input = {

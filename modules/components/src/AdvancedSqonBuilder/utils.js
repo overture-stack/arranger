@@ -7,15 +7,16 @@ import { flattenDeep } from 'lodash';
  * todo: these magic sqon values should be centralized across Arranger
  */
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
-export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between'];
+export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between', 'all'];
 export const RANGE_OPS = ['>=', '<=', 'between'];
-export const TERM_OPS = ['in', 'not-in'];
+export const TERM_OPS = ['in', 'not-in', 'all'];
 export const FIELD_OP_DISPLAY_NAME = {
   in: 'any of',
   'not-in': 'not',
   '>=': 'greater than',
   '<=': 'less than',
   between: 'between',
+  all: 'all of',
 };
 
 /**
@@ -98,8 +99,8 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(s =>
-            !isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s,
+          content: sqon.content.map(
+            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
           ),
         };
   });
@@ -130,9 +131,7 @@ export const removeSqonPath = paths => sqon => {
 
   // creates lens to the immediate parent of target
   const parentPath = flattenDeep(
-    paths
-      .slice(paths.length - 2, paths.length - 1)
-      .map(path => ['content', path]),
+    paths.slice(0, paths.length - 1).map(path => ['content', path]),
   );
   const parentLens = lens(parentPath);
 
@@ -146,6 +145,18 @@ export const removeSqonPath = paths => sqon => {
     { ...parent, content: parent.content.filter(c => c !== removeTarget) },
     sqon,
   );
+};
+
+export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
+  if (isBooleanOp(syntheticSqon)) {
+    return syntheticSqon.content.reduce(
+      (acc, contentSqon) =>
+        acc || isIndexReferencedInSqon(contentSqon)(indexReference),
+      false,
+    );
+  } else {
+    return syntheticSqon === indexReference;
+  }
 };
 
 export const setSqonAtPath = (paths, newSqon) => sqon => {

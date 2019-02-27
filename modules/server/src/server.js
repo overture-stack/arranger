@@ -21,6 +21,7 @@ let startSingleProject = async ({
   }
 };
 
+export { getProjects } from './utils/projects';
 export default async ({
   projectId = PROJECT_ID,
   esHost = ES_HOST,

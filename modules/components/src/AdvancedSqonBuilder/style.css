@@ -21,6 +21,16 @@
   color: grey;
   cursor: unset;
 }
+.sqonBuilder .sqonListActionButton {
+  color: #008199;
+  border: none;
+  padding: 5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sqonBuilder .sqonListActionButton:disabled {
+  color: lightgrey;
+}
 
 .sqonEntry {
   display: flex;
@@ -31,6 +41,10 @@
   margin-top: 4px;
   margin-bottom: 4px;
   padding-right: 100px;
+  min-height: 40px;
+}
+.sqonEntry:hover {
+  background: #e9e9f5;
 }
 .sqonEntry.active {
   background: #e4f1e7;
@@ -51,12 +65,16 @@
   height: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
   background: white;
   padding: 5px;
   border-left: solid 1px lightgrey;
   animation: fadeIn 0.25s;
+}
+
+.sqonEntry .actionButtonsContainer .sqonListActionButton {
+  font-size: 18px;
 }
 
 .sqonEntry .activeStateIndicator {
@@ -136,8 +154,13 @@
   border-radius: 10px;
   background: white;
 }
+.sqonView .pill.sqonReference {
+  overflow: hidden;
+}
 .sqonView .pill .content {
   padding: 5px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .sqonView .logicalOpSelector {
@@ -146,6 +169,9 @@
 }
 .sqonView .logicalOpSelector .content {
   text-transform: uppercase;
+}
+.sqonView .logicalOpSelector .content .opName {
+  padding-right: 5px;
 }
 .sqonView .logicalOpSelector .menuContainer {
   position: absolute;
