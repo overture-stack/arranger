@@ -7,15 +7,16 @@ import { flattenDeep } from 'lodash';
  * todo: these magic sqon values should be centralized across Arranger
  */
 export const BOOLEAN_OPS = ['and', 'or', 'not'];
-export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between'];
+export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between', 'all'];
 export const RANGE_OPS = ['>=', '<=', 'between'];
-export const TERM_OPS = ['in', 'not-in'];
+export const TERM_OPS = ['in', 'not-in', 'all'];
 export const FIELD_OP_DISPLAY_NAME = {
   in: 'any of',
   'not-in': 'not',
   '>=': 'greater than',
   '<=': 'less than',
   between: 'between',
+  all: 'all of',
 };
 
 /**
