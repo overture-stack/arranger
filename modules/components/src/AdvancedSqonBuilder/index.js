@@ -97,20 +97,21 @@ const AdvancedSqonBuilder = ({
       }, []),
     })
       .then(() =>
+        onActiveSqonSelect({
+          index: Math.max(
+            Math.min(syntheticSqons.length - 2, indexToRemove),
+            0,
+          ),
+        }),
+      )
+      .then(() =>
         dispatchSqonListChange({
           eventKey: 'SQON_REMOVED',
           eventDetails: {
             removedIndex: indexToRemove,
           },
           newSqonList: removeSqonAtIndex(indexToRemove, syntheticSqons),
-        }).then(() =>
-          onActiveSqonSelect({
-            index: Math.min(
-              syntheticSqons.length - 2,
-              Math.max(indexToRemove, 0),
-            ),
-          }),
-        ),
+        }),
       )
       .catch(() => {});
   };
@@ -283,7 +284,11 @@ const AdvancedSqonBuilder = ({
               </button>
               <button
                 className={`sqonListActionButton duplicateButton`}
-                disabled={!selectedSyntheticSqon.content.length}
+                disabled={
+                  selectedSyntheticSqon
+                    ? !selectedSyntheticSqon.content.length
+                    : false
+                }
                 onClick={onSqonDuplicate(activeSqonIndex)}
               >
                 <FaRegClone />
