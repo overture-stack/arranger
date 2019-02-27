@@ -34,13 +34,12 @@ export const BooleanFilterUI = props => {
   } = props;
 
   const initialState = {
-    selectedValue: undefined,
     localSqon: initialSqon
   };
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
     op: 'in',
-    content: { field, value: [initialState.selectedValue] },
+    content: { field, value: [undefined] },
   };
 
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
@@ -53,14 +52,16 @@ export const BooleanFilterUI = props => {
           value: [ value.key_as_string ]
       }
     };
-
+    
     s.setState({
-      selectedValue: value.key_as_string,
       localSqon: setSqonAtPath(sqonPath, newOp)(s.state.localSqon),
     });
   };
 
-  const isActive = s => ({ value }) => value === s.state.selectedValue;
+  const isActive = s => ({ value }) => {
+    const op = getOperationAtPath(sqonPath)(s.state.localSqon);
+    return value === (op && op.content.value[0]);
+  };
 
   const fieldDisplayName = getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon);
 
