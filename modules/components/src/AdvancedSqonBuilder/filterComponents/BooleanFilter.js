@@ -4,6 +4,7 @@ import Component from 'react-component-component';
 
 import {
   getOperationAtPath,
+  setSqonAtPath,
 } from '../utils';
 import defaultApi from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
@@ -44,10 +45,18 @@ export const BooleanFilterUI = props => {
 
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
 
-  const onSelectionChange = s => ({ value, generateNextSQON }) => {
+  const onSelectionChange = s => ({ value }) => {
+    const newOp = {
+      op: "in",
+      content: {
+          field,
+          value: [ value.key_as_string ]
+      }
+    };
+
     s.setState({
       selectedValue: value.key_as_string,
-      localSqon: generateNextSQON(s.state.localSqon),
+      localSqon: setSqonAtPath(sqonPath, newOp)(s.state.localSqon),
     });
   };
 

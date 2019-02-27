@@ -187,7 +187,7 @@ storiesOf('AdvancedSqonBuilder', module)
     return (<BooleanFilterUI
       buckets={mockBooleanBuckets}
       initialSqon={mockSqons[3]}
-      sqonPath={[1]}
+      sqonPath={[1, 1]}
       field={'is_proband'}
       fieldDisplayNameMap={mockFieldDisplayMap}
       onSubmit={action('submitted')}
