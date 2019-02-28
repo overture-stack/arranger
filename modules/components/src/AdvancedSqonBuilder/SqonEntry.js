@@ -13,11 +13,6 @@ export default ({
   syntheticSqon,
   getActiveExecutableSqon,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
-  onSqonCheckedChange = () => {},
-  onSqonDuplicate = () => {},
-  onSqonRemove = () => {},
-  onSqonChange = sqon => {},
-  onActivate = () => {},
   isActiveSqon = false,
   isSelected = false,
   index = 0,
@@ -27,6 +22,14 @@ export default ({
   getColorForReference = index => '',
   isReferenced = false,
   isIndexReferenced = index => false,
+  isDeleting = false,
+  onSqonCheckedChange = () => {},
+  onSqonDuplicate = () => {},
+  onSqonRemove = () => {},
+  onSqonChange = sqon => {},
+  onActivate = () => {},
+  onDeleteConfirmed = () => {},
+  onDeleteCanceled = () => {},
 }) => {
   const referenceColor = getColorForReference(index);
   const initialState = {
@@ -108,6 +111,12 @@ export default ({
               <button className={`sqonListActionButton`} onClick={onSqonRemove}>
                 <FaTrashAlt />
               </button>
+            </div>
+          )}
+          {isDeleting && (
+            <div className={'actionButtonsContainer deleteContainer'}>
+              <button onClick={onDeleteConfirmed}>DELETE!!!</button>
+              <button onClick={onDeleteCanceled}>CANCEL</button>
             </div>
           )}
           <SqonActionComponent
