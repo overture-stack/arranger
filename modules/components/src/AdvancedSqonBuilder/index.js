@@ -163,7 +163,7 @@ const AdvancedSqonBuilder = ({
         }),
       );
   };
-  const onNewQueryClick = () => {
+  const onNewQueryClick = s => () => {
     if (allowsNewSqon) {
       dispatchSqonListChange({
         eventKey: 'NEW_SQON',
@@ -277,7 +277,7 @@ const AdvancedSqonBuilder = ({
               <button
                 className={`sqonListActionButton removeButton`}
                 disabled={!allowsNewSqon}
-                onClick={onNewQueryClick}
+                onClick={onNewQueryClick(s)}
               >
                 <FaPlusCircle />
                 {` `}Start new query
