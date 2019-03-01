@@ -112,6 +112,7 @@ export default ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   initialSqon,
+  executableSqon,
   sqonPath,
   field,
 
@@ -141,7 +142,7 @@ export default ({
       api={api}
       projectId={arrangerProjectId}
       query={query}
-      variables={{ sqon: initialSqon }}
+      variables={{ sqon: executableSqon }}
       render={({ data, loading, error }) => (
         <BooleanFilterUI
           ContainerComponent={({ children, ...props }) => (

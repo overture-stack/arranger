@@ -97,6 +97,24 @@ export const sqons = [
       },
     ],
   },
+  {
+    op: 'and',
+    content: [
+      1,
+      2,
+      {
+        op: 'in',
+        content: {
+          field: 'study.short_name',
+          value: [
+            'Ewing Sarcoma: Genetic Risk',
+            'Pediatric Brain Tumors: CBTTC',
+            'Acute Myeloid Leukemia',
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 export const fieldDisplayMap = {

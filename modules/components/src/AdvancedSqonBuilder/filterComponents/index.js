@@ -24,7 +24,7 @@ const FieldOpModifier = ({
   field,
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
-  getExecutableSqon,
+  getExecutableSqon = () => initialSqon,
 }) => (
   <ExtendedMappingProvider
     api={api}
@@ -47,7 +47,8 @@ const FieldOpModifier = ({
           api={api}
           loading={loading}
           sqonPath={sqonPath}
-          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
+          initialSqon={initialSqon}
+          executableSqon={getExecutableSqon()}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}
@@ -58,7 +59,8 @@ const FieldOpModifier = ({
         <RangeFilter
           loading={loading}
           sqonPath={sqonPath}
-          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
+          initialSqon={initialSqon}
+          executableSqon={getExecutableSqon()}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}
@@ -71,8 +73,9 @@ const FieldOpModifier = ({
           arrangerProjectId={arrangerProjectId}
           arrangerProjectIndex={arrangerProjectIndex}
           field={field}
-          initialSqon={getExecutableSqon ? getExecutableSqon() : initialSqon}
           sqonPath={sqonPath}
+          initialSqon={initialSqon}
+          executableSqon={getExecutableSqon()}
           onSubmit={onSubmit}
           onCancel={onCancel}
           fieldDisplayNameMap={fieldDisplayNameMap}
@@ -101,6 +104,7 @@ FieldOpModifier.prototype = {
   field: PropTypes.string,
   arrangerProjectId: PropTypes.string,
   arrangerProjectIndex: PropTypes.string.isRequired,
+  getExecutableSqon: PropTypes.func,
 };
 
 export default FieldOpModifier;

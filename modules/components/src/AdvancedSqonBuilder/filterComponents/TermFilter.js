@@ -46,6 +46,7 @@ export const TermFilterUI = ({
     op: 'in',
     content: { value: [], field },
   };
+  console.log('initialSqon: ', initialSqon);
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
     s.setState({ searchString: e.value });
@@ -194,6 +195,10 @@ export default ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   api = defaultApi,
+  executableSqon = {
+    op: 'and',
+    content: [],
+  },
 
   initialSqon = null,
   onSubmit = sqon => {},
@@ -219,7 +224,7 @@ export default ({
   }`;
   return (
     <Query
-      variables={{ sqon: initialSqon }}
+      variables={{ sqon: executableSqon }}
       projectId={arrangerProjectId}
       api={api}
       query={query}

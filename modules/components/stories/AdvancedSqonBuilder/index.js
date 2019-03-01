@@ -101,9 +101,9 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
-      action('sqons change')({ newSyntheticSqons, sqonValues });
-      s.setState({ syntheticSqons: newSyntheticSqons });
+    const onChange = s => data => {
+      action('sqons change')(data);
+      s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
     const onActiveSqonSelect = s => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
@@ -143,9 +143,9 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
-      action('sqons change')({ newSyntheticSqons, sqonValues });
-      s.setState({ syntheticSqons: newSyntheticSqons });
+    const onChange = s => data => {
+      action('sqons change')(data);
+      s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
     const onActiveSqonSelect = s => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
@@ -226,15 +226,17 @@ storiesOf('AdvancedSqonBuilder', module)
     </ProjectsProvider>
   ))
   .add('filters/BooleanFilter', () => {
-    return (<BooleanFilterUI
-      buckets={mockBooleanBuckets}
-      initialSqon={mockSqons[3]}
-      sqonPath={[1, 1]}
-      field={'is_proband'}
-      fieldDisplayNameMap={mockFieldDisplayMap}
-      onSubmit={action('submitted')}
-      onCancel={action('canceled')}
-    />);
+    return (
+      <BooleanFilterUI
+        buckets={mockBooleanBuckets}
+        initialSqon={mockSqons[3]}
+        sqonPath={[1, 1]}
+        field={'is_proband'}
+        fieldDisplayNameMap={mockFieldDisplayMap}
+        onSubmit={action('submitted')}
+        onCancel={action('canceled')}
+      />
+    );
   })
   .add('filters/RangeFilter', () => {
     return <div>add RangeFilter</div>;
