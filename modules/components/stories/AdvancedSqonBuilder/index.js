@@ -80,6 +80,48 @@ const DemoModal = ({ onOk = () => {}, onCancel = () => {} }) => (
 
 storiesOf('AdvancedSqonBuilder', module)
   .addDecorator(themeDecorator)
+  .add('Builder with default delete handler', () => {
+    const initialState = {
+      activeSqonIndex: 0,
+      ModalComponent: null,
+      syntheticSqons: mockSqons,
+    };
+    const onChange = s => ({ newSyntheticSqons, sqonValues }) => {
+      action('sqons change')({ newSyntheticSqons, sqonValues });
+      s.setState({ syntheticSqons: newSyntheticSqons });
+    };
+    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+      action('active sqon select')({ index, sqonValue });
+      s.setState({ activeSqonIndex: index });
+    };
+    const setModal = s => ModalComponent =>
+      s.setState({
+        ModalComponent,
+      });
+    return (
+      <ProjectsProvider>
+        {({ project, index }) => (
+          <Component initialState={initialState}>
+            {s => (
+              <div style={{ position: 'relative', height: '100%' }}>
+                <AdvancedSqonBuilder
+                  arrangerProjectId={project}
+                  arrangerProjectIndex={index}
+                  syntheticSqons={s.state.syntheticSqons}
+                  activeSqonIndex={s.state.activeSqonIndex}
+                  fieldDisplayNameMap={mockFieldDisplayMap}
+                  onChange={onChange(s)}
+                  onActiveSqonSelect={onActiveSqonSelect(s)}
+                  SqonActionComponent={DemoSqonActionComponent}
+                />
+                {s.state.ModalComponent ? s.state.ModalComponent() : null}
+              </div>
+            )}
+          </Component>
+        )}
+      </ProjectsProvider>
+    );
+  })
   .add('Builder', () => {
     const initialState = {
       activeSqonIndex: 0,

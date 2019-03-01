@@ -3,7 +3,12 @@ import Component from 'react-component-component';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaTrashAlt from 'react-icons/lib/fa/trash';
 import BooleanOp from './sqonPieces/BooleanOp';
-import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
+import {
+  isBooleanOp,
+  removeSqonPath,
+  setSqonAtPath,
+  doesContainReference,
+} from './utils';
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
 
@@ -13,11 +18,6 @@ export default ({
   syntheticSqon,
   getActiveExecutableSqon,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
-  onSqonCheckedChange = () => {},
-  onSqonDuplicate = () => {},
-  onSqonRemove = () => {},
-  onSqonChange = sqon => {},
-  onActivate = () => {},
   isActiveSqon = false,
   isSelected = false,
   index = 0,
@@ -27,6 +27,15 @@ export default ({
   getColorForReference = index => '',
   isReferenced = false,
   isIndexReferenced = index => false,
+  isDeleting = false,
+  dependentIndices = [],
+  onSqonCheckedChange = () => {},
+  onSqonDuplicate = () => {},
+  onSqonRemove = () => {},
+  onSqonChange = sqon => {},
+  onActivate = () => {},
+  onDeleteConfirmed = () => {},
+  onDeleteCanceled = () => {},
 }) => {
   const referenceColor = getColorForReference(index);
   const initialState = {
@@ -107,6 +116,22 @@ export default ({
               </button>
               <button className={`sqonListActionButton`} onClick={onSqonRemove}>
                 <FaTrashAlt />
+              </button>
+            </div>
+          )}
+          {isDeleting && (
+            <div className={'actionButtonsContainer deleteConfirmation'}>
+              <div>
+                {!!dependentIndices.length && (
+                  <div>Dependent queries will be deleted.</div>
+                )}
+                <div>Are you sure you want to delete?</div>
+              </div>
+              <button className={`button cancel`} onClick={onDeleteCanceled}>
+                CANCEL
+              </button>
+              <button className={`button delete`} onClick={onDeleteConfirmed}>
+                DELETE
               </button>
             </div>
           )}

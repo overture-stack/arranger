@@ -73,6 +73,15 @@
   animation: fadeIn 0.25s;
 }
 
+.sqonEntry .actionButtonsContainer.deleteConfirmation {
+  width: 400px;
+}
+.sqonEntry .actionButtonsContainer.deleteConfirmation .button.delete {
+  font-size: 12px;
+  background: #008199;
+  color: white;
+}
+
 .sqonEntry .actionButtonsContainer .sqonListActionButton {
   font-size: 18px;
 }
