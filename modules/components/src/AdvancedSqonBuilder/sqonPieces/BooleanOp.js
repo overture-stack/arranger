@@ -45,7 +45,7 @@ const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
       {s => (
         <ClickAwayListener handler={onClickAway(s)}>
           <span className={'pill logicalOpSelector'} onClick={onClick(s)}>
-            <span className={'content'}>
+            <span className={'content'} style={{ pointerEvents: 'none' }}>
               <span className={'opName'}>{opName}</span>{' '}
               {s.state.isOpen ? <FaChevronUp /> : <FaChevronDown />}
             </span>
