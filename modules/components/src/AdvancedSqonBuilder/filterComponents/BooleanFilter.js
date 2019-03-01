@@ -2,10 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Component from 'react-component-component';
 
-import {
-  getOperationAtPath,
-  setSqonAtPath,
-} from '../utils';
+import { getOperationAtPath, setSqonAtPath } from '../utils';
 import defaultApi from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
 import BooleanAgg from '../../Aggs/BooleanAgg';
@@ -14,7 +11,10 @@ import './FilterContainerStyle.css';
 import Query from '../../Query';
 
 const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
-  return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
+  return (
+    fieldDisplayNameMap[initialFieldSqon.content.field] ||
+    initialFieldSqon.content.field
+  );
 };
 
 const AggsWrapper = ({ children }) => (
@@ -34,28 +34,30 @@ export const BooleanFilterUI = props => {
   } = props;
 
   const initialState = {
-    localSqon: initialSqon
+    localSqon: initialSqon,
   };
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
     op: 'in',
-    content: { field, value: [undefined] },
+    content: { field, value: [] },
   };
 
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
 
   const onSelectionChange = s => ({ value }) => {
-    const newOp = {
-      op: "in",
-      content: {
+    setTimeout(() => {
+      const newOp = {
+        op: 'in',
+        content: {
           field,
-          value: [ value.key_as_string ]
-      }
-    };
-    
-    s.setState({
-      localSqon: setSqonAtPath(sqonPath, newOp)(s.state.localSqon),
-    });
+          value: [value.key_as_string],
+        },
+      };
+
+      s.setState({
+        localSqon: setSqonAtPath(sqonPath, newOp)(s.state.localSqon),
+      });
+    }, 0);
   };
 
   const isActive = s => ({ value }) => {
@@ -63,7 +65,10 @@ export const BooleanFilterUI = props => {
     return value === (op && op.content.value[0]);
   };
 
-  const fieldDisplayName = getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon);
+  const fieldDisplayName = getFieldDisplayName(
+    fieldDisplayNameMap,
+    initialFieldSqon,
+  );
 
   return (
     <Component initialState={initialState}>
@@ -71,7 +76,7 @@ export const BooleanFilterUI = props => {
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <React.Fragment>
             <div key="header" className="contentSection headerContainer">
-              <span>{ `Participant is a ${fieldDisplayName}`}</span>
+              <span>{`Participant is a ${fieldDisplayName}`}</span>
             </div>
             <div key="body" className="contentSection bodyContainer">
               <BooleanAgg
@@ -93,7 +98,7 @@ export const BooleanFilterUI = props => {
 BooleanFilterUI.propTypes = {
   onSubmit: PropTypes.func,
   onCancel: PropTypes.func,
-  ContainerComponent: PropTypes.element,
+  ContainerComponent: PropTypes.func,
   sqonPath: PropTypes.array,
   initialSqon: PropTypes.object,
   field: PropTypes.string.isRequired,
@@ -150,7 +155,11 @@ export default ({
           sqonPath={sqonPath}
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
-          buckets={data ? data[arrangerProjectIndex].aggregations[gqlField].buckets : []}
+          buckets={
+            data
+              ? data[arrangerProjectIndex].aggregations[gqlField].buckets
+              : []
+          }
         />
       )}
     />

@@ -91,9 +91,9 @@ export const sqons = [
           },
           {
             op: 'in',
-            content: { field: 'is_proband', value: [undefined] }
+            content: { field: 'is_proband', value: ['true'] },
           },
-        ]
+        ],
       },
     ],
   },
@@ -103,7 +103,7 @@ export const fieldDisplayMap = {
   'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
   'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
   'participants.study.short_name': 'Study Short Name',
-  'participants.is_proband' : 'Is Proband',
+  'participants.is_proband': 'Is Proband',
   kf_id: 'File ID',
   created_at: 'Created At',
   is_proband: 'Proband',
