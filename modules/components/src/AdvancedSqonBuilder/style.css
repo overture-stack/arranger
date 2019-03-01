@@ -76,8 +76,10 @@
 .sqonEntry .actionButtonsContainer.deleteConfirmation {
   width: 400px;
 }
-.sqonEntry .actionButtonsContainer.deleteConfirmation .sqonListActionButton {
+.sqonEntry .actionButtonsContainer.deleteConfirmation .button.delete {
   font-size: 12px;
+  background: #008199;
+  color: white;
 }
 
 .sqonEntry .actionButtonsContainer .sqonListActionButton {

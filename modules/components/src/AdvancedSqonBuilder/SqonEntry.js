@@ -127,17 +127,11 @@ export default ({
                 )}
                 <div>Are you sure you want to delete?</div>
               </div>
-              <button
-                className={`sqonListActionButton`}
-                onClick={onDeleteConfirmed}
-              >
-                DELETE
-              </button>
-              <button
-                className={`sqonListActionButton`}
-                onClick={onDeleteCanceled}
-              >
+              <button className={`button cancel`} onClick={onDeleteCanceled}>
                 CANCEL
+              </button>
+              <button className={`button delete`} onClick={onDeleteConfirmed}>
+                DELETE
               </button>
             </div>
           )}
