@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Component from 'react-component-component';
+import { get } from 'lodash';
 
 import { getOperationAtPath, setSqonAtPath } from '../utils';
 import defaultApi from '../../utils/api';
@@ -157,7 +158,10 @@ export default ({
           opDisplayNameMap={opDisplayNameMap}
           buckets={
             data
-              ? data[arrangerProjectIndex].aggregations[gqlField].buckets
+              ? get(
+                  data,
+                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
+                )
               : []
           }
         />

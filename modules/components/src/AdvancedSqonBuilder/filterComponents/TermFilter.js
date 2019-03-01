@@ -1,6 +1,6 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { sortBy } from 'lodash';
+import { sortBy, get } from 'lodash';
 
 import './FilterContainerStyle.css';
 import { FilterContainer } from './common';
@@ -240,7 +240,10 @@ export default ({
           opDisplayNameMap={opDisplayNameMap}
           buckets={
             data
-              ? data[arrangerProjectIndex].aggregations[gqlField].buckets
+              ? get(
+                  data,
+                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
+                )
               : []
           }
         />

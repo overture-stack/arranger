@@ -11,14 +11,14 @@ export const sqons = [
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.diagnosis_category',
+          field: 'diagnoses.diagnosis_category',
           value: ['Cancer', 'Acute Myeloid Leukemia'],
         },
       },
       {
         op: 'in',
         content: {
-          field: 'participants.study.short_name',
+          field: 'study.short_name',
           value: [
             'Ewing Sarcoma: Genetic Risk',
             'Pediatric Brain Tumors: CBTTC',
@@ -38,14 +38,14 @@ export const sqons = [
           {
             op: 'in',
             content: {
-              field: 'participants.diagnoses.diagnosis_category',
+              field: 'diagnoses.diagnosis_category',
               value: ['Cancer', 'Acute Myeloid Leukemia'],
             },
           },
           {
             op: 'in',
             content: {
-              field: 'participants.study.short_name',
+              field: 'study.short_name',
               value: [
                 'Ewing Sarcoma: Genetic Risk',
                 'Pediatric Brain Tumors: CBTTC',
@@ -71,7 +71,7 @@ export const sqons = [
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.diagnosis_category',
+          field: 'diagnoses.diagnosis_category',
           value: ['Cancer', 'Acute Myeloid Leukemia'],
         },
       },
@@ -81,7 +81,7 @@ export const sqons = [
           {
             op: 'in',
             content: {
-              field: 'participants.study.short_name',
+              field: 'study.short_name',
               value: [
                 'Ewing Sarcoma: Genetic Risk',
                 'Pediatric Brain Tumors: CBTTC',
@@ -100,10 +100,10 @@ export const sqons = [
 ];
 
 export const fieldDisplayMap = {
-  'participants.diagnoses.diagnosis_category': 'Diagnosis Category',
-  'participants.phenotype.hpo_phenotype_observed_text': 'Observed Text',
-  'participants.study.short_name': 'Study Short Name',
-  'participants.is_proband': 'Is Proband',
+  'diagnoses.diagnosis_category': 'Diagnosis Category',
+  'phenotype.hpo_phenotype_observed_text': 'Observed Text',
+  'study.short_name': 'Study Short Name',
+  is_proband: 'Is Proband',
   kf_id: 'File ID',
   created_at: 'Created At',
   is_proband: 'Proband',
