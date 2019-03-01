@@ -51,7 +51,6 @@ export const resolveSyntheticSqon = allSqons => syntheticSqon => {
     return {
       ...syntheticSqon,
       content: syntheticSqon.content
-        .filter(Boolean)
         .map(c => (!isNaN(c) ? allSqons[c] : c))
         .map(resolveSyntheticSqon(allSqons)),
     };
