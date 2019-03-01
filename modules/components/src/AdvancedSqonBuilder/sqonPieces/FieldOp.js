@@ -54,13 +54,14 @@ export default ({
               <ClickAwayListener
                 className={'selectionContainer'}
                 handler={onClickAway(s)}
-                onClick={toggleDropdown(s)}
               >
-                <span className={'valueDisplay'}>
+                <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
                   {Array.isArray(value) ? value.join(', ') : value}{' '}
                 </span>
-                <span style={{ pointerEvents: 'none' }}>
-                  {s.state.isOpen ? <FaChevronUp /> : <FaChevronDown />}
+                <span onClick={toggleDropdown(s)}>
+                  <span style={{ pointerEvents: 'none' }}>
+                    {s.state.isOpen ? <FaChevronUp /> : <FaChevronDown />}
+                  </span>
                 </span>
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
