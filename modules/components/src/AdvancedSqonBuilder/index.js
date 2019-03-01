@@ -8,6 +8,7 @@ import {
   resolveSyntheticSqon,
   removeSqonAtIndex,
   isIndexReferencedInSqon,
+  getDependentIndices,
   DisplayNameMapContext,
 } from './utils';
 import './style.css';
@@ -46,7 +47,7 @@ const AdvancedSqonBuilder = ({
   arrangerProjectId = PROJECT_ID,
   arrangerProjectIndex,
   syntheticSqons = [],
-  activeSqonIndex = 0,
+  activeSqonIndex: currentActiveSqonIndex = 0,
   FieldOpModifierContainer = undefined,
   SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
     null,
@@ -84,7 +85,7 @@ const AdvancedSqonBuilder = ({
   };
 
   const lastSqon = syntheticSqons[Math.max(syntheticSqons.length - 1, 0)];
-  const selectedSyntheticSqon = syntheticSqons[activeSqonIndex];
+  const selectedSyntheticSqon = syntheticSqons[currentActiveSqonIndex];
   const allowsNewSqon = !(!lastSqon ? false : !lastSqon.content.length);
 
   const getColorForReference = referenceIndex =>
@@ -132,14 +133,7 @@ const AdvancedSqonBuilder = ({
     return getSqonDeleteConfirmation({
       internalStateContainer: s,
       indexToRemove,
-      dependentIndices: syntheticSqons.reduce((acc, sq, i) => {
-        if (sq) {
-          if (sq.content.includes(indexToRemove)) {
-            acc.push(i);
-          }
-        }
-        return acc;
-      }, []),
+      dependentIndices: getDependentIndices(syntheticSqons)(indexToRemove),
     })
       .then(() =>
         onActiveSqonSelect({
@@ -242,13 +236,10 @@ const AdvancedSqonBuilder = ({
     onActiveSqonSelect({ index: 0 });
   };
 
-  const onSqonEntryActivate = s => sqonIndex => () => {
-    if (sqonIndex !== activeSqonIndex) {
-      if (sqonIndex !== s.state.deletingIndex) {
-        clearSqonDeletion(s);
-      }
+  const onSqonEntryActivate = s => nextActiveSqonIndex => () => {
+    if (nextActiveSqonIndex !== currentActiveSqonIndex) {
       onActiveSqonSelect({
-        index: sqonIndex,
+        index: nextActiveSqonIndex,
       });
     }
   };
@@ -303,9 +294,8 @@ const AdvancedSqonBuilder = ({
                 index={i}
                 arrangerProjectId={arrangerProjectId}
                 arrangerProjectIndex={arrangerProjectIndex}
-                allSyntheticSqons={syntheticSqons}
                 syntheticSqon={sq}
-                isActiveSqon={i === activeSqonIndex}
+                isActiveSqon={i === currentActiveSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 SqonActionComponent={SqonActionComponent}
                 FieldOpModifierContainer={FieldOpModifierContainer}
@@ -318,6 +308,7 @@ const AdvancedSqonBuilder = ({
                   selectedSyntheticSqon,
                 )}
                 isDeleting={s.state.deletingIndex === i}
+                dependentIndices={getDependentIndices(syntheticSqons)(i)}
                 onSqonChange={onSqonChange(s)(i)}
                 onSqonCheckedChange={onSelectedSqonIndicesChange(s)(i)}
                 onSqonDuplicate={onSqonDuplicate(s)(i)}
@@ -343,7 +334,7 @@ const AdvancedSqonBuilder = ({
                     ? !selectedSyntheticSqon.content.length
                     : false
                 }
-                onClick={onSqonDuplicate(s)(activeSqonIndex)}
+                onClick={onSqonDuplicate(s)(currentActiveSqonIndex)}
               >
                 <FaRegClone />
                 {` `}Duplicate Query
@@ -382,5 +373,6 @@ export {
   isBooleanOp,
   isFieldOp,
   isIndexReferencedInSqon,
+  getDependentIndices,
 } from './utils';
 export { default as FieldOpModifier } from './filterComponents/index';

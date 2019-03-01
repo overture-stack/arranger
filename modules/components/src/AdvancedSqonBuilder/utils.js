@@ -160,6 +160,22 @@ export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
   }
 };
 
+export const doesContainReference = sqon => {
+  if (isBooleanOp(sqon)) {
+    return sqon.content.some(doesContainReference);
+  } else {
+    return isReference(sqon);
+  }
+};
+
+export const getDependentIndices = syntheticSqons => index =>
+  syntheticSqons.reduce((acc, sq, i) => {
+    if (sq && isIndexReferencedInSqon(sq)(index)) {
+      acc.push(i);
+    }
+    return acc;
+  }, []);
+
 export const setSqonAtPath = (paths, newSqon) => sqon => {
   const lensPath = flattenDeep(paths.map(path => ['content', path]));
   const targetLens = lens(lensPath);

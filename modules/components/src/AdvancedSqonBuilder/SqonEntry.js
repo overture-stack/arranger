@@ -3,7 +3,12 @@ import Component from 'react-component-component';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaTrashAlt from 'react-icons/lib/fa/trash';
 import BooleanOp from './sqonPieces/BooleanOp';
-import { isBooleanOp, removeSqonPath, setSqonAtPath } from './utils';
+import {
+  isBooleanOp,
+  removeSqonPath,
+  setSqonAtPath,
+  doesContainReference,
+} from './utils';
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
 
@@ -23,6 +28,7 @@ export default ({
   isReferenced = false,
   isIndexReferenced = index => false,
   isDeleting = false,
+  dependentIndices = [],
   onSqonCheckedChange = () => {},
   onSqonDuplicate = () => {},
   onSqonRemove = () => {},
@@ -114,9 +120,25 @@ export default ({
             </div>
           )}
           {isDeleting && (
-            <div className={'actionButtonsContainer deleteContainer'}>
-              <button onClick={onDeleteConfirmed}>DELETE!!!</button>
-              <button onClick={onDeleteCanceled}>CANCEL</button>
+            <div className={'actionButtonsContainer deleteConfirmation'}>
+              <div>
+                {!!dependentIndices.length && (
+                  <div>Dependent queries will be deleted.</div>
+                )}
+                <div>Are you sure you want to delete?</div>
+              </div>
+              <button
+                className={`sqonListActionButton`}
+                onClick={onDeleteConfirmed}
+              >
+                DELETE
+              </button>
+              <button
+                className={`sqonListActionButton`}
+                onClick={onDeleteCanceled}
+              >
+                CANCEL
+              </button>
             </div>
           )}
           <SqonActionComponent
