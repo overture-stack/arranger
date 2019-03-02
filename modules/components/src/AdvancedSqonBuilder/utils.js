@@ -22,7 +22,10 @@ export const FIELD_OP_DISPLAY_NAME = {
 /**
  * Utilities for determining the type of sqon object
  */
-export const isEmptySqon = sqonObj => sqonObj === null;
+export const isEmptySqon = sqonObj =>
+  !sqonObj
+    ? true
+    : BOOLEAN_OPS.includes(sqonObj.op) && !Boolean(sqonObj.content.length);
 export const isReference = syntheticSqon => !isNaN(syntheticSqon);
 export const isValueObj = sqonObj =>
   typeof sqonObj === 'object' &&

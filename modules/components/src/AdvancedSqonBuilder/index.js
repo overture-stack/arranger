@@ -10,6 +10,7 @@ import {
   isIndexReferencedInSqon,
   getDependentIndices,
   DisplayNameMapContext,
+  isEmptySqon,
 } from './utils';
 import './style.css';
 import defaultApi from '../utils/api';
@@ -84,9 +85,8 @@ const AdvancedSqonBuilder = ({
     onSqonDeleteCancel: null,
   };
 
-  const lastSqon = syntheticSqons[Math.max(syntheticSqons.length - 1, 0)];
   const selectedSyntheticSqon = syntheticSqons[currentActiveSqonIndex];
-  const allowsNewSqon = !(!lastSqon ? false : !lastSqon.content.length);
+  const allowsNewSqon = !syntheticSqons.some(isEmptySqon);
 
   const getColorForReference = referenceIndex =>
     referenceColors[referenceIndex % referenceColors.length];
@@ -117,7 +117,10 @@ const AdvancedSqonBuilder = ({
     );
   };
   const onSelectedSqonIndicesChange = s => index => () => {
-    if (!s.state.selectedSqonIndices.includes(index)) {
+    if (
+      !s.state.selectedSqonIndices.includes(index) &&
+      !isEmptySqon(syntheticSqons[index])
+    ) {
       s.setState({
         selectedSqonIndices: [...s.state.selectedSqonIndices, index].sort(),
       });
@@ -179,7 +182,14 @@ const AdvancedSqonBuilder = ({
           content: s.state.selectedSqonIndices,
         },
       ],
-    }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
+    })
+      .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
+      .then(() => {
+        s.setState({
+          selectedSqonIndices: [],
+        });
+        clearSqonDeletion(s);
+      });
   };
   const createIntersectSqon = s => () => {
     dispatchSqonListChange(s)({
@@ -301,7 +311,7 @@ const AdvancedSqonBuilder = ({
                 FieldOpModifierContainer={FieldOpModifierContainer}
                 getActiveExecutableSqon={getActiveExecutableSqon}
                 api={api}
-                disabled={!allowsNewSqon && i === syntheticSqons.length - 1}
+                disabled={isEmptySqon(sq)}
                 getColorForReference={getColorForReference}
                 isReferenced={isSqonReferenced(i)}
                 isIndexReferenced={isIndexReferencedInSqon(
