@@ -44,33 +44,35 @@ const defaultSqonDeletionHandler = ({
     });
   });
 
-const AdvancedSqonBuilder = ({
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  syntheticSqons = [],
-  activeSqonIndex: currentActiveSqonIndex = 0,
-  FieldOpModifierContainer = undefined,
-  SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
-    null,
-  onChange = ({ newSyntheticSqons }) => {},
-  onActiveSqonSelect = ({ index }) => {},
-  fieldDisplayNameMap = {},
-  ButtonComponent = ({ className, ...rest }) => (
-    <button className={`button ${className}`} {...rest} />
-  ),
-  getSqonDeleteConfirmation = defaultSqonDeletionHandler,
-  api = defaultApi,
-  referenceColors = [
-    '#cbeefb',
-    '#fce8d3',
-    '#eed5e9',
-    '#cbebf1',
-    '#f9d3d4',
-    '#d5d7e9',
-    '#fad9ea',
-    '#f3ebd0',
-  ],
-}) => {
+const AdvancedSqonBuilder = props => {
+  const {
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    syntheticSqons = [],
+    activeSqonIndex: currentActiveSqonIndex = 0,
+    FieldOpModifierContainer = undefined,
+    SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
+      null,
+    onChange = ({ newSyntheticSqons }) => {},
+    onActiveSqonSelect = ({ index }) => {},
+    fieldDisplayNameMap = {},
+    ButtonComponent = ({ className, ...rest }) => (
+      <button className={`button ${className}`} {...rest} />
+    ),
+    getSqonDeleteConfirmation = defaultSqonDeletionHandler,
+    api = defaultApi,
+    referenceColors = [
+      '#cbeefb',
+      '#fce8d3',
+      '#eed5e9',
+      '#cbebf1',
+      '#f9d3d4',
+      '#d5d7e9',
+      '#fad9ea',
+      '#f3ebd0',
+    ],
+  } = props;
+
   /**
    * "initialState" is used in 'react-component-component', which provides a
    * layer of state container, named 's', which consists of:

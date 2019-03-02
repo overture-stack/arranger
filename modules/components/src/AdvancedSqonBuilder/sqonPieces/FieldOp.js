@@ -13,18 +13,20 @@ import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
-export default ({
-  onSqonChange = fullSqon => {},
-  onContentRemove = () => {},
-  fullSyntheticSqon,
-  sqonPath = [],
-  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  FieldOpModifierContainer = undefined,
-  api = defaultApi,
-  getActiveExecutableSqon,
-}) => {
+export default props => {
+  const {
+    onSqonChange = fullSqon => {},
+    onContentRemove = () => {},
+    fullSyntheticSqon,
+    sqonPath = [],
+    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    FieldOpModifierContainer = undefined,
+    api = defaultApi,
+    getActiveExecutableSqon,
+  } = props;
+
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
   const { op, content: { field, value } } = fieldOpObj;
   const initialState = { isOpen: false };

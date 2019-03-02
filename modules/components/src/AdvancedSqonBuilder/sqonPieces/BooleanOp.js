@@ -9,30 +9,34 @@ import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
-const SqonReference = ({
-  refIndex,
-  onRemoveClick = () => {},
-  highlightColor,
-  isHighlighted,
-}) => (
-  <span className={`sqonReference pill`}>
-    <span
-      className={'content sqonReferenceIndex'}
-      style={
-        !isHighlighted
-          ? {}
-          : {
-              background: highlightColor,
-            }
-      }
-    >
-      #{refIndex + 1}
+const SqonReference = props => {
+  const {
+    refIndex,
+    onRemoveClick = () => {},
+    highlightColor,
+    isHighlighted,
+  } = props;
+  return (
+    <span className={`sqonReference pill`}>
+      <span
+        className={'content sqonReferenceIndex'}
+        style={
+          !isHighlighted
+            ? {}
+            : {
+                background: highlightColor,
+              }
+        }
+      >
+        #{refIndex + 1}
+      </span>
+      <PillRemoveButton onClick={onRemoveClick} />
     </span>
-    <PillRemoveButton onClick={onRemoveClick} />
-  </span>
-);
+  );
+};
 
-const LogicalOpSelector = ({ opName, onChange = newOpName => {} }) => {
+const LogicalOpSelector = props => {
+  const { opName, onChange = newOpName => {} } = props;
   const initialState = { isOpen: false };
   const selectionOptions = ['and', 'or'];
   const onClickAway = s => () => {

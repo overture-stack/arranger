@@ -12,31 +12,33 @@ import {
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
 
-export default ({
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  syntheticSqon,
-  getActiveExecutableSqon,
-  SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
-  isActiveSqon = false,
-  isSelected = false,
-  index = 0,
-  FieldOpModifierContainer = undefined,
-  api = defaultApi,
-  disabled = false,
-  getColorForReference = index => '',
-  isReferenced = false,
-  isIndexReferenced = index => false,
-  isDeleting = false,
-  dependentIndices = [],
-  onSqonCheckedChange = () => {},
-  onSqonDuplicate = () => {},
-  onSqonRemove = () => {},
-  onSqonChange = sqon => {},
-  onActivate = () => {},
-  onDeleteConfirmed = () => {},
-  onDeleteCanceled = () => {},
-}) => {
+export default props => {
+  const {
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    syntheticSqon,
+    getActiveExecutableSqon,
+    SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
+    isActiveSqon = false,
+    isSelected = false,
+    index = 0,
+    FieldOpModifierContainer = undefined,
+    api = defaultApi,
+    disabled = false,
+    getColorForReference = index => '',
+    isReferenced = false,
+    isIndexReferenced = index => false,
+    isDeleting = false,
+    dependentIndices = [],
+    onSqonCheckedChange = () => {},
+    onSqonDuplicate = () => {},
+    onSqonRemove = () => {},
+    onSqonChange = sqon => {},
+    onActivate = () => {},
+    onDeleteConfirmed = () => {},
+    onDeleteCanceled = () => {},
+  } = props;
+
   const referenceColor = getColorForReference(index);
   const initialState = {
     hoverring: false,
