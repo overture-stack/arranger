@@ -1,6 +1,6 @@
 {
   "name": "@arranger/server",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -27,10 +27,10 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/admin": "^1.0.18",
-    "@arranger/mapping-utils": "^1.0.18",
-    "@arranger/middleware": "^1.0.18",
-    "@arranger/schema": "^1.0.18",
+    "@arranger/admin": "^1.0.19",
+    "@arranger/mapping-utils": "^1.0.19",
+    "@arranger/middleware": "^1.0.19",
+    "@arranger/schema": "^1.0.19",
     "apollo-server-core": "1.3.2",
     "apollo-server-express": "^1.3.1",
     "babel-polyfill": "^6.26.0",
