@@ -22,26 +22,26 @@ export default ({ children }) => {
         return new Promise(resolve => {
           s.setState({ projects: data.projects }, resolve);
         });
-      })
-      .then(getIndices(s));
-  const getIndices = s =>
-    fetch(`http://localhost:5050/projects/${s.state.selectedProject}/types`, {
+      });
+  // .then(getIndices(s));
+  const getIndices = projectId =>
+    fetch(`http://localhost:5050/projects/${projectId}/types`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: '{"eshost":"http://localhost:9200"}',
     }).then(res => res.json());
-  const onProjectSelect = s => e =>
-    s.setState(
-      { selectedProject: e.target.value, selectedIndex: undefined },
-      () =>
-        getIndices(s).then(data =>
-          s.setState({
-            indices: data.types,
-          }),
-        ),
+  const onProjectSelect = s => e => {
+    const value = e.target.value;
+    s.setState({ selectedProject: value, selectedIndex: undefined }, () =>
+      getIndices(value).then(data =>
+        s.setState({
+          indices: data.types,
+        }),
+      ),
     );
+  };
   const onIndexSelect = s => e => {
     s.setState({ selectedIndex: e.target.value });
   };
