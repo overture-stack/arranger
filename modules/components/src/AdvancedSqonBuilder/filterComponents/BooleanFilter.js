@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Component from 'react-component-component';
 import { get } from 'lodash';
 
-import { getOperationAtPath, setSqonAtPath } from '../utils';
+import { getOperationAtPath, setSqonAtPath, IN_OP } from '../utils';
 import defaultApi from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
 import BooleanAgg from '../../Aggs/BooleanAgg';
@@ -39,7 +39,7 @@ export const BooleanFilterUI = props => {
   };
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
-    op: 'in',
+    op: IN_OP,
     content: { field, value: [] },
   };
 
@@ -48,7 +48,7 @@ export const BooleanFilterUI = props => {
   const onSelectionChange = s => ({ value }) => {
     setTimeout(() => {
       const newOp = {
-        op: 'in',
+        op: IN_OP,
         content: {
           field,
           value: [value.key_as_string],

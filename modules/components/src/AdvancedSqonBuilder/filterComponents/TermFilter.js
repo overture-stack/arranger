@@ -9,6 +9,8 @@ import {
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
   TERM_OPS,
+  IN_OP,
+  AND_OP,
 } from '../utils';
 import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
@@ -43,10 +45,9 @@ export const TermFilterUI = ({
    * }
    */
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
-    op: 'in',
+    op: IN_OP,
     content: { value: [], field },
   };
-  console.log('initialSqon: ', initialSqon);
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
     s.setState({ searchString: e.value });
@@ -196,7 +197,7 @@ export default ({
   arrangerProjectIndex,
   api = defaultApi,
   executableSqon = {
-    op: 'and',
+    op: AND_OP,
     content: [],
   },
 

@@ -55,7 +55,7 @@ const FieldOpModifier = ({
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
         />
-      ) : ['long', 'float', 'integer'].includes(type) ? (
+      ) : ['long', 'float', 'integer', 'date'].includes(type) ? (
         <RangeFilter
           loading={loading}
           sqonPath={sqonPath}
@@ -66,6 +66,7 @@ const FieldOpModifier = ({
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
+          fieldType={type}
         />
       ) : ['boolean'].includes(type) ? (
         <BooleanFilter
