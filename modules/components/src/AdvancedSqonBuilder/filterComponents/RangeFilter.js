@@ -59,6 +59,15 @@ export const RangeFilterUi = ({
   })();
   const initialState = { localSqon: initialSqon, selectedUnit: originalUnit };
 
+  const toOriginalUnit = s => num =>
+    convert(num)
+      .from(s.state.selectedUnit)
+      .to(originalUnit);
+  const toDisplayUnit = s => num =>
+    convert(num)
+      .from(originalUnit)
+      .to(s.state.selectedUnit);
+
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const getCurrentFieldOp = s =>
     getOperationAtPath(sqonPath)(s.state.localSqon);
@@ -78,7 +87,10 @@ export const RangeFilterUi = ({
         ...currentFieldSqon,
         content: {
           ...currentFieldSqon.content,
-          value: [e.target.value, currentFieldSqon.content.value[1]],
+          value: [
+            toOriginalUnit(s)(e.target.value),
+            toOriginalUnit(s)(currentFieldSqon.content.value[1]),
+          ],
         },
       })(s.state.localSqon),
     });
@@ -90,7 +102,10 @@ export const RangeFilterUi = ({
         ...currentFieldSqon,
         content: {
           ...currentFieldSqon.content,
-          value: [currentFieldSqon.content.value[0], e.target.value],
+          value: [
+            toOriginalUnit(s)(currentFieldSqon.content.value[0]),
+            toOriginalUnit(s)(e.target.value),
+          ],
         },
       })(s.state.localSqon),
     });
@@ -166,7 +181,9 @@ export const RangeFilterUi = ({
                       <span className="inputLabel">From:</span>
                       <span className="inputSecondaryLabel">min: </span>
                       <InputComponent
-                        value={currentFieldOp.content.value[0]}
+                        value={toDisplayUnit(s)(
+                          currentFieldOp.content.value[0],
+                        )}
                         type={'number'}
                         onChange={onMinimumChange(s)}
                       />
@@ -177,7 +194,9 @@ export const RangeFilterUi = ({
                       <span className="inputLabel">To:</span>
                       <span className="inputSecondaryLabel">max: </span>
                       <InputComponent
-                        value={currentFieldOp.content.value[1]}
+                        value={toDisplayUnit(s)(
+                          currentFieldOp.content.value[1],
+                        )}
                         type={'number'}
                         onChange={onMaximumChange(s)}
                       />
