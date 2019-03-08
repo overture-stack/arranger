@@ -1,6 +1,8 @@
 import React, { Fragment } from 'react';
 import Component from 'react-component-component';
 import { sortBy, min, max } from 'lodash';
+import PropTypes from 'prop-types';
+import convert from 'convert-units';
 import './FilterContainerStyle.css';
 import {
   getOperationAtPath,
@@ -15,9 +17,13 @@ import {
 } from '../utils';
 import { FilterContainer } from './common';
 
-const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
+const SUPPORTED_CONVERSIONS = {
+  time: ['d', 'month', 'year'],
+  digital: ['GB', 'B'],
+};
+
+const supportedConversionFromUnit = unit =>
+  unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
 
 const normalizeNumericFieldOp = fieldOp => ({
   ...fieldOp,
@@ -40,6 +46,7 @@ export const RangeFilterUi = ({
   ContainerComponent = FilterContainer,
   InputComponent = props => <input {...props} />,
   fieldType,
+  unit: originalUnit = null,
 }) => {
   const initialFieldOp = (() => {
     const fieldOp = getOperationAtPath(sqonPath)(initialSqon);
@@ -50,9 +57,9 @@ export const RangeFilterUi = ({
           content: { value: [], field },
         };
   })();
-  const initialState = { localSqon: initialSqon };
-  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const initialState = { localSqon: initialSqon, selectedUnit: originalUnit };
 
+  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const getCurrentFieldOp = s =>
     getOperationAtPath(sqonPath)(s.state.localSqon);
   const onOptionTypeChange = s => e => {
@@ -101,6 +108,13 @@ export const RangeFilterUi = ({
     });
   };
 
+  const unitOptions = supportedConversionFromUnit(originalUnit);
+  const onUnitOptionSelect = s => e => {
+    s.setState({
+      selectedUnit: e.target.value,
+    });
+  };
+
   return (
     <Component initialState={initialState}>
       {s => {
@@ -131,9 +145,23 @@ export const RangeFilterUi = ({
                   Clear
                 </span>
               </div>
+              <form className="contentSection">
+                {unitOptions.map(unit => (
+                  <label className="unitOptionLabel" key={unit}>
+                    <input
+                      type="radio"
+                      name={unit}
+                      value={unit}
+                      checked={s.state.selectedUnit === unit}
+                      onChange={onUnitOptionSelect(s)}
+                    />{' '}
+                    {unit}
+                  </label>
+                ))}
+              </form>
               <div className="contentSection">
                 <div className="rangeInputContainer">
-                  {![LTE_OP, LT_OP].includes(currentFieldOp.op) && (
+                  {![GTE_OP, GT_OP].includes(currentFieldOp.op) && (
                     <div className="inputField">
                       <span className="inputLabel">From:</span>
                       <span className="inputSecondaryLabel">min: </span>
@@ -144,7 +172,7 @@ export const RangeFilterUi = ({
                       />
                     </div>
                   )}
-                  {![GTE_OP, GT_OP].includes(currentFieldOp.op) && (
+                  {![LTE_OP, LT_OP].includes(currentFieldOp.op) && (
                     <div className="inputField">
                       <span className="inputLabel">To:</span>
                       <span className="inputSecondaryLabel">max: </span>
@@ -165,7 +193,7 @@ export const RangeFilterUi = ({
   );
 };
 
-export default ({
+const RangeFilter = ({
   sqonPath = [],
   initialSqon = null,
   onSubmit = sqon => {},
@@ -175,6 +203,7 @@ export default ({
   ContainerComponent = FilterContainer,
   InputComponent = props => <input {...props} />,
   fieldType,
+  unit = null,
 }) => {
   return (
     <RangeFilterUi
@@ -187,6 +216,22 @@ export default ({
       opDisplayNameMap={opDisplayNameMap}
       InputComponent={InputComponent}
       fieldType={fieldType}
+      unit={unit}
     />
   );
 };
+
+RangeFilter.prototype = {
+  sqonPath: PropTypes.arrayOf(PropTypes.number),
+  initialSqon: PropTypes.object,
+  onSubmit: PropTypes.func,
+  onCancel: PropTypes.func,
+  fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  opDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  ContainerComponent: PropTypes.func,
+  InputComponent: PropTypes.func,
+  fieldType: PropTypes.string.isRequired,
+  unit: PropTypes.string,
+};
+
+export default RangeFilter;
