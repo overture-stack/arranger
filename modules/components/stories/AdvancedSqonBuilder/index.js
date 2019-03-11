@@ -128,6 +128,7 @@ storiesOf('AdvancedSqonBuilder', module)
                   syntheticSqons={s.state.syntheticSqons}
                   activeSqonIndex={s.state.activeSqonIndex}
                   fieldDisplayNameMap={mockFieldDisplayMap}
+                  emptyEntryMessage={'Custom empty sqon message'}
                   onChange={onChange(s)}
                   onActiveSqonSelect={onActiveSqonSelect(s)}
                   SqonActionComponent={DemoSqonActionComponent}
@@ -170,6 +171,7 @@ storiesOf('AdvancedSqonBuilder', module)
                   syntheticSqons={s.state.syntheticSqons}
                   activeSqonIndex={s.state.activeSqonIndex}
                   fieldDisplayNameMap={mockFieldDisplayMap}
+                  emptyEntryMessage={'Custom empty sqon message'}
                   onChange={onChange(s)}
                   onActiveSqonSelect={onActiveSqonSelect(s)}
                   getSqonDeleteConfirmation={({

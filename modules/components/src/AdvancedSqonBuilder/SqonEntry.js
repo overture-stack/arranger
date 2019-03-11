@@ -8,6 +8,7 @@ import {
   removeSqonPath,
   setSqonAtPath,
   doesContainReference,
+  isEmptySqon,
 } from './utils';
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
@@ -37,6 +38,7 @@ export default props => {
     onActivate = () => {},
     onDeleteConfirmed = () => {},
     onDeleteCanceled = () => {},
+    emptyEntryMessage = null,
   } = props;
 
   const referenceColor = getColorForReference(index);
@@ -85,25 +87,27 @@ export default props => {
             />{' '}
             #{index + 1}
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
               <div className={`sqonView`}>
-                {isBooleanOp(syntheticSqon) && (
-                  <BooleanOp
-                    arrangerProjectId={arrangerProjectId}
-                    arrangerProjectIndex={arrangerProjectIndex}
-                    index={0}
-                    onFieldOpRemove={onFieldOpRemove}
-                    onChange={onLogicalOpChanged}
-                    sqon={syntheticSqon}
-                    FieldOpModifierContainer={FieldOpModifierContainer}
-                    api={api}
-                    getActiveExecutableSqon={getActiveExecutableSqon}
-                    getColorForReference={getColorForReference}
-                    isIndexReferenced={isIndexReferenced}
-                    referencesShouldHighlight={isActiveSqon}
-                  />
-                )}
+                {isEmptySqon(syntheticSqon)
+                  ? emptyEntryMessage
+                  : isBooleanOp(syntheticSqon) && (
+                      <BooleanOp
+                        arrangerProjectId={arrangerProjectId}
+                        arrangerProjectIndex={arrangerProjectIndex}
+                        index={0}
+                        onFieldOpRemove={onFieldOpRemove}
+                        onChange={onLogicalOpChanged}
+                        sqon={syntheticSqon}
+                        FieldOpModifierContainer={FieldOpModifierContainer}
+                        api={api}
+                        getActiveExecutableSqon={getActiveExecutableSqon}
+                        getColorForReference={getColorForReference}
+                        isIndexReferenced={isIndexReferenced}
+                        referencesShouldHighlight={isActiveSqon}
+                      />
+                    )}
               </div>
             </div>
           </div>
