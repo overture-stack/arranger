@@ -58,6 +58,7 @@ const FieldOpModifier = ({
         />
       ) : ['long', 'float', 'integer', 'date'].includes(type) ? (
         <RangeFilter
+          field={field}
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -67,15 +68,14 @@ const FieldOpModifier = ({
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
-          fieldType={type}
           unit={unit}
         />
       ) : ['boolean'].includes(type) ? (
         <BooleanFilter
+          field={field}
           api={api}
           arrangerProjectId={arrangerProjectId}
           arrangerProjectIndex={arrangerProjectIndex}
-          field={field}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
           executableSqon={getExecutableSqon()}
