@@ -9,6 +9,8 @@ import {
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
   TERM_OPS,
+  IN_OP,
+  AND_OP,
 } from '../utils';
 import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
@@ -21,18 +23,20 @@ const AggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
-export const TermFilterUI = ({
-  initialSqon = null,
-  onSubmit = sqon => {},
-  onCancel = () => {},
-  ContainerComponent = FilterContainer,
-  InputComponent = TextFilter,
-  sqonPath = [],
-  buckets,
-  fieldDisplayNameMap = {},
-  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-  field,
-}) => {
+export const TermFilterUI = props => {
+  const {
+    initialSqon = null,
+    onSubmit = sqon => {},
+    onCancel = () => {},
+    ContainerComponent = FilterContainer,
+    InputComponent = TextFilter,
+    sqonPath = [],
+    buckets,
+    fieldDisplayNameMap = {},
+    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+    field,
+  } = props;
+
   /**
    * initialFieldSqon: {
    *  op: "in" | ">=" | "<=",
@@ -43,10 +47,9 @@ export const TermFilterUI = ({
    * }
    */
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
-    op: 'in',
+    op: IN_OP,
     content: { value: [], field },
   };
-  console.log('initialSqon: ', initialSqon);
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = s => e => {
     s.setState({ searchString: e.value });
@@ -190,25 +193,27 @@ export const TermFilterUI = ({
   );
 };
 
-export default ({
-  field,
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  api = defaultApi,
-  executableSqon = {
-    op: 'and',
-    content: [],
-  },
+export default props => {
+  const {
+    field,
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    api = defaultApi,
+    executableSqon = {
+      op: AND_OP,
+      content: [],
+    },
 
-  initialSqon = null,
-  onSubmit = sqon => {},
-  onCancel = () => {},
-  ContainerComponent = FilterContainer,
-  InputComponent = TextFilter,
-  sqonPath = [],
-  fieldDisplayNameMap = {},
-  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-}) => {
+    initialSqon = null,
+    onSubmit = sqon => {},
+    onCancel = () => {},
+    ContainerComponent = FilterContainer,
+    InputComponent = TextFilter,
+    sqonPath = [],
+    fieldDisplayNameMap = {},
+    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  } = props;
+
   const gqlField = field.split('.').join('__');
   const query = `query($sqon: JSON){
     ${arrangerProjectIndex} {

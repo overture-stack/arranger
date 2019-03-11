@@ -49,3 +49,33 @@
 .filterContainer .aggsFilterAction.selectAll {
   margin-right: 5px;
 }
+
+/* for the range filter */
+.filterContainer .rangeInputContainer {
+  border: solid 1px #cacbcf;
+  border-radius: 10px;
+  display: flex;
+  overflow: hidden;
+}
+
+.filterContainer .rangeInputContainer .inputLabel {
+  padding: 7px;
+  background: #edeef1;
+  border-left: solid 1px #cacbcf;
+  border-right: solid 1px #cacbcf;
+}
+.filterContainer .rangeInputContainer .inputSecondaryLabel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #74757d;
+  padding: 3px;
+}
+.filterContainer .rangeInputContainer .inputField {
+  display: flex;
+  flex: 1;
+}
+.filterContainer .rangeInputContainer input {
+  border: none;
+  width: 100%;
+}

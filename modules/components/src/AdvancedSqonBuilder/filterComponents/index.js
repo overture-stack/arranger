@@ -38,7 +38,8 @@ const FieldOpModifier = ({
       );
 
       // temporary, needs to handle errors too
-      const { type } = fieldExtendedMapping || {};
+      console.log('fieldExtendedMapping: ', fieldExtendedMapping);
+      const { type, unit } = fieldExtendedMapping || {};
       return ['keyword', 'id'].includes(type) ? (
         <TermFilter
           field={field}
@@ -55,8 +56,9 @@ const FieldOpModifier = ({
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
         />
-      ) : ['long', 'float', 'integer'].includes(type) ? (
+      ) : ['long', 'float', 'integer', 'date'].includes(type) ? (
         <RangeFilter
+          field={field}
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -66,13 +68,14 @@ const FieldOpModifier = ({
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
+          unit={unit}
         />
       ) : ['boolean'].includes(type) ? (
         <BooleanFilter
+          field={field}
           api={api}
           arrangerProjectId={arrangerProjectId}
           arrangerProjectIndex={arrangerProjectIndex}
-          field={field}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
           executableSqon={getExecutableSqon()}

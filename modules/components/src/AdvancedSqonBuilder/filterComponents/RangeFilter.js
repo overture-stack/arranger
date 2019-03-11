@@ -1,99 +1,195 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import Component from 'react-component-component';
+import { sortBy, min, max } from 'lodash';
+import PropTypes from 'prop-types';
+import convert from 'convert-units';
 import './FilterContainerStyle.css';
 import {
   getOperationAtPath,
   setSqonAtPath,
   FIELD_OP_DISPLAY_NAME,
   RANGE_OPS,
+  BETWEEN_OP,
+  GTE_OP,
+  GT_OP,
+  LTE_OP,
+  LT_OP,
 } from '../utils';
 import { FilterContainer } from './common';
 
-export const RangeFilterUi = ({
-  field = '',
-  sqonPath = [],
-  initialSqon = null,
-  onSubmit = sqon => {},
-  onCancel = () => {},
-  fieldDisplayNameMap = {},
-  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-  ContainerComponent = FilterContainer,
-  InputComponent = props => <input {...props} />,
-}) => {
-  const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
-    op: '<=',
-    content: { value: [], field },
+const SUPPORTED_CONVERSIONS = {
+  time: ['d', 'month', 'year'],
+  digital: ['GB', 'B'],
+};
+
+const supportedConversionFromUnit = unit =>
+  unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
+
+const normalizeNumericFieldOp = fieldOp => ({
+  ...fieldOp,
+  content: {
+    ...fieldOp.content,
+    value: Array.isArray(fieldOp.content.value)
+      ? [min(fieldOp.content.value), max(fieldOp.content.value)]
+      : [fieldOp.content.value],
+  },
+});
+
+export const RangeFilterUi = props => {
+  const {
+    field: fieldName = null,
+    sqonPath = [],
+    initialSqon = null,
+    onSubmit = sqon => {},
+    onCancel = () => {},
+    fieldDisplayNameMap = {},
+    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+    ContainerComponent = FilterContainer,
+    InputComponent = props => <input {...props} />,
+    unit: originalUnit = null,
+  } = props;
+
+  const initialFieldOp = (() => {
+    const fieldOp = getOperationAtPath(sqonPath)(initialSqon);
+    return fieldOp
+      ? normalizeNumericFieldOp(fieldOp)
+      : {
+          op: BETWEEN_OP,
+          content: { value: [], field: fieldName || fieldOp.content.field },
+        };
+  })();
+  const field = fieldName || initialFieldOp.content.field;
+  const initialState = {
+    selectedOperation: initialFieldOp.op,
+    minValue: min(initialFieldOp.content.value),
+    maxValue: max(initialFieldOp.content.value),
+    selectedUnit: originalUnit,
   };
-  const initialState = { localSqon: initialSqon };
-  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+
+  const toOriginalUnit = s => num => {
+    return s.state.selectedUnit
+      ? convert(num)
+          .from(s.state.selectedUnit)
+          .to(originalUnit)
+      : num;
+  };
+  const toDisplayUnit = s => num => {
+    return s.state.selectedUnit
+      ? convert(num)
+          .from(originalUnit)
+          .to(s.state.selectedUnit)
+      : num;
+  };
+
+  const onSqonSubmit = s => () => {
+    const op = s.state.selectedOperation;
+    const value = [GTE_OP, GT_OP].includes(op)
+      ? [s.state.maxValue]
+      : [LTE_OP, LT_OP].includes(op)
+        ? [s.state.minValue]
+        : [s.state.minValue, s.state.maxValue];
+    const sqonToSubmit = {
+      op,
+      content: {
+        field,
+        value,
+      },
+    };
+    onSubmit(setSqonAtPath(sqonPath, sqonToSubmit)(initialSqon));
+  };
+
   const onOptionTypeChange = s => e => {
-    const currentFieldSqon = getOperationAtPath(sqonPath)(s.state.localSqon);
     s.setState({
-      localSqon: setSqonAtPath(sqonPath, {
-        ...currentFieldSqon,
-        op: e.target.value,
-      })(s.state.localSqon),
+      selectedOperation: e.target.value,
     });
   };
   const onMinimumChange = s => e => {
-    const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
-      localSqon: setSqonAtPath(sqonPath, {
-        ...currentFieldSqon,
-        content: {
-          ...currentFieldSqon.content,
-          value: [e.target.value, currentFieldSqon.content.value[1]],
-        },
-      })(s.state.localSqon),
+      minValue: toOriginalUnit(s)(e.target.value),
     });
   };
   const onMaximumChange = s => e => {
-    const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
-      localSqon: setSqonAtPath(sqonPath, {
-        ...currentFieldSqon,
-        content: {
-          ...currentFieldSqon.content,
-          value: [currentFieldSqon.content.value[0], e.target.value],
-        },
-      })(s.state.localSqon),
+      maxValue: toOriginalUnit(s)(e.target.value),
     });
   };
-  const getCurrentFieldOp = s =>
-    getOperationAtPath(sqonPath)(s.state.localSqon);
+  const onClearClick = s => e => {
+    s.setState({
+      maxValue: max(initialFieldOp.content.value),
+      minValue: min(initialFieldOp.content.value),
+    });
+  };
+
+  const unitOptions = supportedConversionFromUnit(originalUnit) || [];
+  const onUnitOptionSelect = s => e => {
+    s.setState({
+      selectedUnit: e.target.value,
+    });
+  };
 
   return (
     <Component initialState={initialState}>
       {s => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <div>
-            <span>
-              {fieldDisplayNameMap[initialFieldSqon.content.field] ||
-                initialFieldSqon.content.field}
-            </span>{' '}
-            is{' '}
-            <select onChange={onOptionTypeChange(s)}>
-              {RANGE_OPS.map(option => (
-                <option
-                  key={option}
-                  value={option}
-                  selected={getCurrentFieldOp(s).op === option}
-                >
-                  {opDisplayNameMap[option]}
-                </option>
+          <div className="filterContent">
+            <div className="contentSection">
+              <span>{fieldDisplayNameMap[field] || field}</span> is{' '}
+              <select onChange={onOptionTypeChange(s)}>
+                {RANGE_OPS.map(option => (
+                  <option
+                    key={option}
+                    value={option}
+                    selected={s.state.selectedOperation === option}
+                  >
+                    {opDisplayNameMap[option]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="contentSection">
+              <span onClick={onClearClick(s)} className="aggsFilterAction">
+                Clear
+              </span>
+            </div>
+            <form className="contentSection">
+              {unitOptions.map(unit => (
+                <label className="unitOptionLabel" key={unit}>
+                  <input
+                    type="radio"
+                    name={unit}
+                    value={unit}
+                    checked={s.state.selectedUnit === unit}
+                    onChange={onUnitOptionSelect(s)}
+                  />{' '}
+                  {unit}
+                </label>
               ))}
-            </select>
-            <div>
-              <InputComponent
-                value={getCurrentFieldOp(s).content.value[0]}
-                type={'number'}
-                onChange={onMinimumChange(s)}
-              />
-              <InputComponent
-                value={getCurrentFieldOp(s).content.value[1]}
-                type={'number'}
-                onChange={onMaximumChange(s)}
-              />
+            </form>
+            <div className="contentSection">
+              <div className="rangeInputContainer">
+                {![GTE_OP, GT_OP].includes(s.state.selectedOperation) && (
+                  <div className="inputField">
+                    <span className="inputLabel">From:</span>
+                    {/* <span className="inputSecondaryLabel">min: </span> */}
+                    <InputComponent
+                      value={toDisplayUnit(s)(s.state.minValue)}
+                      type={'number'}
+                      onChange={onMinimumChange(s)}
+                    />
+                  </div>
+                )}
+                {![LTE_OP, LT_OP].includes(s.state.selectedOperation) && (
+                  <div className="inputField">
+                    <span className="inputLabel">To:</span>
+                    {/* <span className="inputSecondaryLabel">max: </span> */}
+                    <InputComponent
+                      value={toDisplayUnit(s)(s.state.maxValue)}
+                      type={'number'}
+                      onChange={onMaximumChange(s)}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </ContainerComponent>
@@ -102,7 +198,7 @@ export const RangeFilterUi = ({
   );
 };
 
-export default ({
+const RangeFilter = ({
   sqonPath = [],
   initialSqon = null,
   onSubmit = sqon => {},
@@ -111,17 +207,34 @@ export default ({
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
   InputComponent = props => <input {...props} />,
-}) => {
-  return (
-    <RangeFilterUi
-      ContainerComponent={ContainerComponent}
-      sqonPath={sqonPath}
-      initialSqon={initialSqon}
-      onSubmit={onSubmit}
-      onCancel={onCancel}
-      fieldDisplayNameMap={fieldDisplayNameMap}
-      opDisplayNameMap={opDisplayNameMap}
-      InputComponent={InputComponent}
-    />
-  );
+  unit = null,
+  field,
+}) => (
+  <RangeFilterUi
+    field={field}
+    ContainerComponent={ContainerComponent}
+    sqonPath={sqonPath}
+    initialSqon={initialSqon}
+    onSubmit={onSubmit}
+    onCancel={onCancel}
+    fieldDisplayNameMap={fieldDisplayNameMap}
+    opDisplayNameMap={opDisplayNameMap}
+    InputComponent={InputComponent}
+    unit={unit}
+  />
+);
+
+RangeFilter.prototype = {
+  field: PropTypes.string,
+  sqonPath: PropTypes.arrayOf(PropTypes.number),
+  initialSqon: PropTypes.object,
+  onSubmit: PropTypes.func,
+  onCancel: PropTypes.func,
+  fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  opDisplayNameMap: PropTypes.objectOf(PropTypes.string),
+  ContainerComponent: PropTypes.func,
+  InputComponent: PropTypes.func,
+  unit: PropTypes.string,
 };
+
+export default RangeFilter;

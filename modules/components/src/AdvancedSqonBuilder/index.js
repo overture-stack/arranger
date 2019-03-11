@@ -304,22 +304,22 @@ const AdvancedSqonBuilder = props => {
               <SqonEntry
                 key={i}
                 index={i}
+                api={api}
                 arrangerProjectId={arrangerProjectId}
                 arrangerProjectIndex={arrangerProjectIndex}
                 syntheticSqon={sq}
                 isActiveSqon={i === currentActiveSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
-                SqonActionComponent={SqonActionComponent}
-                FieldOpModifierContainer={FieldOpModifierContainer}
-                getActiveExecutableSqon={getActiveExecutableSqon}
-                api={api}
-                disabled={isEmptySqon(sq)}
-                getColorForReference={getColorForReference}
                 isReferenced={isSqonReferenced(i)}
                 isIndexReferenced={isIndexReferencedInSqon(
                   selectedSyntheticSqon,
                 )}
                 isDeleting={s.state.deletingIndex === i}
+                disabled={isEmptySqon(sq)}
+                SqonActionComponent={SqonActionComponent}
+                FieldOpModifierContainer={FieldOpModifierContainer}
+                getActiveExecutableSqon={getActiveExecutableSqon}
+                getColorForReference={getColorForReference}
                 dependentIndices={getDependentIndices(syntheticSqons)(i)}
                 onSqonChange={onSqonChange(s)(i)}
                 onSqonCheckedChange={onSelectedSqonIndicesChange(s)(i)}

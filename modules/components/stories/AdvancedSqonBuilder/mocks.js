@@ -56,8 +56,8 @@ export const sqons = [
           {
             op: 'and',
             content: [
-              { op: '>=', content: { field: 'size', value: 123 } },
-              { op: '<=', content: { field: 'size', value: 192471969710 } },
+              { op: '>=', content: { field: 'size', value: [123] } },
+              { op: '<=', content: { field: 'size', value: [192471969710] } },
             ],
           },
           0,

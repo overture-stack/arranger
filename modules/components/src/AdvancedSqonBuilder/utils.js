@@ -6,17 +6,40 @@ import { flattenDeep } from 'lodash';
 /**
  * todo: these magic sqon values should be centralized across Arranger
  */
-export const BOOLEAN_OPS = ['and', 'or', 'not'];
-export const FIELD_OP = ['in', 'not-in', '>=', '<=', 'between', 'all'];
-export const RANGE_OPS = ['>=', '<=', 'between'];
-export const TERM_OPS = ['in', 'not-in', 'all'];
+export const GT_OP = '>';
+export const LT_OP = '<';
+export const BETWEEN_OP = 'between';
+export const GTE_OP = '>=';
+export const LTE_OP = '<=';
+export const IN_OP = 'in';
+export const NOT_IN_OP = 'in';
+export const ALL_OP = 'all';
+export const FIELD_OP = [
+  GT_OP,
+  LT_OP,
+  BETWEEN_OP,
+  GTE_OP,
+  LTE_OP,
+  IN_OP,
+  NOT_IN_OP,
+  ALL_OP,
+];
+export const RANGE_OPS = [GT_OP, LT_OP, BETWEEN_OP, GTE_OP, LTE_OP];
+export const TERM_OPS = [IN_OP, NOT_IN_OP, ALL_OP];
+
+export const AND_OP = 'and';
+export const OR_OP = 'or';
+export const NOT_OP = 'not';
+export const BOOLEAN_OPS = [AND_OP, OR_OP, NOT_OP];
 export const FIELD_OP_DISPLAY_NAME = {
-  in: 'any of',
-  'not-in': 'not',
-  '>=': 'greater than',
-  '<=': 'less than',
-  between: 'between',
-  all: 'all of',
+  [IN_OP]: 'any of',
+  [NOT_IN_OP]: 'not',
+  [ALL_OP]: 'all of',
+  [GTE_OP]: 'greater than or equal to',
+  [LTE_OP]: 'less than or equal to',
+  [LT_OP]: 'less than',
+  [GT_OP]: 'greater than',
+  [BETWEEN_OP]: 'between',
 };
 
 /**
