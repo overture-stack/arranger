@@ -11,11 +11,18 @@ import {
   getDependentIndices,
   DisplayNameMapContext,
   isEmptySqon,
+  AND_OP,
+  OR_OP,
 } from './utils';
 import './style.css';
 import defaultApi from '../utils/api';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
+
+const newEmptySqon = () => ({
+  op: AND_OP,
+  content: [],
+});
 
 const defaultSqonDeletionHandler = ({
   indexToRemove,
@@ -148,15 +155,21 @@ const AdvancedSqonBuilder = props => {
           ),
         }),
       )
-      .then(() =>
-        dispatchSqonListChange(s)({
+      .then(() => {
+        const sqonListWithIndexRemoved = removeSqonAtIndex(
+          indexToRemove,
+          syntheticSqons,
+        );
+        return dispatchSqonListChange(s)({
           eventKey: 'SQON_REMOVED',
           eventDetails: {
             removedIndex: indexToRemove,
           },
-          newSqonList: removeSqonAtIndex(indexToRemove, syntheticSqons),
-        }),
-      )
+          newSqonList: sqonListWithIndexRemoved.length
+            ? sqonListWithIndexRemoved
+            : [newEmptySqon()],
+        });
+      })
       .catch(() => {});
   };
   const onSqonDuplicate = s => indexToDuplicate => () => {
@@ -180,7 +193,7 @@ const AdvancedSqonBuilder = props => {
       newSqonList: [
         ...syntheticSqons,
         {
-          op: 'or',
+          op: OR_OP,
           content: s.state.selectedSqonIndices,
         },
       ],
@@ -202,7 +215,7 @@ const AdvancedSqonBuilder = props => {
       newSqonList: [
         ...syntheticSqons,
         {
-          op: 'and',
+          op: AND_OP,
           content: s.state.selectedSqonIndices,
         },
       ],
@@ -220,13 +233,7 @@ const AdvancedSqonBuilder = props => {
       dispatchSqonListChange(s)({
         eventKey: 'NEW_SQON',
         eventDetails: {},
-        newSqonList: [
-          ...syntheticSqons,
-          {
-            op: 'and',
-            content: [],
-          },
-        ],
+        newSqonList: [...syntheticSqons, newEmptySqon()],
       })
         .then(() => onActiveSqonSelect({ index: syntheticSqons.length }))
         .then(() => {
@@ -241,7 +248,7 @@ const AdvancedSqonBuilder = props => {
     dispatchSqonListChange(s)({
       eventKey: 'CLEAR_ALL',
       eventDetails: {},
-      newSqonList: [],
+      newSqonList: [newEmptySqon()],
     });
     s.setState({ selectedSqonIndices: [] });
     clearSqonDeletion(s);
