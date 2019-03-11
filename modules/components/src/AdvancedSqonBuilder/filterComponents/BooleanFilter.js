@@ -107,21 +107,23 @@ BooleanFilterUI.propTypes = {
   buckets: PropTypes.array,
 };
 
-export default ({
-  api = defaultApi,
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
-  initialSqon,
-  executableSqon,
-  sqonPath,
-  field,
+export default props => {
+  const {
+    api = defaultApi,
+    arrangerProjectId = PROJECT_ID,
+    arrangerProjectIndex,
+    initialSqon,
+    executableSqon,
+    sqonPath,
+    field,
 
-  onSubmit,
-  onCancel,
-  fieldDisplayNameMap,
-  opDisplayNameMap,
-  ContainerComponent,
-}) => {
+    onSubmit,
+    onCancel,
+    fieldDisplayNameMap,
+    opDisplayNameMap,
+    ContainerComponent,
+  } = props;
+
   const gqlField = field.split('.').join('__');
   const query = `query($sqon: JSON){
     ${arrangerProjectIndex} {
@@ -136,7 +138,6 @@ export default ({
       }
     }
   }`;
-
   return (
     <Query
       api={api}
