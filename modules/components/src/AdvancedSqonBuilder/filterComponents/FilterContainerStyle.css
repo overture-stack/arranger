@@ -79,3 +79,6 @@
   border: none;
   width: 100%;
 }
+.filterContainer .unitOptionLabel {
+  margin-right: 10px;
+}
