@@ -78,6 +78,7 @@ const AdvancedSqonBuilder = props => {
       '#fad9ea',
       '#f3ebd0',
     ],
+    emptyEntryMessage = null,
   } = props;
 
   /**
@@ -335,6 +336,7 @@ const AdvancedSqonBuilder = props => {
                 onActivate={onSqonEntryActivate(s)(i)}
                 onDeleteConfirmed={s.state.onSqonDeleteConfirmed || (() => {})}
                 onDeleteCanceled={s.state.onSqonDeleteCancel || (() => {})}
+                emptyEntryMessage={emptyEntryMessage}
               />
             ))}
             <div>
@@ -380,6 +382,7 @@ AdvancedSqonBuilder.propTypes = {
   getSqonDeleteConfirmation: PropTypes.func,
   api: PropTypes.func,
   referenceColors: PropTypes.arrayOf(PropTypes.string),
+  emptyEntryMessage: PropTypes.node,
 };
 
 export default AdvancedSqonBuilder;
