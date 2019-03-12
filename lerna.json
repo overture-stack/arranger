@@ -1,6 +1,6 @@
 {
   "lerna": "2.5.1",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "packages": [
     "modules/admin",
     "modules/*",
