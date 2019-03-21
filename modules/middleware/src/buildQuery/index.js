@@ -213,9 +213,10 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
 
 export const opSwitch = ({ nestedFields, filter }) => {
   const { op, pivot, content: { value } } = filter;
-  if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
-    throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
-  }
+  // we need a way to handle object fields before the following error is valid
+  // if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
+  //   throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
+  // }
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
