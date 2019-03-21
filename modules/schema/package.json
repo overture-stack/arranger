@@ -1,6 +1,6 @@
 {
   "name": "@arranger/schema",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "GraphQL Schema for Data Portals",
   "main": "dist/index.js",
   "publishConfig": {
@@ -24,8 +24,8 @@
     "graphql": "^14.0.2"
   },
   "dependencies": {
-    "@arranger/mapping-utils": "^1.0.22",
-    "@arranger/middleware": "^1.0.22",
+    "@arranger/mapping-utils": "^1.0.23",
+    "@arranger/middleware": "^1.0.23",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
     "graphql-middleware": "1.3.1",
