@@ -45,7 +45,12 @@ export const RangeFilterUi = props => {
     fieldDisplayNameMap = {},
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
     ContainerComponent = FilterContainer,
-    InputComponent = props => <input {...props} />,
+    InputComponent = props => (
+      <input
+        {...props}
+        className={`rangeFilterInput ${props.className || ''}`}
+      />
+    ),
     unit: originalUnit = null,
   } = props;
 
@@ -127,6 +132,11 @@ export const RangeFilterUi = props => {
     });
   };
 
+  const isMinimumDisabled = s =>
+    [LTE_OP, LT_OP].includes(s.state.selectedOperation);
+  const isMaximumDisabled = s =>
+    [GTE_OP, GT_OP].includes(s.state.selectedOperation);
+
   return (
     <Component initialState={initialState}>
       {s => (
@@ -167,28 +177,36 @@ export const RangeFilterUi = props => {
             </form>
             <div className="contentSection">
               <div className="rangeInputContainer">
-                {![GTE_OP, GT_OP].includes(s.state.selectedOperation) && (
-                  <div className="inputField">
-                    <span className="inputLabel">From:</span>
-                    {/* <span className="inputSecondaryLabel">min: </span> */}
-                    <InputComponent
-                      value={toDisplayUnit(s)(s.state.minValue)}
-                      type={'number'}
-                      onChange={onMinimumChange(s)}
-                    />
-                  </div>
-                )}
-                {![LTE_OP, LT_OP].includes(s.state.selectedOperation) && (
-                  <div className="inputField">
-                    <span className="inputLabel">To:</span>
-                    {/* <span className="inputSecondaryLabel">max: </span> */}
-                    <InputComponent
-                      value={toDisplayUnit(s)(s.state.maxValue)}
-                      type={'number'}
-                      onChange={onMaximumChange(s)}
-                    />
-                  </div>
-                )}
+                <div className="inputField">
+                  <span
+                    className={`inputLabel ${
+                      isMinimumDisabled(s) ? 'disabled' : ''
+                    }`}
+                  >
+                    From:
+                  </span>
+                  <InputComponent
+                    disabled={isMinimumDisabled(s)}
+                    value={toDisplayUnit(s)(s.state.minValue)}
+                    type={'number'}
+                    onChange={onMinimumChange(s)}
+                  />
+                </div>
+                <div className="inputField">
+                  <span
+                    className={`inputLabel ${
+                      isMaximumDisabled(s) ? 'disabled' : ''
+                    }`}
+                  >
+                    To:
+                  </span>
+                  <InputComponent
+                    disabled={isMaximumDisabled(s)}
+                    value={toDisplayUnit(s)(s.state.maxValue)}
+                    type={'number'}
+                    onChange={onMaximumChange(s)}
+                  />
+                </div>
               </div>
             </div>
           </div>

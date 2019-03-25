@@ -64,6 +64,9 @@
   border-left: solid 1px #cacbcf;
   border-right: solid 1px #cacbcf;
 }
+.filterContainer .rangeInputContainer .inputLabel.disabled {
+  color: #a9adc0;
+}
 .filterContainer .rangeInputContainer .inputSecondaryLabel {
   display: flex;
   justify-content: center;
@@ -81,4 +84,8 @@
 }
 .filterContainer .unitOptionLabel {
   margin-right: 10px;
+}
+.filterContainer .rangeFilterInput:disabled {
+  background: #f4f5f8;
+  color: #a9adc0;
 }
