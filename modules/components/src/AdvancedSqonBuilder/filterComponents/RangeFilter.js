@@ -137,6 +137,13 @@ export const RangeFilterUi = props => {
   const isMaximumDisabled = s =>
     [GTE_OP, GT_OP].includes(s.state.selectedOperation);
 
+  const StyledInputComponent = props => (
+    <InputComponent
+      {...props}
+      className={`rangeFilterInput ${props.className || ''}`}
+    />
+  );
+
   return (
     <Component initialState={initialState}>
       {s => (
@@ -185,7 +192,7 @@ export const RangeFilterUi = props => {
                   >
                     From:
                   </span>
-                  <InputComponent
+                  <StyledInputComponent
                     disabled={isMinimumDisabled(s)}
                     value={toDisplayUnit(s)(s.state.minValue)}
                     type={'number'}
@@ -200,7 +207,7 @@ export const RangeFilterUi = props => {
                   >
                     To:
                   </span>
-                  <InputComponent
+                  <StyledInputComponent
                     disabled={isMaximumDisabled(s)}
                     value={toDisplayUnit(s)(s.state.maxValue)}
                     type={'number'}
