@@ -89,9 +89,9 @@ export const RangeFilterUi = props => {
   const onSqonSubmit = s => () => {
     const op = s.state.selectedOperation;
     const value = [GTE_OP, GT_OP].includes(op)
-      ? [s.state.maxValue]
+      ? [s.state.minValue]
       : [LTE_OP, LT_OP].includes(op)
-        ? [s.state.minValue]
+        ? [s.state.maxValue]
         : [s.state.minValue, s.state.maxValue];
     const sqonToSubmit = {
       op,
