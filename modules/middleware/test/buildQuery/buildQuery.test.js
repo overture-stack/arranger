@@ -967,6 +967,44 @@ test('buildQuery "between"', () => {
   expect(actualOutput).toEqual(output);
 });
 
+test('buildQuery "not-in" op', () => {
+  const input = {
+    nestedFields: [],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'not-in',
+          content: {
+            field: 'kf_id',
+            value: ['id_1', 'id_2', 'id_3'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          bool: {
+            must_not: [
+              {
+                terms: {
+                  kf_id: ['id_1', 'id_2', 'id_3'],
+                  boost: 0,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
 // we need a way to handle object fields before the following is valid
 // test('it must reject invalid pivot fields', () => {
 //   const testFunction = () => {

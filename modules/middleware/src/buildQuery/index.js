@@ -38,7 +38,7 @@ import {
   toEsRangeValue,
 } from '../utils/esFilter';
 
-function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
+const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
   return filter.content.field
     .split('.')
     .slice(0, -1)
@@ -49,7 +49,7 @@ function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
       (esFilter, path, i) => wrapNested(esFilter, path),
       isNot ? wrapMustNot(esFilter) : esFilter,
     );
-}
+};
 
 function getRegexFilter({ nestedFields, filter }) {
   const { op, content: { field, value: [value] } } = filter;
@@ -193,8 +193,9 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   }
 }
 
-function getSetFilter({ nestedFields, filter, filter: { content } }) {
+function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
   return wrapFilter({
+    isNot: op === NOT_IN_OP,
     filter,
     nestedFields,
     esFilter: {
@@ -244,5 +245,13 @@ export default function({ nestedFields, filters: rawFilters }) {
     nestedFields,
     filter: normalizeFilters(rawFilters),
   });
+  console.log(
+    'input: ',
+    JSON.stringify({
+      nestedFields,
+      filters: rawFilters,
+    }),
+  );
+  console.log('output: ', JSON.stringify(output));
   return output;
 }
