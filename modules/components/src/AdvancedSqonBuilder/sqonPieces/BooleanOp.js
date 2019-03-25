@@ -48,7 +48,13 @@ const LogicalOpSelector = props => {
     <Component initialState={initialState}>
       {s => (
         <ClickAwayListener handler={onClickAway(s)}>
-          <span className={'pill logicalOpSelector'} onClick={onClick(s)}>
+          <span
+            className="pill logicalOpSelector"
+            role="button"
+            tabIndex={0}
+            onClick={onClick(s)}
+            onKeyPress={onClick(s)}
+          >
             <span className={'content'} style={{ pointerEvents: 'none' }}>
               <span className={'opName'}>{opName}</span>{' '}
               {s.state.isOpen ? <FaChevronUp /> : <FaChevronDown />}
@@ -58,9 +64,10 @@ const LogicalOpSelector = props => {
                 {selectionOptions.map(option => (
                   <div
                     key={option}
+                    className="menuOption"
                     onClick={onselect(option)}
-                    className={`menuOption`}
-                  >
+                    onKeyPress={onselect(option)}
+                    >
                     {option}
                   </div>
                 ))}
