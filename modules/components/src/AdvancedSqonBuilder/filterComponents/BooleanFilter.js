@@ -77,7 +77,7 @@ export const BooleanFilterUI = props => {
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <React.Fragment>
             <div key="header" className="contentSection headerContainer">
-              <span>{`Participant is a ${fieldDisplayName}`}</span>
+              <span>{`${fieldDisplayName}?`}</span>
             </div>
             <div key="body" className="contentSection bodyContainer">
               <BooleanAgg
@@ -85,6 +85,10 @@ export const BooleanFilterUI = props => {
                 field={initialFieldSqon.content.field}
                 displayName={fieldDisplayName}
                 buckets={buckets}
+                defaultDisplayKeys={{
+                  true: 'Yes',
+                  false: 'No',
+                }}
                 handleValueClick={onSelectionChange(s)}
                 isActive={isActive(s)}
               />

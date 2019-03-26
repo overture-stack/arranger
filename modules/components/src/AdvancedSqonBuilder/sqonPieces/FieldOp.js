@@ -51,7 +51,7 @@ export default props => {
                 <span className={`fieldName`}>
                   {fieldDisplayNameMap[field] || field}{' '}
                 </span>
-                <span className={`opName`}> is {opDisplayNameMap[op]} </span>
+                <span className={`opName`}>{` is ${Array.isArray(value) && value.length > 1 ? opDisplayNameMap[op] : ''} `}</span>
               </span>
               <ClickAwayListener
                 className={'selectionContainer'}
