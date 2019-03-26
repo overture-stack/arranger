@@ -85,6 +85,10 @@ export const BooleanFilterUI = props => {
                 field={initialFieldSqon.content.field}
                 displayName={fieldDisplayName}
                 buckets={buckets}
+                defaultDisplayKeys={{
+                  true: 'Yes',
+                  false: 'No',
+                }}
                 handleValueClick={onSelectionChange(s)}
                 isActive={isActive(s)}
               />
