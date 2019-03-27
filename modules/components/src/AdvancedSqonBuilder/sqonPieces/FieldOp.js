@@ -6,6 +6,7 @@ import {
   DisplayNameMapContext,
   getOperationAtPath,
   FIELD_OP_DISPLAY_NAME,
+  RANGE_OPS,
 } from '../utils';
 import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
@@ -51,7 +52,12 @@ export default props => {
                 <span className={`fieldName`}>
                   {fieldDisplayNameMap[field] || field}{' '}
                 </span>
-                <span className={`opName`}>{` is ${Array.isArray(value) && value.length > 1 ? opDisplayNameMap[op] : ''} `}</span>
+                <span className={`opName`}>{` is ${
+                  (Array.isArray(value) && value.length > 1) ||
+                  RANGE_OPS.includes(op)
+                    ? opDisplayNameMap[op]
+                    : ''
+                } `}</span>
               </span>
               <ClickAwayListener
                 className={'selectionContainer'}
