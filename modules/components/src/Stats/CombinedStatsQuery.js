@@ -50,19 +50,16 @@ const CombinedStatsQuery = ({
           render={({ data, loading }) =>
             render({
               loading,
-              data: decoratedStats.reduce(
-                (obj, x) => ({
-                  ...obj,
-                  [x.label]: x.formatResult(
-                    get(
-                      data,
-                      `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`,
-                      null,
-                    ),
+              data: decoratedStats.reduce((acc, x) => {
+                acc[x.label] = x.formatResult(
+                  get(
+                    data,
+                    `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`,
+                    null,
                   ),
-                }),
-                {},
-              ),
+                );
+                return acc;
+              }, {}),
             })
           }
         />

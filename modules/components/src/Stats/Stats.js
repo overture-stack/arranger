@@ -18,6 +18,11 @@ const constructQuery = ({ graphqlField, query, resolver = 'aggregations' }) => `
       ${resolver}(
         filters: $sqon
         ${resolver === 'aggregations' ? 'include_missing: false' : ''}
+        ${
+          resolver === 'aggregations'
+            ? 'aggregations_filter_themselves: true'
+            : ''
+        }
       ) {
         ${query}
       }
