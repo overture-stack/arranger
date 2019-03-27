@@ -35,11 +35,14 @@ const CombinedStatsQuery = ({
                 ${decoratedStats.map(
                   ({ key, aggsField, isRoot }) =>
                     `${key}: ${
-                      isRoot ? `hits` : `aggregations`
-                    }(filters: $sqon) {
-                      ${isRoot ? `total` : aggsField?.query || ``}
-                    }
-                    `,
+                      isRoot
+                        ? `hits(filters: $sqon) {
+                            total
+                          }`
+                        : `aggregations(filters: $sqon, aggregations_filter_themselves: true) {
+                            ${aggsField?.query || ``}
+                          }`
+                    }`,
                 )}
               }
             }
