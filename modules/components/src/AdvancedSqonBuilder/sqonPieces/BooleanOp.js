@@ -67,7 +67,7 @@ const LogicalOpSelector = props => {
                     className="menuOption"
                     onClick={onselect(option)}
                     onKeyPress={onselect(option)}
-                    >
+                  >
                     {option}
                   </div>
                 ))}
@@ -149,7 +149,7 @@ const BooleanOp = props => {
                 }
               />
             ) : isEmptySqon(c) ? (
-              <span>oooooo</span>
+              <span>empty sqon is not yet supported here</span>
             ) : null}
             {i < content.length - 1 && (
               <LogicalOpSelector opName={op} onChange={onOpChange} />

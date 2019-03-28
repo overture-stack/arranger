@@ -142,35 +142,33 @@ const AdvancedSqonBuilder = props => {
       });
     }
   };
+
+  const removeSqon = s => indexToRemove => {
+    onActiveSqonSelect({
+      index: Math.max(Math.min(syntheticSqons.length - 2, indexToRemove), 0),
+    });
+    const sqonListWithIndexRemoved = removeSqonAtIndex(
+      indexToRemove,
+      syntheticSqons,
+    );
+    return dispatchSqonListChange(s)({
+      eventKey: 'SQON_REMOVED',
+      eventDetails: {
+        removedIndex: indexToRemove,
+      },
+      newSqonList: sqonListWithIndexRemoved.length
+        ? sqonListWithIndexRemoved
+        : [newEmptySqon()],
+    });
+  };
+
   const onSqonRemove = s => indexToRemove => () => {
     return getSqonDeleteConfirmation({
       internalStateContainer: s,
       indexToRemove,
       dependentIndices: getDependentIndices(syntheticSqons)(indexToRemove),
     })
-      .then(() =>
-        onActiveSqonSelect({
-          index: Math.max(
-            Math.min(syntheticSqons.length - 2, indexToRemove),
-            0,
-          ),
-        }),
-      )
-      .then(() => {
-        const sqonListWithIndexRemoved = removeSqonAtIndex(
-          indexToRemove,
-          syntheticSqons,
-        );
-        return dispatchSqonListChange(s)({
-          eventKey: 'SQON_REMOVED',
-          eventDetails: {
-            removedIndex: indexToRemove,
-          },
-          newSqonList: sqonListWithIndexRemoved.length
-            ? sqonListWithIndexRemoved
-            : [newEmptySqon()],
-        });
-      })
+      .then(() => removeSqon(s)(indexToRemove))
       .catch(() => {});
   };
   const onSqonDuplicate = s => indexToDuplicate => () => {
@@ -273,6 +271,9 @@ const AdvancedSqonBuilder = props => {
         (sq, i) => (i === sqonIndex ? newSqon : sq),
       ),
     });
+    if (!newSqon.content.length) {
+      removeSqon(s)(sqonIndex);
+    }
   };
   const getActiveExecutableSqon = () =>
     resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
