@@ -1,6 +1,6 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import Component from 'react-component-component';
-import { sortBy, min, max } from 'lodash';
+import { min, max } from 'lodash';
 import PropTypes from 'prop-types';
 import convert from 'convert-units';
 import './FilterContainerStyle.css';
@@ -22,6 +22,12 @@ const SUPPORTED_CONVERSIONS = {
   digital: ['GB', 'B'],
 };
 
+const UNITS_DISPLAY_NAMES = {
+  d: 'day',
+};
+
+const toUnitDisplayName = unit => UNITS_DISPLAY_NAMES[unit] || unit;
+
 const supportedConversionFromUnit = unit =>
   unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
 
@@ -34,6 +40,14 @@ const normalizeNumericFieldOp = fieldOp => ({
       : [fieldOp.content.value],
   },
 });
+
+const convertUnit = (sourceUnit, targetUnit) => num => {
+  return sourceUnit && targetUnit
+    ? convert(num)
+        .from(sourceUnit)
+        .to(targetUnit)
+    : num;
+};
 
 export const RangeFilterUi = props => {
   const {
@@ -71,28 +85,15 @@ export const RangeFilterUi = props => {
     selectedUnit: originalUnit,
   };
 
-  const toOriginalUnit = s => num => {
-    return s.state.selectedUnit
-      ? convert(num)
-          .from(s.state.selectedUnit)
-          .to(originalUnit)
-      : num;
-  };
-  const toDisplayUnit = s => num => {
-    return s.state.selectedUnit
-      ? convert(num)
-          .from(originalUnit)
-          .to(s.state.selectedUnit)
-      : num;
-  };
-
   const onSqonSubmit = s => () => {
     const op = s.state.selectedOperation;
+    const toOriginalUnit = convertUnit(s.state.selectedUnit, originalUnit);
+    const min = toOriginalUnit(s.state.minValue);
+    const max = toOriginalUnit(s.state.maxValue);
     const value = [GTE_OP, GT_OP].includes(op)
-      ? [s.state.minValue]
-      : [LTE_OP, LT_OP].includes(op)
-        ? [s.state.maxValue]
-        : [s.state.minValue, s.state.maxValue];
+      ? [min]
+      : [LTE_OP, LT_OP].includes(op) ? [max] : [min, max];
+
     const sqonToSubmit = {
       op,
       content: {
@@ -108,16 +109,15 @@ export const RangeFilterUi = props => {
       selectedOperation: e.target.value,
     });
   };
+
   const onMinimumChange = s => e => {
-    s.setState({
-      minValue: toOriginalUnit(s)(e.target.value),
-    });
+    s.setState({ minValue: e.target.value });
   };
+
   const onMaximumChange = s => e => {
-    s.setState({
-      maxValue: toOriginalUnit(s)(e.target.value),
-    });
+    s.setState({ maxValue: e.target.value });
   };
+
   const onClearClick = s => e => {
     s.setState({
       maxValue: max(initialFieldOp.content.value),
@@ -127,9 +127,7 @@ export const RangeFilterUi = props => {
 
   const unitOptions = supportedConversionFromUnit(originalUnit) || [];
   const onUnitOptionSelect = s => e => {
-    s.setState({
-      selectedUnit: e.target.value,
-    });
+    s.setState({ selectedUnit: e.target.value });
   };
 
   const isMinimumDisabled = s =>
@@ -178,7 +176,7 @@ export const RangeFilterUi = props => {
                     checked={s.state.selectedUnit === unit}
                     onChange={onUnitOptionSelect(s)}
                   />{' '}
-                  {unit}
+                  {toUnitDisplayName(unit)}
                 </label>
               ))}
             </form>
@@ -194,7 +192,7 @@ export const RangeFilterUi = props => {
                   </span>
                   <StyledInputComponent
                     disabled={isMinimumDisabled(s)}
-                    value={toDisplayUnit(s)(s.state.minValue)}
+                    value={s.state.minValue}
                     type={'number'}
                     onChange={onMinimumChange(s)}
                   />
@@ -209,7 +207,7 @@ export const RangeFilterUi = props => {
                   </span>
                   <StyledInputComponent
                     disabled={isMaximumDisabled(s)}
-                    value={toDisplayUnit(s)(s.state.maxValue)}
+                    value={s.state.maxValue}
                     type={'number'}
                     onChange={onMaximumChange(s)}
                   />
