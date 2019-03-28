@@ -14,7 +14,7 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
-    "@arranger/components": "^1.0.33"
+    "@arranger/components": "^1.0.34"
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.40",
@@ -25,5 +25,5 @@
     "jest-localstorage-mock": "^2.2.0",
     "regenerator-runtime": "^0.11.1"
   },
-  "version": "1.0.33"
+  "version": "1.0.34"
 }
