@@ -11,9 +11,6 @@ import {
   SET_ID,
   MISSING,
   ALL_OP,
-  BETWEEN_OP,
-  GTE_OP,
-  LTE_OP,
 } from '../constants';
 
 // _UNFLAT_KEY_ is a ephemeral mark for groupingOptimizer to not apply grouping
@@ -52,45 +49,6 @@ const applyDefaultPivots = filter => {
       content: filter.content.map(applyDefaultPivots),
     };
   }
-};
-
-/**
- * Special handlings for BETWEEN_OP:
- * - "betweeb" special default for "pivot" based on the content
- * field
- * - preserves grouping so for easy conversion to ES query based on pivot
- **/
-const transformBetweenOp = filter => {
-  const { content } = filter;
-  const field = content.field;
-  const fieldPaths = field.includes('.') ? field.split('.') : [];
-  const defaultPivot = fieldPaths.length
-    ? fieldPaths.slice(0, fieldPaths.length - 1).join('.')
-    : null;
-  if (!isArray(filter.content.value)) {
-    throw Error(`value of ${BETWEEN_OP} must be array`);
-  }
-  return applyDefaultPivots({
-    op: AND_OP,
-    [_UNFLAT_KEY_]: true,
-    pivot: filter.pivot || defaultPivot,
-    content: [
-      {
-        op: GTE_OP,
-        content: {
-          field: filter.content.field,
-          value: [min(filter.content.value.map(Number))],
-        },
-      },
-      {
-        op: LTE_OP,
-        content: {
-          field: filter.content.field,
-          value: [max(filter.content.value.map(Number))],
-        },
-      },
-    ],
-  });
 };
 
 /**
@@ -158,8 +116,6 @@ function normalizeFilters(filter) {
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
-  } else if ([BETWEEN_OP].includes(op)) {
-    return transformBetweenOp(filter);
   } else if ([ALL_OP].includes(op)) {
     return transformAllOp(filter);
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {

@@ -3,6 +3,7 @@ import {
   ES_NESTED,
   ES_QUERY,
   ES_BOOL,
+  BETWEEN_OP,
   GT_OP,
   GTE_OP,
   LT_OP,
@@ -212,6 +213,23 @@ function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
   });
 }
 
+const getBetweenFilter = ({ nestedFields, filter }) => {
+  const { content: { field, value } } = filter;
+  return wrapFilter({
+    filter,
+    nestedFields,
+    esFilter: {
+      range: {
+        [field]: {
+          boost: 0,
+          [GTE_OP]: _.min(value),
+          [LTE_OP]: _.max(value),
+        },
+      },
+    },
+  });
+};
+
 export const opSwitch = ({ nestedFields, filter }) => {
   const { op, pivot, content: { value } } = filter;
   // we need a way to handle object fields before the following error is valid
@@ -232,6 +250,8 @@ export const opSwitch = ({ nestedFields, filter }) => {
     }
   } else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
     return getRangeFilter({ nestedFields, filter });
+  } else if ([BETWEEN_OP].includes(op)) {
+    return getBetweenFilter({ nestedFields, filter });
   } else if (FILTER_OP === op) {
     return getFuzzyFilter({ nestedFields, filter });
   } else {

@@ -917,47 +917,23 @@ test('buildQuery "between"', () => {
     bool: {
       must: [
         {
-          bool: {
-            must: [
-              {
-                nested: {
-                  path: 'biospecimens',
-                  query: {
-                    bool: {
-                      must: [
-                        {
-                          range: {
-                            'biospecimens.age_at_event_days': {
-                              boost: 0,
-                              gte: 200,
-                            },
-                          },
-                        },
-                      ],
+          nested: {
+            path: 'biospecimens',
+            query: {
+              bool: {
+                must: [
+                  {
+                    range: {
+                      'biospecimens.age_at_event_days': {
+                        boost: 0,
+                        gte: 200,
+                        lte: '10000',
+                      },
                     },
                   },
-                },
+                ],
               },
-              {
-                nested: {
-                  path: 'biospecimens',
-                  query: {
-                    bool: {
-                      must: [
-                        {
-                          range: {
-                            'biospecimens.age_at_event_days': {
-                              boost: 0,
-                              lte: 10000,
-                            },
-                          },
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            ],
+            },
           },
         },
       ],
