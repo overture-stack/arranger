@@ -20,19 +20,33 @@ export function normalizeColumns({
     ...columnTypes,
     ...customTypes,
   };
+
   const mappedColumns = columns
-    .map(column => ({
-      ...column,
-      show: typeof column.show === 'boolean' ? column.show : true,
-      Cell: column.Cell || types[column.type],
-      hasCustomType: isNil(column.hasCustomType)
-        ? !!(customTypes || {})[column.type]
-        : column.hasCustomType,
-      ...(!column.accessor && !column.id ? { id: column.field } : {}),
-      ...(customTypeConfigs[column.type] || {}),
-    }))
+    .map(column => {
+      const customCol =
+        customColumns.find(cc => cc.content.field === column.field)?.content ||
+        {};
+
+      return {
+        ...column,
+        show: typeof column.show === 'boolean' ? column.show : true,
+        Cell: column.Cell || types[column.type],
+        hasCustomType: isNil(column.hasCustomType)
+          ? !!(customTypes || {})[column.type]
+          : column.hasCustomType,
+        ...(!column.accessor && !column.id ? { id: column.field } : {}),
+        ...(customTypeConfigs[column.type] || {}),
+        ...customCol,
+      };
+    })
     .filter(x => x.show || x.canChangeShow);
-  return sortBy(customColumns, 'index').reduce(
+
+  // filter out override columns
+  const filteredCustomCols = customColumns.filter(
+    cc => !mappedColumns.some(col => col.field === cc.content.field),
+  );
+
+  return sortBy(filteredCustomCols, 'index').reduce(
     (arr, { index, content }, i) => [
       ...arr.slice(0, index + i),
       content,

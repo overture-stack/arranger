@@ -1,20 +1,45 @@
-export default ({ sqon = null, nestedFields }) =>
-  (sqon?.content || [])
-    .filter(({ content }) => {
-      const splitted = content?.field?.split('.') || '';
-      return content?.field && splitted.length
-        ? nestedFields.includes(
-            splitted.slice(0, splitted.length - 1).join('.'),
-          )
-        : false;
-    })
-    .reduce((acc, filter) => {
-      const splitted = filter.content.field.split('.');
-      const parentPath = splitted.slice(0, splitted.length - 1).join('.');
-      if (acc[parentPath]) {
-        acc[parentPath].push(filter);
-      } else {
-        acc[parentPath] = [filter];
-      }
-      return acc;
-    }, {});
+import { AND_OP, OR_OP, NOT_OP } from '../constants';
+import normalizeFilters from '../buildQuery/normalizeFilters';
+
+const getNestedSqonFilters = ({
+  sqon = null,
+  nestedFields,
+  accumulator = {},
+  parentPivot = '.',
+}) => {
+  const { op } = sqon;
+  if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
+    const { content = [], pivot } = sqon;
+    // console.log('sqon: ', JSON.stringify(sqon, null, 2));
+    content.forEach(c =>
+      getNestedSqonFilters({
+        sqon: c,
+        nestedFields,
+        accumulator,
+        parentPivot: pivot,
+      }),
+    );
+  } else {
+    const { content: { field } } = sqon;
+    const splitted = field.split('.') || '';
+    const parentPath = splitted.slice(0, splitted.length - 1).join('.');
+    const isNested = nestedFields.includes(
+      splitted.slice(0, splitted.length - 1).join('.'),
+    );
+    if (splitted.length && isNested && parentPivot !== parentPath) {
+      accumulator[parentPath] = [...(accumulator[parentPath] || []), sqon];
+    }
+  }
+  return accumulator;
+};
+
+export default ({ sqon = null, nestedFields }) => {
+  const normalized = normalizeFilters(sqon);
+  // console.log('normalized: ', JSON.stringify(normalized, null, 2));
+  return sqon
+    ? getNestedSqonFilters({
+        sqon: normalized,
+        nestedFields,
+      })
+    : {};
+};

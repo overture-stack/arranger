@@ -1,6 +1,7 @@
 // sqon ops
 export const IN_OP = 'in';
 export const NOT_IN_OP = 'not-in';
+export const ALL_OP = 'all';
 export const SOME_NOT_IN_OP = 'some-not-in';
 export const FILTER_OP = 'filter';
 export const AND_OP = 'and';
@@ -10,6 +11,7 @@ export const GT_OP = 'gt';
 export const GTE_OP = 'gte';
 export const LT_OP = 'lt';
 export const LTE_OP = 'lte';
+export const BETWEEN_OP = 'between';
 
 // special values
 export const REGEX = '*';

@@ -175,17 +175,16 @@ const TermAgg = ({
                   setSearchText={setSearchText}
                   aria-label={`Search data`}
                 />
-                {showingMore &&
-                  isMoreEnabled && (
-                    <MoreOrLessButton
-                      isMore={false}
-                      onClick={() => {
-                        setShowingMore(false);
-                        setShowingSearch(false);
-                        scrollToAgg();
-                      }}
-                    />
-                  )}
+                {showingMore && isMoreEnabled && (
+                  <MoreOrLessButton
+                    isMore={false}
+                    onClick={() => {
+                      setShowingMore(false);
+                      setShowingSearch(false);
+                      scrollToAgg();
+                    }}
+                  />
+                )}
               </>,
             ]
           : []),
@@ -206,11 +205,7 @@ const TermAgg = ({
       ]}
     >
       <>
-        {headerTitle && (
-          <div className={`header`}>
-            {headerTitle}
-          </div>
-        )}
+        {headerTitle && <div className={`header`}>{headerTitle}</div>}
         <div className={`bucket`}>
           {decoratedBuckets
             .slice(0, showingMore ? Infinity : maxTerms)

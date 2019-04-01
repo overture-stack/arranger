@@ -8,7 +8,6 @@ import {
   Aggregations,
   CurrentSQON,
   Table,
-  DetectNewVersion,
 } from '../src/Arranger';
 import State from '../src/State';
 import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
@@ -174,7 +173,6 @@ storiesOf('Portal', module).add('Portal', () => (
             render={props => {
               return (
                 <>
-                  <DetectNewVersion {...props} />
                   <DemoHeader update={update} />
                   <Portal {...{ ...props, graphqlField, projectId }} />
                 </>

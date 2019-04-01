@@ -1,0 +1,91 @@
+.filterContainer {
+  border: solid 1px lightgrey;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+  width: 300px;
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.filterContainer .filterContent {
+  flex: 1;
+  overflow: scroll;
+  display: flex;
+  flex-direction: column;
+}
+.filterContainer .contentSection {
+  padding: 7px;
+}
+.filterContainer .termAggContainer {
+  overflow: scroll;
+}
+.filterContainer .searchInputContainer {
+  flex-shrink: 0;
+}
+.filterContainer .Footer {
+  display: flex;
+  background: lightgray;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding: 5px;
+}
+.filterContainer .filterContainerActionButton {
+  border: solid 1px lightgrey;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.filterContainer .aggregation-card {
+  padding: 0px;
+  border: none;
+}
+.filterContainer .aggsFilterAction {
+  color: #a42c90;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.filterContainer .aggsFilterAction.selectAll {
+  margin-right: 5px;
+}
+
+/* for the range filter */
+.filterContainer .rangeInputContainer {
+  border: solid 1px #cacbcf;
+  border-radius: 10px;
+  display: flex;
+  overflow: hidden;
+}
+
+.filterContainer .rangeInputContainer .inputLabel {
+  padding: 7px;
+  background: #edeef1;
+  border-left: solid 1px #cacbcf;
+  border-right: solid 1px #cacbcf;
+}
+.filterContainer .rangeInputContainer .inputLabel.disabled {
+  color: #a9adc0;
+}
+.filterContainer .rangeInputContainer .inputSecondaryLabel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #74757d;
+  padding: 3px;
+}
+.filterContainer .rangeInputContainer .inputField {
+  display: flex;
+  flex: 1;
+}
+.filterContainer .rangeInputContainer input {
+  border: none;
+  width: 100%;
+}
+.filterContainer .unitOptionLabel {
+  margin-right: 10px;
+}
+.filterContainer .rangeFilterInput:disabled {
+  background: #f4f5f8;
+  color: #a9adc0;
+}

@@ -297,12 +297,12 @@ export default async function startProjectApp({
 
   await Promise.all([
     initializeSets({ es }),
-    // initializeStates({ // this should no longer be handled by the search api
-    //   es,
-    //   projectId: id,
-    //   typesWithMappings,
-    //   mappings,
-    // }),
+    initializeStates({
+      es,
+      projectId: id,
+      typesWithMappings,
+      mappings,
+    }),
   ]);
 
   return await createProjectEndpoint({

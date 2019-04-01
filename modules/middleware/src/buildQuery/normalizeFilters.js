@@ -1,3 +1,4 @@
+import { omit, isArray, min, max } from 'lodash';
 import {
   IN_OP,
   NOT_IN_OP,
@@ -9,13 +10,22 @@ import {
   REGEX,
   SET_ID,
   MISSING,
+  ALL_OP,
 } from '../constants';
 
-function groupingOptimizer({ op, content }) {
+// _UNFLAT_KEY_ is a ephemeral mark for groupingOptimizer to not apply grouping
+const _UNFLAT_KEY_ = '__unflat__';
+function groupingOptimizer({ op, content, pivot }) {
   return {
     op,
+    pivot,
     content: content.map(normalizeFilters).reduce((filters, f) => {
-      return filters.concat(f.op === op ? f.content : [f]);
+      const samePivot = f.pivot === pivot || !f.pivot;
+      if (f.op === op && !f[_UNFLAT_KEY_] && samePivot) {
+        return [...filters, ...f.content];
+      } else {
+        return [...filters, omit(f, _UNFLAT_KEY_)];
+      }
     }, []),
   };
 }
@@ -23,6 +33,50 @@ function groupingOptimizer({ op, content }) {
 function isSpecialFilter(value) {
   return [REGEX, SET_ID, MISSING].some(x => `${value}`.includes(x));
 }
+
+const applyDefaultPivots = filter => {
+  const { content, pivot = null } = filter;
+  const { value } = content;
+  if (value) {
+    return {
+      ...filter,
+      pivot,
+    };
+  } else {
+    return {
+      ...filter,
+      pivot,
+      content: filter.content.map(applyDefaultPivots),
+    };
+  }
+};
+
+/**
+ * Special handlings for ALL_OP:
+ * - "all" special default for "pivot" based on the content
+ * field
+ * - preserves grouping so for easy conversion to ES query based on pivot
+ **/
+const transformAllOp = filter => {
+  const { content } = filter;
+  const field = content.field;
+  const fieldPaths = field.includes('.') ? field.split('.') : [];
+  const defaultPivot = fieldPaths.length
+    ? fieldPaths.slice(0, fieldPaths.length - 1).join('.')
+    : null;
+  return applyDefaultPivots({
+    op: AND_OP,
+    [_UNFLAT_KEY_]: true,
+    pivot: filter.pivot || defaultPivot,
+    content: filter.content.value.map(val => ({
+      op: IN_OP,
+      content: {
+        field: filter.content.field,
+        value: [val],
+      },
+    })),
+  });
+};
 
 function normalizeFilters(filter) {
   const { op, content } = filter;
@@ -62,6 +116,8 @@ function normalizeFilters(filter) {
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
+  } else if ([ALL_OP].includes(op)) {
+    return transformAllOp(filter);
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {
@@ -69,4 +125,7 @@ function normalizeFilters(filter) {
   }
 }
 
-export default normalizeFilters;
+export default filter => {
+  const output = filter ? applyDefaultPivots(normalizeFilters(filter)) : filter;
+  return output;
+};

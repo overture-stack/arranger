@@ -68,6 +68,6 @@ const injectNestedFiltersToAggs = ({
     } else {
       return acc;
     }
-  }, aggs);
+  }, cloneDeep(aggs));
 
 export default injectNestedFiltersToAggs;

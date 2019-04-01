@@ -1,4 +1,17 @@
 import buildQuery from '../../src/buildQuery';
+
+test('buildQuery should handle empty sqon', () => {
+  expect(
+    buildQuery({
+      nestedFields: [],
+      filters: {
+        op: 'and',
+        content: [],
+      },
+    }),
+  ).toEqual({ bool: { must: [] } });
+});
+
 test('buildQuery "and" and "or" ops', () => {
   const tests = [
     {
@@ -819,3 +832,175 @@ test('buildQuery "<=" and "=>"', () => {
     expect(actualOutput).toEqual(output);
   });
 });
+
+test('buildQuery "all"', () => {
+  const input = {
+    nestedFields: [
+      'biospecimens',
+      'diagnoses',
+      'family.family_compositions',
+      'family.family_compositions.family_members',
+      'family.family_compositions.family_members.diagnoses',
+      'files',
+      'files.sequencing_experiments',
+    ],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'all',
+          content: {
+            field: 'files.kf_id',
+            value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          bool: {
+            must: [
+              {
+                nested: {
+                  path: 'files',
+                  query: {
+                    bool: {
+                      must: [
+                        { terms: { 'files.kf_id': ['GF_JBMG9T1M'], boost: 0 } },
+                      ],
+                    },
+                  },
+                },
+              },
+              {
+                nested: {
+                  path: 'files',
+                  query: {
+                    bool: {
+                      must: [
+                        { terms: { 'files.kf_id': ['GF_WCYF2AH4'], boost: 0 } },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
+test('buildQuery "between"', () => {
+  const input = {
+    nestedFields: ['biospecimens'],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'between',
+          content: {
+            field: 'biospecimens.age_at_event_days',
+            value: [200, '10000'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          nested: {
+            path: 'biospecimens',
+            query: {
+              bool: {
+                must: [
+                  {
+                    range: {
+                      'biospecimens.age_at_event_days': {
+                        boost: 0,
+                        gte: 200,
+                        lte: '10000',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    },
+  };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
+test('buildQuery "not-in" op', () => {
+  const input = {
+    nestedFields: [],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'not-in',
+          content: {
+            field: 'kf_id',
+            value: ['id_1', 'id_2', 'id_3'],
+          },
+        },
+      ],
+    },
+  };
+  const output = {
+    bool: {
+      must: [
+        {
+          bool: {
+            must_not: [
+              {
+                terms: {
+                  kf_id: ['id_1', 'id_2', 'id_3'],
+                  boost: 0,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
+// we need a way to handle object fields before the following is valid
+// test('it must reject invalid pivot fields', () => {
+//   const testFunction = () => {
+//     const input = {
+//       nestedFields: ['files'],
+//       filters: {
+//         op: 'and',
+//         content: [
+//           {
+//             op: 'all',
+//             pivot: 'asdf',
+//             content: {
+//               field: 'files.kf_id',
+//               value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
+//             },
+//           },
+//         ],
+//       },
+//     };
+//     return buildQuery(input);
+//   };
+//   expect(testFunction).toThrow();
+// });

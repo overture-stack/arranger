@@ -35,11 +35,14 @@ const CombinedStatsQuery = ({
                 ${decoratedStats.map(
                   ({ key, aggsField, isRoot }) =>
                     `${key}: ${
-                      isRoot ? `hits` : `aggregations`
-                    }(filters: $sqon) {
-                      ${isRoot ? `total` : aggsField?.query || ``}
-                    }
-                    `,
+                      isRoot
+                        ? `hits(filters: $sqon) {
+                            total
+                          }`
+                        : `aggregations(filters: $sqon, aggregations_filter_themselves: true) {
+                            ${aggsField?.query || ``}
+                          }`
+                    }`,
                 )}
               }
             }
@@ -47,19 +50,16 @@ const CombinedStatsQuery = ({
           render={({ data, loading }) =>
             render({
               loading,
-              data: decoratedStats.reduce(
-                (obj, x) => ({
-                  ...obj,
-                  [x.label]: x.formatResult(
-                    get(
-                      data,
-                      `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`,
-                      null,
-                    ),
+              data: decoratedStats.reduce((acc, x) => {
+                acc[x.label] = x.formatResult(
+                  get(
+                    data,
+                    `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`,
+                    null,
                   ),
-                }),
-                {},
-              ),
+                );
+                return acc;
+              }, {}),
             })
           }
         />

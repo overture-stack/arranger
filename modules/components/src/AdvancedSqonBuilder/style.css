@@ -1,0 +1,211 @@
+.sqonBuilder {
+  font-size: 12px;
+  padding: 10px;
+}
+.sqonBuilder .actionHeaderContainer {
+  display: flex;
+  justify-content: space-between;
+}
+.sqonBuilder .actionHeaderContainer .button {
+  margin-left: 5px;
+}
+.sqonBuilder .button {
+  border-radius: 100px;
+  box-shadow: none;
+  border: solid 1px lightgrey;
+  color: #008199;
+  cursor: pointer;
+}
+.sqonBuilder .button:disabled {
+  background: #f4f5f8;
+  color: grey;
+  cursor: unset;
+}
+.sqonBuilder .sqonListActionButton {
+  color: #008199;
+  border: none;
+  padding: 5px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sqonBuilder .sqonListActionButton:disabled {
+  color: lightgrey;
+}
+
+.sqonEntry {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  background: #f4f5f8;
+  border: solid 1px lightgrey;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding-right: 100px;
+  min-height: 40px;
+}
+.sqonEntry:hover {
+  background: #e9e9f5;
+}
+.sqonEntry.active {
+  background: #e4f1e7;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sqonEntry .actionButtonsContainer {
+  position: absolute;
+  width: 100px;
+  right: 0px;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  padding: 5px;
+  border-left: solid 1px lightgrey;
+  animation: fadeIn 0.25s;
+}
+
+.sqonEntry .actionButtonsContainer.deleteConfirmation {
+  width: 400px;
+}
+.sqonEntry .actionButtonsContainer.deleteConfirmation .button.delete {
+  font-size: 12px;
+  background: #008199;
+  color: white;
+}
+
+.sqonEntry .actionButtonsContainer .sqonListActionButton {
+  font-size: 18px;
+}
+
+.sqonEntry .activeStateIndicator {
+  width: 15px;
+  min-width: 15px;
+  background: #a9adc0;
+}
+.sqonEntry.active .activeStateIndicator {
+  background: #40a75a;
+}
+
+.sqonEntry .selectionContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  width: 50px;
+  max-width: 50px;
+  min-width: 50px;
+  padding: 2px;
+  border-left: solid 1px lightgrey;
+  border-right: solid 1px lightgrey;
+  cursor: pointer;
+}
+.sqonEntry.active .selectionContainer {
+  background: white;
+}
+
+.sqonEntry .sqonView {
+  flex: 1;
+  padding: 5px;
+}
+
+.sqonView .fieldOp {
+}
+.sqonView .fieldOp .fieldName {
+}
+.sqonView .fieldOp .opName {
+}
+.sqonView .fieldOp .opContainer {
+  display: inline-block;
+  padding: 5px;
+  border-right: solid 1px lightgrey;
+  white-space: nowrap;
+  flex: 1;
+}
+.sqonView .fieldOp .selectionContainer {
+  position: relative;
+  padding: 0px;
+  max-width: 150px;
+  width: 150px;
+  padding-right: 5px;
+  display: inline-flex;
+  justify-content: space-between;
+}
+.sqonView .fieldOp .valueDisplay {
+  position: relative;
+  padding: 5px;
+  display: inline-block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex: 1;
+}
+.sqonView .pillRemoveButton {
+  padding: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-left: solid 1px lightgrey;
+  cursor: pointer;
+}
+
+.sqonView .pill {
+  margin: 1px;
+  display: inline-flex;
+  border: solid 1px lightgrey;
+  border-radius: 10px;
+  background: white;
+}
+.sqonView .pill.sqonReference {
+  overflow: hidden;
+}
+.sqonView .pill .content {
+  padding: 5px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sqonView .logicalOpSelector {
+  position: relative;
+  cursor: pointer;
+}
+.sqonView .logicalOpSelector .content {
+  text-transform: uppercase;
+}
+.sqonView .logicalOpSelector .content .opName {
+  padding-right: 5px;
+}
+.sqonView .logicalOpSelector .menuContainer {
+  position: absolute;
+  top: 100%;
+  background: white;
+  border: solid 1px lightgrey;
+  z-index: 1;
+}
+.sqonView .logicalOpSelector .menuOption {
+  padding: 5px 10px;
+}
+.sqonView .logicalOpSelector .menuOption:hover {
+  background: lightgray;
+}
+.sqonView .fieldFilterContainer {
+  position: absolute;
+  top: 100%;
+  right: 0px;
+  z-index: 1;
+  cursor: default;
+}
+.sqonView .nestedOpBracket {
+  font-weight: bold;
+  font-size: 15px;
+  color: #008199;
+  padding-left: 3px;
+  padding-right: 3px;
+}

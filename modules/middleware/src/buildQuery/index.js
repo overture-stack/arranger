@@ -3,6 +3,7 @@ import {
   ES_NESTED,
   ES_QUERY,
   ES_BOOL,
+  BETWEEN_OP,
   GT_OP,
   GTE_OP,
   LT_OP,
@@ -38,7 +39,7 @@ import {
   toEsRangeValue,
 } from '../utils/esFilter';
 
-function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
+const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
   return filter.content.field
     .split('.')
     .slice(0, -1)
@@ -49,7 +50,7 @@ function wrapFilter({ esFilter, nestedFields, filter, isNot }) {
       (esFilter, path, i) => wrapNested(esFilter, path),
       isNot ? wrapMustNot(esFilter) : esFilter,
     );
-}
+};
 
 function getRegexFilter({ nestedFields, filter }) {
   const { op, content: { field, value: [value] } } = filter;
@@ -175,22 +176,27 @@ const wrappers = {
   [OR_OP]: wrapShould,
   [NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ nestedFields, filter: { content, op } }) {
-  const esFilters = content
-    .map(filter => opSwitch({ nestedFields, filter }))
-    .reduce(
+function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
+  const applyBooleanWrapper = wrappers[op];
+  const esFilters = content.map(filter => opSwitch({ nestedFields, filter }));
+  const isNested = !!esFilters[0]?.nested;
+  if (isNested && pivot === esFilters[0]?.nested.path) {
+    return applyBooleanWrapper(esFilters);
+  } else {
+    const flattned = esFilters.reduce(
       (bools, esFilter) =>
         op === AND_OP || op === NOT_OP
           ? collapseNestedFilters({ esFilter, bools })
           : [...bools, esFilter],
       [],
     );
-
-  return wrappers[op](esFilters);
+    return applyBooleanWrapper(flattned);
+  }
 }
 
-function getSetFilter({ nestedFields, filter, filter: { content } }) {
+function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
   return wrapFilter({
+    isNot: op === NOT_IN_OP,
     filter,
     nestedFields,
     esFilter: {
@@ -207,8 +213,29 @@ function getSetFilter({ nestedFields, filter, filter: { content } }) {
   });
 }
 
+const getBetweenFilter = ({ nestedFields, filter }) => {
+  const { content: { field, value } } = filter;
+  return wrapFilter({
+    filter,
+    nestedFields,
+    esFilter: {
+      range: {
+        [field]: {
+          boost: 0,
+          [GTE_OP]: _.min(value),
+          [LTE_OP]: _.max(value),
+        },
+      },
+    },
+  });
+};
+
 export const opSwitch = ({ nestedFields, filter }) => {
-  const { op, content: { value } } = filter;
+  const { op, pivot, content: { value } } = filter;
+  // we need a way to handle object fields before the following error is valid
+  // if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
+  //   throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
+  // }
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
     return getGroupFilter({ nestedFields, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
@@ -223,6 +250,8 @@ export const opSwitch = ({ nestedFields, filter }) => {
     }
   } else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
     return getRangeFilter({ nestedFields, filter });
+  } else if ([BETWEEN_OP].includes(op)) {
+    return getBetweenFilter({ nestedFields, filter });
   } else if (FILTER_OP === op) {
     return getFuzzyFilter({ nestedFields, filter });
   } else {
@@ -232,5 +261,17 @@ export const opSwitch = ({ nestedFields, filter }) => {
 
 export default function({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
-  return opSwitch({ nestedFields, filter: normalizeFilters(rawFilters) });
+  const output = opSwitch({
+    nestedFields,
+    filter: normalizeFilters(rawFilters),
+  });
+  console.log(
+    'input: ',
+    JSON.stringify({
+      nestedFields,
+      filters: rawFilters,
+    }),
+  );
+  console.log('output: ', JSON.stringify(output));
+  return output;
 }

@@ -91,6 +91,50 @@ export default ({
     }
   };
 
+  const options = (displayKeys.any ?
+    [{
+      value: undefined,
+      title: displayKeys.any,
+    }]
+    : []
+  ).concat([
+    {
+      value: valueKeys.true,
+      disabled: isTrueBucketDisabled,
+      title: (
+        <>
+          <TextHighlight
+            content={displayKeys.true}
+            highlightText={highlightText}
+          />
+          <span className={`bucket-count`} style={{ marginLeft: 2 }}>
+            {formatNumber(isTrueBucketDisabled ? 0 : trueBucket.doc_count)}
+          </span>
+        </>
+      ),
+    },
+    {
+      value: valueKeys.false,
+      disabled: isFalseBucketDisabled,
+      title: (
+        <>
+          <TextHighlight
+            content={displayKeys.false}
+            highlightText={highlightText}
+          />
+          <span
+            className={`bucket-count`}
+            style={{
+              marginLeft: 2,
+            }}
+          >
+            {formatNumber(isFalseBucketDisabled ? 0 : falseBucket.doc_count)}
+          </span>
+        </>
+      ),
+    },
+  ]);
+
   return (
     <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
       <ToggleButton
@@ -100,56 +144,7 @@ export default ({
             : isFalseActive
               ? valueKeys.false
               : undefined,
-          options: [
-            {
-              value: undefined,
-              title: displayKeys.any,
-            },
-            {
-              value: valueKeys.true,
-              disabled: isTrueBucketDisabled,
-              title: (
-                <>
-                  <TextHighlight
-                    content={displayKeys.true}
-                    highlightText={highlightText}
-                  />
-                  <span
-                    className={`bucket-count`}
-                    style={{
-                      marginLeft: 2,
-                    }}
-                  >
-                    {formatNumber(
-                      isTrueBucketDisabled ? 0 : trueBucket.doc_count,
-                    )}
-                  </span>
-                </>
-              ),
-            },
-            {
-              value: valueKeys.false,
-              disabled: isFalseBucketDisabled,
-              title: (
-                <>
-                  <TextHighlight
-                    content={displayKeys.false}
-                    highlightText={highlightText}
-                  />
-                  <span
-                    className={`bucket-count`}
-                    style={{
-                      marginLeft: 2,
-                    }}
-                  >
-                    {formatNumber(
-                      isFalseBucketDisabled ? 0 : falseBucket.doc_count,
-                    )}
-                  </span>
-                </>
-              ),
-            },
-          ],
+          options: options,
           onChange: ({ value }) => {
             handleChange(
               value === valueKeys.true
