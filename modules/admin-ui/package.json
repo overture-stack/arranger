@@ -1,7 +1,6 @@
 {
   "name": "@arranger/admin-ui",
   "version": "1.1.0",
-  "private": true,
   "dependencies": {
     "@arranger/admin": "^1.1.0",
     "@types/react-redux": "^6.0.9",
@@ -43,10 +42,13 @@
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "test": "echo 'test temporarily taken out, script: react-scripts-ts test --env=jsdom'",
+    "test":
+      "echo 'test temporarily taken out, script: react-scripts-ts test --env=jsdom'",
     "eject": "react-scripts-ts eject",
-    "build-css": "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
-    "watch-css": "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive",
+    "build-css":
+      "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
+    "watch-css":
+      "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive",
     "prepare": "npm run build"
   },
   "devDependencies": {
