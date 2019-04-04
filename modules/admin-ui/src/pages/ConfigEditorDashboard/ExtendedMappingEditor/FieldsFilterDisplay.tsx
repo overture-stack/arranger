@@ -39,14 +39,14 @@ const MemoizedInputFormField = React.memo(
   props => <FormField {...props} />,
   ({ value }: { value: string }, { value: newValue }: { value: string }) =>
     value === newValue,
-);
+) as typeof FormField;
 const MemoizedSelectFormField = React.memo(
   props => <FormField {...props} />,
   (
     { selectedItem }: { selectedItem: ISelectOption },
     { selectedItem: newselectedItem }: { selectedItem: ISelectOption },
   ) => selectedItem === newselectedItem,
-);
+) as typeof FormField;
 
 const FieldsFilter: React.ComponentType<{
   filterState: IFilterState;
