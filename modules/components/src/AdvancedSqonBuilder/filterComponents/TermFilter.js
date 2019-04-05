@@ -72,7 +72,7 @@ export const TermFilterUI = props => {
           dotField: initialFieldSqon.content.field,
           currentSQON: getOperationAtPath(sqonPath)(initialSqon),
         }),
-    ).filter(({ key }) => key.includes(s.state.searchString));
+    ).filter(({ key }) => -1 !== key.search(new RegExp(s.state.searchString, 'i')));
   const onOptionTypeChange = s => e => {
     const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
