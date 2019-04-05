@@ -120,8 +120,8 @@ export const RangeFilterUi = props => {
 
   const onClearClick = s => e => {
     s.setState({
-      maxValue: max(initialFieldOp.content.value),
-      minValue: min(initialFieldOp.content.value),
+      maxValue: '',
+      minValue: '',
     });
   };
 

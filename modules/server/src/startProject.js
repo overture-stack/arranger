@@ -145,7 +145,9 @@ const initializeStates = async ({
             timestamp: new Date().toISOString(),
             state: mergeFieldsFromConfig(
               mappingToAggsState(props.mapping),
-              props.config['aggs-state'],
+              Array.isArray(props.config['aggs-state'])
+                ? props.config['aggs-state']
+                : props.config['aggs-state'].state,
             ),
           }),
         ]
@@ -210,7 +212,9 @@ const initializeStates = async ({
             timestamp: new Date().toISOString(),
             state: replaceBy(
               mappingToMatchBoxState(props),
-              props.config['matchbox-state'],
+              Array.isArray(props.config['matchbox-state'])
+                ? props.config['matchbox-state']
+                : props.config['matchbox-state']?.state,
               (x, y) => x.field === y.field,
             ),
           }),
@@ -297,12 +301,14 @@ export default async function startProjectApp({
 
   await Promise.all([
     initializeSets({ es }),
-    initializeStates({
-      es,
-      projectId: id,
-      typesWithMappings,
-      mappings,
-    }),
+    enableAdmin
+      ? initializeStates({
+          es,
+          projectId: id,
+          typesWithMappings,
+          mappings,
+        })
+      : Promise.resolve(),
   ]);
 
   return await createProjectEndpoint({
