@@ -208,6 +208,17 @@ class DataTable extends React.Component {
           PaginationComponent={props => (
             <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
           )}
+          getTrProps={(state, rowInfo) => {
+            if (rowInfo && rowInfo.row) {
+              return {
+                style: {
+                  background: this.isSelected(rowInfo.original.id) ? '#edf9fe' : '',
+                },
+              };
+            } else {
+              return {};
+            }
+          }}
           {...checkboxProps}
           {...fetchFromServerProps}
         />
