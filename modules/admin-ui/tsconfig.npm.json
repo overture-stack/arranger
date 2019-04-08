@@ -21,7 +21,7 @@
       "dom"
     ],
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "jsx": "react",
     "moduleResolution": "node",
     "rootDir": "src",
@@ -37,11 +37,13 @@
   "exclude": [
     "node_modules",
     "build",
+    "dist",
     "scripts",
     "acceptance-tests",
     "webpack",
     "jest",
     "src/setupTests.ts",
-    "src/index.tsx"
+    "src/index.tsx",
+    "webpack.config.npm.js"
   ]
 }
