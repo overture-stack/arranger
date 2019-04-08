@@ -85,6 +85,7 @@
     "react-scrollbar-size": "^2.1.0",
     "react-spinkit": "^3.0.0",
     "react-table": "6.8.6",
+    "react-tippy": "^1.2.3",
     "react-toastify": "^3.3.2",
     "react-treeview": "^0.4.7",
     "recompose": "^0.26.0",
