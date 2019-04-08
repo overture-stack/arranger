@@ -49,7 +49,7 @@
       "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
     "watch-css":
       "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive",
-    "prepare": "npm run build"
+    "prepare": "rm -rf dist && tsc --p ./tsconfig.npm.json"
   },
   "devDependencies": {
     "@types/jest": "^23.3.9",
