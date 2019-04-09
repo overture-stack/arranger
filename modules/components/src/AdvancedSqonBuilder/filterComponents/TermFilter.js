@@ -23,6 +23,13 @@ const AggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
+const filterStringsCaseInsensitive = (values, search, path = null) => {
+  const normalizedSearch = search.toLowerCase();
+  return values.filter(
+    val => (path ? get(val, path) : val).toLowerCase() === normalizedSearch,
+  );
+};
+
 export const TermFilterUI = props => {
   const {
     initialSqon = null,
@@ -37,15 +44,6 @@ export const TermFilterUI = props => {
     field,
   } = props;
 
-  /**
-   * initialFieldSqon: {
-   *  op: "in" | ">=" | "<=",
-   *  content: {
-   *    field: string,
-   *    value: string,
-   *  }
-   * }
-   */
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
     op: IN_OP,
     content: { value: [], field },
@@ -65,14 +63,14 @@ export const TermFilterUI = props => {
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const computeBuckets = (s, buckets) =>
     sortBy(
-      buckets,
+      filterStringsCaseInsensitive(buckets, s.state.searchString, 'key'),
       bucket =>
         !inCurrentSQON({
           value: bucket.key,
           dotField: initialFieldSqon.content.field,
           currentSQON: getOperationAtPath(sqonPath)(initialSqon),
         }),
-    ).filter(({ key }) => -1 !== key.search(new RegExp(s.state.searchString, 'i')));
+    );
   const onOptionTypeChange = s => e => {
     const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
@@ -89,7 +87,10 @@ export const TermFilterUI = props => {
         ...currentFieldSqon,
         content: {
           ...currentFieldSqon.content,
-          value: buckets.map(({ key }) => key),
+          value: filterStringsCaseInsensitive(
+            buckets.map(({ key }) => key),
+            s.state.searchString,
+          ),
         },
       })(s.state.localSqon),
     });
