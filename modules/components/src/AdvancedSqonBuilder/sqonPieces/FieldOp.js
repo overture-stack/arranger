@@ -13,6 +13,8 @@ import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
 import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
+import 'react-tippy/dist/tippy.css';
+import { Tooltip } from 'react-tippy';
 
 export default props => {
   const {
@@ -64,7 +66,12 @@ export default props => {
                 handler={onClickAway(s)}
               >
                 <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
-                  {Array.isArray(value) ? value.join(', ') : value}{' '}
+                  <Tooltip
+                        position="bottom"
+                        html={Array.isArray(value) ? value.join(', ') : value}
+                      >
+                    {Array.isArray(value) ? value.join(', ') : value}{' '}
+                  </Tooltip>
                 </span>
                 <span onClick={toggleDropdown(s)}>
                   <span style={{ pointerEvents: 'none' }}>
