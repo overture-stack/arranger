@@ -58,7 +58,6 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
               )._source;
-              console.log('projectIndexData: ', Object.keys(projectIndexData));
               return projectIndexData.config['aggs-state'];
             }
           },
@@ -84,8 +83,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
               )._source;
-              console.log('projectIndexData: ', Object.keys(projectIndexData));
-              return projectIndexData.config['columns-state'];
+              return { state: projectIndexData.config['columns-state'] };
             }
           },
           matchBoxState: async (obj, t, { es, projectId }) => {
@@ -110,8 +108,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
               )._source;
-              console.log('projectIndexData: ', Object.keys(projectIndexData));
-              return projectIndexData.config['matchbox-state'];
+              return { state: projectIndexData.config['matchbox-state'] };
             }
           },
         }
