@@ -9,6 +9,8 @@
     "@types/recompose": "^0.27.0",
     "@types/redux-devtools": "^3.0.44",
     "apollo-boost": "^0.1.19",
+    "apollo-client": "^2.5.1",
+    "apollo-link-http": "^1.5.14",
     "bulma": "^0.7.2",
     "connected-react-router": "^5.0.1",
     "convert-units": "^2.3.4",

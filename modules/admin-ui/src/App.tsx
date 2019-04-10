@@ -1,8 +1,11 @@
 import * as React from 'react';
 import { Provider } from 'react-redux';
+import { createHttpLink } from 'apollo-link-http';
+import { InMemoryCache } from 'apollo-cache-inmemory';
 import { Route } from 'react-router-dom';
 import { BrowserRouter, withRouter } from 'react-router-dom';
-import ApolloClient from 'apollo-boost';
+import ApolloClient from 'apollo-client';
+// import ApolloClient from 'apollo-boost';
 import { ApolloProvider } from 'react-apollo';
 import { ThemeProvider } from 'mineral-ui/themes';
 
@@ -12,14 +15,19 @@ import VersionsDashboard from './pages/VersionDashboard';
 import ProjectIndicesDashboard from './pages/ProjectIndicesDashboard';
 import ConfigEditorDashboard from './pages/ConfigEditorDashboard';
 import { adminApiRoot as configAdminApiRoot } from './config';
+import { Store } from 'redux';
 
 const App = withRouter(
   ({
     history,
     apiRoot = configAdminApiRoot,
     store = createLocalStore({ history }),
+    fetcher = fetch,
   }: any) => {
-    const client = new ApolloClient({ uri: apiRoot });
+    const client = new ApolloClient({
+      link: createHttpLink({ uri: apiRoot, fetch: fetcher }),
+      cache: new InMemoryCache(),
+    });
 
     const RoutedVersionDashboard = () => <VersionsDashboard />;
     const RoutedProjectIndicesDashboard = ({ match }) => (
@@ -58,8 +66,18 @@ const App = withRouter(
   },
 );
 
-export default ({ basename = '' }: { basename?: string }) => (
+export default ({
+  basename = '',
+  apiRoot,
+  store,
+  fetcher,
+}: {
+  basename?: string;
+  apiRoot?: string;
+  store?: Store;
+  fetcher?: typeof fetch;
+}) => (
   <BrowserRouter basename={basename}>
-    <App />
+    <App apiRoot={apiRoot} store={store} fetcher={fetcher} />
   </BrowserRouter>
 );
