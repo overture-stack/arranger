@@ -11,6 +11,7 @@ import Button from 'mineral-ui/Button';
 import Table, { TableRow, TableCell } from 'mineral-ui/Table';
 import { ApolloError, ApolloQueryResult } from 'apollo-boost';
 import { Link as RouterLink } from 'react-router-dom';
+import Text from 'mineral-ui/Text';
 
 import ProjectDeleteButton from './DeleteButton';
 import AddProjectForm from './AddProjectForm/index';
@@ -18,6 +19,7 @@ import { ModalOverlay } from 'src/components/Modal';
 import ExportButton from './ExportButton';
 import Link from 'src/components/Link';
 import { ActionType } from 'src/store/configEditorReducer';
+import Alert from 'src/components/Alert';
 
 /************************
  * provides graphql query
@@ -139,12 +141,12 @@ interface IInjectedProps
 interface IExternalProps {}
 const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   const {
-    data,
+    data = { projects: [] },
     onVersionSelect,
     localState: { state: { isAddingProject }, mutations: { setAddingProject } },
     refetch,
     clearEditingProject,
-    // error,
+    error,
   } = props;
 
   const { projects = [] } = data;
@@ -196,6 +198,11 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     <Component didMount={didMount}>
       {() => (
         <div>
+          {error && (
+            <Alert variant="error">
+              <Text>{error.message}</Text>
+            </Alert>
+          )}
           <Table
             title="Project versions"
             rowKey="id"
