@@ -83,7 +83,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
               )._source;
-              return { state: projectIndexData.config['columns-state'] };
+              return projectIndexData.config['columns-state'];
             }
           },
           matchBoxState: async (obj, t, { es, projectId }) => {
@@ -108,7 +108,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
               )._source;
-              return { state: projectIndexData.config['matchbox-state'] };
+              return projectIndexData.config['matchbox-state'];
             }
           },
         }
