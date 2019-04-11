@@ -20,7 +20,7 @@ export default async function() {
   console.log(`🚀 Admin API available at: [arranger_root]${adminPath}`);
 
   // Always run test server as admin
-  return Arranger({ enableAdmin: true }).then(router => {
+  return Arranger({ enableAdmin: false }).then(router => {
     app.use(router);
     http.listen(PORT, async () => {
       console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
