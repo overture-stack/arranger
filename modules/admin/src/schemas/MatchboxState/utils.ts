@@ -11,7 +11,7 @@ import {
   getProjectStorageMetadata,
   updateProjectIndexMetadata,
 } from '../IndexSchema/utils';
-import { timestamp } from '../../services';
+import { timestamp, replaceBy } from '../../services';
 
 export const createMatchboxState = ({
   extendedFields,
@@ -48,10 +48,11 @@ export const saveMatchBoxState = (es: Client) => async ({
   const currentMatchboxFields = currentMetadata.config['matchbox-state'].state;
   const newMatchboxState: I_MatchBoxState = {
     timestamp: timestamp(),
-    state: currentMatchboxFields.map(i => ({
-      ...i,
-      ...(updatedMatchboxFields.find(({ field }) => field === i.field) || {}),
-    })),
+    state: replaceBy(
+      currentMatchboxFields,
+      updatedMatchboxFields,
+      ({ field: field1 }, { field: field2 }) => field1 === field2,
+    ),
   };
 
   await updateProjectIndexMetadata(es)({
