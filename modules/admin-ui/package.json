@@ -16,7 +16,7 @@
     "convert-units": "^2.3.4",
     "emotion": "^9.2.12",
     "emotion-theming": "^9.2.9",
-    "file-saver": "^2.0.0-rc.4",
+    "file-saver": "^2.0.1",
     "graphql": "^14.0.2",
     "jszip": "^3.1.5",
     "lodash": "^4.17.11",
