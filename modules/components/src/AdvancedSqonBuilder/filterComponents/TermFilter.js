@@ -26,7 +26,7 @@ const AggsWrapper = ({ children }) => (
 const filterStringsCaseInsensitive = (values, searchString, path = null) =>
   values.filter(val => {
     const valText = path ? get(val, path) : val;
-    return valText.search(new RegExp(searchString, 'i'));
+    return -1 !== valText.search(new RegExp(searchString, 'i'));
   });
 
 export const TermFilterUI = props => {
