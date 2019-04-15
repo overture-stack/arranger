@@ -23,12 +23,11 @@ const AggsWrapper = ({ children }) => (
   <div className="aggregation-card">{children}</div>
 );
 
-const filterStringsCaseInsensitive = (values, search, path = null) => {
-  const normalizedSearch = search.toLowerCase();
-  return values.filter(
-    val => (path ? get(val, path) : val).toLowerCase() === normalizedSearch,
-  );
-};
+const filterStringsCaseInsensitive = (values, searchString, path = null) =>
+  values.filter(val => {
+    const valText = path ? get(val, path) : val;
+    return valText.search(new RegExp(searchString, 'i'));
+  });
 
 export const TermFilterUI = props => {
   const {
