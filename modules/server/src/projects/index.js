@@ -41,7 +41,6 @@ export default ({ graphqlOptions, enableAdmin }) => {
     router.use('/:id/types/add', addType);
     router.use('/:id/spinUp', spinUp({ graphqlOptions, enableAdmin }));
     router.use('/:id/teardown', teardown);
-    router.use('/:id/export', exportProject);
     router.use('/:id/delete', deleteProject);
     router.use('/:id/update', updateProject);
     router.use('/add', addProject);
@@ -49,6 +48,7 @@ export default ({ graphqlOptions, enableAdmin }) => {
   // add these endpoints after Admin endpoints are added as Admin endpoints are more specific endpoints
   // and when serving requests; express serves from the first endpoint that matches the request url
   // so we should add more specific endpoints first
+  router.use('/:id/export', exportProject);
   router.use('/:id/types/:index/fields', getFields);
   router.use('/:id/types', getTypes);
   router.use('/', getProjects);
