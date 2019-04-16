@@ -32,7 +32,7 @@ const injectNestedFiltersToAggs = ({
           [`${aggContent.nested.path}:${AGGS_WRAPPER_FILTERED}`]: {
             filter: {
               bool: {
-                must: nestedSqonFilters[aggContent.nested.path]
+                should: nestedSqonFilters[aggContent.nested.path]
                   .filter(
                     sqonFilter =>
                       aggregationsFilterThemselves ||

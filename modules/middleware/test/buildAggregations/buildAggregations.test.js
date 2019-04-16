@@ -214,7 +214,7 @@ test('buildAggregations should handle nested aggregations with filters on same f
             'participants:filtered': {
               filter: {
                 bool: {
-                  must: [],
+                  should: [],
                 },
               },
               aggs: {
@@ -415,7 +415,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
             'participants.diagnoses:filtered': {
               filter: {
                 bool: {
-                  must: [
+                  should: [
                     {
                       terms: {
                         'participants.diagnoses.mondo_id_diagnosis': [
@@ -545,7 +545,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                     'participants.diagnoses:filtered': {
                       filter: {
                         bool: {
-                          must: [
+                          should: [
                             {
                               terms: {
                                 'participants.diagnoses.mondo_id_diagnosis': [
@@ -640,7 +640,7 @@ test('buildAggregations can drop nested sqon filters down to filters including a
             'participants.diagnoses:filtered': {
               filter: {
                 bool: {
-                  must: [
+                  should: [
                     {
                       terms: {
                         'participants.diagnoses.mondo_id_diagnosis': [
