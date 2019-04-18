@@ -65,6 +65,17 @@ test('buildQuery ">=" and "<=" nested', () => {
                           },
                         },
                       },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'participants',
+                query: {
+                  bool: {
+                    must: [
                       {
                         nested: {
                           path: 'participants.samples',
@@ -101,7 +112,7 @@ test('buildQuery ">=" and "<=" nested', () => {
   });
 });
 
-test('buildQuery ">=" and "<=" nested', () => {
+test('buildQuery single ">="', () => {
   const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
@@ -109,13 +120,7 @@ test('buildQuery ">=" and "<=" nested', () => {
         nestedFields,
         filters: {
           content: [
-            {
-              content: {
-                field: 'files.foo.name',
-                value: 7,
-              },
-              op: '>=',
-            },
+            { content: { field: 'files.foo.name', value: 7 }, op: '>=' },
           ],
           op: 'and',
         },
@@ -125,32 +130,29 @@ test('buildQuery ">=" and "<=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.foo',
                           query: {
                             bool: {
                               must: [
                                 {
                                   range: {
-                                    'files.foo.name': {
-                                      boost: 0,
-                                      gte: 7,
-                                    },
+                                    'files.foo.name': { boost: 0, gte: 7 },
                                   },
                                 },
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
           ],
@@ -200,24 +202,45 @@ test('buildQuery "missing" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         terms: {
-                          boost: 0,
                           'files.data_category': [
                             'Simple Nucleotide Variation',
                           ],
-                        },
-                      },
-                      {
-                        terms: {
                           boost: 0,
-                          'files.experimental_strategy': ['WXS'],
                         },
                       },
                     ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        terms: {
+                          'files.experimental_strategy': ['WXS'],
+                          boost: 0,
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
                     must_not: [
                       {
                         exists: {
@@ -229,7 +252,6 @@ test('buildQuery "missing" nested', () => {
                     ],
                   },
                 },
-                path: 'files',
               },
             },
           ],
@@ -430,10 +452,7 @@ test('buildQuery "=" and "!=" nested', () => {
                   op: '=',
                 },
                 {
-                  content: {
-                    field: 'project.project_id',
-                    value: 'TCGA-BRCA',
-                  },
+                  content: { field: 'project.project_id', value: 'TCGA-BRCA' },
                   op: '=',
                 },
               ],
@@ -448,6 +467,7 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
@@ -457,16 +477,26 @@ test('buildQuery "=" and "!=" nested', () => {
                           boost: 0,
                         },
                       },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
                       {
                         terms: {
-                          boost: 0,
                           'files.experimental_strategy': ['WGS'],
+                          boost: 0,
                         },
                       },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
             { terms: { 'project.project_id': ['TCGA-BRCA'], boost: 0 } },
@@ -487,17 +517,11 @@ test('buildQuery "=" and "!=" nested', () => {
               op: '=',
             },
             {
-              content: {
-                field: 'files.experimental_strategy',
-                value: 'WGS',
-              },
+              content: { field: 'files.experimental_strategy', value: 'WGS' },
               op: '=',
             },
             {
-              content: {
-                field: 'project.project_id',
-                value: 'TCGA-BRCA',
-              },
+              content: { field: 'project.project_id', value: 'TCGA-BRCA' },
               op: '=',
             },
           ],
@@ -509,6 +533,7 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
@@ -518,16 +543,26 @@ test('buildQuery "=" and "!=" nested', () => {
                           boost: 0,
                         },
                       },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
                       {
                         terms: {
-                          boost: 0,
                           'files.experimental_strategy': ['WGS'],
+                          boost: 0,
                         },
                       },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
             { terms: { 'project.project_id': ['TCGA-BRCA'], boost: 0 } },
@@ -548,10 +583,7 @@ test('buildQuery "=" and "!=" nested', () => {
                   op: '=',
                 },
                 {
-                  content: {
-                    field: 'project.primary_site',
-                    value: 'Brain',
-                  },
+                  content: { field: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -566,15 +598,24 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [{ terms: { 'files.access': ['open'], boost: 0 } }],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
-                      { terms: { boost: 0, 'files.access': ['open'] } },
-                      { terms: { boost: 0, 'files.center.code': ['01'] } },
+                      { terms: { 'files.center.code': ['01'], boost: 0 } },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
             { terms: { 'project.primary_site': ['Brain'], boost: 0 } },
@@ -598,10 +639,7 @@ test('buildQuery "=" and "!=" nested', () => {
                   op: '=',
                 },
                 {
-                  content: {
-                    field: 'project.primary_site',
-                    value: 'Brain',
-                  },
+                  content: { field: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -616,17 +654,26 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must_not: [
-                      { terms: { boost: 0, 'files.access': ['protected'] } },
-                    ],
-                    must: [
-                      { terms: { boost: 0, 'files.center.code': ['01'] } },
+                      { terms: { 'files.access': ['protected'], boost: 0 } },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      { terms: { 'files.center.code': ['01'], boost: 0 } },
+                    ],
+                  },
+                },
               },
             },
             { terms: { 'project.primary_site': ['Brain'], boost: 0 } },
@@ -661,27 +708,26 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
-                    must_not: [
-                      {
-                        terms: {
-                          boost: 0,
-                          'files.center.code': ['04'],
-                        },
-                      },
-                    ],
                     must: [
-                      {
-                        terms: {
-                          boost: 0,
-                          'files.access': ['protected4'],
-                        },
-                      },
+                      { terms: { 'files.access': ['protected4'], boost: 0 } },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must_not: [
+                      { terms: { 'files.center.code': ['04'], boost: 0 } },
+                    ],
+                  },
+                },
               },
             },
           ],
@@ -693,27 +739,15 @@ test('buildQuery "=" and "!=" nested', () => {
         nestedFields,
         filters: {
           content: [
-            {
-              content: {
-                field: 'files.access',
-                value: 'protected',
-              },
-              op: '=',
-            },
+            { content: { field: 'files.access', value: 'protected' }, op: '=' },
             {
               content: [
                 {
-                  content: {
-                    field: 'files.center.code',
-                    value: '01',
-                  },
+                  content: { field: 'files.center.code', value: '01' },
                   op: '!=',
                 },
                 {
-                  content: {
-                    field: 'project.primary_site',
-                    value: 'Brain',
-                  },
+                  content: { field: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -728,35 +762,29 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      { terms: { 'files.access': ['protected'], boost: 0 } },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must_not: [
-                      {
-                        terms: {
-                          boost: 0,
-                          'files.center.code': ['01'],
-                        },
-                      },
-                    ],
-                    must: [
-                      {
-                        terms: {
-                          boost: 0,
-                          'files.access': ['protected'],
-                        },
-                      },
+                      { terms: { 'files.center.code': ['01'], boost: 0 } },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
-            {
-              terms: {
-                'project.primary_site': ['Brain'],
-                boost: 0,
-              },
-            },
+            { terms: { 'project.primary_site': ['Brain'], boost: 0 } },
           ],
         },
       },
@@ -766,20 +794,8 @@ test('buildQuery "=" and "!=" nested', () => {
         nestedFields,
         filters: {
           content: [
-            {
-              content: {
-                field: 'files.foo.name',
-                value: 'cname',
-              },
-              op: '=',
-            },
-            {
-              content: {
-                field: 'files.foo.code',
-                value: '01',
-              },
-              op: '=',
-            },
+            { content: { field: 'files.foo.name', value: 'cname' }, op: '=' },
+            { content: { field: 'files.foo.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -789,85 +805,15 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
-                          query: {
-                            bool: {
-                              must: [
-                                {
-                                  terms: {
-                                    'files.foo.name': ['cname'],
-                                    boost: 0,
-                                  },
-                                },
-                                {
-                                  terms: {
-                                    boost: 0,
-                                    'files.foo.code': ['01'],
-                                  },
-                                },
-                              ],
-                            },
-                          },
                           path: 'files.foo',
-                        },
-                      },
-                    ],
-                  },
-                },
-                path: 'files',
-              },
-            },
-          ],
-        },
-      },
-    },
-    {
-      input: {
-        nestedFields,
-        filters: {
-          content: [
-            {
-              content: {
-                field: 'files.foo.name',
-                value: 'cname',
-              },
-              op: '=',
-            },
-            {
-              content: {
-                field: 'files.foo.code',
-                value: '01',
-              },
-              op: '!=',
-            },
-          ],
-          op: 'and',
-        },
-      },
-      output: {
-        bool: {
-          must: [
-            {
-              nested: {
-                query: {
-                  bool: {
-                    must: [
-                      {
-                        nested: {
                           query: {
                             bool: {
-                              must_not: [
-                                {
-                                  terms: {
-                                    boost: 0,
-                                    'files.foo.code': ['01'],
-                                  },
-                                },
-                              ],
                               must: [
                                 {
                                   terms: {
@@ -878,13 +824,36 @@ test('buildQuery "=" and "!=" nested', () => {
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  terms: { 'files.foo.code': ['01'], boost: 0 },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           ],
@@ -896,20 +865,8 @@ test('buildQuery "=" and "!=" nested', () => {
         nestedFields,
         filters: {
           content: [
-            {
-              content: {
-                field: 'files.foo.name',
-                value: 'cname',
-              },
-              op: '!=',
-            },
-            {
-              content: {
-                field: 'files.foo.code',
-                value: '01',
-              },
-              op: '=',
-            },
+            { content: { field: 'files.foo.name', value: 'cname' }, op: '=' },
+            { content: { field: 'files.foo.code', value: '01' }, op: '!=' },
           ],
           op: 'and',
         },
@@ -919,38 +876,55 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  terms: {
+                                    'files.foo.name': ['cname'],
+                                    boost: 0,
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
                           query: {
                             bool: {
                               must_not: [
                                 {
-                                  terms: {
-                                    'files.foo.name': ['cname'],
-                                    boost: 0,
-                                  },
-                                },
-                              ],
-                              must: [
-                                {
-                                  terms: {
-                                    boost: 0,
-                                    'files.foo.code': ['01'],
-                                  },
+                                  terms: { 'files.foo.code': ['01'], boost: 0 },
                                 },
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
-                path: 'files',
               },
             },
           ],
@@ -962,13 +936,8 @@ test('buildQuery "=" and "!=" nested', () => {
         nestedFields,
         filters: {
           content: [
-            {
-              content: {
-                field: 'files.foo.name',
-                value: 'cname',
-              },
-              op: '!=',
-            },
+            { content: { field: 'files.foo.name', value: 'cname' }, op: '!=' },
+            { content: { field: 'files.foo.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -978,11 +947,13 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.foo',
                           query: {
                             bool: {
                               must_not: [
@@ -995,13 +966,36 @@ test('buildQuery "=" and "!=" nested', () => {
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  terms: { 'files.foo.code': ['01'], boost: 0 },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           ],
@@ -1012,39 +1006,76 @@ test('buildQuery "=" and "!=" nested', () => {
       input: {
         nestedFields,
         filters: {
-          content: {
-            field: 'files.foo.code',
-            value: ['01'],
-          },
+          content: [
+            { content: { field: 'files.foo.name', value: 'cname' }, op: '!=' },
+          ],
+          op: 'and',
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must_not: [
+                                {
+                                  terms: {
+                                    'files.foo.name': ['cname'],
+                                    boost: 0,
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      input: {
+        nestedFields,
+        filters: {
+          content: { field: 'files.foo.code', value: ['01'] },
           op: 'not-in',
         },
       },
       output: {
         nested: {
+          path: 'files',
           query: {
             bool: {
               must: [
                 {
                   nested: {
+                    path: 'files.foo',
                     query: {
                       bool: {
                         must_not: [
-                          {
-                            terms: {
-                              boost: 0,
-                              'files.foo.code': ['01'],
-                            },
-                          },
+                          { terms: { 'files.foo.code': ['01'], boost: 0 } },
                         ],
                       },
                     },
-                    path: 'files.foo',
                   },
                 },
               ],
             },
           },
-          path: 'files',
         },
       },
     },
@@ -1054,19 +1085,10 @@ test('buildQuery "=" and "!=" nested', () => {
         filters: {
           content: [
             {
-              content: {
-                field: 'files.foo.bar.name',
-                value: 'cname',
-              },
+              content: { field: 'files.foo.bar.name', value: 'cname' },
               op: '=',
             },
-            {
-              content: {
-                field: 'files.foo.bar.code',
-                value: '01',
-              },
-              op: '=',
-            },
+            { content: { field: 'files.foo.bar.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1076,16 +1098,19 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.foo',
                           query: {
                             bool: {
                               must: [
                                 {
                                   nested: {
+                                    path: 'files.foo.bar',
                                     query: {
                                       bool: {
                                         must: [
@@ -1095,28 +1120,58 @@ test('buildQuery "=" and "!=" nested', () => {
                                               boost: 0,
                                             },
                                           },
-                                          {
-                                            terms: {
-                                              boost: 0,
-                                              'files.foo.bar.code': ['01'],
-                                            },
-                                          },
                                         ],
                                       },
                                     },
-                                    path: 'files.foo.bar',
                                   },
                                 },
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  nested: {
+                                    path: 'files.foo.bar',
+                                    query: {
+                                      bool: {
+                                        must: [
+                                          {
+                                            terms: {
+                                              'files.foo.bar.code': ['01'],
+                                              boost: 0,
+                                            },
+                                          },
+                                        ],
+                                      },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           ],
@@ -1132,10 +1187,7 @@ test('buildQuery "=" and "!=" nested', () => {
               content: { field: 'files.foo.bar.name', value: 'cname' },
               op: '!=',
             },
-            {
-              content: { field: 'files.foo.bar.code', value: '01' },
-              op: '=',
-            },
+            { content: { field: 'files.foo.bar.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1145,16 +1197,19 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.foo',
                           query: {
                             bool: {
                               must: [
                                 {
                                   nested: {
+                                    path: 'files.foo.bar',
                                     query: {
                                       bool: {
                                         must_not: [
@@ -1165,29 +1220,57 @@ test('buildQuery "=" and "!=" nested', () => {
                                             },
                                           },
                                         ],
-                                        must: [
-                                          {
-                                            terms: {
-                                              boost: 0,
-                                              'files.foo.bar.code': ['01'],
-                                            },
-                                          },
-                                        ],
                                       },
                                     },
-                                    path: 'files.foo.bar',
                                   },
                                 },
                               ],
                             },
                           },
-                          path: 'files.foo',
                         },
                       },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        nested: {
+                          path: 'files.foo',
+                          query: {
+                            bool: {
+                              must: [
+                                {
+                                  nested: {
+                                    path: 'files.foo.bar',
+                                    query: {
+                                      bool: {
+                                        must: [
+                                          {
+                                            terms: {
+                                              'files.foo.bar.code': ['01'],
+                                              boost: 0,
+                                            },
+                                          },
+                                        ],
+                                      },
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                },
               },
             },
           ],
@@ -1203,10 +1286,7 @@ test('buildQuery "=" and "!=" nested', () => {
               content: { field: 'files.nn.baz.name', value: 'cname' },
               op: '!=',
             },
-            {
-              content: { field: 'files.code', value: 'beep' },
-              op: '=',
-            },
+            { content: { field: 'files.code', value: 'beep' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1216,11 +1296,13 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         nested: {
+                          path: 'files.nn.baz',
                           query: {
                             bool: {
                               must_not: [
@@ -1233,14 +1315,21 @@ test('buildQuery "=" and "!=" nested', () => {
                               ],
                             },
                           },
-                          path: 'files.nn.baz',
                         },
                       },
-                      { terms: { 'files.code': ['beep'], boost: 0 } },
                     ],
                   },
                 },
+              },
+            },
+            {
+              nested: {
                 path: 'files',
+                query: {
+                  bool: {
+                    must: [{ terms: { 'files.code': ['beep'], boost: 0 } }],
+                  },
+                },
               },
             },
           ],
@@ -1279,24 +1368,45 @@ test('buildQuery "=" and "!=" nested', () => {
           must: [
             {
               nested: {
+                path: 'files',
                 query: {
                   bool: {
                     must: [
                       {
                         terms: {
-                          boost: 0,
                           'files.data_category': [
                             'Simple Nucleotide Variation',
                           ],
-                        },
-                      },
-                      {
-                        terms: {
                           boost: 0,
-                          'files.experimental_strategy': ['WXS'],
                         },
                       },
                     ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
+                    must: [
+                      {
+                        terms: {
+                          'files.experimental_strategy': ['WXS'],
+                          boost: 0,
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              nested: {
+                path: 'files',
+                query: {
+                  bool: {
                     must_not: [
                       {
                         exists: {
@@ -1308,7 +1418,6 @@ test('buildQuery "=" and "!=" nested', () => {
                     ],
                   },
                 },
-                path: 'files',
               },
             },
           ],
@@ -1317,7 +1426,7 @@ test('buildQuery "=" and "!=" nested', () => {
     },
   ];
 
-  tests.forEach(({ input, output }) => {
+  tests.forEach(({ input, output }, i) => {
     const actualOutput = buildQuery(input);
     expect(actualOutput).toEqual(output);
   });

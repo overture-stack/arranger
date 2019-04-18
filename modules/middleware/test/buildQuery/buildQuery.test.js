@@ -81,6 +81,132 @@ test('buildQuery "and" and "or" ops', () => {
   });
 });
 
+test('buildQuery "all" ops', () => {
+  const tests = [
+    {
+      input: {
+        nestedFields: ['diagnoses'],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: 'all',
+              content: {
+                field: 'diagnoses.diagnosis',
+                value: ['ganglioglioma', 'low grade glioma'],
+              },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              bool: {
+                must: [
+                  {
+                    nested: {
+                      path: 'diagnoses',
+                      query: {
+                        bool: {
+                          must: [
+                            {
+                              terms: {
+                                'diagnoses.diagnosis': ['ganglioglioma'],
+                                boost: 0,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    nested: {
+                      path: 'diagnoses',
+                      query: {
+                        bool: {
+                          must: [
+                            {
+                              terms: {
+                                'diagnoses.diagnosis': ['low grade glioma'],
+                                boost: 0,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    },
+    {
+      input: {
+        nestedFields: ['diagnoses'],
+        filters: {
+          op: 'and',
+          content: [
+            {
+              op: 'all',
+              pivot: 'diagnoses',
+              content: {
+                field: 'diagnoses.diagnosis',
+                value: ['ganglioglioma', 'low grade glioma'],
+              },
+            },
+          ],
+        },
+      },
+      output: {
+        bool: {
+          must: [
+            {
+              bool: {
+                must: [
+                  {
+                    nested: {
+                      path: 'diagnoses',
+                      query: {
+                        bool: {
+                          must: [
+                            {
+                              terms: {
+                                'diagnoses.diagnosis': ['ganglioglioma'],
+                                boost: 0,
+                              },
+                            },
+                            {
+                              terms: {
+                                'diagnoses.diagnosis': ['low grade glioma'],
+                                boost: 0,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    },
+  ];
+  tests.forEach(({ input, output }) => {
+    const actualOutput = buildQuery(input);
+    console.log('actualOutput: ', JSON.stringify(actualOutput));
+    expect(actualOutput).toEqual(output);
+  });
+});
+
 test('buildQuery "and", "or" ops nested inside each other', () => {
   const tests = [
     {
@@ -136,13 +262,7 @@ test('buildQuery "=" and "!=" ops', () => {
     {
       input: {
         nestedFields: [],
-        filters: {
-          op: '!=',
-          content: {
-            field: 'project_code',
-            value: 'ACC',
-          },
-        },
+        filters: { op: '!=', content: { field: 'project_code', value: 'ACC' } },
       },
       output: {
         bool: { must_not: [{ terms: { project_code: ['ACC'], boost: 0 } }] },
@@ -154,20 +274,8 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'and',
           content: [
-            {
-              op: '=',
-              content: {
-                field: 'program',
-                value: ['TCGA'],
-              },
-            },
-            {
-              op: '=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'program', value: ['TCGA'] } },
+            { op: '=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -186,20 +294,8 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'and',
           content: [
-            {
-              op: '=',
-              content: {
-                field: 'program',
-                value: ['TCGA'],
-              },
-            },
-            {
-              op: '!=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'program', value: ['TCGA'] } },
+            { op: '!=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -223,29 +319,11 @@ test('buildQuery "=" and "!=" ops', () => {
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: {
-                    field: 'program',
-                    value: ['TCGA'],
-                  },
-                },
-                {
-                  op: '=',
-                  content: {
-                    field: 'project',
-                    value: ['ACC'],
-                  },
-                },
+                { op: '=', content: { field: 'program', value: ['TCGA'] } },
+                { op: '=', content: { field: 'project', value: ['ACC'] } },
               ],
             },
-            {
-              op: '=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -268,29 +346,11 @@ test('buildQuery "=" and "!=" ops', () => {
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: {
-                    field: 'program',
-                    value: ['TCGA'],
-                  },
-                },
-                {
-                  op: '=',
-                  content: {
-                    field: 'project',
-                    value: ['ACC'],
-                  },
-                },
+                { op: '=', content: { field: 'program', value: ['TCGA'] } },
+                { op: '=', content: { field: 'project', value: ['ACC'] } },
               ],
             },
-            {
-              op: '!=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '!=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -315,29 +375,11 @@ test('buildQuery "=" and "!=" ops', () => {
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: {
-                    field: 'program',
-                    value: ['TCGA'],
-                  },
-                },
-                {
-                  op: '!=',
-                  content: {
-                    field: 'project',
-                    value: ['ACC'],
-                  },
-                },
+                { op: '=', content: { field: 'program', value: ['TCGA'] } },
+                { op: '!=', content: { field: 'project', value: ['ACC'] } },
               ],
             },
-            {
-              op: '=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -360,29 +402,11 @@ test('buildQuery "=" and "!=" ops', () => {
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: {
-                    field: 'program',
-                    value: ['TCGA'],
-                  },
-                },
-                {
-                  op: '!=',
-                  content: {
-                    field: 'project',
-                    value: ['ACC'],
-                  },
-                },
+                { op: '=', content: { field: 'program', value: ['TCGA'] } },
+                { op: '!=', content: { field: 'project', value: ['ACC'] } },
               ],
             },
-            {
-              op: '!=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '!=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -390,13 +414,9 @@ test('buildQuery "=" and "!=" ops', () => {
         bool: {
           must: [
             { terms: { program: ['TCGA'], boost: 0 } },
+            { bool: { must_not: [{ terms: { project: ['ACC'], boost: 0 } }] } },
             {
-              bool: {
-                must_not: [
-                  { terms: { project: ['ACC'], boost: 0 } },
-                  { terms: { status: ['legacy'], boost: 0 } },
-                ],
-              },
+              bool: { must_not: [{ terms: { status: ['legacy'], boost: 0 } }] },
             },
           ],
         },
@@ -408,20 +428,8 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'or',
           content: [
-            {
-              op: '=',
-              content: {
-                field: 'program',
-                value: ['TCGA'],
-              },
-            },
-            {
-              op: '=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'program', value: ['TCGA'] } },
+            { op: '=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -440,20 +448,8 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'or',
           content: [
-            {
-              op: '=',
-              content: {
-                field: 'program',
-                value: ['TCGA'],
-              },
-            },
-            {
-              op: '!=',
-              content: {
-                field: 'status',
-                value: ['legacy'],
-              },
-            },
+            { op: '=', content: { field: 'program', value: ['TCGA'] } },
+            { op: '!=', content: { field: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -474,30 +470,12 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'or',
           content: [
-            {
-              op: '=',
-              content: {
-                field: 'project',
-                value: ['ACC'],
-              },
-            },
+            { op: '=', content: { field: 'project', value: ['ACC'] } },
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: {
-                    field: 'program',
-                    value: ['TCGA'],
-                  },
-                },
-                {
-                  op: '=',
-                  content: {
-                    field: 'status',
-                    value: ['legacy'],
-                  },
-                },
+                { op: '=', content: { field: 'program', value: ['TCGA'] } },
+                { op: '=', content: { field: 'status', value: ['legacy'] } },
               ],
             },
           ],
@@ -525,17 +503,11 @@ test('buildQuery "=" and "!=" ops', () => {
         filters: {
           op: 'and',
           content: [
-            {
-              op: '!=',
-              content: { field: 'access', value: 'protected' },
-            },
+            { op: '!=', content: { field: 'access', value: 'protected' } },
             {
               op: 'and',
               content: [
-                {
-                  op: '=',
-                  content: { field: 'center.code', value: '01' },
-                },
+                { op: '=', content: { field: 'center.code', value: '01' } },
                 {
                   op: '=',
                   content: {
@@ -565,32 +537,20 @@ test('buildQuery "=" and "!=" ops', () => {
     {
       input: {
         nestedFields: [],
-        filters: {
-          op: '=',
-          content: {
-            field: 'is_canonical',
-            value: [true],
-          },
-        },
+        filters: { op: '=', content: { field: 'is_canonical', value: [true] } },
       },
       output: { terms: { is_canonical: [true], boost: 0 } },
     },
     {
       input: {
         nestedFields: [],
-        filters: {
-          op: '=',
-          content: {
-            field: 'case_count',
-            value: [24601],
-          },
-        },
+        filters: { op: '=', content: { field: 'case_count', value: [24601] } },
       },
       output: { terms: { case_count: [24601], boost: 0 } },
     },
   ];
 
-  tests.forEach(({ input, output }) => {
+  tests.forEach(({ input, output }, i) => {
     const actualOutput = buildQuery(input);
     expect(actualOutput).toEqual(output);
   });
