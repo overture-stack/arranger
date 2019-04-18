@@ -26,6 +26,7 @@ import {
   REGEX,
   SET_ID,
   MISSING,
+  ALL_OP,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -181,8 +182,6 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   const esFilters = content.map(filter => opSwitch({ nestedFields, filter }));
   const isNested = !!esFilters[0]?.nested;
   if (isNested && pivot === esFilters[0]?.nested.path) {
-    return applyBooleanWrapper(esFilters);
-  } else {
     const flattned = esFilters.reduce(
       (bools, esFilter) =>
         op === AND_OP || op === NOT_OP
@@ -191,6 +190,8 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
       [],
     );
     return applyBooleanWrapper(flattned);
+  } else {
+    return applyBooleanWrapper(esFilters);
   }
 }
 
@@ -248,6 +249,21 @@ export const opSwitch = ({ nestedFields, filter }) => {
     } else {
       return getTermFilter({ nestedFields, filter });
     }
+  } else if ([ALL_OP].includes(op)) {
+    return getGroupFilter({
+      nestedFields,
+      filter: {
+        op: AND_OP,
+        pivot: pivot || '.',
+        content: filter.content.value.map(v => ({
+          op: IN_OP,
+          content: {
+            field: filter.content.field,
+            value: [v],
+          },
+        })),
+      },
+    });
   } else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
     return getRangeFilter({ nestedFields, filter });
   } else if ([BETWEEN_OP].includes(op)) {
@@ -261,17 +277,8 @@ export const opSwitch = ({ nestedFields, filter }) => {
 
 export default function({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
-  const output = opSwitch({
+  return opSwitch({
     nestedFields,
     filter: normalizeFilters(rawFilters),
   });
-  console.log(
-    'input: ',
-    JSON.stringify({
-      nestedFields,
-      filters: rawFilters,
-    }),
-  );
-  console.log('output: ', JSON.stringify(output));
-  return output;
 }

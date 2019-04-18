@@ -51,33 +51,6 @@ const applyDefaultPivots = filter => {
   }
 };
 
-/**
- * Special handlings for ALL_OP:
- * - "all" special default for "pivot" based on the content
- * field
- * - preserves grouping so for easy conversion to ES query based on pivot
- **/
-const transformAllOp = filter => {
-  const { content } = filter;
-  const field = content.field;
-  const fieldPaths = field.includes('.') ? field.split('.') : [];
-  const defaultPivot = fieldPaths.length
-    ? fieldPaths.slice(0, fieldPaths.length - 1).join('.')
-    : null;
-  return applyDefaultPivots({
-    op: AND_OP,
-    [_UNFLAT_KEY_]: true,
-    pivot: filter.pivot || defaultPivot,
-    content: filter.content.value.map(val => ({
-      op: IN_OP,
-      content: {
-        field: filter.content.field,
-        value: [val],
-      },
-    })),
-  });
-};
-
 function normalizeFilters(filter) {
   const { op, content } = filter;
 
@@ -116,8 +89,6 @@ function normalizeFilters(filter) {
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
-  } else if ([ALL_OP].includes(op)) {
-    return transformAllOp(filter);
   } else if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     return groupingOptimizer(filter);
   } else {
