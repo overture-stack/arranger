@@ -23,6 +23,7 @@ import {
   createIndicesByProjectResolver,
   createMatchBoxStateByIndexResolver,
 } from './resolvers';
+import { constants } from './services/constants';
 
 const createSchema = async () => {
   const typeDefs = mergedTypeDefs;
@@ -63,6 +64,18 @@ const createSchema = async () => {
 
 export default async (config: AdminApiConfig) => {
   const esClient = createElasticsearchClient(config.esHost);
+
+  const arrangerConfig = {
+    index: constants.ARRANGER_PROJECT_INDEX,
+    type: constants.ARRANGER_PROJECT_TYPE,
+  };
+
+  try {
+    await esClient.search(arrangerConfig);
+  } catch {
+    await esClient.create(arrangerConfig);
+  }
+
   return new ApolloServer({
     schema: await createSchema(),
     context: (): IQueryContext => ({
