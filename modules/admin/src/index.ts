@@ -72,7 +72,7 @@ export default async (config: AdminApiConfig) => {
 
   try {
     await esClient.search(arrangerConfig);
-  } catch {
+  } catch (searchError) {
     await esClient.create(arrangerConfig);
   }
 
