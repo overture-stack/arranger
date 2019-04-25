@@ -4,6 +4,7 @@ import {
   mergeSchemas,
 } from 'graphql-tools';
 import { ApolloServer } from 'apollo-server-express';
+import { Client } from 'elasticsearch';
 import { print } from 'graphql/language/printer';
 import { createClient as createElasticsearchClient } from './services/elasticsearch';
 
@@ -62,20 +63,28 @@ const createSchema = async () => {
   return mergedSchema;
 };
 
+const initialize = (config: AdminApiConfig): Promise<Client> =>
+  new Promise(async (resolve, reject) => {
+    const esClient = createElasticsearchClient(config.esHost);
+    try {
+      const exists = await esClient.indices.exists({
+        index: constants.ARRANGER_PROJECT_INDEX,
+      });
+      if (!exists) {
+        esClient.indices.create({
+          index: constants.ARRANGER_PROJECT_INDEX,
+        });
+      }
+      resolve(esClient);
+    } catch (err) {
+      setTimeout(() => {
+        initialize(config).then(() => resolve(esClient));
+      }, 1000);
+    }
+  });
+
 export default async (config: AdminApiConfig) => {
-  const esClient = createElasticsearchClient(config.esHost);
-
-  const arrangerConfig = {
-    index: constants.ARRANGER_PROJECT_INDEX,
-    type: constants.ARRANGER_PROJECT_TYPE,
-  };
-
-  try {
-    await esClient.search(arrangerConfig);
-  } catch (searchError) {
-    await esClient.create(arrangerConfig);
-  }
-
+  const esClient = await initialize(config);
   return new ApolloServer({
     schema: await createSchema(),
     context: (): IQueryContext => ({
