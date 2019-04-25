@@ -10,14 +10,9 @@ WORKDIR /app
 
 COPY . /app
 
-RUN apk add --no-cache git bash && \
-    npm install && \
-    npm run bootstrap -- --scope=@arranger/server --include-filtered-dependencies && \
-    npm install -g node-prune && \
-    node-prune && \
-    npm remove -g node-prune && \
-    npm cache clean -f && \
-    apk del git bash
+RUN npm install
+RUN npm run bootstrap -- --scope=@arranger/server --include-filtered-dependencies
+RUN npm cache clean -f
 
 EXPOSE 5050
 
