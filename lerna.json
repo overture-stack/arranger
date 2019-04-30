@@ -2,14 +2,14 @@
   "lerna": "2.5.1",
   "version": "1.2.0",
   "packages": [
+    "integration-tests/import",
+    "integration-tests/server",
     "modules/admin",
     "modules/admin-ui",
     "modules/components",
     "modules/mapping-utils",
     "modules/middleware",
     "modules/schema",
-    "modules/server",
-    "integration-tests/import",
-    "integration-tests/server"
+    "modules/server"
   ]
 }
