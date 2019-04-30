@@ -4,7 +4,12 @@
   "packages": [
     "modules/admin",
     "modules/admin-ui",
-    "modules/*",
-    "integration-tests/*"
+    "modules/components",
+    "modules/mapping-utils",
+    "modules/middleware",
+    "modules/schema",
+    "modules/server",
+    "integration-tests/import",
+    "integration-tests/server"
   ]
 }
