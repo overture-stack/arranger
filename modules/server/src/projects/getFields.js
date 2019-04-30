@@ -2,7 +2,7 @@ import {
   extendFields,
   extendMapping,
   loadExtendedFields,
-} from '@arranger/mapping-utils';
+} from '@kfarranger/mapping-utils';
 
 import getIndexPrefix from '../utils/getIndexPrefix';
 import initializeExtendedFields from '../utils/initializeExtendedFields';

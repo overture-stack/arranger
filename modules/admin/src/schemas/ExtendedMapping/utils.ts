@@ -1,5 +1,5 @@
 import { Client } from 'elasticsearch';
-import { extendMapping } from '@arranger/mapping-utils';
+import { extendMapping } from '@kfarranger/mapping-utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import { EsIndexLocation } from '../types';

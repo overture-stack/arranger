@@ -1,4 +1,4 @@
-import { fetchMapping } from '@arranger/mapping-utils';
+import { fetchMapping } from '@kfarranger/mapping-utils';
 
 export let fetchMappings = ({ types, es }) => {
   return Promise.all(

@@ -1,7 +1,7 @@
 import express from 'express';
 import { Server } from 'http';
 import cors from 'cors';
-import adminGraphql from '@arranger/admin/dist';
+import adminGraphql from '@kfarranger/admin/dist';
 import { ES_HOST } from './utils/config';
 
 import { PORT } from './utils/config';

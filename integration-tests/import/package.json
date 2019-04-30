@@ -14,7 +14,7 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
-    "@arranger/components": "^1.1.8"
+    "@kfarranger/components": "^1.1.8"
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.40",

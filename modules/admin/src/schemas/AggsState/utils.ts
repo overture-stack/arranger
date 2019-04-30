@@ -1,5 +1,5 @@
 import { Client } from 'elasticsearch';
-import { mappingToAggsState } from '@arranger/mapping-utils';
+import { mappingToAggsState } from '@kfarranger/mapping-utils';
 import { sortBy } from 'ramda';
 import {
   I_AggsSetState,

@@ -3,7 +3,7 @@
 // by Elasticsearch in version 6.3, we no longer need these functions here.
 
 import { flattenDeep, isArray, zipObject } from 'lodash';
-import { CONSTANTS } from '@arranger/middleware';
+import { CONSTANTS } from '@kfarranger/middleware';
 
 const resolveSetIdsFromEs = es => setId =>
   es

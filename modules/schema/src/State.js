@@ -4,7 +4,7 @@ export const AggsStateTypeDefs = `
     field: String
     type: String
       @deprecated(
-        reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with @Arranger/components. Projects created with 0.4.6 will return null for this query"
+        reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @kfarranger/mapping-utils/esToAggTypeMap. This computation will already be done with @kfarranger/components. Projects created with 0.4.6 will return null for this query"
       )
     active: Boolean
     show: Boolean

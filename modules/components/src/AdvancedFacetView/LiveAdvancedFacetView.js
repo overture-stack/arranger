@@ -1,5 +1,5 @@
 import React from 'react';
-import { esToAggTypeMap } from '@arranger/mapping-utils';
+import { esToAggTypeMap } from '@kfarranger/mapping-utils';
 import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
 import defaultApi from '../utils/api';

@@ -1,5 +1,5 @@
 import { keys, orderBy, partition } from 'lodash';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
+import { mappingToDisplayTreeData } from '@kfarranger/mapping-utils';
 
 import strToReg from '../utils/strToReg';
 

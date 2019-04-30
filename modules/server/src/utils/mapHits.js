@@ -1,2 +1,2 @@
-import { mapHits } from '@arranger/mapping-utils';
+import { mapHits } from '@kfarranger/mapping-utils';
 export default mapHits;

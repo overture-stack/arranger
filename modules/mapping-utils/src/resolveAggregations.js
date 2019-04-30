@@ -4,7 +4,7 @@ import {
   buildQuery,
   buildAggregations,
   flattenAggregations,
-} from '@arranger/middleware';
+} from '@kfarranger/middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });

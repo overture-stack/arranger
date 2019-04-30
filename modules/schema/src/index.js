@@ -1,6 +1,6 @@
 import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import { applyMiddleware } from 'graphql-middleware';
-import { CONSTANTS } from '@arranger/middleware';
+import { CONSTANTS } from '@kfarranger/middleware';
 import {
   typeDefs as generateTypeDefs,
   resolvers as generateResolvers,

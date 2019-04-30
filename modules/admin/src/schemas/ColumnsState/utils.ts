@@ -10,7 +10,7 @@ import {
   updateProjectIndexMetadata,
 } from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
-import { mappingToColumnsState } from '@arranger/mapping-utils';
+import { mappingToColumnsState } from '@kfarranger/mapping-utils';
 import { replaceBy, timestamp } from '../../services';
 import { getEsMapping } from '../../services/elasticsearch';
 import { sortBy } from 'ramda';

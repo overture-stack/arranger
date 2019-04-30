@@ -1,7 +1,7 @@
 import React from 'react';
 import { get, pick } from 'lodash';
 
-import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
+import columnsToGraphql from '@kfarranger/mapping-utils/dist/utils/columnsToGraphql';
 
 import defaultApi from '../utils/api';
 

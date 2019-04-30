@@ -2,11 +2,11 @@
 # yarn lockfile v1
 
 
-"@arranger/mapping-utils@^0.0.11":
+"@kfarranger/mapping-utils@^0.0.11":
   version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@arranger/mapping-utils/-/mapping-utils-0.0.11.tgz#e70c3e6a95708a573038ba1514f13feaf98e1581"
+  resolved "https://registry.yarnpkg.com/@kfarranger/mapping-utils/-/mapping-utils-0.0.11.tgz#e70c3e6a95708a573038ba1514f13feaf98e1581"
   dependencies:
-    "@arranger/middleware" "^0.0.10"
+    "@kfarranger/middleware" "^0.0.10"
     babel-polyfill "^6.26.0"
     elasticsearch "^14.0.0"
     graphql "^0.12.3"
@@ -14,9 +14,9 @@
     lodash "^4.17.4"
     node-fetch "^2.0.0"
 
-"@arranger/middleware@^0.0.10":
+"@kfarranger/middleware@^0.0.10":
   version "0.0.10"
-  resolved "https://registry.yarnpkg.com/@arranger/middleware/-/middleware-0.0.10.tgz#8d47772345d70a854939f9fe59a1f174048b52df"
+  resolved "https://registry.yarnpkg.com/@kfarranger/middleware/-/middleware-0.0.10.tgz#8d47772345d70a854939f9fe59a1f174048b52df"
   dependencies:
     axios "^0.15.3"
     body-parser "^1.18.2"

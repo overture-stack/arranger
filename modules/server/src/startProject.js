@@ -2,21 +2,21 @@ import { graphqlExpress } from 'apollo-server-express';
 import uuid from 'uuid/v4';
 import { flattenDeep, get } from 'lodash';
 import express from 'express';
-import makeSchema from '@arranger/schema';
+import makeSchema from '@kfarranger/schema';
 import {
   extendFields,
   addMappingsToTypes,
   mappingToAggsState,
   mappingToColumnsState,
   mappingToMatchBoxState,
-} from '@arranger/mapping-utils';
+} from '@kfarranger/mapping-utils';
 import { fetchMappings } from './utils/fetchMappings';
 import mapHits from './utils/mapHits';
 import { getProject, setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
-import { setsMapping } from '@arranger/schema';
-import { CONSTANTS } from '@arranger/middleware';
+import { setsMapping } from '@kfarranger/schema';
+import { CONSTANTS } from '@kfarranger/middleware';
 import getTypes from './utils/getTypes';
 import replaceBy from './utils/replaceBy';
 

@@ -2,7 +2,7 @@ import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 import defaultApi from '../utils/api';
 import { get } from 'lodash';
-import { esToAggTypeMap } from '@arranger/mapping-utils';
+import { esToAggTypeMap } from '@kfarranger/mapping-utils';
 
 let aggFields = `
   state {

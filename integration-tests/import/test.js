@@ -5,9 +5,9 @@ import {
   Aggregations,
   CurrentSQON,
   Table,
-} from '@arranger/components';
+} from '@kfarranger/components';
 
-test('importing @arranger modules', () => {
+test('importing @kfarranger modules', () => {
   expect(Dashboard).toBeDefined();
   expect(Query).toBeDefined();
   expect(Arranger).toBeDefined();

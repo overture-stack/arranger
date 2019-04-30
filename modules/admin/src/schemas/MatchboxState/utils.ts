@@ -1,4 +1,4 @@
-import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '@arranger/mapping-utils';
+import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '@kfarranger/mapping-utils';
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
 import {
   I_MatchBoxField,

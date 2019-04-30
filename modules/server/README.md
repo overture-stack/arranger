@@ -1,7 +1,7 @@
 # Arranger Server
 
 ```
-npm i -g @arranger/server
+npm i -g @kfarranger/server
 arranger-server
 ```
 

@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
+import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@kfarranger/middleware';
 import { chunk } from 'lodash';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
@@ -132,7 +132,7 @@ export const hitsToEdges = ({
                     ? x.sort.map(
                         x =>
                           Number.isInteger(x) && !Number.isSafeInteger(x)
-                            ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
+                            ? // TODO: figure out a way to inject ES_CONSTANTS in here from @kfarranger/middleware
                               // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
                               `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
                             : x,

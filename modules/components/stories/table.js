@@ -5,7 +5,7 @@ import { orderBy, get } from 'lodash';
 import jsonPath from 'jsonpath/jsonpath.min';
 import uuid from 'uuid';
 import { action } from '@storybook/addon-actions';
-import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
+import columnsToGraphql from '@kfarranger/mapping-utils/dist/utils/columnsToGraphql';
 import DataTable, {
   Table,
   TableToolbar,

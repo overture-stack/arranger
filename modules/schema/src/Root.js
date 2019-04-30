@@ -8,7 +8,7 @@ import {
   createConnectionResolvers,
   saveSet,
   mappingToFields,
-} from '@arranger/mapping-utils';
+} from '@kfarranger/mapping-utils';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
