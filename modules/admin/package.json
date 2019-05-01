@@ -1,6 +1,6 @@
 {
   "name": "@kfarranger/admin",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Admin API for the Arranger server in graphql",
   "engineStrict": true,
   "engines": {
@@ -50,8 +50,8 @@
   "author": "Minh Ha",
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
-    "@kfarranger/mapping-utils": "^1.2.1",
-    "@kfarranger/schema": "^1.2.1",
+    "@kfarranger/mapping-utils": "^1.2.2",
+    "@kfarranger/schema": "^1.2.2",
     "@types/elasticsearch": "^5.0.26",
     "apollo-link-http": "^1.5.5",
     "apollo-server": "^2.1.0",
