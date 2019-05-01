@@ -11,7 +11,7 @@
 #### Clone, Install, Bootstrap
 
 ```
-git clone git@github.com:overture-stack/arranger.git
+git clone git@github.com:kids-first/arranger.git
 cd arranger
 npm i
 npm run bootstrap
@@ -41,7 +41,7 @@ npm run storybook
   * [Topology](#topology)
 * [Roadmap](#roadmap)
 * [Development](#development)
-* [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
+* [License](https://github.com/kids-first/arranger/blob/master/LICENSE)
 
 ### Motivation
 
@@ -105,3 +105,9 @@ _this is way too simplistic. needs an update_
 Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
 
 _\* The GDC contains many features that are out of Arranger's scope_
+
+
+@ TODO PUBLISH SUBMODUELS...
+npm run prepare
+npm publish --access public .
+rm -Rf node_modules/ && npm i && npm run prepare && npm publish --access public .

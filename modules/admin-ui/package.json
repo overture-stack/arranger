@@ -1,8 +1,8 @@
 {
   "name": "@kfarranger/admin-ui",
-  "version": "1.2.1",
+  "version": "1.2.0",
   "dependencies": {
-    "@kfarranger/admin": "^1.2.1",
+    "@kfarranger/admin": "^1.2.0",
     "@types/react-redux": "^6.0.9",
     "@types/react-router-dom": "^4.3.1",
     "@types/react-table": "^6.7.14",
@@ -62,5 +62,6 @@
     "ts-loader": "^3.5.0",
     "typescript": "^3.4.2",
     "webpack-cli": "^3.3.0"
-  }
+  },
+  "gitHead": "0d4122c0d4bd93024aaca520281f26ac13f83635"
 }

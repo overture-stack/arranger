@@ -8,7 +8,7 @@ export let esToGraphqlTypeMap = {
   double: 'Float',
   integer: 'Float',
   float: 'Float',
-  // https://github.com/overture-stack/arranger/blob/master/modules/schema/src/index.js#L9
+  // https://github.com/kids-first/arranger/blob/master/modules/schema/src/index.js#L9
   object: 'JSON',
 };
 

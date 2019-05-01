@@ -1,6 +1,6 @@
 {
   "name": "@kfarranger/mapping-utils",
-  "version": "1.2.1",
+  "version": "1.2.0",
   "description": "Transform Elasticsearch mappings",
   "main": "dist/index.js",
   "publishConfig": {
@@ -13,16 +13,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/overture-stack/arranger.git"
+    "url": "git+https://github.com/kids-first/arranger.git"
   },
   "author": "OICR",
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/overture-stack/arranger/issues"
+    "url": "https://github.com/kids-first/arranger/issues"
   },
-  "homepage": "https://github.com/overture-stack/arranger#readme",
+  "homepage": "https://github.com/kids-first/arranger#readme",
   "dependencies": {
-    "@kfarranger/middleware": "^1.2.1",
+    "@kfarranger/middleware": "^1.2.0",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
     "graphql-fields": "^1.0.2",
@@ -47,5 +47,6 @@
   },
   "jest": {
     "testURL": "http://localhost/"
-  }
+  },
+  "gitHead": "0d4122c0d4bd93024aaca520281f26ac13f83635"
 }

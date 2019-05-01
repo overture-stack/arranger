@@ -1,5 +1,5 @@
 {
-  "name": "integration-tests-server",
+  "name": "@kfarranger/integration-tests-server",
   "private": "true",
   "scripts": {
     "test": "mocha --require @babel/register"
@@ -19,5 +19,5 @@
     "mocha": "^5.0.4",
     "regenerator-runtime": "^0.11.1"
   },
-  "version": "1.2.1"
+  "version": "1.2.0"
 }
