@@ -7,6 +7,7 @@ import {
   getOperationAtPath,
   FIELD_OP_DISPLAY_NAME,
   RANGE_OPS,
+  TERM_OPS,
 } from '../utils';
 import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
@@ -15,6 +16,7 @@ import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
+import { isEqual } from 'lodash'
 
 export default props => {
   const {
@@ -56,10 +58,11 @@ export default props => {
                 </span>
                 <span className={`opName`}>{` is ${
                   (Array.isArray(value) && value.length > 1) ||
-                  RANGE_OPS.includes(op)
+                  ((RANGE_OPS.includes(op) || TERM_OPS.includes(op)) && !(isEqual(value,["true"]) || isEqual(value,["false"])))
                     ? opDisplayNameMap[op]
                     : ''
-                } `}</span>
+                } `}
+                </span>
               </span>
               <ClickAwayListener
                 className={'selectionContainer'}
