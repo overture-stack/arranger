@@ -5,10 +5,9 @@ Introduction
 
 What is Arranger?
 =================
-
 `Arranger <https://www.overture.bio/products/arranger>`_ is a collection of reusable components for creating centric search portals with `Elasticsearch <https://www.elastic.co/products/elasticsearch/>`_. Arranger consists of the following components:
-    - *Arranger search API* provides a layer that sits above your Elasticsearch cluster to expose a data-model aware `GraphQL <https://graphql.org/>`_ API, generated from your own Elasticsearch index mapping.
-    - *Arranger components* provides a rich set of UI components that are configured to speak to the search API.
+    - *Arranger Search API* provides a layer that sits above your Elasticsearch cluster to expose a data-model aware `GraphQL <https://graphql.org/>`_ API, generated from your own Elasticsearch index mapping.
+    - *Arranger Components* provides a rich set of UI components that are configured to speak to the search API.
     - *Arranger Admin* provides the API and UI for configuring the search API and content management for the search portal.
 
 Arranger is one of many products provided by `Overture <https://overture.bio>`_ and is completely open-source and free for everyone to use.
@@ -20,16 +19,11 @@ Arranger is one of many products provided by `Overture <https://overture.bio>`_ 
 .. _introduction_features:
 
 Features
-===========
-
-- Single sign-on for microservices
-- User authentication through federated identities such as Google, Facebook, Linkedin, Github (Coming Soon), ORCID (Coming Soon)
-- Provides stateless authorization using `JSON Web Tokens (JWT)  <https://jwt.io/>`_
-- Can scale very well to large number of users
-- Provides ability to create permission lists for users and/or groups on user-defined permission entities
-- Standard REST API that is easy to understand and work with
-- Interactive documentation of the API is provided using Swagger UI. When run locally, this can be found at : http://localhost:8080/swagger-ui.html
-- Built using well established Frameworks - Spring Boot, Spring Security
+==========
+- GraphQL API for query flexibility.
+- `SQON </src/sqon.html>`_ query filter notation balances between human-interpretability and machine-readability to simply search.
+- Admin UI for API configuration and content management.
+- Configuration import and export for easy migration.
 
 License
 ==========
