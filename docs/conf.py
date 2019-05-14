@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Ego'
+project = 'Arranger'
 copyright = '2018, overture.bio'
 author = 'overture.bio'
 
