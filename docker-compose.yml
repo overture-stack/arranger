@@ -4,22 +4,20 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.2.1
     ports:
-      - "9200:9200"
-      - "9300:9300"
+      - 9200:9200
+      - 9300:9300
     volumes:
       - es:/usr/share/elasticsearch/data
-    networks:
-      - es
     environment:
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.zen.minimum_master_nodes=1"
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+      - 'discovery.zen.minimum_master_nodes=1'
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "50m"
-        max-file: "10"
+        max-size: '50m'
+        max-file: '10'
     healthcheck:
-      test: "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"
+      test: 'curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1'
       interval: 1m30s
       timeout: 50s
       retries: 5
@@ -27,18 +25,40 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:6.2.1
     ports:
-      - "5601:5601"
+      - 5601:5601
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "50m"
-        max-file: "10"
-    networks:
-      - es
+        max-size: '50m'
+        max-file: '10'
     depends_on:
       - elasticsearch
     environment:
-      LOGGING_QUIET: "true"
+      LOGGING_QUIET: 'true'
+
+  arranger-server:
+    build:
+      context: ./
+      dockerfile: Dockerfile.server
+    container_name: arranger-server.local
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5050:5050
+    environment:
+      ES_HOST: http://elasticsearch:9200
+
+  arranger-ui:
+    build:
+      context: ./
+      dockerfile: Dockerfile.ui
+    hostname: arranger-ui.local
+    container_name: arranger-ui.local
+    depends_on:
+      - arranger-server
+    ports:
+      - 8080:8080
+      - 8081:8081
 
 volumes:
   es:
