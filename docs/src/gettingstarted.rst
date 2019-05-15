@@ -29,6 +29,7 @@ How Arranger Works
 **1.  Starting with some Elasticsearch (ES) indices with mappings.**
     - Arranger makes no assumption about your data model.
     - Model your `index mappings <https://www.elastic.co/guide/en/elasticsearch/reference/6.4/mapping.html>`_ and index them.
+    - For demo convenience, you can follow a `tutorial bellow <#indexing-demo-data>`_ to index some test data from our Kids First project.
     - Note: the `Overture <https://www.overture.bio/>`_ software suite also provides `Maestro <https://github.com/overture-stack/maestro/tree/develop>`_ for indexing genomic data to ES
 
 **2.  Create an API version for your project from Arranger Admin.**
@@ -42,9 +43,19 @@ How Arranger Works
     - Click `Add` once finalized.
     - Navigate into your newly registered project's configuration and ensure that `Has Mapping` is `yes` for all indices registered.
 
-**3.  <Fill in here>.**
-    - <Fill in here>.
+**3.  View your data.**
+    - Go to `http://localhost:8081/?selectedKind=Portal&selectedStory=Portal&full=0&addons=1&stories=1&panelRight=0&addonPanel=storybook%2Factions%2Factions-panel`.
+    - Select your project and index.
 
+Indexing Demo Data
+-------------------------------------------
+- From your browser, visit your locally running `Kibana <https://www.elastic.co/products/kibana>`_ at http://localhost:5601
+- Go to `Dev Tools <http://localhost:5601/app/kibana#/dev_tools>`_
+- Create a `file_centric` index and add a mapping:
+
+  .. include:: ./file_centric_mapping.txt
+
+- You can run :code:`GET file_centric/_mapping` to confirm that the mapping has been created successfully
 
 Terms Used in Arranger
 -------------------------------------------
