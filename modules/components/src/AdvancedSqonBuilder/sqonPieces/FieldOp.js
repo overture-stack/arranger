@@ -57,7 +57,6 @@ export default props => {
                   {fieldDisplayNameMap[field] || field}{' '}
                 </span>
                 <span className={`opName`}>{` is ${
-                  (Array.isArray(value) && value.length > 1) ||
                   ((RANGE_OPS.includes(op) || TERM_OPS.includes(op)) && !(isEqual(value,["true"]) || isEqual(value,["false"])))
                     ? opDisplayNameMap[op]
                     : ''
