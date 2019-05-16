@@ -1,35 +1,64 @@
 =======================
-Ego for Administrators
+Arranger for Administrators
 =======================
 
 Tutorial
 ======================
 
-To administer Ego, the admin must:
+To administer Arranger, the admin must:
 
-**1. Install Ego.**
+**1. Install Arranger.**
 
    View the installation instructions.
 
-**2. Insert a new user with the admin’s Oauth Id into the “egousers” table, with role ADMIN.**
+**2. Have an Elasticsearch mapping and data indexed to search.**
 
-**3. A developer creates a new Ego-aware application**
+   View the `Indexing Demo Data <gettingstarted.html#indexing-demo-data>`_ for a demo setup.
 
-   a. Admin creates a new application in Ego with the client_id and password.
-   b. Admin creates new policies with new policy names
-   c. Admin assigns permissions to users/groups to permit/deny them access to the new application and policies
+**3. Admin registers the indices with arranger through the admin UI and apply configurations.**
 
-**4. Admin creates or deletes groups, assigns user/group permissions, revoke tokens, etc. as necessary.**
-
-   For example, an administrator might want to:
-
-      - Create a new group called **“QA”**, whose members are all the people in the “QA department”
-      - Create a group called “Access Denied” with access level “DENY” set for every policy in Ego
-      - Grant another user administrative rights (role ADMIN)
-      - Add a former employee to the group “AccessDenied”, and revoke all of their active tokens.
-      - In general, manage permissions and access controls within Ego.
-
-Using the Admin Portal
+Using the Admin UI
 ======================
 
-Ego provides an intuitive GUI for painless user management.
+The arranger UI reflects the following pseudo entity relationship:
+
+.. image :: admin_system.png
+
+**1) Projects:**
+
+   .. image :: images/projects.png
+
+   This page lists the available projects and provides an interface for registering new projects
+
+   Available functionalities:
+
+      - Adding a new project
+      - Removing existing project
+      - Export configuration data (exported data can then be imported into new projects to migrate data).
+
+   Clicking on a project id will navigate to that project's list of indices.
+
+**2) Indices:**
+
+   .. image :: images/indices.png
+
+   This page lists the indices registered to Arranger under the selected project.
+
+   Clicking on an index name will navigate to the configuration page for the index. The following configurations are available:
+
+   **a) Fields configurations**
+
+      .. image :: images/fields.png
+
+      This lists all fields available in the index and allows configuration of Arranger metadata for these fields, including:
+         
+         - **Display Name**: how the field should be displayed to user.
+         - **Aggregation Type**: lets the search portal know how to display aggregation filters for the field.
+         - **Active**: 
+
+   
+   **b) Facet panel configurations**
+
+   **c) Data table configurations**
+
+   **d) Quick search configurations**

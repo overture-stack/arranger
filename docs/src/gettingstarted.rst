@@ -46,7 +46,7 @@ How Arranger Works
 
     - Click **"Add"** once finalized.
     - Navigate into your newly registered project's configuration and ensure that **"Has Mapping"** is **"yes"** for all indices registered.
-    - Configure your project from the API and click **"Save"** to save as a new project.
+    - `Configure your project <admins.html>`_ from the API and click **"Save"** to save as a new project.
 
 **3.  View your data in a portal.**
     - From a UI: 
@@ -61,6 +61,10 @@ How Arranger Works
       - Start a GraphQL IDE (such as `GraphiQL <https://electronjs.org/apps/graphiql>`_ or `GraphQL Playground <https://electronjs.org/apps/graphql-playground>`_
       - Point your IDE to :code:`http://localhost:5050/<project_id>/graphql` to explore the API schema (where :code:`<project_id>` is the project id you have input in step 2).
       - For documentation regarding this API, check out the `Arranger for Application Developers <appdevelopers.html>`_ guide
+
+Architecture
+-------------------------------------------
+.. image :: architecture.png
 
 Indexing Demo Data
 -------------------------------------------
