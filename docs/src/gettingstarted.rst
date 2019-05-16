@@ -64,7 +64,7 @@ How Arranger Works
 
 Architecture
 -------------------------------------------
-.. image :: architecture.png
+.. image :: images/architecture.png
 
 Indexing Demo Data
 -------------------------------------------
