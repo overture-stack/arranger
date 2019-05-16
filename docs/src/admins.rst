@@ -22,7 +22,7 @@ Using the Admin UI
 
 The arranger UI reflects the following pseudo entity relationship:
 
-.. image :: admin_system.png
+.. image :: images/admin_system.png
 
 **1) Projects:**
 
