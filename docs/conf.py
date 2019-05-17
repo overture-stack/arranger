@@ -112,7 +112,7 @@ html_sidebars = {
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Egodoc'
+htmlhelp_basename = 'Arrangerdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -139,7 +139,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Ego.tex', 'Ego Documentation',
+    (master_doc, 'Arranger.tex', 'Arranger Documentation',
      'overture.bio', 'manual'),
 ]
 
@@ -149,7 +149,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ego', 'Ego Documentation',
+    (master_doc, 'arranger', 'Arranger Documentation',
      [author], 1)
 ]
 
@@ -160,10 +160,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Ego', 'Ego Documentation',
-     author, 'Ego', 'One line description of project.',
+    (master_doc, 'Arranger', 'Arranger Documentation',
+     author, 'Arranger', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
