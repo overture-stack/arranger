@@ -1,2 +1,4 @@
-Contributing to the Ego Project
+Contributing to the Arranger Project
 ============================
+
+**Coming Soon**
