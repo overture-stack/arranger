@@ -9,7 +9,7 @@ To administer Arranger, the admin must:
 
 **1. Install Arranger.**
 
-   View the installation instructions.
+   View the `installation instructions <installation.html>`_.
 
 **2. Have an Elasticsearch mapping and data indexed to search.**
 
