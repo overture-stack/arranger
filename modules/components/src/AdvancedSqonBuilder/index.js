@@ -79,6 +79,8 @@ const AdvancedSqonBuilder = props => {
       '#f3ebd0',
     ],
     emptyEntryMessage = null,
+    ResultCountIcon = () => null,
+    resultCountIconProps = {},
   } = props;
 
   /**
@@ -267,8 +269,8 @@ const AdvancedSqonBuilder = props => {
       eventDetails: {
         updatedIndex: sqonIndex,
       },
-      newSqonList: syntheticSqons.map(
-        (sq, i) => (i === sqonIndex ? newSqon : sq),
+      newSqonList: syntheticSqons.map((sq, i) =>
+        i === sqonIndex ? newSqon : sq,
       ),
     });
     if (!newSqon.content.length) {
@@ -338,6 +340,9 @@ const AdvancedSqonBuilder = props => {
                 onDeleteConfirmed={s.state.onSqonDeleteConfirmed || (() => {})}
                 onDeleteCanceled={s.state.onSqonDeleteCancel || (() => {})}
                 emptyEntryMessage={emptyEntryMessage}
+                syntheticSqons={syntheticSqons}
+                ResultCountIcon={ResultCountIcon}
+                resultCountIconProps={resultCountIconProps}
               />
             ))}
             <div>

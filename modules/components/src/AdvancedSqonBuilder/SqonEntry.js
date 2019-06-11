@@ -2,6 +2,8 @@ import React from 'react';
 import Component from 'react-component-component';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaTrashAlt from 'react-icons/lib/fa/trash';
+import { get } from 'lodash';
+
 import BooleanOp from './sqonPieces/BooleanOp';
 import {
   isBooleanOp,
@@ -12,12 +14,24 @@ import {
 } from './utils';
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
+import Query from '../Query';
+import { resolveSyntheticSqon } from './utils';
+
+const participantQuery = `
+  query($sqon: JSON) {
+    participant {
+      hits(filters: $sqon) {
+        total
+      }
+    }
+  }`;
 
 export default props => {
   const {
     arrangerProjectId = PROJECT_ID,
     arrangerProjectIndex,
     syntheticSqon,
+    syntheticSqons,
     getActiveExecutableSqon,
     SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
     isActiveSqon = false,
@@ -39,6 +53,8 @@ export default props => {
     onDeleteConfirmed = () => {},
     onDeleteCanceled = () => {},
     emptyEntryMessage = null,
+    ResultCountIcon = () => {},
+    resultCountIconProps = {},
   } = props;
 
   const referenceColor = getColorForReference(index);
@@ -59,95 +75,131 @@ export default props => {
     onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
   const onLogicalOpChanged = (changedPath, newSqon) =>
     onSqonChange(setSqonAtPath(changedPath, newSqon)(syntheticSqon));
+
+  const executableSqon = resolveSyntheticSqon(syntheticSqons)(syntheticSqon);
+
   return (
     <Component initialState={initialState}>
       {s => (
-        <div
-          onMouseEnter={hoverStart(s)}
-          onMouseLeave={hoverEnd(s)}
-          className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}
-          onClick={onActivate}
-        >
-          <div
-            className={`activeStateIndicator`}
-            style={
-              !isReferenced
-                ? {}
-                : {
-                    background: referenceColor,
-                  }
-            }
-          />
-          <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
-            <input
-              readOnly
-              type="checkbox"
-              checked={isSelected}
-              disabled={disabled}
-            />{' '}
-            #{index + 1}
-          </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'row' }}>
-              <div className={`sqonView`}>
-                {isEmptySqon(syntheticSqon)
-                  ? emptyEntryMessage
-                  : isBooleanOp(syntheticSqon) && (
-                      <BooleanOp
-                        arrangerProjectId={arrangerProjectId}
-                        arrangerProjectIndex={arrangerProjectIndex}
-                        index={0}
-                        onFieldOpRemove={onFieldOpRemove}
-                        onChange={onLogicalOpChanged}
-                        sqon={syntheticSqon}
-                        FieldOpModifierContainer={FieldOpModifierContainer}
-                        api={api}
-                        getActiveExecutableSqon={getActiveExecutableSqon}
-                        getColorForReference={getColorForReference}
-                        isIndexReferenced={isIndexReferenced}
-                        referencesShouldHighlight={isActiveSqon}
-                      />
-                    )}
-              </div>
-            </div>
-          </div>
-          {(isActiveSqon || s.state.hoverring) && (
-            <div className={`actionButtonsContainer`}>
-              <button
-                className={`sqonListActionButton`}
-                disabled={disabled}
-                onClick={onSqonDuplicate}
+        <Query
+          api={api}
+          projectId={arrangerProjectId}
+          query={participantQuery}
+          variables={{ sqon: executableSqon }}
+          render={({ data, loading, error }) => (
+            <div
+              onMouseEnter={hoverStart(s)}
+              onMouseLeave={hoverEnd(s)}
+              className={`sqonEntry ${isActiveSqon ? 'active' : ''}`}
+              onClick={onActivate}
+            >
+              <div
+                className={`activeStateIndicator`}
+                style={
+                  !isReferenced
+                    ? {}
+                    : {
+                        background: referenceColor,
+                      }
+                }
+              />
+              <div
+                className={`selectionContainer`}
+                onClick={onSqonCheckedChange}
               >
-                <FaRegClone />
-              </button>
-              <button className={`sqonListActionButton`} onClick={onSqonRemove}>
-                <FaTrashAlt />
-              </button>
-            </div>
-          )}
-          {isDeleting && (
-            <div className={'actionButtonsContainer deleteConfirmation'}>
-              <div>
-                {!!dependentIndices.length && (
-                  <div>Dependent queries will be deleted.</div>
-                )}
-                <div>Are you sure you want to delete?</div>
+                <input
+                  readOnly
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={disabled}
+                />{' '}
+                #{index + 1}
               </div>
-              <button className={`button cancel`} onClick={onDeleteCanceled}>
-                CANCEL
-              </button>
-              <button className={`button delete`} onClick={onDeleteConfirmed}>
-                DELETE
-              </button>
+              <div className="sqonViewContainer">
+                <div>
+                  <div className={`sqonView`}>
+                    {isEmptySqon(syntheticSqon)
+                      ? emptyEntryMessage
+                      : isBooleanOp(syntheticSqon) && (
+                          <BooleanOp
+                            arrangerProjectId={arrangerProjectId}
+                            arrangerProjectIndex={arrangerProjectIndex}
+                            index={0}
+                            onFieldOpRemove={onFieldOpRemove}
+                            onChange={onLogicalOpChanged}
+                            sqon={syntheticSqon}
+                            FieldOpModifierContainer={FieldOpModifierContainer}
+                            api={api}
+                            getActiveExecutableSqon={getActiveExecutableSqon}
+                            getColorForReference={getColorForReference}
+                            isIndexReferenced={isIndexReferenced}
+                            referencesShouldHighlight={isActiveSqon}
+                          />
+                        )}
+                  </div>
+                </div>
+              </div>
+              {
+                <div
+                  className={`participantsCountContainer ${
+                    isActiveSqon || s.state.hoverring ? 'active' : ''
+                  }`}
+                >
+                  <ResultCountIcon
+                    className="resultCountIcon"
+                    {...resultCountIconProps}
+                  />
+                  {loading ? 'loading' : get(data, 'participant.hits.total', 0)}
+                </div>
+              }
+              {(isActiveSqon || s.state.hoverring) && (
+                <div className="actionButtonsContainer">
+                  <button
+                    className={`sqonListActionButton`}
+                    disabled={disabled}
+                    onClick={onSqonDuplicate}
+                  >
+                    <FaRegClone />
+                  </button>
+                  <button
+                    className={`sqonListActionButton`}
+                    onClick={onSqonRemove}
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              )}
+              {isDeleting && (
+                <div className={'actionButtonsContainer deleteConfirmation'}>
+                  <div>
+                    {!!dependentIndices.length && (
+                      <div>Dependent queries will be deleted.</div>
+                    )}
+                    <div>Are you sure you want to delete?</div>
+                  </div>
+                  <button
+                    className={`button cancel`}
+                    onClick={onDeleteCanceled}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    className={`button delete`}
+                    onClick={onDeleteConfirmed}
+                  >
+                    DELETE
+                  </button>
+                </div>
+              )}
+              <SqonActionComponent
+                isHoverring={s.state.hoverring}
+                sqonIndex={index}
+                isActive={isActiveSqon}
+                isSelected={isSelected}
+              />
             </div>
           )}
-          <SqonActionComponent
-            isHoverring={s.state.hoverring}
-            sqonIndex={index}
-            isActive={isActiveSqon}
-            isSelected={isSelected}
-          />
-        </div>
+        />
       )}
     </Component>
   );

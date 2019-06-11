@@ -112,6 +112,40 @@
   background: white;
 }
 
+.sqonEntry .participantsCountContainer {
+  position: absolute;
+  width: 60px;
+  right: 0px;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+  background: transparent;
+  padding: 5px;
+  border: none;
+  transition: transform 0.25s ease-out;
+  color: #74757d;
+}
+.sqonEntry .participantsCountContainer.active {
+  transform: translateX(-100px);
+}
+
+.sqonEntry .participantsCountContainer .resultCountIcon {
+  margin-right: 0.2em;
+}
+
+.sqonEntry .sqonViewContainer {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+
+.sqonEntry .sqonViewContainer > div {
+  display: flex;
+  flex-direction: row;
+}
+
 .sqonEntry .sqonView {
   flex: 1;
   padding: 5px;
