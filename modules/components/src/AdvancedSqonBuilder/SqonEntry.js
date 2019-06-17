@@ -143,32 +143,30 @@ export default props => {
                 <div
                   className={`participantsCountContainer ${
                     isActiveSqon || s.state.hoverring ? 'active' : ''
-                  }`}
+                  } ${loading ? 'loading' : ''}`}
                 >
                   <ResultCountIcon
                     className="resultCountIcon"
                     {...resultCountIconProps}
                   />
-                  {loading ? 'loading' : get(data, 'participant.hits.total', 0)}
+                  {get(data, 'participant.hits.total', loading ? '' : 0)}
                 </div>
               }
-              {(isActiveSqon || s.state.hoverring) && (
-                <div className="actionButtonsContainer">
-                  <button
-                    className={`sqonListActionButton`}
-                    disabled={disabled}
-                    onClick={onSqonDuplicate}
-                  >
-                    <FaRegClone />
-                  </button>
-                  <button
-                    className={`sqonListActionButton`}
-                    onClick={onSqonRemove}
-                  >
-                    <FaTrashAlt />
-                  </button>
-                </div>
-              )}
+              <div className="actionButtonsContainer">
+                <button
+                  className={`sqonListActionButton`}
+                  disabled={disabled}
+                  onClick={onSqonDuplicate}
+                >
+                  <FaRegClone />
+                </button>
+                <button
+                  className={`sqonListActionButton`}
+                  onClick={onSqonRemove}
+                >
+                  <FaTrashAlt />
+                </button>
+              </div>
               {isDeleting && (
                 <div className={'actionButtonsContainer deleteConfirmation'}>
                   <div>
