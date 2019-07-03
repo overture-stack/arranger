@@ -40,7 +40,7 @@
   border: solid 1px lightgrey;
   margin-top: 4px;
   margin-bottom: 4px;
-  padding-right: 100px;
+  padding-right: 185px;
   min-height: 40px;
 }
 .sqonEntry:hover {
@@ -114,7 +114,7 @@
 
 .sqonEntry .participantsCountContainer {
   position: absolute;
-  width: 6em;
+  width: 75px;
   right: 100px;
   height: 100%;
   display: flex;
