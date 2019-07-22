@@ -54,8 +54,10 @@ The arranger UI reflects the following pseudo entity relationship:
          
          - **Display Name**: how the field should be displayed to user.
          - **Aggregation Type**: lets the search portal know how to display aggregation filters for the field.
-         - **Active**: 
-
+         - **Active**: this field is **DEPRECATED**
+         - **Quicksearch enabled**: whether the field is enabled for quicksearch using the `@arranger/components`'s `QuickSearch` component.
+         - **Is primary key**: check if the field is the unique identifier for the index's main entity.
+         - **Is array**: check if the field is an array. Elasticsearch's mapping does not specify this information.
    
    **b) Facet panel configurations**
 
