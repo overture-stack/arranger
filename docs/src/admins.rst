@@ -83,3 +83,16 @@ The arranger UI reflects the following pseudo entity relationship:
          - **Sortable**: enables sorting of the table on this field.
 
    **d) Quick search configurations**
+
+      .. image :: images/quicksearch.png
+
+      This contains configuration for the portal's quick-search feature, which allows users to filter indexed entities by text. Currently, Arranger only supports exact match on quicksearch, but free-text search is in our roadmap to support. This feature can be exposed to end-users throught the `QuickSearch` UI component from `@arranger/components`.
+
+      Only entities (in other words, the root object and its "nested" fields in Elasticsearch) are available for quick search.
+
+      Available configurations:
+      
+         - **Display Name**: the name to display this field as.
+         - **Active**: check to enable search for this entity.
+         - **Key Field**: the unique field that identifies each instance of this entity.
+         - **Search Field**: the properties of the entity to enable search on.
