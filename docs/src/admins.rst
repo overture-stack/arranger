@@ -58,8 +58,18 @@ The arranger UI reflects the following pseudo entity relationship:
          - **Quicksearch enabled**: whether the field is enabled for quicksearch using the `@arranger/components`'s `QuickSearch` component.
          - **Is primary key**: check if the field is the unique identifier for the index's main entity.
          - **Is array**: check if the field is an array. Elasticsearch's mapping does not specify this information.
+      
+      For convenience, filtering on the fields can be done through the inputs above the header.
    
    **b) Facet panel configurations**
+
+      .. image :: images/aggs.png
+
+      This lists all available aggregations on the fields mentioned. On Arranger's default portal UI, this list is rendered as a facet panel. Each entry on  Supported configutations:
+      
+         - Ordering the facets: drag the facet on its "hamberger menu icon" to place the facet at the desired position. Alternatively, the position can also be set through the select menu beside the icon.
+         - **Shown**: displays the facet in the portal's facet panel.
+         - **Active**: enables this facet for search. An `Active` facet will appear in the `AdvancedFacetView` component in `@arranger/components`. Only facets that are both `Active` and `Shown` will be shown in the portal's facet panel.
 
    **c) Data table configurations**
 
