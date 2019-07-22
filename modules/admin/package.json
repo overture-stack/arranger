@@ -13,7 +13,7 @@
     "@types/jwt-decode": "^2.2.1",
     "@types/node": "~8.10.25",
     "@types/ramda": "^0.25.42",
-    "jest": "^23.5.0",
+    "jest": "^24.8.0",
     "nodemon": "^1.18.4",
     "npm-watch": "^0.4.0",
     "prettier": "~1.14.2",
