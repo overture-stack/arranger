@@ -66,11 +66,20 @@ The arranger UI reflects the following pseudo entity relationship:
       .. image :: images/aggs.png
 
       This lists all available aggregations on the fields mentioned. On Arranger's default portal UI, this list is rendered as a facet panel. Each entry on  Supported configutations:
-      
+
          - Ordering the facets: drag the facet on its "hamberger menu icon" to place the facet at the desired position. Alternatively, the position can also be set through the select menu beside the icon.
          - **Shown**: displays the facet in the portal's facet panel.
          - **Active**: enables this facet for search. An `Active` facet will appear in the `AdvancedFacetView` component in `@arranger/components`. Only facets that are both `Active` and `Shown` will be shown in the portal's facet panel.
 
    **c) Data table configurations**
+
+      .. image :: images/table.png
+
+      This contains configuration for the data table in the default portal. Each entry in the list represents a column in the data table. Available configurations:
+
+         - Column order: positioning can be done by dragging or using the select, similar to the facet panel.
+         - **Active**: enables this column to be viewed in the table. Does not show by default.
+         - **Default**: shows this column by default. Can only be checked if `Active` is checked.
+         - **Sortable**: enables sorting of the table on this field.
 
    **d) Quick search configurations**
