@@ -16,7 +16,17 @@ Additionally, some packages that are used internally are also published. These i
 Server-side
 ================================
 
-On the server side, `@arranger/server` and `@arranger/admin` are the relevant packages. There are multiple ways to get up and running with Arranger on the server-side:
+On the server side, `@arranger/server` and `@arranger/admin` are the relevant packages.
+
+Some prerequisit:
+  
+  - Elasticsearch version 6.6.1 running.
+
+  - Kibana version 6.6.1 (optional)
+
+  - NodeJs version 10
+
+There are multiple ways to get up and running with Arranger on the server-side:
 
   1) Running a stand-alone all-in-one instance:
     - Using Docker: 
@@ -41,7 +51,51 @@ On the server side, `@arranger/server` and `@arranger/admin` are the relevant pa
     
     By default, this bundle also comes with the admin API from :code:`@arranger/admin` serverd at :code:`/admin/api`. From your browser, navigate to http://localhost:5050/admin/graphql to explore this API
 
-    Limitation of this approach: the API from :code:`@arranger/admin` is not meant to be exposed to end-users, hence also not horizontally scalable. 
+    Limitation of this approach: the API from :code:`@arranger/admin` is not meant to be exposed to end-users, hence also not horizontally scalable. For the second a production-ready setup, please use the next option:
+  
+  2) Running with custom express apps:
+    - Example search app (horizontally scalable): 
+
+      .. code-block:: Javascript
+
+        import express from 'express';
+        import Arranger from '@arranger/server';
+
+        const PORT = 9000
+        
+        Arranger({
+          esHost: "http://localhost:9200"
+        }).then(router => {
+          const app = express();
+          app.use(router);
+          app.listen(PORT, () => {
+            console.log(`⚡️⚡️⚡️ search API listening on port ${PORT} ⚡️⚡️⚡️ `)
+          })
+        })
+
+    - Example admin app (single instance):
+
+      .. code-block:: Javascript
+
+        import express from "express";
+        import adminGraphql from "@arranger/admin/dist";
+
+        const PORT = 8000
+
+        adminGraphql({ 
+          esHost: "http://localhost:9200"
+        }).then(adminApp => {
+          const app = express();
+          adminApp.applyMiddleware({
+            app,
+            path: "/admin"
+          });
+          app.listen(PORT, () => {
+            console.log(`⚡️⚡️⚡️ Admin API listening on port ${PORT} ⚡️⚡️⚡️`)
+          })
+        })
+
+    Both applications should be interacting with the same Elasticsearch instance. Since they are two separate applications, they can be scaled separately, with separate authentication and authorization rules.
 
 Client-side
 ================================
