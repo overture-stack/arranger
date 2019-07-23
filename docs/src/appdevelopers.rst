@@ -41,7 +41,7 @@ On the server side, `@arranger/server` and `@arranger/admin` are the relevant pa
     
     By default, this bundle also comes with the admin API from :code:`@arranger/admin` serverd at :code:`/admin/api`. From your browser, navigate to http://localhost:5050/admin/graphql to explore this API
 
-    Limitation of this approach: the API from :code:`@arranger/admin` is not meant to be exposed to end-users, hence also not horizontally scalable.
+    Limitation of this approach: the API from :code:`@arranger/admin` is not meant to be exposed to end-users, hence also not horizontally scalable. 
 
 Client-side
 ================================
