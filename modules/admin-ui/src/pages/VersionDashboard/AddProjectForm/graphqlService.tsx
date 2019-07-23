@@ -286,6 +286,10 @@ const sanitizeIndexConfigs = (
                   };
                 }),
               },
+          extended: (i.config.extended || []).map(obj => ({
+            ...obj,
+            displayValues: obj.displayValues || {},
+          })),
         },
   }));
 
