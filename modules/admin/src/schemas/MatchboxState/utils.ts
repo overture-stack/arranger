@@ -1,3 +1,4 @@
+import { Client } from 'elasticsearch';
 import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '@kfarranger/mapping-utils';
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
 import {
@@ -6,12 +7,11 @@ import {
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
 } from './types';
-import { Client } from 'elasticsearch';
 import {
   getProjectStorageMetadata,
   updateProjectIndexMetadata,
 } from '../IndexSchema/utils';
-import { timestamp, replaceBy } from '../../services';
+import { replaceBy, timestamp } from '../../services';
 
 export const createMatchboxState = ({
   extendedFields,
