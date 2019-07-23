@@ -51,7 +51,7 @@ There are multiple ways to get up and running with Arranger on the server-side:
     
     By default, this bundle also comes with the admin API from :code:`@arranger/admin` serverd at :code:`/admin/api`. From your browser, navigate to http://localhost:5050/admin/graphql to explore this API
 
-    Limitation of this approach: the API from :code:`@arranger/admin` is not meant to be exposed to end-users, hence also not horizontally scalable. For the second a production-ready setup, please use the next option:
+    Limitation of this approach: the API from :code:`@arranger/admin` is **not** meant to be exposed to end-users, hence also **not horizontally scalable**. For the second a production-ready setup, please use the next option:
   
   2) Running with custom express apps:
     - Example search app (horizontally scalable): 
