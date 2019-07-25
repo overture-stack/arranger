@@ -168,6 +168,7 @@ class DataTable extends React.Component {
       selectType: 'checkbox',
       keyField,
     };
+
     return (
       <>
         <DetectScrollbarSize
