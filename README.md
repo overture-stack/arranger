@@ -35,13 +35,16 @@ npm run portal
 npm run storybook
 ```
 
-* [Documentation](#Documentation) (in progress)
+* [Documentation](#Documentation)
 * [Motivation](#motivation)
 * [What is a "Data Portal"?](#data-portal)
   * [Topology](#topology)
 * [Roadmap](#roadmap)
 * [Development](#development)
 * [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
+
+### Documentation
+For in-depth documentation, please see the Arranger Read the Docs: https://arranger.readthedocs.io/en/latest/ 
 
 ### Motivation
 
