@@ -1,6 +1,6 @@
-================================
+=====================================
 Arranger for Application Developers
-================================
+=====================================
 
 Arranger comes in individual pieces that can be flexibly composed together to meet your application's needs. These include:
   - `@arranger/server <https://www.npmjs.com/package/@arranger/server>`_: the main server-side application
@@ -29,6 +29,7 @@ Some prerequisit:
 There are multiple ways to get up and running with Arranger on the server-side:
 
   1) Running a stand-alone all-in-one instance:
+
     - Using Docker: 
 
       - The latest arranger server image is available on `Dockerhub <https://cloud.docker.com/u/overture/repository/docker/overture/arranger-server>`_
@@ -54,6 +55,7 @@ There are multiple ways to get up and running with Arranger on the server-side:
     Limitation of this approach: the API from :code:`@arranger/admin` is **not** meant to be exposed to end-users, hence also **not horizontally scalable**. For the second a production-ready setup, please use the next option:
   
   2) Running with custom express apps:
+
     - Example search app (horizontally scalable): 
 
       .. code-block:: Javascript
@@ -97,8 +99,32 @@ There are multiple ways to get up and running with Arranger on the server-side:
 
     Both applications should be interacting with the same Elasticsearch instance. Since they are two separate applications, they can be scaled separately, with separate authentication and authorization rules.
 
-Client-side
+Browser-side
 ================================
 
+On the browser side, `@arranger/admin-ui` and `@arranger/components` are the relevant packages. Both packages are both written in `React <https://reactjs.org/>`_, hence we recommend using React for your application for the most seamless integration.
+
+- `@arranger/admin-ui`: This package provides the admin interface that is documented in the `Arranger for administrator <admins.html>`_ section.
+
+    **Integration with your React app:**
+
+    1) Install the package: :code:`npm i @arranger/admin-ui`
+    2) Integrate into your app:
+      
+      .. code-block:: Javascript
+
+        import ArrangerAdmin from '@arranger/admin-ui/dist';
+        import { Route, Switch } from 'react-router-dom';
+
+        const ArrangerAdminPage = () => (
+          <ArrangerAdmin basename="/admin" apiRoot="http://localhost:8000" fetcher={fetch} />
+        )
+
+      Configurations:
+        - :code:`basename`: tells :code:`ArrangerAdmin` to treat :code:`/admin` as the root path for client-side routing.
+        - :code:`apiRoot`: tells :code:`ArrangerAdmin` to communicate with back-end API hosted at :code:`http://localhost:8000`
+        - :code:`fetcher`: allows specifying custom data fetcher to use, this is usefull for integrating custom client-side loggins / authorization logics. :code:`fetcher` must implment the `Fetch API <https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API>`_.
+
+- `@arranger/components`: This package provides UI components that are pre-configured to work with the `@arranger/server` API.
 
 **Coming Soon**
