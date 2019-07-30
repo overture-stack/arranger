@@ -32,21 +32,21 @@ There are multiple ways to get up and running with Arranger on the server-side:
 
     - Using Docker: 
 
-      - The latest arranger server image is available on `Dockerhub <https://cloud.docker.com/u/overture/repository/docker/overture/arranger-server>`_
+      1) The latest arranger server image is available on `Dockerhub <https://cloud.docker.com/u/overture/repository/docker/overture/arranger-server>`_
 
-      - Alternatively, you may build an image using the `Dockerfile.server` file from the `Arranger source <https://github.com/overture-stack/arranger>`_
+      2) Alternatively, you may build an image using the `Dockerfile.server` file from the `Arranger source <https://github.com/overture-stack/arranger>`_
 
     - Running with Node:
 
-      - Clone the Arranger repo: :code:`git clone git@github.com:overture-stack/arranger.git`
+      1) Clone the Arranger repo: :code:`git clone git@github.com:overture-stack/arranger.git`
 
-      - Navigate to the directory: :code:`cd arranger`
+      2) Navigate to the directory: :code:`cd arranger`
 
-      - Install dependencies: :code:`npm ci && npm run bootstrap`
+      3) Install dependencies: :code:`npm ci && npm run bootstrap`
 
-      - Navigate to the `modules/server` directory: :code:`cd modules/server`
+      4) Navigate to the `modules/server` directory: :code:`cd modules/server`
 
-      - Start the server: :code:`npm start`
+      5) Start the server: :code:`npm start`
 
     This will start an instance of :code:`@arranger/server` on port :code:`5050`.
     
@@ -125,6 +125,18 @@ On the browser side, `@arranger/admin-ui` and `@arranger/components` are the rel
         - :code:`apiRoot`: tells :code:`ArrangerAdmin` to communicate with back-end API hosted at :code:`http://localhost:8000`
         - :code:`fetcher`: allows specifying custom data fetcher to use, this is usefull for integrating custom client-side loggins / authorization logics. :code:`fetcher` must implment the `Fetch API <https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API>`_.
 
-- `@arranger/components`: This package provides UI components that are pre-configured to work with the `@arranger/server` API.
+- `@arranger/components`: This package provides UI components that are pre-configured to work with the `@arranger/server` API. To explore the components this package provide, follow the steps bellow:
+
+  1) Clone the Arranger repo: :code:`git clone git@github.com:overture-stack/arranger.git`
+
+  2) Navigate to the directory: :code:`cd arranger`
+
+  3) Install dependencies: :code:`npm ci && npm run bootstrap`
+
+  4) Navigate to the `modules/components` directory: :code:`cd modules/components`
+
+  5) Start the `Storybook <https://storybook.js.org/>`_ server: :code:`npm run storybook`
+
+  A basic repo UI can be found at: `arranger/modules/components/stories/Portal.js`
 
 **Coming Soon**
