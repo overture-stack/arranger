@@ -138,5 +138,3 @@ On the browser side, `@arranger/admin-ui` and `@arranger/components` are the rel
   5) Start the `Storybook <https://storybook.js.org/>`_ server: :code:`npm run storybook`
 
   A basic repo UI can be found at: `arranger/modules/components/stories/Portal.js`
-
-**Coming Soon**
