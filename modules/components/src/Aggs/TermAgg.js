@@ -86,7 +86,7 @@ const decorateBuckets = ({ buckets, searchText }) => {
   const [missing, notMissing] = partition(namedFilteredBuckets, {
     name: '__missing__',
   });
-  return [...notMissing, ...missing];
+  return namedFilteredBuckets;
 };
 
 const enhance = compose(
