@@ -19,7 +19,10 @@ export default {
   list: props => {
     const values = jsonPath.query(props.original, props.column.jsonPath);
     const total = values.length;
-    const firstValue = getSingleValue(values[0]);
+    let firstValue = getSingleValue(values[0]);
+
+    props.column.Header === "Participants ID" ? firstValue=React.createElement("a", {href:`/participant/${firstValue}#summary`},firstValue) : firstValue
+
     return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
   },
 };
