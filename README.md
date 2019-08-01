@@ -1,10 +1,14 @@
-![Arranger: Data Portal Generation](https://i.imgur.com/Qb9KBqJ.png)
+<h1 align="center">Arranger</h1>
+<p align="center">Generate and mange your own genomnic data portal.</p>
 
-<p align="center">
-  <img alt="BETA" src="http://www.overture.bio/img/progress-horizontal-BETA.svg" width="320" />
-</p>
+<p align="center"><a href="http://www.overture.bio/products/arranger" target="_blank"><img alt="BETA" src="http://www.overture.bio/img/progress-horizontal-BETA.svg" width="320" /></a></p>
 
 [![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
+
+
+## Documentation 
+
+Explore documentation with the Arranger [Read the Docs](https://arranger.readthedocs.io/en/latest/index.html).
 
 ### Quickstart
 
