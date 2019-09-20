@@ -76,13 +76,14 @@ const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
 );
 
 const decorateBuckets = ({ buckets, searchText }) => {
+  const matcher = strToReg(searchText);
   const namedFilteredBuckets = buckets
-    .map(b => ({ ...b, name: b.key_as_string || b.key }))
     .filter(
       b =>
-        !searchText ||
-        internalTranslateSQONValue(b.name).match(strToReg(searchText)),
-    );
+      !searchText || internalTranslateSQONValue(b.key_as_string || b.key).match(matcher),
+    )
+    .map(b => ({ ...b, name: b.key_as_string || b.key }))
+
   const [missing, notMissing] = partition(namedFilteredBuckets, {
     name: '__missing__',
   });
@@ -170,8 +171,8 @@ const TermAgg = ({
                   placeholder={searchPlaceholder}
                   icon={<DefaultSearchIcon />}
                   onChange={({ target: { value } }) =>
-                    setSearchText(value || '')
-                  }
+                  setSearchText(value || '')
+                }
                   setSearchText={setSearchText}
                   aria-label={`Search data`}
                 />
