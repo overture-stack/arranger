@@ -19,6 +19,7 @@ import {
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm,
+  matchingAggregations,
 } from './utils';
 
 import './AdvancedFacetView.css';
@@ -130,7 +131,7 @@ export default class AdvancedFacetView extends React.Component {
           aggregations,
         }).displayTreeDataWithValue
       : displayTreeData;
-
+      const filteredAggregations = matchingAggregations(aggregations, searchTerm);
     return (
       <div className="advancedFacetViewWrapper">
         {displayTreeData && (
@@ -250,11 +251,11 @@ export default class AdvancedFacetView extends React.Component {
                     ref={view => (this.facetView = view)}
                     sqon={sqon}
                     onValueChange={this.handleSqonChange}
-                    aggregations={aggregations}
+                    aggregations={filteredAggregations}
                     searchString={searchTerm}
                     displayTreeData={filterDisplayTreeDataBySearchTerm({
                       displayTree: visibleDisplayTreeData,
-                      aggregations,
+                      aggregations: filteredAggregations,
                       searchTerm: searchTerm,
                     })}
                     onTermSelected={onTermSelected}

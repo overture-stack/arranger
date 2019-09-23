@@ -97,11 +97,19 @@ const filterDisplayTreeDataBySearchTerm = ({
 }) => {
   const shouldBeIncluded = ({ title, path, children }) => {
     const inTitle = title.match(strToReg(searchTerm));
+    if (inTitle) {
+      return true;
+    }
     const inBuckets = aggregations[path]?.buckets?.some(x =>
       (x.key_as_string || x.key).match(strToReg(searchTerm)),
     );
+
+    if (inBuckets) {
+      return true;
+    }
+
     const inChildren = children && children.some(shouldBeIncluded);
-    return inTitle || inBuckets || inChildren;
+    return inChildren;
   };
 
   return searchTerm && searchTerm.length
@@ -116,10 +124,41 @@ const filterDisplayTreeDataBySearchTerm = ({
     : displayTree;
 };
 
+
+const matchingAggregations = (aggregations = {}, searchTerm) => {
+  if (!searchTerm) {
+    return aggregations;
+  }
+  const matcher = strToReg(searchTerm);
+  
+  return Object.entries(aggregations).reduce((acc, [key, value]) => {
+    const currentBuckets = aggregations[key].buckets;
+    
+    const filteredBuckets = (currentBuckets || []).filter(e => (e.key_as_string || e.key).match(matcher));
+    if (filteredBuckets.length > 0) {
+      return ({
+        ...acc,
+        [key]: {
+          ...value,
+          buckets: filteredBuckets
+        }
+      })
+    } else {
+      return {
+        ...acc,
+        [key]: {
+          ...value,
+        }
+      };
+    }
+  }, {});
+}
+
 export {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   elasticMappingToDisplayTreeData,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm,
+  matchingAggregations,
 };
