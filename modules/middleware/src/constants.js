@@ -14,7 +14,7 @@ export const LTE_OP = 'lte';
 export const BETWEEN_OP = 'between';
 
 // special values
-export const REGEX = '*';
+export const REGEX = 'regexp:';
 export const MISSING = '__missing__';
 export const SET_ID = 'set_id:';
 
