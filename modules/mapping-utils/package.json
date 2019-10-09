@@ -1,6 +1,6 @@
 {
   "name": "@kfarranger/mapping-utils",
-  "version": "1.2.3",
+  "version": "1.3.2",
   "description": "Transform Elasticsearch mappings",
   "main": "dist/index.js",
   "publishConfig": {
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/kids-first/arranger#readme",
   "dependencies": {
-    "@kfarranger/middleware": "^1.2.3",
+    "@kfarranger/middleware": "^1.3.2",
     "babel-polyfill": "^6.26.0",
     "elasticsearch": "^14.0.0",
     "graphql-fields": "^1.0.2",
