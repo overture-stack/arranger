@@ -1,6 +1,6 @@
 import React from 'react';
 import { compose, withState } from 'recompose';
-import { isEmpty, orderBy, partition, truncate } from 'lodash';
+import { isEmpty, truncate } from 'lodash';
 import DefaultSearchIcon from 'react-icons/lib/fa/search';
 import { css } from 'emotion';
 
@@ -80,13 +80,10 @@ const decorateBuckets = ({ buckets, searchText }) => {
   const namedFilteredBuckets = buckets
     .filter(
       b =>
-      !searchText || internalTranslateSQONValue(b.key_as_string || b.key).match(matcher),
+        !searchText ||
+        internalTranslateSQONValue(b.key_as_string || b.key).match(matcher),
     )
-    .map(b => ({ ...b, name: b.key_as_string || b.key }))
-
-  const [missing, notMissing] = partition(namedFilteredBuckets, {
-    name: '__missing__',
-  });
+    .map(b => ({ ...b, name: b.key_as_string || b.key }));
   return namedFilteredBuckets;
 };
 
@@ -171,8 +168,8 @@ const TermAgg = ({
                   placeholder={searchPlaceholder}
                   icon={<DefaultSearchIcon />}
                   onChange={({ target: { value } }) =>
-                  setSearchText(value || '')
-                }
+                    setSearchText(value || '')
+                  }
                   setSearchText={setSearchText}
                   aria-label={`Search data`}
                 />

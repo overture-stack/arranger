@@ -135,60 +135,74 @@ export const TermFilterUI = props => {
   };
   return (
     <Component initialState={initialState}>
-      {s => (
-        <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
-          <div className="contentSection">
-            <span>
-              {fieldDisplayNameMap[initialFieldSqon.content.field] ||
-                initialFieldSqon.content.field}
-            </span>{' '}
-            is{' '}
-            <span className="select">
-              <select
-                onChange={onOptionTypeChange(s)}
-                value={getCurrentFieldOp(s).op}
+      {s => {
+        const computedBuckets = computeBuckets(s, buckets);
+        const noResults = computedBuckets.length === 0;
+        const fieldDisplayName =
+          fieldDisplayNameMap[initialFieldSqon.content.field] ||
+          initialFieldSqon.content.field;
+
+        if (noResults) {
+          return (
+            <ContainerComponent onCancel={onCancel}>
+              <AggsWrapper>
+                <div className="contentSection noResults">{`No ${fieldDisplayName} available for the current query`}</div>
+              </AggsWrapper>
+            </ContainerComponent>
+          );
+        }
+
+        return (
+          <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
+            <div className="contentSection">
+              <span>{fieldDisplayName}</span> is{' '}
+              <span className="select">
+                <select
+                  onChange={onOptionTypeChange(s)}
+                  value={getCurrentFieldOp(s).op}
+                >
+                  {TERM_OPS.map(option => (
+                    <option key={option} value={option}>
+                      {opDisplayNameMap[option]}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </div>
+            <div className="contentSection searchInputContainer">
+              <InputComponent
+                value={s.state.searchString}
+                onChange={onSearchChange(s)}
+              />
+            </div>
+            <div className="contentSection termFilterActionContainer">
+              <span
+                className={`aggsFilterAction selectAll`}
+                onClick={onSelectAllClick(s)}
               >
-                {TERM_OPS.map(option => (
-                  <option key={option} value={option}>
-                    {opDisplayNameMap[option]}
-                  </option>
-                ))}
-              </select>
-            </span>
-          </div>
-          <div className="contentSection searchInputContainer">
-            <InputComponent
-              value={s.state.searchString}
-              onChange={onSearchChange(s)}
-            />
-          </div>
-          <div className="contentSection termFilterActionContainer">
-            <span
-              className={`aggsFilterAction selectAll`}
-              onClick={onSelectAllClick(s)}
-            >
-              Select All
-            </span>
-            <span
-              className={`aggsFilterAction clear`}
-              onClick={onClearClick(s)}
-            >
-              Clear
-            </span>
-          </div>
-          <div className="contentSection termAggContainer">
-            <TermAgg
-              WrapperComponent={AggsWrapper}
-              field={initialFieldSqon.content.field}
-              displayName="Disease Type"
-              buckets={computeBuckets(s, buckets)}
-              handleValueClick={onFilterClick(s)}
-              isActive={isFilterActive(s)}
-              maxTerms={5}
-            />
-          </div>
-        </ContainerComponent>
-      )}
+                Select All
+              </span>
+              <span
+                className={`aggsFilterAction clear`}
+                onClick={onClearClick(s)}
+              >
+                Clear
+              </span>
+            </div>
+            <div className="contentSection termAggContainer">
+              <TermAgg
+                WrapperComponent={AggsWrapper}
+                field={initialFieldSqon.content.field}
+                displayName="Disease Type"
+                buckets={computedBuckets}
+                handleValueClick={onFilterClick(s)}
+                isActive={isFilterActive(s)}
+                maxTerms={5}
+              />
+            </div>
+          </ContainerComponent>
+        );
+      }}
     </Component>
   );
 };
