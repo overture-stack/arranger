@@ -45,8 +45,8 @@ export default class AdvancedFacetView extends React.Component {
             parentNode[nextPath]
               ? parentNode[nextPath]
               : parentNode.properties
-                ? parentNode.properties[nextPath]
-                : {},
+              ? parentNode.properties[nextPath]
+              : {},
           elasticMapping,
         ) || {}
     );
@@ -131,7 +131,7 @@ export default class AdvancedFacetView extends React.Component {
           aggregations,
         }).displayTreeDataWithValue
       : displayTreeData;
-      const filteredAggregations = matchingAggregations(aggregations, searchTerm);
+    const filteredAggregations = matchingAggregations(aggregations, searchTerm);
     return (
       <div className="advancedFacetViewWrapper">
         {displayTreeData && (

@@ -19,6 +19,10 @@
 .filterContainer .contentSection {
   padding: 7px;
 }
+.filterContainer .contentSection.noResults {
+  color: rgba(0, 0, 0, 0.65);
+  font-style: italic;
+}
 .filterContainer .termAggContainer {
   overflow: scroll;
 }
