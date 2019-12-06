@@ -52,15 +52,12 @@
     "prepare": "rm -rf ./dist && webpack --config webpack.config.npm.js"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.9",
-    "@types/node": "^10.12.2",
     "@types/ramda": "^0.25.42",
     "@types/react": "^16.7.7",
     "@types/react-dom": "^16.0.9",
     "css-loader": "^2.1.1",
     "style-loader": "^0.23.1",
     "ts-loader": "^3.5.0",
-    "typescript": "^3.4.2",
     "webpack-cli": "^3.3.0"
   }
 }

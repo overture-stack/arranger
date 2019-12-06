@@ -19,7 +19,6 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
-    "jest": "^22.3.0",
     "jest-localstorage-mock": "^2.2.0",
     "regenerator-runtime": "^0.11.1"
   },

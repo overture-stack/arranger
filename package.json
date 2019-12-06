@@ -18,6 +18,8 @@
     "netlify-build": "npm i && npm run bootstrap -- --scope=@arranger/components --include-filtered-dependencies && cd modules/components && npm run build-storybook"
   },
   "devDependencies": {
+    "@types/jest": "^24.0.23",
+    "@types/node": "^12.12.14",
     "babel-eslint": "^8.2.1",
     "eslint": "^4.1.1",
     "eslint-config-prettier": "^2.9.0",
@@ -26,9 +28,14 @@
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-react": "^7.6.1",
+    "i": "^0.3.6",
+    "jest": "^24.9.0",
     "lerna": "^2.6.0",
+    "npm": "^6.13.2",
     "npm-link-shared": "^0.5.3",
-    "prettier": "^1.9.2"
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.2.0",
+    "typescript": "^3.7.3"
   },
   "prettier": {
     "singleQuote": true,
