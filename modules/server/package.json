@@ -40,7 +40,7 @@
     "date-fns": "^1.29.0",
     "dotenv": "^5.0.0",
     "elasticsearch": "^14.0.0",
-    "express": "^4.16.2",
+    "express": "^4.16.3",
     "graphql": "^14.0.2",
     "jsonpath": "^1.0.0",
     "node-fetch": "^2.0.0",
