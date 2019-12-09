@@ -51,7 +51,6 @@
     "eslint-plugin-react": "^7.6.1",
     "flow-bin": "^0.62.0",
     "jest": "^22.3.0",
-    "prettier": "^1.9.2",
     "react": "^16.3.0",
     "react-dom": "^16.3.0",
     "storybook-router": "^0.3.3"
