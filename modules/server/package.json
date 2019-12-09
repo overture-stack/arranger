@@ -43,7 +43,7 @@
     "express": "^4.16.3",
     "graphql": "^14.0.2",
     "jsonpath": "^1.0.0",
-    "node-fetch": "^2.0.0",
+    "node-fetch": "^2.2.0",
     "tar-stream": "^1.5.5",
     "through2": "^2.0.3",
     "url-join": "^4.0.0",

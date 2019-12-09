@@ -27,7 +27,7 @@
     "elasticsearch": "^14.0.0",
     "graphql-fields": "^1.0.2",
     "lodash": "^4.17.15",
-    "node-fetch": "^2.0.0",
+    "node-fetch": "^2.2.0",
     "uuid": "^3.2.1"
   },
   "peerDependencies": {
