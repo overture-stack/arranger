@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { compose } from 'recompose';
-import styled from 'react-emotion';
+import styled from '@emotion/styled';
 import Card, {
   CardBlock,
   CardTitle,

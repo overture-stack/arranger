@@ -1,5 +1,5 @@
 import { TableRow } from 'mineral-ui/Table';
-import styled from 'react-emotion';
+import styled from '@emotion/styled';
 import { ComponentType } from 'react';
 
 const SelectableTableRow = styled(TableRow)`

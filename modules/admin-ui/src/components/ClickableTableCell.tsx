@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'mineral-ui/Link';
-import styled from 'react-emotion';
+import styled from '@emotion/styled';
 // import { createStyledComponent } from 'mineral-ui';
 import { TableCell } from 'mineral-ui/Table';
 

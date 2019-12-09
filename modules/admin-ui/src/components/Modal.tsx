@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Portal } from 'react-portal';
-import styled from 'react-emotion';
+import styled from '@emotion/styled';
 
 export const Overlay = styled('div')`
   position: absolute;
@@ -15,9 +15,9 @@ export const Overlay = styled('div')`
   z-index: 1;
 `;
 
-export const ModalOverlay: React.ComponentType<
-  React.HtmlHTMLAttributes<HTMLDivElement>
-> = ({ children, ...props }) => {
+export const ModalOverlay: React.ComponentType<React.HtmlHTMLAttributes<
+  HTMLDivElement
+>> = ({ children, ...props }) => {
   return (
     <Portal>
       <Overlay {...props}>{children}</Overlay>
