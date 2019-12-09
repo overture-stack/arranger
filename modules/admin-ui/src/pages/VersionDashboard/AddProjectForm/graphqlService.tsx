@@ -238,9 +238,7 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
           console.log('err: ', err);
         }
         throw new Error(
-          `Invalid files were imported for index "${
-            newIndexMutationInput.graphqlField
-          }"`,
+          `Invalid files were imported for index "${newIndexMutationInput.graphqlField}"`,
         );
       }
     }
@@ -297,11 +295,11 @@ const sanitizeIndexConfigs = (
  * Provides server mutation to add multiple indices given a project
  ******************/
 const ProjectIndicesMutationProvider: React.ComponentType<{
-  children: (
-    {
-      createNewProjectIndex,
-    }: { createNewProjectIndex: MutationFn<{}, INewIndexInput> },
-  ) => React.ReactNode;
+  children: ({
+    createNewProjectIndex,
+  }: {
+    createNewProjectIndex: MutationFn<{}, INewIndexInput>;
+  }) => React.ReactNode;
 }> = ({ children }) => {
   const MUTATION = gql`
     mutation(
@@ -332,7 +330,7 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
 /*****************
  * Provides server transaction to add index
  *****************/
-export interface IPropsWithMutation extends IPropsWithMutation {}
+export { IPropsWithMutation } from './types';
 const withAddProjectMutation: THoc<
   {},
   IPropsWithMutation
