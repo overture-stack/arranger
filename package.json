@@ -28,7 +28,8 @@
     "eslint-plugin-react": "^7.6.1",
     "lerna": "^2.6.0",
     "npm-link-shared": "^0.5.3",
-    "prettier": "^1.19.1"
+    "prettier": "^1.19.1",
+    "typescript": "^3.7.3"
   },
   "prettier": {
     "singleQuote": true,

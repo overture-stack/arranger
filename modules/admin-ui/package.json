@@ -3,11 +3,6 @@
   "version": "1.1.8",
   "dependencies": {
     "@arranger/admin": "^1.1.8",
-    "@types/react-redux": "^6.0.9",
-    "@types/react-router-dom": "^4.3.1",
-    "@types/react-table": "^6.7.14",
-    "@types/recompose": "^0.27.0",
-    "@types/redux-devtools": "^3.0.44",
     "apollo-boost": "^0.1.19",
     "apollo-client": "^2.5.1",
     "apollo-link-http": "^1.5.14",
@@ -52,15 +47,9 @@
     "prepare": "rm -rf ./dist && webpack --config webpack.config.npm.js"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.9",
-    "@types/node": "^10.12.2",
-    "@types/ramda": "^0.25.42",
-    "@types/react": "^16.7.7",
-    "@types/react-dom": "^16.0.9",
     "css-loader": "^2.1.1",
     "style-loader": "^0.23.1",
     "ts-loader": "^3.5.0",
-    "typescript": "^3.4.2",
     "webpack-cli": "^3.3.0"
   }
 }
