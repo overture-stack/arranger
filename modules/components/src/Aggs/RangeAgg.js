@@ -11,6 +11,10 @@ import 'react-input-range/lib/css/index.css';
 import './AggregationCard.css';
 import './RangeAgg.css';
 
+//Quick Fix : I took the same logic as in the module mapping-utils
+export const generateRangeStepFromType = type =>
+  ['float', 'double'].includes((type || '').toLowerCase()) ? 0.01 : 1;
+
 const SUPPORTED_CONVERSIONS = {
   time: ['d', 'year'],
   digital: ['GB'],
@@ -121,6 +125,7 @@ class RangeAgg extends Component {
       displayName = 'Unnamed Field',
       collapsible = true,
       WrapperComponent,
+      type,
     } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     const supportedConversions = supportedConversionFromUnit(unit);
@@ -160,12 +165,12 @@ class RangeAgg extends Component {
               <RangeLabel isTop>{this.formatRangeLabel(value.max)}</RangeLabel>
               <InputRange
                 draggableTrack
-                step={step}
+                step={step || generateRangeStepFromType(type)}
                 minValue={min}
                 maxValue={max}
                 value={value}
                 formatLabel={this.formatRangeLabel}
-                onChange={x => this.setValue(x)}
+                onChange={x => {this.setValue(x)}}
                 onChangeComplete={this.onChangeComplete}
               />
               <RangeLabel isLeft>{this.formatRangeLabel(min)}</RangeLabel>

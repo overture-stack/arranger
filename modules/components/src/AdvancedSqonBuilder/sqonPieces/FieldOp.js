@@ -16,7 +16,15 @@ import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
-import { isEqual } from 'lodash'
+import { isEqual } from 'lodash';
+import internalTranslateSQONValue from '../../utils/translateSQONValue';
+
+const formatDisplayValue = raw => {
+  if (Array.isArray(raw)) {
+    return raw.map(v => internalTranslateSQONValue(v)).join(',');
+  }
+  return internalTranslateSQONValue(raw);
+};
 
 export default props => {
   const {
@@ -70,9 +78,9 @@ export default props => {
                 <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
                   <Tooltip
                         position="bottom"
-                        html={Array.isArray(value) ? value.join(', ') : value}
+                        html={formatDisplayValue(value)}
                       >
-                    {Array.isArray(value) ? value.join(', ') : value}{' '}
+                    {formatDisplayValue(value)}{' '}
                   </Tooltip>
                 </span>
                 <span onClick={toggleDropdown(s)}>
