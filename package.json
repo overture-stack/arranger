@@ -30,6 +30,7 @@
     "npm-link-shared": "^0.5.3",
     "prettier": "^1.19.1",
     "typescript": "^3.7.3",
+    "jest": "^22.3.0",
     "@types/react-redux": "^6.0.9",
     "@types/react-router-dom": "^4.3.1",
     "@types/react-table": "^6.7.14",

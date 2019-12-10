@@ -7,7 +7,6 @@
     "node": ">= 8.9.0"
   },
   "devDependencies": {
-    "jest": "^24.8.0",
     "nodemon": "^1.18.4",
     "npm-watch": "^0.4.0",
     "rimraf": "~2.6.2",
