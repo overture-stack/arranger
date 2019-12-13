@@ -1,6 +1,6 @@
 import { GraphQLResolveInfo } from 'graphql';
 import { MergeInfo } from 'graphql-tools';
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 
 export interface AdminApiConfig {
   esHost: string;

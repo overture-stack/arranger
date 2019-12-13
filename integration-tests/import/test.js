@@ -7,7 +7,7 @@ import {
   Table,
 } from '@arranger/components';
 
-test('importing @arranger modules', () => {
+test('importing @arranger/components modules', () => {
   expect(Dashboard).toBeDefined();
   expect(Query).toBeDefined();
   expect(Arranger).toBeDefined();

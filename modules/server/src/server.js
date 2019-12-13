@@ -1,4 +1,4 @@
-import elasticsearch from 'elasticsearch';
+import elasticsearch from '@elastic/elasticsearch';
 import express from 'express';
 import bodyParser from 'body-parser';
 
@@ -35,7 +35,7 @@ export default async ({
     ? console.log('Application started in ADMIN mode!!')
     : console.log('Application started in read-only mode.');
 
-  const es = new elasticsearch.Client({ host: esHost });
+  const es = new elasticsearch.Client({ node: esHost });
   if (projectId) {
     startSingleProject({ projectId, es, graphqlOptions, enableAdmin });
   } else {

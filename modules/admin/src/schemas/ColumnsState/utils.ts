@@ -1,4 +1,4 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import {
   I_Column,
   I_ColumnSetState,
@@ -34,9 +34,7 @@ export const createColumnSetState = (es: Client) => async ({
     esType,
   });
   const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings;
-  const columns: I_Column[] = mappingToColumnsState(
-    mapping[esIndex].properties,
-  );
+  const columns: I_Column[] = mappingToColumnsState(mapping.properties);
   return {
     state: {
       type: esType,

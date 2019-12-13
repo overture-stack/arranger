@@ -1,22 +1,19 @@
-import { Client } from 'elasticsearch';
+import { Client, ApiResponse } from '@elastic/elasticsearch';
 import { EsMapping } from './types';
 
 export const createClient = (esHost: string) =>
   new Client({
-    host: esHost,
-    // log: 'trace',
+    node: esHost,
   });
 
 export const getEsMapping = (es: Client) => async ({
   esIndex,
-  esType,
 }: {
   esIndex: string;
-  esType: string;
+  esType?: string; //deprecated
 }): Promise<EsMapping> => {
   const response = await es.indices.getMapping({
     index: esIndex,
-    type: esType,
   });
-  return response;
+  return response.body as EsMapping;
 };

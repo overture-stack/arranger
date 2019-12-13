@@ -1,4 +1,4 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { mappingToAggsState } from '@arranger/mapping-utils';
 import { sortBy } from 'ramda';
 import {
@@ -21,7 +21,7 @@ export const createAggsSetState = (es: Client) => async ({
 }: EsIndexLocation): Promise<I_AggsSetState> => {
   const rawEsmapping = await getEsMapping(es)({ esIndex, esType });
   const mapping =
-    rawEsmapping[Object.keys(rawEsmapping)[0]].mappings[esType].properties;
+    rawEsmapping[Object.keys(rawEsmapping)[0]].mappings.properties;
   const aggsState: I_AggsState[] = mappingToAggsState(mapping);
   return { timestamp: timestamp(), state: aggsState };
 };

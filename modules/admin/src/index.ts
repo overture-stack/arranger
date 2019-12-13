@@ -4,7 +4,7 @@ import {
   mergeSchemas,
 } from 'graphql-tools';
 import { ApolloServer } from 'apollo-server-express';
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { print } from 'graphql/language/printer';
 import { createClient as createElasticsearchClient } from './services/elasticsearch';
 
