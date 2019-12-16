@@ -25,19 +25,14 @@ describe('@arranger/admin', () => {
     const adminApp = await adminGraphql({ esHost });
     adminApp.applyMiddleware({ app, path: adminPath });
     app.use(router);
+    await new Promise(resolve => {
+      http.listen(port, () => {
+        resolve();
+      });
+    });
   });
-  afterEach(() => {
-    http.close();
-  });
-  beforeEach(
-    () =>
-      new Promise(resolve => {
-        http.listen(port, () => {
-          resolve();
-        });
-      }),
-  );
   after(async () => {
+    http.close();
     esClient.indices.delete({
       index: 'arranger-projects*',
     });

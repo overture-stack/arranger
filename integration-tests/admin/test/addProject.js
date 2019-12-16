@@ -87,6 +87,7 @@ export default ({ api, adminPath }) => {
         },
       },
     });
+    expect(response.errors).to.be.undefined;
     expect(response.data.index.projectId).to.equal(projectId);
     expect(response.data.index.esIndex).to.equal(esIndex);
   });
@@ -194,6 +195,7 @@ export default ({ api, adminPath }) => {
         `),
       },
     });
+    expect(response.errors).to.be.undefined;
     const projectWithId = response.data.projects.find(
       ({ id }) => id === projectId,
     );
@@ -249,7 +251,7 @@ export default ({ api, adminPath }) => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation($projectId: ID!) {
+          mutation($projectId: String!) {
             deleteProject(id: $projectId) {
               id
             }
@@ -272,7 +274,7 @@ export default ({ api, adminPath }) => {
         `),
       },
     });
-    expect(response.data.projects.map(({ id }) => id)).to.be.empty;
     expect(response.errors).to.be.undefined;
+    expect(response.data.projects.map(({ id }) => id)).to.be.empty;
   });
 };
