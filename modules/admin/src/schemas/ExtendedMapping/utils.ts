@@ -17,11 +17,10 @@ import { replaceBy } from '../../services';
 
 export const createExtendedMapping = (es: Client) => async ({
   esIndex,
-  esType,
 }: EsIndexLocation): Promise<I_GqlExtendedFieldMapping[]> => {
   let extendedMappings: I_GqlExtendedFieldMapping[] = [];
   try {
-    const esMapping = await getEsMapping(es)({ esIndex, esType });
+    const esMapping = await getEsMapping(es)({ esIndex });
     const indexName = Object.keys(esMapping)[0]; //assumes all mappings returned are the same
     const esMappingProperties = esMapping[indexName].mappings.properties;
     extendedMappings = extendMapping(

@@ -6,7 +6,6 @@ export type ResolverOutput<T> = T | Promise<T>;
 
 export interface EsIndexLocation {
   esIndex: string;
-  esType: string;
 }
 
 export type Resolver<Output, Args = Object> =
