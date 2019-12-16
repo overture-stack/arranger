@@ -6,6 +6,7 @@ export default ({ api, adminPath }) => {
   const projectId = 'test';
   const graphqlField = 'file';
   const esIndex = 'file_centric';
+  const keyField = 'kf_id';
   it('creates projects properly', async () => {
     let response = await api.post({
       endpoint: adminPath,
@@ -109,7 +110,9 @@ export default ({ api, adminPath }) => {
           graphqlField,
           state: {
             type: graphqlField,
-            keyField: 'asdf',
+            keyField: keyField,
+            defaultSorted: [],
+            columns: [],
           },
         },
       },
