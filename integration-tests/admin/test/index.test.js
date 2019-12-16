@@ -7,8 +7,11 @@ import ajax from '@arranger/server/dist/utils/ajax';
 import adminGraphql from '@arranger/admin/dist';
 import { Client } from '@elastic/elasticsearch';
 
+const file_centric_mapppings = require('./assets/file_centric.mappings.json');
+
 const port = 5678;
 const esHost = 'http://127.0.0.1:9200';
+const esIndex = 'file_centric';
 
 const app = express();
 const http = Server(app);
@@ -25,6 +28,10 @@ describe('@arranger/admin', () => {
     const adminApp = await adminGraphql({ esHost });
     adminApp.applyMiddleware({ app, path: adminPath });
     app.use(router);
+    await esClient.indices.create({
+      index: esIndex,
+      body: file_centric_mapppings,
+    });
     await new Promise(resolve => {
       http.listen(port, () => {
         resolve();
@@ -34,12 +41,16 @@ describe('@arranger/admin', () => {
   after(async () => {
     http.close();
     esClient.indices.delete({
+      index: esIndex,
+    });
+    esClient.indices.delete({
       index: 'arranger-projects*',
     });
   });
 
   const env = {
     api,
+    esIndex,
     adminPath,
   };
   addProject(env);

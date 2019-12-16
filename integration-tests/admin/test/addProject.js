@@ -2,10 +2,9 @@ import { expect } from 'chai';
 import gql from 'graphql-tag';
 import { print } from 'graphql';
 
-export default ({ api, adminPath }) => {
+export default ({ api, adminPath, esIndex }) => {
   const projectId = 'test';
   const graphqlField = 'file';
-  const esIndex = 'file_centric';
   const keyField = 'kf_id';
   it('creates projects properly', async () => {
     let response = await api.post({
