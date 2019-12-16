@@ -24,14 +24,17 @@ const esClient = new Client({
 describe('@arranger/admin', () => {
   const adminPath = '/admin/graphql';
   before(async () => {
-    const router = await Arranger({ esHost, enableAdmin: false });
-    const adminApp = await adminGraphql({ esHost });
-    adminApp.applyMiddleware({ app, path: adminPath });
-    app.use(router);
+    console.log('===== Initializing Elasticsearch data =====');
     await esClient.indices.create({
       index: esIndex,
       body: file_centric_mapppings,
     });
+
+    console.log('===== Starting arranger app for test =====');
+    const router = await Arranger({ esHost, enableAdmin: false });
+    const adminApp = await adminGraphql({ esHost });
+    adminApp.applyMiddleware({ app, path: adminPath });
+    app.use(router);
     await new Promise(resolve => {
       http.listen(port, () => {
         resolve();
