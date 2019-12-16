@@ -4,7 +4,7 @@ import { serializeToEsId } from '../../services';
 import { IArrangerProject } from './types';
 import { getProjectMetadataEsLocation } from '../IndexSchema/utils';
 
-const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
+const { ARRANGER_PROJECT_INDEX } = constants;
 
 export const newArrangerProject = (id: string): IArrangerProject => ({
   id: serializeToEsId(id),
@@ -30,7 +30,6 @@ export const getArrangerProjects = async (
   } = await es
     .search({
       index: ARRANGER_PROJECT_INDEX,
-      type: ARRANGER_PROJECT_TYPE,
     })
     .catch(() => ({
       body: {
@@ -53,7 +52,6 @@ export const addArrangerProject = (es: Client) => async (
     await es
       .create({
         index: ARRANGER_PROJECT_INDEX,
-        type: ARRANGER_PROJECT_TYPE,
         id: _id,
         body: newProject,
         refresh: 'true',
@@ -77,7 +75,6 @@ export const removeArrangerProject = (es: Client) => async (
       }),
       es.delete({
         index: ARRANGER_PROJECT_INDEX,
-        type: ARRANGER_PROJECT_TYPE,
         id: id,
         refresh: 'true',
       }),

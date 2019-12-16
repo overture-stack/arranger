@@ -146,7 +146,6 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
   metaData: I_ProjectIndexMetadataUpdateDoc;
 }): Promise<IProjectIndexMetadata> => {
   const queue = projectQueueManager.getQueue(projectId);
-  console.log('queue.tasks: ', queue.tasks.length);
   return queue.pushProm(async () => {
     await es.update({
       ...getProjectMetadataEsLocation(projectId),
