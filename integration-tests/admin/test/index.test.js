@@ -6,7 +6,6 @@ import Arranger from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
 import adminGraphql from '@arranger/admin/dist';
 import { Client } from '@elastic/elasticsearch';
-import { resolve } from 'dns';
 
 const port = 5678;
 const esHost = 'http://127.0.0.1:9200';
