@@ -143,7 +143,10 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   const {
     data = { projects: [] },
     onVersionSelect,
-    localState: { state: { isAddingProject }, mutations: { setAddingProject } },
+    localState: {
+      state: { isAddingProject },
+      mutations: { setAddingProject },
+    },
     refetch,
     clearEditingProject,
     error,
@@ -163,10 +166,10 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   const onCancelAddProject = () => setAddingProject(false);
   const onProjectAdded = () => refetch().then(() => setAddingProject(false));
 
-  const didMount = () => {
+  React.useEffect(() => {
     clearEditingProject();
     refetch();
-  };
+  }, []);
 
   const rows = sorted.map(entry => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
@@ -195,42 +198,38 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   }));
 
   return (
-    <Component didMount={didMount}>
-      {() => (
-        <div>
-          {error && (
-            <Alert variant="error">
-              <Text>{error.message}</Text>
-            </Alert>
-          )}
-          <Table
-            title="Project versions"
-            rowKey="id"
-            columns={[
-              { content: 'Project ID', key: 'id' },
-              { content: 'Index Counts', key: 'indexCount' },
-              { content: 'Created', key: 'timestamp' },
-              { content: 'Export configurations', key: 'export' },
-              { content: 'Delete', key: 'delete' },
-            ]}
-            data={rows}
-          />
-          <div>
-            {isAddingProject && (
-              <ModalOverlay>
-                <AddProjectForm
-                  onCancel={onCancelAddProject}
-                  onProjectAdded={onProjectAdded}
-                />
-              </ModalOverlay>
-            )}
-            <Button onClick={onAddButtonClick} size="medium" primary={true}>
-              Add Project
-            </Button>
-          </div>
-        </div>
+    <div>
+      {error && (
+        <Alert variant="error">
+          <Text>{error.message}</Text>
+        </Alert>
       )}
-    </Component>
+      <Table
+        title="Project versions"
+        rowKey="id"
+        columns={[
+          { content: 'Project ID', key: 'id' },
+          { content: 'Index Counts', key: 'indexCount' },
+          { content: 'Created', key: 'timestamp' },
+          { content: 'Export configurations', key: 'export' },
+          { content: 'Delete', key: 'delete' },
+        ]}
+        data={rows}
+      />
+      <div>
+        {isAddingProject && (
+          <ModalOverlay>
+            <AddProjectForm
+              onCancel={onCancelAddProject}
+              onProjectAdded={onProjectAdded}
+            />
+          </ModalOverlay>
+        )}
+        <Button onClick={onAddButtonClick} size="medium" primary={true}>
+          Add Project
+        </Button>
+      </div>
+    </div>
   );
 };
 

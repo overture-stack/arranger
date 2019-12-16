@@ -125,7 +125,6 @@ export interface INewIndexInput {
   projectId: string;
   graphqlField: string;
   esIndex: string;
-  esType: string;
 }
 export interface IMutationResponseData {
   newProject: {

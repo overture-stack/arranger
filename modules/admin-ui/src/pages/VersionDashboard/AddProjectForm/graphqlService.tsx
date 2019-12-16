@@ -200,7 +200,6 @@ const validateMutationVariables = async (
       acc &&
       !!config.newIndexMutationInput.projectId.length &&
       !!config.newIndexMutationInput.esIndex.length &&
-      !!config.newIndexMutationInput.esType.length &&
       !!config.newIndexMutationInput.graphqlField.length,
     true,
   );
@@ -231,6 +230,7 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
       try {
         RT_IndexConfigImportData.check(config);
       } catch (err) {
+        console.log('config: ', config);
         try {
           RT_ColumnsState.check(config.columnsState);
           console.log('check passed!!!');
@@ -261,6 +261,7 @@ const sanitizeIndexConfigs = (
             ? i.config.columnsState
             : {
                 ...i.config.columnsState,
+                type: i.newIndexMutationInput.graphqlField,
                 columns: i.config.columnsState.columns.map(c => {
                   [
                     'field',
@@ -302,17 +303,11 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
   }) => React.ReactNode;
 }> = ({ children }) => {
   const MUTATION = gql`
-    mutation(
-      $projectId: String!
-      $graphqlField: String!
-      $esIndex: String!
-      $esType: String!
-    ) {
+    mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
       newIndex(
         projectId: $projectId
         graphqlField: $graphqlField
         esIndex: $esIndex
-        esType: $esType
       ) {
         id
       }

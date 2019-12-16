@@ -72,7 +72,6 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         projectId,
         graphqlField: '',
         esIndex: '',
-        esType: '',
       },
       config: null,
     });
@@ -91,14 +90,6 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
     setIndexMutationInput(arg.position)({
       ...arg.index,
       esIndex: e.currentTarget.value,
-    });
-
-  const onIndexEsTypeChange = (arg: IIndexConfigArgs) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) =>
-    setIndexMutationInput(arg.position)({
-      ...arg.index,
-      esType: e.currentTarget.value,
     });
 
   const onFileUpload = ({ position }: { position: number }) => async (
@@ -145,7 +136,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
           <React.Fragment key={position}>
             <CardDivider />
             <Grid alignItems="center" columns={12}>
-              <GridItem span={3}>
+              <GridItem span={4}>
                 <FormField
                   label="Name"
                   caption="Arranger alias for the elasticsearch index"
@@ -160,7 +151,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
                   })}
                 />
               </GridItem>
-              <GridItem span={3}>
+              <GridItem span={4}>
                 <FormField
                   label="ES Index"
                   caption="name of index in elasticsearch"
@@ -175,21 +166,6 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
                   })}
                 />
               </GridItem>
-              <GridItem span={3}>
-                <FormField
-                  label="ES type"
-                  caption="name of type in elasticsearch"
-                  size="medium"
-                  disabled={isloading}
-                  required={!index.newIndexMutationInput.esType.length}
-                  input={TextInput}
-                  value={index.newIndexMutationInput.esType}
-                  onChange={onIndexEsTypeChange({
-                    position,
-                    index: index.newIndexMutationInput,
-                  })}
-                />
-              </GridItem>
               <GridItem span={2}>
                 <input
                   type="file"
@@ -199,7 +175,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
                   multiple={true}
                 />
               </GridItem>
-              <GridItem span={1}>
+              <GridItem span={2}>
                 <Button
                   size="medium"
                   variant="danger"
