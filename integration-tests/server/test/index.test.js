@@ -6,6 +6,8 @@ import Arranger from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
 import { Client } from '@elastic/elasticsearch';
 import adminGraphql from '@arranger/admin/dist';
+import gql from 'graphql-tag';
+import { print } from 'graphql';
 
 const mapppings = require('./assets/model_centric.mappings.json');
 
@@ -31,8 +33,10 @@ const cleanup = () =>
     }),
   ]);
 
-describe('@arranger/admin', () => {
+describe('@arranger/server', () => {
   const adminPath = '/admin/graphql';
+  const graphqlField = 'model';
+  const projectId = 'arranger_server_test';
   before(async () => {
     console.log('===== Initializing Elasticsearch data =====');
     try {
@@ -53,16 +57,60 @@ describe('@arranger/admin', () => {
         resolve();
       });
     });
+
+    /**
+     * uses the admin API to adds some metadata
+     */
+    await api.post({
+      endpoint: adminPath,
+      body: {
+        query: print(gql`
+          mutation($projectId: String!) {
+            newProject(id: $projectId) {
+              id
+              __typename
+            }
+          }
+        `),
+        variables: {
+          projectId,
+        },
+      },
+    });
+    await api.post({
+      endpoint: adminPath,
+      body: {
+        query: print(gql`
+          mutation(
+            $projectId: String!
+            $graphqlField: String!
+            $esIndex: String!
+          ) {
+            newIndex(
+              projectId: $projectId
+              graphqlField: $graphqlField
+              esIndex: $esIndex
+            ) {
+              id
+            }
+          }
+        `),
+        variables: {
+          projectId,
+          graphqlField,
+          esIndex,
+        },
+      },
+    });
   });
   after(async () => {
     http.close();
-    // await cleanup();
+    await cleanup();
   });
 
   const env = {
     api,
-    esIndex,
-    adminPath,
+    graphqlField,
   };
   addProject(env);
 });
