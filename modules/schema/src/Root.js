@@ -1,6 +1,5 @@
 import GraphQLJSON from 'graphql-type-json';
 import { GraphQLDate } from 'graphql-scalars';
-import uuid from 'uuid/v4';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
@@ -60,8 +59,8 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   }
 `;
 
-export let typeDefs = ({ types, rootTypes, scalarTypes, enableAdmin }) => [
-  RootTypeDefs({ types, rootTypes, scalarTypes, enableAdmin }),
+export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
+  RootTypeDefs({ types, rootTypes, scalarTypes }),
   AggregationsTypeDefs,
   SetTypeDefs,
   SortTypeDefs,
@@ -71,7 +70,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes, enableAdmin }) => [
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ types, rootTypes, scalarTypes, enableAdmin }) => {
+export let resolvers = ({ types, rootTypes, scalarTypes }) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -113,103 +112,6 @@ export let resolvers = ({ types, rootTypes, scalarTypes, enableAdmin }) => {
       {},
     ),
     Mutation: {
-      ...(() =>
-        enableAdmin
-          ? {
-              saveAggsState: async (
-                obj,
-                { graphqlField, state },
-                { es, projectId },
-              ) => {
-                // TODO: validate / make proper input type
-                const type = types.find(
-                  ([, type]) => type.name === graphqlField,
-                )[1];
-                await es.create({
-                  index: `${type.indexPrefix}-aggs-state`,
-                  type: `${type.indexPrefix}-aggs-state`,
-                  id: uuid(),
-                  body: {
-                    timestamp: new Date().toISOString(),
-                    state,
-                  },
-                  refresh: true,
-                });
-
-                let data = await es.search({
-                  index: `${type.indexPrefix}-aggs-state`,
-                  type: `${type.indexPrefix}-aggs-state`,
-                  body: {
-                    sort: [{ timestamp: { order: 'desc' } }],
-                    size: 1,
-                  },
-                });
-                return data.hits.hits[0]._source;
-              },
-              saveColumnsState: async (
-                obj,
-                { graphqlField, state },
-                { es, projectId },
-              ) => {
-                // TODO: validate / make proper input type
-                const type = types.find(
-                  ([, type]) => type.name === graphqlField,
-                )[1];
-                await es.create({
-                  index: `${type.indexPrefix}-columns-state`,
-                  type: `${type.indexPrefix}-columns-state`,
-                  id: uuid(),
-                  body: {
-                    timestamp: new Date().toISOString(),
-                    state,
-                  },
-                  refresh: true,
-                });
-
-                let data = await es.search({
-                  index: `${type.indexPrefix}-columns-state`,
-                  type: `${type.indexPrefix}-columns-state`,
-                  body: {
-                    sort: [{ timestamp: { order: 'desc' } }],
-                    size: 1,
-                  },
-                });
-
-                return data.hits.hits[0]._source;
-              },
-              saveMatchBoxState: async (
-                obj,
-                { graphqlField, state },
-                { es, projectId },
-              ) => {
-                // TODO: validate / make proper input type
-                const type = types.find(
-                  ([, type]) => type.name === graphqlField,
-                )[1];
-                await es.create({
-                  index: `${type.indexPrefix}-matchbox-state`,
-                  type: `${type.indexPrefix}-matchbox-state`,
-                  id: uuid(),
-                  body: {
-                    timestamp: new Date().toISOString(),
-                    state,
-                  },
-                  refresh: true,
-                });
-
-                let data = await es.search({
-                  index: `${type.indexPrefix}-matchbox-state`,
-                  type: `${type.indexPrefix}-matchbox-state`,
-                  body: {
-                    sort: [{ timestamp: { order: 'desc' } }],
-                    size: 1,
-                  },
-                });
-
-                return data.hits.hits[0]._source;
-              },
-            }
-          : {})(),
       saveSet: saveSet({ types }),
     },
   };
