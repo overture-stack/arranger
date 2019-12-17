@@ -41,7 +41,6 @@ export default ({
     [
       'sets',
       {
-        es_type: CONSTANTS.ES_ARRANGER_SET_INDEX,
         index: CONSTANTS.ES_ARRANGER_SET_TYPE,
         name: 'sets',
         createState: false,

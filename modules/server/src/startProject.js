@@ -1,27 +1,18 @@
 import { graphqlExpress } from 'apollo-server-express';
-import uuid from 'uuid/v4';
-import { flattenDeep, get } from 'lodash';
 import express from 'express';
 import makeSchema from '@arranger/schema';
-import {
-  extendFields,
-  addMappingsToTypes,
-  mappingToAggsState,
-  mappingToColumnsState,
-  mappingToMatchBoxState,
-} from '@arranger/mapping-utils';
+import { extendFields, addMappingsToTypes } from '@arranger/mapping-utils';
 import { fetchMappings } from './utils/fetchMappings';
 import mapHits from './utils/mapHits';
-import { getProject, setProject } from './utils/projects';
+import { setProject } from './utils/projects';
 import download from './download';
 import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
-import replaceBy from './utils/replaceBy';
 
 const initializeSets = async ({ es }) => {
-  if (!await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX })) {
+  if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {
     await es.indices.create({
       index: CONSTANTS.ES_ARRANGER_SET_INDEX,
       body: {
@@ -35,15 +26,6 @@ const initializeSets = async ({ es }) => {
   }
 };
 
-const mergeFieldsFromConfig = (generatedFields, configFields) => {
-  const a = generatedFields || [];
-  const b = configFields || [];
-  return [
-    ...b.filter(x => a.find(y => y.field === x.field)),
-    ...a.filter(x => !b.find(y => y.field === x.field)),
-  ];
-};
-
 export const createProjectEndpoint = async ({
   es,
   id,
@@ -51,6 +33,7 @@ export const createProjectEndpoint = async ({
   enableAdmin,
   typesWithMappings,
 }) => {
+  // console.log('typesWithMappings: ', typesWithMappings);
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -65,6 +48,7 @@ export const createProjectEndpoint = async ({
     middleware: graphqlOptions.middleware || [],
     enableAdmin,
   });
+  console.log('schema: ', schema);
 
   const mockSchema = makeSchema({
     types: typesWithMappings,
@@ -127,115 +111,6 @@ export const createProjectEndpoint = async ({
   return projectApp;
 };
 
-const initializeStates = async ({
-  mappings,
-  typesWithMappings,
-  es,
-  projectId,
-}) => {
-  const createAggsState = typesWithMappings.map(async ([type, props]) => {
-    const index = `${props.indexPrefix}-aggs-state`;
-    const count = await es
-      .count({ index, type: index })
-      .then(d => d.count, () => 0);
-    return !(count > 0)
-      ? [
-          { index: { _index: index, _type: index, _id: uuid() } },
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            state: mergeFieldsFromConfig(
-              mappingToAggsState(props.mapping),
-              Array.isArray(props.config['aggs-state'])
-                ? props.config['aggs-state']
-                : props.config['aggs-state'].state,
-            ),
-          }),
-        ]
-      : [];
-  });
-
-  const createColumnsState = typesWithMappings.map(async ([type, props]) => {
-    const columns = mappingToColumnsState(props.mapping);
-    const index = `${props.indexPrefix}-columns-state`;
-
-    const existing = get(
-      await es
-        .search({
-          index,
-          type: index,
-          body: {
-            sort: [{ timestamp: { order: 'desc' } }],
-            size: 1,
-          },
-        })
-        .catch(e => null),
-      'hits.hits[0]._source',
-    );
-
-    const existingColumns = get(existing, 'state.columns') || [];
-    const newColumns = columns.filter(
-      c => !existingColumns.find(e => e.field === c.field),
-    );
-
-    return !existing || newColumns.length
-      ? [
-          { index: { _index: index, _type: index, _id: uuid() } },
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            state: {
-              type,
-              keyField: 'id',
-              defaultSorted: [
-                { id: columns[0].id || columns[0].accessor, desc: false },
-              ],
-              ...(get(existing, 'state') || {}),
-              ...(props.config['columns-state'] || {}),
-              columns: mergeFieldsFromConfig(
-                [...existingColumns, ...newColumns],
-                props.config['columns-state']?.columns,
-              ),
-            },
-          }),
-        ]
-      : [];
-  });
-
-  const createMatchBoxState = typesWithMappings.map(async ([type, props]) => {
-    const index = `${props.indexPrefix}-matchbox-state`;
-    const count = await es
-      .count({ index, type: index })
-      .then(d => d.count, () => 0);
-    return count === 0
-      ? [
-          { index: { _index: index, _type: index, _id: uuid() } },
-          JSON.stringify({
-            timestamp: new Date().toISOString(),
-            state: replaceBy(
-              mappingToMatchBoxState(props),
-              Array.isArray(props.config['matchbox-state'])
-                ? props.config['matchbox-state']
-                : props.config['matchbox-state']?.state,
-              (x, y) => x.field === y.field,
-            ),
-          }),
-        ]
-      : [];
-  });
-
-  let body = flattenDeep(
-    await Promise.all([
-      ...createAggsState,
-      ...createColumnsState,
-      ...createMatchBoxState,
-    ]),
-  );
-
-  // TODO: don't add new ui states if decomissioned
-  if (!getProject(projectId) && body.length > 0) {
-    await es.bulk({ body });
-  }
-};
-
 export default async function startProjectApp({
   es,
   id,
@@ -257,20 +132,22 @@ export default async function startProjectApp({
     hits.map(async type => {
       const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
       try {
-        const size = (await es.search({
-          index: indexPrefix,
-          type: indexPrefix,
-          size: 0,
-          _source: false,
-        })).hits.total;
+        const size = (
+          await es.search({
+            index: indexPrefix,
+            size: 0,
+            _source: false,
+          })
+        ).hits.total;
 
         const fields = extendFields(
           mapHits(
-            await es.search({
-              index: indexPrefix,
-              type: indexPrefix,
-              size: size,
-            }),
+            (
+              await es.search({
+                index: indexPrefix,
+                size: size,
+              })
+            ).body,
           ),
         );
 
@@ -287,7 +164,6 @@ export default async function startProjectApp({
         type.name,
         {
           index: type.index,
-          es_type: type.esType,
           name: type.name,
           extendedFields: type.fields,
           customFields: ``,
@@ -299,17 +175,7 @@ export default async function startProjectApp({
     mappings: mappings.map(m => m.mapping),
   });
 
-  await Promise.all([
-    initializeSets({ es }),
-    enableAdmin
-      ? initializeStates({
-          es,
-          projectId: id,
-          typesWithMappings,
-          mappings,
-        })
-      : Promise.resolve(),
-  ]);
+  await initializeSets({ es });
 
   return await createProjectEndpoint({
     es,

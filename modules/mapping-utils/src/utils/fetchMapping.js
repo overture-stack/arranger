@@ -1,15 +1,17 @@
-export let fetchMapping = async ({ index, esType, es }) => {
-  let aliases = await es.cat.aliases({ format: 'json' });
+export let fetchMapping = async ({ index, es }) => {
+  let aliases = (await es.cat.aliases({ format: 'json' })).body;
   let alias = aliases?.find(x => x.alias === index)?.index;
 
   return es.indices
     .getMapping({
       index: alias || index,
-      type: esType,
     })
     .catch(err => {
       // TODO: return something more useful than false
       return false;
     })
-    .then(val => ({ index: index, mapping: val, alias }));
+    .then(response => {
+      const mapping = response.body;
+      return { index: index, mapping, alias };
+    });
 };

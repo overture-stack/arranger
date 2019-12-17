@@ -74,7 +74,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes, enableAdmin }) => [
   SetTypeDefs,
   SortTypeDefs,
   StateTypeDefs,
-  ...types.map(([key, type]) => mappingToFields({ key, type, parent: '' })),
+  ...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
