@@ -1,4 +1,4 @@
-import { Client, ApiResponse } from '@elastic/elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { EsMapping } from './types';
 
 export const createClient = (esHost: string) =>

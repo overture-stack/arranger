@@ -17,9 +17,8 @@ import { getEsMapping } from '../../services/elasticsearch';
 
 export const createAggsSetState = (es: Client) => async ({
   esIndex,
-  esType,
 }: EsIndexLocation): Promise<I_AggsSetState> => {
-  const rawEsmapping = await getEsMapping(es)({ esIndex, esType });
+  const rawEsmapping = await getEsMapping(es)({ esIndex });
   const mapping =
     rawEsmapping[Object.keys(rawEsmapping)[0]].mappings.properties;
   const aggsState: I_AggsState[] = mappingToAggsState(mapping);

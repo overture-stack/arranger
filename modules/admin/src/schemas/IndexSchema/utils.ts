@@ -94,9 +94,12 @@ export const createNewIndex = (es: Client) => async (
       active: true,
       config: {
         'aggs-state': await createAggsSetState(es)({ esIndex }),
-        'columns-state': await createColumnSetState(es)({
-          esIndex,
-        }),
+        'columns-state': await createColumnSetState(es)(
+          {
+            esIndex,
+          },
+          graphqlField,
+        ),
         'matchbox-state': createMatchboxState({
           graphqlField,
           extendedFields: extendedMapping,

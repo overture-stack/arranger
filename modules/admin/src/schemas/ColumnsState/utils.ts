@@ -25,19 +25,18 @@ export const getColumnSetState = (es: Client) => async (
   return metaData.config['columns-state'];
 };
 
-export const createColumnSetState = (es: Client) => async ({
-  esIndex,
-  esType,
-}: EsIndexLocation): Promise<I_ColumnSetState> => {
+export const createColumnSetState = (es: Client) => async (
+  { esIndex }: EsIndexLocation,
+  graphqlField: string,
+): Promise<I_ColumnSetState> => {
   const rawEsmapping = await getEsMapping(es)({
     esIndex,
-    esType,
   });
   const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings;
   const columns: I_Column[] = mappingToColumnsState(mapping.properties);
   return {
     state: {
-      type: esType,
+      type: graphqlField,
       keyField: 'id',
       defaultSorted: [
         { id: columns[0].id || columns[0].accessor, desc: false },
