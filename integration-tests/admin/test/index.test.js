@@ -21,10 +21,23 @@ const esClient = new Client({
   node: esHost,
 });
 
+const cleanup = () =>
+  Promise.all([
+    esClient.indices.delete({
+      index: esIndex,
+    }),
+    esClient.indices.delete({
+      index: 'arranger-projects*',
+    }),
+  ]);
+
 describe('@arranger/admin', () => {
   const adminPath = '/admin/graphql';
   before(async () => {
     console.log('===== Initializing Elasticsearch data =====');
+    try {
+      await cleanup();
+    } catch (err) {}
     await esClient.indices.create({
       index: esIndex,
       body: file_centric_mapppings,
@@ -43,12 +56,7 @@ describe('@arranger/admin', () => {
   });
   after(async () => {
     http.close();
-    esClient.indices.delete({
-      index: esIndex,
-    });
-    esClient.indices.delete({
-      index: 'arranger-projects*',
-    });
+    await cleanup();
   });
 
   const env = {

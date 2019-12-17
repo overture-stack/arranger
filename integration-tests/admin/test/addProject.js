@@ -7,7 +7,7 @@ export default ({ api, adminPath, esIndex }) => {
   const graphqlField = 'file';
   const keyField = 'kf_id';
   it('creates projects properly', async () => {
-    let response = await api.post({
+    let { errors } = await api.post({
       endpoint: adminPath,
       body: {
         query: print(gql`
@@ -23,9 +23,8 @@ export default ({ api, adminPath, esIndex }) => {
         },
       },
     });
-    expect(response.errors).to.be.undefined;
-  });
-  it('reads projects properly', async () => {
+    expect(errors).to.be.undefined;
+
     let response = await api.post({
       endpoint: adminPath,
       body: {
