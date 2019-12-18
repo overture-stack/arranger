@@ -10,6 +10,7 @@ import getIndexPrefix from './utils/getIndexPrefix';
 import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
+import expressPlayground from 'graphql-playground-middleware-express';
 
 const initializeSets = async ({ es }) => {
   if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {
@@ -38,6 +39,7 @@ export const createProjectEndpoint = async ({
 
   // indices must be lower cased
   id = id.toLowerCase();
+  console.log('id: ', id);
 
   const types = await getTypes({ id, es });
 
@@ -83,6 +85,12 @@ export const createProjectEndpoint = async ({
       : noSchemaHandler,
   );
 
+  projectApp.get(
+    '/graphql',
+    expressPlayground({
+      endpoint: `graphql`, // this resolves to `${id}/graphql`
+    }),
+  );
   projectApp.use(
     `/graphql`,
     schema
