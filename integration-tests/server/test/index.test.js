@@ -111,6 +111,7 @@ describe('@arranger/server', () => {
   const env = {
     api,
     graphqlField,
+    gqlPath: `${projectId}/graphql`,
   };
   addProject(env);
 });
