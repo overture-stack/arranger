@@ -135,6 +135,7 @@ export default async function startProjectApp({
   if (!types) return;
   const hits = mapHits(types);
   const mappings = await fetchMappings({ es, types: hits });
+  if (!mappings.length) return; // gate to not start a project that doesn't exist
 
   const extended = await Promise.all(
     hits.map(async type => {
