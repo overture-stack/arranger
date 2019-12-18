@@ -64,4 +64,29 @@ export default ({ api, graphqlField, gqlPath }) => {
     ).to.be.not.null.and.not.empty();
     expect(response.errors).to.be.null;
   });
+  it('reads hits properly', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              hits {
+                total 
+                edges {
+                  node {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      get(response, `data[${graphqlField}].hits.edges`),
+    ).to.be.not.null.and.not.empty();
+    expect(response.errors).to.be.null;
+  });
 };
