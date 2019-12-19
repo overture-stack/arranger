@@ -89,4 +89,73 @@ export default ({ api, graphqlField, gqlPath }) => {
     ).to.be.not.null.and.not.empty();
     expect(response.errors).to.be.null;
   });
+  it('reads aggsState properly', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              aggsState {
+                timestamp
+                state {
+                  field
+                  active
+                  show
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      get(response, `data[${graphqlField}].aggsState.state`),
+    ).to.be.not.null.and.not.empty();
+    expect(response.errors).to.be.null;
+  });
+  it('reads columns state properly', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              columnsState {
+                state {
+                  keyField
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      get(response, `data[${graphqlField}].columnsState.state`),
+    ).to.be.not.null.and.not.empty();
+    expect(response.errors).to.be.null;
+  });
+  it('reads matchbox state properly', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              matchBoxState {
+                state {
+                  field
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      get(response, `data[${graphqlField}].matchBoxState.state`),
+    ).to.be.not.null.and.not.empty();
+    expect(response.errors).to.be.null;
+  });
 };
