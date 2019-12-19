@@ -17,8 +17,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response.data[graphqlField].extended).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(response.data[graphqlField].extended).to.be.not.empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads elasticsearch mappings properly', async () => {
     let response = await api.post({
@@ -33,8 +33,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response.data[graphqlField].mapping).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(response.data[graphqlField].mapping).to.be.not.empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads aggregations properly', async () => {
     let response = await api.post({
@@ -61,8 +61,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         response,
         `data[${graphqlField}].aggregations.clinical_diagnosis__histological_type.buckets`,
       ),
-    ).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    ).to.be.not.empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads hits properly', async () => {
     let response = await api.post({
@@ -72,7 +72,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           {
             ${graphqlField} {
               hits {
-                total 
+                total
                 edges {
                   node {
                     id
@@ -84,10 +84,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      get(response, `data[${graphqlField}].hits.edges`),
-    ).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(get(response, `data[${graphqlField}].hits.edges`)).to.be.not.empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads aggsState properly', async () => {
     let response = await api.post({
@@ -109,10 +107,9 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      get(response, `data[${graphqlField}].aggsState.state`),
-    ).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(get(response, `data[${graphqlField}].aggsState.state`)).to.be.not
+      .empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads columns state properly', async () => {
     let response = await api.post({
@@ -131,10 +128,9 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      get(response, `data[${graphqlField}].columnsState.state`),
-    ).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(get(response, `data[${graphqlField}].columnsState.state`)).to.be.not
+      .empty;
+    expect(response.errors).to.be.undefined;
   });
   it('reads matchbox state properly', async () => {
     let response = await api.post({
@@ -153,9 +149,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      get(response, `data[${graphqlField}].matchBoxState.state`),
-    ).to.be.not.null.and.not.empty();
-    expect(response.errors).to.be.null;
+    expect(get(response, `data[${graphqlField}].matchBoxState.state`)).to.be.not
+      .empty;
+    expect(response.errors).to.be.undefined;
   });
 };
