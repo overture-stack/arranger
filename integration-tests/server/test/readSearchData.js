@@ -29,7 +29,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         response,
         `data[${graphqlField}].aggregations.clinical_diagnosis__histological_type.buckets`,
       ),
-    ).to.be.not.empty;
+    ).to.eql([]);
     expect(response.errors).to.be.undefined;
   });
   it('reads hits properly', async () => {
@@ -52,7 +52,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(get(response, `data[${graphqlField}].hits.edges`)).to.be.not.empty;
+    expect(get(response, `data[${graphqlField}].hits.edges`)).to.eql([]);
     expect(response.errors).to.be.undefined;
   });
 };
