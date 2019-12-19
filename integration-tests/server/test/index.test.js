@@ -114,6 +114,7 @@ describe('@arranger/server', () => {
     graphqlField,
     gqlPath: `${projectId}/graphql`,
   };
+
   describe('metadata reading', () => {
     readMetadata(env);
   });

@@ -8,7 +8,8 @@
     "@arranger/server": "^1.1.8",
     "@arranger/admin": "^1.1.8",
     "body-parser": "^1.18.2",
-    "elasticsearch": "^14.0.0"
+    "elasticsearch": "^14.0.0",
+    "integration-tests-server": "^1.1.8"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
