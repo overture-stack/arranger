@@ -12,6 +12,6 @@ export let fetchMapping = async ({ index, es }) => {
     })
     .then(response => {
       const mapping = response.body;
-      return { index: index, mapping, alias };
+      return { index, mapping, alias };
     });
 };
