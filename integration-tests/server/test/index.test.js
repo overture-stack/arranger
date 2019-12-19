@@ -1,13 +1,14 @@
 import 'babel-polyfill';
 import express from 'express';
 import { Server } from 'http';
-import addProject from './addProject';
+import readMetadata from './readMetadata';
 import Arranger from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
 import { Client } from '@elastic/elasticsearch';
 import adminGraphql from '@arranger/admin/dist';
 import gql from 'graphql-tag';
 import { print } from 'graphql';
+import readSearchData from './readSearchData';
 
 const mapppings = require('./assets/model_centric.mappings.json');
 
@@ -113,5 +114,10 @@ describe('@arranger/server', () => {
     graphqlField,
     gqlPath: `${projectId}/graphql`,
   };
-  addProject(env);
+  describe('metadata reading', () => {
+    readMetadata(env);
+  });
+  describe('search data reading', () => {
+    readSearchData(env);
+  });
 });
