@@ -53,6 +53,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
     expect(get(response, `data[${graphqlField}].hits.edges`)).to.eql([]);
+    expect(get(response, `data[${graphqlField}].hits.total`)).to.equal(0);
     expect(response.errors).to.be.undefined;
   });
 };
