@@ -6,6 +6,7 @@ import {
   flattenAggregations,
 } from '@arranger/middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
+import esSearch from './utils/esSearch';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
@@ -44,9 +45,8 @@ export default type => async (
   });
 
   const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
-  const response = await es.search({
+  const response = await esSearch(es)({
     index: type.index,
-    type: type.es_type,
     size: 0,
     _source: false,
     body,
