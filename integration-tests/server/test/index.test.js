@@ -117,7 +117,7 @@ describe('@arranger/server', () => {
   });
   after(async () => {
     http.close();
-    // await cleanup
+    await cleanup();
   });
 
   const env = {
