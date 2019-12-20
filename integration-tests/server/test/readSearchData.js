@@ -65,8 +65,18 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    // expect(get(response, `data[${graphqlField}].hits.edges`)).to.eql([]);
-    expect(get(response, `data[${graphqlField}].hits.total`)).to.equal(2);
-    expect(response.errors).to.be.undefined;
+    expect(response).to.eql({
+      data: {
+        model: {
+          hits: {
+            total: 2,
+            edges: [
+              { node: { id: '5da62fbad545d210fe1c63a9' } },
+              { node: { id: '5dc9b6c3d614630f9809f7d0' } },
+            ],
+          },
+        },
+      },
+    });
   });
 };
