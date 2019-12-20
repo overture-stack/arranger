@@ -11,6 +11,7 @@ import { print } from 'graphql';
 import readSearchData from './readSearchData';
 
 const mapppings = require('./assets/model_centric.mappings.json');
+const data = require('./assets/model_centric.data.json');
 
 const port = 5678;
 const esHost = 'http://127.0.0.1:9200';
@@ -47,6 +48,16 @@ describe('@arranger/server', () => {
       index: esIndex,
       body: mapppings,
     });
+    await Promise.all(
+      data.map(datum =>
+        esClient.index({
+          index: esIndex,
+          id: datum._id,
+          body: datum._source,
+          refresh: 'wait_for',
+        }),
+      ),
+    );
 
     console.log('===== Starting arranger app for test =====');
     const router = await Arranger({ esHost, enableAdmin: false });
@@ -106,7 +117,7 @@ describe('@arranger/server', () => {
   });
   after(async () => {
     http.close();
-    await cleanup();
+    // await cleanup
   });
 
   const env = {

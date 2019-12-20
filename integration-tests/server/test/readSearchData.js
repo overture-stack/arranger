@@ -12,7 +12,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           {
             ${graphqlField} {
               aggregations {
-                clinical_diagnosis__histological_type {
+                clinical_diagnosis__clinical_stage_grouping {
                   buckets {
                     doc_count
                     key
@@ -24,13 +24,26 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      get(
-        response,
-        `data[${graphqlField}].aggregations.clinical_diagnosis__histological_type.buckets`,
-      ),
-    ).to.eql([]);
-    expect(response.errors).to.be.undefined;
+    expect(response).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              buckets: [
+                {
+                  doc_count: 1,
+                  key: 'Stage I',
+                },
+                {
+                  doc_count: 1,
+                  key: '__missing__',
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
   });
   it('reads hits properly', async () => {
     let response = await api.post({
@@ -52,8 +65,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(get(response, `data[${graphqlField}].hits.edges`)).to.eql([]);
-    expect(get(response, `data[${graphqlField}].hits.total`)).to.equal(0);
+    // expect(get(response, `data[${graphqlField}].hits.edges`)).to.eql([]);
+    expect(get(response, `data[${graphqlField}].hits.total`)).to.equal(2);
     expect(response.errors).to.be.undefined;
   });
 };
