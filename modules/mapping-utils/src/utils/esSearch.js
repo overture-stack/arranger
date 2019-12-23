@@ -1,1 +1,12 @@
-export default es => async config => (await es.search(config)).body;
+import { Client, RequestParams } from '@elastic/elasticsearch';
+
+/**
+ * @param {Client} es
+ */
+export default es => {
+  /**
+   * @param {RequestParams.Search} params
+   */
+  const output = async params => (await es.search(params)).body;
+  return output;
+};

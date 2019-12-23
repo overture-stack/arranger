@@ -39,8 +39,9 @@ describe('@arranger/server', () => {
   const adminPath = '/admin/graphql';
   const graphqlField = 'model';
   const projectId = 'arranger_server_test';
-  before(async () => {
+  before(async function() {
     console.log('===== Initializing Elasticsearch data =====');
+    this.timeout(10000);
     try {
       await cleanup();
     } catch (err) {}
@@ -48,16 +49,14 @@ describe('@arranger/server', () => {
       index: esIndex,
       body: mapppings,
     });
-    await Promise.all(
-      data.map(datum =>
-        esClient.index({
-          index: esIndex,
-          id: datum._id,
-          body: datum._source,
-          refresh: 'wait_for',
-        }),
-      ),
-    );
+    for (let datum of data) {
+      await esClient.index({
+        index: esIndex,
+        id: datum._id,
+        body: datum._source,
+        refresh: 'wait_for',
+      });
+    }
 
     console.log('===== Starting arranger app for test =====');
     const router = await Arranger({ esHost, enableAdmin: false });
@@ -117,7 +116,7 @@ describe('@arranger/server', () => {
   });
   after(async () => {
     http.close();
-    await cleanup();
+    // await cleanup();
   });
 
   const env = {

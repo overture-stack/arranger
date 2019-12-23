@@ -1,5 +1,5 @@
 import getFields from 'graphql-fields';
-import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
+import { buildQuery } from '@arranger/middleware';
 import { chunk } from 'lodash';
 import esSearch from './utils/esSearch';
 
@@ -214,7 +214,7 @@ export default ({ type, Parallel }) => async (
     size: first,
     from: offset,
     _source: [
-      ...((fields.edges && Object.keys(fields.edges.node)) || []),
+      ...((fields.edges && Object.keys(fields.edges.node || {})) || []),
       ...Object.values(copyToSourceFields),
     ],
     track_scores: !!score,
