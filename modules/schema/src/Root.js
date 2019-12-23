@@ -49,8 +49,12 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
+  enum ProjectType {
+    ${types.map(([key, type]) => type.name).join('\n')}
+  }
+
   type Mutation {
-    saveSet(type: String! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
+    saveSet(type: ProjectType! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
   }
 
   schema {
