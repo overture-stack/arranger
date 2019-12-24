@@ -1,19 +1,20 @@
 import mapHits from '../utils/mapHits';
+import esSearch from '@arranger/mapping-utils/dist/utils/esSearch';
 
 export async function fetchProjects({ es }) {
   let arrangerConfig = {
     projectsIndex: {
       index: 'arranger-projects',
-      type: 'arranger-projects',
       size: 1000,
     },
   };
 
   try {
-    const projects = await es.search(arrangerConfig.projectsIndex);
+    const projects = await esSearch(es)(arrangerConfig.projectsIndex);
+    console.log('projects: ', projects);
     return {
       projects: mapHits(projects),
-      total: projects.hits.total,
+      total: projects.hits.total.value,
     };
   } catch (searchError) {
     try {

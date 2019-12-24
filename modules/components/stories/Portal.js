@@ -117,11 +117,13 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
         }}
       >
         <option id="version">Select an index</option>
-        {projects.find(x => x.id === projectId)?.types?.types?.map(x => (
-          <option key={x.index} value={x.index}>
-            {x.index}
-          </option>
-        ))}
+        {projects
+          .find(x => x.id === projectId)
+          ?.types?.types?.map(x => (
+            <option key={x.index} value={x.index}>
+              {x.index}
+            </option>
+          ))}
       </select>
     </div>
   );
