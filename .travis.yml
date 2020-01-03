@@ -11,7 +11,7 @@ before_install:
 jobs:
   include:
     - stage: deploy
-      script: publish.sh
+      script: npm run publish
       branches:
         only:
           - master
