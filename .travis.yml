@@ -11,5 +11,5 @@ before_install:
 deploy:
   - provider: script
     script: publish.sh
-    # on:
-    #   branch: master
+    on:
+      all_branches: true
