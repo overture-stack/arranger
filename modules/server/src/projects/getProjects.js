@@ -11,7 +11,6 @@ export async function fetchProjects({ es }) {
 
   try {
     const projects = await esSearch(es)(arrangerConfig.projectsIndex);
-    console.log('projects: ', projects);
     return {
       projects: mapHits(projects),
       total: projects.hits.total.value,

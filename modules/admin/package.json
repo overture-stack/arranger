@@ -50,7 +50,7 @@
     "date-fns": "^1.29.0",
     "@elastic/elasticsearch": "7.5.0",
     "express": "^4.16.3",
-    "graphql": "^14.0.2",
+    "graphql": "^14.5.3",
     "graphql-tools": "^4.0.0",
     "graphql-type-json": "^0.2.1",
     "jwt-decode": "^2.2.0",
@@ -58,7 +58,6 @@
     "node-fetch": "^2.2.0",
     "qew": "^0.9.13",
     "ramda": "^0.26.1",
-    "typegql": "^0.6.0",
     "tslib": "^1.10.0"
   }
 }

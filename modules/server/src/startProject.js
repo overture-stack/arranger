@@ -1,4 +1,4 @@
-import { graphqlExpress } from 'apollo-server-express';
+import { graphqlExpress, ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import makeSchema from '@arranger/schema';
 import { extendFields, addMappingsToTypes } from '@arranger/mapping-utils';
@@ -39,7 +39,6 @@ export const createProjectEndpoint = async ({
 
   // indices must be lower cased
   id = id.toLowerCase();
-  console.log('id: ', id);
 
   const types = await getTypes({ id, es });
 
@@ -50,7 +49,6 @@ export const createProjectEndpoint = async ({
     middleware: graphqlOptions.middleware || [],
     enableAdmin,
   });
-  console.log('schema: ', schema);
 
   const mockSchema = makeSchema({
     types: typesWithMappings,
@@ -70,20 +68,31 @@ export const createProjectEndpoint = async ({
 
   projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
 
+  const externalContext =
+    typeof graphqlOptions.context === 'function'
+      ? await graphqlOptions.context(request, response, graphQLParams)
+      : graphqlOptions.context;
+  const apolloServer = new ApolloServer({
+    schema,
+    context: {
+      es,
+      projectId: id,
+      ...(externalContext || {}),
+    },
+  });
+
   const noSchemaHandler = (req, res) =>
     res.json({
       error:
         'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
     });
 
-  projectApp.use(
-    `/mock/graphql`,
-    mockSchema
-      ? graphqlExpress({
-          schema: mockSchema,
-        })
-      : noSchemaHandler,
-  );
+  new ApolloServer({
+    schema: mockSchema,
+  }).applyMiddleware({
+    app: projectApp,
+    path: `/mock/graphql`,
+  });
 
   projectApp.get(
     '/graphql',
@@ -91,25 +100,10 @@ export const createProjectEndpoint = async ({
       endpoint: `graphql`, // this resolves to `${id}/graphql`
     }),
   );
-  projectApp.use(
-    `/graphql`,
-    schema
-      ? graphqlExpress(async (request, response, graphQLParams) => {
-          const externalContext =
-            typeof graphqlOptions.context === 'function'
-              ? await graphqlOptions.context(request, response, graphQLParams)
-              : graphqlOptions.context;
-          return {
-            schema,
-            context: {
-              es,
-              projectId: id,
-              ...(externalContext || {}),
-            },
-          };
-        })
-      : noSchemaHandler,
-  );
+  apolloServer.applyMiddleware({
+    app: projectApp,
+    path: `/graphql`,
+  });
 
   projectApp.use(`/download`, download({ projectId: id }));
 
