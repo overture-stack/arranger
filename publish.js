@@ -14,5 +14,5 @@ const promisify = require('util').promisify;
     });
   const { version } = require('./lerna.json');
 
-  await run(`npm run lerna version -- --yes ${version}`);
+  await run(`npm run lerna publish -- --yes --dist-tag ${version}`);
 })();
