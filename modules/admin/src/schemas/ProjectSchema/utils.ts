@@ -1,10 +1,10 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { constants } from '../../services/constants';
 import { serializeToEsId } from '../../services';
 import { IArrangerProject } from './types';
 import { getProjectMetadataEsLocation } from '../IndexSchema/utils';
 
-const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
+const { ARRANGER_PROJECT_INDEX } = constants;
 
 export const newArrangerProject = (id: string): IArrangerProject => ({
   id: serializeToEsId(id),
@@ -16,11 +16,28 @@ export const getArrangerProjects = async (
   es: Client,
 ): Promise<Array<IArrangerProject>> => {
   const {
-    hits: { hits },
-  } = await es.search({
-    index: ARRANGER_PROJECT_INDEX,
-    type: ARRANGER_PROJECT_TYPE,
-  });
+    body: {
+      hits: { hits },
+    },
+  }: {
+    body: {
+      hits: {
+        hits: Array<{
+          _source: any;
+        }>;
+      };
+    };
+  } = await es
+    .search({
+      index: ARRANGER_PROJECT_INDEX,
+    })
+    .catch(() => ({
+      body: {
+        hits: {
+          hits: [],
+        },
+      },
+    }));
   return hits.map(({ _source }) => _source as IArrangerProject);
 };
 
@@ -35,10 +52,9 @@ export const addArrangerProject = (es: Client) => async (
     await es
       .create({
         index: ARRANGER_PROJECT_INDEX,
-        type: ARRANGER_PROJECT_TYPE,
         id: _id,
         body: newProject,
-        refresh: true,
+        refresh: 'true',
       })
       .then(() => newProject)
       .catch(Promise.reject),
@@ -59,9 +75,8 @@ export const removeArrangerProject = (es: Client) => async (
       }),
       es.delete({
         index: ARRANGER_PROJECT_INDEX,
-        type: ARRANGER_PROJECT_TYPE,
         id: id,
-        refresh: true,
+        refresh: 'true',
       }),
     ]);
     return getArrangerProjects(es);

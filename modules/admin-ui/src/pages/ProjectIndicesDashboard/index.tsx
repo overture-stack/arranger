@@ -88,62 +88,58 @@ const Dashboard: React.ComponentType<IInjectedProps & IExternalProps> = ({
   onDataLoaded,
   projectData,
 }) => {
-  const didMount = () => {
+  React.useEffect(() => {
     if (!projectData) {
       getProjectData(projectId).then(({ data }) => {
         onDataLoaded(data);
       });
     }
-  };
+  }, []);
 
-  return (
-    <Component didMount={didMount}>
-      {() => {
-        if (!projectData) {
-          return '...loading';
-        } else {
-          const { project: { indices } } = projectData;
+  if (!projectData) {
+    return <>...loading</>;
+  } else {
+    const {
+      project: { indices },
+    } = projectData;
 
-          const rows = indices.map(index => ({
-            row: () => {
-              return (
-                <TableRow>
-                  <TableCell>
-                    <RouterLink to={`/${projectId}/${index.graphqlField}`}>
-                      <Link>{index.graphqlField}</Link>
-                    </RouterLink>
-                  </TableCell>
-                  <TableCell>{index.esIndex}</TableCell>
-                  <TableCell>{index.esType}</TableCell>
-                  <TableCell>{index.hasMapping ? 'yes' : 'no'}</TableCell>
-                </TableRow>
-              );
-            },
-          }));
+    const rows = indices.map(index => ({
+      row: () => {
+        return (
+          <TableRow>
+            <TableCell>
+              <RouterLink to={`/${projectId}/${index.graphqlField}`}>
+                <Link>{index.graphqlField}</Link>
+              </RouterLink>
+            </TableCell>
+            <TableCell>{index.esIndex}</TableCell>
+            <TableCell>{index.esType}</TableCell>
+            <TableCell>{index.hasMapping ? 'yes' : 'no'}</TableCell>
+          </TableRow>
+        );
+      },
+    }));
 
-          return (
-            <Flex direction="column">
-              <Flex justifyContent="flex-end">
-                <ProjectActionButtons />
-              </Flex>
-              <FlexItem>
-                <Table
-                  title={`Arranger project: ${projectId}`}
-                  columns={[
-                    { content: 'Name (aka graphqlField)', key: 'graphqlField' },
-                    { content: 'ES index', key: 'esIndex' },
-                    { content: 'ES type', key: 'esType' },
-                    { content: 'has mapping', key: 'hasMapping' },
-                  ]}
-                  data={rows}
-                />
-              </FlexItem>
-            </Flex>
-          );
-        }
-      }}
-    </Component>
-  );
+    return (
+      <Flex direction="column">
+        <Flex justifyContent="flex-end">
+          <ProjectActionButtons />
+        </Flex>
+        <FlexItem>
+          <Table
+            title={`Arranger project: ${projectId}`}
+            columns={[
+              { content: 'Name (aka graphqlField)', key: 'graphqlField' },
+              { content: 'ES index', key: 'esIndex' },
+              { content: 'ES type', key: 'esType' },
+              { content: 'has mapping', key: 'hasMapping' },
+            ]}
+            data={rows}
+          />
+        </FlexItem>
+      </Flex>
+    );
+  }
 };
 
 export default compose<IInjectedProps, IExternalProps>(

@@ -5,7 +5,6 @@ import { themeDecorator } from './decorators';
 import {
   DatesAgg,
   BooleanAgg,
-  EditAggs,
   TermAgg,
   RangeAgg,
   AggsPanel,
@@ -160,11 +159,6 @@ let aggs = [
 
 storiesOf('Aggs', module)
   .addDecorator(themeDecorator)
-  .add('EditAggs', () => (
-    <div className="edit-aggs-wrapper">
-      <EditAggs aggs={aggs} handleChange={action('Agg State Change')} />
-    </div>
-  ))
   .add('TermAgg', () => (
     <div className="term-agg-wrapper">
       <TermAgg

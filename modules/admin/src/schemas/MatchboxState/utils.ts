@@ -1,4 +1,4 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '@arranger/mapping-utils';
 import { I_GqlExtendedFieldMapping } from '../ExtendedMapping/types';
 import {

@@ -4,23 +4,21 @@
 
 import { flattenDeep, isArray, zipObject } from 'lodash';
 import { CONSTANTS } from '@arranger/middleware';
+import esSearch from './utils/esSearch';
 
 const resolveSetIdsFromEs = es => setId =>
-  es
-    .search({
-      index: CONSTANTS.ES_ARRANGER_SET_INDEX,
-      type: CONSTANTS.ES_ARRANGER_SET_TYPE,
-      body: {
-        query: {
-          bool: {
-            must: { match: { setId } },
-          },
+  esSearch(es)({
+    index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+    body: {
+      query: {
+        bool: {
+          must: { match: { setId } },
         },
       },
-    })
-    .then(({ hits: { hits } }) =>
-      flattenDeep(hits.map(({ _source: { ids } }) => ids)),
-    );
+    },
+  }).then(({ hits: { hits } }) =>
+    flattenDeep(hits.map(({ _source: { ids } }) => ids)),
+  );
 
 const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
   (isArray(content)
@@ -31,12 +29,12 @@ const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
         ),
       )
     : isArray(content?.value)
-      ? content?.value.filter(value => String(value).indexOf('set_id:') === 0)
-      : [
-          ...(String(content?.value).indexOf?.('set_id:') === 0
-            ? [content.value]
-            : []),
-        ]
+    ? content?.value.filter(value => String(value).indexOf('set_id:') === 0)
+    : [
+        ...(String(content?.value).indexOf?.('set_id:') === 0
+          ? [content.value]
+          : []),
+      ]
   ).map(setId => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({

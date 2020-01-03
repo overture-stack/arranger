@@ -25,6 +25,7 @@ const App = withRouter(
     fetcher = fetch,
   }: any) => {
     const client = new ApolloClient({
+      // @ts-ignore there's a type collision between apollo packages
       link: createHttpLink({ uri: apiRoot, fetch: fetcher }),
       cache: new InMemoryCache(),
     });

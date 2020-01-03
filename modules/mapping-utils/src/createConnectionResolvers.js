@@ -5,6 +5,7 @@ import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 import { fetchMapping } from './utils/fetchMapping';
 import loadExtendedFields from './utils/loadExtendedFields';
+import esSearch from './utils/esSearch';
 
 type TcreateConnectionResolversArgs = {
   type: Object,
@@ -23,8 +24,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     mapping: async (obj, { indices }, { es, projectId }) => {
       const { index, es_type: esType } = type;
       const { mapping: esMapping } = await fetchMapping({ index, esType, es });
-      const mappings =
-        esMapping[Object.keys(esMapping)[0]].mappings[esType].properties;
+      const mappings = esMapping[Object.keys(esMapping)[0]].mappings.properties;
       return mappings;
     },
     extended: async (obj, { fields }, { es, projectId }) => {
@@ -39,9 +39,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
           aggsState: async (obj, { indices }, { es, projectId }) => {
             const { index, es_type: esType } = type;
             try {
-              const data = await es.search({
+              const data = await esSearch(es)({
                 index: `${type.indexPrefix}-aggs-state`,
-                type: `${type.indexPrefix}-aggs-state`,
                 body: {
                   sort: [{ timestamp: { order: 'desc' } }],
                   size: 1,
@@ -49,11 +48,9 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
               });
               return get(data, 'hits.hits[0]._source', null);
             } catch (err) {
-              const metaData = await es.search({
+              const metaData = await esSearch(es)({
                 index: `arranger-projects-${projectId}`,
-                type: `arranger-projects-${projectId}`,
               });
-              // const config = get(metaData, 'hits.hits[0]._source.config');
               const projectIndexData = get(metaData, 'hits.hits').find(
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
@@ -64,9 +61,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
           columnsState: async (obj, t, { es, projectId }) => {
             const { index, es_type: esType } = type;
             try {
-              const data = await es.search({
+              const data = await esSearch(es)({
                 index: `${type.indexPrefix}-columns-state`,
-                type: `${type.indexPrefix}-columns-state`,
                 body: {
                   sort: [{ timestamp: { order: 'desc' } }],
                   size: 1,
@@ -74,11 +70,9 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
               });
               return get(data, 'hits.hits[0]._source', null);
             } catch (err) {
-              const metaData = await es.search({
+              const metaData = await esSearch(es)({
                 index: `arranger-projects-${projectId}`,
-                type: `arranger-projects-${projectId}`,
               });
-              // const config = get(metaData, 'hits.hits[0]._source.config');
               const projectIndexData = get(metaData, 'hits.hits').find(
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,
@@ -89,9 +83,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
           matchBoxState: async (obj, t, { es, projectId }) => {
             const { index, es_type: esType } = type;
             try {
-              let data = await es.search({
+              let data = await esSearch(es)({
                 index: `${type.indexPrefix}-matchbox-state`,
-                type: `${type.indexPrefix}-matchbox-state`,
                 body: {
                   sort: [{ timestamp: { order: 'desc' } }],
                   size: 1,
@@ -99,11 +92,9 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
               });
               return get(data, 'hits.hits[0]._source', null);
             } catch (err) {
-              const metaData = await es.search({
+              const metaData = await esSearch(es)({
                 index: `arranger-projects-${projectId}`,
-                type: `arranger-projects-${projectId}`,
               });
-              // const config = get(metaData, 'hits.hits[0]._source.config');
               const projectIndexData = get(metaData, 'hits.hits').find(
                 ({ _source }) =>
                   _source.index === index && _source.esType === esType,

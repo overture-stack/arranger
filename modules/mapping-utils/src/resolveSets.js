@@ -1,11 +1,11 @@
 import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
 import { CONSTANTS, buildQuery } from '@arranger/middleware';
+import esSearch from './utils/esSearch';
 
 const retrieveSetIds = async ({
   es,
   index,
-  type,
   query,
   path,
   sort,
@@ -17,9 +17,8 @@ const retrieveSetIds = async ({
       ...(searchAfter && { search_after: searchAfter }),
     };
 
-    const response = await es.search({
+    const response = await esSearch(es)({
       index,
-      type,
       sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
       body,
@@ -37,7 +36,7 @@ const retrieveSetIds = async ({
     return {
       ids,
       searchAfter: nextSearchAfter,
-      total: response.hits.total,
+      total: response.hits.total.value,
     };
   };
   const handleResult = async ({ searchAfter, total, ids = [] }) => {
@@ -53,14 +52,13 @@ export const saveSet = ({ types }) => async (
   { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId },
 ) => {
-  const { nested_fields: nestedFields, es_type, index } = types.find(
+  const { nested_fields: nestedFields, index } = types.find(
     ([, x]) => x.name === type,
   )[1];
   const query = buildQuery({ nestedFields, filters: sqon || {} });
   const ids = await retrieveSetIds({
     es,
-    index: index,
-    type: es_type,
+    index,
     query,
     path,
     sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
@@ -79,7 +77,6 @@ export const saveSet = ({ types }) => async (
 
   await es.index({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
-    type: CONSTANTS.ES_ARRANGER_SET_TYPE,
     id: body.setId,
     refresh: refresh.toLowerCase(),
     body,

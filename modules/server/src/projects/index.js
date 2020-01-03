@@ -1,4 +1,4 @@
-import elasticsearch from 'elasticsearch';
+import elasticsearch from '@elastic/elasticsearch';
 import express from 'express';
 
 import { ES_LOG } from '../utils/config';

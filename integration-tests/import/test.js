@@ -1,5 +1,4 @@
 import {
-  Dashboard,
   Query,
   Arranger,
   Aggregations,
@@ -7,8 +6,7 @@ import {
   Table,
 } from '@arranger/components';
 
-test('importing @arranger modules', () => {
-  expect(Dashboard).toBeDefined();
+test('importing @arranger/components modules', () => {
   expect(Query).toBeDefined();
   expect(Arranger).toBeDefined();
   expect(Aggregations).toBeDefined();

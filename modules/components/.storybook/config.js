@@ -3,12 +3,6 @@ import { configure } from '@storybook/react';
 import { setOptions } from '@storybook/addon-options';
 
 let start = () => {
-  if (process.env.STORYBOOK_DASHBOARD) {
-    setOptions({ goFullScreen: true });
-    configure(() => require('../stories/Dashboard'), module);
-    return;
-  }
-
   if (process.env.STORYBOOK_PORTAL) {
     setOptions({ goFullScreen: true });
     configure(() => require('../stories/Portal'), module);

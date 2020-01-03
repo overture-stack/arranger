@@ -1,0 +1,211 @@
+{
+  "settings": {
+    "mapping": {
+      "nested_fields": {
+        "limit": "100"
+      }
+    },
+    "max_result_window": "100000000",
+    "analysis": {
+      "filter": {
+        "edge_ngram": {
+          "min_gram": "1",
+          "side": "front",
+          "type": "edge_ngram",
+          "max_gram": "20"
+        }
+      },
+      "analyzer": {
+        "autocomplete_analyzed": {
+          "filter": [
+            "lowercase",
+            "edge_ngram"
+          ],
+          "tokenizer": "standard"
+        },
+        "autocomplete_prefix": {
+          "filter": [
+            "lowercase",
+            "edge_ngram"
+          ],
+          "tokenizer": "keyword"
+        },
+        "lowercase_keyword": {
+          "filter": [
+            "lowercase"
+          ],
+          "tokenizer": "keyword"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "age_at_diagnosis": {
+        "type": "long"
+      },
+      "age_at_sample_acquisition": {
+        "type": "long"
+      },
+      "autocomplete": {
+        "type": "keyword",
+        "fields": {
+          "analyzed": {
+            "type": "text",
+            "analyzer": "autocomplete_analyzed",
+            "search_analyzer": "lowercase_keyword"
+          },
+          "lowercase": {
+            "type": "text",
+            "analyzer": "lowercase_keyword"
+          },
+          "prefix": {
+            "type": "text",
+            "analyzer": "autocomplete_prefix",
+            "search_analyzer": "lowercase_keyword"
+          }
+        }
+      },
+      "chemotherapeutic_drugs": {
+        "type": "boolean"
+      },
+      "clinical_diagnosis": {
+        "properties": {
+          "clinical_stage_grouping": {
+            "type": "keyword"
+          },
+          "clinical_tumor_diagnosis": {
+            "type": "keyword"
+          },
+          "histological_type": {
+            "type": "keyword"
+          },
+          "site_of_sample_acquisition": {
+            "type": "keyword"
+          },
+          "tumor_histological_grade": {
+            "type": "keyword"
+          }
+        }
+      },
+      "createdAt": {
+        "type": "date"
+      },
+      "date_of_availability": {
+        "type": "date"
+      },
+      "disease_status": {
+        "type": "keyword"
+      },
+      "files": {
+        "type": "nested",
+        "properties": {
+          "file_id": {
+            "type": "keyword"
+          },
+          "file_name": {
+            "type": "keyword"
+          },
+          "file_type": {
+            "type": "keyword"
+          },
+          "magnification": {
+            "type": "keyword"
+          },
+          "passage_number": {
+            "type": "keyword"
+          },
+          "scale_bar_length": {
+            "type": "keyword"
+          }
+        }
+      },
+      "gender": {
+        "type": "keyword"
+      },
+      "growth_rate": {
+        "type": "long"
+      },
+      "licensing_required": {
+        "type": "boolean"
+      },
+      "molecular_characterizations": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "keyword",
+        "copy_to": [
+          "autocomplete"
+        ]
+      },
+      "neoadjuvant_therapy": {
+        "type": "keyword"
+      },
+      "primary_site": {
+        "type": "keyword"
+      },
+      "race": {
+        "type": "keyword"
+      },
+      "source_model_url": {
+        "type": "keyword"
+      },
+      "source_sequence_url": {
+        "type": "keyword"
+      },
+      "split_ratio": {
+        "type": "keyword"
+      },
+      "status": {
+        "type": "keyword"
+      },
+      "therapy": {
+        "type": "keyword"
+      },
+      "tnm_stage": {
+        "type": "keyword"
+      },
+      "type": {
+        "type": "keyword"
+      },
+      "updatedAt": {
+        "type": "date"
+      },
+      "updatedBy": {
+        "type": "keyword"
+      },
+      "variants": {
+        "type": "nested",
+        "properties": {
+          "assessment_type": {
+            "type": "keyword"
+          },
+          "category": {
+            "type": "keyword"
+          },
+          "expression_level": {
+            "type": "keyword"
+          },
+          "genes": {
+            "type": "keyword",
+            "copy_to": [
+              "autocomplete"
+            ]
+          },
+          "name": {
+            "type": "keyword",
+            "copy_to": [
+              "autocomplete"
+            ]
+          },
+          "type": {
+            "type": "keyword"
+          }
+        }
+      },
+      "vital_status": {
+        "type": "keyword"
+      }
+    }
+  }
+}

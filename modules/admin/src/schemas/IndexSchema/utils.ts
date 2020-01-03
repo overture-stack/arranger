@@ -1,4 +1,4 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { UserInputError } from 'apollo-server';
 
 import { getEsMapping } from '../../services/elasticsearch';
@@ -20,24 +20,21 @@ import { createAggsSetState } from '../AggsState/utils';
 import { createMatchboxState } from '../MatchboxState/utils';
 import Qew = require('qew');
 
-const { ARRANGER_PROJECT_INDEX, ARRANGER_PROJECT_TYPE } = constants;
+const { ARRANGER_PROJECT_INDEX } = constants;
 
 export const getProjectMetadataEsLocation = (
   projectId: string,
 ): {
   index: string;
-  type: string;
 } => ({
   index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
-  type: `${ARRANGER_PROJECT_TYPE}-${projectId}`,
 });
 
 const mappingExistsOn = (es: Client) => async ({
   esIndex,
-  esType,
 }: EsIndexLocation): Promise<boolean> => {
   try {
-    await getEsMapping(es)({ esIndex, esType });
+    await getEsMapping(es)({ esIndex });
     return true;
   } catch (err) {
     return false;
@@ -49,7 +46,9 @@ export const getProjectStorageMetadata = (es: Client) => async (
 ): Promise<IProjectIndexMetadata[]> => {
   try {
     const {
-      hits: { hits },
+      body: {
+        hits: { hits },
+      },
     } = await es.search({
       ...getProjectMetadataEsLocation(projectId),
     });
@@ -67,19 +66,17 @@ export const getProjectMetadata = (es: Client) => async (
       id: `${projectId}::${metadata.name}`,
       hasMapping: mappingExistsOn(es)({
         esIndex: metadata.index,
-        esType: metadata.esType,
       }),
       graphqlField: metadata.name,
       projectId: projectId,
       esIndex: metadata.index,
-      esType: metadata.esType,
     })),
   );
 
 export const createNewIndex = (es: Client) => async (
   args: INewIndexInput,
 ): Promise<IIndexGqlModel> => {
-  const { projectId, graphqlField, esIndex, esType } = args;
+  const { projectId, graphqlField, esIndex } = args;
   const arrangerProject: {} = (await getArrangerProjects(es)).find(
     project => project.id === projectId,
   );
@@ -88,21 +85,21 @@ export const createNewIndex = (es: Client) => async (
 
     const extendedMapping = await createExtendedMapping(es)({
       esIndex,
-      esType,
     });
 
     const metadataContent: IProjectIndexMetadata = {
       index: esIndex,
       name: serializedGqlField,
-      esType: esType,
       timestamp: timestamp(),
       active: true,
       config: {
-        'aggs-state': await createAggsSetState(es)({ esIndex, esType }),
-        'columns-state': await createColumnSetState(es)({
-          esIndex,
-          esType,
-        }),
+        'aggs-state': await createAggsSetState(es)({ esIndex }),
+        'columns-state': await createColumnSetState(es)(
+          {
+            esIndex,
+          },
+          graphqlField,
+        ),
         'matchbox-state': createMatchboxState({
           graphqlField,
           extendedFields: extendedMapping,
@@ -115,7 +112,7 @@ export const createNewIndex = (es: Client) => async (
       ...getProjectMetadataEsLocation(projectId),
       id: esIndex,
       body: metadataContent,
-      refresh: true,
+      refresh: 'true',
     });
 
     return getProjectIndex(es)({
@@ -152,7 +149,6 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
   metaData: I_ProjectIndexMetadataUpdateDoc;
 }): Promise<IProjectIndexMetadata> => {
   const queue = projectQueueManager.getQueue(projectId);
-  console.log('queue.tasks: ', queue.tasks.length);
   return queue.pushProm(async () => {
     await es.update({
       ...getProjectMetadataEsLocation(projectId),
@@ -160,7 +156,7 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
       body: {
         doc: metaData,
       },
-      refresh: true,
+      refresh: 'true',
     });
     const output = (await getProjectStorageMetadata(es)(projectId)).find(
       i => i.name === metaData.name,
@@ -197,7 +193,7 @@ export const removeProjectIndex = (es: Client) => async ({
     await es.delete({
       ...getProjectMetadataEsLocation(projectId),
       id: removedIndexMetadata.esIndex as string,
-      refresh: true,
+      refresh: 'true',
     });
     return removedIndexMetadata;
   } catch (err) {

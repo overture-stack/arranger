@@ -1,4 +1,3 @@
-export { default as EditAggs } from './EditAggs';
 export { default as AggsPanel } from './AggsPanel';
 export { default as AggsState } from './AggsState';
 export { default as AggsQuery } from './AggsQuery';

@@ -1,4 +1,4 @@
-import { Client } from 'elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { extendMapping } from '@arranger/mapping-utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
@@ -17,14 +17,12 @@ import { replaceBy } from '../../services';
 
 export const createExtendedMapping = (es: Client) => async ({
   esIndex,
-  esType,
 }: EsIndexLocation): Promise<I_GqlExtendedFieldMapping[]> => {
   let extendedMappings: I_GqlExtendedFieldMapping[] = [];
   try {
-    const esMapping = await getEsMapping(es)({ esIndex, esType });
+    const esMapping = await getEsMapping(es)({ esIndex });
     const indexName = Object.keys(esMapping)[0]; //assumes all mappings returned are the same
-    const esMappingProperties =
-      esMapping[indexName].mappings[esType].properties;
+    const esMappingProperties = esMapping[indexName].mappings.properties;
     extendedMappings = extendMapping(
       esMappingProperties,
     ) as I_GqlExtendedFieldMapping[];
@@ -77,9 +75,9 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
   projectId,
   extendedFieldMappingInput,
 }: I_UpdateExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping> => {
-  const currentIndexMetadata = (await getProjectStorageMetadata(es)(
-    projectId,
-  )).find(metaData => {
+  const currentIndexMetadata = (
+    await getProjectStorageMetadata(es)(projectId)
+  ).find(metaData => {
     return metaData.name === graphqlField;
   });
 
@@ -121,9 +119,9 @@ export const saveExtendedMapping = (es: Client) => async (
   args: I_SaveExtendedMappingMutationArgs,
 ): Promise<I_GqlExtendedFieldMapping[]> => {
   const { projectId, graphqlField, input } = args;
-  const currentIndexMetadata = (await getProjectStorageMetadata(es)(
-    projectId,
-  )).find(entry => entry.name === graphqlField);
+  const currentIndexMetadata = (
+    await getProjectStorageMetadata(es)(projectId)
+  ).find(entry => entry.name === graphqlField);
   const {
     config: { extended: currentStoredExtendedMapping },
   } = currentIndexMetadata;

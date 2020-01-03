@@ -1,6 +1,7 @@
 import getFields from 'graphql-fields';
-import { buildQuery, CONSTANTS as ES_CONSTANTS } from '@arranger/middleware';
+import { buildQuery } from '@arranger/middleware';
 import { chunk } from 'lodash';
+import esSearch from './utils/esSearch';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
   Object.entries(mapping).forEach(([k, v]) => {
@@ -31,7 +32,7 @@ export const hitsToEdges = ({
   const chunks = chunk(
     hits.hits,
     dataSize > 1000
-      ? dataSize / systemCores + dataSize % systemCores
+      ? dataSize / systemCores + (dataSize % systemCores)
       : dataSize,
   );
   return Promise.all(
@@ -105,19 +106,19 @@ export const hitsToEdges = ({
                           },
                         }
                       : isObject(hits) && hits
-                        ? Object.assign(
-                            hits.constructor(),
-                            resolveNested({
-                              node: hits,
-                              nestedFields,
-                              parent: fullPath,
-                            }),
-                          )
-                        : resolveNested({
+                      ? Object.assign(
+                          hits.constructor(),
+                          resolveNested({
                             node: hits,
                             nestedFields,
                             parent: fullPath,
-                          });
+                          }),
+                        )
+                      : resolveNested({
+                          node: hits,
+                          nestedFields,
+                          parent: fullPath,
+                        });
                     return acc;
                   }, {});
                 };
@@ -129,13 +130,12 @@ export const hitsToEdges = ({
                 let copied_to_nodes = resolveCopiedTo({ node: source });
                 return {
                   searchAfter: x.sort
-                    ? x.sort.map(
-                        x =>
-                          Number.isInteger(x) && !Number.isSafeInteger(x)
-                            ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
-                              // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
-                              `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
-                            : x,
+                    ? x.sort.map(x =>
+                        Number.isInteger(x) && !Number.isSafeInteger(x)
+                          ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
+                            // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
+                            `-9223372036854775808` //https://github.com/elastic/elasticsearch-js/issues/662
+                          : x,
                       )
                     : [],
                   node: Object.assign(
@@ -189,8 +189,12 @@ export default ({ type, Parallel }) => async (
       return {
         [field]: {
           missing: missing
-            ? missing === 'first' ? '_first' : '_last'
-            : order === 'asc' ? '_first' : '_last',
+            ? missing === 'first'
+              ? '_first'
+              : '_last'
+            : order === 'asc'
+            ? '_first'
+            : '_last',
           order,
           ...rest,
           ...(nested_path?.length ? { nested: { path: nested_path } } : {}),
@@ -205,13 +209,12 @@ export default ({ type, Parallel }) => async (
 
   const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
-  let { hits } = await es.search({
+  let { hits } = await esSearch(es)({
     index: type.index,
-    type: type.es_type,
     size: first,
     from: offset,
     _source: [
-      ...((fields.edges && Object.keys(fields.edges.node)) || []),
+      ...((fields.edges && Object.keys(fields.edges.node || {})) || []),
       ...Object.values(copyToSourceFields),
     ],
     track_scores: !!score,
@@ -226,6 +229,6 @@ export default ({ type, Parallel }) => async (
         Parallel,
         copyToSourceFields,
       }),
-    total: () => hits.total,
+    total: () => hits.total.value,
   };
 };

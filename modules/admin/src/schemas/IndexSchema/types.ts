@@ -14,7 +14,6 @@ export interface IProjectIndexConfigs {
 export interface IProjectIndexMetadata {
   index: string;
   name: string;
-  esType: string;
   config: IProjectIndexConfigs;
   active: boolean;
   timestamp: string;
@@ -42,7 +41,6 @@ export interface IIndexGqlModel {
   graphqlField: Resolver<string>;
   projectId: Resolver<string>;
   esIndex: Resolver<string>;
-  esType: Resolver<string>;
 }
 
 export interface IIndexQueryInput {
@@ -59,5 +57,4 @@ export interface INewIndexInput {
   projectId: string;
   graphqlField: string;
   esIndex: string;
-  esType: string;
 }
