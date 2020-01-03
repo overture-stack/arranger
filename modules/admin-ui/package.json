@@ -1,8 +1,8 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "1.1.8",
+  "version": "2.0.0-alpha.2",
   "dependencies": {
-    "@arranger/admin": "^1.1.8",
+    "@arranger/admin": "^2.0.0-alpha.2",
     "apollo-boost": "^0.1.19",
     "apollo-client": "^2.5.1",
     "apollo-link-http": "^1.5.16",
@@ -34,9 +34,9 @@
     "recompose": "^0.30.0",
     "redux": "^4.0.1",
     "runtypes": "^2.1.6",
+    "tslib": "^1.10.0",
     "utility-types": "^2.1.0",
-    "webpack": "^3.0.0",
-    "tslib": "^1.10.0"
+    "webpack": "^3.0.0"
   },
   "scripts": {
     "start": "react-scripts-ts start",
