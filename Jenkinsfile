@@ -5,7 +5,7 @@ def commit = "UNKNOWN"
 pipeline {
     agent {
         kubernetes {
-            label 'gateway-executor'
+            label 'arranger-executor'
             yaml """
 apiVersion: v1
 kind: Pod
