@@ -1,4 +1,4 @@
-def dockerHubRepo = "overture/arranger"
+def dockerHubRepo = "overture/arranger-test"
 def githubRepo = "overture-stack/arranger"
 def commit = "UNKNOWN"
 
@@ -47,7 +47,8 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    sh "docker build --network=host -f test.Dockerfile -t arranger-test ."
+                    sh "docker build --network=host -f test.Dockerfile -t arranger-test -t {dockerHubRepo}:{commit} ."
+                    sh "docker push {dockerHubRepo}:{commit}"
                     sh "docker run arranger-test"
                 }
             }
@@ -59,6 +60,40 @@ spec:
                     sh "npm run bootstrap"
                 }
             }
+        }
+
+        stage('Push edge test container') {
+          // when {
+          //   branch "develop"
+          // }
+          steps {
+            container('docker') {
+              withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                  sh 'docker login -u $USERNAME -p $PASSWORD'
+              }
+              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:edge"
+              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:{version}-{commit}"
+              sh "docker push {dockerHubRepo}:edge"
+              sh "docker push {dockerHubRepo}:{version}-{commit}"
+            }
+          }
+        }
+
+        stage('Push latest test container') {
+          when {
+            branch "master"
+          }
+          steps {
+            container('docker') {
+              withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                  sh 'docker login -u $USERNAME -p $PASSWORD'
+              }
+              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:latest"
+              sh "docker push {dockerHubRepo}:latest"
+              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:{version}"
+              sh "docker push {dockerHubRepo}:{commit} {dockerHubRepo}:{version}"
+            }
+          }
         }
 
         stage('Publish tag to npm') {
