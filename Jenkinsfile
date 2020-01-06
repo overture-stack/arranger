@@ -47,7 +47,7 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+                    sh "docker build --no-cache --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
                     sh "docker push ${dockerHubRepo}:${commit}"
                     sh "docker run arranger-test"
                 }
