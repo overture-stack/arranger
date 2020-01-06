@@ -47,7 +47,7 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh 'docker login -u $USERNAME -p $PASSWORD'
                         sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
                         sh "docker push ${dockerHubRepo}:${commit}"
@@ -71,7 +71,7 @@ spec:
           // }
           steps {
             container('docker') {
-              withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+              withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                   sh 'docker login -u $USERNAME -p $PASSWORD'
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:edge"
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}-${commit}"
@@ -88,7 +88,7 @@ spec:
           }
           steps {
             container('docker') {
-              withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+              withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                   sh 'docker login -u $USERNAME -p $PASSWORD'
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:latest"
                   sh "docker push ${dockerHubRepo}:latest"
