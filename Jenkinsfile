@@ -47,7 +47,7 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    sh "docker build -f test.Dockerfile -t arranger-test ."
+                    sh "docker build --network=host -f test.Dockerfile -t arranger-test ."
                     sh "docker run arranger-test"
                 }
             }
