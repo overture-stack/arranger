@@ -47,8 +47,8 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    sh "docker build --network=host -f test.Dockerfile -t arranger-test -t {dockerHubRepo}:{commit} ."
-                    sh "docker push {dockerHubRepo}:{commit}"
+                    sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+                    sh "docker push ${dockerHubRepo}:${commit}"
                     sh "docker run arranger-test"
                 }
             }
@@ -71,10 +71,10 @@ spec:
               withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                   sh 'docker login -u $USERNAME -p $PASSWORD'
               }
-              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:edge"
-              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:{version}-{commit}"
-              sh "docker push {dockerHubRepo}:edge"
-              sh "docker push {dockerHubRepo}:{version}-{commit}"
+              sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:edge"
+              sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}-${commit}"
+              sh "docker push ${dockerHubRepo}:edge"
+              sh "docker push ${dockerHubRepo}:${version}-${commit}"
             }
           }
         }
@@ -88,10 +88,10 @@ spec:
               withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                   sh 'docker login -u $USERNAME -p $PASSWORD'
               }
-              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:latest"
-              sh "docker push {dockerHubRepo}:latest"
-              sh "docker tag {dockerHubRepo}:{commit} {dockerHubRepo}:{version}"
-              sh "docker push {dockerHubRepo}:{commit} {dockerHubRepo}:{version}"
+              sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:latest"
+              sh "docker push ${dockerHubRepo}:latest"
+              sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
+              sh "docker push ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
             }
           }
         }
