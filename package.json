@@ -1,4 +1,5 @@
 {
+  "version": "2.0.0-alpha.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/overture-stack/arranger.git"
@@ -9,7 +10,7 @@
     "bootstrap": "lerna bootstrap --hoist",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
-    "publish": "lerna publish from-git",
+    "publish::ci": "lerna publish from-git",
     "test": "lerna run test --stream",
     "server": "cd modules/server && npm run watch",
     "storybook": "cd modules/components && npm run storybook",
