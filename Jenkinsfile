@@ -51,7 +51,7 @@ spec:
                         sh 'docker login -u $USERNAME -p $PASSWORD'
                         sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
                         sh "docker push ${dockerHubRepo}:${commit}"
-                        sh "docker run arranger-test"
+                        sh "docker run ${dockerHubRepo}:${commit}"
                     }
                 }
             }
