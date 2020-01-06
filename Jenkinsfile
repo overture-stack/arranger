@@ -44,14 +44,20 @@ spec:
                 }
             }
         }
-        stage('Test') {
+        stage("Build test container") {
+          steps {
+            container('docker') {
+              sh "docker build --no-cache --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+            }
+          }
+        }
+        stage('Run tests') {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh 'docker login -u $USERNAME -p $PASSWORD'
-                        sh "docker build --no-cache --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+                        // sh "docker run ${dockerHubRepo}:${commit}"
                         sh "docker push ${dockerHubRepo}:${commit}"
-                        sh "docker run ${dockerHubRepo}:${commit}"
                     }
                 }
             }
