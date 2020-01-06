@@ -47,6 +47,9 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
+                    withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'docker login -u $USERNAME -p $PASSWORD'
+                    }
                     sh "docker build --no-cache --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
                     sh "docker push ${dockerHubRepo}:${commit}"
                     sh "docker run arranger-test"
