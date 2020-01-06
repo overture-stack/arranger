@@ -44,6 +44,14 @@ spec:
                 }
             }
         }
+        stage('Test') {
+            steps {
+                container('docker') {
+                    sh "docker build -f test.Dockerfile -t arranger-test ."
+                    sh "docker run arranger-test"
+                }
+            }
+        }
         stage('Build') {
             steps {
                 container('node') {
@@ -52,25 +60,18 @@ spec:
                 }
             }
         }
-        stage('Test') {
-            steps {
-                container('node') {
-                    sh "npm run test"
-                }
-            }
-        }
 
-        stage('Deploy to argo-dev') {
+        stage('Publish tag to npm') {
             // when {
             //     branch "master"
             // }
             steps {
                 container('node') {
-                  withCredentials([
-                    usernamePassword(credentialsId: 'argoGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME'),
-                    usernamePassword(credentialsId: 'devops-npm', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        usernamePassword(credentialsId: 'devopsargo_email', passwordVariable: 'EMAIL_PASSWORD', usernameVariable: 'EMAIL')
-                  ]) {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'argoGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME'),
+                        usernamePassword(credentialsId: 'devops-npm', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
+                        usernamePassword(credentialsId: 'devopsargo_email', passwordVariable: 'E  MAIL_PASSWORD', usernameVariable: 'EMAIL')
+                    ]) {
                         sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
                         sh "git tag ${version}"
                         sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo} --tags"
