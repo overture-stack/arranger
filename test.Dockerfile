@@ -15,6 +15,6 @@ RUN apt-get install elasticsearch=7.5.0
 COPY ./ ./
 COPY ./integration-tests ./integration-tests
 RUN npm ci
-RUN npm run bootstrap
+RUN npm config set unsafe-perm true && npm run bootstrap
 
 CMD service elasticsearch start && sh wait-for-es.sh http://localhost:9200 npm run test && service elasticsearch stop
