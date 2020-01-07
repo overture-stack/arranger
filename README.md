@@ -4,7 +4,10 @@
 <p align="center"><a href="http://www.overture.bio/products/arranger" target="_blank"><img alt="BETA" src="http://www.overture.bio/img/progress-horizontal-BETA.svg" width="320" /></a></p>
 
 [![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
-[![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fdevelop)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/develop/)
+
+Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fdevelop)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/develop/)
+
+Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
 
 ## Documentation
 
@@ -111,5 +114,10 @@ _this is way too simplistic. needs an update_
 ### Development
 
 Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+
+### Releases
+
+- From `master` branch, run `npm run tag <version>`
+- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=master)
 
 _\* The GDC contains many features that are out of Arranger's scope_
