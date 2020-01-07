@@ -17,7 +17,7 @@
     "dashboard": "cd modules/components && npm run dashboard",
     "portal": "cd modules/components && npm run portal",
     "netlify-build": "npm i && npm run bootstrap -- --scope=@arranger/components --include-filtered-dependencies && cd modules/components && npm run build-storybook",
-    "version": "lerna version"
+    "tag": "lerna version"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.1",
