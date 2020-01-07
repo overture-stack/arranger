@@ -47,34 +47,26 @@ spec:
         stage("Build test container") {
           steps {
             container('docker') {
-              sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+              withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                  sh 'docker login -u $USERNAME -p $PASSWORD'
+                  sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
+                  sh "docker push ${dockerHubRepo}:${commit}"
+              }
             }
           }
         }
         stage('Run tests') {
             steps {
                 container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh 'docker login -u $USERNAME -p $PASSWORD'
-                        sh "docker run ${dockerHubRepo}:${commit}"
-                        sh "docker push ${dockerHubRepo}:${commit}"
-                    }
-                }
-            }
-        }
-        stage('Build') {
-            steps {
-                container('node') {
-                    sh "npm ci"
-                    sh "npm config set unsafe-perm true && npm run bootstrap"
+                  sh "docker run ${dockerHubRepo}:${commit}"
                 }
             }
         }
 
         stage('Push edge test container') {
-          // when {
-          //   branch "develop"
-          // }
+          when {
+            branch "develop"
+          }
           steps {
             container('docker') {
               withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -101,6 +93,15 @@ spec:
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
                   sh "docker push ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
               }
+            }
+          }
+        }
+
+        stage('Build release package') {
+          steps {
+            container('node') {
+              sh "npm ci"
+              sh "npm config set unsafe-perm true && npm run bootstrap"
             }
           }
         }
