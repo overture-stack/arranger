@@ -97,14 +97,14 @@ spec:
         //   }
         // }
 
-        stage('Build release package') {
-          steps {
-            container('node') {
-              sh "npm ci"
-              sh "npm config set unsafe-perm true && npm run bootstrap"
-            }
-          }
-        }
+        // stage('Build release package') {
+        //   steps {
+        //     container('node') {
+        //       sh "npm ci"
+        //       sh "npm config set unsafe-perm true && npm run bootstrap"
+        //     }
+        //   }
+        // }
 
         stage('Publish tag to npm') {
             // when {
