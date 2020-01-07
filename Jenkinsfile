@@ -114,7 +114,7 @@ spec:
                 container('node') {
                     withCredentials([
                         usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL')
+                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL'),
                         usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
                     ]) {
                         sh "git tag ${version}"
