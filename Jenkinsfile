@@ -121,9 +121,8 @@ spec:
                     withCredentials([
                         usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
                     ]) {
-                        sh "npm run tag ${version}"
-                        // sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo}"
-                        // sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo} --tags"
+                        sh "git tag ${version}"
+                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo} --tags"
                         sh "npm run publish::ci"
                     }
                 }
