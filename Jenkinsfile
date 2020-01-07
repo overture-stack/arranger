@@ -97,16 +97,6 @@ spec:
         //   }
         // }
 
-        stage('Build release package') {
-          steps {
-            container('node') {
-              sh "npm ci"
-              sh "npm config set unsafe-perm true"
-              sh "npm run bootstrap"
-            }
-          }
-        }
-
         stage('Publish tag to npm') {
             // when {
             //     branch "master"
@@ -119,6 +109,9 @@ spec:
                         usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
                     ]) {
                         sh "git pull --tags"
+                        sh "npm ci"
+                        sh "npm config set unsafe-perm true"
+                        sh "npm run bootstrap"
                         sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
                         sh "npm run publish::ci"
                     }
