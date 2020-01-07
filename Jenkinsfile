@@ -91,7 +91,7 @@ spec:
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:latest"
                   sh "docker push ${dockerHubRepo}:latest"
                   sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
-                  sh "docker push ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
+                  sh "docker push ${dockerHubRepo}:${version}"
               }
             }
           }
