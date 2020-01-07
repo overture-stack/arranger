@@ -120,7 +120,7 @@ spec:
                     ]) {
                         // sh "git tag ${version}"
                         // sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo} --tags"
-
+                        sh "git pull --tags"
                         sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
                         sh "npm run publish::ci"
                     }
