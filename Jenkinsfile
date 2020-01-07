@@ -113,13 +113,13 @@ spec:
             steps {
                 container('node') {
                     withCredentials([
-                        usernamePassword(credentialsId: 'devops-npm', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        usernamePassword(credentialsId: 'devopsargo_email', passwordVariable: 'E  MAIL_PASSWORD', usernameVariable: 'EMAIL')
+                        usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
+                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL')
                     ]) {
                       sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
                     }
                     withCredentials([
-                        usernamePassword(credentialsId: 'argoGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+                        usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
                     ]) {
                         sh "git tag ${version}"
                         // sh "npm run tag ${version}"
