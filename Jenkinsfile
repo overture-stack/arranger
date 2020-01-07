@@ -40,7 +40,7 @@ spec:
                     commit = sh(returnStdout: true, script: 'git describe --always').trim()
                 }
                 script {
-                    version = sh(returnStdout: true, script: 'cat ./package.json | grep \\"version\\" | cut -d \':\' -f2 | sed -e \'s/"//\' -e \'s/",//\'').trim()
+                    version = sh(returnStdout: true, script: 'cat ./lerna.json | grep \\"version\\" | cut -d \':\' -f2 | sed -e \'s/"//\' -e \'s/",//\'').trim()
                 }
             }
         }
@@ -115,14 +115,12 @@ spec:
                     withCredentials([
                         usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
                         string(credentialsId: 'OvertureBioContact', variable: 'EMAIL')
-                    ]) {
-                      sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
-                    }
-                    withCredentials([
                         usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
                     ]) {
                         sh "git tag ${version}"
                         sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${githubRepo} --tags"
+
+                        sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
                         sh "npm run publish::ci"
                     }
                 }
