@@ -8,8 +8,8 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - && apt-get i
 # bootstraps arranger dependencies 
 WORKDIR /app
 COPY . /app
-RUN npm i
-RUN npm run bootstrap
+RUN npm ci
+RUN npm config set unsafe-perm true && npm run bootstrap
 
 # builds admin ui and storybook
 RUN cd modules/admin-ui && REACT_APP_ARRANGER_ADMIN_ROOT=/admin/graphql npm run build

@@ -9,6 +9,7 @@
     "bulma": "^0.7.2",
     "connected-react-router": "^5.0.1",
     "convert-units": "^2.3.4",
+    "create-emotion": "^9.0.0",
     "emotion": "^9.2.12",
     "emotion-theming": "^9.2.9",
     "file-saver": "^2.0.1",
