@@ -8,7 +8,7 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - && apt-get i
 # bootstraps arranger dependencies 
 WORKDIR /app
 COPY . /app
-RUN npm i
+RUN npm ci
 RUN npm run bootstrap
 
 # builds admin ui and storybook

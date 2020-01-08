@@ -12,7 +12,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN npm install
+RUN npm ci
 RUN npm run bootstrap
 
 EXPOSE 5050
