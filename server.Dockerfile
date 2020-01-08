@@ -12,8 +12,8 @@ WORKDIR /app
 
 COPY . /app
 
-RUN npm install
-RUN npm run bootstrap
+RUN npm ci
+RUN npm config set unsafe-perm true && npm run bootstrap
 
 EXPOSE 5050
 
