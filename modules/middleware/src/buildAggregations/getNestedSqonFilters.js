@@ -20,15 +20,20 @@ const getNestedSqonFilters = ({
       }),
     );
   } else {
-    const { content: { field } } = sqon;
-    const splitted = field.split('.') || '';
-    const parentPath = splitted.slice(0, splitted.length - 1).join('.');
-    const isNested = nestedFields.includes(
-      splitted.slice(0, splitted.length - 1).join('.'),
-    );
-    if (splitted.length && isNested && parentPivot !== parentPath) {
-      accumulator[parentPath] = [...(accumulator[parentPath] || []), sqon];
-    }
+    const {
+      content: { field: sqonField, fields: sqonFields },
+    } = sqon;
+    const fields = sqonFields || [sqonField];
+    fields.forEach(field => {
+      const splitted = field.split('.') || '';
+      const parentPath = splitted.slice(0, splitted.length - 1).join('.');
+      const isNested = nestedFields.includes(
+        splitted.slice(0, splitted.length - 1).join('.'),
+      );
+      if (splitted.length && isNested && parentPivot !== parentPath) {
+        accumulator[parentPath] = [...(accumulator[parentPath] || []), sqon];
+      }
+    });
   }
   return accumulator;
 };

@@ -19,12 +19,10 @@ test('buildQuery filter', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
+                    should: [
                       {
-                        multi_match: {
-                          fields: ['files.foo'],
-                          query: 'v',
-                          type: 'phrase_prefix',
+                        prefix: {
+                          ['files.foo']: 'v',
                         },
                       },
                     ],
@@ -33,10 +31,14 @@ test('buildQuery filter', () => {
               },
             },
             {
-              multi_match: {
-                fields: ['test'],
-                query: 'v',
-                type: 'phrase_prefix',
+              bool: {
+                should: [
+                  {
+                    prefix: {
+                      ['test']: 'v',
+                    },
+                  },
+                ],
               },
             },
           ],
