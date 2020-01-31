@@ -27,6 +27,8 @@ import {
   SET_ID,
   MISSING,
   ALL_OP,
+  ES_SHOULD,
+  ES_PREFIX,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -54,7 +56,13 @@ const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
 };
 
 function getRegexFilter({ nestedFields, filter }) {
-  const { op, content: { field, value: [value] } } = filter;
+  const {
+    op,
+    content: {
+      field,
+      value: [value],
+    },
+  } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -66,7 +74,10 @@ function getRegexFilter({ nestedFields, filter }) {
 }
 
 function getTermFilter({ nestedFields, filter }) {
-  const { op, content: { value, field } } = filter;
+  const {
+    op,
+    content: { value, field },
+  } = filter;
   const esFilter = wrapFilter({
     filter,
     nestedFields,
@@ -99,20 +110,22 @@ function getFuzzyFilter({ nestedFields, filter }) {
       wrapFilter({
         filter: { ...filter, content: { ...content, field: fields[0] } },
         nestedFields,
-        esFilter: {
-          [ES_MULTI_MATCH]: {
-            [ES_QUERY]: value,
-            [ES_FIELDS]: fields,
-            [ES_TYPE]: ES_PHRASE_PREFIX,
-          },
-        },
+        esFilter: wrapShould(
+          fields.map(field => ({
+            [ES_PREFIX]: {
+              [field]: value,
+            },
+          })),
+        ),
       }),
     ),
   );
 }
 
 function getMissingFilter({ nestedFields, filter }) {
-  const { content: { field } } = filter;
+  const {
+    content: { field },
+  } = filter;
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
@@ -122,7 +135,10 @@ function getMissingFilter({ nestedFields, filter }) {
 }
 
 function getRangeFilter({ nestedFields, filter }) {
-  const { op, content: { field, value } } = filter;
+  const {
+    op,
+    content: { field, value },
+  } = filter;
   return wrapFilter({
     filter,
     nestedFields,
@@ -148,11 +164,10 @@ function collapseNestedFilters({ esFilter, bools }) {
 
   const found =
     path &&
-    bools.find(
-      bool =>
-        filterIsNested
-          ? readPath(bool) === readPath(esFilter)
-          : _.get(bool, path),
+    bools.find(bool =>
+      filterIsNested
+        ? readPath(bool) === readPath(esFilter)
+        : _.get(bool, path),
     );
 
   return [
@@ -215,7 +230,9 @@ function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
 }
 
 const getBetweenFilter = ({ nestedFields, filter }) => {
-  const { content: { field, value } } = filter;
+  const {
+    content: { field, value },
+  } = filter;
   return wrapFilter({
     filter,
     nestedFields,
@@ -232,7 +249,11 @@ const getBetweenFilter = ({ nestedFields, filter }) => {
 };
 
 export const opSwitch = ({ nestedFields, filter }) => {
-  const { op, pivot, content: { value } } = filter;
+  const {
+    op,
+    pivot,
+    content: { value },
+  } = filter;
   // we need a way to handle object fields before the following error is valid
   // if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
   //   throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
