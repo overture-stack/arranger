@@ -44,6 +44,7 @@ export const ES_MUST = 'must';
 export const ES_MUST_NOT = 'must_not';
 export const ES_SHOULD = 'should';
 export const ES_NESTED = 'nested';
+export const ES_PREFIX = 'prefix';
 export const ES_BOOL = 'bool';
 export const ES_QUERY = 'query';
 export const ES_PATH = 'path';

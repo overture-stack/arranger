@@ -11,6 +11,7 @@ import { print } from 'graphql';
 // test modules
 import readMetadata from './readMetadata';
 import readSearchData from './readSearchData';
+import readAggregation from './readAggregation';
 import manageSets from './manageSets';
 
 const mapppings = require('./assets/model_centric.mappings.json');
@@ -133,6 +134,9 @@ describe('@arranger/server', () => {
   });
   describe('search data reading', () => {
     readSearchData(env);
+  });
+  describe('aggregation reading', () => {
+    readAggregation(env);
   });
   describe('manages sets', () => {
     manageSets(env);
