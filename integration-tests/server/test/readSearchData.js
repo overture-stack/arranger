@@ -40,8 +40,11 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           hits: {
-            total: 1,
-            edges: [{ node: { id: '5da62fbad545d210fe1c63a9' } }],
+            total: 2,
+            edges: [
+              { node: { id: 'sagsdhertdfdgsdfgsdfg' } },
+              { node: { id: '5da62fbad545d210fe1c63a9' } },
+            ],
           },
         },
       },
@@ -72,11 +75,11 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           hits: {
-            total: 2,
+            total: 3,
             edges: [
               {
                 node: {
-                  id: '5da62fbad545d210fe1c63a9',
+                  id: 'sagsdhertdfdgsdfgsdfg',
                 },
               },
             ],
@@ -109,11 +112,11 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           hits: {
-            total: 2,
+            total: 3,
             edges: [
               {
                 node: {
-                  id: '5dc9b6c3d614630f9809f7d0',
+                  id: '5da62fbad545d210fe1c63a9',
                 },
               },
             ],
@@ -146,16 +149,16 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           hits: {
-            total: 2,
+            total: 3,
             edges: [
               {
                 node: {
-                  id: '5da62fbad545d210fe1c63a9',
+                  id: 'sagsdhertdfdgsdfgsdfg',
                 },
               },
               {
                 node: {
-                  id: '5dc9b6c3d614630f9809f7d0',
+                  id: '5da62fbad545d210fe1c63a9',
                 },
               },
             ],
@@ -188,8 +191,13 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           hits: {
-            total: 2,
+            total: 3,
             edges: [
+              {
+                node: {
+                  id: '5da62fbad545d210fe1c63a9',
+                },
+              },
               {
                 node: {
                   id: '5dc9b6c3d614630f9809f7d0',

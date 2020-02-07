@@ -2,13 +2,12 @@
   "name": "integration-tests-server",
   "private": "true",
   "scripts": {
-    "test": "mocha --require @babel/register"
+    "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
     "@arranger/admin": "^2.0.9",
     "@arranger/server": "^2.0.9",
     "body-parser": "^1.18.2",
-    "elasticsearch": "^14.0.0",
     "integration-tests-admin": "^2.0.9"
   },
   "devDependencies": {

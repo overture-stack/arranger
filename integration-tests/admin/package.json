@@ -2,7 +2,7 @@
   "name": "integration-tests-admin",
   "private": "true",
   "scripts": {
-    "test": "mocha --require @babel/register"
+    "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
     "@arranger/admin": "^2.0.9",

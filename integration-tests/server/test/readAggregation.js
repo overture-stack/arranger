@@ -31,7 +31,7 @@ export default ({ api, graphqlField, gqlPath }) => {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
                 {
-                  doc_count: 1,
+                  doc_count: 2,
                   key: 'Stage I',
                 },
                 {
@@ -100,7 +100,7 @@ export default ({ api, graphqlField, gqlPath }) => {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
                 {
-                  doc_count: 1,
+                  doc_count: 2,
                   key: 'Stage I',
                 },
               ],
@@ -110,44 +110,45 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
-  it('reads aggregation with filter sqon', async () => {
+  it('should work with prefix filter sqon', async () => {
     let response = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-          {
-            ${graphqlField} {
-              aggregations(
-                filters: {
-                  op: "and",
-                  content: [
-                    {
-                      op: "filter",
-                      content: {
-                        fields: [
-                          "name",
-                          "primary_site",
-                          "clinical_diagnosis.clinical_tumor_diagnosis",
-                          "gender",
-                          "race"
-                        ],
-                        value: "Colorectal"
+
+            {
+              ${graphqlField} {
+                aggregations(
+                  filters: {
+                    op: "and",
+                    content: [
+                      {
+                        op: "filter",
+                        content: {
+                          fields: [
+                            "name",
+                            "primary_site",
+                            "clinical_diagnosis.clinical_tumor_diagnosis",
+                            "gender",
+                            "race"
+                          ],
+                          value: "Colorectal*"
+                        }
                       }
+                    ]
+                  }, 
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__clinical_stage_grouping {
+                    buckets {
+                      doc_count
+                      key
                     }
-                  ]
-                }, 
-                aggregations_filter_themselves: true
-              ) {
-                clinical_diagnosis__clinical_stage_grouping {
-                  buckets {
-                    doc_count
-                    key
                   }
                 }
               }
             }
-          }
-        `),
+          `),
       },
     });
     console.log('response: ', response);
@@ -172,7 +173,153 @@ export default ({ api, graphqlField, gqlPath }) => {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
                 {
-                  doc_count: 1,
+                  doc_count: 2,
+                  key: 'Stage I',
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('should work with postfix filter sqon', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  filters: {
+                    op: "and",
+                    content: [
+                      {
+                        op: "filter",
+                        content: {
+                          fields: [
+                            "name",
+                            "primary_site",
+                            "clinical_diagnosis.clinical_tumor_diagnosis",
+                            "gender",
+                            "race"
+                          ],
+                          value: "*cancer"
+                        }
+                      }
+                    ]
+                  }, 
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__clinical_stage_grouping {
+                    buckets {
+                      doc_count
+                      key
+                    }
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              buckets: orderBy(
+                response.data[graphqlField].aggregations
+                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                'key',
+              ),
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              buckets: [
+                {
+                  doc_count: 2,
+                  key: 'Stage I',
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('should work with pre and post-fix filter sqon', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  filters: {
+                    op: "and",
+                    content: [
+                      {
+                        op: "filter",
+                        content: {
+                          fields: [
+                            "name",
+                            "primary_site",
+                            "clinical_diagnosis.clinical_tumor_diagnosis",
+                            "gender",
+                            "race"
+                          ],
+                          value: "*SOMEONE*"
+                        }
+                      }
+                    ]
+                  }, 
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__clinical_stage_grouping {
+                    buckets {
+                      doc_count
+                      key
+                    }
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              buckets: orderBy(
+                response.data[graphqlField].aggregations
+                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                'key',
+              ),
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              buckets: [
+                {
+                  doc_count: 2,
                   key: 'Stage I',
                 },
               ],

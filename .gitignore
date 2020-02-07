@@ -9,3 +9,4 @@ yarn.lock
 
 integration-tests/ui
 .vscode
+docker
