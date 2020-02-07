@@ -5,8 +5,8 @@
     "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
-    "@arranger/admin": "^2.0.7",
-    "@arranger/server": "^2.0.7",
+    "@arranger/admin": "^2.0.9",
+    "@arranger/server": "^2.0.9",
     "@elastic/elasticsearch": "7.5.0",
     "body-parser": "^1.18.2"
   },
