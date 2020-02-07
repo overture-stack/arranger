@@ -13,10 +13,6 @@ import {
   SOME_NOT_IN_OP,
   ES_MUST,
   ES_MUST_NOT,
-  ES_MULTI_MATCH,
-  ES_FIELDS,
-  ES_TYPE,
-  ES_PHRASE_PREFIX,
   ES_ARRANGER_SET_INDEX,
   ES_ARRANGER_SET_TYPE,
   OR_OP,
@@ -28,7 +24,7 @@ import {
   MISSING,
   ALL_OP,
   ES_SHOULD,
-  ES_PREFIX,
+  ES_WILDCARD,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -112,8 +108,10 @@ function getFuzzyFilter({ nestedFields, filter }) {
         nestedFields,
         esFilter: wrapShould(
           fields.map(field => ({
-            [ES_PREFIX]: {
-              [field]: value,
+            [ES_WILDCARD]: {
+              [field]: {
+                value: `${value}`,
+              },
             },
           })),
         ),

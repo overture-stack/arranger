@@ -51,7 +51,7 @@ const enhance = compose(
           : searchTextParts.map(x => ({
               op: 'filter',
               content: {
-                value: x,
+                value: `*${x}*`,
                 fields: quickSearchFields?.map(x => x.field),
               },
             })),

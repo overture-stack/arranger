@@ -40,6 +40,7 @@ export const ARRAY_CONTENT = [
 ];
 
 // elasticsearch values
+export const ES_WILDCARD = 'wildcard';
 export const ES_MUST = 'must';
 export const ES_MUST_NOT = 'must_not';
 export const ES_SHOULD = 'should';
