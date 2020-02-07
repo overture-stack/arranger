@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   elasticsearch:
@@ -7,18 +7,18 @@ services:
       - 9200:9200
       - 9300:9300
     volumes:
-      - es:/usr/share/elasticsearch/data
+      - ./docker/volumes/elasticsearch/data:/usr/share/elasticsearch/data
     environment:
       - discovery.type=single-node
       - cluster.name=workflow.elasticsearch
-      - 'ES_JAVA_OPTS=-Xms512m -Xmx2048m'
+      - "ES_JAVA_OPTS=-Xms512m -Xmx2048m"
     logging:
-      driver: 'json-file'
+      driver: "json-file"
       options:
-        max-size: '50m'
-        max-file: '10'
+        max-size: "50m"
+        max-file: "10"
     healthcheck:
-      test: 'curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1'
+      test: "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"
       interval: 1m30s
       timeout: 50s
       retries: 5
@@ -28,14 +28,14 @@ services:
     ports:
       - 5601:5601
     logging:
-      driver: 'json-file'
+      driver: "json-file"
       options:
-        max-size: '50m'
-        max-file: '10'
+        max-size: "50m"
+        max-file: "10"
     depends_on:
       - elasticsearch
     environment:
-      LOGGING_QUIET: 'true'
+      LOGGING_QUIET: "true"
 
   arranger-server:
     build:
