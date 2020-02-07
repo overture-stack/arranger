@@ -7,7 +7,7 @@ test('buildQuery filter', () => {
       input: {
         nestedFields,
         filters: {
-          content: { fields: ['files.foo', 'test'], value: 'v' },
+          content: { fields: ['files.foo', 'test'], value: '*v*' },
           op: 'filter',
         },
       },
@@ -21,8 +21,10 @@ test('buildQuery filter', () => {
                   bool: {
                     should: [
                       {
-                        prefix: {
-                          ['files.foo']: 'v',
+                        wildcard: {
+                          ['files.foo']: {
+                            value: '*v*',
+                          },
                         },
                       },
                     ],
@@ -34,8 +36,10 @@ test('buildQuery filter', () => {
               bool: {
                 should: [
                   {
-                    prefix: {
-                      ['test']: 'v',
+                    wildcard: {
+                      ['test']: {
+                        value: '*v*',
+                      },
                     },
                   },
                 ],
