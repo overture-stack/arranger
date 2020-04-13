@@ -16,5 +16,5 @@ PORT=<...> ES_HOST=<...> npm start
 Build (required before publish):
 
 ```
-npm run build
+npm run prepare
 ```

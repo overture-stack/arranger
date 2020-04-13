@@ -12,7 +12,7 @@ import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
 import expressPlayground from 'graphql-playground-middleware-express';
 
-const initializeSets = async ({ es }) => {
+export const initializeSets = async ({ es }) => {
   if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {
     await es.indices.create({
       index: CONSTANTS.ES_ARRANGER_SET_INDEX,
@@ -113,12 +113,7 @@ export const createProjectEndpoint = async ({
   return projectApp;
 };
 
-export default async function startProjectApp({
-  es,
-  id,
-  graphqlOptions = {},
-  enableAdmin,
-}) {
+export const getTypesWithMappings = async ({ es, id }) => {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -132,7 +127,7 @@ export default async function startProjectApp({
   if (!mappings.length) return; // gate to not start a project that doesn't exist
 
   const extended = await Promise.all(
-    hits.map(async type => {
+    hits.map(async (type) => {
       const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
       try {
         const size = (
@@ -162,7 +157,7 @@ export default async function startProjectApp({
     }),
   );
   const typesWithMappings = addMappingsToTypes({
-    types: extended.map(type => {
+    types: extended.map((type) => {
       return [
         type.name,
         {
@@ -175,8 +170,19 @@ export default async function startProjectApp({
         },
       ];
     }),
-    mappings: mappings.map(m => m.mapping),
+    mappings: mappings.map((m) => m.mapping),
   });
+
+  return typesWithMappings;
+};
+
+export default async function startProjectApp({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+}) {
+  const typesWithMappings = await getTypesWithMappings({ es, id });
 
   await initializeSets({ es });
 
@@ -188,3 +194,21 @@ export default async function startProjectApp({
     typesWithMappings,
   });
 }
+
+export const createProjectSchema = async ({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+}) => {
+  const typesWithMappings = await getTypesWithMappings({ es, id });
+
+  await initializeSets({ es });
+
+  return makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    middleware: graphqlOptions.middleware || [],
+    enableAdmin,
+  });
+};
