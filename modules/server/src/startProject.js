@@ -41,7 +41,7 @@ const getTypesWithMappings = async ({ es, id }) => {
   if (!mappings.length) return; // gate to not start a project that doesn't exist
 
   const extended = await Promise.all(
-    hits.map(async (type) => {
+    hits.map(async type => {
       const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
       try {
         const size = (
@@ -71,7 +71,7 @@ const getTypesWithMappings = async ({ es, id }) => {
     }),
   );
   const typesWithMappings = addMappingsToTypes({
-    types: extended.map((type) => {
+    types: extended.map(type => {
       return [
         type.name,
         {
@@ -84,7 +84,7 @@ const getTypesWithMappings = async ({ es, id }) => {
         },
       ];
     }),
-    mappings: mappings.map((m) => m.mapping),
+    mappings: mappings.map(m => m.mapping),
   });
 
   return typesWithMappings;
@@ -137,7 +137,7 @@ export const createProjectEndpoint = async ({
   enableAdmin,
   typesWithMappings,
 }) => {
-  const { schema, mockSchema } = createProjectSchema({
+  const { schema, mockSchema } = await createProjectSchema({
     es,
     id,
     graphqlOptions,
