@@ -1,4 +1,4 @@
-import { graphqlExpress, ApolloServer } from 'apollo-server-express';
+import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import makeSchema from '@arranger/schema';
 import { extendFields, addMappingsToTypes } from '@arranger/mapping-utils';
@@ -27,13 +27,81 @@ const initializeSets = async ({ es }) => {
   }
 };
 
-export const createProjectEndpoint = async ({
+const getTypesWithMappings = async ({ es, id }) => {
+  if (!id) throw new Error('project empty');
+
+  // indices must be lower cased
+  id = id.toLowerCase();
+
+  const types = await getTypes({ id, es });
+
+  if (!types) return;
+  const hits = mapHits(types);
+  const mappings = await fetchMappings({ es, types: hits });
+  if (!mappings.length) return; // gate to not start a project that doesn't exist
+
+  const extended = await Promise.all(
+    hits.map(async type => {
+      const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
+      try {
+        const size = (
+          await es.search({
+            index: indexPrefix,
+            size: 0,
+            _source: false,
+          })
+        ).hits.total;
+
+        const fields = extendFields(
+          mapHits(
+            (
+              await es.search({
+                index: indexPrefix,
+                size: size,
+              })
+            ).body,
+          ),
+        );
+
+        return { ...type, indexPrefix, fields };
+      } catch (err) {
+        const fields = type.config.extended;
+        return { ...type, indexPrefix, fields };
+      }
+    }),
+  );
+  const typesWithMappings = addMappingsToTypes({
+    types: extended.map(type => {
+      return [
+        type.name,
+        {
+          index: type.index,
+          name: type.name,
+          extendedFields: type.fields,
+          customFields: ``,
+          indexPrefix: type.indexPrefix,
+          config: type.config || {},
+        },
+      ];
+    }),
+    mappings: mappings.map(m => m.mapping),
+  });
+
+  return typesWithMappings;
+};
+
+export const createProjectSchema = async ({
   es,
   id,
   graphqlOptions = {},
   enableAdmin,
   typesWithMappings,
 }) => {
+  if (!typesWithMappings) {
+    typesWithMappings = await getTypesWithMappings({ es, id });
+  }
+  await initializeSets({ es });
+
   // console.log('typesWithMappings: ', typesWithMappings);
   if (!id) throw new Error('project empty');
 
@@ -43,6 +111,7 @@ export const createProjectEndpoint = async ({
   const types = await getTypes({ id, es });
 
   if (!types) return;
+
   const schema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
@@ -57,6 +126,24 @@ export const createProjectEndpoint = async ({
   });
 
   await initializeSets({ es });
+
+  return { schema, mockSchema };
+};
+
+export const createProjectEndpoint = async ({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+  typesWithMappings,
+}) => {
+  const { schema, mockSchema } = await createProjectSchema({
+    es,
+    id,
+    graphqlOptions,
+    enableAdmin,
+    typesWithMappings,
+  });
 
   const projectApp = express.Router();
 
@@ -119,64 +206,7 @@ export default async function startProjectApp({
   graphqlOptions = {},
   enableAdmin,
 }) {
-  if (!id) throw new Error('project empty');
-
-  // indices must be lower cased
-  id = id.toLowerCase();
-
-  const types = await getTypes({ id, es });
-
-  if (!types) return;
-  const hits = mapHits(types);
-  const mappings = await fetchMappings({ es, types: hits });
-  if (!mappings.length) return; // gate to not start a project that doesn't exist
-
-  const extended = await Promise.all(
-    hits.map(async type => {
-      const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
-      try {
-        const size = (
-          await es.search({
-            index: indexPrefix,
-            size: 0,
-            _source: false,
-          })
-        ).hits.total;
-
-        const fields = extendFields(
-          mapHits(
-            (
-              await es.search({
-                index: indexPrefix,
-                size: size,
-              })
-            ).body,
-          ),
-        );
-
-        return { ...type, indexPrefix, fields };
-      } catch (err) {
-        const fields = type.config.extended;
-        return { ...type, indexPrefix, fields };
-      }
-    }),
-  );
-  const typesWithMappings = addMappingsToTypes({
-    types: extended.map(type => {
-      return [
-        type.name,
-        {
-          index: type.index,
-          name: type.name,
-          extendedFields: type.fields,
-          customFields: ``,
-          indexPrefix: type.indexPrefix,
-          config: type.config || {},
-        },
-      ];
-    }),
-    mappings: mappings.map(m => m.mapping),
-  });
+  const typesWithMappings = await getTypesWithMappings({ es, id });
 
   await initializeSets({ es });
 
