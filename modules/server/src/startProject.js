@@ -1,4 +1,4 @@
-import { graphqlExpress, ApolloServer } from 'apollo-server-express';
+import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import makeSchema from '@arranger/schema';
 import { extendFields, addMappingsToTypes } from '@arranger/mapping-utils';
@@ -12,7 +12,7 @@ import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
 import expressPlayground from 'graphql-playground-middleware-express';
 
-export const initializeSets = async ({ es }) => {
+const initializeSets = async ({ es }) => {
   if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {
     await es.indices.create({
       index: CONSTANTS.ES_ARRANGER_SET_INDEX,
@@ -27,93 +27,7 @@ export const initializeSets = async ({ es }) => {
   }
 };
 
-export const createProjectEndpoint = async ({
-  es,
-  id,
-  graphqlOptions = {},
-  enableAdmin,
-  typesWithMappings,
-}) => {
-  // console.log('typesWithMappings: ', typesWithMappings);
-  if (!id) throw new Error('project empty');
-
-  // indices must be lower cased
-  id = id.toLowerCase();
-
-  const types = await getTypes({ id, es });
-
-  if (!types) return;
-  const schema = makeSchema({
-    types: typesWithMappings,
-    rootTypes: [],
-    middleware: graphqlOptions.middleware || [],
-    enableAdmin,
-  });
-
-  const mockSchema = makeSchema({
-    types: typesWithMappings,
-    rootTypes: [],
-    mock: true,
-  });
-
-  await initializeSets({ es });
-
-  const projectApp = express.Router();
-
-  projectApp.use(`/`, (req, res, next) => {
-    req.context = req.context || {};
-    req.context.es = es;
-    next();
-  });
-
-  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
-
-  const externalContext =
-    typeof graphqlOptions.context === 'function'
-      ? await graphqlOptions.context(request, response, graphQLParams)
-      : graphqlOptions.context;
-  const apolloServer = new ApolloServer({
-    schema,
-    context: {
-      es,
-      projectId: id,
-      ...(externalContext || {}),
-    },
-  });
-
-  const noSchemaHandler = (req, res) =>
-    res.json({
-      error:
-        'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
-    });
-
-  new ApolloServer({
-    schema: mockSchema,
-  }).applyMiddleware({
-    app: projectApp,
-    path: `/mock/graphql`,
-  });
-
-  projectApp.get(
-    '/graphql',
-    expressPlayground({
-      endpoint: `graphql`, // this resolves to `${id}/graphql`
-    }),
-  );
-  apolloServer.applyMiddleware({
-    app: projectApp,
-    path: `/graphql`,
-  });
-
-  projectApp.use(`/download`, download({ projectId: id }));
-
-  setProject({ app: projectApp, schema, mockSchema, es, id });
-  console.log(`graphql server running at /${id}/graphql`);
-
-  return projectApp;
-};
-
-export const getTypesWithMappings = async ({ es, id }) => {
+const getTypesWithMappings = async ({ es, id }) => {
   if (!id) throw new Error('project empty');
 
   // indices must be lower cased
@@ -176,6 +90,116 @@ export const getTypesWithMappings = async ({ es, id }) => {
   return typesWithMappings;
 };
 
+export const createProjectSchema = async ({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+  typesWithMappings,
+}) => {
+  if (!typesWithMappings) {
+    typesWithMappings = await getTypesWithMappings({ es, id });
+  }
+  await initializeSets({ es });
+
+  // console.log('typesWithMappings: ', typesWithMappings);
+  if (!id) throw new Error('project empty');
+
+  // indices must be lower cased
+  id = id.toLowerCase();
+
+  const types = await getTypes({ id, es });
+
+  if (!types) return;
+
+  const schema = makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    middleware: graphqlOptions.middleware || [],
+    enableAdmin,
+  });
+
+  const mockSchema = makeSchema({
+    types: typesWithMappings,
+    rootTypes: [],
+    mock: true,
+  });
+
+  await initializeSets({ es });
+
+  return { schema, mockSchema };
+};
+
+export const createProjectEndpoint = async ({
+  es,
+  id,
+  graphqlOptions = {},
+  enableAdmin,
+  typesWithMappings,
+}) => {
+  const { schema, mockSchema } = createProjectSchema({
+    es,
+    id,
+    graphqlOptions,
+    enableAdmin,
+    typesWithMappings,
+  });
+
+  const projectApp = express.Router();
+
+  projectApp.use(`/`, (req, res, next) => {
+    req.context = req.context || {};
+    req.context.es = es;
+    next();
+  });
+
+  projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
+
+  const externalContext =
+    typeof graphqlOptions.context === 'function'
+      ? await graphqlOptions.context(request, response, graphQLParams)
+      : graphqlOptions.context;
+  const apolloServer = new ApolloServer({
+    schema,
+    context: {
+      es,
+      projectId: id,
+      ...(externalContext || {}),
+    },
+  });
+
+  const noSchemaHandler = (req, res) =>
+    res.json({
+      error:
+        'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
+    });
+
+  new ApolloServer({
+    schema: mockSchema,
+  }).applyMiddleware({
+    app: projectApp,
+    path: `/mock/graphql`,
+  });
+
+  projectApp.get(
+    '/graphql',
+    expressPlayground({
+      endpoint: `graphql`, // this resolves to `${id}/graphql`
+    }),
+  );
+  apolloServer.applyMiddleware({
+    app: projectApp,
+    path: `/graphql`,
+  });
+
+  projectApp.use(`/download`, download({ projectId: id }));
+
+  setProject({ app: projectApp, schema, mockSchema, es, id });
+  console.log(`graphql server running at /${id}/graphql`);
+
+  return projectApp;
+};
+
 export default async function startProjectApp({
   es,
   id,
@@ -194,21 +218,3 @@ export default async function startProjectApp({
     typesWithMappings,
   });
 }
-
-export const createProjectSchema = async ({
-  es,
-  id,
-  graphqlOptions = {},
-  enableAdmin,
-}) => {
-  const typesWithMappings = await getTypesWithMappings({ es, id });
-
-  await initializeSets({ es });
-
-  return makeSchema({
-    types: typesWithMappings,
-    rootTypes: [],
-    middleware: graphqlOptions.middleware || [],
-    enableAdmin,
-  });
-};
