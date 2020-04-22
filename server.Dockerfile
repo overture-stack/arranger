@@ -1,4 +1,4 @@
-FROM mhart/alpine-node:latest
+FROM mhart/alpine-node:13.13.0
 
 RUN apk add --no-cache curl
 
