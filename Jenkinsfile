@@ -71,7 +71,7 @@ spec:
                         container('docker') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f server.Dockerfile -t ${uiDockerhubRepo}:${commit} ."
+                                sh "docker build --network=host -f ui.Dockerfile -t ${uiDockerhubRepo}:${commit} ."
                                 sh "docker push ${uiDockerhubRepo}:${commit}"
                             }
                         }
