@@ -41,7 +41,7 @@ spec:
                 }
             }
         }
-        
+
         stage("Build Docker containers") {
             parallel {
                 stage("Build test container") {
@@ -60,7 +60,7 @@ spec:
                         container('docker') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f server.Dockerfile -t ${serverDockerhubRepo}:${commit}"
+                                sh "docker build --network=host -f server.Dockerfile -t ${serverDockerhubRepo}:${commit} ."
                                 sh "docker push ${serverDockerhubRepo}:${commit}"
                             }
                         }
@@ -71,7 +71,7 @@ spec:
                         container('docker') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f server.Dockerfile -t ${uiDockerhubRepo}:${commit}"
+                                sh "docker build --network=host -f server.Dockerfile -t ${uiDockerhubRepo}:${commit} ."
                                 sh "docker push ${uiDockerhubRepo}:${commit}"
                             }
                         }
