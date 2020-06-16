@@ -11,7 +11,6 @@ import { setsMapping } from '@arranger/schema';
 import { CONSTANTS } from '@arranger/middleware';
 import getTypes from './utils/getTypes';
 import expressPlayground from 'graphql-playground-middleware-express';
-import { fetchProjects } from './projects/getProjects';
 
 const initializeSets = async ({ es }) => {
   if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {
@@ -207,22 +206,15 @@ export default async function startProjectApp({
   graphqlOptions = {},
   enableAdmin,
 }) {
-  const projectsResponse = await fetchProjects({ es });
-  const projects = (projectsResponse.projects || []).map(project => project.id);
+  const typesWithMappings = await getTypesWithMappings({ es, id });
 
-  if (projects.includes(id)) {
-    const typesWithMappings = await getTypesWithMappings({ es, id });
+  await initializeSets({ es });
 
-    await initializeSets({ es });
-
-    return await createProjectEndpoint({
-      es,
-      id,
-      graphqlOptions,
-      enableAdmin,
-      typesWithMappings,
-    });
-  } else {
-    throw new Error(`No project with id ${id}`);
-  }
+  return await createProjectEndpoint({
+    es,
+    id,
+    graphqlOptions,
+    enableAdmin,
+    typesWithMappings,
+  });
 }
