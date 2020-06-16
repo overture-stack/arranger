@@ -77,6 +77,7 @@ const QuickSearch = ({
   setSQON,
   value,
   setValue,
+  searchLowercase = false,
   searchTextDelimiters = ['\\s', ','],
   placeholder = 'Quick Search',
   Icon = <SearchIcon />,
