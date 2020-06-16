@@ -29,13 +29,14 @@ const enhance = compose(
   withProps(
     ({
       exact,
+      searchLowercase,
       quickSearchFields,
       searchTextDelimiters,
       searchText,
       searchTextParts = splitString({
         str: searchText,
         split: searchTextDelimiters,
-      }),
+      }).map(part => (searchLowercase ? part.toLowerCase() : part)),
     }) => ({
       searchTextParts,
       sqon: {
