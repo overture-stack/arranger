@@ -16,25 +16,29 @@ const download = (content: IGqlData) => {
     const zip = new JSZip();
     const rootName = `arranger-project-${project.id}`;
     const rootFolder = zip.folder(rootName);
-    project.indices.forEach(index => {
-      const indexFolder = rootFolder.folder(index.esIndex);
-      indexFolder.file(
-        CONFIG_FILENAMES.aggsState,
-        JSON.stringify(index.aggsState.state, null, 2),
-      );
-      indexFolder.file(
-        CONFIG_FILENAMES.columnsState,
-        JSON.stringify(index.columnsState.state, null, 2),
-      );
-      indexFolder.file(
-        CONFIG_FILENAMES.extended,
-        JSON.stringify(index.extended, null, 2),
-      );
-      indexFolder.file(
-        CONFIG_FILENAMES.matchboxState,
-        JSON.stringify(index.matchBoxState.state, null, 2),
-      );
-    });
+    if (rootFolder) {
+      project.indices.forEach(index => {
+        const indexFolder = rootFolder.folder(index.esIndex);
+        if (indexFolder) {
+          indexFolder.file(
+            CONFIG_FILENAMES.aggsState,
+            JSON.stringify(index.aggsState.state, null, 2),
+          );
+          indexFolder.file(
+            CONFIG_FILENAMES.columnsState,
+            JSON.stringify(index.columnsState.state, null, 2),
+          );
+          indexFolder.file(
+            CONFIG_FILENAMES.extended,
+            JSON.stringify(index.extended, null, 2),
+          );
+          indexFolder.file(
+            CONFIG_FILENAMES.matchboxState,
+            JSON.stringify(index.matchBoxState.state, null, 2),
+          );
+        }
+      });
+    }
     zip.generateAsync({ type: 'blob' }).then(content => {
       saveAs(content, `${rootName}.zip`);
       resolve();
