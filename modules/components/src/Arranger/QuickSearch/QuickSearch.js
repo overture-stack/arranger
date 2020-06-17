@@ -103,6 +103,7 @@ const QuickSearch = ({
       <QuickSearchQuery
         {...props}
         {...{ primaryKeyField, quickSearchFields }}
+        searchLowercase={searchLowercase}
         searchTextDelimiters={searchTextDelimiters}
         searchText={value}
         render={({ results: searchResults, loading }) => (
