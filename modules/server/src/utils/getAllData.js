@@ -26,7 +26,6 @@ export default async ({
   const { esIndex, esType, extended } = await es
     .search({
       index: `arranger-projects-${projectId}`,
-      type: `arranger-projects-${projectId}`,
     })
     .then(toHits)
     .then(hits => hits.map(({ _source }) => _source))
@@ -71,7 +70,6 @@ export default async ({
         const hits = await es
           .search({
             index: esIndex,
-            type: esType,
             size: chunkSize,
             body: {
               sort: esSort,
