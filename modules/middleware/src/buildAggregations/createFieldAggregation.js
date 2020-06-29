@@ -1,5 +1,5 @@
 import { get } from 'lodash';
-import { STATS, HISTOGRAM, BUCKETS } from '../constants';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT } from '../constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
@@ -38,9 +38,11 @@ const createTermAggregation = ({ field, isNested }) => {
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
 export default ({ field, graphqlField = {}, isNested = false }) => {
-  const types = [BUCKETS, STATS, HISTOGRAM].filter(t => graphqlField[t]);
+  const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT].filter(
+    t => graphqlField[t],
+  );
   return types.reduce((acc, type) => {
-    if (type === BUCKETS) {
+    if (type === BUCKETS || type === BUCKET_COUNT) {
       return Object.assign(acc, createTermAggregation({ field, isNested }));
     } else if ([STATS, HISTOGRAM].includes(type)) {
       return Object.assign(
