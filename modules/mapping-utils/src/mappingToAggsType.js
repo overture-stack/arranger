@@ -7,8 +7,8 @@ import esToAggTypeMap from './esToAggTypeMap';
 // diagnoses.treatments 👎
 // vs
 // diagnoses__treatments 👍
-type TappendUnderscores = (a: string) => string;
-let appendUnderscores: TappendUnderscores = x => (x ? x + '__' : '');
+type TAppendUnderscores = (a: string) => string;
+let appendUnderscores: TAppendUnderscores = x => (x ? x + '__' : '');
 
 let mappingToAggsType = (properties, parent = '') => {
   return flattenDeep(
@@ -17,16 +17,13 @@ let mappingToAggsType = (properties, parent = '') => {
         ([field, data]) =>
           (data.type && data.type !== 'nested') || data.properties,
       )
-      .map(
-        ([field, data]) =>
-          data.type && data.type !== 'nested'
-            ? `${appendUnderscores(parent) + field}: ${
-                esToAggTypeMap[data.type]
-              }`
-            : mappingToAggsType(
-                data.properties,
-                appendUnderscores(parent) + field,
-              ),
+      .map(([field, data]) =>
+        data.type && data.type !== 'nested'
+          ? `${appendUnderscores(parent) + field}: ${esToAggTypeMap[data.type]}`
+          : mappingToAggsType(
+              data.properties,
+              appendUnderscores(parent) + field,
+            ),
       ),
   );
 };
