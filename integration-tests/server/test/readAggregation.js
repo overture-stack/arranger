@@ -329,4 +329,140 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
+  it('should count the correct number of buckets', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__clinical_stage_grouping {
+                    bucket_count
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              bucket_count:
+                response.data[graphqlField].aggregations
+                  .clinical_diagnosis__clinical_stage_grouping.bucket_count,
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__clinical_stage_grouping: {
+              bucket_count: 2,
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('should ignore buckets with key "MISSING" when include_missing=false', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  include_missing: false
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__histological_type {
+                    bucket_count
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            clinical_diagnosis__histological_type: {
+              bucket_count:
+                response.data[graphqlField].aggregations
+                  .clinical_diagnosis__histological_type.bucket_count,
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__histological_type: {
+              bucket_count: 0,
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('should count buckets with key "MISSING" when include_missing is defaulted to true', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  aggregations_filter_themselves: true
+                ) {
+                  clinical_diagnosis__histological_type {
+                    bucket_count
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            clinical_diagnosis__histological_type: {
+              bucket_count:
+                response.data[graphqlField].aggregations
+                  .clinical_diagnosis__histological_type.bucket_count,
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            clinical_diagnosis__histological_type: {
+              bucket_count: 1,
+            },
+          },
+        },
+      },
+    });
+  });
 };
