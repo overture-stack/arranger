@@ -21,7 +21,7 @@ export default ({ api, graphqlField, gqlPath }) => {
     expect(response.errors).to.be.undefined;
     setId = response.data.newSet.setId;
   });
-  it('retrieves newly created set succesffuly', async () => {
+  it('retrieves newly created set successfully', async () => {
     let response = await api.post({
       endpoint: gqlPath,
       body: {
