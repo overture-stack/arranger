@@ -64,3 +64,4 @@ export const HISTOGRAM = 'histogram';
 export const AGGS_WRAPPER_GLOBAL = 'global';
 export const AGGS_WRAPPER_FILTERED = 'filtered';
 export const AGGS_WRAPPER_NESTED = 'nested';
+export const BUCKET_COUNT = 'bucket_count';
