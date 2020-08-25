@@ -90,12 +90,18 @@ const getTypesWithMappings = async ({ es, id }) => {
   return typesWithMappings;
 };
 
+const getDefaultNegativeFilter = () => ({
+  op: 'not',
+  content: [],
+});
+
 export const createProjectSchema = async ({
   es,
   id,
   graphqlOptions = {},
   enableAdmin,
   typesWithMappings,
+  getNegativeFilter = getDefaultNegativeFilter,
 }) => {
   if (!typesWithMappings) {
     typesWithMappings = await getTypesWithMappings({ es, id });
@@ -117,12 +123,14 @@ export const createProjectSchema = async ({
     rootTypes: [],
     middleware: graphqlOptions.middleware || [],
     enableAdmin,
+    getNegativeFilter,
   });
 
   const mockSchema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
     mock: true,
+    getNegativeFilter,
   });
 
   await initializeSets({ es });
@@ -136,6 +144,7 @@ export const createProjectEndpoint = async ({
   graphqlOptions = {},
   enableAdmin,
   typesWithMappings,
+  getNegativeFilter = getDefaultNegativeFilter,
 }) => {
   const { schema, mockSchema } = await createProjectSchema({
     es,
@@ -143,6 +152,7 @@ export const createProjectEndpoint = async ({
     graphqlOptions,
     enableAdmin,
     typesWithMappings,
+    getNegativeFilter,
   });
 
   const projectApp = express.Router();

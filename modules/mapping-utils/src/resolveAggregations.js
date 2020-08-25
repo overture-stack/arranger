@@ -10,7 +10,7 @@ import esSearch from './utils/esSearch';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-export default type => async (
+export default ({ type, getNegativeFilter }) => async (
   obj,
   {
     offset = 0,
@@ -28,7 +28,19 @@ export default type => async (
   // we are placing this here until the issue is resolved by Elasticsearch in version 6.3
   const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
 
-  const query = buildQuery({ nestedFields, filters: resolvedFilter });
+  const query = buildQuery({
+    nestedFields,
+    filters: {
+      op: 'and',
+      content: [
+        resolvedFilter,
+        {
+          op: 'not',
+          content: [getNegativeFilter()],
+        },
+      ],
+    },
+  });
 
   /**
    * TODO: getFields does not support aliased fields, so we are unable to

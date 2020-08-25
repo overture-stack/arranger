@@ -153,7 +153,7 @@ export const hitsToEdges = ({
   ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
-export default ({ type, Parallel }) => async (
+export default ({ type, Parallel, getNegativeFilter }) => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
   { es },
@@ -166,7 +166,19 @@ export default ({ type, Parallel }) => async (
 
   if (filters || score) {
     // TODO: something with score?
-    query = buildQuery({ nestedFields, filters });
+    query = buildQuery({
+      nestedFields,
+      filters: {
+        op: 'and',
+        content: [
+          filters,
+          {
+            op: 'not',
+            content: [getNegativeFilter()],
+          },
+        ],
+      },
+    });
   }
 
   let body =
