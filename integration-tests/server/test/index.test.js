@@ -67,8 +67,11 @@ describe('@arranger/server', () => {
       esHost,
       enableAdmin: false,
       getNegativeFilter: () => ({
-        op: 'not',
-        content: [],
+        op: 'in',
+        content: {
+          field: 'blacklisted',
+          content: true,
+        },
       }),
     });
     const adminApp = await adminGraphql({ esHost });

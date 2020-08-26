@@ -465,4 +465,51 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
+  it('should not include black listed documents', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  aggregations_filter_themselves: true
+                  include_missing: false
+                ) {
+                  blacklisted {
+                    buckets {
+                      key_as_string
+                    }
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    console.log('response: ', response);
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            blacklisted: {
+              buckets:
+                response.data[graphqlField].aggregations.blacklisted.buckets,
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            blacklisted: {
+              buckets: [{ key_as_string: 'false' }],
+            },
+          },
+        },
+      },
+    });
+  });
 };
