@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
-import startProject from './startProject';
+import startProject, { getDefaultNegativeFilter } from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
@@ -27,6 +27,7 @@ export default async ({
   esHost = ES_HOST,
   graphqlOptions = {},
   enableAdmin = false,
+  getNegativeFilter = getDefaultNegativeFilter,
 } = {}) => {
   if (!esHost) {
     console.error('no elasticsearch host was provided');
@@ -37,7 +38,13 @@ export default async ({
 
   const es = new elasticsearch.Client({ node: esHost });
   if (projectId) {
-    startSingleProject({ projectId, es, graphqlOptions, enableAdmin });
+    startSingleProject({
+      projectId,
+      es,
+      graphqlOptions,
+      enableAdmin,
+      getNegativeFilter,
+    });
   } else {
     const { projects = [] } = await fetchProjects({ es });
     await Promise.all(
@@ -51,6 +58,7 @@ export default async ({
               es,
               graphqlOptions,
               enableAdmin,
+              getNegativeFilter,
             });
           } catch (error) {
             console.warn(error.message);
@@ -92,6 +100,7 @@ export default async ({
           enableAdmin,
           graphqlOptions,
           projectId,
+          getNegativeFilter,
         });
         const project = getProjects().find(
           p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),

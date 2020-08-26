@@ -122,7 +122,7 @@ export let resolvers = ({
       {},
     ),
     Mutation: {
-      saveSet: saveSet({ types }),
+      saveSet: saveSet({ types, getNegativeFilter }),
     },
   };
 };

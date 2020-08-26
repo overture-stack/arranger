@@ -20,6 +20,7 @@ export default ({ api, graphqlField, gqlPath }) => {
     });
     expect(response.errors).to.be.undefined;
     setId = response.data.newSet.setId;
+    console.log('new setId: ', setId);
   });
   it('retrieves newly created set successfully', async () => {
     let response = await api.post({
@@ -28,7 +29,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         query: print(gql`
           {
             sets {
-              hits {
+              hits(first: 1000) {
                 edges {
                   node {
                     id

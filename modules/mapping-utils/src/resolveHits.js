@@ -2,6 +2,7 @@ import getFields from 'graphql-fields';
 import { buildQuery } from '@arranger/middleware';
 import { chunk } from 'lodash';
 import esSearch from './utils/esSearch';
+import compileFilter from './utils/compileFilter';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
   Object.entries(mapping).forEach(([k, v]) => {
@@ -168,16 +169,10 @@ export default ({ type, Parallel, getNegativeFilter }) => async (
     // TODO: something with score?
     query = buildQuery({
       nestedFields,
-      filters: {
-        op: 'and',
-        content: [
-          filters,
-          {
-            op: 'not',
-            content: [getNegativeFilter()],
-          },
-        ],
-      },
+      filters: compileFilter({
+        clientSideFilter: filters,
+        serverSideNegativeFilter: getNegativeFilter(),
+      }),
     });
   }
 

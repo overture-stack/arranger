@@ -63,7 +63,14 @@ describe('@arranger/server', () => {
     }
 
     console.log('===== Starting arranger app for test =====');
-    const router = await Arranger({ esHost, enableAdmin: false });
+    const router = await Arranger({
+      esHost,
+      enableAdmin: false,
+      getNegativeFilter: () => ({
+        op: 'not',
+        content: [],
+      }),
+    });
     const adminApp = await adminGraphql({ esHost });
     adminApp.applyMiddleware({ app, path: adminPath });
     app.use(router);

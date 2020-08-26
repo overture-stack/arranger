@@ -2,6 +2,7 @@ import { get, isEmpty, uniq } from 'lodash';
 import uuid from 'uuid/v4';
 import { CONSTANTS, buildQuery } from '@arranger/middleware';
 import esSearch from './utils/esSearch';
+import compileFilter from './utils/compileFilter';
 
 const retrieveSetIds = async ({
   es,
@@ -47,7 +48,7 @@ const retrieveSetIds = async ({
   return handleResult(await search());
 };
 
-export const saveSet = ({ types }) => async (
+export const saveSet = ({ types, getNegativeFilter }) => async (
   obj,
   { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId },
@@ -55,7 +56,14 @@ export const saveSet = ({ types }) => async (
   const { nested_fields: nestedFields, index } = types.find(
     ([, x]) => x.name === type,
   )[1];
-  const query = buildQuery({ nestedFields, filters: sqon || {} });
+
+  const query = buildQuery({
+    nestedFields,
+    filters: compileFilter({
+      clientSideFilter: sqon,
+      serverSideNegativeFilter: getNegativeFilter(),
+    }),
+  });
   const ids = await retrieveSetIds({
     es,
     index,

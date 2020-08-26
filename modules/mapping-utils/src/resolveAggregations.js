@@ -7,6 +7,7 @@ import {
 } from '@arranger/middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 import esSearch from './utils/esSearch';
+import compileFilter from './utils/compileFilter';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
@@ -30,16 +31,10 @@ export default ({ type, getNegativeFilter }) => async (
 
   const query = buildQuery({
     nestedFields,
-    filters: {
-      op: 'and',
-      content: [
-        resolvedFilter,
-        {
-          op: 'not',
-          content: [getNegativeFilter()],
-        },
-      ],
-    },
+    filters: compileFilter({
+      clientSideFilter: resolvedFilter,
+      serverSideNegativeFilter: getNegativeFilter(),
+    }),
   });
 
   /**

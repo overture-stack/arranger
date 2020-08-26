@@ -90,7 +90,7 @@ const getTypesWithMappings = async ({ es, id }) => {
   return typesWithMappings;
 };
 
-const getDefaultNegativeFilter = () => ({
+export const getDefaultNegativeFilter = () => ({
   op: 'not',
   content: [],
 });
@@ -215,8 +215,12 @@ export default async function startProjectApp({
   id,
   graphqlOptions = {},
   enableAdmin,
+  getNegativeFilter = getDefaultNegativeFilter,
 }) {
-  const typesWithMappings = await getTypesWithMappings({ es, id });
+  const typesWithMappings = await getTypesWithMappings({
+    es,
+    id,
+  });
 
   await initializeSets({ es });
 
@@ -226,5 +230,6 @@ export default async function startProjectApp({
     graphqlOptions,
     enableAdmin,
     typesWithMappings,
+    getNegativeFilter,
   });
 }
