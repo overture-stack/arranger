@@ -13,9 +13,16 @@ let startSingleProject = async ({
   es,
   graphqlOptions,
   enableAdmin,
+  getNegativeFilter,
 }) => {
   try {
-    await startProject({ es, id: projectId, graphqlOptions, enableAdmin });
+    await startProject({
+      es,
+      id: projectId,
+      graphqlOptions,
+      enableAdmin,
+      getNegativeFilter,
+    });
   } catch (error) {
     console.warn(error.message);
   }

@@ -209,4 +209,62 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+  it('excludes blacklisted files', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              hits(first: 1000) {
+                edges {
+                  node {
+                    blacklisted
+                  }
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      response.data.model.hits.edges.every(e => !e.node.blacklisted),
+    ).to.eql(true);
+  });
+  it('cannot request for blacklisted item', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        variables: {
+          sqon: {
+            op: 'and',
+            content: [
+              {
+                op: 'in',
+                content: {
+                  field: 'blacklisted',
+                  value: ['true'],
+                },
+              },
+            ],
+          },
+        },
+        query: print(gql`
+          query ($sqon: JSON) {
+            ${graphqlField} {
+              hits(first: 1000, filters: $sqon) {
+                edges {
+                  node {
+                    blacklisted
+                  }
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(response.data.model.hits.edges.length).to.eql(0);
+  });
 };

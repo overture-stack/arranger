@@ -70,7 +70,7 @@ describe('@arranger/server', () => {
         op: 'in',
         content: {
           field: 'blacklisted',
-          content: true,
+          value: ['true'],
         },
       }),
     });

@@ -151,7 +151,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -224,7 +223,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -297,7 +295,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -349,7 +346,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -395,7 +391,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -440,7 +435,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -488,7 +482,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
