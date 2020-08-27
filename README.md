@@ -1,5 +1,5 @@
 <h1 align="center">Arranger</h1>
-<p align="center">Generate and manage your own genomnic data portal.</p>
+<p align="center">Generate and manage your own genomic data portal.</p>
 
 <p align="center"><a href="http://www.overture.bio/products/arranger" target="_blank"><img alt="BETA" src="http://www.overture.bio/img/progress-horizontal-BETA.svg" width="320" /></a></p>
 
