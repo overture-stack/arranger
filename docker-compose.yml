@@ -37,28 +37,28 @@ services:
     environment:
       LOGGING_QUIET: "true"
 
-  # arranger-server:
-  #   build:
-  #     context: ./
-  #     dockerfile: server.Dockerfile
-  #   container_name: arranger-server.local
-  #   depends_on:
-  #     - elasticsearch
-  #   ports:
-  #     - 5050:5050
-  #   environment:
-  #     ES_HOST: http://elasticsearch:9200
-  # arranger-ui:
-  #   build:
-  #     context: ./
-  #     dockerfile: ui.Dockerfile
-  #   hostname: arranger-ui.local
-  #   container_name: arranger-ui.local
-  #   depends_on:
-  #     - arranger-server
-  #   ports:
-  #     - 8080:8080
-  #     - 8081:8081
+  arranger-server:
+    build:
+      context: ./
+      dockerfile: server.Dockerfile
+    container_name: arranger-server.local
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5050:5050
+    environment:
+      ES_HOST: http://elasticsearch:9200
+  arranger-ui:
+    build:
+      context: ./
+      dockerfile: ui.Dockerfile
+    hostname: arranger-ui.local
+    container_name: arranger-ui.local
+    depends_on:
+      - arranger-server
+    ports:
+      - 8080:8080
+      - 8081:8081
 
 volumes:
   es:
