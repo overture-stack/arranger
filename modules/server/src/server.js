@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
-import startProject, { getDefaultNegativeFilter } from './startProject';
+import startProject, { getDefaultServerSideFilter } from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
@@ -34,7 +34,7 @@ export default async ({
   esHost = ES_HOST,
   graphqlOptions = {},
   enableAdmin = false,
-  getServerSideFilter = getDefaultNegativeFilter,
+  getServerSideFilter = getDefaultServerSideFilter,
 } = {}) => {
   if (!esHost) {
     console.error('no elasticsearch host was provided');
