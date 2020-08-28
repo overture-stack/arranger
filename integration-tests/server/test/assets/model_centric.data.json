@@ -16,7 +16,7 @@
       "primary_site": "Abdomen pelvis",
       "neoadjuvant_therapy": "No",
       "chemotherapeutic_drugs": false,
-      "blacklisted": true,
+      "access_denied": true,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
       "therapy": [
@@ -56,7 +56,7 @@
       "primary_site": "Abdomen pelvis",
       "neoadjuvant_therapy": "No",
       "chemotherapeutic_drugs": false,
-      "blacklisted": false,
+      "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
       "therapy": [
@@ -96,7 +96,7 @@
       "primary_site": "Abdomen pelvis",
       "neoadjuvant_therapy": "No",
       "chemotherapeutic_drugs": false,
-      "blacklisted": false,
+      "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
       "therapy": [

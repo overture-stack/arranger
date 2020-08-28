@@ -209,7 +209,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
-  it('excludes blacklisted files', async () => {
+  it('excludes access_denied files', async () => {
     let response = await api.post({
       endpoint: gqlPath,
       body: {
@@ -219,7 +219,7 @@ export default ({ api, graphqlField, gqlPath }) => {
               hits(first: 1000) {
                 edges {
                   node {
-                    blacklisted
+                    access_denied
                   }
                 }
               }
@@ -229,10 +229,10 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
     expect(
-      response.data.model.hits.edges.every(e => !e.node.blacklisted),
+      response.data.model.hits.edges.every(e => !e.node.access_denied),
     ).to.eql(true);
   });
-  it('cannot request for blacklisted item', async () => {
+  it('cannot request for access_denied item', async () => {
     let response = await api.post({
       endpoint: gqlPath,
       body: {
@@ -243,7 +243,7 @@ export default ({ api, graphqlField, gqlPath }) => {
               {
                 op: 'in',
                 content: {
-                  field: 'blacklisted',
+                  field: 'access_denied',
                   value: ['true'],
                 },
               },
@@ -256,7 +256,7 @@ export default ({ api, graphqlField, gqlPath }) => {
               hits(first: 1000, filters: $sqon) {
                 edges {
                   node {
-                    blacklisted
+                    access_denied
                   }
                 }
               }

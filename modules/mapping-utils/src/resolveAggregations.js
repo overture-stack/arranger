@@ -11,7 +11,7 @@ import compileFilter from './utils/compileFilter';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-export default ({ type, getNegativeFilter }) => async (
+export default ({ type, getServerSideFilter }) => async (
   obj,
   {
     offset = 0,
@@ -33,7 +33,7 @@ export default ({ type, getNegativeFilter }) => async (
     nestedFields,
     filters: compileFilter({
       clientSideFilter: resolvedFilter,
-      serverSideNegativeFilter: getNegativeFilter(),
+      serverSideFilter: getServerSideFilter(),
     }),
   });
 

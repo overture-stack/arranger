@@ -154,7 +154,7 @@ export const hitsToEdges = ({
   ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
-export default ({ type, Parallel, getNegativeFilter }) => async (
+export default ({ type, Parallel, getServerSideFilter }) => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
   { es },
@@ -171,7 +171,7 @@ export default ({ type, Parallel, getNegativeFilter }) => async (
       nestedFields,
       filters: compileFilter({
         clientSideFilter: filters,
-        serverSideNegativeFilter: getNegativeFilter(),
+        serverSideFilter: getServerSideFilter(),
       }),
     });
   }

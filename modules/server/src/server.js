@@ -13,7 +13,7 @@ let startSingleProject = async ({
   es,
   graphqlOptions,
   enableAdmin,
-  getNegativeFilter,
+  getServerSideFilter,
 }) => {
   try {
     await startProject({
@@ -21,7 +21,7 @@ let startSingleProject = async ({
       id: projectId,
       graphqlOptions,
       enableAdmin,
-      getNegativeFilter,
+      getServerSideFilter,
     });
   } catch (error) {
     console.warn(error.message);
@@ -34,7 +34,7 @@ export default async ({
   esHost = ES_HOST,
   graphqlOptions = {},
   enableAdmin = false,
-  getNegativeFilter = getDefaultNegativeFilter,
+  getServerSideFilter = getDefaultNegativeFilter,
 } = {}) => {
   if (!esHost) {
     console.error('no elasticsearch host was provided');
@@ -50,7 +50,7 @@ export default async ({
       es,
       graphqlOptions,
       enableAdmin,
-      getNegativeFilter,
+      getServerSideFilter,
     });
   } else {
     const { projects = [] } = await fetchProjects({ es });
@@ -65,7 +65,7 @@ export default async ({
               es,
               graphqlOptions,
               enableAdmin,
-              getNegativeFilter,
+              getServerSideFilter,
             });
           } catch (error) {
             console.warn(error.message);
@@ -107,7 +107,7 @@ export default async ({
           enableAdmin,
           graphqlOptions,
           projectId,
-          getNegativeFilter,
+          getServerSideFilter,
         });
         const project = getProjects().find(
           p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),

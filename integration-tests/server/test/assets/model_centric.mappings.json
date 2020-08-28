@@ -69,7 +69,7 @@
       "chemotherapeutic_drugs": {
         "type": "boolean"
       },
-      "blacklisted": {
+      "access_denied": {
         "type": "boolean"
       },
       "clinical_diagnosis": {

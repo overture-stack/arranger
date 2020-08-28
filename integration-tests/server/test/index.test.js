@@ -66,12 +66,17 @@ describe('@arranger/server', () => {
     const router = await Arranger({
       esHost,
       enableAdmin: false,
-      getNegativeFilter: () => ({
-        op: 'in',
-        content: {
-          field: 'blacklisted',
-          value: ['true'],
-        },
+      getServerSideFilter: () => ({
+        op: 'not',
+        content: [
+          {
+            op: 'in',
+            content: {
+              field: 'access_denied',
+              value: ['true'],
+            },
+          },
+        ],
       }),
     });
     const adminApp = await adminGraphql({ esHost });

@@ -48,7 +48,7 @@ const retrieveSetIds = async ({
   return handleResult(await search());
 };
 
-export const saveSet = ({ types, getNegativeFilter }) => async (
+export const saveSet = ({ types, getServerSideFilter }) => async (
   obj,
   { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId },
@@ -61,7 +61,7 @@ export const saveSet = ({ types, getNegativeFilter }) => async (
     nestedFields,
     filters: compileFilter({
       clientSideFilter: sqon,
-      serverSideNegativeFilter: getNegativeFilter(),
+      serverSideFilter: getServerSideFilter(),
     }),
   });
   const ids = await retrieveSetIds({

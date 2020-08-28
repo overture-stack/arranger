@@ -19,7 +19,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
   indexPrefix,
   createStateResolvers = true,
   Parallel,
-  getNegativeFilter,
+  getServerSideFilter,
 }) => ({
   [type.name]: {
     mapping: async (obj, { indices }, { es, projectId }) => {
@@ -105,8 +105,8 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
           },
         }
       : {}),
-    hits: resolveHits({ type, Parallel, getNegativeFilter }),
-    aggregations: resolveAggregations({ type, getNegativeFilter }),
+    hits: resolveHits({ type, Parallel, getServerSideFilter }),
+    aggregations: resolveAggregations({ type, getServerSideFilter }),
   },
 });
 

@@ -78,7 +78,7 @@ export let resolvers = ({
   types,
   rootTypes,
   scalarTypes,
-  getNegativeFilter,
+  getServerSideFilter,
 }) => {
   return {
     JSON: GraphQLJSON,
@@ -100,7 +100,7 @@ export let resolvers = ({
           type,
           createStateResolvers: 'createState' in type ? type.createState : true,
           Parallel,
-          getNegativeFilter,
+          getServerSideFilter,
         }),
       }),
       {},
@@ -122,7 +122,7 @@ export let resolvers = ({
       {},
     ),
     Mutation: {
-      saveSet: saveSet({ types, getNegativeFilter }),
+      saveSet: saveSet({ types, getServerSideFilter }),
     },
   };
 };

@@ -460,7 +460,7 @@ export default ({ api, graphqlField, gqlPath }) => {
     });
   });
 
-  it('should not include black listed documents', async () => {
+  it('should not include access_denied documents', async () => {
     let response = await api.post({
       endpoint: gqlPath,
       body: {
@@ -471,7 +471,7 @@ export default ({ api, graphqlField, gqlPath }) => {
                   aggregations_filter_themselves: true
                   include_missing: false
                 ) {
-                  blacklisted {
+                  access_denied {
                     buckets {
                       key_as_string
                     }
@@ -486,9 +486,9 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         [graphqlField]: {
           aggregations: {
-            blacklisted: {
+            access_denied: {
               buckets:
-                response.data[graphqlField].aggregations.blacklisted.buckets,
+                response.data[graphqlField].aggregations.access_denied.buckets,
             },
           },
         },
@@ -497,7 +497,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       data: {
         model: {
           aggregations: {
-            blacklisted: {
+            access_denied: {
               buckets: [{ key_as_string: 'false' }],
             },
           },
