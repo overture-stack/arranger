@@ -151,7 +151,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -224,7 +223,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -297,7 +295,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -349,7 +346,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -395,7 +391,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -440,7 +435,6 @@ export default ({ api, graphqlField, gqlPath }) => {
           `),
       },
     });
-    console.log('response: ', response);
     expect({
       data: {
         [graphqlField]: {
@@ -459,6 +453,52 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count: 1,
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('should not include access_denied documents', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+            {
+              ${graphqlField} {
+                aggregations(
+                  aggregations_filter_themselves: true
+                  include_missing: false
+                ) {
+                  access_denied {
+                    buckets {
+                      key_as_string
+                    }
+                  }
+                }
+              }
+            }
+          `),
+      },
+    });
+    expect({
+      data: {
+        [graphqlField]: {
+          aggregations: {
+            access_denied: {
+              buckets:
+                response.data[graphqlField].aggregations.access_denied.buckets,
+            },
+          },
+        },
+      },
+    }).to.eql({
+      data: {
+        model: {
+          aggregations: {
+            access_denied: {
+              buckets: [{ key_as_string: 'false' }],
             },
           },
         },

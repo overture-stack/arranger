@@ -7,10 +7,11 @@ import {
 } from '@arranger/middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 import esSearch from './utils/esSearch';
+import compileFilter from './utils/compileFilter';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
-export default type => async (
+export default ({ type, getServerSideFilter }) => async (
   obj,
   {
     offset = 0,
@@ -28,7 +29,13 @@ export default type => async (
   // we are placing this here until the issue is resolved by Elasticsearch in version 6.3
   const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
 
-  const query = buildQuery({ nestedFields, filters: resolvedFilter });
+  const query = buildQuery({
+    nestedFields,
+    filters: compileFilter({
+      clientSideFilter: resolvedFilter,
+      serverSideFilter: getServerSideFilter(),
+    }),
+  });
 
   /**
    * TODO: getFields does not support aliased fields, so we are unable to

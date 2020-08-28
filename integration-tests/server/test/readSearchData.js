@@ -209,4 +209,62 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+  it('excludes access_denied files', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        query: print(gql`
+          {
+            ${graphqlField} {
+              hits(first: 1000) {
+                edges {
+                  node {
+                    access_denied
+                  }
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(
+      response.data.model.hits.edges.every(e => !e.node.access_denied),
+    ).to.eql(true);
+  });
+  it('cannot request for access_denied item', async () => {
+    let response = await api.post({
+      endpoint: gqlPath,
+      body: {
+        variables: {
+          sqon: {
+            op: 'and',
+            content: [
+              {
+                op: 'in',
+                content: {
+                  field: 'access_denied',
+                  value: ['true'],
+                },
+              },
+            ],
+          },
+        },
+        query: print(gql`
+          query ($sqon: JSON) {
+            ${graphqlField} {
+              hits(first: 1000, filters: $sqon) {
+                edges {
+                  node {
+                    access_denied
+                  }
+                }
+              }
+            }
+          }
+        `),
+      },
+    });
+    expect(response.data.model.hits.edges.length).to.eql(0);
+  });
 };

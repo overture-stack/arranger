@@ -5,6 +5,46 @@
     "_id": "sagsdhertdfdgsdfgsdfg",
     "_score": 1,
     "_source": {
+      "name": "HCM-SOMEONE-1111-A00",
+      "type": "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)",
+      "growth_rate": 12,
+      "split_ratio": "1:4",
+      "gender": "Unknown",
+      "race": "Asian",
+      "age_at_diagnosis": 12,
+      "age_at_sample_acquisition": 13,
+      "primary_site": "Abdomen pelvis",
+      "neoadjuvant_therapy": "No",
+      "chemotherapeutic_drugs": false,
+      "access_denied": true,
+      "disease_status": "Stable disease",
+      "vital_status": "Alive",
+      "therapy": [
+        "Targeted therapy (small molecule inhibitors and targeted antibodies)"
+      ],
+      "molecular_characterizations": [
+        "WGS of model",
+        "Targeted-seq of normal"
+      ],
+      "files": [],
+      "clinical_diagnosis": {
+        "clinical_tumor_diagnosis": "Colorectal cancer",
+        "histological_type": null,
+        "clinical_stage_grouping": "Stage I",
+        "site_of_sample_acquisition": "Descending colon",
+        "tumor_histological_grade": "GB"
+      },
+      "variants": [],
+      "createdAt": "2019-10-15T20:44:42.316Z",
+      "updatedAt": "2019-12-16T19:25:29.303Z"
+    }
+  },
+  {
+    "_index": "demo",
+    "_type": "model",
+    "_id": "sagsdhertdfdgsdfgsdfg",
+    "_score": 1,
+    "_source": {
       "name": "HCM-SOMEONE-1111-A01",
       "type": "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)",
       "growth_rate": 12,
@@ -16,6 +56,7 @@
       "primary_site": "Abdomen pelvis",
       "neoadjuvant_therapy": "No",
       "chemotherapeutic_drugs": false,
+      "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
       "therapy": [
@@ -55,6 +96,7 @@
       "primary_site": "Abdomen pelvis",
       "neoadjuvant_therapy": "No",
       "chemotherapeutic_drugs": false,
+      "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
       "therapy": [

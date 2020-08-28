@@ -28,7 +28,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         query: print(gql`
           {
             sets {
-              hits {
+              hits(first: 1000) {
                 edges {
                   node {
                     id

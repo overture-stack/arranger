@@ -90,12 +90,18 @@ const getTypesWithMappings = async ({ es, id }) => {
   return typesWithMappings;
 };
 
+export const getDefaultServerSideFilter = () => ({
+  op: 'not',
+  content: [],
+});
+
 export const createProjectSchema = async ({
   es,
   id,
   graphqlOptions = {},
   enableAdmin,
   typesWithMappings,
+  getServerSideFilter = getDefaultServerSideFilter,
 }) => {
   if (!typesWithMappings) {
     typesWithMappings = await getTypesWithMappings({ es, id });
@@ -117,12 +123,14 @@ export const createProjectSchema = async ({
     rootTypes: [],
     middleware: graphqlOptions.middleware || [],
     enableAdmin,
+    getServerSideFilter,
   });
 
   const mockSchema = makeSchema({
     types: typesWithMappings,
     rootTypes: [],
     mock: true,
+    getServerSideFilter,
   });
 
   await initializeSets({ es });
@@ -136,6 +144,7 @@ export const createProjectEndpoint = async ({
   graphqlOptions = {},
   enableAdmin,
   typesWithMappings,
+  getServerSideFilter = getDefaultServerSideFilter,
 }) => {
   const { schema, mockSchema } = await createProjectSchema({
     es,
@@ -143,6 +152,7 @@ export const createProjectEndpoint = async ({
     graphqlOptions,
     enableAdmin,
     typesWithMappings,
+    getServerSideFilter,
   });
 
   const projectApp = express.Router();
@@ -205,8 +215,12 @@ export default async function startProjectApp({
   id,
   graphqlOptions = {},
   enableAdmin,
+  getServerSideFilter = getDefaultServerSideFilter,
 }) {
-  const typesWithMappings = await getTypesWithMappings({ es, id });
+  const typesWithMappings = await getTypesWithMappings({
+    es,
+    id,
+  });
 
   await initializeSets({ es });
 
@@ -216,5 +230,6 @@ export default async function startProjectApp({
     graphqlOptions,
     enableAdmin,
     typesWithMappings,
+    getServerSideFilter,
   });
 }
