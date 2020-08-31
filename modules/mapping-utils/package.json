@@ -25,7 +25,7 @@
     "@arranger/middleware": "^2.2.4",
     "babel-polyfill": "^6.26.0",
     "graphql-fields": "^1.0.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.20",
     "node-fetch": "^2.2.0",
     "uuid": "^3.2.1"
   },

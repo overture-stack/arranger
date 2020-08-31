@@ -54,7 +54,7 @@
     "graphql-tools": "^4.0.0",
     "graphql-type-json": "^0.2.1",
     "jwt-decode": "^2.2.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.20",
     "node-fetch": "^2.2.0",
     "qew": "^0.9.13",
     "ramda": "^0.26.1",
