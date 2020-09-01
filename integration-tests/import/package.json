@@ -14,7 +14,8 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
-    "@arranger/components": "^2.3.0"
+    "@arranger/components": "^2.3.0",
+    "minimist": "^1.2.5"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
