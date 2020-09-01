@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
-import startProject from './startProject';
+import startProject, { getDefaultServerSideFilter } from './startProject';
 import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
@@ -13,9 +13,16 @@ let startSingleProject = async ({
   es,
   graphqlOptions,
   enableAdmin,
+  getServerSideFilter,
 }) => {
   try {
-    await startProject({ es, id: projectId, graphqlOptions, enableAdmin });
+    await startProject({
+      es,
+      id: projectId,
+      graphqlOptions,
+      enableAdmin,
+      getServerSideFilter,
+    });
   } catch (error) {
     console.warn(error.message);
   }
@@ -27,6 +34,7 @@ export default async ({
   esHost = ES_HOST,
   graphqlOptions = {},
   enableAdmin = false,
+  getServerSideFilter = getDefaultServerSideFilter,
 } = {}) => {
   if (!esHost) {
     console.error('no elasticsearch host was provided');
@@ -37,7 +45,13 @@ export default async ({
 
   const es = new elasticsearch.Client({ node: esHost });
   if (projectId) {
-    startSingleProject({ projectId, es, graphqlOptions, enableAdmin });
+    startSingleProject({
+      projectId,
+      es,
+      graphqlOptions,
+      enableAdmin,
+      getServerSideFilter,
+    });
   } else {
     const { projects = [] } = await fetchProjects({ es });
     await Promise.all(
@@ -51,6 +65,7 @@ export default async ({
               es,
               graphqlOptions,
               enableAdmin,
+              getServerSideFilter,
             });
           } catch (error) {
             console.warn(error.message);
@@ -92,6 +107,7 @@ export default async ({
           enableAdmin,
           graphqlOptions,
           projectId,
+          getServerSideFilter,
         });
         const project = getProjects().find(
           p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),

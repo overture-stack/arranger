@@ -19,6 +19,7 @@ export let typeDefs = `
   }
 
   type Aggregations {
+    bucket_count: Int
     buckets: [Bucket]
   }
 `;

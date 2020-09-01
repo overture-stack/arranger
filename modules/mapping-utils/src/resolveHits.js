@@ -2,6 +2,7 @@ import getFields from 'graphql-fields';
 import { buildQuery } from '@arranger/middleware';
 import { chunk } from 'lodash';
 import esSearch from './utils/esSearch';
+import compileFilter from './utils/compileFilter';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
   Object.entries(mapping).forEach(([k, v]) => {
@@ -153,7 +154,7 @@ export const hitsToEdges = ({
   ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
-export default ({ type, Parallel }) => async (
+export default ({ type, Parallel, getServerSideFilter }) => async (
   obj,
   { first = 10, offset = 0, filters, score, sort, searchAfter },
   { es },
@@ -166,7 +167,13 @@ export default ({ type, Parallel }) => async (
 
   if (filters || score) {
     // TODO: something with score?
-    query = buildQuery({ nestedFields, filters });
+    query = buildQuery({
+      nestedFields,
+      filters: compileFilter({
+        clientSideFilter: filters,
+        serverSideFilter: getServerSideFilter(),
+      }),
+    });
   }
 
   let body =

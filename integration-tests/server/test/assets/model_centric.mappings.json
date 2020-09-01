@@ -69,6 +69,9 @@
       "chemotherapeutic_drugs": {
         "type": "boolean"
       },
+      "access_denied": {
+        "type": "boolean"
+      },
       "clinical_diagnosis": {
         "properties": {
           "clinical_stage_grouping": {

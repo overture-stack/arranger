@@ -35,6 +35,7 @@ export default ({
   middleware = [],
   mock = false,
   enableAdmin,
+  getServerSideFilter,
 } = {}) => {
   const typesWithSets = [
     ...types,
@@ -73,6 +74,7 @@ export default ({
     rootTypes,
     scalarTypes,
     enableAdmin,
+    getServerSideFilter,
   });
 
   let schema = makeExecutableSchema({

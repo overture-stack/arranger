@@ -74,7 +74,12 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ types, rootTypes, scalarTypes }) => {
+export let resolvers = ({
+  types,
+  rootTypes,
+  scalarTypes,
+  getServerSideFilter,
+}) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -95,6 +100,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
           type,
           createStateResolvers: 'createState' in type ? type.createState : true,
           Parallel,
+          getServerSideFilter,
         }),
       }),
       {},
@@ -116,7 +122,7 @@ export let resolvers = ({ types, rootTypes, scalarTypes }) => {
       {},
     ),
     Mutation: {
-      saveSet: saveSet({ types }),
+      saveSet: saveSet({ types, getServerSideFilter }),
     },
   };
 };

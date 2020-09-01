@@ -14,7 +14,12 @@ test('flattenAggregations', () => {
           },
         },
       },
-      output: { status: { buckets: [{ key: 'legacy', doc_count: 34 }] } },
+      output: {
+        status: {
+          bucket_count: 1,
+          buckets: [{ key: 'legacy', doc_count: 34 }],
+        },
+      },
     },
     {
       input: {
@@ -49,6 +54,7 @@ test('flattenAggregations', () => {
       },
       output: {
         categoryName: {
+          bucket_count: 4,
           buckets: [
             { key: 'Item flagged DN', doc_count: 16191 },
             { key: 'Item is noncanonical', doc_count: 2923 },
@@ -57,6 +63,7 @@ test('flattenAggregations', () => {
           ],
         },
         itemType: {
+          bucket_count: 2,
           buckets: [
             { key: 'Aliquot', doc_count: 16730 },
             { key: 'Portion', doc_count: 8 },
@@ -79,6 +86,7 @@ test('flattenAggregations', () => {
       },
       output: {
         status: {
+          bucket_count: 2,
           buckets: [
             { key: 'legacy', doc_count: 34 },
             { key: '__missing__', doc_count: 1 },
@@ -104,6 +112,7 @@ test('flattenAggregations', () => {
       },
       output: {
         'archive.revision': {
+          bucket_count: 2,
           buckets: [
             { key: 2002, doc_count: 37860 },
             { key: 0, doc_count: 36684 },
@@ -132,6 +141,7 @@ test('flattenAggregations', () => {
       },
       output: {
         'samples.is_ffpe': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
@@ -163,6 +173,7 @@ test('flattenAggregations', () => {
       },
       output: {
         'samples.portions.amount': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
@@ -201,12 +212,14 @@ test('flattenAggregations', () => {
       },
       output: {
         'samples.portions.amount': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
@@ -254,14 +267,19 @@ test('flattenAggregations', () => {
         },
       },
       output: {
-        status: { buckets: [{ key: 'legacy', doc_count: 34 }] },
+        status: {
+          bucket_count: 1,
+          buckets: [{ key: 'legacy', doc_count: 34 }],
+        },
         'samples.portions.amount': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
           ],
         },
         'samples.is_ffpe': {
+          bucket_count: 2,
           buckets: [
             { key: 'a', doc_count: 7 },
             { key: '__missing__', doc_count: 5 },
