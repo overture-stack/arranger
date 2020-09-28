@@ -34,6 +34,14 @@ const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
   </div>
 );
 
+const getLabelId = displayName => {
+  return `${displayName
+    .split('(')[0]
+    .trim()
+    .toLowerCase()
+    .replace(/\s/g, '-')}__range-label`;
+};
+
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
@@ -159,6 +167,7 @@ class RangeAgg extends Component {
               </RangeLabel>
               <RangeLabel isTop>{this.formatRangeLabel(value.max)}</RangeLabel>
               <InputRange
+                ariaLabelledby={getLabelId(displayName)}
                 draggableTrack
                 step={step}
                 minValue={min}
@@ -170,6 +179,18 @@ class RangeAgg extends Component {
               />
               <RangeLabel isLeft>{this.formatRangeLabel(min)}</RangeLabel>
               <RangeLabel>{this.formatRangeLabel(max)}</RangeLabel>
+              <span
+                id={getLabelId(displayName)}
+                css={`
+                  position: absolute;
+                  height: 0;
+                  width: 0;
+                  top: -9999px;
+                  left: -9999px;
+                `}
+              >
+                Set {displayName}
+              </span>
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import ReactTable from 'react-table';
 import { compose } from 'recompose';
-import checkboxHOC from 'react-table/lib/hoc/selectTable';
+import checkboxHOC from './checkboxHOC';
 
 // import dragColumnsHOC from './dragColumnsHOC';
 
