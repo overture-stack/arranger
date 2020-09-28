@@ -211,7 +211,9 @@ const TermAgg = ({
             .slice(0, showingMore ? Infinity : maxTerms)
             .map((bucket, i, array) => (
               <Content
-                id={constructEntryId({ value: bucket.name })}
+                id={constructEntryId({
+                  value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
+                })}
                 key={bucket.name}
                 className={`bucket-item ${constructBucketItemClassName({
                   bucket,

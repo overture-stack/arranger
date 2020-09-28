@@ -63,6 +63,7 @@ export default class CustomPagination extends ReactTablePagination {
           <span className="select-wrap -pageSizeOptions">
             Show{' '}
             <select
+              aria-label={`Number of visible ${this.props.rowsText || 'rows'}`}
               onChange={e => onPageSizeChange(Number(e.target.value))}
               value={pageSize}
             >
