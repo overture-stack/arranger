@@ -28,7 +28,7 @@
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
     "@arranger/admin": "~2.2.4",
-    "@arranger/mapping-utils": "~.2.4",
+    "@arranger/mapping-utils": "~2.2.4",
     "@arranger/middleware": "~2.2.4",
     "@arranger/schema": "~2.2.4",
     "@elastic/elasticsearch": "^7.5.0",
