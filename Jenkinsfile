@@ -184,7 +184,7 @@ spec:
 
         stage('Publish tag to npm') {
             when {
-                branch "master"
+                branch "LTS-2.2"
             }
             steps {
                 container('node') {
