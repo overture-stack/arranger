@@ -1,6 +1,6 @@
 {
   "name": "@arranger/components",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "Data Portal Components",
   "main": "dist/index.js",
   "publishConfig": {
@@ -59,7 +59,7 @@
     "react-dom": "^16.3.0"
   },
   "dependencies": {
-    "@arranger/mapping-utils": "^2.2.4",
+    "@arranger/mapping-utils": "~2.2.4",
     "ajv": "^6.1.1",
     "babel-polyfill": "^6.26.0",
     "classnames": "^2.2.5",
