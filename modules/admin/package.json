@@ -42,8 +42,8 @@
   "author": "Minh Ha",
   "license": "APLv2",
   "dependencies": {
-    "@arranger/mapping-utils": "~2.2.4",
-    "@arranger/schema": "~2.2.4",
+    "@arranger/mapping-utils": "^2.2.5",
+    "@arranger/schema": "^2.2.5",
     "@elastic/elasticsearch": "7.5.0",
     "apollo-link-http": "^1.5.5",
     "apollo-server": "^2.1.0",
