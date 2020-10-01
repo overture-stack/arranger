@@ -16,6 +16,24 @@ spec:
   - name: node
     image: node:12.6.0
     tty: true
+  - name: test_container_builder
+    image: docker:18-git
+    tty: true
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
+  - name: ui_container_builder
+    image: docker:18-git
+    tty: true
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
+  - name: server_container_builder
+    image: docker:18-git
+    tty: true
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
   - name: docker
     image: docker:18-git
     tty: true
@@ -46,7 +64,7 @@ spec:
             parallel {
                 stage("Build test container") {
                     steps {
-                        container('docker') {
+                        container('test_container_builder') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
                                 sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
@@ -57,7 +75,7 @@ spec:
                 }
                 stage("Build server container") {
                     steps {
-                        container('docker') {
+                        container('server_container_builder') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
                                 sh "docker build --network=host -f server.Dockerfile -t ${serverDockerhubRepo}:${commit} ."
@@ -68,7 +86,7 @@ spec:
                 }
                 stage("Build ui container") {
                     steps {
-                        container('docker') {
+                        container('ui_container_builder') {
                             withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                 sh 'docker login -u $USERNAME -p $PASSWORD'
                                 sh "docker build --network=host -f ui.Dockerfile -t ${uiDockerhubRepo}:${commit} ."
