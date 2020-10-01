@@ -9,6 +9,7 @@ export default ({
   rightIcon,
   componentRef,
   Component = 'input',
+  shouldAutoFocus = true,
   ...props
 }) => (
   <State
@@ -31,7 +32,7 @@ export default ({
           onBlur={() => update({ isFocused: false })}
           style={{ border: 'none', flex: 1 }}
           {...props}
-          autoFocus
+          autoFocus={shouldAutoFocus}
         />
         <span className="inputRightIcon">{rightIcon}</span>
       </div>
