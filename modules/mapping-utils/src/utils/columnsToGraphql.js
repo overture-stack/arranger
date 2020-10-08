@@ -16,19 +16,11 @@ export function toQuery(column) {
   );
 }
 
-export default function columnsToGraphql({
-  config = {},
-  sqon,
-  queryName,
-  sort,
-  offset,
-  first,
-}) {
+export default function columnsToGraphql({ config = {}, sqon, queryName, sort, offset, first }) {
   const fields = config.columns
     .filter(
       column =>
-        !(column.accessor && column.accessor === config.keyField) &&
-        (column.fetch || column.show),
+        !(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
     )
     .concat(config.keyField ? { accessor: config.keyField } : [])
     .map(toQuery)
@@ -60,11 +52,7 @@ export default function columnsToGraphql({
           } else {
             const nested = s.field.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
 
-            return Object.assign(
-              {},
-              s,
-              nested ? { field: `${nested[1]}${nested[2]}` } : {},
-            );
+            return Object.assign({}, s, nested ? { field: `${nested[1]}${nested[2]}` } : {});
           }
         }),
       score:

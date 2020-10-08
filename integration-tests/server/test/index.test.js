@@ -111,16 +111,8 @@ describe('@arranger/server', () => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation(
-            $projectId: String!
-            $graphqlField: String!
-            $esIndex: String!
-          ) {
-            newIndex(
-              projectId: $projectId
-              graphqlField: $graphqlField
-              esIndex: $esIndex
-            ) {
+          mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+            newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
               id
             }
           }

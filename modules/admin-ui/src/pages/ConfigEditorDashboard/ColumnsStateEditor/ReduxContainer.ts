@@ -1,9 +1,5 @@
 import { IGlobalState } from 'src/store';
-import {
-  viewProjectIndex,
-  TReduxAction,
-  ActionType,
-} from 'src/store/configEditorReducer';
+import { viewProjectIndex, TReduxAction, ActionType } from 'src/store/configEditorReducer';
 import { IColumnsState } from 'src/pages/VersionDashboard/AddProjectForm/types';
 import { Dispatch } from 'redux';
 import { ISortEventData } from '../AggsStateEditor/SortableAggsStateList';
@@ -17,9 +13,7 @@ export interface IReduxStateProps {
 }
 
 export interface IReduxDisplatProps {
-  onFieldSortChange: (
-    e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>,
-  ) => void;
+  onFieldSortChange: (e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>) => void;
   onColumnPropertyChange: (newColumn: IColumnsState['columns'][0]) => void;
 }
 

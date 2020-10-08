@@ -26,16 +26,8 @@ const saveAggsState = (client: ApolloClient<{}>) => (
   graphqlField: string,
 ) => async (state: IAggsState): Promise<{}> => {
   const MUTATION = gql`
-    mutation(
-      $projectId: String!
-      $graphqlField: String!
-      $state: [AggStateInput]!
-    ) {
-      saveAggsState(
-        projectId: $projectId
-        graphqlField: $graphqlField
-        state: $state
-      ) {
+    mutation($projectId: String!, $graphqlField: String!, $state: [AggStateInput]!) {
+      saveAggsState(projectId: $projectId, graphqlField: $graphqlField, state: $state) {
         state {
           field
         }
@@ -57,16 +49,8 @@ const saveColumnsState = (client: ApolloClient<{}>) => (
   graphqlField: string,
 ) => async (state: IColumnsState): Promise<{}> => {
   const MUTATION = gql`
-    mutation(
-      $projectId: String!
-      $graphqlField: String!
-      $state: ColumnStateInput!
-    ) {
-      saveColumnsState(
-        projectId: $projectId
-        graphqlField: $graphqlField
-        state: $state
-      ) {
+    mutation($projectId: String!, $graphqlField: String!, $state: ColumnStateInput!) {
+      saveColumnsState(projectId: $projectId, graphqlField: $graphqlField, state: $state) {
         ... on ColumnsState {
           timestamp
         }
@@ -146,16 +130,8 @@ const saveMatboxState = (client: ApolloClient<{}>) => (
   graphqlField: string,
 ) => async (state: IMatchboxState): Promise<{}> => {
   const MUTATION = gql`
-    mutation(
-      $projectId: String!
-      $graphqlField: String!
-      $state: [MatchBoxFieldInput]
-    ) {
-      saveMatchBoxState(
-        projectId: $projectId
-        graphqlField: $graphqlField
-        state: $state
-      ) {
+    mutation($projectId: String!, $graphqlField: String!, $state: [MatchBoxFieldInput]) {
+      saveMatchBoxState(projectId: $projectId, graphqlField: $graphqlField, state: $state) {
         state {
           field
         }
@@ -168,13 +144,7 @@ const saveMatboxState = (client: ApolloClient<{}>) => (
       projectId,
       graphqlField,
       state: state.map(s =>
-        pick(s, [
-          'displayName',
-          'field',
-          'isActive',
-          'keyField',
-          'searchFields',
-        ]),
+        pick(s, ['displayName', 'field', 'isActive', 'keyField', 'searchFields']),
       ),
     },
   });
@@ -183,15 +153,12 @@ const saveMatboxState = (client: ApolloClient<{}>) => (
 /******************
  * Data validators
  ******************/
-const validateMutationVariables = async (
-  variables: IMutationVariables,
-): Promise<void> => {
+const validateMutationVariables = async (variables: IMutationVariables): Promise<void> => {
   const { indexConfigs, projectId } = variables;
   const hasDuplicateIndexName =
     uniqBy(
       indexConfigs,
-      (config: typeof indexConfigs[0]) =>
-        config.newIndexMutationInput.graphqlField,
+      (config: typeof indexConfigs[0]) => config.newIndexMutationInput.graphqlField,
     ).length !== indexConfigs.length;
   const missingIndices = !indexConfigs.length;
   const missingProjectId = !projectId.length;
@@ -203,14 +170,10 @@ const validateMutationVariables = async (
       !!config.newIndexMutationInput.graphqlField.length,
     true,
   );
-  console.log(
-    uniqBy(indexConfigs, (config: INewIndexInput) => config.graphqlField),
-  );
+  console.log(uniqBy(indexConfigs, (config: INewIndexInput) => config.graphqlField));
   console.log(variables);
   if (hasDuplicateIndexName) {
-    throw new Error(
-      'Cannot use multiple indices with the same name (aka graphqlField)',
-    );
+    throw new Error('Cannot use multiple indices with the same name (aka graphqlField)');
   }
   if (missingIndices) {
     throw new Error('Cannot create project with no index');
@@ -248,9 +211,7 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
 /*****
  * Pretty much a monkey patch to ensure legacy data works
  *****/
-const sanitizeIndexConfigs = (
-  indexConfigs: INewIndexArgs[],
-): typeof indexConfigs =>
+const sanitizeIndexConfigs = (indexConfigs: INewIndexArgs[]): typeof indexConfigs =>
   indexConfigs.map(i => ({
     ...i,
     config: !i.config
@@ -304,11 +265,7 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
 }> = ({ children }) => {
   const MUTATION = gql`
     mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
-      newIndex(
-        projectId: $projectId
-        graphqlField: $graphqlField
-        esIndex: $esIndex
-      ) {
+      newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
         id
       }
     }
@@ -326,10 +283,7 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
  * Provides server transaction to add index
  *****************/
 export { IPropsWithMutation } from './types';
-const withAddProjectMutation: THoc<
-  {},
-  IPropsWithMutation
-> = Wrapped => props => {
+const withAddProjectMutation: THoc<{}, IPropsWithMutation> = Wrapped => props => {
   const NEW_PROJECT_MUTATION = gql`
     mutation($projectId: String!) {
       newProject(id: $projectId) {
@@ -373,20 +327,10 @@ const withAddProjectMutation: THoc<
                     indexConfigs.map(async indexConfig => {
                       const { config } = indexConfig;
                       if (config) {
-                        const {
-                          aggsState,
-                          columnsState,
-                          matchboxState,
-                          extended,
-                        } = config;
+                        const { aggsState, columnsState, matchboxState, extended } = config;
 
                         return Promise.all(
-                          [
-                            aggsState,
-                            columnsState,
-                            matchboxState,
-                            extended,
-                          ].map(async metadata => {
+                          [aggsState, columnsState, matchboxState, extended].map(async metadata => {
                             if (aggsState && metadata === aggsState) {
                               return saveAggsState(client)(
                                 projectId,

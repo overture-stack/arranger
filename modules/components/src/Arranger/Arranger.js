@@ -31,8 +31,7 @@ class Arranger extends React.Component {
   };
 
   componentWillMount() {
-    const hasChildren =
-      this.props.children && React.Children.count(this.props.children) !== 0;
+    const hasChildren = this.props.children && React.Children.count(this.props.children) !== 0;
 
     if (this.props.component && this.props.render) {
       console.warn(
@@ -74,8 +73,7 @@ class Arranger extends React.Component {
       graphqlField,
       fetchData: this.fetchData,
       setSQON: sqon => this.setState({ sqon }),
-      setSelectedTableRows: selectedTableRows =>
-        this.setState({ selectedTableRows }),
+      setSelectedTableRows: selectedTableRows => this.setState({ selectedTableRows }),
     };
 
     if (component) {

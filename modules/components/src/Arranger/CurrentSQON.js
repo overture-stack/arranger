@@ -14,8 +14,7 @@ export const CurrentSQON = ({
   valueCharacterLimit = 30,
   onClear = () => {},
   translateSQONValue = x => x,
-  findExtendedMappingField = field =>
-    extendedMapping?.find(e => e.field === field),
+  findExtendedMappingField = field => extendedMapping?.find(e => e.field === field),
   ...props
 }) => (
   <SQONView
@@ -28,10 +27,10 @@ export const CurrentSQON = ({
     ValueCrumb={({ field, value, nextSQON, ...props }) => (
       <Value onClick={() => setSQON(nextSQON)} {...props}>
         {truncate(
-          compose(translateSQONValue, internalTranslateSQONValue)(
-            (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              value,
-          ),
+          compose(
+            translateSQONValue,
+            internalTranslateSQONValue,
+          )((findExtendedMappingField(field)?.displayValues || {})[value] || value),
           { length: valueCharacterLimit || Infinity },
         )}
       </Value>
@@ -50,22 +49,14 @@ export const CurrentSQON = ({
   />
 );
 
-const CurrentSQONState = ({
-  sqon,
-  setSQON,
-  graphqlField,
-  projectId,
-  ...props
-}) => {
+const CurrentSQONState = ({ sqon, setSQON, graphqlField, projectId, ...props }) => {
   return (
     <Component
       initialState={{ extendedMapping: null }}
       didMount={({ state: { extendedMapping }, setState }) =>
-        fetchExtendedMapping({ graphqlField, projectId }).then(
-          ({ extendedMapping }) => {
-            return setState({ extendedMapping });
-          },
-        )
+        fetchExtendedMapping({ graphqlField, projectId }).then(({ extendedMapping }) => {
+          return setState({ extendedMapping });
+        })
       }
     >
       {({ state: { extendedMapping } }) => (

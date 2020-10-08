@@ -58,8 +58,7 @@ const AdvancedSqonBuilder = props => {
     syntheticSqons = [],
     activeSqonIndex: currentActiveSqonIndex = 0,
     FieldOpModifierContainer = undefined,
-    SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
-      null,
+    SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) => null,
     onChange = ({ newSyntheticSqons }) => {},
     onActiveSqonSelect = ({ index }) => {},
     fieldDisplayNameMap = {},
@@ -100,8 +99,7 @@ const AdvancedSqonBuilder = props => {
 
   const getColorForReference = referenceIndex =>
     referenceColors[referenceIndex % referenceColors.length];
-  const isSqonReferenced = sqonIndex =>
-    isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
+  const isSqonReferenced = sqonIndex => isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
 
   const clearSqonDeletion = s => {
     s.setState({
@@ -111,11 +109,7 @@ const AdvancedSqonBuilder = props => {
     });
   };
 
-  const dispatchSqonListChange = s => ({
-    eventKey,
-    newSqonList,
-    eventDetails,
-  }) => {
+  const dispatchSqonListChange = s => ({ eventKey, newSqonList, eventDetails }) => {
     clearSqonDeletion(s);
     // wraps in promise to delay to allow delaying to next frame
     return Promise.resolve(
@@ -127,18 +121,13 @@ const AdvancedSqonBuilder = props => {
     );
   };
   const onSelectedSqonIndicesChange = s => index => () => {
-    if (
-      !s.state.selectedSqonIndices.includes(index) &&
-      !isEmptySqon(syntheticSqons[index])
-    ) {
+    if (!s.state.selectedSqonIndices.includes(index) && !isEmptySqon(syntheticSqons[index])) {
       s.setState({
         selectedSqonIndices: [...s.state.selectedSqonIndices, index].sort(),
       });
     } else {
       s.setState({
-        selectedSqonIndices: s.state.selectedSqonIndices.filter(
-          i => i !== index,
-        ),
+        selectedSqonIndices: s.state.selectedSqonIndices.filter(i => i !== index),
       });
     }
   };
@@ -147,18 +136,13 @@ const AdvancedSqonBuilder = props => {
     onActiveSqonSelect({
       index: Math.max(Math.min(syntheticSqons.length - 2, indexToRemove), 0),
     });
-    const sqonListWithIndexRemoved = removeSqonAtIndex(
-      indexToRemove,
-      syntheticSqons,
-    );
+    const sqonListWithIndexRemoved = removeSqonAtIndex(indexToRemove, syntheticSqons);
     return dispatchSqonListChange(s)({
       eventKey: 'SQON_REMOVED',
       eventDetails: {
         removedIndex: indexToRemove,
       },
-      newSqonList: sqonListWithIndexRemoved.length
-        ? sqonListWithIndexRemoved
-        : [newEmptySqon()],
+      newSqonList: sqonListWithIndexRemoved.length ? sqonListWithIndexRemoved : [newEmptySqon()],
     });
   };
 
@@ -177,10 +161,7 @@ const AdvancedSqonBuilder = props => {
       eventDetails: {
         duplicatedIndex: indexToDuplicate,
       },
-      newSqonList: [
-        ...syntheticSqons,
-        cloneDeep(syntheticSqons[indexToDuplicate]),
-      ],
+      newSqonList: [...syntheticSqons, cloneDeep(syntheticSqons[indexToDuplicate])],
     }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
   const createUnionSqon = s => () => {
@@ -267,16 +248,13 @@ const AdvancedSqonBuilder = props => {
       eventDetails: {
         updatedIndex: sqonIndex,
       },
-      newSqonList: syntheticSqons.map(
-        (sq, i) => (i === sqonIndex ? newSqon : sq),
-      ),
+      newSqonList: syntheticSqons.map((sq, i) => (i === sqonIndex ? newSqon : sq)),
     });
     if (!newSqon.content.length) {
       removeSqon(s)(sqonIndex);
     }
   };
-  const getActiveExecutableSqon = () =>
-    resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
+  const getActiveExecutableSqon = () => resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
 
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
@@ -304,9 +282,7 @@ const AdvancedSqonBuilder = props => {
                 </span>
               </div>
               <div>
-                <ButtonComponent onClick={onClearAllClick(s)}>
-                  CLEAR ALL
-                </ButtonComponent>
+                <ButtonComponent onClick={onClearAllClick(s)}>CLEAR ALL</ButtonComponent>
               </div>
             </div>
             {syntheticSqons.map((sq, i) => (
@@ -320,9 +296,7 @@ const AdvancedSqonBuilder = props => {
                 isActiveSqon={i === currentActiveSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 isReferenced={isSqonReferenced(i)}
-                isIndexReferenced={isIndexReferencedInSqon(
-                  selectedSyntheticSqon,
-                )}
+                isIndexReferenced={isIndexReferencedInSqon(selectedSyntheticSqon)}
                 isDeleting={s.state.deletingIndex === i}
                 disabled={isEmptySqon(sq)}
                 SqonActionComponent={SqonActionComponent}
@@ -351,11 +325,7 @@ const AdvancedSqonBuilder = props => {
               </button>
               <button
                 className={`sqonListActionButton duplicateButton`}
-                disabled={
-                  selectedSyntheticSqon
-                    ? !selectedSyntheticSqon.content.length
-                    : false
-                }
+                disabled={selectedSyntheticSqon ? !selectedSyntheticSqon.content.length : false}
                 onClick={onSqonDuplicate(s)(currentActiveSqonIndex)}
               >
                 <FaRegClone />

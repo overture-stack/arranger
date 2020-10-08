@@ -13,17 +13,11 @@ let appendUnderscores: TAppendUnderscores = x => (x ? x + '__' : '');
 let mappingToAggsType = (properties, parent = '') => {
   return flattenDeep(
     Object.entries(properties)
-      .filter(
-        ([field, data]) =>
-          (data.type && data.type !== 'nested') || data.properties,
-      )
+      .filter(([field, data]) => (data.type && data.type !== 'nested') || data.properties)
       .map(([field, data]) =>
         data.type && data.type !== 'nested'
           ? `${appendUnderscores(parent) + field}: ${esToAggTypeMap[data.type]}`
-          : mappingToAggsType(
-              data.properties,
-              appendUnderscores(parent) + field,
-            ),
+          : mappingToAggsType(data.properties, appendUnderscores(parent) + field),
       ),
   );
 };

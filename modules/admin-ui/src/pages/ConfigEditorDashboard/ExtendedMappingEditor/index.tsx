@@ -100,9 +100,7 @@ const FieldsTable = React.memo(Table, ({ data }, { data: nextData }) => {
   const toSelectedState = ({ selected }) => selected;
   const lastSelectedIndex = data.map(toSelectedState).indexOf(true);
   const nextSelectedIndex = nextData.map(toSelectedState).indexOf(true);
-  return (
-    nextData.length === data.length && lastSelectedIndex === nextSelectedIndex
-  );
+  return nextData.length === data.length && lastSelectedIndex === nextSelectedIndex;
 });
 
 interface IInjectedProps extends IReduxStateProps, IReduxDispatchProps {}
@@ -134,9 +132,9 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
       filter: { ...state.filter, field: e.currentTarget.value },
     });
 
-  const onFilterOptionSelect = (s: IStateContainer) => (
-    field: keyof typeof extendedMapping[0],
-  ) => (e: ISelectOption) =>
+  const onFilterOptionSelect = (s: IStateContainer) => (field: keyof typeof extendedMapping[0]) => (
+    e: ISelectOption,
+  ) =>
     s.setState({
       ...s.state,
       filter: {
@@ -159,15 +157,9 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
         return (
           field.field.includes(filter.field) &&
           (filter.type ? field.type === filter.type : true) &&
-          (filter.active !== null
-            ? String(field.active) === filter.active
-            : true) &&
-          (filter.isArray !== null
-            ? String(field.isArray) === filter.isArray
-            : true) &&
-          (filter.primaryKey !== null
-            ? String(field.primaryKey) === filter.primaryKey
-            : true) &&
+          (filter.active !== null ? String(field.active) === filter.active : true) &&
+          (filter.isArray !== null ? String(field.isArray) === filter.isArray : true) &&
+          (filter.primaryKey !== null ? String(field.primaryKey) === filter.primaryKey : true) &&
           (filter.quickSearchEnabled !== null
             ? String(field.quickSearchEnabled) === filter.quickSearchEnabled
             : true)
@@ -210,9 +202,7 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
                   onActiveStateSelect={onFilterOptionSelect(s)('active')}
                   onIsArraySelect={onFilterOptionSelect(s)('isArray')}
                   onPrimaryStateSelect={onFilterOptionSelect(s)('primaryKey')}
-                  onQuicksearchEnabledSelect={onFilterOptionSelect(s)(
-                    'quickSearchEnabled',
-                  )}
+                  onQuicksearchEnabledSelect={onFilterOptionSelect(s)('quickSearchEnabled')}
                 />
                 <FieldsTable
                   title={`Fields`}
@@ -224,10 +214,7 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
               </GridItem>
               <GridItem span={5}>
                 {selectedField && (
-                  <ExtendedFieldEditor
-                    graphqlField={graphqlField}
-                    fieldData={selectedField}
-                  />
+                  <ExtendedFieldEditor graphqlField={graphqlField} fieldData={selectedField} />
                 )}
               </GridItem>
             </Grid>

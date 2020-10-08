@@ -12,13 +12,7 @@ const enhance = compose(
   }),
 );
 
-export const TabsTable = ({
-  className,
-  columns,
-  data,
-  pageSize = 10,
-  ...props
-}) => (
+export const TabsTable = ({ className, columns, data, pageSize = 10, ...props }) => (
   <ReactTable
     {...{
       columns,
@@ -60,9 +54,7 @@ const Tabs = ({ tabs, activeTab, setActiveTab }) =>
           </div>
         ))}
       </div>
-      <div className={`tabs-content`}>
-        {tabs.find(t => t.key === activeTab)?.content}
-      </div>
+      <div className={`tabs-content`}>{tabs.find(t => t.key === activeTab)?.content}</div>
     </div>
   );
 

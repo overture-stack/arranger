@@ -55,8 +55,7 @@ export default props => {
       hoverring: false,
     });
   };
-  const onFieldOpRemove = removedPath =>
-    onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
+  const onFieldOpRemove = removedPath => onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
   const onLogicalOpChanged = (changedPath, newSqon) =>
     onSqonChange(setSqonAtPath(changedPath, newSqon)(syntheticSqon));
   return (
@@ -79,13 +78,7 @@ export default props => {
             }
           />
           <div className={`selectionContainer`} onClick={onSqonCheckedChange}>
-            <input
-              readOnly
-              type="checkbox"
-              checked={isSelected}
-              disabled={disabled}
-            />{' '}
-            #{index + 1}
+            <input readOnly type="checkbox" checked={isSelected} disabled={disabled} /> #{index + 1}
           </div>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -128,9 +121,7 @@ export default props => {
           {isDeleting && (
             <div className={'actionButtonsContainer deleteConfirmation'}>
               <div>
-                {!!dependentIndices.length && (
-                  <div>Dependent queries will be deleted.</div>
-                )}
+                {!!dependentIndices.length && <div>Dependent queries will be deleted.</div>}
                 <div>Are you sure you want to delete?</div>
               </div>
               <button className={`button cancel`} onClick={onDeleteCanceled}>

@@ -9,11 +9,7 @@ enum AlertVariant {
 const Alert: ComponentType<{ variant: string }> = styled(`div`)`
   width: 100%;
   padding: 10px;
-  background: ${({
-    variant = AlertVariant.success,
-  }: {
-    variant: AlertVariant;
-  }) => {
+  background: ${({ variant = AlertVariant.success }: { variant: AlertVariant }) => {
     switch (variant) {
       case AlertVariant.error:
         return 'rgba(222, 27, 27, 0.1)';

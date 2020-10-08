@@ -31,13 +31,7 @@ class DropDown extends React.Component {
   };
   render() {
     const { isOpen } = this.state;
-    const {
-      items,
-      onChange,
-      itemToString,
-      children,
-      align = 'right',
-    } = this.props;
+    const { items, onChange, itemToString, children, align = 'right' } = this.props;
 
     return (
       <Downshift
@@ -86,8 +80,7 @@ class DropDown extends React.Component {
                       readOnly
                       type="checkbox"
                       checked={selectedItem.indexOf(item) > -1}
-                      aria-label={`Select column ${item.id ||
-                        itemToString(item)}`}
+                      aria-label={`Select column ${item.id || itemToString(item)}`}
                     />
                   </div>
                 ))}

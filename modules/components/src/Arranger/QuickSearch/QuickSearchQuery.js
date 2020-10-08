@@ -21,9 +21,7 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
 };
 
 const isMatching = ({ value = '', searchText = '', exact = false }) =>
-  exact
-    ? value === searchText
-    : value.toLowerCase().includes(searchText.toLowerCase());
+  exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
 
 const enhance = compose(
   withProps(
@@ -82,9 +80,7 @@ const enhance = compose(
               edges {
                 node {
                   primaryKey: ${primaryKeyField?.query}
-                  ${quickSearchFields
-                    ?.map(f => `${f.gqlField}: ${f.query}`)
-                    ?.join('\n')}
+                  ${quickSearchFields?.map(f => `${f.gqlField}: ${f.query}`)?.join('\n')}
                 }
               }
             }
@@ -113,19 +109,14 @@ const enhance = compose(
                 { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
                 primaryKeyField.jsonPath,
               )[0],
-              result = jp.query(
-                { [x.field.split('.')[0]]: node[x.gqlField] },
-                x.jsonPath,
-              )[0],
+              result = jp.query({ [x.field.split('.')[0]]: node[x.gqlField] }, x.jsonPath)[0],
             }) => ({
               primaryKey,
               entityName: x.entityName,
               ...searchTextParts.reduce(
                 (acc, part) => {
                   if (isArray(result)) {
-                    const r = result.find(r =>
-                      isMatching({ value: r, searchText: part, exact }),
-                    );
+                    const r = result.find(r => isMatching({ value: r, searchText: part, exact }));
                     if (r) {
                       return { input: part, result: r };
                     }

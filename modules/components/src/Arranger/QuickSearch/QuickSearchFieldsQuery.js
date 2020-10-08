@@ -59,8 +59,7 @@ const enhance = compose(
         )
         ?.map(x => ({
           ...x,
-          entityName:
-            nestedField({ field: x, nestedFields })?.displayName || index,
+          entityName: nestedField({ field: x, nestedFields })?.displayName || index,
         })) || [],
     }) => {
       return {

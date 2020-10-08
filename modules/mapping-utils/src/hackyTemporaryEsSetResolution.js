@@ -16,9 +16,7 @@ const resolveSetIdsFromEs = es => setId =>
         },
       },
     },
-  }).then(({ hits: { hits } }) =>
-    flattenDeep(hits.map(({ _source: { ids } }) => ids)),
-  );
+  }).then(({ hits: { hits } }) => flattenDeep(hits.map(({ _source: { ids } }) => ids)));
 
 const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
   (isArray(content)
@@ -30,11 +28,7 @@ const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
       )
     : isArray(content?.value)
     ? content?.value.filter(value => String(value).indexOf('set_id:') === 0)
-    : [
-        ...(String(content?.value).indexOf?.('set_id:') === 0
-          ? [content.value]
-          : []),
-      ]
+    : [...(String(content?.value).indexOf?.('set_id:') === 0 ? [content.value] : [])]
   ).map(setId => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
@@ -46,9 +40,7 @@ const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
           ...op.content,
           value: isArray(op.content.value)
             ? flattenDeep(
-                op.content.value.map(
-                  value => setIdsToValueMap[value] || op.content.value,
-                ),
+                op.content.value.map(value => setIdsToValueMap[value] || op.content.value),
               )
             : setIdsToValueMap[op.content.value] || op.content.value,
         }

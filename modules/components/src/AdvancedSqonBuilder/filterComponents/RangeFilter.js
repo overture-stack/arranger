@@ -60,10 +60,7 @@ export const RangeFilterUi = props => {
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
     ContainerComponent = FilterContainer,
     InputComponent = props => (
-      <input
-        {...props}
-        className={`rangeFilterInput ${props.className || ''}`}
-      />
+      <input {...props} className={`rangeFilterInput ${props.className || ''}`} />
     ),
     unit: originalUnit = null,
   } = props;
@@ -92,7 +89,9 @@ export const RangeFilterUi = props => {
     const max = toOriginalUnit(s.state.maxValue);
     const value = [GTE_OP, GT_OP].includes(op)
       ? [min]
-      : [LTE_OP, LT_OP].includes(op) ? [max] : [min, max];
+      : [LTE_OP, LT_OP].includes(op)
+      ? [max]
+      : [min, max];
 
     const sqonToSubmit = {
       op,
@@ -130,16 +129,11 @@ export const RangeFilterUi = props => {
     s.setState({ selectedUnit: e.target.value });
   };
 
-  const isMinimumDisabled = s =>
-    [LTE_OP, LT_OP].includes(s.state.selectedOperation);
-  const isMaximumDisabled = s =>
-    [GTE_OP, GT_OP].includes(s.state.selectedOperation);
+  const isMinimumDisabled = s => [LTE_OP, LT_OP].includes(s.state.selectedOperation);
+  const isMaximumDisabled = s => [GTE_OP, GT_OP].includes(s.state.selectedOperation);
 
   const StyledInputComponent = props => (
-    <InputComponent
-      {...props}
-      className={`rangeFilterInput ${props.className || ''}`}
-    />
+    <InputComponent {...props} className={`rangeFilterInput ${props.className || ''}`} />
   );
 
   return (
@@ -183,11 +177,7 @@ export const RangeFilterUi = props => {
             <div className="contentSection">
               <div className="rangeInputContainer">
                 <div className="inputField">
-                  <span
-                    className={`inputLabel ${
-                      isMinimumDisabled(s) ? 'disabled' : ''
-                    }`}
-                  >
+                  <span className={`inputLabel ${isMinimumDisabled(s) ? 'disabled' : ''}`}>
                     From:
                   </span>
                   <StyledInputComponent
@@ -198,11 +188,7 @@ export const RangeFilterUi = props => {
                   />
                 </div>
                 <div className="inputField">
-                  <span
-                    className={`inputLabel ${
-                      isMaximumDisabled(s) ? 'disabled' : ''
-                    }`}
-                  >
+                  <span className={`inputLabel ${isMaximumDisabled(s) ? 'disabled' : ''}`}>
                     To:
                   </span>
                   <StyledInputComponent

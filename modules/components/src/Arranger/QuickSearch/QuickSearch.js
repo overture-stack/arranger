@@ -50,9 +50,7 @@ const DropdownItem = ({
     `}`}
     onMouseDown={onMouseDown}
   >
-    <div
-      className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}
-    >
+    <div className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}>
       <div>{entityName.slice(0, 2).toUpperCase()}</div>
     </div>
     <div className="quick-search-result-details">
@@ -95,10 +93,7 @@ const QuickSearch = ({
       enabled,
       quickSearchFields,
       quickSearchEntities,
-      entityIndexLookup = quickSearchEntities.reduce(
-        (obj, x, i) => ({ ...obj, [x]: i }),
-        {},
-      ),
+      entityIndexLookup = quickSearchEntities.reduce((obj, x, i) => ({ ...obj, [x]: i }), {}),
     }) => (
       <QuickSearchQuery
         {...props}
@@ -129,10 +124,7 @@ const QuickSearch = ({
                             })
                           }
                         >
-                          {compose(
-                            translateSQONValue,
-                            internalTranslateSQONValue,
-                          )(primaryKey)}
+                          {compose(translateSQONValue, internalTranslateSQONValue)(primaryKey)}
                         </PinnedValueComponent>
                       </div>
                     ))}

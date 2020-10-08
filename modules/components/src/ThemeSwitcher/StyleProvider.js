@@ -15,9 +15,7 @@ export default class StyleProvider extends React.Component {
   };
 
   applyStyle = async (availableThemes, selectedThemeId) => {
-    const stylePath = availableThemes.find(
-      theme => theme.id === selectedThemeId,
-    ).stylePath;
+    const stylePath = availableThemes.find(theme => theme.id === selectedThemeId).stylePath;
 
     let response = await fetch(stylePath);
     let loadedStyle = await response.text();
@@ -29,10 +27,6 @@ export default class StyleProvider extends React.Component {
   };
 
   render() {
-    return (
-      this.state.themeLoaded && (
-        <style type="text/css"> {this.state.loadedStyle} </style>
-      )
-    );
+    return this.state.themeLoaded && <style type="text/css"> {this.state.loadedStyle} </style>;
   }
 }

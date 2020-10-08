@@ -54,10 +54,7 @@ export default () => {
           </ButtonGroup>
           {s.state.isSaving && (
             <ModalOverlay>
-              <ProjectSaveModal
-                onActionCanceled={closeModals(s)}
-                onSaveComplete={closeModals(s)}
-              />
+              <ProjectSaveModal onActionCanceled={closeModals(s)} onSaveComplete={closeModals(s)} />
             </ModalOverlay>
           )}
           {s.state.isCanceling && (

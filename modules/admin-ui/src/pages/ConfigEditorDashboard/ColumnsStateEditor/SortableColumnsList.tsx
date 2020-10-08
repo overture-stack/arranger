@@ -35,9 +35,7 @@ const SortableItem = compose<
 >(
   connect(mapStateToProps, mapDispatchToProps),
   SortableElement,
-  curry(React.memo)(__, (lastProps, nextProps) =>
-    equals(lastProps.item, nextProps.item),
-  ),
+  curry(React.memo)(__, (lastProps, nextProps) => equals(lastProps.item, nextProps.item)),
 )(({ item, columnsState, onFieldSortChange, onColumnPropertyChange }) => {
   if (!columnsState) {
     return <div>LOADING...</div>;
@@ -50,21 +48,15 @@ const SortableItem = compose<
   const onPositionSelect = (o: ISelectOption) => {
     onFieldSortChange({ newIndex: Number(o.value), oldIndex: item.index });
   };
-  const onFieldShowStatuschange = (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => {
+  const onFieldShowStatuschange = (e: React.SyntheticEvent<HTMLInputElement>) => {
     if (item.canChangeShow) {
       onColumnPropertyChange({ ...item, show: e.currentTarget.checked });
     }
   };
-  const onFieldSortableStatuschange = (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => {
+  const onFieldSortableStatuschange = (e: React.SyntheticEvent<HTMLInputElement>) => {
     onColumnPropertyChange({ ...item, sortable: e.currentTarget.checked });
   };
-  const onFieldShowMutabilityChange = (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => {
+  const onFieldShowMutabilityChange = (e: React.SyntheticEvent<HTMLInputElement>) => {
     onColumnPropertyChange({
       ...item,
       canChangeShow: e.currentTarget.checked,
@@ -125,17 +117,10 @@ const SortableItem = compose<
   );
 });
 
-export default SortableContainer<{ items: any } & IExternalProps>(
-  ({ items, graphqlField }) => (
-    <div>
-      {items.map((item, index) => (
-        <SortableItem
-          item={item}
-          graphqlField={graphqlField}
-          index={index}
-          key={`item-${index}`}
-        />
-      ))}
-    </div>
-  ),
-);
+export default SortableContainer<{ items: any } & IExternalProps>(({ items, graphqlField }) => (
+  <div>
+    {items.map((item, index) => (
+      <SortableItem item={item} graphqlField={graphqlField} index={index} key={`item-${index}`} />
+    ))}
+  </div>
+));

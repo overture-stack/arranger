@@ -51,10 +51,7 @@ const elasticMappingToDisplayTreeData = (elasticMapping, parentPath) => {
       id: `${key}`,
       ...(fieldProps.properties
         ? {
-            children: elasticMappingToDisplayTreeData(
-              fieldProps.properties,
-              currentPath,
-            ),
+            children: elasticMappingToDisplayTreeData(fieldProps.properties, currentPath),
           }
         : {}),
     };

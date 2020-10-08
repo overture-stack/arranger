@@ -12,11 +12,7 @@ function toHtml(key, value) {
     type="hidden"
     name="${key}"
     aria-label="${key}"
-    value="${
-      typeof value === 'object'
-        ? JSON.stringify(value).replace(/"/g, '&quot;')
-        : value
-    }"
+    value="${typeof value === 'object' ? JSON.stringify(value).replace(/"/g, '&quot;') : value}"
   />`;
 }
 

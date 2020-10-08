@@ -63,7 +63,11 @@ export default class extends Component {
       });
 
       const config = data[graphqlField].columnsState.state;
-      let { data: { [this.props.graphqlField]: { extended } } } = await api({
+      let {
+        data: {
+          [this.props.graphqlField]: { extended },
+        },
+      } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
@@ -141,12 +145,8 @@ export default class extends Component {
   saveOrder = orderedFields => {
     const columns = this.state.config.columns;
     if (
-      orderedFields.every(field =>
-        columns.find(column => column.field === field),
-      ) &&
-      columns.every(column =>
-        orderedFields.find(field => field === column.field),
-      )
+      orderedFields.every(field => columns.find(column => column.field === field)) &&
+      columns.every(column => orderedFields.find(field => field === column.field))
     ) {
       this.save({
         ...this.state.config,
@@ -169,15 +169,12 @@ export default class extends Component {
           state: {
             ...config,
             columns: config.columns.map(column => {
-              const extendedField = extended.find(
-                e => e.field === column.field,
-              );
+              const extendedField = extended.find(e => e.field === column.field);
               return {
                 ...column,
                 Header: extendedField?.displayName || column.field,
                 extendedType: extendedField?.type,
-                show:
-                  column.field in toggled ? toggled[column.field] : column.show,
+                show: column.field in toggled ? toggled[column.field] : column.show,
                 extendedDisplayValues: extendedField?.displayValues,
               };
             }),

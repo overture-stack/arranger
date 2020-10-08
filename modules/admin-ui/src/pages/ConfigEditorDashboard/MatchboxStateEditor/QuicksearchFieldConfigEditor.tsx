@@ -18,24 +18,20 @@ import {
 } from './ReduxContainer';
 import { ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 
-interface IQuicksearchFieldConfigEditorExternalProps
-  extends IReduxExternalProps {
+interface IQuicksearchFieldConfigEditorExternalProps extends IReduxExternalProps {
   field: string;
 }
-export default connect(mapStateToProps, mapDispatchToProps)(
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(
   (
     props: IReduxStateProps &
       IReduxDispatchProps &
       IReduxExternalProps &
       IQuicksearchFieldConfigEditorExternalProps,
   ) => {
-    const {
-      field,
-      graphqlField,
-      allFields,
-      quicksearchConfigs,
-      onFieldPropertyChange,
-    } = props;
+    const { field, graphqlField, allFields, quicksearchConfigs, onFieldPropertyChange } = props;
     const editingField = quicksearchConfigs.find(f => f.field === field);
     if (!editingField) {
       return null;
@@ -43,7 +39,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     type TDataProperty = keyof typeof editingField;
     interface IFieldPropertyDelta {
       property: TDataProperty;
-      value: (typeof editingField)[IFieldPropertyDelta['property']];
+      value: typeof editingField[IFieldPropertyDelta['property']];
     }
 
     /*******
@@ -64,9 +60,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     const onSearchFieldAdded = (e: ISelectOption) => {
       onFieldPropertyChange({
         ...editingField,
-        searchFields: e.value
-          ? [...editingField.searchFields, e.value]
-          : editingField.searchFields,
+        searchFields: e.value ? [...editingField.searchFields, e.value] : editingField.searchFields,
       });
     };
     const onSearchFieldRemove = (f: string) => () => {
@@ -134,11 +128,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
             {editingField.searchFields.map(f => (
               <Grid columns={12}>
                 <GridItem span={2}>
-                  <Button
-                    variant="danger"
-                    size="small"
-                    onClick={onSearchFieldRemove(f)}
-                  >
+                  <Button variant="danger" size="small" onClick={onSearchFieldRemove(f)}>
                     Remove
                   </Button>
                 </GridItem>

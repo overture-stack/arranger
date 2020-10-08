@@ -30,9 +30,7 @@ export const getProjectMetadataEsLocation = (
   index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
 });
 
-const mappingExistsOn = (es: Client) => async ({
-  esIndex,
-}: EsIndexLocation): Promise<boolean> => {
+const mappingExistsOn = (es: Client) => async ({ esIndex }: EsIndexLocation): Promise<boolean> => {
   try {
     await getEsMapping(es)({ esIndex });
     return true;
@@ -175,9 +173,7 @@ export const getProjectIndex = (es: Client) => async ({
     );
     return output;
   } catch {
-    throw new UserInputError(
-      `could not find index ${graphqlField} of project ${projectId}`,
-    );
+    throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
   }
 };
 
@@ -197,8 +193,6 @@ export const removeProjectIndex = (es: Client) => async ({
     });
     return removedIndexMetadata;
   } catch (err) {
-    throw new UserInputError(
-      `could not remove index ${graphqlField} of project ${projectId}`,
-    );
+    throw new UserInputError(`could not remove index ${graphqlField} of project ${projectId}`);
   }
 };

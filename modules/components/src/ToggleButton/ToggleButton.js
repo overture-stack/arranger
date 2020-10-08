@@ -8,9 +8,9 @@ export default ({ value, options = [], onChange = () => {} }) => (
       return (
         <div
           key={x.value || 'undefined'}
-          className={`toggle-button-option ${
-            value === x.value ? 'active' : ''
-          }${isDisabled ? 'disabled' : ''}`}
+          className={`toggle-button-option ${value === x.value ? 'active' : ''}${
+            isDisabled ? 'disabled' : ''
+          }`}
           onClick={() => (!isDisabled ? onChange({ value: x.value }) : null)}
         >
           {x.title}

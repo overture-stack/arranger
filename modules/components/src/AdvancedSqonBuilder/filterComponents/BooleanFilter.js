@@ -12,15 +12,10 @@ import './FilterContainerStyle.css';
 import Query from '../../Query';
 
 const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
-  return (
-    fieldDisplayNameMap[initialFieldSqon.content.field] ||
-    initialFieldSqon.content.field
-  );
+  return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
 };
 
-const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
+const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
 
 export const BooleanFilterUI = props => {
   const {
@@ -66,10 +61,7 @@ export const BooleanFilterUI = props => {
     return value === (op && op.content.value[0]);
   };
 
-  const fieldDisplayName = getFieldDisplayName(
-    fieldDisplayNameMap,
-    initialFieldSqon,
-  );
+  const fieldDisplayName = getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon);
 
   return (
     <Component initialState={initialState}>
@@ -163,12 +155,7 @@ export default props => {
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           buckets={
-            data
-              ? get(
-                  data,
-                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
-                )
-              : []
+            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
           }
         />
       )}

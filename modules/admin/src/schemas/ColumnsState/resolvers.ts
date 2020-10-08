@@ -6,10 +6,11 @@ import {
 } from './types';
 import { getColumnSetState, saveColumnState } from './utils';
 
-const columnStateQueryResolver: Resolver<
-  I_ColumnSetState,
-  I_ColumnStateQueryInput
-> = (_, args, { es }) => {
+const columnStateQueryResolver: Resolver<I_ColumnSetState, I_ColumnStateQueryInput> = (
+  _,
+  args,
+  { es },
+) => {
   return getColumnSetState(es)(args);
 };
 

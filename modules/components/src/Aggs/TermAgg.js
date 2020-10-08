@@ -48,16 +48,13 @@ const IncludeExcludeButton = ({
       { title: 'Exclude', value: 'exclude' },
     ]}
     onChange={({ value, isExclude = value === 'exclude' }) => {
-      const activeBuckets = buckets.filter(b =>
-        isActive({ field: dotField, value: b.name }),
-      );
+      const activeBuckets = buckets.filter(b => isActive({ field: dotField, value: b.name }));
       handleIncludeExcludeChange({
         isExclude,
         buckets: activeBuckets,
         generateNextSQON: sqon =>
           activeBuckets.reduce(
-            (q, bucket) =>
-              generateNextSQON({ dotField, isExclude, bucket, sqon: q }),
+            (q, bucket) => generateNextSQON({ dotField, isExclude, bucket, sqon: q }),
             removeSQON(dotField, sqon),
           ),
       });
@@ -67,10 +64,7 @@ const IncludeExcludeButton = ({
 );
 
 const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
-  <div
-    className={`showMore-wrapper ${isMore ? 'more' : 'less'}`}
-    onClick={onClick}
-  >
+  <div className={`showMore-wrapper ${isMore ? 'more' : 'less'}`} onClick={onClick}>
     {isMore ? `${howManyMore} More` : 'Less'}
   </div>
 );
@@ -78,11 +72,7 @@ const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
 const decorateBuckets = ({ buckets, searchText }) => {
   const namedFilteredBuckets = buckets
     .map(b => ({ ...b, name: b.key_as_string || b.key }))
-    .filter(
-      b =>
-        !searchText ||
-        internalTranslateSQONValue(b.name).match(strToReg(searchText)),
-    );
+    .filter(b => !searchText || internalTranslateSQONValue(b.name).match(strToReg(searchText)));
   const [missing, notMissing] = partition(namedFilteredBuckets, {
     name: '__missing__',
   });
@@ -123,8 +113,7 @@ const TermAgg = ({
   scrollToAgg = () => {
     if (containerRef?.current)
       containerRef.current.scrollTop =
-        aggWrapperRef.current.offsetTop -
-        aggHeaderRef.current.getBoundingClientRect().height;
+        aggWrapperRef.current.offsetTop - aggHeaderRef.current.getBoundingClientRect().height;
   },
 
   // Internal State
@@ -142,8 +131,7 @@ const TermAgg = ({
   const dotField = field.replace(/__/g, '.');
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
   const hasSearchHit =
-    highlightText &&
-    decoratedBuckets.some(x => x.name.match(strToReg(searchText)));
+    highlightText && decoratedBuckets.some(x => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   return (
@@ -152,11 +140,7 @@ const TermAgg = ({
       headerRef={aggHeaderRef}
       stickyHeader
       {...{ displayName, WrapperComponent, collapsible }}
-      ActionIcon={
-        <DefaultSearchIcon
-          onClick={() => setShowingSearch(!stateShowingSearch)}
-        />
-      }
+      ActionIcon={<DefaultSearchIcon onClick={() => setShowingSearch(!stateShowingSearch)} />}
       filters={[
         ...(stateShowingSearch
           ? [
@@ -169,9 +153,7 @@ const TermAgg = ({
                   value={searchText}
                   placeholder={searchPlaceholder}
                   icon={<DefaultSearchIcon />}
-                  onChange={({ target: { value } }) =>
-                    setSearchText(value || '')
-                  }
+                  onChange={({ target: { value } }) => setSearchText(value || '')}
                   setSearchText={setSearchText}
                   aria-label={`Search data`}
                 />
@@ -207,62 +189,57 @@ const TermAgg = ({
       <>
         {headerTitle && <div className={`header`}>{headerTitle}</div>}
         <div className={`bucket`}>
-          {decoratedBuckets
-            .slice(0, showingMore ? Infinity : maxTerms)
-            .map((bucket, i, array) => (
-              <Content
-                id={constructEntryId({
-                  value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
-                })}
-                key={bucket.name}
-                className={`bucket-item ${constructBucketItemClassName({
-                  bucket,
-                  i,
-                  showingBuckets: array,
-                  showingMore,
-                }) || ''}`}
-                content={{
+          {decoratedBuckets.slice(0, showingMore ? Infinity : maxTerms).map((bucket, i, array) => (
+            <Content
+              id={constructEntryId({
+                value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
+              })}
+              key={bucket.name}
+              className={`bucket-item ${constructBucketItemClassName({
+                bucket,
+                i,
+                showingBuckets: array,
+                showingMore,
+              }) || ''}`}
+              content={{
+                field: dotField,
+                value: bucket.name,
+              }}
+              onClick={() =>
+                handleValueClick({
                   field: dotField,
-                  value: bucket.name,
-                }}
-                onClick={() =>
-                  handleValueClick({
+                  value: bucket,
+                  isExclude,
+                  generateNextSQON: sqon => generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                })
+              }
+            >
+              <span className="bucket-link" merge="toggle">
+                <input
+                  readOnly
+                  type="checkbox"
+                  checked={isActive({
                     field: dotField,
-                    value: bucket,
-                    isExclude,
-                    generateNextSQON: sqon =>
-                      generateNextSQON({ isExclude, dotField, bucket, sqon }),
-                  })
-                }
-              >
-                <span className="bucket-link" merge="toggle">
-                  <input
-                    readOnly
-                    type="checkbox"
-                    checked={isActive({
-                      field: dotField,
-                      value: bucket.name,
-                    })}
-                    aria-label={`Select ${bucket.name}`}
-                    id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                    name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                  />
-                  <TextHighlight
-                    content={
-                      truncate(internalTranslateSQONValue(bucket.name), {
-                        length: valueCharacterLimit || Infinity,
-                      }) + ' '
-                    }
-                    highlightText={highlightText}
-                  />
-                </span>
-                {bucket.doc_count && (
-                  <span className="bucket-count">
-                    {formatNumber(bucket.doc_count)}
-                  </span>
-                )}
-              </Content>
-            ))}
+                    value: bucket.name,
+                  })}
+                  aria-label={`Select ${bucket.name}`}
+                  id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                  name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                />
+                <TextHighlight
+                  content={
+                    truncate(internalTranslateSQONValue(bucket.name), {
+                      length: valueCharacterLimit || Infinity,
+                    }) + ' '
+                  }
+                  highlightText={highlightText}
+                />
+              </span>
+              {bucket.doc_count && (
+                <span className="bucket-count">{formatNumber(bucket.doc_count)}</span>
+              )}
+            </Content>
+          ))}
         </div>
         {isMoreEnabled && (
           <MoreOrLessButton

@@ -18,11 +18,7 @@ const constructQuery = ({ graphqlField, query, resolver = 'aggregations' }) => `
       ${resolver}(
         filters: $sqon
         ${resolver === 'aggregations' ? 'include_missing: false' : ''}
-        ${
-          resolver === 'aggregations'
-            ? 'aggregations_filter_themselves: true'
-            : ''
-        }
+        ${resolver === 'aggregations' ? 'aggregations_filter_themselves: true' : ''}
       ) {
         ${query}
       }
@@ -79,11 +75,7 @@ const FieldQuery = ({
       render({
         loading,
         value: formatResult(
-          get(
-            data,
-            `data.aggregations.${accessor({ aggsField, dataAccessor })}`,
-            '',
-          ),
+          get(data, `data.aggregations.${accessor({ aggsField, dataAccessor })}`, ''),
         ),
       })
     }
@@ -104,9 +96,7 @@ const Stat = ({
       <div className="stat-content">
         <QueryComponent
           {...props}
-          render={x =>
-            x.loading ? <LoadingSpinnerComponent /> : formatNumber(x.value)
-          }
+          render={x => (x.loading ? <LoadingSpinnerComponent /> : formatNumber(x.value))}
         />
       </div>
       <div className="stat-label">{label}</div>

@@ -1,10 +1,4 @@
-import {
-  Query,
-  Arranger,
-  Aggregations,
-  CurrentSQON,
-  Table,
-} from '@arranger/components';
+import { Query, Arranger, Aggregations, CurrentSQON, Table } from '@arranger/components';
 
 test('importing @arranger/components modules', () => {
   expect(Query).toBeDefined();

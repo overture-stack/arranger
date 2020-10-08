@@ -49,16 +49,8 @@ const App = withRouter(
             <div>
               <Header />
               <Route exact={true} path="/" render={RoutedVersionDashboard} />
-              <Route
-                exact={true}
-                path="/:projectId/"
-                render={RoutedProjectIndicesDashboard}
-              />
-              <Route
-                exact={true}
-                path="/:projectId/:indexId"
-                render={RoutedConfigEditor}
-              />
+              <Route exact={true} path="/:projectId/" render={RoutedProjectIndicesDashboard} />
+              <Route exact={true} path="/:projectId/:indexId" render={RoutedConfigEditor} />
             </div>
           </ThemeProvider>
         </ApolloProvider>

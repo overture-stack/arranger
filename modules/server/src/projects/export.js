@@ -26,12 +26,9 @@ const mapState = (key, state) => {
   if (key === 'extended') {
     return source;
   } else if (['aggs-state', 'columns-state', 'matchbox-state'].includes(key)) {
-    return source.sort((x, y) => parse(y.timestamp) - parse(x.timestamp))[0]
-      .state;
+    return source.sort((x, y) => parse(y.timestamp) - parse(x.timestamp))[0].state;
   } else {
-    console.log(
-      `[export] - WARNING - no import strategy for config state '${key}'`,
-    );
+    console.log(`[export] - WARNING - no import strategy for config state '${key}'`);
     return source;
   }
 };
@@ -89,9 +86,7 @@ export default async (req, res) => {
   const types = mapHits(await getTypes({ id, es })).map(x => x.index);
 
   const pack = tar.pack();
-  await Promise.all(
-    types.map(type => jamTypeStateInPack({ type, pack, id, es })),
-  );
+  await Promise.all(types.map(type => jamTypeStateInPack({ type, pack, id, es })));
   await pack.finalize();
 
   res.attachment(`arranger-project-${id}.tar.gz`);

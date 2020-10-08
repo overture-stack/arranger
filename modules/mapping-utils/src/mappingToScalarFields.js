@@ -14,23 +14,14 @@ export let esToGraphqlTypeMap = {
 
 const maybeArray = (field, extendedFields, type, parent) => {
   const fullField = [parent, field].filter(Boolean).join('.');
-  return extendedFields?.find(x => x.field === fullField)?.isArray
-    ? `[${type}]`
-    : type;
+  return extendedFields?.find(x => x.field === fullField)?.isArray ? `[${type}]` : type;
 };
 
 export default (mapping, extendedFields, parent) => {
   return Object.entries(mapping)
-    .filter(([, metadata]) =>
-      Object.keys(esToGraphqlTypeMap).includes(metadata.type),
-    )
+    .filter(([, metadata]) => Object.keys(esToGraphqlTypeMap).includes(metadata.type))
     .map(
       ([field, metadata]) =>
-        `${field}: ${maybeArray(
-          field,
-          extendedFields,
-          esToGraphqlTypeMap[metadata.type],
-          parent,
-        )}`,
+        `${field}: ${maybeArray(field, extendedFields, esToGraphqlTypeMap[metadata.type], parent)}`,
     );
 };

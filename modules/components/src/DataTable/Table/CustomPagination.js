@@ -43,10 +43,7 @@ export default class CustomPagination extends ReactTablePagination {
     } = this.props;
 
     const firstPage = Math.floor(
-      Math.max(
-        Math.min(page - maxPagesOptions / 2, pages - maxPagesOptions),
-        0,
-      ),
+      Math.max(Math.min(page - maxPagesOptions / 2, pages - maxPagesOptions), 0),
     );
     const lastPage = Math.floor(Math.min(firstPage + maxPagesOptions, pages));
     return (
@@ -80,17 +77,13 @@ export default class CustomPagination extends ReactTablePagination {
         {showPageJump && (
           <span className="-pageJump">
             <span
-              className={`-toStart -pagination_button ${
-                canPrevious ? '' : '-disabled'
-              }`}
+              className={`-toStart -pagination_button ${canPrevious ? '' : '-disabled'}`}
               onClick={this.onStartPageClick}
             >
               {'<<'}
             </span>
             <span
-              className={`-previous -pagination_button ${
-                canPrevious ? '' : '-disabled'
-              }`}
+              className={`-previous -pagination_button ${canPrevious ? '' : '-disabled'}`}
               onClick={this.onPreviousPageClick}
             >
               {'<'}
@@ -108,17 +101,13 @@ export default class CustomPagination extends ReactTablePagination {
               </span>
             ))}
             <span
-              className={`-next -pagination_button ${
-                canNext ? '' : '-disabled'
-              }`}
+              className={`-next -pagination_button ${canNext ? '' : '-disabled'}`}
               onClick={this.onNextPageClick}
             >
               {'>'}
             </span>
             <span
-              className={`-toEnd -pagination_button ${
-                canNext ? '' : '-disabled'
-              }`}
+              className={`-toEnd -pagination_button ${canNext ? '' : '-disabled'}`}
               onClick={this.onEndPageClick}
             >
               {'>>'}

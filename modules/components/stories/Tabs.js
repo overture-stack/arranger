@@ -25,9 +25,7 @@ storiesOf('Tabs', module)
                   { Header: 'Matched Entity', accessor: 'matchedEntity' },
                   { Header: 'Entity Id', accessor: 'entityId' },
                 ]}
-                data={[
-                  { inputId: 123, matchedEntity: 'Dog', entityId: 'dog123' },
-                ]}
+                data={[{ inputId: 123, matchedEntity: 'Dog', entityId: 'dog123' }]}
               />
             ),
           },

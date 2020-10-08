@@ -43,10 +43,7 @@ const Table = ({
                 generateNextSQON({
                   sqon,
                   fields: columnState.state.columns
-                    .filter(
-                      x =>
-                        fieldTypesForFilter.includes(x.extendedType) && x.show,
-                    )
+                    .filter(x => fieldTypesForFilter.includes(x.extendedType) && x.show)
                     .map(x => x.field),
                 }),
               );

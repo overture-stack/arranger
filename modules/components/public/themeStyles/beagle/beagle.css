@@ -524,8 +524,7 @@ div {
   left: 0px;
 }
 
-.input-range__slider-container:nth-child(3)
-  .input-range__label.input-range__label--value {
+.input-range__slider-container:nth-child(3) .input-range__label.input-range__label--value {
   right: 100%;
 }
 

@@ -19,9 +19,7 @@ export default async ({
       hits: { hits },
     },
   }) => hits;
-  const esSort = sort
-    .map(({ field, order }) => ({ [field]: order }))
-    .concat({ _id: 'asc' });
+  const esSort = sort.map(({ field, order }) => ({ [field]: order })).concat({ _id: 'asc' });
 
   const { esIndex, esType, extended } = await es
     .search({
@@ -41,9 +39,7 @@ export default async ({
           .filter(({ name }) => name === index)[0],
     );
 
-  const nestedFields = extended
-    .filter(({ type }) => type === 'nested')
-    .map(({ field }) => field);
+  const nestedFields = extended.filter(({ type }) => type === 'nested').map(({ field }) => field);
 
   const query = buildQuery({ nestedFields, filters: sqon });
 
@@ -75,9 +71,7 @@ export default async ({
               sort: esSort,
               ...(previousHits
                 ? {
-                    search_after: previousHits[
-                      previousHits.length - 1
-                    ].sort.map(esToSafeJsInt),
+                    search_after: previousHits[previousHits.length - 1].sort.map(esToSafeJsInt),
                   }
                 : {}),
               ...(Object.entries(query).length ? { query } : {}),

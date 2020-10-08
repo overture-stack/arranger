@@ -19,9 +19,7 @@ import defaultApi from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
 import Query from '../../Query';
 
-const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
+const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
 
 const filterStringsCaseInsensitive = (values, searchString, path = null) =>
   values.filter(val => {
@@ -57,8 +55,7 @@ export const TermFilterUI = props => {
       dotField: d.field,
       currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
-  const getCurrentFieldOp = s =>
-    getOperationAtPath(sqonPath)(s.state.localSqon);
+  const getCurrentFieldOp = s => getOperationAtPath(sqonPath)(s.state.localSqon);
   const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
   const computeBuckets = (s, buckets) =>
     sortBy(
@@ -121,9 +118,7 @@ export const TermFilterUI = props => {
         content: {
           ...currentFieldSqon.content,
           value: [
-            ...(currentFieldSqon.content.value || []).filter(
-              v => v !== existingValue,
-            ),
+            ...(currentFieldSqon.content.value || []).filter(v => v !== existingValue),
             ...(existingValue ? [] : deltaFiterObjContentValue),
           ],
         },
@@ -144,10 +139,7 @@ export const TermFilterUI = props => {
             </span>{' '}
             is{' '}
             <span className="select">
-              <select
-                onChange={onOptionTypeChange(s)}
-                value={getCurrentFieldOp(s).op}
-              >
+              <select onChange={onOptionTypeChange(s)} value={getCurrentFieldOp(s).op}>
                 {TERM_OPS.map(option => (
                   <option key={option} value={option}>
                     {opDisplayNameMap[option]}
@@ -157,22 +149,13 @@ export const TermFilterUI = props => {
             </span>
           </div>
           <div className="contentSection searchInputContainer">
-            <InputComponent
-              value={s.state.searchString}
-              onChange={onSearchChange(s)}
-            />
+            <InputComponent value={s.state.searchString} onChange={onSearchChange(s)} />
           </div>
           <div className="contentSection termFilterActionContainer">
-            <span
-              className={`aggsFilterAction selectAll`}
-              onClick={onSelectAllClick(s)}
-            >
+            <span className={`aggsFilterAction selectAll`} onClick={onSelectAllClick(s)}>
               Select All
             </span>
-            <span
-              className={`aggsFilterAction clear`}
-              onClick={onClearClick(s)}
-            >
+            <span className={`aggsFilterAction clear`} onClick={onClearClick(s)}>
               Clear
             </span>
           </div>
@@ -249,12 +232,7 @@ export default props => {
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           buckets={
-            data
-              ? get(
-                  data,
-                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
-                )
-              : []
+            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
           }
         />
       )}

@@ -40,9 +40,7 @@ const SortableItem = compose<
 >(
   SortableElement,
   connect(mapStateToProps, mapDispatchToProps),
-  curry(React.memo)(__, (lastProps, nextProps) =>
-    equals(lastProps.item, nextProps.item),
-  ),
+  curry(React.memo)(__, (lastProps, nextProps) => equals(lastProps.item, nextProps.item)),
 )(({ item, aggsState, onFieldSortChange, onFieldPropertyChange }) => {
   const positionOptions = range(0, aggsState.length).map(val => ({
     text: String(val),

@@ -58,12 +58,7 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
           return 'loading...';
         }
         return (
-          <Component
-            {...props}
-            data={data as IGqlQueryData}
-            error={error}
-            refetch={refetch}
-          />
+          <Component {...props} data={data as IGqlQueryData} error={error} refetch={refetch} />
         );
       }}
     </Query>
@@ -134,10 +129,7 @@ const withLocalState: THoc<{}, IPropsFromLocalState> = Wrapped => props => {
 /*************************
  * Layout component
  *************************/
-interface IInjectedProps
-  extends IPropsFromGql,
-    IPropsFromRedux,
-    IPropsFromLocalState {}
+interface IInjectedProps extends IPropsFromGql, IPropsFromRedux, IPropsFromLocalState {}
 interface IExternalProps {}
 const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   const {
@@ -187,10 +179,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
             <ExportButton projectId={entry.id} />
           </TableCell>
           <TableCell>
-            <ProjectDeleteButton
-              projectId={data.id}
-              onProjectRemoved={onProjectRemoved}
-            />
+            <ProjectDeleteButton projectId={data.id} onProjectRemoved={onProjectRemoved} />
           </TableCell>
         </TableRow>
       );
@@ -219,10 +208,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
       <div>
         {isAddingProject && (
           <ModalOverlay>
-            <AddProjectForm
-              onCancel={onCancelAddProject}
-              onProjectAdded={onProjectAdded}
-            />
+            <AddProjectForm onCancel={onCancelAddProject} onProjectAdded={onProjectAdded} />
           </ModalOverlay>
         )}
         <Button onClick={onAddButtonClick} size="medium" primary={true}>
@@ -233,8 +219,4 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   );
 };
 
-export default compose<{}, IExternalProps>(
-  withQuery,
-  withGlobalState,
-  withLocalState,
-)(Layout);
+export default compose<{}, IExternalProps>(withQuery, withGlobalState, withLocalState)(Layout);

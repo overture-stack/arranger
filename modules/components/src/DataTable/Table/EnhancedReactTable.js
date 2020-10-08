@@ -10,9 +10,7 @@ const defaultSelectInputComponent = props => {
     <input
       type={props.selectType || 'checkbox'}
       checked={props.checked}
-      aria-label={`${props.checked ? 'Deselect' : 'Select'} ${
-        props.id ? 'this row' : 'all rows'
-      }`}
+      aria-label={`${props.checked ? 'Deselect' : 'Select'} ${props.id ? 'this row' : 'all rows'}`}
       onClick={e => {
         const { shiftKey } = e;
         e.stopPropagation();

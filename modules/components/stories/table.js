@@ -6,11 +6,7 @@ import jsonPath from 'jsonpath/jsonpath.min';
 import uuid from 'uuid';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
-import DataTable, {
-  Table,
-  TableToolbar,
-  getSingleValue,
-} from '../src/DataTable';
+import DataTable, { Table, TableToolbar, getSingleValue } from '../src/DataTable';
 import { themeDecorator } from './decorators';
 import api from '../src/utils/api';
 
@@ -125,9 +121,7 @@ const dummyData = Array(1000)
     };
   });
 
-const withColumns = compose(
-  withState('columns', 'onColumnsChange', dummyConfig.columns),
-);
+const withColumns = compose(withState('columns', 'onColumnsChange', dummyConfig.columns));
 
 const TableToolbarStory = withColumns(TableToolbar);
 
@@ -184,11 +178,11 @@ storiesOf('Table', module)
       setSelectedTableRows={action('selection changed')}
     />
   ))
-  .add('Toolbar', () => (
-    <TableToolbarStory onFilterChange={console.log.bind(console)} />
-  ))
+  .add('Toolbar', () => <TableToolbarStory onFilterChange={console.log.bind(console)} />)
   .add('Toolbar with customHeaderContent', () => (
-    <TableToolbarStory customHeaderContent={(<div style={{backgroundColor: 'red', paddingTop: '4px'}}>Red Box</div>)} />
+    <TableToolbarStory
+      customHeaderContent={<div style={{ backgroundColor: 'red', paddingTop: '4px' }}>Red Box</div>}
+    />
   ))
   .add('Data Table', () => (
     <DataTable

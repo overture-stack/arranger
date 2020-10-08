@@ -13,10 +13,7 @@ import RangeFilter, {
   RangeFilterUi,
 } from '../../src/AdvancedSqonBuilder/filterComponents/RangeFilter';
 
-import {
-  sqons as mockSqons,
-  fieldDisplayMap as mockFieldDisplayMap,
-} from './mocks';
+import { sqons as mockSqons, fieldDisplayMap as mockFieldDisplayMap } from './mocks';
 import ProjectsProvider from './ProjectsProvider';
 
 const mockTermBuckets = [
@@ -53,12 +50,7 @@ const mockBooleanBuckets = [
   },
 ];
 
-const DemoSqonActionComponent = ({
-  sqonIndex,
-  isActive,
-  isSelected,
-  isHoverring,
-}) =>
+const DemoSqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
   !(isHoverring || isActive) && (
     <div
       style={{
@@ -174,10 +166,7 @@ storiesOf('AdvancedSqonBuilder', module)
                   emptyEntryMessage={'Custom empty sqon message'}
                   onChange={onChange(s)}
                   onActiveSqonSelect={onActiveSqonSelect(s)}
-                  getSqonDeleteConfirmation={({
-                    indexToRemove,
-                    dependentIndices,
-                  }) =>
+                  getSqonDeleteConfirmation={({ indexToRemove, dependentIndices }) =>
                     new Promise((resolve, reject) => {
                       setModal(s)(() => (
                         <DemoModal

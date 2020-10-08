@@ -36,9 +36,7 @@ function removeFieldFromQuery({ field, query }) {
     return null;
   } else if (nestedQuery) {
     const cleaned = removeFieldFromQuery({ field, query: nestedQuery });
-    return (
-      cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } }
-    );
+    return cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } };
   } else if (bool) {
     const filtered = Object.entries(bool).reduce((acc, [type, values]) => {
       const filteredValues = values
@@ -63,12 +61,7 @@ function getNestedPathsInField({ field, nestedFields }) {
     .filter(p => nestedFields.includes(p));
 }
 
-function wrapWithFilters({
-  field,
-  query,
-  aggregationsFilterThemselves,
-  aggregation,
-}) {
+function wrapWithFilters({ field, query, aggregationsFilterThemselves, aggregation }) {
   if (!aggregationsFilterThemselves) {
     const cleanedQuery = removeFieldFromQuery({ field, query });
     // TODO: better way to figure out that the field wasn't found
@@ -101,35 +94,32 @@ export default function({
     sqon: normalizedSqon,
     nestedFields,
   });
-  const aggs = Object.entries(graphqlFields).reduce(
-    (aggregations, [fieldKey, graphqlField]) => {
-      const field = fieldKey.replace(/__/g, '.');
-      const nestedPaths = getNestedPathsInField({ field, nestedFields });
-      const fieldAggregation = createFieldAggregation({
+  const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
+    const field = fieldKey.replace(/__/g, '.');
+    const nestedPaths = getNestedPathsInField({ field, nestedFields });
+    const fieldAggregation = createFieldAggregation({
+      field,
+      graphqlField,
+      isNested: nestedPaths.length,
+    });
+
+    const aggregation = nestedPaths.reverse().reduce(
+      (aggs, path) => ({
+        [`${field}:${AGGS_WRAPPER_NESTED}`]: { nested: { path }, aggs },
+      }),
+      fieldAggregation,
+    );
+
+    return Object.assign(
+      aggregations,
+      wrapWithFilters({
+        query,
         field,
-        graphqlField,
-        isNested: nestedPaths.length,
-      });
-
-      const aggregation = nestedPaths.reverse().reduce(
-        (aggs, path) => ({
-          [`${field}:${AGGS_WRAPPER_NESTED}`]: { nested: { path }, aggs },
-        }),
-        fieldAggregation,
-      );
-
-      return Object.assign(
-        aggregations,
-        wrapWithFilters({
-          query,
-          field,
-          aggregation,
-          aggregationsFilterThemselves,
-        }),
-      );
-    },
-    {},
-  );
+        aggregation,
+        aggregationsFilterThemselves,
+      }),
+    );
+  }, {});
 
   const filteredAggregations = injectNestedFiltersToAggs({
     aggs,

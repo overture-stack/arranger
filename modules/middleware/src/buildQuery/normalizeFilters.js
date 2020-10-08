@@ -68,11 +68,7 @@ function normalizeFilters(filter) {
       ...filter,
       content: { ...content, value: [].concat(value) },
     });
-  } else if (
-    [IN_OP, NOT_IN_OP].includes(op) &&
-    value.some(isSpecialFilter) &&
-    value.length > 1
-  ) {
+  } else if ([IN_OP, NOT_IN_OP].includes(op) && value.some(isSpecialFilter) && value.length > 1) {
     // Separate filters with special handling into separate filters and "or" them with the normal filter
     const specialFilters = value.filter(isSpecialFilter).map(specialValue => ({
       ...filter,
@@ -82,10 +78,7 @@ function normalizeFilters(filter) {
     const normalValues = value.filter(psv => !isSpecialFilter(psv));
     const filters =
       normalValues.length > 0
-        ? [
-            { ...filter, content: { ...content, value: normalValues } },
-            ...specialFilters,
-          ]
+        ? [{ ...filter, content: { ...content, value: normalValues } }, ...specialFilters]
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });

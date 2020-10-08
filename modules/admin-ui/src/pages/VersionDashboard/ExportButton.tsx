@@ -5,10 +5,7 @@ import { Query } from 'react-apollo';
 import Button from 'mineral-ui/Button';
 
 import { CONFIG_FILENAMES } from './AddProjectForm/utils';
-import {
-  QUERY as ALL_PROJECT_DATA_QUERY,
-  IGqlData,
-} from 'src/gql/queries/allProjectData';
+import { QUERY as ALL_PROJECT_DATA_QUERY, IGqlData } from 'src/gql/queries/allProjectData';
 
 const download = (content: IGqlData) => {
   return new Promise(resolve => {
@@ -28,10 +25,7 @@ const download = (content: IGqlData) => {
             CONFIG_FILENAMES.columnsState,
             JSON.stringify(index.columnsState.state, null, 2),
           );
-          indexFolder.file(
-            CONFIG_FILENAMES.extended,
-            JSON.stringify(index.extended, null, 2),
-          );
+          indexFolder.file(CONFIG_FILENAMES.extended, JSON.stringify(index.extended, null, 2));
           indexFolder.file(
             CONFIG_FILENAMES.matchboxState,
             JSON.stringify(index.matchBoxState.state, null, 2),
@@ -46,15 +40,9 @@ const download = (content: IGqlData) => {
   });
 };
 
-const ExportButton: React.ComponentType<{ projectId: string }> = ({
-  projectId,
-}) => {
+const ExportButton: React.ComponentType<{ projectId: string }> = ({ projectId }) => {
   return (
-    <Query
-      query={ALL_PROJECT_DATA_QUERY}
-      variables={{ projectId }}
-      fetchPolicy={'no-cache'}
-    >
+    <Query query={ALL_PROJECT_DATA_QUERY} variables={{ projectId }} fetchPolicy={'no-cache'}>
       {({ data, loading, error }) => {
         const onClick = () => {
           return download(data);

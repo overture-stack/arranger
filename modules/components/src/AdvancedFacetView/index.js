@@ -44,14 +44,13 @@ export default class AdvancedFacetView extends React.Component {
             parentNode[nextPath]
               ? parentNode[nextPath]
               : parentNode.properties
-                ? parentNode.properties[nextPath]
-                : {},
+              ? parentNode.properties[nextPath]
+              : {},
           elasticMapping,
         ) || {}
     );
   };
-  constructFilterId = ({ field, value }) =>
-    value ? `${field}---${value}` : field;
+  constructFilterId = ({ field, value }) => (value ? `${field}---${value}` : field);
 
   handleSqonChange = ({ sqon }) => {
     const { onSqonFieldChange = () => {} } = this.props;
@@ -59,10 +58,7 @@ export default class AdvancedFacetView extends React.Component {
   };
 
   getSnapshotBeforeUpdate(prevProps, prevState) {
-    const aggChanged = !isEqual(
-      this.props.aggregations,
-      prevProps.aggregations,
-    );
+    const aggChanged = !isEqual(this.props.aggregations, prevProps.aggregations);
     const sqonChanged = !isEqual(this.props.sqon, prevProps.sqon);
     return { shouldEndLoading: aggChanged || sqonChanged };
   }
@@ -100,13 +96,7 @@ export default class AdvancedFacetView extends React.Component {
   }, 500);
 
   render() {
-    const {
-      selectedPath,
-      withValueOnly,
-      searchTerm,
-      displayTreeData,
-      isLoading,
-    } = this.state;
+    const { selectedPath, withValueOnly, searchTerm, displayTreeData, isLoading } = this.state;
     const {
       extendedMapping = [],
       aggregations = {},
@@ -178,9 +168,7 @@ export default class AdvancedFacetView extends React.Component {
                     defaultCollapsed={({ depth }) => depth !== 0}
                     shouldCollapse={() => {
                       // if there's a searchTerm, expand everything. Else, don't control
-                      return searchTerm && searchTerm.length
-                        ? false
-                        : undefined;
+                      return searchTerm && searchTerm.length ? false : undefined;
                     }}
                     dataSource={visibleDisplayTreeData}
                     selectedPath={selectedPath}

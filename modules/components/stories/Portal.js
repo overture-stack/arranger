@@ -2,13 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { injectGlobal } from 'emotion';
 
-import {
-  Arranger,
-  GetProjects,
-  Aggregations,
-  CurrentSQON,
-  Table,
-} from '../src/Arranger';
+import { Arranger, GetProjects, Aggregations, CurrentSQON, Table } from '../src/Arranger';
 import State from '../src/State';
 import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import {
@@ -40,13 +34,11 @@ const DemoHeader = ({ update }) => {
         padding: 0 20px;
         font-size: 20px;
         font-weight: bold;
-        box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
-          0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12),
+          0 2px 4px -1px rgba(0, 0, 0, 0.3);
       `}
     >
-      {process.env.STORYBOOK_PORTAL_NAME ||
-        process.env.STORYBOOK_PORTAL_NAME ||
-        'Data Portal'}{' '}
+      {process.env.STORYBOOK_PORTAL_NAME || process.env.STORYBOOK_PORTAL_NAME || 'Data Portal'}{' '}
       Search Page
       <div
         css={`
@@ -184,12 +176,7 @@ storiesOf('Portal', module).add('Portal', () => (
         ) : (
           <GetProjects
             render={props => (
-              <ChooseProject
-                {...props}
-                index={index}
-                projectId={projectId}
-                update={update}
-              />
+              <ChooseProject {...props} index={index} projectId={projectId} update={update} />
             )}
           />
         );

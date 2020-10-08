@@ -11,9 +11,7 @@ const getTypes = async ({ id, es }) => {
     //  so here we call fetchProjects and check that the id exists.
 
     const projectsResponse = await fetchProjects({ es });
-    const projects = (projectsResponse.projects || []).map(
-      project => project.id,
-    );
+    const projects = (projectsResponse.projects || []).map(project => project.id);
     if (projects.includes(id)) {
       await es.indices.create({ index });
     }

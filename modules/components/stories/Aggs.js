@@ -2,13 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
-import {
-  DatesAgg,
-  BooleanAgg,
-  TermAgg,
-  RangeAgg,
-  AggsPanel,
-} from '../src/Aggs';
+import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
 import { inCurrentSQON, currentFieldValue } from '../src/SQONView/utils';
 import Component from 'react-component-component';
 
@@ -308,9 +302,7 @@ storiesOf('Aggs', module)
               avg: 70,
               sum: 15000,
             }}
-            handleChange={({ generateNextSQON }) =>
-              update({ sqon: generateNextSQON(sqon) })
-            }
+            handleChange={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}
           />
         </div>
       )}

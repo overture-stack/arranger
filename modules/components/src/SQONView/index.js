@@ -33,13 +33,7 @@ export const Op = ({ children, ...props }: { children?: mixed }) => (
   </Bubble>
 );
 
-export const Value = ({
-  children,
-  className = '',
-  ...props
-}: {
-  children?: mixed,
-}) => (
+export const Value = ({ children, className = '', ...props }: { children?: mixed }) => (
   <Bubble className={`sqon-value ${className}`} {...props}>
     {children}
   </Bubble>
@@ -110,21 +104,18 @@ const SQON = ({
   return (
     <div className={`sqon-view ${isEmpty ? 'sqon-view-empty' : ''}`}>
       {isEmpty && (
-        <div className="sqon-empty-message">
-          {'\u2190 Start by selecting a query field'}
-        </div>
+        <div className="sqon-empty-message">{'\u2190 Start by selecting a query field'}</div>
       )}
       {sqonContent.length >= 1 && (
         <Row wrap>
-          <Row
-            className="sqon-group"
-            key="clear"
-            style={{ alignItems: 'center' }}
-          >
+          <Row className="sqon-group" key="clear" style={{ alignItems: 'center' }}>
             {Clear({ nextSQON: null })}
           </Row>
           {sqonContent.map((valueSQON, i) => {
-            const { op, content: { field, fields, entity } } = valueSQON;
+            const {
+              op,
+              content: { field, fields, entity },
+            } = valueSQON;
             const value = [].concat(valueSQON.content.value || []);
             const isSingleValue = !Array.isArray(value) || value.length === 1;
             return (
@@ -134,8 +125,7 @@ const SQON = ({
                 style={{ alignItems: 'center' }}
               >
                 {FieldCrumb({
-                  field:
-                    op === 'filter' ? (entity ? `${entity}.${op}` : op) : field,
+                  field: op === 'filter' ? (entity ? `${entity}.${op}` : op) : field,
                   nextSQON: toggleSQON(
                     {
                       op: 'and',
@@ -144,77 +134,61 @@ const SQON = ({
                     sqon,
                   ),
                 })}
-                <Op>
-                  {(op === 'in' && isSingleValue) || op === 'filter'
-                    ? 'is'
-                    : op}
-                </Op>
+                <Op>{(op === 'in' && isSingleValue) || op === 'filter' ? 'is' : op}</Op>
                 {value.length > 1 && (
-                  <span className="sqon-value-group sqon-value-group-start">
-                    (
+                  <span className="sqon-value-group sqon-value-group-start">(</span>
+                )}
+                {(isExpanded(valueSQON) ? value : take(value, 2)).map((value, i) =>
+                  ValueCrumb({
+                    field,
+                    key: value,
+                    value,
+                    className: isSingleValue ? 'sqon-value-single' : '',
+                    nextSQON:
+                      op === 'filter'
+                        ? replaceFilterSQON(
+                            {
+                              op: 'and',
+                              content: [
+                                {
+                                  op: op,
+                                  content: {
+                                    ...(entity && { entity }),
+                                  },
+                                },
+                              ],
+                            },
+                            sqon,
+                          )
+                        : toggleSQON(
+                            {
+                              op: 'and',
+                              content: [
+                                {
+                                  op: op,
+                                  content: {
+                                    field: field,
+                                    value: [value],
+                                  },
+                                },
+                              ],
+                            },
+                            sqon,
+                          ),
+                  }),
+                )}
+                {value.length > 2 && !isExpanded(valueSQON) && (
+                  <span className="sqon-more" onClick={() => onLessClicked(valueSQON)}>
+                    {'\u2026'}
                   </span>
                 )}
-                {(isExpanded(valueSQON) ? value : take(value, 2)).map(
-                  (value, i) =>
-                    ValueCrumb({
-                      field,
-                      key: value,
-                      value,
-                      className: isSingleValue ? 'sqon-value-single' : '',
-                      nextSQON:
-                        op === 'filter'
-                          ? replaceFilterSQON(
-                              {
-                                op: 'and',
-                                content: [
-                                  {
-                                    op: op,
-                                    content: {
-                                      ...(entity && { entity }),
-                                    },
-                                  },
-                                ],
-                              },
-                              sqon,
-                            )
-                          : toggleSQON(
-                              {
-                                op: 'and',
-                                content: [
-                                  {
-                                    op: op,
-                                    content: {
-                                      field: field,
-                                      value: [value],
-                                    },
-                                  },
-                                ],
-                              },
-                              sqon,
-                            ),
-                    }),
-                )}
-                {value.length > 2 &&
-                  !isExpanded(valueSQON) && (
-                    <span
-                      className="sqon-more"
-                      onClick={() => onLessClicked(valueSQON)}
-                    >
-                      {'\u2026'}
-                    </span>
-                  )}
                 {isExpanded(valueSQON) && (
-                  <div
-                    className="sqon-less"
-                    onClick={() => onLessClicked(valueSQON)}
-                  >
+                  <div className="sqon-less" onClick={() => onLessClicked(valueSQON)}>
                     Less
                   </div>
                 )}
                 {value.length > 1 && (
-                  <span className="sqon-value-group sqon-value-group-end">
-                    )
-                  </span>
+                  <span className="sqon-value-group sqon-value-group-end">)</span>
                 )}
                 {i < sqonContent.length - 1 && <Op>{sqon.op}</Op>}
               </Row>

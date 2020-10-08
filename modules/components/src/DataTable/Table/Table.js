@@ -20,8 +20,7 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedTableRows:
-        props.selectedTableRows || props.initalSelectedTableRows || [],
+      selectedTableRows: props.selectedTableRows || props.initalSelectedTableRows || [],
       data: [],
       pages: -1,
       loading: false,
@@ -33,8 +32,7 @@ class DataTable extends React.Component {
   static getDerivedStateFromProps(nextProps, prevState) {
     return {
       ...prevState,
-      selectedTableRows:
-        nextProps.selectedTableRows || prevState.selectedTableRows,
+      selectedTableRows: nextProps.selectedTableRows || prevState.selectedTableRows,
     };
   }
 
@@ -65,13 +63,7 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = state => {
-    const {
-      fetchData,
-      config,
-      sqon,
-      alwaysSorted = [],
-      keepSelectedOnPageChange,
-    } = this.props;
+    const { fetchData, config, sqon, alwaysSorted = [], keepSelectedOnPageChange } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
@@ -120,8 +112,7 @@ class DataTable extends React.Component {
     if (
       !this.state.loading &&
       lastProps.config.columns.some(
-        (lastColumn, i) =>
-          lastColumn.show !== this.props.config.columns[i].show,
+        (lastColumn, i) => lastColumn.show !== this.props.config.columns[i].show,
       )
     ) {
       this.onFetchData(this.state.lastState);
@@ -145,13 +136,7 @@ class DataTable extends React.Component {
       maxPagesOptions,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
-    const {
-      data,
-      selectedTableRows,
-      pages,
-      loading,
-      scrollbarSize,
-    } = this.state;
+    const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -180,9 +165,7 @@ class DataTable extends React.Component {
           style={style}
           onSortedChange={onSortedChange}
           onPageChange={page => this.props.onPaginationChange({ page })}
-          onPageSizeChange={(pageSize, page) =>
-            this.props.onPaginationChange({ pageSize, page })
-          }
+          onPageSizeChange={(pageSize, page) => this.props.onPaginationChange({ pageSize, page })}
           data={propsData?.data || data}
           defaultSorted={defaultSorted}
           columns={columns.map(
@@ -194,9 +177,7 @@ class DataTable extends React.Component {
                       const values = c.accessor
                         ? [get(x, c.accessor)]
                         : jsonpath.query(x, c.jsonPath);
-                      return values
-                        .map(x => c.extendedDisplayValues[`${x}`] || x)
-                        .join(', ');
+                      return values.map(x => c.extendedDisplayValues[`${x}`] || x).join(', ');
                     },
                     id: c.field,
                   }

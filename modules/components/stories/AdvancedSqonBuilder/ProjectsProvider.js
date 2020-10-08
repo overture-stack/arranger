@@ -50,10 +50,7 @@ export default ({ children }) => {
       {s => (
         <div>
           <div>
-            <select
-              value={s.state.selectedProject}
-              onChange={onProjectSelect(s)}
-            >
+            <select value={s.state.selectedProject} onChange={onProjectSelect(s)}>
               <option value={undefined} disabled selected>
                 Select a project version
               </option>

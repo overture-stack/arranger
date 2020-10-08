@@ -1,8 +1,4 @@
-import {
-  addMockFunctionsToSchema,
-  IResolversParameter,
-  mergeSchemas,
-} from 'graphql-tools';
+import { addMockFunctionsToSchema, IResolversParameter, mergeSchemas } from 'graphql-tools';
 import { ApolloServer } from 'apollo-server-express';
 import { Client } from '@elastic/elasticsearch';
 import { print } from 'graphql/language/printer';

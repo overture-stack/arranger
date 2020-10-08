@@ -4,8 +4,7 @@ export const serializeToEsId = (id: string): string =>
     .split('-')
     .join('_');
 
-export const serializeToGqlField = (field: string): string =>
-  field.split('.').join('__');
+export const serializeToGqlField = (field: string): string => field.split('.').join('__');
 
 export const timestamp = () => new Date().toISOString();
 

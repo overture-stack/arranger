@@ -52,18 +52,13 @@ const TableToolbar = ({
   customHeaderContent = null,
 }) => {
   const isPlural =
-    total > 1 &&
-    pageSize > 1 &&
-    (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
+    total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
   return (
-    <div
-      style={{ display: 'flex', flex: 'none', ...style }}
-      className="tableToolbar"
-    >
+    <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
       <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
         Showing {(page * pageSize + 1).toLocaleString()} -{' '}
-        {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
-        {total?.toLocaleString()} {pluralize(type, isPlural ? 2 : 1)}
+        {Math.min((page + 1) * pageSize, total).toLocaleString()} of {total?.toLocaleString()}{' '}
+        {pluralize(type, isPlural ? 2 : 1)}
       </div>
       {!customHeaderContent ? null : customHeaderContent}
       <div className="group">

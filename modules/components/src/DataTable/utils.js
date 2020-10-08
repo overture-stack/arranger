@@ -23,9 +23,7 @@ export function normalizeColumns({
 
   const mappedColumns = columns
     .map(column => {
-      const customCol =
-        customColumns.find(cc => cc.content.field === column.field)?.content ||
-        {};
+      const customCol = customColumns.find(cc => cc.content.field === column.field)?.content || {};
 
       return {
         ...column,
@@ -47,11 +45,7 @@ export function normalizeColumns({
   );
 
   return sortBy(filteredCustomCols, 'index').reduce(
-    (arr, { index, content }, i) => [
-      ...arr.slice(0, index + i),
-      content,
-      ...arr.slice(index + i),
-    ],
+    (arr, { index, content }, i) => [...arr.slice(0, index + i), content, ...arr.slice(index + i)],
     mappedColumns,
   );
 }

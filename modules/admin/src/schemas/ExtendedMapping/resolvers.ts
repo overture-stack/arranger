@@ -6,11 +6,7 @@ import {
   I_SaveExtendedMappingMutationArgs,
   I_UpdateExtendedMappingMutationArgs,
 } from './types';
-import {
-  getExtendedMapping,
-  saveExtendedMapping,
-  updateFieldExtendedMapping,
-} from './utils';
+import { getExtendedMapping, saveExtendedMapping, updateFieldExtendedMapping } from './utils';
 
 const extendedMappingQueryResolver: Resolver<
   I_GqlExtendedFieldMapping[],

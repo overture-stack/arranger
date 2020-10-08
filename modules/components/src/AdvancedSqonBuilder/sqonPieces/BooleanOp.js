@@ -10,12 +10,7 @@ import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
 const SqonReference = props => {
-  const {
-    refIndex,
-    onRemoveClick = () => {},
-    highlightColor,
-    isHighlighted,
-  } = props;
+  const { refIndex, onRemoveClick = () => {}, highlightColor, isHighlighted } = props;
   return (
     <span className={`sqonReference pill`}>
       <span
@@ -144,16 +139,12 @@ const BooleanOp = props => {
                 refIndex={c}
                 onRemoveClick={onRemove(currentPath)}
                 highlightColor={getColorForReference(c)}
-                isHighlighted={
-                  referencesShouldHighlight && isIndexReferenced(c)
-                }
+                isHighlighted={referencesShouldHighlight && isIndexReferenced(c)}
               />
             ) : isEmptySqon(c) ? (
               <span>empty sqon is not yet supported here</span>
             ) : null}
-            {i < content.length - 1 && (
-              <LogicalOpSelector opName={op} onChange={onOpChange} />
-            )}
+            {i < content.length - 1 && <LogicalOpSelector opName={op} onChange={onOpChange} />}
           </span>
         );
       })}

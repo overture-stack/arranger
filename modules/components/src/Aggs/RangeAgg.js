@@ -45,7 +45,11 @@ const getLabelId = displayName => {
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    let { stats: { min, max }, unit, value } = props;
+    let {
+      stats: { min, max },
+      unit,
+      value,
+    } = props;
     this.state = {
       min,
       max,
@@ -59,7 +63,10 @@ class RangeAgg extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const { stats: { min, max }, value: externalVal } = nextProps;
+    const {
+      stats: { min, max },
+      value: externalVal,
+    } = nextProps;
     let { value } = this.state;
     this.setState({
       min,
@@ -100,10 +107,7 @@ class RangeAgg extends Component {
   };
 
   setValue = ({ min, max }) => {
-    if (
-      round(min) >= round(this.state.min) &&
-      round(max) <= round(this.state.max)
-    ) {
+    if (round(min) >= round(this.state.min) && round(max) <= round(this.state.max)) {
       this.setState({ value: { min: round(min), max: round(max) } });
     }
   };
@@ -124,12 +128,7 @@ class RangeAgg extends Component {
   };
 
   render() {
-    let {
-      step,
-      displayName = 'Unnamed Field',
-      collapsible = true,
-      WrapperComponent,
-    } = this.props;
+    let { step, displayName = 'Unnamed Field', collapsible = true, WrapperComponent } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     const supportedConversions = supportedConversionFromUnit(unit);
     return (
@@ -153,9 +152,7 @@ class RangeAgg extends Component {
                         id={abbr}
                         value={abbr}
                         checked={active}
-                        onChange={e =>
-                          this.setState({ displayUnit: e.target.value })
-                        }
+                        onChange={e => this.setState({ displayUnit: e.target.value })}
                       />
                       <label htmlFor={abbr}>{plural}</label>
                     </span>

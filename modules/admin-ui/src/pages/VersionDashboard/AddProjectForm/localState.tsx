@@ -56,35 +56,29 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               indices: state.indices.filter((x, i) => i !== indexPosition),
             });
           },
-          setIndexMutationInput: (indexPosition: number) => (
-            config: INewIndexInput,
-          ) => {
+          setIndexMutationInput: (indexPosition: number) => (config: INewIndexInput) => {
             setState({
               ...state,
-              indices: state.indices.map(
-                (args, i): typeof args =>
-                  i !== indexPosition
-                    ? args
-                    : {
-                        ...args,
-                        newIndexMutationInput: config,
-                      },
+              indices: state.indices.map((args, i): typeof args =>
+                i !== indexPosition
+                  ? args
+                  : {
+                      ...args,
+                      newIndexMutationInput: config,
+                    },
               ),
             });
           },
-          setIndexConfig: (indexPosition: number) => (
-            indexConfig: IProjectIndexConfig | null,
-          ) => {
+          setIndexConfig: (indexPosition: number) => (indexConfig: IProjectIndexConfig | null) => {
             setState({
               ...state,
-              indices: state.indices.map(
-                (args, i): typeof args =>
-                  i !== indexPosition
-                    ? args
-                    : {
-                        ...args,
-                        config: indexConfig,
-                      },
+              indices: state.indices.map((args, i): typeof args =>
+                i !== indexPosition
+                  ? args
+                  : {
+                      ...args,
+                      config: indexConfig,
+                    },
               ),
             });
           },
@@ -97,8 +91,7 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               }, 5000);
             });
           },
-          setLoadingState: isLoading =>
-            setState({ ...state, isloading: isLoading }),
+          setLoadingState: isLoading => setState({ ...state, isloading: isLoading }),
         };
         const childrenProps: IFormStateProps = {
           formState: { state, mutations: mutations },

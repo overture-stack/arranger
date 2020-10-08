@@ -44,16 +44,8 @@ export default ({ api, adminPath, esIndex }) => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation(
-            $projectId: String!
-            $graphqlField: String!
-            $esIndex: String!
-          ) {
-            newIndex(
-              projectId: $projectId
-              graphqlField: $graphqlField
-              esIndex: $esIndex
-            ) {
+          mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+            newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
               id
             }
           }
@@ -94,16 +86,8 @@ export default ({ api, adminPath, esIndex }) => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation(
-            $projectId: String!
-            $graphqlField: String!
-            $state: [AggStateInput]!
-          ) {
-            saveAggsState(
-              projectId: $projectId
-              graphqlField: $graphqlField
-              state: $state
-            ) {
+          mutation($projectId: String!, $graphqlField: String!, $state: [AggStateInput]!) {
+            saveAggsState(projectId: $projectId, graphqlField: $graphqlField, state: $state) {
               state {
                 field
               }
@@ -124,16 +108,8 @@ export default ({ api, adminPath, esIndex }) => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation(
-            $projectId: String!
-            $graphqlField: String!
-            $state: ColumnStateInput!
-          ) {
-            saveColumnsState(
-              projectId: $projectId
-              graphqlField: $graphqlField
-              state: $state
-            ) {
+          mutation($projectId: String!, $graphqlField: String!, $state: ColumnStateInput!) {
+            saveColumnsState(projectId: $projectId, graphqlField: $graphqlField, state: $state) {
               ... on ColumnsState {
                 timestamp
               }
@@ -194,9 +170,7 @@ export default ({ api, adminPath, esIndex }) => {
       },
     });
     expect(response.errors).to.be.undefined;
-    const projectWithId = response.data.projects.find(
-      ({ id }) => id === projectId,
-    );
+    const projectWithId = response.data.projects.find(({ id }) => id === projectId);
     const projectIndex = projectWithId.indices.find(
       ({ graphqlField: _graphqlField }) => _graphqlField === graphqlField,
     );

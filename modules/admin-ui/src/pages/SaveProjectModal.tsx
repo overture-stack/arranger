@@ -54,9 +54,7 @@ export default compose<
     loading: false,
   };
 
-  const onProjectIdInput = (s: IStateContainer) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) =>
+  const onProjectIdInput = (s: IStateContainer) => (e: React.SyntheticEvent<HTMLInputElement>) =>
     s.setState({
       ...s.state,
       projectId: e.currentTarget.value,
@@ -140,11 +138,7 @@ export default compose<
           </CardBlock>
           <CardDivider />
           <CardActions>
-            <Button
-              disabled={s.state.loading}
-              primary={true}
-              onClick={onSaveConfirmed(s)}
-            >
+            <Button disabled={s.state.loading} primary={true} onClick={onSaveConfirmed(s)}>
               Save
             </Button>
             <Button disabled={s.state.loading} onClick={onActionCanceled}>

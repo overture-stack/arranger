@@ -46,15 +46,11 @@ export default Component => {
         const drake = Dragula([componentBackingInstance], options);
 
         drake.on('drop', (el, target, source, sibling) => {
-          const movedColumnId = el.attributes.getNamedItem('data-accessor')
-            .value;
+          const movedColumnId = el.attributes.getNamedItem('data-accessor').value;
           let movedColumn;
 
           let newColumnsOrder = this.state.columns.filter(column => {
-            if (
-              column.accessor === movedColumnId ||
-              column.id === movedColumnId
-            ) {
+            if (column.accessor === movedColumnId || column.id === movedColumnId) {
               movedColumn = column;
               return false;
             }
@@ -62,13 +58,10 @@ export default Component => {
           });
 
           if (sibling) {
-            const siblingColumnId = sibling.attributes.getNamedItem(
-              'data-accessor',
-            ).value;
+            const siblingColumnId = sibling.attributes.getNamedItem('data-accessor').value;
 
             const siblingColumn = newColumnsOrder.filter(
-              col =>
-                col.accessor === siblingColumnId || col.id === siblingColumnId,
+              col => col.accessor === siblingColumnId || col.id === siblingColumnId,
             )[0];
 
             const siblingColumnIndex = newColumnsOrder.indexOf(siblingColumn);

@@ -12,21 +12,14 @@ const memoizedExtendedMapping = ({ projectId, graphqlField, api }) => {
   return memoHash[key];
 };
 
-const memoizedExtendedMappingField = ({
-  contentField,
-  projectId,
-  graphqlField,
-  api,
-}) => {
+const memoizedExtendedMappingField = ({ contentField, projectId, graphqlField, api }) => {
   const key = `${projectId}/${graphqlField}/${contentField}`;
   if (!memoHash[key]) {
     memoHash[key] = memoizedExtendedMapping({
       projectId,
       graphqlField,
       api,
-    }).then(({ extendedMapping }) =>
-      extendedMapping.filter(({ field }) => field === contentField),
-    );
+    }).then(({ extendedMapping }) => extendedMapping.filter(({ field }) => field === contentField));
   }
   return memoHash[key];
 };

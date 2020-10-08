@@ -34,12 +34,8 @@ export default ({
   ),
   ...rest
 }) => {
-  const trueBucket = buckets.find(
-    ({ key_as_string }) => key_as_string === valueKeys.true,
-  );
-  const falseBucket = buckets.find(
-    ({ key_as_string }) => key_as_string === valueKeys.false,
-  );
+  const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
+  const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false);
 
   const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
 
@@ -54,10 +50,8 @@ export default ({
     field: dotField,
   });
 
-  const isTrueBucketDisabled =
-    trueBucket === undefined || trueBucket?.doc_count <= 0;
-  const isFalseBucketDisabled =
-    falseBucket === undefined || falseBucket?.doc_count <= 0;
+  const isTrueBucketDisabled = trueBucket === undefined || trueBucket?.doc_count <= 0;
+  const isFalseBucketDisabled = falseBucket === undefined || falseBucket?.doc_count <= 0;
 
   const handleChange = (isTrue, field) => {
     if (isTrue !== undefined) {
@@ -91,11 +85,13 @@ export default ({
     }
   };
 
-  const options = (displayKeys.any ?
-    [{
-      value: undefined,
-      title: displayKeys.any,
-    }]
+  const options = (displayKeys.any
+    ? [
+        {
+          value: undefined,
+          title: displayKeys.any,
+        },
+      ]
     : []
   ).concat([
     {
@@ -103,10 +99,7 @@ export default ({
       disabled: isTrueBucketDisabled,
       title: (
         <>
-          <TextHighlight
-            content={displayKeys.true}
-            highlightText={highlightText}
-          />
+          <TextHighlight content={displayKeys.true} highlightText={highlightText} />
           <span className={`bucket-count`} style={{ marginLeft: 2 }}>
             {formatNumber(isTrueBucketDisabled ? 0 : trueBucket.doc_count)}
           </span>
@@ -118,10 +111,7 @@ export default ({
       disabled: isFalseBucketDisabled,
       title: (
         <>
-          <TextHighlight
-            content={displayKeys.false}
-            highlightText={highlightText}
-          />
+          <TextHighlight content={displayKeys.false} highlightText={highlightText} />
           <span
             className={`bucket-count`}
             style={{
@@ -139,19 +129,11 @@ export default ({
     <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
       <ToggleButton
         {...{
-          value: isTrueActive
-            ? valueKeys.true
-            : isFalseActive
-              ? valueKeys.false
-              : undefined,
+          value: isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined,
           options: options,
           onChange: ({ value }) => {
             handleChange(
-              value === valueKeys.true
-                ? true
-                : value === valueKeys.false
-                  ? false
-                  : undefined,
+              value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
               dotField,
             );
           },

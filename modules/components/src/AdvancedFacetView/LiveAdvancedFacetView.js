@@ -4,12 +4,7 @@ import AdvancedFacetView from './';
 import { isEqual } from 'lodash';
 import defaultApi from '../utils/api';
 
-const fetchGraphqlQuery = async ({
-  query,
-  projectId,
-  variables = null,
-  api = defaultApi,
-}) =>
+const fetchGraphqlQuery = async ({ query, projectId, variables = null, api = defaultApi }) =>
   api({
     endpoint: `/${projectId}/graphql`,
     body: {
@@ -34,25 +29,15 @@ const fetchMappingData = async fetchConfig =>
     ...fetchConfig,
   }).then(data => data[fetchConfig.index]);
 
-const fetchAggregationData = async ({
-  sqon,
-  extended,
-  projectId,
-  index,
-  api,
-}) => {
+const fetchAggregationData = async ({ sqon, extended, projectId, index, api }) => {
   const fetchConfig = { projectId, index, api };
   const serializeToGraphQl = aggName => aggName.split('.').join('__');
   const serializeToPath = aggName => aggName.split('__').join('.');
-  const allAggsNames = extended
-    .map(entry => entry.field)
-    .map(serializeToGraphQl);
+  const allAggsNames = extended.map(entry => entry.field).map(serializeToGraphQl);
   const getAggregationQuery = () =>
     allAggsNames
       .map(aggName => {
-        const aggType = extended.find(
-          entry => serializeToGraphQl(entry.field) === aggName,
-        ).type;
+        const aggType = extended.find(entry => serializeToGraphQl(entry.field) === aggName).type;
         return `
           ${aggName} {
             ${
@@ -147,8 +132,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     extended.filter(
       e =>
         !this.blackListedAggTypes.includes(e.type) &&
-        aggsState.state.find(s => s.field.split('__').join('.') === e.field)
-          ?.active,
+        aggsState.state.find(s => s.field.split('__').join('.') === e.field)?.active,
     );
 
   componentDidMount() {
@@ -194,10 +178,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     );
   };
   render() {
-    const {
-      fieldTypesToExclude = defaultFieldTypesToExclude,
-      ...props
-    } = this.props;
+    const { fieldTypesToExclude = defaultFieldTypesToExclude, ...props } = this.props;
     return (
       <AdvancedFacetView
         {...props}

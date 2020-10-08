@@ -32,9 +32,7 @@ export const hitsToEdges = ({
   const dataSize = hits.hits.length;
   const chunks = chunk(
     hits.hits,
-    dataSize > 1000
-      ? dataSize / systemCores + (dataSize % systemCores)
-      : dataSize,
+    dataSize > 1000 ? dataSize / systemCores + (dataSize % systemCores) : dataSize,
   );
   return Promise.all(
     chunks.map(
@@ -51,35 +49,30 @@ export const hitsToEdges = ({
               const jp = require('jsonpath/jsonpath.min');
 
               const resolveCopiedTo = ({ node }) => {
-                const foundValues = Object.entries(copyToSourceFields).reduce(
-                  (acc, pair) => {
-                    const copyToField = pair[0];
-                    const sourceField = pair[1];
-                    let found = {};
-                    found[copyToField] = flattenDeep(
-                      sourceField.map(path =>
-                        jp.query(
-                          node,
-                          path
-                            .split('.')
-                            .reduce(
-                              (acc, part, index) =>
-                                index === 0 ? `$.${part}` : `${acc}..${part}`,
-                              '',
-                            ),
-                        ),
+                const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
+                  const copyToField = pair[0];
+                  const sourceField = pair[1];
+                  let found = {};
+                  found[copyToField] = flattenDeep(
+                    sourceField.map(path =>
+                      jp.query(
+                        node,
+                        path
+                          .split('.')
+                          .reduce(
+                            (acc, part, index) => (index === 0 ? `$.${part}` : `${acc}..${part}`),
+                            '',
+                          ),
                       ),
-                    );
-                    return found;
-                  },
-                  {},
-                );
+                    ),
+                  );
+                  return found;
+                }, {});
                 return foundValues;
               };
 
               return hits.map(x => {
-                let joinParent = (parent, field) =>
-                  parent ? `${parent}.${field}` : field;
+                let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
                 let resolveNested = ({ node, nestedFields, parent = '' }) => {
                   if (!isObject(node) || !node) return node;
@@ -187,11 +180,7 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
     body.sort = sort.map(({ field, missing, order, ...rest }) => {
       const nested_path = nestedFields
         .filter(nestedField => field.indexOf(nestedField) === 0)
-        .reduce(
-          (deepestPath, path) =>
-            deepestPath.length > path.length ? deepestPath : path,
-          '',
-        );
+        .reduce((deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path), '');
 
       return {
         [field]: {

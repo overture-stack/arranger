@@ -4,14 +4,7 @@ import { CONSTANTS, buildQuery } from '@arranger/middleware';
 import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
 
-const retrieveSetIds = async ({
-  es,
-  index,
-  query,
-  path,
-  sort,
-  BULK_SIZE = 1000,
-}) => {
+const retrieveSetIds = async ({ es, index, query, path, sort, BULK_SIZE = 1000 }) => {
   const search = async ({ searchAfter } = {}) => {
     const body = {
       ...(!isEmpty(query) && { query }),
@@ -29,9 +22,7 @@ const retrieveSetIds = async ({
     );
 
     const nextSearchAfter = sort
-      .map(({ field }) =>
-        response.hits.hits.map(x => x._source[field] || x[field]),
-      )
+      .map(({ field }) => response.hits.hits.map(x => x._source[field] || x[field]))
       .reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
 
     return {
@@ -53,9 +44,7 @@ export const saveSet = ({ types, getServerSideFilter }) => async (
   { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
   { es, projectId },
 ) => {
-  const { nested_fields: nestedFields, index } = types.find(
-    ([, x]) => x.name === type,
-  )[1];
+  const { nested_fields: nestedFields, index } = types.find(([, x]) => x.name === type)[1];
 
   const query = buildQuery({
     nestedFields,

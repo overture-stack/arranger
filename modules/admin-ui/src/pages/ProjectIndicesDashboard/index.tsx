@@ -21,16 +21,11 @@ import Flex, { FlexItem } from 'mineral-ui/Flex';
 export interface IPropsWithProjectDataGetter {
   getProjectData: (projectId: string) => Promise<ApolloQueryResult<IGqlData>>;
 }
-export const withProjectDataGetter: THoc<
-  {},
-  IPropsWithProjectDataGetter
-> = Wrapped => props => {
+export const withProjectDataGetter: THoc<{}, IPropsWithProjectDataGetter> = Wrapped => props => {
   return (
     <ApolloConsumer>
       {client => {
-        const getProjectData = (
-          projectId: string,
-        ): Promise<ApolloQueryResult<IGqlData>> => {
+        const getProjectData = (projectId: string): Promise<ApolloQueryResult<IGqlData>> => {
           return client.query({
             query: QUERY,
             variables: {
@@ -58,9 +53,7 @@ interface IReduxStateProps {
 interface IReduxDispatchProps {
   onDataLoaded: (data: IGqlData) => void;
 }
-export interface IPropsFromRedux
-  extends IReduxStateProps,
-    IReduxDispatchProps {}
+export interface IPropsFromRedux extends IReduxStateProps, IReduxDispatchProps {}
 const mapStateToProps = (state: IGlobalState): IReduxStateProps => ({
   projectData: state.configEditor.currentProjectData,
 });

@@ -11,9 +11,7 @@ const FileSize = ({ options = {}, ...props }) => (
 
 export default {
   number: Number,
-  bits: ({ value, ...props }) => (
-    <FileSize {...props} value={(value || 0) / 8} />
-  ),
+  bits: ({ value, ...props }) => <FileSize {...props} value={(value || 0) / 8} />,
   bytes: props => <FileSize {...props} />,
   boolean: ({ value }) => (!isNil(value) ? `${value}` : ``),
   list: props => {

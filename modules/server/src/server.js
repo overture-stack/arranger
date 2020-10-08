@@ -90,9 +90,7 @@ export default async ({
       // ========= step 1: attempt to run the existing project ==========
       const projects = getProjects();
       if (!projects.length) return next();
-      const project = projects.find(
-        p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
-      );
+      const project = projects.find(p => p.id.toLowerCase() === req.params.projectId.toLowerCase());
       if (project) {
         return project.app(req, res, next);
       }

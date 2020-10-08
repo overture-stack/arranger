@@ -3,10 +3,7 @@ import { extendMapping } from '@arranger/mapping-utils';
 import { getEsMapping } from '../../services/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import { EsIndexLocation } from '../types';
-import {
-  getProjectStorageMetadata,
-  updateProjectIndexMetadata,
-} from '../IndexSchema/utils';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
 import {
   I_ExtendedFieldsMappingsQueryArgs,
   I_GqlExtendedFieldMapping,
@@ -23,9 +20,7 @@ export const createExtendedMapping = (es: Client) => async ({
     const esMapping = await getEsMapping(es)({ esIndex });
     const indexName = Object.keys(esMapping)[0]; //assumes all mappings returned are the same
     const esMappingProperties = esMapping[indexName].mappings.properties;
-    extendedMappings = extendMapping(
-      esMappingProperties,
-    ) as I_GqlExtendedFieldMapping[];
+    extendedMappings = extendMapping(esMappingProperties) as I_GqlExtendedFieldMapping[];
   } catch (err) {
     console.log('error: ', err);
     throw err;
@@ -56,16 +51,12 @@ export const getExtendedMapping = (es: Client) => async ({
   );
   if (indexMetadata) {
     if (field) {
-      return indexMetadata.config.extended
-        .filter(ex => field === ex.field)
-        .map(assertOutputType);
+      return indexMetadata.config.extended.filter(ex => field === ex.field).map(assertOutputType);
     } else {
       return indexMetadata.config.extended.map(assertOutputType);
     }
   } else {
-    throw new UserInputError(
-      `no index found under name ${graphqlField} for project ${projectId}`,
-    );
+    throw new UserInputError(`no index found under name ${graphqlField} for project ${projectId}`);
   }
 };
 
@@ -75,9 +66,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
   projectId,
   extendedFieldMappingInput,
 }: I_UpdateExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping> => {
-  const currentIndexMetadata = (
-    await getProjectStorageMetadata(es)(projectId)
-  ).find(metaData => {
+  const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(metaData => {
     return metaData.name === graphqlField;
   });
 
@@ -105,13 +94,9 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
       },
     });
 
-    return newIndexExtendedMappingFields.find(
-      field => field.field === mutatedField,
-    );
+    return newIndexExtendedMappingFields.find(field => field.field === mutatedField);
   } else {
-    throw new UserInputError(
-      `no index found under name ${graphqlField} for project ${projectId}`,
-    );
+    throw new UserInputError(`no index found under name ${graphqlField} for project ${projectId}`);
   }
 };
 
@@ -119,9 +104,9 @@ export const saveExtendedMapping = (es: Client) => async (
   args: I_SaveExtendedMappingMutationArgs,
 ): Promise<I_GqlExtendedFieldMapping[]> => {
   const { projectId, graphqlField, input } = args;
-  const currentIndexMetadata = (
-    await getProjectStorageMetadata(es)(projectId)
-  ).find(entry => entry.name === graphqlField);
+  const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
+    entry => entry.name === graphqlField,
+  );
   const {
     config: { extended: currentStoredExtendedMapping },
   } = currentIndexMetadata;

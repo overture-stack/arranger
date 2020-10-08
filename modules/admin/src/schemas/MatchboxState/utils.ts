@@ -7,10 +7,7 @@ import {
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
 } from './types';
-import {
-  getProjectStorageMetadata,
-  updateProjectIndexMetadata,
-} from '../IndexSchema/utils';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
 import { replaceBy, timestamp } from '../../services';
 
 export const createMatchboxState = ({

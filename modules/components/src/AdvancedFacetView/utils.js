@@ -5,11 +5,7 @@ import strToReg from '../utils/strToReg';
 
 const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
 
-const injectExtensionToElasticMapping = ({
-  elasticMapping,
-  extendedMapping,
-  rootTypeName,
-}) => {
+const injectExtensionToElasticMapping = ({ elasticMapping, extendedMapping, rootTypeName }) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
   const extend = node => {
     const extension = extendedMapping.find(x => x.field === node.path);
@@ -22,26 +18,18 @@ const injectExtensionToElasticMapping = ({
       ...(node.children && { children: node.children.map(extend) }),
     };
   };
-  const [rootFields, nestedFields] = partition(
-    rawDisplayData.map(extend),
-    x => !x.children,
-  );
+  const [rootFields, nestedFields] = partition(rawDisplayData.map(extend), x => !x.children);
   return [
     ...[{ title: rootTypeName || 'Root', children: rootFields, isRoot: true }],
     ...nestedFields,
   ];
 };
 
-const filterOutNonValue = ({
-  aggregations,
-  displayTreeData,
-  extendedMapping,
-}) => {
+const filterOutNonValue = ({ aggregations, displayTreeData, extendedMapping }) => {
   const aggregationsWithValue = keys(aggregations).reduce((a, key) => {
     const keyHasValue =
-      aggregations[key]?.buckets?.filter(
-        x => (x.key_as_string || x.key) !== '__missing__',
-      )?.length > 0 ||
+      aggregations[key]?.buckets?.filter(x => (x.key_as_string || x.key) !== '__missing__')
+        ?.length > 0 ||
       aggregations[key]?.stats?.min ||
       aggregations[key]?.stats?.max;
     return {
@@ -65,20 +53,19 @@ const filterOutNonValue = ({
   return {
     aggregationsWithValue,
     ...(displayTreeData && {
-      displayTreeDataWithValue: applyFilterToDisplayNodeCollection(
-        displayTreeData,
-      ),
+      displayTreeDataWithValue: applyFilterToDisplayNodeCollection(displayTreeData),
     }),
     ...(extendedMapping && {
-      extendedMappingWithValue: extendedMapping?.filter?.(
-        x => aggregationsWithValue[x.field],
-      ),
+      extendedMappingWithValue: extendedMapping?.filter?.(x => aggregationsWithValue[x.field]),
     }),
   };
 };
 
 const orderDisplayTreeData = displayTreeData => [
-  ...orderBy(displayTreeData.filter(x => !x.children || x.isRoot), 'title'),
+  ...orderBy(
+    displayTreeData.filter(x => !x.children || x.isRoot),
+    'title',
+  ),
   ...orderBy(
     displayTreeData
       .filter(x => !!x.children && !x.isRoot)
@@ -90,11 +77,7 @@ const orderDisplayTreeData = displayTreeData => [
   ),
 ];
 
-const filterDisplayTreeDataBySearchTerm = ({
-  displayTree,
-  searchTerm,
-  aggregations,
-}) => {
+const filterDisplayTreeDataBySearchTerm = ({ displayTree, searchTerm, aggregations }) => {
   const shouldBeIncluded = ({ title, path, children }) => {
     const inTitle = title.match(strToReg(searchTerm));
     const inBuckets = aggregations[path]?.buckets?.some(x =>

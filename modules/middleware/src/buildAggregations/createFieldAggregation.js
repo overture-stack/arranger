@@ -12,8 +12,7 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
         field,
         ...(type === HISTOGRAM
           ? {
-              interval:
-                get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
+              interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
             }
           : {}),
       },
@@ -38,17 +37,12 @@ const createTermAggregation = ({ field, isNested }) => {
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
 export default ({ field, graphqlField = {}, isNested = false }) => {
-  const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT].filter(
-    t => graphqlField[t],
-  );
+  const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT].filter(t => graphqlField[t]);
   return types.reduce((acc, type) => {
     if (type === BUCKETS || type === BUCKET_COUNT) {
       return Object.assign(acc, createTermAggregation({ field, isNested }));
     } else if ([STATS, HISTOGRAM].includes(type)) {
-      return Object.assign(
-        acc,
-        createNumericAggregation({ type, field, graphqlField }),
-      );
+      return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
     } else {
       return acc;
     }

@@ -51,30 +51,20 @@ interface IReduxDispatchProps {
   onFieldDisplayNameChange: (
     currentField: IExtendedMappingField,
   ) => (newDisplayName: string) => void;
-  onFieldTypeChange: (
-    currentField: IExtendedMappingField,
-  ) => (newType: string) => void;
-  onFieldActiveChange: (
-    currentField: IExtendedMappingField,
-  ) => (newActiveState: boolean) => void;
+  onFieldTypeChange: (currentField: IExtendedMappingField) => (newType: string) => void;
+  onFieldActiveChange: (currentField: IExtendedMappingField) => (newActiveState: boolean) => void;
   onFieldQuicksearchStateChange: (
     currentField: IExtendedMappingField,
   ) => (newQuicksearchState: boolean) => void;
   onFieldPrimarykeyStateChange: (
     currentField: IExtendedMappingField,
   ) => (newState: boolean) => void;
-  onFieldIsArrayStateChange: (
-    currentField: IExtendedMappingField,
-  ) => (newState: boolean) => void;
-  onFieldRangeStepChange: (
-    currentField: IExtendedMappingField,
-  ) => (newValue: number) => void;
+  onFieldIsArrayStateChange: (currentField: IExtendedMappingField) => (newState: boolean) => void;
+  onFieldRangeStepChange: (currentField: IExtendedMappingField) => (newValue: number) => void;
   onFieldValueDisplayChange: (
     currentField: IExtendedMappingField,
   ) => (valueKey: string, displayValue: string) => void;
-  onFieldUnitChange: (
-    currentField: IExtendedMappingField,
-  ) => (newValue: string) => void;
+  onFieldUnitChange: (currentField: IExtendedMappingField) => (newValue: string) => void;
 }
 const DEFAULT_BOOLEAN_VALUE_DISPLAY: {
   [k: string]: string;
@@ -83,10 +73,7 @@ const DEFAULT_BOOLEAN_VALUE_DISPLAY: {
   false: 'no',
   any: 'any',
 };
-const mapDispatchtoProps = (
-  dispatch: Dispatch,
-  ownProps: IExternalProps,
-): IReduxDispatchProps => ({
+const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IReduxDispatchProps => ({
   onFieldDisplayNameChange: currentField => newDisplayName =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
@@ -107,9 +94,7 @@ const mapDispatchtoProps = (
           ...currentField,
           type: newType,
           displayValues:
-            newType === EXTENDED_FIELD_TYPES.boolean
-              ? DEFAULT_BOOLEAN_VALUE_DISPLAY
-              : null,
+            newType === EXTENDED_FIELD_TYPES.boolean ? DEFAULT_BOOLEAN_VALUE_DISPLAY : null,
         },
       },
     }),
@@ -195,9 +180,7 @@ const mapDispatchtoProps = (
     }),
 });
 
-const Layout: React.ComponentType<
-  IExternalProps & IReduxStateProps & IReduxDispatchProps
-> = ({
+const Layout: React.ComponentType<IExternalProps & IReduxStateProps & IReduxDispatchProps> = ({
   fieldData,
   onFieldDisplayNameChange,
   onFieldTypeChange,
@@ -214,8 +197,7 @@ const Layout: React.ComponentType<
 
   const onTypeChange = e => onFieldTypeChange(fieldData)(e.value);
 
-  const onActiveStateToggle = () =>
-    onFieldActiveChange(fieldData)(!fieldData.active);
+  const onActiveStateToggle = () => onFieldActiveChange(fieldData)(!fieldData.active);
 
   const onQuicksearchStateToggle = () =>
     onFieldQuicksearchStateChange(fieldData)(!fieldData.quickSearchEnabled);
@@ -223,15 +205,13 @@ const Layout: React.ComponentType<
   const onPrimarykeyStateChange = () =>
     onFieldPrimarykeyStateChange(fieldData)(!fieldData.primaryKey);
 
-  const onIsArrayStateChange = () =>
-    onFieldIsArrayStateChange(fieldData)(!fieldData.isArray);
+  const onIsArrayStateChange = () => onFieldIsArrayStateChange(fieldData)(!fieldData.isArray);
 
   const onRangeStepChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
     onFieldRangeStepChange(fieldData)(Number(e.currentTarget.value));
 
-  const onValueDisplayChange = (valueKey: string) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => onFieldValueDisplayChange(fieldData)(valueKey, e.currentTarget.value);
+  const onValueDisplayChange = (valueKey: string) => (e: React.SyntheticEvent<HTMLInputElement>) =>
+    onFieldValueDisplayChange(fieldData)(valueKey, e.currentTarget.value);
 
   const onUnitChange = (value: string) => onFieldUnitChange(fieldData)(value);
 
@@ -289,17 +269,17 @@ const Layout: React.ComponentType<
         <CardBlock>
           <CardDivider />
           <FormField size="medium" label="Display Values" />
-          {Object.entries(
-            fieldData.displayValues || DEFAULT_BOOLEAN_VALUE_DISPLAY,
-          ).map(([valueKey, value]) => (
-            <FormField
-              input={TextInput}
-              label={valueKey}
-              size="medium"
-              value={value}
-              onChange={onValueDisplayChange(valueKey)}
-            />
-          ))}
+          {Object.entries(fieldData.displayValues || DEFAULT_BOOLEAN_VALUE_DISPLAY).map(
+            ([valueKey, value]) => (
+              <FormField
+                input={TextInput}
+                label={valueKey}
+                size="medium"
+                value={value}
+                onChange={onValueDisplayChange(valueKey)}
+              />
+            ),
+          )}
           <CardDivider />
         </CardBlock>
       )}

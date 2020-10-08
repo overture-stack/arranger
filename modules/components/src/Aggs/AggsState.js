@@ -133,8 +133,7 @@ export default class extends Component {
     return this.props.render({
       update: this.update,
       aggs: this.state.temp.map(x => {
-        const type =
-          getMappingTypeOfField({ field: x.field, mapping }) || x.type;
+        const type = getMappingTypeOfField({ field: x.field, mapping }) || x.type;
         return {
           ...x,
           type,

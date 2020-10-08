@@ -4,8 +4,7 @@ export default ({ files }) =>
       f =>
         new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () =>
-            resolve({ name: f.name, content: reader.result });
+          reader.onload = () => resolve({ name: f.name, content: reader.result });
           reader.onerror = e => reject(e);
           reader.readAsText(f);
         }),

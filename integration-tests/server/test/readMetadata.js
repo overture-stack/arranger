@@ -56,8 +56,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(get(response, `data[${graphqlField}].aggsState.state`)).to.be.not
-      .empty;
+    expect(get(response, `data[${graphqlField}].aggsState.state`)).to.be.not.empty;
     expect(response.errors).to.be.undefined;
   });
   it('reads columns state properly', async () => {
@@ -77,8 +76,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(get(response, `data[${graphqlField}].columnsState.state`)).to.be.not
-      .empty;
+    expect(get(response, `data[${graphqlField}].columnsState.state`)).to.be.not.empty;
     expect(response.errors).to.be.undefined;
   });
   it('reads matchbox state properly', async () => {
@@ -98,8 +96,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(get(response, `data[${graphqlField}].matchBoxState.state`)).to.be.not
-      .empty;
+    expect(get(response, `data[${graphqlField}].matchBoxState.state`)).to.be.not.empty;
     expect(response.errors).to.be.undefined;
   });
 };

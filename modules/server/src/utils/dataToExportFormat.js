@@ -13,8 +13,7 @@ const getAllValue = data => {
 };
 
 const getValue = (row, column) => {
-  const valueFromExtended = value =>
-    (column.extendedDisplayValues || {})[value] || value;
+  const valueFromExtended = value => (column.extendedDisplayValues || {})[value] || value;
   if (column.jsonPath) {
     return jsonPath
       .query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))
@@ -30,14 +29,7 @@ const getValue = (row, column) => {
 };
 
 const getRows = args => {
-  const {
-    row,
-    data = row,
-    paths,
-    pathIndex = 0,
-    columns,
-    entities = [],
-  } = args;
+  const { row, data = row, paths, pathIndex = 0, columns, entities = [] } = args;
   if (pathIndex >= paths.length - 1) {
     return [
       columns.map(column => {
@@ -84,11 +76,11 @@ export const columnsToHeader = ({ columns, fileType = 'tsv' }) => {
   return fileType === 'tsv'
     ? `${columns.map(({ Header }) => Header).join('\t')}`
     : fileType === 'json'
-      ? columns.reduce((output, { Header, accessor }) => {
-          output[[accessor]] = Header;
-          return output;
-        }, {})
-      : '';
+    ? columns.reduce((output, { Header, accessor }) => {
+        output[[accessor]] = Header;
+        return output;
+      }, {})
+    : '';
 };
 
 export const dataToTSV = ({ isFirst, pipe, columns, ...args }) => {
@@ -129,13 +121,7 @@ export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
   });
 };
 
-export default ({
-  index,
-  columns,
-  uniqueBy,
-  emptyValue = '--',
-  fileType = 'tsv',
-}) => {
+export default ({ index, columns, uniqueBy, emptyValue = '--', fileType = 'tsv' }) => {
   let isFirst = true;
   let chunkCounts = 0;
 
@@ -232,8 +218,7 @@ const dataToStream = ({
   }
 };
 
-const rowToTSV = ({ row, emptyValue }) =>
-  row.map(r => r || emptyValue).join('\t');
+const rowToTSV = ({ row, emptyValue }) => row.map(r => r || emptyValue).join('\t');
 
 /*
 example args:
@@ -275,19 +260,13 @@ example args:
   emptyValue: '--' }
 */
 const rowToJSON = args => {
-  const {
-    row,
-    data = row,
-    paths,
-    pathIndex = 0,
-    columns,
-    emptyValue,
-    entities = [],
-  } = args;
-  return (columns || []).filter(col => col.show).reduce((output, col) => {
-    output[[col.accessor]] = row[col.accessor] || emptyValue;
-    return output;
-  }, {});
+  const { row, data = row, paths, pathIndex = 0, columns, emptyValue, entities = [] } = args;
+  return (columns || [])
+    .filter(col => col.show)
+    .reduce((output, col) => {
+      output[[col.accessor]] = row[col.accessor] || emptyValue;
+      return output;
+    }, {});
 };
 
 const pushToStream = (line, stream) => {

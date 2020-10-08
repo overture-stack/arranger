@@ -8,11 +8,7 @@ import { cloneDeep } from 'lodash';
  * queries that are on a term that shares a parent with a aggregation field
  * needs to be dropped down to the aggregation level as a filter.
  */
-const injectNestedFiltersToAggs = ({
-  aggs,
-  nestedSqonFilters,
-  aggregationsFilterThemselves,
-}) =>
+const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilterThemselves }) =>
   Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
     const skipToNextLevel = () => {
       acc[aggName] = {

@@ -27,9 +27,7 @@ const getNestedSqonFilters = ({
     fields.forEach(field => {
       const splitted = field.split('.') || '';
       const parentPath = splitted.slice(0, splitted.length - 1).join('.');
-      const isNested = nestedFields.includes(
-        splitted.slice(0, splitted.length - 1).join('.'),
-      );
+      const isNested = nestedFields.includes(splitted.slice(0, splitted.length - 1).join('.'));
       if (splitted.length && isNested && parentPivot !== parentPath) {
         accumulator[parentPath] = [...(accumulator[parentPath] || []), sqon];
       }

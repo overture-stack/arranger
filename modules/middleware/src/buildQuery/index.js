@@ -144,9 +144,7 @@ function getRangeFilter({ nestedFields, filter }) {
       range: {
         [field]: {
           boost: 0,
-          [op]: toEsRangeValue(
-            [GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value),
-          ),
+          [op]: toEsRangeValue([GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value)),
         },
       },
     },
@@ -163,9 +161,7 @@ function collapseNestedFilters({ esFilter, bools }) {
   const found =
     path &&
     bools.find(bool =>
-      filterIsNested
-        ? readPath(bool) === readPath(esFilter)
-        : _.get(bool, path),
+      filterIsNested ? readPath(bool) === readPath(esFilter) : _.get(bool, path),
     );
 
   return [

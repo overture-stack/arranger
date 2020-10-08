@@ -25,27 +25,24 @@ class Query extends Component {
   componentDidCatch(error, info) {
     this.setState({ error });
   }
-  fetch = debounce(
-    async ({ projectId, query, variables, name, ...options }) => {
-      const { api = defaultApi } = this.props;
-      this.setState({ loading: true });
-      try {
-        let { data, errors } = await api({
-          ...options,
-          endpoint: path.join(projectId, 'graphql', name || ''),
-          body: { query, variables },
-        });
-        this.setState({
-          data,
-          error: errors ? { errors } : null,
-          loading: false,
-        });
-      } catch (error) {
-        this.setState({ data: null, error: error.message, loading: false });
-      }
-    },
-    this.props.debounceTime || 0,
-  );
+  fetch = debounce(async ({ projectId, query, variables, name, ...options }) => {
+    const { api = defaultApi } = this.props;
+    this.setState({ loading: true });
+    try {
+      let { data, errors } = await api({
+        ...options,
+        endpoint: path.join(projectId, 'graphql', name || ''),
+        body: { query, variables },
+      });
+      this.setState({
+        data,
+        error: errors ? { errors } : null,
+        loading: false,
+      });
+    } catch (error) {
+      this.setState({ data: null, error: error.message, loading: false });
+    }
+  }, this.props.debounceTime || 0);
   render() {
     const { loading, error, data } = this.state;
     const { render, renderError } = this.props;

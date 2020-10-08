@@ -5,14 +5,7 @@ import { AggsState } from '../Aggs';
 import Query from '../Query';
 import { accessor, underscoreField } from './Stats';
 
-const CombinedStatsQuery = ({
-  api,
-  projectId,
-  graphqlField,
-  sqon,
-  stats,
-  render,
-}) => (
+const CombinedStatsQuery = ({ api, projectId, graphqlField, sqon, stats, render }) => (
   <AggsState
     {...{ api, projectId, graphqlField }}
     render={({ aggs }) => {
@@ -52,11 +45,7 @@ const CombinedStatsQuery = ({
               loading,
               data: decoratedStats.reduce((acc, x) => {
                 acc[x.label] = x.formatResult(
-                  get(
-                    data,
-                    `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`,
-                    null,
-                  ),
+                  get(data, `data.${x.key}.${x.isRoot ? `total` : accessor(x)}`, null),
                 );
                 return acc;
               }, {}),

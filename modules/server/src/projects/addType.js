@@ -9,8 +9,7 @@ export default async (req, res) => {
   let { id } = req.params;
   let { index, name, config: rawConfig = {} } = req.body;
 
-  const esType =
-    req.body.esType && req.body.esType.length ? req.body.esType : index;
+  const esType = req.body.esType && req.body.esType.length ? req.body.esType : index;
 
   if (!id || !index || !name) {
     return res.json({ error: 'missing fields' });

@@ -6,10 +6,12 @@ import {
 } from './types';
 import { getMatchBoxState, saveMatchBoxState } from './utils';
 
-const matchBoxStateQueryResolver: Resolver<
-  I_MatchBoxState,
-  I_MatchBoxStateQueryInput
-> = (_, args, { es }, info) => {
+const matchBoxStateQueryResolver: Resolver<I_MatchBoxState, I_MatchBoxStateQueryInput> = (
+  _,
+  args,
+  { es },
+  info,
+) => {
   return getMatchBoxState(es)(args);
 };
 

@@ -14,16 +14,7 @@ export const LTE_OP = '<=';
 export const IN_OP = 'in';
 export const NOT_IN_OP = 'not-in';
 export const ALL_OP = 'all';
-export const FIELD_OP = [
-  GT_OP,
-  LT_OP,
-  BETWEEN_OP,
-  GTE_OP,
-  LTE_OP,
-  IN_OP,
-  NOT_IN_OP,
-  ALL_OP,
-];
+export const FIELD_OP = [GT_OP, LT_OP, BETWEEN_OP, GTE_OP, LTE_OP, IN_OP, NOT_IN_OP, ALL_OP];
 export const RANGE_OPS = [GT_OP, LT_OP, BETWEEN_OP, GTE_OP, LTE_OP];
 export const TERM_OPS = [IN_OP, ALL_OP, NOT_IN_OP];
 
@@ -46,23 +37,14 @@ export const FIELD_OP_DISPLAY_NAME = {
  * Utilities for determining the type of sqon object
  */
 export const isEmptySqon = sqonObj =>
-  !sqonObj
-    ? true
-    : BOOLEAN_OPS.includes(sqonObj.op) && !Boolean(sqonObj.content.length);
+  !sqonObj ? true : BOOLEAN_OPS.includes(sqonObj.op) && !Boolean(sqonObj.content.length);
 export const isReference = syntheticSqon => !isNaN(syntheticSqon);
 export const isValueObj = sqonObj =>
-  typeof sqonObj === 'object' &&
-  !isEmptySqon(sqonObj) &&
-  'value' in sqonObj &&
-  'field' in sqonObj;
+  typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && 'value' in sqonObj && 'field' in sqonObj;
 export const isBooleanOp = sqonObj =>
-  typeof sqonObj === 'object' &&
-  !isEmptySqon(sqonObj) &&
-  BOOLEAN_OPS.includes(sqonObj.op);
+  typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && BOOLEAN_OPS.includes(sqonObj.op);
 export const isFieldOp = sqonObj =>
-  typeof sqonObj === 'object' &&
-  !isEmptySqon(sqonObj) &&
-  FIELD_OP.includes(sqonObj.op);
+  typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && FIELD_OP.includes(sqonObj.op);
 
 /**
  * A synthetic sqon may look like: { "op": "and", "content": [1, 0, 2] }
@@ -125,9 +107,7 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(
-            s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s),
-          ),
+          content: sqon.content.map(s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s)),
         };
   });
 };
@@ -139,9 +119,7 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
 export const getOperationAtPath = paths => sqon => {
   const [currentPath, ...rest] = paths;
   return isBooleanOp(sqon)
-    ? sqon.content
-        .filter((c, i) => i === currentPath)
-        .map(getOperationAtPath(rest))[0]
+    ? sqon.content.filter((c, i) => i === currentPath).map(getOperationAtPath(rest))[0]
     : sqon;
 };
 
@@ -156,9 +134,7 @@ export const removeSqonPath = paths => sqon => {
   const targetLens = lens(lensPath);
 
   // creates lens to the immediate parent of target
-  const parentPath = flattenDeep(
-    paths.slice(0, paths.length - 1).map(path => ['content', path]),
-  );
+  const parentPath = flattenDeep(paths.slice(0, paths.length - 1).map(path => ['content', path]));
   const parentLens = lens(parentPath);
 
   // get reference to target and its immediate parent
@@ -176,8 +152,7 @@ export const removeSqonPath = paths => sqon => {
 export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
   if (isBooleanOp(syntheticSqon)) {
     return syntheticSqon.content.reduce(
-      (acc, contentSqon) =>
-        acc || isIndexReferencedInSqon(contentSqon)(indexReference),
+      (acc, contentSqon) => acc || isIndexReferencedInSqon(contentSqon)(indexReference),
       false,
     );
   } else {

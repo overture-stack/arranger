@@ -4,12 +4,7 @@ import { currentFieldValue } from '../SQONView/utils';
 import { inCurrentSQON } from '../SQONView/utils';
 import { fieldInCurrentSQON } from '../SQONView/utils';
 
-const composedTermAgg = ({
-  sqon,
-  onValueChange,
-  getTermAggProps = () => ({}),
-  ...rest
-}) => (
+const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
   <TermAgg
     handleValueClick={({ generateNextSQON, value, field }) => {
       let nextSQON = generateNextSQON(sqon);
@@ -47,20 +42,10 @@ const composedRangeAgg = ({
 }) => (
   <RangeAgg
     value={{
-      min:
-        currentFieldValue({ sqon, dotField: field, op: '>=' }) ||
-        stats?.min ||
-        0,
-      max:
-        currentFieldValue({ sqon, dotField: field, op: '<=' }) ||
-        stats?.max ||
-        0,
+      min: currentFieldValue({ sqon, dotField: field, op: '>=' }) || stats?.min || 0,
+      max: currentFieldValue({ sqon, dotField: field, op: '<=' }) || stats?.max || 0,
     }}
-    handleChange={({
-      generateNextSQON,
-      field: { displayName, displayUnit, field },
-      value,
-    }) => {
+    handleChange={({ generateNextSQON, field: { displayName, displayUnit, field }, value }) => {
       const nextSQON = generateNextSQON(sqon);
 
       onValueChange({
@@ -112,12 +97,7 @@ const composedBooleanAgg = ({
   />
 );
 
-const composedDatesAgg = ({
-  sqon,
-  onValueChange,
-  getDatesAggProps = () => ({}),
-  ...rest
-}) => (
+const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), ...rest }) => (
   <DatesAgg
     handleDateChange={({ generateNextSQON = () => {}, field, value } = {}) => {
       const nextSQON = generateNextSQON(sqon);
