@@ -8,11 +8,11 @@ import startProject, { getDefaultServerSideFilter } from './startProject';
 import { ES_HOST, ES_USER, ES_PASS, ES_LOG, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
-export const buildClientViaEnv = () => {
-  return buildClient(ES_HOST, ES_USER, ES_PASS, ES_LOG)
+export const buildEsClientViaEnv = () => {
+  return buildEsClient(ES_HOST, ES_USER, ES_PASS, ES_LOG)
 }
 
-export const buildClient = (esHost, esUser, esPass, esLog) => {
+export const buildEsClient = (esHost, esUser, esPass, esLog) => {
   if (!esHost) {
     console.error('no elasticsearch host was provided');
   }
@@ -69,7 +69,7 @@ export default async ({
     : console.log('Application started in read-only mode.');
 	
 
-  const es = buildClient(esHost, esUser, esPass)
+  const es = buildEsClient(esHost, esUser, esPass)
   if (projectId) {
     startSingleProject({
       projectId,

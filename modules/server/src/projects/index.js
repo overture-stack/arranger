@@ -13,14 +13,14 @@ import deleteType from './deleteType';
 import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
-import { buildClientViaEnv as buildEsClient } from '../server';
+import buildEsClientViaEnv from '../server';
 
 export default ({ graphqlOptions, enableAdmin }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
     try {
-      req.context.es = buildEsClient();
+      req.context.es = buildEsClientViaEnv();
     } catch (error) {
       return res.json({ error: error.message });
     }
