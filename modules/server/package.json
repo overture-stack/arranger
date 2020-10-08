@@ -58,9 +58,22 @@
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
     "@babel/preset-env": "^7.5.5",
     "@babel/register": "^7.5.5",
-    "nodemon": "^1.18.4"
+    "nodemon": "^1.18.4",
+    "prettier": "^2.1.2",
+    "husky": "^4.3.0",
+    "pretty-quick": "^3.0.2"
   },
   "jest": {
     "testURL": "http://localhost/"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all",
+    "singleQuote": true
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }

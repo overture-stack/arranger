@@ -93,7 +93,10 @@
     "semantic-ui-react": "^0.77.2",
     "url-join": "^4.0.0",
     "url-parse": "^1.2.0",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "prettier": "^2.1.2",
+    "husky": "^4.3.0",
+    "pretty-quick": "^3.0.2"
   },
   "jest": {
     "moduleNameMapper": {
@@ -101,5 +104,15 @@
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     },
     "testURL": "http://localhost/"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all",
+    "singleQuote": true
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
