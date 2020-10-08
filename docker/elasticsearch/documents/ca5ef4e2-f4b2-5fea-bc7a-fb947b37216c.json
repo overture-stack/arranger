@@ -1,0 +1,94 @@
+{
+  "object_id": "ca5ef4e2-f4b2-5fea-bc7a-fb947b37216c",
+  "study_id": "ABC123",
+  "data_type": "Variant Calling Data",
+  "file_type": "VCF",
+  "file_access": "open",
+  "analysis": {
+    "analysis_id": "9ad4de51-d012-454a-94de-51d012754a66",
+    "analysis_type": "variantCall",
+    "analysis_version": 1,
+    "analysis_state": "PUBLISHED",
+    "experiment": {
+      "info": {
+        "randomField16": "alternatively, put some extra EXPERIMENT fields here"
+      },
+      "randomField14": "we can define any EXPERIMENT field. For example, randomField14",
+      "randomField15": "as a second example, we can define another random EXPERIMENT field called randomField15",
+      "variantCallingTool": "silver bullet",
+      "matchedNormalSampleSubmitterId": "sample-x24-11a"
+    },
+    "info": {
+      "randomField19": "alternatively, put some extra ANALYSIS fields here"
+    },
+    "randomField17": "we can define any ANALYSIS field. For example, randomField17",
+    "randomField18": "as a second example, we can define another random ANALYSIS field called randomField18"
+  },
+  "file": {
+    "name": "example.vcf.gz",
+    "md5sum": "9a793e90d0d1e11301ea8da996446e59",
+    "size": 52,
+    "data_type": "Variant Calling Data",
+    "index_file": {
+      "object_id": "fb02c029-330e-5acd-a16e-6b33e7b98095",
+      "name": "example.vcf.gz.idx",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "data_type": "Variant Calling Index",
+      "size": 24,
+      "randomField10": "we can define any FILE field. For example, randomField10",
+      "randomField12": "alternatively, put some extra FILE fields here",
+      "randomField13": "as a second example, we can define another random FILE field called randomField13"
+    },
+    "randomField10": "we can define any FILE field. For example, randomField10",
+    "randomField11": "as a second example, we can define another random FILE field called randomField11",
+    "randomField12": "alternatively, put some extra FILE fields here"
+  },
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "donors": [
+    {
+      "donor_id": "74458887-c5c0-54e3-b1b4-18eebb781e14",
+      "submitter_donor_id": "internal_donor_123456789-00",
+      "gender": "Female",
+      "specimens": [
+        {
+          "specimen_id": "34975145-1283-57c7-a1c7-f0476542c565",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "internal_specimen_1",
+          "samples": [
+            {
+              "sample_id": "69d466fb-1ace-58a6-996e-89eaf7d0ced6",
+              "submitter_sample_id": "internal_sample_1",
+              "sample_type": "Total RNA",
+              "matched_normal_submitter_sample_id": "sample-x24-11a",
+              "randomField7": "we can define any SAMPLE field. For example, randomField7",
+              "randomField8": "as a second example, we can define another random SAMPLE field called randomField8",
+              "randomField9": "alternatively, put some extra SAMPLE fields here"
+            }
+          ],
+          "tumour_normal_designation": "Tumour",
+          "specimen_tissue_source": "Solid tissue",
+          "randomField1": "we can define any SPECIMEN field. For example, randomField1",
+          "randomField2": "as a second example, we can define another random SPECIMEN field called randomField2",
+          "randomField3": "alternatively, put some extra SPECIMEN fields here"
+        }
+      ],
+      "age": 30,
+      "randomField4": "we can define any DONOR field. For example, randomField4",
+      "randomField5": "as a second example, we can define another random DONOR field called randomField5",
+      "randomField6": "alternatively, put some extra DONOR fields here"
+    }
+  ],
+  "randomField10": "we can define any FILE field. For example, randomField10",
+  "randomField11": "as a second example, we can define another random FILE field called randomField11",
+  "randomField12": "alternatively, put some extra FILE fields here"
+}

@@ -1,0 +1,69 @@
+{
+  "object_id": "43a4a09d-674f-515b-bb88-1468f52f71c1",
+  "study_id": "ABC123",
+  "data_type": "Variant Calling Data",
+  "file_type": "VCF",
+  "file_access": "open",
+  "analysis": {
+    "analysis_id": "ff554639-f995-4d68-9546-39f995fd683e",
+    "analysis_type": "variantCall",
+    "analysis_version": 1,
+    "analysis_state": "PUBLISHED",
+    "experiment": {
+      "variantCallingTool": "silver bullet",
+      "matchedNormalSampleSubmitterId": "sample-x24-11a"
+    }
+  },
+  "file": {
+    "name": "example3.vcf.gz",
+    "md5sum": "9a793e90d0d1e11301ea8da996446e59",
+    "size": 53,
+    "data_type": "Variant Calling Data",
+    "index_file": {
+      "object_id": "7de931bf-650e-5b51-a233-220d32e39992",
+      "name": "example3.vcf.gz.idx",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "data_type": "Variant Calling Index",
+      "size": 24
+    }
+  },
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "donors": [
+    {
+      "donor_id": "74458887-c5c0-54e3-b1b4-18eebb781e14",
+      "submitter_donor_id": "internal_donor_123456789-00",
+      "gender": "Male",
+      "specimens": [
+        {
+          "specimen_id": "932b4e0b-7023-516d-8931-a079efc953d9",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "internal_specimen_3",
+          "samples": [
+            {
+              "sample_id": "27120ae5-06e6-5a3f-87d2-0f045cecbc86",
+              "submitter_sample_id": "internal_sample_3",
+              "sample_type": "Total RNA",
+              "matched_normal_submitter_sample_id": "sample-x24-11a"
+            }
+          ],
+          "tumour_normal_designation": "Tumour",
+          "specimen_tissue_source": "Solid tissue"
+        }
+      ],
+      "age": 22,
+      "randomField4": "we can define any DONOR field. For example, randomField4",
+      "randomField5": "as a second example, we can define another random DONOR field called randomField5",
+      "randomField6": "alternatively, put some extra DONOR fields here"
+    }
+  ]
+}
