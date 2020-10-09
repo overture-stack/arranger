@@ -1,7 +1,6 @@
 import elasticsearch from '@elastic/elasticsearch';
 import express from 'express';
 
-import { ES_LOG } from '../utils/config';
 import getFields from './getFields';
 import addType from './addType';
 import spinUp from './spinUp';
@@ -14,20 +13,14 @@ import deleteType from './deleteType';
 import addProject from './addProject';
 import getProjects from './getProjects';
 import updateField from './updateField';
+import buildEsClientViaEnv from '../server';
 
 export default ({ graphqlOptions, enableAdmin }) => {
   const router = express.Router();
   // create es client
   router.use('/', async (req, res, next) => {
-    let { eshost } = req.body;
-    let host = eshost || req.get('ES_HOST');
-    req.context = req.context || {};
-    if (!host) return res.json({ error: 'host must be provided' });
     try {
-      req.context.es = new elasticsearch.Client({
-        host,
-        log: ES_LOG,
-      });
+      req.context.es = buildEsClientViaEnv();
     } catch (error) {
       return res.json({ error: error.message });
     }

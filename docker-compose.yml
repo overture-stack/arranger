@@ -2,16 +2,16 @@ version: '3'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
     ports:
       - 9200:9200
       - 9300:9300
-    volumes:
-      - ./docker/volumes/elasticsearch/data:/usr/share/elasticsearch/data
     environment:
-      - discovery.type=single-node
-      - cluster.name=workflow.elasticsearch
-      - 'ES_JAVA_OPTS=-Xms512m -Xmx2048m'
+      discovery.type: single-node
+      cluster.name: workflow.elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx2048m
+      ELASTIC_PASSWORD: "$ES_PASSWORD"
+      xpack.security.enabled: "true"
     logging:
       driver: 'json-file'
       options:
@@ -35,7 +35,9 @@ services:
     depends_on:
       - elasticsearch
     environment:
-      LOGGING_QUIET: 'true'
+      LOGGING_QUIET: "true"
+      ELASTICSEARCH_USERNAME: "$ES_USERNAME"
+      ELASTICSEARCH_PASSWORD: "$ES_PASSWORD"
 
   arranger-server:
     build:
@@ -48,6 +50,8 @@ services:
       - 5050:5050
     environment:
       ES_HOST: http://elasticsearch:9200
+      ES_USER: "$ES_USERNAME"
+      ES_PASS: "$ES_PASSWORD"
   arranger-ui:
     build:
       context: ./
@@ -59,10 +63,3 @@ services:
     ports:
       - 8080:8080
       - 8081:8081
-
-volumes:
-  es:
-    driver: local
-
-networks:
-  es:
