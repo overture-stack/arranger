@@ -43,7 +43,8 @@ const download = (content: IGqlData) => {
 const ExportButton: React.ComponentType<{ projectId: string }> = ({ projectId }) => {
   return (
     <Query query={ALL_PROJECT_DATA_QUERY} variables={{ projectId }} fetchPolicy={'no-cache'}>
-      {({ data, loading, error }) => {
+      {(props) => {
+        const { data, loading, error } = props;
         const onClick = () => {
           return download(data);
         };
