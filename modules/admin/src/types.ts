@@ -4,6 +4,8 @@ import { Client } from '@elastic/elasticsearch';
 
 export interface AdminApiConfig {
   esHost: string;
+  esUser: string;
+  esPass: string;
 }
 export interface IQueryContext {
   es: Client;

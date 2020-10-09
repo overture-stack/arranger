@@ -5,8 +5,41 @@ import bodyParser from 'body-parser';
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
 import startProject, { getDefaultServerSideFilter } from './startProject';
-import { ES_HOST, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
+import {
+  ES_HOST,
+  ES_USER,
+  ES_PASS,
+  ES_LOG,
+  PROJECT_ID,
+  MAX_LIVE_VERSIONS,
+} from './utils/config';
 import { fetchProjects } from './projects/getProjects';
+
+export const buildEsClientViaEnv = () => {
+  return buildEsClient(ES_HOST, ES_USER, ES_PASS, ES_LOG);
+};
+
+export const buildEsClient = (esHost, esUser, esPass, esLog) => {
+  if (!esHost) {
+    console.error('no elasticsearch host was provided');
+  }
+
+  let esConfig = {
+    node: esHost,
+    log: esLog,
+  };
+
+  if (esUser) {
+    if (!esPass) {
+      console.error('ES user was defined, but password was not');
+    }
+    esConfig['auth'] = {
+      username: esUser,
+      password: esPass,
+    };
+  }
+  return new elasticsearch.Client(esConfig);
+};
 
 let startSingleProject = async ({
   projectId,
@@ -32,18 +65,17 @@ export { getProjects } from './utils/projects';
 export default async ({
   projectId = PROJECT_ID,
   esHost = ES_HOST,
+  esUser = ES_USER,
+  esPass = ES_PASS,
   graphqlOptions = {},
   enableAdmin = false,
   getServerSideFilter = getDefaultServerSideFilter,
 } = {}) => {
-  if (!esHost) {
-    console.error('no elasticsearch host was provided');
-  }
   enableAdmin
     ? console.log('Application started in ADMIN mode!!')
     : console.log('Application started in read-only mode.');
 
-  const es = new elasticsearch.Client({ node: esHost });
+  const es = buildEsClient(esHost, esUser, esPass);
   if (projectId) {
     startSingleProject({
       projectId,

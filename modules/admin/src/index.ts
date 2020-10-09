@@ -63,9 +63,13 @@ const createSchema = async () => {
   return mergedSchema;
 };
 
+function buildElasticsearchClient(config: AdminApiConfig){
+    return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
+}
+
 const initialize = (config: AdminApiConfig): Promise<Client> =>
   new Promise(async (resolve, reject) => {
-    const esClient = createElasticsearchClient(config.esHost);
+    const esClient = buildElasticsearchClient(config);
     try {
       const exists = await esClient.indices.exists({
         index: constants.ARRANGER_PROJECT_INDEX,

@@ -50,6 +50,23 @@ npm run storybook
 - [Development](#development)
 - [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
 
+#### Docker
+
+##### Start all services
+```bash
+make start
+```
+
+##### Bootstrap the file_centric index
+```bash
+make init-es
+```
+
+##### Show other make targets
+```bash
+make help
+```
+
 ### Documentation
 
 For in-depth documentation, please see the Arranger Read the Docs: https://arranger.readthedocs.io/en/latest/
