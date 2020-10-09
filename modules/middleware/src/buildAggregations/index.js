@@ -30,7 +30,7 @@ function removeFieldFromQuery({ field, query }) {
   const bool = get(query, ES_BOOL);
 
   if (
-    ['terms', 'range'].some(k => get(query, [k, field])) ||
+    ['terms', 'range'].some((k) => get(query, [k, field])) ||
     get(query, ['exists', 'field']) === field
   ) {
     return null;
@@ -40,7 +40,7 @@ function removeFieldFromQuery({ field, query }) {
   } else if (bool) {
     const filtered = Object.entries(bool).reduce((acc, [type, values]) => {
       const filteredValues = values
-        .map(value => removeFieldFromQuery({ field, query: value }))
+        .map((value) => removeFieldFromQuery({ field, query: value }))
         .filter(Boolean);
       if (filteredValues.length > 0) {
         acc[type] = filteredValues;
@@ -58,7 +58,7 @@ function getNestedPathsInField({ field, nestedFields }) {
   return field
     .split('.')
     .map((s, i, arr) => arr.slice(0, i + 1).join('.'))
-    .filter(p => nestedFields.includes(p));
+    .filter((p) => nestedFields.includes(p));
 }
 
 function wrapWithFilters({ field, query, aggregationsFilterThemselves, aggregation }) {
@@ -82,7 +82,7 @@ function wrapWithFilters({ field, query, aggregationsFilterThemselves, aggregati
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
-export default function({
+export default function ({
   sqon,
   graphqlFields,
   nestedFields,

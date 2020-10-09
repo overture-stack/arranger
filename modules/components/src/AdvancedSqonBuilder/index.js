@@ -51,7 +51,7 @@ const defaultSqonDeletionHandler = ({
     });
   });
 
-const AdvancedSqonBuilder = props => {
+const AdvancedSqonBuilder = (props) => {
   const {
     arrangerProjectId = PROJECT_ID,
     arrangerProjectIndex,
@@ -97,11 +97,11 @@ const AdvancedSqonBuilder = props => {
   const selectedSyntheticSqon = syntheticSqons[currentActiveSqonIndex];
   const allowsNewSqon = !syntheticSqons.some(isEmptySqon);
 
-  const getColorForReference = referenceIndex =>
+  const getColorForReference = (referenceIndex) =>
     referenceColors[referenceIndex % referenceColors.length];
-  const isSqonReferenced = sqonIndex => isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
+  const isSqonReferenced = (sqonIndex) => isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
 
-  const clearSqonDeletion = s => {
+  const clearSqonDeletion = (s) => {
     s.setState({
       deletingIndex: null,
       onSqonDeleteConfirmed: null,
@@ -109,7 +109,7 @@ const AdvancedSqonBuilder = props => {
     });
   };
 
-  const dispatchSqonListChange = s => ({ eventKey, newSqonList, eventDetails }) => {
+  const dispatchSqonListChange = (s) => ({ eventKey, newSqonList, eventDetails }) => {
     clearSqonDeletion(s);
     // wraps in promise to delay to allow delaying to next frame
     return Promise.resolve(
@@ -120,19 +120,19 @@ const AdvancedSqonBuilder = props => {
       }),
     );
   };
-  const onSelectedSqonIndicesChange = s => index => () => {
+  const onSelectedSqonIndicesChange = (s) => (index) => () => {
     if (!s.state.selectedSqonIndices.includes(index) && !isEmptySqon(syntheticSqons[index])) {
       s.setState({
         selectedSqonIndices: [...s.state.selectedSqonIndices, index].sort(),
       });
     } else {
       s.setState({
-        selectedSqonIndices: s.state.selectedSqonIndices.filter(i => i !== index),
+        selectedSqonIndices: s.state.selectedSqonIndices.filter((i) => i !== index),
       });
     }
   };
 
-  const removeSqon = s => indexToRemove => {
+  const removeSqon = (s) => (indexToRemove) => {
     onActiveSqonSelect({
       index: Math.max(Math.min(syntheticSqons.length - 2, indexToRemove), 0),
     });
@@ -146,7 +146,7 @@ const AdvancedSqonBuilder = props => {
     });
   };
 
-  const onSqonRemove = s => indexToRemove => () => {
+  const onSqonRemove = (s) => (indexToRemove) => () => {
     return getSqonDeleteConfirmation({
       internalStateContainer: s,
       indexToRemove,
@@ -155,7 +155,7 @@ const AdvancedSqonBuilder = props => {
       .then(() => removeSqon(s)(indexToRemove))
       .catch(() => {});
   };
-  const onSqonDuplicate = s => indexToDuplicate => () => {
+  const onSqonDuplicate = (s) => (indexToDuplicate) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'SQON_DUPLICATED',
       eventDetails: {
@@ -164,7 +164,7 @@ const AdvancedSqonBuilder = props => {
       newSqonList: [...syntheticSqons, cloneDeep(syntheticSqons[indexToDuplicate])],
     }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
-  const createUnionSqon = s => () => {
+  const createUnionSqon = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'NEW_UNION_COMBINATION',
       eventDetails: {
@@ -186,7 +186,7 @@ const AdvancedSqonBuilder = props => {
         clearSqonDeletion(s);
       });
   };
-  const createIntersectSqon = s => () => {
+  const createIntersectSqon = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'NEW_INTERSECTION_COMBINATION',
       eventDetails: {
@@ -208,7 +208,7 @@ const AdvancedSqonBuilder = props => {
         clearSqonDeletion(s);
       });
   };
-  const onNewQueryClick = s => () => {
+  const onNewQueryClick = (s) => () => {
     if (allowsNewSqon) {
       dispatchSqonListChange(s)({
         eventKey: 'NEW_SQON',
@@ -224,7 +224,7 @@ const AdvancedSqonBuilder = props => {
         });
     }
   };
-  const onClearAllClick = s => () => {
+  const onClearAllClick = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'CLEAR_ALL',
       eventDetails: {},
@@ -235,14 +235,14 @@ const AdvancedSqonBuilder = props => {
     onActiveSqonSelect({ index: 0 });
   };
 
-  const onSqonEntryActivate = s => nextActiveSqonIndex => () => {
+  const onSqonEntryActivate = (s) => (nextActiveSqonIndex) => () => {
     if (nextActiveSqonIndex !== currentActiveSqonIndex) {
       onActiveSqonSelect({
         index: nextActiveSqonIndex,
       });
     }
   };
-  const onSqonChange = s => sqonIndex => newSqon => {
+  const onSqonChange = (s) => (sqonIndex) => (newSqon) => {
     dispatchSqonListChange(s)({
       eventKey: 'SQON_CHANGE',
       eventDetails: {
@@ -259,7 +259,7 @@ const AdvancedSqonBuilder = props => {
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
-        {s => (
+        {(s) => (
           <div className={`sqonBuilder`}>
             <div className={`actionHeaderContainer`}>
               <div>

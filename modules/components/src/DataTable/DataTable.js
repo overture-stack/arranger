@@ -90,8 +90,8 @@ class DataTableWithToolbar extends React.Component {
           config={config}
           fetchData={fetchData}
           setSelectedTableRows={setSelectedTableRows}
-          onPaginationChange={state => this.setState(state)}
-          onSortedChange={sort => {
+          onPaginationChange={(state) => this.setState(state)}
+          onSortedChange={(sort) => {
             this.setState({ sort, page: 0 });
             onSortedChange(sort);
           }}

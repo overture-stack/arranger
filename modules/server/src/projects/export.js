@@ -22,7 +22,7 @@ const getAllResults = async ({ es, search, results = [] }) => {
 };
 
 const mapState = (key, state) => {
-  const source = state.map(x => x._source);
+  const source = state.map((x) => x._source);
   if (key === 'extended') {
     return source;
   } else if (['aggs-state', 'columns-state', 'matchbox-state'].includes(key)) {
@@ -58,7 +58,7 @@ const jamTypeStateInPack = async ({ type, pack, id, es }) => {
 
   await Promise.all(
     Object.keys(results)
-      .map(key => ({
+      .map((key) => ({
         key,
         fileKey: key === type ? `extended` : key.replace(`${type}-`, ''),
       }))
@@ -70,7 +70,7 @@ const jamTypeStateInPack = async ({ type, pack, id, es }) => {
                 name: `arranger-project-${id}/${type}/${fileKey}.json`,
               },
               JSON.stringify(mapState(fileKey, results[key]), null, 2),
-              err => (err ? rej(err) : res()),
+              (err) => (err ? rej(err) : res()),
             ),
           ),
       ),
@@ -83,10 +83,10 @@ export default async (req, res) => {
 
   if (!id) return res.json({ error: 'project empty' });
 
-  const types = mapHits(await getTypes({ id, es })).map(x => x.index);
+  const types = mapHits(await getTypes({ id, es })).map((x) => x.index);
 
   const pack = tar.pack();
-  await Promise.all(types.map(type => jamTypeStateInPack({ type, pack, id, es })));
+  await Promise.all(types.map((type) => jamTypeStateInPack({ type, pack, id, es })));
   await pack.finalize();
 
   res.attachment(`arranger-project-${id}.tar.gz`);

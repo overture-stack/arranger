@@ -60,7 +60,7 @@ export const getProjectMetadata = (es: Client) => async (
   projectId: string,
 ): Promise<IIndexGqlModel[]> =>
   Promise.all(
-    (await getProjectStorageMetadata(es)(projectId)).map(async metadata => ({
+    (await getProjectStorageMetadata(es)(projectId)).map(async (metadata) => ({
       id: `${projectId}::${metadata.name}`,
       hasMapping: mappingExistsOn(es)({
         esIndex: metadata.index,
@@ -76,7 +76,7 @@ export const createNewIndex = (es: Client) => async (
 ): Promise<IIndexGqlModel> => {
   const { projectId, graphqlField, esIndex } = args;
   const arrangerProject: {} = (await getArrangerProjects(es)).find(
-    project => project.id === projectId,
+    (project) => project.id === projectId,
   );
   if (arrangerProject) {
     const serializedGqlField = serializeToGqlField(graphqlField);
@@ -157,7 +157,7 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
       refresh: 'true',
     });
     const output = (await getProjectStorageMetadata(es)(projectId)).find(
-      i => i.name === metaData.name,
+      (i) => i.name === metaData.name,
     );
     return output;
   });

@@ -1,6 +1,6 @@
 import { flattenDeep } from 'lodash';
 
-let joinWith = (s = '.') => x => (x ? x + s : '');
+let joinWith = (s = '.') => (x) => (x ? x + s : '');
 
 let flattenMapping = (properties, parent = '') => {
   return flattenDeep(

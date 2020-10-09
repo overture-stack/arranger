@@ -26,12 +26,12 @@ const UNITS_DISPLAY_NAMES = {
   d: 'day',
 };
 
-const toUnitDisplayName = unit => UNITS_DISPLAY_NAMES[unit] || unit;
+const toUnitDisplayName = (unit) => UNITS_DISPLAY_NAMES[unit] || unit;
 
-const supportedConversionFromUnit = unit =>
+const supportedConversionFromUnit = (unit) =>
   unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
 
-const normalizeNumericFieldOp = fieldOp => ({
+const normalizeNumericFieldOp = (fieldOp) => ({
   ...fieldOp,
   content: {
     ...fieldOp.content,
@@ -41,25 +41,21 @@ const normalizeNumericFieldOp = fieldOp => ({
   },
 });
 
-const convertUnit = (sourceUnit, targetUnit) => num => {
-  return sourceUnit && targetUnit
-    ? convert(num)
-        .from(sourceUnit)
-        .to(targetUnit)
-    : num;
+const convertUnit = (sourceUnit, targetUnit) => (num) => {
+  return sourceUnit && targetUnit ? convert(num).from(sourceUnit).to(targetUnit) : num;
 };
 
-export const RangeFilterUi = props => {
+export const RangeFilterUi = (props) => {
   const {
     field: fieldName = null,
     sqonPath = [],
     initialSqon = null,
-    onSubmit = sqon => {},
+    onSubmit = (sqon) => {},
     onCancel = () => {},
     fieldDisplayNameMap = {},
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
     ContainerComponent = FilterContainer,
-    InputComponent = props => (
+    InputComponent = (props) => (
       <input {...props} className={`rangeFilterInput ${props.className || ''}`} />
     ),
     unit: originalUnit = null,
@@ -82,7 +78,7 @@ export const RangeFilterUi = props => {
     selectedUnit: originalUnit,
   };
 
-  const onSqonSubmit = s => () => {
+  const onSqonSubmit = (s) => () => {
     const op = s.state.selectedOperation;
     const toOriginalUnit = convertUnit(s.state.selectedUnit, originalUnit);
     const min = toOriginalUnit(s.state.minValue);
@@ -103,21 +99,21 @@ export const RangeFilterUi = props => {
     onSubmit(setSqonAtPath(sqonPath, sqonToSubmit)(initialSqon));
   };
 
-  const onOptionTypeChange = s => e => {
+  const onOptionTypeChange = (s) => (e) => {
     s.setState({
       selectedOperation: e.target.value,
     });
   };
 
-  const onMinimumChange = s => e => {
+  const onMinimumChange = (s) => (e) => {
     s.setState({ minValue: e.target.value });
   };
 
-  const onMaximumChange = s => e => {
+  const onMaximumChange = (s) => (e) => {
     s.setState({ maxValue: e.target.value });
   };
 
-  const onClearClick = s => e => {
+  const onClearClick = (s) => (e) => {
     s.setState({
       maxValue: '',
       minValue: '',
@@ -125,26 +121,26 @@ export const RangeFilterUi = props => {
   };
 
   const unitOptions = supportedConversionFromUnit(originalUnit) || [];
-  const onUnitOptionSelect = s => e => {
+  const onUnitOptionSelect = (s) => (e) => {
     s.setState({ selectedUnit: e.target.value });
   };
 
-  const isMinimumDisabled = s => [LTE_OP, LT_OP].includes(s.state.selectedOperation);
-  const isMaximumDisabled = s => [GTE_OP, GT_OP].includes(s.state.selectedOperation);
+  const isMinimumDisabled = (s) => [LTE_OP, LT_OP].includes(s.state.selectedOperation);
+  const isMaximumDisabled = (s) => [GTE_OP, GT_OP].includes(s.state.selectedOperation);
 
-  const StyledInputComponent = props => (
+  const StyledInputComponent = (props) => (
     <InputComponent {...props} className={`rangeFilterInput ${props.className || ''}`} />
   );
 
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <div className="filterContent">
             <div className="contentSection">
               <span>{fieldDisplayNameMap[field] || field}</span> is{' '}
               <select onChange={onOptionTypeChange(s)}>
-                {RANGE_OPS.map(option => (
+                {RANGE_OPS.map((option) => (
                   <option
                     key={option}
                     value={option}
@@ -161,7 +157,7 @@ export const RangeFilterUi = props => {
               </span>
             </div>
             <form className="contentSection">
-              {unitOptions.map(unit => (
+              {unitOptions.map((unit) => (
                 <label className="unitOptionLabel" key={unit}>
                   <input
                     type="radio"
@@ -210,12 +206,12 @@ export const RangeFilterUi = props => {
 const RangeFilter = ({
   sqonPath = [],
   initialSqon = null,
-  onSubmit = sqon => {},
+  onSubmit = (sqon) => {},
   onCancel = () => {},
   fieldDisplayNameMap = {},
   opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   ContainerComponent = FilterContainer,
-  InputComponent = props => <input {...props} />,
+  InputComponent = (props) => <input {...props} />,
   unit = null,
   field,
 }) => (

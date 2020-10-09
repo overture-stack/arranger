@@ -4,7 +4,7 @@ import { storiesOf } from '@storybook/react';
 import { themeDecorator } from './decorators';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 
-const injectMockBuckets = node =>
+const injectMockBuckets = (node) =>
   Object.keys(node).reduce(
     (agg, key) => ({
       ...agg,
@@ -13,7 +13,7 @@ const injectMockBuckets = node =>
     {},
   );
 
-const attachBucketToNode = mappingNode => ({
+const attachBucketToNode = (mappingNode) => ({
   ...mappingNode,
   ...(mappingNode.properties
     ? {

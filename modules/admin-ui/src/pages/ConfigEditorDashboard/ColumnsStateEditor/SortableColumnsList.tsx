@@ -41,7 +41,7 @@ const SortableItem = compose<
     return <div>LOADING...</div>;
   }
   const { columns } = columnsState;
-  const positionOptions = range(0, columns.length).map(val => ({
+  const positionOptions = range(0, columns.length).map((val) => ({
     text: String(val),
     value: String(val),
   }));

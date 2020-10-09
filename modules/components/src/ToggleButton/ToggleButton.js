@@ -3,7 +3,7 @@ import './ToggleButton.css';
 
 export default ({ value, options = [], onChange = () => {} }) => (
   <div className="toggle-button">
-    {options.map(x => {
+    {options.map((x) => {
       const isDisabled = x ? x.disabled : false;
       return (
         <div

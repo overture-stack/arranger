@@ -23,7 +23,7 @@ class DropDown extends React.Component {
   handleToggleMenu = () => {
     this.setState(({ isOpen }) => ({ isOpen: !isOpen }));
   };
-  handleStateChange = changes => {
+  handleStateChange = (changes) => {
     const { isOpen, type } = changes;
     if (type === Downshift.stateChangeTypes.mouseUp) {
       this.setState({ isOpen });
@@ -37,7 +37,7 @@ class DropDown extends React.Component {
       <Downshift
         itemToString={itemToString}
         onChange={onChange}
-        selectedItem={items.filter(item => item.show)}
+        selectedItem={items.filter((item) => item.show)}
         isOpen={isOpen}
         onStateChange={this.handleStateChange}
       >

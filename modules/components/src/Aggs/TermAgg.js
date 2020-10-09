@@ -48,11 +48,11 @@ const IncludeExcludeButton = ({
       { title: 'Exclude', value: 'exclude' },
     ]}
     onChange={({ value, isExclude = value === 'exclude' }) => {
-      const activeBuckets = buckets.filter(b => isActive({ field: dotField, value: b.name }));
+      const activeBuckets = buckets.filter((b) => isActive({ field: dotField, value: b.name }));
       handleIncludeExcludeChange({
         isExclude,
         buckets: activeBuckets,
-        generateNextSQON: sqon =>
+        generateNextSQON: (sqon) =>
           activeBuckets.reduce(
             (q, bucket) => generateNextSQON({ dotField, isExclude, bucket, sqon: q }),
             removeSQON(dotField, sqon),
@@ -71,8 +71,8 @@ const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
 
 const decorateBuckets = ({ buckets, searchText }) => {
   const namedFilteredBuckets = buckets
-    .map(b => ({ ...b, name: b.key_as_string || b.key }))
-    .filter(b => !searchText || internalTranslateSQONValue(b.name).match(strToReg(searchText)));
+    .map((b) => ({ ...b, name: b.key_as_string || b.key }))
+    .filter((b) => !searchText || internalTranslateSQONValue(b.name).match(strToReg(searchText)));
   const [missing, notMissing] = partition(namedFilteredBuckets, {
     name: '__missing__',
   });
@@ -131,7 +131,7 @@ const TermAgg = ({
   const dotField = field.replace(/__/g, '.');
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
   const hasSearchHit =
-    highlightText && decoratedBuckets.some(x => x.name.match(strToReg(searchText)));
+    highlightText && decoratedBuckets.some((x) => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   return (
@@ -195,12 +195,14 @@ const TermAgg = ({
                 value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
               })}
               key={bucket.name}
-              className={`bucket-item ${constructBucketItemClassName({
-                bucket,
-                i,
-                showingBuckets: array,
-                showingMore,
-              }) || ''}`}
+              className={`bucket-item ${
+                constructBucketItemClassName({
+                  bucket,
+                  i,
+                  showingBuckets: array,
+                  showingMore,
+                }) || ''
+              }`}
               content={{
                 field: dotField,
                 value: bucket.name,
@@ -210,7 +212,8 @@ const TermAgg = ({
                   field: dotField,
                   value: bucket,
                   isExclude,
-                  generateNextSQON: sqon => generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                  generateNextSQON: (sqon) =>
+                    generateNextSQON({ isExclude, dotField, bucket, sqon }),
                 })
               }
             >

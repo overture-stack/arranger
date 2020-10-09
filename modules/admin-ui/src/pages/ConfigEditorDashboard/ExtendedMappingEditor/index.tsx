@@ -29,7 +29,7 @@ export const mapStateToProps = (
     return {};
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
-      index => index.graphqlField === graphqlField,
+      (index) => index.graphqlField === graphqlField,
     );
     if (currentProjectIndexData) {
       return {
@@ -148,11 +148,11 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
   };
 
   const getSelectedField = (s: IStateContainer) =>
-    extendedMapping.find(entry => entry.field === s.state.selectedField);
+    extendedMapping.find((entry) => entry.field === s.state.selectedField);
 
   const getFilteredFields = (state: ILocalState): typeof extendedMapping =>
     sortBy(prop('field'))(
-      extendedMapping.filter(field => {
+      extendedMapping.filter((field) => {
         const { filter } = state;
         return (
           field.field.includes(filter.field) &&
@@ -178,9 +178,9 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
             key: 'field',
           },
         ];
-        const fieldTableRows = filteredExtendedMapping.map(entry => ({
+        const fieldTableRows = filteredExtendedMapping.map((entry) => ({
           selected: s.state.selectedField === entry.field,
-          row: props => {
+          row: (props) => {
             return (
               <SelectableTableRow
                 selected={s.state.selectedField === entry.field}

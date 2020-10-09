@@ -6,7 +6,7 @@ import { flattenDeep, isArray, zipObject } from 'lodash';
 import { CONSTANTS } from '@arranger/middleware';
 import esSearch from './utils/esSearch';
 
-const resolveSetIdsFromEs = es => setId =>
+const resolveSetIdsFromEs = (es) => (setId) =>
   esSearch(es)({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     body: {
@@ -27,20 +27,20 @@ const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
         ),
       )
     : isArray(content?.value)
-    ? content?.value.filter(value => String(value).indexOf('set_id:') === 0)
+    ? content?.value.filter((value) => String(value).indexOf('set_id:') === 0)
     : [...(String(content?.value).indexOf?.('set_id:') === 0 ? [content.value] : [])]
-  ).map(setId => setId.replace('set_id:', ''));
+  ).map((setId) => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
   ...sqon,
-  content: sqon.content.map(op => ({
+  content: sqon.content.map((op) => ({
     ...op,
     content: !isArray(op.content)
       ? {
           ...op.content,
           value: isArray(op.content.value)
             ? flattenDeep(
-                op.content.value.map(value => setIdsToValueMap[value] || op.content.value),
+                op.content.value.map((value) => setIdsToValueMap[value] || op.content.value),
               )
             : setIdsToValueMap[op.content.value] || op.content.value,
         }
@@ -51,9 +51,9 @@ const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
 export const resolveSetsInSqon = ({ sqon, es }) => {
   const setIds = getSetIdsFromSqon(sqon || {});
   return setIds.length
-    ? Promise.all(setIds.map(resolveSetIdsFromEs(es))).then(searchResult => {
+    ? Promise.all(setIds.map(resolveSetIdsFromEs(es))).then((searchResult) => {
         const setIdsToValueMap = zipObject(
-          setIds.map(id => `set_id:${id}`),
+          setIds.map((id) => `set_id:${id}`),
           searchResult,
         );
         return injectIdsIntoSqon({ sqon, setIdsToValueMap });

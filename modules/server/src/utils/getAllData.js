@@ -26,9 +26,9 @@ export default async ({
       index: `arranger-projects-${projectId}`,
     })
     .then(toHits)
-    .then(hits => hits.map(({ _source }) => _source))
+    .then((hits) => hits.map(({ _source }) => _source))
     .then(
-      hits =>
+      (hits) =>
         hits
           .map(({ index: esIndex, name, esType, config: { extended } }) => ({
             esIndex,
@@ -60,7 +60,7 @@ export default async ({
       const total = data[index].hits.total;
       const steps = Array(Math.ceil(total / chunkSize)).fill();
       // async reduce because each cycle is dependent on result of the previous
-      return steps.reduce(async previous => {
+      return steps.reduce(async (previous) => {
         const previousHits = await previous;
         console.time(`EsQuery`);
         const hits = await es

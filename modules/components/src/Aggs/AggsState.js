@@ -82,7 +82,7 @@ export default class extends Component {
     }
   }, 300);
 
-  save = debounce(async state => {
+  save = debounce(async (state) => {
     const { api = defaultApi } = this.props;
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
@@ -108,21 +108,21 @@ export default class extends Component {
   }, 300);
 
   update = ({ field, key, value }) => {
-    let agg = this.state.temp.find(x => x.field === field);
-    let index = this.state.temp.findIndex(x => x.field === field);
+    let agg = this.state.temp.find((x) => x.field === field);
+    let index = this.state.temp.findIndex((x) => x.field === field);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...agg, [key]: value },
     });
     this.setState({ temp }, () => this.save(temp));
   };
 
-  saveOrder = orderedFields => {
+  saveOrder = (orderedFields) => {
     const aggs = this.state.temp;
     if (
-      orderedFields.every(field => aggs.find(agg => agg.field === field)) &&
-      aggs.every(agg => orderedFields.find(field => field === agg.field))
+      orderedFields.every((field) => aggs.find((agg) => agg.field === field)) &&
+      aggs.every((agg) => orderedFields.find((field) => field === agg.field))
     ) {
-      this.save(sortBy(aggs, agg => orderedFields.indexOf(agg.field)));
+      this.save(sortBy(aggs, (agg) => orderedFields.indexOf(agg.field)));
     } else {
       console.warn('provided orderedFields are not clean: ', orderedFields);
     }
@@ -132,7 +132,7 @@ export default class extends Component {
     const { mapping } = this.state;
     return this.props.render({
       update: this.update,
-      aggs: this.state.temp.map(x => {
+      aggs: this.state.temp.map((x) => {
         const type = getMappingTypeOfField({ field: x.field, mapping }) || x.type;
         return {
           ...x,

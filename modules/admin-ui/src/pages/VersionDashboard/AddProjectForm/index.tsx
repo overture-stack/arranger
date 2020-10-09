@@ -25,7 +25,7 @@ interface IIndexConfigArgs {
   index: INewIndexInput;
 }
 
-const Layout: React.ComponentType<ILayoutProps> = props => {
+const Layout: React.ComponentType<ILayoutProps> = (props) => {
   const {
     formState: {
       mutations: {

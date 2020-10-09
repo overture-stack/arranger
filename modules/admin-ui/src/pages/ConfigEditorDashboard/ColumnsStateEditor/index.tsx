@@ -113,7 +113,7 @@ export default connect(
     };
     const getFilteredColumns = (s: IFilterStateContainer) =>
       columnsWithIndex.filter(
-        c =>
+        (c) =>
           c.field.includes(s.state.filter.fieldFilter) &&
           (s.state.filter.show !== null ? String(c.show) === s.state.filter.show : true) &&
           (s.state.filter.sortable !== null

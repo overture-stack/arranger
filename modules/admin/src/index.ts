@@ -59,8 +59,8 @@ const createSchema = async () => {
   return mergedSchema;
 };
 
-function buildElasticsearchClient(config: AdminApiConfig){
-    return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
+function buildElasticsearchClient(config: AdminApiConfig) {
+  return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
 }
 
 const initialize = (config: AdminApiConfig): Promise<Client> =>

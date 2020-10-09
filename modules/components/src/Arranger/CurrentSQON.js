@@ -13,8 +13,8 @@ export const CurrentSQON = ({
   extendedMapping,
   valueCharacterLimit = 30,
   onClear = () => {},
-  translateSQONValue = x => x,
-  findExtendedMappingField = field => extendedMapping?.find(e => e.field === field),
+  translateSQONValue = (x) => x,
+  findExtendedMappingField = (field) => extendedMapping?.find((e) => e.field === field),
   ...props
 }) => (
   <SQONView

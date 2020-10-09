@@ -2,7 +2,7 @@ import { get, flatten } from 'lodash';
 import through2 from 'through2';
 import jsonPath from 'jsonpath';
 
-const getAllValue = data => {
+const getAllValue = (data) => {
   if (typeof data === 'object') {
     return Object.values(data || {})
       .map(getAllValue)
@@ -13,7 +13,7 @@ const getAllValue = data => {
 };
 
 const getValue = (row, column) => {
-  const valueFromExtended = value => (column.extendedDisplayValues || {})[value] || value;
+  const valueFromExtended = (value) => (column.extendedDisplayValues || {})[value] || value;
   if (column.jsonPath) {
     return jsonPath
       .query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))
@@ -28,15 +28,15 @@ const getValue = (row, column) => {
   }
 };
 
-const getRows = args => {
+const getRows = (args) => {
   const { row, data = row, paths, pathIndex = 0, columns, entities = [] } = args;
   if (pathIndex >= paths.length - 1) {
     return [
-      columns.map(column => {
+      columns.map((column) => {
         const entity = entities
           .slice()
           .reverse()
-          .find(entity => column.field.indexOf(entity.field) === 0);
+          .find((entity) => column.field.indexOf(entity.field) === 0);
 
         if (entity) {
           return getValue(entity.data, {
@@ -51,7 +51,7 @@ const getRows = args => {
   } else {
     const currentPath = paths[pathIndex];
     return flatten(
-      (get(data, currentPath) || []).map(node => {
+      (get(data, currentPath) || []).map((node) => {
         return getRows({
           ...args,
           data: node,
@@ -125,7 +125,7 @@ export default ({ index, columns, uniqueBy, emptyValue = '--', fileType = 'tsv' 
   let isFirst = true;
   let chunkCounts = 0;
 
-  return through2.obj(function({ hits, total }, enc, callback) {
+  return through2.obj(function ({ hits, total }, enc, callback) {
     console.time(`esHitsToTsv_${chunkCounts}`);
     const outputStream = this;
     dataToStream({
@@ -161,8 +161,8 @@ const transformData = ({
   pipe,
 }) => {
   hits
-    .map(row => dataTransformer({ row, uniqueBy, columns, emptyValue }))
-    .forEach(transformedRow => {
+    .map((row) => dataTransformer({ row, uniqueBy, columns, emptyValue }))
+    .forEach((transformedRow) => {
       pushToStream(transformedRow, pipe);
     });
 };
@@ -173,7 +173,7 @@ const transformDataToTSV = ({ row, uniqueBy, columns, emptyValue }) => {
     paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
     columns: columns,
     emptyValue,
-  }).map(r => rowToTSV({ row: r, emptyValue }));
+  }).map((r) => rowToTSV({ row: r, emptyValue }));
 };
 
 const transformDataToJSON = ({ row, uniqueBy, columns, emptyValue }) => {
@@ -218,7 +218,7 @@ const dataToStream = ({
   }
 };
 
-const rowToTSV = ({ row, emptyValue }) => row.map(r => r || emptyValue).join('\t');
+const rowToTSV = ({ row, emptyValue }) => row.map((r) => r || emptyValue).join('\t');
 
 /*
 example args:
@@ -259,10 +259,10 @@ example args:
        hasCustomType: false } ],
   emptyValue: '--' }
 */
-const rowToJSON = args => {
+const rowToJSON = (args) => {
   const { row, data = row, paths, pathIndex = 0, columns, emptyValue, entities = [] } = args;
   return (columns || [])
-    .filter(col => col.show)
+    .filter((col) => col.show)
     .reduce((output, col) => {
       output[[col.accessor]] = row[col.accessor] || emptyValue;
       return output;

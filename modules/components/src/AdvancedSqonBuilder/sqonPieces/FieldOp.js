@@ -16,9 +16,9 @@ import defaultApi from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
 
-export default props => {
+export default (props) => {
   const {
-    onSqonChange = fullSqon => {},
+    onSqonChange = (fullSqon) => {},
     onContentRemove = () => {},
     fullSyntheticSqon,
     sqonPath = [],
@@ -36,20 +36,20 @@ export default props => {
     content: { field, value },
   } = fieldOpObj;
   const initialState = { isOpen: false };
-  const onClickAway = s => () => {
+  const onClickAway = (s) => () => {
     s.setState({ isOpen: false });
   };
-  const toggleDropdown = s => () => s.setState({ isOpen: !s.state.isOpen });
+  const toggleDropdown = (s) => () => s.setState({ isOpen: !s.state.isOpen });
   const onRemoveClick = () => {
     onContentRemove(fieldOpObj);
   };
-  const onNewSqonSubmitted = s => newSqon => {
+  const onNewSqonSubmitted = (s) => (newSqon) => {
     onSqonChange(newSqon);
     toggleDropdown(s)();
   };
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <DisplayNameMapContext.Consumer>
           {(fieldDisplayNameMap = {}) => (
             <span className={`fieldOp pill`}>

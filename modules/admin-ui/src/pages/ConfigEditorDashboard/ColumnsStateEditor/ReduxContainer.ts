@@ -30,7 +30,7 @@ export const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   { graphqlField }: IReduxExternalProps,
 ): IReduxDisplatProps => ({
-  onFieldSortChange: sortEvent => {
+  onFieldSortChange: (sortEvent) => {
     dispatch({
       type: ActionType.COLUMNS_STATE_FIELD_ORDER_CHANGE,
       payload: {
@@ -40,7 +40,7 @@ export const mapDispatchToProps = (
       },
     });
   },
-  onColumnPropertyChange: newColumn => {
+  onColumnPropertyChange: (newColumn) => {
     dispatch({
       type: ActionType.COLUMNS_STATE_COLUMN_PROPERTY_CHANGE,
       payload: {

@@ -38,7 +38,7 @@ interface IPropsFromGql {
     variables?: OperationVariables | undefined,
   ) => Promise<ApolloQueryResult<IGqlQueryData>>;
 }
-const withQuery: THoc<{}, IPropsFromGql> = Component => {
+const withQuery: THoc<{}, IPropsFromGql> = (Component) => {
   const query = gql`
     {
       projects {
@@ -51,7 +51,7 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
     }
   `;
 
-  return props => (
+  return (props) => (
     <Query query={query} partialRefetch={true} displayName="ProjectsQuery">
       {({ data, loading, error, refetch }: QueryResult<IGqlQueryData>) => {
         if (loading) {
@@ -104,7 +104,7 @@ interface IPropsFromLocalState {
     mutations: ILocalDispatchProps;
   };
 }
-const withLocalState: THoc<{}, IPropsFromLocalState> = Wrapped => props => {
+const withLocalState: THoc<{}, IPropsFromLocalState> = (Wrapped) => (props) => {
   const initialState: ILocalStateProps = { isAddingProject: false };
   return (
     <Component initialState={initialState}>
@@ -131,7 +131,7 @@ const withLocalState: THoc<{}, IPropsFromLocalState> = Wrapped => props => {
  *************************/
 interface IInjectedProps extends IPropsFromGql, IPropsFromRedux, IPropsFromLocalState {}
 interface IExternalProps {}
-const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
+const Layout: React.ComponentType<IInjectedProps & IExternalProps> = (props) => {
   const {
     data = { projects: [] },
     onVersionSelect,
@@ -146,7 +146,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const { projects = [] } = data;
 
-  const columnsData = projects.map(project => ({
+  const columnsData = projects.map((project) => ({
     id: project.id,
     timestamp: project.timestamp,
     indexCount: (project.indices || []).length,
@@ -163,7 +163,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     refetch();
   }, []);
 
-  const rows = sorted.map(entry => ({
+  const rows = sorted.map((entry) => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
       const onProjectRemoved = () => refetch();
       return (

@@ -35,7 +35,7 @@ const mapStateToProps = (
     return {};
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
-      index => index.graphqlField === graphqlField,
+      (index) => index.graphqlField === graphqlField,
     );
     if (currentProjectIndexData) {
       return {
@@ -74,7 +74,7 @@ const DEFAULT_BOOLEAN_VALUE_DISPLAY: {
   any: 'any',
 };
 const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IReduxDispatchProps => ({
-  onFieldDisplayNameChange: currentField => newDisplayName =>
+  onFieldDisplayNameChange: (currentField) => (newDisplayName) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -85,7 +85,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldTypeChange: currentField => newType =>
+  onFieldTypeChange: (currentField) => (newType) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -98,7 +98,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldActiveChange: currentField => newActiveState =>
+  onFieldActiveChange: (currentField) => (newActiveState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -109,7 +109,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldQuicksearchStateChange: currentField => newState =>
+  onFieldQuicksearchStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -120,7 +120,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldPrimarykeyStateChange: currentField => newState =>
+  onFieldPrimarykeyStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -131,7 +131,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldIsArrayStateChange: currentField => newState =>
+  onFieldIsArrayStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -142,7 +142,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldRangeStepChange: currentField => newValue =>
+  onFieldRangeStepChange: (currentField) => (newValue) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -153,7 +153,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldValueDisplayChange: currentField => (valueKey, displayValue) =>
+  onFieldValueDisplayChange: (currentField) => (valueKey, displayValue) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -167,7 +167,7 @@ const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IRedu
         },
       },
     }),
-  onFieldUnitChange: currentField => newUnit =>
+  onFieldUnitChange: (currentField) => (newUnit) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -195,7 +195,7 @@ const Layout: React.ComponentType<IExternalProps & IReduxStateProps & IReduxDisp
   const onDisplayNameChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
     onFieldDisplayNameChange(fieldData)(e.currentTarget.value);
 
-  const onTypeChange = e => onFieldTypeChange(fieldData)(e.value);
+  const onTypeChange = (e) => onFieldTypeChange(fieldData)(e.value);
 
   const onActiveStateToggle = () => onFieldActiveChange(fieldData)(!fieldData.active);
 
@@ -240,7 +240,7 @@ const Layout: React.ComponentType<IExternalProps & IReduxStateProps & IReduxDisp
           input={Select}
           label="Aggregation Type"
           size="medium"
-          data={Object.values(EXTENDED_FIELD_TYPES).map(val => ({
+          data={Object.values(EXTENDED_FIELD_TYPES).map((val) => ({
             text: val,
             value: val,
           }))}

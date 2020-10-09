@@ -28,7 +28,7 @@ export const mapStateToProps = (
     return { aggsState: [] };
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
-      index => index.graphqlField === graphqlField,
+      (index) => index.graphqlField === graphqlField,
     );
     if (currentProjectIndexData) {
       return {

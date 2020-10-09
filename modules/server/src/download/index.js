@@ -7,12 +7,12 @@ import { defaults } from 'lodash';
 import getAllData from '../utils/getAllData';
 import dataToExportFormat from '../utils/dataToExportFormat';
 
-export default function({ projectId }) {
+export default function ({ projectId }) {
   const router = express.Router();
 
   router.use(bodyParser.urlencoded({ extended: true }));
 
-  router.post('/', async function(req, res) {
+  router.post('/', async function (req, res) {
     const es = req.context.es;
     const { params } = req.body;
     console.time('download');
@@ -83,9 +83,9 @@ const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
           fileType: file.fileType,
         });
 
-        fileStream.on('data', chunk => (data += chunk));
+        fileStream.on('data', (chunk) => (data += chunk));
         fileStream.on('end', () => {
-          pack.entry({ name: file.fileName || `file-${i + 1}.tsv` }, data, function(err) {
+          pack.entry({ name: file.fileName || `file-${i + 1}.tsv` }, data, function (err) {
             if (err) {
               reject(err);
             } else {
@@ -105,7 +105,7 @@ const getFileStream = async ({ es, projectId, mock, chunkSize, file, fileType })
   return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
 };
 
-const convertDataToExportFormat = ({ es, projectId, fileType }) => async args =>
+const convertDataToExportFormat = ({ es, projectId, fileType }) => async (args) =>
   (
     await getAllData({
       projectId,

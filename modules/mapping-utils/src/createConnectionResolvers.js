@@ -29,7 +29,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     extended: async (obj, { fields }, { es, projectId }) => {
       const { index } = type;
       const extendedFields = await loadExtendedFields({ es, projectId, index });
-      return fields ? extendedFields.filter(x => fields.includes(x.field)) : extendedFields;
+      return fields ? extendedFields.filter((x) => fields.includes(x.field)) : extendedFields;
     },
     ...(createStateResolvers
       ? {

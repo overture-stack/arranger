@@ -27,7 +27,7 @@ interface IExternalProps {
 
 export const booleanFilterOptions = [
   { text: 'none', value: null },
-  ...Object.values(BOOLEAN_FILTER_VALUES).map(val => ({
+  ...Object.values(BOOLEAN_FILTER_VALUES).map((val) => ({
     text: val,
     value: val,
   })),
@@ -73,7 +73,7 @@ export default connect(
     }));
     const getFilteredFields = (s: IStateContainer) =>
       aggsStateWithIndex.filter(
-        i =>
+        (i) =>
           i.field.includes(s.state.fieldFilter) &&
           (s.state.active !== null ? String(i.active) === s.state.active : true) &&
           (s.state.show !== null ? String(i.show) === s.state.show : true),

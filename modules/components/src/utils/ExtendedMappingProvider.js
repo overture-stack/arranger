@@ -33,7 +33,7 @@ const ExtendedMappingProvider = ({
   children,
 }) => {
   const initialState = { loading: true, extendedMapping: undefined };
-  const didMount = async s => {
+  const didMount = async (s) => {
     if (contentField) {
       const extendedMapping = !useCache
         ? await fetchExtendedMapping({
@@ -69,7 +69,7 @@ const ExtendedMappingProvider = ({
   };
   return (
     <Component initialState={initialState} didMount={didMount}>
-      {s => children({ ...s.state })}
+      {(s) => children({ ...s.state })}
     </Component>
   );
 };

@@ -21,14 +21,14 @@ export interface ISelectOption {
 const DebouncedInput = withDebouncedOnChange()(TextInput);
 const booleanFilterOptions = [
   { text: 'none', value: null },
-  ...Object.values(BOOLEAN_FILTER_VALUES).map(val => ({
+  ...Object.values(BOOLEAN_FILTER_VALUES).map((val) => ({
     text: val,
     value: val,
   })),
 ];
 const getFieldTypeOptions = () => [
   { text: 'none', value: null },
-  ...Object.values(EXTENDED_FIELD_TYPES).map(val => ({
+  ...Object.values(EXTENDED_FIELD_TYPES).map((val) => ({
     text: val,
     value: val,
   })),
@@ -36,11 +36,11 @@ const getFieldTypeOptions = () => [
 
 // Memoized display components
 const MemoizedInputFormField = React.memo(
-  props => <FormField {...props} />,
+  (props) => <FormField {...props} />,
   ({ value }: { value: string }, { value: newValue }: { value: string }) => value === newValue,
 ) as typeof FormField;
 const MemoizedSelectFormField = React.memo(
-  props => <FormField {...props} />,
+  (props) => <FormField {...props} />,
   (
     { selectedItem }: { selectedItem: ISelectOption },
     { selectedItem: newselectedItem }: { selectedItem: ISelectOption },

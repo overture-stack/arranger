@@ -8,7 +8,7 @@ import esToAggTypeMap from './esToAggTypeMap';
 // vs
 // diagnoses__treatments 👍
 type TAppendUnderscores = (a: string) => string;
-let appendUnderscores: TAppendUnderscores = x => (x ? x + '__' : '');
+let appendUnderscores: TAppendUnderscores = (x) => (x ? x + '__' : '');
 
 let mappingToAggsType = (properties, parent = '') => {
   return flattenDeep(

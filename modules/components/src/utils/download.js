@@ -21,7 +21,7 @@ function createIFrame({ method, url, fields }) {
 
   iFrame.style.display = 'none';
   iFrame.src = 'about:blank';
-  iFrame.onload = function() {
+  iFrame.onload = function () {
     this.__frame__loaded = true;
   };
   // Appending to document body to allow navigation away from the current
@@ -55,7 +55,7 @@ function download({ url, params, method = 'GET', body = {} }) {
   return resolveOnDownload;
 }
 
-export const addDownloadHttpHeaders = headers => {
+export const addDownloadHttpHeaders = (headers) => {
   httpHeaders = { ...httpHeaders, ...headers };
 };
 

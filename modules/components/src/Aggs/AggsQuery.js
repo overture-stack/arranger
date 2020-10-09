@@ -12,7 +12,7 @@ export default ({ index = '', aggs = [], sqon = null, api = defaultApi, ...props
       renderError
       name={`${capitalize(index)}AggregationsQuery`}
       variables={{
-        fields: aggs.map(x => x.field.replace(/__/g, '.')),
+        fields: aggs.map((x) => x.field.replace(/__/g, '.')),
         sqon,
       }}
       query={`
@@ -26,7 +26,7 @@ export default ({ index = '', aggs = [], sqon = null, api = defaultApi, ...props
               aggregations_filter_themselves: false
               filters: $sqon
             ){
-              ${aggs.map(x => x.query || queryFromAgg(x))}
+              ${aggs.map((x) => x.query || queryFromAgg(x))}
             }
           }
         }

@@ -39,7 +39,7 @@ const saveAggsState = (client: ApolloClient<{}>) => (
     variables: {
       projectId,
       graphqlField,
-      state: state.map(s => pick(s, ['field', 'active', 'show'])),
+      state: state.map((s) => pick(s, ['field', 'active', 'show'])),
     },
   });
 };
@@ -64,8 +64,8 @@ const saveColumnsState = (client: ApolloClient<{}>) => (
       graphqlField,
       state: {
         ...pick(state, ['type', 'keyField']),
-        defaultSorted: state.defaultSorted.map(s => pick(s, ['id', 'desc'])),
-        columns: state.columns.map(s =>
+        defaultSorted: state.defaultSorted.map((s) => pick(s, ['id', 'desc'])),
+        columns: state.columns.map((s) =>
           pick(s, [
             'show',
             'type',
@@ -107,7 +107,7 @@ const saveExtendedMapping = (client: ApolloClient<{}>) => (
     variables: {
       projectId,
       graphqlField,
-      extendedMapping: state.map(s =>
+      extendedMapping: state.map((s) =>
         pick(s, [
           'field',
           'type',
@@ -143,7 +143,7 @@ const saveMatboxState = (client: ApolloClient<{}>) => (
     variables: {
       projectId,
       graphqlField,
-      state: state.map(s =>
+      state: state.map((s) =>
         pick(s, ['displayName', 'field', 'isActive', 'keyField', 'searchFields']),
       ),
     },
@@ -187,7 +187,7 @@ const validateMutationVariables = async (variables: IMutationVariables): Promise
 };
 
 const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
-  indexConfigs.forEach(indexConfig => {
+  indexConfigs.forEach((indexConfig) => {
     if (indexConfig.config) {
       const { config, newIndexMutationInput } = indexConfig;
       try {
@@ -212,7 +212,7 @@ const validateProjectConfigData = (indexConfigs: INewIndexArgs[]) => {
  * Pretty much a monkey patch to ensure legacy data works
  *****/
 const sanitizeIndexConfigs = (indexConfigs: INewIndexArgs[]): typeof indexConfigs =>
-  indexConfigs.map(i => ({
+  indexConfigs.map((i) => ({
     ...i,
     config: !i.config
       ? i.config
@@ -223,7 +223,7 @@ const sanitizeIndexConfigs = (indexConfigs: INewIndexArgs[]): typeof indexConfig
             : {
                 ...i.config.columnsState,
                 type: i.newIndexMutationInput.graphqlField,
-                columns: i.config.columnsState.columns.map(c => {
+                columns: i.config.columnsState.columns.map((c) => {
                   [
                     'field',
                     'accessor',
@@ -234,7 +234,7 @@ const sanitizeIndexConfigs = (indexConfigs: INewIndexArgs[]): typeof indexConfig
                     'jsonPath',
                     'query',
                     'id',
-                  ].forEach(k => {
+                  ].forEach((k) => {
                     if (c[k] === undefined) console.log([k]);
                   });
                   return {
@@ -246,7 +246,7 @@ const sanitizeIndexConfigs = (indexConfigs: INewIndexArgs[]): typeof indexConfig
                   };
                 }),
               },
-          extended: (i.config.extended || []).map(obj => ({
+          extended: (i.config.extended || []).map((obj) => ({
             ...obj,
             displayValues: obj.displayValues || {},
           })),
@@ -283,7 +283,7 @@ const ProjectIndicesMutationProvider: React.ComponentType<{
  * Provides server transaction to add index
  *****************/
 export { IPropsWithMutation } from './types';
-const withAddProjectMutation: THoc<{}, IPropsWithMutation> = Wrapped => props => {
+const withAddProjectMutation: THoc<{}, IPropsWithMutation> = (Wrapped) => (props) => {
   const NEW_PROJECT_MUTATION = gql`
     mutation($projectId: String!) {
       newProject(id: $projectId) {
@@ -293,9 +293,9 @@ const withAddProjectMutation: THoc<{}, IPropsWithMutation> = Wrapped => props =>
   `;
   return (
     <ApolloConsumer>
-      {client => (
+      {(client) => (
         <Mutation mutation={NEW_PROJECT_MUTATION}>
-          {createNewProject => (
+          {(createNewProject) => (
             <ProjectIndicesMutationProvider>
               {({ createNewProjectIndex }: { createNewProjectIndex: any }) => {
                 const addProject = async (args: IMutationVariables) => {
@@ -316,7 +316,7 @@ const withAddProjectMutation: THoc<{}, IPropsWithMutation> = Wrapped => props =>
                     },
                   });
                   await Promise.all(
-                    indexConfigs.map(indexConfig =>
+                    indexConfigs.map((indexConfig) =>
                       createNewProjectIndex({
                         variables: indexConfig.newIndexMutationInput,
                       }),
@@ -324,39 +324,41 @@ const withAddProjectMutation: THoc<{}, IPropsWithMutation> = Wrapped => props =>
                   );
                   // index creations can happen in parallel
                   await Promise.all(
-                    indexConfigs.map(async indexConfig => {
+                    indexConfigs.map(async (indexConfig) => {
                       const { config } = indexConfig;
                       if (config) {
                         const { aggsState, columnsState, matchboxState, extended } = config;
 
                         return Promise.all(
-                          [aggsState, columnsState, matchboxState, extended].map(async metadata => {
-                            if (aggsState && metadata === aggsState) {
-                              return saveAggsState(client)(
-                                projectId,
-                                indexConfig.newIndexMutationInput.graphqlField,
-                              )(aggsState);
-                            }
-                            if (columnsState && metadata === columnsState) {
-                              return saveColumnsState(client)(
-                                projectId,
-                                indexConfig.newIndexMutationInput.graphqlField,
-                              )(columnsState);
-                            }
-                            if (matchboxState && metadata === matchboxState) {
-                              return saveMatboxState(client)(
-                                projectId,
-                                indexConfig.newIndexMutationInput.graphqlField,
-                              )(matchboxState);
-                            }
-                            if (extended && metadata === extended) {
-                              return saveExtendedMapping(client)(
-                                projectId,
-                                indexConfig.newIndexMutationInput.graphqlField,
-                              )(extended);
-                            }
-                            return null;
-                          }),
+                          [aggsState, columnsState, matchboxState, extended].map(
+                            async (metadata) => {
+                              if (aggsState && metadata === aggsState) {
+                                return saveAggsState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput.graphqlField,
+                                )(aggsState);
+                              }
+                              if (columnsState && metadata === columnsState) {
+                                return saveColumnsState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput.graphqlField,
+                                )(columnsState);
+                              }
+                              if (matchboxState && metadata === matchboxState) {
+                                return saveMatboxState(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput.graphqlField,
+                                )(matchboxState);
+                              }
+                              if (extended && metadata === extended) {
+                                return saveExtendedMapping(client)(
+                                  projectId,
+                                  indexConfig.newIndexMutationInput.graphqlField,
+                                )(extended);
+                              }
+                              return null;
+                            },
+                          ),
                         );
                       }
                       return null;

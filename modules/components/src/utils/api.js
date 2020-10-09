@@ -8,9 +8,9 @@ const defaultApi = ({ endpoint = '', body, headers, method }) =>
     method: method || 'POST',
     headers: { ...alwaysSendHeaders, ...headers },
     body: JSON.stringify(body),
-  }).then(r => r.json());
+  }).then((r) => r.json());
 
-export const graphql = body => api({ endpoint: 'graphql', body });
+export const graphql = (body) => api({ endpoint: 'graphql', body });
 
 export const fetchExtendedMapping = ({ graphqlField, projectId, api = defaultApi }) =>
   api({
@@ -24,11 +24,11 @@ export const fetchExtendedMapping = ({ graphqlField, projectId, api = defaultApi
         }
       `,
     },
-  }).then(response => ({
+  }).then((response) => ({
     extendedMapping: response.data[graphqlField].extended,
   }));
 
-export const addHeaders = headers => {
+export const addHeaders = (headers) => {
   alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
   addDownloadHttpHeaders(headers);
 };

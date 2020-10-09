@@ -27,7 +27,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -59,7 +59,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -92,7 +92,7 @@ describe('esHitsToTSV accessor columns', () => {
     let actual = '';
     stream
       .pipe(dataToTSVStream(config))
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(actual).toBe(expected))
       .write(data);
   });
@@ -149,7 +149,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -207,7 +207,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -279,7 +279,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });

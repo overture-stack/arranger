@@ -55,13 +55,13 @@ class Query extends Component {
 }
 const EnhancedQuery = defaultProps({ shouldFetch: true })(Query);
 
-export const withQuery = getOptions => Component => props => {
+export const withQuery = (getOptions) => (Component) => (props) => {
   const options = getOptions(props);
 
   return (
     <EnhancedQuery
       {...options}
-      render={data => <Component {...props} {...{ [options.key]: data }} />}
+      render={(data) => <Component {...props} {...{ [options.key]: data }} />}
     />
   );
 };

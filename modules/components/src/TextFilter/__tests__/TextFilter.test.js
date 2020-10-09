@@ -60,7 +60,7 @@ describe('generateNextSQON', () => {
   });
 
   it('should remove a filter op if fields is not specified', () => {
-    [null, []].forEach(fields =>
+    [null, []].forEach((fields) =>
       expect(generateNextSQON('value')({ sqon: sqonWithFilter, fields })).toEqual(
         sqonWithoutFilter,
       ),
@@ -68,7 +68,7 @@ describe('generateNextSQON', () => {
   });
 
   it('should remove a filter op if value is not specified', () => {
-    [null, ''].forEach(value =>
+    [null, ''].forEach((value) =>
       expect(
         generateNextSQON(value)({
           sqon: sqonWithFilter,

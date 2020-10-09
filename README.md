@@ -53,16 +53,19 @@ npm run storybook
 #### Docker
 
 ##### Start all services
+
 ```bash
 make start
 ```
 
 ##### Bootstrap the file_centric index
+
 ```bash
 make init-es
 ```
 
 ##### Show other make targets
+
 ```bash
 make help
 ```

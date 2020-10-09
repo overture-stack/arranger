@@ -41,6 +41,6 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
     expect(response.errors).to.be.undefined;
-    expect(response.data.sets.hits.edges.map(edge => edge.node.id)).to.include(setId);
+    expect(response.data.sets.hits.edges.map((edge) => edge.node.id)).to.include(setId);
   });
 };

@@ -32,7 +32,7 @@ export default connect(
       IQuicksearchFieldConfigEditorExternalProps,
   ) => {
     const { field, graphqlField, allFields, quicksearchConfigs, onFieldPropertyChange } = props;
-    const editingField = quicksearchConfigs.find(f => f.field === field);
+    const editingField = quicksearchConfigs.find((f) => f.field === field);
     if (!editingField) {
       return null;
     }
@@ -66,7 +66,7 @@ export default connect(
     const onSearchFieldRemove = (f: string) => () => {
       onFieldPropertyChange({
         ...editingField,
-        searchFields: editingField.searchFields.filter(_f => _f != f),
+        searchFields: editingField.searchFields.filter((_f) => _f != f),
       });
     };
     const onKeyFieldSelect = (e: ISelectOption) => {
@@ -125,7 +125,7 @@ export default connect(
           <CardDivider />
           <FormField label="Search Fields" />
           <div>
-            {editingField.searchFields.map(f => (
+            {editingField.searchFields.map((f) => (
               <Grid columns={12}>
                 <GridItem span={2}>
                   <Button variant="danger" size="small" onClick={onSearchFieldRemove(f)}>
@@ -144,7 +144,7 @@ export default connect(
             onChange={onSearchFieldAdded}
             data={allFields
               .filter(isSubField)
-              .filter(f => !editingField.searchFields.includes(f))
+              .filter((f) => !editingField.searchFields.includes(f))
               .map(toSelectOption)}
           />
         </CardBlock>

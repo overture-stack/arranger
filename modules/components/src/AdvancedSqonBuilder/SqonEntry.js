@@ -13,7 +13,7 @@ import {
 import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
 
-export default props => {
+export default (props) => {
   const {
     arrangerProjectId = PROJECT_ID,
     arrangerProjectIndex,
@@ -26,15 +26,15 @@ export default props => {
     FieldOpModifierContainer = undefined,
     api = defaultApi,
     disabled = false,
-    getColorForReference = index => '',
+    getColorForReference = (index) => '',
     isReferenced = false,
-    isIndexReferenced = index => false,
+    isIndexReferenced = (index) => false,
     isDeleting = false,
     dependentIndices = [],
     onSqonCheckedChange = () => {},
     onSqonDuplicate = () => {},
     onSqonRemove = () => {},
-    onSqonChange = sqon => {},
+    onSqonChange = (sqon) => {},
     onActivate = () => {},
     onDeleteConfirmed = () => {},
     onDeleteCanceled = () => {},
@@ -45,22 +45,22 @@ export default props => {
   const initialState = {
     hoverring: false,
   };
-  const hoverStart = s => e => {
+  const hoverStart = (s) => (e) => {
     s.setState({
       hoverring: true,
     });
   };
-  const hoverEnd = s => e => {
+  const hoverEnd = (s) => (e) => {
     s.setState({
       hoverring: false,
     });
   };
-  const onFieldOpRemove = removedPath => onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
+  const onFieldOpRemove = (removedPath) => onSqonChange(removeSqonPath(removedPath)(syntheticSqon));
   const onLogicalOpChanged = (changedPath, newSqon) =>
     onSqonChange(setSqonAtPath(changedPath, newSqon)(syntheticSqon));
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <div
           onMouseEnter={hoverStart(s)}
           onMouseLeave={hoverEnd(s)}

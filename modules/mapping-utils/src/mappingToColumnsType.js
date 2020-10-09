@@ -14,7 +14,7 @@ export let esToColumnType = {
   float: 'number',
 };
 
-let appendDot = x => (x ? x + '.' : '');
+let appendDot = (x) => (x ? x + '.' : '');
 
 let mappingToColumnsType = (properties, parent = '', isList = false) => {
   return flattenDeep(

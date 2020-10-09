@@ -10,10 +10,10 @@ export const readFile = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     var reader = new FileReader();
     reader.readAsText(file, 'UTF-8');
-    reader.onload = function(evt: any) {
+    reader.onload = function (evt: any) {
       resolve(evt.target.result);
     };
-    reader.onerror = function(evt) {
+    reader.onerror = function (evt) {
       reject();
     };
   });
@@ -22,7 +22,7 @@ export const withDebouncedOnChange = ({
   debounceTime = 500,
 }: {
   debounceTime?: number;
-} = {}) => Input => ({ value, onChange, ...props }) => {
+} = {}) => (Input) => ({ value, onChange, ...props }) => {
   interface ILocalState {
     value: string;
   }

@@ -8,7 +8,7 @@ const initializeExtendedFields = async ({ indexPrefix, fields, config, es }) => 
     : config.extended;
 
   let body = flattenDeep(
-    mergedFields.map(f => [
+    mergedFields.map((f) => [
       {
         index: {
           _index: indexPrefix,

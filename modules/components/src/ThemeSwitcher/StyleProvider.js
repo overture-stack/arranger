@@ -10,12 +10,12 @@ export default class StyleProvider extends React.Component {
     this.applyStyle(this.props.availableThemes, this.props.selected);
   };
 
-  componentWillReceiveProps = nextProps => {
+  componentWillReceiveProps = (nextProps) => {
     this.applyStyle(nextProps.availableThemes, nextProps.selected);
   };
 
   applyStyle = async (availableThemes, selectedThemeId) => {
-    const stylePath = availableThemes.find(theme => theme.id === selectedThemeId).stylePath;
+    const stylePath = availableThemes.find((theme) => theme.id === selectedThemeId).stylePath;
 
     let response = await fetch(stylePath);
     let loadedStyle = await response.text();

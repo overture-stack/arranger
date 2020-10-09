@@ -36,14 +36,14 @@ export const FIELD_OP_DISPLAY_NAME = {
 /**
  * Utilities for determining the type of sqon object
  */
-export const isEmptySqon = sqonObj =>
+export const isEmptySqon = (sqonObj) =>
   !sqonObj ? true : BOOLEAN_OPS.includes(sqonObj.op) && !Boolean(sqonObj.content.length);
-export const isReference = syntheticSqon => !isNaN(syntheticSqon);
-export const isValueObj = sqonObj =>
+export const isReference = (syntheticSqon) => !isNaN(syntheticSqon);
+export const isValueObj = (sqonObj) =>
   typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && 'value' in sqonObj && 'field' in sqonObj;
-export const isBooleanOp = sqonObj =>
+export const isBooleanOp = (sqonObj) =>
   typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && BOOLEAN_OPS.includes(sqonObj.op);
-export const isFieldOp = sqonObj =>
+export const isFieldOp = (sqonObj) =>
   typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && FIELD_OP.includes(sqonObj.op);
 
 /**
@@ -52,14 +52,14 @@ export const isFieldOp = sqonObj =>
  * of given sqons. resolveSyntheticSqon resolves a synthetic sqon to an
  * executable sqon.
  **/
-export const resolveSyntheticSqon = allSqons => syntheticSqon => {
+export const resolveSyntheticSqon = (allSqons) => (syntheticSqon) => {
   if (isEmptySqon(syntheticSqon)) {
     return syntheticSqon;
   } else if (isBooleanOp(syntheticSqon)) {
     return {
       ...syntheticSqon,
       content: syntheticSqon.content
-        .map(c => (!isNaN(c) ? allSqons[c] : c))
+        .map((c) => (!isNaN(c) ? allSqons[c] : c))
         .map(resolveSyntheticSqon(allSqons)),
     };
   } else {
@@ -74,7 +74,7 @@ export const resolveSyntheticSqon = allSqons => syntheticSqon => {
 export const removeSqonAtIndex = (indexToRemove, sqonList) => {
   return sqonList
     .filter((s, i) => i !== indexToRemove) // takes out the removed sqon
-    .map(sqon => {
+    .map((sqon) => {
       return isEmptySqon(sqon)
         ? sqon
         : {
@@ -83,11 +83,11 @@ export const removeSqonAtIndex = (indexToRemove, sqonList) => {
             content: sqon.content
               .filter(
                 // removes references
-                content => content !== indexToRemove,
+                (content) => content !== indexToRemove,
               )
               .map(
                 // shifts references to indices greater than the removed one
-                s => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
+                (s) => (!isNaN(s) ? (s > indexToRemove ? s - 1 : s) : s),
               ),
           };
     });
@@ -102,12 +102,12 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
     ...sqonList.slice(0, indexToDuplicate),
     cloneDeep(sqonList[indexToDuplicate]),
     ...sqonList.slice(indexToDuplicate, sqonList.length),
-  ].map(sqon => {
+  ].map((sqon) => {
     return isEmptySqon(sqon)
       ? sqon
       : {
           ...sqon,
-          content: sqon.content.map(s => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s)),
+          content: sqon.content.map((s) => (!isNaN(s) ? (s > indexToDuplicate ? s + 1 : s) : s)),
         };
   });
 };
@@ -116,7 +116,7 @@ export const duplicateSqonAtIndex = (indexToDuplicate, sqonList) => {
  * Paths are in the format [1, 3, 4, ...] where each number is a
  * "content" index of the obj of interest in the sqon tree.
  **/
-export const getOperationAtPath = paths => sqon => {
+export const getOperationAtPath = (paths) => (sqon) => {
   const [currentPath, ...rest] = paths;
   return isBooleanOp(sqon)
     ? sqon.content.filter((c, i) => i === currentPath).map(getOperationAtPath(rest))[0]
@@ -128,13 +128,13 @@ export const getOperationAtPath = paths => sqon => {
  * @param {[Number]} paths
  * @param {*} sqon
  */
-export const removeSqonPath = paths => sqon => {
+export const removeSqonPath = (paths) => (sqon) => {
   // creates the target lens
-  const lensPath = flattenDeep(paths.map(path => ['content', path]));
+  const lensPath = flattenDeep(paths.map((path) => ['content', path]));
   const targetLens = lens(lensPath);
 
   // creates lens to the immediate parent of target
-  const parentPath = flattenDeep(paths.slice(0, paths.length - 1).map(path => ['content', path]));
+  const parentPath = flattenDeep(paths.slice(0, paths.length - 1).map((path) => ['content', path]));
   const parentLens = lens(parentPath);
 
   // get reference to target and its immediate parent
@@ -144,12 +144,12 @@ export const removeSqonPath = paths => sqon => {
   // returns the modified structure with removeTarget filtered out
   return set(
     parentLens,
-    { ...parent, content: parent.content.filter(c => c !== removeTarget) },
+    { ...parent, content: parent.content.filter((c) => c !== removeTarget) },
     sqon,
   );
 };
 
-export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
+export const isIndexReferencedInSqon = (syntheticSqon) => (indexReference) => {
   if (isBooleanOp(syntheticSqon)) {
     return syntheticSqon.content.reduce(
       (acc, contentSqon) => acc || isIndexReferencedInSqon(contentSqon)(indexReference),
@@ -160,7 +160,7 @@ export const isIndexReferencedInSqon = syntheticSqon => indexReference => {
   }
 };
 
-export const doesContainReference = sqon => {
+export const doesContainReference = (sqon) => {
   if (isBooleanOp(sqon)) {
     return sqon.content.some(doesContainReference);
   } else {
@@ -168,7 +168,7 @@ export const doesContainReference = sqon => {
   }
 };
 
-export const getDependentIndices = syntheticSqons => index =>
+export const getDependentIndices = (syntheticSqons) => (index) =>
   syntheticSqons.reduce((acc, sq, i) => {
     if (sq && isIndexReferencedInSqon(sq)(index)) {
       acc.push(i);
@@ -176,8 +176,8 @@ export const getDependentIndices = syntheticSqons => index =>
     return acc;
   }, []);
 
-export const setSqonAtPath = (paths, newSqon) => sqon => {
-  const lensPath = flattenDeep(paths.map(path => ['content', path]));
+export const setSqonAtPath = (paths, newSqon) => (sqon) => {
+  const lensPath = flattenDeep(paths.map((path) => ['content', path]));
   const targetLens = lens(lensPath);
   return set(targetLens, newSqon, sqon);
 };

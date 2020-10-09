@@ -96,15 +96,15 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => data => {
+    const onChange = (s) => (data) => {
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
       s.setState({ activeSqonIndex: index });
     };
-    const setModal = s => ModalComponent =>
+    const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
       });
@@ -112,7 +112,7 @@ storiesOf('AdvancedSqonBuilder', module)
       <ProjectsProvider>
         {({ project, index }) => (
           <Component initialState={initialState}>
-            {s => (
+            {(s) => (
               <div style={{ position: 'relative', height: '100%' }}>
                 <AdvancedSqonBuilder
                   arrangerProjectId={project}
@@ -139,15 +139,15 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => data => {
+    const onChange = (s) => (data) => {
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
       s.setState({ activeSqonIndex: index });
     };
-    const setModal = s => ModalComponent =>
+    const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
       });
@@ -155,7 +155,7 @@ storiesOf('AdvancedSqonBuilder', module)
       <ProjectsProvider>
         {({ project, index }) => (
           <Component initialState={initialState}>
-            {s => (
+            {(s) => (
               <div style={{ position: 'relative', height: '100%' }}>
                 <AdvancedSqonBuilder
                   arrangerProjectId={project}

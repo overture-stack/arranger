@@ -8,13 +8,13 @@ import { CONFIG_FILENAMES } from './AddProjectForm/utils';
 import { QUERY as ALL_PROJECT_DATA_QUERY, IGqlData } from 'src/gql/queries/allProjectData';
 
 const download = (content: IGqlData) => {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const { project } = content;
     const zip = new JSZip();
     const rootName = `arranger-project-${project.id}`;
     const rootFolder = zip.folder(rootName);
     if (rootFolder) {
-      project.indices.forEach(index => {
+      project.indices.forEach((index) => {
         const indexFolder = rootFolder.folder(index.esIndex);
         if (indexFolder) {
           indexFolder.file(
@@ -33,7 +33,7 @@ const download = (content: IGqlData) => {
         }
       });
     }
-    zip.generateAsync({ type: 'blob' }).then(content => {
+    zip.generateAsync({ type: 'blob' }).then((content) => {
       saveAs(content, `${rootName}.zip`);
       resolve();
     });

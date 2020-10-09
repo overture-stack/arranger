@@ -24,14 +24,14 @@ export default () => {
     isSaving: false,
   };
 
-  const onCancelButtonClick = (s: IStateContainer) => e =>
+  const onCancelButtonClick = (s: IStateContainer) => (e) =>
     s.setState({
       ...s.state,
       isCanceling: true,
       isSaving: false,
     });
 
-  const onSaveButtonClick = (s: IStateContainer) => e =>
+  const onSaveButtonClick = (s: IStateContainer) => (e) =>
     s.setState({
       ...s.state,
       isCanceling: false,

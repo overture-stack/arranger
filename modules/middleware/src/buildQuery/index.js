@@ -43,7 +43,7 @@ const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
     .split('.')
     .slice(0, -1)
     .map((p, i, segments) => segments.slice(0, i + 1).join('.'))
-    .filter(p => nestedFields.includes(p))
+    .filter((p) => nestedFields.includes(p))
     .reverse()
     .reduce(
       (esFilter, path, i) => wrapNested(esFilter, path),
@@ -77,7 +77,7 @@ function getTermFilter({ nestedFields, filter }) {
   const esFilter = wrapFilter({
     filter,
     nestedFields,
-    esFilter: { terms: { [field]: value.map(item => item || ''), boost: 0 } },
+    esFilter: { terms: { [field]: value.map((item) => item || ''), boost: 0 } },
     isNot: NOT_IN_OP === op,
   });
 
@@ -91,7 +91,7 @@ function getFuzzyFilter({ nestedFields, filter }) {
   // group queries by their nesting level
   const sortedNested = nestedFields.slice().sort((a, b) => b.length - a.length);
   const nestedMap = fields.reduce((acc, field) => {
-    const group = sortedNested.find(y => field.includes(y)) || '';
+    const group = sortedNested.find((y) => field.includes(y)) || '';
     if (acc[group]) {
       acc[group].push(field);
     } else {
@@ -102,12 +102,12 @@ function getFuzzyFilter({ nestedFields, filter }) {
 
   // construct one multi match per nested group
   return wrapShould(
-    Object.values(nestedMap).map(fields =>
+    Object.values(nestedMap).map((fields) =>
       wrapFilter({
         filter: { ...filter, content: { ...content, field: fields[0] } },
         nestedFields,
         esFilter: wrapShould(
-          fields.map(field => ({
+          fields.map((field) => ({
             [ES_WILDCARD]: {
               [field]: {
                 value: `${value}`,
@@ -155,17 +155,17 @@ function collapseNestedFilters({ esFilter, bools }) {
   const filterIsNested = isNested(esFilter);
   const basePath = [...(filterIsNested ? [ES_NESTED, ES_QUERY] : []), ES_BOOL];
   const path = [ES_MUST, ES_MUST_NOT]
-    .map(p => [...basePath, p])
-    .find(path => _.get(esFilter, path));
+    .map((p) => [...basePath, p])
+    .find((path) => _.get(esFilter, path));
 
   const found =
     path &&
-    bools.find(bool =>
+    bools.find((bool) =>
       filterIsNested ? readPath(bool) === readPath(esFilter) : _.get(bool, path),
     );
 
   return [
-    ...bools.filter(bool => bool !== found),
+    ...bools.filter((bool) => bool !== found),
     found
       ? mergePath(
           found,
@@ -188,7 +188,7 @@ const wrappers = {
 };
 function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   const applyBooleanWrapper = wrappers[op];
-  const esFilters = content.map(filter => opSwitch({ nestedFields, filter }));
+  const esFilters = content.map((filter) => opSwitch({ nestedFields, filter }));
   const isNested = !!esFilters[0]?.nested;
   if (isNested && pivot === esFilters[0]?.nested.path) {
     const flattned = esFilters.reduce(
@@ -270,7 +270,7 @@ export const opSwitch = ({ nestedFields, filter }) => {
       filter: {
         op: AND_OP,
         pivot: pivot || '.',
-        content: filter.content.value.map(v => ({
+        content: filter.content.value.map((v) => ({
           op: IN_OP,
           content: {
             field: filter.content.field,
@@ -290,7 +290,7 @@ export const opSwitch = ({ nestedFields, filter }) => {
   }
 };
 
-export default function({ nestedFields, filters: rawFilters }) {
+export default function ({ nestedFields, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
   return opSwitch({
     nestedFields,

@@ -62,7 +62,7 @@ export default compose<
 
   const showError = (s: IStateContainer) => (err: Error) => {
     const timeout = 5000;
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       s.setState({
         ...s.state,
         error: err,
@@ -78,7 +78,7 @@ export default compose<
     });
   };
 
-  const onSaveConfirmed = (s: IStateContainer) => async e => {
+  const onSaveConfirmed = (s: IStateContainer) => async (e) => {
     s.setState({ ...s.state, loading: true });
     if (projectData) {
       try {

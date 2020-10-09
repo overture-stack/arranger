@@ -2,7 +2,7 @@ import React from 'react';
 import Dragula from 'dragula';
 import { isEqual } from 'lodash';
 
-export default Component => {
+export default (Component) => {
   const wrapper = class RTDragColumnTable extends React.Component {
     constructor(props) {
       super(props);
@@ -35,10 +35,10 @@ export default Component => {
 
       return <Component {...rest} {...extra} />;
     }
-    dragulaDecorator = componentBackingInstance => {
+    dragulaDecorator = (componentBackingInstance) => {
       if (componentBackingInstance) {
         let options = {
-          moves: function(el, container, handle) {
+          moves: function (el, container, handle) {
             return el.attributes.getNamedItem('data-accessor') != null;
           },
         };
@@ -49,7 +49,7 @@ export default Component => {
           const movedColumnId = el.attributes.getNamedItem('data-accessor').value;
           let movedColumn;
 
-          let newColumnsOrder = this.state.columns.filter(column => {
+          let newColumnsOrder = this.state.columns.filter((column) => {
             if (column.accessor === movedColumnId || column.id === movedColumnId) {
               movedColumn = column;
               return false;
@@ -61,7 +61,7 @@ export default Component => {
             const siblingColumnId = sibling.attributes.getNamedItem('data-accessor').value;
 
             const siblingColumn = newColumnsOrder.filter(
-              col => col.accessor === siblingColumnId || col.id === siblingColumnId,
+              (col) => col.accessor === siblingColumnId || col.id === siblingColumnId,
             )[0];
 
             const siblingColumnIndex = newColumnsOrder.indexOf(siblingColumn);

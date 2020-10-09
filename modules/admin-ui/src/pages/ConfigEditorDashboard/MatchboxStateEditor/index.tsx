@@ -33,18 +33,18 @@ export default connect(
     { content: `Fields (${quicksearchConfigs.length})`, key: 'field' },
   ];
 
-  const onFieldTableRowClick = s => (field: string) => () =>
+  const onFieldTableRowClick = (s) => (field: string) => () =>
     s.setState({
       selectedField: field,
     });
 
-  const onActiveStateChange = entry => () => {
+  const onActiveStateChange = (entry) => () => {
     onFieldPropertyChange({ ...entry, isActive: !entry.isActive });
   };
 
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <Grid alignItems="top" columns={12}>
           <GridItem span={7}>
             <Table
@@ -52,11 +52,11 @@ export default connect(
               hideTitle={true}
               rowKey="field"
               columns={fieldTableColumns}
-              data={quicksearchConfigs.map(entry => {
+              data={quicksearchConfigs.map((entry) => {
                 const selected = s.state.selectedField === entry.field;
                 return {
                   selected,
-                  row: props => {
+                  row: (props) => {
                     return (
                       <SelectableTableRow
                         selected={selected}

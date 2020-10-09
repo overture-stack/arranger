@@ -21,7 +21,7 @@ const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ..
         },
       });
     }}
-    isActive={d =>
+    isActive={(d) =>
       inCurrentSQON({
         value: d.value,
         dotField: d.field,
@@ -72,7 +72,7 @@ const composedBooleanAgg = ({
   ...rest
 }) => (
   <BooleanAgg
-    isActive={d =>
+    isActive={(d) =>
       inCurrentSQON({
         value: d.value,
         dotField: d.field,

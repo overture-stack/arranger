@@ -29,10 +29,10 @@ export const AggregationsListDisplay = ({
   const aggComponentInstances =
     data &&
     aggs
-      .map(agg => ({
+      .map((agg) => ({
         ...agg,
         ...data[graphqlField].aggregations[agg.field],
-        ...data[graphqlField].extended.find(x => x.field.replace(/\./g, '__') === agg.field),
+        ...data[graphqlField].extended.find((x) => x.field.replace(/\./g, '__') === agg.field),
         onValueChange: ({ sqon, value }) => {
           onValueChange(value);
           setSQON(sqon);
@@ -41,7 +41,7 @@ export const AggregationsListDisplay = ({
         sqon,
         containerRef,
       }))
-      .map(agg => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
+      .map((agg) => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
   if (aggComponentInstances) {
     // sort the list by the index specified for each component to prevent order bumping
     const componentListToInsert = sortBy(getCustomItems({ aggs }), 'index');
@@ -124,8 +124,8 @@ const Aggregations = ({
         api={api}
         projectId={projectId}
         graphqlField={graphqlField}
-        render={aggsState => {
-          const aggs = aggsState.aggs.filter(x => x.show);
+        render={(aggsState) => {
+          const aggs = aggsState.aggs.filter((x) => x.show);
           return (
             <AggregationsList
               onValueChange={onValueChange}

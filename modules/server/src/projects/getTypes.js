@@ -38,9 +38,9 @@ export default async (req, res) => {
   let mappings = await fetchMappings({ es, types: hits });
 
   res.json({
-    types: hits.map(x => ({
+    types: hits.map((x) => ({
       ...x,
-      mappings: mappings.find(y => y.index === x.index).mapping,
+      mappings: mappings.find((y) => y.index === x.index).mapping,
     })),
     total: types.hits.total,
   });

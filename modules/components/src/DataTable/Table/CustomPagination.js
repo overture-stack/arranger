@@ -61,7 +61,7 @@ export default class CustomPagination extends ReactTablePagination {
             Show{' '}
             <select
               aria-label={`Number of visible ${this.props.rowsText || 'rows'}`}
-              onChange={e => onPageSizeChange(Number(e.target.value))}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
               value={pageSize}
             >
               {pageSizeOptions.map((option, i) => (
@@ -88,7 +88,7 @@ export default class CustomPagination extends ReactTablePagination {
             >
               {'<'}
             </span>
-            {range(firstPage, lastPage).map(pageIndex => (
+            {range(firstPage, lastPage).map((pageIndex) => (
               <span
                 key={pageIndex}
                 className={classnames(

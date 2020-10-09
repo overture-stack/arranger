@@ -87,7 +87,7 @@ class MatchBoxState extends Component {
     }
   }, 300);
 
-  save = debounce(async state => {
+  save = debounce(async (state) => {
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
       body: {
@@ -112,8 +112,8 @@ class MatchBoxState extends Component {
   }, 300);
 
   update = ({ field, key, value }) => {
-    let matchBoxField = this.state.temp.find(x => x.field === field);
-    let index = this.state.temp.findIndex(x => x.field === field);
+    let matchBoxField = this.state.temp.find((x) => x.field === field);
+    let index = this.state.temp.findIndex((x) => x.field === field);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...matchBoxField, [key]: value },
     });
@@ -122,8 +122,8 @@ class MatchBoxState extends Component {
 
   getActiveFields = () =>
     this.state.temp
-      ?.filter(x => x.isActive)
-      ?.map(x => {
+      ?.filter((x) => x.isActive)
+      ?.map((x) => {
         return {
           ...x,
           keyField: {
@@ -133,7 +133,7 @@ class MatchBoxState extends Component {
               field: x.keyField,
             }),
           },
-          searchFields: x.searchFields.map(y => ({
+          searchFields: x.searchFields.map((y) => ({
             field: y,
             entityName: x.displayName,
             ...decorateFieldWithColumnsState({
@@ -148,7 +148,7 @@ class MatchBoxState extends Component {
     return this.props.render({
       update: this.update,
       matchBoxState: this.state.temp,
-      primaryKeyField: this.state.extended?.find(x => x.primaryKey),
+      primaryKeyField: this.state.extended?.find((x) => x.primaryKey),
       activeFields: this.getActiveFields(),
       extended: this.state.extended,
     });

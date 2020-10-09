@@ -17,12 +17,12 @@ const retrieveSetIds = async ({ es, index, query, path, sort, BULK_SIZE = 1000 }
       size: BULK_SIZE,
       body,
     });
-    const ids = response.hits.hits.map(x =>
+    const ids = response.hits.hits.map((x) =>
       get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
 
     const nextSearchAfter = sort
-      .map(({ field }) => response.hits.hits.map(x => x._source[field] || x[field]))
+      .map(({ field }) => response.hits.hits.map((x) => x._source[field] || x[field]))
       .reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
 
     return {

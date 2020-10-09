@@ -49,7 +49,7 @@ const enhance = compose(
     onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({ target: { files } }) => {
       setSearchTextLoading(true);
       const contents = await parseInputFiles({ files });
-      setSearchText((contents || []).map(f => f.content).reduce((str, c) => `${str}${c}\n`, ``));
+      setSearchText((contents || []).map((f) => f.content).reduce((str, c) => `${str}${c}\n`, ``));
       setSearchTextLoading(false);
     },
   }),
@@ -131,7 +131,7 @@ const MatchBox = ({
         render={({
           primaryKeyField,
           activeFields,
-          activeField = activeFields.find(x => x.field === activeEntityField),
+          activeField = activeFields.find((x) => x.field === activeEntityField),
         }) => (
           <Fragment>
             {!selectableEntityType ? null : (
@@ -194,7 +194,7 @@ const MatchBox = ({
                 results: uniqBy(results, 'primaryKey'),
                 unmatchedKeys: difference(
                   searchTextParts,
-                  results.map(x => x.input),
+                  results.map((x) => x.input),
                 ),
               })}
               render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
@@ -209,7 +209,7 @@ const MatchBox = ({
                             title: `${matchedTabTitle} (${formatNumber(results.length)})`,
                             content: (
                               <TabsTable
-                                columns={['inputId', 'matchedEntity', 'entityId'].map(x => ({
+                                columns={['inputId', 'matchedEntity', 'entityId'].map((x) => ({
                                   Header: matchTableColumnHeaders[x],
                                   accessor: x,
                                 }))}
@@ -244,7 +244,7 @@ const MatchBox = ({
                                 ]}
                                 data={
                                   unmatchedKeys?.length
-                                    ? unmatchedKeys.map(x => ({ inputId: x }))
+                                    ? unmatchedKeys.map((x) => ({ inputId: x }))
                                     : [{ inputId: '' }]
                                 }
                               />

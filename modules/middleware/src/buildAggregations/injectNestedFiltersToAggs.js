@@ -30,11 +30,11 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
               bool: {
                 should: nestedSqonFilters[aggContent.nested.path]
                   .filter(
-                    sqonFilter =>
+                    (sqonFilter) =>
                       aggregationsFilterThemselves ||
                       aggName.split(':')[0] !== sqonFilter.content.field,
                   )
-                  .map(sqonFilter =>
+                  .map((sqonFilter) =>
                     opSwitch({
                       nestedFields: [],
                       filter: normalizeFilters(sqonFilter),

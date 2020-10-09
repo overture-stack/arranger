@@ -17,7 +17,7 @@ export const getColumnSetState = (es: Client) => async (
 ): Promise<I_ColumnSetState> => {
   const { graphqlField, projectId } = args;
   const metaData = (await getProjectStorageMetadata(es)(projectId)).find(
-    i => i.name === graphqlField,
+    (i) => i.name === graphqlField,
   );
   return metaData.config['columns-state'];
 };
@@ -48,8 +48,10 @@ export const saveColumnState = (es: Client) => async ({
   state,
 }: I_SaveColumnsStateMutationInput): Promise<I_ColumnSetState> => {
   const currentProjectMetadata = await getProjectStorageMetadata(es)(projectId);
-  const currentIndexMetadata = currentProjectMetadata.find(i => i.name === graphqlField);
-  const sortByNewOrder = sortBy((i: I_Column) => state.columns.findIndex(c => c.field === i.field));
+  const currentIndexMetadata = currentProjectMetadata.find((i) => i.name === graphqlField);
+  const sortByNewOrder = sortBy((i: I_Column) =>
+    state.columns.findIndex((c) => c.field === i.field),
+  );
   const mergedState: typeof state = {
     ...state,
     columns: sortByNewOrder(

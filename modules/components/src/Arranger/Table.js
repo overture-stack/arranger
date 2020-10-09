@@ -22,7 +22,7 @@ const Table = ({
       projectId={projectId}
       graphqlField={graphqlField}
       api={api}
-      render={columnState => {
+      render={(columnState) => {
         return columnState.loading ? (
           <Spinner fadeIn="full" name="circle" />
         ) : (
@@ -43,8 +43,8 @@ const Table = ({
                 generateNextSQON({
                   sqon,
                   fields: columnState.state.columns
-                    .filter(x => fieldTypesForFilter.includes(x.extendedType) && x.show)
-                    .map(x => x.field),
+                    .filter((x) => fieldTypesForFilter.includes(x.extendedType) && x.show)
+                    .map((x) => x.field),
                 }),
               );
             }}

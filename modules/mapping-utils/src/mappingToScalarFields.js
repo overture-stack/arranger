@@ -14,7 +14,7 @@ export let esToGraphqlTypeMap = {
 
 const maybeArray = (field, extendedFields, type, parent) => {
   const fullField = [parent, field].filter(Boolean).join('.');
-  return extendedFields?.find(x => x.field === fullField)?.isArray ? `[${type}]` : type;
+  return extendedFields?.find((x) => x.field === fullField)?.isArray ? `[${type}]` : type;
 };
 
 export default (mapping, extendedFields, parent) => {

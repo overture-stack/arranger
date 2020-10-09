@@ -130,8 +130,8 @@ function fetchDummyData({ config, sort, offset, first }) {
     total: dummyData.length,
     data: orderBy(
       dummyData,
-      sort.map(s => s.field),
-      sort.map(s => s.order),
+      sort.map((s) => s.field),
+      sort.map((s) => s.order),
     ).slice(offset, offset + first),
   });
 }
@@ -140,13 +140,13 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   <DataTable
     config={tableConfig}
     setSelectedTableRows={action('selection changed')}
-    fetchData={options => {
+    fetchData={(options) => {
       return api({
         endpoint: 'table',
         body: columnsToGraphql({ ...options, sqon }),
-      }).then(r => {
+      }).then((r) => {
         const hits = get(r, `data.${options.config.type}.hits`) || {};
-        const data = get(hits, 'edges', []).map(e => e.node);
+        const data = get(hits, 'edges', []).map((e) => e.node);
         const total = hits.total || 0;
         return { total, data };
       });
@@ -156,7 +156,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
 
 storiesOf('Table', module)
   .addDecorator(themeDecorator)
-  .addDecorator(story => (
+  .addDecorator((story) => (
     <div
       style={{
         position: 'absolute',
@@ -189,7 +189,7 @@ storiesOf('Table', module)
       config={dummyConfig}
       filterInputPlaceholder={'Filter table'}
       customTypes={{
-        list: props => {
+        list: (props) => {
           const values = jsonPath.query(props.original, props.column.jsonPath);
           const total = values.length;
           const firstValue = getSingleValue(values[0]);

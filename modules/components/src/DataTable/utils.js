@@ -22,8 +22,9 @@ export function normalizeColumns({
   };
 
   const mappedColumns = columns
-    .map(column => {
-      const customCol = customColumns.find(cc => cc.content.field === column.field)?.content || {};
+    .map((column) => {
+      const customCol =
+        customColumns.find((cc) => cc.content.field === column.field)?.content || {};
 
       return {
         ...column,
@@ -37,11 +38,11 @@ export function normalizeColumns({
         ...customCol,
       };
     })
-    .filter(x => x.show || x.canChangeShow);
+    .filter((x) => x.show || x.canChangeShow);
 
   // filter out override columns
   const filteredCustomCols = customColumns.filter(
-    cc => !mappedColumns.some(col => col.field === cc.content.field),
+    (cc) => !mappedColumns.some((col) => col.field === cc.content.field),
   );
 
   return sortBy(filteredCustomCols, 'index').reduce(

@@ -42,7 +42,7 @@ const MOCK_MAPPING = {
 };
 const elasticMappingToDisplayTreeData = (elasticMapping, parentPath) => {
   const mappingKeys = Object.keys(elasticMapping);
-  return mappingKeys.map(key => {
+  return mappingKeys.map((key) => {
     const fieldProps = elasticMapping[key];
     const currentPath = parentPath ? `${parentPath}.${key}` : `${key}`;
     return {

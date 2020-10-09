@@ -71,10 +71,10 @@ const enhance = compose(
   }),
   withState('expanded', 'setExpanded', []),
   withProps(({ expanded }) => ({
-    isExpanded: valueSQON => expanded.includes(valueSQON),
+    isExpanded: (valueSQON) => expanded.includes(valueSQON),
   })),
   withHandlers({
-    onLessClicked: ({ expanded, setExpanded }) => valueSQON => {
+    onLessClicked: ({ expanded, setExpanded }) => (valueSQON) => {
       setExpanded(xor(expanded, [valueSQON]));
     },
   }),

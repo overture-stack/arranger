@@ -3,11 +3,11 @@ var dependencyKeys = ['dependencies', 'peerDependencies', 'devDependencies'];
 console.log(
   dependencyKeys
     .reduce(
-      function(dependencies, key) {
+      function (dependencies, key) {
         return dependencies.concat(
           Object.keys(packageJSON[key] || {})
-            .filter(n => n.indexOf('@arranger') >= 0)
-            .map(n => n.split('/')[1]),
+            .filter((n) => n.indexOf('@arranger') >= 0)
+            .map((n) => n.split('/')[1]),
         );
       },
       ['', 'server'],

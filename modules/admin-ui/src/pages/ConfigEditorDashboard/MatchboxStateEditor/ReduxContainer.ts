@@ -30,7 +30,7 @@ export const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   { graphqlField }: IReduxExternalProps,
 ): IReduxDispatchProps => ({
-  onFieldPropertyChange: newFieldConfig => {
+  onFieldPropertyChange: (newFieldConfig) => {
     dispatch({
       type: ActionType.QUICK_SEARCH_CONFIG_PROPERTY_CHANGE,
       payload: {

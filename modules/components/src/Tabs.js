@@ -6,7 +6,7 @@ import ReactTable from 'react-table';
 const enhance = compose(
   withState('activeTab', 'setActiveTab', null),
   withPropsOnChange(['tabs'], ({ tabs, activeTab, setActiveTab }) => {
-    const tabsWithKey = tabs.map(x => ({ ...x, key: x.key || x.title }));
+    const tabsWithKey = tabs.map((x) => ({ ...x, key: x.key || x.title }));
     !activeTab && tabs?.length && setActiveTab(tabsWithKey[0].key);
     return { tabs: tabsWithKey };
   }),
@@ -23,7 +23,7 @@ export const TabsTable = ({ className, columns, data, pageSize = 10, ...props })
       resizable: false,
       pageSize,
       showPagination: data?.length > pageSize,
-      PaginationComponent: props => (
+      PaginationComponent: (props) => (
         <PaginationComponent
           {...props}
           showPageSizeOptions={false}
@@ -54,7 +54,7 @@ const Tabs = ({ tabs, activeTab, setActiveTab }) =>
           </div>
         ))}
       </div>
-      <div className={`tabs-content`}>{tabs.find(t => t.key === activeTab)?.content}</div>
+      <div className={`tabs-content`}>{tabs.find((t) => t.key === activeTab)?.content}</div>
     </div>
   );
 

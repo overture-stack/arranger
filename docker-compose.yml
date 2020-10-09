@@ -10,8 +10,8 @@ services:
       discovery.type: single-node
       cluster.name: workflow.elasticsearch
       ES_JAVA_OPTS: -Xms512m -Xmx2048m
-      ELASTIC_PASSWORD: "$ES_PASSWORD"
-      xpack.security.enabled: "true"
+      ELASTIC_PASSWORD: '$ES_PASSWORD'
+      xpack.security.enabled: 'true'
     logging:
       driver: 'json-file'
       options:
@@ -35,9 +35,9 @@ services:
     depends_on:
       - elasticsearch
     environment:
-      LOGGING_QUIET: "true"
-      ELASTICSEARCH_USERNAME: "$ES_USERNAME"
-      ELASTICSEARCH_PASSWORD: "$ES_PASSWORD"
+      LOGGING_QUIET: 'true'
+      ELASTICSEARCH_USERNAME: '$ES_USERNAME'
+      ELASTICSEARCH_PASSWORD: '$ES_PASSWORD'
 
   arranger-server:
     build:
@@ -50,8 +50,8 @@ services:
       - 5050:5050
     environment:
       ES_HOST: http://elasticsearch:9200
-      ES_USER: "$ES_USERNAME"
-      ES_PASS: "$ES_PASSWORD"
+      ES_USER: '$ES_USERNAME'
+      ES_PASS: '$ES_PASSWORD'
   arranger-ui:
     build:
       context: ./

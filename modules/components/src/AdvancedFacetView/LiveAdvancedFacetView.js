@@ -11,9 +11,9 @@ const fetchGraphqlQuery = async ({ query, projectId, variables = null, api = def
       query: query,
       variables,
     },
-  }).then(data => data.data);
+  }).then((data) => data.data);
 
-const fetchMappingData = async fetchConfig =>
+const fetchMappingData = async (fetchConfig) =>
   fetchGraphqlQuery({
     query: `{
       ${fetchConfig.index} {
@@ -27,17 +27,17 @@ const fetchMappingData = async fetchConfig =>
       }
     }`,
     ...fetchConfig,
-  }).then(data => data[fetchConfig.index]);
+  }).then((data) => data[fetchConfig.index]);
 
 const fetchAggregationData = async ({ sqon, extended, projectId, index, api }) => {
   const fetchConfig = { projectId, index, api };
-  const serializeToGraphQl = aggName => aggName.split('.').join('__');
-  const serializeToPath = aggName => aggName.split('__').join('.');
-  const allAggsNames = extended.map(entry => entry.field).map(serializeToGraphQl);
+  const serializeToGraphQl = (aggName) => aggName.split('.').join('__');
+  const serializeToPath = (aggName) => aggName.split('__').join('.');
+  const allAggsNames = extended.map((entry) => entry.field).map(serializeToGraphQl);
   const getAggregationQuery = () =>
     allAggsNames
-      .map(aggName => {
-        const aggType = extended.find(entry => serializeToGraphQl(entry.field) === aggName).type;
+      .map((aggName) => {
+        const aggType = extended.find((entry) => serializeToGraphQl(entry.field) === aggName).type;
         return `
           ${aggName} {
             ${
@@ -61,7 +61,7 @@ const fetchAggregationData = async ({ sqon, extended, projectId, index, api }) =
     query,
     variables: { sqon },
     ...fetchConfig,
-  }).then(data => ({
+  }).then((data) => ({
     aggregations: Object.keys(data[index].aggregations || {}).reduce(
       (agg, key) => ({
         ...agg,
@@ -82,7 +82,7 @@ const removeFieldTypesFromMapping = ({
     ...Object.entries(mapping).reduce((acc, [key, val]) => {
       const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
       const isId = fieldTypesToExclude.some(
-        type => type === extended.find(ex => ex.field === currentField)?.type,
+        (type) => type === extended.find((ex) => ex.field === currentField)?.type,
       );
       const toSpread = !isId
         ? {
@@ -130,9 +130,9 @@ export default class LiveAdvancedFacetView extends React.Component {
 
   filterExtendedForFetchingAggs = ({ extended, aggsState }) =>
     extended.filter(
-      e =>
+      (e) =>
         !this.blackListedAggTypes.includes(e.type) &&
-        aggsState.state.find(s => s.field.split('__').join('.') === e.field)?.active,
+        aggsState.state.find((s) => s.field.split('__').join('.') === e.field)?.active,
     );
 
   componentDidMount() {
@@ -185,7 +185,7 @@ export default class LiveAdvancedFacetView extends React.Component {
         rootTypeName={props.graphqlField}
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended.filter(
-          ex => !fieldTypesToExclude.some(type => ex.type === type),
+          (ex) => !fieldTypesToExclude.some((type) => ex.type === type),
         )}
         aggregations={this.state.aggregations}
         onSqonFieldChange={this.onSqonFieldChange}

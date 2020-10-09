@@ -19,7 +19,7 @@ export function toQuery(column) {
 export default function columnsToGraphql({ config = {}, sqon, queryName, sort, offset, first }) {
   const fields = config.columns
     .filter(
-      column =>
+      (column) =>
         !(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
     )
     .concat(config.keyField ? { accessor: config.keyField } : [])
@@ -46,7 +46,7 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
       sqon: sqon || null,
       sort:
         sort &&
-        sort.map(s => {
+        sort.map((s) => {
           if (s.field.indexOf('hits.total') >= 0) {
             return Object.assign({}, s, { field: '_score' });
           } else {
@@ -58,8 +58,8 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
       score:
         (sort &&
           sort
-            .filter(s => s.field.indexOf('hits.total') >= 0)
-            .map(s => {
+            .filter((s) => s.field.indexOf('hits.total') >= 0)
+            .map((s) => {
               const match = s.field.match(/((.*)s)\.hits\.total/);
               return `${match[1]}.${match[2]}_id`;
             })

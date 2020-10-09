@@ -40,10 +40,11 @@ export default async (req, res) => {
         index: projectInfoIndex,
         type: projectInfoIndex,
       });
-      const { esType, config } = projectInfo?.hits?.hits?.find(x => x._id === index)?._source || {};
+      const { esType, config } =
+        projectInfo?.hits?.hits?.find((x) => x._id === index)?._source || {};
 
       let aliases = await es.cat.aliases({ format: 'json' });
-      let alias = aliases?.find(x => x.alias === index)?.index;
+      let alias = aliases?.find((x) => x.alias === index)?.index;
 
       const response = await fetchMapping({
         index: alias || index,

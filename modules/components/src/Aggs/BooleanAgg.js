@@ -59,7 +59,7 @@ export default ({
         bucket: isTrue ? trueBucket : falseBucket,
         value: isTrue ? trueBucket : falseBucket || missingKeyBucket,
         field,
-        generateNextSQON: sqon =>
+        generateNextSQON: (sqon) =>
           replaceSQON(
             {
               op: 'and',
@@ -80,7 +80,7 @@ export default ({
       handleValueClick({
         value: 'Any',
         field,
-        generateNextSQON: sqon => removeSQON(dotField, sqon),
+        generateNextSQON: (sqon) => removeSQON(dotField, sqon),
       });
     }
   };

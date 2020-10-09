@@ -11,7 +11,7 @@ import './Toolbar.css';
 
 const enhance = compose(
   withProps(({ columns }) => ({
-    canChangeShowColumns: columns.filter(column => column.canChangeShow),
+    canChangeShowColumns: columns.filter((column) => column.canChangeShow),
   })),
   withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
     debouncedOnFilterChange: debounce(onFilterChange, 300),
@@ -44,7 +44,7 @@ const TableToolbar = ({
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
   exporter = saveTSV,
-  transformParams = params => params,
+  transformParams = (params) => params,
   sqon,
   downloadUrl,
   InputComponent,
@@ -78,9 +78,9 @@ const TableToolbar = ({
         {allowTogglingColumns && (
           <DropDown
             aria-label={`Select columns`}
-            itemToString={i => i.Header}
+            itemToString={(i) => i.Header}
             items={canChangeShowColumns}
-            onChange={item => {
+            onChange={(item) => {
               setFilterVal('');
               onFilterChange({
                 value: '',

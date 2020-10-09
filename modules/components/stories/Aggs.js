@@ -202,7 +202,7 @@ storiesOf('Aggs', module)
               width: 300px;
             `}
           >
-            {aggs.map(agg => (
+            {aggs.map((agg) => (
               // TODO: switch on agg type
               <TermAgg
                 key={agg.field}
@@ -210,7 +210,7 @@ storiesOf('Aggs', module)
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={d =>
+                isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
                     dotField: d.field,
@@ -338,14 +338,14 @@ storiesOf('Aggs', module)
               width: 300px;
             `}
           >
-            {bolleanAggs.map(agg => (
+            {bolleanAggs.map((agg) => (
               <BooleanAgg
                 key={agg.field}
                 {...agg}
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={d =>
+                isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
                     dotField: d.field,
@@ -367,7 +367,7 @@ storiesOf('Aggs', module)
           <label>index: </label>
           <input // <-- could be a dropdown of available indices
             value={index}
-            onChange={e => update({ index: e.target.value })}
+            onChange={(e) => update({ index: e.target.value })}
           />
           {index && (
             <div

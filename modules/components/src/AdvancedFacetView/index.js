@@ -34,7 +34,7 @@ export default class AdvancedFacetView extends React.Component {
       isLoading: true,
     };
   }
-  fieldMappingFromPath = path => {
+  fieldMappingFromPath = (path) => {
     const { elasticMapping = {} } = this.props;
     return (
       path
@@ -87,7 +87,7 @@ export default class AdvancedFacetView extends React.Component {
     }
   }
 
-  setSearchTerm = debounce(value => {
+  setSearchTerm = debounce((value) => {
     const { onFilterChange = () => {} } = this.props;
     onFilterChange(value);
     this.setState({
@@ -109,7 +109,7 @@ export default class AdvancedFacetView extends React.Component {
       InputComponent = TextInput,
       ...props
     } = this.props;
-    const scrollFacetViewToPath = path => {
+    const scrollFacetViewToPath = (path) => {
       this.facetView.scrollToPath({ path });
       onFacetNavigation(path);
     };
@@ -128,7 +128,7 @@ export default class AdvancedFacetView extends React.Component {
             <div>
               <CurrentSQON
                 {...{ sqon, extendedMapping, translateSQONValue, onClear }}
-                setSQON={sqon => this.handleSqonChange({ sqon })}
+                setSQON={(sqon) => this.handleSqonChange({ sqon })}
               />
             </div>
             <div className="facetViewWrapper">
@@ -172,7 +172,7 @@ export default class AdvancedFacetView extends React.Component {
                     }}
                     dataSource={visibleDisplayTreeData}
                     selectedPath={selectedPath}
-                    onLeafSelect={path => {
+                    onLeafSelect={(path) => {
                       scrollFacetViewToPath(path);
                       this.setState({ selectedPath: path });
                     }}
@@ -235,7 +235,7 @@ export default class AdvancedFacetView extends React.Component {
                   <FacetView
                     extendedMapping={extendedMapping}
                     constructEntryId={this.constructFilterId}
-                    ref={view => (this.facetView = view)}
+                    ref={(view) => (this.facetView = view)}
                     sqon={sqon}
                     onValueChange={this.handleSqonChange}
                     aggregations={aggregations}

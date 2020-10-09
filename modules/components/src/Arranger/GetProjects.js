@@ -24,10 +24,10 @@ class GetProjects extends React.Component {
       },
     });
     const projects = {
-      projects: data.projects.map(project => ({
+      projects: data.projects.map((project) => ({
         id: project.id,
         types: {
-          types: project.indices.map(i => ({
+          types: project.indices.map((i) => ({
             index: i.esIndex,
             name: i.graphqlField,
           })),

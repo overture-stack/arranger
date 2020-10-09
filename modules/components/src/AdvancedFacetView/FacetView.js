@@ -3,9 +3,9 @@ import { isEqual } from 'lodash';
 import aggComponentsMap from '../Aggs/aggComponentsMap';
 import TextHighlight from '../TextHighlight';
 
-const serializeToDomId = path => path.split('.').join('__');
+const serializeToDomId = (path) => path.split('.').join('__');
 
-const flattenDisplayTreeData = displayTreeData => {
+const flattenDisplayTreeData = (displayTreeData) => {
   return displayTreeData.reduce(
     (acc, node) => [...acc, ...(node.children ? flattenDisplayTreeData(node.children) : [node])],
     [],
@@ -52,7 +52,7 @@ export default class FacetView extends React.Component {
       onTermSelected,
     } = this.props;
     return (
-      <div className="facetView" ref={el => (this.root = el)}>
+      <div className="facetView" ref={(el) => (this.root = el)}>
         {flattenDisplayTreeData(displayTreeData).map(({ path }) => {
           const metaData = extendedMapping.find(({ field }) => field === path);
           const { type } = metaData || {};
@@ -60,7 +60,7 @@ export default class FacetView extends React.Component {
             .split('.')
             .reduce((acc, node, i, paths) => [...acc, [...paths.slice(0, i), node].join('.')], []);
           const pathDisplayNames = paths.map(
-            path => extendedMapping.find(({ field }) => field === path)?.displayName,
+            (path) => extendedMapping.find(({ field }) => field === path)?.displayName,
           );
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({

@@ -19,7 +19,7 @@ export const extractAndValidate = (files: FileList) => {
     return file.name;
   }) as string[];
   const allValidNames =
-    fileNames.filter(name => Object.values(CONFIG_FILENAMES).includes(name)).length ===
+    fileNames.filter((name) => Object.values(CONFIG_FILENAMES).includes(name)).length ===
     fileNames.length;
   if (!allValidNames) {
     throw new Error(`File name must be one of: ${Object.values(CONFIG_FILENAMES).join(', ')}`);
@@ -32,7 +32,7 @@ export const getFileContentCollection = async (files: FileList) => {
   const fileContents = await Promise.all(
     Array.prototype.map.call(files, readFile) as Array<Promise<string>>,
   );
-  const dataContents = fileContents.map(s => JSON.parse(s));
+  const dataContents = fileContents.map((s) => JSON.parse(s));
   files[0].name;
   const configTypesMap = invert(CONFIG_FILENAMES);
   const filesCollection = fileNames.reduce(

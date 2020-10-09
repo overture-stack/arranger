@@ -16,10 +16,10 @@ const SUPPORTED_CONVERSIONS = {
   digital: ['GB'],
 };
 
-const supportedConversionFromUnit = unit =>
+const supportedConversionFromUnit = (unit) =>
   unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : null;
 
-const round = x => Math.round(x * 100) / 100;
+const round = (x) => Math.round(x * 100) / 100;
 
 const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
   <div
@@ -34,12 +34,8 @@ const RangeLabel = ({ children, isTop, isLeft, ...props }) => (
   </div>
 );
 
-const getLabelId = displayName => {
-  return `${displayName
-    .split('(')[0]
-    .trim()
-    .toLowerCase()
-    .replace(/\s/g, '-')}__range-label`;
+const getLabelId = (displayName) => {
+  return `${displayName.split('(')[0].trim().toLowerCase().replace(/\s/g, '-')}__range-label`;
 };
 
 class RangeAgg extends Component {
@@ -81,7 +77,7 @@ class RangeAgg extends Component {
   onChangeComplete = () => {
     let { field, handleChange, displayName } = this.props;
     let { value, displayUnit } = this.state;
-    const [min, max] = [value.min, value.max].map(x => round(x));
+    const [min, max] = [value.min, value.max].map((x) => round(x));
 
     handleChange?.({
       field: {
@@ -92,7 +88,7 @@ class RangeAgg extends Component {
       value,
       min,
       max,
-      generateNextSQON: sqon =>
+      generateNextSQON: (sqon) =>
         replaceSQON(
           {
             op: 'and',
@@ -118,11 +114,7 @@ class RangeAgg extends Component {
     const { unit, displayUnit } = this.state;
     return formatNumber(
       unit && displayUnit
-        ? Math.round(
-            convert(value)
-              .from(unit)
-              .to(displayUnit) * 100,
-          ) / 100
+        ? Math.round(convert(value).from(unit).to(displayUnit) * 100) / 100
         : value,
     );
   };
@@ -143,8 +135,8 @@ class RangeAgg extends Component {
             <div className="unit-wrapper">
               {supportedConversions?.length > 1 &&
                 supportedConversions
-                  ?.map(x => convert().describe(x))
-                  ?.map(x => ({ ...x, active: x.abbr === displayUnit }))
+                  ?.map((x) => convert().describe(x))
+                  ?.map((x) => ({ ...x, active: x.abbr === displayUnit }))
                   ?.map(({ abbr, plural, active }) => (
                     <span key={abbr}>
                       <input
@@ -152,7 +144,7 @@ class RangeAgg extends Component {
                         id={abbr}
                         value={abbr}
                         checked={active}
-                        onChange={e => this.setState({ displayUnit: e.target.value })}
+                        onChange={(e) => this.setState({ displayUnit: e.target.value })}
                       />
                       <label htmlFor={abbr}>{plural}</label>
                     </span>
@@ -171,7 +163,7 @@ class RangeAgg extends Component {
                 maxValue={max}
                 value={value}
                 formatLabel={this.formatRangeLabel}
-                onChange={x => this.setValue(x)}
+                onChange={(x) => this.setValue(x)}
                 onChangeComplete={this.onChangeComplete}
               />
               <RangeLabel isLeft>{this.formatRangeLabel(min)}</RangeLabel>

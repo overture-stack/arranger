@@ -11,7 +11,7 @@ export default ({ name, extendedFields }) => [
     ...defaults,
   },
   ...extendedFields
-    .filter(x => x.type === 'nested')
+    .filter((x) => x.type === 'nested')
     .map(({ field, displayName }) => ({
       displayName,
       field,

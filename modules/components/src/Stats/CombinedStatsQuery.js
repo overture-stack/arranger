@@ -11,8 +11,8 @@ const CombinedStatsQuery = ({ api, projectId, graphqlField, sqon, stats, render 
     render={({ aggs }) => {
       const decoratedStats = stats.map((s, i) => ({
         key: `q${i}`,
-        formatResult: x => x,
-        aggsField: aggs.find(x => x.field === underscoreField(s.field)),
+        formatResult: (x) => x,
+        aggsField: aggs.find((x) => x.field === underscoreField(s.field)),
         ...s,
       }));
       return (

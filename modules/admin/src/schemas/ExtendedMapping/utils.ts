@@ -47,11 +47,11 @@ export const getExtendedMapping = (es: Client) => async ({
     rangeStep: i.rangeStep,
   });
   const indexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
-    metaData => metaData.name === graphqlField,
+    (metaData) => metaData.name === graphqlField,
   );
   if (indexMetadata) {
     if (field) {
-      return indexMetadata.config.extended.filter(ex => field === ex.field).map(assertOutputType);
+      return indexMetadata.config.extended.filter((ex) => field === ex.field).map(assertOutputType);
     } else {
       return indexMetadata.config.extended.map(assertOutputType);
     }
@@ -66,7 +66,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
   projectId,
   extendedFieldMappingInput,
 }: I_UpdateExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping> => {
-  const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(metaData => {
+  const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find((metaData) => {
     return metaData.name === graphqlField;
   });
 
@@ -77,7 +77,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
     });
 
     const newIndexExtendedMappingFields: I_GqlExtendedFieldMapping[] = indexExtendedMappingFields.map(
-      field =>
+      (field) =>
         (field.field as string) === mutatedField
           ? { ...field, ...extendedFieldMappingInput }
           : field,
@@ -94,7 +94,7 @@ export const updateFieldExtendedMapping = (es: Client) => async ({
       },
     });
 
-    return newIndexExtendedMappingFields.find(field => field.field === mutatedField);
+    return newIndexExtendedMappingFields.find((field) => field.field === mutatedField);
   } else {
     throw new UserInputError(`no index found under name ${graphqlField} for project ${projectId}`);
   }
@@ -105,7 +105,7 @@ export const saveExtendedMapping = (es: Client) => async (
 ): Promise<I_GqlExtendedFieldMapping[]> => {
   const { projectId, graphqlField, input } = args;
   const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
-    entry => entry.name === graphqlField,
+    (entry) => entry.name === graphqlField,
   );
   const {
     config: { extended: currentStoredExtendedMapping },

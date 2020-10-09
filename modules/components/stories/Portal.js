@@ -78,7 +78,7 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
       </h2>
       <select
         value={projectId}
-        onChange={e => {
+        onChange={(e) => {
           setValue('PROJECT_ID', e.target.value);
           update({
             projectId: e.target.value,
@@ -86,7 +86,7 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
         }}
       >
         <option id="version">Select a version</option>
-        {projects.map(x => (
+        {projects.map((x) => (
           <option key={x.id} value={x.id}>
             {x.id}
           </option>
@@ -94,12 +94,12 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
       </select>
       <select
         value={index}
-        onChange={e => {
+        onChange={(e) => {
           setValue('ACTIVE_INDEX', e.target.value);
 
           let graphqlField = projects
-            .find(x => x.id === projectId)
-            ?.types?.types.find(x => x.index === e.target.value).name;
+            .find((x) => x.id === projectId)
+            ?.types?.types.find((x) => x.index === e.target.value).name;
 
           setValue('ACTIVE_INDEX_NAME', graphqlField);
           update({
@@ -110,8 +110,8 @@ const ChooseProject = ({ index, projectId, update, projects }) => {
       >
         <option id="version">Select an index</option>
         {projects
-          .find(x => x.id === projectId)
-          ?.types?.types?.map(x => (
+          .find((x) => x.id === projectId)
+          ?.types?.types?.map((x) => (
             <option key={x.index} value={x.index}>
               {x.index}
             </option>
@@ -164,7 +164,7 @@ storiesOf('Portal', module).add('Portal', () => (
             index={index}
             graphqlField={graphqlField}
             projectId={projectId}
-            render={props => {
+            render={(props) => {
               return (
                 <>
                   <DemoHeader update={update} />
@@ -175,7 +175,7 @@ storiesOf('Portal', module).add('Portal', () => (
           />
         ) : (
           <GetProjects
-            render={props => (
+            render={(props) => (
               <ChooseProject {...props} index={index} projectId={projectId} update={update} />
             )}
           />

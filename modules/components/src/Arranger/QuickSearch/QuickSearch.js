@@ -81,7 +81,7 @@ const QuickSearch = ({
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
-  translateSQONValue = x => x,
+  translateSQONValue = (x) => x,
   InputComponent = TextInput,
   DropdownItemComponent = DropdownItem,
   ...props
@@ -112,7 +112,7 @@ const QuickSearch = ({
                     {currentValues({
                       sqon,
                       primaryKeyField,
-                    })?.map(primaryKey => (
+                    })?.map((primaryKey) => (
                       <div className="quick-search-pinned-value">
                         <PinnedValueComponent
                           onClick={() =>
