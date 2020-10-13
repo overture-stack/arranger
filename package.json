@@ -13,7 +13,6 @@
     "test": "lerna run test --stream",
     "server": "cd modules/server && npm run watch",
     "run-prod-server": "cd modules/server && npm run run-prod",
-    "run-prod-admin-ui": "cd modules/admin-ui && npm run run-prod",
     "storybook": "cd modules/components && npm run storybook",
     "dashboard": "cd modules/components && npm run dashboard",
     "portal": "cd modules/components && npm run portal",

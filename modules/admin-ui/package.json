@@ -37,15 +37,13 @@
     "runtypes": "^2.1.6",
     "tslib": "^1.10.0",
     "utility-types": "^2.1.0",
-    "webpack": "^3.0.0",
-	"serve" : "^11.3.2"
+    "webpack": "^3.0.0"
   },
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
     "test": "echo 'test temporarily taken out, script: react-scripts-ts test --env=jsdom'",
     "eject": "react-scripts-ts eject",
-	"run-prod": "if [ -z $PORT ];then export PORT=3000; fi && serve -s build --listen $PORT",
     "build-css": "node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/",
     "watch-css": "npm run build-css && node-sass-chokidar --include-path ./src/scss --include-path ./node_modules src/scss/ -o src/ --watch --recursive",
     "prepare": "rm -rf ./dist && webpack --config webpack.config.npm.js"
