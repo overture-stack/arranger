@@ -10,9 +10,7 @@
         "properties": {
           "analysis_id": {
             "type": "keyword",
-            "copy_to": [
-              "file_autocomplete"
-            ]
+            "copy_to": ["file_autocomplete"]
           },
           "analysis_state": {
             "type": "keyword"
@@ -30,18 +28,14 @@
       },
       "data_type": {
         "type": "keyword",
-        "copy_to": [
-          "file_autocomplete"
-        ]
+        "copy_to": ["file_autocomplete"]
       },
       "donors": {
         "type": "nested",
         "properties": {
           "donor_id": {
             "type": "keyword",
-            "copy_to": [
-              "file_autocomplete"
-            ]
+            "copy_to": ["file_autocomplete"]
           },
           "gender": {
             "type": "keyword"
@@ -54,32 +48,24 @@
                 "properties": {
                   "matched_normal_submitter_sample_id": {
                     "type": "keyword",
-                    "copy_to": [
-                      "file_autocomplete"
-                    ]
+                    "copy_to": ["file_autocomplete"]
                   },
                   "sample_id": {
                     "type": "keyword",
-                    "copy_to": [
-                      "file_autocomplete"
-                    ]
+                    "copy_to": ["file_autocomplete"]
                   },
                   "sample_type": {
                     "type": "keyword"
                   },
                   "submitter_sample_id": {
                     "type": "keyword",
-                    "copy_to": [
-                      "file_autocomplete"
-                    ]
+                    "copy_to": ["file_autocomplete"]
                   }
                 }
               },
               "specimen_id": {
                 "type": "keyword",
-                "copy_to": [
-                  "file_autocomplete"
-                ]
+                "copy_to": ["file_autocomplete"]
               },
               "specimen_tissue_source": {
                 "type": "keyword"
@@ -89,9 +75,7 @@
               },
               "submitter_specimen_id": {
                 "type": "keyword",
-                "copy_to": [
-                  "file_autocomplete"
-                ]
+                "copy_to": ["file_autocomplete"]
               },
               "tumour_normal_designation": {
                 "type": "keyword"
@@ -100,9 +84,7 @@
           },
           "submitter_donor_id": {
             "type": "keyword",
-            "copy_to": [
-              "file_autocomplete"
-            ]
+            "copy_to": ["file_autocomplete"]
           }
         }
       },
@@ -132,9 +114,7 @@
           },
           "name": {
             "type": "keyword",
-            "copy_to": [
-              "file_autocomplete"
-            ]
+            "copy_to": ["file_autocomplete"]
           },
           "size": {
             "type": "long"
@@ -168,9 +148,7 @@
       },
       "object_id": {
         "type": "keyword",
-        "copy_to": [
-          "file_autocomplete"
-        ]
+        "copy_to": ["file_autocomplete"]
       },
       "repositories": {
         "type": "nested",
@@ -194,9 +172,7 @@
       },
       "study_id": {
         "type": "keyword",
-        "copy_to": [
-          "file_autocomplete"
-        ]
+        "copy_to": ["file_autocomplete"]
       }
     }
   },
@@ -215,23 +191,15 @@
         },
         "analyzer": {
           "autocomplete_analyzed": {
-            "filter": [
-              "lowercase",
-              "edge_ngram"
-            ],
+            "filter": ["lowercase", "edge_ngram"],
             "tokenizer": "standard"
           },
           "autocomplete_prefix": {
-            "filter": [
-              "lowercase",
-              "edge_ngram"
-            ],
+            "filter": ["lowercase", "edge_ngram"],
             "tokenizer": "keyword"
           },
           "lowercase_keyword": {
-            "filter": [
-              "lowercase"
-            ],
+            "filter": ["lowercase"],
             "tokenizer": "keyword"
           }
         }

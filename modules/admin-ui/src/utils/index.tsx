@@ -10,10 +10,10 @@ export const readFile = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     var reader = new FileReader();
     reader.readAsText(file, 'UTF-8');
-    reader.onload = function(evt: any) {
+    reader.onload = function (evt: any) {
       resolve(evt.target.result);
     };
-    reader.onerror = function(evt) {
+    reader.onerror = function (evt) {
       reject();
     };
   });
@@ -22,7 +22,7 @@ export const withDebouncedOnChange = ({
   debounceTime = 500,
 }: {
   debounceTime?: number;
-} = {}) => Input => ({ value, onChange, ...props }) => {
+} = {}) => (Input) => ({ value, onChange, ...props }) => {
   interface ILocalState {
     value: string;
   }
@@ -31,17 +31,12 @@ export const withDebouncedOnChange = ({
     setState: (s: ILocalState) => void;
   }
 
-  const debouncedOnchange = debounce(
-    (e: React.SyntheticEvent<HTMLInputElement>) => {
-      e.currentTarget = e.target as HTMLInputElement;
-      onChange(e);
-    },
-    debounceTime,
-  );
+  const debouncedOnchange = debounce((e: React.SyntheticEvent<HTMLInputElement>) => {
+    e.currentTarget = e.target as HTMLInputElement;
+    onChange(e);
+  }, debounceTime);
 
-  const whenInputChange = (s: IStateContainer) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => {
+  const whenInputChange = (s: IStateContainer) => (e: React.SyntheticEvent<HTMLInputElement>) => {
     e.persist();
     s.setState({ value: e.currentTarget.value });
     debouncedOnchange(e);

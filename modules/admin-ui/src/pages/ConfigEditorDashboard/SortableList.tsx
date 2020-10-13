@@ -37,6 +37,4 @@ export default SortableContainer(
   },
 );
 
-export const DragHandle = SortableHandle(() => (
-  <IconMenu size="large" color="gray" />
-));
+export const DragHandle = SortableHandle(() => <IconMenu size="large" color="gray" />);

@@ -29,15 +29,7 @@ export const OP_ALIASES = {
 };
 export const DATE_FORMAT = 'YYYY-MM-DD';
 
-export const ARRAY_CONTENT = [
-  IN_OP,
-  NOT_IN_OP,
-  SOME_NOT_IN_OP,
-  GT_OP,
-  GTE_OP,
-  LT_OP,
-  LTE_OP,
-];
+export const ARRAY_CONTENT = [IN_OP, NOT_IN_OP, SOME_NOT_IN_OP, GT_OP, GTE_OP, LT_OP, LTE_OP];
 
 // elasticsearch values
 export const ES_WILDCARD = 'wildcard';

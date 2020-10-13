@@ -1,10 +1,6 @@
 import getFields from 'graphql-fields';
 
-import {
-  buildQuery,
-  buildAggregations,
-  flattenAggregations,
-} from '@arranger/middleware';
+import { buildQuery, buildAggregations, flattenAggregations } from '@arranger/middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
@@ -13,12 +9,7 @@ let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
 export default ({ type, getServerSideFilter }) => async (
   obj,
-  {
-    offset = 0,
-    filters,
-    aggregations_filter_themselves,
-    include_missing = true,
-  },
+  { offset = 0, filters, aggregations_filter_themselves, include_missing = true },
   { es },
   info,
 ) => {

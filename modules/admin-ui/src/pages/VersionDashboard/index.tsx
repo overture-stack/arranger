@@ -38,7 +38,7 @@ interface IPropsFromGql {
     variables?: OperationVariables | undefined,
   ) => Promise<ApolloQueryResult<IGqlQueryData>>;
 }
-const withQuery: THoc<{}, IPropsFromGql> = Component => {
+const withQuery: THoc<{}, IPropsFromGql> = (Component) => {
   const query = gql`
     {
       projects {
@@ -51,19 +51,14 @@ const withQuery: THoc<{}, IPropsFromGql> = Component => {
     }
   `;
 
-  return props => (
+  return (props) => (
     <Query query={query} partialRefetch={true} displayName="ProjectsQuery">
       {({ data, loading, error, refetch }: QueryResult<IGqlQueryData>) => {
         if (loading) {
           return 'loading...';
         }
         return (
-          <Component
-            {...props}
-            data={data as IGqlQueryData}
-            error={error}
-            refetch={refetch}
-          />
+          <Component {...props} data={data as IGqlQueryData} error={error} refetch={refetch} />
         );
       }}
     </Query>
@@ -109,7 +104,7 @@ interface IPropsFromLocalState {
     mutations: ILocalDispatchProps;
   };
 }
-const withLocalState: THoc<{}, IPropsFromLocalState> = Wrapped => props => {
+const withLocalState: THoc<{}, IPropsFromLocalState> = (Wrapped) => (props) => {
   const initialState: ILocalStateProps = { isAddingProject: false };
   return (
     <Component initialState={initialState}>
@@ -134,12 +129,9 @@ const withLocalState: THoc<{}, IPropsFromLocalState> = Wrapped => props => {
 /*************************
  * Layout component
  *************************/
-interface IInjectedProps
-  extends IPropsFromGql,
-    IPropsFromRedux,
-    IPropsFromLocalState {}
+interface IInjectedProps extends IPropsFromGql, IPropsFromRedux, IPropsFromLocalState {}
 interface IExternalProps {}
-const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
+const Layout: React.ComponentType<IInjectedProps & IExternalProps> = (props) => {
   const {
     data = { projects: [] },
     onVersionSelect,
@@ -154,7 +146,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
 
   const { projects = [] } = data;
 
-  const columnsData = projects.map(project => ({
+  const columnsData = projects.map((project) => ({
     id: project.id,
     timestamp: project.timestamp,
     indexCount: (project.indices || []).length,
@@ -171,7 +163,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
     refetch();
   }, []);
 
-  const rows = sorted.map(entry => ({
+  const rows = sorted.map((entry) => ({
     row: ({ onIdClick = () => onVersionSelect(entry.id), data = entry }) => {
       const onProjectRemoved = () => refetch();
       return (
@@ -187,10 +179,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
             <ExportButton projectId={entry.id} />
           </TableCell>
           <TableCell>
-            <ProjectDeleteButton
-              projectId={data.id}
-              onProjectRemoved={onProjectRemoved}
-            />
+            <ProjectDeleteButton projectId={data.id} onProjectRemoved={onProjectRemoved} />
           </TableCell>
         </TableRow>
       );
@@ -219,10 +208,7 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
       <div>
         {isAddingProject && (
           <ModalOverlay>
-            <AddProjectForm
-              onCancel={onCancelAddProject}
-              onProjectAdded={onProjectAdded}
-            />
+            <AddProjectForm onCancel={onCancelAddProject} onProjectAdded={onProjectAdded} />
           </ModalOverlay>
         )}
         <Button onClick={onAddButtonClick} size="medium" primary={true}>
@@ -233,8 +219,4 @@ const Layout: React.ComponentType<IInjectedProps & IExternalProps> = props => {
   );
 };
 
-export default compose<{}, IExternalProps>(
-  withQuery,
-  withGlobalState,
-  withLocalState,
-)(Layout);
+export default compose<{}, IExternalProps>(withQuery, withGlobalState, withLocalState)(Layout);

@@ -3,11 +3,7 @@ import { GraphQLDate } from 'graphql-scalars';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
-import {
-  createConnectionResolvers,
-  saveSet,
-  mappingToFields,
-} from '@arranger/mapping-utils';
+import { createConnectionResolvers, saveSet, mappingToFields } from '@arranger/mapping-utils';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
@@ -74,12 +70,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 let resolveObject = () => ({});
 
-export let resolvers = ({
-  types,
-  rootTypes,
-  scalarTypes,
-  getServerSideFilter,
-}) => {
+export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -108,9 +99,7 @@ export let resolvers = ({
     ...rootTypes.reduce(
       (acc, [key, type]) => ({
         ...acc,
-        ...(type.resolvers
-          ? { [startCase(key).replace(/\s/g, '')]: type.resolvers }
-          : {}),
+        ...(type.resolvers ? { [startCase(key).replace(/\s/g, '')]: type.resolvers } : {}),
       }),
       {},
     ),

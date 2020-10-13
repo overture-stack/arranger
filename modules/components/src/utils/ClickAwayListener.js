@@ -7,7 +7,7 @@ import React from 'react';
  */
 export default class ClickAwayListener extends React.Component {
   ref = React.createRef();
-  clickHandler = e => {
+  clickHandler = (e) => {
     const { handler = () => {} } = this.props;
     if (!this.ref.current.contains(e.target)) {
       handler(e);

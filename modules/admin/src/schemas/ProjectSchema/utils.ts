@@ -12,9 +12,7 @@ export const newArrangerProject = (id: string): IArrangerProject => ({
   timestamp: new Date().toISOString(),
 });
 
-export const getArrangerProjects = async (
-  es: Client,
-): Promise<Array<IArrangerProject>> => {
+export const getArrangerProjects = async (es: Client): Promise<Array<IArrangerProject>> => {
   const {
     body: {
       hits: { hits },
@@ -65,9 +63,7 @@ export const addArrangerProject = (es: Client) => async (
 export const removeArrangerProject = (es: Client) => async (
   id: string,
 ): Promise<IArrangerProject[]> => {
-  const existingProject = (await getArrangerProjects(es)).find(
-    ({ id: _id }) => id === _id,
-  );
+  const existingProject = (await getArrangerProjects(es)).find(({ id: _id }) => id === _id);
   if (existingProject) {
     await Promise.all([
       es.indices.delete({

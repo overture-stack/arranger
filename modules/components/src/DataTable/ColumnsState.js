@@ -63,7 +63,11 @@ export default class extends Component {
       });
 
       const config = data[graphqlField].columnsState.state;
-      let { data: { [this.props.graphqlField]: { extended } } } = await api({
+      let {
+        data: {
+          [this.props.graphqlField]: { extended },
+        },
+      } = await api({
         endpoint: `/${this.props.projectId}/graphql`,
         body: {
           query: `
@@ -86,7 +90,7 @@ export default class extends Component {
     }
   }, 300);
 
-  save = debounce(async state => {
+  save = debounce(async (state) => {
     const { api = defaultApi } = this.props;
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
@@ -110,7 +114,7 @@ export default class extends Component {
   }, 300);
 
   update = ({ field, key, value }) => {
-    let index = this.state.config.columns.findIndex(x => x.field === field);
+    let index = this.state.config.columns.findIndex((x) => x.field === field);
     let column = this.state.config.columns[index];
     let temp = {
       ...this.state.config,
@@ -122,9 +126,9 @@ export default class extends Component {
     this.setState({ temp }, () => this.save(temp));
   };
 
-  add = column => {
+  add = (column) => {
     const { id } = column;
-    let existing = this.state.config.columns.find(x => x.id === id);
+    let existing = this.state.config.columns.find((x) => x.id === id);
     if (existing) return;
     let temp = {
       ...this.state.config,
@@ -138,15 +142,11 @@ export default class extends Component {
     this.setState({ toggled: { ...this.state.toggled, [field]: show } });
   };
 
-  saveOrder = orderedFields => {
+  saveOrder = (orderedFields) => {
     const columns = this.state.config.columns;
     if (
-      orderedFields.every(field =>
-        columns.find(column => column.field === field),
-      ) &&
-      columns.every(column =>
-        orderedFields.find(field => field === column.field),
-      )
+      orderedFields.every((field) => columns.find((column) => column.field === field)) &&
+      columns.every((column) => orderedFields.find((field) => field === column.field))
     ) {
       this.save({
         ...this.state.config,
@@ -168,16 +168,13 @@ export default class extends Component {
           saveOrder: this.saveOrder,
           state: {
             ...config,
-            columns: config.columns.map(column => {
-              const extendedField = extended.find(
-                e => e.field === column.field,
-              );
+            columns: config.columns.map((column) => {
+              const extendedField = extended.find((e) => e.field === column.field);
               return {
                 ...column,
                 Header: extendedField?.displayName || column.field,
                 extendedType: extendedField?.type,
-                show:
-                  column.field in toggled ? toggled[column.field] : column.show,
+                show: column.field in toggled ? toggled[column.field] : column.show,
                 extendedDisplayValues: extendedField?.displayValues,
               };
             }),

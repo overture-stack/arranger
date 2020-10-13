@@ -29,9 +29,7 @@ test('buildQuery ">=" and "<=" nested', () => {
               op: 'in',
               content: {
                 field: 'participants.samples.anatomical_site',
-                value: [
-                  'C40.0: Long bones of upper limb, scapula and associated joints',
-                ],
+                value: ['C40.0: Long bones of upper limb, scapula and associated joints'],
               },
             },
           ],
@@ -119,9 +117,7 @@ test('buildQuery single ">="', () => {
       input: {
         nestedFields,
         filters: {
-          content: [
-            { content: { field: 'files.foo.name', value: 7 }, op: '>=' },
-          ],
+          content: [{ content: { field: 'files.foo.name', value: 7 }, op: '>=' }],
           op: 'and',
         },
       },
@@ -208,9 +204,7 @@ test('buildQuery "missing" nested', () => {
                     must: [
                       {
                         terms: {
-                          'files.data_category': [
-                            'Simple Nucleotide Variation',
-                          ],
+                          'files.data_category': ['Simple Nucleotide Variation'],
                           boost: 0,
                         },
                       },
@@ -244,8 +238,7 @@ test('buildQuery "missing" nested', () => {
                     must_not: [
                       {
                         exists: {
-                          field:
-                            'files.analysis.metadata.read_groups.is_paired_end',
+                          field: 'files.analysis.metadata.read_groups.is_paired_end',
                           boost: 0,
                         },
                       },
@@ -349,9 +342,7 @@ test('buildQuery "some-not-in" nested', () => {
                                               must: [
                                                 {
                                                   terms: {
-                                                    'files.foo.bar.name': [
-                                                      'cname',
-                                                    ],
+                                                    'files.foo.bar.name': ['cname'],
                                                     boost: 0,
                                                   },
                                                 },
@@ -611,9 +602,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
-                      { terms: { 'files.center.code': ['01'], boost: 0 } },
-                    ],
+                    must: [{ terms: { 'files.center.code': ['01'], boost: 0 } }],
                   },
                 },
               },
@@ -657,9 +646,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must_not: [
-                      { terms: { 'files.access': ['protected'], boost: 0 } },
-                    ],
+                    must_not: [{ terms: { 'files.access': ['protected'], boost: 0 } }],
                   },
                 },
               },
@@ -669,9 +656,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
-                      { terms: { 'files.center.code': ['01'], boost: 0 } },
-                    ],
+                    must: [{ terms: { 'files.center.code': ['01'], boost: 0 } }],
                   },
                 },
               },
@@ -711,9 +696,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
-                      { terms: { 'files.access': ['protected4'], boost: 0 } },
-                    ],
+                    must: [{ terms: { 'files.access': ['protected4'], boost: 0 } }],
                   },
                 },
               },
@@ -723,9 +706,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must_not: [
-                      { terms: { 'files.center.code': ['04'], boost: 0 } },
-                    ],
+                    must_not: [{ terms: { 'files.center.code': ['04'], boost: 0 } }],
                   },
                 },
               },
@@ -765,9 +746,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must: [
-                      { terms: { 'files.access': ['protected'], boost: 0 } },
-                    ],
+                    must: [{ terms: { 'files.access': ['protected'], boost: 0 } }],
                   },
                 },
               },
@@ -777,9 +756,7 @@ test('buildQuery "=" and "!=" nested', () => {
                 path: 'files',
                 query: {
                   bool: {
-                    must_not: [
-                      { terms: { 'files.center.code': ['01'], boost: 0 } },
-                    ],
+                    must_not: [{ terms: { 'files.center.code': ['01'], boost: 0 } }],
                   },
                 },
               },
@@ -1006,9 +983,7 @@ test('buildQuery "=" and "!=" nested', () => {
       input: {
         nestedFields,
         filters: {
-          content: [
-            { content: { field: 'files.foo.name', value: 'cname' }, op: '!=' },
-          ],
+          content: [{ content: { field: 'files.foo.name', value: 'cname' }, op: '!=' }],
           op: 'and',
         },
       },
@@ -1066,9 +1041,7 @@ test('buildQuery "=" and "!=" nested', () => {
                     path: 'files.foo',
                     query: {
                       bool: {
-                        must_not: [
-                          { terms: { 'files.foo.code': ['01'], boost: 0 } },
-                        ],
+                        must_not: [{ terms: { 'files.foo.code': ['01'], boost: 0 } }],
                       },
                     },
                   },
@@ -1374,9 +1347,7 @@ test('buildQuery "=" and "!=" nested', () => {
                     must: [
                       {
                         terms: {
-                          'files.data_category': [
-                            'Simple Nucleotide Variation',
-                          ],
+                          'files.data_category': ['Simple Nucleotide Variation'],
                           boost: 0,
                         },
                       },
@@ -1410,8 +1381,7 @@ test('buildQuery "=" and "!=" nested', () => {
                     must_not: [
                       {
                         exists: {
-                          field:
-                            'files.analysis.metadata.read_groups.is_paired_end',
+                          field: 'files.analysis.metadata.read_groups.is_paired_end',
                           boost: 0,
                         },
                       },

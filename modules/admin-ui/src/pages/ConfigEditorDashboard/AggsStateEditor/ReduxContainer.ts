@@ -1,8 +1,5 @@
 import { IGlobalState } from 'src/store';
-import {
-  IAggsStateEntry,
-  IAggsState,
-} from 'src/pages/VersionDashboard/AddProjectForm/types';
+import { IAggsStateEntry, IAggsState } from 'src/pages/VersionDashboard/AddProjectForm/types';
 import { Dispatch } from 'redux';
 import { TReduxAction, ActionType } from 'src/store/configEditorReducer';
 
@@ -19,10 +16,7 @@ export interface IReduxStateProps {
 }
 
 export interface IReduxDispatchProps {
-  onFieldSortChange: (
-    field: IAggsStateEntryWithIndex,
-    newIndex: number,
-  ) => void;
+  onFieldSortChange: (field: IAggsStateEntryWithIndex, newIndex: number) => void;
   onFieldPropertyChange: ({ newField: IAggsStateEntryWithIndex }) => void;
 }
 
@@ -34,7 +28,7 @@ export const mapStateToProps = (
     return { aggsState: [] };
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
-      index => index.graphqlField === graphqlField,
+      (index) => index.graphqlField === graphqlField,
     );
     if (currentProjectIndexData) {
       return {

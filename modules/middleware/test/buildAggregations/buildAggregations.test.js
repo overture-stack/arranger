@@ -93,15 +93,13 @@ test('buildAggregations should handle nested aggregations', () => {
                         'cases.samples.portions.slides.annotations.notes:missing': {
                           aggs: { rn: { reverse_nested: {} } },
                           missing: {
-                            field:
-                              'cases.samples.portions.slides.annotations.notes',
+                            field: 'cases.samples.portions.slides.annotations.notes',
                           },
                         },
                         'cases.samples.portions.slides.annotations.notes': {
                           aggs: { rn: { reverse_nested: {} } },
                           terms: {
-                            field:
-                              'cases.samples.portions.slides.annotations.notes',
+                            field: 'cases.samples.portions.slides.annotations.notes',
                             size: 300000,
                           },
                         },
@@ -135,15 +133,13 @@ test('buildAggregations should handle nested aggregations', () => {
                         'cases.samples.portions.slides.annotations.category:missing': {
                           aggs: { rn: { reverse_nested: {} } },
                           missing: {
-                            field:
-                              'cases.samples.portions.slides.annotations.category',
+                            field: 'cases.samples.portions.slides.annotations.category',
                           },
                         },
                         'cases.samples.portions.slides.annotations.category': {
                           aggs: { rn: { reverse_nested: {} } },
                           terms: {
-                            field:
-                              'cases.samples.portions.slides.annotations.category',
+                            field: 'cases.samples.portions.slides.annotations.category',
                             size: 300000,
                           },
                         },
@@ -418,9 +414,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
                   should: [
                     {
                       terms: {
-                        'participants.diagnoses.mondo_id_diagnosis': [
-                          'SOME_VALUE',
-                        ],
+                        'participants.diagnoses.mondo_id_diagnosis': ['SOME_VALUE'],
                         boost: 0,
                       },
                     },
@@ -512,9 +506,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                                   must: [
                                     {
                                       terms: {
-                                        'participants.diagnoses.mondo_id_diagnosis': [
-                                          'SOME_VALUE',
-                                        ],
+                                        'participants.diagnoses.mondo_id_diagnosis': ['SOME_VALUE'],
                                         boost: 0,
                                       },
                                     },
@@ -548,9 +540,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                           should: [
                             {
                               terms: {
-                                'participants.diagnoses.mondo_id_diagnosis': [
-                                  'SOME_VALUE',
-                                ],
+                                'participants.diagnoses.mondo_id_diagnosis': ['SOME_VALUE'],
                                 boost: 0,
                               },
                             },
@@ -565,8 +555,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                             },
                           },
                           terms: {
-                            field:
-                              'participants.diagnoses.source_text_diagnosis',
+                            field: 'participants.diagnoses.source_text_diagnosis',
                             size: 300000,
                           },
                         },
@@ -577,8 +566,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                             },
                           },
                           missing: {
-                            field:
-                              'participants.diagnoses.source_text_diagnosis',
+                            field: 'participants.diagnoses.source_text_diagnosis',
                           },
                         },
                       },
@@ -643,17 +631,13 @@ test('buildAggregations can drop nested sqon filters down to filters including a
                   should: [
                     {
                       terms: {
-                        'participants.diagnoses.mondo_id_diagnosis': [
-                          'SOME_VALUE',
-                        ],
+                        'participants.diagnoses.mondo_id_diagnosis': ['SOME_VALUE'],
                         boost: 0,
                       },
                     },
                     {
                       terms: {
-                        'participants.diagnoses.source_text_diagnosis': [
-                          'SOME_VALUE',
-                        ],
+                        'participants.diagnoses.source_text_diagnosis': ['SOME_VALUE'],
                         boost: 0,
                       },
                     },

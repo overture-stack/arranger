@@ -1,4 +1,4 @@
-const isProperSqon = sqon => !!(sqon && sqon.op);
+const isProperSqon = (sqon) => !!(sqon && sqon.op);
 
 export default ({ clientSideFilter, serverSideFilter }) => ({
   op: 'and',

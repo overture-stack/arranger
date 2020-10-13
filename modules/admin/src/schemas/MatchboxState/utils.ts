@@ -7,10 +7,7 @@ import {
   I_MatchBoxStateQueryInput,
   I_SaveMatchBoxStateMutationInput,
 } from './types';
-import {
-  getProjectStorageMetadata,
-  updateProjectIndexMetadata,
-} from '../IndexSchema/utils';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
 import { replaceBy, timestamp } from '../../services';
 
 export const createMatchboxState = ({
@@ -32,7 +29,7 @@ export const getMatchBoxState = (es: Client) => async ({
   projectId,
 }: I_MatchBoxStateQueryInput): Promise<I_MatchBoxState> => {
   const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
-    i => i.name === graphqlField,
+    (i) => i.name === graphqlField,
   );
   return currentMetadata.config['matchbox-state'];
 };
@@ -43,7 +40,7 @@ export const saveMatchBoxState = (es: Client) => async ({
   state: updatedMatchboxFields,
 }: I_SaveMatchBoxStateMutationInput): Promise<I_MatchBoxState> => {
   const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
-    i => i.name === graphqlField,
+    (i) => i.name === graphqlField,
   );
   const currentMatchboxFields = currentMetadata.config['matchbox-state'].state;
   const newMatchboxState: I_MatchBoxState = {

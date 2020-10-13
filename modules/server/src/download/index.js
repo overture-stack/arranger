@@ -7,12 +7,12 @@ import { defaults } from 'lodash';
 import getAllData from '../utils/getAllData';
 import dataToExportFormat from '../utils/dataToExportFormat';
 
-export default function({ projectId }) {
+export default function ({ projectId }) {
   const router = express.Router();
 
   router.use(bodyParser.urlencoded({ extended: true }));
 
-  router.post('/', async function(req, res) {
+  router.post('/', async function (req, res) {
     const es = req.context.es;
     const { params } = req.body;
     console.time('download');
@@ -23,29 +23,19 @@ export default function({ projectId }) {
         params: JSON.parse(params),
       });
       res.set('Content-Type', contentType);
-      res.set(
-        'Content-disposition',
-        `attachment; filename=${responseFileName}`,
-      );
+      res.set('Content-disposition', `attachment; filename=${responseFileName}`);
       output.pipe(res).on('finish', () => {
         console.timeEnd('download');
       });
     } catch (err) {
-      res
-        .status(400)
-        .send(err.message || err.details || 'An unknown error occurred.');
+      res.status(400).send(err.message || err.details || 'An unknown error occurred.');
     }
   });
 
   return router;
 }
 
-export const dataStream = async ({
-  es,
-  projectId,
-  params,
-  fileType = 'tsv',
-}) => {
+export const dataStream = async ({ es, projectId, params, fileType = 'tsv' }) => {
   const { files, fileName = 'file.tar.gz', mock, chunkSize } = params;
   if (!files || !files.length) {
     console.warn('no files defined to download');
@@ -93,19 +83,15 @@ const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
           fileType: file.fileType,
         });
 
-        fileStream.on('data', chunk => (data += chunk));
+        fileStream.on('data', (chunk) => (data += chunk));
         fileStream.on('end', () => {
-          pack.entry(
-            { name: file.fileName || `file-${i + 1}.tsv` },
-            data,
-            function(err) {
-              if (err) {
-                reject(err);
-              } else {
-                resolve();
-              }
-            },
-          );
+          pack.entry({ name: file.fileName || `file-${i + 1}.tsv` }, data, function (err) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
         });
       });
     }),
@@ -114,21 +100,16 @@ const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
   return pack.pipe(zlib.createGzip());
 };
 
-const getFileStream = async ({
-  es,
-  projectId,
-  mock,
-  chunkSize,
-  file,
-  fileType,
-}) => {
+const getFileStream = async ({ es, projectId, mock, chunkSize, file, fileType }) => {
   const exportArgs = defaults(file, { mock, chunkSize, fileType });
   return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
 };
 
-const convertDataToExportFormat = ({ es, projectId, fileType }) => async args =>
-  (await getAllData({
-    projectId,
-    es,
-    ...args,
-  })).pipe(dataToExportFormat({ ...args, fileType }));
+const convertDataToExportFormat = ({ es, projectId, fileType }) => async (args) =>
+  (
+    await getAllData({
+      projectId,
+      es,
+      ...args,
+    })
+  ).pipe(dataToExportFormat({ ...args, fileType }));

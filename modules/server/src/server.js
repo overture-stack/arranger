@@ -5,14 +5,7 @@ import bodyParser from 'body-parser';
 import projectsRoutes from './projects';
 import { getProjects } from './utils/projects';
 import startProject, { getDefaultServerSideFilter } from './startProject';
-import {
-  ES_HOST,
-  ES_USER,
-  ES_PASS,
-  ES_LOG,
-  PROJECT_ID,
-  MAX_LIVE_VERSIONS,
-} from './utils/config';
+import { ES_HOST, ES_USER, ES_PASS, ES_LOG, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
 import { fetchProjects } from './projects/getProjects';
 
 export const buildEsClientViaEnv = () => {
@@ -88,9 +81,9 @@ export default async ({
     const { projects = [] } = await fetchProjects({ es });
     await Promise.all(
       projects
-        .filter(project => project.active)
+        .filter((project) => project.active)
         // .slice(0, MAX_LIVE_VERSIONS)
-        .map(async project => {
+        .map(async (project) => {
           try {
             await startSingleProject({
               projectId: project.id,
@@ -123,7 +116,7 @@ export default async ({
       const projects = getProjects();
       if (!projects.length) return next();
       const project = projects.find(
-        p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
+        (p) => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
       );
       if (project) {
         return project.app(req, res, next);
@@ -142,7 +135,7 @@ export default async ({
           getServerSideFilter,
         });
         const project = getProjects().find(
-          p => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
+          (p) => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
         );
         return project.app(req, res, next);
       } catch (err) {

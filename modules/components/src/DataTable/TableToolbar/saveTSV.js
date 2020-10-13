@@ -1,6 +1,6 @@
 import download from '../../utils/download';
 
-export default async function({ url, files = [], fileName, options = {} }) {
+export default async function ({ url, files = [], fileName, options = {} }) {
   return download({
     url,
     method: 'POST',
@@ -10,7 +10,7 @@ export default async function({ url, files = [], fileName, options = {} }) {
       files: files.map(({ columns, ...file }, i) => {
         return {
           ...file,
-          columns: columns.filter(c => c.show),
+          columns: columns.filter((c) => c.show),
         };
       }),
       ...options.params,

@@ -1,12 +1,7 @@
 import * as React from 'react';
 import { compose } from 'recompose';
 import styled from 'react-emotion';
-import Card, {
-  CardBlock,
-  CardTitle,
-  CardActions,
-  CardDivider,
-} from 'mineral-ui/Card';
+import Card, { CardBlock, CardTitle, CardActions, CardDivider } from 'mineral-ui/Card';
 import { FormField } from 'mineral-ui/Form';
 import TextInput from 'mineral-ui/TextInput';
 import Button from 'mineral-ui/Button';
@@ -30,7 +25,7 @@ interface IIndexConfigArgs {
   index: INewIndexInput;
 }
 
-const Layout: React.ComponentType<ILayoutProps> = props => {
+const Layout: React.ComponentType<ILayoutProps> = (props) => {
   const {
     formState: {
       mutations: {
@@ -108,8 +103,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
     return;
   };
 
-  const onIndexConfigRemoveClick = (position: number) => () =>
-    removeIndex(position);
+  const onIndexConfigRemoveClick = (position: number) => () => removeIndex(position);
 
   return (
     <StyledCard>
@@ -191,11 +185,7 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
         <CardDivider />
         <Grid>
           <GridItem>
-            <Button
-              onClick={onIndexAddClick}
-              size="medium"
-              disabled={isloading}
-            >
+            <Button onClick={onIndexAddClick} size="medium" disabled={isloading}>
               Add Index
             </Button>
           </GridItem>
@@ -214,7 +204,4 @@ const Layout: React.ComponentType<ILayoutProps> = props => {
   );
 };
 
-export default compose<{}, IExternalProps>(
-  withLocalFormState,
-  withAddProjectMutation,
-)(Layout);
+export default compose<{}, IExternalProps>(withLocalFormState, withAddProjectMutation)(Layout);

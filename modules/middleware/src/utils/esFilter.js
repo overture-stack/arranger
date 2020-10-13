@@ -33,9 +33,7 @@ export function wrapNested(esFilter, path) {
   return {
     [CONSTANTS.ES_NESTED]: {
       [CONSTANTS.ES_PATH]: path,
-      [CONSTANTS.ES_QUERY]: esFilter[CONSTANTS.ES_BOOL]
-        ? esFilter
-        : wrapMust(esFilter),
+      [CONSTANTS.ES_QUERY]: esFilter[CONSTANTS.ES_BOOL] ? esFilter : wrapMust(esFilter),
     },
   };
 }

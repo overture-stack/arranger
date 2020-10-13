@@ -73,14 +73,12 @@ export const RT_IndexConfigImportData = Record({
   matchboxState: Union(Undefined, RT_MatchboxState),
 });
 
-export interface IIndexConfigImportData
-  extends Static<typeof RT_IndexConfigImportData> {}
+export interface IIndexConfigImportData extends Static<typeof RT_IndexConfigImportData> {}
 export interface IAggsStateEntry extends Static<typeof RT_AggsStateEntry> {}
 export interface IAggsState extends Static<typeof RT_AggsState> {}
 export interface IColumnsState extends Static<typeof RT_ColumnsState> {}
 export interface IExtendedMapping extends Static<typeof RT_ExtendedMapping> {}
-export interface IExtendedMappingField
-  extends Static<typeof RT_ExtendedMappingField> {}
+export interface IExtendedMappingField extends Static<typeof RT_ExtendedMappingField> {}
 export interface IMatchboxState extends Static<typeof RT_MatchboxState> {}
 
 /********
@@ -101,12 +99,8 @@ export interface ILocalFormMutations {
   setProjectId: (id: string) => void;
   addIndex: (indexConfig: INewIndexArgs) => void;
   removeIndex: (indexPosition: number) => void;
-  setIndexMutationInput: (
-    indexPosition: number,
-  ) => (mutationInput: INewIndexInput) => void;
-  setIndexConfig: (
-    indexPosition: number,
-  ) => (indexConfig: IProjectIndexConfig | null) => void;
+  setIndexMutationInput: (indexPosition: number) => (mutationInput: INewIndexInput) => void;
+  setIndexConfig: (indexPosition: number) => (indexConfig: IProjectIndexConfig | null) => void;
   setError: (error: Error) => Promise<Error>;
   setLoadingState: (isLoading: boolean) => void;
 }

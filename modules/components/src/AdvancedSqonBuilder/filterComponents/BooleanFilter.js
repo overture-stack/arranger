@@ -12,19 +12,14 @@ import './FilterContainerStyle.css';
 import Query from '../../Query';
 
 const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
-  return (
-    fieldDisplayNameMap[initialFieldSqon.content.field] ||
-    initialFieldSqon.content.field
-  );
+  return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
 };
 
-const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
+const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
 
-export const BooleanFilterUI = props => {
+export const BooleanFilterUI = (props) => {
   const {
-    onSubmit = sqon => {},
+    onSubmit = (sqon) => {},
     onCancel = () => {},
     ContainerComponent = FilterContainer,
     sqonPath = [],
@@ -43,9 +38,9 @@ export const BooleanFilterUI = props => {
     content: { field, value: [] },
   };
 
-  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const onSqonSubmit = (s) => () => onSubmit(s.state.localSqon);
 
-  const onSelectionChange = s => ({ value }) => {
+  const onSelectionChange = (s) => ({ value }) => {
     setTimeout(() => {
       const newOp = {
         op: IN_OP,
@@ -61,19 +56,16 @@ export const BooleanFilterUI = props => {
     }, 0);
   };
 
-  const isActive = s => ({ value }) => {
+  const isActive = (s) => ({ value }) => {
     const op = getOperationAtPath(sqonPath)(s.state.localSqon);
     return value === (op && op.content.value[0]);
   };
 
-  const fieldDisplayName = getFieldDisplayName(
-    fieldDisplayNameMap,
-    initialFieldSqon,
-  );
+  const fieldDisplayName = getFieldDisplayName(fieldDisplayNameMap, initialFieldSqon);
 
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <React.Fragment>
             <div key="header" className="contentSection headerContainer">
@@ -111,7 +103,7 @@ BooleanFilterUI.propTypes = {
   buckets: PropTypes.array,
 };
 
-export default props => {
+export default (props) => {
   const {
     api = defaultApi,
     arrangerProjectId = PROJECT_ID,
@@ -163,12 +155,7 @@ export default props => {
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           buckets={
-            data
-              ? get(
-                  data,
-                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
-                )
-              : []
+            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
           }
         />
       )}

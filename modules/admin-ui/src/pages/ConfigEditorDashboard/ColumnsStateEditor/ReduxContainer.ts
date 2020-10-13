@@ -1,9 +1,5 @@
 import { IGlobalState } from 'src/store';
-import {
-  viewProjectIndex,
-  TReduxAction,
-  ActionType,
-} from 'src/store/configEditorReducer';
+import { viewProjectIndex, TReduxAction, ActionType } from 'src/store/configEditorReducer';
 import { IColumnsState } from 'src/pages/VersionDashboard/AddProjectForm/types';
 import { Dispatch } from 'redux';
 import { ISortEventData } from '../AggsStateEditor/SortableAggsStateList';
@@ -17,9 +13,7 @@ export interface IReduxStateProps {
 }
 
 export interface IReduxDisplatProps {
-  onFieldSortChange: (
-    e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>,
-  ) => void;
+  onFieldSortChange: (e: Pick<ISortEventData, Exclude<keyof ISortEventData, 'collection'>>) => void;
   onColumnPropertyChange: (newColumn: IColumnsState['columns'][0]) => void;
 }
 
@@ -36,7 +30,7 @@ export const mapDispatchToProps = (
   dispatch: Dispatch<TReduxAction>,
   { graphqlField }: IReduxExternalProps,
 ): IReduxDisplatProps => ({
-  onFieldSortChange: sortEvent => {
+  onFieldSortChange: (sortEvent) => {
     dispatch({
       type: ActionType.COLUMNS_STATE_FIELD_ORDER_CHANGE,
       payload: {
@@ -46,7 +40,7 @@ export const mapDispatchToProps = (
       },
     });
   },
-  onColumnPropertyChange: newColumn => {
+  onColumnPropertyChange: (newColumn) => {
     dispatch({
       type: ActionType.COLUMNS_STATE_COLUMN_PROPERTY_CHANGE,
       payload: {

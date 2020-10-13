@@ -54,9 +54,7 @@ export default compose<
     loading: false,
   };
 
-  const onProjectIdInput = (s: IStateContainer) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) =>
+  const onProjectIdInput = (s: IStateContainer) => (e: React.SyntheticEvent<HTMLInputElement>) =>
     s.setState({
       ...s.state,
       projectId: e.currentTarget.value,
@@ -64,7 +62,7 @@ export default compose<
 
   const showError = (s: IStateContainer) => (err: Error) => {
     const timeout = 5000;
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       s.setState({
         ...s.state,
         error: err,
@@ -80,7 +78,7 @@ export default compose<
     });
   };
 
-  const onSaveConfirmed = (s: IStateContainer) => async e => {
+  const onSaveConfirmed = (s: IStateContainer) => async (e) => {
     s.setState({ ...s.state, loading: true });
     if (projectData) {
       try {
@@ -140,11 +138,7 @@ export default compose<
           </CardBlock>
           <CardDivider />
           <CardActions>
-            <Button
-              disabled={s.state.loading}
-              primary={true}
-              onClick={onSaveConfirmed(s)}
-            >
+            <Button disabled={s.state.loading} primary={true} onClick={onSaveConfirmed(s)}>
               Save
             </Button>
             <Button disabled={s.state.loading} onClick={onActionCanceled}>

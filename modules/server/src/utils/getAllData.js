@@ -19,18 +19,16 @@ export default async ({
       hits: { hits },
     },
   }) => hits;
-  const esSort = sort
-    .map(({ field, order }) => ({ [field]: order }))
-    .concat({ _id: 'asc' });
+  const esSort = sort.map(({ field, order }) => ({ [field]: order })).concat({ _id: 'asc' });
 
   const { esIndex, esType, extended } = await es
     .search({
       index: `arranger-projects-${projectId}`,
     })
     .then(toHits)
-    .then(hits => hits.map(({ _source }) => _source))
+    .then((hits) => hits.map(({ _source }) => _source))
     .then(
-      hits =>
+      (hits) =>
         hits
           .map(({ index: esIndex, name, esType, config: { extended } }) => ({
             esIndex,
@@ -41,9 +39,7 @@ export default async ({
           .filter(({ name }) => name === index)[0],
     );
 
-  const nestedFields = extended
-    .filter(({ type }) => type === 'nested')
-    .map(({ field }) => field);
+  const nestedFields = extended.filter(({ type }) => type === 'nested').map(({ field }) => field);
 
   const query = buildQuery({ nestedFields, filters: sqon });
 
@@ -64,7 +60,7 @@ export default async ({
       const total = data[index].hits.total;
       const steps = Array(Math.ceil(total / chunkSize)).fill();
       // async reduce because each cycle is dependent on result of the previous
-      return steps.reduce(async previous => {
+      return steps.reduce(async (previous) => {
         const previousHits = await previous;
         console.time(`EsQuery`);
         const hits = await es
@@ -75,9 +71,7 @@ export default async ({
               sort: esSort,
               ...(previousHits
                 ? {
-                    search_after: previousHits[
-                      previousHits.length - 1
-                    ].sort.map(esToSafeJsInt),
+                    search_after: previousHits[previousHits.length - 1].sort.map(esToSafeJsInt),
                   }
                 : {}),
               ...(Object.entries(query).length ? { query } : {}),

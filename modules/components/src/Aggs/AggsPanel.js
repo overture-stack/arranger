@@ -17,18 +17,18 @@ export default ({ index, aggs = [], ...props }) =>
             {Object.entries(data[index].aggregations).map(([field, data]) => (
               <Location
                 key={field}
-                render={search => (
+                render={(search) => (
                   <TermAgg
                     field={field}
                     buckets={data.buckets}
-                    isActive={d =>
+                    isActive={(d) =>
                       inCurrentFilters({
                         key: d.value,
                         dotField: d.field,
                         currentFilters: (search.filters || {}).content,
                       })
                     }
-                    handleFieldClick={d => {
+                    handleFieldClick={(d) => {
                       // history.push({
                       //   search: stringify({
                       //     filters: JSON.stringify({

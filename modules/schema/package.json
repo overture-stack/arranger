@@ -44,6 +44,19 @@
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
     "@babel/preset-env": "^7.5.5",
     "@babel/register": "^7.5.5",
-    "graphql": "^14.5.3"
+    "graphql": "^14.5.3",
+    "prettier": "^2.1.2",
+    "husky": "^4.3.0",
+    "pretty-quick": "^3.0.2"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all",
+    "singleQuote": true
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }

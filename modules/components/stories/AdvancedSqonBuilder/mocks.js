@@ -1,9 +1,7 @@
 export const sqons = [
   {
     op: 'and',
-    content: [
-      { op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } },
-    ],
+    content: [{ op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } }],
   },
   {
     op: 'or',

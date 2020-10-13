@@ -16,9 +16,7 @@ export default ({
   headerRef,
 }) => {
   return WrapperComponent ? (
-    <WrapperComponent
-      {...{ collapsible, displayName, componentRef, headerRef }}
-    >
+    <WrapperComponent {...{ collapsible, displayName, componentRef, headerRef }}>
       {children}
     </WrapperComponent>
   ) : (
@@ -35,15 +33,9 @@ export default ({
             <div className={`title-wrapper ${isCollapsed ? 'collapsed' : ''}`}>
               <div
                 className="title-control"
-                onClick={
-                  collapsible
-                    ? () => setState({ isCollapsed: !isCollapsed })
-                    : () => {}
-                }
+                onClick={collapsible ? () => setState({ isCollapsed: !isCollapsed }) : () => {}}
               >
-                {collapsible && (
-                  <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />
-                )}
+                {collapsible && <span className={`arrow ${isCollapsed ? 'collapsed' : ''}`} />}
                 <span className="title">{displayName}</span>
               </div>
               {ActionIcon && <div className="action-icon">{ActionIcon}</div>}
@@ -57,9 +49,7 @@ export default ({
               ))}
           </div>
           {!isCollapsed && (
-            <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>
-              {children}
-            </div>
+            <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>{children}</div>
           )}
         </div>
       )}

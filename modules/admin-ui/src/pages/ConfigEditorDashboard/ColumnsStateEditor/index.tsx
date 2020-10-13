@@ -29,7 +29,10 @@ export type TColumnWithIndex = ColumnConfig & {
 };
 
 const DebouncedInput = withDebouncedOnChange()(TextInput);
-export default connect(mapStateToProps, mapDispatchToProps)(
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(
   ({
     columnsState,
     graphqlField,
@@ -70,9 +73,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
       ...col,
       index,
     }));
-    const onSortEnd = (filteredFields: TColumnWithIndex[]) => (
-      data: ISortEventData,
-    ) => {
+    const onSortEnd = (filteredFields: TColumnWithIndex[]) => (data: ISortEventData) => {
       const currentItemAtNewIndex = filteredFields[data.newIndex];
       const unfilteredNewIndex = currentItemAtNewIndex.index;
       const fieldToMove = filteredFields[data.oldIndex];
@@ -92,9 +93,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         },
       });
     };
-    const onColumnShowFilterSelect = (s: IFilterStateContainer) => (
-      o: ISelectOption,
-    ) => {
+    const onColumnShowFilterSelect = (s: IFilterStateContainer) => (o: ISelectOption) => {
       s.setState({
         ...s.state,
         filter: {
@@ -103,9 +102,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         },
       });
     };
-    const onColumnSortableFilterSelect = (s: IFilterStateContainer) => (
-      o: ISelectOption,
-    ) => {
+    const onColumnSortableFilterSelect = (s: IFilterStateContainer) => (o: ISelectOption) => {
       s.setState({
         ...s.state,
         filter: {
@@ -116,11 +113,9 @@ export default connect(mapStateToProps, mapDispatchToProps)(
     };
     const getFilteredColumns = (s: IFilterStateContainer) =>
       columnsWithIndex.filter(
-        c =>
+        (c) =>
           c.field.includes(s.state.filter.fieldFilter) &&
-          (s.state.filter.show !== null
-            ? String(c.show) === s.state.filter.show
-            : true) &&
+          (s.state.filter.show !== null ? String(c.show) === s.state.filter.show : true) &&
           (s.state.filter.sortable !== null
             ? String(c.sortable) === s.state.filter.sortable
             : true),

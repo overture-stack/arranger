@@ -3,14 +3,11 @@ import { isEqual } from 'lodash';
 import aggComponentsMap from '../Aggs/aggComponentsMap';
 import TextHighlight from '../TextHighlight';
 
-const serializeToDomId = path => path.split('.').join('__');
+const serializeToDomId = (path) => path.split('.').join('__');
 
-const flattenDisplayTreeData = displayTreeData => {
+const flattenDisplayTreeData = (displayTreeData) => {
   return displayTreeData.reduce(
-    (acc, node) => [
-      ...acc,
-      ...(node.children ? flattenDisplayTreeData(node.children) : [node]),
-    ],
+    (acc, node) => [...acc, ...(node.children ? flattenDisplayTreeData(node.children) : [node])],
     [],
   );
 };
@@ -55,22 +52,15 @@ export default class FacetView extends React.Component {
       onTermSelected,
     } = this.props;
     return (
-      <div className="facetView" ref={el => (this.root = el)}>
+      <div className="facetView" ref={(el) => (this.root = el)}>
         {flattenDisplayTreeData(displayTreeData).map(({ path }) => {
           const metaData = extendedMapping.find(({ field }) => field === path);
           const { type } = metaData || {};
           const paths = path
             .split('.')
-            .reduce(
-              (acc, node, i, paths) => [
-                ...acc,
-                [...paths.slice(0, i), node].join('.'),
-              ],
-              [],
-            );
+            .reduce((acc, node, i, paths) => [...acc, [...paths.slice(0, i), node].join('.')], []);
           const pathDisplayNames = paths.map(
-            path =>
-              extendedMapping.find(({ field }) => field === path)?.displayName,
+            (path) => extendedMapping.find(({ field }) => field === path)?.displayName,
           );
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({
@@ -82,12 +72,7 @@ export default class FacetView extends React.Component {
                   const maxTerms = columns * 2;
                   return {
                     maxTerms,
-                    constructBucketItemClassName: ({
-                      bucket,
-                      showingBuckets,
-                      i,
-                      showingMore,
-                    }) =>
+                    constructBucketItemClassName: ({ bucket, showingBuckets, i, showingMore }) =>
                       `row_${Math.floor(i / columns)} col_${i % columns} ${
                         Math.floor(i / columns) ===
                         Math.floor((showingBuckets.length - 1) / columns)
@@ -122,19 +107,14 @@ export default class FacetView extends React.Component {
               <div id={serializeToDomId(path)} className={`facetContainer`}>
                 <div className={`header`}>
                   <div className={`title`}>
-                    <TextHighlight
-                      content={displayName}
-                      highlightText={searchString}
-                    />
+                    <TextHighlight content={displayName} highlightText={searchString} />
                   </div>
                   <div className={`breadscrumbs`}>
-                    {pathDisplayNames
-                      .slice(0, -1)
-                      .map((pathName, index, arr) => (
-                        <span key={index} className={`breadscrumb-item`}>
-                          {pathName}
-                        </span>
-                      ))}
+                    {pathDisplayNames.slice(0, -1).map((pathName, index, arr) => (
+                      <span key={index} className={`breadscrumb-item`}>
+                        {pathName}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div className={`content`}>{children}</div>

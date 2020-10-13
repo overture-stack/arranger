@@ -32,15 +32,13 @@ export const hitsToEdges = ({
   const dataSize = hits.hits.length;
   const chunks = chunk(
     hits.hits,
-    dataSize > 1000
-      ? dataSize / systemCores + (dataSize % systemCores)
-      : dataSize,
+    dataSize > 1000 ? dataSize / systemCores + (dataSize % systemCores) : dataSize,
   );
   return Promise.all(
     chunks.map(
-      chunk =>
+      (chunk) =>
         //Parallel.spawn output has a .then but it's not returning an actual promise
-        new Promise(resolve => {
+        new Promise((resolve) => {
           new Parallel({ hits: chunk, nestedFields, copyToSourceFields })
             .spawn(({ hits, nestedFields, copyToSourceFields }) => {
               /*
@@ -51,35 +49,30 @@ export const hitsToEdges = ({
               const jp = require('jsonpath/jsonpath.min');
 
               const resolveCopiedTo = ({ node }) => {
-                const foundValues = Object.entries(copyToSourceFields).reduce(
-                  (acc, pair) => {
-                    const copyToField = pair[0];
-                    const sourceField = pair[1];
-                    let found = {};
-                    found[copyToField] = flattenDeep(
-                      sourceField.map(path =>
-                        jp.query(
-                          node,
-                          path
-                            .split('.')
-                            .reduce(
-                              (acc, part, index) =>
-                                index === 0 ? `$.${part}` : `${acc}..${part}`,
-                              '',
-                            ),
-                        ),
+                const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
+                  const copyToField = pair[0];
+                  const sourceField = pair[1];
+                  let found = {};
+                  found[copyToField] = flattenDeep(
+                    sourceField.map((path) =>
+                      jp.query(
+                        node,
+                        path
+                          .split('.')
+                          .reduce(
+                            (acc, part, index) => (index === 0 ? `$.${part}` : `${acc}..${part}`),
+                            '',
+                          ),
                       ),
-                    );
-                    return found;
-                  },
-                  {},
-                );
+                    ),
+                  );
+                  return found;
+                }, {});
                 return foundValues;
               };
 
-              return hits.map(x => {
-                let joinParent = (parent, field) =>
-                  parent ? `${parent}.${field}` : field;
+              return hits.map((x) => {
+                let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
 
                 let resolveNested = ({ node, nestedFields, parent = '' }) => {
                   if (!isObject(node) || !node) return node;
@@ -92,7 +85,7 @@ export const hitsToEdges = ({
                     acc[field] = nestedFields.includes(fullPath)
                       ? {
                           hits: {
-                            edges: hits.map(node => ({
+                            edges: hits.map((node) => ({
                               node: Object.assign(
                                 {},
                                 node,
@@ -131,7 +124,7 @@ export const hitsToEdges = ({
                 let copied_to_nodes = resolveCopiedTo({ node: source });
                 return {
                   searchAfter: x.sort
-                    ? x.sort.map(x =>
+                    ? x.sort.map((x) =>
                         Number.isInteger(x) && !Number.isSafeInteger(x)
                           ? // TODO: figure out a way to inject ES_CONSTANTS in here from @arranger/middleware
                             // ? ES_CONSTANTS.ES_MAX_LONG //https://github.com/elastic/elasticsearch-js/issues/662
@@ -151,7 +144,7 @@ export const hitsToEdges = ({
             .then(resolve);
         }),
     ),
-  ).then(chunks => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
+  ).then((chunks) => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
 export default ({ type, Parallel, getServerSideFilter }) => async (
@@ -186,12 +179,8 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
     // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
     body.sort = sort.map(({ field, missing, order, ...rest }) => {
       const nested_path = nestedFields
-        .filter(nestedField => field.indexOf(nestedField) === 0)
-        .reduce(
-          (deepestPath, path) =>
-            deepestPath.length > path.length ? deepestPath : path,
-          '',
-        );
+        .filter((nestedField) => field.indexOf(nestedField) === 0)
+        .reduce((deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path), '');
 
       return {
         [field]: {

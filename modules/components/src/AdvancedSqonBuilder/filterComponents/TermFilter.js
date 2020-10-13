@@ -19,20 +19,18 @@ import defaultApi from '../../utils/api';
 import { PROJECT_ID } from '../../utils/config';
 import Query from '../../Query';
 
-const AggsWrapper = ({ children }) => (
-  <div className="aggregation-card">{children}</div>
-);
+const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
 
 const filterStringsCaseInsensitive = (values, searchString, path = null) =>
-  values.filter(val => {
+  values.filter((val) => {
     const valText = path ? get(val, path) : val;
     return -1 !== valText.search(new RegExp(searchString, 'i'));
   });
 
-export const TermFilterUI = props => {
+export const TermFilterUI = (props) => {
   const {
     initialSqon = null,
-    onSubmit = sqon => {},
+    onSubmit = (sqon) => {},
     onCancel = () => {},
     ContainerComponent = FilterContainer,
     InputComponent = TextFilter,
@@ -48,29 +46,28 @@ export const TermFilterUI = props => {
     content: { value: [], field },
   };
   const initialState = { searchString: '', localSqon: initialSqon };
-  const onSearchChange = s => e => {
+  const onSearchChange = (s) => (e) => {
     s.setState({ searchString: e.value });
   };
-  const isFilterActive = s => d =>
+  const isFilterActive = (s) => (d) =>
     inCurrentSQON({
       value: d.value,
       dotField: d.field,
       currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
-  const getCurrentFieldOp = s =>
-    getOperationAtPath(sqonPath)(s.state.localSqon);
-  const onSqonSubmit = s => () => onSubmit(s.state.localSqon);
+  const getCurrentFieldOp = (s) => getOperationAtPath(sqonPath)(s.state.localSqon);
+  const onSqonSubmit = (s) => () => onSubmit(s.state.localSqon);
   const computeBuckets = (s, buckets) =>
     sortBy(
       filterStringsCaseInsensitive(buckets, s.state.searchString, 'key'),
-      bucket =>
+      (bucket) =>
         !inCurrentSQON({
           value: bucket.key,
           dotField: initialFieldSqon.content.field,
           currentSQON: getOperationAtPath(sqonPath)(initialSqon),
         }),
     );
-  const onOptionTypeChange = s => e => {
+  const onOptionTypeChange = (s) => (e) => {
     const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
@@ -79,7 +76,7 @@ export const TermFilterUI = props => {
       })(s.state.localSqon),
     });
   };
-  const onSelectAllClick = s => () => {
+  const onSelectAllClick = (s) => () => {
     const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
@@ -94,7 +91,7 @@ export const TermFilterUI = props => {
       })(s.state.localSqon),
     });
   };
-  const onClearClick = s => () => {
+  const onClearClick = (s) => () => {
     const currentFieldSqon = getCurrentFieldOp(s);
     s.setState({
       localSqon: setSqonAtPath(sqonPath, {
@@ -106,14 +103,14 @@ export const TermFilterUI = props => {
       })(s.state.localSqon),
     });
   };
-  const onFilterClick = s => ({ generateNextSQON }) => {
+  const onFilterClick = (s) => ({ generateNextSQON }) => {
     setTimeout(() => {
       // state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
       const deltaSqon = generateNextSQON();
       const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
       // we're only interested in the new field operation's content value
       const currentFieldSqon = getCurrentFieldOp(s);
-      const existingValue = (currentFieldSqon.content.value || []).find(v =>
+      const existingValue = (currentFieldSqon.content.value || []).find((v) =>
         deltaFiterObjContentValue.includes(v),
       );
       const newFieldSqon = {
@@ -121,9 +118,7 @@ export const TermFilterUI = props => {
         content: {
           ...currentFieldSqon.content,
           value: [
-            ...(currentFieldSqon.content.value || []).filter(
-              v => v !== existingValue,
-            ),
+            ...(currentFieldSqon.content.value || []).filter((v) => v !== existingValue),
             ...(existingValue ? [] : deltaFiterObjContentValue),
           ],
         },
@@ -135,7 +130,7 @@ export const TermFilterUI = props => {
   };
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <div className="contentSection">
             <span>
@@ -144,11 +139,8 @@ export const TermFilterUI = props => {
             </span>{' '}
             is{' '}
             <span className="select">
-              <select
-                onChange={onOptionTypeChange(s)}
-                value={getCurrentFieldOp(s).op}
-              >
-                {TERM_OPS.map(option => (
+              <select onChange={onOptionTypeChange(s)} value={getCurrentFieldOp(s).op}>
+                {TERM_OPS.map((option) => (
                   <option key={option} value={option}>
                     {opDisplayNameMap[option]}
                   </option>
@@ -157,22 +149,13 @@ export const TermFilterUI = props => {
             </span>
           </div>
           <div className="contentSection searchInputContainer">
-            <InputComponent
-              value={s.state.searchString}
-              onChange={onSearchChange(s)}
-            />
+            <InputComponent value={s.state.searchString} onChange={onSearchChange(s)} />
           </div>
           <div className="contentSection termFilterActionContainer">
-            <span
-              className={`aggsFilterAction selectAll`}
-              onClick={onSelectAllClick(s)}
-            >
+            <span className={`aggsFilterAction selectAll`} onClick={onSelectAllClick(s)}>
               Select All
             </span>
-            <span
-              className={`aggsFilterAction clear`}
-              onClick={onClearClick(s)}
-            >
+            <span className={`aggsFilterAction clear`} onClick={onClearClick(s)}>
               Clear
             </span>
           </div>
@@ -193,7 +176,7 @@ export const TermFilterUI = props => {
   );
 };
 
-export default props => {
+export default (props) => {
   const {
     field,
     arrangerProjectId = PROJECT_ID,
@@ -205,7 +188,7 @@ export default props => {
     },
 
     initialSqon = null,
-    onSubmit = sqon => {},
+    onSubmit = (sqon) => {},
     onCancel = () => {},
     ContainerComponent = FilterContainer,
     InputComponent = TextFilter,
@@ -249,12 +232,7 @@ export default props => {
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
           buckets={
-            data
-              ? get(
-                  data,
-                  `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`,
-                )
-              : []
+            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
           }
         />
       )}

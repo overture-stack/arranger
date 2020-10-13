@@ -34,21 +34,20 @@ class MatchBoxState extends Component {
     }
   }
 
-  fetchMatchBoxState = debounce(
-    async ({ graphqlField }, onComplete = () => {}) => {
-      try {
-        let {
-          data: {
-            [graphqlField]: {
-              extended,
-              matchBoxState: { state: matchBoxState },
-              columnsState: { state: columnsState },
-            },
+  fetchMatchBoxState = debounce(async ({ graphqlField }, onComplete = () => {}) => {
+    try {
+      let {
+        data: {
+          [graphqlField]: {
+            extended,
+            matchBoxState: { state: matchBoxState },
+            columnsState: { state: columnsState },
           },
-        } = await api({
-          endpoint: `/${this.props.projectId}/graphql`,
-          body: {
-            query: `
+        },
+      } = await api({
+        endpoint: `/${this.props.projectId}/graphql`,
+        body: {
+          query: `
             {
               ${graphqlField} {
                 extended
@@ -67,30 +66,28 @@ class MatchBoxState extends Component {
               }
             }
           `,
-          },
-        });
+        },
+      });
 
-        this.setState(
-          {
-            matchBoxState,
-            temp: matchBoxState,
-            extended,
-            columnsState,
-            err: null,
-          },
-          () =>
-            onComplete({
-              activeFields: this.getActiveFields(),
-            }),
-        );
-      } catch (err) {
-        this.setState({ err });
-      }
-    },
-    300,
-  );
+      this.setState(
+        {
+          matchBoxState,
+          temp: matchBoxState,
+          extended,
+          columnsState,
+          err: null,
+        },
+        () =>
+          onComplete({
+            activeFields: this.getActiveFields(),
+          }),
+      );
+    } catch (err) {
+      this.setState({ err });
+    }
+  }, 300);
 
-  save = debounce(async state => {
+  save = debounce(async (state) => {
     let { data } = await api({
       endpoint: `/${this.props.projectId}/graphql`,
       body: {
@@ -115,8 +112,8 @@ class MatchBoxState extends Component {
   }, 300);
 
   update = ({ field, key, value }) => {
-    let matchBoxField = this.state.temp.find(x => x.field === field);
-    let index = this.state.temp.findIndex(x => x.field === field);
+    let matchBoxField = this.state.temp.find((x) => x.field === field);
+    let index = this.state.temp.findIndex((x) => x.field === field);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...matchBoxField, [key]: value },
     });
@@ -124,32 +121,34 @@ class MatchBoxState extends Component {
   };
 
   getActiveFields = () =>
-    this.state.temp?.filter(x => x.isActive)?.map(x => {
-      return {
-        ...x,
-        keyField: {
-          field: x.keyField,
-          ...decorateFieldWithColumnsState({
-            columnsState: this.state.columnsState,
+    this.state.temp
+      ?.filter((x) => x.isActive)
+      ?.map((x) => {
+        return {
+          ...x,
+          keyField: {
             field: x.keyField,
-          }),
-        },
-        searchFields: x.searchFields.map(y => ({
-          field: y,
-          entityName: x.displayName,
-          ...decorateFieldWithColumnsState({
-            columnsState: this.state.columnsState,
+            ...decorateFieldWithColumnsState({
+              columnsState: this.state.columnsState,
+              field: x.keyField,
+            }),
+          },
+          searchFields: x.searchFields.map((y) => ({
             field: y,
-          }),
-        })),
-      };
-    });
+            entityName: x.displayName,
+            ...decorateFieldWithColumnsState({
+              columnsState: this.state.columnsState,
+              field: y,
+            }),
+          })),
+        };
+      });
 
   render() {
     return this.props.render({
       update: this.update,
       matchBoxState: this.state.temp,
-      primaryKeyField: this.state.extended?.find(x => x.primaryKey),
+      primaryKeyField: this.state.extended?.find((x) => x.primaryKey),
       activeFields: this.getActiveFields(),
       extended: this.state.extended,
     });

@@ -6,10 +6,10 @@ import { head, isArray } from 'lodash';
 import { withQuery } from '../../Query';
 import splitString from '../../utils/splitString';
 
-const isValidValue = value => value?.trim()?.length > 1;
+const isValidValue = (value) => value?.trim()?.length > 1;
 
 export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
-  const columnsStateField = columnsState?.columns?.find(y => y.field === field);
+  const columnsStateField = columnsState?.columns?.find((y) => y.field === field);
   return columnsStateField
     ? {
         ...columnsStateField,
@@ -21,9 +21,7 @@ export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
 };
 
 const isMatching = ({ value = '', searchText = '', exact = false }) =>
-  exact
-    ? value === searchText
-    : value.toLowerCase().includes(searchText.toLowerCase());
+  exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
 
 const enhance = compose(
   withProps(
@@ -36,7 +34,7 @@ const enhance = compose(
       searchTextParts = splitString({
         str: searchText,
         split: searchTextDelimiters,
-      }).map(part => (searchLowercase ? part.toLowerCase() : part)),
+      }).map((part) => (searchLowercase ? part.toLowerCase() : part)),
     }) => ({
       searchTextParts,
       sqon: {
@@ -49,11 +47,11 @@ const enhance = compose(
                 value: searchTextParts,
               },
             }))
-          : searchTextParts.map(x => ({
+          : searchTextParts.map((x) => ({
               op: 'filter',
               content: {
                 value: `*${x}*`,
-                fields: quickSearchFields?.map(x => x.field),
+                fields: quickSearchFields?.map((x) => x.field),
               },
             })),
       },
@@ -82,9 +80,7 @@ const enhance = compose(
               edges {
                 node {
                   primaryKey: ${primaryKeyField?.query}
-                  ${quickSearchFields
-                    ?.map(f => `${f.gqlField}: ${f.query}`)
-                    ?.join('\n')}
+                  ${quickSearchFields?.map((f) => `${f.gqlField}: ${f.query}`)?.join('\n')}
                 }
               }
             }
@@ -103,7 +99,7 @@ const enhance = compose(
       primaryKeyField,
       quickSearchFields,
       rawSearchResults: { data, loading },
-      searchResultsByEntity = quickSearchFields?.map(x => ({
+      searchResultsByEntity = quickSearchFields?.map((x) => ({
         ...x,
         results: data?.[index]?.hits?.edges
           ?.map(
@@ -113,19 +109,14 @@ const enhance = compose(
                 { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
                 primaryKeyField.jsonPath,
               )[0],
-              result = jp.query(
-                { [x.field.split('.')[0]]: node[x.gqlField] },
-                x.jsonPath,
-              )[0],
+              result = jp.query({ [x.field.split('.')[0]]: node[x.gqlField] }, x.jsonPath)[0],
             }) => ({
               primaryKey,
               entityName: x.entityName,
               ...searchTextParts.reduce(
                 (acc, part) => {
                   if (isArray(result)) {
-                    const r = result.find(r =>
-                      isMatching({ value: r, searchText: part, exact }),
-                    );
+                    const r = result.find((r) => isMatching({ value: r, searchText: part, exact }));
                     if (r) {
                       return { input: part, result: r };
                     }
@@ -140,14 +131,14 @@ const enhance = compose(
               ),
             }),
           )
-          ?.filter(x => isValidValue(searchText) && x.input),
+          ?.filter((x) => isValidValue(searchText) && x.input),
       })) || [],
     }) => ({
       searchResultsByEntity,
       searchResultsLoading: loading,
       searchResults: flatMap(
         searchResultsByEntity
-          ?.filter(x => x?.results?.length)
+          ?.filter((x) => x?.results?.length)
           ?.map(({ entityName, field, results }) =>
             results?.map(({ input, primaryKey, result }) => ({
               entityName,

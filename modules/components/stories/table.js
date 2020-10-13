@@ -6,11 +6,7 @@ import jsonPath from 'jsonpath/jsonpath.min';
 import uuid from 'uuid';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
-import DataTable, {
-  Table,
-  TableToolbar,
-  getSingleValue,
-} from '../src/DataTable';
+import DataTable, { Table, TableToolbar, getSingleValue } from '../src/DataTable';
 import { themeDecorator } from './decorators';
 import api from '../src/utils/api';
 
@@ -125,9 +121,7 @@ const dummyData = Array(1000)
     };
   });
 
-const withColumns = compose(
-  withState('columns', 'onColumnsChange', dummyConfig.columns),
-);
+const withColumns = compose(withState('columns', 'onColumnsChange', dummyConfig.columns));
 
 const TableToolbarStory = withColumns(TableToolbar);
 
@@ -136,8 +130,8 @@ function fetchDummyData({ config, sort, offset, first }) {
     total: dummyData.length,
     data: orderBy(
       dummyData,
-      sort.map(s => s.field),
-      sort.map(s => s.order),
+      sort.map((s) => s.field),
+      sort.map((s) => s.order),
     ).slice(offset, offset + first),
   });
 }
@@ -146,13 +140,13 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
   <DataTable
     config={tableConfig}
     setSelectedTableRows={action('selection changed')}
-    fetchData={options => {
+    fetchData={(options) => {
       return api({
         endpoint: 'table',
         body: columnsToGraphql({ ...options, sqon }),
-      }).then(r => {
+      }).then((r) => {
         const hits = get(r, `data.${options.config.type}.hits`) || {};
-        const data = get(hits, 'edges', []).map(e => e.node);
+        const data = get(hits, 'edges', []).map((e) => e.node);
         const total = hits.total || 0;
         return { total, data };
       });
@@ -162,7 +156,7 @@ const EnhancedDataTable = withSQON(({ sqon, setSQON }) => (
 
 storiesOf('Table', module)
   .addDecorator(themeDecorator)
-  .addDecorator(story => (
+  .addDecorator((story) => (
     <div
       style={{
         position: 'absolute',
@@ -184,18 +178,18 @@ storiesOf('Table', module)
       setSelectedTableRows={action('selection changed')}
     />
   ))
-  .add('Toolbar', () => (
-    <TableToolbarStory onFilterChange={console.log.bind(console)} />
-  ))
+  .add('Toolbar', () => <TableToolbarStory onFilterChange={console.log.bind(console)} />)
   .add('Toolbar with customHeaderContent', () => (
-    <TableToolbarStory customHeaderContent={(<div style={{backgroundColor: 'red', paddingTop: '4px'}}>Red Box</div>)} />
+    <TableToolbarStory
+      customHeaderContent={<div style={{ backgroundColor: 'red', paddingTop: '4px' }}>Red Box</div>}
+    />
   ))
   .add('Data Table', () => (
     <DataTable
       config={dummyConfig}
       filterInputPlaceholder={'Filter table'}
       customTypes={{
-        list: props => {
+        list: (props) => {
           const values = jsonPath.query(props.original, props.column.jsonPath);
           const total = values.length;
           const firstValue = getSingleValue(values[0]);

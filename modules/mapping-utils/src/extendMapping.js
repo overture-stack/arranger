@@ -1,7 +1,7 @@
 import { startCase } from 'lodash';
 import flattenMapping from './flattenMapping';
 
-export const extendFields = fields =>
+export const extendFields = (fields) =>
   fields.map(({ field, type, ...rest }) => ({
     field,
     type,
@@ -16,4 +16,4 @@ export const extendFields = fields =>
     ...rest,
   }));
 
-export default mapping => extendFields(flattenMapping(mapping));
+export default (mapping) => extendFields(flattenMapping(mapping));

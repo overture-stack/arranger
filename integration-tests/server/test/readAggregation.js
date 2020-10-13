@@ -85,8 +85,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                  .buckets,
                 'key',
               ),
             },
@@ -157,8 +157,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                  .buckets,
                 'key',
               ),
             },
@@ -229,8 +229,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                  .buckets,
                 'key',
               ),
             },
@@ -301,8 +301,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__clinical_stage_grouping.buckets,
+                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                  .buckets,
                 'key',
               ),
             },
@@ -352,8 +352,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               bucket_count:
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__clinical_stage_grouping.bucket_count,
+                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                  .bucket_count,
             },
           },
         },
@@ -397,8 +397,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__histological_type.bucket_count,
+                response.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                  .bucket_count,
             },
           },
         },
@@ -441,8 +441,8 @@ export default ({ api, graphqlField, gqlPath }) => {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                response.data[graphqlField].aggregations
-                  .clinical_diagnosis__histological_type.bucket_count,
+                response.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                  .bucket_count,
             },
           },
         },
@@ -487,8 +487,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         [graphqlField]: {
           aggregations: {
             access_denied: {
-              buckets:
-                response.data[graphqlField].aggregations.access_denied.buckets,
+              buckets: response.data[graphqlField].aggregations.access_denied.buckets,
             },
           },
         },

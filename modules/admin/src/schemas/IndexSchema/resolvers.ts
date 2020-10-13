@@ -14,15 +14,19 @@ const indexQueryResolver: Resolver<IIndexGqlModel, IIndexQueryInput> = async (
   info,
 ) => getProjectIndex(es)(args);
 
-const newIndexMutationResolver: Resolver<
-  IIndexGqlModel,
-  INewIndexInput
-> = async (_, args, { es }, info) => createNewIndex(es)(args);
+const newIndexMutationResolver: Resolver<IIndexGqlModel, INewIndexInput> = async (
+  _,
+  args,
+  { es },
+  info,
+) => createNewIndex(es)(args);
 
-const removeIndexMutationResolver: Resolver<
-  IIndexGqlModel,
-  IIndexRemovalMutationInput
-> = async (_, args, { es }, info) => removeProjectIndex(es)(args);
+const removeIndexMutationResolver: Resolver<IIndexGqlModel, IIndexRemovalMutationInput> = async (
+  _,
+  args,
+  { es },
+  info,
+) => removeProjectIndex(es)(args);
 
 export default {
   Query: {

@@ -2,18 +2,13 @@ import { flattenDeep } from 'lodash';
 
 import replaceBy from './replaceBy';
 
-const initializeExtendedFields = async ({
-  indexPrefix,
-  fields,
-  config,
-  es,
-}) => {
+const initializeExtendedFields = async ({ indexPrefix, fields, config, es }) => {
   const mergedFields = fields?.length
     ? replaceBy(fields, config.extended, (x, y) => x.field === y.field)
     : config.extended;
 
   let body = flattenDeep(
-    mergedFields.map(f => [
+    mergedFields.map((f) => [
       {
         index: {
           _index: indexPrefix,

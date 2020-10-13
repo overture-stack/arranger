@@ -41,13 +41,7 @@ class TreeView extends React.PureComponent {
       props: { ...rest, className: className + ' ' + arrowClassName },
       state: this.state,
       handleClick: this.handleClick,
-    }) || (
-      <div
-        {...rest}
-        className={className + ' ' + arrowClassName}
-        onClick={this.handleClick}
-      />
-    );
+    }) || <div {...rest} className={className + ' ' + arrowClassName} onClick={this.handleClick} />;
 
     return (
       <div className={'tree-view ' + treeViewClassName}>

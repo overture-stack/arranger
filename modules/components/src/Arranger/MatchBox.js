@@ -45,18 +45,11 @@ const enhance = compose(
     onEntityChange: ({ setActiveEntityField }) => ({ target: { value } }) => {
       return setActiveEntityField(value);
     },
-    onTextChange: ({ setSearchText }) => ({ target: { value } }) =>
-      setSearchText(value),
-    onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({
-      target: { files },
-    }) => {
+    onTextChange: ({ setSearchText }) => ({ target: { value } }) => setSearchText(value),
+    onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({ target: { files } }) => {
       setSearchTextLoading(true);
       const contents = await parseInputFiles({ files });
-      setSearchText(
-        (contents || [])
-          .map(f => f.content)
-          .reduce((str, c) => `${str}${c}\n`, ``),
-      );
+      setSearchText((contents || []).map((f) => f.content).reduce((str, c) => `${str}${c}\n`, ``));
       setSearchTextLoading(false);
     },
   }),
@@ -74,9 +67,8 @@ const EntitySelectionSection = ({
     <select onChange={onEntityChange}>
       <option value={null}>{entitySelectPlaceholder}</option>
       {activeFields
-        .filter(
-          ({ keyField: { field } }) =>
-            uploadableFields ? uploadableFields.includes(field) : true,
+        .filter(({ keyField: { field } }) =>
+          uploadableFields ? uploadableFields.includes(field) : true,
         )
         .map(({ field, displayName }) => (
           <option key={field} value={field}>
@@ -119,9 +111,7 @@ const MatchBox = ({
   setActiveEntityField,
   ...props
 }) => {
-  const selectableEntityType = !(
-    uploadableFields && (uploadableFields || []).length === 1
-  );
+  const selectableEntityType = !(uploadableFields && (uploadableFields || []).length === 1);
   return (
     <div className={`match-box ${layoutStyle}`}>
       <MatchBoxState
@@ -134,16 +124,14 @@ const MatchBox = ({
             if (activeFieldToSet) {
               setActiveEntityField(activeFieldToSet.field);
             } else {
-              throw new Error(
-                `no no active field found by the path ${uploadableFields[0]}`,
-              );
+              throw new Error(`no no active field found by the path ${uploadableFields[0]}`);
             }
           }
         }}
         render={({
           primaryKeyField,
           activeFields,
-          activeField = activeFields.find(x => x.field === activeEntityField),
+          activeField = activeFields.find((x) => x.field === activeEntityField),
         }) => (
           <Fragment>
             {!selectableEntityType ? null : (
@@ -167,9 +155,7 @@ const MatchBox = ({
                 onChange={onTextChange}
                 aria-label={`Match box`}
               />
-              <div className="match-box-upload-instruction-text">
-                {uploadInstructionText}
-              </div>
+              <div className="match-box-upload-instruction-text">{uploadInstructionText}</div>
               <div
                 className={css`
                   display: flex;
@@ -208,7 +194,7 @@ const MatchBox = ({
                 results: uniqBy(results, 'primaryKey'),
                 unmatchedKeys: difference(
                   searchTextParts,
-                  results.map(x => x.input),
+                  results.map((x) => x.input),
                 ),
               })}
               render={({ results, unmatchedKeys, sqon: quickSearchSqon }) => (
@@ -220,32 +206,20 @@ const MatchBox = ({
                         tabs={[
                           {
                             key: 'matched',
-                            title: `${matchedTabTitle} (${formatNumber(
-                              results.length,
-                            )})`,
+                            title: `${matchedTabTitle} (${formatNumber(results.length)})`,
                             content: (
                               <TabsTable
-                                columns={[
-                                  'inputId',
-                                  'matchedEntity',
-                                  'entityId',
-                                ].map(x => ({
+                                columns={['inputId', 'matchedEntity', 'entityId'].map((x) => ({
                                   Header: matchTableColumnHeaders[x],
                                   accessor: x,
                                 }))}
                                 data={
                                   results.length
-                                    ? results.map(
-                                        ({
-                                          input,
-                                          entityName,
-                                          primaryKey,
-                                        }) => ({
-                                          inputId: input,
-                                          matchedEntity: entityName,
-                                          entityId: primaryKey,
-                                        }),
-                                      )
+                                    ? results.map(({ input, entityName, primaryKey }) => ({
+                                        inputId: input,
+                                        matchedEntity: entityName,
+                                        entityId: primaryKey,
+                                      }))
                                     : [
                                         {
                                           inputId: '',
@@ -259,9 +233,7 @@ const MatchBox = ({
                           },
                           {
                             key: 'unmatched',
-                            title: `${unmatchedTabTitle} (${formatNumber(
-                              unmatchedKeys.length,
-                            )})`,
+                            title: `${unmatchedTabTitle} (${formatNumber(unmatchedKeys.length)})`,
                             content: (
                               <TabsTable
                                 columns={[
@@ -272,7 +244,7 @@ const MatchBox = ({
                                 ]}
                                 data={
                                   unmatchedKeys?.length
-                                    ? unmatchedKeys.map(x => ({ inputId: x }))
+                                    ? unmatchedKeys.map((x) => ({ inputId: x }))
                                     : [{ inputId: '' }]
                                 }
                               />
@@ -284,11 +256,7 @@ const MatchBox = ({
                   )}
                   {children({
                     hasResults: results?.length,
-                    saveSet: async ({
-                      userId,
-                      api,
-                      dataPath = 'data.data.saveSet',
-                    }) => {
+                    saveSet: async ({ userId, api, dataPath = 'data.data.saveSet' }) => {
                       const data = get(
                         await saveSet({
                           sqon: quickSearchSqon,

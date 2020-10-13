@@ -1,29 +1,29 @@
 .sqon-view {
-    background-color: #EDF8FB;
-    padding: 1.1rem;
+  background-color: #edf8fb;
+  padding: 1.1rem;
 }
 
 .sqon-bubble {
-    color: #fff;
-    padding: 6px;
+  color: #fff;
+  padding: 6px;
 }
 .sqon-value {
-    background-color: #D6E02F;
+  background-color: #d6e02f;
 }
 
 .sqon-op {
-    background-color: #C73E89;
+  background-color: #c73e89;
 }
 
 .sqon-field {
-    background-color: #3FC5ED;
+  background-color: #3fc5ed;
 }
 
 .sqon-clear {
-    background-color: #C73E89;
+  background-color: #c73e89;
 }
 .sqon-less {
-    padding: 6px 0;
+  padding: 6px 0;
 }
 
 .portal {

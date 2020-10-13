@@ -50,9 +50,7 @@ const DropdownItem = ({
     `}`}
     onMouseDown={onMouseDown}
   >
-    <div
-      className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}
-    >
+    <div className={`quick-search-result-entity quick-search-result-entity-${optionIndex}`}>
       <div>{entityName.slice(0, 2).toUpperCase()}</div>
     </div>
     <div className="quick-search-result-details">
@@ -83,7 +81,7 @@ const QuickSearch = ({
   Icon = <SearchIcon />,
   LoadingIcon = <SearchIcon />,
   PinnedValueComponent = SQONBubble,
-  translateSQONValue = x => x,
+  translateSQONValue = (x) => x,
   InputComponent = TextInput,
   DropdownItemComponent = DropdownItem,
   ...props
@@ -95,10 +93,7 @@ const QuickSearch = ({
       enabled,
       quickSearchFields,
       quickSearchEntities,
-      entityIndexLookup = quickSearchEntities.reduce(
-        (obj, x, i) => ({ ...obj, [x]: i }),
-        {},
-      ),
+      entityIndexLookup = quickSearchEntities.reduce((obj, x, i) => ({ ...obj, [x]: i }), {}),
     }) => (
       <QuickSearchQuery
         {...props}
@@ -117,7 +112,7 @@ const QuickSearch = ({
                     {currentValues({
                       sqon,
                       primaryKeyField,
-                    })?.map(primaryKey => (
+                    })?.map((primaryKey) => (
                       <div className="quick-search-pinned-value">
                         <PinnedValueComponent
                           onClick={() =>
@@ -129,10 +124,7 @@ const QuickSearch = ({
                             })
                           }
                         >
-                          {compose(
-                            translateSQONValue,
-                            internalTranslateSQONValue,
-                          )(primaryKey)}
+                          {compose(translateSQONValue, internalTranslateSQONValue)(primaryKey)}
                         </PinnedValueComponent>
                       </div>
                     ))}

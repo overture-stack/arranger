@@ -17,12 +17,10 @@ interface WithThemeProps {
 
 export type TWithThemeHoc<P = any> = THoc<P, WithThemeProps>;
 
-export type TComponentWithTheme<P = {}> = React.ComponentType<
-  P & { theme: Theme }
->;
+export type TComponentWithTheme<P = {}> = React.ComponentType<P & { theme: Theme }>;
 
-export const withTheme: TWithThemeHoc = Wrapped => {
-  return props => {
+export const withTheme: TWithThemeHoc = (Wrapped) => {
+  return (props) => {
     return <Wrapped {...{ ...props, theme }} />;
   };
 };

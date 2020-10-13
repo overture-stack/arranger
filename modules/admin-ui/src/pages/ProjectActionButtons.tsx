@@ -24,14 +24,14 @@ export default () => {
     isSaving: false,
   };
 
-  const onCancelButtonClick = (s: IStateContainer) => e =>
+  const onCancelButtonClick = (s: IStateContainer) => (e) =>
     s.setState({
       ...s.state,
       isCanceling: true,
       isSaving: false,
     });
 
-  const onSaveButtonClick = (s: IStateContainer) => e =>
+  const onSaveButtonClick = (s: IStateContainer) => (e) =>
     s.setState({
       ...s.state,
       isCanceling: false,
@@ -54,10 +54,7 @@ export default () => {
           </ButtonGroup>
           {s.state.isSaving && (
             <ModalOverlay>
-              <ProjectSaveModal
-                onActionCanceled={closeModals(s)}
-                onSaveComplete={closeModals(s)}
-              />
+              <ProjectSaveModal onActionCanceled={closeModals(s)} onSaveComplete={closeModals(s)} />
             </ModalOverlay>
           )}
           {s.state.isCanceling && (

@@ -4,10 +4,7 @@ import NestedTreeView from '../src/NestedTreeView';
 import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 import { themeDecorator } from './decorators';
 
-const {
-  elasticMappingToDisplayTreeData,
-  MOCK_MAPPING,
-} = mappingToDisplayTreeData;
+const { elasticMappingToDisplayTreeData, MOCK_MAPPING } = mappingToDisplayTreeData;
 
 const dataSource = [
   {
@@ -60,9 +57,7 @@ storiesOf('Treeview', module)
   .addDecorator(themeDecorator)
   .add('Treeview', () => (
     <>
-      <NestedTreeView
-        dataSource={elasticMappingToDisplayTreeData(MOCK_MAPPING)}
-      />
+      <NestedTreeView dataSource={elasticMappingToDisplayTreeData(MOCK_MAPPING)} />
       <NestedTreeView dataSource={dataSource} />
     </>
   ));

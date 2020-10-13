@@ -1,15 +1,8 @@
 import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import { applyMiddleware } from 'graphql-middleware';
 import { CONSTANTS } from '@arranger/middleware';
-import {
-  typeDefs as generateTypeDefs,
-  resolvers as generateResolvers,
-} from './Root';
-import {
-  AggsStateTypeDefs,
-  ColumnStateTypeDefs,
-  MatchBoxStateTypeDefs,
-} from './State';
+import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
+import { AggsStateTypeDefs, ColumnStateTypeDefs, MatchBoxStateTypeDefs } from './State';
 
 export const StateTypeDefs = {
   AggsStateTypeDefs,

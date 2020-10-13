@@ -6,8 +6,6 @@ export const Option = ({ value, children, ...props }) => (
   </option>
 );
 
-const Select = ({ children, ...props }) => (
-  <select {...props}>{children}</select>
-);
+const Select = ({ children, ...props }) => <select {...props}>{children}</select>;
 
 export default Select;

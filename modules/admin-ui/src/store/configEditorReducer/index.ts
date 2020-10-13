@@ -9,9 +9,7 @@ const initialState: IProjectConfigEditorState = {
 };
 type TProjectIndex = IGqlData['project']['indices'][0];
 
-const getIndexLens = (state: IProjectConfigEditorState) => (
-  graphqlField: string,
-): Lens =>
+const getIndexLens = (state: IProjectConfigEditorState) => (graphqlField: string): Lens =>
   lensPath([
     'currentProjectData',
     'project',
@@ -19,21 +17,17 @@ const getIndexLens = (state: IProjectConfigEditorState) => (
     !state.currentProjectData
       ? 0
       : state.currentProjectData.project.indices.findIndex(
-          entry => entry.graphqlField === graphqlField,
+          (entry) => entry.graphqlField === graphqlField,
         ),
   ]);
 export const viewProjectIndex = (state: IProjectConfigEditorState) => (
   graphqlField: string,
 ): TProjectIndex => view(getIndexLens(state)(graphqlField), state);
 
-const reducer = (
-  state = initialState,
-  action: TReduxAction,
-): IProjectConfigEditorState => {
-  const setProjectIndex = (state: IProjectConfigEditorState) => (
-    graphqlField: string,
-  ) => (data: TProjectIndex) =>
-    set(getIndexLens(state)(graphqlField), data, state);
+const reducer = (state = initialState, action: TReduxAction): IProjectConfigEditorState => {
+  const setProjectIndex = (state: IProjectConfigEditorState) => (graphqlField: string) => (
+    data: TProjectIndex,
+  ) => set(getIndexLens(state)(graphqlField), data, state);
 
   switch (action.type) {
     case ActionType.PROJECT_EDIT_CLEAR: {
@@ -52,11 +46,13 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, fieldConfig } } = action;
+      const {
+        payload: { graphqlField, fieldConfig },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
-        extended: currentIndex.extended.map(f => ({
+        extended: currentIndex.extended.map((f) => ({
           ...(fieldConfig.field !== f.field ? f : fieldConfig),
         })),
       });
@@ -65,7 +61,9 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, newIndex, oldIndex } } = action;
+      const {
+        payload: { graphqlField, newIndex, oldIndex },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
@@ -79,14 +77,16 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, newField } } = action;
+      const {
+        payload: { graphqlField, newField },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
         aggsState: {
           ...currentIndex.aggsState,
-          state: currentIndex.aggsState.state.map(
-            entry => (entry.field === newField.field ? newField : entry),
+          state: currentIndex.aggsState.state.map((entry) =>
+            entry.field === newField.field ? newField : entry,
           ),
         },
       });
@@ -95,7 +95,9 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, newIndex, oldIndex } } = action;
+      const {
+        payload: { graphqlField, newIndex, oldIndex },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
@@ -103,11 +105,7 @@ const reducer = (
           ...currentIndex.columnsState,
           state: {
             ...currentIndex.columnsState.state,
-            columns: arrayMove(
-              currentIndex.columnsState.state.columns,
-              oldIndex,
-              newIndex,
-            ),
+            columns: arrayMove(currentIndex.columnsState.state.columns, oldIndex, newIndex),
           },
         },
       });
@@ -116,7 +114,9 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, newField } } = action;
+      const {
+        payload: { graphqlField, newField },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
@@ -124,7 +124,7 @@ const reducer = (
           ...currentIndex.columnsState,
           state: {
             ...currentIndex.columnsState.state,
-            columns: currentIndex.columnsState.state.columns.map(c => ({
+            columns: currentIndex.columnsState.state.columns.map((c) => ({
               ...(c.field !== newField.field ? c : newField),
             })),
           },
@@ -135,13 +135,15 @@ const reducer = (
       if (!state.currentProjectData) {
         return state;
       }
-      const { payload: { graphqlField, newField } } = action;
+      const {
+        payload: { graphqlField, newField },
+      } = action;
       const currentIndex = viewProjectIndex(state)(graphqlField);
       return setProjectIndex(state)(graphqlField)({
         ...currentIndex,
         matchBoxState: {
           ...currentIndex.matchBoxState,
-          state: currentIndex.matchBoxState.state.map(s => ({
+          state: currentIndex.matchBoxState.state.map((s) => ({
             ...(s.field === newField.field ? newField : s),
           })),
         },

@@ -51,7 +51,7 @@ test('getNestedFields deep nested', () => {
       },
     },
   });
-  let expected = [ 'family.family_members' ];
+  let expected = ['family.family_members'];
 
   expect(actual.length).toBe(expected.length);
   expected.forEach((field, i) => expect(field).toEqual(actual[i]));

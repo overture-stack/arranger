@@ -34,7 +34,7 @@ export default class AdvancedFacetView extends React.Component {
       isLoading: true,
     };
   }
-  fieldMappingFromPath = path => {
+  fieldMappingFromPath = (path) => {
     const { elasticMapping = {} } = this.props;
     return (
       path
@@ -44,14 +44,13 @@ export default class AdvancedFacetView extends React.Component {
             parentNode[nextPath]
               ? parentNode[nextPath]
               : parentNode.properties
-                ? parentNode.properties[nextPath]
-                : {},
+              ? parentNode.properties[nextPath]
+              : {},
           elasticMapping,
         ) || {}
     );
   };
-  constructFilterId = ({ field, value }) =>
-    value ? `${field}---${value}` : field;
+  constructFilterId = ({ field, value }) => (value ? `${field}---${value}` : field);
 
   handleSqonChange = ({ sqon }) => {
     const { onSqonFieldChange = () => {} } = this.props;
@@ -59,10 +58,7 @@ export default class AdvancedFacetView extends React.Component {
   };
 
   getSnapshotBeforeUpdate(prevProps, prevState) {
-    const aggChanged = !isEqual(
-      this.props.aggregations,
-      prevProps.aggregations,
-    );
+    const aggChanged = !isEqual(this.props.aggregations, prevProps.aggregations);
     const sqonChanged = !isEqual(this.props.sqon, prevProps.sqon);
     return { shouldEndLoading: aggChanged || sqonChanged };
   }
@@ -91,7 +87,7 @@ export default class AdvancedFacetView extends React.Component {
     }
   }
 
-  setSearchTerm = debounce(value => {
+  setSearchTerm = debounce((value) => {
     const { onFilterChange = () => {} } = this.props;
     onFilterChange(value);
     this.setState({
@@ -100,13 +96,7 @@ export default class AdvancedFacetView extends React.Component {
   }, 500);
 
   render() {
-    const {
-      selectedPath,
-      withValueOnly,
-      searchTerm,
-      displayTreeData,
-      isLoading,
-    } = this.state;
+    const { selectedPath, withValueOnly, searchTerm, displayTreeData, isLoading } = this.state;
     const {
       extendedMapping = [],
       aggregations = {},
@@ -119,7 +109,7 @@ export default class AdvancedFacetView extends React.Component {
       InputComponent = TextInput,
       ...props
     } = this.props;
-    const scrollFacetViewToPath = path => {
+    const scrollFacetViewToPath = (path) => {
       this.facetView.scrollToPath({ path });
       onFacetNavigation(path);
     };
@@ -138,7 +128,7 @@ export default class AdvancedFacetView extends React.Component {
             <div>
               <CurrentSQON
                 {...{ sqon, extendedMapping, translateSQONValue, onClear }}
-                setSQON={sqon => this.handleSqonChange({ sqon })}
+                setSQON={(sqon) => this.handleSqonChange({ sqon })}
               />
             </div>
             <div className="facetViewWrapper">
@@ -178,13 +168,11 @@ export default class AdvancedFacetView extends React.Component {
                     defaultCollapsed={({ depth }) => depth !== 0}
                     shouldCollapse={() => {
                       // if there's a searchTerm, expand everything. Else, don't control
-                      return searchTerm && searchTerm.length
-                        ? false
-                        : undefined;
+                      return searchTerm && searchTerm.length ? false : undefined;
                     }}
                     dataSource={visibleDisplayTreeData}
                     selectedPath={selectedPath}
-                    onLeafSelect={path => {
+                    onLeafSelect={(path) => {
                       scrollFacetViewToPath(path);
                       this.setState({ selectedPath: path });
                     }}
@@ -247,7 +235,7 @@ export default class AdvancedFacetView extends React.Component {
                   <FacetView
                     extendedMapping={extendedMapping}
                     constructEntryId={this.constructFilterId}
-                    ref={view => (this.facetView = view)}
+                    ref={(view) => (this.facetView = view)}
                     sqon={sqon}
                     onValueChange={this.handleSqonChange}
                     aggregations={aggregations}
