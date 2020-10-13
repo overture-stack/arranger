@@ -61,7 +61,7 @@ ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
 
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
 
 RUN addgroup -S -g $APP_GID $APP_USER \
 	&& adduser -S -u $APP_UID -G $APP_USER $APP_USER \

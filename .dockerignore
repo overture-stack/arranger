@@ -4,4 +4,5 @@ docker-compose.yml
 **/node_modules
 **/dist
 docker
+!docker/ui/**
 # integration-tests
