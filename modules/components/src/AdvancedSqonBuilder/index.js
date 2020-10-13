@@ -51,15 +51,14 @@ const defaultSqonDeletionHandler = ({
     });
   });
 
-const AdvancedSqonBuilder = props => {
+const AdvancedSqonBuilder = (props) => {
   const {
     arrangerProjectId = PROJECT_ID,
     arrangerProjectIndex,
     syntheticSqons = [],
     activeSqonIndex: currentActiveSqonIndex = 0,
     FieldOpModifierContainer = undefined,
-    SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
-      null,
+    SqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) => null,
     onChange = ({ newSyntheticSqons }) => {},
     onActiveSqonSelect = ({ index }) => {},
     fieldDisplayNameMap = {},
@@ -98,12 +97,11 @@ const AdvancedSqonBuilder = props => {
   const selectedSyntheticSqon = syntheticSqons[currentActiveSqonIndex];
   const allowsNewSqon = !syntheticSqons.some(isEmptySqon);
 
-  const getColorForReference = referenceIndex =>
+  const getColorForReference = (referenceIndex) =>
     referenceColors[referenceIndex % referenceColors.length];
-  const isSqonReferenced = sqonIndex =>
-    isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
+  const isSqonReferenced = (sqonIndex) => isIndexReferencedInSqon(selectedSyntheticSqon)(sqonIndex);
 
-  const clearSqonDeletion = s => {
+  const clearSqonDeletion = (s) => {
     s.setState({
       deletingIndex: null,
       onSqonDeleteConfirmed: null,
@@ -111,11 +109,7 @@ const AdvancedSqonBuilder = props => {
     });
   };
 
-  const dispatchSqonListChange = s => ({
-    eventKey,
-    newSqonList,
-    eventDetails,
-  }) => {
+  const dispatchSqonListChange = (s) => ({ eventKey, newSqonList, eventDetails }) => {
     clearSqonDeletion(s);
     // wraps in promise to delay to allow delaying to next frame
     return Promise.resolve(
@@ -126,43 +120,33 @@ const AdvancedSqonBuilder = props => {
       }),
     );
   };
-  const onSelectedSqonIndicesChange = s => index => () => {
-    if (
-      !s.state.selectedSqonIndices.includes(index) &&
-      !isEmptySqon(syntheticSqons[index])
-    ) {
+  const onSelectedSqonIndicesChange = (s) => (index) => () => {
+    if (!s.state.selectedSqonIndices.includes(index) && !isEmptySqon(syntheticSqons[index])) {
       s.setState({
         selectedSqonIndices: [...s.state.selectedSqonIndices, index].sort(),
       });
     } else {
       s.setState({
-        selectedSqonIndices: s.state.selectedSqonIndices.filter(
-          i => i !== index,
-        ),
+        selectedSqonIndices: s.state.selectedSqonIndices.filter((i) => i !== index),
       });
     }
   };
 
-  const removeSqon = s => indexToRemove => {
+  const removeSqon = (s) => (indexToRemove) => {
     onActiveSqonSelect({
       index: Math.max(Math.min(syntheticSqons.length - 2, indexToRemove), 0),
     });
-    const sqonListWithIndexRemoved = removeSqonAtIndex(
-      indexToRemove,
-      syntheticSqons,
-    );
+    const sqonListWithIndexRemoved = removeSqonAtIndex(indexToRemove, syntheticSqons);
     return dispatchSqonListChange(s)({
       eventKey: 'SQON_REMOVED',
       eventDetails: {
         removedIndex: indexToRemove,
       },
-      newSqonList: sqonListWithIndexRemoved.length
-        ? sqonListWithIndexRemoved
-        : [newEmptySqon()],
+      newSqonList: sqonListWithIndexRemoved.length ? sqonListWithIndexRemoved : [newEmptySqon()],
     });
   };
 
-  const onSqonRemove = s => indexToRemove => () => {
+  const onSqonRemove = (s) => (indexToRemove) => () => {
     return getSqonDeleteConfirmation({
       internalStateContainer: s,
       indexToRemove,
@@ -171,19 +155,16 @@ const AdvancedSqonBuilder = props => {
       .then(() => removeSqon(s)(indexToRemove))
       .catch(() => {});
   };
-  const onSqonDuplicate = s => indexToDuplicate => () => {
+  const onSqonDuplicate = (s) => (indexToDuplicate) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'SQON_DUPLICATED',
       eventDetails: {
         duplicatedIndex: indexToDuplicate,
       },
-      newSqonList: [
-        ...syntheticSqons,
-        cloneDeep(syntheticSqons[indexToDuplicate]),
-      ],
+      newSqonList: [...syntheticSqons, cloneDeep(syntheticSqons[indexToDuplicate])],
     }).then(() => onActiveSqonSelect({ index: syntheticSqons.length }));
   };
-  const createUnionSqon = s => () => {
+  const createUnionSqon = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'NEW_UNION_COMBINATION',
       eventDetails: {
@@ -205,7 +186,7 @@ const AdvancedSqonBuilder = props => {
         clearSqonDeletion(s);
       });
   };
-  const createIntersectSqon = s => () => {
+  const createIntersectSqon = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'NEW_INTERSECTION_COMBINATION',
       eventDetails: {
@@ -227,7 +208,7 @@ const AdvancedSqonBuilder = props => {
         clearSqonDeletion(s);
       });
   };
-  const onNewQueryClick = s => () => {
+  const onNewQueryClick = (s) => () => {
     if (allowsNewSqon) {
       dispatchSqonListChange(s)({
         eventKey: 'NEW_SQON',
@@ -243,7 +224,7 @@ const AdvancedSqonBuilder = props => {
         });
     }
   };
-  const onClearAllClick = s => () => {
+  const onClearAllClick = (s) => () => {
     dispatchSqonListChange(s)({
       eventKey: 'CLEAR_ALL',
       eventDetails: {},
@@ -254,34 +235,31 @@ const AdvancedSqonBuilder = props => {
     onActiveSqonSelect({ index: 0 });
   };
 
-  const onSqonEntryActivate = s => nextActiveSqonIndex => () => {
+  const onSqonEntryActivate = (s) => (nextActiveSqonIndex) => () => {
     if (nextActiveSqonIndex !== currentActiveSqonIndex) {
       onActiveSqonSelect({
         index: nextActiveSqonIndex,
       });
     }
   };
-  const onSqonChange = s => sqonIndex => newSqon => {
+  const onSqonChange = (s) => (sqonIndex) => (newSqon) => {
     dispatchSqonListChange(s)({
       eventKey: 'SQON_CHANGE',
       eventDetails: {
         updatedIndex: sqonIndex,
       },
-      newSqonList: syntheticSqons.map(
-        (sq, i) => (i === sqonIndex ? newSqon : sq),
-      ),
+      newSqonList: syntheticSqons.map((sq, i) => (i === sqonIndex ? newSqon : sq)),
     });
     if (!newSqon.content.length) {
       removeSqon(s)(sqonIndex);
     }
   };
-  const getActiveExecutableSqon = () =>
-    resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
+  const getActiveExecutableSqon = () => resolveSyntheticSqon(syntheticSqons)(selectedSyntheticSqon);
 
   return (
     <DisplayNameMapContext.Provider value={fieldDisplayNameMap}>
       <Component initialState={initialState}>
-        {s => (
+        {(s) => (
           <div className={`sqonBuilder`}>
             <div className={`actionHeaderContainer`}>
               <div>
@@ -304,9 +282,7 @@ const AdvancedSqonBuilder = props => {
                 </span>
               </div>
               <div>
-                <ButtonComponent onClick={onClearAllClick(s)}>
-                  CLEAR ALL
-                </ButtonComponent>
+                <ButtonComponent onClick={onClearAllClick(s)}>CLEAR ALL</ButtonComponent>
               </div>
             </div>
             {syntheticSqons.map((sq, i) => (
@@ -320,9 +296,7 @@ const AdvancedSqonBuilder = props => {
                 isActiveSqon={i === currentActiveSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
                 isReferenced={isSqonReferenced(i)}
-                isIndexReferenced={isIndexReferencedInSqon(
-                  selectedSyntheticSqon,
-                )}
+                isIndexReferenced={isIndexReferencedInSqon(selectedSyntheticSqon)}
                 isDeleting={s.state.deletingIndex === i}
                 disabled={isEmptySqon(sq)}
                 SqonActionComponent={SqonActionComponent}
@@ -351,11 +325,7 @@ const AdvancedSqonBuilder = props => {
               </button>
               <button
                 className={`sqonListActionButton duplicateButton`}
-                disabled={
-                  selectedSyntheticSqon
-                    ? !selectedSyntheticSqon.content.length
-                    : false
-                }
+                disabled={selectedSyntheticSqon ? !selectedSyntheticSqon.content.length : false}
                 onClick={onSqonDuplicate(s)(currentActiveSqonIndex)}
               >
                 <FaRegClone />

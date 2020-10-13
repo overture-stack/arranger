@@ -2,15 +2,15 @@ import { Client } from '@elastic/elasticsearch';
 import { EsMapping } from './types';
 
 export const createClient = (esHost: string, esUser: string, esPass: string) => {
-  const esConf = { node: esHost}
-  if (esUser && esPass){
+  const esConf = { node: esHost };
+  if (esUser && esPass) {
     esConf['auth'] = {
       username: esUser,
-      password: esPass
-    }
+      password: esPass,
+    };
   }
   return new Client(esConf);
-}
+};
 
 export const getEsMapping = (es: Client) => async ({
   esIndex,

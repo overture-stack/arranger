@@ -31,10 +31,10 @@ function groupingOptimizer({ op, content, pivot }) {
 }
 
 function isSpecialFilter(value) {
-  return [REGEX, SET_ID, MISSING].some(x => `${value}`.includes(x));
+  return [REGEX, SET_ID, MISSING].some((x) => `${value}`.includes(x));
 }
 
-const applyDefaultPivots = filter => {
+const applyDefaultPivots = (filter) => {
   const { content, pivot = null } = filter;
   const { value } = content;
   if (value) {
@@ -68,24 +68,17 @@ function normalizeFilters(filter) {
       ...filter,
       content: { ...content, value: [].concat(value) },
     });
-  } else if (
-    [IN_OP, NOT_IN_OP].includes(op) &&
-    value.some(isSpecialFilter) &&
-    value.length > 1
-  ) {
+  } else if ([IN_OP, NOT_IN_OP].includes(op) && value.some(isSpecialFilter) && value.length > 1) {
     // Separate filters with special handling into separate filters and "or" them with the normal filter
-    const specialFilters = value.filter(isSpecialFilter).map(specialValue => ({
+    const specialFilters = value.filter(isSpecialFilter).map((specialValue) => ({
       ...filter,
       content: { ...content, value: [specialValue] },
     }));
 
-    const normalValues = value.filter(psv => !isSpecialFilter(psv));
+    const normalValues = value.filter((psv) => !isSpecialFilter(psv));
     const filters =
       normalValues.length > 0
-        ? [
-            { ...filter, content: { ...content, value: normalValues } },
-            ...specialFilters,
-          ]
+        ? [{ ...filter, content: { ...content, value: normalValues } }, ...specialFilters]
         : specialFilters;
 
     return normalizeFilters({ op: OR_OP, content: filters });
@@ -96,7 +89,7 @@ function normalizeFilters(filter) {
   }
 }
 
-export default filter => {
+export default (filter) => {
   const output = filter ? applyDefaultPivots(normalizeFilters(filter)) : filter;
   return output;
 };

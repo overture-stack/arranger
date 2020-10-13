@@ -5,10 +5,7 @@ import {
   I_ColumnStateQueryInput,
   I_SaveColumnsStateMutationInput,
 } from './types';
-import {
-  getProjectStorageMetadata,
-  updateProjectIndexMetadata,
-} from '../IndexSchema/utils';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
 import { EsIndexLocation } from '../types';
 import { mappingToColumnsState } from '@arranger/mapping-utils';
 import { replaceBy, timestamp } from '../../services';
@@ -20,7 +17,7 @@ export const getColumnSetState = (es: Client) => async (
 ): Promise<I_ColumnSetState> => {
   const { graphqlField, projectId } = args;
   const metaData = (await getProjectStorageMetadata(es)(projectId)).find(
-    i => i.name === graphqlField,
+    (i) => i.name === graphqlField,
   );
   return metaData.config['columns-state'];
 };
@@ -38,9 +35,7 @@ export const createColumnSetState = (es: Client) => async (
     state: {
       type: graphqlField,
       keyField: 'id',
-      defaultSorted: [
-        { id: columns[0].id || columns[0].accessor, desc: false },
-      ],
+      defaultSorted: [{ id: columns[0].id || columns[0].accessor, desc: false }],
       columns,
     },
     timestamp: timestamp(),
@@ -53,11 +48,9 @@ export const saveColumnState = (es: Client) => async ({
   state,
 }: I_SaveColumnsStateMutationInput): Promise<I_ColumnSetState> => {
   const currentProjectMetadata = await getProjectStorageMetadata(es)(projectId);
-  const currentIndexMetadata = currentProjectMetadata.find(
-    i => i.name === graphqlField,
-  );
+  const currentIndexMetadata = currentProjectMetadata.find((i) => i.name === graphqlField);
   const sortByNewOrder = sortBy((i: I_Column) =>
-    state.columns.findIndex(c => c.field === i.field),
+    state.columns.findIndex((c) => c.field === i.field),
   );
   const mergedState: typeof state = {
     ...state,

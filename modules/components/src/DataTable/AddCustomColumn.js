@@ -36,11 +36,7 @@ const AddCustomColumn = ({ values, submitForm, style }) => {
       </label>
       <label>
         active:
-        <Field
-          type="checkbox"
-          value={values.canChangeShow}
-          name="canChangeShow"
-        />
+        <Field type="checkbox" value={values.canChangeShow} name="canChangeShow" />
       </label>
       <button onClick={submitForm}>Add Custom Column</button>
     </div>

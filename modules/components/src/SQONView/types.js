@@ -25,17 +25,10 @@ export type TMergeEnum = boolean | 'toggle' | 'replace';
 
 export type TMergeFns = (v: TMergeEnum) => TMergeSQON;
 
-export type TMergeQuery = (
-  q: ?TUriQuery,
-  c: TRawQuery,
-  t: TMergeEnum,
-) => TUriQuery;
+export type TMergeQuery = (q: ?TUriQuery, c: TRawQuery, t: TMergeEnum) => TUriQuery;
 
 export type TSortSQON = (a: TValueSQON, b: TValueSQON) => number;
 
-export type TFilterByWhitelist = (
-  o: ?TRawQuery,
-  w: ?Array<string>,
-) => TRawQuery;
+export type TFilterByWhitelist = (o: ?TRawQuery, w: ?Array<string>) => TRawQuery;
 
 export type TRemoveSQON = (field: string, query: TGroupSQON) => ?TGroupSQON;

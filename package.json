@@ -46,19 +46,27 @@
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-react": "^7.6.1",
+    "husky": "^4.3.0",
     "jest": "^22.3.0",
     "lerna": "^3.20.2",
+    "node-sass": "4.13.0",
     "npm-link-shared": "^0.5.3",
-    "prettier": "^1.19.1",
-    "typescript": "^3.7.3",
-    "node-sass": "4.13.0"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "all"
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.0.2",
+    "typescript": "^3.9.7"
   },
   "dependencies": {
     "kind-of": "^6.0.3",
     "minimist": "^1.2.5"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all",
+    "singleQuote": true
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }

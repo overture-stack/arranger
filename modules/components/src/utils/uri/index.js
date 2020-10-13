@@ -1,10 +1,6 @@
 /* @flow */
 
-import type {
-  TParseSQONParam,
-  TParseJSONParam,
-  TParseIntParam,
-} from './types';
+import type { TParseSQONParam, TParseJSONParam, TParseIntParam } from './types';
 
 export const parseIntParam: TParseIntParam = (str, defaults) =>
   str ? Math.max(parseInt(str, 10), 0) : defaults;

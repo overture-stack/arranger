@@ -13,10 +13,7 @@ import RangeFilter, {
   RangeFilterUi,
 } from '../../src/AdvancedSqonBuilder/filterComponents/RangeFilter';
 
-import {
-  sqons as mockSqons,
-  fieldDisplayMap as mockFieldDisplayMap,
-} from './mocks';
+import { sqons as mockSqons, fieldDisplayMap as mockFieldDisplayMap } from './mocks';
 import ProjectsProvider from './ProjectsProvider';
 
 const mockTermBuckets = [
@@ -53,12 +50,7 @@ const mockBooleanBuckets = [
   },
 ];
 
-const DemoSqonActionComponent = ({
-  sqonIndex,
-  isActive,
-  isSelected,
-  isHoverring,
-}) =>
+const DemoSqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring }) =>
   !(isHoverring || isActive) && (
     <div
       style={{
@@ -104,15 +96,15 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => data => {
+    const onChange = (s) => (data) => {
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
       s.setState({ activeSqonIndex: index });
     };
-    const setModal = s => ModalComponent =>
+    const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
       });
@@ -120,7 +112,7 @@ storiesOf('AdvancedSqonBuilder', module)
       <ProjectsProvider>
         {({ project, index }) => (
           <Component initialState={initialState}>
-            {s => (
+            {(s) => (
               <div style={{ position: 'relative', height: '100%' }}>
                 <AdvancedSqonBuilder
                   arrangerProjectId={project}
@@ -147,15 +139,15 @@ storiesOf('AdvancedSqonBuilder', module)
       ModalComponent: null,
       syntheticSqons: mockSqons,
     };
-    const onChange = s => data => {
+    const onChange = (s) => (data) => {
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = s => ({ index, sqonValue }) => {
+    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
       action('active sqon select')({ index, sqonValue });
       s.setState({ activeSqonIndex: index });
     };
-    const setModal = s => ModalComponent =>
+    const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
       });
@@ -163,7 +155,7 @@ storiesOf('AdvancedSqonBuilder', module)
       <ProjectsProvider>
         {({ project, index }) => (
           <Component initialState={initialState}>
-            {s => (
+            {(s) => (
               <div style={{ position: 'relative', height: '100%' }}>
                 <AdvancedSqonBuilder
                   arrangerProjectId={project}
@@ -174,10 +166,7 @@ storiesOf('AdvancedSqonBuilder', module)
                   emptyEntryMessage={'Custom empty sqon message'}
                   onChange={onChange(s)}
                   onActiveSqonSelect={onActiveSqonSelect(s)}
-                  getSqonDeleteConfirmation={({
-                    indexToRemove,
-                    dependentIndices,
-                  }) =>
+                  getSqonDeleteConfirmation={({ indexToRemove, dependentIndices }) =>
                     new Promise((resolve, reject) => {
                       setModal(s)(() => (
                         <DemoModal

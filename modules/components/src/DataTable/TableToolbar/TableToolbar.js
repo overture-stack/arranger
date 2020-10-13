@@ -11,7 +11,7 @@ import './Toolbar.css';
 
 const enhance = compose(
   withProps(({ columns }) => ({
-    canChangeShowColumns: columns.filter(column => column.canChangeShow),
+    canChangeShowColumns: columns.filter((column) => column.canChangeShow),
   })),
   withPropsOnChange(['onFilterChange'], ({ onFilterChange = () => {} }) => ({
     debouncedOnFilterChange: debounce(onFilterChange, 300),
@@ -44,7 +44,7 @@ const TableToolbar = ({
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
   exporter = saveTSV,
-  transformParams = params => params,
+  transformParams = (params) => params,
   sqon,
   downloadUrl,
   InputComponent,
@@ -52,18 +52,13 @@ const TableToolbar = ({
   customHeaderContent = null,
 }) => {
   const isPlural =
-    total > 1 &&
-    pageSize > 1 &&
-    (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
+    total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
   return (
-    <div
-      style={{ display: 'flex', flex: 'none', ...style }}
-      className="tableToolbar"
-    >
+    <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
       <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
         Showing {(page * pageSize + 1).toLocaleString()} -{' '}
-        {Math.min((page + 1) * pageSize, total).toLocaleString()} of{' '}
-        {total?.toLocaleString()} {pluralize(type, isPlural ? 2 : 1)}
+        {Math.min((page + 1) * pageSize, total).toLocaleString()} of {total?.toLocaleString()}{' '}
+        {pluralize(type, isPlural ? 2 : 1)}
       </div>
       {!customHeaderContent ? null : customHeaderContent}
       <div className="group">
@@ -83,9 +78,9 @@ const TableToolbar = ({
         {allowTogglingColumns && (
           <DropDown
             aria-label={`Select columns`}
-            itemToString={i => i.Header}
+            itemToString={(i) => i.Header}
             items={canChangeShowColumns}
-            onChange={item => {
+            onChange={(item) => {
               setFilterVal('');
               onFilterChange({
                 value: '',

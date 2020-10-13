@@ -30,9 +30,7 @@ export const getProjectMetadataEsLocation = (
   index: `${ARRANGER_PROJECT_INDEX}-${projectId}`,
 });
 
-const mappingExistsOn = (es: Client) => async ({
-  esIndex,
-}: EsIndexLocation): Promise<boolean> => {
+const mappingExistsOn = (es: Client) => async ({ esIndex }: EsIndexLocation): Promise<boolean> => {
   try {
     await getEsMapping(es)({ esIndex });
     return true;
@@ -62,7 +60,7 @@ export const getProjectMetadata = (es: Client) => async (
   projectId: string,
 ): Promise<IIndexGqlModel[]> =>
   Promise.all(
-    (await getProjectStorageMetadata(es)(projectId)).map(async metadata => ({
+    (await getProjectStorageMetadata(es)(projectId)).map(async (metadata) => ({
       id: `${projectId}::${metadata.name}`,
       hasMapping: mappingExistsOn(es)({
         esIndex: metadata.index,
@@ -78,7 +76,7 @@ export const createNewIndex = (es: Client) => async (
 ): Promise<IIndexGqlModel> => {
   const { projectId, graphqlField, esIndex } = args;
   const arrangerProject: {} = (await getArrangerProjects(es)).find(
-    project => project.id === projectId,
+    (project) => project.id === projectId,
   );
   if (arrangerProject) {
     const serializedGqlField = serializeToGqlField(graphqlField);
@@ -159,7 +157,7 @@ export const updateProjectIndexMetadata = (es: Client) => async ({
       refresh: 'true',
     });
     const output = (await getProjectStorageMetadata(es)(projectId)).find(
-      i => i.name === metaData.name,
+      (i) => i.name === metaData.name,
     );
     return output;
   });
@@ -175,9 +173,7 @@ export const getProjectIndex = (es: Client) => async ({
     );
     return output;
   } catch {
-    throw new UserInputError(
-      `could not find index ${graphqlField} of project ${projectId}`,
-    );
+    throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
   }
 };
 
@@ -197,8 +193,6 @@ export const removeProjectIndex = (es: Client) => async ({
     });
     return removedIndexMetadata;
   } catch (err) {
-    throw new UserInputError(
-      `could not remove index ${graphqlField} of project ${projectId}`,
-    );
+    throw new UserInputError(`could not remove index ${graphqlField} of project ${projectId}`);
   }
 };

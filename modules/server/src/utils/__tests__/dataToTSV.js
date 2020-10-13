@@ -1,7 +1,4 @@
-import dataToTSVStream, {
-  dataToTSV,
-  columnsToHeader,
-} from '../dataToExportFormat';
+import dataToTSVStream, { dataToTSV, columnsToHeader } from '../dataToExportFormat';
 import { PassThrough } from 'stream';
 
 describe('esHitsToTSV accessor columns', () => {
@@ -9,10 +6,7 @@ describe('esHitsToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        hits: [
-          { _source: { test1: 1, test2: 'txt1' } },
-          { _source: { test1: 2, test2: 'txt2' } },
-        ],
+        hits: [{ _source: { test1: 1, test2: 'txt1' } }, { _source: { test1: 2, test2: 'txt2' } }],
         total: 5,
       },
       columns: [
@@ -33,7 +27,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -43,10 +37,7 @@ describe('esHitsToTSV accessor columns', () => {
     const config = {
       index: 'file',
       data: {
-        hits: [
-          { _source: { test1: 1, test2: 'txt1' } },
-          { _source: { test1: 2 } },
-        ],
+        hits: [{ _source: { test1: 1, test2: 'txt1' } }, { _source: { test1: 2 } }],
         total: 5,
       },
       columns: [
@@ -68,7 +59,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -92,10 +83,7 @@ describe('esHitsToTSV accessor columns', () => {
     };
 
     const data = {
-      hits: [
-        { _source: { test1: 1, test2: 'txt1' } },
-        { _source: { test1: 2, test2: 'txt2' } },
-      ],
+      hits: [{ _source: { test1: 1, test2: 'txt1' } }, { _source: { test1: 2, test2: 'txt2' } }],
       total: 5,
     };
 
@@ -104,7 +92,7 @@ describe('esHitsToTSV accessor columns', () => {
     let actual = '';
     stream
       .pipe(dataToTSVStream(config))
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(actual).toBe(expected))
       .write(data);
   });
@@ -161,7 +149,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -219,7 +207,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });
@@ -283,8 +271,7 @@ describe('esHitsToTSV accessor columns', () => {
         {
           Header: 'Test2',
           field: 'test2.nestedValue.nesting.nestedValue',
-          jsonPath:
-            '$.test2.hits.edges[*].node.nesting.hits.edges[*].node.nestedValue',
+          jsonPath: '$.test2.hits.edges[*].node.nesting.hits.edges[*].node.nestedValue',
         },
       ],
     };
@@ -292,7 +279,7 @@ describe('esHitsToTSV accessor columns', () => {
     const stream = PassThrough();
     let actual = '';
     stream
-      .on('data', chunk => (actual += chunk))
+      .on('data', (chunk) => (actual += chunk))
       .on('end', () => expect(columnsToHeader(config) + actual).toBe(expected));
 
     dataToTSV({ pipe: stream, ...config });

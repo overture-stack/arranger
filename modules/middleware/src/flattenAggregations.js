@@ -31,7 +31,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
               ...bucket,
               doc_count: rn ? rn.doc_count : bucket.doc_count,
             }))
-            .filter(b => b.doc_count),
+            .filter((b) => b.doc_count),
         },
       };
     } else {

@@ -22,4 +22,4 @@ export let typeDefs = `
     mode: Mode
     missing: Missing
   }
-`
+`;

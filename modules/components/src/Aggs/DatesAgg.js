@@ -9,8 +9,8 @@ import AggsWrapper from './AggsWrapper';
 import './DatesAgg.css';
 
 const SQON_DATE_FORMAT = 'YYYY-MM-DD';
-const dateFromSqon = dateString => Moment(dateString, SQON_DATE_FORMAT);
-const momentToSqonDate = moment => moment?.format(SQON_DATE_FORMAT);
+const dateFromSqon = (dateString) => Moment(dateString, SQON_DATE_FORMAT);
+const momentToSqonDate = (moment) => moment?.format(SQON_DATE_FORMAT);
 
 class DatesAgg extends React.Component {
   constructor(props) {
@@ -67,11 +67,8 @@ class DatesAgg extends React.Component {
       handleDateChange({
         field,
         value: content,
-        generateNextSQON: sqon =>
-          replaceSQON(
-            content.length ? { op: 'and', content } : null,
-            removeSQON(field, sqon),
-          ),
+        generateNextSQON: (sqon) =>
+          replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(field, sqon)),
       });
     }
   };
@@ -101,7 +98,7 @@ class DatesAgg extends React.Component {
             disabledKeyboardNavigation
             placeholderText="Start Date"
             selected={startDate}
-            onChange={x => this.setState({ startDate: x }, this.updateSqon)}
+            onChange={(x) => this.setState({ startDate: x }, this.updateSqon)}
             aria-label={`Pick start date`}
           />
           <DatePicker
@@ -112,7 +109,7 @@ class DatesAgg extends React.Component {
             disabledKeyboardNavigation
             placeholderText="End Date"
             selected={endDate}
-            onChange={x => this.setState({ endDate: x }, this.updateSqon)}
+            onChange={(x) => this.setState({ endDate: x }, this.updateSqon)}
             aria-label={`Pick end date`}
           />
         </div>

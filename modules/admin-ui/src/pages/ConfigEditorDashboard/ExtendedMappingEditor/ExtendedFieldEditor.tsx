@@ -35,7 +35,7 @@ const mapStateToProps = (
     return {};
   } else {
     const currentProjectIndexData = state.configEditor.currentProjectData.project.indices.find(
-      index => index.graphqlField === graphqlField,
+      (index) => index.graphqlField === graphqlField,
     );
     if (currentProjectIndexData) {
       return {
@@ -51,30 +51,20 @@ interface IReduxDispatchProps {
   onFieldDisplayNameChange: (
     currentField: IExtendedMappingField,
   ) => (newDisplayName: string) => void;
-  onFieldTypeChange: (
-    currentField: IExtendedMappingField,
-  ) => (newType: string) => void;
-  onFieldActiveChange: (
-    currentField: IExtendedMappingField,
-  ) => (newActiveState: boolean) => void;
+  onFieldTypeChange: (currentField: IExtendedMappingField) => (newType: string) => void;
+  onFieldActiveChange: (currentField: IExtendedMappingField) => (newActiveState: boolean) => void;
   onFieldQuicksearchStateChange: (
     currentField: IExtendedMappingField,
   ) => (newQuicksearchState: boolean) => void;
   onFieldPrimarykeyStateChange: (
     currentField: IExtendedMappingField,
   ) => (newState: boolean) => void;
-  onFieldIsArrayStateChange: (
-    currentField: IExtendedMappingField,
-  ) => (newState: boolean) => void;
-  onFieldRangeStepChange: (
-    currentField: IExtendedMappingField,
-  ) => (newValue: number) => void;
+  onFieldIsArrayStateChange: (currentField: IExtendedMappingField) => (newState: boolean) => void;
+  onFieldRangeStepChange: (currentField: IExtendedMappingField) => (newValue: number) => void;
   onFieldValueDisplayChange: (
     currentField: IExtendedMappingField,
   ) => (valueKey: string, displayValue: string) => void;
-  onFieldUnitChange: (
-    currentField: IExtendedMappingField,
-  ) => (newValue: string) => void;
+  onFieldUnitChange: (currentField: IExtendedMappingField) => (newValue: string) => void;
 }
 const DEFAULT_BOOLEAN_VALUE_DISPLAY: {
   [k: string]: string;
@@ -83,11 +73,8 @@ const DEFAULT_BOOLEAN_VALUE_DISPLAY: {
   false: 'no',
   any: 'any',
 };
-const mapDispatchtoProps = (
-  dispatch: Dispatch,
-  ownProps: IExternalProps,
-): IReduxDispatchProps => ({
-  onFieldDisplayNameChange: currentField => newDisplayName =>
+const mapDispatchtoProps = (dispatch: Dispatch, ownProps: IExternalProps): IReduxDispatchProps => ({
+  onFieldDisplayNameChange: (currentField) => (newDisplayName) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -98,7 +85,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldTypeChange: currentField => newType =>
+  onFieldTypeChange: (currentField) => (newType) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -107,13 +94,11 @@ const mapDispatchtoProps = (
           ...currentField,
           type: newType,
           displayValues:
-            newType === EXTENDED_FIELD_TYPES.boolean
-              ? DEFAULT_BOOLEAN_VALUE_DISPLAY
-              : null,
+            newType === EXTENDED_FIELD_TYPES.boolean ? DEFAULT_BOOLEAN_VALUE_DISPLAY : null,
         },
       },
     }),
-  onFieldActiveChange: currentField => newActiveState =>
+  onFieldActiveChange: (currentField) => (newActiveState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -124,7 +109,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldQuicksearchStateChange: currentField => newState =>
+  onFieldQuicksearchStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -135,7 +120,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldPrimarykeyStateChange: currentField => newState =>
+  onFieldPrimarykeyStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -146,7 +131,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldIsArrayStateChange: currentField => newState =>
+  onFieldIsArrayStateChange: (currentField) => (newState) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -157,7 +142,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldRangeStepChange: currentField => newValue =>
+  onFieldRangeStepChange: (currentField) => (newValue) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -168,7 +153,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldValueDisplayChange: currentField => (valueKey, displayValue) =>
+  onFieldValueDisplayChange: (currentField) => (valueKey, displayValue) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -182,7 +167,7 @@ const mapDispatchtoProps = (
         },
       },
     }),
-  onFieldUnitChange: currentField => newUnit =>
+  onFieldUnitChange: (currentField) => (newUnit) =>
     dispatch({
       type: ActionType.EXTENDED_MAPPING_FIELD_CHANGE,
       payload: {
@@ -195,9 +180,7 @@ const mapDispatchtoProps = (
     }),
 });
 
-const Layout: React.ComponentType<
-  IExternalProps & IReduxStateProps & IReduxDispatchProps
-> = ({
+const Layout: React.ComponentType<IExternalProps & IReduxStateProps & IReduxDispatchProps> = ({
   fieldData,
   onFieldDisplayNameChange,
   onFieldTypeChange,
@@ -212,10 +195,9 @@ const Layout: React.ComponentType<
   const onDisplayNameChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
     onFieldDisplayNameChange(fieldData)(e.currentTarget.value);
 
-  const onTypeChange = e => onFieldTypeChange(fieldData)(e.value);
+  const onTypeChange = (e) => onFieldTypeChange(fieldData)(e.value);
 
-  const onActiveStateToggle = () =>
-    onFieldActiveChange(fieldData)(!fieldData.active);
+  const onActiveStateToggle = () => onFieldActiveChange(fieldData)(!fieldData.active);
 
   const onQuicksearchStateToggle = () =>
     onFieldQuicksearchStateChange(fieldData)(!fieldData.quickSearchEnabled);
@@ -223,15 +205,13 @@ const Layout: React.ComponentType<
   const onPrimarykeyStateChange = () =>
     onFieldPrimarykeyStateChange(fieldData)(!fieldData.primaryKey);
 
-  const onIsArrayStateChange = () =>
-    onFieldIsArrayStateChange(fieldData)(!fieldData.isArray);
+  const onIsArrayStateChange = () => onFieldIsArrayStateChange(fieldData)(!fieldData.isArray);
 
   const onRangeStepChange = (e: React.SyntheticEvent<HTMLInputElement>) =>
     onFieldRangeStepChange(fieldData)(Number(e.currentTarget.value));
 
-  const onValueDisplayChange = (valueKey: string) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) => onFieldValueDisplayChange(fieldData)(valueKey, e.currentTarget.value);
+  const onValueDisplayChange = (valueKey: string) => (e: React.SyntheticEvent<HTMLInputElement>) =>
+    onFieldValueDisplayChange(fieldData)(valueKey, e.currentTarget.value);
 
   const onUnitChange = (value: string) => onFieldUnitChange(fieldData)(value);
 
@@ -260,7 +240,7 @@ const Layout: React.ComponentType<
           input={Select}
           label="Aggregation Type"
           size="medium"
-          data={Object.values(EXTENDED_FIELD_TYPES).map(val => ({
+          data={Object.values(EXTENDED_FIELD_TYPES).map((val) => ({
             text: val,
             value: val,
           }))}
@@ -289,17 +269,17 @@ const Layout: React.ComponentType<
         <CardBlock>
           <CardDivider />
           <FormField size="medium" label="Display Values" />
-          {Object.entries(
-            fieldData.displayValues || DEFAULT_BOOLEAN_VALUE_DISPLAY,
-          ).map(([valueKey, value]) => (
-            <FormField
-              input={TextInput}
-              label={valueKey}
-              size="medium"
-              value={value}
-              onChange={onValueDisplayChange(valueKey)}
-            />
-          ))}
+          {Object.entries(fieldData.displayValues || DEFAULT_BOOLEAN_VALUE_DISPLAY).map(
+            ([valueKey, value]) => (
+              <FormField
+                input={TextInput}
+                label={valueKey}
+                size="medium"
+                value={value}
+                onChange={onValueDisplayChange(valueKey)}
+              />
+            ),
+          )}
           <CardDivider />
         </CardBlock>
       )}

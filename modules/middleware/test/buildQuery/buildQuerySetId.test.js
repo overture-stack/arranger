@@ -1,8 +1,5 @@
 import buildQuery from '../../src/buildQuery';
-import {
-  ES_ARRANGER_SET_INDEX,
-  ES_ARRANGER_SET_TYPE,
-} from '../../src/constants';
+import { ES_ARRANGER_SET_INDEX, ES_ARRANGER_SET_TYPE } from '../../src/constants';
 test('buildQuery sets', () => {
   const nestedFields = ['files', 'files.foo'];
 

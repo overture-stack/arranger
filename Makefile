@@ -135,3 +135,9 @@ start:
 	@$(DC_UP_CMD)
 	@$(MAKE) _ping_elasticsearch_server
 	@echo $(YELLOW)$(INFO_HEADER) Succesfully started all arranger services! $(END)
+
+#############################################################
+#  Dev targets
+#############################################################
+format:
+	@./scripts/format-all.sh

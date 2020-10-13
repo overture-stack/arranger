@@ -2,13 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { themeDecorator } from './decorators';
-import {
-  DatesAgg,
-  BooleanAgg,
-  TermAgg,
-  RangeAgg,
-  AggsPanel,
-} from '../src/Aggs';
+import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
 import { inCurrentSQON, currentFieldValue } from '../src/SQONView/utils';
 import Component from 'react-component-component';
 
@@ -208,7 +202,7 @@ storiesOf('Aggs', module)
               width: 300px;
             `}
           >
-            {aggs.map(agg => (
+            {aggs.map((agg) => (
               // TODO: switch on agg type
               <TermAgg
                 key={agg.field}
@@ -216,7 +210,7 @@ storiesOf('Aggs', module)
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={d =>
+                isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
                     dotField: d.field,
@@ -308,9 +302,7 @@ storiesOf('Aggs', module)
               avg: 70,
               sum: 15000,
             }}
-            handleChange={({ generateNextSQON }) =>
-              update({ sqon: generateNextSQON(sqon) })
-            }
+            handleChange={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}
           />
         </div>
       )}
@@ -346,14 +338,14 @@ storiesOf('Aggs', module)
               width: 300px;
             `}
           >
-            {bolleanAggs.map(agg => (
+            {bolleanAggs.map((agg) => (
               <BooleanAgg
                 key={agg.field}
                 {...agg}
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
                 }
-                isActive={d =>
+                isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
                     dotField: d.field,
@@ -375,7 +367,7 @@ storiesOf('Aggs', module)
           <label>index: </label>
           <input // <-- could be a dropdown of available indices
             value={index}
-            onChange={e => update({ index: e.target.value })}
+            onChange={(e) => update({ index: e.target.value })}
           />
           {index && (
             <div

@@ -23,9 +23,7 @@ export default ({
     setState: (s: ILocalState) => void;
   }
   const initialState: ILocalState = {
-    selectedType: selectedItem
-      ? convert().describe(selectedItem).measure || undefined
-      : undefined,
+    selectedType: selectedItem ? convert().describe(selectedItem).measure || undefined : undefined,
   };
   const unitTypeOptions: IOption[] = convert()
     .measures()
@@ -35,9 +33,7 @@ export default ({
     s.setState({ ...s.state, selectedType: option });
 
   const getPossibleUnits = (s: IStateContainer): string[] =>
-    s.state.selectedType
-      ? convert().possibilities(s.state.selectedType.value)
-      : [];
+    s.state.selectedType ? convert().possibilities(s.state.selectedType.value) : [];
 
   const onUnitSelectionChange = (o: IOption) => {
     if (onChange) {
@@ -59,13 +55,13 @@ export default ({
           <Select
             size="medium"
             placeholder="Unit"
-            data={getPossibleUnits(s).map((val): IOption => ({
-              text: val,
-              value: val,
-            }))}
-            selectedItem={
-              selectedItem && { text: selectedItem, value: selectedItem }
-            }
+            data={getPossibleUnits(s).map(
+              (val): IOption => ({
+                text: val,
+                value: val,
+              }),
+            )}
+            selectedItem={selectedItem && { text: selectedItem, value: selectedItem }}
             onChange={onUnitSelectionChange}
           />
         </Flex>

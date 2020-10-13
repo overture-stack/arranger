@@ -1,11 +1,6 @@
-export const serializeToEsId = (id: string): string =>
-  id
-    .toLowerCase()
-    .split('-')
-    .join('_');
+export const serializeToEsId = (id: string): string => id.toLowerCase().split('-').join('_');
 
-export const serializeToGqlField = (field: string): string =>
-  field.split('.').join('__');
+export const serializeToGqlField = (field: string): string => field.split('.').join('__');
 
 export const timestamp = () => new Date().toISOString();
 
@@ -20,7 +15,7 @@ export const replaceBy = <T>(
   // console.log('cArr1: ', cArr1);
   // console.log('cArr2: ', cArr2);
   return [
-    ...cArr2.filter(x => cArr1.find(y => operator(x, y))),
-    ...cArr1.filter(x => !cArr2.find(y => operator(x, y))),
+    ...cArr2.filter((x) => cArr1.find((y) => operator(x, y))),
+    ...cArr1.filter((x) => !cArr2.find((y) => operator(x, y))),
   ];
 };

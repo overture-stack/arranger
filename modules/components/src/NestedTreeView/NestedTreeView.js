@@ -28,7 +28,7 @@ const NestedTreeView = ({
               cursor: pointer;
               padding-left: ${labelPadding}px;
             `}`}
-            onClick={e => {
+            onClick={(e) => {
               onLeafSelect(id || title);
               open();
             }}

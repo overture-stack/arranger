@@ -16,10 +16,7 @@ import {
   IReduxDispatchProps,
   IAggsStateEntryWithIndex,
 } from './ReduxContainer';
-import {
-  BOOLEAN_FILTER_VALUES,
-  ISelectOption,
-} from '../ExtendedMappingEditor/FieldsFilterDisplay';
+import { BOOLEAN_FILTER_VALUES, ISelectOption } from '../ExtendedMappingEditor/FieldsFilterDisplay';
 
 /***************
  * main component
@@ -30,14 +27,17 @@ interface IExternalProps {
 
 export const booleanFilterOptions = [
   { text: 'none', value: null },
-  ...Object.values(BOOLEAN_FILTER_VALUES).map(val => ({
+  ...Object.values(BOOLEAN_FILTER_VALUES).map((val) => ({
     text: val,
     value: val,
   })),
 ];
 
 const DebouncedInput = withDebouncedOnChange()(TextInput);
-export default connect(mapStateToProps, mapDispatchToProps)(
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(
   ({
     aggsState,
     graphqlField,
@@ -67,39 +67,29 @@ export default connect(mapStateToProps, mapDispatchToProps)(
         ...s.state,
         fieldFilter: e.currentTarget.value,
       });
-    const aggsStateWithIndex: Array<IAggsStateEntryWithIndex> = aggsState.map(
-      (s, i) => ({
-        ...s,
-        index: i,
-      }),
-    );
+    const aggsStateWithIndex: Array<IAggsStateEntryWithIndex> = aggsState.map((s, i) => ({
+      ...s,
+      index: i,
+    }));
     const getFilteredFields = (s: IStateContainer) =>
       aggsStateWithIndex.filter(
-        i =>
+        (i) =>
           i.field.includes(s.state.fieldFilter) &&
-          (s.state.active !== null
-            ? String(i.active) === s.state.active
-            : true) &&
+          (s.state.active !== null ? String(i.active) === s.state.active : true) &&
           (s.state.show !== null ? String(i.show) === s.state.show : true),
       );
-    const onSortEnd = (filteredFields: IAggsStateEntryWithIndex[]) => (
-      data: ISortEventData,
-    ) => {
+    const onSortEnd = (filteredFields: IAggsStateEntryWithIndex[]) => (data: ISortEventData) => {
       const currentItemAtNewIndex = filteredFields[data.newIndex];
       const unfilteredNewIndex = currentItemAtNewIndex.index;
       const fieldtoMove = filteredFields[data.oldIndex];
       onFieldSortChange(fieldtoMove, unfilteredNewIndex);
     };
-    const onFieldActiveFilterChange = (s: IStateContainer) => ({
-      value,
-    }: ISelectOption) =>
+    const onFieldActiveFilterChange = (s: IStateContainer) => ({ value }: ISelectOption) =>
       s.setState({
         ...s.state,
         active: value,
       });
-    const onFieldShowFilterChange = (s: IStateContainer) => ({
-      value,
-    }: ISelectOption) =>
+    const onFieldShowFilterChange = (s: IStateContainer) => ({ value }: ISelectOption) =>
       s.setState({
         ...s.state,
         show: value,

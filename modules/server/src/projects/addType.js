@@ -9,8 +9,7 @@ export default async (req, res) => {
   let { id } = req.params;
   let { index, name, config: rawConfig = {} } = req.body;
 
-  const esType =
-    req.body.esType && req.body.esType.length ? req.body.esType : index;
+  const esType = req.body.esType && req.body.esType.length ? req.body.esType : index;
 
   if (!id || !index || !name) {
     return res.json({ error: 'missing fields' });
@@ -73,14 +72,14 @@ export default async (req, res) => {
 
   let mappings = await fetchMappings({ es, types: hits });
 
-  if (hits.some(x => mappings.find(y => y.index === x.index).mapping)) {
+  if (hits.some((x) => mappings.find((y) => y.index === x.index).mapping)) {
     try {
       await es.indices.create({
         index: indexPrefix,
       });
 
       let aliases = await es.cat.aliases({ format: 'json' });
-      let alias = aliases?.find(x => x.alias === index)?.index;
+      let alias = aliases?.find((x) => x.alias === index)?.index;
 
       let mappings = await es.indices.getMapping({
         index: alias || index,
@@ -99,9 +98,9 @@ export default async (req, res) => {
   }
 
   res.json({
-    types: hits.map(x => ({
+    types: hits.map((x) => ({
       ...x,
-      mappings: mappings.find(y => y.index === x.index).mapping,
+      mappings: mappings.find((y) => y.index === x.index).mapping,
     })),
     total: types.hits.total,
   });

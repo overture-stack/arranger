@@ -5,19 +5,16 @@ import { Query } from 'react-apollo';
 import Button from 'mineral-ui/Button';
 
 import { CONFIG_FILENAMES } from './AddProjectForm/utils';
-import {
-  QUERY as ALL_PROJECT_DATA_QUERY,
-  IGqlData,
-} from 'src/gql/queries/allProjectData';
+import { QUERY as ALL_PROJECT_DATA_QUERY, IGqlData } from 'src/gql/queries/allProjectData';
 
 const download = (content: IGqlData) => {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const { project } = content;
     const zip = new JSZip();
     const rootName = `arranger-project-${project.id}`;
     const rootFolder = zip.folder(rootName);
     if (rootFolder) {
-      project.indices.forEach(index => {
+      project.indices.forEach((index) => {
         const indexFolder = rootFolder.folder(index.esIndex);
         if (indexFolder) {
           indexFolder.file(
@@ -28,10 +25,7 @@ const download = (content: IGqlData) => {
             CONFIG_FILENAMES.columnsState,
             JSON.stringify(index.columnsState.state, null, 2),
           );
-          indexFolder.file(
-            CONFIG_FILENAMES.extended,
-            JSON.stringify(index.extended, null, 2),
-          );
+          indexFolder.file(CONFIG_FILENAMES.extended, JSON.stringify(index.extended, null, 2));
           indexFolder.file(
             CONFIG_FILENAMES.matchboxState,
             JSON.stringify(index.matchBoxState.state, null, 2),
@@ -39,23 +33,18 @@ const download = (content: IGqlData) => {
         }
       });
     }
-    zip.generateAsync({ type: 'blob' }).then(content => {
+    zip.generateAsync({ type: 'blob' }).then((content) => {
       saveAs(content, `${rootName}.zip`);
       resolve();
     });
   });
 };
 
-const ExportButton: React.ComponentType<{ projectId: string }> = ({
-  projectId,
-}) => {
+const ExportButton: React.ComponentType<{ projectId: string }> = ({ projectId }) => {
   return (
-    <Query
-      query={ALL_PROJECT_DATA_QUERY}
-      variables={{ projectId }}
-      fetchPolicy={'no-cache'}
-    >
-      {({ data, loading, error }) => {
+    <Query query={ALL_PROJECT_DATA_QUERY} variables={{ projectId }} fetchPolicy={'no-cache'}>
+      {(props) => {
+        const { data, loading, error } = props;
         const onClick = () => {
           return download(data);
         };

@@ -16,9 +16,9 @@ import defaultApi from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
 
-export default props => {
+export default (props) => {
   const {
-    onSqonChange = fullSqon => {},
+    onSqonChange = (fullSqon) => {},
     onContentRemove = () => {},
     fullSyntheticSqon,
     sqonPath = [],
@@ -31,45 +31,39 @@ export default props => {
   } = props;
 
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
-  const { op, content: { field, value } } = fieldOpObj;
+  const {
+    op,
+    content: { field, value },
+  } = fieldOpObj;
   const initialState = { isOpen: false };
-  const onClickAway = s => () => {
+  const onClickAway = (s) => () => {
     s.setState({ isOpen: false });
   };
-  const toggleDropdown = s => () => s.setState({ isOpen: !s.state.isOpen });
+  const toggleDropdown = (s) => () => s.setState({ isOpen: !s.state.isOpen });
   const onRemoveClick = () => {
     onContentRemove(fieldOpObj);
   };
-  const onNewSqonSubmitted = s => newSqon => {
+  const onNewSqonSubmitted = (s) => (newSqon) => {
     onSqonChange(newSqon);
     toggleDropdown(s)();
   };
   return (
     <Component initialState={initialState}>
-      {s => (
+      {(s) => (
         <DisplayNameMapContext.Consumer>
           {(fieldDisplayNameMap = {}) => (
             <span className={`fieldOp pill`}>
               <span className={'opContainer'}>
-                <span className={`fieldName`}>
-                  {fieldDisplayNameMap[field] || field}{' '}
-                </span>
+                <span className={`fieldName`}>{fieldDisplayNameMap[field] || field} </span>
                 <span className={`opName`}>{` is ${
-                  (Array.isArray(value) && value.length > 1) ||
-                  RANGE_OPS.includes(op)
+                  (Array.isArray(value) && value.length > 1) || RANGE_OPS.includes(op)
                     ? opDisplayNameMap[op]
                     : ''
                 } `}</span>
               </span>
-              <ClickAwayListener
-                className={'selectionContainer'}
-                handler={onClickAway(s)}
-              >
+              <ClickAwayListener className={'selectionContainer'} handler={onClickAway(s)}>
                 <span className={'valueDisplay'} onClick={toggleDropdown(s)}>
-                  <Tooltip
-                        position="bottom"
-                        html={Array.isArray(value) ? value.join(', ') : value}
-                      >
+                  <Tooltip position="bottom" html={Array.isArray(value) ? value.join(', ') : value}>
                     {Array.isArray(value) ? value.join(', ') : value}{' '}
                   </Tooltip>
                 </span>

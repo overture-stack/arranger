@@ -6,11 +6,12 @@ import Query from '../Query';
 import { AggsState } from '../Aggs';
 import formatNumber from '../utils/formatNumber';
 
-export const underscoreField = str => (str || '').split('.').join('__');
+export const underscoreField = (str) => (str || '').split('.').join('__');
 
 export const accessor = ({ aggsField, dataAccessor }) =>
-  `${underscoreField(aggsField?.field)}.${dataAccessor ||
-    (aggsField?.isTerms ? `buckets.length` : `stats.count`)}`;
+  `${underscoreField(aggsField?.field)}.${
+    dataAccessor || (aggsField?.isTerms ? `buckets.length` : `stats.count`)
+  }`;
 
 const constructQuery = ({ graphqlField, query, resolver = 'aggregations' }) => `
   query($sqon: JSON) {
@@ -18,11 +19,7 @@ const constructQuery = ({ graphqlField, query, resolver = 'aggregations' }) => `
       ${resolver}(
         filters: $sqon
         ${resolver === 'aggregations' ? 'include_missing: false' : ''}
-        ${
-          resolver === 'aggregations'
-            ? 'aggregations_filter_themselves: true'
-            : ''
-        }
+        ${resolver === 'aggregations' ? 'aggregations_filter_themselves: true' : ''}
       ) {
         ${query}
       }
@@ -64,8 +61,8 @@ const FieldQuery = ({
   sqon,
   graphqlField,
   dataAccessor,
-  formatResult = x => x,
-  aggsField = aggs.find(x => x.field === underscoreField(field)),
+  formatResult = (x) => x,
+  aggsField = aggs.find((x) => x.field === underscoreField(field)),
   ...props
 }) => (
   <Query
@@ -79,11 +76,7 @@ const FieldQuery = ({
       render({
         loading,
         value: formatResult(
-          get(
-            data,
-            `data.aggregations.${accessor({ aggsField, dataAccessor })}`,
-            '',
-          ),
+          get(data, `data.aggregations.${accessor({ aggsField, dataAccessor })}`, ''),
         ),
       })
     }
@@ -104,9 +97,7 @@ const Stat = ({
       <div className="stat-content">
         <QueryComponent
           {...props}
-          render={x =>
-            x.loading ? <LoadingSpinnerComponent /> : formatNumber(x.value)
-          }
+          render={(x) => (x.loading ? <LoadingSpinnerComponent /> : formatNumber(x.value))}
         />
       </div>
       <div className="stat-label">{label}</div>
@@ -140,7 +131,7 @@ export default ({
   >
     <AggsState
       {...{ api, projectId, graphqlField }}
-      render={aggsState =>
+      render={(aggsState) =>
         stats.map((stat, i) => (
           <Fragment key={stat.label}>
             {i > 0 && <div key={i} className="stats-line" />}

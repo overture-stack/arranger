@@ -121,11 +121,7 @@
 .facetViewWrapper .facetContainer .header .breadscrumbs {
   text-align: right;
 }
-.facetViewWrapper
-  .facetContainer
-  .header
-  .breadscrumbs
-  .breadscrumb-item:not(:last-child):after {
+.facetViewWrapper .facetContainer .header .breadscrumbs .breadscrumb-item:not(:last-child):after {
   content: ' » ';
 }
 .facetViewWrapper .facetContainer .content {

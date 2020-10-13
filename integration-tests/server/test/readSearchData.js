@@ -228,9 +228,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(
-      response.data.model.hits.edges.every(e => !e.node.access_denied),
-    ).to.eql(true);
+    expect(response.data.model.hits.edges.every((e) => !e.node.access_denied)).to.eql(true);
   });
   it('cannot request for access_denied item', async () => {
     let response = await api.post({

@@ -9,10 +9,7 @@ import {
   ScalarFieldMapping,
 } from './src/services/elasticsearch/types';
 
-import {
-  IProjectQueryInput,
-  IArrangerProject,
-} from './src/schemas/ProjectSchema/types';
+import { IProjectQueryInput, IArrangerProject } from './src/schemas/ProjectSchema/types';
 
 import {
   I_ProjectIndexConfigsUpdateDoc,

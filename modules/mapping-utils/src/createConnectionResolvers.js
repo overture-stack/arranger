@@ -10,9 +10,7 @@ import esSearch from './utils/esSearch';
 type TcreateConnectionResolversArgs = {
   type: Object,
 };
-type TcreateConnectionResolvers = (
-  args: TcreateConnectionResolversArgs,
-) => Object;
+type TcreateConnectionResolvers = (args: TcreateConnectionResolversArgs) => Object;
 
 let createConnectionResolvers: TcreateConnectionResolvers = ({
   type,
@@ -31,9 +29,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
     extended: async (obj, { fields }, { es, projectId }) => {
       const { index } = type;
       const extendedFields = await loadExtendedFields({ es, projectId, index });
-      return fields
-        ? extendedFields.filter(x => fields.includes(x.field))
-        : extendedFields;
+      return fields ? extendedFields.filter((x) => fields.includes(x.field)) : extendedFields;
     },
     ...(createStateResolvers
       ? {
@@ -53,8 +49,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
               });
               const projectIndexData = get(metaData, 'hits.hits').find(
-                ({ _source }) =>
-                  _source.index === index && _source.esType === esType,
+                ({ _source }) => _source.index === index && _source.esType === esType,
               )._source;
               return projectIndexData.config['aggs-state'];
             }
@@ -75,8 +70,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
               });
               const projectIndexData = get(metaData, 'hits.hits').find(
-                ({ _source }) =>
-                  _source.index === index && _source.esType === esType,
+                ({ _source }) => _source.index === index && _source.esType === esType,
               )._source;
               return projectIndexData.config['columns-state'];
             }
@@ -97,8 +91,7 @@ let createConnectionResolvers: TcreateConnectionResolvers = ({
                 index: `arranger-projects-${projectId}`,
               });
               const projectIndexData = get(metaData, 'hits.hits').find(
-                ({ _source }) =>
-                  _source.index === index && _source.esType === esType,
+                ({ _source }) => _source.index === index && _source.esType === esType,
               )._source;
               return projectIndexData.config['matchbox-state'];
             }

@@ -20,8 +20,7 @@ class DataTable extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedTableRows:
-        props.selectedTableRows || props.initalSelectedTableRows || [],
+      selectedTableRows: props.selectedTableRows || props.initalSelectedTableRows || [],
       data: [],
       pages: -1,
       loading: false,
@@ -33,17 +32,16 @@ class DataTable extends React.Component {
   static getDerivedStateFromProps(nextProps, prevState) {
     return {
       ...prevState,
-      selectedTableRows:
-        nextProps.selectedTableRows || prevState.selectedTableRows,
+      selectedTableRows: nextProps.selectedTableRows || prevState.selectedTableRows,
     };
   }
 
-  setSelectedTableRows = selectedTableRows => {
+  setSelectedTableRows = (selectedTableRows) => {
     this.props.setSelectedTableRows(selectedTableRows);
     this.setState({ selectedTableRows });
   };
 
-  toggleSelectedTableRow = key => {
+  toggleSelectedTableRow = (key) => {
     // react-table does some weird stuff and passes `select-${}` for some reason
     const sanitizedKey = key.split('select-').join('');
     const selectedTableRows = xor(this.state.selectedTableRows, [sanitizedKey]);
@@ -54,24 +52,18 @@ class DataTable extends React.Component {
     const selectedTableRows =
       this.state.selectedTableRows.length === this.state.data.length
         ? []
-        : this.state.data.map(item => item[this.props.config.keyField]);
+        : this.state.data.map((item) => item[this.props.config.keyField]);
 
     this.setSelectedTableRows(selectedTableRows);
   };
 
-  isSelected = key => {
+  isSelected = (key) => {
     return this.state.selectedTableRows.includes(key);
   };
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
-  onFetchData = state => {
-    const {
-      fetchData,
-      config,
-      sqon,
-      alwaysSorted = [],
-      keepSelectedOnPageChange,
-    } = this.props;
+  onFetchData = (state) => {
+    const { fetchData, config, sqon, alwaysSorted = [], keepSelectedOnPageChange } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
@@ -81,7 +73,7 @@ class DataTable extends React.Component {
       sqon,
       queryName: 'Table',
       sort: [
-        ...state.sorted.map(sort => ({
+        ...state.sorted.map((sort) => ({
           field: sort.id,
           order: sort.desc ? 'desc' : 'asc',
         })),
@@ -104,13 +96,13 @@ class DataTable extends React.Component {
         if (!keepSelectedOnPageChange) {
           this.setSelectedTableRows(
             intersection(
-              data.map(item => item[this.props.config.keyField]),
+              data.map((item) => item[this.props.config.keyField]),
               selectedTableRows,
             ),
           );
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
         this.setState({ loading: false });
       });
@@ -120,8 +112,7 @@ class DataTable extends React.Component {
     if (
       !this.state.loading &&
       lastProps.config.columns.some(
-        (lastColumn, i) =>
-          lastColumn.show !== this.props.config.columns[i].show,
+        (lastColumn, i) => lastColumn.show !== this.props.config.columns[i].show,
       )
     ) {
       this.onFetchData(this.state.lastState);
@@ -145,13 +136,7 @@ class DataTable extends React.Component {
       maxPagesOptions,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
-    const {
-      data,
-      selectedTableRows,
-      pages,
-      loading,
-      scrollbarSize,
-    } = this.state;
+    const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
 
     const fetchFromServerProps = {
       pages,
@@ -171,18 +156,16 @@ class DataTable extends React.Component {
     return (
       <>
         <DetectScrollbarSize
-          onLoad={scrollbarSize => this.setState({ scrollbarSize })}
-          onChange={scrollbarSize => this.setState({ scrollbarSize })}
+          onLoad={(scrollbarSize) => this.setState({ scrollbarSize })}
+          onChange={(scrollbarSize) => this.setState({ scrollbarSize })}
         />
         <ReactTable
           minRows={0}
           className={`-striped -highlight ${createStyle({ scrollbarSize })}`}
           style={style}
           onSortedChange={onSortedChange}
-          onPageChange={page => this.props.onPaginationChange({ page })}
-          onPageSizeChange={(pageSize, page) =>
-            this.props.onPaginationChange({ pageSize, page })
-          }
+          onPageChange={(page) => this.props.onPaginationChange({ page })}
+          onPageSizeChange={(pageSize, page) => this.props.onPaginationChange({ pageSize, page })}
           data={propsData?.data || data}
           defaultSorted={defaultSorted}
           columns={columns.map(
@@ -190,13 +173,11 @@ class DataTable extends React.Component {
               ...c,
               ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
                 ? {
-                    accessor: x => {
+                    accessor: (x) => {
                       const values = c.accessor
                         ? [get(x, c.accessor)]
                         : jsonpath.query(x, c.jsonPath);
-                      return values
-                        .map(x => c.extendedDisplayValues[`${x}`] || x)
-                        .join(', ');
+                      return values.map((x) => c.extendedDisplayValues[`${x}`] || x).join(', ');
                     },
                     id: c.field,
                   }
@@ -205,7 +186,7 @@ class DataTable extends React.Component {
             {},
           )}
           defaultPageSize={defaultPageSize}
-          PaginationComponent={props => (
+          PaginationComponent={(props) => (
             <CustomPagination {...props} maxPagesOptions={maxPagesOptions} />
           )}
           {...checkboxProps}

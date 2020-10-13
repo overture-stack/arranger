@@ -12,21 +12,14 @@ const memoizedExtendedMapping = ({ projectId, graphqlField, api }) => {
   return memoHash[key];
 };
 
-const memoizedExtendedMappingField = ({
-  contentField,
-  projectId,
-  graphqlField,
-  api,
-}) => {
+const memoizedExtendedMappingField = ({ contentField, projectId, graphqlField, api }) => {
   const key = `${projectId}/${graphqlField}/${contentField}`;
   if (!memoHash[key]) {
     memoHash[key] = memoizedExtendedMapping({
       projectId,
       graphqlField,
       api,
-    }).then(({ extendedMapping }) =>
-      extendedMapping.filter(({ field }) => field === contentField),
-    );
+    }).then(({ extendedMapping }) => extendedMapping.filter(({ field }) => field === contentField));
   }
   return memoHash[key];
 };
@@ -40,7 +33,7 @@ const ExtendedMappingProvider = ({
   children,
 }) => {
   const initialState = { loading: true, extendedMapping: undefined };
-  const didMount = async s => {
+  const didMount = async (s) => {
     if (contentField) {
       const extendedMapping = !useCache
         ? await fetchExtendedMapping({
@@ -76,7 +69,7 @@ const ExtendedMappingProvider = ({
   };
   return (
     <Component initialState={initialState} didMount={didMount}>
-      {s => children({ ...s.state })}
+      {(s) => children({ ...s.state })}
     </Component>
   );
 };

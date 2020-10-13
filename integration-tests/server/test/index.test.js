@@ -43,7 +43,7 @@ describe('@arranger/server', () => {
   const adminPath = '/admin/graphql';
   const graphqlField = 'model';
   const projectId = 'arranger_server_test';
-  before(async function() {
+  before(async function () {
     console.log('===== Initializing Elasticsearch data =====');
     this.timeout(10000);
     try {
@@ -82,7 +82,7 @@ describe('@arranger/server', () => {
     const adminApp = await adminGraphql({ esHost });
     adminApp.applyMiddleware({ app, path: adminPath });
     app.use(router);
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       http.listen(port, () => {
         resolve();
       });
@@ -111,16 +111,8 @@ describe('@arranger/server', () => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation(
-            $projectId: String!
-            $graphqlField: String!
-            $esIndex: String!
-          ) {
-            newIndex(
-              projectId: $projectId
-              graphqlField: $graphqlField
-              esIndex: $esIndex
-            ) {
+          mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+            newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
               id
             }
           }

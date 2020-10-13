@@ -1,5 +1,4 @@
-const escapeStrForRegex = str =>
+const escapeStrForRegex = (str) =>
   (str || '').replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
 
-export default (str, { modifiers = 'i' } = {}) =>
-  new RegExp(escapeStrForRegex(str), modifiers);
+export default (str, { modifiers = 'i' } = {}) => new RegExp(escapeStrForRegex(str), modifiers);

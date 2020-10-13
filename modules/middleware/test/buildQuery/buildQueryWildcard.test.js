@@ -14,9 +14,7 @@ test('buildQuery wildcard nested', () => {
       input: {
         nestedFields,
         filters: {
-          content: [
-            { content: { field: 'case_id', value: ['006*'] }, op: 'in' },
-          ],
+          content: [{ content: { field: 'case_id', value: ['006*'] }, op: 'in' }],
           op: 'and',
         },
       },
@@ -32,10 +30,7 @@ test('buildQuery wildcard nested', () => {
       },
       output: {
         bool: {
-          should: [
-            { terms: { case_id: ['v1'], boost: 0 } },
-            { regexp: { case_id: '006.*' } },
-          ],
+          should: [{ terms: { case_id: ['v1'], boost: 0 } }, { regexp: { case_id: '006.*' } }],
         },
       },
     },
@@ -43,9 +38,7 @@ test('buildQuery wildcard nested', () => {
       input: {
         nestedFields,
         filters: {
-          content: [
-            { content: { field: 'case_id', value: ['006*', 'v1'] }, op: 'in' },
-          ],
+          content: [{ content: { field: 'case_id', value: ['006*', 'v1'] }, op: 'in' }],
           op: 'and',
         },
       },
@@ -98,9 +91,7 @@ test('buildQuery wildcard nested', () => {
       input: {
         nestedFields,
         filters: {
-          content: [
-            { content: { field: 'files.foo.name', value: 'cname*' }, op: '=' },
-          ],
+          content: [{ content: { field: 'files.foo.name', value: 'cname*' }, op: '=' }],
           op: 'and',
         },
       },
@@ -118,9 +109,7 @@ test('buildQuery wildcard nested', () => {
                           path: 'files.foo',
                           query: {
                             bool: {
-                              must: [
-                                { regexp: { 'files.foo.name': 'cname.*' } },
-                              ],
+                              must: [{ regexp: { 'files.foo.name': 'cname.*' } }],
                             },
                           },
                         },
@@ -264,9 +253,7 @@ test('buildQuery wildcard nested', () => {
                           path: 'files.foo',
                           query: {
                             bool: {
-                              must: [
-                                { regexp: { 'files.foo.name1': '.*cname' } },
-                              ],
+                              must: [{ regexp: { 'files.foo.name1': '.*cname' } }],
                             },
                           },
                         },
@@ -287,9 +274,7 @@ test('buildQuery wildcard nested', () => {
                           path: 'files.foo',
                           query: {
                             bool: {
-                              must: [
-                                { regexp: { 'files.foo.name2': 'cn.*me' } },
-                              ],
+                              must: [{ regexp: { 'files.foo.name2': 'cn.*me' } }],
                             },
                           },
                         },
@@ -310,9 +295,7 @@ test('buildQuery wildcard nested', () => {
                           path: 'files.foo',
                           query: {
                             bool: {
-                              must: [
-                                { regexp: { 'files.foo.name3': 'cname.*' } },
-                              ],
+                              must: [{ regexp: { 'files.foo.name3': 'cname.*' } }],
                             },
                           },
                         },

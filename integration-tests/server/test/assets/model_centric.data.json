@@ -19,13 +19,8 @@
       "access_denied": true,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
-      "therapy": [
-        "Targeted therapy (small molecule inhibitors and targeted antibodies)"
-      ],
-      "molecular_characterizations": [
-        "WGS of model",
-        "Targeted-seq of normal"
-      ],
+      "therapy": ["Targeted therapy (small molecule inhibitors and targeted antibodies)"],
+      "molecular_characterizations": ["WGS of model", "Targeted-seq of normal"],
       "files": [],
       "clinical_diagnosis": {
         "clinical_tumor_diagnosis": "Colorectal cancer",
@@ -59,13 +54,8 @@
       "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
-      "therapy": [
-        "Targeted therapy (small molecule inhibitors and targeted antibodies)"
-      ],
-      "molecular_characterizations": [
-        "WGS of model",
-        "Targeted-seq of normal"
-      ],
+      "therapy": ["Targeted therapy (small molecule inhibitors and targeted antibodies)"],
+      "molecular_characterizations": ["WGS of model", "Targeted-seq of normal"],
       "files": [],
       "clinical_diagnosis": {
         "clinical_tumor_diagnosis": "Colorectal cancer",
@@ -99,13 +89,8 @@
       "access_denied": false,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
-      "therapy": [
-        "Targeted therapy (small molecule inhibitors and targeted antibodies)"
-      ],
-      "molecular_characterizations": [
-        "WGS of model",
-        "Targeted-seq of normal"
-      ],
+      "therapy": ["Targeted therapy (small molecule inhibitors and targeted antibodies)"],
+      "molecular_characterizations": ["WGS of model", "Targeted-seq of normal"],
       "files": [],
       "clinical_diagnosis": {
         "clinical_tumor_diagnosis": "Colorectal cancer",
@@ -138,12 +123,8 @@
       "chemotherapeutic_drugs": true,
       "disease_status": "Stable disease",
       "vital_status": "Alive",
-      "therapy": [
-        "Hormonal therapy"
-      ],
-      "molecular_characterizations": [
-        "Targeted-seq of parent tumor"
-      ],
+      "therapy": ["Hormonal therapy"],
+      "molecular_characterizations": ["Targeted-seq of parent tumor"],
       "licensing_required": false,
       "files": [],
       "clinical_diagnosis": {

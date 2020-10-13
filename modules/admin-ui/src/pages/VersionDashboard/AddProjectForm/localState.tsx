@@ -14,7 +14,7 @@ import {
 /******************
  * provides local form state
  ******************/
-const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
+const withLocalFormState: THoc<{}, IFormStateProps> = (Wrapped) => (props) => {
   const initialState: ILocalFormState = {
     projectId: '',
     indices: [],
@@ -31,11 +31,11 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
         setState: (s: ILocalFormState) => void;
       }) => {
         const mutations: ILocalFormMutations = {
-          setProjectId: id => {
+          setProjectId: (id) => {
             setState({
               ...state,
               projectId: id,
-              indices: state.indices.map(i => ({
+              indices: state.indices.map((i) => ({
                 ...i,
                 newIndexMutationInput: {
                   ...i.newIndexMutationInput,
@@ -56,49 +56,42 @@ const withLocalFormState: THoc<{}, IFormStateProps> = Wrapped => props => {
               indices: state.indices.filter((x, i) => i !== indexPosition),
             });
           },
-          setIndexMutationInput: (indexPosition: number) => (
-            config: INewIndexInput,
-          ) => {
+          setIndexMutationInput: (indexPosition: number) => (config: INewIndexInput) => {
             setState({
               ...state,
-              indices: state.indices.map(
-                (args, i): typeof args =>
-                  i !== indexPosition
-                    ? args
-                    : {
-                        ...args,
-                        newIndexMutationInput: config,
-                      },
+              indices: state.indices.map((args, i): typeof args =>
+                i !== indexPosition
+                  ? args
+                  : {
+                      ...args,
+                      newIndexMutationInput: config,
+                    },
               ),
             });
           },
-          setIndexConfig: (indexPosition: number) => (
-            indexConfig: IProjectIndexConfig | null,
-          ) => {
+          setIndexConfig: (indexPosition: number) => (indexConfig: IProjectIndexConfig | null) => {
             setState({
               ...state,
-              indices: state.indices.map(
-                (args, i): typeof args =>
-                  i !== indexPosition
-                    ? args
-                    : {
-                        ...args,
-                        config: indexConfig,
-                      },
+              indices: state.indices.map((args, i): typeof args =>
+                i !== indexPosition
+                  ? args
+                  : {
+                      ...args,
+                      config: indexConfig,
+                    },
               ),
             });
           },
-          setError: error => {
+          setError: (error) => {
             setState({ ...state, error });
-            return new Promise(resolve => {
+            return new Promise((resolve) => {
               setTimeout(() => {
                 setState({ ...state, error: null });
                 resolve(error);
               }, 5000);
             });
           },
-          setLoadingState: isLoading =>
-            setState({ ...state, isloading: isLoading }),
+          setLoadingState: (isLoading) => setState({ ...state, isloading: isLoading }),
         };
         const childrenProps: IFormStateProps = {
           formState: { state, mutations: mutations },
