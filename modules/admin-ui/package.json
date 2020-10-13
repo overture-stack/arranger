@@ -40,9 +40,6 @@
     "webpack": "^3.0.0",
 	"serve" : "^11.3.2"
   },
-  "config": {
-	  "port": "3000"
-  },
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
