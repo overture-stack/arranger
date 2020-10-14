@@ -3,9 +3,20 @@
 #######################################################
 FROM node:13.13.0-alpine as builder
 
+ENV APP_UID=9999
+ENV APP_GID=9999
+ENV APP_HOME=/app
+ENV APP_USER=node
+
 RUN apk --no-cache add shadow
-RUN mkdir -p /app
-WORKDIR /app
+RUN apk --no-cache add shadow \
+	&& groupmod -g $APP_GID $APP_USER \
+	&& usermod -u $APP_UID -g $APP_GID $APP_USER \
+	&& mkdir -p $APP_HOME \
+	&& chown -R $APP_USER $APP_HOME
+
+WORKDIR $APP_HOME
+
 COPY . .
 
 RUN npm ci \
@@ -15,23 +26,16 @@ RUN npm ci \
 #######################################################
 # Arranger Server
 #######################################################
-FROM node:13.13.0-alpine as server
+FROM builder as server
 
 ENV APP_UID=9999
 ENV APP_GID=9999
 ENV APP_HOME=/app
-
-RUN apk --no-cache add shadow \
-	&& groupmod -g $APP_GID node \
-	&& usermod -u $APP_UID -g $APP_GID node \
-	&& mkdir -p $APP_HOME \
-	&& chown -R node $APP_HOME
-
-USER node
-
-COPY --from=builder /app $APP_HOME
+ENV APP_USER=node
 
 WORKDIR $APP_HOME
+
+USER $APP_USER
 
 EXPOSE 5050
 
@@ -40,11 +44,14 @@ CMD ["npm", "run", "run-prod-server"]
 #######################################################
 # Builder 2
 #######################################################
-FROM node:13.13.0-alpine as builder2
+FROM builder as builder2
 
-RUN apk --no-cache add shadow
-COPY --from=builder /app /app
-WORKDIR /app
+ENV APP_UID=9999
+ENV APP_GID=9999
+ENV APP_HOME=/app
+ENV APP_USER=node
+
+WORKDIR $APP_HOME
 
 RUN cd modules/admin-ui \
 	&& REACT_APP_ARRANGER_ADMIN_ROOT=/admin/graphql npm run build
