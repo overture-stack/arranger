@@ -1,23 +1,23 @@
 {
   "name": "@arranger/admin",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Admin API for the Arranger server in graphql",
   "engineStrict": true,
   "engines": {
     "node": ">= 8.9.0"
   },
   "devDependencies": {
+    "husky": "^4.3.0",
     "nodemon": "^1.18.4",
     "npm-watch": "^0.4.0",
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.0.2",
     "rimraf": "~2.6.2",
     "ts-jest": "~23.1.3",
     "tslint": "~5.11.0",
     "tslint-config-prettier": "1.14.0",
     "tslint-microsoft-contrib": "~5.2.0",
-    "tsutils": "~3.0.0",
-    "prettier": "^2.1.2",
-    "husky": "^4.3.0",
-    "pretty-quick": "^3.0.2"
+    "tsutils": "~3.0.0"
   },
   "watch": {
     "lint": {
@@ -44,8 +44,8 @@
   "author": "Minh Ha",
   "license": "APLv2",
   "dependencies": {
-    "@arranger/mapping-utils": "^2.4.0",
-    "@arranger/schema": "^2.4.0",
+    "@arranger/mapping-utils": "^2.5.0",
+    "@arranger/schema": "^2.5.0",
     "@elastic/elasticsearch": "7.5.0",
     "apollo-link-http": "^1.5.5",
     "apollo-server": "^2.14.2",

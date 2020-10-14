@@ -1,8 +1,8 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "dependencies": {
-    "@arranger/admin": "^2.4.0",
+    "@arranger/admin": "^2.5.0",
     "apollo-boost": "^0.1.19",
     "apollo-client": "^2.5.1",
     "apollo-link-http": "^1.5.16",
@@ -50,12 +50,12 @@
   },
   "devDependencies": {
     "css-loader": "^2.1.1",
+    "husky": "^4.3.0",
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.0.2",
     "style-loader": "^0.23.1",
     "ts-loader": "^3.5.0",
-    "webpack-cli": "^3.3.0",
-    "prettier": "^2.1.2",
-    "husky": "^4.3.0",
-    "pretty-quick": "^3.0.2"
+    "webpack-cli": "^3.3.0"
   },
   "prettier": {
     "printWidth": 100,
