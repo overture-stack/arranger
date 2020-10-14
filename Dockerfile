@@ -98,11 +98,7 @@ RUN apt-get update
 RUN apt-get install elasticsearch=7.6.0
 
 # initializes arranger
-COPY ./ ./
-COPY ./integration-tests ./integration-tests
-RUN npm ci \
-	&& npm config set unsafe-perm true \
-	&& npm run bootstrap
+COPY --from=builder /app ./
 
 CMD service elasticsearch start \
 	&& sh docker/test/wait-for-es.sh http://localhost:9200 npm run test \
