@@ -91,18 +91,18 @@ CMD envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.temp
 #######################################################
 # Test
 #######################################################
-FROM node:12.13.1 as test
+FROM node:13.13.0 as test
 
 WORKDIR /app
 
 # installs and starts elasticsearch
-RUN apt-get update
-RUN apt-get -y upgrade
-RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -
-RUN apt-get install apt-transport-https
-RUN echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-7.x.list
-RUN apt-get update
-RUN apt-get install elasticsearch=7.6.0
+RUN apt-get update \
+	&& apt-get -y upgrade \
+	&& wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add - \
+	&& apt-get install -y apt-transport-https \
+	&& echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-7.x.list \
+	&& apt-get update \
+	&& apt-get install elasticsearch=7.6.0
 
 # initializes arranger
 COPY --from=builder /app ./
