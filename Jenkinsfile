@@ -44,6 +44,16 @@ spec:
 
         stage("Build Docker containers") {
             parallel {
+                stage("Build test container") {
+                    steps {
+                        container('docker') {
+                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                sh 'docker login -u $USERNAME -p $PASSWORD'
+                                sh "docker build --network=host --target test -f Dockerfile -t ${dockerHubRepo}:${commit} ."
+                            }
+                        }
+                    }
+                }
                 stage("Build server container") {
                     steps {
                         container('docker') {

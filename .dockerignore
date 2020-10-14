@@ -5,4 +5,4 @@ docker-compose.yml
 **/dist
 docker
 !docker/ui/**
-# integration-tests
+!docker/test/**
