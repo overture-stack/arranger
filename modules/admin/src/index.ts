@@ -65,8 +65,10 @@ function buildElasticsearchClient(config: AdminApiConfig) {
 
 const initialize = (config: AdminApiConfig): Promise<Client> =>
   new Promise(async (resolve, reject) => {
+    console.info("Initializing Elasticsearch Client for host: "+config.esHost)
     const esClient = buildElasticsearchClient(config);
     try {
+      console.info("Checking if index "+constants.ARRANGER_PROJECT_INDEX+" exists in Elasticsearch")
       const exists = await esClient.indices.exists({
         index: constants.ARRANGER_PROJECT_INDEX,
       });

@@ -41,44 +41,16 @@ spec:
                 }
             }
         }
-
-        stage("Build Docker containers") {
-            parallel {
-                stage("Build test container") {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f test.Dockerfile -t ${dockerHubRepo}:${commit} ."
-                                sh "docker push ${dockerHubRepo}:${commit}"
-                            }
-                        }
-                    }
-                }
-                stage("Build server container") {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f server.Dockerfile -t ${serverDockerhubRepo}:${commit} ."
-                                sh "docker push ${serverDockerhubRepo}:${commit}"
-                            }
-                        }
-                    }
-                }
-                stage("Build ui container") {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker build --network=host -f ui.Dockerfile -t ${uiDockerhubRepo}:${commit} ."
-                                sh "docker push ${uiDockerhubRepo}:${commit}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+		stage("Build test container") {
+			steps {
+				container('docker') {
+					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+						sh 'docker login -u $USERNAME -p $PASSWORD'
+						sh "docker build --network=host --target test -f Dockerfile -t ${dockerHubRepo}:${commit} ."
+					}
+				}
+			}
+		}
 
         stage('Run tests') {
             steps {
@@ -88,24 +60,35 @@ spec:
             }
         }
 
+		stage("Build server container") {
+			steps {
+				container('docker') {
+					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+						sh 'docker login -u $USERNAME -p $PASSWORD'
+						sh "docker build --network=host --target server -f Dockerfile -t ${serverDockerhubRepo}:${commit} ."
+						sh "docker push ${serverDockerhubRepo}:${commit}"
+					}
+				}
+			}
+		}
+
+		stage("Build ui container") {
+			steps {
+				container('docker') {
+					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+						sh 'docker login -u $USERNAME -p $PASSWORD'
+						sh "docker build --network=host --target ui -f Dockerfile -t ${uiDockerhubRepo}:${commit} ."
+						sh "docker push ${uiDockerhubRepo}:${commit}"
+					}
+				}
+			}
+		}
+
         stage('Push edge containers') {
             when {
               branch "develop"
             }
             parallel {
-                stage('Push edge test container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:edge"
-                                sh "docker push ${dockerHubRepo}:edge"
-                                sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}-${commit}"
-                                sh "docker push ${dockerHubRepo}:${version}-${commit}"
-                            }
-                          }
-                    }
-                }
                 stage('Push edge server container') {
                     steps {
                         container('docker') {
@@ -140,19 +123,6 @@ spec:
                 branch "master"
             }
             parallel {
-                stage('Push latest test container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:latest"
-                                sh "docker push ${dockerHubRepo}:latest"
-                                sh "docker tag ${dockerHubRepo}:${commit} ${dockerHubRepo}:${version}"
-                                sh "docker push ${dockerHubRepo}:${version}"
-                            }
-                        }
-                    }
-                }
                 stage('Push latest server container') {
                     steps {
                         container('docker') {

@@ -1,5 +1,8 @@
-Dockerfile.server
+Dockerfile
+docker-compose.yml
 .git
-node_modules
+**/node_modules
+**/dist
 docker
-# integration-tests
+!docker/ui/**
+!docker/test/**
