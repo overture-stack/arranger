@@ -67,6 +67,7 @@ ENV APP_GID=9999
 ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
+ENV NGINX_CONF_PATH=/etc/nginx/nginx.conf
 
 COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
 
@@ -84,9 +85,9 @@ COPY --from=builder2 /app $APP_HOME
 
 WORKDIR $APP_HOME
 
-USER $APP_UID
+USER $APP_USER
 
-CMD envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'
+CMD envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
 
 #######################################################
 # Test
