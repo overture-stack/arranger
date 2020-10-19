@@ -173,6 +173,38 @@ spec:
                 }
             }
         }
+
+		stage('Deploy to Overture QA') {
+			when {
+				branch "develop"
+			}
+			steps {
+				build(job: "/Overture.bio/provision/helm", parameters: [
+						[$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'qa' ],
+						[$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
+						[$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: "https://overture-stack.github.io/charts-server/"],
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ]
+				])
+			}
+		}
+
+		stage('Deploy to Overture Staging') {
+			when {
+				branch "master"
+			}
+			steps {
+				build(job: "/Overture.bio/provision/helm", parameters: [
+						[$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'staging' ],
+						[$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
+						[$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: "https://overture-stack.github.io/charts-server/"],
+						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ]
+				])
+			}
+		}
     }
     post {
         unsuccessful {
