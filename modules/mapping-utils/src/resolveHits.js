@@ -149,7 +149,7 @@ export const hitsToEdges = ({
 
 export default ({ type, Parallel, getServerSideFilter }) => async (
   obj,
-  { first = 10, offset = 0, filters, score, sort, searchAfter },
+  { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
   { es },
   info,
 ) => {
@@ -209,6 +209,7 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
     index: type.index,
     size: first,
     from: offset,
+    track_total_hits: trackTotalHits,
     _source: [
       ...((fields.edges && Object.keys(fields.edges.node || {})) || []),
       ...Object.values(copyToSourceFields),

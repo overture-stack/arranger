@@ -28,6 +28,7 @@ export default ({ type, fields = '', createStateTypeDefs = true }) => `
       first: Int
       last: Int
       searchAfter: JSON
+      trackTotalHits: Boolean = true
     ): ${type.name}Connection
 
     aggregations(
