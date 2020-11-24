@@ -10,10 +10,12 @@ let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 export default ({ type, getServerSideFilter }) => async (
   obj,
   { offset = 0, filters, aggregations_filter_themselves, include_missing = true },
-  { es },
+  context,
   info,
 ) => {
   const nestedFields = type.nested_fields;
+
+  const { es } = context;
 
   // due to this problem in Elasticsearch 6.2 https://github.com/elastic/elasticsearch/issues/27782,
   // we have to resolve set ids into actual ids. As this is an aggregations specific issue,
@@ -24,7 +26,7 @@ export default ({ type, getServerSideFilter }) => async (
     nestedFields,
     filters: compileFilter({
       clientSideFilter: resolvedFilter,
-      serverSideFilter: getServerSideFilter(),
+      serverSideFilter: getServerSideFilter(context),
     }),
   });
 
