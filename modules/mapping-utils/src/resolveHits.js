@@ -156,20 +156,30 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
   let fields = getFields(info);
   let nestedFields = type.nested_fields;
 
-  let query = filters;
-
   const { es } = context;
 
-  if (filters || score) {
-    // TODO: something with score?
-    query = buildQuery({
-      nestedFields,
-      filters: compileFilter({
-        clientSideFilter: filters,
-        serverSideFilter: getServerSideFilter(context),
-      }),
-    });
-  }
+  /**
+   * @todo: I left this chunk here for reference, in case someone actually understands what it actually is trying to do
+    let query = filters;
+    if (filters || score) {
+      // TODO: something with score?
+      query = buildQuery({
+        nestedFields,
+        filters: compileFilter({
+          clientSideFilter: filters,
+          serverSideFilter: getServerSideFilter(context),
+        }),
+      });
+    }
+    */
+
+  const query = buildQuery({
+    nestedFields,
+    filters: compileFilter({
+      clientSideFilter: filters || { op: 'and', content: [] },
+      serverSideFilter: getServerSideFilter(context),
+    }),
+  });
 
   let body =
     (query && {
