@@ -37,6 +37,7 @@ class DataTableWithToolbar extends React.Component {
       toolbarStyle,
       onFilterChange,
       onColumnsChange = () => {},
+      onMultipleColumnsChange = () => {},
       columnDropdownText,
       exportTSVText,
       exportTSVFilename,
@@ -68,7 +69,9 @@ class DataTableWithToolbar extends React.Component {
           allowTSVExport={allowTSVExport}
           sqon={sqon}
           columns={config.columns}
+          defaultColumns={config.defaultColumns}
           onColumnsChange={onColumnsChange}
+          onMultipleColumnsChange={onMultipleColumnsChange}
           total={total}
           page={page}
           pageSize={pageSize}

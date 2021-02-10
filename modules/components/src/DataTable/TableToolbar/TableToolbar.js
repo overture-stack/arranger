@@ -6,7 +6,7 @@ import pluralize from 'pluralize';
 import { currentFilterValue } from '../../SQONView/utils';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
 import saveTSV from './saveTSV';
-import DropDown from '../../DropDown';
+import { MultiSelectDropDown } from '../../DropDown';
 import './Toolbar.css';
 
 const enhance = compose(
@@ -25,7 +25,9 @@ const enhance = compose(
 const TableToolbar = ({
   columns,
   canChangeShowColumns,
+  defaultColumns,
   onColumnsChange,
+  onMultipleColumnsChange,
   filterVal,
   setFilterVal,
   onFilterChange,
@@ -76,10 +78,15 @@ const TableToolbar = ({
       </div>
       <div className="group">
         {allowTogglingColumns && (
-          <DropDown
-            aria-label={`Select columns`}
+          <MultiSelectDropDown
+            buttonAriaLabelClosed={`Open column selection menu`}
+            buttonAriaLabelOpen={`Close column selection menu`}
+            itemSelectionLegend={`Select columns to display`}
+            selectAllAriaLabel={`Select all columns`}
+            resetToDefaultAriaLabel={`Reset to default columns`}
             itemToString={(i) => i.Header}
             items={canChangeShowColumns}
+            defaultColumns={defaultColumns}
             onChange={(item) => {
               setFilterVal('');
               onFilterChange({
@@ -88,9 +95,12 @@ const TableToolbar = ({
               });
               onColumnsChange({ ...item, show: !item.show });
             }}
+            onMultipleChange={(changes) => {
+              onMultipleColumnsChange(changes);
+            }}
           >
             {columnDropdownText}
-          </DropDown>
+          </MultiSelectDropDown>
         )}
         {allowTSVExport && (
           <div className="buttonWrapper">
