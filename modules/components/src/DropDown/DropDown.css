@@ -6,7 +6,9 @@
 
 .dropDownHeader .dropDownButton {
   display: flex;
+  align-items: center;
   cursor: pointer;
+  background-color: unset;
 }
 
 .dropDownHeader .dropDownButton .dropDownButtonContent {
@@ -25,8 +27,91 @@
   top: 100%;
 }
 
+.dropDownHeader .dropDownContent.multiSelectDropDown {
+  max-height: unset !important;
+  overflow-y: unset !important;
+  padding: 0;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  border: solid 1px #b2b7c1;
+  background-color: white;
+}
+
 .dropDownContentElement {
   display: flex;
   justify-content: space-between;
   padding: 5px;
+}
+
+.multiSelectDropDownWrapper {
+  position: relative;
+  min-width: 210px;
+}
+
+.multiSelectDropDownFieldSet {
+  border: 0px;
+  margin: 0;
+  padding: 0;
+}
+
+.multiSelectDropDownControls {
+  display: flex;
+  border-bottom: 1px solid #d9d9df;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  padding: 4px 8px;
+}
+
+.multiSelectDropDownControlsButton {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: unset;
+  padding: 0;
+  margin: 0 20px 0 0;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  height: 17px;
+  color: #900000;
+  font-weight: normal;
+  line-height: 1.27;
+  cursor: pointer;
+}
+
+.multiSelectDropDownControlsButton svg {
+  margin-right: 4px;
+}
+
+.multiSelectDropDownControlsButton:hover {
+  text-decoration: underline;
+}
+
+.multiSelectDropDownList {
+  list-style: none;
+  padding: 0px;
+  margin-top: 26px;
+  overflow-y: scroll;
+  max-height: 285px;
+  margin-bottom: 0;
+}
+
+.multiSelectDropDownElement {
+  padding: 4px 5px;
+}
+
+.dropDownContentElement.multiSelectDropDownElement:hover {
+  background-color: #f3f6f7;
+}
+
+.multiSelectDropDownElementLabel {
+  list-style: none;
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+}
+
+.multiSelectDropDownElementInput {
+  cursor: pointer;
+  margin-right: 8px;
 }
