@@ -1,49 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ArrowIcon, CheckIcon, ResetIcon } from './../Icons';
 import './DropDown.css';
 
 let instances = 0;
-
-const ArrowIcon = ({ isOpen }) => {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      preserveAspectRatio="none"
-      width={16}
-      fill="transparent"
-      stroke="#979797"
-      strokeWidth="1.1px"
-      transform={isOpen ? 'rotate(180)' : null}
-    >
-      <path d="M1,6 L10,15 L19,6" />
-    </svg>
-  );
-};
-
-const CheckIcon = () => {
-  return (
-    <svg width={9} height={9} viewBox="0 0 8 6">
-      <g fill="currentColor">
-        <path
-          d="M.225 4.877c-.687-.686.357-1.73 1.043-1.044L2.596 5.16l4.136-4.135c.686-.687 1.73.357 1.043 1.044L3.118 6.726c-.289.289-.756.289-1.044 0L.224 4.877z"
-          transform="translate(-1105 -366) translate(0 63) translate(265 17) translate(0 237) translate(830 11) translate(0 27) translate(1 6) translate(9 4)"
-        />
-      </g>
-    </svg>
-  );
-};
-
-const ResetIcon = () => {
-  return (
-    <svg width={10} height={10} viewBox="0 0 10 10">
-      <g fill="currentColor">
-        <path
-          d="M4.874 1.252c-.039 0-.076.005-.113.013V.158c0-.144-.176-.209-.273-.112L2.8 1.75c-.065.065-.065.161-.016.226L4.488 3.68c.097.097.273.032.273-.112v-1.3c.037.008.074.013.113.013 1.844 0 3.345 1.5 3.345 3.345 0 1.844-1.5 3.345-3.345 3.345-1.844 0-3.345-1.5-3.345-3.345 0-.284-.23-.515-.514-.515-.285 0-.515.23-.515.515C.5 8.038 2.462 10 4.874 10s4.374-1.962 4.374-4.374-1.962-4.374-4.374-4.374"
-          transform="translate(-1189 -364) translate(0 63) translate(265 17) translate(0 237) translate(830 11) translate(0 27) translate(1 6) translate(93 3)"
-        />
-      </g>
-    </svg>
-  );
-};
 
 export default ({
   buttonAriaLabelClosed = 'Open selection menu',
@@ -65,6 +24,7 @@ export default ({
   const [instanceNum, setInstanceNum] = useState(0);
   const renderRef = useRef();
   const buttonRef = useRef();
+  const panelRef = useRef();
   const itemsRef = useRef([]);
 
   const toggle = (item) => {
@@ -165,14 +125,22 @@ export default ({
   };
 
   const handleBlur = (e) => {
-    const currentTarget = e.currentTarget;
-    // blur happens before click, preventing any click events in children from firing due to rerender from state change
-    // so wait a tick for child component events to fire before changing open state and causing rerender
-    window.setTimeout(() => {
-      if (!currentTarget.contains(document.activeElement)) {
-        setIsOpen(false);
-      }
-    }, 100);
+    const nextTarget = e.relatedTarget;
+
+    if (isOpen && panelRef.current && !panelRef.current.contains(nextTarget)) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleClickOutside = (e) => {
+    if (
+      isOpen &&
+      panelRef.current &&
+      !panelRef.current.contains(e.target) &&
+      e.target !== buttonRef.current
+    ) {
+      setIsOpen(false);
+    }
   };
 
   // set defaults and selected items on initial load
@@ -213,11 +181,13 @@ export default ({
 
   useEffect(() => {
     if (isOpen) {
+      window.addEventListener('click', handleClickOutside);
       window.addEventListener('keydown', handleEsc);
       focusFirst();
     }
 
     return () => {
+      window.removeEventListener('click', handleClickOutside);
       window.removeEventListener('keydown', handleEsc);
     };
   }, [isOpen]);
@@ -228,6 +198,7 @@ export default ({
         aria-label={isOpen ? buttonAriaLabelOpen : buttonAriaLabelClosed}
         aria-haspopup="true"
         aria-expanded={isOpen}
+        onBlur={handleBlur}
         onClick={(e) => {
           e.preventDefault();
           setIsOpen((isOpen) => !isOpen);
@@ -239,21 +210,13 @@ export default ({
         <ArrowIcon isOpen={isOpen} />
       </button>
       {isOpen && (
-        // tabIndex is required for the onBlur handler to function, but
-        // adding tabIndex triggers this linter rule requiring a role
-        // to be added to the element. there are no roles which match the
-        // function of this, since it is a non-interactive element, hence
-        // the disabling of the rule here.
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div
-          onBlur={(e) => handleBlur(e)}
-          tabIndex="-1"
           className="dropDownContent multiSelectDropDown"
           style={{
             right: align === 'right' ? 0 : 'auto',
             left: align === 'right' ? 'auto' : 0,
-            cursor: 'default',
           }}
+          ref={panelRef}
         >
           <div className="multiSelectDropDownWrapper">
             <fieldset className="multiSelectDropDownFieldSet">
@@ -302,6 +265,7 @@ export default ({
                             id={`multiselect-dropdown-${instanceNum}-item-${index}`}
                             onKeyDown={(e) => handleKeyPress(e, index)}
                             className="multiSelectDropDownElementInput"
+                            onBlur={index === items.length - 1 ? handleBlur : undefined}
                           />
                           {itemToString(item)}
                         </label>
