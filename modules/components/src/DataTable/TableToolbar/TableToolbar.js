@@ -6,7 +6,7 @@ import pluralize from 'pluralize';
 import { currentFilterValue } from '../../SQONView/utils';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
 import saveTSV from './saveTSV';
-import DropDown from '../../DropDown';
+import DropDown, { MultiSelectDropDown } from '../../DropDown';
 import './Toolbar.css';
 
 const enhance = compose(
@@ -25,7 +25,9 @@ const enhance = compose(
 const TableToolbar = ({
   columns,
   canChangeShowColumns,
+  defaultColumns,
   onColumnsChange,
+  onMultipleColumnsChange,
   filterVal,
   setFilterVal,
   onFilterChange,
@@ -41,6 +43,7 @@ const TableToolbar = ({
   customActions = null,
   style,
   columnDropdownText = 'Show columns',
+  enableDropDownControls = false,
   exportTSVText = 'Export TSV',
   exportTSVFilename = `${type}-table.tsv`,
   exporter = saveTSV,
@@ -75,23 +78,48 @@ const TableToolbar = ({
         )}
       </div>
       <div className="group">
-        {allowTogglingColumns && (
-          <DropDown
-            aria-label={`Select columns`}
-            itemToString={(i) => i.Header}
-            items={canChangeShowColumns}
-            onChange={(item) => {
-              setFilterVal('');
-              onFilterChange({
-                value: '',
-                generateNextSQON: generateNextSQON(''),
-              });
-              onColumnsChange({ ...item, show: !item.show });
-            }}
-          >
-            {columnDropdownText}
-          </DropDown>
-        )}
+        {allowTogglingColumns &&
+          (enableDropDownControls ? (
+            <MultiSelectDropDown
+              buttonAriaLabelClosed={`Open column selection menu`}
+              buttonAriaLabelOpen={`Close column selection menu`}
+              itemSelectionLegend={`Select columns to display`}
+              selectAllAriaLabel={`Select all columns`}
+              resetToDefaultAriaLabel={`Reset to default columns`}
+              itemToString={(i) => i.Header}
+              items={canChangeShowColumns}
+              defaultColumns={defaultColumns}
+              onChange={(item) => {
+                setFilterVal('');
+                onFilterChange({
+                  value: '',
+                  generateNextSQON: generateNextSQON(''),
+                });
+                onColumnsChange({ ...item, show: !item.show });
+              }}
+              onMultipleChange={(changes) => {
+                onMultipleColumnsChange(changes);
+              }}
+            >
+              {columnDropdownText}
+            </MultiSelectDropDown>
+          ) : (
+            <DropDown
+              aria-label={`Select columns`}
+              itemToString={(i) => i.Header}
+              items={canChangeShowColumns}
+              onChange={(item) => {
+                setFilterVal('');
+                onFilterChange({
+                  value: '',
+                  generateNextSQON: generateNextSQON(''),
+                });
+                onColumnsChange({ ...item, show: !item.show });
+              }}
+            >
+              {columnDropdownText}
+            </DropDown>
+          ))}
         {allowTSVExport && (
           <div className="buttonWrapper">
             <button

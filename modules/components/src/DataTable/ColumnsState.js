@@ -142,6 +142,10 @@ export default class extends Component {
     this.setState({ toggled: { ...this.state.toggled, [field]: show } });
   };
 
+  toggleMultiple = (changes) => {
+    this.setState({ toggled: { ...this.state.toggled, ...changes } });
+  };
+
   saveOrder = (orderedFields) => {
     const columns = this.state.config.columns;
     if (
@@ -165,6 +169,7 @@ export default class extends Component {
           update: this.update,
           add: this.add,
           toggle: this.toggle,
+          toggleMultiple: this.toggleMultiple,
           saveOrder: this.saveOrder,
           state: {
             ...config,
@@ -178,6 +183,7 @@ export default class extends Component {
                 extendedDisplayValues: extendedField?.displayValues,
               };
             }),
+            defaultColumns: config.columns.filter((column) => column.show),
           },
         })
       : this.props.render({ loading: true, state: { config: null } });

@@ -37,6 +37,7 @@ const Table = ({
             }}
             fetchData={fetchData(projectId)}
             onColumnsChange={columnState.toggle}
+            onMultipleColumnsChange={columnState.toggleMultiple}
             onFilterChange={({ generateNextSQON, value }) => {
               onFilterChange(value);
               setSQON(
