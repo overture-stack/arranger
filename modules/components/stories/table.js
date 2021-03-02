@@ -7,6 +7,7 @@ import uuid from 'uuid';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 import DataTable, { Table, TableToolbar, getSingleValue } from '../src/DataTable';
+
 import { themeDecorator } from './decorators';
 import api from '../src/utils/api';
 
@@ -178,7 +179,9 @@ storiesOf('Table', module)
       setSelectedTableRows={action('selection changed')}
     />
   ))
-  .add('Toolbar', () => <TableToolbarStory onFilterChange={console.log.bind(console)} />)
+  .add('Toolbar', () => (
+    <TableToolbarStory enableDropDownControls={true} onFilterChange={console.log.bind(console)} />
+  ))
   .add('Toolbar with customHeaderContent', () => (
     <TableToolbarStory
       customHeaderContent={<div style={{ backgroundColor: 'red', paddingTop: '4px' }}>Red Box</div>}
@@ -197,6 +200,8 @@ storiesOf('Table', module)
         },
       }}
       fetchData={fetchDummyData}
+      sessionStorage={true}
+      storageKey="storybook"
     />
   ))
   .add('Live Data Table', () => <EnhancedDataTable />);
