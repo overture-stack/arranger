@@ -40,7 +40,6 @@ export default class extends Component {
 
   getStoredToggled() {
     if (this.props.sessionStorage) {
-      console.log('jondebug', 'ColumnState getStoredToggled', 'attempting to read session storage');
       const storedColumnSelections = window.sessionStorage.getItem(this.getStorageKey()) || '{}';
       return JSON.parse(storedColumnSelections);
     } else {
