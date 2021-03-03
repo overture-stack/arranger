@@ -34,6 +34,19 @@ export default class extends Component {
     };
   }
 
+  getStorageKey() {
+    return `arranger-columnstate-toggled-${this.props.storageKey || ''}`;
+  }
+
+  getStoredToggled() {
+    if (this.props.sessionStorage) {
+      const storedColumnSelections = window.sessionStorage.getItem(this.getStorageKey()) || '{}';
+      return JSON.parse(storedColumnSelections);
+    } else {
+      return {};
+    }
+  }
+
   async componentDidMount() {
     this.fetchColumnsState(this.props);
   }
@@ -80,9 +93,12 @@ export default class extends Component {
         },
       });
 
+      const toggled = this.getStoredToggled();
+
       this.setState({
         extended,
         config,
+        toggled,
       });
     } catch (e) {
       console.warn(e);
@@ -138,12 +154,21 @@ export default class extends Component {
     this.setState({ temp }, () => this.save(temp));
   };
 
+  setColumnSelections(toggled) {
+    this.setState({ toggled });
+    if (this.props.sessionStorage) {
+      window.sessionStorage.setItem(this.getStorageKey(), JSON.stringify(toggled));
+    }
+  }
+
   toggle = ({ field, show }) => {
-    this.setState({ toggled: { ...this.state.toggled, [field]: show } });
+    const toggled = { ...this.state.toggled, [field]: show };
+    this.setColumnSelections(toggled);
   };
 
   toggleMultiple = (changes) => {
-    this.setState({ toggled: { ...this.state.toggled, ...changes } });
+    const toggled = { ...this.state.toggled, ...changes };
+    this.setColumnSelections(toggled);
   };
 
   saveOrder = (orderedFields) => {
