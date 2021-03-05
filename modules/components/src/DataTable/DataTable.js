@@ -146,6 +146,7 @@ class DataTableWithToolbar extends React.Component {
           }}
           defaultPageSize={pageSize}
           defaultSorted={sorted}
+          sorted={sorted}
           loading={loading}
           maxPagesOptions={maxPagesOptions}
           alwaysSorted={alwaysSorted}
