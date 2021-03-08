@@ -134,6 +134,7 @@ class DataTable extends React.Component {
       loading: propsLoading,
       style,
       maxPagesOptions,
+      sorted,
     } = this.props;
     const { columns, keyField, defaultSorted } = config;
     const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
@@ -167,7 +168,7 @@ class DataTable extends React.Component {
           onPageChange={(page) => this.props.onPaginationChange({ page })}
           onPageSizeChange={(pageSize, page) => this.props.onPaginationChange({ pageSize, page })}
           data={propsData?.data || data}
-          defaultSorted={defaultSorted}
+          defaultSorted={sorted ? sorted : defaultSorted}
           columns={columns.map(
             ({ Cell, ...c }) => ({
               ...c,
