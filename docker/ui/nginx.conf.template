@@ -1,15 +1,17 @@
 events {
-    
+
 }
 
 http {
-
     server {
         listen ${PORT};
-		root /app/arranger-admin;
-        location / { }
-		location /admin/graphql {
-		  proxy_pass ${REACT_APP_ARRANGER_ADMIN_ROOT}/admin/graphql;
-		}
+
+        location / {
+            root /app/arranger-admin;
+        }
+
+        location /admin/graphql {
+            proxy_pass ${REACT_APP_ARRANGER_ADMIN_ROOT}/admin/graphql;
+        }
     }
 }
