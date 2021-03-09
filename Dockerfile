@@ -54,7 +54,7 @@ ENV APP_USER=node
 WORKDIR $APP_HOME
 
 RUN cd modules/admin-ui \
-	&& REACT_APP_ARRANGER_ADMIN_ROOT=/admin/graphql npm run build
+	&& npm run build
 RUN cp -r modules/admin-ui/build ./arranger-admin
 
 #######################################################
@@ -68,6 +68,7 @@ ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
 ENV NGINX_CONF_PATH=/etc/nginx/nginx.conf
+ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
 COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
 
@@ -82,12 +83,14 @@ RUN addgroup -S -g $APP_GID $APP_USER \
 	&& rm -rf /var/cache/apk/*
 
 COPY --from=builder2 /app $APP_HOME
+RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin
 
 WORKDIR $APP_HOME
 
 USER $APP_USER
 
-CMD envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
+CMD envsubst < docker/ui/env-config.template.js > /app/arranger-admin/env-config.js \
+	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
 
 #######################################################
 # Test
