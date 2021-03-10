@@ -71,6 +71,7 @@ ENV NGINX_CONF_PATH=/etc/nginx/nginx.conf
 ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
 COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY docker/ui/env-config.js /etc/nginx/env-config.js
 
 RUN addgroup -S -g $APP_GID $APP_USER \
 	&& adduser -S -u $APP_UID -G $APP_USER $APP_USER \
@@ -86,10 +87,12 @@ COPY --from=builder2 /app $APP_HOME
 RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin
 
 WORKDIR $APP_HOME
-
 USER $APP_USER
 
-CMD envsubst < docker/ui/env-config.template.js > /app/arranger-admin/env-config.js \
+RUN ln -s /etc/nginx/env-config.js ./arranger-admin/env-config.js \
+	&& chown -R $APP_UID:$APP_GID ./arranger-admin/env-config.js
+
+CMD envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /etc/nginx/env-config.js \
 	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
 
 #######################################################
