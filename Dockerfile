@@ -62,20 +62,25 @@ RUN cp -r modules/admin-ui/build ./arranger-admin
 #######################################################
 FROM nginx:1.17.9-alpine as ui
 
-RUN env
-
-# ARG KUBERNETES_SERVICE_HOST=$KUBERNETES_SERVICE_HOST
-
 ENV APP_UID=9999
 ENV APP_GID=9999
 ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
-ENV NGINX_PATH=/etc/nginx/
-ENV NGINX_CONF_PATH=${NGINX_PATH:-/etc/nginx/}nginx.conf
 ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
-COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
+# expects a writable path for some files to be changed at container boot
+# currently, NGINX_CONF_PATH is passed as '/path/filename', whereas it should be '/path', and filenames be specified
+ENV NGINX_PATH=${NGINX_PATH:-/etc/nginx}
+
+## Hardwiring /custom-nginx here as a stopgap, while we change the K8s helm charts to take a config map
+RUN if [ $(expr $HOSTNAME : ^k8s) != 0 ]; then \
+    	export NGINX_PATH=/custom-nginx; \
+    fi
+## ^^ end of throwaway code ^^
+
+# This file allows setting defaults for Environment vars to be used in runtime by the client
+COPY docker/ui/env-config.js $NGINX_PATH/env-config.js
 
 RUN addgroup -S -g $APP_GID $APP_USER \
 	&& adduser -S -u $APP_UID -G $APP_USER $APP_USER \
@@ -88,22 +93,17 @@ RUN addgroup -S -g $APP_GID $APP_USER \
 	&& rm -rf /var/cache/apk/*
 
 COPY --from=builder2 /app $APP_HOME
-RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin
 
 WORKDIR $APP_HOME
+
+RUN ln -s $NGINX_PATH/env-config.js ./arranger-admin/env-config.js \
+	&& chown -R $APP_UID:$APP_GID ./arranger-admin
+
 USER $APP_USER
 
-ENV TEST_VAR=${KUBERNETES_SERVICE_HOST:+$KUBERNETES_SERVICE_HOST:-$NGINX_PATH}
-
-RUN env
-
-## Hardwiring /custom-nginx/ here as a stopgap, while we change the helm charts to take a config map
-## NGINX_CONF_PATH is passed as 'path/filename', whereas it should just be 'path', and filenames be defined here
-COPY docker/ui/env-config.js /custom-nginx/env-config.js
-RUN ln -s /custom-nginx/env-config.js ./arranger-admin/env-config.js
-
-CMD env && envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /custom-nginx/env-config.js \
-	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
+CMD envsubst < docker/ui/env-config.template.js > $NGINX_PATH/env-config.js \
+	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < docker/ui/nginx.conf.template > $NGINX_PATH/nginx.conf \
+	&& exec nginx -c $NGINX_PATH/nginx.conf -g 'daemon off;'
 
 #######################################################
 # Test
