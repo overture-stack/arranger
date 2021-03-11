@@ -62,16 +62,20 @@ RUN cp -r modules/admin-ui/build ./arranger-admin
 #######################################################
 FROM nginx:1.17.9-alpine as ui
 
+RUN env
+
+# ARG KUBERNETES_SERVICE_HOST=$KUBERNETES_SERVICE_HOST
+
 ENV APP_UID=9999
 ENV APP_GID=9999
 ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
-ENV NGINX_CONF_PATH=/etc/nginx/nginx.conf
+ENV NGINX_PATH=/etc/nginx/
+ENV NGINX_CONF_PATH=${NGINX_PATH:-/etc/nginx/}nginx.conf
 ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
 COPY docker/ui/nginx.conf.template /etc/nginx/nginx.conf.template
-COPY docker/ui/env-config.js /etc/nginx/env-config.js
 
 RUN addgroup -S -g $APP_GID $APP_USER \
 	&& adduser -S -u $APP_UID -G $APP_USER $APP_USER \
@@ -89,12 +93,16 @@ RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin
 WORKDIR $APP_HOME
 USER $APP_USER
 
-RUN ln -s /etc/nginx/env-config.js ./arranger-admin/env-config.js \
-	&& chown -R $APP_UID:$APP_GID ./arranger-admin/env-config.js
+ENV TEST_VAR=${KUBERNETES_SERVICE_HOST:+$KUBERNETES_SERVICE_HOST:-$NGINX_PATH}
 
-## Hardwiring /custom-nginx/ here as a stopgap, while we change the helmcharts to take a config map
-## NGINX_CONF_PATH is passed as a path/filename, whereas it should just be the path, and filename be defined here
-CMD envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /custom-nginx/env-config.js \
+RUN env
+
+## Hardwiring /custom-nginx/ here as a stopgap, while we change the helm charts to take a config map
+## NGINX_CONF_PATH is passed as 'path/filename', whereas it should just be 'path', and filenames be defined here
+COPY docker/ui/env-config.js /custom-nginx/env-config.js
+RUN ln -s /custom-nginx/env-config.js ./arranger-admin/env-config.js
+
+CMD env && envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /custom-nginx/env-config.js \
 	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
 
 #######################################################
