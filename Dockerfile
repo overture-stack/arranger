@@ -92,7 +92,9 @@ USER $APP_USER
 RUN ln -s /etc/nginx/env-config.js ./arranger-admin/env-config.js \
 	&& chown -R $APP_UID:$APP_GID ./arranger-admin/env-config.js
 
-CMD envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /etc/nginx/env-config.js \
+## Hardwiring /custom-nginx/ here as a stopgap, while we change the helmcharts to take a config map
+## NGINX_CONF_PATH is passed as a path/filename, whereas it should just be the path, and filename be defined here
+CMD envsubst '$REACT_APP_BASE_URL' < docker/ui/env-config.template.js > /custom-nginx/env-config.js \
 	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_CONF_PATH && exec nginx -c $NGINX_CONF_PATH -g 'daemon off;'
 
 #######################################################
