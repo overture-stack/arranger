@@ -74,8 +74,10 @@ ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 ENV NGINX_PATH=${NGINX_PATH:-/etc/nginx}
 
 ## Hardwiring /custom-nginx here as a stopgap, while we change the K8s helm charts to take a config map
-RUN if [ $(expr $HOSTNAME : ^k8s) != 0 ]; then \
+RUN if [ $(expr $HOSTNAME : k8s) != 0 ]; then \
     	export NGINX_PATH=/custom-nginx; \
+		echo 'Kubernetes custom path'; \
+	else echo HOSTNAME $HOSTNAME detected; \
     fi
 ## ^^ end of throwaway code ^^
 
