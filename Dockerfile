@@ -69,17 +69,16 @@ ENV APP_HOME=/app
 ENV PORT=3000
 ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
-# expects a writable path for some files to be changed at container boot
-# currently, NGINX_CONF_PATH is passed as '/path/filename', whereas it should be '/path', and filenames be specified
-ENV NGINX_PATH=${NGINX_PATH:-/etc/nginx}
-
 ## Hardwiring /custom-nginx here as a stopgap, while we change the K8s helm charts to take a config map
 RUN if [ $(expr $HOSTNAME : k8s) != 0 ]; then \
     	export NGINX_PATH=/custom-nginx; \
-		echo 'Kubernetes custom path'; \
-	else echo HOSTNAME $HOSTNAME detected; \
+		echo Kubernetes custom path set to $NGINX_PATH; \
     fi
 ## ^^ end of throwaway code ^^
+
+# expects a writable path for some files to be changed at container boot
+# currently, NGINX_CONF_PATH is passed as '/path/filename', whereas it should be '/path', and filenames be specified
+ENV NGINX_PATH=${NGINX_PATH:-/etc/nginx}
 
 # This file allows setting defaults for Environment vars to be used in runtime by the client
 COPY docker/ui/env-config.js $NGINX_PATH/env-config.js
@@ -103,7 +102,7 @@ RUN ln -s $NGINX_PATH/env-config.js ./arranger-admin/env-config.js \
 
 USER $APP_USER
 
-CMD envsubst < docker/ui/env-config.template.js > $NGINX_PATH/env-config.js \
+CMD env && envsubst < docker/ui/env-config.template.js > $NGINX_PATH/env-config.js \
 	&& envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < docker/ui/nginx.conf.template > $NGINX_PATH/nginx.conf \
 	&& exec nginx -c $NGINX_PATH/nginx.conf -g 'daemon off;'
 
