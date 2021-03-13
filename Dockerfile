@@ -71,7 +71,6 @@ ENV REACT_APP_BASE_URL=${REACT_APP_BASE_URL:-''}
 
 ENV NGINX_PATH=${NGINX_PATH:-/etc/nginx}
 
-# This file allows setting defaults for Environment vars to be used in runtime by the client
 COPY docker/ui/. $NGINX_PATH/.
 
 RUN addgroup -S -g $APP_GID $APP_USER \
@@ -84,8 +83,17 @@ RUN addgroup -S -g $APP_GID $APP_USER \
 	&& chown -R $APP_UID:$APP_GID $APP_HOME \
 	&& rm -rf /var/cache/apk/*
 
+## this is throwaway code
+# hardwired	folder name for k8s writable path, hile we change the K8s helm charts to take a config map
+# creates a link to a yet inexistent file, which will be either fullfilled by entrypoint, or replaced by it.
+RUN if [ $(expr $HOSTNAME : k8s) != 0 ]; then \
+		ln -s /custom-nginx/env-config.js $NGINX_PATH/env-config.js; \
+	fi
+## end of throwaway code ^^^
+
 COPY --from=builder2 /app $APP_HOME
-RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin;
+RUN chown -R $APP_UID:$APP_GID $APP_HOME/arranger-admin \
+	&& ln -s $NGINX_PATH/env-config.js $APP_HOME/arranger-admin/env-config.js
 
 WORKDIR $APP_HOME
 USER $APP_USER

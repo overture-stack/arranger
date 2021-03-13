@@ -5,6 +5,4 @@ export NGINX_PATH=${K8S_PATH:-$NGINX_PATH}
 envsubst < /etc/nginx/env-config.template.js > $NGINX_PATH/env-config.js
 envsubst '$PORT,$REACT_APP_ARRANGER_ADMIN_ROOT' < /etc/nginx/nginx.conf.template > $NGINX_PATH/nginx.conf
 
-ln -s $NGINX_PATH/env-config.js ./arranger-admin/env-config.js
-
 exec nginx -c $NGINX_PATH/nginx.conf -g 'daemon off;'
