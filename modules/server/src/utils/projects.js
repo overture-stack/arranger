@@ -1,4 +1,4 @@
-import apollo, { runQuery } from 'apollo-server-core';
+import { graphql } from 'graphql';
 
 const projects = {};
 
@@ -13,15 +13,15 @@ export function getProjects() {
 export function setProject(project) {
   project.runQuery = ({ query, variables, mock }) => {
     const schema = mock ? project.mockSchema : project.schema;
-    return runQuery({
+    return graphql({
       schema,
-      query,
-      context: {
+      contextValue: {
         schema,
         es: project.es,
         projectId: project.id,
       },
-      variables,
+      source: query,
+      variableValues: variables,
     });
   };
 

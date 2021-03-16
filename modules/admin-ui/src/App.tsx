@@ -14,7 +14,7 @@ import Header from './components/Header';
 import VersionsDashboard from './pages/VersionDashboard';
 import ProjectIndicesDashboard from './pages/ProjectIndicesDashboard';
 import ConfigEditorDashboard from './pages/ConfigEditorDashboard';
-import { adminApiRoot as configAdminApiRoot } from './config';
+import { adminApiRoot as configAdminApiRoot, baseURL } from './config';
 import { Store } from 'redux';
 
 const App = withRouter(
@@ -60,17 +60,15 @@ const App = withRouter(
 );
 
 export default ({
-  basename = '',
   apiRoot,
   store,
   fetcher,
 }: {
-  basename?: string;
   apiRoot?: string;
   store?: Store;
   fetcher?: typeof fetch;
 }) => (
-  <BrowserRouter basename={basename}>
+  <BrowserRouter basename={baseURL}>
     <App apiRoot={apiRoot} store={store} fetcher={fetcher} />
   </BrowserRouter>
 );
