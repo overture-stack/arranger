@@ -84,11 +84,11 @@ RUN addgroup -S -g $APP_GID $APP_USER \
 	&& rm -rf /var/cache/apk/*
 
 ## this is throwaway code
-# hardwired	folder name for k8s writable path, hile we change the K8s helm charts to take a config map
+# hardwired folder name for k8s writable path, while we change the K8s helm charts to take a config map
 # creates a link to a yet inexistent file, which will be either fullfilled by entrypoint, or replaced by it.
 RUN if [ $(expr $HOSTNAME : k8s) != 0 ]; then \
-		ln -s /custom-nginx/env-config.js $NGINX_PATH/env-config.js; \
-	fi
+	ln -s /custom-nginx/env-config.js $NGINX_PATH/env-config.js; \
+fi
 ## end of throwaway code ^^^
 
 COPY --from=builder2 /app $APP_HOME
