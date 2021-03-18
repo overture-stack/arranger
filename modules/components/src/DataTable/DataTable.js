@@ -5,18 +5,30 @@ import urlJoin from 'url-join';
 import { ARRANGER_API, PROJECT_ID } from '../utils/config';
 import { Table, TableToolbar } from './';
 
+const STORED_PROPS = {
+  PAGE_SIZE: 'PAGE_SIZE',
+  SORT_ORDER: 'SORT_ORDER',
+  SELECTED_ROWS: 'SELECTED_ROWS',
+};
+
 class DataTableWithToolbar extends React.Component {
   constructor(props) {
     super(props);
 
     let pageSize = 20;
     let sorted = props.config.defaultSorted || [];
+    let selectedTableRows = [];
 
     // Read initial config settings from session storage, if enabled:
     if (this.props.sessionStorage) {
-      const storedSorted = JSON.parse(window.sessionStorage.getItem(this.getSortedStorageKey()));
+      const storedSorted = JSON.parse(
+        window.sessionStorage.getItem(this.getStorageKey(STORED_PROPS.SORT_ORDER)),
+      );
       const storedPageSize = JSON.parse(
-        window.sessionStorage.getItem(this.getPageSizeStorageKey()),
+        window.sessionStorage.getItem(this.getStorageKey(STORED_PROPS.PAGE_SIZE)),
+      );
+      const storedSelectedRows = JSON.parse(
+        window.sessionStorage.getItem(this.getStorageKey(STORED_PROPS.SELECTED_ROWS)),
       );
       if (storedSorted) {
         sorted = storedSorted;
@@ -25,32 +37,35 @@ class DataTableWithToolbar extends React.Component {
       if (storedPageSize) {
         pageSize = storedPageSize;
       }
+      if (storedSelectedRows && storedSelectedRows.length) {
+        selectedTableRows = storedSelectedRows;
+      }
     }
 
     this.state = {
       pageSize,
       sorted,
+      selectedTableRows,
     };
 
     props.onSortedChange?.(sorted);
   }
 
-  getPageSizeStorageKey() {
-    return `arranger-table-pagesize-${this.props.storageKey || ''}`;
-  }
-  getSortedStorageKey() {
-    return `arranger-table-sorted-${this.props.storageKey || ''}`;
-  }
-
-  storeSorted(sorted) {
-    if (this.props.sessionStorage) {
-      window.sessionStorage.setItem(this.getSortedStorageKey(), JSON.stringify(sorted));
+  getStorageKey(prop) {
+    switch (prop) {
+      case STORED_PROPS.PAGE_SIZE:
+        return `arranger-table-pagesize-${this.props.storageKey || ''}`;
+      case STORED_PROPS.SORT_ORDER:
+        return `arranger-table-sorted-${this.props.storageKey || ''}`;
+      case STORED_PROPS.SELECTED_ROWS:
+        return `arranger-table-selectedrows-${this.props.storageKey || ''}`;
     }
   }
 
-  storePageSize(pageSize) {
+  storeProperty(prop, value) {
     if (this.props.sessionStorage) {
-      window.sessionStorage.setItem(this.getPageSizeStorageKey(), JSON.stringify(pageSize));
+      const stringValue = JSON.stringify(value);
+      window.sessionStorage.setItem(this.getStorageKey(prop), stringValue);
     }
   }
 
@@ -64,7 +79,7 @@ class DataTableWithToolbar extends React.Component {
     const {
       config,
       fetchData,
-      setSelectedTableRows,
+      setSelectedTableRows = () => {},
       sqon,
       selectedTableRows = null,
       allowTogglingColumns = true,
@@ -74,7 +89,7 @@ class DataTableWithToolbar extends React.Component {
       loading = null,
       tableStyle,
       toolbarStyle,
-      onFilterChange,
+      onFilterChange = () => {},
       onColumnsChange = () => {},
       onMultipleColumnsChange = () => {},
       columnDropdownText,
@@ -88,8 +103,8 @@ class DataTableWithToolbar extends React.Component {
       downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
       onSortedChange = () => {},
       alwaysSorted = [],
-      initalSelectedTableRows = [],
-      keepSelectedOnPageChange = false,
+      initalSelectedTableRows,
+      keepSelectedOnPageChange = false, // If false, this will reset the selection to empty on reload even if sessionStorage is enabled. To keep selections after reload st this to true.
       showFilterInput = true,
       filterInputPlaceholder,
       InputComponent,
@@ -132,17 +147,20 @@ class DataTableWithToolbar extends React.Component {
           sqon={sqon}
           config={config}
           fetchData={fetchData}
-          setSelectedTableRows={setSelectedTableRows}
+          setSelectedTableRows={(selectedTableRows) => {
+            setSelectedTableRows(selectedTableRows);
+            this.storeProperty(STORED_PROPS.SELECTED_ROWS, selectedTableRows);
+          }}
           onPaginationChange={(state) => {
             this.setState(state);
             if (state.pageSize) {
-              this.storePageSize(state.pageSize);
+              this.storeProperty(STORED_PROPS.PAGE_SIZE, state.pageSize);
             }
           }}
           onSortedChange={(sorted) => {
             this.setState({ sorted, page: 0 });
             onSortedChange(sorted);
-            this.storeSorted(sorted);
+            this.storeProperty(STORED_PROPS.SORT_ORDER, sorted);
           }}
           defaultPageSize={pageSize}
           defaultSorted={sorted}
@@ -150,7 +168,7 @@ class DataTableWithToolbar extends React.Component {
           loading={loading}
           maxPagesOptions={maxPagesOptions}
           alwaysSorted={alwaysSorted}
-          initalSelectedTableRows={initalSelectedTableRows}
+          initalSelectedTableRows={initalSelectedTableRows || this.state.selectedTableRows}
           keepSelectedOnPageChange={keepSelectedOnPageChange}
           selectedTableRows={selectedTableRows}
         />
