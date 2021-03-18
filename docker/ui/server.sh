@@ -2,9 +2,7 @@
 K8S_PATH=${NGINX_CONF_PATH%/*}
 export NGINX_PATH=${K8S_PATH:-$NGINX_PATH}
 
-env
-
-if [ -z "${OVERTURE_ENV}" ]; then
+if [ -z "${OVERTURE_QA_ES_HTTP_SERVICE_HOST}" ] && [ -z "${OVERTURE_STAGING_ES_HTTP_SERVICE_HOST}" ]; then
     echo 'reseting env vars ghost link';
     rm /etc/nginx/env-config.js;
 fi
