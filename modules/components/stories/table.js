@@ -202,6 +202,9 @@ storiesOf('Table', module)
       fetchData={fetchDummyData}
       sessionStorage={true}
       storageKey="storybook"
+      // Note: keepSelectedOnPageChange doesn't work atm because the row IDs are regenerated on page reload.
+      //       Including this here as a reference that this needs to be toggled on to maintain storage between page loads
+      keepSelectedOnPageChange={true}
     />
   ))
   .add('Live Data Table', () => <EnhancedDataTable />);
