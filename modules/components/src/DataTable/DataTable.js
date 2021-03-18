@@ -104,7 +104,7 @@ class DataTableWithToolbar extends React.Component {
       onSortedChange = () => {},
       alwaysSorted = [],
       initalSelectedTableRows,
-      keepSelectedOnPageChange = false, // If false, this will reset the selection to empty on reload even if sessionStorage is enabled. To keep selections after reload st this to true.
+      keepSelectedOnPageChange = false, // If false, this will reset the selection to empty on reload even if sessionStorage is enabled. To keep selections after reload set this to true.
       showFilterInput = true,
       filterInputPlaceholder,
       InputComponent,
