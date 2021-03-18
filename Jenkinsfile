@@ -132,6 +132,8 @@ spec:
                                 sh "docker push ${serverDockerhubRepo}:latest"
                                 sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:${version}"
                                 sh "docker push ${serverDockerhubRepo}:${version}"
+                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:${version}-${commit}"
+                                sh "docker push ${serverDockerhubRepo}:${version}-${commit}"
                             }
                         }
                     }
@@ -145,6 +147,8 @@ spec:
                                 sh "docker push ${uiDockerhubRepo}:latest"
                                 sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:${version}"
                                 sh "docker push ${uiDockerhubRepo}:${version}"
+                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:${version}-${commit}"
+                                sh "docker push ${uiDockerhubRepo}:${version}-${commit}"
                             }
                         }
                     }
