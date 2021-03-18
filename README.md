@@ -15,15 +15,15 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 - [Getting Started](#getting-started)
   - [Development Setup](#--development-setup)
-  - [Dockerised Setup (a.k.a. quickstart)](#--dockerised-setup)
+  - [Dockerized Setup (a.k.a. Quickstart)](#--dockerized-setup)
 - [Motivation](#motivation)
 - [What is a "Data Portal"?](#data-portal)
 - [Roadmap](#roadmap)
-- [Development details](#development)
+- [Development Details](#development-details)
 
 ---
 
-### Getting started
+### Getting Started
 
 #### - Development Setup
 
@@ -66,7 +66,7 @@ Now you should be able to start the following processes from the project's root:
   npm run storybook
 ```
 
-#### - Dockerised setup
+#### - Dockerized Setup
 
 A bit more friendly "quickstart", if you just want to get things started
 
@@ -77,7 +77,7 @@ A bit more friendly "quickstart", if you just want to get things started
 
 # ^^^ which runs the following command behind the scenes:
 # ES_USERNAME=elastic ES_PASSWORD=myelasticpassword docker-compose -f docker-compose.yml up -d -build
-# Note: these ES_* values may be customised when running your own Arranger instance
+# Note: these ES_* values may be customized when running your own Arranger instance
 
 
 ---
@@ -164,11 +164,11 @@ _this is way too simplistic. needs an update_
 
 ---
 
-### Development details
+### Development Details
 
-Arranger is a [lerna](https://github.com/lerna/lerna) flavoured [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
 
-#### Releasing instructions
+#### Releasing Instructions
 
 - From `master` branch, run `npm run tag <version>`
 - Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=master)
