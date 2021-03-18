@@ -11,79 +11,106 @@ Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/bu
 
 ## Documentation
 
-Explore documentation with the Arranger [Read the Docs](https://arranger.readthedocs.io/en/latest/index.html).
+This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
 
-### Quickstart
-
-#### Clone, Install, Bootstrap
-
-```
-git clone git@github.com:overture-stack/arranger.git
-cd arranger
-npm i
-npm run bootstrap
-
-# watch modules and rebuild on change
-npm run watch
-
-# run tests for all modules
-npm test
-
-# run server on :5050
-npm run server
-
-# run dashboard on :6060
-npm run dashboard
-
-# run portal on :7070
-npm run portal
-
-# run storybook on :8080
-npm run storybook
-```
-
-- [Documentation](#Documentation)
+- [Getting Started](#getting-started)
+  - [Development Setup](#--development-setup)
+  - [Dockerised Setup (a.k.a. quickstart)](#--dockerised-setup)
 - [Motivation](#motivation)
 - [What is a "Data Portal"?](#data-portal)
-  - [Topology](#topology)
 - [Roadmap](#roadmap)
-- [Development](#development)
-- [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
+- [Development details](#development)
 
-#### Docker
+---
 
-##### Start all services
+### Getting started
 
-```bash
-make start
-```
+#### - Development Setup
 
-##### Bootstrap the file_centric index
+Setting up the project, and ready things to make changes
 
 ```bash
-make init-es
+# 1. clone the repository
+  git clone git@github.com:overture-stack/arranger.git
+
+# 2. enter the project's folder
+  cd arranger
+
+# 3. install the dependencies
+  npm i
+
+# 4. install the module's own dependencies
+  npm run bootstrap
+
 ```
 
-##### Show other make targets
+Now you should be able to start the following processes from the project's root:
 
 ```bash
-make help
+# watch all modules and rebuild them when you make changes
+  npm run watch
+
+# test all modules at once
+  npm test
+
+# run the server (on port 5050)
+  npm run server
+
+# serve the component dashboard (on port 6060)
+  npm run dashboard
+
+# serve the component portal (on port 7070)
+  npm run portal
+
+# run storybook (on port 8080)
+  npm run storybook
 ```
 
-### Documentation
+#### - Dockerised setup
 
-For in-depth documentation, please see the Arranger Read the Docs: https://arranger.readthedocs.io/en/latest/
+A bit more friendly "quickstart", if you just want to get things started
+
+```bash
+# Start all services at once, using some default settings.
+# This runs the following services: Elasticsearch, kibana, arranger-server, and arranger-ui
+  make start
+
+# ^^^ which runs the following command behind the scenes:
+# ES_USERNAME=elastic ES_PASSWORD=myelasticpassword docker-compose -f docker-compose.yml up -d -build
+# Note: these ES_* values may be customised when running your own Arranger instance
+
+
+---
+# Afterwards, in another bash process, you may seed an example file_centric index
+  make init-es
+
+# ^^^ which runs the following command behind the scenes:
+# ./docker/elasticsearch/load-es-data.sh ./docker/elasticsearch elastic myelasticpassword
+# That SH script may give you ideas on how to automate uploading indexes to your instance.
+
+
+---
+# Bonus: ----------------------------- #
+# See other preprogrammed make targets
+  make help
+# e.g. utilities to list the indexes, or clear the Elasticsearch; list the running docker containers, etc.
+```
+
+---
 
 ### Motivation
 
-The Ontario Institute for Cancer Research ([OICR](https://oicr.on.ca/)) has built two **[Data Portals](#data-portal)**:
+The Ontario Institute for Cancer Research ([OICR](https://oicr.on.ca/)) has built a few **[Data Portals](#data-portal)**.
+e.g.:
 
 - [International Cancer Genome Consortium (ICGC) Data Portal](https://dcc.icgc.org/)
 - [Genomic Data Commons (GDC) Data Portal](https://portal.gdc.cancer.gov/) (joint effort with University of Chicago)
 
 Although they are not identical in architecture, available data or overall purpose, there is tremendous amount of overlap in how they function and how users interact with them, despite being implemented differently. It's no coincidence. The GDC Data Portal was directly influenced by the ICGC Data Portal.
 
-With new projects ahead of us, there is an opportunity to create a framework designed to act as a core library for any given data portal, similar to what Elastic's Kibana accomplishes, but based on the features of our existing portals and the expectation of continuous improvement and domain specific customization. There are many potential benefits:
+With new projects ahead of us, there is an opportunity to create a framework designed to act as a core library for any given data portal, similar to what Elastic's Kibana accomplishes; but based on the features of our existing portals, and the expectation of continuous improvement and domain specific customization.
+
+There are many potential benefits:
 
 - Reduce duplicate code
 - Ability to fix bugs and add features to many projects at once
@@ -91,12 +118,16 @@ With new projects ahead of us, there is an opportunity to create a framework des
 - Increase cross-team communication
 - Encourage open source contribution
 
+---
+
 <h3 id="data-portal">What Is A "Data Portal"?</h3>
 
 #### Topology
 
 ![DP Topology](https://i.imgur.com/Ylm9drr.png)
 _this is way too simplistic. needs an update_
+
+---
 
 ### Roadmap
 
@@ -131,11 +162,13 @@ _this is way too simplistic. needs an update_
 - Kibana Plugin
 - Hosted Data Portal generating service
 
-### Development
+---
 
-Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+### Development details
 
-### Releases
+Arranger is a [lerna](https://github.com/lerna/lerna) flavoured [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+
+#### Releasing instructions
 
 - From `master` branch, run `npm run tag <version>`
 - Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=master)
