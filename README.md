@@ -27,7 +27,7 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 #### - Development Setup
 
-Setting up the project, and ready things to make changes
+Setting up the project, and prepare things to make changes
 
 ```bash
 # 1. clone the repository
