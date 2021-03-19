@@ -12,7 +12,7 @@ export const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
         columns: exColumns // if the component gave you custom columns to show
           ? Object.values(
               exColumns.length > 0 // if they ask for any specific columns
-                ? Object.keys(allColumns).filter((fieldName) => exColumns.includes(fieldName)) // use them
+                ? exColumns.map((fieldName) => allColumns[fieldName]) // use them
                 : allColumns, // else, they're asking for all the columns
             )
           : columns.filter((column) => column.show), // no custom columns, use admin's
