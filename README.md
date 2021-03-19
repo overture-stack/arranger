@@ -44,7 +44,7 @@ Setting up the project, and prepare things to make changes
 
 ```
 
-Now you should be able to start the following processes from the project's root:
+Now you should be able to start the following processes from the project's root folder:
 
 ```bash
 # watch all modules and rebuild them when you make changes
