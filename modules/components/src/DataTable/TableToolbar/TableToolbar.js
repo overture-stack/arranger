@@ -4,8 +4,9 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 
 import { currentFilterValue } from '../../SQONView/utils';
+import stringCleaner from '../../utils/stringCleaner';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
-import saveTSV from './saveTSV';
+import { exporterProcessor, saveTSV } from './helpers';
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
 import './Toolbar.css';
 
@@ -23,39 +24,49 @@ const enhance = compose(
 );
 
 const TableToolbar = ({
-  columns,
+  allColumns = [],
+  allowTogglingColumns = true,
+  allowTSVExport = true,
   canChangeShowColumns,
-  defaultColumns,
-  onColumnsChange,
-  onMultipleColumnsChange,
-  filterVal,
-  setFilterVal,
-  onFilterChange,
+  columnDropdownText = 'Show columns',
+  columns,
+  customActions = null,
+  customHeaderContent = null,
   debouncedOnFilterChange,
+  defaultColumns,
+  downloadUrl,
+  enableDropDownControls = false,
+  exporter = null,
+  exporterLabel = 'Download',
+  exportTSVFilename = '',
+  exportTSVText = 'Export TSV',
+  filterInputPlaceholder = 'Filter',
+  filterVal,
+  InputComponent,
+  onColumnsChange,
+  onFilterChange,
+  onMultipleColumnsChange,
   page = 0,
   pageSize = 0,
   propsData,
-  filterInputPlaceholder = 'Filter',
-  total = propsData?.total || 0,
-  type = '',
-  allowTogglingColumns = true,
-  allowTSVExport = true,
-  customActions = null,
-  style,
-  columnDropdownText = 'Show columns',
-  enableDropDownControls = false,
-  exportTSVText = 'Export TSV',
-  exportTSVFilename = `${type}-table.tsv`,
-  exporter = saveTSV,
-  transformParams = (params) => params,
-  sqon,
-  downloadUrl,
-  InputComponent,
+  setFilterVal,
   showFilterInput = true,
-  customHeaderContent = null,
+  sqon,
+  style,
+  total = propsData?.total || 0,
+  transformParams = (params) => params,
+  type = '',
 }) => {
   const isPlural =
     total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
+
+  const { customExporter, exporterArray, multipleExporters } = exporterProcessor(
+    exporter,
+    allowTSVExport,
+    exportTSVText,
+    columns,
+  );
+
   return (
     <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
       <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
@@ -120,35 +131,66 @@ const TableToolbar = ({
               {columnDropdownText}
             </DropDown>
           ))}
-        {allowTSVExport && (
-          <div className="buttonWrapper">
-            <button
-              style={{
-                display: 'flex',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                minHeight: 16,
-              }}
-              onClick={() => {
-                exporter(
-                  transformParams({
-                    url: downloadUrl,
-                    files: [
-                      {
-                        fileName: exportTSVFilename,
-                        fileType: 'tsv',
-                        sqon,
-                        index: type,
-                        columns,
-                      },
-                    ],
-                  }),
-                );
-              }}
-            >
-              {exportTSVText}
-            </button>
-          </div>
+
+        {multipleExporters ? ( // check if we're given more than one custom exporter
+          <DropDown
+            aria-label={`Download options`}
+            itemToString={(i) => i.exLabel}
+            items={exporterArray}
+            onChange={({ exColumns, exLabel, exFunction }) =>
+              exFunction(
+                transformParams({
+                  url: downloadUrl,
+                  files: [
+                    {
+                      allColumns,
+                      columns,
+                      fileName: `${stringCleaner(exLabel.toLowerCase())}.tsv`,
+                      fileType: 'tsv',
+                      index: type,
+                      sqon,
+                      ...(exColumns && { exColumns }),
+                    },
+                  ],
+                }),
+              )
+            }
+            singleSelect={true}
+          >
+            {exporterLabel}
+          </DropDown>
+        ) : (
+          // else, use a custom function if any is given, or use the default saveTSV if the flag is on
+          (customExporter || allowTSVExport) && (
+            <div className="buttonWrapper">
+              <button
+                style={{
+                  display: 'flex',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  minHeight: 16,
+                }}
+                onClick={() => {
+                  (customExporter || saveTSV)(
+                    transformParams({
+                      url: downloadUrl,
+                      files: [
+                        {
+                          fileName: exportTSVFilename || `${type}-table.tsv`,
+                          fileType: 'tsv',
+                          sqon,
+                          index: type,
+                          columns,
+                        },
+                      ],
+                    }),
+                  );
+                }}
+              >
+                {exportTSVText}
+              </button>
+            </div>
+          )
         )}
         {customActions}
       </div>

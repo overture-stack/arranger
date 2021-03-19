@@ -37,6 +37,14 @@ const Table = ({
             sqon={sqon}
             config={{
               ...columnState.state,
+              // generates a handy dictionary with all the available columns
+              allColumns: columnState.state.columns.reduce(
+                (columnsDict, column) => ({
+                  ...columnsDict,
+                  [column.field]: column,
+                }),
+                {},
+              ),
               type: graphqlField,
             }}
             fetchData={fetchData(projectId)}

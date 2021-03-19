@@ -29,9 +29,17 @@ class DropDown extends React.Component {
       this.setState({ isOpen });
     }
   };
+
   render() {
     const { isOpen } = this.state;
-    const { items, onChange, itemToString, children, align = 'right' } = this.props;
+    const {
+      items,
+      onChange = () => {},
+      itemToString,
+      children,
+      align = 'right',
+      singleSelect = false,
+    } = this.props;
 
     return (
       <Downshift
@@ -61,29 +69,39 @@ class DropDown extends React.Component {
               <div className="dropDownButtonContent">{children}</div>
               <ArrowIcon isOpen={isOpen} />
             </button>
-            {!isOpen ? null : (
+            {isOpen && (
               <div
-                className="dropDownContent"
+                className={`dropDownContent ${singleSelect ? 'single' : 'multiple'}`}
                 style={{
                   right: align === 'right' ? 0 : 'auto',
                   left: align === 'right' ? 'auto' : 0,
                 }}
               >
-                {items.map((item, index) => (
-                  <div
-                    className="dropDownContentElement"
-                    key={item.id || itemToString(item)}
-                    {...getItemProps({ item, index })}
-                  >
-                    {itemToString(item)}
-                    <input
-                      readOnly
-                      type="checkbox"
-                      checked={selectedItem.indexOf(item) > -1}
-                      aria-label={`Select column ${item.id || itemToString(item)}`}
-                    />
-                  </div>
-                ))}
+                {items.map((item, index) =>
+                  singleSelect ? (
+                    <div
+                      className="dropDownContentElement"
+                      key={item.id || itemToString(item)}
+                      {...getItemProps({ item, index })}
+                    >
+                      {itemToString(item)}
+                    </div>
+                  ) : (
+                    <div
+                      className="dropDownContentElement"
+                      key={item.id || itemToString(item)}
+                      {...getItemProps({ item, index })}
+                    >
+                      {itemToString(item)}
+                      <input
+                        readOnly
+                        type="checkbox"
+                        checked={selectedItem.indexOf(item) > -1}
+                        aria-label={`Select column ${item.id || itemToString(item)}`}
+                      />
+                    </div>
+                  ),
+                )}
               </div>
             )}
           </div>

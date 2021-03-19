@@ -112,9 +112,11 @@ class DataTableWithToolbar extends React.Component {
       customHeaderContent = null,
     } = this.props;
     const { page, pageSize, sorted, total } = this.state;
+
     return (
       <>
         <TableToolbar
+          allColumns={config.allColumns}
           filterInputPlaceholder={filterInputPlaceholder}
           onFilterChange={onFilterChange}
           style={toolbarStyle}
