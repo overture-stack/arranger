@@ -7,12 +7,12 @@ export const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     ...options,
     params: {
       fileName,
-      files: files.map(({ allColumns, columns, exColumns = null, ...file }, i) => ({
+      files: files.map(({ allColumns, columns, exporterColumns = null, ...file }, i) => ({
         ...file,
-        columns: exColumns // if the component gave you custom columns to show
+        columns: exporterColumns // if the component gave you custom columns to show
           ? Object.values(
-              exColumns.length > 0 // if they ask for any specific columns
-                ? exColumns.map((fieldName) => allColumns[fieldName]) // use them
+              exporterColumns.length > 0 // if they ask for any specific columns
+                ? exporterColumns.map((fieldName) => allColumns[fieldName]) // use them
                 : allColumns, // else, they're asking for all the columns
             )
           : columns.filter((column) => column.show), // no custom columns, use admin's
@@ -28,14 +28,14 @@ export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
       [item, item?.function].some((fnName) => fnName === 'saveTSV') ||
       (item.constructor === {}.constructor && !Object.keys(item).includes('function'))
         ? {
-            exLabel: item?.label || exportTSVText,
-            exFunction: saveTSV,
-            ...(item?.columns && Array.isArray(item.columns) && { exColumns: item?.columns }),
+            exporterLabel: item?.label || exportTSVText,
+            exporterFunction: saveTSV,
+            ...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item?.columns }),
           }
         : Object.entries(item).reduce(
-            (exItem, [key, value]) => ({
-              ...exItem,
-              [`ex${key[0].toUpperCase()}${key.slice(1)}`]: value,
+            (exporterItem, [key, value]) => ({
+              ...exporterItem,
+              [`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
             }),
             {},
           ),
@@ -52,7 +52,7 @@ export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
       : exporterArray // or check whether it's an array of them
       ? multipleExporters // that contains more than one
         ? exporterArray // return it, but may lead to bugs if misused
-        : exporterArray[0]?.exFunction // or a single element in an array
+        : exporterArray[0]?.exporterFunction // or a single element in an array
       : console.log(
           `The custom exporter(s) format provided was invalid.${
             allowTSVExport ? ' Defaulting to TSV downloads' : ''

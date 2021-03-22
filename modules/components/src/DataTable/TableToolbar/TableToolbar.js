@@ -152,21 +152,21 @@ const TableToolbar = ({
         {multipleExporters ? ( // check if we're given more than one custom exporter
           <DropDown
             aria-label={`Download options`}
-            itemToString={(i) => i.exLabel}
+            itemToString={(i) => i.exporterLabel}
             items={exporterArray}
-            onChange={({ exColumns, exLabel, exFunction }) =>
-              exFunction(
+            onChange={({ exporterColumns, exporterLabel, exporterFunction }) =>
+              exporterFunction(
                 transformParams({
                   url: downloadUrl,
                   files: [
                     {
                       allColumns,
                       columns,
-                      fileName: `${stringCleaner(exLabel.toLowerCase())}.tsv`,
+                      fileName: `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
                       fileType: 'tsv',
                       index: type,
                       sqon,
-                      ...(exColumns && { exColumns }),
+                      ...(exporterColumns && { exporterColumns }),
                     },
                   ],
                 }),
