@@ -45,22 +45,28 @@ export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
 
   // this checks whether a single custom function has been provided
   // by itself, or as the single item in an array
-  const customExporter =
-    exporter && //
-    (exporter instanceof Function // check it's a valid function
-      ? exporter // then use it
-      : exporterArray // or check whether it's an array of them
-      ? multipleExporters // that contains more than one
-        ? exporterArray // return it, but may lead to bugs if misused
-        : exporterArray[0]?.exporterFunction // or a single element in an array
-      : console.log(
+  const resolveCustomExporter = (exporter) => {
+    switch (true) {
+      case exporter instanceof Function:
+        return exporter;
+
+      case multipleExporters:
+        return exporterArray;
+
+      case exporterArray:
+        return exporterArray[0]?.exporterFunction;
+
+      default:
+        console.log(
           `The custom exporter(s) format provided was invalid.${
             allowTSVExport ? ' Defaulting to TSV downloads' : ''
           }`,
-        ));
+        );
+    }
+  };
 
   return {
-    customExporter,
+    customExporter: resolveCustomExporter(exporter),
     exporterArray,
     multipleExporters,
   };
