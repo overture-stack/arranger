@@ -23,6 +23,23 @@ const enhance = compose(
   }),
 );
 
+/** Advanced Implementation details (TODO move to TS) ******
+ * This component allows library integrators to pass custom exporters (functionality to be run on the data, e.g. get JSON)
+ * They can provide their own function (default is saveTSV) through `exporter`, and leverage other props like
+ * `exportTSVText` and `exportTSVFilename` in order to customise the resulting button; or they can display multiple
+ * options in a dropdown, by passing an array of objects with details like so:
+ *
+ * exporter = [{
+ *   label: '',
+ *   function: () => {},
+ *   columns: [''],
+ * }]
+ *
+ * Columns passed here override the ones being displayed in the table.
+ * If columns is undefined/null, the exporter will use all the columns shown in the table.
+ * However, if columns is an empty array, the exporter will use all the columns declared in the column-state config.
+ */
+
 const TableToolbar = ({
   allColumns = [],
   allowTogglingColumns = true,
