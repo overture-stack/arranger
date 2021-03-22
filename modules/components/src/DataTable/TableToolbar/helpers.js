@@ -1,6 +1,6 @@
 import download from '../../utils/download';
 
-export const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
+const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
   download({
     url,
     method: 'POST',
@@ -21,7 +21,7 @@ export const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     },
   });
 
-export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
+const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
   const exporterArray =
     Array.isArray(exporter) &&
     exporter.map((item) =>
@@ -45,7 +45,7 @@ export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
 
   // this checks whether a single custom function has been provided
   // by itself, or as the single item in an array
-  const resolveCustomExporter = (exporter) => {
+  const resolveSingleExporter = (exporter, useDefaultTSV) => {
     switch (true) {
       case exporter instanceof Function:
         return exporter;
@@ -56,18 +56,20 @@ export const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
       case exporterArray:
         return exporterArray[0]?.exporterFunction;
 
+      case useDefaultTSV:
+        return saveTSV;
+
       default:
-        console.log(
-          `The custom exporter(s) format provided was invalid.${
-            allowTSVExport ? ' Defaulting to TSV downloads' : ''
-          }`,
-        );
+        exporter && // log something to indicate this needs to be addressed
+          console.log('The custom exporter(s) format provided was invalid');
     }
   };
 
   return {
-    customExporter: resolveCustomExporter(exporter),
+    singleExporter: resolveSingleExporter(exporter, allowTSVExport),
     exporterArray,
     multipleExporters,
   };
 };
+
+export default exporterProcessor;

@@ -6,8 +6,8 @@ import pluralize from 'pluralize';
 import { currentFilterValue } from '../../SQONView/utils';
 import stringCleaner from '../../utils/stringCleaner';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
-import { exporterProcessor, saveTSV } from './helpers';
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
+import exporterProcessor from './helpers';
 import './Toolbar.css';
 
 const enhance = compose(
@@ -77,7 +77,7 @@ const TableToolbar = ({
   const isPlural =
     total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
 
-  const { customExporter, exporterArray, multipleExporters } = exporterProcessor(
+  const { singleExporter, exporterArray, multipleExporters } = exporterProcessor(
     exporter,
     allowTSVExport,
     exportTSVText,
@@ -178,7 +178,7 @@ const TableToolbar = ({
           </DropDown>
         ) : (
           // else, use a custom function if any is given, or use the default saveTSV if the flag is on
-          (customExporter || allowTSVExport) && (
+          singleExporter && (
             <div className="buttonWrapper">
               <button
                 style={{
@@ -188,7 +188,7 @@ const TableToolbar = ({
                   minHeight: 16,
                 }}
                 onClick={() => {
-                  (customExporter || saveTSV)(
+                  singleExporter(
                     transformParams({
                       url: downloadUrl,
                       files: [
