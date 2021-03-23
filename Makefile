@@ -65,7 +65,7 @@ help:
 clean-docker:
 	@echo $(YELLOW)$(INFO_HEADER) "Destroying running docker services" $(END)
 	@$(DOCKER_COMPOSE_CMD) down -v
-	
+
 # Destroy all non-arranger and non-kibana elasticsearch indices
 clean-elastic:
 	@echo $(YELLOW)$(INFO_HEADER) "Removing ElasticSearch indices" $(END)
@@ -131,7 +131,7 @@ ps:
 	@$(DOCKER_COMPOSE_CMD) ps
 
 start:
-	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearc, kibana, arranger-server, and arranger-ui" $(END)
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearch, kibana, arranger-server, and arranger-ui" $(END)
 	@$(DC_UP_CMD)
 	@$(MAKE) _ping_elasticsearch_server
 	@echo $(YELLOW)$(INFO_HEADER) Succesfully started all arranger services! $(END)
