@@ -53,6 +53,7 @@ const TableToolbar = ({
   defaultColumns,
   downloadUrl,
   enableDropDownControls = false,
+  enableSelectedTableRowsExporterFilter = true,
   exporter = null,
   exporterLabel = 'Download',
   exportTSVFilename = '',
@@ -85,20 +86,21 @@ const TableToolbar = ({
     columns,
   );
 
-  const downloadSqon = selectedTableRows.length
-    ? addInSQON(
-        {
-          op: 'and',
-          content: [
-            {
-              op: 'in',
-              content: { field: 'file_autocomplete', value: selectedTableRows },
-            },
-          ],
-        },
-        sqon,
-      )
-    : sqon;
+  const downloadSqon =
+    enableSelectedTableRowsExporterFilter && selectedTableRows.length
+      ? addInSQON(
+          {
+            op: 'and',
+            content: [
+              {
+                op: 'in',
+                content: { field: 'file_autocomplete', value: selectedTableRows },
+              },
+            ],
+          },
+          sqon,
+        )
+      : sqon;
 
   return (
     <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
