@@ -1,5 +1,5 @@
 import React from 'react';
-import { get, pick } from 'lodash';
+import { get } from 'lodash';
 
 import columnsToGraphql from '@arranger/mapping-utils/dist/utils/columnsToGraphql';
 
