@@ -3,7 +3,7 @@ import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 
-import { currentFilterValue } from '../../SQONView/utils';
+import { addInSQON, currentFilterValue } from '../../SQONView/utils';
 import stringCleaner from '../../utils/stringCleaner';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
@@ -66,9 +66,10 @@ const TableToolbar = ({
   page = 0,
   pageSize = 0,
   propsData,
+  selectedTableRows = [],
   setFilterVal,
   showFilterInput = true,
-  sqon,
+  sqon = {},
   style,
   total = propsData?.total || 0,
   transformParams = (params) => params,
@@ -83,6 +84,21 @@ const TableToolbar = ({
     exportTSVText,
     columns,
   );
+
+  const downloadSqon = selectedTableRows.length
+    ? addInSQON(
+        {
+          op: 'and',
+          content: [
+            {
+              op: 'in',
+              content: { field: 'file_autocomplete', value: selectedTableRows },
+            },
+          ],
+        },
+        sqon,
+      )
+    : sqon;
 
   return (
     <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
@@ -165,7 +181,7 @@ const TableToolbar = ({
                       fileName: `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
                       fileType: 'tsv',
                       index: type,
-                      sqon,
+                      sqon: downloadSqon,
                       ...(exporterColumns && { exporterColumns }),
                     },
                   ],
@@ -193,11 +209,11 @@ const TableToolbar = ({
                       url: downloadUrl,
                       files: [
                         {
+                          columns,
                           fileName: exportTSVFilename || `${type}-table.tsv`,
                           fileType: 'tsv',
-                          sqon,
                           index: type,
-                          columns,
+                          sqon: downloadSqon,
                         },
                       ],
                     }),
