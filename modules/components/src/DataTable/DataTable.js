@@ -59,6 +59,8 @@ class DataTableWithToolbar extends React.Component {
         return `arranger-table-sorted-${this.props.storageKey || ''}`;
       case STORED_PROPS.SELECTED_ROWS:
         return `arranger-table-selectedrows-${this.props.storageKey || ''}`;
+      default:
+        return '';
     }
   }
 
@@ -77,39 +79,38 @@ class DataTableWithToolbar extends React.Component {
 
   render() {
     const {
-      config,
-      fetchData,
-      setSelectedTableRows = () => {},
-      sqon,
-      selectedTableRows = null,
       allowTogglingColumns = true,
       allowTSVExport = true,
+      alwaysSorted = [],
+      columnDropdownText,
+      config,
       customActions = null,
+      customHeaderContent = null,
       data = null,
+      enableDropDownControls = false,
+      exporter,
+      exportTSVFilename,
+      exportTSVText,
+      fetchData,
+      filterInputPlaceholder,
+      initalSelectedTableRows,
+      InputComponent,
+      keepSelectedOnPageChange = false,
       loading = null,
+      maxPagesOptions,
+      onColumnsChange = () => {},
+      onFilterChange = () => {},
+      onMultipleColumnsChange = () => {},
+      onSortedChange = () => {},
+      projectId = PROJECT_ID,
+      sessionStorage,
+      selectedTableRows = [],
+      setSelectedTableRows = () => {},
+      showFilterInput = true,
+      sqon,
       tableStyle,
       toolbarStyle,
-      onFilterChange = () => {},
-      onColumnsChange = () => {},
-      onMultipleColumnsChange = () => {},
-      columnDropdownText,
-      enableDropDownControls = false,
-      exportTSVText,
-      exportTSVFilename,
-      exporter,
       transformParams,
-      maxPagesOptions,
-      projectId = PROJECT_ID,
-      downloadUrl = urlJoin(ARRANGER_API, projectId, 'download'),
-      onSortedChange = () => {},
-      alwaysSorted = [],
-      initalSelectedTableRows,
-      keepSelectedOnPageChange = false,
-      sessionStorage,
-      showFilterInput = true,
-      filterInputPlaceholder,
-      InputComponent,
-      customHeaderContent = null,
     } = this.props;
     const { page, pageSize, sorted, total } = this.state;
 
@@ -117,32 +118,34 @@ class DataTableWithToolbar extends React.Component {
       <>
         <TableToolbar
           allColumns={config.allColumns}
-          filterInputPlaceholder={filterInputPlaceholder}
-          onFilterChange={onFilterChange}
-          style={toolbarStyle}
-          propsData={data}
-          customActions={customActions}
-          allowTogglingColumns={allowTogglingColumns}
           allowTSVExport={allowTSVExport}
-          sqon={sqon}
+          allowTogglingColumns={allowTogglingColumns}
+          columnDropdownText={columnDropdownText}
           columns={config.columns}
+          customActions={customActions}
+          customHeaderContent={customHeaderContent}
           defaultColumns={config.defaultColumns}
+          downloadUrl={urlJoin(ARRANGER_API, projectId, 'download')}
+          enableDropDownControls={enableDropDownControls}
+          exportTSVFilename={exportTSVFilename}
+          exportTSVText={exportTSVText}
+          exporter={exporter}
+          filterInputPlaceholder={filterInputPlaceholder}
+          InputComponent={InputComponent}
+          keyField={config.keyField}
           onColumnsChange={onColumnsChange}
+          onFilterChange={onFilterChange}
           onMultipleColumnsChange={onMultipleColumnsChange}
-          total={total}
           page={page}
           pageSize={pageSize}
-          type={config.type}
-          columnDropdownText={columnDropdownText}
-          enableDropDownControls={enableDropDownControls}
-          exportTSVText={exportTSVText}
-          exportTSVFilename={exportTSVFilename}
-          exporter={exporter}
-          transformParams={transformParams}
-          downloadUrl={downloadUrl}
-          InputComponent={InputComponent}
+          propsData={data}
+          selectedTableRows={selectedTableRows}
           showFilterInput={showFilterInput}
-          customHeaderContent={customHeaderContent}
+          sqon={sqon}
+          style={toolbarStyle}
+          total={total}
+          transformParams={transformParams}
+          type={config.type}
         />
         <Table
           style={tableStyle}
