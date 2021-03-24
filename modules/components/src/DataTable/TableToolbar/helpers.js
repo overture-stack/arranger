@@ -30,6 +30,7 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
         ? {
             exporterLabel: item?.label || exportTSVText,
             exporterFunction: saveTSV,
+            exporterFileName: item?.fileName,
             ...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item?.columns }),
           }
         : Object.entries(item).reduce(
