@@ -172,7 +172,7 @@ const TableToolbar = ({
             aria-label={`Download options`}
             itemToString={(i) => i.exporterLabel}
             items={exporterArray}
-            onChange={({ exporterColumns, exporterLabel, exporterFunction }) =>
+            onChange={({ exporterColumns, exporterLabel, exporterFileName, exporterFunction }) =>
               exporterFunction(
                 transformParams({
                   url: downloadUrl,
@@ -180,7 +180,11 @@ const TableToolbar = ({
                     {
                       allColumns,
                       columns,
-                      fileName: `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
+                      fileName: exporterFileName
+                        ? `${exporterFileName}${
+                            exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
+                          }`
+                        : `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
                       fileType: 'tsv',
                       index: type,
                       sqon: downloadSqon,
