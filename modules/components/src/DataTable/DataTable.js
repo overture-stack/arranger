@@ -87,6 +87,7 @@ class DataTableWithToolbar extends React.Component {
       customActions = null,
       customHeaderContent = null,
       data = null,
+      downloadUrl = '',
       enableDropDownControls = false,
       enableSelectedTableRowsExporterFilter = true,
       exporter,
@@ -115,6 +116,8 @@ class DataTableWithToolbar extends React.Component {
     } = this.props;
     const { page, pageSize, sorted, total } = this.state;
 
+    const url = downloadUrl || urlJoin(ARRANGER_API, projectId, 'download');
+
     return (
       <>
         <TableToolbar
@@ -126,7 +129,7 @@ class DataTableWithToolbar extends React.Component {
           customActions={customActions}
           customHeaderContent={customHeaderContent}
           defaultColumns={config.defaultColumns}
-          downloadUrl={urlJoin(ARRANGER_API, projectId, 'download')}
+          downloadUrl={url}
           enableDropDownControls={enableDropDownControls}
           enableSelectedTableRowsExporterFilter={enableSelectedTableRowsExporterFilter}
           exportTSVFilename={exportTSVFilename}
