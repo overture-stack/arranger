@@ -54,9 +54,11 @@ const CurrentSQONState = ({ sqon, setSQON, graphqlField, projectId, ...props }) 
     <Component
       initialState={{ extendedMapping: null }}
       didMount={({ state: { extendedMapping }, setState }) =>
-        fetchExtendedMapping({ graphqlField, projectId }).then(({ extendedMapping }) => {
-          return setState({ extendedMapping });
-        })
+        fetchExtendedMapping({ graphqlField, projectId, api: props.api }).then(
+          ({ extendedMapping }) => {
+            return setState({ extendedMapping });
+          },
+        )
       }
     >
       {({ state: { extendedMapping } }) => (
