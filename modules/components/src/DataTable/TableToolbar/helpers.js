@@ -24,23 +24,26 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
 const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
   const exporterArray =
     Array.isArray(exporter) &&
-    exporter.map((item) =>
-      [item, item?.function].some((fnName) => fnName === 'saveTSV') ||
-      (item.constructor === {}.constructor && !Object.keys(item).includes('function'))
-        ? {
-            exporterLabel: item?.label || exportTSVText,
-            exporterFunction: saveTSV,
-            exporterFileName: item?.fileName,
-            ...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item?.columns }),
-          }
-        : Object.entries(item).reduce(
-            (exporterItem, [key, value]) => ({
-              ...exporterItem,
-              [`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
-            }),
-            {},
-          ),
-    );
+    exporter
+      .filter((item) => item)
+      .map((item) =>
+        [item, item.function].some((fnName) => fnName === 'saveTSV') ||
+        (item.hasOwnProperty('fileName') && !item.hasOwnProperty('function'))
+          ? {
+              exporterLabel: item?.label || exportTSVText,
+              exporterFunction: saveTSV,
+              exporterFileName: item?.fileName,
+              ...(item?.columns &&
+                Array.isArray(item.columns) && { exporterColumns: item?.columns }),
+            }
+          : Object.entries(item).reduce(
+              (exporterItem, [key, value]) => ({
+                ...exporterItem,
+                [`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
+              }),
+              {},
+            ),
+      );
 
   const multipleExporters = exporterArray && exporter.length > 1;
 

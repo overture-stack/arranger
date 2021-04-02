@@ -22,7 +22,6 @@
   z-index: 100;
   border: 1px solid rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
-  cursor: pointer;
   padding: 5px;
   top: 100%;
 }
@@ -39,8 +38,14 @@
 
 .dropDownContentElement {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   padding: 5px;
+  user-select: none;
+}
+
+.dropDownContentElement.clickable:hover {
+  cursor: pointer;
 }
 
 .multiSelectDropDownWrapper {

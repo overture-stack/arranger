@@ -76,32 +76,34 @@ class DropDown extends React.Component {
                   right: align === 'right' ? 0 : 'auto',
                   left: align === 'right' ? 'auto' : 0,
                 }}
+                {...(singleSelect && { onClick: this.handleToggleMenu })}
               >
-                {items.map((item, index) =>
-                  singleSelect ? (
+                {items.map((item, index) => {
+                  const { id, ...itemProps } = getItemProps({ item, index });
+                  const label = itemToString(item);
+                  const labelIsComponent = React.isValidElement(label);
+                  return (
                     <div
-                      className="dropDownContentElement"
-                      key={item.id || itemToString(item)}
-                      {...getItemProps({ item, index })}
+                      className={`dropDownContentElement${
+                        labelIsComponent ? ' custom' : ' clickable'
+                      }`}
+                      key={item.id || id}
+                      {...itemProps}
                     >
-                      {itemToString(item)}
+                      {label}
+                      {!(singleSelect || labelIsComponent) && (
+                        <input
+                          readOnly
+                          type="checkbox"
+                          checked={selectedItem.indexOf(item) > -1}
+                          aria-label={`Select column ${
+                            item.id || (typeof label === 'string' ? label : id)
+                          }`}
+                        />
+                      )}
                     </div>
-                  ) : (
-                    <div
-                      className="dropDownContentElement"
-                      key={item.id || itemToString(item)}
-                      {...getItemProps({ item, index })}
-                    >
-                      {itemToString(item)}
-                      <input
-                        readOnly
-                        type="checkbox"
-                        checked={selectedItem.indexOf(item) > -1}
-                        aria-label={`Select column ${item.id || itemToString(item)}`}
-                      />
-                    </div>
-                  ),
-                )}
+                  );
+                })}
               </div>
             )}
           </div>
