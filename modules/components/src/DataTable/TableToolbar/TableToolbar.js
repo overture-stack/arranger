@@ -23,18 +23,23 @@ const enhance = compose(
   }),
 );
 
-/** Advanced Implementation details (TODO move to TS) ******
+/** Advanced Implementation details ****** (TODO: move to TS)
  * This component allows library integrators to pass custom exporters (functionality to be run on the data, e.g. get JSON)
  * They can provide their own function (default is saveTSV) through `exporter`, and leverage other props like
  * `exportTSVText` and `exportTSVFilename` in order to customise the resulting button; or they can display multiple
  * options in a dropdown, by passing an array of objects with details like so:
  *
  * exporter = [{
- *   label: '',
- *   function: () => {},
- *   columns: [''],
- * }]
+ *   label: '' || () => </>,
+ *   fileName?: '',
+ *   function?: () => {},
+ *   columns?: [''],
+ * }, ...]
  *
+ * A label doesn't require an exporter function, and can be a React component (e.g. to display instructions, a divider, etc.)
+ * furthermore, if label is 'saveTSV', Arranger will use its internal TSV exporter.
+ * The function attribute accepts 'saveTSV' as well, in case you wish to use a custom label for it.
+ * When a fileName is given without a custom function, Arranger will also produce a TSV file.
  * Columns passed here override the ones being displayed in the table.
  * If columns is undefined/null, the exporter will use all the columns shown in the table.
  * However, if columns is an empty array, the exporter will use all the columns declared in the column-state config.
@@ -170,10 +175,12 @@ const TableToolbar = ({
         {multipleExporters ? ( // check if we're given more than one custom exporter
           <DropDown
             aria-label={`Download options`}
-            itemToString={(i) => i.exporterLabel}
+            itemToString={(i) =>
+              typeof i.exporterLabel === 'function' ? <i.exporterLabel /> : i.exporterLabel
+            }
             items={exporterArray}
             onChange={({ exporterColumns, exporterLabel, exporterFileName, exporterFunction }) =>
-              exporterFunction(
+              exporterFunction?.(
                 transformParams({
                   url: downloadUrl,
                   files: [
