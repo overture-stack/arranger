@@ -81,6 +81,7 @@ const enhance = compose(
 );
 
 const SQON = ({
+  emptyMessage = 'Start by selecting a query field',
   sqon,
   FieldCrumb,
   ValueCrumb,
@@ -90,6 +91,7 @@ const SQON = ({
   setExpanded,
   onLessClicked,
 }: {
+  emptyMessage: String,
   sqon: TGroupSQON,
   FieldCrumb: (props: TFieldCrumbArg) => any,
   ValueCrumb: (props: TValueCrumbArg) => any,
@@ -104,7 +106,10 @@ const SQON = ({
   return (
     <div className={`sqon-view ${isEmpty ? 'sqon-view-empty' : ''}`}>
       {isEmpty && (
-        <div className="sqon-empty-message">{'\u2190 Start by selecting a query field'}</div>
+        <div className="sqon-empty-message">
+          <span className="sqon-empty-message-arrow">{'\u2190'}</span>
+          {` ${emptyMessage}`}
+        </div>
       )}
       {sqonContent.length >= 1 && (
         <Row wrap>

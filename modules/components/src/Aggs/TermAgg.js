@@ -126,6 +126,7 @@ const TermAgg = ({
   searchText,
   setSearchText,
   InputComponent = Input,
+  type,
 }) => {
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
@@ -134,11 +135,17 @@ const TermAgg = ({
     highlightText && decoratedBuckets.some((x) => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
+
+  const dataFields = {
+    ...(field && { 'data-field': field }),
+    ...(type && { 'data-type': type }),
+  };
   return (
     <AggsWrapper
       componentRef={aggWrapperRef}
       headerRef={aggHeaderRef}
       stickyHeader
+      dataFields={dataFields}
       {...{ displayName, WrapperComponent, collapsible }}
       ActionIcon={<DefaultSearchIcon onClick={() => setShowingSearch(!stateShowingSearch)} />}
       filters={[

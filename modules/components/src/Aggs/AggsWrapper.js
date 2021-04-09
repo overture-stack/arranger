@@ -7,6 +7,7 @@ import './AggregationCard.css';
 export default ({
   children,
   collapsible = true,
+  dataFields = {},
   stickyHeader = false,
   displayName,
   filters,
@@ -16,13 +17,13 @@ export default ({
   headerRef,
 }) => {
   return WrapperComponent ? (
-    <WrapperComponent {...{ collapsible, displayName, componentRef, headerRef }}>
+    <WrapperComponent {...{ collapsible, displayName, componentRef, headerRef }} {...dataFields}>
       {children}
     </WrapperComponent>
   ) : (
     <Component initialState={{ isCollapsed: false }}>
       {({ setState, state: { isCollapsed } }) => (
-        <div className="aggregation-card" ref={componentRef}>
+        <div className="aggregation-card" ref={componentRef} {...dataFields}>
           <div
             ref={headerRef}
             className={`header ${css`
@@ -49,7 +50,7 @@ export default ({
               ))}
           </div>
           {!isCollapsed && (
-            <div className={`bucket ${isCollapsed ? 'collapsed' : ''}`}>{children}</div>
+            <div className={`bucket${isCollapsed ? ' collapsed' : ''}`}>{children}</div>
           )}
         </div>
       )}
