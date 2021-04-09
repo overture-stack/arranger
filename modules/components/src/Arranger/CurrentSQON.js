@@ -8,6 +8,7 @@ import { fetchExtendedMapping } from '../utils/api';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
+  emptyMessage = '',
   sqon,
   setSQON,
   extendedMapping,
@@ -18,6 +19,7 @@ export const CurrentSQON = ({
   ...props
 }) => (
   <SQONView
+    emptyMessage={emptyMessage}
     sqon={sqon}
     FieldCrumb={({ field, nextSQON, ...props }) => (
       <Field {...{ field, ...props }}>
