@@ -1,8 +1,8 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "2.12.6",
+  "version": "2.12.7",
   "dependencies": {
-    "@arranger/admin": "^2.12.6",
+    "@arranger/admin": "^2.12.7",
     "@types/node": "^13.13.0",
     "apollo-boost": "^0.1.19",
     "apollo-client": "^2.5.1",
