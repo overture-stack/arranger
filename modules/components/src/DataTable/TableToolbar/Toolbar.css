@@ -1,3 +1,7 @@
+.currentlyDisplayed > span:not(:last-child) {
+  margin-left: 3px;
+}
+
 .group {
   display: flex;
 }

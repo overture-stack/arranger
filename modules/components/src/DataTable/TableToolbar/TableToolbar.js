@@ -2,6 +2,7 @@ import React from 'react';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
 import pluralize from 'pluralize';
+import { css } from 'emotion';
 
 import { addInSQON, currentFilterValue } from '../../SQONView/utils';
 import stringCleaner from '../../utils/stringCleaner';
@@ -34,6 +35,7 @@ const enhance = compose(
  *   fileName?: '',
  *   function?: () => {},
  *   columns?: [''],
+ *   requiresRowSelection?: false,
  * }, ...]
  *
  * A label doesn't require an exporter function, and can be a React component (e.g. to display instructions, a divider, etc.)
@@ -91,8 +93,10 @@ const TableToolbar = ({
     columns,
   );
 
+  const hasSelectedRows = selectedTableRows.length > 0;
+
   const downloadSqon =
-    enableSelectedTableRowsExporterFilter && selectedTableRows.length
+    enableSelectedTableRowsExporterFilter && hasSelectedRows
       ? addInSQON(
           {
             op: 'and',
@@ -109,14 +113,23 @@ const TableToolbar = ({
 
   return (
     <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">
-      <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-        Showing {(page * pageSize + 1).toLocaleString()} -{' '}
-        {Math.min((page + 1) * pageSize, total).toLocaleString()} of {total?.toLocaleString()}{' '}
-        {pluralize(type, isPlural ? 2 : 1)}
+      <div
+        className="currentlyDisplayed"
+        style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}
+      >
+        <span className="numbers">
+          {`Showing ${(page * pageSize + 1).toLocaleString()} - ${Math.min(
+            (page + 1) * pageSize,
+            total,
+          ).toLocaleString()}`}
+        </span>
+        <span className="ofTotal">of {total?.toLocaleString()}</span>
+        <span className="type">{pluralize(type, isPlural ? 2 : 1)}</span>
       </div>
-      {!customHeaderContent ? null : customHeaderContent}
-      <div className="group">
-        {!showFilterInput ? null : (
+      {customHeaderContent || null}
+
+      {showFilterInput && (
+        <div className="group">
           <TextFilter
             InputComponent={InputComponent}
             value={filterVal}
@@ -126,8 +139,9 @@ const TableToolbar = ({
               debouncedOnFilterChange({ value, generateNextSQON });
             }}
           />
-        )}
-      </div>
+        </div>
+      )}
+
       <div className="group">
         {allowTogglingColumns &&
           (enableDropDownControls ? (
@@ -178,11 +192,18 @@ const TableToolbar = ({
             itemToString={(i) =>
               typeof i.exporterLabel === 'function' ? <i.exporterLabel /> : i.exporterLabel
             }
+            hasSelectedRows={hasSelectedRows}
             items={exporterArray}
-            onChange={({ exporterColumns, exporterLabel, exporterFileName, exporterFunction }) =>
+            onChange={({
+              exporterColumns,
+              exporterLabel,
+              exporterFileName,
+              exporterFunction,
+              exporterRequiresRowSelection,
+            }) =>
+              (exporterRequiresRowSelection && !hasSelectedRows) ||
               exporterFunction?.(
                 transformParams({
-                  url: downloadUrl,
                   files: [
                     {
                       allColumns,
@@ -198,6 +219,8 @@ const TableToolbar = ({
                       ...(exporterColumns && { exporterColumns }),
                     },
                   ],
+                  selectedTableRows,
+                  url: downloadUrl,
                 }),
               )
             }
@@ -210,27 +233,33 @@ const TableToolbar = ({
           singleExporter && (
             <div className="buttonWrapper">
               <button
-                style={{
-                  display: 'flex',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  minHeight: 16,
-                }}
+                disabled={exporter?.[0]?.requiresRowSelection && !hasSelectedRows}
+                css={css`
+                  display: flex;
+                  min-height: 16;
+                  white-space: nowrap;
+
+                  &:not(:disabled):hover {
+                    cursor: pointer;
+                  }
+                `}
                 onClick={() => {
-                  singleExporter(
-                    transformParams({
-                      url: downloadUrl,
-                      files: [
-                        {
-                          columns,
-                          fileName: exportTSVFilename || `${type}-table.tsv`,
-                          fileType: 'tsv',
-                          index: type,
-                          sqon: downloadSqon,
-                        },
-                      ],
-                    }),
-                  );
+                  (exporter?.[0]?.requiresRowSelection && !hasSelectedRows) ||
+                    singleExporter(
+                      transformParams({
+                        files: [
+                          {
+                            columns,
+                            fileName: exportTSVFilename || `${type}-table.tsv`,
+                            fileType: 'tsv',
+                            index: type,
+                            sqon: downloadSqon,
+                          },
+                        ],
+                        selectedTableRows,
+                        url: downloadUrl,
+                      }),
+                    );
                 }}
               >
                 {exportTSVText}
