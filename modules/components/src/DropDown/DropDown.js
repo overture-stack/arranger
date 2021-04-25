@@ -20,8 +20,8 @@ function ArrowIcon({ isOpen }) {
 
 class DropDown extends React.Component {
   state = { isOpen: false };
-  handleToggleMenu = () => {
-    this.setState(({ isOpen }) => ({ isOpen: !isOpen }));
+  handleToggleMenu = (event) => {
+    event.target?.attributes?.disabled || this.setState(({ isOpen }) => ({ isOpen: !isOpen }));
   };
   handleStateChange = (changes) => {
     const { isOpen, type } = changes;
@@ -33,6 +33,7 @@ class DropDown extends React.Component {
   render() {
     const { isOpen } = this.state;
     const {
+      hasSelectedRows,
       items,
       onChange = () => {},
       itemToString,
@@ -40,6 +41,9 @@ class DropDown extends React.Component {
       align = 'right',
       singleSelect = false,
     } = this.props;
+
+    const disableDownloads =
+      items.every((item) => item.exporterRequiresRowSelection) && !hasSelectedRows;
 
     return (
       <Downshift
@@ -64,7 +68,10 @@ class DropDown extends React.Component {
             <button
               aria-label={`Show columns to select`}
               className="dropDownButton"
-              {...getButtonProps({ onClick: this.handleToggleMenu })}
+              {...getButtonProps({
+                disabled: disableDownloads,
+                onClick: this.handleToggleMenu,
+              })}
             >
               <div className="dropDownButtonContent">{children}</div>
               <ArrowIcon isOpen={isOpen} />
@@ -79,7 +86,11 @@ class DropDown extends React.Component {
                 {...(singleSelect && { onClick: this.handleToggleMenu })}
               >
                 {items.map((item, index) => {
-                  const { id, ...itemProps } = getItemProps({ item, index });
+                  const { id, ...itemProps } = getItemProps({
+                    item,
+                    index,
+                    disabled: item.exporterRequiresRowSelection && !hasSelectedRows,
+                  });
                   const label = itemToString(item);
                   const labelIsComponent = React.isValidElement(label);
                   return (

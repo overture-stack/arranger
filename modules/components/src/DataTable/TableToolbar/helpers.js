@@ -33,6 +33,7 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
               exporterLabel: item?.label || exportTSVText,
               exporterFunction: saveTSV,
               exporterFileName: item?.fileName,
+              exporterRequiresRowSelection: item?.requiresRowSelection,
               ...(item?.columns &&
                 Array.isArray(item.columns) && { exporterColumns: item?.columns }),
             }

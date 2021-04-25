@@ -7,8 +7,11 @@
 .dropDownHeader .dropDownButton {
   display: flex;
   align-items: center;
-  cursor: pointer;
   background-color: unset;
+}
+
+.dropDownHeader .dropDownButton:not([disabled]) {
+  cursor: pointer;
 }
 
 .dropDownHeader .dropDownButton .dropDownButtonContent {
@@ -44,7 +47,11 @@
   user-select: none;
 }
 
-.dropDownContentElement.clickable:hover {
+.dropDownContentElement.clickable[disabled] {
+  color: #999;
+}
+
+.dropDownContentElement.clickable:not([disabled]):hover {
   cursor: pointer;
 }
 
