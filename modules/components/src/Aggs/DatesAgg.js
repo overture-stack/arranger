@@ -75,14 +75,22 @@ class DatesAgg extends React.Component {
 
   render() {
     const {
-      displayName = 'Date Range',
       collapsible = true,
-      WrapperComponent,
+      displayName = 'Date Range',
       facetView = false,
+      field,
+      type,
+      WrapperComponent,
     } = this.props;
     const { minDate, maxDate, startDate, endDate } = this.state;
+
+    const dataFields = {
+      ...(field && { 'data-field': field }),
+      ...(type && { 'data-type': type }),
+    };
+
     return (
-      <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
+      <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
         <div
           css={`
             display: flex;
