@@ -46,11 +46,16 @@ class RangeAgg extends Component {
       unit,
       value,
     } = props;
+
+    const supportedUnits = supportedConversionFromUnit(unit);
+
     this.state = {
       min,
       max,
       unit: unit,
-      displayUnit: supportedConversionFromUnit(unit)?.[0],
+      displayUnit: supportedUnits?.includes(unit)
+        ? unit // use unit selected in Admin UI as default, if available here
+        : supportedUnits?.[0],
       value: {
         min: !_.isNil(value) ? value.min || min : min,
         max: !_.isNil(value) ? value.max || max : max,
