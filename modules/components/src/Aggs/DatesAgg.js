@@ -1,6 +1,8 @@
 import React from 'react';
 import Moment from 'moment';
 import DatePicker from 'react-datepicker';
+import { css } from 'emotion';
+
 import 'react-datepicker/dist/react-datepicker.css';
 
 import { removeSQON, replaceSQON } from '../SQONView/utils';
@@ -92,14 +94,19 @@ class DatesAgg extends React.Component {
     return (
       <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
         <div
-          css={`
+          css={css`
             display: flex;
             align-items: center;
             justify-content: space-around;
+
+            input {
+              width: 90%;
+            }
           `}
         >
           <DatePicker
             {...{ minDate, maxDate }}
+            className="start-date"
             isClearable
             openToDate={minDate}
             popperPlacement={facetView ? 'bottom-start' : 'top-start'}
@@ -111,6 +118,7 @@ class DatesAgg extends React.Component {
           />
           <DatePicker
             {...{ minDate, maxDate }}
+            className="end-date"
             isClearable
             openToDate={maxDate}
             popperPlacement={facetView ? 'bottom-end' : 'top-start'}
