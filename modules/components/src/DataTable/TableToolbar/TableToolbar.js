@@ -4,10 +4,11 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 import { css } from 'emotion';
 
-import { addInSQON, currentFilterValue } from '../../SQONView/utils';
-import stringCleaner from '../../utils/stringCleaner';
-import TextFilter, { generateNextSQON } from '../../TextFilter';
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
+import { addInSQON, currentFilterValue } from '../../SQONView/utils';
+import TextFilter, { generateNextSQON } from '../../TextFilter';
+import download from '../../utils/download';
+import stringCleaner from '../../utils/stringCleaner';
 import exporterProcessor from './helpers';
 import './Toolbar.css';
 
@@ -222,6 +223,7 @@ const TableToolbar = ({
                   selectedTableRows,
                   url: downloadUrl,
                 }),
+                download,
               )
             }
             singleSelect={true}
@@ -259,6 +261,7 @@ const TableToolbar = ({
                         selectedTableRows,
                         url: downloadUrl,
                       }),
+                      download,
                     );
                 }}
               >

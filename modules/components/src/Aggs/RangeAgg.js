@@ -46,11 +46,16 @@ class RangeAgg extends Component {
       unit,
       value,
     } = props;
+
+    const supportedUnits = supportedConversionFromUnit(unit);
+
     this.state = {
       min,
       max,
       unit: unit,
-      displayUnit: supportedConversionFromUnit(unit)?.[0],
+      displayUnit: supportedUnits?.includes(unit)
+        ? unit // use unit selected in Admin UI as default, if available here
+        : supportedUnits?.[0],
       value: {
         min: !_.isNil(value) ? value.min || min : min,
         max: !_.isNil(value) ? value.max || max : max,
@@ -79,7 +84,7 @@ class RangeAgg extends Component {
     let { value, displayUnit } = this.state;
     const [min, max] = [value.min, value.max].map((x) => round(x));
 
-    handleChange?.({
+    return handleChange?.({
       field: {
         displayName,
         displayUnit,
@@ -120,11 +125,25 @@ class RangeAgg extends Component {
   };
 
   render() {
-    let { step, displayName = 'Unnamed Field', collapsible = true, WrapperComponent } = this.props;
+    let {
+      collapsible = true,
+      displayName = 'Unnamed Field',
+      field,
+      step,
+      type,
+      WrapperComponent,
+    } = this.props;
     let { min, max, value, unit, displayUnit } = this.state;
     const supportedConversions = supportedConversionFromUnit(unit);
+
+    const dataFields = {
+      ...(field && { 'data-field': field }),
+      ...(type && { 'data-type': type }),
+    };
+
     return (
       <AggsWrapper
+        dataFields={dataFields}
         displayName={`${displayName}${
           displayUnit ? ` (${convert().describe(displayUnit).plural})` : ``
         }`}

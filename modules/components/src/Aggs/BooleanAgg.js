@@ -32,6 +32,7 @@ export default ({
     }),
     {},
   ),
+  type,
   ...rest
 }) => {
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
@@ -125,8 +126,13 @@ export default ({
     },
   ]);
 
+  const dataFields = {
+    ...(field && { 'data-field': field }),
+    ...(type && { 'data-type': type }),
+  };
+
   return (
-    <AggsWrapper {...{ displayName, WrapperComponent, collapsible }}>
+    <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
       <ToggleButton
         {...{
           value: isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined,
