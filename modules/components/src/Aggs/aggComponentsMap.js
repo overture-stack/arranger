@@ -41,10 +41,12 @@ const composedRangeAgg = ({
   ...rest
 }) => (
   <RangeAgg
-    value={{
-      min: currentFieldValue({ sqon, dotField: field, op: '>=' }) || stats?.min || 0,
-      max: currentFieldValue({ sqon, dotField: field, op: '<=' }) || stats?.max || 0,
-    }}
+    sqonValues={
+      sqon && {
+        min: currentFieldValue({ sqon, dotField: field, op: '>=' }),
+        max: currentFieldValue({ sqon, dotField: field, op: '<=' }),
+      }
+    }
     handleChange={({ generateNextSQON, field: { displayName, displayUnit, field }, value }) => {
       const nextSQON = generateNextSQON(sqon);
 
@@ -54,7 +56,7 @@ const composedRangeAgg = ({
           field: `${displayName} (${displayUnit})`,
           value,
           active: fieldInCurrentSQON({
-            currentSQON: nextSQON.content,
+            currentSQON: nextSQON?.content,
             field: field,
           }),
         },

@@ -42,6 +42,7 @@ export const AggregationsListDisplay = ({
         containerRef,
       }))
       .map((agg) => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
+
   if (aggComponentInstances) {
     // sort the list by the index specified for each component to prevent order bumping
     const componentListToInsert = sortBy(getCustomItems({ aggs }), 'index');
