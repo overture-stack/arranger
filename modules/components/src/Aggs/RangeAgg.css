@@ -3,12 +3,8 @@
   margin-top: 4px;
 }
 
-.unit-wrapper span {
-  margin: 0 5px;
-}
-
 .unit-wrapper label {
-  margin-left: 2px;
+  margin: 0 5px;
   font-family: inherit;
   color: inherit;
   border-bottom: none;
@@ -24,4 +20,13 @@
 
 .input-range__label {
   display: none;
+}
+
+.input-range--disabled {
+  background: #dfdfe1;
+}
+
+.input-range--disabled .input-range__slider,
+.input-range--disabled .input-range__track {
+  cursor: default;
 }

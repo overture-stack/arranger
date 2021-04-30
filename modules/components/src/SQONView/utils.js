@@ -142,6 +142,22 @@ export const addInSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
+export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
+  if (!ctxq && !q) return null;
+  if (!ctxq) return q;
+  if (!q) return ctxq;
+
+  const merged = {
+    op: 'and',
+    content: ctxq.content
+      .filter((condition) => condition?.content?.field !== field)
+      .concat(q?.content || [])
+      .sort(sortSQON),
+  };
+
+  return merged.content.length ? merged : null;
+};
+
 export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
   const { entity, fields, value } = q?.content?.[0]?.content || {};
   const merged = {
@@ -232,12 +248,12 @@ export const inCurrentSQON = ({
 
 // true if field in
 export const fieldInCurrentSQON = ({
-  currentSQON,
+  currentSQON = [],
   field,
 }: {
   currentSQON: TGroupContent,
   field: string,
-}) => currentSQON.some((f) => f.content.field === field);
+}) => currentSQON.some((f) => f?.content?.field === field);
 
 export const getSQONValue = ({
   currentSQON,
