@@ -42,7 +42,7 @@ const composedRangeAgg = ({
 }) => (
   <RangeAgg
     sqonValues={
-      sqon && {
+      !!sqon && {
         min: currentFieldValue({ sqon, dotField: field, op: '>=' }),
         max: currentFieldValue({ sqon, dotField: field, op: '<=' }),
       }
