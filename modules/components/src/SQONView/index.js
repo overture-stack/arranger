@@ -81,7 +81,7 @@ const enhance = compose(
 );
 
 const SQON = ({
-  emptyMessage = 'Start by selecting a query field',
+  emptyMessage = 'Start by selecting filters',
   sqon,
   FieldCrumb,
   ValueCrumb,
