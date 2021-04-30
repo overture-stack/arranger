@@ -8,7 +8,7 @@ import { fetchExtendedMapping } from '../utils/api';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
-  emptyMessage = '',
+  emptyMessage,
   sqon,
   setSQON,
   extendedMapping,
