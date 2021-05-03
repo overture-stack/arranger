@@ -1,18 +1,16 @@
 import React from 'react';
-import Moment from 'moment';
 import DatePicker from 'react-datepicker';
 import { css } from 'emotion';
-
-import 'react-datepicker/dist/react-datepicker.css';
+import { addDays, endOfDay, startOfDay, subDays } from 'date-fns';
 
 import { removeSQON, replaceSQON } from '../SQONView/utils';
-import './AggregationCard.css';
 import AggsWrapper from './AggsWrapper';
+
+import 'react-datepicker/dist/react-datepicker.css';
 import './DatesAgg.css';
 
-const SQON_DATE_FORMAT = 'YYYY-MM-DD';
-const dateFromSqon = (dateString) => Moment(dateString, SQON_DATE_FORMAT);
-const momentToSqonDate = (moment) => moment?.format(SQON_DATE_FORMAT);
+const dateFromSqon = (dateString) => new Date(dateString);
+const toSqonDate = (date) => date.valueOf();
 
 class DatesAgg extends React.Component {
   constructor(props) {
@@ -20,16 +18,17 @@ class DatesAgg extends React.Component {
     this.state = this.initializeState(props);
   }
 
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     this.setState(this.initializeState(nextProps));
   }
 
   initializeState = ({ stats = {}, getActiveValue = () => null }) => {
     const { field } = this.props;
-    const minDate = stats.min && Moment(stats.min).subtract(1, 'days');
-    const maxDate = stats.max && Moment(stats.max).add(1, 'days');
+    const minDate = stats.min && subDays(stats.min, 1);
+    const maxDate = stats.max && addDays(stats.max, 1);
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
+
     return {
       minDate,
       maxDate,
@@ -49,7 +48,7 @@ class DatesAgg extends React.Component {
                 op: '>=',
                 content: {
                   field,
-                  value: momentToSqonDate(startDate.startOf('day')),
+                  value: toSqonDate(startOfDay(startDate)),
                 },
               },
             ]
@@ -60,7 +59,7 @@ class DatesAgg extends React.Component {
                 op: '<=',
                 content: {
                   field,
-                  value: momentToSqonDate(endDate.endOf('day')),
+                  value: toSqonDate(endOfDay(endDate)),
                 },
               },
             ]
@@ -73,6 +72,10 @@ class DatesAgg extends React.Component {
           replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(field, sqon)),
       });
     }
+  };
+
+  handleDateChange = (limit) => (date) => {
+    this.setState({ [`${limit}Date`]: date }, this.updateSqon);
   };
 
   render() {
@@ -95,38 +98,41 @@ class DatesAgg extends React.Component {
       <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
         <div
           css={css`
-            display: flex;
             align-items: center;
+            display: flex;
             justify-content: space-around;
-
-            input {
-              width: 90%;
-            }
+            padding-left: 5px;
           `}
         >
           <DatePicker
             {...{ minDate, maxDate }}
+            aria-label={`Pick start date`}
             className="start-date"
             isClearable
             openToDate={minDate}
             popperPlacement={facetView ? 'bottom-start' : 'top-start'}
-            disabledKeyboardNavigation
-            placeholderText="Start Date"
+            onChange={this.handleDateChange('start')}
+            placeholderText="YYYY/MM/DD"
             selected={startDate}
-            onChange={(x) => this.setState({ startDate: x }, this.updateSqon)}
-            aria-label={`Pick start date`}
           />
+          <span
+            css={css`
+              font-size: 13px;
+              margin: 0 10px;
+            `}
+          >
+            to
+          </span>
           <DatePicker
             {...{ minDate, maxDate }}
+            aria-label={`Pick end date`}
             className="end-date"
             isClearable
             openToDate={maxDate}
             popperPlacement={facetView ? 'bottom-end' : 'top-start'}
-            disabledKeyboardNavigation
-            placeholderText="End Date"
+            onChange={this.handleDateChange('end')}
+            placeholderText="YYYY/MM/DD"
             selected={endDate}
-            onChange={(x) => this.setState({ endDate: x }, this.updateSqon)}
-            aria-label={`Pick end date`}
           />
         </div>
       </AggsWrapper>
