@@ -63,19 +63,22 @@ class RangeAgg extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const { sqonValues: { max: sqonMax, min: sqonMin } = {}, stats: { max, min } = {} } = nextProps;
+    const {
+      sqonValues: { max: sqonMax, min: sqonMin } = {},
+      stats: { max: newMax, min: newMin } = {},
+    } = nextProps;
     const { stats: { max: oldMax, min: oldMin } = {} } = this.props;
     const { currentValues: { max: selectedMax, min: selectedMin } = {} } = this.state;
 
     const resetMax =
-      isNil(sqonMax) || selectedMax < min || (max > oldMax && selectedMax === oldMax);
+      newMax < selectedMax || (isNil(sqonMax) && newMax > oldMax && selectedMax === oldMax);
     const resetMin =
-      isNil(sqonMin) || selectedMin > max || (min < oldMin && selectedMin === oldMin);
+      newMin > selectedMin || (isNil(sqonMin) && newMin < oldMin && selectedMin === oldMin);
 
     this.setState({
       currentValues: {
-        max: resetMax ? max : Math.min(sqonMax || selectedMax, max),
-        min: resetMin ? min : Math.max(sqonMin || selectedMin, min),
+        max: resetMax ? newMax : Math.min(sqonMax || selectedMax, newMax),
+        min: resetMin ? newMin : Math.max(sqonMin || selectedMin, newMin),
       },
     });
   }

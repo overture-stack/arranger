@@ -1,14 +1,26 @@
-.DateRangePicker_picker__portal {
-  top: 0 !important;
-  bottom: 0 !important;
+.react-datepicker__input-container {
+  width: 100%;
 }
-.DateRangePicker_picker {
-  z-index: 1000;
+
+.react-datepicker-wrapper input {
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 5px;
+  width: 100%;
 }
-.datesAgg_inputRow {
-  display: flex;
-  justify-content: center;
+
+.react-datepicker__input-container .react-datepicker__close-icon::after {
+  background-color: #999;
+  border-radius: 30%;
+  height: 11px;
+  width: 11px;
 }
-.DateRangePickerInput_arrow_svg__small {
-  width: 55px;
+
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  line-height: 1.4rem;
+  width: 1.5rem;
 }

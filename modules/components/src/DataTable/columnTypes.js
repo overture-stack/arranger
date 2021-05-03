@@ -1,8 +1,33 @@
 import React from 'react';
-import { isNil } from 'lodash';
+import { format, isValid, parseISO } from 'date-fns';
 import filesize from 'filesize';
-import { getSingleValue } from './utils';
 import jsonPath from 'jsonpath/jsonpath.min';
+import { isNil } from 'lodash';
+
+import { getSingleValue } from './utils';
+
+const STANDARD_DATE = 'yyyy-MM-dd';
+
+const Date = ({ value, ...props }) => {
+  switch (true) {
+    case isNil(value):
+      return '';
+
+    case isValid(new Date(value)):
+      return format(new Date(value), STANDARD_DATE);
+
+    case isValid(parseISO(value)):
+      return format(parseISO(value), STANDARD_DATE);
+
+    case !isNaN(parseInt(value, 10)):
+      return format(parseInt(value, 10), STANDARD_DATE);
+
+    default: {
+      console.error('unhandled data', value, props);
+      return value;
+    }
+  }
+};
 
 const Number = (props) => <div style={{ textAlign: 'right' }}>{props.value}</div>;
 const FileSize = ({ options = {}, ...props }) => (
@@ -10,14 +35,15 @@ const FileSize = ({ options = {}, ...props }) => (
 );
 
 export default {
-  number: Number,
   bits: ({ value, ...props }) => <FileSize {...props} value={(value || 0) / 8} />,
+  boolean: ({ value }) => (isNil(value) ? '' : `${value}`),
   bytes: (props) => <FileSize {...props} />,
-  boolean: ({ value }) => (!isNil(value) ? `${value}` : ``),
+  date: Date,
   list: (props) => {
     const values = jsonPath.query(props.original, props.column.jsonPath);
     const total = values.length;
     const firstValue = getSingleValue(values[0]);
     return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
   },
+  number: Number,
 };

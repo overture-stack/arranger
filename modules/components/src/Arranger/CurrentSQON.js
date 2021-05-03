@@ -2,12 +2,14 @@ import React from 'react';
 import { compose } from 'recompose';
 import Component from 'react-component-component';
 import { truncate } from 'lodash';
+import { format } from 'date-fns';
 
 import SQONView, { Value, Bubble, Field } from '../SQONView';
 import { fetchExtendedMapping } from '../utils/api';
 import internalTranslateSQONValue from '../utils/translateSQONValue';
 
 export const CurrentSQON = ({
+  dateFormat = 'yyyy-MM-dd',
   emptyMessage,
   sqon,
   setSQON,
@@ -32,7 +34,12 @@ export const CurrentSQON = ({
           compose(
             translateSQONValue,
             internalTranslateSQONValue,
-          )((findExtendedMappingField(field)?.displayValues || {})[value] || value),
+          )(
+            (findExtendedMappingField(field)?.displayValues || {})[value] ||
+              findExtendedMappingField(field)?.type === 'date'
+              ? format(value, dateFormat)
+              : value,
+          ),
           { length: valueCharacterLimit || Infinity },
         )}
       </Value>
