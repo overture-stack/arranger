@@ -109,10 +109,10 @@ class DatesAgg extends React.Component {
             aria-label={`Pick start date`}
             className="start-date"
             isClearable
-            openToDate={minDate}
-            popperPlacement={facetView ? 'bottom-start' : 'top-start'}
             onChange={this.handleDateChange('start')}
+            openToDate={startDate || minDate}
             placeholderText="YYYY/MM/DD"
+            popperPlacement={facetView ? 'bottom-start' : 'top-start'}
             selected={startDate}
           />
           <span
@@ -128,10 +128,10 @@ class DatesAgg extends React.Component {
             aria-label={`Pick end date`}
             className="end-date"
             isClearable
-            openToDate={maxDate}
-            popperPlacement={facetView ? 'bottom-end' : 'top-start'}
             onChange={this.handleDateChange('end')}
+            openToDate={endDate || maxDate}
             placeholderText="YYYY/MM/DD"
+            popperPlacement={facetView ? 'bottom-end' : 'top-start'}
             selected={endDate}
           />
         </div>

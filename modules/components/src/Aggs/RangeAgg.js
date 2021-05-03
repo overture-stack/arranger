@@ -70,10 +70,12 @@ class RangeAgg extends Component {
     const { stats: { max: oldMax, min: oldMin } = {} } = this.props;
     const { currentValues: { max: selectedMax, min: selectedMin } = {} } = this.state;
 
-    const resetMax =
-      newMax < selectedMax || (isNil(sqonMax) && newMax > oldMax && selectedMax === oldMax);
-    const resetMin =
-      newMin > selectedMin || (isNil(sqonMin) && newMin < oldMin && selectedMin === oldMin);
+    const resetMax = isNil(sqonMax)
+      ? isNil(oldMax) || (newMax > oldMax && oldMax === selectedMax)
+      : newMax < selectedMax || newMin > selectedMax;
+    const resetMin = isNil(sqonMin)
+      ? isNil(oldMin) || (newMin < oldMin && oldMin === selectedMin)
+      : newMin > selectedMin || newMax < selectedMin;
 
     this.setState({
       currentValues: {
