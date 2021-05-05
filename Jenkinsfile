@@ -79,7 +79,7 @@ spec:
 		}
 
 // START OF TEST BLOCK - remove before creating PR
-        stage('Push edge images') {
+        stage('Testing push edge images into ghcr') {
             when {
                 branch "Docker-image-ghcr-migration"
             }
