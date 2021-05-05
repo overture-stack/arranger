@@ -78,31 +78,6 @@ spec:
 			}
 		}
 
-// START OF TEST BLOCK - remove before creating PR
-        stage('Testing push edge images into ghcr') {
-            when {
-                branch "Docker-image-ghcr-migration"
-            }
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
-                    }
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                }
-            }
-        }
-// END OF TEST BLOCK
-
         stage('Push edge images') {
             when {
                 branch "develop"
