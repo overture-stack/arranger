@@ -98,7 +98,6 @@ spec:
                         sh "docker push ${dockerhubRepo}-ui:${version}-${commit}"
                     }
                 }
-            }
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
