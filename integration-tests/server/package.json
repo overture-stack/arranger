@@ -5,10 +5,10 @@
     "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
-    "@arranger/admin": "^2.12.13",
-    "@arranger/server": "^2.12.13",
+    "@arranger/admin": "^2.12.14",
+    "@arranger/server": "^2.12.14",
     "body-parser": "^1.18.2",
-    "integration-tests-admin": "^2.12.13",
+    "integration-tests-admin": "^2.12.14",
     "minimist": "^1.2.5"
   },
   "devDependencies": {
@@ -21,5 +21,5 @@
     "mocha": "^5.0.4",
     "regenerator-runtime": "^0.11.1"
   },
-  "version": "2.12.13"
+  "version": "2.12.14"
 }
