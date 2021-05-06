@@ -96,7 +96,7 @@ spec:
                     sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:edge"
                     sh "docker push ${dockerHubRepo}-ui:edge"
                     sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${dockerhubRepo}-ui:${version}-${commit}"
+                    sh "docker push ${dockerHubRepo}-ui:${version}-${commit}"
                 }
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -127,7 +127,7 @@ spec:
                     }
 					sh "docker push ${dockerHubRepo}-server:${commit}"
 					sh "docker push ${dockerHubRepo}-ui:${commit}"
-                    sh "docker tag ${dockerhubRepo}-server:${commit} ${dockerHubRepo}-server:latest"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:latest"
                     sh "docker push ${dockerHubRepo}-server:latest"
                     sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}"
                     sh "docker push ${dockerHubRepo}-server:${version}"
