@@ -1,7 +1,6 @@
-def dockerHubRepo = "overture/arranger-test"
-def serverDockerhubRepo = "overture/arranger-server"
-def uiDockerhubRepo = "overture/arranger-ui"
-def githubRepo = "overture-stack/arranger"
+def gitHubRepo = "overture-stack/arranger"
+def gitHubRegistry = "ghcr.io"
+def dockerHubRepo = "overture/arranger"
 def commit = "UNKNOWN"
 
 pipeline {
@@ -46,8 +45,8 @@ spec:
 				container('docker') {
 					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
 						sh 'docker login -u $USERNAME -p $PASSWORD'
-						sh "docker build --network=host --target test -f Dockerfile -t ${dockerHubRepo}:${commit} ."
 					}
+					sh "docker build --network=host --target test -f Dockerfile -t ${dockerHubRepo}-test:${commit} ."
 				}
 			}
 		}
@@ -55,103 +54,110 @@ spec:
         stage('Run tests') {
             steps {
                 container('docker') {
-                  sh "docker run ${dockerHubRepo}:${commit}"
+                    sh "docker run ${dockerHubRepo}-test:${commit}"
                 }
             }
         }
 
-		stage("Build server container") {
+		stage("Build server and ui images") {
 			steps {
 				container('docker') {
 					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
 						sh 'docker login -u $USERNAME -p $PASSWORD'
-						sh "docker build --network=host --target server -f Dockerfile -t ${serverDockerhubRepo}:${commit} ."
-						sh "docker push ${serverDockerhubRepo}:${commit}"
 					}
+					sh "docker build --network=host --target server -f Dockerfile -t ${dockerHubRepo}-server:${commit} ."
+					sh "docker build --network=host --target ui -f Dockerfile -t ${dockerHubRepo}-ui:${commit} ."
 				}
-			}
-		}
-
-		stage("Build ui container") {
-			steps {
 				container('docker') {
-					withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-						sh 'docker login -u $USERNAME -p $PASSWORD'
-						sh "docker build --network=host --target ui -f Dockerfile -t ${uiDockerhubRepo}:${commit} ."
-						sh "docker push ${uiDockerhubRepo}:${commit}"
+					withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+						sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
 					}
+					sh "docker build --network=host --target server -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-server:${commit} ."
+					sh "docker build --network=host --target ui -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ."
 				}
 			}
 		}
 
-        stage('Push edge containers') {
+        stage('Push edge images') {
             when {
-              branch "develop"
+                branch "develop"
             }
-            parallel {
-                stage('Push edge server container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:edge"
-                                sh "docker push ${serverDockerhubRepo}:edge"
-                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:${version}-${commit}"
-                                sh "docker push ${serverDockerhubRepo}:${version}-${commit}"
-                            }
-                        }
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh "docker login -u $USERNAME -p $PASSWORD"
                     }
+					sh "docker push ${dockerHubRepo}-server:${commit}"
+					sh "docker push ${dockerHubRepo}-ui:${commit}"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:edge"
+                    sh "docker push ${dockerHubRepo}-server:edge"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}-${commit}"
+                    sh "docker push ${dockerHubRepo}-server:${version}-${commit}"
+                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:edge"
+                    sh "docker push ${dockerHubRepo}-ui:edge"
+                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}-${commit}"
+                    sh "docker push ${dockerHubRepo}-ui:${version}-${commit}"
                 }
-                stage('Push edge ui container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:edge"
-                                sh "docker push ${uiDockerhubRepo}:edge"
-                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:${version}-${commit}"
-                                sh "docker push ${uiDockerhubRepo}:${version}-${commit}"
-                            }
-                        }
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
+					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
+					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:edge"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:edge"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
                 }
             }
         }
 
-        stage('Push latest containers') {
+        stage('Push latest images') {
             when {
                 branch "master"
             }
-            parallel {
-                stage('Push latest server container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:latest"
-                                sh "docker push ${serverDockerhubRepo}:latest"
-                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:${version}"
-                                sh "docker push ${serverDockerhubRepo}:${version}"
-                                sh "docker tag ${serverDockerhubRepo}:${commit} ${serverDockerhubRepo}:${version}-${commit}"
-                                sh "docker push ${serverDockerhubRepo}:${version}-${commit}"
-                            }
-                        }
+            steps {
+               container('docker') {
+                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh "docker login -u $USERNAME -p $PASSWORD"
                     }
+					sh "docker push ${dockerHubRepo}-server:${commit}"
+					sh "docker push ${dockerHubRepo}-ui:${commit}"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:latest"
+                    sh "docker push ${dockerHubRepo}-server:latest"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}"
+                    sh "docker push ${dockerHubRepo}-server:${version}"
+                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}-${commit}"
+                    sh "docker push ${dockerHubRepo}-server:${version}-${commit}"
+                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:latest"
+                    sh "docker push ${dockerHubRepo}-ui:latest"
+                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}"
+                    sh "docker push ${dockerHubRepo}-ui:${version}"
+                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}-${commit}"
+                    sh "docker push ${dockerHubRepo}-ui:${version}-${commit}"
                 }
-                stage('Push latest ui container') {
-                    steps {
-                        container('docker') {
-                            withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh 'docker login -u $USERNAME -p $PASSWORD'
-                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:latest"
-                                sh "docker push ${uiDockerhubRepo}:latest"
-                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:${version}"
-                                sh "docker push ${uiDockerhubRepo}:${version}"
-                                sh "docker tag ${uiDockerhubRepo}:${commit} ${uiDockerhubRepo}:${version}-${commit}"
-                                sh "docker push ${uiDockerhubRepo}:${version}-${commit}"
-                            }
-                        }
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
+					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
+					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:latest"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:latest"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
                 }
             }
         }
