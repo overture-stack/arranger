@@ -152,7 +152,7 @@ const TableToolbar = ({
               itemSelectionLegend={`Select columns to display`}
               selectAllAriaLabel={`Select all columns`}
               resetToDefaultAriaLabel={`Reset to default columns`}
-              itemToString={(i) => i.Header}
+              itemToString={(i) => i.displayName || i.Header}
               items={canChangeShowColumns}
               defaultColumns={defaultColumns}
               onChange={(item) => {
