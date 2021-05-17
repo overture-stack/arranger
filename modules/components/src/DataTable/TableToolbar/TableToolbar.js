@@ -61,7 +61,7 @@ const TableToolbar = ({
   defaultColumns,
   downloadUrl,
   enableDropDownControls = false,
-  enableSelectedTableRowsExporterFilter = true,
+  enableSelectedTableRowsExporterFilter = false,
   exporter = null,
   exporterLabel = 'Download',
   exportTSVFilename = '',
