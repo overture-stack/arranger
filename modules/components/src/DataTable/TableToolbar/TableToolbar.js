@@ -62,6 +62,7 @@ const TableToolbar = ({
   downloadUrl,
   enableDropDownControls = false,
   enableSelectedTableRowsExporterFilter = false,
+  selectedRowsFilterPropertyName = 'file_autocomplete',
   exporter = null,
   exporterLabel = 'Download',
   exportTSVFilename = '',
@@ -104,7 +105,7 @@ const TableToolbar = ({
             content: [
               {
                 op: 'in',
-                content: { field: 'file_autocomplete', value: selectedTableRows },
+                content: { field: selectedRowsFilterPropertyName, value: selectedTableRows },
               },
             ],
           },
