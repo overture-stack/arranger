@@ -89,8 +89,10 @@ class DataTableWithToolbar extends React.Component {
       data = null,
       downloadUrl = '',
       enableDropDownControls = false,
-      enableSelectedTableRowsExporterFilter = true,
+      enableSelectedTableRowsExporterFilter,
+      selectedRowsFilterPropertyName,
       exporter,
+      exporterLabel,
       exportTSVFilename,
       exportTSVText,
       fetchData,
@@ -135,6 +137,7 @@ class DataTableWithToolbar extends React.Component {
           exportTSVFilename={exportTSVFilename}
           exportTSVText={exportTSVText}
           exporter={exporter}
+          exporterLabel={exporterLabel}
           filterInputPlaceholder={filterInputPlaceholder}
           InputComponent={InputComponent}
           keyField={config.keyField}
