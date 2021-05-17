@@ -188,48 +188,50 @@ const TableToolbar = ({
           ))}
 
         {multipleExporters ? ( // check if we're given more than one custom exporter
-          <DropDown
-            aria-label={`Download options`}
-            itemToString={(i) =>
-              typeof i.exporterLabel === 'function' ? <i.exporterLabel /> : i.exporterLabel
-            }
-            hasSelectedRows={hasSelectedRows}
-            items={exporterArray}
-            onChange={({
-              exporterColumns,
-              exporterLabel,
-              exporterFileName,
-              exporterFunction,
-              exporterRequiresRowSelection,
-            }) =>
-              (exporterRequiresRowSelection && !hasSelectedRows) ||
-              exporterFunction?.(
-                transformParams({
-                  files: [
-                    {
-                      allColumns,
-                      columns,
-                      fileName: exporterFileName
-                        ? `${exporterFileName}${
-                            exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
-                          }`
-                        : `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
-                      fileType: 'tsv',
-                      index: type,
-                      sqon: downloadSqon,
-                      ...(exporterColumns && { exporterColumns }),
-                    },
-                  ],
-                  selectedTableRows,
-                  url: downloadUrl,
-                }),
-                download,
-              )
-            }
-            singleSelect={true}
-          >
-            {exporterLabel}
-          </DropDown>
+          <div className="buttonWrapper">
+            <DropDown
+              aria-label={`Download options`}
+              itemToString={(i) =>
+                typeof i.exporterLabel === 'function' ? <i.exporterLabel /> : i.exporterLabel
+              }
+              hasSelectedRows={hasSelectedRows}
+              items={exporterArray}
+              onChange={({
+                exporterColumns,
+                exporterLabel,
+                exporterFileName,
+                exporterFunction,
+                exporterRequiresRowSelection,
+              }) =>
+                (exporterRequiresRowSelection && !hasSelectedRows) ||
+                exporterFunction?.(
+                  transformParams({
+                    files: [
+                      {
+                        allColumns,
+                        columns,
+                        fileName: exporterFileName
+                          ? `${exporterFileName}${
+                              exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
+                            }`
+                          : `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
+                        fileType: 'tsv',
+                        index: type,
+                        sqon: downloadSqon,
+                        ...(exporterColumns && { exporterColumns }),
+                      },
+                    ],
+                    selectedTableRows,
+                    url: downloadUrl,
+                  }),
+                  download,
+                )
+              }
+              singleSelect={true}
+            >
+              {exporterLabel}
+            </DropDown>
+          </div>
         ) : (
           // else, use a custom function if any is given, or use the default saveTSV if the flag is on
           singleExporter && (
