@@ -124,7 +124,7 @@ const TableToolbar = ({
             total,
           ).toLocaleString()}`}
         </span>
-        <span className="ofTotal">of {total?.toLocaleString()}</span>
+        <span className="ofTotal">of {total?.toLocaleString()} </span>
         <span className="type">{pluralize(type, isPlural ? 2 : 1)}</span>
       </div>
       {customHeaderContent || null}
