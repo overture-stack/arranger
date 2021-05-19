@@ -25,6 +25,7 @@ export const AggregationsListDisplay = ({
     getDatesAggProps: () => ({}),
   },
   getCustomItems = ({ aggs }) => [], // Array<{index: number, component: Component | Function}>
+  customFacets = [],
 }) => {
   const aggComponentInstances =
     data &&
@@ -41,6 +42,15 @@ export const AggregationsListDisplay = ({
         sqon,
         containerRef,
       }))
+      .map((agg) => {
+        const customContent =
+          customFacets.find((x) => x.content.field === agg.field)?.content || {};
+
+        return {
+          ...agg,
+          ...customContent,
+        };
+      })
       .map((agg) => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
 
   if (aggComponentInstances) {
@@ -77,6 +87,7 @@ export const AggregationsList = ({
   aggs = [],
   debounceTime,
   getCustomItems,
+  customFacets = [],
 }) => (
   <AggsQuery
     api={api}
@@ -96,11 +107,26 @@ export const AggregationsList = ({
         containerRef,
         componentProps,
         getCustomItems,
+        customFacets,
       })
     }
   />
 );
 
+/**
+* customFacets allows custom content to be passed to each facet in the aggregation list. 
+*   This can overwrite any property in the agg object in the aggregation list
+*   The structure of this property is:
+*   [
+*     {
+*       content: {
+*         field: 'field_name', // identify which facet this object customizes
+*         displayName: 'New Display Name for This Field', // modify displayName of the facet
+*       },
+*     },
+*   ]
+* 
+*/
 const Aggregations = ({
   onValueChange = () => {},
   setSQON,
@@ -118,6 +144,7 @@ const Aggregations = ({
     getBooleanAggProps: () => ({}),
     getDatesAggProps: () => ({}),
   },
+  customFacets = [],
 }) => {
   return (
     <Wrapper style={style} className={className}>
@@ -141,6 +168,7 @@ const Aggregations = ({
               graphqlField={graphqlField}
               sqon={sqon}
               aggs={aggs}
+              customFacets={customFacets}
             />
           );
         }}
