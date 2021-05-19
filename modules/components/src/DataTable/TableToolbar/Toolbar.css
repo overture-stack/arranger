@@ -1,4 +1,4 @@
-.currentlyDisplayed > span:not(:last-child) {
+.currentlyDisplayed > span:not(:first-child) {
   margin-left: 3px;
 }
 
