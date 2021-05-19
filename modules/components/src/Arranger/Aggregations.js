@@ -25,6 +25,7 @@ export const AggregationsListDisplay = ({
     getDatesAggProps: () => ({}),
   },
   getCustomItems = ({ aggs }) => [], // Array<{index: number, component: Component | Function}>
+  customFacets = [],
 }) => {
   const aggComponentInstances =
     data &&
@@ -41,6 +42,15 @@ export const AggregationsListDisplay = ({
         sqon,
         containerRef,
       }))
+      .map((agg) => {
+        const customContent =
+          customFacets.find((x) => x.content.field === agg.field)?.content || {};
+
+        return {
+          ...agg,
+          ...customContent,
+        };
+      })
       .map((agg) => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
 
   if (aggComponentInstances) {
@@ -77,6 +87,7 @@ export const AggregationsList = ({
   aggs = [],
   debounceTime,
   getCustomItems,
+  customFacets = [],
 }) => (
   <AggsQuery
     api={api}
@@ -96,6 +107,7 @@ export const AggregationsList = ({
         containerRef,
         componentProps,
         getCustomItems,
+        customFacets,
       })
     }
   />
@@ -118,6 +130,7 @@ const Aggregations = ({
     getBooleanAggProps: () => ({}),
     getDatesAggProps: () => ({}),
   },
+  customFacets = [],
 }) => {
   return (
     <Wrapper style={style} className={className}>
@@ -141,6 +154,7 @@ const Aggregations = ({
               graphqlField={graphqlField}
               sqon={sqon}
               aggs={aggs}
+              customFacets={customFacets}
             />
           );
         }}
