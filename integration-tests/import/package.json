@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@arranger/components": "^2.13.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "minimist": "^1.2.5"
   },
   "devDependencies": {
