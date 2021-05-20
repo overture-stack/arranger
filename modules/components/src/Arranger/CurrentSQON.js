@@ -35,10 +35,9 @@ export const CurrentSQON = ({
             translateSQONValue,
             internalTranslateSQONValue,
           )(
-            (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              findExtendedMappingField(field)?.type === 'date'
-              ? format(value, dateFormat)
-              : value,
+            (findExtendedMappingField(field)?.type === 'date' && format(value, dateFormat)) ||
+              (findExtendedMappingField(field)?.displayValues || {})[value] ||
+              value,
           ),
           { length: valueCharacterLimit || Infinity },
         )}
