@@ -74,10 +74,10 @@ const getRows = (args) => {
 
 export const columnsToHeader = ({ columns, fileType = 'tsv' }) => {
   return fileType === 'tsv'
-    ? `${columns.map(({ Header }) => Header).join('\t')}`
+    ? `${columns.map(({ Header, displayName }) => (displayName ? displayName : Header)).join('\t')}`
     : fileType === 'json'
-    ? columns.reduce((output, { Header, accessor }) => {
-        output[[accessor]] = Header;
+    ? columns.reduce((output, { Header, displayName, accessor }) => {
+        output[[accessor]] = displayName ? displayName : Header;
         return output;
       }, {})
     : '';
