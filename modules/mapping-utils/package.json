@@ -24,7 +24,7 @@
   "dependencies": {
     "@arranger/middleware": "^2.13.1",
     "babel-polyfill": "^6.26.0",
-    "graphql-fields": "^1.0.2",
+    "graphql-fields": "^2.0.3",
     "kind-of": "^6.0.3",
     "lodash": "^4.17.20",
     "minimist": "^1.2.5",
