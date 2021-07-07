@@ -202,7 +202,6 @@ test('buildQuery "all" ops', () => {
   ];
   tests.forEach(({ input, output }) => {
     const actualOutput = buildQuery(input);
-    console.log('actualOutput: ', JSON.stringify(actualOutput));
     expect(actualOutput).toEqual(output);
   });
 });
@@ -933,6 +932,27 @@ test('buildQuery "not-in" op', () => {
       ],
     },
   };
+  const actualOutput = buildQuery(input);
+  expect(actualOutput).toEqual(output);
+});
+
+test('buildQuery should provide query to check if field exists', () => {
+  const input = {
+    nestedFields: [],
+    filters: {
+      op: 'and',
+      content: [
+        {
+          op: 'in',
+          content: {
+            field: 'some_field',
+            value: ['__exists__'],
+          },
+        },
+      ],
+    },
+  };
+  const output = { bool: { must: [{ exists: { boost: 0, field: 'some_field' } }] } };
   const actualOutput = buildQuery(input);
   expect(actualOutput).toEqual(output);
 });

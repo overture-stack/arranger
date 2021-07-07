@@ -25,6 +25,7 @@ import {
   ALL_OP,
   ES_SHOULD,
   ES_WILDCARD,
+  EXISTS,
 } from '../constants';
 import normalizeFilters from './normalizeFilters';
 import {
@@ -62,7 +63,7 @@ function getRegexFilter({ nestedFields, filter }) {
   const esFilter = wrapFilter({
     filter,
     nestedFields,
-    esFilter: { regexp: { [field]: value.replace('*', '.*') } },
+    esFilter: { regexp: { [field]: value.replace(REGEX, '') } },
     isNot: NOT_IN_OP === op,
   });
 
@@ -120,15 +121,16 @@ function getFuzzyFilter({ nestedFields, filter }) {
   );
 }
 
-function getMissingFilter({ nestedFields, filter }) {
+function getMissingFilter({ nestedFields, filter, isNotRequired = true }) {
   const {
     content: { field },
   } = filter;
+
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
     filter,
-    isNot: true,
+    isNot: isNotRequired,
   });
 }
 
@@ -261,6 +263,8 @@ export const opSwitch = ({ nestedFields, filter }) => {
       return getSetFilter({ nestedFields, filter });
     } else if (`${value[0]}`.includes(MISSING)) {
       return getMissingFilter({ nestedFields, filter });
+    } else if (`${value[0]}`.includes(EXISTS)) {
+      return getMissingFilter({ nestedFields, filter, isNotRequired: false });
     } else {
       return getTermFilter({ nestedFields, filter });
     }

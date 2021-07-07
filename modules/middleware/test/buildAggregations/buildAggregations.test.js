@@ -676,3 +676,90 @@ test('buildAggregations can drop nested sqon filters down to filters including a
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expectedOutput);
 });
+
+test('buildAggregations should not wrap aggregations in a Global aggregation is not required', () => {
+  const sqon = {
+    op: 'and',
+    content: [
+      {
+        op: 'in',
+        content: {
+          field: 'observed_phenotype.name',
+          value: [
+            'Abnormality of the head (HP:0000234)',
+            'Abnormality of nervous system morphology (HP:0012639)',
+          ],
+        },
+      },
+    ],
+  };
+
+  const nestedFields = ['observed_phenotype', 'observed_phenotype.name'];
+
+  const input = {
+    nestedFields,
+    sqon,
+    query: buildQuery({ nestedFields, filters: sqon }),
+    graphqlFields: {
+      observed_phenotype__name: {
+        buckets: {
+          key: {},
+          doc_count: {},
+          top_hits: {
+            __arguments: [
+              {
+                _source: {
+                  kind: 'ListValue',
+                  value: ['observed_phenotype.parents'],
+                },
+              },
+              {
+                size: {
+                  kind: 'IntValue',
+                  value: 1,
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+    aggregationsFilterThemselves: false,
+    no_global_aggregation: true,
+  };
+  const expectedOutput = {
+    'observed_phenotype.name:nested': {
+      nested: { path: 'observed_phenotype' },
+      aggs: {
+        'observed_phenotype:filtered': {
+          filter: { bool: { should: [] } },
+          aggs: {
+            'observed_phenotype.name:nested': {
+              nested: { path: 'observed_phenotype.name' },
+              aggs: {
+                'observed_phenotype.name': {
+                  aggs: {
+                    rn: { reverse_nested: {} },
+                    'observed_phenotype.name.hits': {
+                      top_hits: {
+                        _source: ['observed_phenotype.parents'],
+                        size: 1,
+                      },
+                    },
+                  },
+                  terms: { field: 'observed_phenotype.name', size: 300000 },
+                },
+                'observed_phenotype.name:missing': {
+                  aggs: { rn: { reverse_nested: {} } },
+                  missing: { field: 'observed_phenotype.name' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  const actualOutput = buildAggregations(input);
+  expect(actualOutput).toEqual(expectedOutput);
+});

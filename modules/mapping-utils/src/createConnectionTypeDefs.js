@@ -37,6 +37,7 @@ export default ({ type, fields = '', createStateTypeDefs = true }) => `
       include_missing: Boolean
       # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
       aggregations_filter_themselves: Boolean
+      no_global_aggregation: Boolean
     ): ${type.name}Aggregations
   }
 
