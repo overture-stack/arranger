@@ -9,7 +9,13 @@ let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
 export default ({ type, getServerSideFilter }) => async (
   obj,
-  { offset = 0, filters, aggregations_filter_themselves, include_missing = true },
+  {
+    offset = 0,
+    filters,
+    aggregations_filter_themselves,
+    include_missing = true,
+    no_global_aggregation = false,
+  },
   context,
   info,
 ) => {
@@ -42,6 +48,7 @@ export default ({ type, getServerSideFilter }) => async (
     graphqlFields,
     nestedFields,
     aggregationsFilterThemselves: aggregations_filter_themselves,
+    no_global_aggregation,
   });
 
   const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };

@@ -61,11 +61,17 @@ function getNestedPathsInField({ field, nestedFields }) {
     .filter((p) => nestedFields.includes(p));
 }
 
-function wrapWithFilters({ field, query, aggregationsFilterThemselves, aggregation }) {
+function wrapWithFilters({
+  field,
+  query,
+  aggregationsFilterThemselves,
+  aggregation,
+  no_global_aggregation,
+}) {
   if (!aggregationsFilterThemselves) {
     const cleanedQuery = removeFieldFromQuery({ field, query });
     // TODO: better way to figure out that the field wasn't found
-    if (!isEqual(cleanedQuery || {}, query || {})) {
+    if (!no_global_aggregation && !isEqual(cleanedQuery || {}, query || {})) {
       return createGlobalAggregation({
         field,
         aggregation: createFilteredAggregation({
@@ -88,6 +94,7 @@ export default function ({
   nestedFields,
   aggregationsFilterThemselves,
   query,
+  no_global_aggregation,
 }) {
   const normalizedSqon = normalizeFilters(sqon);
   const nestedSqonFilters = getNestedSqonFilters({
@@ -117,6 +124,7 @@ export default function ({
         field,
         aggregation,
         aggregationsFilterThemselves,
+        no_global_aggregation,
       }),
     );
   }, {});
