@@ -3,7 +3,13 @@ import { GraphQLDate } from 'graphql-scalars';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
-import { createConnectionResolvers, saveSet, mappingToFields } from '@arranger/mapping-utils';
+import {
+  createConnectionResolvers,
+  saveSet,
+  mappingToFields,
+  deleteSets,
+  updateSet,
+} from '@arranger/mapping-utils';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
@@ -48,9 +54,33 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   enum ProjectType {
     ${types.map(([key, type]) => type.name).join('\n')}
   }
+  
+  enum SetActionTypes {
+    RENAME_TAG
+    ADD_IDS
+    REMOVE_IDS
+  }
+  
+  input SetUpdateInputData {
+    type: String,
+    sqon: JSON,
+    path: String,
+    newTag: String
+  }
+  
+  input SetUpdateTarget {
+    setId: String!,
+  }
+  
+  type UpdateSetResult {
+    setSize: Int
+    updatedResults: Int!
+  }
 
   type Mutation {
-    saveSet(type: ProjectType! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
+    saveSet(type: ProjectType! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh tag: String): Set
+    deleteSets(setIds: [String!]): Int
+    updateSet(data: SetUpdateInputData! setUpdateAction: SetActionTypes! target: SetUpdateTarget!): UpdateSetResult
   }
 
   schema {
@@ -70,7 +100,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) => {
+export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter, callbacks }) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -111,7 +141,12 @@ export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) 
       {},
     ),
     Mutation: {
-      saveSet: saveSet({ types, getServerSideFilter }),
+      saveSet: saveSet({ types, getServerSideFilter, postProcessCb: callbacks?.postProcessSets }),
+      deleteSets: deleteSets({ postProcessCb: callbacks?.postProcessSets }),
+      updateSet: updateSet({
+        types,
+        postProcessCb: callbacks?.postProcessSets,
+      }),
     },
   };
 };
