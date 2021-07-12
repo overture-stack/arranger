@@ -75,6 +75,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   type UpdateSetResult {
     setSize: Int
     updatedResults: Int!
+    updatedSet: Set
   }
 
   type Mutation {
@@ -100,7 +101,7 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter, callbacks }) => {
+export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -141,11 +142,10 @@ export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter, ca
       {},
     ),
     Mutation: {
-      saveSet: saveSet({ types, getServerSideFilter, postProcessCb: callbacks?.postProcessSets }),
-      deleteSets: deleteSets({ postProcessCb: callbacks?.postProcessSets }),
+      saveSet: saveSet({ types, getServerSideFilter }),
+      deleteSets: deleteSets(),
       updateSet: updateSet({
         types,
-        postProcessCb: callbacks?.postProcessSets,
       }),
     },
   };

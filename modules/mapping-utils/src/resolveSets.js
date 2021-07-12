@@ -52,6 +52,10 @@ const renameTag = async ({ es, setId, newTag, userId }) => {
   };
 };
 
+const updatedSet = (set, tag, ids, sqon) => {
+  return { ...set, sqon, ids, tag };
+};
+
 const addOrRemoveIds = async ({ types, es, userId, setId, sqon, setUpdateAction, type, path }) => {
   const esSearchResponse = await esSearch(es)({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
@@ -141,6 +145,7 @@ const addOrRemoveIds = async ({ types, es, userId, setId, sqon, setUpdateAction,
   return {
     setSize: idsSize,
     updatedResults: esUpdateResponse.body.updated,
+    updatedSet: updatedSet(setToUpdate, setToUpdate.tag, updatedIds, combinedSqon),
   };
 };
 
