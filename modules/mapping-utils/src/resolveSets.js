@@ -12,15 +12,13 @@ import {
 } from './utils/sets';
 import mapHits from './utils/mapHits';
 
-const isQueryEmpty = (sqon) => !sqon || sqon.content.length === 0;
-
 const ActionTypes = {
   RENAME_TAG: 'RENAME_TAG',
   ADD_IDS: 'ADD_IDS',
   REMOVE_IDS: 'REMOVE_IDS',
 };
 
-const renameTag = async ({ es, setId, newTag, subAction, userId }) => {
+const renameTag = async ({ es, setId, newTag, userId }) => {
   const esResponse = await es.updateByQuery({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     refresh: true,
@@ -50,11 +48,11 @@ const renameTag = async ({ es, setId, newTag, subAction, userId }) => {
   });
 
   return {
-    updatedResults: esResponse.updated,
+    updatedResults: esResponse.body.updated,
   };
 };
 
-const addOrRemoveIds = async ({ types, es, userId, setId, sqon, subAction, type, path }) => {
+const addOrRemoveIds = async ({ types, es, userId, setId, sqon, setUpdateAction, type, path }) => {
   const esSearchResponse = await esSearch(es)({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     body: {
@@ -99,11 +97,11 @@ const addOrRemoveIds = async ({ types, es, userId, setId, sqon, subAction, type,
 
   let updatedIds = [];
   let combinedSqon;
-  if (ActionTypes.ADD_IDS === subAction) {
+  if (ActionTypes.ADD_IDS === setUpdateAction) {
     const concatenatedIds = [...ids, ...idsFromQuery];
     updatedIds = truncateIds(makeUnique(concatenatedIds));
     combinedSqon = addSqonToSetSqon(sqonFromExistingSet, sqon);
-  } else if (ActionTypes.REMOVE_IDS === subAction) {
+  } else if (ActionTypes.REMOVE_IDS === setUpdateAction) {
     updatedIds = ids.filter((id) => !idsFromQuery.includes(id));
     combinedSqon = removeSqonToSetSqon(sqonFromExistingSet, sqon);
   }
@@ -229,19 +227,13 @@ export const saveSet = ({ types, getServerSideFilter }) => async (
 
 export const updateSet = ({ types }) => async (
   obj,
-  { subAction, target, userId, data },
+  { setUpdateAction, target, userId, data },
   { es },
 ) => {
-  switch (subAction) {
+  switch (setUpdateAction) {
     case ActionTypes.REMOVE_IDS:
     case ActionTypes.ADD_IDS: {
       const { type, sqon, path } = data;
-
-      if (isQueryEmpty(sqon)) {
-        return {
-          updatedResults: 0,
-        };
-      }
 
       const { setId } = target;
 
@@ -251,7 +243,7 @@ export const updateSet = ({ types }) => async (
         userId,
         setId,
         sqon,
-        subAction,
+        setUpdateAction,
         type,
         path,
       });
@@ -262,7 +254,6 @@ export const updateSet = ({ types }) => async (
       const { newTag } = data;
       return await renameTag({
         es,
-        subAction,
         userId,
         setId,
         newTag,

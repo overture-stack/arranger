@@ -46,7 +46,7 @@ export const retrieveIdsFromQuery = async ({ es, index, query, path, sort, BULK_
       body,
     });
 
-    const ids = response.body.hits.hits.map((x) =>
+    const ids = response.hits.hits.map((x) =>
       get(x, `_source.${path.split('__').join('.')}`, x._id || ''),
     );
 
