@@ -1,6 +1,6 @@
 export { default as addMappingsToTypes } from './addMappingsToTypes';
 export { default as createConnectionResolvers } from './createConnectionResolvers';
-export { default as resolveSets, saveSet } from './resolveSets';
+export { default as resolveSets, saveSet, deleteSets, updateSet } from './resolveSets';
 export { default as mappingToFields } from './mappingToFields';
 export { default as mappingToAggsType } from './mappingToAggsType';
 export { default as mappingToAggsState } from './mappingToAggsState';

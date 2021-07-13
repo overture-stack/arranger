@@ -8,5 +8,6 @@ export let typeDefs = `
     sqon: JSON
     type: String
     userId: String
+    tag: String
   }
 `;
