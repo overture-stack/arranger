@@ -15,6 +15,8 @@ spec:
   - name: node
     image: node:12.6.0
     tty: true
+    securityContext:
+      runAsUser: 1000
   - name: docker
     image: docker:18-git
     tty: true
