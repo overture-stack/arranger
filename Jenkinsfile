@@ -27,6 +27,7 @@ spec:
     image: docker:18.06-dind
     securityContext:
       privileged: true
+      runAsUser: 0
     volumeMounts:
     - name: docker-graph-storage
       mountPath: /var/lib/docker
