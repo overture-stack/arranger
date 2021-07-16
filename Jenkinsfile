@@ -35,13 +35,14 @@ spec:
         }
     }
     stages {
-        stage('Troubleshooting')
+        stage('Troubleshooting') {
             steps {
                 container('node') {
                     sh '''
                     printenv
                     id
                     '''
+                }
                 container('docker') {
                     sh '''
                     printenv
@@ -49,6 +50,7 @@ spec:
                     '''
                 }
             }
+        }
 
         stage('Prepare') {
             steps {
