@@ -35,6 +35,21 @@ spec:
         }
     }
     stages {
+        stage('Troubleshooting')
+            steps {
+                container('node') {
+                    sh '''
+                    printenv
+                    id
+                    '''
+                container('docker') {
+                    sh '''
+                    printenv
+                    id
+                    '''
+                }
+            }
+
         stage('Prepare') {
             steps {
                 script {
