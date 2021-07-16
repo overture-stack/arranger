@@ -38,16 +38,13 @@ spec:
         stage('Troubleshooting') {
             steps {
                 container('node') {
-                    sh '''
-                    printenv
-                    id
-                    '''
+                    sh 'printenv'
+                    sh 'id'
                 }
                 container('docker') {
-                    sh '''
-                    printenv
-                    id
-                    '''
+                    sh 'printenv'
+                    sh 'id'
+                    sh 'sleep 1000000'
                 }
             }
         }
