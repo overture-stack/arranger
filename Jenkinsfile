@@ -11,8 +11,6 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-  securityContext:
-    runAsUser: 1000
   containers:
   - name: node
     image: node:12.6.0
@@ -31,6 +29,8 @@ spec:
     volumeMounts:
     - name: docker-graph-storage
       mountPath: /var/lib/docker
+  securityContext:
+    runAsUser: 1000
   volumes:
   - name: docker-graph-storage
     emptyDir: {}
@@ -38,20 +38,6 @@ spec:
         }
     }
     stages {
-        stage('Troubleshooting') {
-            steps {
-                container('node') {
-                    sh 'printenv'
-                    sh 'id'
-                }
-                container('docker') {
-                    sh 'printenv'
-                    sh 'id'
-                    sh 'sleep 1000000'
-                }
-            }
-        }
-
         stage('Prepare') {
             steps {
                 script {
