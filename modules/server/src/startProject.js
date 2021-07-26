@@ -165,17 +165,21 @@ export const createProjectEndpoint = async ({
 
   projectApp.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
 
-  const externalContext =
-    typeof graphqlOptions.context === 'function'
-      ? await graphqlOptions.context(request, response, graphQLParams)
-      : graphqlOptions.context;
-  const apolloServer = new ApolloServer({
-    schema,
-    context: {
+  const buildContext = async (request, response, connection) => {
+    const externalContext =
+      typeof graphqlOptions.context === 'function'
+        ? await graphqlOptions.context(request, response, connection)
+        : graphqlOptions.context;
+    return {
       es,
       projectId: id,
       ...(externalContext || {}),
-    },
+    };
+  };
+
+  const apolloServer = new ApolloServer({
+    schema,
+    context: ({ req, res, con }) => buildContext(req, res, con),
   });
 
   const noSchemaHandler = (req, res) =>
