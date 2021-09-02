@@ -22,7 +22,7 @@ export let typeDefs = `
 
   type Aggregations {
     bucket_count: Int
-    buckets: [Bucket]
+    buckets(max:Int): [Bucket]
     cardinality(precision_threshold:Int): Int
   }
 `;
