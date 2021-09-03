@@ -4,7 +4,7 @@ import { CONSTANTS, buildQuery } from '@arranger/middleware';
 import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
 
-const retrieveSetIds = async ({ es, index, query, path, sort, BULK_SIZE = 1000 }) => {
+const retrieveSetIds = async ({ es, index, query, path, sort, BULK_SIZE = 1000, trackTotalHits = true  }) => {
   const search = async ({ searchAfter } = {}) => {
     const body = {
       ...(!isEmpty(query) && { query }),
@@ -15,6 +15,7 @@ const retrieveSetIds = async ({ es, index, query, path, sort, BULK_SIZE = 1000 }
       index,
       sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
+      track_total_hits: trackTotalHits,
       body,
     });
     const ids = response.hits.hits.map(x =>
