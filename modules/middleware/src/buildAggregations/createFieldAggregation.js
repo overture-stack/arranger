@@ -25,9 +25,11 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
 };
 
 const createTermAggregation = ({ field, isNested, graphqlField }) => {
-  const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0], {
-    max: { value: MAX_AGGREGATION_SIZE },
-  }).max.value;
+  const maxAggregations = get(
+    graphqlField,
+    ['buckets', '__arguments', 0, 'max', 'value'],
+    MAX_AGGREGATION_SIZE,
+  );
   const termFilter = graphqlField?.buckets?.filter_by_term || null;
   const topHits = graphqlField?.buckets?.top_hits || null;
   const source = topHits?.__arguments[0]?._source || null;
