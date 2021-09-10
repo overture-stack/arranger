@@ -47,14 +47,12 @@ Setting up the project, and prepare things to make changes
 Now you should be able to start the following processes from the project's root folder:
 
 ```bash
-# watch all modules and rebuild them when you make changes
-  npm run watch
-
-# test all modules at once
+# test all modules at once (may require a working ES instance)
   npm test
 
 # run the server (on port 5050)
-  npm run server
+  npm run server # (nodemon on src)
+  npm run server:prod # (node on dist, no watch)
 
 # serve the component dashboard (on port 6060)
   npm run dashboard
