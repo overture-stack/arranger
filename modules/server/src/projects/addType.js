@@ -1,4 +1,4 @@
-import { extendMapping } from '@arranger/mapping-utils';
+import { extendMapping } from '../mapping';
 import { fetchMappings } from '../utils/fetchMappings';
 import mapHits from '../utils/mapHits';
 import getIndexPrefix from '../utils/getIndexPrefix';

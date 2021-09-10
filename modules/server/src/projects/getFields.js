@@ -1,8 +1,7 @@
-import { extendFields, extendMapping, loadExtendedFields } from '@arranger/mapping-utils';
-
+import { extendFields, extendMapping, loadExtendedFields } from '../mapping';
+import { fetchMapping } from '../mapping';
 import getIndexPrefix from '../utils/getIndexPrefix';
 import initializeExtendedFields from '../utils/initializeExtendedFields';
-import { fetchMapping } from '../utils/fetchMappings';
 
 export default async (req, res) => {
   let { es } = req.context;

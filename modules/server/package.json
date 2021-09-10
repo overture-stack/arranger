@@ -28,9 +28,6 @@
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
     "@arranger/admin": "^2.15.0",
-    "@arranger/mapping-utils": "^2.15.0",
-    "@arranger/middleware": "^2.15.0",
-    "@arranger/schema": "^2.15.0",
     "@elastic/elasticsearch": "^7.5.0",
     "apollo-server-core": "^2.14.2",
     "apollo-server-express": "^2.14.2",
@@ -57,6 +54,7 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
     "@babel/preset-env": "^7.5.5",
+    "@babel/preset-flow": "^7.14.5",
     "@babel/register": "^7.5.5",
     "husky": "^4.3.0",
     "nodemon": "^1.18.4",

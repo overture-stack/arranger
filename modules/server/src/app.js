@@ -1,10 +1,9 @@
 import express from 'express';
 import { Server } from 'http';
 import cors from 'cors';
-import adminGraphql from '@arranger/admin/dist';
-import { ES_HOST, ES_PASS, ES_USER } from './utils/config';
 
-import { PORT } from './utils/config';
+import adminGraphql from '@arranger/admin/dist';
+import { ES_HOST, ES_PASS, ES_USER, PORT } from './utils/config';
 import Arranger from './server';
 
 const app = express();

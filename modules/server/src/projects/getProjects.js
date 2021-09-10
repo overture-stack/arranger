@@ -1,5 +1,5 @@
+import esSearch from '../mapping/utils/esSearch';
 import mapHits from '../utils/mapHits';
-import esSearch from '@arranger/mapping-utils/dist/utils/esSearch';
 
 export async function fetchProjects({ es }) {
   let arrangerConfig = {
