@@ -2,7 +2,8 @@
 require('babel-polyfill');
 require('dotenv').config();
 require('@babel/register')({
-  presets: ['@babel/env', '@babel/preset-flow'],
+  extensions: ['.js', '.ts'],
+  presets: ['@babel/env', '@babel/preset-typescript'],
   plugins: [
     '@babel/plugin-proposal-export-namespace-from',
     '@babel/plugin-proposal-optional-chaining',

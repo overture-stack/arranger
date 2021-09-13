@@ -4,5 +4,5 @@
     "@babel/plugin-proposal-optional-chaining",
     "@babel/plugin-proposal-object-rest-spread"
   ],
-  "presets": ["@babel/env", "@babel/preset-flow"]
+  "presets": ["@babel/env", "@babel/preset-typescript"]
 }

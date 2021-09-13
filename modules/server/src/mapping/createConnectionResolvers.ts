@@ -8,7 +8,7 @@ import loadExtendedFields from './utils/loadExtendedFields';
 import esSearch from './utils/esSearch';
 
 type TcreateConnectionResolversArgs = {
-  type: Object,
+  type: Object;
 };
 type TcreateConnectionResolvers = (args: TcreateConnectionResolversArgs) => Object;
 
