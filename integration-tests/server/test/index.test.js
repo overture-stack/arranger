@@ -1,10 +1,9 @@
 import 'babel-polyfill';
 import express from 'express';
 import { Server } from 'http';
-import Arranger from '@arranger/server';
+import Arranger, { adminGraphql } from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
 import { Client } from '@elastic/elasticsearch';
-import adminGraphql from '@arranger/admin/dist';
 import gql from 'graphql-tag';
 import { print } from 'graphql';
 

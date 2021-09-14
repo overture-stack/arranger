@@ -6,7 +6,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "watch": "npm run bootstrap && npm run lerna -- run --parallel watch",
-    "bootstrap": "lerna bootstrap --hoist",
+    "bootstrap": "lerna bootstrap",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
     "publish::ci": "lerna publish from-git --yes --force-publish=*",

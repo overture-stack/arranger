@@ -1,10 +1,10 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import NestedTreeView from '../src/NestedTreeView';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
-import { themeDecorator } from './decorators';
 
-const { elasticMappingToDisplayTreeData, MOCK_MAPPING } = mappingToDisplayTreeData;
+import { elasticMappingToDisplayTreeData } from '../src/AdvancedFacetView/utils';
+import NestedTreeView from '../src/NestedTreeView';
+
+import { themeDecorator } from './decorators';
 
 const dataSource = [
   {
@@ -52,6 +52,49 @@ const dataSource = [
     ],
   },
 ];
+
+const MOCK_MAPPING = {
+  boolean: {
+    type: 'boolean',
+  },
+  children: {
+    properties: {
+      key: {
+        type: 'text',
+        fields: {
+          keyword: {
+            type: 'keyword',
+            ignore_above: 256,
+          },
+        },
+      },
+    },
+  },
+  float: {
+    type: 'float',
+  },
+  int: {
+    type: 'long',
+  },
+  stringarray: {
+    type: 'text',
+    fields: {
+      keyword: {
+        type: 'keyword',
+        ignore_above: 256,
+      },
+    },
+  },
+  text: {
+    type: 'text',
+    fields: {
+      keyword: {
+        type: 'keyword',
+        ignore_above: 256,
+      },
+    },
+  },
+};
 
 storiesOf('Treeview', module)
   .addDecorator(themeDecorator)

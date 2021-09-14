@@ -1,9 +1,0 @@
-[
-  "participants",
-  "participants.biospecimens",
-  "participants.diagnoses",
-  "participants.family.family_compositions",
-  "participants.family.family_compositions.family_members",
-  "participants.family.family_compositions.family_members.diagnoses",
-  "sequencing_experiments"
-]

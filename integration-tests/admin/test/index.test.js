@@ -2,9 +2,8 @@ import 'babel-polyfill';
 import express from 'express';
 import { Server } from 'http';
 import addProject from './addProject';
-import Arranger from '@arranger/server';
+import Arranger, { adminGraphql } from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
-import adminGraphql from '@arranger/admin/dist';
 import { Client } from '@elastic/elasticsearch';
 
 const file_centric_mapppings = require('./assets/file_centric.mappings.json');
