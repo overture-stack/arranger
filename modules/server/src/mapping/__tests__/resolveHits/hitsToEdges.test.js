@@ -1,7 +1,7 @@
 import hits from './mockData/wrangledHits.json';
 import nestedFields from './mockData/nestedFields.json';
 import expectedEdges from './mockData/wrangledExpectedEdges.json';
-import { hitsToEdges } from '../../src/resolveHits';
+import { hitsToEdges } from '../../resolveHits';
 import Parallel from 'paralleljs';
 
 test('hitsToEdges should be acurate', async () => {

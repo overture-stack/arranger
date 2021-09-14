@@ -8,15 +8,25 @@ import { Client } from '@elastic/elasticsearch';
 
 const file_centric_mapppings = require('./assets/file_centric.mappings.json');
 
-const port = 5678;
-const esHost = 'http://127.0.0.1:9200';
-const esIndex = 'file_centric';
+const port = process.env.ES_PORT || 5678;
+const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
+const esIndex = process.env.ES_INDEX || 'file_centric';
+const esPwd = process.env.ES_PASS;
+const esUser = process.env.ES_USER;
+
+const useAuth = !!esPwd && !!esUser;
 
 const app = express();
 const http = Server(app);
 
 const api = ajax(`http://localhost:${port}`);
 const esClient = new Client({
+  ...(useAuth && {
+    auth: {
+      username: esUser,
+      password: esPwd,
+    },
+  }),
   node: esHost,
 });
 

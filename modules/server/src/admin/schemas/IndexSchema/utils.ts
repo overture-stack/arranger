@@ -1,6 +1,6 @@
 import { Client } from '@elastic/elasticsearch';
 import { UserInputError } from 'apollo-server';
-import Qew from 'qew';
+import Qew from 'qew'; // TODO: using 0.9.13 because later versions break the async
 
 import { getEsMapping } from '../../services/elasticsearch';
 import { constants } from '../../services/constants';
@@ -132,7 +132,7 @@ const createProjectQueueManager = () => {
   return {
     getQueue: (projectId: string) => {
       if (!queues[projectId]) {
-        queues[projectId] = new Qew(1);
+        queues[projectId] = new Qew();
       }
       return queues[projectId];
     },
@@ -151,6 +151,7 @@ export const updateProjectIndexMetadata =
     metaData: I_ProjectIndexMetadataUpdateDoc;
   }): Promise<IProjectIndexMetadata> => {
     const queue = projectQueueManager.getQueue(projectId);
+
     return queue.pushProm(async () => {
       await es.update({
         ...getProjectMetadataEsLocation(projectId),
@@ -160,9 +161,11 @@ export const updateProjectIndexMetadata =
         },
         refresh: 'true',
       });
+
       const output = (await getProjectStorageMetadata(es)(projectId)).find(
         (i) => i.name === metaData.name,
       );
+
       return output;
     });
   };

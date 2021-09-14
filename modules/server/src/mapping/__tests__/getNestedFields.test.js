@@ -1,4 +1,4 @@
-import getNestedFields from '../src/getNestedFields';
+import getNestedFields from '../getNestedFields';
 
 test('getNestedFields', () => {
   let actual = getNestedFields({

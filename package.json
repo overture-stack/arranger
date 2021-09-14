@@ -38,6 +38,7 @@
     "@types/react-table": "^6.7.14",
     "@types/recompose": "^0.27.0",
     "@types/redux-devtools": "^3.0.44",
+    "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^8.2.1",
     "eslint": "^4.1.1",
     "eslint-config-prettier": "^2.9.0",

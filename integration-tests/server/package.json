@@ -6,7 +6,13 @@
   },
   "dependencies": {
     "@arranger/server": "^2.15.0",
+    "@elastic/elasticsearch": "^7.14.1",
+    "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
+    "express": "^4.17.1",
+    "graphql": "^15.5.3",
+    "graphql-tag": "^2.12.5",
+    "http": "0.0.1-security",
     "integration-tests-admin": "^2.15.0",
     "minimist": "^1.2.5"
   },

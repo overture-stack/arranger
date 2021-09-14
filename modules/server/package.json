@@ -12,9 +12,9 @@
   "scripts": {
     "start": "nodemon index.js",
     "start:prod": "node index.js",
-    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --extensions .ts,.js --out-dir dist",
     "test": "jest",
-    "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist"
+    "watch": "rm -rf dist && mkdir dist && babel src --watch --extensions .ts,.js --out-dir dist"
   },
   "repository": {
     "type": "git",
@@ -41,18 +41,20 @@
     "express": "^4.16.3",
     "graphql": "^14.5.3",
     "graphql-fields": "^2.0.3",
-    "graphql-middleware": "^6.1.6",
+    "graphql-middleware": "^1.7.8",
     "graphql-playground-middleware-express": "^1.7.12",
     "graphql-scalars": "^1.10.1",
+    "graphql-tools": "^4.0.8",
     "graphql-type-json": "^0.3.2",
     "jsonpath": "^1.0.0",
     "lodash": "^4.17.20",
     "node-fetch": "^2.2.0",
     "paralleljs": "^1.1.0",
-    "qew": "^0.11.1",
+    "qew": "^0.9.13",
     "ramda": "^0.27.1",
     "tar-stream": "^1.5.5",
     "through2": "^2.0.3",
+    "tslib": "^2.3.1",
     "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
@@ -65,6 +67,7 @@
     "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.5.5",
     "@types/convert-units": "^2.3.5",
+    "babel-core": "^7.0.0-bridge.0",
     "husky": "^4.3.0",
     "nodemon": "^1.18.4",
     "prettier": "^2.1.2",
@@ -72,6 +75,9 @@
     "typescript": "^4.4.3"
   },
   "jest": {
+    "modulePathIgnorePatterns": [
+      "dist"
+    ],
     "testURL": "http://localhost/"
   },
   "prettier": {

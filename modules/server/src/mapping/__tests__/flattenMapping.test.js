@@ -1,4 +1,4 @@
-import flattenMapping from '../src/flattenMapping';
+import flattenMapping from '../flattenMapping';
 
 const testMapping = {
   level_1_1: {
