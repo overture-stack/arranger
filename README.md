@@ -66,7 +66,8 @@ Now you should be able to start the following processes from the project's root 
 
 #### - Dockerized Setup
 
-A bit more friendly "quickstart", if you just want to get things started
+A bit more friendly "quickstart", if you just want to get things started.
+Note: it may take a while on the first run, as it builds the images, etc.
 
 ```bash
 # Start all services at once, using some default settings.
@@ -89,9 +90,9 @@ A bit more friendly "quickstart", if you just want to get things started
 
 ---
 # Bonus: ----------------------------- #
-# See other preprogrammed make targets
+# See other predefined `make` targets
   make help
-# e.g. utilities to list the indexes, or clear the Elasticsearch; list the running docker containers, etc.
+# e.g. utilities to list the indexes, or clear the Elasticsearch, list the running docker containers, etc.
 ```
 
 ---
