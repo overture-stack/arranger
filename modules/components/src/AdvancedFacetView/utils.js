@@ -1,9 +1,24 @@
 import { keys, orderBy, partition } from 'lodash';
-import { mappingToDisplayTreeData } from '@arranger/mapping-utils';
 
 import strToReg from '../utils/strToReg';
 
-const { elasticMappingToDisplayTreeData } = mappingToDisplayTreeData;
+const elasticMappingToDisplayTreeData = (elasticMapping, parentPath) => {
+  const mappingKeys = Object.keys(elasticMapping);
+  return mappingKeys.map((key) => {
+    const fieldProps = elasticMapping[key];
+    const currentPath = parentPath ? `${parentPath}.${key}` : `${key}`;
+    return {
+      title: key,
+      path: currentPath,
+      id: `${key}`,
+      ...(fieldProps.properties
+        ? {
+            children: elasticMappingToDisplayTreeData(fieldProps.properties, currentPath),
+          }
+        : {}),
+    };
+  });
+};
 
 const injectExtensionToElasticMapping = ({ elasticMapping, extendedMapping, rootTypeName }) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);

@@ -5,16 +5,18 @@
     "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
-    "@arranger/admin": "^2.15.0",
     "@arranger/server": "^2.15.0",
     "@elastic/elasticsearch": "7.5.0",
-    "body-parser": "^1.18.2"
+    "body-parser": "^1.18.2",
+    "express": "^4.17.1",
+    "graphql-tag": "^2.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@babel/register": "^7.5.5",
+    "babel-polyfill": "^6.26.0",
     "chai": "^4.1.2",
     "mocha": "^5.0.4",
     "regenerator-runtime": "^0.11.1"

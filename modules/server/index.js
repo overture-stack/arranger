@@ -2,8 +2,10 @@
 require('babel-polyfill');
 require('dotenv').config();
 require('@babel/register')({
-  presets: ['@babel/env'],
+  extensions: ['.js', '.ts'],
+  presets: ['@babel/env', '@babel/preset-typescript'],
   plugins: [
+    '@babel/plugin-proposal-export-namespace-from',
     '@babel/plugin-proposal-optional-chaining',
     '@babel/plugin-proposal-object-rest-spread',
   ],

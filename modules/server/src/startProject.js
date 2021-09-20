@@ -1,16 +1,16 @@
+import expressPlayground from 'graphql-playground-middleware-express';
 import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
-import makeSchema from '@arranger/schema';
-import { extendFields, addMappingsToTypes } from '@arranger/mapping-utils';
+
+import download from './download';
+import { extendFields, addMappingsToTypes } from './mapping';
+import { CONSTANTS } from './middleware';
+import makeSchema, { setsMapping } from './schema';
 import { fetchMappings } from './utils/fetchMappings';
+import getIndexPrefix from './utils/getIndexPrefix';
+import getTypes from './utils/getTypes';
 import mapHits from './utils/mapHits';
 import { setProject } from './utils/projects';
-import download from './download';
-import getIndexPrefix from './utils/getIndexPrefix';
-import { setsMapping } from '@arranger/schema';
-import { CONSTANTS } from '@arranger/middleware';
-import getTypes from './utils/getTypes';
-import expressPlayground from 'graphql-playground-middleware-express';
 
 const initializeSets = async ({ es }) => {
   if (!(await es.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))) {

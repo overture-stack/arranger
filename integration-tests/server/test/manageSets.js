@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import gql from 'graphql-tag';
 import { print } from 'graphql';
-import get from 'lodash/get';
 
 export default ({ api, graphqlField, gqlPath }) => {
   let setId = undefined;

@@ -39,7 +39,7 @@ USER $APP_USER
 
 EXPOSE 5050
 
-CMD ["npm", "run", "run-prod-server"]
+CMD ["npm", "run", "server:prod"]
 
 #######################################################
 # Builder 2
