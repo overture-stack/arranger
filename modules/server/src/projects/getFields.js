@@ -1,5 +1,4 @@
-import { extendFields, extendMapping, loadExtendedFields } from '../mapping';
-import { fetchMapping } from '../mapping';
+import { extendFields, extendMapping, fetchMapping, loadExtendedFields } from '../mapping';
 import getIndexPrefix from '../utils/getIndexPrefix';
 import initializeExtendedFields from '../utils/initializeExtendedFields';
 
