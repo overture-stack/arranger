@@ -1,5 +1,4 @@
 import express from 'express';
-import { Server } from 'http';
 import cors from 'cors';
 
 import adminGraphql from './admin';
@@ -8,8 +7,6 @@ import Arranger from './server';
 
 const app = express();
 app.use(cors());
-
-const http = Server(app);
 
 export default async function () {
   // the admin app
@@ -21,7 +18,7 @@ export default async function () {
   // Always run test server as admin
   return Arranger({ enableAdmin: false }).then((router) => {
     app.use(router);
-    http.listen(PORT, async () => {
+    app.listen(PORT, async () => {
       console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
     });
   });

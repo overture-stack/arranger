@@ -1,6 +1,5 @@
 import 'babel-polyfill';
 import express from 'express';
-import { Server } from 'http';
 import addProject from './addProject';
 import Arranger, { adminGraphql } from '@arranger/server';
 import ajax from '@arranger/server/dist/utils/ajax';
@@ -17,7 +16,6 @@ const esUser = process.env.ES_USER;
 const useAuth = !!esPwd && !!esUser;
 
 const app = express();
-const http = Server(app);
 
 const api = ajax(`http://localhost:${port}`);
 const esClient = new Client({
@@ -41,6 +39,7 @@ const cleanup = () =>
   ]);
 
 describe('@arranger/admin', () => {
+  let server;
   const adminPath = '/admin/graphql';
   before(async () => {
     console.log('===== Initializing Elasticsearch data =====');
@@ -58,13 +57,13 @@ describe('@arranger/admin', () => {
     adminApp.applyMiddleware({ app, path: adminPath });
     app.use(router);
     await new Promise((resolve) => {
-      http.listen(port, () => {
+      server = app.listen(port, () => {
         resolve();
       });
     });
   });
   after(async () => {
-    http.close();
+    server?.close();
     await cleanup();
   });
 
