@@ -15,8 +15,9 @@ spec:
   - name: node
     image: node:12.6.0
     tty: true
-    securityContext:
-      runAsUser: 9999
+    env:
+    - name: HOME
+      value: /home/jenkins/agent
   - name: docker
     image: docker:18-git
     tty: true
