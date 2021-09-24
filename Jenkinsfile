@@ -15,6 +15,8 @@ spec:
   - name: node
     image: node:12.6.0
     tty: true
+    securityContext:
+      runAsUser: 9999
   - name: docker
     image: docker:18-git
     tty: true
@@ -40,6 +42,16 @@ spec:
         }
     }
     stages {
+        stage('Diagnostics') {
+            steps {
+                container('docker') {
+                    sh "printenv; id; cat /etc/passwd"
+                }
+                container('node') {
+                    sh "printenv; id; cat /etc/passwd"
+                }
+            }
+        }
         stage('Prepare') {
             steps {
                 script {
