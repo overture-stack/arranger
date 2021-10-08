@@ -5,6 +5,9 @@
   },
   "license": "SEE LICENSE IN LICENSE",
   "scripts": {
+    "admin": "cd modules/admin-ui && npm run start",
+    "all": "npm run lerna -- run --parallel start",
+    "components:watch": "cd modules/components && npm run watch",
     "watch": "npm run bootstrap && npm run lerna -- run --parallel watch",
     "bootstrap": "lerna bootstrap",
     "lerna": "lerna",
@@ -59,6 +62,11 @@
   "dependencies": {
     "kind-of": "^6.0.3",
     "minimist": "^1.2.5"
+  },
+  "jest": {
+    "modulePathIgnorePatterns": [
+      "dist"
+    ]
   },
   "prettier": {
     "printWidth": 100,

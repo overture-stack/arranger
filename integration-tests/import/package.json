@@ -14,7 +14,7 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
-    "@arranger/components": "^2.15.0",
+    "@caravinci/arranger-components": "^2.15.1",
     "lodash": "^4.17.20",
     "minimist": "^1.2.5"
   },

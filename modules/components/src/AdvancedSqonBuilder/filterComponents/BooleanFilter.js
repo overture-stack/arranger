@@ -5,7 +5,6 @@ import { get } from 'lodash';
 
 import { getOperationAtPath, setSqonAtPath, IN_OP } from '../utils';
 import defaultApi from '../../utils/api';
-import { PROJECT_ID } from '../../utils/config';
 import BooleanAgg from '../../Aggs/BooleanAgg';
 import { FilterContainer } from './common';
 import './FilterContainerStyle.css';
@@ -106,8 +105,7 @@ BooleanFilterUI.propTypes = {
 export default (props) => {
   const {
     api = defaultApi,
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     initialSqon,
     executableSqon,
     sqonPath,
@@ -122,7 +120,7 @@ export default (props) => {
 
   const gqlField = field.split('.').join('__');
   const query = `query($sqon: JSON){
-    ${arrangerProjectIndex} {
+    ${arrangerIndex} {
       aggregations(filters: $sqon) {
         ${gqlField} {
           buckets {
@@ -137,7 +135,6 @@ export default (props) => {
   return (
     <Query
       api={api}
-      projectId={arrangerProjectId}
       query={query}
       variables={{ sqon: executableSqon }}
       render={({ data, loading, error }) => (
@@ -154,9 +151,7 @@ export default (props) => {
           sqonPath={sqonPath}
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
-          buckets={
-            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
-          }
+          buckets={data ? get(data, `${arrangerIndex}.aggregations.${gqlField}.buckets`) : []}
         />
       )}
     />

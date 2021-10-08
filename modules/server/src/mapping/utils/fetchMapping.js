@@ -1,17 +1,32 @@
-export let fetchMapping = async ({ index, es }) => {
-  let aliases = (await es.cat.aliases({ format: 'json' })).body;
-  let alias = aliases?.find((x) => x.alias === index)?.index;
+export let fetchMapping = async ({ esClient, index }) => {
+  if (esClient) {
+    console.log(`Fetching ES mapping for "${index}"...`);
+    const aliases = (await esClient?.cat.aliases({ format: 'json' })).body;
+    const alias = aliases?.find((foundIndex) => foundIndex.alias === index)?.index;
+    alias && console.log(`Found it as an alias for index "${alias}".`);
+    const accessor = alias || index;
 
-  return es.indices
-    .getMapping({
-      index: alias || index,
-    })
-    .catch((err) => {
-      // TODO: return something more useful than false
-      return false;
-    })
-    .then((response) => {
-      const mapping = response.body;
-      return { index, mapping, alias };
-    });
+    return esClient?.indices
+      .getMapping({
+        index: accessor,
+      })
+      .catch((error) => {
+        console.error(error?.message || error);
+        // TODO: analyse returning something more useful than false
+        return false;
+      })
+      .then((response) => {
+        const mappings = response?.body?.[accessor];
+
+        if (mappings) {
+          const mapping = mappings?.mappings?.properties;
+          return { index: accessor, mappings, mapping, alias };
+        }
+
+        console.info(`Response could not be used to map "${accessor}":`, response?.body);
+        throw new Error(`Could not create a mapping for "${accessor}"`);
+      });
+  }
+
+  throw new Error('fetchMapping did not receive an esClient');
 };

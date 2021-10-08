@@ -157,7 +157,7 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
   let fields = getFields(info);
   let nestedFields = type.nested_fields;
 
-  const { es } = context;
+  const { esClient } = context;
 
   /**
    * @todo: I left this chunk here for reference, in case someone actually understands what it actually is trying to do
@@ -218,7 +218,7 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
 
   const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
-  let { hits } = await esSearch(es)({
+  let { hits } = await esSearch(esClient)({
     index: type.index,
     size: first,
     from: offset,

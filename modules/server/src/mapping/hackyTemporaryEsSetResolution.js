@@ -2,13 +2,15 @@
 // we have to resolve set ids into actual ids. Once the issue is resolved
 // by Elasticsearch in version 6.3, we no longer need these functions here.
 
+// TODO: evaluate this ^^^^^^
+
 import { flattenDeep, isArray, zipObject } from 'lodash';
 
 import { CONSTANTS } from '../middleware';
 import esSearch from './utils/esSearch';
 
-const resolveSetIdsFromEs = (es) => (setId) =>
-  esSearch(es)({
+const resolveSetIdsFromEs = (esClient) => (setId) =>
+  esSearch(esClient)({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     body: {
       query: {
@@ -49,10 +51,10 @@ const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
   })),
 });
 
-export const resolveSetsInSqon = ({ sqon, es }) => {
+export const resolveSetsInSqon = ({ sqon, esClient }) => {
   const setIds = getSetIdsFromSqon(sqon || {});
   return setIds.length
-    ? Promise.all(setIds.map(resolveSetIdsFromEs(es))).then((searchResult) => {
+    ? Promise.all(setIds.map(resolveSetIdsFromEs(esClient))).then((searchResult) => {
         const setIdsToValueMap = zipObject(
           setIds.map((id) => `set_id:${id}`),
           searchResult,

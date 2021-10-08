@@ -2,7 +2,7 @@ import { flattenDeep } from 'lodash';
 
 import replaceBy from './replaceBy';
 
-const initializeExtendedFields = async ({ indexPrefix, fields, config, es }) => {
+const initializeExtendedFields = async ({ indexPrefix, fields, config, esClient }) => {
   const mergedFields = fields?.length
     ? replaceBy(fields, config.extended, (x, y) => x.field === y.field)
     : config.extended;
@@ -20,7 +20,7 @@ const initializeExtendedFields = async ({ indexPrefix, fields, config, es }) => 
     ]),
   );
 
-  await es.bulk({ body });
+  await esClient.bulk({ body });
 
   return mergedFields;
 };

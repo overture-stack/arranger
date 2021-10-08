@@ -27,11 +27,11 @@ export default ({
   scalarTypes = [],
   middleware = [],
   mock = false,
-  enableAdmin,
+  enableAdmin = false,
   getServerSideFilter,
 } = {}) => {
   const typesWithSets = [
-    ...types,
+    types,
     [
       'sets',
       {

@@ -1,72 +1,54 @@
 import { PassThrough } from 'stream';
 
+import { mapHits } from '../mapping';
 import { buildQuery, esToSafeJsInt } from '../middleware';
-import { DOWNLOAD_STREAM_BUFFER_SIZE } from '../utils/config';
-import { getProject } from './projects';
+import { CONFIG } from '../config';
+import runQuery from './runQuery';
 
 export default async ({
-  projectId,
-  es,
-  index,
+  chunkSize = CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
   columns = [],
+  ctx = {},
+  mock,
   sort = [],
   sqon,
-  chunkSize = DOWNLOAD_STREAM_BUFFER_SIZE,
   ...rest
 }) => {
+  const { configs, esClient, mockSchema, schema } = ctx;
   const stream = new PassThrough({ objectMode: true });
-  const toHits = ({
-    body: {
-      hits: { hits },
-    },
-  }) => hits;
   const esSort = sort.map(({ field, order }) => ({ [field]: order })).concat({ _id: 'asc' });
 
-  const { esIndex, esType, extended } = await es
-    .search({
-      index: `arranger-projects-${projectId}`,
-    })
-    .then(toHits)
-    .then((hits) => hits.map(({ _source }) => _source))
-    .then(
-      (hits) =>
-        hits
-          .map(({ index: esIndex, name, esType, config: { extended } }) => ({
-            esIndex,
-            name,
-            esType,
-            extended,
-          }))
-          .filter(({ name }) => name === index)[0],
-    );
-
-  const nestedFields = extended.filter(({ type }) => type === 'nested').map(({ field }) => field);
+  const nestedFields = configs.extendedFields
+    .filter(({ type }) => type === 'nested')
+    .map(({ field }) => field);
 
   const query = buildQuery({ nestedFields, filters: sqon });
 
-  getProject(projectId)
-    .runQuery({
-      query: `
+  runQuery({
+    esClient,
+    query: `
         query ($sqon: JSON) {
-          ${index} {
+          ${configs.name} {
             hits(filters: $sqon) {
               total
             }
           }
         }
       `,
-      variables: { sqon },
-    })
+    schema: mock ? mockSchema : schema,
+    variables: { sqon },
+  })
     .then(({ data }) => {
-      const total = data[index].hits.total;
-      const steps = Array(Math.ceil(total / chunkSize)).fill();
+      const total = data?.[configs.name]?.hits?.total || 0;
+      const steps = Array(Math.ceil(total / Number(chunkSize))).fill(null);
+
       // async reduce because each cycle is dependent on result of the previous
       return steps.reduce(async (previous) => {
         const previousHits = await previous;
         console.time(`EsQuery`);
-        const hits = await es
+        const hits = await esClient
           .search({
-            index: esIndex,
+            index: configs.index,
             size: chunkSize,
             body: {
               sort: esSort,
@@ -78,13 +60,16 @@ export default async ({
               ...(Object.entries(query).length ? { query } : {}),
             },
           })
-          .then(toHits);
+          .then(({ body }) => mapHits(body));
+
         console.timeEnd(`EsQuery`);
         stream.write({ hits, total });
+
         return hits;
       }, Promise.resolve());
     })
     .then(() => stream.end())
     .catch(console.error);
+
   return stream;
 };

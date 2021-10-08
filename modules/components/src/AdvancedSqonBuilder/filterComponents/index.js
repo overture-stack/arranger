@@ -5,7 +5,6 @@ import RangeFilter from './RangeFilter';
 import BooleanFilter from './BooleanFilter';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
 import { default as defaultApi } from '../../utils/api';
-import { PROJECT_ID } from '../../utils/config';
 import { FilterContainer } from './common';
 
 export { default as TermFilter } from './TermFilter';
@@ -22,29 +21,21 @@ const FieldOpModifier = ({
   ContainerComponent = FilterContainer,
   api = defaultApi,
   field,
-  arrangerProjectId = PROJECT_ID,
-  arrangerProjectIndex,
+  arrangerIndex,
   getExecutableSqon = () => initialSqon,
 }) => (
-  <ExtendedMappingProvider
-    api={api}
-    projectId={arrangerProjectId}
-    graphqlField={arrangerProjectIndex}
-    field={field}
-  >
+  <ExtendedMappingProvider api={api} graphqlField={arrangerIndex} field={field}>
     {({ loading, extendedMapping }) => {
       const fieldExtendedMapping = (extendedMapping || []).find(
         ({ field: _field }) => field === _field,
       );
 
       // temporary, needs to handle errors too
-      console.log('fieldExtendedMapping: ', fieldExtendedMapping);
       const { type, unit } = fieldExtendedMapping || {};
       return ['keyword', 'id'].includes(type) ? (
         <TermFilter
           field={field}
-          arrangerProjectId={arrangerProjectId}
-          arrangerProjectIndex={arrangerProjectIndex}
+          arrangerIndex={arrangerIndex}
           api={api}
           loading={loading}
           sqonPath={sqonPath}
@@ -74,8 +65,7 @@ const FieldOpModifier = ({
         <BooleanFilter
           field={field}
           api={api}
-          arrangerProjectId={arrangerProjectId}
-          arrangerProjectIndex={arrangerProjectIndex}
+          arrangerIndex={arrangerIndex}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
           executableSqon={getExecutableSqon()}
@@ -105,8 +95,7 @@ FieldOpModifier.prototype = {
   ContainerComponent: PropTypes.any,
   api: PropTypes.func,
   field: PropTypes.string,
-  arrangerProjectId: PropTypes.string,
-  arrangerProjectIndex: PropTypes.string.isRequired,
+  arrangerIndex: PropTypes.string.isRequired,
   getExecutableSqon: PropTypes.func,
 };
 

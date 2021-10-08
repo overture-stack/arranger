@@ -15,12 +15,12 @@ export default ({ type, getServerSideFilter }) => async (
 ) => {
   const nestedFields = type.nested_fields;
 
-  const { es } = context;
+  const { esClient } = context;
 
   // due to this problem in Elasticsearch 6.2 https://github.com/elastic/elasticsearch/issues/27782,
   // we have to resolve set ids into actual ids. As this is an aggregations specific issue,
   // we are placing this here until the issue is resolved by Elasticsearch in version 6.3
-  const resolvedFilter = await resolveSetsInSqon({ sqon: filters, es });
+  const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
 
   const query = buildQuery({
     nestedFields,
@@ -45,7 +45,7 @@ export default ({ type, getServerSideFilter }) => async (
   });
 
   const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
-  const response = await esSearch(es)({
+  const response = await esSearch(esClient)({
     index: type.index,
     size: 0,
     _source: false,

@@ -8,7 +8,8 @@ require('@babel/register')({
     '@babel/plugin-proposal-export-namespace-from',
     '@babel/plugin-proposal-optional-chaining',
     '@babel/plugin-proposal-object-rest-spread',
+    '@babel/plugin-transform-runtime',
   ],
 });
 
-require('./src').App();
+require('./src').App(__dirname);

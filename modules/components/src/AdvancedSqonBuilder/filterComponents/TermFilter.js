@@ -16,7 +16,6 @@ import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import defaultApi from '../../utils/api';
-import { PROJECT_ID } from '../../utils/config';
 import Query from '../../Query';
 
 const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
@@ -179,8 +178,7 @@ export const TermFilterUI = (props) => {
 export default (props) => {
   const {
     field,
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     api = defaultApi,
     executableSqon = {
       op: AND_OP,
@@ -199,7 +197,7 @@ export default (props) => {
 
   const gqlField = field.split('.').join('__');
   const query = `query($sqon: JSON){
-    ${arrangerProjectIndex} {
+    ${arrangerIndex} {
       aggregations(filters: $sqon) {
         ${gqlField} {
           buckets {
@@ -213,7 +211,6 @@ export default (props) => {
   return (
     <Query
       variables={{ sqon: executableSqon }}
-      projectId={arrangerProjectId}
       api={api}
       query={query}
       render={({ data, loading, error }) => (
@@ -231,9 +228,7 @@ export default (props) => {
           sqonPath={sqonPath}
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
-          buckets={
-            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
-          }
+          buckets={data ? get(data, `${arrangerIndex}.aggregations.${gqlField}.buckets`) : []}
         />
       )}
     />

@@ -2,7 +2,7 @@ import React from 'react';
 import { isEqual } from 'lodash';
 import urlJoin from 'url-join';
 
-import { ARRANGER_API, PROJECT_ID } from '../utils/config';
+import { ARRANGER_API } from '../utils/config';
 import { Table, TableToolbar } from './';
 
 const STORED_PROPS = {
@@ -106,7 +106,6 @@ class DataTableWithToolbar extends React.Component {
       onFilterChange = () => {},
       onMultipleColumnsChange = () => {},
       onSortedChange = () => {},
-      projectId = PROJECT_ID,
       sessionStorage,
       selectedTableRows = [],
       setSelectedTableRows = () => {},
@@ -118,7 +117,7 @@ class DataTableWithToolbar extends React.Component {
     } = this.props;
     const { page, pageSize, sorted, total } = this.state;
 
-    const url = downloadUrl || urlJoin(ARRANGER_API, projectId, 'download');
+    const url = downloadUrl || urlJoin(ARRANGER_API, 'download');
 
     return (
       <>

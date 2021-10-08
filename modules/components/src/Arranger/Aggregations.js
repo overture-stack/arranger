@@ -72,7 +72,6 @@ export const AggregationsList = ({
   onValueChange = () => {},
   setSQON,
   sqon,
-  projectId,
   graphqlField,
   style,
   api,
@@ -92,7 +91,6 @@ export const AggregationsList = ({
   <AggsQuery
     api={api}
     debounceTime={300}
-    projectId={projectId}
     index={graphqlField}
     sqon={sqon}
     aggs={aggs}
@@ -114,24 +112,23 @@ export const AggregationsList = ({
 );
 
 /**
-* customFacets allows custom content to be passed to each facet in the aggregation list. 
-*   This can overwrite any property in the agg object in the aggregation list
-*   The structure of this property is:
-*   [
-*     {
-*       content: {
-*         field: 'field_name', // identify which facet this object customizes
-*         displayName: 'New Display Name for This Field', // modify displayName of the facet
-*       },
-*     },
-*   ]
-* 
-*/
+ * customFacets allows custom content to be passed to each facet in the aggregation list.
+ *   This can overwrite any property in the agg object in the aggregation list
+ *   The structure of this property is:
+ *   [
+ *     {
+ *       content: {
+ *         field: 'field_name', // identify which facet this object customizes
+ *         displayName: 'New Display Name for This Field', // modify displayName of the facet
+ *       },
+ *     },
+ *   ]
+ *
+ */
 const Aggregations = ({
   onValueChange = () => {},
   setSQON,
   sqon,
-  projectId,
   graphqlField,
   className = '',
   style,
@@ -150,7 +147,6 @@ const Aggregations = ({
     <Wrapper style={style} className={className}>
       <AggsState
         api={api}
-        projectId={projectId}
         graphqlField={graphqlField}
         render={(aggsState) => {
           const aggs = aggsState.aggs.filter((x) => x.show);
@@ -164,7 +160,6 @@ const Aggregations = ({
               componentProps={componentProps}
               api={api}
               debounceTime={300}
-              projectId={projectId}
               graphqlField={graphqlField}
               sqon={sqon}
               aggs={aggs}

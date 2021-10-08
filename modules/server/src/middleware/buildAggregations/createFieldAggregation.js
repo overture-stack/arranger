@@ -32,8 +32,8 @@ const createTermAggregation = ({ field, isNested, graphqlField }) => {
   );
   const termFilter = graphqlField?.buckets?.filter_by_term || null;
   const topHits = graphqlField?.buckets?.top_hits || null;
-  const source = topHits?.__arguments[0]?._source || null;
-  const size = topHits?.__arguments[1]?.size || 1;
+  const source = topHits?.__arguments?.[0]?._source || null;
+  const size = topHits?.__arguments?.[1]?.size || 1;
 
   let innerAggs = {};
   if (isNested) {
@@ -52,9 +52,9 @@ const createTermAggregation = ({ field, isNested, graphqlField }) => {
   }
 
   if (termFilter) {
-    const terms = termFilter.__arguments[0]?.filter?.value || [];
+    const terms = termFilter.__arguments?.[0]?.filter?.value || [];
 
-    const aggsFilters = terms.content.map((sqonFilter) =>
+    const aggsFilters = terms?.content?.map((sqonFilter) =>
       opSwitch({
         nestedFields: [],
         filter: normalizeFilters(sqonFilter),

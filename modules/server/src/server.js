@@ -1,15 +1,12 @@
 import elasticsearch from '@elastic/elasticsearch';
 import express from 'express';
 
-import projectsRoutes from './projects';
-import { getProjects } from './utils/projects';
-import startProject, { getDefaultServerSideFilter } from './startProject';
-import { ES_HOST, ES_USER, ES_PASS, ES_LOG, PROJECT_ID, MAX_LIVE_VERSIONS } from './utils/config';
-import { fetchProjects } from './projects/getProjects';
+import { CONFIG } from './config';
+import downloadRoutes from './download';
+import getGraphQLRoutes from './graphqlRoutes';
+import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
-export const buildEsClientViaEnv = () => {
-  return buildEsClient(ES_HOST, ES_USER, ES_PASS, ES_LOG);
-};
+const { ES_HOST, ES_USER, ES_PASS, ES_LOG } = CONFIG;
 
 export const buildEsClient = (esHost, esUser, esPass, esLog) => {
   if (!esHost) {
@@ -30,124 +27,37 @@ export const buildEsClient = (esHost, esUser, esPass, esLog) => {
       password: esPass,
     };
   }
+
   return new elasticsearch.Client(esConfig);
 };
 
-let startSingleProject = async ({
-  projectId,
-  es,
-  graphqlOptions,
-  enableAdmin,
-  getServerSideFilter,
-}) => {
-  try {
-    await startProject({
-      es,
-      id: projectId,
-      graphqlOptions,
-      enableAdmin,
-      getServerSideFilter,
-    });
-  } catch (error) {
-    console.warn(error.message);
-  }
+export const buildEsClientViaEnv = () => {
+  return buildEsClient(ES_HOST, ES_USER, ES_PASS, ES_LOG);
 };
 
-export { getProjects } from './utils/projects';
 export default async ({
-  projectId = PROJECT_ID,
-  esHost = ES_HOST,
-  esUser = ES_USER,
-  esPass = ES_PASS,
-  graphqlOptions = {},
   enableAdmin = false,
+  esHost = ES_HOST,
+  esPass = ES_PASS,
+  esUser = ES_USER,
   getServerSideFilter = getDefaultServerSideFilter,
+  graphqlOptions = {},
 } = {}) => {
-  enableAdmin
-    ? console.log('Application started in ADMIN mode!!')
-    : console.log('Application started in read-only mode.');
-
-  const es = buildEsClient(esHost, esUser, esPass);
-  if (projectId) {
-    startSingleProject({
-      projectId,
-      es,
-      graphqlOptions,
-      enableAdmin,
-      getServerSideFilter,
-    });
-  } else {
-    const { projects = [] } = await fetchProjects({ es });
-    await Promise.all(
-      projects
-        .filter((project) => project.active)
-        // .slice(0, MAX_LIVE_VERSIONS)
-        .map(async (project) => {
-          try {
-            await startSingleProject({
-              projectId: project.id,
-              es,
-              graphqlOptions,
-              enableAdmin,
-              getServerSideFilter,
-            });
-          } catch (error) {
-            console.warn(error.message);
-          }
-        }),
-    );
-  }
-
+  const esClient = buildEsClient(esHost, esUser, esPass);
   const router = express.Router();
-  router.use(express.urlencoded({ extended: false, limit: '50mb' }));
-  router.use(express.json({ limit: '50mb' }));
 
-  // The GraphQL endpoints
+  console.log(`Application started in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'}`);
 
-  // List all projects
-  router.use('/projects', projectsRoutes({ graphqlOptions, enableAdmin }));
+  const graphQLRoutes = await getGraphQLRoutes({
+    esClient,
+    graphqlOptions,
+    enableAdmin,
+    getServerSideFilter,
+  });
 
-  // Get project by ID
-  router.use(
-    '/:projectId',
-    (req, res, next) => {
-      // ========= step 1: attempt to run the existing project ==========
-      const projects = getProjects();
-      if (!projects.length) return next();
-      const project = projects.find(
-        (p) => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
-      );
-      if (project) {
-        return project.app(req, res, next);
-      }
-      return next();
-    },
-    async (req, res, next) => {
-      // ========= step 2: if above fails, attempt to start the project =======
-      const projectId = req.params.projectId;
-      try {
-        await startSingleProject({
-          es,
-          enableAdmin,
-          graphqlOptions,
-          projectId,
-          getServerSideFilter,
-        });
-        const project = getProjects().find(
-          (p) => p.id.toLowerCase() === req.params.projectId.toLowerCase(),
-        );
-        return project.app(req, res, next);
-      } catch (err) {
-        return next();
-      }
-    },
-    (req, res) => {
-      // ========= step 3: if above fails, respond with error code =======
-      return res.status(400).send({
-        error: `no project with id ${req.params.projectId} is available`,
-      });
-    },
-  );
+  router.use('/', graphQLRoutes); // also adds esClient to request context
+  router.use(`/download`, downloadRoutes());
+  router.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
 
   return router;
 };

@@ -11,7 +11,6 @@ import {
 import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
-import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
@@ -23,8 +22,7 @@ export default (props) => {
     fullSyntheticSqon,
     sqonPath = [],
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     FieldOpModifierContainer = undefined,
     api = defaultApi,
     getActiveExecutableSqon,
@@ -75,8 +73,7 @@ export default (props) => {
                 {s.state.isOpen && (
                   <div className={`fieldFilterContainer`}>
                     <FieldOpModifier
-                      arrangerProjectId={arrangerProjectId}
-                      arrangerProjectIndex={arrangerProjectIndex}
+                      arrangerIndex={arrangerIndex}
                       field={field}
                       sqonPath={sqonPath}
                       initialSqon={fullSyntheticSqon}

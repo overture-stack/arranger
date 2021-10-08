@@ -1,4 +1,4 @@
-version: "3.7"
+version: '3.7'
 
 services:
   elasticsearch:
@@ -10,7 +10,7 @@ services:
       discovery.type: single-node
       cluster.name: workflow.elasticsearch
       ES_JAVA_OPTS: -Xms512m -Xmx2048m
-      ELASTIC_PASSWORD: '$ES_PASSWORD'
+      ELASTIC_PASSWORD: '$ES_PASS'
       xpack.security.enabled: 'true'
     logging:
       driver: 'json-file'
@@ -36,8 +36,8 @@ services:
       - elasticsearch
     environment:
       LOGGING_QUIET: 'true'
-      ELASTICSEARCH_USERNAME: '$ES_USERNAME'
-      ELASTICSEARCH_PASSWORD: '$ES_PASSWORD'
+      ELASTICSEARCH_USERNAME: '$ES_USER'
+      ELASTICSEARCH_PASSWORD: '$ES_PASS'
 
   arranger-server:
     build:
@@ -51,20 +51,5 @@ services:
       - 5050:5050
     environment:
       ES_HOST: http://elasticsearch:9200
-      ES_USER: "$ES_USERNAME"
-      ES_PASS: "$ES_PASSWORD"
-
-  arranger-ui:
-    build:
-      context: ./
-      target: ui
-      dockerfile: Dockerfile
-    hostname: arranger-ui.local
-    container_name: arranger-ui.local
-    depends_on:
-      - arranger-server
-    environment:
-      REACT_APP_ARRANGER_ADMIN_ROOT: "http://arranger-server:5050"
-      PORT: 3000
-    ports:
-      - 8080:3000
+      ES_USER: '$ES_USER'
+      ES_PASS: '$ES_PASS'

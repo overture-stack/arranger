@@ -10,7 +10,6 @@ const getNestedSqonFilters = ({
   const { op } = sqon;
   if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
     const { content = [], pivot } = sqon;
-    // console.log('sqon: ', JSON.stringify(sqon, null, 2));
     content.forEach((c) =>
       getNestedSqonFilters({
         sqon: c,
@@ -38,7 +37,7 @@ const getNestedSqonFilters = ({
 
 export default ({ sqon = null, nestedFields }) => {
   const normalized = normalizeFilters(sqon);
-  // console.log('normalized: ', JSON.stringify(normalized, null, 2));
+
   return sqon
     ? getNestedSqonFilters({
         sqon: normalized,

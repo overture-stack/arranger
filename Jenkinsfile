@@ -1,6 +1,6 @@
-def gitHubRepo = "overture-stack/arranger"
-def gitHubRegistry = "ghcr.io"
 def dockerHubRepo = "overture/arranger"
+def gitHubRegistry = "ghcr.io"
+def gitHubRepo = "overture-stack/arranger"
 def commit = "UNKNOWN"
 
 pipeline {
@@ -13,8 +13,11 @@ kind: Pod
 spec:
   containers:
   - name: node
-    image: node:12.6.0
+    image: node:13.13.0
     tty: true
+    env:
+    - name: HOME
+      value: /home/jenkins/agent
   - name: docker
     image: docker:18-git
     tty: true
@@ -77,7 +80,6 @@ spec:
 						sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
 					}
 					sh "docker build --network=host --target server -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-server:${commit} ."
-					sh "docker build --network=host --target ui -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ."
 				}
 			}
 		}
@@ -92,15 +94,10 @@ spec:
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
                 }
             }
         }
@@ -115,19 +112,12 @@ spec:
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:latest"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:latest"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
                 }
             }
         }
@@ -141,10 +131,10 @@ spec:
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
+                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:rewrite-${commit}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:rewrite"
+					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:rewrite-${commit}"
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:rewrite"
                 }
             }
         }

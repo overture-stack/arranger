@@ -1,9 +1,9 @@
-import 'babel-polyfill';
-import express from 'express';
-import addProject from './addProject';
-import Arranger, { adminGraphql } from '@arranger/server';
-import ajax from '@arranger/server/dist/utils/ajax';
 import { Client } from '@elastic/elasticsearch';
+import express from 'express';
+
+import Arranger, { adminGraphql } from '../../../modules/server/dist';
+import ajax from '../../../modules/server/dist/utils/ajax';
+import addProject from './addProject';
 
 const file_centric_mapppings = require('./assets/file_centric.mappings.json');
 

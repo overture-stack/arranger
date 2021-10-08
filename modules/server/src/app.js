@@ -1,25 +1,26 @@
 import express from 'express';
 import cors from 'cors';
 
-import adminGraphql from './admin';
-import { ES_HOST, ES_PASS, ES_USER, PORT } from './utils/config';
+import { CONFIG } from './config';
 import Arranger from './server';
 
 const app = express();
 app.use(cors());
 
-export default async function () {
-  // the admin app
-  const adminPath = '/admin/graphql';
-  const adminApp = await adminGraphql({ esHost: ES_HOST, esUser: ES_USER, esPass: ES_PASS });
-  adminApp.applyMiddleware({ app, path: adminPath });
-  console.log(`🚀 Admin API available at: [arranger_root]${adminPath}`);
+export default async function (rootPath = '') {
+  global.__basedir = rootPath;
 
   // Always run test server as admin
   return Arranger({ enableAdmin: false }).then((router) => {
     app.use(router);
-    app.listen(PORT, async () => {
-      console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
+
+    app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+    app.use(express.json({ limit: '50mb' }));
+
+    app.listen(CONFIG.PORT, async () => {
+      console.log('\n------------------------------------');
+      console.log(`⚡️⚡️⚡️ Listening on port ${CONFIG.PORT} ⚡️⚡️⚡️`);
+      console.log('------------------------------------\n');
     });
   });
 }

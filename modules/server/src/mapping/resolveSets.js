@@ -6,7 +6,7 @@ import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
 
 const retrieveSetIds = async ({
-  es,
+  esClient,
   index,
   query,
   path,
@@ -20,7 +20,7 @@ const retrieveSetIds = async ({
       ...(searchAfter && { search_after: searchAfter }),
     };
 
-    const response = await esSearch(es)({
+    const response = await esSearch(esClient)({
       index,
       sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
@@ -55,7 +55,7 @@ export const saveSet = ({ types, getServerSideFilter }) => async (
   context,
 ) => {
   const { nested_fields: nestedFields, index } = types.find(([, x]) => x.name === type)[1];
-  const { es, projectId } = context;
+  const { esClient } = context;
 
   const query = buildQuery({
     nestedFields,
@@ -65,7 +65,7 @@ export const saveSet = ({ types, getServerSideFilter }) => async (
     }),
   });
   const ids = await retrieveSetIds({
-    es,
+    esClient,
     index,
     query,
     path,
@@ -83,7 +83,7 @@ export const saveSet = ({ types, getServerSideFilter }) => async (
     size: ids.length,
   };
 
-  await es.index({
+  await esClient.index({
     index: CONSTANTS.ES_ARRANGER_SET_INDEX,
     id: body.setId,
     refresh: refresh.toLowerCase(),

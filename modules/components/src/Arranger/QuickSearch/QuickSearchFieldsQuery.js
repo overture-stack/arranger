@@ -8,8 +8,7 @@ const nestedField = ({ field, nestedFields }) =>
   nestedFields.find((x) => x.field === field.field.split('.').slice(0, -1).join('.'));
 
 const enhance = compose(
-  withQuery(({ index, projectId }) => ({
-    projectId,
+  withQuery(({ index }) => ({
     key: 'extendedFields',
     query: `
       query ${capitalize(index)}ExtendedQuery {

@@ -57,7 +57,7 @@ export default class extends Component {
     const { api = defaultApi } = this.props;
     try {
       let { data } = await api({
-        endpoint: `/${this.props.projectId}/graphql/aggsStateQuery`,
+        endpoint: `/graphql/aggsStateQuery`,
         body: {
           query: `query aggsStateQuery
             {
@@ -85,7 +85,7 @@ export default class extends Component {
   save = debounce(async (state) => {
     const { api = defaultApi } = this.props;
     let { data } = await api({
-      endpoint: `/${this.props.projectId}/graphql`,
+      endpoint: `/graphql`,
       body: {
         variables: { state },
         query: `

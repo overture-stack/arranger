@@ -5,7 +5,6 @@ import Spinner from 'react-spinkit';
 
 const Table = ({
   onFilterChange = () => {},
-  projectId,
   graphqlField,
   fetchData,
   setSQON,
@@ -21,7 +20,6 @@ const Table = ({
 }) => {
   return (
     <ColumnsState
-      projectId={projectId}
       graphqlField={graphqlField}
       api={api}
       sessionStorage={sessionStorage}
@@ -33,7 +31,6 @@ const Table = ({
           <DataTable
             {...{ ...props, api, showFilterInput, customHeaderContent }}
             InputComponent={InputComponent}
-            projectId={projectId}
             sqon={sqon}
             config={{
               ...columnState.state,
@@ -47,7 +44,7 @@ const Table = ({
               ),
               type: graphqlField,
             }}
-            fetchData={fetchData(projectId)}
+            fetchData={fetchData()}
             onColumnsChange={columnState.toggle}
             onMultipleColumnsChange={columnState.toggleMultiple}
             onFilterChange={({ generateNextSQON, value }) => {
