@@ -25,6 +25,9 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
+Arranger has been tested using NodeJS version: ^13.13.0.
+Our team is actively working on making compatible for versions 14 and above.
+
 #### - Development Setup
 
 Setting up the project, and prepare things to make changes
@@ -37,7 +40,7 @@ Setting up the project, and prepare things to make changes
   cd arranger
 
 # 3. install the dependencies
-  npm i
+  npm ci
 
 # 4. install the module's own dependencies
   npm run bootstrap
@@ -51,7 +54,7 @@ Now you should be able to start the following processes from the project's root 
   npm run watch
 
 # test all modules at once
-  npm test
+  npm run test
 
 # run the server (on port 5050)
   npm run server
