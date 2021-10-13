@@ -3,8 +3,8 @@
 #######################################################
 FROM node:13.13.0-alpine as builder
 
-ENV APP_UID=9999
-ENV APP_GID=9999
+ENV APP_UID=1000
+ENV APP_GID=1000
 ENV APP_HOME=/app
 ENV APP_USER=node
 
@@ -28,8 +28,8 @@ RUN npm ci \
 #######################################################
 FROM builder as server
 
-ENV APP_UID=9999
-ENV APP_GID=9999
+ENV APP_UID=1000
+ENV APP_GID=1000
 ENV APP_HOME=/app
 ENV APP_USER=node
 
@@ -46,8 +46,8 @@ CMD ["npm", "run", "run-prod-server"]
 #######################################################
 FROM builder as builder2
 
-ENV APP_UID=9999
-ENV APP_GID=9999
+ENV APP_UID=1000
+ENV APP_GID=1000
 ENV APP_HOME=/app
 ENV APP_USER=node
 
@@ -62,8 +62,8 @@ RUN cp -r modules/admin-ui/build ./arranger-admin
 #######################################################
 FROM nginx:1.17.9-alpine as ui
 
-ENV APP_UID=9999
-ENV APP_GID=9999
+ENV APP_UID=1000
+ENV APP_GID=1000
 ENV APP_USER=node
 ENV APP_HOME=/app
 ENV PORT=3000
