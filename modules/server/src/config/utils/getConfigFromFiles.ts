@@ -63,16 +63,6 @@ export default (dirname: string): Promise<ConfigObject> => {
         } as ConfigObject,
       );
 
-      // in case we want to write out a single file?
-      //
-      // fs.appendFile(readFileAsync(path.join(configsPath, 'arranger_configs.json'), JSON.stringify(summaryFiles, null, 4), function (err) {
-      //   if(err) {
-      //     return console.log(err);
-      //   }
-      //
-      //   console.log("The file was appended!");
-      // });
-
       return configObj;
     });
 };
