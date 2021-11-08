@@ -15,6 +15,7 @@ export default async ({
   ...rest
 }) => {
   const { configs, esClient, mockSchema, schema } = ctx;
+
   const stream = new PassThrough({ objectMode: true });
   const esSort = sort.map(({ field, order }) => ({ [field]: order })).concat({ _id: 'asc' });
 
@@ -43,9 +44,11 @@ export default async ({
       const steps = Array(Math.ceil(total / Number(chunkSize))).fill(null);
 
       // async reduce because each cycle is dependent on result of the previous
-      return steps.reduce(async (previous) => {
+      return steps.reduce(async (previous, next, stepNumber) => {
         const previousHits = await previous;
-        console.time(`EsQuery`);
+        const timerLabel = `EsQuery, step ${stepNumber + 1}`;
+
+        console.time(timerLabel);
         const hits = await esClient
           .search({
             index: configs.index,
@@ -54,15 +57,15 @@ export default async ({
               sort: esSort,
               ...(previousHits
                 ? {
-                    search_after: previousHits[previousHits.length - 1].sort.map(esToSafeJsInt),
+                    search_after: previousHits[previousHits.length - 1]?.sort?.map(esToSafeJsInt),
                   }
                 : {}),
               ...(Object.entries(query).length ? { query } : {}),
             },
           })
           .then(({ body }) => mapHits(body));
+        console.timeEnd(timerLabel);
 
-        console.timeEnd(`EsQuery`);
         stream.write({ hits, total });
 
         return hits;

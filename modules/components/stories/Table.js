@@ -98,7 +98,7 @@ const dummyConfig = {
 };
 
 const dummyData = Array(1000)
-  .fill()
+  .fill(null)
   .map(() => {
     const cases = Array(Math.floor(Math.random() * 10))
       .fill()

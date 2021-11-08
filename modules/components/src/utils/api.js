@@ -3,14 +3,15 @@ import urlJoin from 'url-join';
 import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
-const defaultApi = ({ endpoint = '', body, headers, method }) =>
+
+const defaultApi = ({ endpoint = '', body, headers, method = 'POST' }) =>
   fetch(urlJoin(ARRANGER_API, endpoint), {
-    method: method || 'POST',
-    headers: { ...alwaysSendHeaders, ...headers },
     body: JSON.stringify(body),
+    headers: { ...alwaysSendHeaders, ...headers },
+    method,
   }).then((r) => r.json());
 
-export const graphql = (body) => api({ endpoint: 'graphql', body });
+export const graphql = (body) => defaultApi({ endpoint: 'graphql', body });
 
 export const fetchExtendedMapping = ({ graphqlField, api = defaultApi }) =>
   api({

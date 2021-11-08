@@ -92,7 +92,6 @@ const TableToolbar = ({
     exporter,
     allowTSVExport,
     exportTSVText,
-    columns,
   );
 
   const hasSelectedRows = selectedTableRows.length > 0;

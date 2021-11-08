@@ -18,9 +18,12 @@ export default async function (rootPath = '') {
     app.use(express.json({ limit: '50mb' }));
 
     app.listen(CONFIG.PORT, async () => {
-      console.log('\n------------------------------------');
-      console.log(`⚡️⚡️⚡️ Listening on port ${CONFIG.PORT} ⚡️⚡️⚡️`);
-      console.log('------------------------------------\n');
+      const message = `⚡️⚡️⚡️ Listening on port ${CONFIG.PORT} ⚡️⚡️⚡️`;
+      const line = '-'.repeat(message.length);
+
+      console.info(`\n${line}`);
+      console.log(message);
+      console.info(`${line}\n`);
     });
   });
 }

@@ -112,7 +112,7 @@ const createEndpoint = async ({
       path: '/graphql',
     });
 
-    console.log('GraphQL server running at /graphql');
+    console.log('GraphQL server running at .../graphql');
   } else {
     router.use('/graphql', noSchemaHandler);
   }
@@ -125,7 +125,7 @@ const createEndpoint = async ({
       path: '/mock/graphql',
     });
 
-    console.log('GraphQL mock server running at /mock/graphql');
+    console.log('GraphQL mock server running at .../mock/graphql');
   } else {
     router.use('/mock/graphql', noSchemaHandler);
   }
@@ -160,6 +160,7 @@ export default async ({ enableAdmin, esClient, getServerSideFilter, graphqlOptio
       graphqlOptions,
       typesWithMappings,
     });
+
     await initializeSets({ esClient });
 
     return [
@@ -183,7 +184,7 @@ export default async ({ enableAdmin, esClient, getServerSideFilter, graphqlOptio
     return (req, res) =>
       res.status(500).send({
         // TODO: revisit this response
-        error: 'The server is unavailable due to an internal error',
+        error: 'The GraphQL server is unavailable due to an internal error',
         message: error,
       });
   }

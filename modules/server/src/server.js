@@ -57,7 +57,7 @@ export default async ({
 
   router.use('/', graphQLRoutes); // also adds esClient to request context
   router.use(`/download`, downloadRoutes());
-  router.get(`/ping`, (req, res) => res.send({ status: 'ok' }));
+  router.get(`/ping`, (req, res) => res.status(200).send({ status: 'ok' }));
 
   return router;
 };

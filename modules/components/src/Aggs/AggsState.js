@@ -77,8 +77,9 @@ export default class extends Component {
         temp: data[graphqlField].aggsState.state,
         mapping: data[graphqlField].mapping,
       });
-    } catch (e) {
+    } catch (error) {
       // this.setState({ })
+      console.warn(error);
     }
   }, 300);
 
