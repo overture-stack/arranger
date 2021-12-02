@@ -29,7 +29,7 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
   return {
     fields,
     query: `
-        query($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
+        query columnsToGraphql($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
           ${config.type} {
             hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
               total

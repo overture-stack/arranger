@@ -9,6 +9,7 @@ export default async ({
   chunkSize = CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
   columns = [],
   ctx = {},
+  maxRows,
   mock,
   sort = [],
   sqon,
@@ -40,8 +41,14 @@ export default async ({
     variables: { sqon },
   })
     .then(({ data }) => {
-      const total = data?.[configs.name]?.hits?.total || 0;
-      const steps = Array(Math.ceil(total / Number(chunkSize))).fill(null);
+      const allowCustomMaxRows =
+        configs.config.allowCustomDownloadMaxRows || CONFIG.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS;
+      const maxHits = (allowCustomMaxRows && maxRows) || configs.config.downloadMaxRows;
+
+      const hitsCount = data?.[configs.name]?.hits?.total || 0;
+      const total = Math.min(hitsCount, maxHits) || hitsCount;
+      console.log('total?', allowCustomMaxRows, maxHits, total, Math.ceil(total / chunkSize));
+      const steps = Array(Math.ceil(total / chunkSize)).fill(null);
 
       // async reduce because each cycle is dependent on result of the previous
       return steps.reduce(async (previous, next, stepNumber) => {
@@ -52,7 +59,7 @@ export default async ({
         const hits = await esClient
           .search({
             index: configs.index,
-            size: chunkSize,
+            size: maxHits ? Math.min(maxHits, chunkSize) : chunkSize,
             body: {
               sort: esSort,
               ...(previousHits

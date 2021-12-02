@@ -60,6 +60,7 @@ export default (dirname: string): Promise<ConfigObject> => {
         {
           index: CONFIG.ES_INDEX,
           name: CONFIG.GRAPHQL_FIELD,
+          downloadMaxRows: CONFIG.DOWNLOAD_MAX_ROWS,
         } as ConfigObject,
       );
 

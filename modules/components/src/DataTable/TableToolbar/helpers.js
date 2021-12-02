@@ -28,7 +28,7 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     },
   });
 
-const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
+const exporterProcessor = (exporter, allowTSVExport, exportTSVText, exportMaxRows) => {
   const exporterArray =
     Array.isArray(exporter) &&
     exporter
@@ -40,6 +40,7 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
               exporterLabel: item?.label || exportTSVText,
               exporterFunction: saveTSV,
               exporterFileName: item?.fileName || 'unnamed.tsv',
+              exporterMaxRows: item?.maxRows || exportMaxRows,
               exporterRequiresRowSelection: item?.requiresRowSelection,
               ...(item?.columns &&
                 Array.isArray(item.columns) && { exporterColumns: item?.columns }),

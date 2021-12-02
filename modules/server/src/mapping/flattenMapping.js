@@ -1,6 +1,9 @@
 import { flattenDeep } from 'lodash';
 
-let joinWith = (s = '.') => (x) => (x ? x + s : '');
+let joinWith =
+  (s = '.') =>
+  (x) =>
+    x ? x + s : '';
 
 let flattenMapping = (properties, parent = '') => {
   return flattenDeep(
@@ -8,7 +11,7 @@ let flattenMapping = (properties, parent = '') => {
       !data.properties
         ? {
             field: joinWith()(parent) + field,
-            type: field.includes('id') ? 'id' : data.type,
+            type: data.type,
           }
         : [
             {
