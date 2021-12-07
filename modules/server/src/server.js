@@ -6,7 +6,7 @@ import downloadRoutes from './download';
 import getGraphQLRoutes from './graphqlRoutes';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
-const { ES_HOST, ES_USER, ES_PASS, ES_LOG } = CONFIG;
+const { ES_HOST, ES_USER, ES_PASS, ES_LOG, PING_PATH } = CONFIG;
 
 export const buildEsClient = (esHost, esUser, esPass, esLog) => {
   if (!esHost) {
@@ -42,6 +42,7 @@ export default async ({
   esUser = ES_USER,
   getServerSideFilter = getDefaultServerSideFilter,
   graphqlOptions = {},
+  pingPath = PING_PATH,
 } = {}) => {
   const esClient = buildEsClient(esHost, esUser, esPass);
   const router = express.Router();
@@ -57,7 +58,9 @@ export default async ({
 
   router.use('/', graphQLRoutes); // also adds esClient to request context
   router.use(`/download`, downloadRoutes());
-  router.get(`/ping`, (req, res) => res.status(200).send({ status: 'ok' }));
+  router.get(pingPath, (req, res) =>
+    res.status(200).send({ message: 'Arranger is functioning correctly...' }),
+  );
 
   return router;
 };
