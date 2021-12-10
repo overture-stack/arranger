@@ -3,6 +3,12 @@
 
 <p align="center"><a href="http://www.overture.bio/products/arranger" target="_blank"><img alt="Release Candidate" src="http://www.overture.bio/img/progress-horizontal-RC.svg" width="320" /></a></p>
 
+<h3 align="center">Note: This branch is being preserved for v2.X support only.</h3>
+
+<p align="center">
+All new implementation is being done in v3+ at the `main` and `develop` branches, and such features/fixes may not be backported herein.
+<p/>
+
 [![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
 
 Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fdevelop)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/develop/)
