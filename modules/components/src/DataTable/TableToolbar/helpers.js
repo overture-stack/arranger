@@ -12,7 +12,14 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
         columns: exporterColumns // if the component gave you custom columns to show
           ? Object.values(
               exporterColumns.length > 0 // if they ask for any specific columns
-                ? exporterColumns.map((fieldName) => allColumns[fieldName]) // use them
+                ? exporterColumns
+                    .map(
+                      (fieldName) =>
+                        allColumns[fieldName] || // get the column data from the extended configs
+                        // or let the user know if the column isn't valid
+                        console.info('Could not include a column into the file:', fieldName),
+                    )
+                    .filter((column) => column) // and then, use the valid ones
                 : allColumns, // else, they're asking for all the columns
             )
           : columns.filter((column) => column.show), // no custom columns, use admin's
@@ -21,7 +28,7 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     },
   });
 
-const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
+const exporterProcessor = (exporter, allowTSVExport, exportTSVText, exportMaxRows) => {
   const exporterArray =
     Array.isArray(exporter) &&
     exporter
@@ -32,7 +39,8 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
           ? {
               exporterLabel: item?.label || exportTSVText,
               exporterFunction: saveTSV,
-              exporterFileName: item?.fileName,
+              exporterFileName: item?.fileName || 'unnamed.tsv',
+              exporterMaxRows: item?.maxRows || exportMaxRows,
               exporterRequiresRowSelection: item?.requiresRowSelection,
               ...(item?.columns &&
                 Array.isArray(item.columns) && { exporterColumns: item?.columns }),

@@ -115,7 +115,6 @@ export interface IFormStateProps {
  * Server data types
  ********/
 export interface INewIndexInput {
-  // TODO: this should be imported from '@arranger/admin
   projectId: string;
   graphqlField: string;
   esIndex: string;

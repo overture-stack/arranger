@@ -1,5 +1,5 @@
-import { fetchMapping } from '@arranger/mapping-utils';
+import { fetchMapping } from '../mapping';
 
-export let fetchMappings = ({ types, es }) => {
-  return Promise.all(types.map(({ index, name, esType }) => fetchMapping({ index, esType, es })));
+export let fetchMappings = ({ types, esClient }) => {
+  return Promise.all(types.map(({ index }) => fetchMapping({ index, esClient })));
 };

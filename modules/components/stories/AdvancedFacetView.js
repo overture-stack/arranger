@@ -44,7 +44,6 @@ storiesOf('AdvancedFacetView', module)
             (Stat components to be inserted here from portal)
           </div>
         ),
-        projectId: process.env['STORYBOOK_AFV_PROJECT_ID'],
         index: process.env['STORYBOOK_AFV_ACTIVE_INDEX'],
         onSqonChange: ({ sqon }) => console.log(sqon),
         sqon: {

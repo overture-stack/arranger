@@ -1,6 +1,6 @@
 {
-  "name": "@arranger/server",
-  "version": "2.16.0",
+  "name": "@overture-stack/arranger-server",
+  "version": "3.0.0-beta.1",
   "description": "GraphQL Server",
   "main": "dist/index.js",
   "bin": {
@@ -10,11 +10,11 @@
     "access": "public"
   },
   "scripts": {
-    "start": "DEPS=`node getDependencies.js` && cd .. && nodemon $DEPS server/index.js",
-    "run-prod": "node index.js",
-    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --out-dir dist",
+    "start": "nodemon index.js -e js,ts",
+    "start:prod": "node index.js",
+    "prepare": "rm -rf dist && mkdir dist && babel src --ignore */**/__tests__ --extensions .ts,.js --out-dir dist",
     "test": "jest",
-    "watch": "rm -rf dist && mkdir dist && babel src --watch --out-dir dist"
+    "watch": "rm -rf dist && mkdir dist && babel src --watch --extensions .ts,.js --out-dir dist"
   },
   "repository": {
     "type": "git",
@@ -27,27 +27,34 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@arranger/admin": "^2.16.0",
-    "@arranger/mapping-utils": "^2.16.0",
-    "@arranger/middleware": "^2.16.0",
-    "@arranger/schema": "^2.16.0",
+    "@babel/runtime": "^7.15.4",
     "@elastic/elasticsearch": "^7.5.0",
+    "apollo-server": "^3.3.0",
     "apollo-server-core": "^2.14.2",
     "apollo-server-express": "^2.14.2",
     "babel-polyfill": "^6.26.0",
-    "body-parser": "^1.18.2",
     "chalk": "^2.3.1",
+    "convert-units": "^2.3.4",
     "cors": "^2.8.4",
     "date-fns": "^1.29.0",
     "dotenv": "^5.0.0",
     "express": "^4.16.3",
     "graphql": "^14.5.3",
+    "graphql-fields": "^2.0.3",
+    "graphql-middleware": "^1.7.8",
     "graphql-playground-middleware-express": "^1.7.12",
+    "graphql-scalars": "^1.10.1",
+    "graphql-tools": "^4.0.8",
+    "graphql-type-json": "^0.3.2",
     "jsonpath": "^1.0.0",
     "lodash": "^4.17.20",
     "node-fetch": "^2.2.0",
+    "paralleljs": "^1.1.0",
+    "qew": "^0.9.13",
+    "ramda": "^0.27.1",
     "tar-stream": "^1.5.5",
     "through2": "^2.0.3",
+    "tslib": "^2.3.1",
     "url-join": "^4.0.0",
     "uuid": "^3.2.1"
   },
@@ -56,14 +63,32 @@
     "@babel/core": "^7.5.5",
     "@babel/plugin-proposal-object-rest-spread": "^7.5.5",
     "@babel/plugin-proposal-optional-chaining": "^7.2.0",
+    "@babel/plugin-transform-runtime": "^7.15.0",
     "@babel/preset-env": "^7.5.5",
+    "@babel/preset-typescript": "^7.15.0",
     "@babel/register": "^7.5.5",
+    "@types/convert-units": "^2.3.5",
+    "@types/jest": "^27.0.2",
+    "@types/lodash": "^4.14.173",
+    "@types/node-fetch": "^3.0.3",
+    "@types/paralleljs": "0.0.21",
+    "@types/tar-stream": "^2.2.1",
+    "@types/url-join": "^4.0.1",
+    "@types/uuid": "^8.3.1",
+    "babel-core": "^7.0.0-bridge.0",
     "husky": "^4.3.0",
+    "jest": "^27.2.4",
     "nodemon": "^1.18.4",
     "prettier": "^2.1.2",
-    "pretty-quick": "^3.0.2"
+    "pretty-quick": "^3.0.2",
+    "ts-jest": "^27.0.5",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3"
   },
   "jest": {
+    "modulePathIgnorePatterns": [
+      "dist"
+    ],
     "testURL": "http://localhost/"
   },
   "prettier": {

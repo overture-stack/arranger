@@ -1,29 +1,29 @@
 import express from 'express';
-import { Server } from 'http';
 import cors from 'cors';
-import adminGraphql from '@arranger/admin/dist';
-import { ES_HOST, ES_PASS, ES_USER } from './utils/config';
 
-import { PORT } from './utils/config';
+import { CONFIG } from './config';
 import Arranger from './server';
 
 const app = express();
 app.use(cors());
 
-const http = Server(app);
-
-export default async function () {
-  // the admin app
-  const adminPath = '/admin/graphql';
-  const adminApp = await adminGraphql({ esHost: ES_HOST, esUser: ES_USER, esPass: ES_PASS });
-  adminApp.applyMiddleware({ app, path: adminPath });
-  console.log(`🚀 Admin API available at: [arranger_root]${adminPath}`);
+export default async function (rootPath = '') {
+  global.__basedir = rootPath;
 
   // Always run test server as admin
   return Arranger({ enableAdmin: false }).then((router) => {
     app.use(router);
-    http.listen(PORT, async () => {
-      console.log(`⚡️⚡️⚡️ Listening on port ${PORT} ⚡️⚡️⚡️`);
+
+    app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+    app.use(express.json({ limit: '50mb' }));
+
+    app.listen(CONFIG.PORT, async () => {
+      const message = `⚡️⚡️⚡️ Listening on port ${CONFIG.PORT} ⚡️⚡️⚡️`;
+      const line = '-'.repeat(message.length);
+
+      console.info(`\n${line}`);
+      console.log(message);
+      console.info(`${line}\n`);
     });
   });
 }

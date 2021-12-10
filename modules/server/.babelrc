@@ -1,7 +1,9 @@
 {
   "plugins": [
+    "@babel/plugin-proposal-export-namespace-from",
     "@babel/plugin-proposal-optional-chaining",
-    "@babel/plugin-proposal-object-rest-spread"
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-transform-runtime"
   ],
-  "presets": ["@babel/env"]
+  "presets": ["@babel/env", "@babel/preset-typescript"]
 }

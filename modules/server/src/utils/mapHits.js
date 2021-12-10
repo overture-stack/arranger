@@ -1,2 +1,2 @@
-import { mapHits } from '@arranger/mapping-utils';
+import { mapHits } from '../mapping';
 export default mapHits;

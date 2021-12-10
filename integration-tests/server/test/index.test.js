@@ -1,12 +1,10 @@
-import 'babel-polyfill';
-import express from 'express';
-import { Server } from 'http';
-import Arranger from '@arranger/server';
-import ajax from '@arranger/server/dist/utils/ajax';
 import { Client } from '@elastic/elasticsearch';
-import adminGraphql from '@arranger/admin/dist';
-import gql from 'graphql-tag';
+import express from 'express';
 import { print } from 'graphql';
+import gql from 'graphql-tag';
+
+import Arranger, { adminGraphql } from '../../../modules/server/dist';
+import ajax from '../../../modules/server/dist/utils/ajax';
 
 // test modules
 import readMetadata from './readMetadata';
@@ -17,15 +15,24 @@ import manageSets from './manageSets';
 const mapppings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
-const port = 5678;
-const esHost = 'http://127.0.0.1:9200';
-const esIndex = 'models';
+const port = process.env.ES_PORT || 5678;
+const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
+const esIndex = process.env.ES_INDEX || 'models';
+const esPwd = process.env.ES_PASS;
+const esUser = process.env.ES_USER;
+
+const useAuth = !!esPwd && !!esUser;
 
 const app = express();
-const http = Server(app);
 
 const api = ajax(`http://localhost:${port}`);
 const esClient = new Client({
+  ...(useAuth && {
+    auth: {
+      username: esUser,
+      password: esPwd,
+    },
+  }),
   node: esHost,
 });
 
@@ -39,7 +46,8 @@ const cleanup = () =>
     }),
   ]);
 
-describe('@arranger/server', () => {
+describe('@overture-stack/arranger-server', () => {
+  let server;
   const adminPath = '/admin/graphql';
   const graphqlField = 'model';
   const projectId = 'arranger_server_test';
@@ -53,6 +61,7 @@ describe('@arranger/server', () => {
       index: esIndex,
       body: mapppings,
     });
+
     for (let datum of data) {
       await esClient.index({
         index: esIndex,
@@ -63,70 +72,75 @@ describe('@arranger/server', () => {
     }
 
     console.log('===== Starting arranger app for test =====');
-    const router = await Arranger({
-      esHost,
-      enableAdmin: false,
-      getServerSideFilter: () => ({
-        op: 'not',
-        content: [
-          {
-            op: 'in',
-            content: {
-              field: 'access_denied',
-              value: ['true'],
+    try {
+      const router = await Arranger({
+        esHost,
+        enableAdmin: false,
+        getServerSideFilter: () => ({
+          op: 'not',
+          content: [
+            {
+              op: 'in',
+              content: {
+                field: 'access_denied',
+                value: ['true'],
+              },
             },
-          },
-        ],
-      }),
-    });
-    const adminApp = await adminGraphql({ esHost });
-    adminApp.applyMiddleware({ app, path: adminPath });
-    app.use(router);
-    await new Promise((resolve) => {
-      http.listen(port, () => {
-        resolve();
+          ],
+        }),
       });
-    });
+      const adminApp = await adminGraphql({ esHost });
+      adminApp.applyMiddleware({ app, path: adminPath });
+      app.use(router);
 
-    /**
-     * uses the admin API to adds some metadata
-     */
-    await api.post({
-      endpoint: adminPath,
-      body: {
-        query: print(gql`
-          mutation($projectId: String!) {
-            newProject(id: $projectId) {
-              id
-              __typename
+      await new Promise((resolve) => {
+        server = app.listen(port, () => {
+          resolve(null);
+        });
+      });
+
+      /**
+       * uses the admin API to adds some metadata
+       */
+      await api.post({
+        endpoint: adminPath,
+        body: {
+          query: print(gql`
+            mutation ($projectId: String!) {
+              newProject(id: $projectId) {
+                id
+                __typename
+              }
             }
-          }
-        `),
-        variables: {
-          projectId,
+          `),
+          variables: {
+            projectId,
+          },
         },
-      },
-    });
-    await api.post({
-      endpoint: adminPath,
-      body: {
-        query: print(gql`
-          mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
-            newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
-              id
+      });
+      await api.post({
+        endpoint: adminPath,
+        body: {
+          query: print(gql`
+            mutation ($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+              newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
+                id
+              }
             }
-          }
-        `),
-        variables: {
-          projectId,
-          graphqlField,
-          esIndex,
+          `),
+          variables: {
+            projectId,
+            graphqlField,
+            esIndex,
+          },
         },
-      },
-    });
+      });
+    } catch (err) {
+      throw err;
+    }
   });
   after(async () => {
-    http.close();
+    server.close();
     await cleanup();
   });
 

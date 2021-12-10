@@ -1,8 +1,7 @@
 {
   "name": "@arranger/admin-ui",
-  "version": "2.16.0",
+  "version": "2.15.0",
   "dependencies": {
-    "@arranger/admin": "^2.16.0",
     "@types/node": "^13.13.0",
     "apollo-boost": "^0.1.19",
     "apollo-client": "^2.5.1",
@@ -29,6 +28,7 @@
     "react-emotion": "^9.2.12",
     "react-portal": "^4.1.5",
     "react-redux": "^5.1.0",
+    "react-router": "^5.2.1",
     "react-router-dom": "^4.3.1",
     "react-scripts-ts": "3.1.0",
     "react-sortable-hoc": "^0.8.3",
