@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import createFieldAggregation from './createFieldAggregation';
 import normalizeFilters from '../buildQuery/normalizeFilters';
+import { getTermFilter } from '../buildQuery';
 
 function createGlobalAggregation({ field, aggregation }) {
   return {
@@ -97,10 +98,17 @@ export default function ({
   const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
     const field = fieldKey.replace(/__/g, '.');
     const nestedPaths = getNestedPathsInField({ field, nestedFields });
+    const contentsFiltered = (sqon.content || []).filter((c) =>
+      c.content?.field?.startsWith(nestedPaths),
+    );
+    const termFilters = contentsFiltered.map((filter) =>
+      getTermFilter({ nestedFields: [], filter }),
+    );
     const fieldAggregation = createFieldAggregation({
       field,
       graphqlField,
       isNested: nestedPaths.length,
+      termFilters,
     });
 
     const aggregation = nestedPaths.reverse().reduce(
