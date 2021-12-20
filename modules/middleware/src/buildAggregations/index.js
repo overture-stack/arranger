@@ -99,7 +99,9 @@ export default function ({
     const field = fieldKey.replace(/__/g, '.');
     const nestedPaths = getNestedPathsInField({ field, nestedFields });
     const contentsFiltered = (sqon.content || []).filter((c) =>
-      c.content?.field?.startsWith(nestedPaths),
+      aggregationsFilterThemselves
+        ? c.content?.field?.startsWith(nestedPaths)
+        : c.content?.field?.startsWith(nestedPaths) && c.content?.field !== field,
     );
     const termFilters = contentsFiltered.map((filter) =>
       getTermFilter({ nestedFields: [], filter }),
