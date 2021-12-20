@@ -69,7 +69,7 @@ function getRegexFilter({ nestedFields, filter }) {
   return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-export function getTermFilter({ nestedFields, filter }) {
+function getTermFilter({ nestedFields, filter }) {
   const {
     op,
     content: { value, field },

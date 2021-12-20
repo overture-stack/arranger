@@ -88,7 +88,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
     },
   };
 
-  return isNested ? wrapNestedFilter(aggs, field, termFilters) : aggs;
+  return isNested && termFilters.length > 0 ? wrapNestedFilter(aggs, field, termFilters) : aggs;
 };
 
 const wrapNestedFilter = (aggs, field, termFilters) => {
