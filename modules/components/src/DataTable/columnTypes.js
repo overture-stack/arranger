@@ -8,7 +8,7 @@ import { getSingleValue } from './utils';
 
 const STANDARD_DATE = 'yyyy-MM-dd';
 
-const Date = ({ value, ...props }) => {
+const dateHandler = ({ value, ...props }) => {
   switch (true) {
     case isNil(value):
       return '';
@@ -38,7 +38,7 @@ export default {
   bits: ({ value, ...props }) => <FileSize {...props} value={(value || 0) / 8} />,
   boolean: ({ value }) => (isNil(value) ? '' : `${value}`),
   bytes: (props) => <FileSize {...props} />,
-  date: Date,
+  date: dateHandler,
   list: (props) => {
     const values = jsonPath.query(props.original, props.column.jsonPath);
     const total = values.length;
