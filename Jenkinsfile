@@ -53,6 +53,7 @@ spec:
                 }
             }
         }
+
         stage('Prepare') {
             steps {
                 script {
@@ -63,6 +64,7 @@ spec:
                 }
             }
         }
+
 		stage("Build test container") {
 			steps {
 				container('docker') {
@@ -144,7 +146,7 @@ spec:
                 branch "master"
             }
             steps {
-               container('docker') {
+                container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh "docker login -u $USERNAME -p $PASSWORD"
                     }
@@ -192,16 +194,22 @@ spec:
             steps {
                 container('node') {
                     withCredentials([
-                        usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL'),
-                        usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+                        string(credentialsId: "OvertureNPMAutomationToken", variable: 'NPM_TOKEN')
                     ]) {
-                        sh "git pull --tags"
-                        sh "npm ci"
-                        sh "npm config set unsafe-perm true"
-                        sh "npm run bootstrap"
-                        sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
-                        sh "npm run publish::ci"
+                        script {
+                            // we still want to run the platform deploy even if this fails, hence try-catch
+                            try {
+                                sh "git pull --tags"
+                                sh "npm ci"
+                                sh "npm config set unsafe-perm true"
+                                sh "npm run bootstrap"
+                                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                                sh "npm whoami"
+                                sh "npm run publish::ci"
+                            } catch (err) {
+                                echo "There was an error while publishing packages"
+                            }
+                        }
                     }
                 }
             }
