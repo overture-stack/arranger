@@ -12,7 +12,7 @@
     "bootstrap": "lerna bootstrap",
     "lerna": "lerna",
     "link": "npm-link-shared modules",
-    "publish::ci": "lerna publish from-git --yes --force-publish=*",
+    "publish::ci": "lerna publish from-package --yes --no-verify-access --force-publish=*",
     "test": "lerna run test --stream",
     "server": "cd modules/server && npm run start",
     "server:prod": "cd modules/server && npm run start:prod",

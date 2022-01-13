@@ -53,6 +53,7 @@ spec:
                 }
             }
         }
+
         stage('Prepare') {
             steps {
                 script {
@@ -114,7 +115,7 @@ spec:
 
         stage('Push latest images') {
             when {
-                branch "master"
+                branch "main"
             }
             steps {
                 container('docker') {
@@ -132,40 +133,28 @@ spec:
             }
         }
 
-        stage('Push rewrite images') {
-            when {
-                branch "rewrite"
-            }
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
-                    }
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:rewrite-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:rewrite-${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-                }
-            }
-        }
-
         stage('Publish tag to npm') {
             when {
-                branch "master"
+                branch "main"
             }
             steps {
                 container('node') {
                     withCredentials([
-                        usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL'),
-                        usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+                        string(credentialsId: "OvertureNPMAutomationToken", variable: 'NPM_TOKEN')
                     ]) {
-                        sh "git pull --tags"
-                        sh "npm ci"
-                        sh "npm config set unsafe-perm true"
-                        sh "npm run bootstrap"
-                        sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
-                        sh "npm run publish::ci"
+                        script {
+                            // we still want to run the platform deploy even if this fails, hence try-catch
+                            try {
+                                sh "git pull --tags"
+                                sh "npm ci"
+                                sh "npm config set unsafe-perm true"
+                                sh "npm run bootstrap"
+                                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                                sh "npm run publish::ci"
+                            } catch (err) {
+                                echo "There was an error while publishing packages"
+                            }
+                        }
                     }
                 }
             }

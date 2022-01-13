@@ -6,3 +6,4 @@ docker-compose.yml
 docker
 !docker/ui/**
 !docker/test/**
+.npmrc
