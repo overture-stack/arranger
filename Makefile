@@ -14,6 +14,7 @@ DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
 # Variables
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+CONFIG_PATH := $(ROOT_DIR)/modules/server/configs
 RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
 DOCKER_DIR := $(ROOT_DIR)/docker
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
@@ -24,7 +25,13 @@ ES_USER := elastic
 ES_BASIC_AUTH := $(shell printf "$(ES_USER):$(ES_PASS)" | base64)
 
 # Commands
-DOCKER_COMPOSE_CMD := ES_USER=$(ES_USER) ES_PASS=$(ES_PASS) $(DOCKER_COMPOSE_EXE) -f $(ROOT_DIR)/docker-compose.yml
+DOCKER_COMPOSE_CMD := \
+	CONFIG_PATH=$(CONFIG_PATH) \
+  ES_HOST=$(ES_HOST) \
+  ES_USER=$(ES_USER) \
+	ES_PASS=$(ES_PASS) \
+  $(DOCKER_COMPOSE_EXE) -f \
+	$(ROOT_DIR)/docker-compose.yml
 DC_UP_CMD := $(DOCKER_COMPOSE_CMD) up -d --build
 
 #############################################################
