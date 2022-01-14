@@ -24,7 +24,7 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
   };
 };
 
-const createTermAggregation = ({ field, isNested, graphqlField }) => {
+const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) => {
   const maxAggregations = get(
     graphqlField,
     ['buckets', '__arguments', 0, 'max', 'value'],
@@ -77,7 +77,7 @@ const createTermAggregation = ({ field, isNested, graphqlField }) => {
     };
   }
 
-  return {
+  const aggs = {
     [field]: {
       ...(!isEmpty(innerAggs) ? { aggs: { ...innerAggs } } : {}),
       terms: { field, size: maxAggregations },
@@ -85,6 +85,21 @@ const createTermAggregation = ({ field, isNested, graphqlField }) => {
     [`${field}:missing`]: {
       ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
       missing: { field: field },
+    },
+  };
+
+  return isNested && termFilters.length > 0 ? wrapNestedFilter(aggs, field, termFilters) : aggs;
+};
+
+const wrapNestedFilter = (aggs, field, termFilters) => {
+  return {
+    [`${field}:nested_filtered`]: {
+      filter: {
+        bool: {
+          must: termFilters,
+        },
+      },
+      aggs: aggs,
     },
   };
 };
@@ -106,13 +121,16 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
-export default ({ field, graphqlField = {}, isNested = false }) => {
+export default ({ field, graphqlField = {}, isNested = false, termFilters = [] }) => {
   const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter(
     (t) => graphqlField[t],
   );
   return types.reduce((acc, type) => {
     if (type === BUCKETS || type === BUCKET_COUNT) {
-      return Object.assign(acc, createTermAggregation({ field, isNested, graphqlField }));
+      return Object.assign(
+        acc,
+        createTermAggregation({ field, isNested, graphqlField, termFilters }),
+      );
     } else if ([STATS, HISTOGRAM].includes(type)) {
       return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
     } else if (type === CARDINALITY) {
