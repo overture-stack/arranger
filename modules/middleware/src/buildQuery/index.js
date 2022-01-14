@@ -190,7 +190,7 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   const applyBooleanWrapper = wrappers[op];
   const esFilters = content.map((filter) => opSwitch({ nestedFields, filter }));
   const isNested = !!esFilters[0]?.nested;
-  if (isNested && pivot === esFilters[0]?.nested.path) {
+  if (isNested && esFilters.map((f) => f.nested?.path).includes(pivot)) {
     const flattned = esFilters.reduce(
       (bools, esFilter) =>
         op === AND_OP || op === NOT_OP
