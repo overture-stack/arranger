@@ -79,7 +79,7 @@ A bit more friendly "quickstart", if you just want to get things started
   make start
 
 # ^^^ which runs the following command behind the scenes:
-# ES_USERNAME=elastic ES_PASSWORD=myelasticpassword docker-compose -f docker-compose.yml up -d -build
+# ES_USER=elastic ES_PASS=myelasticpassword docker-compose -f docker-compose.yml up -d -build
 # Note: these ES_* values may be customized when running your own Arranger instance
 
 

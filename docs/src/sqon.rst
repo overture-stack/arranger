@@ -2,7 +2,7 @@
 SQON Filters
 =============
 
-Arranger uses a custom JSON object format for filtering that is called SQON (pronounced like "Scone"). SQON provides a flexible system for combining many different filters.
+Arranger uses a custom JSON object format for filtering that is called SQON (Serializable Query Object Notation, pronounced like "Scone"). SQON provides a flexible system for combining many different filters.
 
 
 A SQON object consists of nested objects of two types: **Operations** and **Values**.

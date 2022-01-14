@@ -1,0 +1,8 @@
+__mocks__/
+src/
+stories/
+.storybook/
+
+.babelrc
+.env*
+.eslintrc*

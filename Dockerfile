@@ -8,7 +8,7 @@ ENV APP_GID=1000
 ENV APP_HOME=/app
 ENV APP_USER=node
 
-RUN apk --no-cache add curl make shadow \
+RUN apk --no-cache add curl g++ make python3 shadow \
 	&& groupmod -g $APP_GID $APP_USER \
 	&& usermod -u $APP_UID -g $APP_GID $APP_USER \
 	&& mkdir -p $APP_HOME \

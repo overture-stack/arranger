@@ -53,3 +53,5 @@ services:
       ES_HOST: http://elasticsearch:9200
       ES_USER: '$ES_USER'
       ES_PASS: '$ES_PASS'
+    volumes:
+      - '${CONFIG_PATH}:/app/modules/server/configs'
