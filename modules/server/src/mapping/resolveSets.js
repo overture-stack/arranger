@@ -6,7 +6,7 @@ import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
 
 const retrieveSetIds = async ({
-  es,
+  esClient,
   index,
   query,
   path,
@@ -20,7 +20,7 @@ const retrieveSetIds = async ({
       ...(searchAfter && { search_after: searchAfter }),
     };
 
-    const response = await esSearch(es)({
+    const response = await esSearch(esClient)({
       index,
       sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
       size: BULK_SIZE,
@@ -49,46 +49,44 @@ const retrieveSetIds = async ({
   return handleResult(await search());
 };
 
-export const saveSet = ({ types, getServerSideFilter }) => async (
-  obj,
-  { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' },
-  context,
-) => {
-  const { nested_fields: nestedFields, index } = types.find(([, x]) => x.name === type)[1];
-  const { es, projectId } = context;
+export const saveSet =
+  ({ types, getServerSideFilter }) =>
+  async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
+    const { nested_fields: nestedFields, index } = types.find(([, x]) => x.name === type)[1];
+    const { esClient } = context;
 
-  const query = buildQuery({
-    nestedFields,
-    filters: compileFilter({
-      clientSideFilter: sqon,
-      serverSideFilter: getServerSideFilter(context),
-    }),
-  });
-  const ids = await retrieveSetIds({
-    es,
-    index,
-    query,
-    path,
-    sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
-  });
+    const query = buildQuery({
+      nestedFields,
+      filters: compileFilter({
+        clientSideFilter: sqon,
+        serverSideFilter: getServerSideFilter(context),
+      }),
+    });
+    const ids = await retrieveSetIds({
+      esClient,
+      index,
+      query,
+      path,
+      sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
+    });
 
-  const body = {
-    setId: uuid(),
-    createdAt: Date.now(),
-    ids,
-    type,
-    path,
-    sqon,
-    userId,
-    size: ids.length,
+    const body = {
+      setId: uuid(),
+      createdAt: Date.now(),
+      ids,
+      type,
+      path,
+      sqon,
+      userId,
+      size: ids.length,
+    };
+
+    await esClient.index({
+      index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+      id: body.setId,
+      refresh: refresh.toLowerCase(),
+      body,
+    });
+
+    return body;
   };
-
-  await es.index({
-    index: CONSTANTS.ES_ARRANGER_SET_INDEX,
-    id: body.setId,
-    refresh: refresh.toLowerCase(),
-    body,
-  });
-
-  return body;
-};

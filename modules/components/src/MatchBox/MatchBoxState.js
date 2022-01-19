@@ -45,7 +45,7 @@ class MatchBoxState extends Component {
           },
         },
       } = await api({
-        endpoint: `/${this.props.projectId}/graphql`,
+        endpoint: `/graphql`,
         body: {
           query: `
             {
@@ -89,7 +89,7 @@ class MatchBoxState extends Component {
 
   save = debounce(async (state) => {
     let { data } = await api({
-      endpoint: `/${this.props.projectId}/graphql`,
+      endpoint: `/graphql`,
       body: {
         variables: { state },
         query: `

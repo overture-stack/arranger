@@ -36,6 +36,7 @@ const enhance = compose(
  *   fileName?: '',
  *   function?: () => {},
  *   columns?: [''],
+ *   maxRows?: 100,
  *   requiresRowSelection?: false,
  * }, ...]
  *
@@ -65,6 +66,7 @@ const TableToolbar = ({
   selectedRowsFilterPropertyName = 'file_autocomplete',
   exporter = null,
   exporterLabel = 'Download',
+  exportMaxRows,
   exportTSVFilename = '',
   exportTSVText = 'Export TSV',
   filterInputPlaceholder = 'Filter',
@@ -92,7 +94,7 @@ const TableToolbar = ({
     exporter,
     allowTSVExport,
     exportTSVText,
-    columns,
+    exportMaxRows,
   );
 
   const hasSelectedRows = selectedTableRows.length > 0;
@@ -199,6 +201,7 @@ const TableToolbar = ({
                 exporterLabel,
                 exporterFileName,
                 exporterFunction,
+                exporterMaxRows,
                 exporterRequiresRowSelection,
               }) =>
                 (exporterRequiresRowSelection && !hasSelectedRows) ||
@@ -208,6 +211,7 @@ const TableToolbar = ({
                       {
                         allColumns,
                         columns,
+                        maxRows: exporterMaxRows,
                         fileName: exporterFileName
                           ? `${exporterFileName}${
                               exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'

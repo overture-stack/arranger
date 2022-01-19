@@ -8,8 +8,7 @@ const nestedField = ({ field, nestedFields }) =>
   nestedFields.find((x) => x.field === field.field.split('.').slice(0, -1).join('.'));
 
 const enhance = compose(
-  withQuery(({ index, projectId }) => ({
-    projectId,
+  withQuery(({ index }) => ({
     key: 'extendedFields',
     query: `
       query ${capitalize(index)}ExtendedQuery {
@@ -37,7 +36,9 @@ const enhance = compose(
       quickSearchFields = data?.[index]?.extended
         ?.filter((x) => x.quickSearchEnabled)
         ?.filter((x) => {
-          const { field: parentField = '' } = //defaults to "" because a root field's parent would evaluate to such
+          const {
+            field: parentField = '',
+          } = //defaults to "" because a root field's parent would evaluate to such
             nestedField({
               nestedFields,
               field: x,

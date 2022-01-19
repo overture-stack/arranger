@@ -1,2 +1,7 @@
-src
-.babelrc
+src/
+
+.babelrc*
+.eslintrc*
+
+index.js
+tsconfig*

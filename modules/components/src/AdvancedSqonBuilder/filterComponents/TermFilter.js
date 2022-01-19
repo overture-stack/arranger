@@ -16,7 +16,6 @@ import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
 import defaultApi from '../../utils/api';
-import { PROJECT_ID } from '../../utils/config';
 import Query from '../../Query';
 
 const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
@@ -103,31 +102,33 @@ export const TermFilterUI = (props) => {
       })(s.state.localSqon),
     });
   };
-  const onFilterClick = (s) => ({ generateNextSQON }) => {
-    setTimeout(() => {
-      // state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
-      const deltaSqon = generateNextSQON();
-      const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
-      // we're only interested in the new field operation's content value
-      const currentFieldSqon = getCurrentFieldOp(s);
-      const existingValue = (currentFieldSqon.content.value || []).find((v) =>
-        deltaFiterObjContentValue.includes(v),
-      );
-      const newFieldSqon = {
-        ...currentFieldSqon,
-        content: {
-          ...currentFieldSqon.content,
-          value: [
-            ...(currentFieldSqon.content.value || []).filter((v) => v !== existingValue),
-            ...(existingValue ? [] : deltaFiterObjContentValue),
-          ],
-        },
-      };
-      s.setState({
-        localSqon: setSqonAtPath(sqonPath, newFieldSqon)(s.state.localSqon),
-      });
-    }, 0);
-  };
+  const onFilterClick =
+    (s) =>
+    ({ generateNextSQON }) => {
+      setTimeout(() => {
+        // state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
+        const deltaSqon = generateNextSQON();
+        const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
+        // we're only interested in the new field operation's content value
+        const currentFieldSqon = getCurrentFieldOp(s);
+        const existingValue = (currentFieldSqon.content.value || []).find((v) =>
+          deltaFiterObjContentValue.includes(v),
+        );
+        const newFieldSqon = {
+          ...currentFieldSqon,
+          content: {
+            ...currentFieldSqon.content,
+            value: [
+              ...(currentFieldSqon.content.value || []).filter((v) => v !== existingValue),
+              ...(existingValue ? [] : deltaFiterObjContentValue),
+            ],
+          },
+        };
+        s.setState({
+          localSqon: setSqonAtPath(sqonPath, newFieldSqon)(s.state.localSqon),
+        });
+      }, 0);
+    };
   return (
     <Component initialState={initialState}>
       {(s) => (
@@ -179,8 +180,7 @@ export const TermFilterUI = (props) => {
 export default (props) => {
   const {
     field,
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     api = defaultApi,
     executableSqon = {
       op: AND_OP,
@@ -199,7 +199,7 @@ export default (props) => {
 
   const gqlField = field.split('.').join('__');
   const query = `query($sqon: JSON){
-    ${arrangerProjectIndex} {
+    ${arrangerIndex} {
       aggregations(filters: $sqon) {
         ${gqlField} {
           buckets {
@@ -213,7 +213,6 @@ export default (props) => {
   return (
     <Query
       variables={{ sqon: executableSqon }}
-      projectId={arrangerProjectId}
       api={api}
       query={query}
       render={({ data, loading, error }) => (
@@ -231,9 +230,7 @@ export default (props) => {
           sqonPath={sqonPath}
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
-          buckets={
-            data ? get(data, `${arrangerProjectIndex}.aggregations.${gqlField}.buckets`) : []
-          }
+          buckets={data ? get(data, `${arrangerIndex}.aggregations.${gqlField}.buckets`) : []}
         />
       )}
     />

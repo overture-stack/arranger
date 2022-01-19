@@ -1,6 +1,12 @@
-import { Query, Arranger, Aggregations, CurrentSQON, Table } from '@arranger/components';
+import {
+  Query,
+  Arranger,
+  Aggregations,
+  CurrentSQON,
+  Table,
+} from '@overture-stack/arranger-components';
 
-test('importing @arranger/components modules', () => {
+test('importing @overture-stack/arranger-components modules', () => {
   expect(Query).toBeDefined();
   expect(Arranger).toBeDefined();
   expect(Aggregations).toBeDefined();

@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { cloneDeep } from 'lodash';
 import Component from 'react-component-component';
-import { PROJECT_ID } from '../utils/config';
 import SqonEntry from './SqonEntry';
 import {
   resolveSyntheticSqon,
@@ -35,14 +34,12 @@ const defaultSqonDeletionHandler = ({
       onSqonDeleteConfirmed: () => {
         s.setState({
           deletingIndex: null,
-          deletingIndex: null,
           onSqonDeleteConfirmed: null,
         });
         resolve();
       },
       onSqonDeleteCancel: () => {
         s.setState({
-          deletingIndex: null,
           deletingIndex: null,
           onSqonDeleteConfirmed: null,
         });
@@ -53,8 +50,7 @@ const defaultSqonDeletionHandler = ({
 
 const AdvancedSqonBuilder = (props) => {
   const {
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     syntheticSqons = [],
     activeSqonIndex: currentActiveSqonIndex = 0,
     FieldOpModifierContainer = undefined,
@@ -109,17 +105,19 @@ const AdvancedSqonBuilder = (props) => {
     });
   };
 
-  const dispatchSqonListChange = (s) => ({ eventKey, newSqonList, eventDetails }) => {
-    clearSqonDeletion(s);
-    // wraps in promise to delay to allow delaying to next frame
-    return Promise.resolve(
-      onChange({
-        eventKey,
-        eventDetails,
-        newSyntheticSqons: newSqonList,
-      }),
-    );
-  };
+  const dispatchSqonListChange =
+    (s) =>
+    ({ eventKey, newSqonList, eventDetails }) => {
+      clearSqonDeletion(s);
+      // wraps in promise to delay to allow delaying to next frame
+      return Promise.resolve(
+        onChange({
+          eventKey,
+          eventDetails,
+          newSyntheticSqons: newSqonList,
+        }),
+      );
+    };
   const onSelectedSqonIndicesChange = (s) => (index) => () => {
     if (!s.state.selectedSqonIndices.includes(index) && !isEmptySqon(syntheticSqons[index])) {
       s.setState({
@@ -290,8 +288,7 @@ const AdvancedSqonBuilder = (props) => {
                 key={i}
                 index={i}
                 api={api}
-                arrangerProjectId={arrangerProjectId}
-                arrangerProjectIndex={arrangerProjectIndex}
+                arrangerIndex={arrangerIndex}
                 syntheticSqon={sq}
                 isActiveSqon={i === currentActiveSqonIndex}
                 isSelected={s.state.selectedSqonIndices.includes(i)}
@@ -340,8 +337,7 @@ const AdvancedSqonBuilder = (props) => {
 };
 
 AdvancedSqonBuilder.propTypes = {
-  arrangerProjectId: PropTypes.string,
-  arrangerProjectIndex: PropTypes.string.isRequired,
+  arrangerIndex: PropTypes.string.isRequired,
   syntheticSqons: PropTypes.arrayOf(PropTypes.object),
   activeSqonIndex: PropTypes.number,
   FieldOpModifierContainer: PropTypes.any,

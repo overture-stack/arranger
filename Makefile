@@ -14,30 +14,37 @@ DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
 # Variables
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+CONFIG_PATH := $(ROOT_DIR)/modules/server/configs
 RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
-PROJECT_NAME := $(shell echo $(ROOT_DIR) | sed 's/.*\///g')
 DOCKER_DIR := $(ROOT_DIR)/docker
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
 ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
-ES_USERNAME := elastic
-ES_PASSWORD := myelasticpassword
-ES_BASIC_AUTH := $(shell echo -n "$(ES_USERNAME):$(ES_PASSWORD)" | base64)
+ES_HOST := http://localhost:9200
+ES_PASS := myelasticpassword
+ES_USER := elastic
+ES_BASIC_AUTH := $(shell printf "$(ES_USER):$(ES_PASS)" | base64)
 
 # Commands
-DOCKER_COMPOSE_CMD := ES_USERNAME=$(ES_USERNAME) ES_PASSWORD=$(ES_PASSWORD) $(DOCKER_COMPOSE_EXE) -f $(ROOT_DIR)/docker-compose.yml
+DOCKER_COMPOSE_CMD := \
+	CONFIG_PATH=$(CONFIG_PATH) \
+  ES_HOST=$(ES_HOST) \
+  ES_USER=$(ES_USER) \
+	ES_PASS=$(ES_PASS) \
+  $(DOCKER_COMPOSE_EXE) -f \
+	$(ROOT_DIR)/docker-compose.yml
 DC_UP_CMD := $(DOCKER_COMPOSE_CMD) up -d --build
 
 #############################################################
 # Internal Targets
 #############################################################
 _ping_elasticsearch_server:
-	@echo $(YELLOW)$(INFO_HEADER) "Pinging ElasticSearch on http://localhost:9200" $(END)
-	@$(RETRY_CMD) "curl --retry 10 \
+	@echo $(YELLOW)$(INFO_HEADER) "Pinging ElasticSearch on $(ES_HOST)" $(END)
+	@sh $(RETRY_CMD) "curl --retry 10 \
     --retry-delay 0 \
     --retry-max-time 40 \
     --retry-connrefuse \
 	-H \"Authorization: Basic $(ES_BASIC_AUTH)\" \
-	\"http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=100s&wait_for_no_initializing_shards=true\""
+	\"$(ES_HOST)/_cluster/health?wait_for_status=yellow&timeout=100s&wait_for_no_initializing_shards=true\""
 	@echo ""
 
 
@@ -71,12 +78,12 @@ clean-elastic:
 	@echo $(YELLOW)$(INFO_HEADER) "Removing ElasticSearch indices" $(END)
 	@$(CURL_EXE) \
 		-H "Authorization: Basic $(ES_BASIC_AUTH)" \
-		-X GET "http://localhost:9200/_cat/indices" \
+		-X GET "$(ES_HOST)/_cat/indices" \
 		| grep -v kibana \
 		| grep -v arranger \
 		| grep -v configuration \
 		| awk '{ print $$3 }' \
-		| xargs -i $(CURL_EXE) -H "Authorization: Basic $(ES_BASIC_AUTH)" -XDELETE "http://localhost:9200/{}?pretty"
+		| xargs -I {} $(CURL_EXE) -H "Authorization: Basic $(ES_BASIC_AUTH)" -X DELETE "$(ES_HOST)/{}?pretty"
 
 	@echo $(YELLOW)$(INFO_HEADER) "ElasticSearch indices removed" $(END)
 
@@ -95,31 +102,34 @@ clean: clean-elastic clean-docker
 #  Indexing and ES Targets
 #############################################################
 # Just delete the documents, not the entire index.
+
 clear-es-documents:
 	@echo $(YELLOW)$(INFO_HEADER) "Deleting elasticsearch documents" $(END)
 	@$(CURL_EXE) -s -X GET \
 		-H "Authorization: Basic $(ES_BASIC_AUTH)" \
-		"http://localhost:9200/_cat/indices" \
+		"$(ES_HOST)/_cat/indices" \
 		| grep -v kibana \
 		| grep -v arranger \
 		| grep -v configuration \
 		| awk '{ print $$3 }'  \
-		| sed  's/^/http:\/\/localhost:9200\//' \
-		| sed 's/$$/\/_delete_by_query/' \
-		| xargs $(CURL_EXE) -XPOST -H "Authorization: Basic $(ES_BASIC_AUTH)" --header 'Content-Type: application/json' -d '{"query":{"match_all":{}}}'
+		| sed 's#^#$(ES_HOST)/#' \
+		| sed 's#$$#/_delete_by_query#' \
+		| xargs $(CURL_EXE) -XPOST \
+		-H "Authorization: Basic $(ES_BASIC_AUTH)" \
+		-H 'Content-Type: application/json' \
+		-d '{"query":{"match_all":{}}}'
 
 init-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Initializing file_centric index" $(END)
-	@$(ES_LOAD_SCRIPT) $(ES_DATA_DIR) $(ES_USERNAME) $(ES_PASSWORD)
-
+	@$(ES_LOAD_SCRIPT) $(ES_DATA_DIR) $(ES_USER) $(ES_PASS)
 
 get-es-indices:
 	@echo $(YELLOW)$(INFO_HEADER) "Available indices:" $(END)
-	@$(CURL_EXE) -X GET -H "Authorization: Basic $(ES_BASIC_AUTH)"  "localhost:9200/_cat/indices"
+	@$(CURL_EXE) -X GET -H "Authorization: Basic $(ES_BASIC_AUTH)"  "$(ES_HOST)/_cat/indices"
 
 get-es-filecentric-content:
 	@echo $(YELLOW)$(INFO_HEADER) "file_centric content:" $(END)
-	@$(CURL_EXE) -X GET -H "Authorization: Basic $(ES_BASIC_AUTH)"  "localhost:9200/file_centric/_search?size=100" | ${JQ_EXE} -e
+	@$(CURL_EXE) -X GET -H "Authorization: Basic $(ES_BASIC_AUTH)"  "$(ES_HOST)/file_centric/_search?size=100" | ${JQ_EXE} -e
 
 get-es-info: get-es-indices get-es-filecentric-content
 
@@ -131,7 +141,7 @@ ps:
 	@$(DOCKER_COMPOSE_CMD) ps
 
 start:
-	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearch, kibana, arranger-server, and arranger-ui" $(END)
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearch, kibana, and arranger-server" $(END)
 	@$(DC_UP_CMD)
 	@$(MAKE) _ping_elasticsearch_server
 	@echo $(YELLOW)$(INFO_HEADER) Succesfully started all arranger services! $(END)

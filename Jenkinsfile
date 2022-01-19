@@ -1,6 +1,6 @@
-def gitHubRepo = "overture-stack/arranger"
-def gitHubRegistry = "ghcr.io"
 def dockerHubRepo = "overture/arranger"
+def gitHubRegistry = "ghcr.io"
+def gitHubRepo = "overture-stack/arranger"
 def commit = "UNKNOWN"
 
 pipeline {
@@ -13,8 +13,11 @@ kind: Pod
 spec:
   containers:
   - name: node
-    image: node:12.6.0
+    image: node:13.13.0
     tty: true
+    env:
+    - name: HOME
+      value: /home/jenkins/agent
   - name: docker
     image: docker:18-git
     tty: true
@@ -40,6 +43,17 @@ spec:
         }
     }
     stages {
+        stage('Diagnostics') {
+            steps {
+                container('docker') {
+                    sh "printenv; id; cat /etc/passwd"
+                }
+                container('node') {
+                    sh "printenv; id; cat /etc/passwd"
+                }
+            }
+        }
+
         stage('Prepare') {
             steps {
                 script {
@@ -77,7 +91,6 @@ spec:
 						sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
 					}
 					sh "docker build --network=host --target server -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-server:${commit} ."
-					sh "docker build --network=host --target ui -f Dockerfile -t ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ."
 				}
 			}
 		}
@@ -92,22 +105,17 @@ spec:
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
                 }
             }
         }
 
         stage('Push latest images') {
             when {
-                branch "master"
+                branch "main"
             }
             steps {
                 container('docker') {
@@ -115,57 +123,41 @@ spec:
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:latest"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:latest"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                }
-            }
-        }
-
-        stage('Push rewrite images') {
-            when {
-                branch "rewrite"
-            }
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
-                    }
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:rewrite"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:rewrite"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:rewrite"
                 }
             }
         }
 
         stage('Publish tag to npm') {
             when {
-                branch "master"
+                anyOf {
+                    branch "legacy";
+                    branch "main"
+                }
             }
             steps {
                 container('node') {
                     withCredentials([
-                        usernamePassword(credentialsId: 'OvertureBioNPM', passwordVariable: 'NPM_PASSWORD', usernameVariable: 'NPM_USERNAME'),
-                        string(credentialsId: 'OvertureBioContact', variable: 'EMAIL'),
-                        usernamePassword(credentialsId: 'OvertureBioGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')
+                        string(credentialsId: "OvertureNPMAutomationToken", variable: 'NPM_TOKEN')
                     ]) {
-                        sh "git pull --tags"
-                        sh "npm ci"
-                        sh "npm config set unsafe-perm true"
-                        sh "npm run bootstrap"
-                        sh "NPM_EMAIL=${EMAIL} NPM_USERNAME=${NPM_USERNAME} NPM_PASSWORD=${NPM_PASSWORD} npx npm-ci-login"
-                        sh "npm run publish::ci"
+                        script {
+                            // we still want to run the platform deploy even if this fails, hence try-catch
+                            try {
+                                sh "git pull --tags"
+                                sh "npm ci"
+                                sh "npm config set unsafe-perm true"
+                                sh "npm run bootstrap"
+                                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                                sh "npm run publish::ci"
+                            } catch (err) {
+                                echo "There was an error while publishing packages"
+                            }
+                        }
                     }
                 }
             }

@@ -6,7 +6,6 @@ import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
 import FieldOp from './FieldOp';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
-import { PROJECT_ID } from '../../utils/config';
 import defaultApi from '../../utils/api';
 
 const SqonReference = (props) => {
@@ -81,8 +80,7 @@ const LogicalOpSelector = (props) => {
  */
 const BooleanOp = (props) => {
   const {
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     contentPath = [],
     onFieldOpRemove = (path) => {},
     onChange = (changedPath, newOp) => {},
@@ -123,8 +121,7 @@ const BooleanOp = (props) => {
             ) : isFieldOp(c) ? (
               <span>
                 <FieldOp
-                  arrangerProjectId={arrangerProjectId}
-                  arrangerProjectIndex={arrangerProjectIndex}
+                  arrangerIndex={arrangerIndex}
                   sqonPath={currentPath}
                   fullSyntheticSqon={fullSyntheticSqon}
                   onContentRemove={onRemove(currentPath)}

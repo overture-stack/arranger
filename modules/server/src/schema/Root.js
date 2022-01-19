@@ -38,18 +38,20 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     viewer: Root
     query(query: String, types: [String]): QueryResults
 
+    hasValidConfig(field: String!, index: String!): Boolean
+
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
   }
 
   ${rootTypes.map(([, type]) => type.typeDefs)}
 
-  enum ProjectType {
+  enum DocumentType {
     ${types.map(([key, type]) => type.name).join('\n')}
   }
 
   type Mutation {
-    saveSet(type: ProjectType! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
+    saveSet(type: DocumentType! userId: String sqon: JSON! path: String! sort: [Sort] refresh: EsRefresh): Set
   }
 
   schema {
@@ -75,6 +77,17 @@ export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) 
     Date: GraphQLDate,
     Root: {
       viewer: resolveObject,
+      hasValidConfig: async (obj, { field, index }) => {
+        const [_, type] = types.find(([name]) => name === field) || [];
+
+        // TODO: make this more useful/verbose;
+        return (
+          !!type &&
+          field === type.name &&
+          index === type.index &&
+          Object.keys(type.config).length > 0
+        );
+      },
       ...[...types, ...rootTypes].reduce(
         (acc, [key, type]) => ({
           ...acc,

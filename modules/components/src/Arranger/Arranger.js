@@ -15,14 +15,15 @@ class Arranger extends React.Component {
     };
   }
 
-  fetchData = (projectId) => {
+  fetchData = () => {
     return (options) => {
       const { api = defaultApi } = this.props;
+
       return api({
-        endpoint: `/${projectId}/graphql`,
+        endpoint: `/graphql`,
         body: columnsToGraphql(options),
-      }).then((r) => {
-        const hits = get(r, `data.${options.config.type}.hits`) || {};
+      }).then((response) => {
+        const hits = get(response, `data.${options.config.type}.hits`) || {};
         const data = get(hits, 'edges', []).map((e) => e.node);
         const total = hits.total || 0;
         return { total, data };
@@ -53,22 +54,13 @@ class Arranger extends React.Component {
   }
 
   render() {
-    const {
-      index,
-      graphqlField,
-      projectId,
-      children,
-      render,
-      component,
-      api = defaultApi,
-    } = this.props;
+    const { index, graphqlField, children, render, component, api = defaultApi } = this.props;
     const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
       api,
       sqon,
       selectedTableRows,
-      projectId,
       index,
       graphqlField,
       fetchData: this.fetchData,

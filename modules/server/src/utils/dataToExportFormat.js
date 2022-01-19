@@ -169,20 +169,20 @@ const transformData = ({
 
 const transformDataToTSV = ({ row, uniqueBy, columns, emptyValue }) => {
   return getRows({
-    row: row._source,
-    paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
-    columns: columns,
+    columns,
     emptyValue,
+    paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
+    row,
   }).map((r) => rowToTSV({ row: r, emptyValue }));
 };
 
 const transformDataToJSON = ({ row, uniqueBy, columns, emptyValue }) => {
   return JSON.stringify(
     rowToJSON({
-      row: row._source,
-      paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
-      columns: columns,
+      columns,
       emptyValue,
+      paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
+      row,
     }),
   );
 };

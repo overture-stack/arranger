@@ -148,18 +148,19 @@ export const hitsToEdges = ({
   ).then((chunks) => chunks.reduce((acc, chunk) => acc.concat(chunk), []));
 };
 
-export default ({ type, Parallel, getServerSideFilter }) => async (
-  obj,
-  { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
-  context,
-  info,
-) => {
-  let fields = getFields(info);
-  let nestedFields = type.nested_fields;
+export default ({ type, Parallel, getServerSideFilter }) =>
+  async (
+    obj,
+    { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
+    context,
+    info,
+  ) => {
+    let fields = getFields(info);
+    let nestedFields = type.nested_fields;
 
-  const { es } = context;
+    const { esClient } = context;
 
-  /**
+    /**
    * @todo: I left this chunk here for reference, in case someone actually understands what it actually is trying to do
     let query = filters;
     if (filters || score) {
@@ -174,71 +175,74 @@ export default ({ type, Parallel, getServerSideFilter }) => async (
     }
     */
 
-  const query = buildQuery({
-    nestedFields,
-    filters: compileFilter({
-      clientSideFilter: filters || { op: 'and', content: [] },
-      serverSideFilter: getServerSideFilter(context),
-    }),
-  });
-
-  let body =
-    (query && {
-      query,
-    }) ||
-    {};
-
-  if (sort && sort.length) {
-    // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
-    body.sort = sort.map(({ field, missing, order, ...rest }) => {
-      const nested_path = nestedFields
-        .filter((nestedField) => field.indexOf(nestedField) === 0)
-        .reduce((deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path), '');
-
-      return {
-        [field]: {
-          missing: missing
-            ? missing === 'first'
-              ? '_first'
-              : '_last'
-            : order === 'asc'
-            ? '_first'
-            : '_last',
-          order,
-          ...rest,
-          ...(nested_path?.length ? { nested: { path: nested_path } } : {}),
-        },
-      };
-    });
-  }
-
-  if (searchAfter) {
-    body.search_after = searchAfter;
-  }
-
-  const copyToSourceFields = findCopyToSourceFields(type.mapping);
-
-  let { hits } = await esSearch(es)({
-    index: type.index,
-    size: first,
-    from: offset,
-    track_total_hits: trackTotalHits,
-    _source: [
-      ...((fields.edges && Object.keys(fields.edges.node || {})) || []),
-      ...Object.values(copyToSourceFields),
-    ],
-    track_scores: !!score,
-    body,
-  });
-
-  return {
-    edges: () =>
-      hitsToEdges({
-        hits,
-        nestedFields,
-        Parallel,
-        copyToSourceFields,
+    const query = buildQuery({
+      nestedFields,
+      filters: compileFilter({
+        clientSideFilter: filters || { op: 'and', content: [] },
+        serverSideFilter: getServerSideFilter(context),
       }),
-    total: () => hits.total.value,
+    });
+
+    let body =
+      (query && {
+        query,
+      }) ||
+      {};
+
+    if (sort && sort.length) {
+      // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
+      body.sort = sort.map(({ field, missing, order, ...rest }) => {
+        const nested_path = nestedFields
+          .filter((nestedField) => field.indexOf(nestedField) === 0)
+          .reduce(
+            (deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path),
+            '',
+          );
+
+        return {
+          [field]: {
+            missing: missing
+              ? missing === 'first'
+                ? '_first'
+                : '_last'
+              : order === 'asc'
+              ? '_first'
+              : '_last',
+            order,
+            ...rest,
+            ...(nested_path?.length ? { nested: { path: nested_path } } : {}),
+          },
+        };
+      });
+    }
+
+    if (searchAfter) {
+      body.search_after = searchAfter;
+    }
+
+    const copyToSourceFields = findCopyToSourceFields(type.mapping);
+
+    let { hits } = await esSearch(esClient)({
+      index: type.index,
+      size: first,
+      from: offset,
+      track_total_hits: trackTotalHits,
+      _source: [
+        ...((fields.edges && Object.keys(fields.edges.node || {})) || []),
+        ...Object.values(copyToSourceFields),
+      ],
+      track_scores: !!score,
+      body,
+    });
+
+    return {
+      edges: () =>
+        hitsToEdges({
+          hits,
+          nestedFields,
+          Parallel,
+          copyToSourceFields,
+        }),
+      total: () => hits.total.value,
+    };
   };
-};

@@ -25,6 +25,9 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
+Arranger has been tested using NodeJS version: ^13.13.0.
+Our team is actively working on making compatible for versions 14 and above.
+
 #### - Development Setup
 
 Setting up the project, and prepare things to make changes
@@ -37,7 +40,7 @@ Setting up the project, and prepare things to make changes
   cd arranger
 
 # 3. install the dependencies
-  npm i
+  npm ci
 
 # 4. install the module's own dependencies
   npm run bootstrap
@@ -47,12 +50,14 @@ Setting up the project, and prepare things to make changes
 Now you should be able to start the following processes from the project's root folder:
 
 ```bash
-# test all modules at once (may require a working ES instance)
-  npm test
+# watch all modules and rebuild them when you make changes
+  npm run watch
+
+# test all modules at once
+  npm run test
 
 # run the server (on port 5050)
-  npm run server # (nodemon on src)
-  npm run server:prod # (node on dist, no watch)
+  npm run server
 
 # serve the component dashboard (on port 6060)
   npm run dashboard
@@ -66,8 +71,7 @@ Now you should be able to start the following processes from the project's root 
 
 #### - Dockerized Setup
 
-A bit more friendly "quickstart", if you just want to get things started.
-Note: it may take a while on the first run, as it builds the images, etc.
+A bit more friendly "quickstart", if you just want to get things started
 
 ```bash
 # Start all services at once, using some default settings.
@@ -75,7 +79,7 @@ Note: it may take a while on the first run, as it builds the images, etc.
   make start
 
 # ^^^ which runs the following command behind the scenes:
-# ES_USERNAME=elastic ES_PASSWORD=myelasticpassword docker-compose -f docker-compose.yml up -d -build
+# ES_USER=elastic ES_PASS=myelasticpassword docker-compose -f docker-compose.yml up -d -build
 # Note: these ES_* values may be customized when running your own Arranger instance
 
 
@@ -90,9 +94,9 @@ Note: it may take a while on the first run, as it builds the images, etc.
 
 ---
 # Bonus: ----------------------------- #
-# See other predefined `make` targets
+# See other preprogrammed make targets
   make help
-# e.g. utilities to list the indexes, or clear the Elasticsearch, list the running docker containers, etc.
+# e.g. utilities to list the indexes, or clear the Elasticsearch; list the running docker containers, etc.
 ```
 
 ---

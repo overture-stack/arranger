@@ -59,7 +59,6 @@ const enhance = compose(
   ),
   withQuery(
     ({
-      projectId,
       index,
       primaryKeyField,
       quickSearchFields,
@@ -70,7 +69,6 @@ const enhance = compose(
     }) => ({
       debounceTime: 300,
       shouldFetch: isValidValue(searchText) && (quickSearchFields || []).length,
-      projectId,
       key: 'rawSearchResults',
       query: `
         query ${capitalize(index)}QuickSearchResults($sqon: JSON, $size: Int) {

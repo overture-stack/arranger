@@ -5,9 +5,9 @@ import { AggsState } from '../Aggs';
 import Query from '../Query';
 import { accessor, underscoreField } from './Stats';
 
-const CombinedStatsQuery = ({ api, projectId, graphqlField, sqon, stats, render }) => (
+const CombinedStatsQuery = ({ api, graphqlField, sqon, stats, render }) => (
   <AggsState
-    {...{ api, projectId, graphqlField }}
+    {...{ api, graphqlField }}
     render={({ aggs }) => {
       const decoratedStats = stats.map((s, i) => ({
         key: `q${i}`,
@@ -17,7 +17,7 @@ const CombinedStatsQuery = ({ api, projectId, graphqlField, sqon, stats, render 
       }));
       return (
         <Query
-          {...{ api, projectId, graphqlField }}
+          {...{ api, graphqlField }}
           renderError
           name={`CombinedStatsQuery`}
           shouldFetch={aggs.length}

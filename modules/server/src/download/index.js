@@ -1,86 +1,45 @@
 import express from 'express';
 import zlib from 'zlib';
-import bodyParser from 'body-parser';
 import tar from 'tar-stream';
 import { defaults } from 'lodash';
 
 import getAllData from '../utils/getAllData';
 import dataToExportFormat from '../utils/dataToExportFormat';
 
-export default function ({ projectId }) {
-  const router = express.Router();
+const convertDataToExportFormat =
+  ({ ctx, fileType }) =>
+  async (args) =>
+    (
+      await getAllData({
+        ctx,
+        ...args,
+      })
+    ).pipe(dataToExportFormat({ ...args, fileType }));
 
-  router.use(bodyParser.urlencoded({ extended: true }));
+const getFileStream = async ({ chunkSize, ctx, file, fileType, mock }) => {
+  const exportArgs = defaults(file, { chunkSize, fileType, mock });
 
-  router.post('/', async function (req, res) {
-    const es = req.context.es;
-    const { params } = req.body;
-    console.time('download');
-    try {
-      const { output, responseFileName, contentType } = await dataStream({
-        es,
-        projectId,
-        params: JSON.parse(params),
-      });
-      res.set('Content-Type', contentType);
-      res.set('Content-disposition', `attachment; filename=${responseFileName}`);
-      output.pipe(res).on('finish', () => {
-        console.timeEnd('download');
-      });
-    } catch (err) {
-      res.status(400).send(err.message || err.details || 'An unknown error occurred.');
-    }
+  return convertDataToExportFormat({ ctx, fileType })({
+    ...exportArgs,
+    mock,
   });
-
-  return router;
-}
-
-export const dataStream = async ({ es, projectId, params, fileType = 'tsv' }) => {
-  const { files, fileName = 'file.tar.gz', mock, chunkSize } = params;
-  if (!files || !files.length) {
-    console.warn('no files defined to download');
-    throw new Error('files array was missing or empty');
-  } else {
-    let output;
-    let responseFileName;
-    let contentType;
-
-    if (files.length === 1) {
-      output = await getFileStream({
-        es,
-        projectId,
-        mock,
-        chunkSize,
-        file: files[0],
-        fileType: files[0].fileType || fileType,
-      });
-      responseFileName = files[0].fileName;
-      contentType = 'text/plain';
-    } else {
-      output = multipleFiles({ files, projectId, mock, chunkSize, es });
-      responseFileName = fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'); // make sure file ends with '.tar.gz'
-      contentType = 'application/gzip';
-    }
-
-    return { output, responseFileName, contentType };
-  }
 };
 
-const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
+const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
   const pack = tar.pack();
 
   Promise.all(
     files.map((file, i) => {
       return new Promise(async (resolve, reject) => {
-        // pack needs the size of the stream. We don't know that until we get all the data. This collects all the data before adding it.
+        // pack needs the size of the stream. We don't know that until we get all the data.
+        // This collects all the data before adding it.
         let data = '';
         const fileStream = await getFileStream({
-          es,
-          projectId,
-          mock,
           chunkSize,
+          ctx,
           file,
           fileType: file.fileType,
+          mock,
         });
 
         fileStream.on('data', (chunk) => (data += chunk));
@@ -89,7 +48,7 @@ const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
             if (err) {
               reject(err);
             } else {
-              resolve();
+              resolve(null);
             }
           });
         });
@@ -100,16 +59,57 @@ const multipleFiles = async ({ files, projectId, mock, chunkSize, es }) => {
   return pack.pipe(zlib.createGzip());
 };
 
-const getFileStream = async ({ es, projectId, mock, chunkSize, file, fileType }) => {
-  const exportArgs = defaults(file, { mock, chunkSize, fileType });
-  return convertDataToExportFormat({ es, projectId, fileType })(exportArgs);
+export const dataStream = async ({ ctx, params }) => {
+  const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv', mock } = params;
+
+  if (files?.length > 0) {
+    return files.length === 1
+      ? {
+          contentType: 'text/plain',
+          output: await getFileStream({
+            chunkSize,
+            ctx,
+            file: files[0],
+            fileType: files[0].fileType || fileType,
+            mock,
+          }),
+          responseFileName: files[0].fileName || fileName,
+        }
+      : {
+          contentType: 'application/gzip',
+          output: multipleFiles({ chunkSize, ctx, files, mock }),
+          responseFileName: fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'), // make sure file ends with '.tar.gz'
+        };
+  }
+
+  console.warn('no files defined to download');
+  throw new Error('files array was missing or empty');
 };
 
-const convertDataToExportFormat = ({ es, projectId, fileType }) => async (args) =>
-  (
-    await getAllData({
-      projectId,
-      es,
-      ...args,
-    })
-  ).pipe(dataToExportFormat({ ...args, fileType }));
+export default function () {
+  const router = express.Router();
+
+  router.use(express.urlencoded({ extended: true }));
+
+  router.post('/', async function (req, res) {
+    const { params } = req.body;
+    console.time('download');
+
+    try {
+      const { output, responseFileName, contentType } = await dataStream({
+        ctx: req.context,
+        params: JSON.parse(params),
+      });
+
+      res.set('Content-Type', contentType);
+      res.set('Content-disposition', `attachment; filename=${responseFileName}`);
+      output.pipe(res).on('finish', () => {
+        console.timeEnd('download');
+      });
+    } catch (err) {
+      res.status(400).send(err?.message || err?.details || 'An unknown error occurred.');
+    }
+  });
+
+  return router;
+}

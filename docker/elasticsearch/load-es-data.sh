@@ -3,8 +3,8 @@
 set -euo pipefail
 
 es_data_dir=$1
-es_username=$2
-es_password=$3
+es_user=$2
+es_pass=$3
 
 if [ ! -d $es_data_dir ]; then
 	echo "The directory $es_data_dir does not exist"
@@ -14,8 +14,7 @@ fi
 es_doc_dir=$es_data_dir/documents
 es_index_config_file=$es_data_dir/index_config.json
 
-
-es_basic_auth=$(echo -n "$es_username:$es_password" | base64)
+es_basic_auth=$(printf "$es_user:$es_pass" | base64)
 
 echo "Creating file_centric_1.0 index"
 curl -sL -XPUT \

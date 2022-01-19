@@ -10,13 +10,11 @@ import {
   doesContainReference,
   isEmptySqon,
 } from './utils';
-import { PROJECT_ID } from '../utils/config';
 import defaultApi from '../utils/api';
 
 export default (props) => {
   const {
-    arrangerProjectId = PROJECT_ID,
-    arrangerProjectIndex,
+    arrangerIndex,
     syntheticSqon,
     getActiveExecutableSqon,
     SqonActionComponent = ({ sqonIndex, isActive, isSelected }) => null,
@@ -87,8 +85,7 @@ export default (props) => {
                   ? emptyEntryMessage
                   : isBooleanOp(syntheticSqon) && (
                       <BooleanOp
-                        arrangerProjectId={arrangerProjectId}
-                        arrangerProjectIndex={arrangerProjectIndex}
+                        arrangerIndex={arrangerIndex}
                         index={0}
                         onFieldOpRemove={onFieldOpRemove}
                         onChange={onLogicalOpChanged}
