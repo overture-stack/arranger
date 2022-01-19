@@ -13,7 +13,7 @@ kind: Pod
 spec:
   containers:
   - name: node
-    image: node:13.13.0
+    image: node:16
     tty: true
     env:
     - name: HOME
