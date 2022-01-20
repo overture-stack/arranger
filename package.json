@@ -61,6 +61,7 @@
   },
   "dependencies": {
     "kind-of": "^6.0.3",
+    "lodash": "^4.17.21",
     "minimist": "^1.2.5"
   },
   "jest": {

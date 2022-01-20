@@ -29,7 +29,7 @@
   "dependencies": {
     "@babel/runtime": "^7.15.4",
     "@elastic/elasticsearch": "^7.5.0",
-    "apollo-server": "^3.3.0",
+    "apollo-server": "^3.6.2",
     "apollo-server-core": "^2.14.2",
     "apollo-server-express": "^2.14.2",
     "babel-polyfill": "^6.26.0",
