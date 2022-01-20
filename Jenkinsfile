@@ -135,10 +135,7 @@ spec:
 
         stage('Publish tag to npm') {
             when {
-                anyOf {
-                    branch "legacy";
-                    branch "main"
-                }
+                branch "main"
             }
             steps {
                 container('node') {
