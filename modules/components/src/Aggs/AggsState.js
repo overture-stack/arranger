@@ -43,13 +43,13 @@ const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
 export default class extends Component {
   state = { aggs: [], temp: [], mapping: {} };
 
-  async componentDidMount() {
+  componentDidMount() {
     this.fetchAggsState(this.props);
   }
 
-  componentWillReceiveProps(next) {
-    if (this.props.graphqlField !== next.graphqlField) {
-      this.fetchAggsState(next);
+  componentDidUpdate(prev) {
+    if (this.props.graphqlField !== prev.graphqlField) {
+      this.fetchAggsState(this.props);
     }
   }
 
