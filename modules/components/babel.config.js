@@ -1,5 +1,10 @@
 module.exports = {
-  presets: ['@babel/env', '@babel/react', '@babel/flow'],
+  presets: [
+    '@babel/env',
+    '@babel/flow',
+    ['@babel/preset-react', { development: process.env.BABEL_ENV === 'development' }],
+    '@babel/preset-typescript',
+  ],
   plugins: [
     '@babel/plugin-proposal-optional-chaining',
     '@babel/plugin-proposal-object-rest-spread',
