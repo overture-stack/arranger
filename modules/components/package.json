@@ -7,15 +7,15 @@
     "access": "public"
   },
   "scripts": {
-    "prepare": "rm -rf dist && mkdir dist && babel src --out-dir dist --copy-files",
-    "watch": "babel src --out-dir dist --copy-files --watch",
     "build-storybook": "build-storybook -s ./public",
-    "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
     "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-    "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-    "test": "jest",
     "flow": "flow",
-    "lint": "eslint src/**/*.js"
+    "lint": "eslint src/**/*.js",
+    "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
+    "prepare": "rm -rf dist && babel src --out-dir dist --copy-files --extensions \".tsx,.ts,.js\"",
+    "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
+    "test": "jest",
+    "watch": "rm -rf dist && babel src --out-dir dist --copy-files --extensions \".tsx,.ts,.js\" --watch"
   },
   "repository": {
     "type": "git",
@@ -37,10 +37,14 @@
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.16.7",
     "@babel/register": "^7.5.5",
     "@storybook/addon-actions": "^3.3.8",
     "@storybook/addon-options": "^3.3.11",
     "@storybook/react": "^3.3.3",
+    "@types/lodash": "^4.14.178",
+    "@types/react": "^17.0.38",
+    "@types/react-dom": "^17.0.11",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.2.1",
     "babel-plugin-emotion": "^9.2.11",
@@ -95,6 +99,7 @@
     "rxjs": "^5.5.6",
     "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.2",
+    "typescript": "^4.5.5",
     "url-join": "^4.0.0",
     "url-parse": "^1.2.0",
     "uuid": "^3.2.1"
