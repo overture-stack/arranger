@@ -3,19 +3,22 @@
   "version": "3.0.0-beta.3",
   "description": "Data Portal Components",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build": "babel src --out-dir dist --copy-files --extensions \".tsx,.ts,.js\"",
     "build-storybook": "build-storybook -s ./public",
+    "cleanDist": "rm -rf dist",
     "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-    "flow": "flow",
+    "declarations": "ttsc --emitDeclarationOnly",
     "lint": "eslint src/**/*.js",
     "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-    "prepare": "rm -rf dist && babel src --out-dir dist --copy-files --extensions \".tsx,.ts,.js\"",
+    "prepack": "npm run cleanDist && (npm run build & npm run declarations)",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
     "test": "jest",
-    "watch": "rm -rf dist && babel src --out-dir dist --copy-files --extensions \".tsx,.ts,.js\" --watch"
+    "watch": "npm run cleanDist && (npm run build -- --watch & npm run declarations -- --watch)"
   },
   "repository": {
     "type": "git",
@@ -45,9 +48,11 @@
     "@types/lodash": "^4.14.178",
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
+    "@types/url-join": "^4.0.1",
     "babel-core": "7.0.0-bridge.0",
     "babel-eslint": "^8.2.1",
     "babel-plugin-emotion": "^9.2.11",
+    "babel-plugin-module-resolver": "^4.1.0",
     "eslint": "^4.1.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-flowtype": "^2.42.0",
@@ -58,7 +63,9 @@
     "flow-bin": "^0.62.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "storybook-router": "^0.3.3"
+    "storybook-router": "^0.3.3",
+    "ttypescript": "^1.5.13",
+    "typescript-transform-paths": "^3.3.1"
   },
   "peerDependencies": {
     "react": "^16.14.0",
@@ -66,6 +73,7 @@
   },
   "dependencies": {
     "ajv": "^6.1.1",
+    "axios": "^0.25.0",
     "babel-polyfill": "^6.26.0",
     "classnames": "^2.2.5",
     "convert-units": "^2.3.4",
@@ -99,6 +107,7 @@
     "rxjs": "^5.5.6",
     "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.2",
+    "sqon-builder": "^2.0.1",
     "typescript": "^4.5.5",
     "url-join": "^4.0.0",
     "url-parse": "^1.2.0",
