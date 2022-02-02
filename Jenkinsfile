@@ -103,9 +103,9 @@ spec:
 			}
 		}
 
-        stage('Push edge images') {
+        stage('Push images') {
             when {
-                branch "develop"
+                branch "legacy"
             }
             steps {
                 container('docker') {
@@ -114,52 +114,10 @@ spec:
                     }
 					sh "docker push ${dockerHubRepo}-server:${commit}"
 					sh "docker push ${dockerHubRepo}-ui:${commit}"
-                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:edge"
-                    sh "docker push ${dockerHubRepo}-server:edge"
-                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}-${commit}"
-                    sh "docker push ${dockerHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:edge"
-                    sh "docker push ${dockerHubRepo}-ui:edge"
-                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${dockerHubRepo}-ui:${version}-${commit}"
-                }
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
-                    }
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:edge"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
-                }
-            }
-        }
-
-        stage('Push latest images') {
-            when {
-                branch "master"
-            }
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh "docker login -u $USERNAME -p $PASSWORD"
-                    }
-					sh "docker push ${dockerHubRepo}-server:${commit}"
-					sh "docker push ${dockerHubRepo}-ui:${commit}"
-                    sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:latest"
-                    sh "docker push ${dockerHubRepo}-server:latest"
                     sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}"
                     sh "docker push ${dockerHubRepo}-server:${version}"
                     sh "docker tag ${dockerHubRepo}-server:${commit} ${dockerHubRepo}-server:${version}-${commit}"
                     sh "docker push ${dockerHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:latest"
-                    sh "docker push ${dockerHubRepo}-ui:latest"
                     sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}"
                     sh "docker push ${dockerHubRepo}-ui:${version}"
                     sh "docker tag ${dockerHubRepo}-ui:${commit} ${dockerHubRepo}-ui:${version}-${commit}"
@@ -171,14 +129,10 @@ spec:
                     }
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
 					sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}-${commit}"
-                    sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:latest"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:latest"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
                     sh "docker tag ${gitHubRegistry}/${gitHubRepo}-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}-${commit}"
@@ -189,7 +143,7 @@ spec:
 
         stage('Publish tag to npm') {
             when {
-                branch "master"
+                branch "legacy"
             }
             steps {
                 container('node') {
@@ -204,70 +158,10 @@ spec:
                                 sh "npm config set unsafe-perm true"
                                 sh "npm run bootstrap"
                                 sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
-                                sh "npm whoami"
                                 sh "npm run publish::ci"
                             } catch (err) {
                                 echo "There was an error while publishing packages"
                             }
-                        }
-                    }
-                }
-            }
-        }
-
-		stage('Deploy to Overture QA') {
-			when {
-				branch "develop"
-			}
-			steps {
-				build(job: "/Overture.bio/provision/helm", parameters: [
-						[$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'qa' ],
-						[$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
-						[$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: "https://overture-stack.github.io/charts-server/"],
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ],
-						[$class: 'StringParameterValue', name: 'OVERTURE_ARGS_LINE', value: "--set-string apiImage.tag=${version}-${commit} --set-string uiImage.tag=${version}-${commit}" ]
-				])
-			}
-		}
-
-		stage('Deploy to Overture Staging') {
-			when {
-				branch "master"
-			}
-			steps {
-				build(job: "/Overture.bio/provision/helm", parameters: [
-						[$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'staging' ],
-						[$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
-						[$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: "https://overture-stack.github.io/charts-server/"],
-						[$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ],
-						[$class: 'StringParameterValue', name: 'OVERTURE_ARGS_LINE', value: "--set-string apiImage.tag=${version}-${commit} --set-string uiImage.tag=${version}-${commit}" ]
-				])
-			}
-		}
-    }
-    post {
-        unsuccessful {
-            // i used node   container since it has curl already
-            container("node") {
-                script {
-                    if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "develop") {
-                    withCredentials([string(credentialsId: 'JenkinsFailuresSlackChannelURL', variable: 'JenkinsFailuresSlackChannelURL')]) {
-                            sh "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"Build Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL}) \"}' ${JenkinsFailuresSlackChannelURL}"
-                        }
-                    }
-                }
-            }
-        }
-        fixed {
-            container("node") {
-                script {
-                    if (env.BRANCH_NAME == "master" || env.BRANCH_NAME == "develop") {
-                    withCredentials([string(credentialsId: 'JenkinsFailuresSlackChannelURL', variable: 'JenkinsFailuresSlackChannelURL')]) {
-                            sh "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"Build Fixed: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL}) \"}' ${JenkinsFailuresSlackChannelURL}"
                         }
                     }
                 }
