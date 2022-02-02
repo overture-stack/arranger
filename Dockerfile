@@ -1,22 +1,29 @@
+ARG APP_FOLDER=/app
+ARG APP_GID=1000
+ARG APP_UID=1000
+ARG APP_USER=node
+ARG ES_HOST=http://localhost:9200
+
 #######################################################
 # Builder
 #######################################################
-FROM node:13.13.0-alpine as builder
+FROM node:16-alpine as builder
 
-ENV APP_UID=1000
-ENV APP_GID=1000
-ENV APP_HOME=/app
-ENV APP_USER=node
+ARG APP_FOLDER
+ARG APP_GID
+ARG APP_UID
+ARG APP_USER
 
 RUN apk --no-cache add curl g++ make python3 shadow \
 	&& groupmod -g $APP_GID $APP_USER \
-	&& usermod -u $APP_UID -g $APP_GID $APP_USER \
-	&& mkdir -p $APP_HOME \
-	&& chown -R $APP_USER $APP_HOME
+	&& usermod -u $APP_UID -g $APP_GID $APP_USER
 
-WORKDIR $APP_HOME
+WORKDIR $APP_FOLDER
 
 COPY . .
+RUN chown -R $APP_USER $APP_FOLDER
+
+USER $APP_USER
 
 RUN npm ci \
 	&& npm config set unsafe-perm true \
@@ -27,13 +34,10 @@ RUN npm ci \
 #######################################################
 FROM builder as server
 
-ENV APP_UID=1000
-ENV APP_GID=1000
-ENV APP_HOME=/app
-ENV APP_USER=node
-ENV ES_HOST=http://localhost:9200
+ARG APP_FOLDER
+ARG APP_USER
 
-WORKDIR $APP_HOME
+WORKDIR $APP_FOLDER
 
 USER $APP_USER
 
@@ -44,9 +48,11 @@ CMD make _ping_elasticsearch_server -e && BABEL_DISABLE_CACHE=1 npm run server:p
 #######################################################
 # Test
 #######################################################
-FROM node:13.13.0 as test
+FROM node:16 as test
 
-WORKDIR /app
+ARG APP_FOLDER
+ARG ES_HOST
+ENV ES_HOST $ES_HOST
 
 # installs and starts elasticsearch
 RUN apt-get update \
@@ -55,11 +61,13 @@ RUN apt-get update \
 	&& apt-get install -y apt-transport-https \
 	&& echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | tee -a /etc/apt/sources.list.d/elastic-7.x.list \
 	&& apt-get update \
-	&& apt-get install elasticsearch=7.16.3
+	&& apt-get install elasticsearch=7.6.0
+
+WORKDIR $APP_FOLDER
+
+COPY --from=builder $APP_FOLDER .
 
 # initializes arranger
-COPY --from=builder /app ./
-
 CMD service elasticsearch start \
-	&& sh docker/test/wait-for-es.sh http://localhost:9200 npm run test \
+	&& sh docker/test/wait-for-es.sh ${ES_HOST} npm run test \
 	&& service elasticsearch stop

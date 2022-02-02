@@ -1,6 +1,4 @@
-/* @flow */
-
-import { parseIntParam, parseSQONParam } from '..';
+import { parseIntParam, parseSQONParam } from '@/utils/uri';
 
 describe('parseIntParam', () => {
   it('should handle strings', () => {
