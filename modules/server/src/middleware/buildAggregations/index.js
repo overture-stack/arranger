@@ -2,8 +2,8 @@ import { get, isEqual } from 'lodash';
 import injectNestedFiltersToAggs from './injectNestedFiltersToAggs';
 import getNestedSqonFilters from './getNestedSqonFilters';
 import {
-  AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_FILTERED,
+  AGGS_WRAPPER_GLOBAL,
   AGGS_WRAPPER_NESTED,
   ES_BOOL,
   ES_NESTED,
@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import createFieldAggregation from './createFieldAggregation';
 import normalizeFilters from '../buildQuery/normalizeFilters';
+import { opSwitch } from '../buildQuery';
 
 function createGlobalAggregation({ field, aggregation }) {
   return {
@@ -97,10 +98,18 @@ export default function ({
   const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
     const field = fieldKey.replace(/__/g, '.');
     const nestedPaths = getNestedPathsInField({ field, nestedFields });
+    const contentsFiltered = (normalizedSqon?.content || []).filter((c) =>
+      aggregationsFilterThemselves
+        ? c.content?.field?.startsWith(nestedPaths)
+        : c.content?.field?.startsWith(nestedPaths) && c.content?.field !== field,
+    );
+    const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFields: [], filter }));
+
     const fieldAggregation = createFieldAggregation({
       field,
       graphqlField,
       isNested: nestedPaths.length,
+      termFilters,
     });
 
     const aggregation = nestedPaths.reverse().reduce(
