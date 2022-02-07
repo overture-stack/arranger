@@ -1,8 +1,9 @@
 export let fetchMapping = async ({ esClient, index }) => {
   if (esClient) {
-    console.log(`Fetching ES mapping for "${index}"...`);
+    console.log(`  Fetching ES mapping for "${index}"...`);
     const aliases = (await esClient?.cat.aliases({ format: 'json' })).body;
-    const alias = aliases?.find((foundIndex) => foundIndex.alias === index)?.index;
+    const alias = aliases?.find((foundIndex = { alias: undefined }) => foundIndex.alias === index)
+      ?.index;
     alias && console.log(`Found it as an alias for index "${alias}".`);
     const accessor = alias || index;
 

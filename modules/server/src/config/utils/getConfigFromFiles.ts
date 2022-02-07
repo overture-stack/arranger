@@ -34,7 +34,7 @@ const isDataFile = (filename: string) => {
 
 export default (dirname: string): Promise<ConfigObject> => {
   const configsPath = path.resolve(global.__basedir || '', dirname);
-  console.log(`Reading files from '${configsPath}'...`);
+  console.log(`  Reading files from '${configsPath}'...`);
 
   return readDirectoryAsync(configsPath)
     .then((filenames = []) =>
