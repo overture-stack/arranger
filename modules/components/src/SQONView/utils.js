@@ -237,8 +237,8 @@ export const inCurrentSQON = ({
   dotField,
 }: {
   currentSQON: TGroupSQON,
-  value: string,
   dotField: string,
+  value: string,
 }): boolean => {
   const content = currentSQON?.content;
   return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(

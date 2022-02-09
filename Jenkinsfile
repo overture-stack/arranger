@@ -43,16 +43,16 @@ spec:
         }
     }
     stages {
-        stage('Diagnostics') {
-            steps {
-                container('docker') {
-                    sh "printenv; id; cat /etc/passwd"
-                }
-                container('node') {
-                    sh "printenv; id; cat /etc/passwd"
-                }
-            }
-        }
+        // stage('Diagnostics') {
+        //     steps {
+        //         container('docker') {
+        //             sh "printenv; id; cat /etc/passwd"
+        //         }
+        //         container('node') {
+        //             sh "printenv; id; cat /etc/passwd"
+        //         }
+        //     }
+        // }
 
         stage('Prepare') {
             steps {

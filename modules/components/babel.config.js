@@ -11,5 +11,15 @@ module.exports = {
     '@babel/plugin-proposal-class-properties',
     '@babel/plugin-transform-runtime',
     'emotion',
+    [
+      'module-resolver',
+      {
+        root: ['./src'],
+        alias: {
+          '@/public': './public',
+          '@': './src',
+        },
+      },
+    ],
   ],
 };

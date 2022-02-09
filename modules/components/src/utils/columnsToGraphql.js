@@ -16,8 +16,15 @@ export function toQuery(column) {
   );
 }
 
-export default function columnsToGraphql({ config = {}, sqon, queryName, sort, offset, first }) {
-  const fields = config.columns
+export default function columnsToGraphql({
+  config = {},
+  sqon = null,
+  queryName = '',
+  sort = [],
+  offset = 0,
+  first = 20,
+}) {
+  const fields = config?.columns
     .filter(
       (column) =>
         !(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
@@ -29,7 +36,7 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
   return {
     fields,
     query: `
-        query($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
+        query ${queryName}($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
           ${config.type} {
             hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
               total
@@ -43,28 +50,26 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
         }
       `,
     variables: {
-      sqon: sqon || null,
-      sort:
-        sort &&
-        sort.map((s) => {
-          if (s.field.indexOf('hits.total') >= 0) {
-            return Object.assign({}, s, { field: '_score' });
-          } else {
-            const nested = s.field.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
+      sqon,
+      sort: sort.map((s) => {
+        if (s.field.indexOf('hits.total') >= 0) {
+          return Object.assign({}, s, { field: '_score' });
+        } else {
+          const nested = s.field.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
 
-            return Object.assign({}, s, nested ? { field: `${nested[1]}${nested[2]}` } : {});
-          }
-        }),
+          return Object.assign({}, s, nested ? { field: `${nested[1]}${nested[2]}` } : {});
+        }
+      }),
       score:
-        (sort &&
-          sort
-            .filter((s) => s.field.indexOf('hits.total') >= 0)
-            .map((s) => {
-              const match = s.field.match(/((.*)s)\.hits\.total/);
-              return `${match[1]}.${match[2]}_id`;
-            })
-            .join(',')) ||
-        null,
+        sort.length > 0
+          ? sort
+              .filter((s) => s.field.indexOf('hits.total') >= 0)
+              .map((s) => {
+                const match = s.field.match(/((.*)s)\.hits\.total/);
+                return `${match[1]}.${match[2]}_id`;
+              })
+              .join(',')
+          : null,
       offset,
       first,
     },
