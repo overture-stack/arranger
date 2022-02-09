@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import gql from 'graphql-tag';
 import { print } from 'graphql';
+import gql from 'graphql-tag';
 
 export default ({ api, graphqlField, gqlPath }) => {
   it('reads hits with sqon properly', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
@@ -36,7 +36,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response).to.eql({
+
+    expect(data).to.eql({
       data: {
         model: {
           hits: {
@@ -50,27 +51,30 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
   it('paginates hits properly', async () => {
     expect(
-      await await api.post({
-        endpoint: gqlPath,
-        body: {
-          query: print(gql`
-          {
-            ${graphqlField} {
-              hits (first: 1, offset: 0) {
-                total
-                edges {
-                  node {
-                    id
+      await api
+        .post({
+          endpoint: gqlPath,
+          body: {
+            query: print(gql`
+            {
+              ${graphqlField} {
+                hits (first: 1, offset: 0) {
+                  total
+                  edges {
+                    node {
+                      id
+                    }
                   }
                 }
               }
             }
-          }
-        `),
-        },
-      }),
+          `),
+          },
+        })
+        .then(({ data } = { data: '' }) => data),
     ).to.eql({
       data: {
         model: {
@@ -89,25 +93,27 @@ export default ({ api, graphqlField, gqlPath }) => {
     });
 
     expect(
-      await await api.post({
-        endpoint: gqlPath,
-        body: {
-          query: print(gql`
-          {
-            ${graphqlField} {
-              hits (first: 1, offset: 1) {
-                total
-                edges {
-                  node {
-                    id
+      await api
+        .post({
+          endpoint: gqlPath,
+          body: {
+            query: print(gql`
+            {
+              ${graphqlField} {
+                hits (first: 1, offset: 1) {
+                  total
+                  edges {
+                    node {
+                      id
+                    }
                   }
                 }
               }
             }
-          }
-        `),
-        },
-      }),
+          `),
+          },
+        })
+        .then(({ data } = { data: '' }) => data),
     ).to.eql({
       data: {
         model: {
@@ -126,25 +132,27 @@ export default ({ api, graphqlField, gqlPath }) => {
     });
 
     expect(
-      await await api.post({
-        endpoint: gqlPath,
-        body: {
-          query: print(gql`
-          {
-            ${graphqlField} {
-              hits (first: 2, offset: 0) {
-                total
-                edges {
-                  node {
-                    id
+      await api
+        .post({
+          endpoint: gqlPath,
+          body: {
+            query: print(gql`
+            {
+              ${graphqlField} {
+                hits (first: 2, offset: 0) {
+                  total
+                  edges {
+                    node {
+                      id
+                    }
                   }
                 }
               }
             }
-          }
-        `),
-        },
-      }),
+          `),
+          },
+        })
+        .then(({ data } = { data: '' }) => data),
     ).to.eql({
       data: {
         model: {
@@ -168,25 +176,27 @@ export default ({ api, graphqlField, gqlPath }) => {
     });
 
     expect(
-      await await api.post({
-        endpoint: gqlPath,
-        body: {
-          query: print(gql`
-          {
-            ${graphqlField} {
-              hits (first: 2, offset: 1) {
-                total
-                edges {
-                  node {
-                    id
+      await api
+        .post({
+          endpoint: gqlPath,
+          body: {
+            query: print(gql`
+            {
+              ${graphqlField} {
+                hits (first: 2, offset: 1) {
+                  total
+                  edges {
+                    node {
+                      id
+                    }
                   }
                 }
               }
             }
-          }
-        `),
-        },
-      }),
+          `),
+          },
+        })
+        .then(({ data } = { data: '' }) => data),
     ).to.eql({
       data: {
         model: {
@@ -209,8 +219,9 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
   it('excludes access_denied files', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
@@ -228,10 +239,12 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response.data.model.hits.edges.every((e) => !e.node.access_denied)).to.eql(true);
+
+    expect(data?.data?.model?.hits?.edges?.every((edge) => !edge.node.access_denied)).to.eql(true);
   });
+
   it('cannot request for access_denied item', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         variables: {
@@ -263,6 +276,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response.data.model.hits.edges.length).to.eql(0);
+
+    expect(data?.data?.model?.hits?.edges?.length).to.eql(0);
   });
 };

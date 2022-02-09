@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import gql from 'graphql-tag';
 import { print } from 'graphql';
+import gql from 'graphql-tag';
 import orderBy from 'lodash/orderBy';
 
 export default ({ api, graphqlField, gqlPath }) => {
   it('reads aggregations properly', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
@@ -24,7 +24,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response).to.eql({
+
+    expect(data).to.eql({
       data: {
         model: {
           aggregations: {
@@ -45,8 +46,9 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
   it('reads aggregations with sqon properly', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
@@ -79,13 +81,14 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -95,7 +98,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -110,54 +113,55 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
   });
+
   it('should work with prefix filter sqon', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-
-            {
-              ${graphqlField} {
-                aggregations(
-                  filters: {
-                    op: "and",
-                    content: [
-                      {
-                        op: "filter",
-                        content: {
-                          fields: [
-                            "name",
-                            "primary_site",
-                            "clinical_diagnosis.clinical_tumor_diagnosis",
-                            "gender",
-                            "race"
-                          ],
-                          value: "Colorectal*"
-                        }
+          {
+            ${graphqlField} {
+              aggregations(
+                filters: {
+                  op: "and",
+                  content: [
+                    {
+                      op: "filter",
+                      content: {
+                        fields: [
+                          "name",
+                          "primary_site",
+                          "clinical_diagnosis.clinical_tumor_diagnosis",
+                          "gender",
+                          "race"
+                        ],
+                        value: "Colorectal*"
                       }
-                    ]
-                  }, 
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__clinical_stage_grouping {
-                    buckets {
-                      doc_count
-                      key
                     }
+                  ]
+                }, 
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__clinical_stage_grouping {
+                  buckets {
+                    doc_count
+                    key
                   }
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -167,7 +171,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -184,52 +188,53 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should work with postfix filter sqon', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  filters: {
-                    op: "and",
-                    content: [
-                      {
-                        op: "filter",
-                        content: {
-                          fields: [
-                            "name",
-                            "primary_site",
-                            "clinical_diagnosis.clinical_tumor_diagnosis",
-                            "gender",
-                            "race"
-                          ],
-                          value: "*cancer"
-                        }
+          {
+            ${graphqlField} {
+              aggregations(
+                filters: {
+                  op: "and",
+                  content: [
+                    {
+                      op: "filter",
+                      content: {
+                        fields: [
+                          "name",
+                          "primary_site",
+                          "clinical_diagnosis.clinical_tumor_diagnosis",
+                          "gender",
+                          "race"
+                        ],
+                        value: "*cancer"
                       }
-                    ]
-                  }, 
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__clinical_stage_grouping {
-                    buckets {
-                      doc_count
-                      key
                     }
+                  ]
+                }, 
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__clinical_stage_grouping {
+                  buckets {
+                    doc_count
+                    key
                   }
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -239,7 +244,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -256,52 +261,53 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should work with pre and post-fix filter sqon', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  filters: {
-                    op: "and",
-                    content: [
-                      {
-                        op: "filter",
-                        content: {
-                          fields: [
-                            "name",
-                            "primary_site",
-                            "clinical_diagnosis.clinical_tumor_diagnosis",
-                            "gender",
-                            "race"
-                          ],
-                          value: "*SOMEONE*"
-                        }
+          {
+            ${graphqlField} {
+              aggregations(
+                filters: {
+                  op: "and",
+                  content: [
+                    {
+                      op: "filter",
+                      content: {
+                        fields: [
+                          "name",
+                          "primary_site",
+                          "clinical_diagnosis.clinical_tumor_diagnosis",
+                          "gender",
+                          "race"
+                        ],
+                        value: "*SOMEONE*"
                       }
-                    ]
-                  }, 
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__clinical_stage_grouping {
-                    buckets {
-                      doc_count
-                      key
                     }
+                  ]
+                }, 
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__clinical_stage_grouping {
+                  buckets {
+                    doc_count
+                    key
                   }
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -311,7 +317,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -328,31 +334,32 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should count the correct number of buckets', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__clinical_stage_grouping {
-                    bucket_count
-                  }
+          {
+            ${graphqlField} {
+              aggregations(
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__clinical_stage_grouping {
+                  bucket_count
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               bucket_count:
-                response.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .bucket_count,
             },
           },
@@ -360,7 +367,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               bucket_count: 2,
@@ -372,32 +379,33 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should ignore buckets with key "MISSING" when include_missing=false', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  include_missing: false
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__histological_type {
-                    bucket_count
-                  }
+          {
+            ${graphqlField} {
+              aggregations(
+                include_missing: false
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__histological_type {
+                  bucket_count
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                response.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                data.data[graphqlField].aggregations.clinical_diagnosis__histological_type
                   .bucket_count,
             },
           },
@@ -405,7 +413,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count: 0,
@@ -417,31 +425,32 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should count buckets with key "MISSING" when include_missing is defaulted to true', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  aggregations_filter_themselves: true
-                ) {
-                  clinical_diagnosis__histological_type {
-                    bucket_count
-                  }
+          {
+            ${graphqlField} {
+              aggregations(
+                aggregations_filter_themselves: true
+              ) {
+                clinical_diagnosis__histological_type {
+                  bucket_count
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                response.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                data.data[graphqlField].aggregations.clinical_diagnosis__histological_type
                   .bucket_count,
             },
           },
@@ -449,7 +458,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count: 1,
@@ -461,40 +470,41 @@ export default ({ api, graphqlField, gqlPath }) => {
   });
 
   it('should not include access_denied documents', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
-            {
-              ${graphqlField} {
-                aggregations(
-                  aggregations_filter_themselves: true
-                  include_missing: false
-                ) {
-                  access_denied {
-                    buckets {
-                      key_as_string
-                    }
+          {
+            ${graphqlField} {
+              aggregations(
+                aggregations_filter_themselves: true
+                include_missing: false
+              ) {
+                access_denied {
+                  buckets {
+                    key_as_string
                   }
                 }
               }
             }
-          `),
+          }
+        `),
       },
     });
+
     expect({
       data: {
         [graphqlField]: {
           aggregations: {
             access_denied: {
-              buckets: response.data[graphqlField].aggregations.access_denied.buckets,
+              buckets: data.data[graphqlField].aggregations.access_denied.buckets,
             },
           },
         },
       },
     }).to.eql({
       data: {
-        model: {
+        [graphqlField]: {
           aggregations: {
             access_denied: {
               buckets: [{ key_as_string: 'false' }],

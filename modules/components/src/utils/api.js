@@ -17,7 +17,7 @@ const defaultApiFetcher = ({
     data: JSON.stringify(body),
     headers: { ...alwaysSendHeaders, ...headers },
     method,
-  }).then((r) => r.json());
+  });
 
 export const graphql = (body) => defaultApiFetcher({ endpoint: 'graphql', body });
 

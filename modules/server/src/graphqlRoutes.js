@@ -10,7 +10,7 @@ import makeSchema from './schema';
 const getTypesWithMappings = async (esClient, configs = {}) => {
   if (Object.keys(configs).length > 0) {
     try {
-      console.log('Now creating a GraphQL mapping based on the ES index:');
+      console.log(' \nNow creating a GraphQL mapping based on the ES index:');
       const { mapping } = await fetchMapping({ esClient, index: configs?.index });
 
       if (mapping) {
@@ -33,16 +33,16 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
           mapping,
         });
 
-        console.log('Success!\n');
+        console.log('  Success!\n');
         return typesWithMapping;
       }
     } catch (error) {
       console.error(error?.message || error);
-      throw 'Something went wrong while creating the GraphQL mapping';
+      throw '  Something went wrong while creating the GraphQL mapping';
     }
   }
 
-  throw Error('No configs available at getTypesWithMappings');
+  throw Error('  No configs available at getTypesWithMappings');
 };
 
 const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
@@ -112,7 +112,7 @@ const createEndpoint = async ({
       path: '/graphql',
     });
 
-    console.log('GraphQL server running at .../graphql');
+    console.log('- GraphQL server running at .../graphql');
   } else {
     router.use('/graphql', noSchemaHandler);
   }
@@ -125,7 +125,7 @@ const createEndpoint = async ({
       path: '/mock/graphql',
     });
 
-    console.log('GraphQL mock server running at .../mock/graphql');
+    console.log('- GraphQL mock server running at .../mock/graphql');
   } else {
     router.use('/mock/graphql', noSchemaHandler);
   }
@@ -146,12 +146,20 @@ const createEndpoint = async ({
     return next();
   });
 
+  console.log(' \n');
+
   return router;
 };
 
-export default async ({ enableAdmin, esClient, getServerSideFilter, graphqlOptions = {} }) => {
+export default async ({
+  configsSource = '',
+  enableAdmin,
+  esClient,
+  getServerSideFilter,
+  graphqlOptions = {},
+}) => {
   try {
-    const configsFromFiles = await getConfigObject();
+    const configsFromFiles = await getConfigObject(configsSource);
     const typesWithMappings = await getTypesWithMappings(esClient, configsFromFiles);
     const graphQLEndpoints = await createEndpoint({
       enableAdmin,
