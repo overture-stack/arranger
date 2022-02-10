@@ -1,27 +1,33 @@
 import { expect } from 'chai';
-import gql from 'graphql-tag';
 import { print } from 'graphql';
+import gql from 'graphql-tag';
 
 export default ({ api, graphqlField, gqlPath }) => {
   let setId = undefined;
+
   it('creates set successfully', async () => {
-    let response = await api.post({
-      endpoint: gqlPath,
-      body: {
-        query: print(gql`
+    const { data } = await api
+      .post({
+        endpoint: gqlPath,
+        body: {
+          query: print(gql`
           mutation {
             newSet: saveSet(type: ${graphqlField}, path: "name", sqon: {}) {
               setId
             }
           }
         `),
-      },
-    });
-    expect(response.errors).to.be.undefined;
-    setId = response.data.newSet.setId;
+        },
+      })
+      .catch((err) => console.log(err));
+
+    expect(data.errors).to.be.undefined;
+
+    setId = data.data.newSet.setId;
   });
+
   it('retrieves newly created set successfully', async () => {
-    let response = await api.post({
+    const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
@@ -39,7 +45,8 @@ export default ({ api, graphqlField, gqlPath }) => {
         `),
       },
     });
-    expect(response.errors).to.be.undefined;
-    expect(response.data.sets.hits.edges.map((edge) => edge.node.id)).to.include(setId);
+
+    expect(data.errors).to.be.undefined;
+    expect(data.data.sets.hits.edges.map((edge) => edge.node.id)).to.include(setId);
   });
 };

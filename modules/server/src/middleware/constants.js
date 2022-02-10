@@ -27,7 +27,7 @@ export const OP_ALIASES = {
   '=': IN_OP,
   '!=': NOT_IN_OP,
 };
-export const DATE_FORMAT = 'YYYY-MM-DD';
+export const DATE_FORMAT = 'yyyy-MM-dd';
 
 export const ARRAY_CONTENT = [IN_OP, NOT_IN_OP, SOME_NOT_IN_OP, GT_OP, GTE_OP, LT_OP, LTE_OP];
 
@@ -45,7 +45,7 @@ export const ES_MULTI_MATCH = 'multi_match';
 export const ES_FIELDS = 'fields';
 export const ES_TYPE = 'type';
 export const ES_PHRASE_PREFIX = 'phrase_prefix';
-export const ES_DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss.SSSSSS';
+export const ES_DATE_FORMAT = 'yyyy-MM-dd HH:mm:ss.SSSSSS';
 export const ES_MAX_LONG = `-9223372036854775808`;
 export const ES_ARRANGER_SET_INDEX = 'arranger-sets';
 export const ES_ARRANGER_SET_TYPE = 'arranger-sets';

@@ -249,3 +249,45 @@ test('it should handle multiple aggregation types per field', () => {
 
   expect(createFieldAggregation(input)).toEqual(output);
 });
+
+test('it should generate nested terms filters in aggs ', () => {
+  const input = {
+    field: 'donors.zygosity',
+    graphqlField: {
+      buckets: {
+        key: {},
+        doc_count: {},
+      },
+    },
+    isNested: 1,
+    termFilters: [
+      { terms: { 'donors.parental_origin': ['mother'], boost: 0 } },
+      { terms: { 'donors.patient_id': ['PA00001'], boost: 0 } },
+    ],
+  };
+
+  const output = {
+    'donors.zygosity:nested_filtered': {
+      filter: {
+        bool: {
+          must: [
+            { terms: { 'donors.parental_origin': ['mother'], boost: 0 } },
+            { terms: { 'donors.patient_id': ['PA00001'], boost: 0 } },
+          ],
+        },
+      },
+      aggs: {
+        'donors.zygosity': {
+          aggs: { rn: { reverse_nested: {} } },
+          terms: { field: 'donors.zygosity', size: 300000 },
+        },
+        'donors.zygosity:missing': {
+          aggs: { rn: { reverse_nested: {} } },
+          missing: { field: 'donors.zygosity' },
+        },
+      },
+    },
+  };
+
+  expect(createFieldAggregation(input)).toEqual(output);
+});

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { parse, format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import * as CONSTANTS from '../constants';
 
 export function mergePath(target, [key, ...path], data) {
@@ -47,8 +47,13 @@ export function wrapBool(op, value) {
 }
 
 export function toEsRangeValue(value) {
-  const dateValue = parse(value);
-  return format(dateValue, CONSTANTS.DATE_FORMAT) === value
-    ? format(dateValue, CONSTANTS.ES_DATE_FORMAT)
-    : value;
+  if (typeof value === 'string' && value.length >= 10) {
+    const dateValue = parseISO(value);
+
+    return isValid(dateValue) && format(dateValue, CONSTANTS.DATE_FORMAT) === value
+      ? format(dateValue, CONSTANTS.ES_DATE_FORMAT)
+      : value;
+  }
+
+  return value;
 }

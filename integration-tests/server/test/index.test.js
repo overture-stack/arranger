@@ -2,9 +2,11 @@ import { Client } from '@elastic/elasticsearch';
 import express from 'express';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
+import {} from 'mocha'; // Removes error ts2304 from "before" and "after" testing hooks
 
-import Arranger, { adminGraphql } from '../../../modules/server/dist';
-import ajax from '../../../modules/server/dist/utils/ajax';
+// import Arranger, { adminGraphql } from '../../../modules/server/dist';
+import Arranger from '@overture-stack/arranger-server';
+import ajax from '@overture-stack/arranger-server/dist/utils/ajax';
 
 // test modules
 import readMetadata from './readMetadata';
@@ -15,11 +17,12 @@ import manageSets from './manageSets';
 const mapppings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
-const port = process.env.ES_PORT || 5678;
+const configsPath = process.env.CONFIG_PATH || './configs';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'models';
 const esPwd = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
+const port = process.env.PORT || 5678;
 
 const useAuth = !!esPwd && !!esUser;
 
@@ -41,22 +44,19 @@ const cleanup = () =>
     esClient.indices.delete({
       index: esIndex,
     }),
-    esClient.indices.delete({
-      index: 'arranger-projects*',
-    }),
   ]);
 
 describe('@overture-stack/arranger-server', () => {
   let server;
-  const adminPath = '/admin/graphql';
   const graphqlField = 'model';
-  const projectId = 'arranger_server_test';
-  before(async function () {
-    console.log('===== Initializing Elasticsearch data =====');
+
+  before('Initialise Elasticsearch and Arranger', async function () {
     this.timeout(10000);
+
     try {
       await cleanup();
     } catch (err) {}
+
     await esClient.indices.create({
       index: esIndex,
       body: mapppings,
@@ -71,9 +71,10 @@ describe('@overture-stack/arranger-server', () => {
       });
     }
 
-    console.log('===== Starting arranger app for test =====');
     try {
       const router = await Arranger({
+        // This may be useful when troubleshooting tests
+        // enableLogs: true,
         esHost,
         enableAdmin: false,
         getServerSideFilter: () => ({
@@ -89,9 +90,12 @@ describe('@overture-stack/arranger-server', () => {
           ],
         }),
       });
-      const adminApp = await adminGraphql({ esHost });
-      adminApp.applyMiddleware({ app, path: adminPath });
+
       app.use(router);
+
+      // TODO: reenable once Admin is back online
+      // const adminApp = await adminGraphql({ esHost });
+      // adminApp.applyMiddleware({ app, path: adminPath });
 
       await new Promise((resolve) => {
         server = app.listen(port, () => {
@@ -99,67 +103,77 @@ describe('@overture-stack/arranger-server', () => {
         });
       });
 
-      /**
-       * uses the admin API to adds some metadata
-       */
-      await api.post({
-        endpoint: adminPath,
-        body: {
-          query: print(gql`
-            mutation ($projectId: String!) {
-              newProject(id: $projectId) {
-                id
-                __typename
-              }
-            }
-          `),
-          variables: {
-            projectId,
-          },
-        },
-      });
-      await api.post({
-        endpoint: adminPath,
-        body: {
-          query: print(gql`
-            mutation ($projectId: String!, $graphqlField: String!, $esIndex: String!) {
-              newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
-                id
-              }
-            }
-          `),
-          variables: {
-            projectId,
-            graphqlField,
-            esIndex,
-          },
-        },
-      });
+      // TODO: reenable once Admin is back online
+      // /**
+      //  * uses the admin API to adds some metadata
+      //  */
+      // await api.post({
+      //   endpoint: adminPath,
+      //   body: {
+      //     query: print(gql`
+      //       mutation($projectId: String!) {
+      //         newProject(id: $projectId) {
+      //           id
+      //           __typename
+      //         }
+      //       }
+      //     `),
+      //     variables: {
+      //       projectId,
+      //     },
+      //   },
+      // });
+
+      // await api.post({
+      //   endpoint: adminPath,
+      //   body: {
+      //     query: print(gql`
+      //       mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+      //         newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
+      //           id
+      //         }
+      //       }
+      //     `),
+      //     variables: {
+      //       projectId,
+      //       graphqlField,
+      //       esIndex,
+      //     },
+      //   },
+      // });
+      console.log('******* Starting tests *******');
     } catch (err) {
       throw err;
     }
   });
-  after(async () => {
-    server.close();
-    await cleanup();
+
+  after('Clear Elasticsearch and stop Arranger', async () => {
+    server?.close();
+
+    try {
+      await cleanup();
+    } catch (err) {}
   });
 
   const env = {
     api,
     graphqlField,
-    gqlPath: `${projectId}/graphql`,
+    gqlPath: '/graphql',
   };
 
-  describe('metadata reading', () => {
+  describe(' \n** metadata reading', () => {
     readMetadata(env);
   });
-  describe('search data reading', () => {
+
+  describe(' \n** search data reading', () => {
     readSearchData(env);
   });
-  describe('aggregation reading', () => {
+
+  describe(' \n** aggregation reading', () => {
     readAggregation(env);
   });
-  describe('manages sets', () => {
+
+  describe('\n** manages sets', () => {
     manageSets(env);
   });
 });

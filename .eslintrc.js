@@ -5,6 +5,7 @@ module.exports = {
     'plugin:flowtype/recommended',
     'react-app',
     'plugin:jsx-a11y/strict',
+    'react-hooks',
   ],
   plugins: ['flowtype', 'prettier', 'jsx-a11y'],
   rules: {

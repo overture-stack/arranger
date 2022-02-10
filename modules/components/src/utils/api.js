@@ -1,20 +1,28 @@
-import { ARRANGER_API } from './config';
+import axios from 'axios';
 import urlJoin from 'url-join';
+
+import { ARRANGER_API } from './config';
 import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 
-const defaultApi = ({ endpoint = '', body, headers, method = 'POST' }) =>
-  fetch(urlJoin(ARRANGER_API, endpoint), {
-    body: JSON.stringify(body),
+const defaultApiFetcher = ({
+  endpoint = '',
+  body,
+  headers = {},
+  method = 'POST',
+  url = ARRANGER_API,
+}) =>
+  axios(urlJoin(url, endpoint), {
+    data: JSON.stringify(body),
     headers: { ...alwaysSendHeaders, ...headers },
     method,
-  }).then((r) => r.json());
+  });
 
-export const graphql = (body) => defaultApi({ endpoint: 'graphql', body });
+export const graphql = (body) => defaultApiFetcher({ endpoint: 'graphql', body });
 
-export const fetchExtendedMapping = ({ graphqlField, api = defaultApi }) =>
-  api({
+export const fetchExtendedMapping = ({ graphqlField, apiFetcher = defaultApiFetcher }) =>
+  apiFetcher({
     endpoint: `/graphql`,
     body: {
       query: `
@@ -36,4 +44,4 @@ export const addHeaders = (headers) => {
 
 export const getAlwaysAddHeaders = () => alwaysSendHeaders;
 
-export default defaultApi;
+export default defaultApiFetcher;

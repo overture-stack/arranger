@@ -1,10 +1,12 @@
+import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
+
 import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 
 // TODO: tighten these types
 type TcreateConnectionResolversArgs = {
   createStateResolvers?: boolean;
-  getServerSideFilter: any;
+  getServerSideFilter?: GetServerSideFilterFn;
   Parallel: any;
   type: Record<string, any>;
 };
