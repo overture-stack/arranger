@@ -1,8 +1,4 @@
 {
-  "version": "3.0.0-beta.3",
-  "packages": [
-    "integration-tests/**",
-    "modules/components",
-    "modules/server"
-  ]
+  "version": "3.0.0-beta.4",
+  "packages": ["integration-tests/**", "modules/components", "modules/server"]
 }
