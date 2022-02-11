@@ -15,7 +15,7 @@
     "declarations": "ttsc --emitDeclarationOnly",
     "lint": "eslint src/**/*.js",
     "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-    "postpack": "npm run declarations || exit 0",
+    "postpack": "npm run -s declarations || true",
     "prepare": "npm run cleanDist && npm run build",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
     "test": "jest",
