@@ -9,6 +9,8 @@ Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buil
 
 Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
 
+> **Note**: Arranger is undergoing refactoring work on its internals, for what will become version 3+. While we do not foresee overly dramatic breaking changes, an _upgrade guide_ is already in the works. Current users of v2 may look at the `legacy` branch meanwhile, where we will continue fixing newly reported bugs until further notice.
+
 ## Documentation
 
 This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
@@ -25,8 +27,7 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
-Arranger has been tested using NodeJS version: ^13.13.0.
-Our team is actively working on making compatible for versions 14 and above.
+Arranger has been tested using NodeJS version: ^16.13.2, and it may not work correctly on versions <14
 
 #### - Development Setup
 
