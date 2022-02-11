@@ -1,6 +1,6 @@
 {
   "name": "integration-tests-server",
-  "version": "3.0.0-beta.5",
+  "version": "3.0.0-beta.6",
   "private": "true",
   "scripts": {
     "test": "mocha --require @babel/register --timeout 240000"
@@ -8,7 +8,7 @@
   "dependencies": {
     "@babel/runtime": "^7.15.4",
     "@elastic/elasticsearch": "^7.14.1",
-    "@overture-stack/arranger-server": "^3.0.0-beta.5",
+    "@overture-stack/arranger-server": "^3.0.0-beta.6",
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.18.2",
     "express": "^4.17.1",
