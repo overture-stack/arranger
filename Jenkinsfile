@@ -65,26 +65,19 @@ spec:
             }
         }
 
-        stage("Build test container") {
+        stage('Build and run test container') {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh 'docker login -u $USERNAME -p $PASSWORD'
                     }
                     sh "docker build --network=host --target test -f Dockerfile -t ${dockerHubRepo}-test:${commit} ."
-                }
-            }
-        }
-
-        stage('Run tests') {
-            steps {
-                container('docker') {
                     sh "docker run ${dockerHubRepo}-test:${commit}"
                 }
             }
         }
 
-        stage("Build server and ui images") {
+        stage('Build server and ui images') {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
@@ -150,7 +143,7 @@ spec:
                                 sh "npm config set unsafe-perm true"
                                 sh "npm run bootstrap"
                                 sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
-                                sh "npm run publish::ci"
+                                sh "PUBLISH_DECLARATIONS=true npm run publish::ci"
                             } catch (err) {
                                 echo "There was an error while publishing packages"
                             }

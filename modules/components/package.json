@@ -13,10 +13,10 @@
     "cleanDist": "rm -rf dist",
     "dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
     "declarations": "ttsc --emitDeclarationOnly",
+    "ifPublish:declarations": "if test \"$PUBLISH_DECLARATIONS\" = \"true\" ; then (npm run -s declarations || true) ; fi",
     "lint": "eslint src/**/*.js",
     "portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-    "postpack": "npm run -s declarations || true",
-    "prepare": "npm run cleanDist && npm run build",
+    "prepare": "npm run cleanDist && npm run build && npm run ifPublish:declarations",
     "storybook": "start-storybook -p 8080 -c .storybook -s ./public",
     "test": "jest",
     "watch": "npm run cleanDist && (npm run build -- --watch & npm run declarations -- --watch)"
