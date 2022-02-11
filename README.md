@@ -25,8 +25,7 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
-Arranger has been tested using NodeJS version: ^13.13.0.
-Our team is actively working on making compatible for versions 14 and above.
+Arranger has been tested using NodeJS version: ^16.13.2, and it may not work correctly on versions <14
 
 #### - Development Setup
 
