@@ -138,44 +138,18 @@ _this is way too simplistic. needs an update_
 
 ---
 
-### Roadmap
-
-#### Short Term
-
-- cli tool for bootstrapping new projects
-
-- Provide all necessary modules to implement searching functionality
-  - Dynamic GraphQL schema generation
-  - API Server (GraphQL endpoint)
-  - Query / Aggregation building middleware
-  - Response middleware (ie. removing null aggregations)
-  - UI Components
-    - Aggregations
-      - Simple view
-      - Advanced View
-    - Results Table
-    - SQON Display
-
-* Provide editor interface to expose common transformations (similar to the [Babel](https://babeljs.io/repl/) or [bodybuilder](thttp://bodybuilder.js.org/) REPLs)
-  - Elasticsearch Mappings -> GraphQL Schema
-  - GraphQL Query -> Elasticsearch Queries
-
-#### Medium Term
-
-- Authentication
-- Sets
-- Analysis
-
-#### Long Term
-
-- Kibana Plugin
-- Hosted Data Portal generating service
-
----
-
 ### Development Details
 
 Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https://medium.com/@maoberlehner/monorepos-in-the-wild-33c6eb246cb9). The modules exposed by Arranger compose all of the necessary code required to build an application such as the [Genomic Data Commons](https://portal.gdc.cancer.gov/).\*
+
+#### Migration notes
+
+If you're coming from an older version of Arranger and you use the Docker images, bear in mind we've made a changes to the Admin-UI image:
+
+<img width="422" alt="image" src="https://user-images.githubusercontent.com/2107110/155411336-fcb98e0c-5f03-45f1-af2a-573c8ed6b42c.png">
+
+- The app's port will be 3000 inside the container by default
+- you need the new environment variable `REACT_APP_ARRANGER_ADMIN_ROOT` for the container to start
 
 #### Releasing Instructions
 
