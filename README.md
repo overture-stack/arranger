@@ -31,8 +31,8 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
-Arranger has been tested using NodeJS version: ^13.13.0.
-Our team is actively working on making compatible for versions 14 and above.
+While our team is actively working on a new Arranger (see the `develop` branch), the version in this branch is considered "legacy";
+being maintained only to support existing projects, it has been tested using NodeJS v14. It may not work well with other versions.
 
 #### - Development Setup
 

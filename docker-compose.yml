@@ -1,4 +1,4 @@
-version: "3.7"
+version: '3.7'
 
 services:
   elasticsearch:
@@ -43,7 +43,7 @@ services:
     build:
       context: ./
       target: server
-      dockerfile: Dockerfile
+      dockerfile: ./docker/Dockerfile.local
     container_name: arranger-server.local
     depends_on:
       - elasticsearch
@@ -51,20 +51,20 @@ services:
       - 5050:5050
     environment:
       ES_HOST: http://elasticsearch:9200
-      ES_USER: "$ES_USERNAME"
-      ES_PASS: "$ES_PASSWORD"
+      ES_USER: '$ES_USERNAME'
+      ES_PASS: '$ES_PASSWORD'
 
   arranger-ui:
     build:
       context: ./
       target: ui
-      dockerfile: Dockerfile
+      dockerfile: ./docker/Dockerfile.local
     hostname: arranger-ui.local
     container_name: arranger-ui.local
     depends_on:
       - arranger-server
     environment:
-      REACT_APP_ARRANGER_ADMIN_ROOT: "http://arranger-server:5050"
+      REACT_APP_ARRANGER_ADMIN_ROOT: 'http://arranger-server:5050'
       PORT: 3000
     ports:
       - 8080:3000

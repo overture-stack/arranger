@@ -25,7 +25,7 @@ ES_BASIC_AUTH := $(shell echo -n "$(ES_USERNAME):$(ES_PASSWORD)" | base64)
 
 # Commands
 DOCKER_COMPOSE_CMD := ES_USERNAME=$(ES_USERNAME) ES_PASSWORD=$(ES_PASSWORD) $(DOCKER_COMPOSE_EXE) -f $(ROOT_DIR)/docker-compose.yml
-DC_UP_CMD := $(DOCKER_COMPOSE_CMD) up -d --build
+DC_UP_CMD := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 $(DOCKER_COMPOSE_CMD) up -d --build
 
 #############################################################
 # Internal Targets
