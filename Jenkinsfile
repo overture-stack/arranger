@@ -202,7 +202,7 @@ pipeline {
             sh "docker tag arranger-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
             sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
           // (admin) ui:version tag
-            sh "docker tag arranger-ui:${version} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+            sh "docker tag arranger-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
             sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
           }
         }
@@ -221,6 +221,7 @@ pipeline {
                     script {
                         // we still want to run the platform deploy even if this fails, hence try-catch
                         try {
+                            sh 'git reset --hard HEAD'
                             sh 'git pull --tags'
                             sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
                             sh 'npm run publish::ci'
