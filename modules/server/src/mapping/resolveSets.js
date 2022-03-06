@@ -1,5 +1,5 @@
 import { get, isEmpty, uniq } from 'lodash';
-import uuid from 'uuid/v4';
+import { v4 as uuid } from 'uuid';
 
 import { CONSTANTS, buildQuery } from '../middleware';
 import esSearch from './utils/esSearch';

@@ -1,0 +1,42 @@
+ARG APP_FOLDER=/app
+ARG APP_GID=1000
+ARG APP_UID=1000
+ARG APP_USER=node
+ARG ES_HOST=http://localhost:9200
+
+#######################################################
+# Builder
+#######################################################
+FROM node:16-alpine as builder
+
+ARG APP_FOLDER
+ARG APP_GID
+ARG APP_UID
+ARG APP_USER
+
+RUN apk --no-cache add curl g++ make python3 shadow \
+	&& groupmod -g $APP_GID $APP_USER \
+	&& usermod -u $APP_UID -g $APP_GID $APP_USER
+
+WORKDIR $APP_FOLDER
+
+COPY . .
+RUN chown -R $APP_USER $APP_FOLDER
+
+CMD ["/bin/sh"]
+
+#######################################################
+# Arranger Server
+#######################################################
+FROM builder as server
+
+ARG APP_FOLDER
+ARG APP_USER
+
+WORKDIR $APP_FOLDER
+
+USER $APP_USER
+
+EXPOSE 5050
+
+CMD make _ping_elasticsearch_server -e && BABEL_DISABLE_CACHE=1 npm run server:prod

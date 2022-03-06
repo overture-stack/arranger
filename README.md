@@ -9,7 +9,7 @@ Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buil
 
 Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
 
-> **Note**: Arranger is undergoing refactoring work on its internals, for what will become version 3+. While we do not foresee overly dramatic breaking changes, an _upgrade guide_ is already in the works. Current users of v2 may look at the `legacy` branch meanwhile, where we will continue fixing newly reported bugs until further notice.
+> **Note**: Arranger is undergoing refactoring work, for what will become version 3+. While we do not foresee many dramatic breaking changes, an _upgrade guide_ is already in the works. Current users of v2 may look at the `legacy` branch meanwhile, where we will continue fixing newly reported bugs until further notice.
 
 ## Documentation
 

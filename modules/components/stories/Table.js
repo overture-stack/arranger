@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react';
 import { compose, withState } from 'recompose';
 import { orderBy, get } from 'lodash';
 import jsonPath from 'jsonpath/jsonpath.min';
-import uuid from 'uuid';
+import { v4 as uuid } from 'uuid';
 import { action } from '@storybook/addon-actions';
 import columnsToGraphql from '../src/utils/columnsToGraphql';
 import DataTable, { Table, TableToolbar, getSingleValue } from '../src/DataTable';
