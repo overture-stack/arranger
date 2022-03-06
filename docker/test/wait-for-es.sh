@@ -6,6 +6,7 @@ host="$1"
 shift
 cmd="$@"
 
+echo Elasticsearch host: $host
 
 until $(curl --output /dev/null --silent --head --fail "$host"); do
     printf '.'
