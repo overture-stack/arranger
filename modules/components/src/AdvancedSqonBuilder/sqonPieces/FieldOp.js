@@ -11,7 +11,7 @@ import {
 import FieldOpModifier from '../filterComponents/index';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
-import defaultApi from '../../utils/api';
+import defaultApiFetcher from '../../utils/api';
 import 'react-tippy/dist/tippy.css';
 import { Tooltip } from 'react-tippy';
 
@@ -24,7 +24,7 @@ export default (props) => {
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
     arrangerIndex,
     FieldOpModifierContainer = undefined,
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     getActiveExecutableSqon,
   } = props;
 
@@ -83,7 +83,7 @@ export default (props) => {
                       opDisplayNameMap={opDisplayNameMap}
                       ContainerComponent={FieldOpModifierContainer}
                       getExecutableSqon={getActiveExecutableSqon}
-                      api={api}
+                      apiFetcher={apiFetcher}
                     />
                   </div>
                 )}

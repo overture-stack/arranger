@@ -1,5 +1,5 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import Spinner from 'react-spinkit';
 
 const defaultSpinner = (

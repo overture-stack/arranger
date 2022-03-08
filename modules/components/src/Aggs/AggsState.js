@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { debounce, get, sortBy } from 'lodash';
 
-import defaultApi from '../utils/api';
+import defaultApiFetcher from '../utils/api';
 import esToAggTypeMap from '../utils/esToAggTypeMap';
 
 let aggFields = `
@@ -54,9 +54,9 @@ export default class extends Component {
   }
 
   fetchAggsState = debounce(async ({ graphqlField }) => {
-    const { api = defaultApi } = this.props;
+    const { apiFetcher = defaultApiFetcher } = this.props;
     try {
-      let { data } = await api({
+      let { data } = await apiFetcher({
         endpoint: `/graphql/aggsStateQuery`,
         body: {
           query: `query aggsStateQuery
@@ -84,8 +84,8 @@ export default class extends Component {
   }, 300);
 
   save = debounce(async (state) => {
-    const { api = defaultApi } = this.props;
-    let { data } = await api({
+    const { apiFetcher = defaultApiFetcher } = this.props;
+    let { data } = await apiFetcher({
       endpoint: `/graphql`,
       body: {
         variables: { state },

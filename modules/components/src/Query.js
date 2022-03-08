@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { isEqual, debounce } from 'lodash';
 import path from 'path';
-import defaultApi from './utils/api';
+import defaultApiFetcher from './utils/api';
 import { defaultProps } from 'recompose';
 
 class Query extends Component {
@@ -26,10 +26,10 @@ class Query extends Component {
     this.setState({ error });
   }
   fetch = debounce(async ({ query, variables, name, ...options }) => {
-    const { api = defaultApi } = this.props;
+    const { apiFetcher = defaultApiFetcher } = this.props;
     this.setState({ loading: true });
     try {
-      let { data, errors } = await api({
+      let { data, errors } = await apiFetcher({
         ...options,
         endpoint: path.join('graphql', name || ''),
         body: { query, variables },

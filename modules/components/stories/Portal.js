@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { injectGlobal } from 'emotion';
+import { injectGlobal } from '@emotion/react';
 
 import { Arranger, Aggregations, CurrentSQON, Table } from '../src/Arranger';
 import State from '../src/State';

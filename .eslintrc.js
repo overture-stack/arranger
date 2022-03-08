@@ -1,16 +1,45 @@
 module.exports = {
+  env: {
+    es6: true,
+    node: true,
+  },
   extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
     'prettier',
-    'prettier/flowtype',
-    'plugin:flowtype/recommended',
-    'react-app',
-    'plugin:jsx-a11y/strict',
-    'react-hooks',
   ],
-  plugins: ['flowtype', 'prettier', 'jsx-a11y'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint', 'prettier'],
+  root: true,
   rules: {
-    'prettier/prettier': [1, { trailingComma: 'all', singleQuote: true }],
-    'flowtype/define-flow-type': 1,
-    'jsx-a11y/href-no-hash': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+    'import/first': ['warn', 'absolute-first'],
+    'import/order': [
+      'warn',
+      {
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        'newlines-between': 'always',
+        warnOnUnassignedImports: true,
+      },
+    ],
+    'import/newline-after-import': 'warn',
+    'prettier/prettier': [
+      'error',
+      {
+        printWidth: 100,
+        semi: true,
+        singleQuote: true,
+        trailingComma: 'all',
+      },
+    ],
+  },
+  settings: {
+    'import/resolver': {
+      'babel-module': { allowExistingDirectories: true },
+    },
+    'import/internal-regex': '^@/',
   },
 };

@@ -10,7 +10,7 @@ import {
   doesContainReference,
   isEmptySqon,
 } from './utils';
-import defaultApi from '../utils/api';
+import defaultApiFetcher from '../utils/api';
 
 export default (props) => {
   const {
@@ -22,7 +22,7 @@ export default (props) => {
     isSelected = false,
     index = 0,
     FieldOpModifierContainer = undefined,
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     disabled = false,
     getColorForReference = (index) => '',
     isReferenced = false,
@@ -91,7 +91,7 @@ export default (props) => {
                         onChange={onLogicalOpChanged}
                         sqon={syntheticSqon}
                         FieldOpModifierContainer={FieldOpModifierContainer}
-                        api={api}
+                        apiFetcher={apiFetcher}
                         getActiveExecutableSqon={getActiveExecutableSqon}
                         getColorForReference={getColorForReference}
                         isIndexReferenced={isIndexReferenced}

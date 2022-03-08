@@ -1,6 +1,6 @@
 import React from 'react';
 import DatePicker from 'react-datepicker';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import { addDays, endOfDay, startOfDay, subDays } from 'date-fns';
 
 import { removeSQON, replaceSQON } from '../SQONView/utils';

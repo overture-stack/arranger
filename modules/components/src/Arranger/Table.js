@@ -10,7 +10,7 @@ const Table = ({
   setSQON,
   sqon,
   fieldTypesForFilter = ['text', 'keyword'],
-  api,
+  apiFetcher,
   InputComponent,
   showFilterInput = true,
   customHeaderContent = null,
@@ -21,7 +21,7 @@ const Table = ({
   return (
     <ColumnsState
       graphqlField={graphqlField}
-      api={api}
+      apiFetcher={apiFetcher}
       sessionStorage={sessionStorage}
       storageKey={storageKey}
       render={(columnState) => {
@@ -29,7 +29,7 @@ const Table = ({
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
-            {...{ ...props, api, showFilterInput, customHeaderContent }}
+            {...{ ...props, apiFetcher, showFilterInput, customHeaderContent }}
             InputComponent={InputComponent}
             sqon={sqon}
             config={{

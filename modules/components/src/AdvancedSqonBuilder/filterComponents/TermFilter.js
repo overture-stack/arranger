@@ -15,7 +15,7 @@ import {
 import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
 import { inCurrentSQON } from '../../SQONView/utils';
-import defaultApi from '../../utils/api';
+import defaultApiFetcher from '../../utils/api';
 import Query from '../../Query';
 
 const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
@@ -181,7 +181,7 @@ export default (props) => {
   const {
     field,
     arrangerIndex,
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     executableSqon = {
       op: AND_OP,
       content: [],
@@ -213,7 +213,7 @@ export default (props) => {
   return (
     <Query
       variables={{ sqon: executableSqon }}
-      api={api}
+      apiFetcher={apiFetcher}
       query={query}
       render={({ data, loading, error }) => (
         <TermFilterUI

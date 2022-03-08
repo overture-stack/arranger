@@ -1,6 +1,7 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import { storiesOf } from '@storybook/react';
+
 import { themeDecorator } from './decorators';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
 

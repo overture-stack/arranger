@@ -6,7 +6,7 @@ import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
 import FieldOp from './FieldOp';
 import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import { PillRemoveButton } from './common';
-import defaultApi from '../../utils/api';
+import defaultApiFetcher from '../../utils/api';
 
 const SqonReference = (props) => {
   const { refIndex, onRemoveClick = () => {}, highlightColor, isHighlighted } = props;
@@ -87,7 +87,7 @@ const BooleanOp = (props) => {
     sqon,
     fullSyntheticSqon = sqon,
     FieldOpModifierContainer = undefined,
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     getActiveExecutableSqon,
     getColorForReference = () => '',
     isIndexReferenced = () => false,
@@ -127,7 +127,7 @@ const BooleanOp = (props) => {
                   onContentRemove={onRemove(currentPath)}
                   onSqonChange={onNewSqonSubmit}
                   FieldOpModifierContainer={FieldOpModifierContainer}
-                  api={api}
+                  apiFetcher={apiFetcher}
                   getActiveExecutableSqon={getActiveExecutableSqon}
                 />
               </span>

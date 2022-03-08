@@ -1,8 +1,5 @@
 export * from './Arranger';
-export {
-  default as useArrangerContext,
-  ArrangerContext,
-  ArrangerProvider,
-} from './ContextProvider';
-export { default as api, addHeaders } from './utils/api';
+export { DataContext, DataProvider, useDataContext } from './ContextProvider';
+export { arrangerTheme, ThemeContext, ThemeProvider, useThemeContext } from './ThemeProvider';
+export { default as apiFetcher, addHeaders } from './utils/api';
 export { default as Query, withQuery } from './Query';
