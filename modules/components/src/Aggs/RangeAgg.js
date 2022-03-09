@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import InputRange from 'react-input-range';
 import convert from 'convert-units';
 import { isNil } from 'lodash';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 import { replaceFieldSQON } from '../SQONView/utils';
 import AggsWrapper from './AggsWrapper';

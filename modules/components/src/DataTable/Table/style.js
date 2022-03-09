@@ -1,4 +1,4 @@
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 export default ({ scrollbarSize: { scrollbarWidth } } = {}) => css`
   &.ReactTable .rt-thead.-header {

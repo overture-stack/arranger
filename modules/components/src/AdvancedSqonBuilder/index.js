@@ -2,6 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { cloneDeep } from 'lodash';
 import Component from 'react-component-component';
+
+import defaultApiFetcher from '../utils/api';
+
 import SqonEntry from './SqonEntry';
 import {
   resolveSyntheticSqon,
@@ -14,7 +17,6 @@ import {
   OR_OP,
 } from './utils';
 import './style.css';
-import defaultApi from '../utils/api';
 import FaRegClone from 'react-icons/lib/fa/clone';
 import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
 
@@ -62,7 +64,7 @@ const AdvancedSqonBuilder = (props) => {
       <button className={`button ${className}`} {...rest} />
     ),
     getSqonDeleteConfirmation = defaultSqonDeletionHandler,
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     referenceColors = [
       '#cbeefb',
       '#fce8d3',
@@ -287,7 +289,7 @@ const AdvancedSqonBuilder = (props) => {
               <SqonEntry
                 key={i}
                 index={i}
-                api={api}
+                apiFetcher={apiFetcher}
                 arrangerIndex={arrangerIndex}
                 syntheticSqon={sq}
                 isActiveSqon={i === currentActiveSqonIndex}
@@ -347,7 +349,7 @@ AdvancedSqonBuilder.propTypes = {
   fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
   ButtonComponent: PropTypes.any,
   getSqonDeleteConfirmation: PropTypes.func,
-  api: PropTypes.func,
+  apiFetcher: PropTypes.func,
   referenceColors: PropTypes.arrayOf(PropTypes.string),
   emptyEntryMessage: PropTypes.node,
 };

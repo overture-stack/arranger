@@ -100,10 +100,12 @@ storiesOf('AdvancedSqonBuilder', module)
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
-      action('active sqon select')({ index, sqonValue });
-      s.setState({ activeSqonIndex: index });
-    };
+    const onActiveSqonSelect =
+      (s) =>
+      ({ index, sqonValue }) => {
+        action('active sqon select')({ index, sqonValue });
+        s.setState({ activeSqonIndex: index });
+      };
     const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
@@ -143,10 +145,12 @@ storiesOf('AdvancedSqonBuilder', module)
       action('sqons change')(data);
       s.setState({ syntheticSqons: data.newSyntheticSqons });
     };
-    const onActiveSqonSelect = (s) => ({ index, sqonValue }) => {
-      action('active sqon select')({ index, sqonValue });
-      s.setState({ activeSqonIndex: index });
-    };
+    const onActiveSqonSelect =
+      (s) =>
+      ({ index, sqonValue }) => {
+        action('active sqon select')({ index, sqonValue });
+        s.setState({ activeSqonIndex: index });
+      };
     const setModal = (s) => (ModalComponent) =>
       s.setState({
         ModalComponent,
@@ -209,7 +213,7 @@ storiesOf('AdvancedSqonBuilder', module)
           field={'kf_id'}
           arrangerProjectId={project}
           arrangerProjectIndex={index}
-          api={undefined}
+          apiFetcher={undefined}
           initialSqon={mockSqons[0]}
           sqonPath={[0]}
           fieldDisplayNameMap={mockFieldDisplayMap}

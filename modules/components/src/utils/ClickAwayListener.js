@@ -13,7 +13,7 @@ export default class ClickAwayListener extends React.Component {
       handler(e);
     }
   };
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     document.addEventListener('click', this.clickHandler);
   }
   componentWillUnmount() {

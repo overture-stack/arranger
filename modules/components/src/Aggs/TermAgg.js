@@ -2,7 +2,7 @@ import React from 'react';
 import { compose, withState } from 'recompose';
 import { isEmpty, orderBy, partition, truncate } from 'lodash';
 import DefaultSearchIcon from 'react-icons/lib/fa/search';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 import './AggregationCard.css';
 

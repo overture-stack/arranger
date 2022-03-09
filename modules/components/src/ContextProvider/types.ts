@@ -2,6 +2,8 @@ import { Dispatch } from 'react';
 import { Method } from 'axios';
 import SQON from 'sqon-builder';
 
+import { CustomThemeType, DefaultTheme } from '@/ThemeProvider';
+
 export type APIFetcherFn = (options: {
   body: any;
   endpoint?: string;
@@ -9,6 +11,13 @@ export type APIFetcherFn = (options: {
   method?: Method;
   url?: string;
 }) => Promise<any>;
+
+export interface DataProviderProps<Theme = DefaultTheme> {
+  children?: React.ReactNode;
+  customFetcher?: APIFetcherFn;
+  url?: string;
+  theme?: CustomThemeType<Theme>;
+}
 
 export type FetchDataFn = (options?: {
   config?: Record<string, any>;
@@ -21,10 +30,12 @@ export type FetchDataFn = (options?: {
 
 export type SQONType = typeof SQON | null;
 
-export interface ContextInterface {
+export interface DataContextInterface {
   fetchData: FetchDataFn;
   sqon: SQONType;
   setSQON: Dispatch<React.SetStateAction<SQONType>>;
 }
 
-export type UseArrangerContextFn = (options?: { customFetcher?: FetchDataFn }) => ContextInterface;
+export interface UseDataContextProps {
+  customFetcher?: FetchDataFn;
+}

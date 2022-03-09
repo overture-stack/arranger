@@ -28,7 +28,7 @@ class MatchBoxState extends Component {
     this.fetchMatchBoxState(this.props, onInitialLoaded);
   }
 
-  componentWillReceiveProps(next) {
+  UNSAFE_componentWillReceiveProps(next) {
     if (this.props.graphqlField !== next.graphqlField) {
       this.fetchMatchBoxState(next);
     }

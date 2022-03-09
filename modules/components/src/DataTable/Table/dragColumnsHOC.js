@@ -11,7 +11,7 @@ export default (Component) => {
         columns: props.columns,
       };
     }
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
       if (!isEqual(nextProps.columns, this.props.columns)) {
         this.setState({ columns: nextProps.columns });
       }

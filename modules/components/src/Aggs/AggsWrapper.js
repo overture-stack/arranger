@@ -1,6 +1,6 @@
 import React from 'react';
 import Component from 'react-component-component';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 import './AggregationCard.css';
 

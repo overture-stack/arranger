@@ -71,7 +71,7 @@ class DataTableWithToolbar extends React.Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (!isEqual(nextProps.sqon, this.props.sqon)) {
       this.setState({ page: 0 });
     }
@@ -192,4 +192,5 @@ class DataTableWithToolbar extends React.Component {
     );
   }
 }
+
 export default DataTableWithToolbar;

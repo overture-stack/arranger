@@ -281,8 +281,8 @@ pipeline {
   post {
     fixed {
       withCredentials([string(
-        credentialsId: 'JenkinsFailuresSlackChannelURL',
-        variable: 'JenkinsFixesSlackChannelURL'
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'fixed_slackChannelURL'
       )]) {
         container('node') {
           script {
@@ -291,9 +291,9 @@ pipeline {
                 -X POST \
                 -H 'Content-type: application/json' \
                 --data '{ \
-                  \"text\":\"Build Fixed: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL}) \" \
+                  \"text\":\"Build Fixed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
                 }' \
-                ${JenkinsFixesSlackChannelURL}"
+                ${fixed_slackChannelURL}"
             }
           }
         }
@@ -302,8 +302,8 @@ pipeline {
 
     unsuccessful {
       withCredentials([string(
-        credentialsId: 'JenkinsFailuresSlackChannelURL',
-        variable: 'JenkinsFailureSlackChannelURL'
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'failed_slackChannelURL'
       )]) {
         container('node') {
           script {
@@ -312,9 +312,9 @@ pipeline {
                 -X POST \
                 -H 'Content-type: application/json' \
                 --data '{ \
-                  \"text\":\"Build Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL}) \" \
+                  \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
                 }' \
-                ${JenkinsFailuresSlackChannelURL}"
+                ${failed_slackChannelURL}"
             }
           }
         }

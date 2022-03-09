@@ -2,7 +2,7 @@ import React from 'react';
 import { compose, withProps, withPropsOnChange, withState } from 'recompose';
 import { debounce } from 'lodash';
 import pluralize from 'pluralize';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
 import { addInSQON, currentFilterValue } from '../../SQONView/utils';

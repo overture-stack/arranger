@@ -106,7 +106,7 @@ const Stat = ({
 };
 
 export default ({
-  api,
+  apiFetcher,
   graphqlField,
   stats,
   className,
@@ -129,7 +129,7 @@ export default ({
     `}
   >
     <AggsState
-      {...{ api, graphqlField }}
+      {...{ apiFetcher, graphqlField }}
       render={(aggsState) =>
         stats.map((stat, i) => (
           <Fragment key={stat.label}>
@@ -137,7 +137,7 @@ export default ({
             <Stat
               {...{
                 aggsState,
-                api,
+                apiFetcher,
                 graphqlField,
                 LoadingSpinnerComponent,
               }}

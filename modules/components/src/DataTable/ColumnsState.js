@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 
-import defaultApi from '../utils/api';
+import defaultApiFetcher from '../utils/api';
 
 let columnFields = `
   state {
@@ -51,16 +51,16 @@ export default class extends Component {
     this.fetchColumnsState(this.props);
   }
 
-  componentWillReceiveProps(next) {
+  UNSAFE_componentWillReceiveProps(next) {
     if (this.props.graphqlField !== next.graphqlField) {
       this.fetchColumnsState(next);
     }
   }
 
   fetchColumnsState = debounce(async ({ graphqlField }) => {
-    const { api = defaultApi } = this.props;
+    const { apiFetcher = defaultApiFetcher } = this.props;
     try {
-      let { data } = await api({
+      let { data } = await apiFetcher({
         endpoint: `/graphql/columnsStateQuery`,
         body: {
           query: `query columnsStateQuery
@@ -80,7 +80,7 @@ export default class extends Component {
         data: {
           [this.props.graphqlField]: { extended },
         },
-      } = await api({
+      } = await apiFetcher({
         endpoint: `/graphql`,
         body: {
           query: `
@@ -107,8 +107,8 @@ export default class extends Component {
   }, 300);
 
   save = debounce(async (state) => {
-    const { api = defaultApi } = this.props;
-    let { data } = await api({
+    const { apiFetcher = defaultApiFetcher } = this.props;
+    let { data } = await apiFetcher({
       endpoint: `/graphql`,
       body: {
         variables: { state },

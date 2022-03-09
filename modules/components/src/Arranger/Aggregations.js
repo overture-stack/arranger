@@ -1,6 +1,8 @@
 import React from 'react';
 import { sortBy } from 'lodash';
 
+import noopFn, { emptyArrFn, emptyObjFn } from '@/utils/noopFns';
+
 import { AggsState, AggsQuery } from '../Aggs';
 import aggComponents from '../Aggs/aggComponentsMap.js';
 
@@ -12,19 +14,19 @@ const BaseWrapper = ({ className, ...props }) => (
 
 export const AggregationsListDisplay = ({
   data,
-  onValueChange = () => {},
+  onValueChange = noopFn,
   aggs,
   graphqlField,
   setSQON,
   sqon,
   containerRef,
   componentProps = {
-    getTermAggProps: () => ({}),
-    getRangeAggProps: () => ({}),
-    getBooleanAggProps: () => ({}),
-    getDatesAggProps: () => ({}),
+    getTermAggProps: emptyObjFn,
+    getRangeAggProps: emptyObjFn,
+    getBooleanAggProps: emptyObjFn,
+    getDatesAggProps: emptyObjFn,
   },
-  getCustomItems = ({ aggs }) => [], // Array<{index: number, component: Component | Function}>
+  getCustomItems = emptyArrFn, // ({ aggs }) => Array<{index: number, component: Component | Function}>
   customFacets = [],
 }) => {
   const aggComponentInstances =
@@ -69,28 +71,26 @@ export const AggregationsListDisplay = ({
 };
 
 export const AggregationsList = ({
-  onValueChange = () => {},
+  onValueChange = noopFn,
   setSQON,
   sqon,
   graphqlField,
-  style,
-  api,
-  Wrapper = BaseWrapper,
+  apiFetcher,
   containerRef,
   componentProps = {
-    getTermAggProps: () => ({}),
-    getRangeAggProps: () => ({}),
-    getBooleanAggProps: () => ({}),
-    getDatesAggProps: () => ({}),
+    getTermAggProps: emptyObjFn,
+    getRangeAggProps: emptyObjFn,
+    getBooleanAggProps: emptyObjFn,
+    getDatesAggProps: emptyObjFn,
   },
   aggs = [],
-  debounceTime,
+  debounceTime = 300,
   getCustomItems,
   customFacets = [],
 }) => (
   <AggsQuery
-    api={api}
-    debounceTime={300}
+    apiFetcher={apiFetcher}
+    debounceTime={debounceTime}
     index={graphqlField}
     sqon={sqon}
     aggs={aggs}
@@ -126,27 +126,27 @@ export const AggregationsList = ({
  *
  */
 const Aggregations = ({
-  onValueChange = () => {},
+  onValueChange = noopFn,
   setSQON,
   sqon,
-  graphqlField,
+  graphqlField = '',
   className = '',
-  style,
-  api,
+  style = {},
+  apiFetcher,
   Wrapper = BaseWrapper,
-  containerRef,
+  containerRef = null,
   componentProps = {
-    getTermAggProps: () => ({}),
-    getRangeAggProps: () => ({}),
-    getBooleanAggProps: () => ({}),
-    getDatesAggProps: () => ({}),
+    getTermAggProps: emptyObjFn,
+    getRangeAggProps: emptyObjFn,
+    getBooleanAggProps: emptyObjFn,
+    getDatesAggProps: emptyObjFn,
   },
   customFacets = [],
 }) => {
   return (
     <Wrapper style={style} className={className}>
       <AggsState
-        api={api}
+        apiFetcher={apiFetcher}
         graphqlField={graphqlField}
         render={(aggsState) => {
           const aggs = aggsState.aggs.filter((x) => x.show);
@@ -158,8 +158,7 @@ const Aggregations = ({
               Wrapper={Wrapper}
               containerRef={containerRef}
               componentProps={componentProps}
-              api={api}
-              debounceTime={300}
+              apiFetcher={apiFetcher}
               graphqlField={graphqlField}
               sqon={sqon}
               aggs={aggs}

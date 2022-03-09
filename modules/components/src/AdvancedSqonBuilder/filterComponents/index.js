@@ -4,7 +4,7 @@ import TermFilter from './TermFilter';
 import RangeFilter from './RangeFilter';
 import BooleanFilter from './BooleanFilter';
 import ExtendedMappingProvider from '../../utils/ExtendedMappingProvider';
-import { default as defaultApi } from '../../utils/api';
+import { default as defaultApiFetcher } from '../../utils/api';
 import { FilterContainer } from './common';
 
 export { default as TermFilter } from './TermFilter';
@@ -19,12 +19,12 @@ const FieldOpModifier = ({
   fieldDisplayNameMap,
   opDisplayNameMap,
   ContainerComponent = FilterContainer,
-  api = defaultApi,
+  apiFetcher = defaultApiFetcher,
   field,
   arrangerIndex,
   getExecutableSqon = () => initialSqon,
 }) => (
-  <ExtendedMappingProvider api={api} graphqlField={arrangerIndex} field={field}>
+  <ExtendedMappingProvider apiFetcher={apiFetcher} graphqlField={arrangerIndex} field={field}>
     {({ loading, extendedMapping }) => {
       const fieldExtendedMapping = (extendedMapping || []).find(
         ({ field: _field }) => field === _field,
@@ -36,7 +36,7 @@ const FieldOpModifier = ({
         <TermFilter
           field={field}
           arrangerIndex={arrangerIndex}
-          api={api}
+          apiFetcher={apiFetcher}
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -64,7 +64,7 @@ const FieldOpModifier = ({
       ) : ['boolean'].includes(type) ? (
         <BooleanFilter
           field={field}
-          api={api}
+          apiFetcher={apiFetcher}
           arrangerIndex={arrangerIndex}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -93,7 +93,7 @@ FieldOpModifier.prototype = {
   fieldDisplayNameMap: PropTypes.objectOf(PropTypes.string),
   opDisplayNameMap: PropTypes.objectOf(PropTypes.string),
   ContainerComponent: PropTypes.any,
-  api: PropTypes.func,
+  apiFetcher: PropTypes.func,
   field: PropTypes.string,
   arrangerIndex: PropTypes.string.isRequired,
   getExecutableSqon: PropTypes.func,
