@@ -251,4 +251,48 @@ pipeline {
       }
     }
   }
+
+  post {
+    fixed {
+      withCredentials([string(
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'fixed_slackChannelURL'
+      )]) {
+        container('node') {
+          script {
+            if (env.BRANCH_NAME ==~ 'legacy') {
+              sh "curl \
+                -X POST \
+                -H 'Content-type: application/json' \
+                --data '{ \
+                  \"text\":\"Build Fixed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
+                }' \
+                ${fixed_slackChannelURL}"
+            }
+          }
+        }
+      }
+    }
+
+    unsuccessful {
+      withCredentials([string(
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'failed_slackChannelURL'
+      )]) {
+        container('node') {
+          script {
+            if (env.BRANCH_NAME ==~ 'legacy') {
+              sh "curl \
+                -X POST \
+                -H 'Content-type: application/json' \
+                --data '{ \
+                  \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
+                }' \
+                ${failed_slackChannelURL}"
+            }
+          }
+        }
+      }
+    }
+  }
 }
