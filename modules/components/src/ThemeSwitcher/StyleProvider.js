@@ -10,7 +10,7 @@ export default class StyleProvider extends React.Component {
     this.applyStyle(this.props.availableThemes, this.props.selected);
   };
 
-  componentWillReceiveProps = (nextProps) => {
+  UNSAFE_componentWillReceiveProps = (nextProps) => {
     this.applyStyle(nextProps.availableThemes, nextProps.selected);
   };
 

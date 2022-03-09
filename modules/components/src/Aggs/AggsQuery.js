@@ -1,10 +1,16 @@
 import React from 'react';
 import { capitalize } from 'lodash';
 import Query from '../Query';
-import defaultApi from '../utils/api';
+import defaultApiFetcher from '../utils/api';
 import { queryFromAgg } from './AggsState';
 
-export default ({ index = '', aggs = [], sqon = null, api = defaultApi, ...props }) => {
+export default ({
+  index = '',
+  aggs = [],
+  sqon = null,
+  apiFetcher = defaultApiFetcher,
+  ...props
+}) => {
   return !index || !aggs.length ? (
     ''
   ) : (
@@ -31,7 +37,7 @@ export default ({ index = '', aggs = [], sqon = null, api = defaultApi, ...props
           }
         }
       `}
-      {...{ api, ...props }}
+      {...{ apiFetcher, ...props }}
     />
   );
 };

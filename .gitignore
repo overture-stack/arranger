@@ -1,12 +1,8 @@
-dist
-node_modules
 lerna-debug.log
-.DS_Store
-_build
+.groovylintrc.json
 
-# remove this in beta
-yarn.lock
-
-integration-tests/ui
-.vscode
-
+**/dist
+**/node_modules
+**/.DS_Store
+**/*.env*
+!**/.env.schema

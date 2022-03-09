@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 
 import Input from '../Input';
 import Tabs, { TabsTable } from '../Tabs';
@@ -42,16 +42,25 @@ const enhance = compose(
   withState('searchTextLoading', 'setSearchTextLoading', false),
   withState('searchText', 'setSearchText', ''),
   withHandlers({
-    onEntityChange: ({ setActiveEntityField }) => ({ target: { value } }) => {
-      return setActiveEntityField(value);
-    },
-    onTextChange: ({ setSearchText }) => ({ target: { value } }) => setSearchText(value),
-    onFileUpload: ({ setSearchText, setSearchTextLoading }) => async ({ target: { files } }) => {
-      setSearchTextLoading(true);
-      const contents = await parseInputFiles({ files });
-      setSearchText((contents || []).map((f) => f.content).reduce((str, c) => `${str}${c}\n`, ``));
-      setSearchTextLoading(false);
-    },
+    onEntityChange:
+      ({ setActiveEntityField }) =>
+      ({ target: { value } }) => {
+        return setActiveEntityField(value);
+      },
+    onTextChange:
+      ({ setSearchText }) =>
+      ({ target: { value } }) =>
+        setSearchText(value),
+    onFileUpload:
+      ({ setSearchText, setSearchTextLoading }) =>
+      async ({ target: { files } }) => {
+        setSearchTextLoading(true);
+        const contents = await parseInputFiles({ files });
+        setSearchText(
+          (contents || []).map((f) => f.content).reduce((str, c) => `${str}${c}\n`, ``),
+        );
+        setSearchTextLoading(false);
+      },
   }),
 );
 
@@ -256,14 +265,14 @@ const MatchBox = ({
                   )}
                   {children({
                     hasResults: results?.length,
-                    saveSet: async ({ userId, api, dataPath = 'data.data.saveSet' }) => {
+                    saveSet: async ({ userId, apiFetcher, dataPath = 'data.data.saveSet' }) => {
                       const data = get(
                         await saveSet({
                           sqon: quickSearchSqon,
                           type: props.graphqlField,
                           userId,
                           path: primaryKeyField.field,
-                          api,
+                          apiFetcher,
                         }),
                         dataPath,
                       );

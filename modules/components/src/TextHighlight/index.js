@@ -1,5 +1,5 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import { isEqual } from 'lodash';
 
 import strToReg from '../utils/strToReg';

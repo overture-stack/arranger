@@ -1,7 +1,7 @@
 import React from 'react';
 import { keys, debounce, isEqual } from 'lodash';
 import { pick } from 'lodash';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import Component from 'react-component-component';
 
 import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';

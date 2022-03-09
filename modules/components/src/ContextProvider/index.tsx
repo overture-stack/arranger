@@ -1,28 +1,29 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 import defaultApiFetcher from '@/utils/api';
 import columnsToGraphql from '@/utils/columnsToGraphql';
+import { arrangerTheme, DefaultTheme, ThemeProvider } from '@/ThemeProvider';
 
 import {
-  APIFetcherFn,
-  ContextInterface,
+  DataContextInterface,
   FetchDataFn,
   SQONType,
-  UseArrangerContextFn,
+  DataProviderProps,
+  UseDataContextProps,
 } from './types';
 
-export const ArrangerContext = createContext<ContextInterface>(({} as unknown) as ContextInterface);
+export const DataContext = createContext<DataContextInterface>({} as DataContextInterface);
 // returning "as interface" so the type is explicit while integrating into another app
+if (process.env.NODE_ENV === 'development') {
+  DataContext.displayName = 'ArrangerDataContext';
+}
 
-export const ArrangerProvider = ({
+export const DataProvider = ({
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
   url = '',
-}: {
-  children: ReactNode;
-  customFetcher?: APIFetcherFn;
-  url?: string;
-}) => {
+  theme = arrangerTheme.default as Partial<DefaultTheme>,
+}: DataProviderProps): React.ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
   // TODO: should this SQON override the one in fetcher `options`?
 
@@ -44,16 +45,20 @@ export const ArrangerProvider = ({
     setSQON,
   };
 
-  return <ArrangerContext.Provider value={contextValues}>{children}</ArrangerContext.Provider>;
+  return (
+    <DataContext.Provider value={contextValues}>
+      <ThemeProvider theme={theme}>{children}</ThemeProvider>
+    </DataContext.Provider>
+  );
 };
 
-const useArrangerContext: UseArrangerContextFn = ({ customFetcher: localFetcher } = {}) => {
-  const defaultContext = useContext(ArrangerContext);
+export const useDataContext = ({
+  customFetcher: localFetcher,
+}: UseDataContextProps = {}): DataContextInterface => {
+  const defaultContext = useContext(DataContext);
 
   return {
     ...defaultContext,
     fetchData: localFetcher || defaultContext.fetchData,
   };
 };
-
-export default useArrangerContext;

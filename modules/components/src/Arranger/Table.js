@@ -1,17 +1,20 @@
 import React from 'react';
-
-import DataTable, { ColumnsState } from '../DataTable';
 import Spinner from 'react-spinkit';
 
+import DataTable, { ColumnsState } from '@/DataTable';
+import TextInput from '@/Input';
+import defaultApiFetcher from '@/utils/api';
+import { noopFn } from '@/utils/noopFns';
+
 const Table = ({
-  onFilterChange = () => {},
-  graphqlField,
-  fetchData,
+  onFilterChange = noopFn,
+  graphqlField = '',
+  fetchData = defaultApiFetcher,
   setSQON,
   sqon,
   fieldTypesForFilter = ['text', 'keyword'],
-  api,
-  InputComponent,
+  apiFetcher,
+  InputComponent = TextInput,
   showFilterInput = true,
   customHeaderContent = null,
   sessionStorage = false, // Use session storage to save selected columns, page size, and column sort.
@@ -21,7 +24,7 @@ const Table = ({
   return (
     <ColumnsState
       graphqlField={graphqlField}
-      api={api}
+      apiFetcher={apiFetcher}
       sessionStorage={sessionStorage}
       storageKey={storageKey}
       render={(columnState) => {
@@ -29,7 +32,7 @@ const Table = ({
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
-            {...{ ...props, api, showFilterInput, customHeaderContent }}
+            {...{ ...props, apiFetcher, showFilterInput, customHeaderContent }}
             InputComponent={InputComponent}
             sqon={sqon}
             config={{

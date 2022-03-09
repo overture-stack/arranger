@@ -4,7 +4,7 @@ import Component from 'react-component-component';
 import { get } from 'lodash';
 
 import { getOperationAtPath, setSqonAtPath, IN_OP } from '../utils';
-import defaultApi from '../../utils/api';
+import defaultApiFetcher from '../../utils/api';
 import BooleanAgg from '../../Aggs/BooleanAgg';
 import { FilterContainer } from './common';
 import './FilterContainerStyle.css';
@@ -108,7 +108,7 @@ BooleanFilterUI.propTypes = {
 
 export default (props) => {
   const {
-    api = defaultApi,
+    apiFetcher = defaultApiFetcher,
     arrangerIndex,
     initialSqon,
     executableSqon,
@@ -138,7 +138,7 @@ export default (props) => {
   }`;
   return (
     <Query
-      api={api}
+      apiFetcher={apiFetcher}
       query={query}
       variables={{ sqon: executableSqon }}
       render={({ data, loading, error }) => (

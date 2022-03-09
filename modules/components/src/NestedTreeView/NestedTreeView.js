@@ -1,5 +1,6 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
+
 import ReactTreeView from './ReactTreeView';
 import TextHighlight from '../TextHighlight';
 import './style.css';

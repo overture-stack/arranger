@@ -12,7 +12,7 @@ class State extends React.Component {
     const { async = () => {} } = this.props;
     Promise.resolve(async()).then(this.update);
   }
-  componentWillReceiveProps(props) {
+  UNSAFE_componentWillReceiveProps(props) {
     let { onReceiveProps } = props;
     onReceiveProps && onReceiveProps({ props, state: this.state, update: this.update });
   }

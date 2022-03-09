@@ -1,5 +1,5 @@
 import React from 'react';
-import { css } from 'emotion';
+import { css } from '@emotion/react';
 import { compose, withState } from 'recompose';
 import SearchIcon from 'react-icons/lib/fa/search';
 import Component from 'react-component-component';

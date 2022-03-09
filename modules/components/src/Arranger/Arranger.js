@@ -2,8 +2,7 @@ import React from 'react';
 import { get } from 'lodash';
 
 import columnsToGraphql from '../utils/columnsToGraphql';
-
-import defaultApi from '../utils/api';
+import defaultApiFetcher from '../utils/api';
 
 class Arranger extends React.Component {
   constructor(props) {
@@ -17,9 +16,9 @@ class Arranger extends React.Component {
 
   fetchData = () => {
     return (options) => {
-      const { api = defaultApi } = this.props;
+      const { apiFetcher = defaultApiFetcher } = this.props;
 
-      return api({
+      return apiFetcher({
         endpoint: `/graphql`,
         body: columnsToGraphql(options),
       }).then((response) => {
@@ -31,7 +30,7 @@ class Arranger extends React.Component {
     };
   };
 
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     const hasChildren = this.props.children && React.Children.count(this.props.children) !== 0;
 
     if (this.props.component && this.props.render) {
@@ -54,11 +53,18 @@ class Arranger extends React.Component {
   }
 
   render() {
-    const { index, graphqlField, children, render, component, api = defaultApi } = this.props;
+    const {
+      index,
+      graphqlField,
+      children,
+      render,
+      component,
+      apiFetcher = defaultApiFetcher,
+    } = this.props;
     const { sqon, selectedTableRows } = this.state;
 
     const childProps = {
-      api,
+      apiFetcher,
       sqon,
       selectedTableRows,
       index,

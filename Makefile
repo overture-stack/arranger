@@ -5,6 +5,9 @@ DOCKER_COMPOSE_EXE := $(shell which docker-compose)
 CURL_EXE := $(shell which curl)
 
 # STDOUT Formatting
+BLUE := $$(echo "\033[0;34m")
+GREEN := $$(echo "\033[0;32m")
+MAGENTA := $$(echo "\033[0;35m")
 RED := $$(echo  "\033[0;31m")
 YELLOW := $$(echo "\033[0;33m")
 END := $$(echo  "\033[0m")
@@ -32,7 +35,7 @@ DOCKER_COMPOSE_CMD := \
 	ES_PASS=$(ES_PASS) \
   $(DOCKER_COMPOSE_EXE) -f \
 	$(ROOT_DIR)/docker-compose.yml
-DC_UP_CMD := $(DOCKER_COMPOSE_CMD) up -d --build
+DC_UP_CMD := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 $(DOCKER_COMPOSE_CMD) up -d --build
 
 #############################################################
 # Internal Targets
@@ -85,7 +88,7 @@ clean-elastic:
 		| awk '{ print $$3 }' \
 		| xargs -I {} $(CURL_EXE) -H "Authorization: Basic $(ES_BASIC_AUTH)" -X DELETE "$(ES_HOST)/{}?pretty"
 
-	@echo $(YELLOW)$(INFO_HEADER) "ElasticSearch indices removed" $(END)
+	@echo $(GREEN)$(INFO_HEADER) "ElasticSearch indices removed" $(END)
 
 clean-log-dirs:
 	@echo $(YELLOW)$(INFO_HEADER) "Cleaning log directories" $(END);
@@ -143,8 +146,16 @@ ps:
 start:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearch, kibana, and arranger-server" $(END)
 	@$(DC_UP_CMD)
-	@$(MAKE) _ping_elasticsearch_server
-	@echo $(YELLOW)$(INFO_HEADER) Succesfully started all arranger services! $(END)
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started all arranger services! $(GREEN)
+	@echo $(MAGENTA) "You may have to populate ES and restart the Server container. (Use 'make init-es' for mock data)" $(END)
+
+startES:
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: elasticsearch" $(END)
+	@COMPOSE_PROJECT_NAME=Arranger_ES $(DC_UP_CMD) elasticsearch
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
+	@echo $(MAGENTA) "You may have to populate it. (Use 'make init-es' for mock data)" $(END)
+
+test:
 
 #############################################################
 #  Dev targets

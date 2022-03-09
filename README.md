@@ -9,6 +9,10 @@ Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buil
 
 Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
 
+> **Note**: Arranger is undergoing refactoring work, for what will become version 3+. While we do not foresee many dramatic breaking changes, an _upgrade guide_ is already in the works. Current users of v2 may look at the `legacy` branch meanwhile, where we will continue fixing newly reported bugs until further notice.
+>
+> You may need to add the `--legacy-peer-deps` flag when integrating our modules into your apps. Along with the rewrite, we're steadily updating the internal dependencies so this isn't necessary.
+
 ## Documentation
 
 This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
@@ -25,8 +29,7 @@ This file is meant as a quick introduction, but for more in-detail documentation
 
 ### Getting Started
 
-Arranger has been tested using NodeJS version: ^13.13.0.
-Our team is actively working on making compatible for versions 14 and above.
+Arranger has been tested using NodeJS version: ^16.13.2, and it may not work correctly on versions <14
 
 #### - Development Setup
 
@@ -128,7 +131,7 @@ There are many potential benefits:
 #### Topology
 
 ![DP Topology](https://i.imgur.com/Ylm9drr.png)
-_this is way too simplistic. needs an update_
+_This is a simplified "birds-view" diagram of what goes on under the hood_
 
 ---
 
@@ -173,7 +176,7 @@ Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https:
 
 #### Releasing Instructions
 
-- From `master` branch, run `npm run tag <version>`
-- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=master)
+- From `main` branch, run `npm run tag <version>`
+- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=main)
 
 _\* The GDC contains many features that are out of Arranger's scope_

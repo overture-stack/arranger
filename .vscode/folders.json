@@ -1,0 +1,14 @@
+[
+  {
+    "name": "ROOT",
+    "path": "../"
+  },
+  {
+    "name": "components",
+    "path": "../modules/components"
+  },
+  {
+    "name": "server",
+    "path": "../modules/server"
+  }
+]
