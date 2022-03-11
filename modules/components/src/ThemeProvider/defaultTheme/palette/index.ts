@@ -1,4 +1,4 @@
-import { common, blueGrey as grey, purple, red, orange, lightBlue as blue, green } from './colours';
+import { common, blueGrey as grey, purple, red, orange, lightBlue as blue, green } from './colors';
 import { deepMerge } from './utils';
 
 export interface Color {
@@ -192,4 +192,4 @@ export default function createPalette({ mode, ...other } = blankDefaults) {
   return paletteOutput;
 }
 
-export * as colours from './colours';
+export * as colors from './colors';

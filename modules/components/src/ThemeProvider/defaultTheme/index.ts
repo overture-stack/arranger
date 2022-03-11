@@ -1,8 +1,8 @@
-import createPalette, { colours } from './palette';
+import createPalette, { colors } from './palette';
 import shape from './shape';
 
 export default {
-  colours,
+  colors,
   palette: createPalette(),
   shape,
 };

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useDebugValue, useMemo } from 'react';
 
-import arrangerTheme from './defaultTheme';
 import { DefaultTheme, ThemeContextInterface, ThemeProviderProps, UseThemeProps } from './types';
 import { mergeOuterLocalTheme, nested } from './utils';
 

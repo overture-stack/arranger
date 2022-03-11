@@ -2,6 +2,7 @@ import { Shape, ShapeOptions } from './shape';
 import { Spacing, SpacingOptions } from './spacing';
 
 export interface DefaultTheme {
+  colors?: Record<string, any>;
   components?: Record<string, any>;
   palette: Record<string, any> & { mode: 'light' | 'dark' };
   shadows?: unknown;
@@ -12,6 +13,7 @@ export interface DefaultTheme {
 }
 
 export interface ThemeOptions {
+  colors?: Record<string, any>;
   components?: Record<string, any>;
   palette?: Record<string, any>;
   shadows?: unknown;

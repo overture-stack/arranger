@@ -1,4 +1,4 @@
-// Material UI Colours
+// Material UI Colors
 
 export { default as amber } from './amber';
 export { default as blue } from './blue';
