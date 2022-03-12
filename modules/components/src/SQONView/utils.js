@@ -1,19 +1,19 @@
 /* @flow */
 import { parseSQONParam } from '../utils/uri';
 
-import type {
-  TValueContent,
-  TValueSQON,
-  TGroupContent,
-  TGroupSQON,
-  TMergeSQON,
-  TCombineValues,
-  TMergeFns,
-  TMergeQuery,
-  TSortSQON,
-  TFilterByWhitelist,
-  TRemoveSQON,
-} from './types';
+// import type {
+//   TValueContent,
+//   TValueSQON,
+//   TGroupContent,
+//   TGroupSQON,
+//   TMergeSQON,
+//   TCombineValues,
+//   TMergeFns,
+//   TMergeQuery,
+//   TSortSQON,
+//   TFilterByWhitelist,
+//   TRemoveSQON,
+// } from './types';
 
 function compareTerms(a, b) {
   return (
@@ -22,7 +22,8 @@ function compareTerms(a, b) {
   );
 }
 
-const sortSQON: TSortSQON = (a, b) => {
+// const sortSQON: TSortSQON = (a, b) => {
+const sortSQON = (a, b) => {
   if (a.content.field && b.content.field) {
     return a.content.field.localeCompare(b.content.field);
   } else if (a.content.field || b.content.field) {
@@ -32,7 +33,8 @@ const sortSQON: TSortSQON = (a, b) => {
   }
 };
 
-export const combineValues: TCombineValues = (x, y) => {
+// export const combineValues: TCombineValues = (x, y) => {
+export const combineValues = (x, y) => {
   const xValue = [].concat(x.content.value || []);
   const yValue = [].concat(y.content.value || []);
 
@@ -56,7 +58,8 @@ export const combineValues: TCombineValues = (x, y) => {
   return merged.content.value.length ? merged : null;
 };
 
-export const addInValue: TCombineValues = (x, y) => {
+// export const addInValue: TCombineValues = (x, y) => {
+export const addInValue = (x, y) => {
   const xValue = [].concat(x.content.value || []);
   const yValue = [].concat(y.content.value || []);
 
@@ -80,7 +83,8 @@ export const addInValue: TCombineValues = (x, y) => {
   return merged.content.value.length ? merged : null;
 };
 
-export const toggleSQON: TMergeSQON = (q, ctxq) => {
+// export const toggleSQON: TMergeSQON = (q, ctxq) => {
+export const toggleSQON = (q, ctxq) => {
   if (!ctxq && !q) return null;
   if (!ctxq) return q;
   if (!q) return ctxq;
@@ -101,7 +105,8 @@ export const toggleSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-export const replaceSQON: TMergeSQON = (q, ctxq) => {
+// export const replaceSQON: TMergeSQON = (q, ctxq) => {
+export const replaceSQON = (q, ctxq) => {
   if (!ctxq && !q) return null;
   if (!ctxq) return q;
   if (!q) return ctxq;
@@ -120,7 +125,8 @@ export const replaceSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-export const addInSQON: TMergeSQON = (q, ctxq) => {
+// export const addInSQON: TMergeSQON = (q, ctxq) => {
+export const addInSQON = (q, ctxq) => {
   if (!ctxq && !q) return null;
   if (!ctxq) return q;
   if (!q) return ctxq;
@@ -142,7 +148,8 @@ export const addInSQON: TMergeSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
+// export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
+export const replaceFieldSQON = (field, q, ctxq) => {
   if (!ctxq && !q) return null;
   if (!ctxq) return q;
   if (!q) return ctxq;
@@ -158,7 +165,8 @@ export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
+// export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
+export const replaceFilterSQON = (q, ctxq) => {
   const { entity, fields, value } = q?.content?.[0]?.content || {};
   const merged = {
     op: 'and',
@@ -177,7 +185,8 @@ export const currentFilterValue = (sqon, entity = null) =>
     ({ op, content }) => op === 'filter' && (!entity || entity === content.entity),
   )?.content?.value || '';
 
-const mergeFns: TMergeFns = (v) => {
+// const mergeFns: TMergeFns = (v) => {
+const mergeFns = (v) => {
   switch (v) {
     case 'toggle':
       return toggleSQON;
@@ -188,15 +197,18 @@ const mergeFns: TMergeFns = (v) => {
   }
 };
 
-const filterByWhitelist: TFilterByWhitelist = (obj, wls) =>
+// const filterByWhitelist: TFilterByWhitelist = (obj, wls) =>
+const filterByWhitelist = (obj, wls) =>
   Object.keys(obj || {}).reduce((acc, k) => (wls.includes(k) ? { ...acc, [k]: obj[k] } : acc), {});
 
-export const mergeQuery: TMergeQuery = (q, c, mergeType, whitelist) => {
+// export const mergeQuery: TMergeQuery = (q, c, mergeType, whitelist) => {
+export const mergeQuery = (q, c, mergeType, whitelist) => {
   const ctx = c || {};
   const query = q || {};
   const wlCtx = whitelist ? filterByWhitelist(ctx, whitelist) : ctx;
 
-  const mQs: Object = {
+  // const mQs: Object = {
+  const mQs = {
     ...wlCtx,
     ...query,
   };
@@ -207,7 +219,8 @@ export const mergeQuery: TMergeQuery = (q, c, mergeType, whitelist) => {
   };
 };
 
-export const setSQON = ({ value, field }: TValueContent) => ({
+// export const setSQON = ({ value, field }: TValueContent) => ({
+export const setSQON = ({ value, field }) => ({
   op: 'and',
   content: [
     {
@@ -217,7 +230,8 @@ export const setSQON = ({ value, field }: TValueContent) => ({
   ],
 });
 
-export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
+// export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
+export const setSQONContent = (sqonContent) =>
   sqonContent.length
     ? {
         op: 'and',
@@ -235,11 +249,12 @@ export const inCurrentSQON = ({
   currentSQON,
   value,
   dotField,
-}: {
-  currentSQON: TGroupSQON,
-  dotField: string,
-  value: string,
-}): boolean => {
+  // }: {
+  //   currentSQON: TGroupSQON,
+  //   dotField: string,
+  //   value: string,
+  // }): boolean => {
+}) => {
   const content = currentSQON?.content;
   return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
     (f) => f.content?.field === dotField && [].concat(f.content.value || []).includes(value),
@@ -250,21 +265,22 @@ export const inCurrentSQON = ({
 export const fieldInCurrentSQON = ({
   currentSQON = [],
   field,
-}: {
-  currentSQON: TGroupContent,
-  field: string,
+  // }: {
+  //   currentSQON: TGroupContent,
+  //   field: string,
 }) => currentSQON.some((f) => f?.content?.field === field);
 
 export const getSQONValue = ({
   currentSQON,
   dotField,
-}: {
-  currentSQON: TGroupContent,
-  dotField: string,
+  // }: {
+  //   currentSQON: TGroupContent,
+  // dotField: string,
 }) => currentSQON.find((f) => f.content.field === dotField);
 
-type TMakeSQON = (fields: [{ field: string, value: string }]) => Object | string;
-export const makeSQON: TMakeSQON = (fields) => {
+// type TMakeSQON = (fields: [{ field: string, value: string }]) => Object | string;
+// export const makeSQON: TMakeSQON = (fields) => {
+export const makeSQON = (fields) => {
   if (!fields.length) return {};
   return {
     op: 'and',
@@ -280,7 +296,8 @@ export const makeSQON: TMakeSQON = (fields) => {
   };
 };
 
-export const removeSQON: TRemoveSQON = (field, sqon) => {
+// export const removeSQON: TRemoveSQON = (field, sqon) => {
+export const removeSQON = (field, sqon) => {
   if (!sqon) return null;
   if (!field) return sqon;
   if (Object.keys(sqon).length === 0) return sqon;

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 import defaultApiFetcher from '@/utils/api';
 import columnsToGraphql from '@/utils/columnsToGraphql';
-import { arrangerTheme, DefaultTheme, ThemeProvider } from '@/ThemeProvider';
+import { arrangerTheme, ThemeProvider } from '@/ThemeProvider';
 
 import {
   DataContextInterface,
@@ -21,8 +21,8 @@ if (process.env.NODE_ENV === 'development') {
 export const DataProvider = ({
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
+  theme = arrangerTheme.default,
   url = '',
-  theme = arrangerTheme.default as Partial<DefaultTheme>,
 }: DataProviderProps): React.ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
   // TODO: should this SQON override the one in fetcher `options`?

@@ -46,6 +46,7 @@ export const ThemeProvider = <Theme extends DefaultTheme>({
   const theme = useMemo(() => {
     const output = outerTheme === null ? localTheme : mergeOuterLocalTheme(outerTheme, localTheme);
 
+    // TODO: verify passing global vs local theme overrides vs default theme
     if (output != null) {
       output[nested] = outerTheme !== null;
     }

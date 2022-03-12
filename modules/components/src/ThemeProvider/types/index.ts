@@ -1,10 +1,13 @@
+import defaultTheme from '@/ThemeProvider/defaultTheme';
+
 import { Shape, ShapeOptions } from './shape';
 import { Spacing, SpacingOptions } from './spacing';
+import { Common, Hues, Mode } from './palette';
 
 export interface DefaultTheme {
-  colors?: Record<string, any>;
+  colors?: Record<string, Partial<Hues & Common>>;
   components?: Record<string, any>;
-  palette: Record<string, any> & { mode: 'light' | 'dark' };
+  palette: typeof defaultTheme.palette;
   shadows?: unknown;
   shape: Shape;
   spacing: Spacing;
