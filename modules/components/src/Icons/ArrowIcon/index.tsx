@@ -1,14 +1,17 @@
-import { css, SerializedStyles } from '@emotion/react';
+import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeProvider';
 
+import Props from './types';
+
 /** Displays a chevron, commonly used for dropdown functionalities (buttons and trees)
- * @param {string} color override the default hue
+ * The following props (passed by the parent components) will be prioritised over theme customisations
+ * @param {string} fill override the default hue
  * @param {boolean} isTreeJoint makes the arrow point right when not pointing down
- * @param {number|string} line defines how thick the stroke should be (default: 4)
  * @param {boolean} pointUp tells the arrow to point up rather than down/right
- * @param {number|size} size specifies the magnitude of the arrow (default: 12)
+ * @param {number|size} size specifies the magnitude of the arrow
+ * @param {string} transition css animation speed
  **/
 
 const ArrowIcon = ({
@@ -16,20 +19,10 @@ const ArrowIcon = ({
   css: customCSS,
   fill,
   isTreeJoint,
-  line,
   pointUp,
   size,
   transition,
-}: {
-  className?: string;
-  css?: SerializedStyles;
-  fill?: string;
-  isTreeJoint?: boolean;
-  line?: string | number;
-  pointUp?: boolean;
-  size?: string | number;
-  transition?: string;
-}) => {
+}: Props) => {
   const {
     colors,
     components: {
@@ -37,7 +30,6 @@ const ArrowIcon = ({
         className: themeClassName = '',
         css: themeCSS = '',
         fill: themeFill = colors?.grey?.[600],
-        line: themeLine = 4,
         size: themeSize = 12,
         transition: themeTransition = 'all 0.2s',
         ...themeArrowIconProps
@@ -62,16 +54,17 @@ const ArrowIcon = ({
         ${customCSS}
       `}
       height={size || themeSize}
-      fill="transparent"
       preserveAspectRatio="xMidYMin "
-      stroke={fill || themeFill}
-      strokeLinecap="round"
-      strokeWidth={line || themeLine}
-      viewBox="0 0 20 20"
+      viewBox="0 0 12 12"
       width={size || themeSize}
       {...themeArrowIconProps}
     >
-      <path d="M1,6 L10,15 L19,6" />
+      <path
+        fill={fill || themeFill}
+        d="M9.952 3.342c.468-.456 1.228-.456 1.697 0 .234.228.351.526.351.825 0
+      .298-.117.597-.351.825l-4.8 4.666c-.469.456-1.23.456-1.697 0l-4.8-4.666c-.47-.456-.47-1.194
+      0-1.65.468-.456 1.228-.456 1.696 0L6 7.184l3.952-3.842z"
+      />
     </svg>
   );
 };

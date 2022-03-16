@@ -14,10 +14,6 @@
   cursor: pointer;
 }
 
-.dropDownHeader .dropDownButton .dropDownButtonContent {
-  margin-right: 8px;
-}
-
 .dropDownHeader .dropDownContent {
   position: absolute;
   background: white;

@@ -1,13 +1,12 @@
-import defaultTheme from '@/ThemeProvider/defaultTheme';
-
+import { Components, ComponentsOptions } from './components';
 import { Shape, ShapeOptions } from './shape';
 import { Spacing, SpacingOptions } from './spacing';
-import { Common, Hues } from './palette';
+import { Colors, ColorsOptions, Palette, PaletteOptions } from './palette';
 
 export interface DefaultTheme {
-  colors?: Record<string, Partial<Hues & Common>>;
-  components?: Record<string, any>;
-  palette: typeof defaultTheme.palette;
+  colors?: Colors;
+  components?: Components;
+  palette: Palette;
   shadows?: unknown;
   shape: Shape;
   spacing: Spacing;
@@ -16,9 +15,9 @@ export interface DefaultTheme {
 }
 
 export interface ThemeOptions {
-  colors?: Record<string, any>;
-  components?: Record<string, any>;
-  palette?: Record<string, any>;
+  colors?: ColorsOptions;
+  components?: ComponentsOptions;
+  palette?: PaletteOptions;
   shadows?: unknown;
   shape?: ShapeOptions;
   spacing?: SpacingOptions;
@@ -27,11 +26,15 @@ export interface ThemeOptions {
 }
 
 export type ThemeProcessorFn = <Theme = DefaultTheme>(outerTheme: Theme) => Theme;
-export type CustomThemeType<Theme = DefaultTheme> = Partial<Theme> | ThemeProcessorFn;
+export type CustomThemeType<Theme = DefaultTheme> = Theme | ThemeProcessorFn;
+
+export type ThemeAggregatorFn = <Theme = DefaultTheme>(
+  partial: CustomThemeType<Theme> | CustomThemeType<Theme>[],
+) => ThemeOptions;
 
 export interface ThemeContextInterface<Theme = DefaultTheme> {
-  aggregateTheme: (partialTheme: CustomThemeType<Theme>) => Partial<Theme>;
-  theme: Partial<Theme>;
+  aggregateTheme: ThemeAggregatorFn;
+  theme: Theme;
 }
 
 export interface ThemeProviderProps<Theme = DefaultTheme> {
@@ -42,5 +45,5 @@ export interface ThemeProviderProps<Theme = DefaultTheme> {
 }
 
 export interface WithThemeProps<Theme = DefaultTheme> {
-  theme?: Partial<Theme>;
+  theme?: Theme;
 }

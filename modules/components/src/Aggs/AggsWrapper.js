@@ -7,19 +7,17 @@ import { ArrowIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeProvider';
 import noopFn from '@/utils/noopFns';
 
-import './AggregationCard.css';
-
 const AggsWrapper = ({
-  actionIcon: { Icon: AggTypeActionIcon, onClick: aggTypeActionIconHandler = noopFn } = {},
+  actionIcon: { Icon: CustomActionIcon, onClick: customActionIconHandler } = {},
   children,
   className: aggTypeCustomClassName,
-  collapsible = true,
+  collapsible: customCollapsible,
   componentRef,
   dataFields = {},
   displayName,
   filters,
   headerRef,
-  stickyHeader = false,
+  stickyHeader,
   WrapperComponent,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -30,31 +28,33 @@ const AggsWrapper = ({
         AggsGroup: {
           className: themeAggsGroupClassName,
           collapsedBackground: themeAggsGroupCollapsedBackground = colors?.grey?.[200],
+          collapsible: themeAggsGroupCollapsible = true,
           groupDividerColor: ThemeAggsGroupDividerColor = colors?.grey?.[300],
           headerBackground: themeAggsHeaderBackground = colors?.common?.white,
           headerDividerColor: themeAggsHeaderDividerColor = colors?.grey?.[300],
           headerFontColor: themeAggsHeaderFontColor = colors?.grey?.[900],
+          headerSticky: themeAggsHeaderSticky = false,
           ...aggsGroupTheme
         } = {},
         ActionIcon: {
-          ActionIcon: ThemeActionIcon,
-          onClick: themeActionIconHandler,
+          Icon: ThemeActionIcon,
+          onClick: themeActionIconHandler = noopFn,
           size: themeActionIconSize = '14',
           ...actionIconTheme
         } = {},
         TreeJointIcon: {
           className: themeTreeJointIconClassName,
-          line: themeTreeJointIconLine = 3,
           size: themeTreeJointIconSize = 9,
-          TreeJointIcon: ThemeTreeJointIcon = ArrowIcon,
+          Icon: ThemeTreeJointIcon = ArrowIcon,
           ...treeJointIconTheme
         } = {},
       } = {},
     } = {},
   } = useThemeContext();
 
-  const ActionIcon = ThemeActionIcon || AggTypeActionIcon;
+  const ActionIcon = CustomActionIcon || ThemeActionIcon;
   const TreeJointIcon = ThemeTreeJointIcon;
+  const collapsible = customCollapsible || themeAggsGroupCollapsible;
 
   return WrapperComponent ? (
     <WrapperComponent {...{ collapsible, displayName, componentRef, headerRef }} {...dataFields}>
@@ -77,7 +77,7 @@ const AggsWrapper = ({
           background: ${themeAggsHeaderBackground};
           box-sizing: border-box;
           padding: 0 6px;
-          position: ${stickyHeader ? `sticky` : `relative`};
+          position: ${stickyHeader || themeAggsHeaderSticky ? `sticky` : `relative`};
           top: 0px;
 
           &.collapsed {
@@ -89,8 +89,10 @@ const AggsWrapper = ({
         <div
           className={cx('title-wrapper', { collapsed: isCollapsed })}
           css={css`
+            align-items: center;
             border-bottom: 0.1rem solid ${themeAggsHeaderDividerColor};
             box-sizing: border-box;
+            display: flex;
             padding: 6px 0 4px;
           `}
         >
@@ -106,8 +108,7 @@ const AggsWrapper = ({
               <TreeJointIcon
                 className={cx('treejoint', themeTreeJointIconClassName)}
                 height={themeTreeJointIconSize}
-                isTreeJoint={true}
-                line={themeTreeJointIconLine}
+                isTreeJoint
                 pointUp={!isCollapsed}
                 size={themeTreeJointIconSize}
                 width={themeTreeJointIconSize}
@@ -134,6 +135,7 @@ const AggsWrapper = ({
               css={css`
                 margin-left: 0.4rem;
                 margin-top: 0.1rem;
+                padding: 0.2rem;
                 position: absolute;
                 right: 6px;
               `}
@@ -141,7 +143,7 @@ const AggsWrapper = ({
             >
               <ActionIcon
                 height={themeActionIconSize}
-                onClick={themeActionIconHandler || aggTypeActionIconHandler}
+                onClick={customActionIconHandler || themeActionIconHandler}
                 size={themeActionIconSize}
                 width={themeActionIconSize}
                 {...actionIconTheme}
@@ -165,7 +167,7 @@ const AggsWrapper = ({
 
       {!isCollapsed && (
         <section
-          className={`bucket${isCollapsed ? ' collapsed' : ''}`}
+          className={cx('bucket', { collapsed: isCollapsed })}
           css={css`
             align-items: flex-end;
             display: flex;

@@ -17,15 +17,19 @@ import arrangerTheme from './defaultTheme';
 import {
   CustomThemeType,
   DefaultTheme,
+  ThemeAggregatorFn,
   ThemeContextInterface,
+  ThemeOptions,
   ThemeProviderProps,
   WithThemeProps,
 } from './types';
 import { isProviderNested, mergeThemes } from './utils';
 
-export const ThemeContext = createContext<ThemeContextInterface>({} as ThemeContextInterface);
+export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>(
+  {} as ThemeContextInterface<ThemeOptions>,
+);
 
-export const useThemeContext = (customTheme?: CustomThemeType): Partial<DefaultTheme> => {
+export const useThemeContext = (customTheme?: CustomThemeType<ThemeOptions>): ThemeOptions => {
   const { theme, aggregateTheme = noopFn } = useContext(ThemeContext);
 
   useEffect(() => {
@@ -41,12 +45,12 @@ export const useThemeContext = (customTheme?: CustomThemeType): Partial<DefaultT
 };
 
 // const useAggregableTheme = (initialTheme?: CustomThemeType | CustomThemeType[]) => {
-const useAggregableTheme = (initialTheme: any) => {
-  const [currentTheme, setCurrentTheme] = useState<Partial<DefaultTheme>>(initialTheme);
+const useAggregableTheme = (initialTheme: any): readonly [ThemeOptions, ThemeAggregatorFn] => {
+  const [currentTheme, setCurrentTheme] = useState<ThemeOptions>(initialTheme);
 
-  const aggregateTheme = useCallback(
-    (partialTheme: CustomThemeType | CustomThemeType[] = {}) => {
-      const theme = mergeThemes(currentTheme, partialTheme);
+  const aggregateTheme = useCallback<ThemeAggregatorFn>(
+    (partialTheme) => {
+      const theme = partialTheme ? mergeThemes(currentTheme, partialTheme) : currentTheme;
 
       if (!isEqual(JSON.stringify(currentTheme), JSON.stringify(theme))) {
         setCurrentTheme(theme);
@@ -85,7 +89,7 @@ export const ThemeProvider = <Theme extends DefaultTheme>({
 };
 
 export const withTheme = <Props extends object>(Component: ComponentType<Props>) => {
-  const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps) => {
+  const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps<ThemeOptions>) => {
     const themedProps = {
       ...props,
       theme: useThemeContext(customTheme),

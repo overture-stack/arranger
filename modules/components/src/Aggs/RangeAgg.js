@@ -10,7 +10,6 @@ import formatNumber from '@/utils/formatNumber';
 import { withTheme } from '@/ThemeProvider';
 
 import AggsWrapper from './AggsWrapper';
-import './AggregationCard.css';
 import './RangeAgg.css';
 
 const SUPPORTED_CONVERSIONS = {

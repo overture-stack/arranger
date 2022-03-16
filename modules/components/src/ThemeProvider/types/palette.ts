@@ -1,3 +1,8 @@
+import defaultTheme from '@/ThemeProvider/defaultTheme';
+import { RecursivePartial } from '@/utils/types';
+
+export type ColorNames = keyof typeof defaultTheme.colors;
+
 export interface Common {
   black: string;
   white: string;
@@ -19,4 +24,12 @@ export interface Hues {
   A700: string;
 }
 
+export type GenericColors = Record<string, any>;
+
+export type Colors = Record<ColorNames, Hues> & Record<'common', Common>;
+export type ColorsOptions = RecursivePartial<Colors>;
+
 export type Mode = 'light' | 'dark';
+
+export type Palette = typeof defaultTheme.palette;
+export type PaletteOptions = RecursivePartial<Palette>;

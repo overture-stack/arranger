@@ -1,16 +1,27 @@
 import styled from '@emotion/styled';
 
-export const TransparentButton = styled.button`
+const Button = styled.button`
   align-items: center;
-  background: none;
-  border: none;
   box-sizing: border-box;
   cursor: pointer;
   display: flex;
+  justify-content: center;
+  pointer-events: ${({ hidden }) => (hidden ? 'none' : undefined)};
+  visibility: ${({ hidden }) => (hidden ? 'hidden' : undefined)};
+
+  &.disabled,
+  &:disabled {
+    cursor: not-allowed;
+  }
+`;
+
+export const TransparentButton = styled(Button)`
+  background: none;
+  border: none;
   justify-content: flex-start;
   margin: 0;
   padding: 0;
-  pointer-events: ${({ hidden }) => (hidden ? 'none' : undefined)};
   text-align: left;
-  visibility: ${({ hidden }) => (hidden ? 'hidden' : undefined)};
 `;
+
+export default Button;

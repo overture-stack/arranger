@@ -16,8 +16,6 @@ import strToReg from '@/utils/strToReg';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import AggsWrapper from './AggsWrapper';
-import './AggregationCard.css';
-import './TermAgg.css';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -45,11 +43,6 @@ const IncludeExcludeButton = ({
   handleIncludeExcludeChange,
 }) => (
   <ToggleButton
-    value={isExclude ? 'exclude' : 'include'}
-    options={[
-      { title: 'Include', value: 'include' },
-      { title: 'Exclude', value: 'exclude' },
-    ]}
     onChange={({ value, isExclude = value === 'exclude' }) => {
       const activeBuckets = buckets.filter((b) => isActive({ field: dotField, value: b.name }));
       handleIncludeExcludeChange({
@@ -63,6 +56,11 @@ const IncludeExcludeButton = ({
       });
       updateIsExclude(isExclude);
     }}
+    options={[
+      { title: 'Include', value: 'include' },
+      { title: 'Exclude', value: 'exclude' },
+    ]}
+    value={isExclude ? 'exclude' : 'include'}
   />
 );
 
@@ -94,7 +92,7 @@ const TermAgg = ({
   aggHeaderRef = createRef(),
   aggWrapperRef = createRef(),
   buckets = [],
-  collapsible = true,
+  collapsible: customCollapsible,
   constructBucketItemClassName = emptyStrFn,
   constructEntryId = ({ value }) => value,
   containerRef,
@@ -143,6 +141,7 @@ const TermAgg = ({
         FilterInput: themeAggregationsFilterInputProps = {},
         MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
         TermAgg: {
+          collapsible: themeTermAggCollapsible = true,
           FilterInput: themeTermAggFilterInputProps = {},
           MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
         } = {},
@@ -156,11 +155,12 @@ const TermAgg = ({
         onClick: () => setShowingSearch(!stateShowingSearch),
         Icon: FaSearch,
       }}
+      collapsible={customCollapsible || themeTermAggCollapsible}
       componentRef={aggWrapperRef}
       dataFields={dataFields}
       headerRef={aggHeaderRef}
       filters={[
-        stateShowingSearch ? (
+        stateShowingSearch && (
           <>
             <InputComponent
               aria-label={`Search data`}
@@ -176,7 +176,6 @@ const TermAgg = ({
               <MoreOrLessButton
                 onClick={() => {
                   setShowingMore(false);
-                  setShowingSearch(false);
                   scrollToAgg();
                 }}
                 {...themeAggregationsMoreOrLessButtonProps}
@@ -184,8 +183,8 @@ const TermAgg = ({
               />
             )}
           </>
-        ) : null,
-        showExcludeOption && !isEmpty(decoratedBuckets) ? (
+        ),
+        showExcludeOption && !isEmpty(decoratedBuckets) && (
           <IncludeExcludeButton
             {...{
               dotField,
@@ -196,13 +195,22 @@ const TermAgg = ({
               updateIsExclude: setIsExclude,
             }}
           />
-        ) : null,
-      ].filter((filter) => filter !== null)}
+        ),
+      ].filter((filter) => !!filter)}
       stickyHeader
-      {...{ displayName, WrapperComponent, collapsible }}
+      {...{ displayName, WrapperComponent }}
     >
       <>
-        {headerTitle && <div className="header">{headerTitle}</div>}
+        {headerTitle && (
+          <div
+            className="header"
+            css={css`
+              text-align: right;
+            `}
+          >
+            {headerTitle}
+          </div>
+        )}
 
         <div
           css={css`
@@ -215,14 +223,15 @@ const TermAgg = ({
                 value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
               })}
               key={bucket.name}
-              className={`bucket-item ${
+              className={cx(
+                'bucket-item',
                 constructBucketItemClassName({
                   bucket,
                   i,
                   showingBuckets: array,
                   showingMore,
-                }) || ''
-              }`}
+                }),
+              )}
               content={{
                 field: dotField,
                 value: bucket.name,
@@ -302,7 +311,6 @@ const TermAgg = ({
             isMore={!showingMore}
             onClick={() => {
               setShowingMore(!showingMore);
-              setShowingSearch(!showingMore);
               if (showingMore) scrollToAgg();
             }}
             {...themeAggregationsMoreOrLessButtonProps}

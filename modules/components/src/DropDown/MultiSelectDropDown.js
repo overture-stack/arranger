@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { css } from '@emotion/react';
 
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeProvider';
@@ -222,6 +223,10 @@ const MultiSelectDropDown = ({
       >
         <div className="dropDownButtonContent">{children}</div>
         <ArrowIcon
+          css={css`
+            margin-left: 0.3rem;
+            margin-top: 0.1rem;
+          `}
           fill={customArrowColor || themeArrowColor}
           pointUp={isOpen}
           transition={customArrowTransition || themeArrowTransition}

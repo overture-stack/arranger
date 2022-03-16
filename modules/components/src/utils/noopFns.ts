@@ -1,8 +1,11 @@
-export const emptyArrFn = (): never[] => [];
-export const emptyObjFn = (): Record<string, never> => ({});
-export const emptyStrFn = (): string => '';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export type GenericFn = (..._arg: any) => any;
 
-const noopFn = (): void => {
+export const emptyArrFn = (..._arg: any): never[] => [];
+export const emptyObjFn = (..._arg: any): Record<string, never> => ({});
+export const emptyStrFn = (..._arg: any): string => '';
+
+const noopFn = (..._arg: any): void => {
   // do nothing
 };
 
