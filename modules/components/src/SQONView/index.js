@@ -13,7 +13,7 @@ import {
 
 import { Row } from '../Flex';
 import { toggleSQON, replaceFilterSQON } from './utils';
-import type { TGroupSQON, TValueSQON } from './types';
+// import type { TGroupSQON, TValueSQON } from './types';
 
 export const Bubble = ({ className = '', children, ...props }) => (
   <div className={`${className} sqon-bubble`} {...props}>
@@ -21,49 +21,55 @@ export const Bubble = ({ className = '', children, ...props }) => (
   </div>
 );
 
-export const Field = ({ children, ...props }: { children?: mixed }) => (
+// export const Field = ({ children, ...props }: { children?: mixed }) => (
+export const Field = ({ children, ...props }) => (
   <Bubble className="sqon-field" {...props}>
     {children}
   </Bubble>
 );
 
-export const Op = ({ children, ...props }: { children?: mixed }) => (
+// export const Op = ({ children, ...props }: { children?: mixed }) => (
+export const Op = ({ children, ...props }) => (
   <Bubble className="sqon-op" {...props}>
     {children}
   </Bubble>
 );
 
-export const Value = ({ children, className = '', ...props }: { children?: mixed }) => (
+// export const Value = ({ children, className = '', ...props }: { children?: mixed }) => (
+export const Value = ({ children, className = '', ...props }) => (
   <Bubble className={`sqon-value ${className}`} {...props}>
     {children}
   </Bubble>
 );
 
-type TFieldCrumbArg = {
-  field: string,
-  nextSQON: TGroupSQON,
-};
+// type TFieldCrumbArg = {
+//   field: string,
+//   nextSQON: TGroupSQON,
+// };
 
-type TValueCrumbArg = {
-  value: string,
-  nextSQON: TGroupSQON,
-};
+// type TValueCrumbArg = {
+//   value: string,
+//   nextSQON: TGroupSQON,
+// };
 
-type TClearArg = {
-  nextSQON: TGroupSQON,
-};
+// type TClearArg = {
+//   nextSQON: TGroupSQON,
+// };
 
 const enhance = compose(
   defaultProps({
-    FieldCrumb: ({ field, nextSQON }: TFieldCrumbArg) => (
+    // FieldCrumb: ({ field, nextSQON }: TFieldCrumbArg) => (
+    FieldCrumb: ({ field, nextSQON }) => (
       <Field onClick={() => console.log(nextSQON)}>{field}</Field>
     ),
-    ValueCrumb: ({ value, nextSQON, ...props }: TValueCrumbArg) => (
+    // ValueCrumb: ({ value, nextSQON, ...props }: TValueCrumbArg) => (
+    ValueCrumb: ({ value, nextSQON, ...props }) => (
       <Value onClick={() => console.log(nextSQON)} {...props}>
         {value}
       </Value>
     ),
-    Clear: ({ nextSQON }: TClearArg) => (
+    // Clear: ({ nextSQON }: TClearArg) => (
+    Clear: ({ nextSQON }) => (
       <Bubble className="sqon-clear" onClick={() => console.log(nextSQON)}>
         Clear
       </Bubble>
@@ -74,9 +80,11 @@ const enhance = compose(
     isExpanded: (valueSQON) => expanded.includes(valueSQON),
   })),
   withHandlers({
-    onLessClicked: ({ expanded, setExpanded }) => (valueSQON) => {
-      setExpanded(xor(expanded, [valueSQON]));
-    },
+    onLessClicked:
+      ({ expanded, setExpanded }) =>
+      (valueSQON) => {
+        setExpanded(xor(expanded, [valueSQON]));
+      },
   }),
 );
 
@@ -90,16 +98,16 @@ const SQON = ({
   expanded,
   setExpanded,
   onLessClicked,
-}: {
-  emptyMessage: String,
-  sqon: TGroupSQON,
-  FieldCrumb: (props: TFieldCrumbArg) => any,
-  ValueCrumb: (props: TValueCrumbArg) => any,
-  Clear: (props: TClearArg) => any,
-  isExpanded: (valueSQON: TValueSQON) => boolean,
-  expanded: Array<TValueSQON>,
-  setExpanded: () => void,
-  onLessClicked: Function,
+  // }: {
+  //   emptyMessage: String,
+  //   sqon: TGroupSQON,
+  //   FieldCrumb: (props: TFieldCrumbArg) => any,
+  //   ValueCrumb: (props: TValueCrumbArg) => any,
+  //   Clear: (props: TClearArg) => any,
+  //   isExpanded: (valueSQON: TValueSQON) => boolean,
+  //   expanded: Array<TValueSQON>,
+  //   setExpanded: () => void,
+  //   onLessClicked: Function,
 }) => {
   const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;

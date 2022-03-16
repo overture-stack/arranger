@@ -14,7 +14,7 @@ const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
   return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
 };
 
-const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
+const AggsWrapper = ({ children }) => <div className="aggregation-group">{children}</div>;
 
 export const BooleanFilterUI = (props) => {
   const {

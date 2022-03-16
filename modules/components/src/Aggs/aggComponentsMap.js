@@ -1,8 +1,5 @@
-import React from 'react';
-import { TermAgg, RangeAgg, BooleanAgg, DatesAgg } from '../Aggs';
-import { currentFieldValue } from '../SQONView/utils';
-import { inCurrentSQON } from '../SQONView/utils';
-import { fieldInCurrentSQON } from '../SQONView/utils';
+import { BooleanAgg, DatesAgg, TermAgg, RangeAgg } from '@/Aggs';
+import { currentFieldValue, fieldInCurrentSQON, inCurrentSQON } from '@/SQONView/utils';
 
 const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
   <TermAgg

@@ -1,12 +1,13 @@
 import React from 'react';
 import Component from 'react-component-component';
-import FaChevronDown from 'react-icons/lib/fa/chevron-down';
-import FaChevronUp from 'react-icons/lib/fa/chevron-up';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+
 import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
-import FieldOp from './FieldOp';
-import ClickAwayListener from '../../utils/ClickAwayListener.js';
-import { PillRemoveButton } from './common';
 import defaultApiFetcher from '../../utils/api';
+import ClickAwayListener from '../../utils/ClickAwayListener.js';
+
+import { PillRemoveButton } from './common';
+import FieldOp from './FieldOp';
 
 const SqonReference = (props) => {
   const { refIndex, onRemoveClick = () => {}, highlightColor, isHighlighted } = props;

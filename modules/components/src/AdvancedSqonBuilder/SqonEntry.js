@@ -1,16 +1,11 @@
 import React from 'react';
 import Component from 'react-component-component';
-import FaRegClone from 'react-icons/lib/fa/clone';
-import FaTrashAlt from 'react-icons/lib/fa/trash';
-import BooleanOp from './sqonPieces/BooleanOp';
-import {
-  isBooleanOp,
-  removeSqonPath,
-  setSqonAtPath,
-  doesContainReference,
-  isEmptySqon,
-} from './utils';
+import { FaRegClone, FaTrashAlt } from 'react-icons/fa';
+
 import defaultApiFetcher from '../utils/api';
+
+import BooleanOp from './sqonPieces/BooleanOp';
+import { isBooleanOp, removeSqonPath, setSqonAtPath, isEmptySqon } from './utils';
 
 export default (props) => {
   const {

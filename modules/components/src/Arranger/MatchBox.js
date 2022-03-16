@@ -3,7 +3,8 @@ import { capitalize, difference, get, uniqBy } from 'lodash';
 import { compose, withState, withHandlers } from 'recompose';
 import { css } from '@emotion/react';
 
-import Input from '../Input';
+import Input from '@/Input';
+
 import Tabs, { TabsTable } from '../Tabs';
 import { MatchBoxState } from '../MatchBox';
 import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
@@ -157,12 +158,12 @@ const MatchBox = ({
             <div className="match-box-id-form">
               <div className="match-box-selection-text">{instructionText}</div>
               <Input
-                disabled={!activeField}
+                aria-label={`Match box`}
                 Component="textarea"
+                disabled={!activeField}
+                onChange={onTextChange}
                 placeholder={placeholderText}
                 value={searchText}
-                onChange={onTextChange}
-                aria-label={`Match box`}
               />
               <div className="match-box-upload-instruction-text">{uploadInstructionText}</div>
               <div

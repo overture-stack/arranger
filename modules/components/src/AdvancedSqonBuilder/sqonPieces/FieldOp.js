@@ -1,7 +1,10 @@
 import React from 'react';
 import Component from 'react-component-component';
-import FaChevronDown from 'react-icons/lib/fa/chevron-down';
-import FaChevronUp from 'react-icons/lib/fa/chevron-up';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { Tooltip } from 'react-tippy';
+import 'react-tippy/dist/tippy.css';
+
+import ClickAwayListener from '../../utils/ClickAwayListener.js';
 import {
   DisplayNameMapContext,
   getOperationAtPath,
@@ -9,11 +12,9 @@ import {
   RANGE_OPS,
 } from '../utils';
 import FieldOpModifier from '../filterComponents/index';
-import ClickAwayListener from '../../utils/ClickAwayListener.js';
-import { PillRemoveButton } from './common';
 import defaultApiFetcher from '../../utils/api';
-import 'react-tippy/dist/tippy.css';
-import { Tooltip } from 'react-tippy';
+
+import { PillRemoveButton } from './common';
 
 export default (props) => {
   const {

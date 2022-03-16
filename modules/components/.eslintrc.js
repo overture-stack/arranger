@@ -2,7 +2,12 @@ module.exports = {
   env: {
     browser: true,
   },
-  extends: ['plugin:jsx-a11y/strict', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+  extends: [
+    'plugin:jsx-a11y/strict',
+    'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
+    'plugin:react-hooks/recommended',
+  ],
   parserOptions: {
     ecmaFeatures: {
       jsx: true,

@@ -1,22 +1,5 @@
-import { common, blueGrey as grey, purple, red, orange, lightBlue as blue, green } from './colours';
+import { common, blueGrey as grey, purple, red, orange, lightBlue as blue, green } from './colors';
 import { deepMerge } from './utils';
-
-export interface Color {
-  50: string;
-  100: string;
-  200: string;
-  300: string;
-  400: string;
-  500: string;
-  600: string;
-  700: string;
-  800: string;
-  900: string;
-  A100: string;
-  A200: string;
-  A400: string;
-  A700: string;
-}
 
 export const light = {
   // The colors used to style the text.
@@ -192,4 +175,4 @@ export default function createPalette({ mode, ...other } = blankDefaults) {
   return paletteOutput;
 }
 
-export * as colours from './colours';
+export * as colors from './colors';

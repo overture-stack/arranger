@@ -1,52 +1,53 @@
-import React from 'react';
-import SearchIcon from 'react-icons/lib/fa/search';
+import { FaSearch } from 'react-icons/fa';
 
-import TextInput from '../Input';
-import { replaceFilterSQON } from '../SQONView/utils';
+import TextInput from '@/Input';
+import { replaceFilterSQON } from '@/SQONView/utils';
+import noopFn from '@/utils/noopFns';
 
-export const generateNextSQON = (value) => ({ sqon, fields, entity }) =>
-  replaceFilterSQON(
-    {
-      op: 'and',
-      content: [
-        {
-          op: 'filter',
-          content: {
-            fields: fields,
-            value,
-            ...(entity && { entity }),
+export const generateNextSQON =
+  (value) =>
+  ({ sqon, fields, entity }) =>
+    replaceFilterSQON(
+      {
+        op: 'and',
+        content: [
+          {
+            op: 'filter',
+            content: {
+              fields: fields,
+              value,
+              ...(entity && { entity }),
+            },
           },
-        },
-      ],
-    },
-    sqon,
-  );
+        ],
+      },
+      sqon,
+    );
 
 const TextFilter = ({
-  value,
-  onChange,
-  Icon = SearchIcon,
+  Component = TextInput,
+  leftIcon = { Icon: FaSearch },
+  onChange = noopFn,
   placeholder = 'Filter',
-  InputComponent = TextInput,
   ...props
-}) => (
-  <InputComponent
-    icon={<Icon />}
-    type="text"
-    placeholder={placeholder}
-    value={value}
-    onChange={(e) => {
-      const {
-        target: { value },
-      } = e;
-      onChange({
-        value,
-        generateNextSQON: generateNextSQON(value),
-      });
-    }}
-    aria-label={`Data filter`}
-    {...props}
-  />
-);
+}) => {
+  const handleChange = ({ target: { value } = {} } = {}) => {
+    onChange({
+      value,
+      generateNextSQON: generateNextSQON(value),
+    });
+  };
+
+  return (
+    <Component
+      aria-label={`Data filter`}
+      leftIcon={leftIcon}
+      onChange={handleChange}
+      placeholder={placeholder}
+      type="text"
+      {...props}
+    />
+  );
+};
 
 export default TextFilter;

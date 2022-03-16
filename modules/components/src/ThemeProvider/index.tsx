@@ -1,65 +1,108 @@
-import React, { createContext, useContext, useDebugValue, useMemo } from 'react';
+import {
+  ComponentType,
+  createContext,
+  ReactElement,
+  useCallback,
+  useContext,
+  useDebugValue,
+  useEffect,
+  useState,
+} from 'react';
+import { isEqual } from 'lodash';
+
+import getComponentDisplayName from '@/utils/getComponentDisplayName';
+import noopFn from '@/utils/noopFns';
 
 import arrangerTheme from './defaultTheme';
-import { DefaultTheme, ThemeContextInterface, ThemeProviderProps, UseThemeProps } from './types';
-import { mergeOuterLocalTheme, nested } from './utils';
+import {
+  CustomThemeType,
+  DefaultTheme,
+  ThemeContextInterface,
+  ThemeProviderProps,
+  WithThemeProps,
+} from './types';
+import { isProviderNested, mergeThemes } from './utils';
 
-export const ThemeContext = createContext<ThemeContextInterface>({
-  // theme: arrangerTheme as Partial<DefaultTheme>,
-} as ThemeContextInterface);
+export const ThemeContext = createContext<ThemeContextInterface>({} as ThemeContextInterface);
 
-if (process.env.NODE_ENV === 'development') {
-  ThemeContext.displayName = 'ArrangerThemeContext';
-}
+export const useThemeContext = (customTheme?: CustomThemeType): Partial<DefaultTheme> => {
+  const { theme, aggregateTheme = noopFn } = useContext(ThemeContext);
 
-export const useThemeContext = ({ customTheme }: UseThemeProps = {}): Partial<DefaultTheme> => {
-  // export const useThemeContext: UseThemeFn = () => {
-  const { theme } = useContext(ThemeContext);
+  useEffect(() => {
+    customTheme && aggregateTheme(customTheme);
+  }, [aggregateTheme, customTheme, theme]);
 
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useDebugValue(theme);
   }
 
-  return theme || null;
+  return theme;
 };
 
+// const useAggregableTheme = (initialTheme?: CustomThemeType | CustomThemeType[]) => {
+const useAggregableTheme = (initialTheme: any) => {
+  const [currentTheme, setCurrentTheme] = useState<Partial<DefaultTheme>>(initialTheme);
+
+  const aggregateTheme = useCallback(
+    (partialTheme: CustomThemeType | CustomThemeType[] = {}) => {
+      const theme = mergeThemes(currentTheme, partialTheme);
+
+      if (!isEqual(JSON.stringify(currentTheme), JSON.stringify(theme))) {
+        setCurrentTheme(theme);
+      }
+
+      return theme;
+    },
+    [currentTheme],
+  );
+
+  return [currentTheme, aggregateTheme] as const; // make tuple type
+};
+
+/** Context provider for Arranger's theme functionalities
+ * @param {Theme} theme allows giving the provider a custom version of the theme for the consumers.
+ * @param {boolean} useArrangerTheme tells the provider to source the default Arranger theme. (default: `true`)
+ */
 export const ThemeProvider = <Theme extends DefaultTheme>({
   children,
   theme: localTheme,
-}: ThemeProviderProps): React.ReactElement<ThemeContextInterface<Theme>> => {
-  const outerTheme = useThemeContext();
+  useArrangerTheme = true,
+}: ThemeProviderProps): ReactElement<ThemeContextInterface<Theme>> => {
+  const outerTheme = useThemeContext(); // get theme from parent theme provider, if any.
+  const defaultTheme = useArrangerTheme ? arrangerTheme : {};
+  const isNested = isProviderNested(defaultTheme, [outerTheme, localTheme]);
+  const otherThemes = [outerTheme, localTheme, isNested];
 
-  if (process.env.NODE_ENV === 'development') {
-    // Make sure a theme is already injected higher in the tree or provide a theme object instead of a function
-    if (outerTheme === null && typeof localTheme === 'function') {
-      console.info(
-        [
-          'You are providing a theme function to the ThemeProvider:',
-          '<ThemeProvider theme={outerTheme => outerTheme} />',
-          '',
-          'However, as no "outer theme" was given by a parent context provider, this theme provider expected a theme object instead.',
-        ].join('\n'),
-      );
-    }
-  }
-
-  const theme = useMemo(() => {
-    const output = outerTheme === null ? localTheme : mergeOuterLocalTheme(outerTheme, localTheme);
-
-    if (output != null) {
-      output[nested] = outerTheme !== null;
-    }
-
-    return output;
-  }, [localTheme, outerTheme]);
+  const [theme, aggregateTheme] = useAggregableTheme(mergeThemes(defaultTheme, otherThemes));
 
   const contextValues = {
+    aggregateTheme,
     theme,
   };
 
   return <ThemeContext.Provider value={contextValues}>{children}</ThemeContext.Provider>;
 };
+
+export const withTheme = <Props extends object>(Component: ComponentType<Props>) => {
+  const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps) => {
+    const themedProps = {
+      ...props,
+      theme: useThemeContext(customTheme),
+    } as Props;
+
+    return <Component {...themedProps} />;
+  };
+
+  ThemedComponent.displayName = `WithArrangerTheme(${getComponentDisplayName(Component)})`;
+
+  return ThemedComponent;
+};
+
+if (process.env.NODE_ENV === 'development') {
+  ThemeContext.displayName = 'ArrangerThemeContext';
+  ThemeProvider.displayName = 'ArrangerThemeProvider';
+}
 
 export * as arrangerTheme from './defaultTheme';
 export * from './types';

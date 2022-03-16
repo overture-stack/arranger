@@ -1,35 +1,7 @@
-.aggregation-card .title-wrapper,
-.aggregation-card .filter {
+.aggregation-group .title-wrapper,
+.aggregation-group .filter {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-}
-.aggregation-card .header {
-  background: white;
-}
-.aggregation-card .arrow:after {
-  content: '›';
-}
-.aggregation-card .arrow.collapsed {
-  transform: rotate(0deg);
-}
-.aggregation-card .arrow {
-  transform: rotate(90deg);
-  transition: all 0.5s;
-  cursor: pointer;
-}
-.aggregation-card .action-icon {
-  cursor: pointer;
-}
-.aggregation-card .showMore-wrapper {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.aggregation-card .no-data {
-  color: #999;
-  display: block;
-  font-size: 0.8em;
-  padding: 6px;
 }

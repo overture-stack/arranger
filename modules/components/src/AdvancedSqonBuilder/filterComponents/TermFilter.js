@@ -18,7 +18,7 @@ import { inCurrentSQON } from '../../SQONView/utils';
 import defaultApiFetcher from '../../utils/api';
 import Query from '../../Query';
 
-const AggsWrapper = ({ children }) => <div className="aggregation-card">{children}</div>;
+const AggsWrapper = ({ children }) => <div className="aggregation-group">{children}</div>;
 
 const filterStringsCaseInsensitive = (values, searchString, path = null) =>
   values.filter((val) => {

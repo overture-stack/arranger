@@ -1,6 +1,6 @@
 module.exports = {
   presets: [
-    '@babel/env',
+    '@babel/preset-env',
     '@babel/flow',
     [
       '@babel/preset-react',
@@ -21,7 +21,7 @@ module.exports = {
           '^@/(.+)': './src/\\1',
         },
         cwd: 'packagejson',
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        extensions: ['.js', '.jsx', '.d.ts', '.ts', '.tsx'],
         root: ['./src'],
       },
     ],

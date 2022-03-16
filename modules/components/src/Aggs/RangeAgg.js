@@ -1,14 +1,15 @@
-import React, { Component } from 'react';
-import InputRange from 'react-input-range';
-import convert from 'convert-units';
-import { isNil } from 'lodash';
+import { Component } from 'react';
 import { css } from '@emotion/react';
-
-import { replaceFieldSQON } from '../SQONView/utils';
-import AggsWrapper from './AggsWrapper';
-import formatNumber from '../utils/formatNumber';
-
+import { isNil } from 'lodash';
+import convert from 'convert-units';
+import InputRange from 'react-input-range';
 import 'react-input-range/lib/css/index.css';
+
+import { replaceFieldSQON } from '@/SQONView/utils';
+import formatNumber from '@/utils/formatNumber';
+import { withTheme } from '@/ThemeProvider';
+
+import AggsWrapper from './AggsWrapper';
 import './AggregationCard.css';
 import './RangeAgg.css';
 
@@ -153,6 +154,17 @@ class RangeAgg extends Component {
       rangeStep,
       stats: { max, min },
       step,
+      theme: {
+        colors,
+        components: {
+          Aggregations: {
+            NoDataContainer: {
+              fontColor: themeNoDataFontColor = colors?.grey?.[600],
+              fontSize: themeNoDataFontSize = '0.8em',
+            } = {},
+          } = {},
+        } = {},
+      } = {},
       type,
       WrapperComponent,
     } = this.props;
@@ -238,11 +250,20 @@ class RangeAgg extends Component {
             </div>
           </div>
         ) : (
-          <span className="no-data">No data available</span>
+          <span
+            className="no-data"
+            css={css`
+              color: ${themeNoDataFontColor};
+              display: block;
+              font-size: ${themeNoDataFontSize};
+            `}
+          >
+            No data available
+          </span>
         )}
       </AggsWrapper>
     );
   }
 }
 
-export default RangeAgg;
+export default withTheme(RangeAgg);
