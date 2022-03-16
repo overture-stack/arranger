@@ -1,26 +1,24 @@
 import React from 'react';
-import { keys, debounce, isEqual } from 'lodash';
-import { pick } from 'lodash';
+import { debounce, keys, isEqual, pick } from 'lodash';
 import { css } from '@emotion/react';
 import Component from 'react-component-component';
+import { FaFilter, FaTimesCircle } from 'react-icons/fa';
 
-import FaTimesCircleO from 'react-icons/lib/fa/times-circle-o';
-import FaFilter from 'react-icons/lib/fa/filter';
+import TextInput from '@/Input';
+import noopFn from '@/utils/noopFns';
 
-import NestedTreeView from '../NestedTreeView';
 import { CurrentSQON } from '../Arranger/CurrentSQON';
-import FacetView from './FacetView';
-import TextInput from '../Input';
 import LoadingScreen from '../LoadingScreen';
+import NestedTreeView from '../NestedTreeView';
 import Stats from '../Stats';
 
+import FacetView from './FacetView';
 import {
   filterOutNonValue,
   injectExtensionToElasticMapping,
   orderDisplayTreeData,
   filterDisplayTreeDataBySearchTerm,
 } from './utils';
-
 import './AdvancedFacetView.css';
 
 export default class AdvancedFacetView extends React.Component {
@@ -53,7 +51,7 @@ export default class AdvancedFacetView extends React.Component {
   constructFilterId = ({ field, value }) => (value ? `${field}---${value}` : field);
 
   handleSqonChange = ({ sqon }) => {
-    const { onSqonFieldChange = () => {} } = this.props;
+    const { onSqonFieldChange = noopFn } = this.props;
     this.setState({ isLoading: true }, () => onSqonFieldChange({ sqon }));
   };
 
@@ -88,7 +86,7 @@ export default class AdvancedFacetView extends React.Component {
   }
 
   setSearchTerm = debounce((value) => {
-    const { onFilterChange = () => {} } = this.props;
+    const { onFilterChange = noopFn } = this.props;
     onFilterChange(value);
     this.setState({
       searchTerm: value,
@@ -103,7 +101,7 @@ export default class AdvancedFacetView extends React.Component {
       sqon,
       statsConfig,
       translateSQONValue,
-      onFacetNavigation = () => {},
+      onFacetNavigation = noopFn,
       onTermSelected,
       onClear,
       InputComponent = TextInput,
@@ -185,28 +183,27 @@ export default class AdvancedFacetView extends React.Component {
                   <Component initialState={{ value: searchTerm || '' }}>
                     {({ state: { value }, setState }) => (
                       <InputComponent
-                        icon={<FaFilter />}
-                        aria-label={`Data filter`}
-                        rightIcon={
-                          <FaTimesCircleO
-                            onClick={() => {
-                              setState({ value: null }, () => {
-                                this.setState({
-                                  searchTerm: null,
-                                });
-                              });
-                            }}
-                          />
-                        }
+                        aria-label="Data filter"
                         className="filterInput"
-                        type="text"
-                        placeholder="Filter"
-                        value={value || ''}
+                        leftIcon={{ Icon: FaFilter }}
                         onChange={({ target: { value } }) => {
                           setState({ value }, () => {
                             this.setSearchTerm(value);
                           });
                         }}
+                        placeholder="Filter"
+                        rightIcon={{
+                          Icon: FaTimesCircle,
+                          onClick: () => {
+                            setState({ value: null }, () => {
+                              this.setState({
+                                searchTerm: null,
+                              });
+                            });
+                          },
+                        }}
+                        type="text"
+                        value={value || ''}
                       />
                     )}
                   </Component>

@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { cloneDeep } from 'lodash';
 import Component from 'react-component-component';
+import { FaPlusCircle, FaRegClone } from 'react-icons/fa';
 
 import defaultApiFetcher from '../utils/api';
 
@@ -17,8 +18,6 @@ import {
   OR_OP,
 } from './utils';
 import './style.css';
-import FaRegClone from 'react-icons/lib/fa/clone';
-import FaPlusCircle from 'react-icons/lib/fa/plus-circle';
 
 const newEmptySqon = () => ({
   op: AND_OP,

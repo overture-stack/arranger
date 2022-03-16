@@ -1,22 +1,11 @@
 import React from 'react';
 import Downshift from 'downshift';
-import './DropDown.css';
 
-function ArrowIcon({ isOpen }) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      preserveAspectRatio="none"
-      width={16}
-      fill="transparent"
-      stroke="#979797"
-      strokeWidth="1.1px"
-      transform={isOpen ? 'rotate(180)' : null}
-    >
-      <path d="M1,6 L10,15 L19,6" />
-    </svg>
-  );
-}
+import { ArrowIcon } from '@/Icons';
+import noopFn from '@/utils/noopFns';
+import { withTheme } from '@/ThemeProvider';
+
+import './DropDown.css';
 
 class DropDown extends React.Component {
   state = { isOpen: false };
@@ -25,21 +14,33 @@ class DropDown extends React.Component {
   };
   handleStateChange = (changes) => {
     const { isOpen, type } = changes;
-    if (type === Downshift.stateChangeTypes.mouseUp) {
-      this.setState({ isOpen });
+
+    if (type === '__autocomplete_click_button__') {
+      this.setState({ isOpen: !isOpen });
     }
   };
 
   render() {
     const { isOpen } = this.state;
     const {
+      arrowColor: customArrowColor,
+      arrowTransition: customArrowTransition,
       hasSelectedRows,
       items,
-      onChange = () => {},
+      onChange = noopFn,
       itemToString,
       children,
       align = 'right',
       singleSelect = false,
+      theme: {
+        components: {
+          DropDown: {
+            arrowColor: themeArrowColor,
+            arrowTransition: themeArrowTransition,
+            ...themeArrowProps
+          } = {},
+        } = {},
+      } = {},
     } = this.props;
 
     const disableDownloads =
@@ -74,8 +75,14 @@ class DropDown extends React.Component {
               })}
             >
               <div className="dropDownButtonContent">{children}</div>
-              <ArrowIcon isOpen={isOpen} />
+              <ArrowIcon
+                fill={customArrowColor || themeArrowColor}
+                pointUp={isOpen}
+                transition={customArrowTransition || themeArrowTransition}
+                {...themeArrowProps}
+              />
             </button>
+
             {isOpen && (
               <div
                 className={`dropDownContent ${singleSelect ? 'single' : 'multiple'}`}
@@ -124,4 +131,4 @@ class DropDown extends React.Component {
   }
 }
 
-export default DropDown;
+export default withTheme(DropDown);

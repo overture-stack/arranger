@@ -1,20 +1,23 @@
-import React from 'react';
-import { compose, withState } from 'recompose';
-import { isEmpty, orderBy, partition, truncate } from 'lodash';
-import DefaultSearchIcon from 'react-icons/lib/fa/search';
+import { createRef, useState } from 'react';
 import { css } from '@emotion/react';
+import { isEmpty, orderBy, partition, truncate } from 'lodash';
+import { FaSearch } from 'react-icons/fa';
+import cx from 'classnames';
 
-import './AggregationCard.css';
+import { TransparentButton } from '@/Button';
+import { removeSQON, toggleSQON } from '@/SQONView/utils';
+import TextFilter from '@/TextFilter';
+import TextHighlight from '@/TextHighlight';
+import { useThemeContext } from '@/ThemeProvider';
+import ToggleButton from '@/ToggleButton';
+import formatNumber from '@/utils/formatNumber';
+import noopFn, { emptyStrFn } from '@/utils/noopFns';
+import strToReg from '@/utils/strToReg';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
-import { removeSQON, toggleSQON } from '../SQONView/utils';
 import AggsWrapper from './AggsWrapper';
-import TextHighlight from '../TextHighlight';
+import './AggregationCard.css';
 import './TermAgg.css';
-import ToggleButton from '../ToggleButton';
-import internalTranslateSQONValue from '../utils/translateSQONValue';
-import Input from '../Input';
-import strToReg from '../utils/strToReg';
-import formatNumber from '../utils/formatNumber';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -63,10 +66,18 @@ const IncludeExcludeButton = ({
   />
 );
 
-const MoreOrLessButton = ({ howManyMore, isMore, onClick }) => (
-  <div className={`showMore-wrapper ${isMore ? 'more' : 'less'}`} onClick={onClick}>
+const MoreOrLessButton = ({ className, css: customCSS, howManyMore, isMore, ...props }) => (
+  <TransparentButton
+    className={cx('showMore-wrapper', isMore ? 'more' : 'less', className)}
+    css={css`
+      margin-left: 0.5rem;
+      text-decoration: underline;
+      ${customCSS}
+    `}
+    {...props}
+  >
     {isMore ? `${howManyMore} More` : 'Less'}
-  </div>
+  </TransparentButton>
 );
 
 const decorateBuckets = ({ buckets, searchText }) => {
@@ -79,55 +90,40 @@ const decorateBuckets = ({ buckets, searchText }) => {
   return [...orderBy(notMissing, 'doc_count', 'desc'), ...missing];
 };
 
-const enhance = compose(
-  withState('stateShowingMore', 'setShowingMore', false),
-  withState('stateIsExclude', 'setIsExclude', false),
-  withState('stateShowingSearch', 'setShowingSearch', false),
-  withState('searchText', 'setSearchText', ''),
-);
-
 const TermAgg = ({
-  field = '',
-  displayName = 'Unnamed Field',
-  headerTitle = null,
+  aggHeaderRef = createRef(),
+  aggWrapperRef = createRef(),
   buckets = [],
-  handleValueClick = () => {},
-  isActive = () => {},
-  Content = 'div',
-  SearchIcon = DefaultSearchIcon,
-  maxTerms = 5,
   collapsible = true,
-  isExclude: externalIsExclude = () => {},
-  showExcludeOption = false,
-  handleIncludeExcludeChange = () => {},
+  constructBucketItemClassName = emptyStrFn,
   constructEntryId = ({ value }) => value,
-  valueCharacterLimit,
-  observableValueInFocus = null,
-  WrapperComponent,
-  highlightText,
-  constructBucketItemClassName = () => '',
-  searchPlaceholder = 'Search',
   containerRef,
-  aggWrapperRef = React.createRef(),
-  aggHeaderRef = React.createRef(),
+  Content = 'div',
+  displayName = 'Unnamed Field',
+  field = '',
+  handleIncludeExcludeChange = noopFn,
+  handleValueClick = noopFn,
+  headerTitle = null,
+  highlightText,
+  InputComponent = TextFilter,
+  isActive = noopFn,
+  isExclude: externalIsExclude = noopFn,
+  maxTerms = 5,
   scrollToAgg = () => {
     if (containerRef?.current)
       containerRef.current.scrollTop =
         aggWrapperRef.current.offsetTop - aggHeaderRef.current.getBoundingClientRect().height;
   },
-
-  // Internal State
-  stateShowingMore,
-  setShowingMore,
-  stateIsExclude,
-  setIsExclude,
-  stateShowingSearch,
-  setShowingSearch,
-  searchText,
-  setSearchText,
-  InputComponent = Input,
+  searchPlaceholder = 'Search',
+  showExcludeOption = false,
   type,
+  valueCharacterLimit,
+  WrapperComponent,
 }) => {
+  const [stateShowingMore, setShowingMore] = useState(false);
+  const [stateIsExclude, setIsExclude] = useState(false);
+  const [stateShowingSearch, setShowingSearch] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
@@ -135,67 +131,84 @@ const TermAgg = ({
     highlightText && decoratedBuckets.some((x) => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
-
   const dataFields = {
     ...(field && { 'data-field': field }),
     ...(type && { 'data-type': type }),
   };
+
+  const {
+    colors,
+    components: {
+      Aggregations: {
+        FilterInput: themeAggregationsFilterInputProps = {},
+        MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
+        TermAgg: {
+          FilterInput: themeTermAggFilterInputProps = {},
+          MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
+        } = {},
+      } = {},
+    } = {},
+  } = useThemeContext();
+
   return (
     <AggsWrapper
+      actionIcon={{
+        onClick: () => setShowingSearch(!stateShowingSearch),
+        Icon: FaSearch,
+      }}
       componentRef={aggWrapperRef}
-      headerRef={aggHeaderRef}
-      stickyHeader
       dataFields={dataFields}
-      {...{ displayName, WrapperComponent, collapsible }}
-      ActionIcon={<DefaultSearchIcon onClick={() => setShowingSearch(!stateShowingSearch)} />}
+      headerRef={aggHeaderRef}
       filters={[
-        ...(stateShowingSearch
-          ? [
-              <>
-                <InputComponent
-                  className={css`
-                    flex-grow: 1;
-                  `}
-                  type="text"
-                  value={searchText}
-                  placeholder={searchPlaceholder}
-                  icon={<DefaultSearchIcon />}
-                  onChange={({ target: { value } }) => setSearchText(value || '')}
-                  setSearchText={setSearchText}
-                  aria-label={`Search data`}
-                />
-                {showingMore && isMoreEnabled && (
-                  <MoreOrLessButton
-                    isMore={false}
-                    onClick={() => {
-                      setShowingMore(false);
-                      setShowingSearch(false);
-                      scrollToAgg();
-                    }}
-                  />
-                )}
-              </>,
-            ]
-          : []),
-        ...(showExcludeOption && !isEmpty(decoratedBuckets)
-          ? [
-              <IncludeExcludeButton
-                {...{
-                  dotField,
-                  isActive,
-                  isExclude,
-                  handleIncludeExcludeChange,
-                  buckets: decoratedBuckets,
-                  updateIsExclude: setIsExclude,
+        stateShowingSearch ? (
+          <>
+            <InputComponent
+              aria-label={`Search data`}
+              onChange={({ value }) => setSearchText(value || '')}
+              placeholder={searchPlaceholder}
+              type="text"
+              value={searchText}
+              {...themeAggregationsFilterInputProps}
+              {...themeTermAggFilterInputProps}
+            />
+
+            {showingMore && isMoreEnabled && (
+              <MoreOrLessButton
+                onClick={() => {
+                  setShowingMore(false);
+                  setShowingSearch(false);
+                  scrollToAgg();
                 }}
-              />,
-            ]
-          : []),
-      ]}
+                {...themeAggregationsMoreOrLessButtonProps}
+                {...themeTermAggMoreOrLessButtonProps}
+              />
+            )}
+          </>
+        ) : null,
+        showExcludeOption && !isEmpty(decoratedBuckets) ? (
+          <IncludeExcludeButton
+            {...{
+              dotField,
+              isActive,
+              isExclude,
+              handleIncludeExcludeChange,
+              buckets: decoratedBuckets,
+              updateIsExclude: setIsExclude,
+            }}
+          />
+        ) : null,
+      ].filter((filter) => filter !== null)}
+      stickyHeader
+      {...{ displayName, WrapperComponent, collapsible }}
     >
       <>
-        {headerTitle && <div className={`header`}>{headerTitle}</div>}
-        <div className={`bucket`}>
+        {headerTitle && <div className="header">{headerTitle}</div>}
+
+        <div
+          css={css`
+            width: 100%;
+          `}
+        >
           {decoratedBuckets.slice(0, showingMore ? Infinity : maxTerms).map((bucket, i, array) => (
             <Content
               id={constructEntryId({
@@ -214,6 +227,14 @@ const TermAgg = ({
                 field: dotField,
                 value: bucket.name,
               }}
+              css={css`
+                align-items: center;
+                cursor: pointer;
+                display: flex;
+                font-size: 0.8rem;
+                justify-content: space-between;
+                margin: 0.15rem 0;
+              `}
               onClick={() =>
                 handleValueClick({
                   field: dotField,
@@ -224,17 +245,28 @@ const TermAgg = ({
                 })
               }
             >
-              <span className="bucket-link" merge="toggle">
+              <span
+                className="bucket-link"
+                css={css`
+                  align-items: center;
+                  display: flex;
+                  line-height: 1rem;
+                `}
+                merge="toggle"
+              >
                 <input
-                  readOnly
-                  type="checkbox"
+                  aria-label={`Select ${bucket.name}`}
                   checked={isActive({
                     field: dotField,
                     value: bucket.name,
                   })}
-                  aria-label={`Select ${bucket.name}`}
+                  css={css`
+                    margin: 0 0.3rem 0 0;
+                  `}
                   id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                  readOnly
+                  type="checkbox"
                 />
                 <TextHighlight
                   content={
@@ -242,24 +274,39 @@ const TermAgg = ({
                       length: valueCharacterLimit || Infinity,
                     }) + ' '
                   }
-                  highlightText={highlightText}
+                  highlightText={searchText}
                 />
               </span>
+
               {bucket.doc_count && (
-                <span className="bucket-count">{formatNumber(bucket.doc_count)}</span>
+                <span
+                  className="bucket-count"
+                  css={css`
+                    background: ${colors?.grey?.[200]};
+                    border-radius: 0.2rem;
+                    display: inline-block;
+                    font-size: 0.7rem;
+                    padding: 0 0.2rem;
+                  `}
+                >
+                  {formatNumber(bucket.doc_count)}
+                </span>
               )}
             </Content>
           ))}
         </div>
+
         {isMoreEnabled && (
           <MoreOrLessButton
+            howManyMore={decoratedBuckets.length - maxTerms}
             isMore={!showingMore}
             onClick={() => {
               setShowingMore(!showingMore);
               setShowingSearch(!showingMore);
               if (showingMore) scrollToAgg();
             }}
-            howManyMore={decoratedBuckets.length - maxTerms}
+            {...themeAggregationsMoreOrLessButtonProps}
+            {...themeTermAggMoreOrLessButtonProps}
           />
         )}
       </>
@@ -267,4 +314,4 @@ const TermAgg = ({
   );
 };
 
-export default enhance(TermAgg);
+export default TermAgg;

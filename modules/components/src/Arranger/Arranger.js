@@ -1,6 +1,8 @@
 import React from 'react';
 import { get } from 'lodash';
 
+import { DataProvider } from '@/ContextProvider';
+
 import columnsToGraphql from '../utils/columnsToGraphql';
 import defaultApiFetcher from '../utils/api';
 
@@ -14,20 +16,18 @@ class Arranger extends React.Component {
     };
   }
 
-  fetchData = () => {
-    return (options) => {
-      const { apiFetcher = defaultApiFetcher } = this.props;
+  fetchData = (options) => {
+    const { apiFetcher = defaultApiFetcher } = this.props;
 
-      return apiFetcher({
-        endpoint: `/graphql`,
-        body: columnsToGraphql(options),
-      }).then((response) => {
-        const hits = get(response, `data.${options.config.type}.hits`) || {};
-        const data = get(hits, 'edges', []).map((e) => e.node);
-        const total = hits.total || 0;
-        return { total, data };
-      });
-    };
+    return apiFetcher({
+      endpoint: `/graphql`,
+      body: columnsToGraphql(options),
+    }).then((response) => {
+      const hits = get(response, `data.${options.config.type}.hits`) || {};
+      const data = get(hits, 'edges', []).map((e) => e.node);
+      const total = hits.total || 0;
+      return { total, data };
+    });
   };
 
   UNSAFE_componentWillMount() {
@@ -74,15 +74,19 @@ class Arranger extends React.Component {
       setSelectedTableRows: (selectedTableRows) => this.setState({ selectedTableRows }),
     };
 
-    if (component) {
-      return React.createElement(component, childProps);
-    } else if (render) {
-      return render(childProps);
-    } else if (children) {
-      return typeof children === 'function' ? children(childProps) : children;
-    } else {
-      return null;
-    }
+    return (
+      <DataProvider customFetcher={apiFetcher}>
+        {component
+          ? React.createElement(component, childProps)
+          : render
+          ? render(childProps)
+          : children
+          ? typeof children === 'function'
+            ? children(childProps)
+            : children
+          : null}
+      </DataProvider>
+    );
   }
 }
 

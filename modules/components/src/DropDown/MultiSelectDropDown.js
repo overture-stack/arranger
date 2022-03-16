@@ -1,10 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { ArrowIcon, CheckIcon, ResetIcon } from './../Icons';
+import { useEffect, useRef, useState } from 'react';
+
+import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
+import { useThemeContext } from '@/ThemeProvider';
+
 import './DropDown.css';
 
 let instances = 0;
 
-export default ({
+const MultiSelectDropDown = ({
+  arrowColor: customArrowColor,
+  arrowTransition: customArrowTransition,
   buttonAriaLabelClosed = 'Open selection menu',
   buttonAriaLabelOpen = 'Close selection menu',
   items = [],
@@ -26,6 +31,15 @@ export default ({
   const buttonRef = useRef();
   const panelRef = useRef();
   const itemsRef = useRef([]);
+  const {
+    components: {
+      DropDown: {
+        arrowColor: themeArrowColor,
+        arrowTransition: themeArrowTransition,
+        ...themeArrowProps
+      } = {},
+    } = {},
+  } = useThemeContext();
 
   const toggle = (item) => {
     if (selectedItemsMap.get(item.field)) {
@@ -207,8 +221,14 @@ export default ({
         className="dropDownButton"
       >
         <div className="dropDownButtonContent">{children}</div>
-        <ArrowIcon isOpen={isOpen} />
+        <ArrowIcon
+          fill={customArrowColor || themeArrowColor}
+          pointUp={isOpen}
+          transition={customArrowTransition || themeArrowTransition}
+          {...themeArrowProps}
+        />
       </button>
+
       {isOpen && (
         <div
           className="dropDownContent multiSelectDropDown"
@@ -281,3 +301,5 @@ export default ({
     </div>
   );
 };
+
+export default MultiSelectDropDown;

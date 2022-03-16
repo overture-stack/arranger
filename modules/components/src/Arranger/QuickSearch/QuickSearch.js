@@ -1,16 +1,18 @@
 import React from 'react';
 import { css } from '@emotion/react';
 import { compose, withState } from 'recompose';
-import SearchIcon from 'react-icons/lib/fa/search';
+import { FaSearch } from 'react-icons/fa';
 import Component from 'react-component-component';
+
+import TextHighlight from '@/TextHighlight';
+import TextInput from '@/Input';
 
 import { Value as SQONBubble } from '../../SQONView';
 import { currentFieldValue, toggleSQON } from '../../SQONView/utils';
-import TextInput from '../../Input';
-import TextHighlight from '../../TextHighlight';
+import internalTranslateSQONValue from '../../utils/translateSQONValue';
+
 import QuickSearchQuery from './QuickSearchQuery';
 import QuickSearchFieldsQuery from './QuickSearchFieldsQuery';
-import internalTranslateSQONValue from '../../utils/translateSQONValue';
 
 const currentValues = ({ sqon, primaryKeyField }) =>
   currentFieldValue({ sqon, dotField: primaryKeyField?.field, op: 'in' });
@@ -78,8 +80,8 @@ const QuickSearch = ({
   searchLowercase = false,
   searchTextDelimiters = ['\\s', ','],
   placeholder = 'Quick Search',
-  Icon = <SearchIcon />,
-  LoadingIcon = <SearchIcon />,
+  Icon = FaSearch,
+  LoadingIcon = FaSearch,
   PinnedValueComponent = SQONBubble,
   translateSQONValue = (x) => x,
   InputComponent = TextInput,
@@ -130,16 +132,18 @@ const QuickSearch = ({
                     ))}
                   </div>
                   <InputComponent
+                    aria-label={`Quick search`}
+                    componentRef={inputRef}
                     disabled={!enabled}
-                    icon={loading ? LoadingIcon : Icon}
+                    leftIcon={{
+                      Icon: loading ? LoadingIcon : Icon,
+                    }}
                     onBlur={hideDropdown}
+                    onChange={({ target: { value } = {} } = {}) => setValue(value || '')}
                     onFocus={showDropdown}
+                    placeholder={placeholder}
                     type="text"
                     value={value}
-                    componentRef={inputRef}
-                    placeholder={placeholder}
-                    onChange={({ target: { value } }) => setValue(value || '')}
-                    aria-label={`Quick search`}
                   />
                   <div
                     className={css`

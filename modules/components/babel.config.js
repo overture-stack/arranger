@@ -21,7 +21,7 @@ module.exports = {
           '^@/(.+)': './src/\\1',
         },
         cwd: 'packagejson',
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        extensions: ['.js', '.jsx', '.d.ts', '.ts', '.tsx'],
         root: ['./src'],
       },
     ],

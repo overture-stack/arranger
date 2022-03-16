@@ -1,4 +1,3 @@
-import React from 'react';
 import Spinner from 'react-spinkit';
 
 import DataTable, { ColumnsState } from '@/DataTable';
@@ -47,7 +46,7 @@ const Table = ({
               ),
               type: graphqlField,
             }}
-            fetchData={fetchData()}
+            fetchData={fetchData}
             onColumnsChange={columnState.toggle}
             onMultipleColumnsChange={columnState.toggleMultiple}
             onFilterChange={({ generateNextSQON, value }) => {

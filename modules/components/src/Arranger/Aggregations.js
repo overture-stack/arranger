@@ -1,33 +1,30 @@
-import React from 'react';
 import { sortBy } from 'lodash';
+import cx from 'classnames';
 
+import { AggsState, AggsQuery } from '@/Aggs';
+import aggComponents from '@/Aggs/aggComponentsMap';
 import noopFn, { emptyArrFn, emptyObjFn } from '@/utils/noopFns';
 
-import { AggsState, AggsQuery } from '../Aggs';
-import aggComponents from '../Aggs/aggComponentsMap.js';
-
-export { AggsWrapper } from '../Aggs';
-
-const BaseWrapper = ({ className, ...props }) => (
-  <div {...props} className={`aggregations ${className}`} />
+const BaseWrapper = ({ className, theme, ...props }) => (
+  <section {...props} className={cx('aggregations', className)} />
 );
 
 export const AggregationsListDisplay = ({
-  data,
-  onValueChange = noopFn,
   aggs,
-  graphqlField,
-  setSQON,
-  sqon,
-  containerRef,
   componentProps = {
-    getTermAggProps: emptyObjFn,
-    getRangeAggProps: emptyObjFn,
     getBooleanAggProps: emptyObjFn,
     getDatesAggProps: emptyObjFn,
+    getRangeAggProps: emptyObjFn,
+    getTermAggProps: emptyObjFn,
   },
-  getCustomItems = emptyArrFn, // ({ aggs }) => Array<{index: number, component: Component | Function}>
+  containerRef,
   customFacets = [],
+  data,
+  getCustomItems = emptyArrFn, // ({ aggs }) => Array<{index: number, component: Component | Function}>
+  graphqlField,
+  onValueChange = noopFn,
+  setSQON,
+  sqon,
 }) => {
   const aggComponentInstances =
     data &&
@@ -64,55 +61,57 @@ export const AggregationsListDisplay = ({
       const secondChunk = acc.slice(index, acc.length);
       return [...firstChunk, component(), ...secondChunk];
     }, aggComponentInstances);
+
     return inserted;
   } else {
+    // TODO: study what is returned here if !aggComponentInstances, are we handling it?
     return aggComponentInstances;
   }
 };
 
 export const AggregationsList = ({
+  aggs = [],
+  apiFetcher,
+  componentProps = {
+    getBooleanAggProps: emptyObjFn,
+    getDatesAggProps: emptyObjFn,
+    getRangeAggProps: emptyObjFn,
+    getTermAggProps: emptyObjFn,
+  },
+  containerRef,
+  customFacets = [],
+  debounceTime = 300,
+  getCustomItems,
+  graphqlField,
   onValueChange = noopFn,
   setSQON,
   sqon,
-  graphqlField,
-  apiFetcher,
-  containerRef,
-  componentProps = {
-    getTermAggProps: emptyObjFn,
-    getRangeAggProps: emptyObjFn,
-    getBooleanAggProps: emptyObjFn,
-    getDatesAggProps: emptyObjFn,
-  },
-  aggs = [],
-  debounceTime = 300,
-  getCustomItems,
-  customFacets = [],
 }) => (
   <AggsQuery
+    aggs={aggs}
     apiFetcher={apiFetcher}
     debounceTime={debounceTime}
     index={graphqlField}
-    sqon={sqon}
-    aggs={aggs}
     render={({ data }) =>
       AggregationsListDisplay({
-        data,
-        onValueChange,
         aggs,
+        componentProps,
+        containerRef,
+        customFacets,
+        data,
+        getCustomItems,
         graphqlField,
+        onValueChange,
         setSQON,
         sqon,
-        containerRef,
-        componentProps,
-        getCustomItems,
-        customFacets,
       })
     }
+    sqon={sqon}
   />
 );
 
 /**
- * customFacets allows custom content to be passed to each facet in the aggregation list.
+ * @param {array} customFacets Allows custom content to be passed to each facet in the aggregation list.
  *   This can overwrite any property in the agg object in the aggregation list
  *   The structure of this property is:
  *   [
@@ -123,46 +122,45 @@ export const AggregationsList = ({
  *       },
  *     },
  *   ]
- *
  */
 const Aggregations = ({
-  onValueChange = noopFn,
-  setSQON,
-  sqon,
-  graphqlField = '',
-  className = '',
-  style = {},
   apiFetcher,
-  Wrapper = BaseWrapper,
-  containerRef = null,
+  className = '',
   componentProps = {
     getTermAggProps: emptyObjFn,
     getRangeAggProps: emptyObjFn,
     getBooleanAggProps: emptyObjFn,
     getDatesAggProps: emptyObjFn,
   },
+  containerRef = null,
   customFacets = [],
+  graphqlField = '',
+  onValueChange = noopFn,
+  setSQON,
+  sqon,
+  style = {},
+  Wrapper = BaseWrapper,
 }) => {
   return (
-    <Wrapper style={style} className={className}>
+    <Wrapper className={className} style={style}>
       <AggsState
         apiFetcher={apiFetcher}
         graphqlField={graphqlField}
         render={(aggsState) => {
-          const aggs = aggsState.aggs.filter((x) => x.show);
+          const aggs = aggsState.aggs.filter((agg) => agg.show);
+
           return (
             <AggregationsList
+              aggs={aggs}
+              apiFetcher={apiFetcher}
+              componentProps={componentProps}
+              containerRef={containerRef}
+              customFacets={customFacets}
+              graphqlField={graphqlField}
               onValueChange={onValueChange}
               setSQON={setSQON}
-              style={style}
-              Wrapper={Wrapper}
-              containerRef={containerRef}
-              componentProps={componentProps}
-              apiFetcher={apiFetcher}
-              graphqlField={graphqlField}
               sqon={sqon}
-              aggs={aggs}
-              customFacets={customFacets}
+              Wrapper={Wrapper}
             />
           );
         }}

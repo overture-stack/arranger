@@ -103,7 +103,7 @@ div {
 /** styling for the aggregations ***/
 /***********************************/
 
-.aggregation-card {
+.aggregation-group {
   padding: 10px;
   margin-top: 5px;
   margin-bottom: 5px;
@@ -113,76 +113,76 @@ div {
   border-width: 1px 0 1px 0;
   border-left: solid 5px;
 }
-.aggregation-card:first-child {
+.aggregation-group:first-child {
   margin-top: 0;
 }
-.aggregation-card:nth-child(5n + 1) {
+.aggregation-group:nth-child(5n + 1) {
   border-left-color: #a42c90;
 }
-.aggregation-card:nth-child(5n + 2) {
+.aggregation-group:nth-child(5n + 2) {
   border-left-color: #00afed;
 }
-.aggregation-card:nth-child(5n + 3) {
+.aggregation-group:nth-child(5n + 3) {
   border-left-color: #ff9324;
 }
-.aggregation-card:nth-child(5n + 4) {
+.aggregation-group:nth-child(5n + 4) {
   border-left-color: #009bb8;
 }
-.aggregation-card:nth-child(5n + 5) {
+.aggregation-group:nth-child(5n + 5) {
   border-left-color: #d8202f;
 }
-.aggregation-card .header {
+.aggregation-group .header {
   margin-top: -10px;
 }
-.aggregation-card .title-wrapper {
+.aggregation-group .title-wrapper {
   padding-top: 10px;
   padding-bottom: 7px;
   color: #404c9a;
 }
-.aggregation-card .title-wrapper,
-.aggregation-card .filter {
+.aggregation-group .title-wrapper,
+.aggregation-group .filter {
   border-bottom: solid 1px #e0e1e6;
 }
-.aggregation-card .title-wrapper.collapsed {
+.aggregation-group .title-wrapper.collapsed {
   padding-bottom: 0px;
   border-bottom: none;
 }
-.aggregation-card .title-control {
+.aggregation-group .title-control {
   display: flex;
   cursor: pointer;
 }
-.aggregation-card .title-wrapper .title {
+.aggregation-group .title-wrapper .title {
   color: #404c9a;
   font-weight: bolder;
   font-size: 0.9rem;
   font-family: 'Open Sans', sans-serif;
   margin-left: 5px;
 }
-.aggregation-card .filter {
+.aggregation-group .filter {
   padding: 7px 0;
 }
-.aggregation-card input[type='checkbox'] {
+.aggregation-group input[type='checkbox'] {
   pointer-events: none;
   margin-right: 5px;
   flex-shrink: 0;
   vertical-align: middle;
 }
-.aggregation-card .filter .showMore-wrapper {
+.aggregation-group .filter .showMore-wrapper {
   margin-left: 5px;
   margin-top: 0px;
 }
-.aggregation-card .bucket {
+.aggregation-group .bucket {
   padding-top: 5px;
 }
-.aggregation-card .bucket.collapsed {
+.aggregation-group .bucket.collapsed {
   padding-top: 0px;
 }
-.aggregation-card .bucket-item {
+.aggregation-group .bucket-item {
   padding-top: 5px;
   padding-bottom: 5px;
   cursor: pointer;
 }
-.aggregation-card .bucket-item .bucket-count {
+.aggregation-group .bucket-item .bucket-count {
   border-radius: 5px;
   background-color: rgba(169, 173, 192, 0.3);
   color: #343434;
@@ -193,7 +193,7 @@ div {
   align-items: center;
   margin-left: auto;
 }
-.aggregation-card .bucket .header {
+.aggregation-group .bucket .header {
   font-size: 11px;
   margin-top: 4px;
   text-transform: uppercase;
@@ -220,16 +220,16 @@ div {
   content: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+ICA8Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iNiIgZmlsbD0iIzkwMjc4ZSIgLz4gIDxsaW5lIHgxPSIyIiB5MT0iNiIgeDI9IjEwIiB5Mj0iNiIgc3R5bGU9InN0cm9rZTp3aGl0ZTsgc3Ryb2tlLXdpZHRoOjIiIC8+PC9zdmc+);
 }
 
-.aggregation-card .react-datepicker-wrapper input,
-.aggregation-card .bucket-item,
-.aggregation-card .input-range__label,
-.aggregation-card .filter,
-.aggregation-card .toggle-button {
+.aggregation-group .react-datepicker-wrapper input,
+.aggregation-group .bucket-item,
+.aggregation-group .input-range__label,
+.aggregation-group .filter,
+.aggregation-group .toggle-button {
   font-size: 0.8rem;
 }
 
 .facetContainer .react-datepicker-wrapper input,
-.aggregation-card .react-datepicker-wrapper input {
+.aggregation-group .react-datepicker-wrapper input {
   padding: 5px;
   border-radius: 10px;
   border: 1px solid #cacbcf;
@@ -239,7 +239,7 @@ div {
   width: 130px;
 }
 
-.aggregation-card .react-datepicker-wrapper input {
+.aggregation-group .react-datepicker-wrapper input {
   width: 100px;
 }
 
@@ -566,7 +566,7 @@ div {
   color: #2b388f;
 }
 
-.aggregation-card .toggle-button .bucket-count,
+.aggregation-group .toggle-button .bucket-count,
 .facetViewWrapper .bucket-count {
   border-radius: 5px;
   background-color: #e7e8ed;

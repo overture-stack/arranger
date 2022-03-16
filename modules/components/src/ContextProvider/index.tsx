@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 import defaultApiFetcher from '@/utils/api';
 import columnsToGraphql from '@/utils/columnsToGraphql';
-import { arrangerTheme, ThemeProvider } from '@/ThemeProvider';
+import { ThemeProvider } from '@/ThemeProvider';
 
 import {
   DataContextInterface,
@@ -14,14 +14,11 @@ import {
 
 export const DataContext = createContext<DataContextInterface>({} as DataContextInterface);
 // returning "as interface" so the type is explicit while integrating into another app
-if (process.env.NODE_ENV === 'development') {
-  DataContext.displayName = 'ArrangerDataContext';
-}
 
 export const DataProvider = ({
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
-  theme = arrangerTheme.default,
+  theme,
   url = '',
 }: DataProviderProps): React.ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
@@ -62,3 +59,8 @@ export const useDataContext = ({
     fetchData: localFetcher || defaultContext.fetchData,
   };
 };
+
+if (process.env.NODE_ENV === 'development') {
+  DataContext.displayName = 'ArrangerDataContext';
+  DataProvider.displayName = 'ArrangerDataProvider';
+}
