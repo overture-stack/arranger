@@ -50,7 +50,7 @@ export default async ({
 } = {}) => {
   const esClient = buildEsClient(esHost, esUser, esPass);
   const router = express.Router();
-  console.log('enableLogs', enableLogs);
+  enableLogs && console.log('Extensive Logging enabled');
 
   console.log(
     `Starting Arranger server... ${

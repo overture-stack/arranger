@@ -42,6 +42,12 @@
     "__typename": "AggState"
   },
   {
+    "field": "donors__age",
+    "active": true,
+    "show": true,
+    "__typename": "AggState"
+  },
+  {
     "field": "donors__gender",
     "active": true,
     "show": true,
@@ -200,7 +206,7 @@
   {
     "field": "repositories__organization",
     "active": true,
-    "show": false,
+    "show": true,
     "__typename": "AggState"
   },
   {
@@ -212,7 +218,7 @@
   {
     "field": "study_id",
     "active": true,
-    "show": false,
+    "show": true,
     "__typename": "AggState"
   }
 ]

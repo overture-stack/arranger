@@ -511,6 +511,9 @@ export default {
           ethnicity: {
             type: 'keyword',
           },
+          age: {
+            type: 'integer',
+          },
           gender: {
             type: 'keyword',
           },

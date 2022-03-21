@@ -1,17 +1,21 @@
 import { flattenDeep } from 'lodash';
 
 export let esToColumnType = {
-  string: 'string',
-  object: 'string',
-  text: 'string',
   boolean: 'boolean',
+  byte: 'number',
   date: 'date',
-  keyword: 'string',
-  id: 'string',
-  long: 'number',
   double: 'number',
-  integer: 'number',
   float: 'number',
+  half_float: 'number',
+  id: 'string',
+  integer: 'number',
+  keyword: 'string',
+  long: 'number',
+  object: 'string',
+  scaled_float: 'number',
+  string: 'string',
+  text: 'string',
+  unsigned_long: 'number',
 };
 
 let appendDot = (x) => (x ? x + '.' : '');

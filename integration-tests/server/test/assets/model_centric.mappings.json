@@ -115,6 +115,9 @@
           }
         }
       },
+      "age": {
+        "type": "integer"
+      },
       "gender": {
         "type": "keyword"
       },

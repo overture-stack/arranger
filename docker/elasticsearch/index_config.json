@@ -37,6 +37,9 @@
             "type": "keyword",
             "copy_to": ["file_autocomplete"]
           },
+          "age": {
+            "type": "byte"
+          },
           "gender": {
             "type": "keyword"
           },

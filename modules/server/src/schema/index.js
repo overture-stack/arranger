@@ -56,13 +56,15 @@ export default ({
       },
     ],
   ];
-  let typeDefs = generateTypeDefs({
+
+  const typeDefs = generateTypeDefs({
     types: typesWithSets,
     rootTypes,
     scalarTypes,
     enableAdmin,
   });
-  let resolvers = generateResolvers({
+
+  const resolvers = generateResolvers({
     types: typesWithSets,
     rootTypes,
     scalarTypes,
@@ -70,7 +72,7 @@ export default ({
     getServerSideFilter,
   });
 
-  let schema = makeExecutableSchema({
+  const schema = makeExecutableSchema({
     typeDefs,
     resolvers,
     resolverValidationOptions: {

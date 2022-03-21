@@ -3,9 +3,7 @@ version: '3.7'
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
-    ports:
-      - 9200:9200
-      - 9300:9300
+
     environment:
       discovery.type: single-node
       cluster.name: workflow.elasticsearch
@@ -17,6 +15,10 @@ services:
       options:
         max-size: '50m'
         max-file: '10'
+    ports:
+      - 9200:9200
+      - 9300:9300
+
     healthcheck:
       test: 'curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1'
       interval: 1m30s
@@ -25,33 +27,33 @@ services:
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.1
-    ports:
-      - 5601:5601
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '50m'
-        max-file: '10'
+
     depends_on:
       - elasticsearch
     environment:
       LOGGING_QUIET: 'true'
       ELASTICSEARCH_USERNAME: '$ES_USER'
       ELASTICSEARCH_PASSWORD: '$ES_PASS'
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '50m'
+        max-file: '10'
+    ports:
+      - 5601:5601
 
   arranger-server:
     build:
       context: ./
-      target: server
       dockerfile: ./docker/Dockerfile.local
+      target: server
     container_name: arranger-server.local
-    depends_on:
-      - elasticsearch
-    ports:
-      - 5050:5050
     environment:
-      ES_HOST: http://elasticsearch:9200
+      ENABLE_LOGS: '${ENABLE_LOGS:-false}'
+      ES_HOST: '${ES_HOST:-http://host.docker.internal:9200}'
       ES_USER: '$ES_USER'
       ES_PASS: '$ES_PASS'
+    ports:
+      - 5050:5050
     volumes:
-      - '${CONFIG_PATH}:/app/modules/server/configs'
+      - '${CONFIG_PATH:-./modules/server/configs}:/app/modules/server/configs'

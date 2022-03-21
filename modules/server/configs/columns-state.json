@@ -98,6 +98,18 @@
       "type": "list",
       "sortable": false,
       "canChangeShow": true,
+      "query": "donors {\n                hits {\n                edges {\n                node {\n                age\n              }\n              }\n              }\n              }",
+      "jsonPath": "$.donors.hits.edges[*].node.age",
+      "id": null,
+      "field": "donors.age",
+      "accessor": null,
+      "__typename": "Column"
+    },
+    {
+      "show": true,
+      "type": "list",
+      "sortable": false,
+      "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                gender\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.gender",
       "id": null,

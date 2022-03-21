@@ -78,21 +78,26 @@ A bit more friendly "quickstart", if you just want to get things started
 
 ```bash
 # Start all services at once, using some default settings.
-# This runs the following services: Elasticsearch, kibana, arranger-server, and arranger-ui
+# This runs the following services: Elasticsearch, Kibana, and Arranger Server:
   make start
 
-# ^^^ which runs the following command behind the scenes:
+# ^^^^ ^^^^^ which stands for the following command behind the scenes:
 # ES_USER=elastic ES_PASS=myelasticpassword docker-compose -f docker-compose.yml up -d -build
-# Note: these ES_* values may be customized when running your own Arranger instance
 
+# Alternatively, you could start the services separately, like so:
+  make startES # Elasticsearch
+  make startServer # Arranger Server
+
+# Note: The ES_* environment values may be customized when running your own Arranger instance. They can be found atop the `Makefile`.
 
 ---
-# Afterwards, in another bash process, you may seed an example file_centric index
+# Afterwards, in another bash process, you may seed an example/mock file_centric index:
   make init-es
 
-# ^^^ which runs the following command behind the scenes:
+# ^^^^ ^^^^^^^ which runs the following command behind the scenes:
 # ./docker/elasticsearch/load-es-data.sh ./docker/elasticsearch elastic myelasticpassword
-# That SH script may give you ideas on how to automate uploading indexes to your instance.
+
+# That script file may give you ideas on how to automate uploading indexes to your instance.
 
 
 ---

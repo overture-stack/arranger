@@ -4,18 +4,22 @@ import convert from 'convert-units';
 export default async () => gql`
   scalar JSON
   enum ExtendedFieldType {
-    string
-    object
-    text
     boolean
+    byte
     date
-    keyword
-    id
-    long
     double
-    integer
     float
+    half_float
+    id
+    integer
+    keyword
+    long
     nested
+    object
+    scaled_float
+    string
+    text
+    unsigned_long
   }
   # enum NumericTypeUnit {
   #   ${convert().measures()}

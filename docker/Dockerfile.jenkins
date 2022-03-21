@@ -2,6 +2,7 @@ ARG APP_FOLDER=/app
 ARG APP_GID=1000
 ARG APP_UID=1000
 ARG APP_USER=node
+ARG ENABLE_LOGS=false
 ARG ES_HOST=http://localhost:9200
 
 #######################################################
@@ -33,6 +34,8 @@ FROM builder as server
 
 ARG APP_FOLDER
 ARG APP_USER
+ARG ENABLE_LOGS
+ENV ENABLE_LOGS=$ENABLE_LOGS
 
 WORKDIR $APP_FOLDER
 
