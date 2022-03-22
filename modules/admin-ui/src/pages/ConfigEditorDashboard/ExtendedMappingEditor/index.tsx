@@ -66,31 +66,37 @@ interface IStateContainer {
 }
 
 export const EXTENDED_FIELD_TYPES: {
-  string: 'string';
-  object: 'object';
-  text: 'text';
   boolean: 'boolean';
   date: 'date';
-  keyword: 'keyword';
-  id: 'id';
-  long: 'long';
   double: 'double';
-  integer: 'integer';
   float: 'float';
+  half_float: 'float';
+  id: 'id';
+  integer: 'integer';
+  keyword: 'keyword';
+  long: 'long';
   nested: 'nested';
+  object: 'object';
+  scaled_float: 'float';
+  string: 'string';
+  text: 'text';
+  unsigned_long: 'long';
 } = {
-  string: 'string',
-  object: 'object',
-  text: 'text',
   boolean: 'boolean',
   date: 'date',
-  keyword: 'keyword',
-  id: 'id',
-  long: 'long',
   double: 'double',
-  integer: 'integer',
   float: 'float',
+  half_float: 'float',
+  id: 'id',
+  integer: 'integer',
+  keyword: 'keyword',
+  long: 'long',
   nested: 'nested',
+  object: 'object',
+  scaled_float: 'float',
+  string: 'string',
+  text: 'text',
+  unsigned_long: 'long',
 };
 
 /**********************
@@ -124,24 +130,23 @@ const Dashboard: React.ComponentType<IExternalProps> = connect(
     selectedField: extendedMapping[0].field,
   };
 
-  const onFieldFilterChange = ({ state, setState }: IStateContainer) => (
-    e: React.SyntheticEvent<HTMLInputElement>,
-  ) =>
-    setState({
-      ...state,
-      filter: { ...state.filter, field: e.currentTarget.value },
-    });
+  const onFieldFilterChange =
+    ({ state, setState }: IStateContainer) =>
+    (e: React.SyntheticEvent<HTMLInputElement>) =>
+      setState({
+        ...state,
+        filter: { ...state.filter, field: e.currentTarget.value },
+      });
 
-  const onFilterOptionSelect = (s: IStateContainer) => (field: keyof typeof extendedMapping[0]) => (
-    e: ISelectOption,
-  ) =>
-    s.setState({
-      ...s.state,
-      filter: {
-        ...s.state.filter,
-        [field]: e.value,
-      },
-    });
+  const onFilterOptionSelect =
+    (s: IStateContainer) => (field: keyof typeof extendedMapping[0]) => (e: ISelectOption) =>
+      s.setState({
+        ...s.state,
+        filter: {
+          ...s.state.filter,
+          [field]: e.value,
+        },
+      });
 
   const setSelectedField = (s: IStateContainer) => (field: string) => () => {
     s.setState({ ...s.state, selectedField: field });

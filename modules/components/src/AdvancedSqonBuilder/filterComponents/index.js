@@ -40,7 +40,7 @@ const FieldOpModifier = ({
       // temporary, needs to handle errors too
       console.log('fieldExtendedMapping: ', fieldExtendedMapping);
       const { type, unit } = fieldExtendedMapping || {};
-      return ['keyword', 'id'].includes(type) ? (
+      return ['id', 'keyword', 'string', 'text'].includes(type) ? (
         <TermFilter
           field={field}
           arrangerProjectId={arrangerProjectId}
@@ -56,7 +56,16 @@ const FieldOpModifier = ({
           opDisplayNameMap={opDisplayNameMap}
           ContainerComponent={ContainerComponent}
         />
-      ) : ['long', 'float', 'integer', 'date'].includes(type) ? (
+      ) : [
+          'byte',
+          'date',
+          'float',
+          'half_float',
+          'integer',
+          'long',
+          'scaled_float',
+          'unsigned_long',
+        ].includes(type) ? (
         <RangeFilter
           field={field}
           loading={loading}

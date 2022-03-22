@@ -12,7 +12,7 @@ export const extendFields = (fields) =>
     quickSearchEnabled: false,
     unit: null,
     displayValues: {},
-    rangeStep: type === 'float' || type === 'double' ? 0.01 : 1,
+    rangeStep: ['double', 'float', 'half_float', 'scaled_float'].includes(type) ? 0.01 : 1,
     ...rest,
   }));
 

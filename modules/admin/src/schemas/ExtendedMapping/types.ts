@@ -1,18 +1,22 @@
 import { Resolver } from '../types';
 
 enum E_ExtendedFieldType {
-  string = 'string',
-  object = 'object',
-  text = 'text',
   boolean = 'boolean',
+  byte = 'integer',
   date = 'date',
-  keyword = 'keyword',
-  id = 'id',
-  long = 'long',
   double = 'double',
-  integer = 'integer',
   float = 'float',
+  half_float = 'float',
+  id = 'id',
+  integer = 'integer',
+  keyword = 'keyword',
+  long = 'long',
   nested = 'nested',
+  object = 'object',
+  scaled_float = 'float',
+  string = 'string',
+  text = 'text',
+  unsigned_long = 'long',
 }
 
 enum E_NumericTypeUnit {
