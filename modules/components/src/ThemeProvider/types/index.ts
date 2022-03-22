@@ -3,7 +3,7 @@ import { Shape, ShapeOptions } from './shape';
 import { Spacing, SpacingOptions } from './spacing';
 import { Colors, ColorsOptions, Palette, PaletteOptions } from './palette';
 
-export interface DefaultTheme {
+export interface BaseThemeInterface {
   colors?: Colors;
   components?: Components;
   palette: Palette;
@@ -25,25 +25,25 @@ export interface ThemeOptions {
   zIndex?: Record<string, number>;
 }
 
-export type ThemeProcessorFn = <Theme = DefaultTheme>(outerTheme: Theme) => Theme;
-export type CustomThemeType<Theme = DefaultTheme> = Theme | ThemeProcessorFn;
+export type ThemeProcessorFn = <Theme = BaseThemeInterface>(inputTheme: Theme) => Theme;
+export type CustomThemeType<Theme = BaseThemeInterface> = Theme | ThemeProcessorFn;
 
-export type ThemeAggregatorFn = <Theme = DefaultTheme>(
+export type ThemeAggregatorFn = <Theme = BaseThemeInterface>(
   partial: CustomThemeType<Theme> | CustomThemeType<Theme>[],
 ) => ThemeOptions;
 
-export interface ThemeContextInterface<Theme = DefaultTheme> {
+export interface ThemeContextInterface<Theme = BaseThemeInterface> {
   aggregateTheme: ThemeAggregatorFn;
   theme: Theme;
 }
 
-export interface ThemeProviderProps<Theme = DefaultTheme> {
+export interface ThemeProviderProps<Theme = BaseThemeInterface> {
   children?: React.ReactNode;
   location?: string; // helpful for troubleshooting multiple theme providers
   theme?: CustomThemeType<Theme>;
   useArrangerTheme?: boolean;
 }
 
-export interface WithThemeProps<Theme = DefaultTheme> {
+export interface WithThemeProps<Theme = BaseThemeInterface> {
   theme?: Theme;
 }

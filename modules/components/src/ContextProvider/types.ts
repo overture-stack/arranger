@@ -2,7 +2,7 @@ import { Dispatch } from 'react';
 import { Method } from 'axios';
 import SQON from 'sqon-builder';
 
-import { CustomThemeType, DefaultTheme } from '@/ThemeProvider';
+import { CustomThemeType, BaseThemeInterface } from '@/ThemeProvider';
 
 export type APIFetcherFn = (options: {
   body: any;
@@ -12,7 +12,7 @@ export type APIFetcherFn = (options: {
   url?: string;
 }) => Promise<any>;
 
-export interface DataProviderProps<Theme = DefaultTheme> {
+export interface DataProviderProps<Theme = BaseThemeInterface> {
   children?: React.ReactNode;
   customFetcher?: APIFetcherFn;
   url?: string;

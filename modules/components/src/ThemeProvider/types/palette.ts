@@ -1,7 +1,7 @@
-import defaultTheme from '@/ThemeProvider/defaultTheme';
+import baseTheme from '@/ThemeProvider/baseTheme';
 import { RecursivePartial } from '@/utils/types';
 
-export type ColorNames = keyof typeof defaultTheme.colors;
+export type ColorNames = keyof typeof baseTheme.colors;
 
 export interface Common {
   black: string;
@@ -31,5 +31,5 @@ export type ColorsOptions = RecursivePartial<Colors>;
 
 export type Mode = 'light' | 'dark';
 
-export type Palette = typeof defaultTheme.palette;
+export type Palette = typeof baseTheme.palette;
 export type PaletteOptions = RecursivePartial<Palette>;
