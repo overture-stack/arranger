@@ -98,6 +98,18 @@
       "type": "list",
       "sortable": false,
       "canChangeShow": true,
+      "query": "donors {\n                hits {\n                edges {\n                node {\n                age\n              }\n              }\n              }\n              }",
+      "jsonPath": "$.donors.hits.edges[*].node.age",
+      "id": null,
+      "field": "donors.age",
+      "accessor": null,
+      "__typename": "Column"
+    },
+    {
+      "show": true,
+      "type": "list",
+      "sortable": false,
+      "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                gender\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.gender",
       "id": null,
@@ -138,6 +150,18 @@
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_type",
       "id": null,
       "field": "donors.specimens.samples.sample_type",
+      "accessor": null,
+      "__typename": "Column"
+    },
+    {
+      "show": true,
+      "type": "list",
+      "sortable": false,
+      "canChangeShow": true,
+      "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                collection_date\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
+      "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.collection_date",
+      "id": null,
+      "field": "donors.specimens.samples.collection_date",
       "accessor": null,
       "__typename": "Column"
     },

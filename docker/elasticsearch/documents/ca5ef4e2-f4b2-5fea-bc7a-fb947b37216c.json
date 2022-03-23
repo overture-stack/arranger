@@ -72,7 +72,8 @@
               "matched_normal_submitter_sample_id": "sample-x24-11a",
               "randomField7": "we can define any SAMPLE field. For example, randomField7",
               "randomField8": "as a second example, we can define another random SAMPLE field called randomField8",
-              "randomField9": "alternatively, put some extra SAMPLE fields here"
+              "randomField9": "alternatively, put some extra SAMPLE fields here",
+              "collection_date": "2021-11-23T00:00:00.000Z"
             }
           ],
           "tumour_normal_designation": "Tumour",

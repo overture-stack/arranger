@@ -70,6 +70,7 @@
               "submitter_sample_id": "internal_sample_1",
               "sample_type": "Total RNA",
               "matched_normal_submitter_sample_id": "sample-x24-11a",
+              "collection_date": "2021-06-14T00:00:00.000Z",
               "randomField7": "we can define any SAMPLE field. For example, randomField7",
               "randomField8": "as a second example, we can define another random SAMPLE field called randomField8",
               "randomField9": "alternatively, put some extra SAMPLE fields here"

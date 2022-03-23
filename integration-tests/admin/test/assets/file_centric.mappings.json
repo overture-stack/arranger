@@ -254,6 +254,9 @@
                       "external_id": {
                         "type": "keyword"
                       },
+                      "age": {
+                        "type": "integer"
+                      },
                       "gender": {
                         "type": "keyword"
                       },

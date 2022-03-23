@@ -2,15 +2,18 @@ import React from 'react';
 import DatePicker from 'react-datepicker';
 import { css } from '@emotion/react';
 import { addDays, endOfDay, startOfDay, subDays } from 'date-fns';
-
-import { removeSQON, replaceSQON } from '../SQONView/utils';
-import AggsWrapper from './AggsWrapper';
-
 import 'react-datepicker/dist/react-datepicker.css';
+
+import { removeSQON, replaceSQON } from '@/SQONView/utils';
+
+import AggsWrapper from './AggsWrapper';
 import './DatesAgg.css';
 
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
+
+const dateFormat = 'yyyy/MM/dd';
+const fieldPlaceholder = dateFormat.toUpperCase();
 
 class DatesAgg extends React.Component {
   constructor(props) {
@@ -108,10 +111,11 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             aria-label={`Pick start date`}
             className="start-date"
+            dateFormat={dateFormat}
             isClearable
             onChange={this.handleDateChange('start')}
             openToDate={startDate || minDate}
-            placeholderText="YYYY/MM/DD"
+            placeholderText={fieldPlaceholder}
             popperPlacement={facetView ? 'bottom-start' : 'top-start'}
             selected={startDate}
           />
@@ -127,10 +131,11 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             aria-label={`Pick end date`}
             className="end-date"
+            dateFormat={dateFormat}
             isClearable
             onChange={this.handleDateChange('end')}
             openToDate={endDate || maxDate}
-            placeholderText="YYYY/MM/DD"
+            placeholderText={fieldPlaceholder}
             popperPlacement={facetView ? 'bottom-end' : 'top-start'}
             selected={endDate}
           />

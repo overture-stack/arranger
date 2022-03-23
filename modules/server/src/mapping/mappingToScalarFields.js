@@ -1,15 +1,18 @@
 export let esToGraphqlTypeMap = {
+  boolean: 'Boolean',
+  byte: 'Int',
+  date: 'String',
+  double: 'Float',
+  float: 'Float',
+  half_float: 'Float',
+  integer: 'Int',
   keyword: 'String',
+  long: 'Int',
+  object: 'JSON', // https://github.com/overture-stack/arranger/blob/master/modules/schema/src/index.js#L9
+  scaled_float: 'Float',
   string: 'String',
   text: 'String',
-  date: 'String',
-  boolean: 'Boolean',
-  long: 'Float',
-  double: 'Float',
-  integer: 'Float',
-  float: 'Float',
-  // https://github.com/overture-stack/arranger/blob/master/modules/schema/src/index.js#L9
-  object: 'JSON',
+  unsigned_long: 'Int',
 };
 
 const maybeArray = (field, extendedFields, type, parent) => {

@@ -124,10 +124,14 @@ const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), 
 );
 
 export default {
+  boolean: composedBooleanAgg,
+  byte: composedRangeAgg,
+  date: composedDatesAgg,
+  float: composedRangeAgg,
+  half_float: composedRangeAgg,
+  integer: composedRangeAgg,
   keyword: composedTermAgg,
   long: composedRangeAgg,
-  float: composedRangeAgg,
-  boolean: composedBooleanAgg,
-  date: composedDatesAgg,
-  integer: composedRangeAgg,
+  scaled_float: composedRangeAgg,
+  unsigned_long: composedRangeAgg,
 };

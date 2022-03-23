@@ -1,8 +1,10 @@
 .PHONY:
 
 # Required System files
-DOCKER_COMPOSE_EXE := $(shell which docker-compose)
 CURL_EXE := $(shell which curl)
+DOCKER_COMPOSE_EXE := $(shell which docker-compose)
+ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 
 # STDOUT Formatting
 BLUE := $$(echo "\033[0;34m")
@@ -10,32 +12,34 @@ GREEN := $$(echo "\033[0;32m")
 MAGENTA := $$(echo "\033[0;35m")
 RED := $$(echo  "\033[0;31m")
 YELLOW := $$(echo "\033[0;33m")
+
 END := $$(echo  "\033[0m")
 ERROR_HEADER :=  [ERROR]:
 INFO_HEADER := "**************** "
+
 DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
+
 # Variables
-ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-CONFIG_PATH := $(ROOT_DIR)/modules/server/configs
-RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
 DOCKER_DIR := $(ROOT_DIR)/docker
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
-ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
 ES_HOST := http://localhost:9200
+ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
 ES_PASS := myelasticpassword
 ES_USER := elastic
+RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
+
 ES_BASIC_AUTH := $(shell printf "$(ES_USER):$(ES_PASS)" | base64)
+
 
 # Commands
 DOCKER_COMPOSE_CMD := \
-	CONFIG_PATH=$(CONFIG_PATH) \
-  ES_HOST=$(ES_HOST) \
   ES_USER=$(ES_USER) \
 	ES_PASS=$(ES_PASS) \
   $(DOCKER_COMPOSE_EXE) -f \
 	$(ROOT_DIR)/docker-compose.yml
 DC_UP_CMD := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 $(DOCKER_COMPOSE_CMD) up -d --build
+
 
 #############################################################
 # Internal Targets
@@ -144,16 +148,21 @@ ps:
 	@$(DOCKER_COMPOSE_CMD) ps
 
 start:
-	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: elasticsearch, kibana, and arranger-server" $(END)
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: Elasticsearch, Kibana, and Arranger Server" $(END)
 	@$(DC_UP_CMD)
-	@echo $(GREEN)$(INFO_HEADER) Succesfully started all arranger services! $(GREEN)
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started all Arranger services! $(GREEN)
 	@echo $(MAGENTA) "You may have to populate ES and restart the Server container. (Use 'make init-es' for mock data)" $(END)
 
 startES:
-	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: elasticsearch" $(END)
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Elasticsearch" $(END)
 	@COMPOSE_PROJECT_NAME=Arranger_ES $(DC_UP_CMD) elasticsearch
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
-	@echo $(MAGENTA) "You may have to populate it. (Use 'make init-es' for mock data)" $(END)
+	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make init-es' for mock data)" $(END)
+
+startServer:
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Arranger Server" $(END)
+	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server 
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 
 test:
 
