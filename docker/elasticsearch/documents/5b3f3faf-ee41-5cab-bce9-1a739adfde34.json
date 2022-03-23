@@ -62,6 +62,7 @@
         }
       ],
       "age": 20,
+      "vaccinated": true,
       "randomField4": "we can define any DONOR field. For example, randomField4",
       "randomField5": "as a second example, we can define another random DONOR field called randomField5",
       "randomField6": "alternatively, put some extra DONOR fields here"

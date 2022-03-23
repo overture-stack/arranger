@@ -92,6 +92,9 @@
           "submitter_donor_id": {
             "type": "keyword",
             "copy_to": ["file_autocomplete"]
+          },
+          "vaccinated": {
+            "type": "boolean"
           }
         }
       },

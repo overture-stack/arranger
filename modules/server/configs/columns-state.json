@@ -275,6 +275,18 @@
     },
     {
       "show": false,
+      "type": "list",
+      "sortable": false,
+      "canChangeShow": true,
+      "query": "donors {\n                hits {\n                edges {\n                node {\n                vaccinated\n              }\n              }\n              }\n              }",
+      "jsonPath": "$.donors.hits.edges[*].node.vaccinated",
+      "id": null,
+      "field": "donors.vaccinated",
+      "accessor": null,
+      "__typename": "Column"
+    },
+    {
+      "show": false,
       "type": "number",
       "sortable": true,
       "canChangeShow": true,

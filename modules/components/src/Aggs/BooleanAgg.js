@@ -1,17 +1,18 @@
-import React from 'react';
-import AggsWrapper from './AggsWrapper.js';
-import { replaceSQON, removeSQON } from '../SQONView/utils';
-import './BooleanAgg.css';
-import TextHighlight from '../TextHighlight';
-import ToggleButton from '../ToggleButton';
-import formatNumber from '../utils/formatNumber';
+import { replaceSQON, removeSQON } from '@/SQONView/utils';
+import TextHighlight from '@/TextHighlight';
+import ToggleButton from '@/ToggleButton';
+import formatNumber from '@/utils/formatNumber';
+import noopFn from '@/utils/noopFns';
 
-export default ({
-  field,
+import AggsWrapper from './AggsWrapper.js';
+import './BooleanAgg.css';
+
+const BooleanAgg = ({
   buckets,
-  handleValueClick = () => {},
-  isActive = () => false,
   collapsible,
+  field,
+  handleValueClick = noopFn,
+  isActive = () => false,
   WrapperComponent,
   displayName,
   highlightText,
@@ -33,7 +34,6 @@ export default ({
     {},
   ),
   type,
-  ...rest
 }) => {
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
   const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false);
@@ -86,14 +86,15 @@ export default ({
     }
   };
 
-  const options = (displayKeys.any
-    ? [
-        {
-          value: undefined,
-          title: displayKeys.any,
-        },
-      ]
-    : []
+  const options = (
+    displayKeys.any
+      ? [
+          {
+            value: undefined,
+            title: displayKeys.any,
+          },
+        ]
+      : []
   ).concat([
     {
       value: valueKeys.true,
@@ -134,17 +135,17 @@ export default ({
   return (
     <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
       <ToggleButton
-        {...{
-          value: isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined,
-          options: options,
-          onChange: ({ value }) => {
-            handleChange(
-              value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
-              dotField,
-            );
-          },
+        onChange={({ value }) => {
+          handleChange(
+            value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
+            dotField,
+          );
         }}
+        options={options}
+        value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
       />
     </AggsWrapper>
   );
 };
+
+export default BooleanAgg;
