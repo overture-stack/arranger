@@ -53,7 +53,8 @@
               "sample_id": "11a58b4f-8be4-5abe-a1d0-7e1d97220e54",
               "submitter_sample_id": "internal_sample_2",
               "sample_type": "Total RNA",
-              "matched_normal_submitter_sample_id": "sample-x24-11a"
+              "matched_normal_submitter_sample_id": "sample-x24-11a",
+              "collection_date": "2022-01-12T00:00:00.000Z"
             }
           ],
           "tumour_normal_designation": "Tumour",

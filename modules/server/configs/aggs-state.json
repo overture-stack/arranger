@@ -72,6 +72,12 @@
     "__typename": "AggState"
   },
   {
+    "field": "donors__specimens__samples__collection_date",
+    "active": true,
+    "show": true,
+    "__typename": "AggState"
+  },
+  {
     "field": "donors__specimens__samples__submitter_sample_id",
     "active": true,
     "show": true,

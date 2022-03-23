@@ -63,6 +63,10 @@
                   "submitter_sample_id": {
                     "type": "keyword",
                     "copy_to": ["file_autocomplete"]
+                  },
+                  "collection_date": {
+                    "type": "date",
+                    "copy_to": ["file_autocomplete"]
                   }
                 }
               },

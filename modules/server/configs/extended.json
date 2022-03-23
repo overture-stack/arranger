@@ -224,6 +224,20 @@
     "__typename": "ExtendedFieldMapping"
   },
   {
+    "gqlId": "local::file::extended::donors.specimens.samples.collection_date",
+    "field": "donors.specimens.samples.collection_date",
+    "type": "date",
+    "displayName": "Sample Collection Date",
+    "active": true,
+    "isArray": false,
+    "primaryKey": false,
+    "quickSearchEnabled": false,
+    "unit": "time",
+    "displayValues": {},
+    "rangeStep": 1,
+    "__typename": "ExtendedFieldMapping"
+  },
+  {
     "gqlId": "local::file::extended::donors.specimens.samples.submitter_sample_id",
     "field": "donors.specimens.samples.submitter_sample_id",
     "type": "id",
