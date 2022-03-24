@@ -16,6 +16,7 @@ import strToReg from '@/utils/strToReg';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import AggsWrapper from './AggsWrapper';
+import BucketCount from './BucketCount';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -35,12 +36,13 @@ const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   );
 
 const IncludeExcludeButton = ({
-  dotField,
   buckets,
+  dotField,
+  handleIncludeExcludeChange,
   isActive,
   isExclude,
+  ToggleButtonThemeProps,
   updateIsExclude,
-  handleIncludeExcludeChange,
 }) => (
   <ToggleButton
     onChange={({ value, isExclude = value === 'exclude' }) => {
@@ -60,6 +62,7 @@ const IncludeExcludeButton = ({
       { title: 'Include', value: 'include' },
       { title: 'Exclude', value: 'exclude' },
     ]}
+    theme={ToggleButtonThemeProps}
     value={isExclude ? 'exclude' : 'include'}
   />
 );
@@ -135,14 +138,15 @@ const TermAgg = ({
   };
 
   const {
-    colors,
     components: {
       Aggregations: {
         FilterInput: themeAggregationsFilterInputProps = {},
         MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
         TermAgg: {
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
           collapsible: themeTermAggCollapsible = true,
           FilterInput: themeTermAggFilterInputProps = {},
+          IncludeExcludeButton: ToggleButtonThemeProps = {},
           MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
         } = {},
       } = {},
@@ -187,11 +191,12 @@ const TermAgg = ({
         showExcludeOption && !isEmpty(decoratedBuckets) && (
           <IncludeExcludeButton
             {...{
+              buckets: decoratedBuckets,
               dotField,
+              handleIncludeExcludeChange,
               isActive,
               isExclude,
-              handleIncludeExcludeChange,
-              buckets: decoratedBuckets,
+              ToggleButtonThemeProps,
               updateIsExclude: setIsExclude,
             }}
           />
@@ -277,6 +282,7 @@ const TermAgg = ({
                   readOnly
                   type="checkbox"
                 />
+
                 <TextHighlight
                   content={
                     truncate(internalTranslateSQONValue(bucket.name), {
@@ -288,18 +294,9 @@ const TermAgg = ({
               </span>
 
               {bucket.doc_count && (
-                <span
-                  className="bucket-count"
-                  css={css`
-                    background: ${colors?.grey?.[200]};
-                    border-radius: 0.2rem;
-                    display: inline-block;
-                    font-size: 0.7rem;
-                    padding: 0 0.2rem;
-                  `}
-                >
+                <BucketCount className={themeBucketCountClassName} theme={bucketCountTheme}>
                   {formatNumber(bucket.doc_count)}
-                </span>
+                </BucketCount>
               )}
             </Content>
           ))}

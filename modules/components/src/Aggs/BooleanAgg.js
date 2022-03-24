@@ -1,10 +1,15 @@
+import { css } from '@emotion/react';
+import cx from 'classnames';
+
 import { replaceSQON, removeSQON } from '@/SQONView/utils';
 import TextHighlight from '@/TextHighlight';
+import { useThemeContext } from '@/ThemeProvider';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
 import noopFn from '@/utils/noopFns';
 
-import AggsWrapper from './AggsWrapper.js';
+import AggsWrapper from './AggsWrapper';
+import BucketCount from './BucketCount';
 import './BooleanAgg.css';
 
 const BooleanAgg = ({
@@ -35,6 +40,17 @@ const BooleanAgg = ({
   ),
   type,
 }) => {
+  const {
+    components: {
+      Aggregations: {
+        BooleanAgg: {
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
+          ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = {},
+        } = {},
+      } = {},
+    } = {},
+  } = useThemeContext();
+
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
   const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false);
 
@@ -55,35 +71,35 @@ const BooleanAgg = ({
   const isFalseBucketDisabled = falseBucket === undefined || falseBucket?.doc_count <= 0;
 
   const handleChange = (isTrue, field) => {
-    if (isTrue !== undefined) {
-      handleValueClick({
-        bucket: isTrue ? trueBucket : falseBucket,
-        value: isTrue ? trueBucket : falseBucket || missingKeyBucket,
-        field,
-        generateNextSQON: (sqon) =>
-          replaceSQON(
-            {
-              op: 'and',
-              content: [
+    handleValueClick(
+      isTrue === undefined // aka "Any" button clicked
+        ? {
+            field,
+            generateNextSQON: (sqon) => removeSQON(dotField, sqon),
+            value: 'Any',
+          }
+        : {
+            bucket: isTrue ? trueBucket : falseBucket,
+            field,
+            generateNextSQON: (sqon) =>
+              replaceSQON(
                 {
-                  op: 'in',
-                  content: {
-                    field: dotField,
-                    value: [valueKeys[isTrue ? 'true' : 'false']],
-                  },
+                  op: 'and',
+                  content: [
+                    {
+                      op: 'in',
+                      content: {
+                        field: dotField,
+                        value: [valueKeys[isTrue ? 'true' : 'false']],
+                      },
+                    },
+                  ],
                 },
-              ],
-            },
-            sqon,
-          ),
-      });
-    } else {
-      handleValueClick({
-        value: 'Any',
-        field,
-        generateNextSQON: (sqon) => removeSQON(dotField, sqon),
-      });
-    }
+                sqon,
+              ),
+            value: isTrue ? trueBucket : falseBucket || missingKeyBucket,
+          },
+    );
   };
 
   const options = (
@@ -99,29 +115,36 @@ const BooleanAgg = ({
     {
       value: valueKeys.true,
       disabled: isTrueBucketDisabled,
-      title: (
+      title: ({ toggleStatus = '' } = {}) => (
         <>
           <TextHighlight content={displayKeys.true} highlightText={highlightText} />
-          <span className={`bucket-count`} style={{ marginLeft: 2 }}>
+          <BucketCount
+            className={cx(toggleStatus, themeBucketCountClassName)}
+            css={css`
+              margin-left: 0.3rem;
+            `}
+            theme={bucketCountTheme}
+          >
             {formatNumber(isTrueBucketDisabled ? 0 : trueBucket.doc_count)}
-          </span>
+          </BucketCount>
         </>
       ),
     },
     {
       value: valueKeys.false,
       disabled: isFalseBucketDisabled,
-      title: (
+      title: ({ toggleStatus = '' } = {}) => (
         <>
           <TextHighlight content={displayKeys.false} highlightText={highlightText} />
-          <span
-            className={`bucket-count`}
-            style={{
-              marginLeft: 2,
-            }}
+          <BucketCount
+            className={cx(toggleStatus, themeBucketCountClassName)}
+            css={css`
+              margin-left: 0.2rem;
+            `}
+            theme={bucketCountTheme}
           >
             {formatNumber(isFalseBucketDisabled ? 0 : falseBucket.doc_count)}
-          </span>
+          </BucketCount>
         </>
       ),
     },
@@ -134,16 +157,24 @@ const BooleanAgg = ({
 
   return (
     <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
-      <ToggleButton
-        onChange={({ value }) => {
-          handleChange(
-            value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
-            dotField,
-          );
-        }}
-        options={options}
-        value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
-      />
+      <div
+        css={css`
+          width: 100%;
+        `}
+      >
+        <ToggleButton
+          className={themeToggleButtonClassName}
+          onChange={({ value }) => {
+            handleChange(
+              value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
+              dotField,
+            );
+          }}
+          options={options}
+          theme={toggleButtonTheme}
+          value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
+        />
+      </div>
     </AggsWrapper>
   );
 };

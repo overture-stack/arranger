@@ -5,9 +5,33 @@ import Button from '@/Button';
 import { useThemeContext } from '@/ThemeProvider';
 import noopFn from '@/utils/noopFns';
 
-import Props from './types';
+import Props, { ToggleButtonThemeProps } from './types';
 
-const ToggleButton = ({ onChange = noopFn, options = [], value: selectedValue = '' }: Props) => {
+const ToggleButton = ({
+  className,
+  onChange = noopFn,
+  options = [],
+  value: selectedValue = '',
+  theme: {
+    activeBackground: customActiveBackground,
+    activeBorderColor: customActiveBorderColor,
+    activeFontColor: customActiveFontColor,
+    activeFontSize: customActiveFontSize,
+    background: customBackground,
+    borderRadius: customBorderRadius,
+    borderColor: customBorderColor,
+    className: customClassName,
+    css: customCSS,
+    disabledBackground: customDisabledBackground,
+    disabledBorderColor: customDisabledBorderColor,
+    disabledFontColor: customDisabledFontColor,
+    disabledFontSize: customDisabledFontSize,
+    fontColor: customFontColor,
+    fontSize: customFontSize,
+    OptionCSS: customOptionCSS,
+    ...customToggleButtonProps
+  } = {} as ToggleButtonThemeProps,
+}: Props) => {
   const {
     colors,
     components: {
@@ -22,14 +46,14 @@ const ToggleButton = ({ onChange = noopFn, options = [], value: selectedValue = 
           borderColor: themeBorderColor = colors?.grey?.[600],
           className: themeClassName = '',
           css: themeCSS = undefined,
-          disabledBackground: themeDisabledBackground = colors?.grey?.[300],
+          disabledBackground: themeDisabledBackground = colors?.grey?.[200],
           disabledBorderColor: themeDisabledBorderColor = undefined,
-          disabledFontColor: themeDisabledFontColor = colors?.grey?.[800],
+          disabledFontColor: themeDisabledFontColor = colors?.grey?.[700],
           disabledFontSize: themeDisabledFontSize = undefined,
           fontColor: themeFontColor = undefined,
           fontSize: themeFontSize = '0.9rem',
           OptionCSS: themeOptionCSS = undefined,
-          ...toggleButtonTheme
+          ...toggleButtonThemeProps
         } = {},
       } = {},
     } = {},
@@ -37,7 +61,7 @@ const ToggleButton = ({ onChange = noopFn, options = [], value: selectedValue = 
 
   return (
     <div
-      className={cx('toggle-button', themeClassName)}
+      className={cx('toggle-button', className, customClassName, themeClassName)}
       css={[
         css`
           display: flex;
@@ -46,10 +70,12 @@ const ToggleButton = ({ onChange = noopFn, options = [], value: selectedValue = 
           height: calc(${themeFontSize} * 2);
         `,
         themeCSS,
+        customCSS,
       ]}
-      {...toggleButtonTheme}
+      {...toggleButtonThemeProps}
+      {...customToggleButtonProps}
     >
-      {options.map(({ disabled = false, title = '', value = '' }, index) => {
+      {options.map(({ disabled = false, title, value = '' }, index) => {
         const active = selectedValue === value;
         const clickHandler = () => (disabled ? null : onChange({ value }));
 
@@ -61,49 +87,63 @@ const ToggleButton = ({ onChange = noopFn, options = [], value: selectedValue = 
             })}
             css={[
               css`
-                background: ${(disabled && themeDisabledBackground) ||
-                (active && themeActiveBackground) ||
-                themeBackground};
+                background: ${customBackground || themeBackground};
                 border: 0.1rem solid;
-                border-color: ${(disabled && themeDisabledBorderColor) ||
-                (active && themeActiveBorderColor) ||
-                themeBorderColor};
-                color: ${(disabled && themeDisabledFontColor) ||
-                (active && themeActiveFontColor) ||
-                themeFontColor};
-                font-size: ${(disabled && themeDisabledFontSize) ||
-                (active && themeActiveFontSize) ||
-                themeFontSize};
+                border-color: ${customBorderColor || themeBorderColor};
+                color: ${customFontColor || themeFontColor};
                 flex: 1;
+                font-size: ${customFontSize || themeFontSize};
                 padding: 5px;
 
+                &.active {
+                  background: ${customActiveBackground || themeActiveBackground};
+                  border-color: ${customActiveBorderColor || themeActiveBorderColor};
+                  color: ${customActiveFontColor || themeActiveFontColor};
+                  font-size: ${customActiveFontSize || themeActiveFontSize};
+                }
+
+                &.disabled {
+                  background: ${customDisabledBackground || themeDisabledBackground};
+                  border-color: ${customDisabledBorderColor || themeDisabledBorderColor};
+                  color: ${customDisabledFontColor || themeDisabledFontColor};
+                  font-size: ${customDisabledFontSize || themeDisabledFontSize};
+
+                  .button-count {
+                    background: red;
+                    /* background-color: #cacbcf; */
+                  }
+                }
+
                 &:first-of-type {
-                  border-top-left-radius: ${themeBorderRadius};
-                  border-bottom-left-radius: ${themeBorderRadius};
+                  border-top-left-radius: ${customBorderRadius || themeBorderRadius};
+                  border-bottom-left-radius: ${customBorderRadius || themeBorderRadius};
                 }
 
                 &:not(:first-of-type) {
-                  border-left: none;
+                  &.active {
+                    margin-left: -0.1rem;
+                  }
+
+                  &:not(.active) {
+                    border-left: none;
+                  }
                 }
 
                 &:last-of-type {
-                  border-top-right-radius: ${themeBorderRadius};
-                  border-bottom-right-radius: ${themeBorderRadius};
-                }
-
-                // TODO: this carryover from css files needs to be validated
-                // I could not find what this was added for
-                &.disabled > .button-count {
-                  background-color: #cacbcf;
+                  border-top-right-radius: ${customBorderRadius || themeBorderRadius};
+                  border-bottom-right-radius: ${customBorderRadius || themeBorderRadius};
                 }
               `,
               themeOptionCSS,
+              customOptionCSS,
             ]}
             disabled={disabled}
             key={value || `undefined-${index}`}
             onClick={clickHandler}
           >
-            {title}
+            {typeof title === 'function'
+              ? title({ toggleStatus: cx({ active, disabled }) })
+              : title}
           </Button>
         );
       })}

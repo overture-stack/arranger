@@ -4,6 +4,8 @@ import { SerializedStyles } from '@emotion/react';
 import { ToggleButtonThemeProps } from '@/ToggleButton/types';
 import { GenericFn } from '@/utils/noopFns';
 
+import { BucketCountThemeProps } from './BucketCount/types';
+
 interface IconButton {
   className: string;
   fill: string;
@@ -15,6 +17,7 @@ interface IconButton {
 
 export type AggregationsThemeProps = {
   Aggregations: {
+    ActionIcon: IconButton;
     AggsGroup: {
       className: string;
       collapsedBackground: string;
@@ -25,16 +28,20 @@ export type AggregationsThemeProps = {
       headerFontColor: string;
       headerSticky: boolean;
     };
-    ActionIcon: IconButton;
-    TreeJointIcon: IconButton;
+    BooleanAgg: { BucketCount: BucketCountThemeProps; ToggleButton: ToggleButtonThemeProps };
+    BucketCount: BucketCountThemeProps;
     FilterInput: ReactNode;
     MoreOrLessButton: { css: SerializedStyles };
     TermAgg: {
       ActionIcon: IconButton;
+      BucketCount: BucketCountThemeProps;
       collapsible: boolean;
       FilterInput: ReactNode;
+      IncludeExcludeButton: ToggleButtonThemeProps;
       MoreOrLessButton: { css: SerializedStyles };
       TreeJointIcon: IconButton;
     };
-  } & ToggleButtonThemeProps;
+    ToggleButton: ToggleButtonThemeProps;
+    TreeJointIcon: IconButton;
+  };
 };

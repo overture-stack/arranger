@@ -27,11 +27,12 @@ const AggsWrapper = ({
       Aggregations: {
         AggsGroup: {
           className: themeAggsGroupClassName,
+          css: themeAggsGroupCSS,
           collapsedBackground: themeAggsGroupCollapsedBackground = colors?.grey?.[200],
           collapsible: themeAggsGroupCollapsible = true,
           groupDividerColor: ThemeAggsGroupDividerColor = colors?.grey?.[300],
           headerBackground: themeAggsHeaderBackground = colors?.common?.white,
-          headerDividerColor: themeAggsHeaderDividerColor = colors?.grey?.[300],
+          headerDividerColor: themeAggsHeaderDividerColor = colors?.grey?.[200],
           headerFontColor: themeAggsHeaderFontColor = colors?.grey?.[900],
           headerSticky: themeAggsHeaderSticky = false,
           ...aggsGroupTheme
@@ -63,10 +64,15 @@ const AggsWrapper = ({
   ) : (
     <article
       className={cx('aggregation-group', themeAggsGroupClassName || aggTypeCustomClassName)}
-      css={css`
-        border-bottom: 0.1rem solid ${ThemeAggsGroupDividerColor};
-        box-sizing: border-box;
-      `}
+      css={[
+        css`
+          border-bottom: 0.05rem solid transparent;
+          border-color: ${ThemeAggsGroupDividerColor};
+          box-sizing: border-box;
+          padding-bottom: ${isCollapsed ? 0 : '0.3rem'};
+        `,
+        themeAggsGroupCSS,
+      ]}
       ref={componentRef}
       {...aggsGroupTheme}
       {...dataFields}
