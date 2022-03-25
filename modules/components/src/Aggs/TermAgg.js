@@ -8,7 +8,7 @@ import { TransparentButton } from '@/Button';
 import { removeSQON, toggleSQON } from '@/SQONView/utils';
 import TextFilter from '@/TextFilter';
 import TextHighlight from '@/TextHighlight';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
 import noopFn, { emptyStrFn } from '@/utils/noopFns';
@@ -16,8 +16,7 @@ import strToReg from '@/utils/strToReg';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import AggsWrapper from './AggsWrapper';
-import './AggregationCard.css';
-import './TermAgg.css';
+import BucketCount from './BucketCount';
 
 const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   toggleSQON(
@@ -37,19 +36,15 @@ const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
   );
 
 const IncludeExcludeButton = ({
-  dotField,
   buckets,
+  dotField,
+  handleIncludeExcludeChange,
   isActive,
   isExclude,
+  ToggleButtonThemeProps,
   updateIsExclude,
-  handleIncludeExcludeChange,
 }) => (
   <ToggleButton
-    value={isExclude ? 'exclude' : 'include'}
-    options={[
-      { title: 'Include', value: 'include' },
-      { title: 'Exclude', value: 'exclude' },
-    ]}
     onChange={({ value, isExclude = value === 'exclude' }) => {
       const activeBuckets = buckets.filter((b) => isActive({ field: dotField, value: b.name }));
       handleIncludeExcludeChange({
@@ -63,6 +58,12 @@ const IncludeExcludeButton = ({
       });
       updateIsExclude(isExclude);
     }}
+    options={[
+      { title: 'Include', value: 'include' },
+      { title: 'Exclude', value: 'exclude' },
+    ]}
+    theme={ToggleButtonThemeProps}
+    value={isExclude ? 'exclude' : 'include'}
   />
 );
 
@@ -94,7 +95,7 @@ const TermAgg = ({
   aggHeaderRef = createRef(),
   aggWrapperRef = createRef(),
   buckets = [],
-  collapsible = true,
+  collapsible: customCollapsible,
   constructBucketItemClassName = emptyStrFn,
   constructEntryId = ({ value }) => value,
   containerRef,
@@ -137,13 +138,15 @@ const TermAgg = ({
   };
 
   const {
-    colors,
     components: {
       Aggregations: {
         FilterInput: themeAggregationsFilterInputProps = {},
         MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
         TermAgg: {
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
+          collapsible: themeTermAggCollapsible = true,
           FilterInput: themeTermAggFilterInputProps = {},
+          IncludeExcludeButton: ToggleButtonThemeProps = {},
           MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
         } = {},
       } = {},
@@ -156,11 +159,12 @@ const TermAgg = ({
         onClick: () => setShowingSearch(!stateShowingSearch),
         Icon: FaSearch,
       }}
+      collapsible={customCollapsible || themeTermAggCollapsible}
       componentRef={aggWrapperRef}
       dataFields={dataFields}
       headerRef={aggHeaderRef}
       filters={[
-        stateShowingSearch ? (
+        stateShowingSearch && (
           <>
             <InputComponent
               aria-label={`Search data`}
@@ -176,7 +180,6 @@ const TermAgg = ({
               <MoreOrLessButton
                 onClick={() => {
                   setShowingMore(false);
-                  setShowingSearch(false);
                   scrollToAgg();
                 }}
                 {...themeAggregationsMoreOrLessButtonProps}
@@ -184,25 +187,35 @@ const TermAgg = ({
               />
             )}
           </>
-        ) : null,
-        showExcludeOption && !isEmpty(decoratedBuckets) ? (
+        ),
+        showExcludeOption && !isEmpty(decoratedBuckets) && (
           <IncludeExcludeButton
             {...{
+              buckets: decoratedBuckets,
               dotField,
+              handleIncludeExcludeChange,
               isActive,
               isExclude,
-              handleIncludeExcludeChange,
-              buckets: decoratedBuckets,
+              ToggleButtonThemeProps,
               updateIsExclude: setIsExclude,
             }}
           />
-        ) : null,
-      ].filter((filter) => filter !== null)}
+        ),
+      ].filter((filter) => !!filter)}
       stickyHeader
-      {...{ displayName, WrapperComponent, collapsible }}
+      {...{ displayName, WrapperComponent }}
     >
       <>
-        {headerTitle && <div className="header">{headerTitle}</div>}
+        {headerTitle && (
+          <div
+            className="header"
+            css={css`
+              text-align: right;
+            `}
+          >
+            {headerTitle}
+          </div>
+        )}
 
         <div
           css={css`
@@ -215,14 +228,15 @@ const TermAgg = ({
                 value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
               })}
               key={bucket.name}
-              className={`bucket-item ${
+              className={cx(
+                'bucket-item',
                 constructBucketItemClassName({
                   bucket,
                   i,
                   showingBuckets: array,
                   showingMore,
-                }) || ''
-              }`}
+                }),
+              )}
               content={{
                 field: dotField,
                 value: bucket.name,
@@ -268,6 +282,7 @@ const TermAgg = ({
                   readOnly
                   type="checkbox"
                 />
+
                 <TextHighlight
                   content={
                     truncate(internalTranslateSQONValue(bucket.name), {
@@ -279,18 +294,9 @@ const TermAgg = ({
               </span>
 
               {bucket.doc_count && (
-                <span
-                  className="bucket-count"
-                  css={css`
-                    background: ${colors?.grey?.[200]};
-                    border-radius: 0.2rem;
-                    display: inline-block;
-                    font-size: 0.7rem;
-                    padding: 0 0.2rem;
-                  `}
-                >
+                <BucketCount className={themeBucketCountClassName} theme={bucketCountTheme}>
                   {formatNumber(bucket.doc_count)}
-                </span>
+                </BucketCount>
               )}
             </Content>
           ))}
@@ -302,7 +308,6 @@ const TermAgg = ({
             isMore={!showingMore}
             onClick={() => {
               setShowingMore(!showingMore);
-              setShowingSearch(!showingMore);
               if (showingMore) scrollToAgg();
             }}
             {...themeAggregationsMoreOrLessButtonProps}

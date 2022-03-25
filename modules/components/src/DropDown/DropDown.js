@@ -1,9 +1,10 @@
 import React from 'react';
 import Downshift from 'downshift';
+import { css } from '@emotion/react';
 
 import { ArrowIcon } from '@/Icons';
 import noopFn from '@/utils/noopFns';
-import { withTheme } from '@/ThemeProvider';
+import { withTheme } from '@/ThemeContext';
 
 import './DropDown.css';
 
@@ -76,6 +77,10 @@ class DropDown extends React.Component {
             >
               <div className="dropDownButtonContent">{children}</div>
               <ArrowIcon
+                css={css`
+                  margin-left: 0.3rem;
+                  margin-top: 0.1rem;
+                `}
                 fill={customArrowColor || themeArrowColor}
                 pointUp={isOpen}
                 transition={customArrowTransition || themeArrowTransition}

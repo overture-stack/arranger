@@ -1,7 +1,7 @@
 import React from 'react';
 import { get } from 'lodash';
 
-import { DataProvider } from '@/ContextProvider';
+import { DataProvider } from '@/DataContext';
 
 import columnsToGraphql from '../utils/columnsToGraphql';
 import defaultApiFetcher from '../utils/api';

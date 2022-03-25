@@ -13,19 +13,23 @@ import { isEqual } from 'lodash';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import noopFn from '@/utils/noopFns';
 
-import arrangerTheme from './defaultTheme';
+import arrangerBaseTheme from './baseTheme';
 import {
+  BaseThemeInterface,
   CustomThemeType,
-  DefaultTheme,
+  ThemeAggregatorFn,
   ThemeContextInterface,
+  ThemeOptions,
   ThemeProviderProps,
   WithThemeProps,
 } from './types';
 import { isProviderNested, mergeThemes } from './utils';
 
-export const ThemeContext = createContext<ThemeContextInterface>({} as ThemeContextInterface);
+export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>(
+  {} as ThemeContextInterface<ThemeOptions>,
+);
 
-export const useThemeContext = (customTheme?: CustomThemeType): Partial<DefaultTheme> => {
+export const useThemeContext = (customTheme?: CustomThemeType<ThemeOptions>): ThemeOptions => {
   const { theme, aggregateTheme = noopFn } = useContext(ThemeContext);
 
   useEffect(() => {
@@ -41,12 +45,12 @@ export const useThemeContext = (customTheme?: CustomThemeType): Partial<DefaultT
 };
 
 // const useAggregableTheme = (initialTheme?: CustomThemeType | CustomThemeType[]) => {
-const useAggregableTheme = (initialTheme: any) => {
-  const [currentTheme, setCurrentTheme] = useState<Partial<DefaultTheme>>(initialTheme);
+const useAggregableTheme = (initialTheme: any): readonly [ThemeOptions, ThemeAggregatorFn] => {
+  const [currentTheme, setCurrentTheme] = useState<ThemeOptions>(initialTheme);
 
-  const aggregateTheme = useCallback(
-    (partialTheme: CustomThemeType | CustomThemeType[] = {}) => {
-      const theme = mergeThemes(currentTheme, partialTheme);
+  const aggregateTheme = useCallback<ThemeAggregatorFn>(
+    (partialTheme) => {
+      const theme = partialTheme ? mergeThemes(currentTheme, partialTheme) : currentTheme;
 
       if (!isEqual(JSON.stringify(currentTheme), JSON.stringify(theme))) {
         setCurrentTheme(theme);
@@ -64,17 +68,17 @@ const useAggregableTheme = (initialTheme: any) => {
  * @param {Theme} theme allows giving the provider a custom version of the theme for the consumers.
  * @param {boolean} useArrangerTheme tells the provider to source the default Arranger theme. (default: `true`)
  */
-export const ThemeProvider = <Theme extends DefaultTheme>({
+export const ThemeProvider = <Theme extends BaseThemeInterface>({
   children,
   theme: localTheme,
   useArrangerTheme = true,
 }: ThemeProviderProps): ReactElement<ThemeContextInterface<Theme>> => {
   const outerTheme = useThemeContext(); // get theme from parent theme provider, if any.
-  const defaultTheme = useArrangerTheme ? arrangerTheme : {};
-  const isNested = isProviderNested(defaultTheme, [outerTheme, localTheme]);
+  const initialTheme = useArrangerTheme ? arrangerBaseTheme : {};
+  const isNested = isProviderNested(initialTheme, [outerTheme, localTheme]);
   const otherThemes = [outerTheme, localTheme, isNested];
 
-  const [theme, aggregateTheme] = useAggregableTheme(mergeThemes(defaultTheme, otherThemes));
+  const [theme, aggregateTheme] = useAggregableTheme(mergeThemes(initialTheme, otherThemes));
 
   const contextValues = {
     aggregateTheme,
@@ -85,7 +89,7 @@ export const ThemeProvider = <Theme extends DefaultTheme>({
 };
 
 export const withTheme = <Props extends object>(Component: ComponentType<Props>) => {
-  const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps) => {
+  const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps<ThemeOptions>) => {
     const themedProps = {
       ...props,
       theme: useThemeContext(customTheme),
@@ -104,6 +108,6 @@ if (process.env.NODE_ENV === 'development') {
   ThemeProvider.displayName = 'ArrangerThemeProvider';
 }
 
-export * as arrangerTheme from './defaultTheme';
+export * as arrangerTheme from './baseTheme';
 export * from './types';
 export * as themeUtils from './utils';

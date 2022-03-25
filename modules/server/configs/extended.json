@@ -336,6 +336,20 @@
     "__typename": "ExtendedFieldMapping"
   },
   {
+    "gqlId": "local::file::extended::donors.vaccinated",
+    "field": "donors.vaccinated",
+    "type": "boolean",
+    "displayName": "Donor Vaccinated",
+    "active": true,
+    "isArray": false,
+    "primaryKey": false,
+    "quickSearchEnabled": false,
+    "unit": null,
+    "displayValues": {},
+    "rangeStep": 1,
+    "__typename": "ExtendedFieldMapping"
+  },
+  {
     "gqlId": "local::file::extended::file",
     "field": "file",
     "type": "object",

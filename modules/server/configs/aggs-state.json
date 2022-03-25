@@ -120,6 +120,12 @@
     "__typename": "AggState"
   },
   {
+    "field": "donors__vaccinated",
+    "active": true,
+    "show": true,
+    "__typename": "AggState"
+  },
+  {
     "field": "file__index_file__file_type",
     "active": true,
     "show": true,

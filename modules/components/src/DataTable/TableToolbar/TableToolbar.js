@@ -3,7 +3,7 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 import { css } from '@emotion/react';
 
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
 import { addInSQON, currentFilterValue } from '../../SQONView/utils';

@@ -3,7 +3,7 @@ import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import cx from 'classnames';
 
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 
 const InputWrapper = styled.div`
   align-items: center;

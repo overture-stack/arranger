@@ -1,9 +1,9 @@
 import { merge } from 'lodash';
 
 // To support theme composition
-const mergeBaseAndCustomTheme = (baseTheme = {}, customTheme = {}) => {
+const mergeTargetAndCustomTheme = (targetTheme = {}, customTheme = {}) => {
   if (typeof customTheme === 'function') {
-    const mergedTheme = customTheme(baseTheme);
+    const mergedTheme = customTheme(targetTheme);
 
     if (mergedTheme) {
       return mergedTheme;
@@ -13,19 +13,19 @@ const mergeBaseAndCustomTheme = (baseTheme = {}, customTheme = {}) => {
       console.error('Your customTheme function should return an object');
     }
 
-    return baseTheme;
+    return targetTheme;
   }
 
-  return merge({ ...baseTheme }, customTheme);
+  return merge({ ...targetTheme }, customTheme);
 };
 
-export const mergeThemes = (baseTheme = {}, partialTheme = {}) =>
+export const mergeThemes = (targetTheme = {}, partialTheme = {}) =>
   Array.isArray(partialTheme)
     ? partialTheme.reduce(
-        (aggregated, partial) => mergeBaseAndCustomTheme(aggregated, partial),
-        baseTheme,
+        (aggregated, partial) => mergeTargetAndCustomTheme(aggregated, partial),
+        targetTheme,
       )
-    : mergeBaseAndCustomTheme(baseTheme, partialTheme);
+    : mergeTargetAndCustomTheme(targetTheme, partialTheme);
 
 export const nested =
   typeof Symbol === 'function' && Symbol.for // has symbol
@@ -49,18 +49,18 @@ const checkThemingFunction = (theme: (args?: any) => any) => {
   }
 };
 
-export const isProviderNested = (defaultTheme = {}, otherThemes: any[] = [{}]) => {
-  const hasValidDefaultTheme = getObjKeyCount(defaultTheme) > 0;
+export const isProviderNested = (initialTheme = {}, otherThemes: any[] = [{}]) => {
+  const hasValidInitialTheme = getObjKeyCount(initialTheme) > 0;
   const totalValidParents = otherThemes.filter((theme = {}, index) => {
     if (typeof theme === 'function') {
       // Make sure a theme is already injected higher in the tree or provide a theme object instead of a function
-      return !hasValidDefaultTheme && index === 0 && checkThemingFunction(theme);
+      return !hasValidInitialTheme && index === 0 && checkThemingFunction(theme);
     } else if (typeof theme === 'object') {
       return getObjKeyCount(theme);
     }
   }).length;
 
-  const isNested = defaultTheme ? hasValidDefaultTheme && totalValidParents : totalValidParents > 1;
+  const isNested = initialTheme ? hasValidInitialTheme && totalValidParents : totalValidParents > 1;
 
   return isNested && { [nested]: true };
 };

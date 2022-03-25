@@ -5,9 +5,9 @@ import { addDays, endOfDay, startOfDay, subDays } from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
 
 import { removeSQON, replaceSQON } from '@/SQONView/utils';
+import { withTheme } from '@/ThemeContext';
 
 import AggsWrapper from './AggsWrapper';
-import './DatesAgg.css';
 
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
@@ -87,6 +87,7 @@ class DatesAgg extends React.Component {
       displayName = 'Date Range',
       facetView = false,
       field,
+      theme: { colors },
       type,
       WrapperComponent,
     } = this.props;
@@ -105,6 +106,45 @@ class DatesAgg extends React.Component {
             display: flex;
             justify-content: space-around;
             padding-left: 5px;
+
+            .react-datepicker__current-month,
+            .react-datepicker-time__header,
+            .react-datepicker-year-header {
+              color: ${colors.grey[700]};
+            }
+
+            .react-datepicker__input-container {
+              width: 100%;
+            }
+
+            .react-datepicker-wrapper input {
+              border: 1px solid ${colors.grey[400]};
+              border-radius: 2px;
+              box-sizing: border-box;
+              font-size: 12px;
+              padding: 6px 5px 5px 7px;
+              width: 100%;
+            }
+
+            .react-datepicker__input-container .react-datepicker__close-icon::after {
+              align-items: center;
+              background-color: ${colors.grey[500]};
+              border-radius: 30%;
+              display: flex;
+              font-size: 14px;
+              justify-content: center;
+              height: 10px;
+              line-height: 0;
+              padding: 0.1rem;
+              width: 10px;
+            }
+
+            .react-datepicker__day-name,
+            .react-datepicker__day,
+            .react-datepicker__time-name {
+              line-height: 1.4rem;
+              width: 1.5rem;
+            }
           `}
         >
           <DatePicker
@@ -145,4 +185,4 @@ class DatesAgg extends React.Component {
   }
 }
 
-export default DatesAgg;
+export default withTheme(DatesAgg);
