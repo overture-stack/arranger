@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import { css } from '@emotion/react';
 import { isNil } from 'lodash';
+import cx from 'classnames';
 import convert from 'convert-units';
 import InputRange from 'react-input-range';
 import 'react-input-range/lib/css/index.css';
@@ -10,7 +11,6 @@ import formatNumber from '@/utils/formatNumber';
 import { withTheme } from '@/ThemeProvider';
 
 import AggsWrapper from './AggsWrapper';
-import './RangeAgg.css';
 
 const SUPPORTED_CONVERSIONS = {
   time: ['d', 'year'],
@@ -22,14 +22,37 @@ const supportedConversionFromUnit = (unit) =>
 
 const round = (x) => Math.round(x * 100) / 100;
 
-const RangeLabel = ({ children, isTop, position, ...props }) => (
+const RangeLabel = ({
+  background = 'none',
+  children,
+  className,
+  borderRadius = 0,
+  css: customCSS,
+  fontWeight = 'inherit',
+  isRight,
+  isTop,
+  ...props
+}) => (
   <div
+    className={cx(
+      'RangeLabel',
+      { bottom: !isTop, left: !isRight, right: isRight, top: isTop },
+      className,
+    )}
+    css={[
+      css`
+        background: ${background};
+        border-radius: ${borderRadius};
+        color: ${isTop ? 'inherit' : '#666'};
+        font-size: ${isTop ? 0.9 : 0.7}rem;
+        font-weight: ${fontWeight};
+        position: absolute;
+        ${isRight && `right: 0;`}
+        top: ${isTop ? `-` : ``}1.2rem;
+      `,
+      customCSS,
+    ]}
     {...props}
-    css={css`
-      position: absolute;
-      ${position === 'right' && `${position}: 0;`}
-      top: ${isTop ? `-` : ``}1.2rem;
-    `}
   >
     {children}
   </div>
@@ -157,9 +180,29 @@ class RangeAgg extends Component {
         colors,
         components: {
           Aggregations: {
-            NoDataContainer: {
-              fontColor: themeNoDataFontColor = colors?.grey?.[600],
-              fontSize: themeNoDataFontSize = '0.8em',
+            RangeAgg: {
+              InputRange: {
+                background: themeInputRangeBackground = 'none',
+                disabledBackground: themeInputRangeDisabledBackground = colors?.grey?.[200],
+                css: themeInputRangeCSS,
+              } = {},
+              NoDataContainer: {
+                fontColor: themeNoDataFontColor = colors?.grey?.[600],
+                fontSize: themeNoDataFontSize = '0.8em',
+              } = {},
+              RangeLabel: themeRangeLabelProps = {},
+              RangeSlider: {
+                background: themeRangeSliderBackground = colors?.common?.white,
+                borderColor: themeRangeSliderBorderColor = colors?.grey?.[500],
+                css: themeRangeSliderCSS = {},
+                disabledBackground: themeRangeSliderDisabledBackground = colors?.grey?.[200],
+                disabledBorderColor: themeRangeSliderDisabledBorderColor = colors?.grey?.[500],
+              } = {},
+              RangeTrack: {
+                background: themeRangeTrackBackground = colors?.grey?.[600],
+                disabledBackground: themeRangeTrackDisabledBackground = colors?.grey?.[400],
+              } = {},
+              RangeWrapper: { css: themeRangeWrapperCSS, ...RangeWrapperProps } = {},
             } = {},
           } = {},
         } = {},
@@ -189,14 +232,41 @@ class RangeAgg extends Component {
         {...{ WrapperComponent, collapsible }}
       >
         {hasData ? (
-          <div className="range-wrapper">
+          <div
+            className="range-wrapper"
+            css={[
+              css`
+                align-items: center;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+              `,
+              themeRangeWrapperCSS,
+            ]}
+            {...RangeWrapperProps}
+          >
             {supportedConversions.length > 1 && (
-              <div className="unit-wrapper">
+              <div
+                className="unit-wrapper"
+                css={css`
+                  text-align: center;
+                  margin-top: 4px;
+                `}
+              >
                 {supportedConversions
                   .map((x) => convert().describe(x))
                   .map((x) => ({ ...x, active: x.abbr === displayUnit }))
                   .map(({ abbr, plural, active }) => (
-                    <label htmlFor={abbr} key={abbr}>
+                    <label
+                      css={css`
+                        margin: 0 5px;
+                        font-family: inherit;
+                        color: inherit;
+                        border-bottom: none;
+                      `}
+                      htmlFor={abbr}
+                      key={abbr}
+                    >
                       <input
                         checked={active}
                         id={abbr}
@@ -210,30 +280,96 @@ class RangeAgg extends Component {
               </div>
             )}
 
-            <div className={`input-range-wrapper${unusable ? ' disabled' : ''}`}>
-              <RangeLabel isTop>{this.formatRangeLabel(currentValues.min)}</RangeLabel>
+            <div
+              className={cx('input-range-wrapper', { disabled: unusable })}
+              css={css`
+                margin: 1.5rem 0;
+                position: relative;
+                font-size: 0.8rem;
+                width: 90%;
+
+                /** InputRange doesn't allow customisation through props
+                 * The following classes, and theme overrides are the
+                 * only way available for now. May implement our own slider.
+                 */
+                .input-range {
+                  background: ${themeInputRangeBackground};
+
+                  .input-range__label {
+                    display: none;
+                  }
+
+                  .input-range__slider {
+                    background: ${themeRangeSliderBackground};
+                    border-color: ${themeRangeSliderBorderColor};
+                    padding: 0;
+
+                    ${themeRangeSliderCSS}
+                  }
+
+                  .input-range__track.input-range__track--background {
+                    background: ${colors?.grey?.[200]};
+                  }
+
+                  .input-range__track {
+                    background: ${themeRangeTrackBackground};
+                  }
+
+                  &.input-range--disabled {
+                    background: ${themeInputRangeDisabledBackground};
+
+                    .input-range__slider,
+                    .input-range__track {
+                      cursor: default;
+                    }
+
+                    .input-range__slider {
+                      background: ${themeRangeSliderDisabledBackground};
+                      border-color: ${themeRangeSliderDisabledBorderColor};
+                    }
+
+                    .input-range__track {
+                      background: ${themeRangeTrackDisabledBackground};
+                    }
+                  }
+
+                  /* ${themeInputRangeCSS} */
+                }
+              `}
+            >
+              <RangeLabel isTop {...themeRangeLabelProps}>
+                {this.formatRangeLabel(currentValues.min)}
+              </RangeLabel>
+
               {!minIsMax && (
-                <RangeLabel isTop position="right">
+                <RangeLabel isTop isRight {...themeRangeLabelProps}>
                   {this.formatRangeLabel(currentValues.max)}
                 </RangeLabel>
               )}
 
               <InputRange
+                allowSameValues={true}
                 ariaLabelledby={getLabelId(displayName)}
-                className={unusable ? 'disabled' : ''}
-                draggableTrack
+                className={cx({ disabled: unusable })}
                 disabled={unusable}
-                step={step}
+                draggableTrack
+                formatLabel={this.formatRangeLabel}
                 minValue={min}
                 maxValue={max}
-                value={currentValues}
-                formatLabel={this.formatRangeLabel}
                 onChange={this.setNewValue}
                 onChangeComplete={this.onChangeComplete}
+                step={step}
+                value={currentValues}
               />
 
-              <RangeLabel>{this.formatRangeLabel(currentValues.min)}</RangeLabel>
-              {!minIsMax && <RangeLabel position="right">{this.formatRangeLabel(max)}</RangeLabel>}
+              <RangeLabel {...themeRangeLabelProps}>{this.formatRangeLabel(min)}</RangeLabel>
+
+              {!minIsMax && (
+                <RangeLabel isRight {...themeRangeLabelProps}>
+                  {this.formatRangeLabel(max)}
+                </RangeLabel>
+              )}
+
               <span
                 id={getLabelId(displayName)}
                 css={css`
@@ -244,7 +380,7 @@ class RangeAgg extends Component {
                   left: -9999px;
                 `}
               >
-                Set {displayName}
+                {`Set ${displayName}`}
               </span>
             </div>
           </div>

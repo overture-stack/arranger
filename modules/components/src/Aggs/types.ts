@@ -31,7 +31,36 @@ export type AggregationsThemeProps = {
     BooleanAgg: { BucketCount: BucketCountThemeProps; ToggleButton: ToggleButtonThemeProps };
     BucketCount: BucketCountThemeProps;
     FilterInput: ReactNode;
+    InputRange: SerializedStyles;
     MoreOrLessButton: { css: SerializedStyles };
+    RangeAgg: {
+      InputRange: {
+        background: string;
+        disabledBackground: string;
+        css: SerializedStyles;
+      };
+      NoDataContainer: {
+        fontColor: string;
+        fontSize: string;
+      };
+      RangeLabel: {
+        borderRadius: string;
+        css: SerializedStyles;
+        fontWeight: string;
+      };
+      RangeSlider: {
+        background: string;
+        borderColor: string;
+        css: SerializedStyles;
+        disabledBackground: string;
+        disabledBorderColor: string;
+      };
+      RangeTrack: {
+        background: string;
+        disabledBackground: string;
+      };
+      RangeWrapper: { css: SerializedStyles };
+    };
     TermAgg: {
       ActionIcon: IconButton;
       BucketCount: BucketCountThemeProps;
