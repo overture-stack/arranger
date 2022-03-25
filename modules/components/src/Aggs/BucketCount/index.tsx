@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 
 import Props, { BucketCountThemeProps } from './types';
 

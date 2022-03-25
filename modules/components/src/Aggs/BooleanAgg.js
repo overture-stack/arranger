@@ -3,14 +3,13 @@ import cx from 'classnames';
 
 import { replaceSQON, removeSQON } from '@/SQONView/utils';
 import TextHighlight from '@/TextHighlight';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
 import noopFn from '@/utils/noopFns';
 
 import AggsWrapper from './AggsWrapper';
 import BucketCount from './BucketCount';
-import './BooleanAgg.css';
 
 const BooleanAgg = ({
   buckets,

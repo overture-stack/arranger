@@ -2,7 +2,7 @@ import { Dispatch } from 'react';
 import { Method } from 'axios';
 import SQON from 'sqon-builder';
 
-import { CustomThemeType, BaseThemeInterface } from '@/ThemeProvider';
+import { CustomThemeType, BaseThemeInterface } from '@/ThemeContext';
 
 export type APIFetcherFn = (options: {
   body: any;

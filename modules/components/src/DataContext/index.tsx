@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 import defaultApiFetcher from '@/utils/api';
 import columnsToGraphql from '@/utils/columnsToGraphql';
-import { ThemeProvider } from '@/ThemeProvider';
+import { ThemeProvider } from '@/ThemeContext';
 
 import {
   DataContextInterface,

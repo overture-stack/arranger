@@ -1,4 +1,4 @@
-import baseTheme from '@/ThemeProvider/baseTheme';
+import baseTheme from '@/ThemeContext/baseTheme';
 import { RecursivePartial } from '@/utils/types';
 
 export type ColorNames = keyof typeof baseTheme.colors;

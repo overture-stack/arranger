@@ -4,12 +4,12 @@ export {
   DataProvider as ArrangerDataProvider,
   useDataContext as useArrangerData,
   withTheme as withArrangerTheme,
-} from './ContextProvider';
+} from './DataContext';
 export {
   arrangerTheme,
   ThemeContext as ArrangerThemeContext,
   ThemeProvider as ArrangerThemeProvider,
   useThemeContext as useArrangerTheme,
-} from './ThemeProvider';
+} from './ThemeContext';
 export { default as apiFetcher, addHeaders } from './utils/api';
 export { default as Query, withQuery } from './Query';

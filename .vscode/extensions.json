@@ -2,6 +2,7 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "AnthonyCJW.vscode-styled-components-cre-edition"
+    "anthonycjw.vscode-styled-components-cre-edition",
+    "wayou.vscode-todo-highlight"
   ]
 }

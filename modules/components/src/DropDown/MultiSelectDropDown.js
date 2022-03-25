@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 
 import './DropDown.css';
 

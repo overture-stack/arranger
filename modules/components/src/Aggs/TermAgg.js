@@ -8,7 +8,7 @@ import { TransparentButton } from '@/Button';
 import { removeSQON, toggleSQON } from '@/SQONView/utils';
 import TextFilter from '@/TextFilter';
 import TextHighlight from '@/TextHighlight';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
 import noopFn, { emptyStrFn } from '@/utils/noopFns';

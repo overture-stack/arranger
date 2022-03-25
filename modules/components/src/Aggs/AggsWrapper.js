@@ -4,7 +4,7 @@ import cx from 'classnames';
 
 import { TransparentButton } from '@/Button';
 import { ArrowIcon } from '@/Icons';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 import noopFn from '@/utils/noopFns';
 
 const AggsWrapper = ({

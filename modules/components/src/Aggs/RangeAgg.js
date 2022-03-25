@@ -8,7 +8,7 @@ import 'react-input-range/lib/css/index.css';
 
 import { replaceFieldSQON } from '@/SQONView/utils';
 import formatNumber from '@/utils/formatNumber';
-import { withTheme } from '@/ThemeProvider';
+import { withTheme } from '@/ThemeContext';
 
 import AggsWrapper from './AggsWrapper';
 

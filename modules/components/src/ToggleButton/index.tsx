@@ -2,7 +2,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import Button from '@/Button';
-import { useThemeContext } from '@/ThemeProvider';
+import { useThemeContext } from '@/ThemeContext';
 import noopFn from '@/utils/noopFns';
 
 import Props, { ToggleButtonThemeProps } from './types';

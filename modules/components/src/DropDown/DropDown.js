@@ -4,7 +4,7 @@ import { css } from '@emotion/react';
 
 import { ArrowIcon } from '@/Icons';
 import noopFn from '@/utils/noopFns';
-import { withTheme } from '@/ThemeProvider';
+import { withTheme } from '@/ThemeContext';
 
 import './DropDown.css';
 
