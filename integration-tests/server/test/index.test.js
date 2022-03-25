@@ -1,11 +1,10 @@
+import {} from 'mocha'; // Removes error ts2304 from "before" and "after" testing hooks
 import { Client } from '@elastic/elasticsearch';
 import express from 'express';
-import { print } from 'graphql';
-import gql from 'graphql-tag';
-import {} from 'mocha'; // Removes error ts2304 from "before" and "after" testing hooks
-
-// import Arranger, { adminGraphql } from '../../../modules/server/dist';
+// import { print } from 'graphql';
+// import gql from 'graphql-tag';
 import Arranger from '@overture-stack/arranger-server';
+// import Arranger, { adminGraphql } from '../../../modules/server/dist';
 import ajax from '@overture-stack/arranger-server/dist/utils/ajax';
 
 // test modules
@@ -17,7 +16,6 @@ import manageSets from './manageSets';
 const mapppings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
-const configsPath = process.env.CONFIG_PATH || './configs';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'models';
 const esPwd = process.env.ES_PASS;
@@ -74,7 +72,7 @@ describe('@overture-stack/arranger-server', () => {
     try {
       const router = await Arranger({
         // This may be useful when troubleshooting tests
-        // enableLogs: true,
+        enableLogs: true,
         esHost,
         enableAdmin: false,
         getServerSideFilter: () => ({
@@ -143,6 +141,7 @@ describe('@overture-stack/arranger-server', () => {
       // });
       console.log('******* Starting tests *******');
     } catch (err) {
+      console.error(err);
       throw err;
     }
   });

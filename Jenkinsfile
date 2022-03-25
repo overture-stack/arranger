@@ -16,7 +16,7 @@ spec:
           memory: 512Mi
           cpu: 1000m
         limits:
-          memory: 2048Mi
+          memory: 2560Mi
           cpu: 4000m
     - name: elasticsearch
       image: elasticsearch:7.17.1
