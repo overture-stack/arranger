@@ -14,9 +14,7 @@
     "testURL": "http://localhost/"
   },
   "dependencies": {
-    "@overture-stack/arranger-components": "^3.0.0-beta.10",
-    "lodash": "^4.17.21",
-    "minimist": "^1.2.6"
+    "@overture-stack/arranger-components": "^3.0.0-beta.10"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",
