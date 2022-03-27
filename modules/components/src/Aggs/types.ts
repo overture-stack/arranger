@@ -35,8 +35,6 @@ export type AggregationsThemeProps = {
     MoreOrLessButton: { css: SerializedStyles };
     RangeAgg: {
       InputRange: {
-        background: string;
-        disabledBackground: string;
         css: SerializedStyles;
       };
       NoDataContainer: {
@@ -58,6 +56,10 @@ export type AggregationsThemeProps = {
       RangeTrack: {
         background: string;
         disabledBackground: string;
+        disabledInBackground: string;
+        disabledOutBackground: string;
+        inBackground: string;
+        outBackground: string;
       };
       RangeWrapper: { css: SerializedStyles };
     };
