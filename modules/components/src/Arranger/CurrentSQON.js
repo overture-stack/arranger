@@ -1,79 +1,64 @@
-import React from 'react';
-import { compose } from 'recompose';
-import Component from 'react-component-component';
+import { useCallback } from 'react';
 import { truncate } from 'lodash';
 import { format } from 'date-fns';
 
-import SQONView, { Value, Bubble, Field } from '../SQONView';
-import { fetchExtendedMapping } from '../utils/api';
-import internalTranslateSQONValue from '../utils/translateSQONValue';
+import SQONView, { Value, Bubble, Field } from '@/SQONView';
+import noopFn from '@/utils/noopFns';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
+import { useDataContext } from '@/DataContext';
 
 export const CurrentSQON = ({
   dateFormat = 'yyyy-MM-dd',
-  emptyMessage,
-  sqon,
+  emptyMessage = undefined,
+  onClear = noopFn,
   setSQON,
-  extendedMapping,
-  valueCharacterLimit = 30,
-  onClear = () => {},
+  sqon,
   translateSQONValue = (x) => x,
-  findExtendedMappingField = (field) => extendedMapping?.find((e) => e.field === field),
-  ...props
-}) => (
-  <SQONView
-    emptyMessage={emptyMessage}
-    sqon={sqon}
-    FieldCrumb={({ field, nextSQON, ...props }) => (
-      <Field {...{ field, ...props }}>
-        {findExtendedMappingField(field)?.displayName || field}
-      </Field>
-    )}
-    ValueCrumb={({ field, value, nextSQON, ...props }) => (
-      <Value onClick={() => setSQON(nextSQON)} {...props}>
-        {truncate(
-          compose(
-            translateSQONValue,
-            internalTranslateSQONValue,
-          )(
-            (findExtendedMappingField(field)?.type === 'date' && format(value, dateFormat)) ||
-              (findExtendedMappingField(field)?.displayValues || {})[value] ||
-              value,
-          ),
-          { length: valueCharacterLimit || Infinity },
-        )}
-      </Value>
-    )}
-    Clear={({ nextSQON }) => (
-      <Bubble
-        className="sqon-clear"
-        onClick={() => {
-          onClear();
-          setSQON(nextSQON);
-        }}
-      >
-        Clear
-      </Bubble>
-    )}
-  />
-);
+  valueCharacterLimit = 30,
+}) => {
+  const { extendedMapping } = useDataContext();
 
-const CurrentSQONState = ({ sqon, setSQON, graphqlField = '', ...props }) => {
+  const findExtendedMappingField = useCallback(
+    (wantedField) => extendedMapping?.find((mapping) => mapping.field === wantedField),
+    [extendedMapping],
+  );
+
   return (
-    <Component
-      initialState={{ extendedMapping: null }}
-      didMount={({ state: { extendedMapping }, setState }) =>
-        fetchExtendedMapping({ graphqlField, apiFetcher: props.apiFetcher })
-          .then(({ extendedMapping }) => {
-            return setState({ extendedMapping });
-          })
-          .catch((error) => console.warn(error))
-      }
-    >
-      {({ state: { extendedMapping } }) => (
-        <CurrentSQON {...{ sqon, setSQON, extendedMapping, ...props }} />
+    <SQONView
+      emptyMessage={emptyMessage}
+      sqon={sqon}
+      FieldCrumb={({ field, nextSQON, ...fieldProps }) => (
+        <Field {...{ field, ...fieldProps }}>
+          {findExtendedMappingField(field)?.displayName || field}
+        </Field>
       )}
-    </Component>
+      ValueCrumb={({ field, value, nextSQON, ...valueProps }) => (
+        <Value onClick={() => setSQON(nextSQON)} {...valueProps}>
+          {truncate(
+            translateSQONValue(
+              internalTranslateSQONValue(
+                (findExtendedMappingField(field)?.type === 'date' && format(value, dateFormat)) ||
+                  (findExtendedMappingField(field)?.displayValues || {})[value] ||
+                  value,
+              ),
+            ),
+            { length: valueCharacterLimit || Infinity },
+          )}
+        </Value>
+      )}
+      Clear={({ nextSQON }) => (
+        <Bubble
+          className="sqon-clear"
+          onClick={() => {
+            onClear();
+            setSQON(nextSQON);
+          }}
+        >
+          Clear
+        </Bubble>
+      )}
+    />
   );
 };
 
-export default CurrentSQONState;
+export default CurrentSQON;

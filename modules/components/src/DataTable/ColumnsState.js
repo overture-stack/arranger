@@ -1,7 +1,7 @@
 import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 
-import defaultApiFetcher from '../utils/api';
+import { withData } from '@/DataContext';
 
 let columnFields = `
   state {
@@ -24,12 +24,11 @@ let columnFields = `
   }
 `;
 
-export default class extends Component {
+class ColumnsState extends Component {
   constructor(props) {
     super(props);
     this.state = {
       config: null,
-      extended: [],
       toggled: {},
     };
   }
@@ -58,7 +57,7 @@ export default class extends Component {
   }
 
   fetchColumnsState = debounce(async ({ graphqlField }) => {
-    const { apiFetcher = defaultApiFetcher } = this.props;
+    const { apiFetcher } = this.props;
     try {
       let { data } = await apiFetcher({
         endpoint: `/graphql/columnsStateQuery`,
@@ -76,27 +75,9 @@ export default class extends Component {
       });
 
       const config = data[graphqlField].columnsState.state;
-      let {
-        data: {
-          [this.props.graphqlField]: { extended },
-        },
-      } = await apiFetcher({
-        endpoint: `/graphql`,
-        body: {
-          query: `
-          query{
-            ${this.props.graphqlField} {
-              extended
-            }
-          }
-        `,
-        },
-      });
-
       const toggled = this.getStoredToggled();
 
       this.setState({
-        extended,
         config,
         toggled,
       });
@@ -107,7 +88,7 @@ export default class extends Component {
   }, 300);
 
   save = debounce(async (state) => {
-    const { apiFetcher = defaultApiFetcher } = this.props;
+    const { apiFetcher } = this.props;
     let { data } = await apiFetcher({
       endpoint: `/graphql`,
       body: {
@@ -187,7 +168,8 @@ export default class extends Component {
   };
 
   render() {
-    let { config, extended, toggled } = this.state;
+    let { extendedMapping = [] } = this.props;
+    let { config, toggled } = this.state;
     return config
       ? this.props.render({
           loading: false,
@@ -199,7 +181,8 @@ export default class extends Component {
           state: {
             ...config,
             columns: config.columns.map((column) => {
-              const extendedField = extended.find((e) => e.field === column.field);
+              const extendedField = extendedMapping.find((e) => e.field === column.field);
+
               return {
                 ...column,
                 Header: extendedField?.displayName || column.field,
@@ -214,3 +197,5 @@ export default class extends Component {
       : this.props.render({ loading: true, state: { config: null } });
   }
 }
+
+export default withData(ColumnsState);
