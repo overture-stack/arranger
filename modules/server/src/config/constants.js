@@ -1,6 +1,7 @@
 export const ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS =
   (process.env.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS || '').toLowerCase() === 'true' || false;
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
+export const DEBUG_MODE = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
 export const DOWNLOAD_MAX_ROWS = Number(process.env.DOWNLOAD_MAX_ROWS || '') || 100;
 export const DOWNLOAD_STREAM_BUFFER_SIZE =
   Number(process.env.DOWNLOAD_STREAM_BUFFER_SIZE || '') || 2000;

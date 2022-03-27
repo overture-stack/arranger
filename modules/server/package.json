@@ -16,7 +16,7 @@
     "declarations": "ttsc --emitDeclarationOnly",
     "ifPublish:declarations": "if test \"$PUBLISH_DECLARATIONS\" = \"true\" ; then (npm run -s declarations || true) ; fi",
     "prepare": "npm run cleanDist && npm run build && npm run ifPublish:declarations",
-    "start": "nodemon index.js -e js,ts",
+    "start": "NODE_ENV=development nodemon index.js -e js,ts",
     "start:prod": "node index.js",
     "test": "jest",
     "watch": "npm run cleanDist && (npm run build -- --watch & npm run declarations -- --watch)"

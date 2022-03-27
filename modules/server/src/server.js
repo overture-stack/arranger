@@ -8,7 +8,7 @@ import downloadRoutes from './download';
 import getGraphQLRoutes from './graphqlRoutes';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
-const { CONFIG_FILES_PATH, ES_HOST, ES_USER, ES_PASS, ES_LOG, PING_PATH } = CONFIG;
+const { CONFIG_FILES_PATH, DEBUG_MODE, ES_HOST, ES_USER, ES_PASS, ES_LOG, PING_PATH } = CONFIG;
 
 export const buildEsClient = (esHost = '', esUser = '', esPass = '', esLog = 'error') => {
   if (!esHost) {
@@ -50,25 +50,27 @@ export default async ({
 } = {}) => {
   const esClient = buildEsClient(esHost, esUser, esPass);
   const router = express.Router();
-  enableLogs && console.log('Extensive Logging enabled');
 
+  console.log('------------------------------------');
   console.log(
-    `Starting Arranger server... ${
-      enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'}` : ''
+    `\nStarting Arranger server... ${
+      enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'})` : ''
     }`,
   );
 
-  enableLogs &&
+  if (enableLogs) {
+    console.log('  Extensive console logging enabled.');
+    DEBUG_MODE && console.log('  (Everything but health checks)');
+
     router.use(
       morgan('dev', {
         skip: (req, res) => {
-          // logs everything but health checks on dev, errors only otherwise
-          return process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true'
-            ? req.originalUrl.includes(pingPath)
-            : res.statusCode < 400;
+          // log everything but health checks on dev/debug. errors only otherwise
+          return DEBUG_MODE ? req.originalUrl.includes(pingPath) : res.statusCode < 400;
         },
       }),
     );
+  }
 
   const graphQLRoutes = await getGraphQLRoutes({
     configsSource,
