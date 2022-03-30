@@ -1,18 +1,47 @@
 import React from 'react';
 import { css } from '@emotion/react';
 import { isEqual } from 'lodash';
+import cx from 'classnames';
 
-import strToReg from '../utils/strToReg';
+import { withTheme } from '@/ThemeContext';
+import strToReg from '@/utils/strToReg';
 
+// TODO: turn into function... component could use hooks.
 class TextHighlight extends React.Component {
   shouldComponentUpdate(nextProps) {
     return !isEqual(nextProps, this.props);
   }
 
   render() {
-    const { content, highlightClassName, highlightColor = '#f7ed9c', highlightText } = this.props;
+    const {
+      content,
+      highlightClassName,
+      highlightColor,
+      highlightText,
+      theme: {
+        colors,
+        components: {
+          TextHighlight: {
+            background: themeBackground = colors?.amber?.[200],
+            borderColor: themeBorderColor,
+            borderRadius: themeBorderRadius,
+            className: themeClassName,
+            css: customCSS,
+            fontcolor: themeFontColor = colors?.grey?.[900],
+            fontDecoration: themeFontDecoration,
+            fontSize: themeFontSize,
+            fontWeight: themeFontWeight,
+            margin: themeMargin,
+            padding: themePadding,
+            wrapperClassName: themeWrapperClassName,
+            wrapperCSS: themeWrapperCSS,
+          } = {},
+        } = {},
+      } = {},
+    } = this.props;
 
     if (highlightText) {
+      // TODO: abstract into a custom hook to resolve <span> duplication
       const regex = strToReg(highlightText, { modifiers: 'i' });
       const matchResult = content.match(regex);
       const foundIndex = matchResult?.index;
@@ -24,13 +53,32 @@ class TextHighlight extends React.Component {
           : null;
 
       return (
-        <span className="textHighlight">
+        <span
+          className={cx('textHighlight active', themeWrapperClassName)}
+          css={[
+            css`
+              // internal customisation should go here
+            `,
+            themeWrapperCSS,
+          ]}
+        >
           {seg1}
           <span
-            className={highlightClassName}
-            css={css`
-              background: ${highlightColor};
-            `}
+            className={cx('highlighted', highlightClassName, themeClassName)}
+            css={[
+              css`
+                background: ${themeBackground || highlightColor};
+                border: ${themeBorderColor && `1px solid ${themeBorderColor}`};
+                border-radius: ${themeBorderRadius};
+                color: ${themeFontColor};
+                font-size: ${themeFontSize};
+                font-weight: ${themeFontWeight};
+                margin: ${themeMargin};
+                padding: ${themePadding};
+                text-decoration: ${themeFontDecoration};
+              `,
+              customCSS,
+            ]}
           >
             {foundQuery}
           </span>
@@ -39,8 +87,20 @@ class TextHighlight extends React.Component {
       );
     }
 
-    return <span className="textHighlight">{content}</span>;
+    return (
+      <span
+        className={cx('textHighlight active', themeWrapperClassName)}
+        css={[
+          css`
+            // internal customisation should go here
+          `,
+          themeWrapperCSS,
+        ]}
+      >
+        {content}
+      </span>
+    );
   }
 }
 
-export default TextHighlight;
+export default withTheme(TextHighlight);

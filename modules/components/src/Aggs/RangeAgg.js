@@ -6,9 +6,9 @@ import convert from 'convert-units';
 import InputRange from 'react-input-range'; // TODO: abandoned. use rc-slider instead
 import 'react-input-range/lib/css/index.css';
 
-import { replaceFieldSQON } from '@/SQONView/utils';
-import formatNumber from '@/utils/formatNumber';
+import { replaceFieldSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
+import formatNumber from '@/utils/formatNumber';
 
 import AggsWrapper from './AggsWrapper';
 

@@ -1,21 +1,12 @@
-import { SerializedStyles } from '@emotion/react';
+import { ThemeCommon } from '@/ThemeContext/types';
 
-export default interface Props {
-  className?: string;
-  css?: SerializedStyles;
-  fill?: string;
-  isTreeJoint?: boolean;
-  pointUp?: boolean;
-  size?: string | number;
-  transition?: string;
+export interface ArrowIconThemeProps extends ThemeCommon.CustomCSS {
+  fill: string;
+  size: string | number;
+  transition: string;
 }
 
-export interface ArrowIconThemeProps {
-  ArrowIcon: {
-    className: string;
-    css: SerializedStyles;
-    fill: string;
-    size: string | number;
-    transition: string;
-  };
+export default interface Props extends Partial<ArrowIconThemeProps> {
+  isTreeJoint?: boolean;
+  pointUp?: boolean;
 }

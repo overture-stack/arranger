@@ -1,9 +1,8 @@
-export type DataTableThemeProps = {
-  Table: {
-    DropDown: {
-      arrowColor: string;
-      arrowTransition: string;
-      className: string;
-    };
-  };
-};
+import { ThemeCommon } from '@/ThemeContext/types';
+
+export interface DataTableThemeProps {
+  DropDown: {
+    arrowColor: string;
+    arrowTransition: string;
+  } & ThemeCommon.CustomCSS;
+}

@@ -1,7 +1,7 @@
 import { FaSearch } from 'react-icons/fa';
 
 import TextInput from '@/Input';
-import { replaceFilterSQON } from '@/SQONView/utils';
+import { replaceFilterSQON } from '@/SQONViewer/utils';
 import noopFn from '@/utils/noopFns';
 
 export const generateNextSQON =

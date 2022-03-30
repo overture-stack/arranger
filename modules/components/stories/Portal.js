@@ -2,7 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { injectGlobal } from '@emotion/react';
 
-import { Arranger, Aggregations, CurrentSQON, Table } from '../src/Arranger';
+import { Arranger, Aggregations, SQONViewer, Table } from '../src';
 import State from '../src/State';
 import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
 import { ACTIVE_INDEX, ACTIVE_INDEX_NAME, deleteValue } from '../src/utils/config';
@@ -70,7 +70,7 @@ const Portal = ({ style, ...props }) => {
           flex-direction: column;
         `}
       >
-        <CurrentSQON {...props} />
+        <SQONViewer {...props} />
         <Table {...props} />
       </div>
     </div>

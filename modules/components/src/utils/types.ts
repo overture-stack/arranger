@@ -8,3 +8,8 @@ export type RecursivePartial<T> = {
     ? Array<RecursivePartial<I>>
     : RecursivePartial<T[P]>;
 };
+
+// TODO: enhance this to take a list of prefixes
+export type PrefixKeys<T, Prefix extends string> = {
+  [P in keyof T & string as `${Prefix}${Capitalize<P>}`]: T[P];
+};

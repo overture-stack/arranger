@@ -109,5 +109,4 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export * as arrangerTheme from './baseTheme';
-export * from './types';
 export * as themeUtils from './utils';

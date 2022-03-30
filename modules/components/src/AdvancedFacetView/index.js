@@ -5,9 +5,9 @@ import Component from 'react-component-component';
 import { FaFilter, FaTimesCircle } from 'react-icons/fa';
 
 import TextInput from '@/Input';
+import SQONViewer from '@/SQONViewer';
 import noopFn from '@/utils/noopFns';
 
-import { CurrentSQON } from '../Arranger/CurrentSQON';
 import LoadingScreen from '../LoadingScreen';
 import NestedTreeView from '../NestedTreeView';
 import Stats from '../Stats';
@@ -124,8 +124,8 @@ export default class AdvancedFacetView extends React.Component {
         {displayTreeData && (
           <>
             <div>
-              <CurrentSQON
-                {...{ sqon, extendedMapping, translateSQONValue, onClear }}
+              <SQONViewer
+                {...{ sqon, translateSQONValue, onClear }}
                 setSQON={(sqon) => this.handleSqonChange({ sqon })}
               />
             </div>

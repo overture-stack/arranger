@@ -5,7 +5,6 @@ export {
   AggregationsList,
   AggsWrapper,
 } from './Aggregations';
-export { default as CurrentSQON } from './CurrentSQON';
 export { default as Table } from './Table';
 export { default as AdvancedFacetView } from '../AdvancedFacetView/LiveAdvancedFacetView';
 export { default as QuickSearch } from './QuickSearch';

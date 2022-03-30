@@ -3,10 +3,10 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 import { css } from '@emotion/react';
 
+import { currentFilterValue } from '@/SQONViewer/utils';
 import { useThemeContext } from '@/ThemeContext';
 
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
-import { addInSQON, currentFilterValue } from '../../SQONView/utils';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
 import download from '../../utils/download';
 import stringCleaner from '../../utils/stringCleaner';

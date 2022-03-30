@@ -1,6 +1,7 @@
-import React from 'react';
-import { inCurrentSQON } from '../SQONView/utils';
+import { inCurrentSQON } from '@/SQONViewer/utils';
+
 import Location from '../Location';
+
 import TermAgg from './TermAgg';
 import AggsQuery from './AggsQuery';
 

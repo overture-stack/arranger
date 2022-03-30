@@ -5,6 +5,9 @@ export {
   useDataContext as useArrangerData,
   withTheme as withArrangerTheme,
 } from './DataContext';
+// TODO: Deprecate "CurrentSQON" component name as unsemantical,
+// remove SQONView (duplicate of CurrentSQON to produce the same log warning)
+export { CurrentSQON, SQONView, default as SQONViewer } from './SQONViewer';
 export {
   arrangerTheme,
   ThemeContext as ArrangerThemeContext,

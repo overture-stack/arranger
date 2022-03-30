@@ -47,3 +47,5 @@ export interface ThemeProviderProps<Theme = BaseThemeInterface> {
 export interface WithThemeProps<Theme = BaseThemeInterface> {
   theme?: Theme;
 }
+
+export * as ThemeCommon from './common';

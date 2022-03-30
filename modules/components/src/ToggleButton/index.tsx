@@ -29,7 +29,6 @@ const ToggleButton = ({
     fontColor: customFontColor,
     fontSize: customFontSize,
     OptionCSS: customOptionCSS,
-    ...customToggleButtonProps
   } = {} as ToggleButtonThemeProps,
 }: Props) => {
   const {
@@ -53,7 +52,6 @@ const ToggleButton = ({
           fontColor: themeFontColor = undefined,
           fontSize: themeFontSize = '0.9rem',
           OptionCSS: themeOptionCSS = undefined,
-          ...toggleButtonThemeProps
         } = {},
       } = {},
     } = {},
@@ -72,8 +70,6 @@ const ToggleButton = ({
         themeCSS,
         customCSS,
       ]}
-      {...toggleButtonThemeProps}
-      {...customToggleButtonProps}
     >
       {options.map(({ disabled = false, title, value = '' }, index) => {
         const active = selectedValue === value;
