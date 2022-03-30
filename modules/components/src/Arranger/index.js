@@ -5,7 +5,7 @@ export {
   AggregationsList,
   AggsWrapper,
 } from './Aggregations';
-export { default as Table } from './Table';
+export { default as OldTable } from './Table';
 export { default as AdvancedFacetView } from '../AdvancedFacetView/LiveAdvancedFacetView';
 export { default as QuickSearch } from './QuickSearch';
 export { default as MatchBox } from './MatchBox';
