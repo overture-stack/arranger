@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { replaceSQON, removeSQON } from '@/SQONView/utils';
+import { replaceSQON, removeSQON } from '@/SQONViewer/utils';
 import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';

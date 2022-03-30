@@ -10,12 +10,8 @@
     "@elastic/elasticsearch": "^8.1.0",
     "@overture-stack/arranger-server": "^3.0.0-beta.10",
     "babel-polyfill": "^6.26.0",
-    "body-parser": "^1.19.2",
-    "express": "^4.17.3",
     "graphql": "^16.3.0",
-    "graphql-tag": "^2.12.6",
-    "http": "0.0.1-security",
-    "minimist": "^1.2.6"
+    "graphql-tag": "^2.12.6"
   },
   "devDependencies": {
     "@babel/core": "^7.17.8",

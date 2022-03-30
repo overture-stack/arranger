@@ -4,12 +4,11 @@ import { compose, withState } from 'recompose';
 import { FaSearch } from 'react-icons/fa';
 import Component from 'react-component-component';
 
-import TextHighlight from '@/TextHighlight';
 import TextInput from '@/Input';
-
-import { Value as SQONBubble } from '../../SQONView';
-import { currentFieldValue, toggleSQON } from '../../SQONView/utils';
-import internalTranslateSQONValue from '../../utils/translateSQONValue';
+import { Value as SQONBubble } from '@/SQONViewer';
+import { currentFieldValue, toggleSQON } from '@/SQONViewer/utils';
+import TextHighlight from '@/TextHighlight';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import QuickSearchQuery from './QuickSearchQuery';
 import QuickSearchFieldsQuery from './QuickSearchFieldsQuery';

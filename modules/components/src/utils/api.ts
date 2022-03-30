@@ -1,12 +1,14 @@
 import axios from 'axios';
 import urlJoin from 'url-join';
 
+import { APIFetcherFn } from '@/DataContext/types';
+
 import { ARRANGER_API } from './config';
 import { addDownloadHttpHeaders } from './download';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 
-const defaultApiFetcher = ({
+const defaultApiFetcher: APIFetcherFn = ({
   endpoint = '',
   body,
   headers = {},
@@ -19,13 +21,19 @@ const defaultApiFetcher = ({
     method,
   });
 
-export const graphql = (body) => defaultApiFetcher({ endpoint: 'graphql', body });
+export const graphql = (body: unknown) => defaultApiFetcher({ endpoint: 'graphql', body });
 
-export const fetchExtendedMapping = ({ graphqlField, apiFetcher = defaultApiFetcher }) =>
+export const fetchExtendedMapping = ({
+  graphqlField,
+  apiFetcher = defaultApiFetcher,
+}: {
+  graphqlField: string;
+  apiFetcher: APIFetcherFn;
+}) =>
   apiFetcher({
-    endpoint: `/graphql`,
+    endpoint: `/graphql/extendedMapping`,
     body: {
-      query: `
+      query: `query extendedMapping
         {
           ${graphqlField}{
             extended
@@ -37,7 +45,7 @@ export const fetchExtendedMapping = ({ graphqlField, apiFetcher = defaultApiFetc
     extendedMapping: response.data[graphqlField].extended,
   }));
 
-export const addHeaders = (headers) => {
+export const addHeaders = (headers: Headers) => {
   alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
   addDownloadHttpHeaders(headers);
 };

@@ -3,7 +3,7 @@ import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
 
-import Props, { BucketCountThemeProps } from './types';
+import Props from './types';
 
 const BucketCount = ({
   className,
@@ -25,7 +25,7 @@ const BucketCount = ({
     disabledFontSize: customDisabledFontSize,
     fontColor,
     fontSize,
-  } = {} as BucketCountThemeProps,
+  } = {},
   ...props
 }: Props) => {
   const {
@@ -73,6 +73,7 @@ const BucketCount = ({
           color: ${fontColor || themeFontColor};
           display: inline-block;
           font-size: ${fontSize || themeFontSize};
+          height: fit-content;
           padding: 0 0.2rem;
 
           &.active {

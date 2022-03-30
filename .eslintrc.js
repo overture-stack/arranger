@@ -17,8 +17,14 @@ module.exports = {
   plugins: ['@typescript-eslint', 'prettier'],
   root: true,
   rules: {
-    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/no-empty-interface': [
+      'warn',
+      {
+        allowSingleExtends: false,
+      },
+    ],
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
     'import/first': ['warn', 'absolute-first'],
     'import/order': [
       'warn',

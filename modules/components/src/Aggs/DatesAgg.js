@@ -4,7 +4,7 @@ import { css } from '@emotion/react';
 import { addDays, endOfDay, startOfDay, subDays } from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
 
-import { removeSQON, replaceSQON } from '@/SQONView/utils';
+import { removeSQON, replaceSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
 
 import AggsWrapper from './AggsWrapper';

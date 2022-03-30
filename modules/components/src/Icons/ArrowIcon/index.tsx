@@ -40,19 +40,21 @@ const ArrowIcon = ({
   return (
     <svg
       className={cx('arrow', className, themeClassName)}
-      css={css`
-        flex: 0 auto;
-        transform: ${isTreeJoint
-          ? pointUp
-            ? undefined
-            : 'rotate(-90deg)'
-          : pointUp
-          ? 'scale(-1)'
-          : undefined};
-        transition: ${transition || themeTransition};
-        ${themeCSS}
-        ${customCSS}
-      `}
+      css={[
+        css`
+          flex: 0 auto;
+          transform: ${isTreeJoint
+            ? pointUp
+              ? undefined
+              : 'rotate(-90deg)'
+            : pointUp
+            ? 'scale(-1)'
+            : undefined};
+          transition: ${transition || themeTransition};
+        `,
+        themeCSS,
+        customCSS,
+      ]}
       height={size || themeSize}
       preserveAspectRatio="xMidYMin "
       viewBox="0 0 12 12"

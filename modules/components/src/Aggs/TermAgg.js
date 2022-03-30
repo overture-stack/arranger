@@ -5,7 +5,7 @@ import { FaSearch } from 'react-icons/fa';
 import cx from 'classnames';
 
 import { TransparentButton } from '@/Button';
-import { removeSQON, toggleSQON } from '@/SQONView/utils';
+import { removeSQON, toggleSQON } from '@/SQONViewer/utils';
 import TextFilter from '@/TextFilter';
 import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
@@ -242,7 +242,6 @@ const TermAgg = ({
                 value: bucket.name,
               }}
               css={css`
-                align-items: center;
                 cursor: pointer;
                 display: flex;
                 font-size: 0.8rem;
@@ -262,7 +261,6 @@ const TermAgg = ({
               <span
                 className="bucket-link"
                 css={css`
-                  align-items: center;
                   display: flex;
                   line-height: 1rem;
                 `}
@@ -275,7 +273,7 @@ const TermAgg = ({
                     value: bucket.name,
                   })}
                   css={css`
-                    margin: 0 0.3rem 0 0;
+                    margin: 0.2rem 0.3rem 0 0;
                   `}
                   id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
                   name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}

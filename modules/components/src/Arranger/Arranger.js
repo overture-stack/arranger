@@ -6,6 +6,10 @@ import { DataProvider } from '@/DataContext';
 import columnsToGraphql from '../utils/columnsToGraphql';
 import defaultApiFetcher from '../utils/api';
 
+// TODO: This is a dummy object, exported for the DataContext's types, to ensure that a TS
+// error comes up when this component is deprecated in a later version, after the rewrite
+export let legacyProps;
+
 class Arranger extends React.Component {
   constructor(props) {
     super(props);
@@ -52,6 +56,9 @@ class Arranger extends React.Component {
     }
   }
 
+  setSelectedTableRows = (selectedTableRows) => this.setState({ selectedTableRows });
+  setSQON = (sqon) => this.setState({ sqon });
+
   render() {
     const {
       index,
@@ -62,20 +69,27 @@ class Arranger extends React.Component {
       apiFetcher = defaultApiFetcher,
     } = this.props;
     const { sqon, selectedTableRows } = this.state;
+    const { setSelectedTableRows, setSQON } = this;
 
     const childProps = {
       apiFetcher,
-      sqon,
-      selectedTableRows,
-      index,
-      graphqlField,
       fetchData: this.fetchData,
-      setSQON: (sqon) => this.setState({ sqon }),
-      setSelectedTableRows: (selectedTableRows) => this.setState({ selectedTableRows }),
+      graphqlField,
+      index,
+      selectedTableRows,
+      setSelectedTableRows,
+      setSQON,
+      sqon,
     };
 
+    legacyProps = { index, selectedTableRows, setSelectedTableRows, setSQON, sqon };
+
     return (
-      <DataProvider customFetcher={apiFetcher}>
+      <DataProvider
+        customFetcher={apiFetcher}
+        graphqlField={graphqlField}
+        legacyProps={legacyProps}
+      >
         {component
           ? React.createElement(component, childProps)
           : render

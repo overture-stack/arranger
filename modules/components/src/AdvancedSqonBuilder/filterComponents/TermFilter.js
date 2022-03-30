@@ -1,9 +1,8 @@
-import React from 'react';
 import Component from 'react-component-component';
 import { sortBy, get } from 'lodash';
 
-import './FilterContainerStyle.css';
-import { FilterContainer } from './common';
+import { inCurrentSQON } from '@/SQONViewer/utils';
+
 import {
   getOperationAtPath,
   setSqonAtPath,
@@ -14,9 +13,11 @@ import {
 } from '../utils';
 import TermAgg from '../../Aggs/TermAgg';
 import TextFilter from '../../TextFilter';
-import { inCurrentSQON } from '../../SQONView/utils';
 import defaultApiFetcher from '../../utils/api';
 import Query from '../../Query';
+
+import { FilterContainer } from './common';
+import './FilterContainerStyle.css';
 
 const AggsWrapper = ({ children }) => <div className="aggregation-group">{children}</div>;
 

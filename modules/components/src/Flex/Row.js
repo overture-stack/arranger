@@ -1,7 +1,5 @@
-// @flow
-
-// Vendor
-import React, { Children, cloneElement } from 'react';
+import { Children, cloneElement } from 'react';
+import { css } from '@emotion/react';
 import PropTypes from 'prop-types';
 
 /*----------------------------------------------------------------------------*/
@@ -14,14 +12,26 @@ const baseStyle = {
   outline: 'none',
 };
 
-const Row = ({ flex, wrap, style, spacing, children, ...props }) => (
-  <div
-    style={{
-      ...baseStyle,
-      flex,
-      ...(wrap ? { flexWrap: 'wrap' } : {}),
-      ...style,
-    }}
+// adding temporary defaults to make the props optional when imported in TSX files
+const Row = ({
+  as = 'div',
+  children = [],
+  Component = as,
+  flex = undefined,
+  spacing = '',
+  style = {},
+  wrap = false,
+  ...props
+}) => (
+  <Component
+    css={[
+      baseStyle,
+      css`
+        flex: ${flex};
+        flex-wrap: ${wrap && 'wrap'};
+      `,
+      style,
+    ]}
     {...props}
   >
     {!spacing && children}
@@ -39,11 +49,13 @@ const Row = ({ flex, wrap, style, spacing, children, ...props }) => (
             },
           }),
       )}
-  </div>
+  </Component>
 );
 
 Row.propTypes = {
+  as: PropTypes.elementType,
   children: PropTypes.node,
+  Component: PropTypes.elementType,
   style: PropTypes.object,
   flex: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   wrap: PropTypes.bool,

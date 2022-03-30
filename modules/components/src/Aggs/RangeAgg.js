@@ -1,14 +1,14 @@
 import { Component } from 'react';
 import { css } from '@emotion/react';
-import { isNil } from 'lodash';
+import { isEqual, isNil } from 'lodash';
 import cx from 'classnames';
 import convert from 'convert-units';
-import InputRange from 'react-input-range';
+import InputRange from 'react-input-range'; // TODO: abandoned. use rc-slider instead
 import 'react-input-range/lib/css/index.css';
 
-import { replaceFieldSQON } from '@/SQONView/utils';
-import formatNumber from '@/utils/formatNumber';
+import { replaceFieldSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
+import formatNumber from '@/utils/formatNumber';
 
 import AggsWrapper from './AggsWrapper';
 
@@ -94,18 +94,20 @@ class RangeAgg extends Component {
     const { currentValues: { max: selectedMax, min: selectedMin } = {} } = this.state;
 
     const resetMax = isNil(sqonMax)
-      ? isNil(oldMax) || (newMax > oldMax && oldMax === selectedMax)
+      ? isNil(oldMax) || (newMax > oldMax && oldMax === selectedMax) || newMax !== selectedMax
       : newMax < selectedMax || newMin > selectedMax;
     const resetMin = isNil(sqonMin)
-      ? isNil(oldMin) || (newMin < oldMin && oldMin === selectedMin)
+      ? isNil(oldMin) || (newMin < oldMin && oldMin === selectedMin) || newMin !== selectedMin
       : newMin > selectedMin || newMax < selectedMin;
 
-    this.setState({
+    const newState = {
       currentValues: {
         max: resetMax ? newMax : Math.min(sqonMax || selectedMax, newMax),
         min: resetMin ? newMin : Math.max(sqonMin || selectedMin, newMin),
       },
-    });
+    };
+
+    isEqual(this.state.currentValues, newState.currentValues) || this.setState(newState);
   }
 
   onChangeComplete = () => {
@@ -151,6 +153,8 @@ class RangeAgg extends Component {
 
     if (round(newMax) <= round(max) && round(newMin) >= round(min)) {
       this.setState({ currentValues: { max: round(newMax), min: round(newMin) } });
+    } else {
+      console.error('the selected value is out of range');
     }
   };
 
@@ -181,11 +185,7 @@ class RangeAgg extends Component {
         components: {
           Aggregations: {
             RangeAgg: {
-              InputRange: {
-                background: themeInputRangeBackground = 'none',
-                disabledBackground: themeInputRangeDisabledBackground = colors?.grey?.[200],
-                css: themeInputRangeCSS,
-              } = {},
+              InputRange: { css: themeInputRangeCSS } = {},
               NoDataContainer: {
                 fontColor: themeNoDataFontColor = colors?.grey?.[600],
                 fontSize: themeNoDataFontSize = '0.8em',
@@ -199,8 +199,12 @@ class RangeAgg extends Component {
                 disabledBorderColor: themeRangeSliderDisabledBorderColor = colors?.grey?.[500],
               } = {},
               RangeTrack: {
-                background: themeRangeTrackBackground = colors?.grey?.[600],
-                disabledBackground: themeRangeTrackDisabledBackground = colors?.grey?.[400],
+                background: themeRangeTrackBackground = 'none',
+                disabledBackground: themeRangeTrackDisabledBackground = colors?.grey?.[200],
+                disabledInBackground: themeRangeTrackDisabledInBackground = colors?.grey?.[400],
+                disabledOutBackground: themeRangeTrackDisabledOutBackground = colors?.grey?.[200],
+                inBackground: themeRangeTrackInBackground = colors?.grey?.[600],
+                outBackground: themeRangeTrackOutBackground = colors?.grey?.[200],
               } = {},
               RangeWrapper: { css: themeRangeWrapperCSS, ...RangeWrapperProps } = {},
             } = {},
@@ -293,7 +297,7 @@ class RangeAgg extends Component {
                  * only way available for now. May implement our own slider.
                  */
                 .input-range {
-                  background: ${themeInputRangeBackground};
+                  background: ${themeRangeTrackBackground};
 
                   .input-range__label {
                     display: none;
@@ -307,16 +311,16 @@ class RangeAgg extends Component {
                     ${themeRangeSliderCSS}
                   }
 
-                  .input-range__track.input-range__track--background {
-                    background: ${colors?.grey?.[200]};
-                  }
-
                   .input-range__track {
-                    background: ${themeRangeTrackBackground};
+                    background: ${themeRangeTrackInBackground};
+
+                    &.input-range__track--background {
+                      background: ${themeRangeTrackOutBackground};
+                    }
                   }
 
                   &.input-range--disabled {
-                    background: ${themeInputRangeDisabledBackground};
+                    background: ${themeRangeTrackDisabledBackground};
 
                     .input-range__slider,
                     .input-range__track {
@@ -329,7 +333,11 @@ class RangeAgg extends Component {
                     }
 
                     .input-range__track {
-                      background: ${themeRangeTrackDisabledBackground};
+                      background: ${themeRangeTrackDisabledInBackground};
+
+                      &.input-range__track--background {
+                        background: ${themeRangeTrackDisabledOutBackground};
+                      }
                     }
                   }
 

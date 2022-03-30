@@ -1,4 +1,3 @@
-/* @flow */
 import { addInSQON, toggleSQON, mergeQuery } from '../utils';
 import { stringifyJSONParam } from '../../utils/uri';
 

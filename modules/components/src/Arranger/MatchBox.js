@@ -4,14 +4,15 @@ import { compose, withState, withHandlers } from 'recompose';
 import { css } from '@emotion/react';
 
 import Input from '@/Input';
+import { toggleSQON } from '@/SQONViewer/utils';
 
 import Tabs, { TabsTable } from '../Tabs';
 import { MatchBoxState } from '../MatchBox';
-import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 import saveSet from '../utils/saveSet';
 import formatNumber from '../utils/formatNumber';
 import parseInputFiles from '../utils/parseInputFiles';
-import { toggleSQON } from '../SQONView/utils';
+
+import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
 
 const layoutStyle = css`
   &.match-box {
