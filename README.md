@@ -92,7 +92,7 @@ A bit more friendly "quickstart", if you just want to get things started
 
 ---
 # Afterwards, in another bash process, you may seed an example/mock file_centric index:
-  make init-es
+  make populate-es
 
 # ^^^^ ^^^^^^^ which runs the following command behind the scenes:
 # ./docker/elasticsearch/load-es-data.sh ./docker/elasticsearch elastic myelasticpassword
