@@ -1,7 +1,7 @@
-import React from 'react';
 import { compose, withPropsOnChange, withState } from 'recompose';
+import ReactTable from 'react-table-old';
+
 import PaginationComponent from './DataTable/Table/CustomPagination';
-import ReactTable from 'react-table';
 
 const enhance = compose(
   withState('activeTab', 'setActiveTab', null),

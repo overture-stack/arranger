@@ -1,7 +1,6 @@
-import React from 'react';
 import classnames from 'classnames';
 import { range } from 'lodash';
-import ReactTablePagination from 'react-table/lib/pagination';
+import ReactTablePagination from 'react-table-old/lib/pagination';
 
 export default class CustomPagination extends ReactTablePagination {
   onPreviousPageClick = () => {
