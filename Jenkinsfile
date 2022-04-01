@@ -301,6 +301,28 @@ pipeline {
       }
     }
 
+    success {
+      withCredentials([string(
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'failed_slackChannelURL'
+      )]) {
+        container('node') {
+          script {
+            if (env.BRANCH_NAME ==~ /(main)/) {
+              sh "curl \
+                -X POST \
+                -H 'Content-type: application/json' \
+                --data '{ \
+                  \"text\":\"New Arranger published succesfully: \
+                  v.${version} [Build ${env.BUILD_NUMBER}] (${env.BUILD_URL}) \" \
+                }' \
+                ${failed_slackChannelURL}"
+            }
+          }
+        }
+      }
+    }
+
     unsuccessful {
       withCredentials([string(
         credentialsId: 'OvertureSlackJenkinsWebhookURL',
