@@ -151,13 +151,15 @@ const SQONViewer = ({
 
 export default SQONViewer;
 
-export const CurrentSQON =
-  (console.warn(
+export const CurrentSQON = (props) => {
+  console.warn(
     'Arranger deprecation warning --\n This component has been renamed to `SQONViewer` for declarativeness. ' +
       'Please update your integration accordingly to prevent errors, ' +
       'as the old name will be deprecated in a future Arranger version.',
-  ),
-  SQONViewer);
+  );
+
+  return <SQONViewer {...props} />;
+};
 
 export const SQONView = CurrentSQON;
 

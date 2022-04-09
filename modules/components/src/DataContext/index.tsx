@@ -1,18 +1,11 @@
 import { ComponentType, createContext, useContext, useState } from 'react';
 
 import defaultApiFetcher from '@/utils/api';
-import columnsToGraphql from '@/utils/columnsToGraphql';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import { ThemeProvider } from '@/ThemeContext';
 
-import { useExtendedMapping } from './helpers';
-import {
-  DataContextInterface,
-  DataProviderProps,
-  FetchDataFn,
-  SQONType,
-  UseDataContextProps,
-} from './types';
+import { fetchDataInitialiser, useConfigs } from './helpers';
+import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
 
 export const DataContext = createContext<DataContextInterface>({} as DataContextInterface);
 // returning "as interface" so the type is explicit while integrating into another app
@@ -26,34 +19,27 @@ export const DataContext = createContext<DataContextInterface>({} as DataContext
 export const DataProvider = ({
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
-  graphqlField,
+  documentType,
   legacyProps,
   theme,
   url,
 }: DataProviderProps): React.ReactElement<DataContextInterface> => {
   const [selectedTableRows, setSelectedTableRows] = useState<string[]>([]);
   const [sqon, setSQON] = useState<SQONType>(null);
-  const extendedMapping = useExtendedMapping({
+
+  const { columnState, extendedMapping, isLoadingConfigs } = useConfigs({
     apiFetcher,
-    graphqlField,
+    documentType,
   });
 
-  const fetchData: FetchDataFn = (options = {}) =>
-    apiFetcher({
-      endpoint: `/graphql`,
-      body: columnsToGraphql(options),
-      url,
-    }).then((response) => {
-      const hits = options?.config?.type ? response?.data?.[options.config.type]?.hits : {};
-      const data = (hits.edges || []).map((e: any) => e.node);
-      const total = hits.total || 0;
-
-      return { total, data };
-    });
+  const fetchData = fetchDataInitialiser({ apiFetcher, documentType, url });
 
   const contextValues = {
+    columnState,
     extendedMapping,
     fetchData,
+    documentType,
+    isLoadingConfigs,
     selectedTableRows,
     setSelectedTableRows,
     setSQON,

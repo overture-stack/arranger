@@ -1,8 +1,10 @@
 import { PassThrough } from 'stream';
 
-import { mapHits } from '../mapping';
-import { buildQuery, esToSafeJsInt } from '../middleware';
-import { CONFIG } from '../config';
+import { CONFIG } from '@/config';
+import { ConfigProperties } from '@/config/types';
+import { mapHits } from '@/mapping';
+import { buildQuery, esToSafeJsInt } from '@/middleware';
+
 import runQuery from './runQuery';
 
 export default async ({
@@ -41,12 +43,12 @@ export default async ({
     variables: { sqon },
   })
     .then(({ data }) => {
-      const allowCustomMaxRows =
-        configs.config.allowCustomDownloadMaxRows || CONFIG.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS;
-      const maxHits = (allowCustomMaxRows && maxRows) || configs.config.downloadMaxRows;
+      const allowCustomMaxRows = configs.config[ConfigProperties.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS];
+      const maxHits =
+        allowCustomMaxRows && (maxRows || configs.config[ConfigProperties.DOWNLOAD_MAX_ROWS]);
 
       const hitsCount = data?.[configs.name]?.hits?.total || 0;
-      const total = Math.min(hitsCount, maxHits) || hitsCount;
+      const total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount; // a.k.a 'maxHits == 0' => hitCounts
       const steps = Array(Math.ceil(total / chunkSize)).fill(null);
 
       // async reduce because each cycle is dependent on result of the previous

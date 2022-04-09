@@ -4,6 +4,8 @@ import { compose, defaultProps } from 'recompose';
 import jsonpath from 'jsonpath/jsonpath.min';
 import DetectScrollbarSize from 'react-scrollbar-size';
 
+import { withData } from '@/DataContext';
+
 import createStyle from './style';
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
@@ -14,6 +16,7 @@ const enhance = compose(
     onPaginationChange: noop,
     selectedTableRows: null,
   }),
+  withData,
 );
 
 class DataTable extends React.Component {
@@ -63,14 +66,24 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = (state) => {
-    const { fetchData, config, sqon, alwaysSorted = [], keepSelectedOnPageChange } = this.props;
+    const {
+      fetchData,
+      documentType,
+      config,
+      sqon,
+      alwaysSorted = [],
+      keepSelectedOnPageChange,
+    } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
 
     return fetchData?.({
       config,
-      sqon,
+      endpoint: '/graphql/OldTableDataQuery',
+      first: state.pageSize,
+      documentType,
+      offset: state.page * state.pageSize,
       queryName: 'Table',
       sort: [
         ...state.sorted.map((sort) => ({
@@ -79,8 +92,7 @@ class DataTable extends React.Component {
         })),
         ...alwaysSorted,
       ],
-      offset: state.page * state.pageSize,
-      first: state.pageSize,
+      sqon,
     })
       .then(({ total, data }) => {
         if (total !== this.state.total) {

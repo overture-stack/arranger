@@ -29,16 +29,16 @@ class MatchBoxState extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(next) {
-    if (this.props.graphqlField !== next.graphqlField) {
+    if (this.props.documentType !== next.documentType) {
       this.fetchMatchBoxState(next);
     }
   }
 
-  fetchMatchBoxState = debounce(async ({ graphqlField }, onComplete = () => {}) => {
+  fetchMatchBoxState = debounce(async ({ documentType }, onComplete = () => {}) => {
     try {
       let {
         data: {
-          [graphqlField]: {
+          [documentType]: {
             extended,
             matchBoxState: { state: matchBoxState },
             columnsState: { state: columnsState },
@@ -49,7 +49,7 @@ class MatchBoxState extends Component {
         body: {
           query: `
             {
-              ${graphqlField} {
+              ${documentType} {
                 extended
                 matchBoxState {
                   ${matchBoxFields}
@@ -96,7 +96,7 @@ class MatchBoxState extends Component {
         mutation($state: JSON!) {
           saveMatchBoxState(
             state: $state
-            graphqlField: "${this.props.graphqlField}"
+            documentType: "${this.props.documentType}"
           ) {
             ${matchBoxFields}
           }

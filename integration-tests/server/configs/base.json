@@ -1,12 +1,11 @@
 {
+  "document-type": "model",
   "index": "models",
-  "name": "model",
   "aggs-state": [
     {
       "field": "analysis__analysis_id",
       "active": true,
-      "show": true,
-      "__typename": "AggState"
+      "show": true
     }
   ],
   "columns-state": {},
@@ -17,8 +16,7 @@
       "field": "",
       "isActive": false,
       "keyField": null,
-      "searchFields": [],
-      "__typename": "MatchBoxField"
+      "searchFields": []
     }
   ]
 }

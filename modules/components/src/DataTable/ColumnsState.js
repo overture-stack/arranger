@@ -12,14 +12,14 @@ let columnFields = `
       desc
     }
     columns {
-      field
       accessor
-      show
-      type
-      sortable
       canChangeShow
+      field
       query
       jsonPath
+      show
+      sortable
+      type
     }
   }
 `;
@@ -51,20 +51,20 @@ class ColumnsState extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(next) {
-    if (this.props.graphqlField !== next.graphqlField) {
+    if (this.props.documentType !== next.documentType) {
       this.fetchColumnsState(next);
     }
   }
 
-  fetchColumnsState = debounce(async ({ graphqlField }) => {
+  fetchColumnsState = debounce(async ({ documentType }) => {
     const { apiFetcher } = this.props;
     try {
       let { data } = await apiFetcher({
-        endpoint: `/graphql/columnsStateQuery`,
+        endpoint: `/graphql/ColumnsStateQuery`,
         body: {
           query: `query columnsStateQuery
             {
-              ${graphqlField} {
+              ${documentType} {
                 columnsState {
                   ${columnFields}
                 }
@@ -74,7 +74,7 @@ class ColumnsState extends Component {
         },
       });
 
-      const config = data[graphqlField].columnsState.state;
+      const config = data[documentType].columnsState.state;
       const toggled = this.getStoredToggled();
 
       this.setState({
@@ -97,7 +97,7 @@ class ColumnsState extends Component {
         mutation($state: JSON!) {
           saveColumnsState(
             state: $state
-            graphqlField: "${this.props.graphqlField}"
+            documentType: "${this.props.documentType}"
           ) {
             ${columnFields}
           }

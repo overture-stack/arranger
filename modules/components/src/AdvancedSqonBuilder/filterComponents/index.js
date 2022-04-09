@@ -24,7 +24,7 @@ const FieldOpModifier = ({
   arrangerIndex,
   getExecutableSqon = () => initialSqon,
 }) => (
-  <ExtendedMappingProvider apiFetcher={apiFetcher} graphqlField={arrangerIndex} field={field}>
+  <ExtendedMappingProvider apiFetcher={apiFetcher} documentType={arrangerIndex} field={field}>
     {({ loading, extendedMapping }) => {
       const fieldExtendedMapping = (extendedMapping || []).find(
         ({ field: _field }) => field === _field,

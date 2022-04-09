@@ -40,7 +40,7 @@ const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
   return esToAggTypeMap[get(mapping, mappingPath)?.type];
 };
 
-export default class extends Component {
+class AggsState extends Component {
   state = { aggs: [], temp: [], mapping: {} };
 
   componentDidMount() {
@@ -48,20 +48,20 @@ export default class extends Component {
   }
 
   componentDidUpdate(prev) {
-    if (this.props.graphqlField !== prev.graphqlField) {
+    if (this.props.documentType !== prev.documentType) {
       this.fetchAggsState(this.props);
     }
   }
 
-  fetchAggsState = debounce(async ({ graphqlField }) => {
+  fetchAggsState = debounce(async ({ documentType }) => {
     const { apiFetcher = defaultApiFetcher } = this.props;
     try {
       let { data } = await apiFetcher({
-        endpoint: `/graphql/aggsStateQuery`,
+        endpoint: `/graphql/AggsStateQuery`,
         body: {
           query: `query aggsStateQuery
             {
-              ${graphqlField} {
+              ${documentType} {
                 mapping
                 aggsState {
                   ${aggFields}
@@ -73,9 +73,9 @@ export default class extends Component {
       });
 
       this.setState({
-        aggs: data[graphqlField].aggsState.state,
-        temp: data[graphqlField].aggsState.state,
-        mapping: data[graphqlField].mapping,
+        aggs: data[documentType].aggsState.state,
+        temp: data[documentType].aggsState.state,
+        mapping: data[documentType].mapping,
       });
     } catch (error) {
       // this.setState({ })
@@ -93,7 +93,7 @@ export default class extends Component {
           mutation($state: JSON!) {
             saveAggsState(
               state: $state
-              graphqlField: "${this.props.graphqlField}"
+              documentType: "${this.props.documentType}"
             ) {
               ${aggFields}
             }
@@ -149,3 +149,5 @@ export default class extends Component {
     });
   }
 }
+
+export default AggsState;

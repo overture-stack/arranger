@@ -183,7 +183,7 @@ export default class LiveAdvancedFacetView extends React.Component {
     return (
       <AdvancedFacetView
         {...props}
-        rootTypeName={props.graphqlField}
+        rootTypeName={props.documentType}
         elasticMapping={this.state.mapping}
         extendedMapping={this.state.extended.filter(
           (ex) => !fieldTypesToExclude.some((type) => ex.type === type),

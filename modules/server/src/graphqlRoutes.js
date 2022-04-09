@@ -4,6 +4,7 @@ import express from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
+import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import makeSchema from './schema';
 
@@ -25,7 +26,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
         const typesWithMapping = addMappingsToTypes({
           graphQLType: {
             index: configs?.index,
-            name: configs?.name,
+            name: configs?.[ConfigProperties.DOCUMENT_TYPE],
             extendedFields,
             customFields: '',
             config: configs,

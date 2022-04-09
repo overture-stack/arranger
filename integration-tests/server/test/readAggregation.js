@@ -3,14 +3,14 @@ import { print } from 'graphql';
 import gql from 'graphql-tag';
 import orderBy from 'lodash/orderBy';
 
-export default ({ api, graphqlField, gqlPath }) => {
+export default ({ api, documentType, gqlPath }) => {
   it('reads aggregations properly', async () => {
     const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations {
                 clinical_diagnosis__clinical_stage_grouping {
                   buckets {
@@ -53,7 +53,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 filters: {
                   op: "and",
@@ -84,11 +84,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -98,7 +98,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -120,7 +120,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 filters: {
                   op: "and",
@@ -157,11 +157,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -171,7 +171,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -193,7 +193,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 filters: {
                   op: "and",
@@ -230,11 +230,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -244,7 +244,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -266,7 +266,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 filters: {
                   op: "and",
@@ -303,11 +303,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: orderBy(
-                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .buckets,
                 'key',
               ),
@@ -317,7 +317,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               buckets: [
@@ -339,7 +339,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 aggregations_filter_themselves: true
               ) {
@@ -355,11 +355,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               bucket_count:
-                data.data[graphqlField].aggregations.clinical_diagnosis__clinical_stage_grouping
+                data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping
                   .bucket_count,
             },
           },
@@ -367,7 +367,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__clinical_stage_grouping: {
               bucket_count: 2,
@@ -384,7 +384,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 include_missing: false
                 aggregations_filter_themselves: true
@@ -401,11 +401,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                data.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                data.data[documentType].aggregations.clinical_diagnosis__histological_type
                   .bucket_count,
             },
           },
@@ -413,7 +413,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count: 0,
@@ -430,7 +430,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 aggregations_filter_themselves: true
               ) {
@@ -446,11 +446,11 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count:
-                data.data[graphqlField].aggregations.clinical_diagnosis__histological_type
+                data.data[documentType].aggregations.clinical_diagnosis__histological_type
                   .bucket_count,
             },
           },
@@ -458,7 +458,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             clinical_diagnosis__histological_type: {
               bucket_count: 1,
@@ -475,7 +475,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggregations(
                 aggregations_filter_themselves: true
                 include_missing: false
@@ -494,17 +494,17 @@ export default ({ api, graphqlField, gqlPath }) => {
 
     expect({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             access_denied: {
-              buckets: data.data[graphqlField].aggregations.access_denied.buckets,
+              buckets: data.data[documentType].aggregations.access_denied.buckets,
             },
           },
         },
       },
     }).to.eql({
       data: {
-        [graphqlField]: {
+        [documentType]: {
           aggregations: {
             access_denied: {
               buckets: [{ key_as_string: 'false' }],

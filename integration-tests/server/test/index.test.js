@@ -46,7 +46,7 @@ const cleanup = () =>
 
 describe('@overture-stack/arranger-server', () => {
   let server;
-  const graphqlField = 'model';
+  const documentType = 'model';
 
   before('Initialise Elasticsearch and Arranger', async function () {
     this.timeout(10000);
@@ -126,15 +126,15 @@ describe('@overture-stack/arranger-server', () => {
       //   endpoint: adminPath,
       //   body: {
       //     query: print(gql`
-      //       mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
-      //         newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
+      //       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
+      //         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
       //           id
       //         }
       //       }
       //     `),
       //     variables: {
       //       projectId,
-      //       graphqlField,
+      //       documentType,
       //       esIndex,
       //     },
       //   },
@@ -156,7 +156,7 @@ describe('@overture-stack/arranger-server', () => {
 
   const env = {
     api,
-    graphqlField,
+    documentType,
     gqlPath: '/graphql',
   };
 

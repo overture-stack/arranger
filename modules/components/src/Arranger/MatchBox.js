@@ -271,7 +271,7 @@ const MatchBox = ({
                       const data = get(
                         await saveSet({
                           sqon: quickSearchSqon,
-                          type: props.graphqlField,
+                          type: props.documentType,
                           userId,
                           path: primaryKeyField.field,
                           apiFetcher,

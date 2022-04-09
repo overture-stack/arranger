@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@babel/runtime": "^7.17.8",
+    "@babel/runtime": "^7.17.9",
     "@elastic/elasticsearch": "^7.5.0",
     "apollo-server": "^3.6.3",
     "apollo-server-core": "^2.14.2",
@@ -66,7 +66,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.17.6",
-    "@babel/core": "^7.17.8",
+    "@babel/core": "^7.17.9",
     "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
     "@babel/plugin-proposal-optional-chaining": "^7.16.7",
     "@babel/plugin-transform-runtime": "^7.17.0",
@@ -75,7 +75,7 @@
     "@babel/register": "^7.17.7",
     "@types/convert-units": "^2.3.5",
     "@types/jest": "^27.4.1",
-    "@types/lodash": "^4.14.180",
+    "@types/lodash": "^4.14.181",
     "@types/morgan": "^1.9.3",
     "@types/paralleljs": "0.0.21",
     "@types/tar-stream": "^2.2.2",

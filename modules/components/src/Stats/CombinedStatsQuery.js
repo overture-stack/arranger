@@ -3,11 +3,12 @@ import { get } from 'lodash';
 
 import { AggsState } from '../Aggs';
 import Query from '../Query';
+
 import { accessor, underscoreField } from './Stats';
 
-const CombinedStatsQuery = ({ apiFetcher, graphqlField, sqon, stats, render }) => (
+const CombinedStatsQuery = ({ apiFetcher, documentType, sqon, stats, render }) => (
   <AggsState
-    {...{ apiFetcher, graphqlField }}
+    {...{ apiFetcher, documentType }}
     render={({ aggs }) => {
       const decoratedStats = stats.map((s, i) => ({
         key: `q${i}`,
@@ -17,14 +18,14 @@ const CombinedStatsQuery = ({ apiFetcher, graphqlField, sqon, stats, render }) =
       }));
       return (
         <Query
-          {...{ apiFetcher, graphqlField }}
+          {...{ apiFetcher, documentType }}
           renderError
           name={`CombinedStatsQuery`}
           shouldFetch={aggs.length}
           variables={{ sqon }}
           query={`
             query($sqon: JSON) {
-              data: ${graphqlField} {
+              data: ${documentType} {
                 ${decoratedStats.map(
                   ({ key, aggsField, isRoot }) =>
                     `${key}: ${

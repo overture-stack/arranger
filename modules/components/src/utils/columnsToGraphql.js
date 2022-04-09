@@ -4,7 +4,7 @@ export function toQuery(column) {
     (column.accessor || '')
       .split('.')
       .reverse()
-      .reduce((acc, segment, i, arr) => {
+      .reduce((acc, segment, i) => {
         if (i === 0) {
           return segment;
         } else {
@@ -18,6 +18,7 @@ export function toQuery(column) {
 
 export default function columnsToGraphql({
   config = {},
+  documentType = 'unknownField',
   sqon = null,
   queryName = '',
   sort = [],
@@ -25,7 +26,7 @@ export default function columnsToGraphql({
   first = 20,
 }) {
   const fields = config?.columns
-    .filter(
+    ?.filter(
       (column) =>
         !(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
     )
@@ -35,20 +36,18 @@ export default function columnsToGraphql({
 
   return {
     fields,
-    query: `
-        query ${queryName}($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
-          ${config.type} {
-            hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
-              total
-              edges {
-                node {
-                  ${fields}
-                }
-              }
+    query: `query ${queryName}($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
+      ${documentType} {
+        hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
+          total
+          edges {
+            node {
+              ${fields}
             }
           }
         }
-      `,
+      }
+    }`,
     variables: {
       sqon,
       sort: sort.map((s) => {

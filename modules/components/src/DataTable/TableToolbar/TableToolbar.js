@@ -13,6 +13,7 @@ import stringCleaner from '../../utils/stringCleaner';
 
 import exporterProcessor from './helpers';
 import './Toolbar.css';
+import { useDataContext } from '@/DataContext';
 
 const enhance = compose(
   withProps(({ columns }) => ({
@@ -86,8 +87,8 @@ const TableToolbar = ({
   style,
   total = propsData?.total || 0,
   transformParams = (params) => params,
-  type = '',
 }) => {
+  const { documentType } = useDataContext();
   const { components: { Table: { DropDown: themeDropDownProps = {} } = {} } = {} } =
     useThemeContext();
 
@@ -129,7 +130,7 @@ const TableToolbar = ({
           ).toLocaleString()}`}
         </span>{' '}
         <span className="ofTotal">of {total?.toLocaleString()}</span>{' '}
-        <span className="type">{pluralize(type, isPlural ? 2 : 1)}</span>
+        <span className="type">{pluralize(documentType, isPlural ? 2 : 1)}</span>
       </div>
       {customHeaderContent || null}
 
@@ -217,6 +218,7 @@ const TableToolbar = ({
                       {
                         allColumns,
                         columns,
+                        documentType,
                         maxRows: exporterMaxRows,
                         fileName: exporterFileName
                           ? `${exporterFileName}${
@@ -224,7 +226,6 @@ const TableToolbar = ({
                             }`
                           : `${stringCleaner(exporterLabel.toLowerCase())}.tsv`,
                         fileType: 'tsv',
-                        index: type,
                         sqon: downloadSqon,
                         ...(exporterColumns && { exporterColumns }),
                       },
@@ -263,9 +264,9 @@ const TableToolbar = ({
                         files: [
                           {
                             columns,
-                            fileName: exportTSVFilename || `${type}-table.tsv`,
+                            documentType,
+                            fileName: exportTSVFilename || `${documentType}-table.tsv`,
                             fileType: 'tsv',
-                            index: type,
                             sqon: downloadSqon,
                           },
                         ],

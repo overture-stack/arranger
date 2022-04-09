@@ -24,10 +24,10 @@ const defaultApiFetcher: APIFetcherFn = ({
 export const graphql = (body: unknown) => defaultApiFetcher({ endpoint: 'graphql', body });
 
 export const fetchExtendedMapping = ({
-  graphqlField,
+  documentType,
   apiFetcher = defaultApiFetcher,
 }: {
-  graphqlField: string;
+  documentType: string;
   apiFetcher: APIFetcherFn;
 }) =>
   apiFetcher({
@@ -35,14 +35,14 @@ export const fetchExtendedMapping = ({
     body: {
       query: `query extendedMapping
         {
-          ${graphqlField}{
+          ${documentType}{
             extended
           }
         }
       `,
     },
   }).then((response) => ({
-    extendedMapping: response.data[graphqlField].extended,
+    extendedMapping: response.data[documentType].extended,
   }));
 
 export const addHeaders = (headers: Headers) => {

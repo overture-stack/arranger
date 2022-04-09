@@ -48,9 +48,9 @@ export default (dirname: string): Promise<ConfigObject> => {
       if (files.length === 0) throw new Error('Could not find any config files');
 
       const configObj = files.reduce(
-        (configsAcc: ConfigObject, file) => {
+        (configsAcc: Partial<ConfigObject>, file) => {
           const [fileName, fileData] = file as [string, any];
-          var fileDataJSON = JSON.parse(fileData);
+          const fileDataJSON = JSON.parse(fileData);
 
           return {
             ...configsAcc,
@@ -58,11 +58,12 @@ export default (dirname: string): Promise<ConfigObject> => {
           };
         },
         {
+          'allow-custom-download-max-rows': CONFIG.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS,
           index: CONFIG.ES_INDEX,
-          name: CONFIG.GRAPHQL_FIELD,
-          downloadMaxRows: CONFIG.DOWNLOAD_MAX_ROWS,
-        } as ConfigObject,
-      );
+          'document-type': CONFIG.DOCUMENT_TYPE,
+          'download-max-rows': CONFIG.DOWNLOAD_MAX_ROWS,
+        },
+      ) as ConfigObject; // hopefully
 
       return configObj;
     });

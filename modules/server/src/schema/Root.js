@@ -4,6 +4,7 @@ import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
 import { createConnectionResolvers, saveSet, mappingToFields } from '../mapping';
+
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
@@ -38,7 +39,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
     viewer: Root
     query(query: String, types: [String]): QueryResults
 
-    hasValidConfig(field: String!, index: String!): Boolean
+    hasValidConfig(documentType: String!, index: String!): Boolean
 
     ${rootTypes.map(([key]) => `${key}: ${startCase(key).replace(/\s/g, '')}`)}
     ${types.map(([key, type]) => `${type.name}: ${type.name}`)}
@@ -77,16 +78,11 @@ export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) 
     Date: GraphQLDate,
     Root: {
       viewer: resolveObject,
-      hasValidConfig: async (obj, { field, index }) => {
-        const [_, type] = types.find(([name]) => name === field) || [];
+      hasValidConfig: async (obj, { documentType, index }) => {
+        const [_, type] = types.find(([name]) => name === documentType) || [];
 
         // TODO: make this more useful/verbose;
-        return (
-          !!type &&
-          field === type.name &&
-          index === type.index &&
-          Object.keys(type.config).length > 0
-        );
+        return !!type && index === type.index && Object.keys(type.config).length > 0;
       },
       ...[...types, ...rootTypes].reduce(
         (acc, [key, type]) => ({

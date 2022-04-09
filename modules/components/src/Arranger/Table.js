@@ -7,7 +7,7 @@ import noopFn from '@/utils/noopFns';
 
 const Table = ({
   onFilterChange = noopFn,
-  graphqlField = '',
+  documentType = '',
   fetchData = defaultApiFetcher,
   setSQON,
   sqon,
@@ -22,7 +22,7 @@ const Table = ({
 }) => {
   return (
     <ColumnsState
-      graphqlField={graphqlField}
+      documentType={documentType}
       apiFetcher={apiFetcher}
       sessionStorage={sessionStorage}
       storageKey={storageKey}
@@ -44,7 +44,7 @@ const Table = ({
                 }),
                 {},
               ),
-              type: graphqlField,
+              documentType,
             }}
             fetchData={fetchData}
             onColumnsChange={columnState.toggle}

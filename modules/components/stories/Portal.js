@@ -5,7 +5,7 @@ import { injectGlobal } from '@emotion/react';
 import { Arranger, Aggregations, SQONViewer, Table } from '../src';
 import State from '../src/State';
 import { StyleProvider, AVAILABLE_THEMES } from '../src/ThemeSwitcher';
-import { ACTIVE_INDEX, ACTIVE_INDEX_NAME, deleteValue } from '../src/utils/config';
+import { ACTIVE_INDEX, DOCUMENT_TYPE, deleteValue } from '../src/utils/config';
 
 injectGlobal`
   html,
@@ -41,7 +41,7 @@ const DemoHeader = ({ update }) => {
         onClick={() => {
           deleteValue('ACTIVE_INDEX');
           deleteValue('ACTIVE_INDEX_NAME');
-          update({ index: '', graphqlField: '' });
+          update({ index: '', documentType: '' });
         }}
       >
         Logout
@@ -83,19 +83,19 @@ storiesOf('Portal', module).add('Portal', () => (
     <State
       initial={{
         index: ACTIVE_INDEX,
-        graphqlField: ACTIVE_INDEX_NAME,
+        documentType: DOCUMENT_TYPE,
       }}
-      render={({ index, graphqlField, update }) =>
+      render={({ index, documentType, update }) =>
         index ? (
           <Arranger
             disableSocket
             index={index}
-            graphqlField={graphqlField}
+            documentType={documentType}
             render={(props) => {
               return (
                 <>
                   <DemoHeader update={update} />
-                  <Portal {...{ ...props, graphqlField }} />
+                  <Portal {...{ ...props, documentType }} />
                 </>
               );
             }}

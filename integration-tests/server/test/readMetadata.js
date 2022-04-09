@@ -2,14 +2,14 @@ import { expect } from 'chai';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-export default ({ api, graphqlField, gqlPath }) => {
+export default ({ api, documentType, gqlPath }) => {
   it('reads extended mapping properly', async () => {
     const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               extended
             }
           }
@@ -17,7 +17,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[graphqlField]?.extended).to.be.not.empty;
+    expect(data?.data?.[documentType]?.extended).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -27,7 +27,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               mapping
             }
           }
@@ -35,7 +35,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[graphqlField]?.mapping).to.be.not.empty;
+    expect(data?.data?.[documentType]?.mapping).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -45,7 +45,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               aggsState {
                 timestamp
                 state {
@@ -60,7 +60,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[graphqlField]?.aggsState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.aggsState?.state).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -70,7 +70,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               columnsState {
                 state {
                   keyField
@@ -82,7 +82,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[graphqlField]?.columnsState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.columnsState?.state).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -92,7 +92,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               matchBoxState {
                 state {
                   field
@@ -104,7 +104,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[graphqlField]?.matchBoxState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.matchBoxState?.state).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 };

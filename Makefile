@@ -161,10 +161,13 @@ start-es:
 
 start-server:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Arranger Server" $(END)
-	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server 
+	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 
 test:
+	@echo $(YELLOW)$(INFO_HEADER) "Testing all services and integrations" $(END)
+	@ES_USER=$(ES_USER) ES_PASS=$(ES_PASS) npm run test
+	@echo $(GREEN)$(INFO_HEADER) Finished testing! $(GREEN)
 
 #############################################################
 #  Dev targets
