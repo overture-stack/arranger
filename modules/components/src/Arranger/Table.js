@@ -26,8 +26,8 @@ const Table = ({
       apiFetcher={apiFetcher}
       sessionStorage={sessionStorage}
       storageKey={storageKey}
-      render={(columnState) => {
-        return columnState.loading ? (
+      render={(columnsState = {}) => {
+        return columnsState.loading ? (
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
@@ -35,9 +35,9 @@ const Table = ({
             InputComponent={InputComponent}
             sqon={sqon}
             config={{
-              ...columnState.state,
+              ...columnsState.state,
               // generates a handy dictionary with all the available columns
-              allColumns: columnState.state.columns.reduce(
+              allColumns: columnsState.state?.columns?.reduce(
                 (columnsDict, column) => ({
                   ...columnsDict,
                   [column.field]: column,
@@ -47,15 +47,15 @@ const Table = ({
               documentType,
             }}
             fetchData={fetchData}
-            onColumnsChange={columnState.toggle}
-            onMultipleColumnsChange={columnState.toggleMultiple}
+            onColumnsChange={columnsState.toggle}
+            onMultipleColumnsChange={columnsState.toggleMultiple}
             onFilterChange={({ generateNextSQON, value }) => {
               onFilterChange(value);
               setSQON(
                 generateNextSQON({
                   sqon,
-                  fields: columnState.state.columns
-                    .filter((x) => fieldTypesForFilter.includes(x.extendedType) && x.show)
+                  fields: columnsState.state.columns
+                    .filter((x) => fieldTypesForFilter.includes(x.type) && x.show)
                     .map((x) => x.field),
                 }),
               );

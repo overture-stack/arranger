@@ -31,19 +31,21 @@ export const ColumnStateTypeDefs = `
   }
 
   type Column {
-    show: Boolean
-    type: String
-    sortable: Boolean
-    canChangeShow: Boolean
-    query: String
-    jsonPath: String
-    id: String
-    field: String
     accessor: String
+    canChangeShow: Boolean
+    displayValues: JSON
+    field: String
+    header: String
+    id: String
+    isArray: Boolean
+    jsonPath: String
+    query: String
+    show: Boolean
+    sortable: Boolean
+    type: String
   }
 
   type ColumnState {
-    type: String
     keyField: String
     defaultSorted: [ColumnSort]
     columns: [Column]
@@ -61,15 +63,14 @@ export const ColumnStateTypeDefs = `
 
   ########### INPUT TYPES ###########
   input ColumnInput {
-    show: Boolean
-    type: String
-    sortable: Boolean
-    canChangeShow: Boolean
-    query: String
-    jsonPath: String
-    id: String
-    field: String
     accessor: String
+    canChangeShow: Boolean
+    field: String
+    id: String
+    jsonPath: String
+    query: String
+    show: Boolean
+    sortable: Boolean
   }
 
   input ColumnSortInput {
@@ -78,7 +79,6 @@ export const ColumnStateTypeDefs = `
   }
 
   input ColumnStateInput {
-    type: String
     keyField: String
     defaultSorted: [ColumnSortInput]
     columns: [ColumnInput]

@@ -4,7 +4,7 @@ import columnsToGraphql from '@/utils/columnsToGraphql';
 
 import {
   APIFetcherFn,
-  ColumnStateInterface,
+  ColumnsStateInterface,
   ConfigsInterface,
   ExtendedMappingInterface,
   FetchDataFn,
@@ -14,7 +14,7 @@ import { componentConfigsQuery } from './dataQueries';
 export const useConfigs = ({
   apiFetcher,
   configs: {
-    columnState: customColumnState = {} as ColumnStateInterface,
+    columnsState: customColumnsState = {} as ColumnsStateInterface,
     extendedMapping: customExtendedMapping = [] as ExtendedMappingInterface[],
   } = {} as ConfigsInterface,
   documentType,
@@ -24,7 +24,7 @@ export const useConfigs = ({
   documentType: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [columnState, setColumnState] = useState<ColumnStateInterface>(customColumnState);
+  const [columnsState, setColumnsState] = useState<ColumnsStateInterface>(customColumnsState);
   const [extendedMapping, setExtendedMapping] =
     useState<ExtendedMappingInterface[]>(customExtendedMapping);
 
@@ -38,7 +38,7 @@ export const useConfigs = ({
       .then((response) => {
         const { columnsState, extended } = response?.data?.[documentType] || {};
 
-        setColumnState(columnsState?.state);
+        setColumnsState(columnsState?.state);
         setExtendedMapping(extended);
       })
       .catch((error) => console.warn(error))
@@ -48,7 +48,7 @@ export const useConfigs = ({
   }, [apiFetcher, documentType]);
 
   return {
-    columnState,
+    columnsState,
     extendedMapping,
     isLoadingConfigs: isLoading,
   };

@@ -4,8 +4,10 @@ import express from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
+import { DEBUG_MODE } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
+import { extendColumns } from './mapping/extendMapping';
 import makeSchema from './schema';
 
 const getTypesWithMappings = async (esClient, configs = {}) => {
@@ -19,6 +21,26 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
           try {
             return extendFields(mapping, configs?.extended);
           } catch (err) {
+            console.log(
+              '  Something happened while extending the ES mappings.\n' +
+                '  Defaulting to "extended" config from files.\n',
+            );
+            DEBUG_MODE && console.log(err);
+
+            return configs?.extended || [];
+          }
+        })();
+
+        const extendedColumnsState = await (async () => {
+          try {
+            return extendColumns(configs?.[ConfigProperties.COLUMNS], configs?.extended);
+          } catch (err) {
+            console.log(
+              '  Something happened while extending the column mappings.\n' +
+                '  Defaulting to "extended" config from files.\n',
+            );
+            DEBUG_MODE && console.log(err);
+
             return configs?.extended || [];
           }
         })();
@@ -29,7 +51,10 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
             name: configs?.[ConfigProperties.DOCUMENT_TYPE],
             extendedFields,
             customFields: '',
-            config: configs,
+            config: {
+              ...configs,
+              [ConfigProperties.COLUMNS]: extendedColumnsState,
+            },
           },
           mapping,
         });

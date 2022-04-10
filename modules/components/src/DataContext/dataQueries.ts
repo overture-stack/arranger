@@ -1,6 +1,5 @@
-const columnStateFields = `columnsState {
+export const columnStateFields = `columnsState {
   state {
-    type
     keyField
     defaultSorted {
       id
@@ -9,12 +8,16 @@ const columnStateFields = `columnsState {
     columns {
       accessor
       canChangeShow
+      displayValues
       field
+      header
       id
+      isArray
       jsonPath
       query
       show
       sortable
+      type
     }
   }
 }`;
