@@ -14,6 +14,7 @@ export interface ColumnMappingInterface {
   field: string;
   header?: string;
   id?: string | null;
+  isArray?: boolean;
   jsonPath?: string | null;
   query?: string | null;
   show: boolean;
@@ -21,7 +22,7 @@ export interface ColumnMappingInterface {
   type: string;
 }
 
-export interface ColumnStateInterface {
+export interface ColumnsStateInterface {
   type: string;
   keyField: string;
   defaultSorted: {
@@ -46,7 +47,7 @@ export interface ExtendedMappingInterface {
 }
 
 export interface ConfigsInterface {
-  columnState: ColumnStateInterface;
+  columnsState: ColumnsStateInterface;
   extendedMapping: ExtendedMappingInterface[];
 }
 
@@ -81,7 +82,7 @@ export interface DataProviderProps<Theme = BaseThemeInterface> {
 export type SQONType = typeof SQON | null;
 
 export interface DataContextInterface {
-  columnState: ColumnStateInterface;
+  columnsState: ColumnsStateInterface;
   documentType: string;
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;

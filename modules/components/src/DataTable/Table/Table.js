@@ -122,6 +122,7 @@ class DataTable extends React.Component {
 
   componentDidUpdate(lastProps) {
     if (
+      !this.props.isLoadingConfigs &&
       !this.state.loading &&
       lastProps.config.columns.some(
         (lastColumn, i) => lastColumn.show !== this.props.config.columns[i].show,
@@ -184,13 +185,14 @@ class DataTable extends React.Component {
           columns={columns.map(
             ({ Cell, ...c }) => ({
               ...c,
-              ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
+              ...(!c.hasCustomType && !isEmpty(c.displayValues)
                 ? {
                     accessor: (x) => {
                       const values = c.accessor
                         ? [get(x, c.accessor)]
                         : jsonpath.query(x, c.jsonPath);
-                      return values.map((x) => c.extendedDisplayValues[`${x}`] || x).join(', ');
+
+                      return values.map((x) => c.displayValues[`${x}`] || x).join(', ');
                     },
                     id: c.field,
                   }

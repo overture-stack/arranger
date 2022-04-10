@@ -27,7 +27,7 @@ export const DataProvider = ({
   const [selectedTableRows, setSelectedTableRows] = useState<string[]>([]);
   const [sqon, setSQON] = useState<SQONType>(null);
 
-  const { columnState, extendedMapping, isLoadingConfigs } = useConfigs({
+  const { columnsState, extendedMapping, isLoadingConfigs } = useConfigs({
     apiFetcher,
     documentType,
   });
@@ -35,7 +35,7 @@ export const DataProvider = ({
   const fetchData = fetchDataInitialiser({ apiFetcher, documentType, url });
 
   const contextValues = {
-    columnState,
+    columnsState,
     extendedMapping,
     fetchData,
     documentType,

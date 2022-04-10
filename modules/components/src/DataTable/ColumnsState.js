@@ -3,32 +3,10 @@ import { debounce, sortBy } from 'lodash';
 
 import { withData } from '@/DataContext';
 
-let columnFields = `
-  state {
-    type
-    keyField
-    defaultSorted {
-      id
-      desc
-    }
-    columns {
-      accessor
-      canChangeShow
-      field
-      query
-      jsonPath
-      show
-      sortable
-      type
-    }
-  }
-`;
-
 class ColumnsState extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      config: null,
       toggled: {},
     };
   }
@@ -57,30 +35,10 @@ class ColumnsState extends Component {
   }
 
   fetchColumnsState = debounce(async ({ documentType }) => {
-    const { apiFetcher } = this.props;
     try {
-      let { data } = await apiFetcher({
-        endpoint: `/graphql/ColumnsStateQuery`,
-        body: {
-          query: `query columnsStateQuery
-            {
-              ${documentType} {
-                columnsState {
-                  ${columnFields}
-                }
-              }
-            }
-          `,
-        },
-      });
-
-      const config = data[documentType].columnsState.state;
       const toggled = this.getStoredToggled();
 
-      this.setState({
-        config,
-        toggled,
-      });
+      this.setState({ toggled });
     } catch (e) {
       console.warn(e);
       // this.setState({ })
@@ -153,13 +111,14 @@ class ColumnsState extends Component {
   };
 
   saveOrder = (orderedFields) => {
-    const columns = this.state.config.columns;
+    let { columnsState = { columns: [] } } = this.props;
+    const { columns } = columnsState;
     if (
       orderedFields.every((field) => columns.find((column) => column.field === field)) &&
       columns.every((column) => orderedFields.find((field) => field === column.field))
     ) {
       this.save({
-        ...this.state.config,
+        ...columnsState,
         columns: sortBy(columns, ({ field }) => orderedFields.indexOf(field)),
       });
     } else {
@@ -168,33 +127,32 @@ class ColumnsState extends Component {
   };
 
   render() {
-    let { extendedMapping = [] } = this.props;
-    let { config, toggled } = this.state;
-    return config
-      ? this.props.render({
-          loading: false,
-          update: this.update,
-          add: this.add,
-          toggle: this.toggle,
-          toggleMultiple: this.toggleMultiple,
-          saveOrder: this.saveOrder,
-          state: {
-            ...config,
-            columns: config.columns.map((column) => {
-              const extendedField = extendedMapping.find((e) => e.field === column.field);
+    let { columnsState = { columns: [] }, isLoadingConfigs } = this.props;
+    let { toggled } = this.state;
 
-              return {
-                ...column,
-                Header: extendedField?.displayName || column.field,
-                extendedType: extendedField?.type,
-                show: column.field in toggled ? toggled[column.field] : column.show,
-                extendedDisplayValues: extendedField?.displayValues,
-              };
-            }),
-            defaultColumns: config.columns.filter((column) => column.show),
+    return this.props.render(
+      isLoadingConfigs
+        ? { loading: true, state: {} }
+        : {
+            loading: false,
+            update: this.update,
+            add: this.add,
+            toggle: this.toggle,
+            toggleMultiple: this.toggleMultiple,
+            saveOrder: this.saveOrder,
+            state: {
+              ...columnsState,
+              columns: columnsState?.columns?.map((column) => {
+                return {
+                  ...column,
+                  Header: column.header,
+                  show: column.field in toggled ? toggled[column.field] : column.show,
+                };
+              }),
+              defaultColumns: columnsState?.columns?.filter((column) => column.show),
+            },
           },
-        })
-      : this.props.render({ loading: true, state: { config: null } });
+    );
   }
 }
 
