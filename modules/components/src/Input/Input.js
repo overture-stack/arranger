@@ -63,7 +63,7 @@ const Input = ({
         RightIcon: ThemeRightIcon,
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'Input' });
 
   const Component = CustomComponent || ThemeComponent || 'input';
   const LeftIcon = CustomLeftIcon || ThemeLeftIcon;

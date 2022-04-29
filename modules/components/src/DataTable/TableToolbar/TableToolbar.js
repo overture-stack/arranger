@@ -3,6 +3,7 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 import { css } from '@emotion/react';
 
+import { useDataContext } from '@/DataContext';
 import { currentFilterValue } from '@/SQONViewer/utils';
 import { useThemeContext } from '@/ThemeContext';
 
@@ -13,7 +14,6 @@ import stringCleaner from '../../utils/stringCleaner';
 
 import exporterProcessor from './helpers';
 import './Toolbar.css';
-import { useDataContext } from '@/DataContext';
 
 const enhance = compose(
   withProps(({ columns }) => ({
@@ -88,9 +88,9 @@ const TableToolbar = ({
   total = propsData?.total || 0,
   transformParams = (params) => params,
 }) => {
-  const { documentType } = useDataContext();
+  const { documentType } = useDataContext({ callerName: 'OldTableToolbar' });
   const { components: { Table: { DropDown: themeDropDownProps = {} } = {} } = {} } =
-    useThemeContext();
+    useThemeContext({ callerName: 'OldTableToolBar' });
 
   const isPlural =
     total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);

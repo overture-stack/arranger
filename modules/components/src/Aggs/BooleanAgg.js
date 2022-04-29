@@ -48,7 +48,7 @@ const BooleanAgg = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'BooleanAgg' });
 
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
   const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false);

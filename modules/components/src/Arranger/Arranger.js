@@ -8,6 +8,13 @@ import defaultApiFetcher from '../utils/api';
 // error comes up when this component is deprecated in a later version, after the rewrite
 export let legacyProps;
 
+/** Arranger Root Component
+ * @deprecated
+ * This component used to serve as a makeshift context provider in older versions of Arranger.
+ *
+ * Please review the migration instructions to update your app as soon as possible.
+ */
+
 class Arranger extends React.Component {
   constructor(props) {
     super(props);

@@ -51,7 +51,7 @@ const AggsWrapper = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'AggsWrapper' });
 
   const ActionIcon = CustomActionIcon || ThemeActionIcon;
   const TreeJointIcon = ThemeTreeJointIcon;

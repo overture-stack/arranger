@@ -55,7 +55,7 @@ const ToggleButton = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'ToggleButton' });
 
   return (
     <div

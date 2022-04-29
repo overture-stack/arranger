@@ -5,7 +5,7 @@ import { useThemeContext } from '@/ThemeContext';
 // TODO: Delete this component once the Table is done.
 
 const RewriteWarning = ({ hide = false }) => {
-  const { colors } = useThemeContext();
+  const { colors } = useThemeContext({ callerName: 'Table - RewriteWarning' });
 
   return (
     <div

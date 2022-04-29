@@ -35,7 +35,7 @@ const ArrowIcon = ({
         ...themeArrowIconProps
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'ArrowIcon' });
 
   return (
     <svg

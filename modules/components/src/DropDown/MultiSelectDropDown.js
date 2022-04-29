@@ -40,7 +40,7 @@ const MultiSelectDropDown = ({
         ...themeArrowProps
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'MultiSelectDropDown' });
 
   const toggle = (item) => {
     if (selectedItemsMap.get(item.field)) {

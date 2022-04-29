@@ -1,7 +1,9 @@
 import { merge } from 'lodash';
 
+import { ThemeProcessorFn } from './types';
+
 // To support theme composition
-const mergeTargetAndCustomTheme = (targetTheme = {}, customTheme = {}) => {
+const mergeTargetAndCustomTheme = <Theme>(targetTheme: Theme, customTheme: Theme) => {
   if (typeof customTheme === 'function') {
     const mergedTheme = customTheme(targetTheme);
 
@@ -9,8 +11,12 @@ const mergeTargetAndCustomTheme = (targetTheme = {}, customTheme = {}) => {
       return mergedTheme;
     }
 
+    const callerName = (customTheme as unknown as ThemeProcessorFn).callerName;
+
     if (process.env.NODE_ENV === 'development') {
-      console.error('Your customTheme function should return an object');
+      console.error(
+        `Your customTheme function ${callerName ? `at ${callerName} ` : ''}should return an object`,
+      );
     }
 
     return targetTheme;
@@ -19,13 +25,13 @@ const mergeTargetAndCustomTheme = (targetTheme = {}, customTheme = {}) => {
   return merge({ ...targetTheme }, customTheme);
 };
 
-export const mergeThemes = (targetTheme = {}, partialTheme = {}) =>
+export const mergeThemes = <Theme>(targetTheme: Theme, partialTheme: Theme | Theme[]) =>
   Array.isArray(partialTheme)
     ? partialTheme.reduce(
-        (aggregated, partial) => mergeTargetAndCustomTheme(aggregated, partial),
+        (aggregated, partial) => mergeTargetAndCustomTheme<Theme>(aggregated, partial),
         targetTheme,
       )
-    : mergeTargetAndCustomTheme(targetTheme, partialTheme);
+    : mergeTargetAndCustomTheme<Theme>(targetTheme, partialTheme);
 
 export const nested =
   typeof Symbol === 'function' && Symbol.for // has symbol

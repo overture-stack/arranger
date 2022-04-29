@@ -87,12 +87,12 @@ export interface DataContextInterface {
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;
   isLoadingConfigs: boolean;
-  selectedTableRows: string[];
-  setSelectedTableRows: Dispatch<SetStateAction<string[]>>;
+  providerMissing?: boolean;
   sqon: SQONType;
   setSQON: Dispatch<SetStateAction<SQONType>>;
 }
 
 export interface UseDataContextProps {
+  callerName?: string;
   customFetcher?: FetchDataFn;
 }

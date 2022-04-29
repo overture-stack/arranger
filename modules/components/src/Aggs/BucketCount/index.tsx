@@ -51,7 +51,7 @@ const BucketCount = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'BucketCount' });
 
   const hasBorder =
     borderColor ||

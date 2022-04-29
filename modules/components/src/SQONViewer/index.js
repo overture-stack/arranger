@@ -27,7 +27,7 @@ const SQONViewer = ({
         SQONWrapper: themeSQONWrapperProps = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'SQONViewer' });
   const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;
   const { Clear, FieldCrumb, isExpanded, LessOrMore, ValueCrumb } = useDataBubbles({

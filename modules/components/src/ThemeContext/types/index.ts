@@ -25,15 +25,20 @@ export interface ThemeOptions {
   zIndex?: Record<string, number>;
 }
 
-export type ThemeProcessorFn = <Theme = BaseThemeInterface>(inputTheme: Theme) => Theme;
+export type ThemeProcessorFn = {
+  <Theme = BaseThemeInterface>(inputTheme: Theme): Theme;
+  callerName?: string;
+};
+
 export type CustomThemeType<Theme = BaseThemeInterface> = Theme | ThemeProcessorFn;
 
-export type ThemeAggregatorFn = <Theme = BaseThemeInterface>(
+export type ThemeAggregatorFn = <Theme extends object = BaseThemeInterface>(
   partial: CustomThemeType<Theme> | CustomThemeType<Theme>[],
 ) => ThemeOptions;
 
 export interface ThemeContextInterface<Theme = BaseThemeInterface> {
   aggregateTheme: ThemeAggregatorFn;
+  providerMissing?: boolean;
   theme: Theme;
 }
 
@@ -43,6 +48,10 @@ export interface ThemeProviderProps<Theme = BaseThemeInterface> {
   theme?: CustomThemeType<Theme>;
   useArrangerTheme?: boolean;
 }
+
+export type UseThemeContextProps = CustomThemeType<ThemeOptions> & {
+  callerName?: string;
+};
 
 export interface WithThemeProps<Theme = BaseThemeInterface> {
   theme?: Theme;

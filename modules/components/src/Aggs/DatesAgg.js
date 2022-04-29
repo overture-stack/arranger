@@ -110,7 +110,7 @@ class DatesAgg extends React.Component {
             .react-datepicker__current-month,
             .react-datepicker-time__header,
             .react-datepicker-year-header {
-              color: ${colors.grey[700]};
+              color: ${colors?.grey?.[700]};
             }
 
             .react-datepicker__input-container {
@@ -118,7 +118,7 @@ class DatesAgg extends React.Component {
             }
 
             .react-datepicker-wrapper input {
-              border: 1px solid ${colors.grey[400]};
+              border: 1px solid ${colors?.grey?.[400]};
               border-radius: 2px;
               box-sizing: border-box;
               font-size: 12px;
@@ -128,7 +128,7 @@ class DatesAgg extends React.Component {
 
             .react-datepicker__input-container .react-datepicker__close-icon::after {
               align-items: center;
-              background-color: ${colors.grey[500]};
+              background-color: ${colors?.grey?.[500]};
               border-radius: 30%;
               display: flex;
               font-size: 14px;

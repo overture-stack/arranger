@@ -151,7 +151,7 @@ const TermAgg = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'TermAgg' });
 
   return (
     <AggsWrapper
@@ -262,7 +262,6 @@ const TermAgg = ({
                 className="bucket-link"
                 css={css`
                   display: flex;
-                  line-height: 1rem;
                 `}
                 merge="toggle"
               >

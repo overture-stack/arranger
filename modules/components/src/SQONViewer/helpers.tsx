@@ -25,9 +25,9 @@ interface BubbleProps extends ButtonProps {
   onClick?: () => void;
 }
 
-export const Bubble = ({ children, className = undefined, ...props }: BubbleProps) => {
+export const Bubble = ({ children, className, ...props }: BubbleProps) => {
   const { components: { SQONViewer: { SQONBubble: themeSQONBubbleProps = {} } = {} } = {} } =
-    useThemeContext();
+    useThemeContext({ callerName: 'SQONViewer - Bubble' });
 
   return (
     <TransparentButton
@@ -42,19 +42,19 @@ export const Bubble = ({ children, className = undefined, ...props }: BubbleProp
   );
 };
 
-export const Field = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Field = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-field', className)} {...props}>
     {children}
   </Bubble>
 );
 
-export const Op = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Op = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-op', className)} {...props}>
     {children}
   </Bubble>
 );
 
-export const Value = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Value = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-value', className)} {...props}>
     {children}
   </Bubble>
@@ -84,7 +84,7 @@ export const useDataBubbles = ({
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'SQONViewer - useDataBubbles' });
   const [expanded, setExpanded] = useState<GroupValueSQONType>([]);
 
   const isExpanded = useCallback(
@@ -92,7 +92,7 @@ export const useDataBubbles = ({
     [expanded],
   );
 
-  const { extendedMapping } = useDataContext();
+  const { extendedMapping } = useDataContext({ callerName: 'SQONViewer - useDataBubbles' });
   const findExtendedMappingForField = useCallback(
     (wantedField) => extendedMapping.find((mapping) => mapping.field === wantedField),
     [extendedMapping],

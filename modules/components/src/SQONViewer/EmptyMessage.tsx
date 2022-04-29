@@ -15,7 +15,7 @@ const EmptyMessage = ({ className, message }: { className?: string; message: str
         } = {},
       } = {},
     } = {},
-  } = useThemeContext();
+  } = useThemeContext({ callerName: 'EmptyMessage' });
 
   return (
     <div
