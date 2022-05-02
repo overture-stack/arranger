@@ -1,14 +1,19 @@
-import { Row } from 'react-table';
+import { Row } from '@tanstack/react-table';
 
-const TableRow = ({ row, ...props }: { row: Row<{}> }) => {
+const TableRow = ({
+  row,
+  ...props
+}: {
+  row: Row<Record<string, any>>;
+}) => {
   return (
     <tr {...props}>
-      {row.cells.map((cell) => {
+      {row.getVisibleCells().map((cell) => {
         const { key: cellKey, ...restCellProps } = cell.getCellProps();
 
         return (
           <td key={cellKey} {...restCellProps}>
-            {cell.render('Cell')}
+            {cell.renderCell()}
           </td>
         );
       })}

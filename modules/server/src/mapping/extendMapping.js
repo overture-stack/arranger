@@ -9,6 +9,7 @@ export const extendColumns = (columnState = {}, extendedFields = []) => ({
 
     return {
       ...column,
+      accessor: column.accessor ?? column.field,
       displayValues: fieldObj?.displayValues ?? {},
       header: fieldObj?.displayName ?? '* ' + column.field,
       isArray: fieldObj?.isArray ?? false,

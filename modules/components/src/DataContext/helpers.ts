@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import columnsToGraphql from '@/utils/columnsToGraphql';
 
@@ -8,6 +8,7 @@ import {
   ConfigsInterface,
   ExtendedMappingInterface,
   FetchDataFn,
+  SQONType,
 } from './types';
 import { componentConfigsQuery } from './dataQueries';
 
@@ -54,29 +55,33 @@ export const useConfigs = ({
   };
 };
 
-export const fetchDataInitialiser =
-  ({
-    apiFetcher,
-    documentType,
-    url,
-  }: {
-    apiFetcher: APIFetcherFn;
-    documentType: string;
-    url?: string;
-  }): FetchDataFn =>
-  ({ endpoint = `/graphql`, ...options } = {}) => {
-    return apiFetcher({
-      endpoint,
-      body: columnsToGraphql({
-        documentType,
-        ...options,
-      }),
-      url,
-    }).then((response) => {
-      const hits = response?.data?.[documentType]?.hits || {};
-      const data = (hits.edges || []).map((e: any) => e.node);
-      const total = hits.total || 0;
+export const useDataFetcher = ({
+  apiFetcher,
+  documentType,
+  sqon,
+  url,
+}: {
+  apiFetcher: APIFetcherFn;
+  documentType: string;
+  sqon?: SQONType;
+  url?: string;
+}): FetchDataFn =>
+  useCallback<FetchDataFn>(
+    ({ endpoint = `/graphql`, ...options } = {}) =>
+      apiFetcher({
+        endpoint,
+        body: columnsToGraphql({
+          documentType,
+          sqon,
+          ...options,
+        }),
+        url,
+      }).then((response) => {
+        const hits = response?.data?.[documentType]?.hits || {};
+        const data = (hits.edges || []).map((e: any) => e.node);
+        const total = hits.total || 0;
 
-      return { total, data };
-    });
-  };
+        return { total, data };
+      }),
+    [apiFetcher, documentType, sqon, url],
+  );

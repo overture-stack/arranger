@@ -27,5 +27,6 @@ export const componentConfigsQuery = (documentType: string, queryName = '') =>
     ${documentType} {
       ${columnStateFields}
       extended
+      mapping
     }
   }`;

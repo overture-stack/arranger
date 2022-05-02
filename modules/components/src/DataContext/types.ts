@@ -13,7 +13,7 @@ export interface ColumnMappingInterface {
   displayValues?: Record<string, string>;
   field: string;
   header?: string;
-  id?: string | null;
+  id: string;
   isArray?: boolean;
   jsonPath?: string | null;
   query?: string | null;

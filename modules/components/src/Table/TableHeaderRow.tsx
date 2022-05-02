@@ -1,14 +1,23 @@
-import { HeaderGroup } from 'react-table';
+import { HeaderGroup } from '@tanstack/react-table';
 
-const TableHeaderRow = ({ headerGroup, ...props }: { headerGroup: HeaderGroup<{}> }) => {
+const TableHeaderRow = ({
+  headerGroup,
+  ...props
+}: {
+  headerGroup: HeaderGroup<any>;
+}) => {
+
   return (
     <tr {...props}>
-      {headerGroup.headers.map((column) => {
-        const { key: headerKey, ...restColumn } = column.getHeaderProps();
+      {headerGroup.headers.map((header) => {
+        const { key: headerKey, ...restHeader } = header.getHeaderProps();
 
         return (
-          <th key={headerKey} {...restColumn}>
-            {column.render('Header')}
+          <th
+            key={headerKey}
+            {...restHeader}
+          >
+            {header.isPlaceholder ? null : header.renderHeader()}
           </th>
         );
       })}

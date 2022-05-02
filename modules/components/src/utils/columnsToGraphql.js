@@ -16,6 +16,9 @@ export function toQuery(column) {
   );
 }
 
+/**
+ * @param {SQONType} [sqon] typescript validation placeholder
+ */
 export default function columnsToGraphql({
   config = {},
   documentType = 'unknownField',

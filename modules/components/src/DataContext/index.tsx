@@ -1,11 +1,19 @@
-import { ComponentType, createContext, ReactElement, useContext, useState } from 'react';
+import {
+  ComponentType,
+  createContext,
+  ReactElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import { ThemeProvider } from '@/ThemeContext';
 import defaultApiFetcher from '@/utils/api';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
 
-import { fetchDataInitialiser, useConfigs } from './helpers';
+import { useConfigs, useDataFetcher } from './helpers';
 import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
 
 export const DataContext = createContext<DataContextInterface>({
@@ -31,12 +39,16 @@ export const DataProvider = ({
 }: DataProviderProps): ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
 
+  useEffect(() => {
+    setSQON(legacyProps?.sqon);
+  }, [legacyProps?.sqon]);
+
   const { columnsState, extendedMapping, isLoadingConfigs } = useConfigs({
     apiFetcher,
     documentType,
   });
 
-  const fetchData = fetchDataInitialiser({ apiFetcher, documentType, url });
+  const fetchData = useDataFetcher({ apiFetcher, documentType, sqon, url });
 
   const contextValues = {
     columnsState,
