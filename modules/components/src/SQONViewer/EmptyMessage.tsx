@@ -2,19 +2,20 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 const EmptyMessage = ({ className, message }: { className?: string; message: string }) => {
   const {
     components: {
       SQONViewer: {
         EmptyMessage: {
-          className: themeClassName = undefined,
-          fontColor: themeFontColor = undefined,
-          fontSize: themeFontSize = undefined,
+          className: themeClassName,
+          fontColor: themeFontColor,
+          fontSize: themeFontSize,
           fontWeight: themeFontWeight = 'normal',
-        } = {},
-      } = {},
-    } = {},
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'EmptyMessage' });
 
   return (

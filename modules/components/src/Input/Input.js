@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 const InputWrapper = styled.div`
   align-items: center;
@@ -41,11 +42,11 @@ const Input = ({
   Component: CustomComponent,
   componentRef,
   css: customCSS,
-  leftIcon: { Icon: CustomLeftIcon, ...customLeftIconProps } = {},
+  leftIcon: { Icon: CustomLeftIcon, ...customLeftIconProps } = emptyObj,
   onBlur: customBlurHandler,
   onChange: customChangeHandler,
   onFocus: customFocusHandler,
-  rightIcon: { Icon: CustomRightIcon, ...customRightIconProps } = {},
+  rightIcon: { Icon: CustomRightIcon, ...customRightIconProps } = emptyObj,
   shouldAutoFocus = false, // autoFocus is problematic for accessibility reasons, let alone if true by default
   ...props
 }) => {
@@ -61,8 +62,8 @@ const Input = ({
         onBlur: themeBlurHandler,
         onFocus: themeFocusHandler,
         RightIcon: ThemeRightIcon,
-      } = {},
-    } = {},
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'Input' });
 
   const Component = CustomComponent || ThemeComponent || 'input';

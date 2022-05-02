@@ -5,6 +5,7 @@ import { APIFetcherFn } from '@/DataContext/types';
 
 import { ARRANGER_API } from './config';
 import { addDownloadHttpHeaders } from './download';
+import { emptyObj } from './noops';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 
@@ -16,7 +17,7 @@ const defaultApiFetcher: APIFetcherFn = async (args) => {
 
   if (cache.has(key)) return cache.get(key);
 
-  const { endpoint = '', body, headers = {}, method = 'POST', url = ARRANGER_API } = args;
+  const { endpoint = '', body, headers = emptyObj, method = 'POST', url = ARRANGER_API } = args;
 
   const response = await axios(urlJoin(url, endpoint), {
     data: JSON.stringify(body),

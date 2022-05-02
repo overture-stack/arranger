@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import columnsToGraphql from '@/utils/columnsToGraphql';
+import { emptyObj } from '@/utils/noops';
 
 import {
   APIFetcherFn,
@@ -15,9 +16,9 @@ import { componentConfigsQuery } from './dataQueries';
 export const useConfigs = ({
   apiFetcher,
   configs: {
-    columnsState: customColumnsState = {} as ColumnsStateInterface,
+    columnsState: customColumnsState = emptyObj as ColumnsStateInterface,
     extendedMapping: customExtendedMapping = [] as ExtendedMappingInterface[],
-  } = {} as ConfigsInterface,
+  } = emptyObj as ConfigsInterface,
   documentType,
 }: {
   apiFetcher: APIFetcherFn;
@@ -67,7 +68,7 @@ export const useDataFetcher = ({
   url?: string;
 }): FetchDataFn =>
   useCallback<FetchDataFn>(
-    ({ endpoint = `/graphql`, ...options } = {}) =>
+    ({ endpoint = `/graphql`, ...options } = emptyObj) =>
       apiFetcher({
         endpoint,
         body: columnsToGraphql({

@@ -3,7 +3,7 @@ import cx from 'classnames';
 import { take } from 'lodash';
 
 import { useThemeContext } from '@/ThemeContext';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import EmptyMessage from './EmptyMessage';
 import { Op, SQONGroup, SQONValueGroup, SQONWrapper, useDataBubbles } from './helpers';
@@ -21,12 +21,12 @@ const SQONViewer = ({
   const {
     components: {
       SQONViewer: {
-        SQONGroup: themeSQONGroupProps = {},
-        SQONOp: themeSQONOpProps = {},
-        SQONValueGroup: themeSQONVaueGroupProps = {},
-        SQONWrapper: themeSQONWrapperProps = {},
-      } = {},
-    } = {},
+        SQONGroup: themeSQONGroupProps = emptyObj,
+        SQONOp: themeSQONOpProps = emptyObj,
+        SQONValueGroup: themeSQONVaueGroupProps = emptyObj,
+        SQONWrapper: themeSQONWrapperProps = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'SQONViewer' });
   const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;

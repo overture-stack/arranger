@@ -3,7 +3,7 @@ import Spinner from 'react-spinkit';
 import DataTable, { ColumnsState } from '@/DataTable';
 import TextInput from '@/Input';
 import defaultApiFetcher from '@/utils/api';
-import noopFn from '@/utils/noopFns';
+import noopFn from '@/utils/noops';
 
 const Table = ({
   onFilterChange = noopFn,

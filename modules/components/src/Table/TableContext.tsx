@@ -3,6 +3,7 @@ import { ComponentType, createContext, ReactElement, useContext, useEffect, useS
 import { useDataContext } from '@/DataContext';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
+import { emptyObj } from '@/utils/noops';
 
 import { aggregateCustomColumns, getVisibleColumns } from './helpers';
 import {
@@ -64,7 +65,7 @@ export const TableContextProvider = ({
         endpoint: '/graphql/TableDataQuery',
         queryName: 'tableData',
       })
-        .then(({ total = 0, data } = {}) => {
+        .then(({ total = 0, data } = emptyObj) => {
           setTotal(total);
           setTableData(data);
           setIsStaleTableData(false);
@@ -104,7 +105,7 @@ export const TableContextProvider = ({
 export const useTableContext = ({
   callerName,
   customFetcher: localFetcher,
-}: UseTableContextProps = {}): TableContextInterface => {
+}: UseTableContextProps = emptyObj): TableContextInterface => {
   const defaultContext = useContext(TableContext);
 
   defaultContext.providerMissing && missingProviderHandler(TableContext.displayName, callerName);

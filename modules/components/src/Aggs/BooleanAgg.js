@@ -6,7 +6,7 @@ import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import AggsWrapper from './AggsWrapper';
 import BucketCount from './BucketCount';
@@ -29,7 +29,7 @@ const BooleanAgg = ({
     true: 'Yes',
     false: 'No',
   },
-  displayValues: extendedDisplayKeys = {},
+  displayValues: extendedDisplayKeys = emptyObj,
   displayKeys = Object.keys(defaultDisplayKeys).reduce(
     (obj, x) => ({
       ...obj,
@@ -43,11 +43,11 @@ const BooleanAgg = ({
     components: {
       Aggregations: {
         BooleanAgg: {
-          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
-          ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = {},
-        } = {},
-      } = {},
-    } = {},
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
+          ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'BooleanAgg' });
 
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
@@ -114,7 +114,7 @@ const BooleanAgg = ({
     {
       value: valueKeys.true,
       disabled: isTrueBucketDisabled,
-      title: ({ toggleStatus = '' } = {}) => (
+      title: ({ toggleStatus = '' } = emptyObj) => (
         <>
           <TextHighlight content={displayKeys.true} highlightText={highlightText} />
           <BucketCount
@@ -132,7 +132,7 @@ const BooleanAgg = ({
     {
       value: valueKeys.false,
       disabled: isFalseBucketDisabled,
-      title: ({ toggleStatus = '' } = {}) => (
+      title: ({ toggleStatus = '' } = emptyObj) => (
         <>
           <TextHighlight content={displayKeys.false} highlightText={highlightText} />
           <BucketCount

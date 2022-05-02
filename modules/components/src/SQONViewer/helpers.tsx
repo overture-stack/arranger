@@ -11,8 +11,9 @@ import ButtonProps from '@/Button/types';
 import { useDataContext } from '@/DataContext';
 import { Row } from '@/Flex';
 import { useThemeContext } from '@/ThemeContext';
-import internalTranslateSQONValue from '@/utils/translateSQONValue';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { emptyObj } from '@/utils/noops';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import {
   GroupSQONInterface,
@@ -26,8 +27,11 @@ interface BubbleProps extends ButtonProps {
 }
 
 export const Bubble = ({ children, className, ...props }: BubbleProps) => {
-  const { components: { SQONViewer: { SQONBubble: themeSQONBubbleProps = {} } = {} } = {} } =
-    useThemeContext({ callerName: 'SQONViewer - Bubble' });
+  const {
+    components: {
+      SQONViewer: { SQONBubble: themeSQONBubbleProps = emptyObj } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'SQONViewer - Bubble' });
 
   return (
     <TransparentButton
@@ -74,16 +78,16 @@ export const useDataBubbles = ({
     colors,
     components: {
       SQONViewer: {
-        SQONClear: themeSQONClearProps = {},
-        SQONField: themeSQONFieldProps = {},
-        SQONLessOrMore: themeSQONLessOrMoreProps = {},
+        SQONClear: themeSQONClearProps = emptyObj,
+        SQONField: themeSQONFieldProps = emptyObj,
+        SQONLessOrMore: themeSQONLessOrMoreProps = emptyObj,
         SQONValue: {
           characterLimit: themeCharacterLimit = 30,
-          css: themeSQONValueCustomCSS = {},
+          css: themeSQONValueCustomCSS = emptyObj,
           ...themeSQONValueProps
-        } = {},
-      } = {},
-    } = {},
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'SQONViewer - useDataBubbles' });
   const [expanded, setExpanded] = useState<GroupValueSQONType>([]);
 
@@ -200,7 +204,7 @@ export const SQONGroup = styled(
   {
     shouldForwardProp: isPropValid,
   },
-)<ThemeCommon.NonButtomThemeProps>`
+)<ThemeCommon.NonButtonThemeProps>`
   align-items: center;
 `;
 
@@ -211,7 +215,7 @@ export const SQONValueGroup = styled(
   {
     shouldForwardProp: isPropValid,
   },
-)<ThemeCommon.NonButtomThemeProps>`
+)<ThemeCommon.NonButtonThemeProps>`
   background: ${({ background }) => background};
   border-color: ${({ borderColor }) => borderColor};
   border-radius: ${({ borderRadius }) => borderRadius};
@@ -225,7 +229,7 @@ export const SQONValueGroup = styled(
   text-transform: ${({ textTransform }) => textTransform};
 `;
 
-export const SQONWrapper = styled.article<ThemeCommon.NonButtomThemeProps>`
+export const SQONWrapper = styled.article<ThemeCommon.NonButtonThemeProps>`
   align-items: center;
   color: ${({ fontColor }) => fontColor};
   display: flex;

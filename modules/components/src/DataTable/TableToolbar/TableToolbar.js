@@ -6,6 +6,7 @@ import { css } from '@emotion/react';
 import { useDataContext } from '@/DataContext';
 import { currentFilterValue } from '@/SQONViewer/utils';
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import DropDown, { MultiSelectDropDown } from '../../DropDown';
 import TextFilter, { generateNextSQON } from '../../TextFilter';
@@ -89,8 +90,9 @@ const TableToolbar = ({
   transformParams = (params) => params,
 }) => {
   const { documentType } = useDataContext({ callerName: 'OldTableToolbar' });
-  const { components: { Table: { DropDown: themeDropDownProps = {} } = {} } = {} } =
-    useThemeContext({ callerName: 'OldTableToolBar' });
+  const {
+    components: { Table: { DropDown: themeDropDownProps = emptyObj } = emptyObj } = emptyObj,
+  } = useThemeContext({ callerName: 'OldTableToolBar' });
 
   const isPlural =
     total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);

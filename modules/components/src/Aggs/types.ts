@@ -4,7 +4,7 @@ import { SerializedStyles } from '@emotion/react';
 import { ThemedButtonProps } from '@/Button/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 import { ToggleButtonThemeProps } from '@/ToggleButton/types';
-import { GenericFn } from '@/utils/noopFns';
+import { GenericFn } from '@/utils/noops';
 
 import { BucketCountThemeProps } from './BucketCount/types';
 

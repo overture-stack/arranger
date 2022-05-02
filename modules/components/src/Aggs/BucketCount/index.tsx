@@ -2,6 +2,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import Props from './types';
 
@@ -25,7 +26,7 @@ const BucketCount = ({
     disabledFontSize: customDisabledFontSize,
     fontColor,
     fontSize,
-  } = {},
+  } = emptyObj,
   ...props
 }: Props) => {
   const {
@@ -33,24 +34,24 @@ const BucketCount = ({
     components: {
       Aggregations: {
         BucketCount: {
-          activeBackground: themeActiveBackground = undefined,
-          activeBorderColor: themeActiveBorderColor = undefined,
-          activeFontColor: themeActiveFontColor = undefined,
-          activeFontSize: themeActiveFontSize = undefined,
+          activeBackground: themeActiveBackground,
+          activeBorderColor: themeActiveBorderColor,
+          activeFontColor: themeActiveFontColor,
+          activeFontSize: themeActiveFontSize,
           background: themeBackground = colors?.grey?.[200],
-          borderColor: themeBorderColor = undefined,
+          borderColor: themeBorderColor,
           borderRadius: themeBorderRadius = '0.2rem',
-          className: themeClassName = undefined,
-          css: themeCSS = {},
+          className: themeClassName,
+          css: themeCSS,
           disabledBackground: themeDisabledBackground = colors?.common?.white,
-          disabledBorderColor: themeDisabledBorderColor = undefined,
+          disabledBorderColor: themeDisabledBorderColor,
           disabledFontColor: themeDisabledFontColor = colors?.grey?.[700],
-          disabledFontSize: themeDisabledFontSize = undefined,
+          disabledFontSize: themeDisabledFontSize,
           fontColor: themeFontColor = colors?.grey?.[900],
           fontSize: themeFontSize = '0.7rem',
-        } = {},
-      } = {},
-    } = {},
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'BucketCount' });
 
   const hasBorder =

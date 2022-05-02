@@ -35,6 +35,7 @@ export interface FontProperties {
   lineHeight?: string;
   textDecoration?: string;
   textTransform?: string;
+  whiteSpace?: string;
 }
 
 export type FontActiveProperties = PrefixKeys<FontProperties, 'active'>;
@@ -49,4 +50,4 @@ export interface MouseEventProperties extends Partial<PrefixKeys<BoxModelPropert
 export type MouseEventActiveProperties = PrefixKeys<MouseEvent, 'active'>;
 export type MouseEventDisabledProperties = PrefixKeys<MouseEvent, 'disabled'>;
 
-export type NonButtomThemeProps = BoxModelProperties & CustomCSS & FontProperties;
+export type NonButtonThemeProps = BoxModelProperties & CustomCSS & FontProperties;

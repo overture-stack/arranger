@@ -1,5 +1,7 @@
 import { merge } from 'lodash';
 
+import { emptyObj } from '@/utils/noops';
+
 import { ThemeProcessorFn } from './types';
 
 // To support theme composition
@@ -38,7 +40,7 @@ export const nested =
     ? Symbol.for('theme.nested')
     : '__THEME_NESTED__';
 
-const getObjKeyCount = (obj = {}) => Object.keys(obj).length;
+const getObjKeyCount = (obj = emptyObj) => Object.keys(obj).length;
 
 const checkThemingFunction = (theme: (args?: any) => any) => {
   if (process.env.NODE_ENV === 'development') {
@@ -55,9 +57,9 @@ const checkThemingFunction = (theme: (args?: any) => any) => {
   }
 };
 
-export const isProviderNested = (initialTheme = {}, otherThemes: any[] = [{}]) => {
+export const isProviderNested = (initialTheme = emptyObj, otherThemes: any[] = [emptyObj]) => {
   const hasValidInitialTheme = getObjKeyCount(initialTheme) > 0;
-  const totalValidParents = otherThemes.filter((theme = {}, index) => {
+  const totalValidParents = otherThemes.filter((theme = emptyObj, index) => {
     if (typeof theme === 'function') {
       // Make sure a theme is already injected higher in the tree or provide a theme object instead of a function
       return !hasValidInitialTheme && index === 0 && checkThemingFunction(theme);

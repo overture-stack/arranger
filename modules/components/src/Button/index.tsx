@@ -23,9 +23,9 @@ const Button = styled('button', {
   line-height: ${({ lineHeight }) => lineHeight};
   margin: ${({ margin }) => margin};
   padding: ${({ padding }) => padding};
-  pointer-events: ${({ hidden }) => (hidden ? 'none' : undefined)};
+  pointer-events: ${({ hidden }) => hidden && 'none'};
   text-transform: ${({ textTransform }) => textTransform};
-  visibility: ${({ hidden }) => (hidden ? 'hidden' : undefined)};
+  visibility: ${({ hidden }) => hidden && 'hidden'};
 
   &:hover {
     background: ${({ hoverBackground }) => hoverBackground};
@@ -41,8 +41,7 @@ const Button = styled('button', {
 
 export const TransparentButton = styled(Button)<ButtonProps>`
   background: ${({ background = 'none' }) => background};
-  border: ${({ borderColor }) => (borderColor ? '0.1rem solid' : 'none')};
-  border-color: ${({ borderColor }) => borderColor};
+  border: ${({ borderColor }) => (borderColor ? `0.1rem solid ${borderColor}` : 'none')};
   color: ${({ fontColor = 'inherit' }) => fontColor};
   font-family: ${({ fontFamily = 'inherit' }) => fontFamily};
   justify-content: flex-start;

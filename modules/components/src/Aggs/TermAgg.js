@@ -11,7 +11,7 @@ import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
-import noopFn, { emptyStrFn } from '@/utils/noopFns';
+import noopFn, { emptyObj, emptyStrFn } from '@/utils/noops';
 import strToReg from '@/utils/strToReg';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
@@ -140,17 +140,17 @@ const TermAgg = ({
   const {
     components: {
       Aggregations: {
-        FilterInput: themeAggregationsFilterInputProps = {},
-        MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
+        FilterInput: themeAggregationsFilterInputProps = emptyObj,
+        MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = emptyObj,
         TermAgg: {
-          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
           collapsible: themeTermAggCollapsible = true,
-          FilterInput: themeTermAggFilterInputProps = {},
-          IncludeExcludeButton: ToggleButtonThemeProps = {},
-          MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
-        } = {},
-      } = {},
-    } = {},
+          FilterInput: themeTermAggFilterInputProps = emptyObj,
+          IncludeExcludeButton: ToggleButtonThemeProps = emptyObj,
+          MoreOrLessButton: themeTermAggMoreOrLessButtonProps = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'TermAgg' });
 
   return (

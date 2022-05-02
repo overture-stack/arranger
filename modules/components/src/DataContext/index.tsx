@@ -1,17 +1,10 @@
-import {
-  ComponentType,
-  createContext,
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { ComponentType, createContext, ReactElement, useContext, useEffect, useState } from 'react';
 
 import { ThemeProvider } from '@/ThemeContext';
 import defaultApiFetcher from '@/utils/api';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
+import { emptyObj } from '@/utils/noops';
 
 import { useConfigs, useDataFetcher } from './helpers';
 import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
@@ -75,7 +68,7 @@ export const DataProvider = ({
 export const useDataContext = ({
   callerName,
   customFetcher: localFetcher,
-}: UseDataContextProps = {}): DataContextInterface => {
+}: UseDataContextProps = emptyObj): DataContextInterface => {
   const defaultContext = useContext(DataContext);
 
   defaultContext.providerMissing && missingProviderHandler(DataContext.displayName, callerName);

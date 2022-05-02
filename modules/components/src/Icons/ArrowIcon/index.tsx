@@ -2,6 +2,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import Props from './types';
 
@@ -27,14 +28,14 @@ const ArrowIcon = ({
     colors,
     components: {
       ArrowIcon: {
-        className: themeClassName = '',
-        css: themeCSS = '',
+        className: themeClassName,
+        css: themeCSS,
         fill: themeFill = colors?.grey?.[600],
         size: themeSize = 12,
         transition: themeTransition = 'all 0.2s',
         ...themeArrowIconProps
-      } = {},
-    } = {},
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'ArrowIcon' });
 
   return (

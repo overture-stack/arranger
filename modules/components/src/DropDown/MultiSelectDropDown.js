@@ -3,6 +3,7 @@ import { css } from '@emotion/react';
 
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import './DropDown.css';
 
@@ -38,8 +39,8 @@ const MultiSelectDropDown = ({
         arrowColor: themeArrowColor,
         arrowTransition: themeArrowTransition,
         ...themeArrowProps
-      } = {},
-    } = {},
+      } = emptyObj,
+    } = emptyObj,
   } = useThemeContext({ callerName: 'MultiSelectDropDown' });
 
   const toggle = (item) => {

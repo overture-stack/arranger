@@ -3,7 +3,7 @@ import Downshift from 'downshift';
 import { css } from '@emotion/react';
 
 import { ArrowIcon } from '@/Icons';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 import { withTheme } from '@/ThemeContext';
 
 import './DropDown.css';
@@ -39,9 +39,9 @@ class DropDown extends React.Component {
             arrowColor: themeArrowColor,
             arrowTransition: themeArrowTransition,
             ...themeArrowProps
-          } = {},
-        } = {},
-      } = {},
+          } = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
     } = this.props;
 
     const disableDownloads =

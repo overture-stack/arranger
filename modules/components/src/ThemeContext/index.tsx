@@ -12,7 +12,7 @@ import { isEqual, omit } from 'lodash';
 
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import arrangerBaseTheme from './baseTheme';
 import {
@@ -37,7 +37,7 @@ export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
  * @param {Theme} [customTheme] takes customisation parameters for Arranger components.
  * @returns {Theme} theme object
  */
-export const useThemeContext = (customTheme: UseThemeContextProps = {}): ThemeOptions => {
+export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): ThemeOptions => {
   const { aggregateTheme = noopFn, providerMissing, theme } = useContext(ThemeContext);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export const ThemeProvider = <Theme extends BaseThemeInterface>({
   useArrangerTheme = true,
 }: ThemeProviderProps): ReactElement<ThemeContextInterface<Theme>> => {
   const outerTheme = useThemeContext({ callerName: ThemeContext.displayName }); // get theme from parent theme provider, if any.
-  const initialTheme = useArrangerTheme ? arrangerBaseTheme : {};
+  const initialTheme = useArrangerTheme ? arrangerBaseTheme : emptyObj;
   const isNested = isProviderNested(initialTheme, [outerTheme, localTheme]);
   const otherThemes = [outerTheme, localTheme, isNested];
 

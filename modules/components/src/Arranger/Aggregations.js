@@ -3,7 +3,7 @@ import cx from 'classnames';
 
 import { AggsState, AggsQuery } from '@/Aggs';
 import aggComponents from '@/Aggs/aggComponentsMap';
-import noopFn, { emptyArrFn, emptyObjFn } from '@/utils/noopFns';
+import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
 
 const BaseWrapper = ({ className, ...props }) => (
   <section {...props} className={cx('aggregations', className)} />
@@ -138,7 +138,7 @@ const Aggregations = ({
   onValueChange = noopFn,
   setSQON,
   sqon,
-  style = {},
+  style = emptyObj,
   Wrapper = BaseWrapper,
 }) => {
   return (
