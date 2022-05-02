@@ -10,7 +10,7 @@ import { get } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
 
-import { useTableContext } from './TableContext';
+import { useTableContext } from './Context';
 import { ColumnsDictionary } from './types';
 
 export const aggregateCustomColumns = (

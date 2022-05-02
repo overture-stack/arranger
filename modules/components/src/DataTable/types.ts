@@ -1,8 +1,8 @@
-import { ThemeCommon } from '@/ThemeContext/types';
+import { ThemedButtonProps } from '@/Button/types';
 
 export interface DataTableThemeProps {
   DropDown: {
     arrowColor: string;
     arrowTransition: string;
-  } & ThemeCommon.CustomCSS;
+  } & ThemedButtonProps;
 }

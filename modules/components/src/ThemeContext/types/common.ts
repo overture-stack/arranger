@@ -33,6 +33,7 @@ export interface FontProperties {
   fontWeight?: number | string;
   letterSpacing?: string;
   lineHeight?: string;
+  textOverflow?: string;
   textDecoration?: string;
   textTransform?: string;
   whiteSpace?: string;

@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react';
+import { MouseEvent, PropsWithChildren } from 'react';
 
 import { ThemeCommon } from '@/ThemeContext/types';
 
@@ -12,6 +12,12 @@ export type ThemedButtonProps = ThemeCommon.MouseEventProperties &
   ThemeCommon.FontActiveProperties &
   ThemeCommon.FontDisabledProperties;
 
+export interface MouseEventProps<T = HTMLButtonElement> {
+  onClick?: (event: MouseEvent<T>) => unknown;
+}
+
 // To be used in components.
-type ButtonProps = PropsWithChildren<Partial<ThemedButtonProps>>;
+type ButtonProps<T = HTMLButtonElement> = PropsWithChildren<
+  Partial<ThemedButtonProps> & MouseEventProps<T>
+>;
 export default ButtonProps;

@@ -1,3 +1,3 @@
 export { default } from './Table';
-export * from './TableContext';
+export * from './Context';
 export { default as Toolbar } from './Toolbar';

@@ -8,7 +8,7 @@
   flex-direction: column;
 }
 
-.advancedFacetViewWrapper .loadingScreen {
+.advancedFacetViewWrapper .Spinner {
   background: rgba(255, 255, 255, 0.9);
 }
 

@@ -1,18 +1,22 @@
+import { createRef, ForwardedRef, forwardRef } from 'react';
 import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
 
+import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
+
 import ButtonProps from './types';
 
-const Button = styled('button', {
+const BaseButton = styled('button', {
   shouldForwardProp: isPropValid,
 })<ButtonProps>`
   align-items: center;
   background: ${({ background }) => background};
   box-sizing: border-box;
-  border-color: ${({ borderColor }) => borderColor};
+  border: ${({ borderColor }) => borderColor && `0.08rem solid ${borderColor}`};
   border-radius: ${({ borderRadius }) => borderRadius};
   color: ${({ fontColor }) => fontColor};
-  cursor: ${({ onClick }) => (onClick ? 'pointer' : 'default')};
+  cursor: ${({ onClick }) => (typeof onClick === 'function' ? 'pointer' : 'default')};
   display: flex;
   flex: ${({ flex }) => flex};
   font-family: ${({ fontFamily }) => fontFamily};
@@ -39,7 +43,49 @@ const Button = styled('button', {
   }
 `;
 
-export const TransparentButton = styled(Button)<ButtonProps>`
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    { background, borderColor, borderRadius, fontSize, lineHeight, children, ...props },
+    ref?: ForwardedRef<HTMLButtonElement>,
+  ) => {
+    // manual displayname setting required due to forwardRef
+    Button.displayName = 'Button';
+
+    const forwardedRef = ref || createRef();
+
+    const {
+      colors,
+      components: {
+        Button: {
+          background: themeBackground = background || colors?.grey?.[100],
+          borderColor: themeBorderColor = borderColor || colors?.grey?.[400],
+          borderRadius: themeBorderRadius = borderRadius || '0.3rem',
+          fontSize: themeFontSize = fontSize || '0.85rem',
+          lineHeight: themeLineHeight = lineHeight || '1.3rem',
+          ...themeProps
+        } = emptyObj,
+      } = emptyObj,
+    } = useThemeContext({
+      callerName: 'Button',
+    });
+
+    return (
+      <BaseButton
+        background={themeBackground}
+        borderColor={themeBorderColor}
+        borderRadius={themeBorderRadius}
+        fontSize={themeFontSize}
+        lineHeight={themeLineHeight}
+        ref={forwardedRef}
+        {...{ ...themeProps, ...props }}
+      >
+        {children}
+      </BaseButton>
+    );
+  },
+);
+
+export const TransparentButton = styled(BaseButton)<ButtonProps>`
   background: ${({ background = 'none' }) => background};
   border: ${({ borderColor }) => (borderColor ? `0.1rem solid ${borderColor}` : 'none')};
   color: ${({ fontColor = 'inherit' }) => fontColor};
