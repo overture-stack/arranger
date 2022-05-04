@@ -5,13 +5,14 @@ import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
 import { emptyObj } from '@/utils/noops';
 
-import { aggregateCustomColumns, getVisibleColumns } from './helpers';
 import {
   ColumnsDictionary,
   TableContextInterface,
   TableContextProviderProps,
   UseTableContextProps,
-} from './types';
+} from '../types';
+
+import { aggregateCustomColumns, getVisibleColumns } from './columns';
 
 export const TableContext = createContext<TableContextInterface>({
   providerMissing: true,
@@ -33,8 +34,10 @@ export const TableContextProvider = ({
   const { columnsState, documentType, fetchData, isLoadingConfigs, providerMissing, sqon } =
     useDataContext({ callerName: 'TableContextProvider' });
 
+  const [currentPage, setCurrentPage] = useState(0);
   const [isLoadingTableData, setIsLoadingTableData] = useState(false);
   const [isStaleTableData, setIsStaleTableData] = useState(true);
+  const [pageSize, setPageSize] = useState(20);
   const [selectedTableRows, setSelectedTableRows] = useState<string[]>([]);
   const [tableData, setTableData] = useState<unknown[]>([]);
   const [total, setTotal] = useState(0);
@@ -84,10 +87,15 @@ export const TableContextProvider = ({
   ]);
 
   const contextValues = {
+    currentPage,
+    documentType,
     fetchData: customFetcher || fetchData,
     isLoading: isLoadingConfigs || isLoadingTableData || isStaleTableData,
+    pageSize,
     providerMissing: providerMissing && !(customColumns && customDocumentType && customFetcher),
     selectedTableRows,
+    setCurrentPage,
+    setPageSize,
     setSelectedTableRows,
     tableData,
     total,

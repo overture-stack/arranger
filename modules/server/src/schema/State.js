@@ -33,9 +33,10 @@ export const ColumnStateTypeDefs = `
   type Column {
     accessor: String
     canChangeShow: Boolean
+    displayFormat: String
+    displayName: String
     displayValues: JSON
     field: String
-    header: String
     id: String
     isArray: Boolean
     jsonPath: String

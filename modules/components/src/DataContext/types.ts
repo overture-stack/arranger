@@ -7,29 +7,31 @@ import SQON from 'sqon-builder';
 import { legacyProps } from '@/Arranger/Arranger';
 import { CustomThemeType, BaseThemeInterface } from '@/ThemeContext/types';
 
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+
 export interface ColumnMappingInterface {
-  accessor?: string;
+  accessor: string;
   canChangeShow: boolean;
+  displayFormat?: string;
+  displayName?: string;
   displayValues?: Record<string, string>;
   field: string;
-  header?: string;
   id: string;
   isArray?: boolean;
   jsonPath?: string | null;
   query?: string | null;
   show: boolean;
   sortable: boolean;
-  type: string;
+  type: DisplayType;
 }
 
 export interface ColumnsStateInterface {
-  type: string;
-  keyField: string;
-  defaultSorted: {
-    id: string;
-    desc: boolean;
-  };
   columns: ColumnMappingInterface[];
+  defaultSorted: {
+    desc: boolean;
+    id: string;
+  };
+  keyField: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -42,7 +44,7 @@ export interface ExtendedMappingInterface {
   primaryKey: boolean;
   quickSearchEnabled: boolean;
   rangeStep: number | null | undefined;
-  type: string;
+  type: DisplayType;
   unit: string | null;
 }
 

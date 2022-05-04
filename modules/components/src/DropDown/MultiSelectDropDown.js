@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 
+import Button from '@/Button';
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -38,7 +39,7 @@ const MultiSelectDropDown = ({
       DropDown: {
         arrowColor: themeArrowColor,
         arrowTransition: themeArrowTransition,
-        ...themeArrowProps
+        ...themeDropDownButtonProps
       } = emptyObj,
     } = emptyObj,
   } = useThemeContext({ callerName: 'MultiSelectDropDown' });
@@ -210,17 +211,18 @@ const MultiSelectDropDown = ({
 
   return (
     <div className="dropDownHeader">
-      <button
+      <Button
         aria-label={isOpen ? buttonAriaLabelOpen : buttonAriaLabelClosed}
         aria-haspopup="true"
         aria-expanded={isOpen}
+        className="dropDownButton"
         onBlur={handleBlur}
         onClick={(e) => {
           e.preventDefault();
           setIsOpen((isOpen) => !isOpen);
         }}
         ref={buttonRef}
-        className="dropDownButton"
+        {...themeDropDownButtonProps}
       >
         <div className="dropDownButtonContent">{children}</div>
         <ArrowIcon
@@ -231,9 +233,8 @@ const MultiSelectDropDown = ({
           fill={customArrowColor || themeArrowColor}
           pointUp={isOpen}
           transition={customArrowTransition || themeArrowTransition}
-          {...themeArrowProps}
         />
-      </button>
+      </Button>
 
       {isOpen && (
         <div

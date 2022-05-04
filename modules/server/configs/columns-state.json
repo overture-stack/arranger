@@ -11,7 +11,6 @@
       "accessor": "analysis.analysis_id",
       "canChangeShow": true,
       "field": "analysis.analysis_id",
-      "id": null,
       "jsonPath": null,
       "query": null,
       "show": true,
@@ -23,7 +22,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "analysis.analysis_state",
       "accessor": "analysis.analysis_state"
     },
@@ -33,7 +31,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "analysis.analysis_type",
       "accessor": "analysis.analysis_type"
     },
@@ -43,7 +40,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "analysis.analysis_version",
       "accessor": "analysis.analysis_version"
     },
@@ -53,7 +49,6 @@
       "canChangeShow": false,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "analysis.experiment",
       "accessor": "analysis.experiment"
     },
@@ -63,7 +58,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "data_type",
       "accessor": "data_type"
     },
@@ -73,7 +67,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                donor_id\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.donor_id",
-      "id": null,
       "field": "donors.donor_id",
       "accessor": null
     },
@@ -83,7 +76,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                age\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.age",
-      "id": null,
       "field": "donors.age",
       "accessor": null
     },
@@ -93,7 +85,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                gender\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.gender",
-      "id": null,
       "field": "donors.gender",
       "accessor": null
     },
@@ -103,7 +94,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                matched_normal_submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.matched_normal_submitter_sample_id",
-      "id": null,
       "field": "donors.specimens.samples.matched_normal_submitter_sample_id",
       "accessor": null
     },
@@ -113,7 +103,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_id",
-      "id": null,
       "field": "donors.specimens.samples.sample_id",
       "accessor": null
     },
@@ -123,19 +112,17 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_type",
-      "id": null,
       "field": "donors.specimens.samples.sample_type",
       "accessor": null
     },
     {
-      "show": true,
-      "sortable": false,
       "canChangeShow": true,
-      "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                collection_date\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-      "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.collection_date",
-      "id": null,
+      "displayFormat": "yyyy-MM-dd HH:ss",
       "field": "donors.specimens.samples.collection_date",
-      "accessor": null
+      "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.collection_date",
+      "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                collection_date\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
+      "show": true,
+      "sortable": false
     },
     {
       "show": false,
@@ -143,7 +130,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.submitter_sample_id",
-      "id": null,
       "field": "donors.specimens.samples.submitter_sample_id",
       "accessor": null
     },
@@ -153,7 +139,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "donors.specimens.samples.hits.total",
       "accessor": "donors.hits.edges[0].node.specimens.hits.edges[0].node.samples.hits.total"
     },
@@ -163,7 +148,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_id",
-      "id": null,
       "field": "donors.specimens.specimen_id",
       "accessor": null
     },
@@ -173,7 +157,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_tissue_source\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_tissue_source",
-      "id": null,
       "field": "donors.specimens.specimen_tissue_source",
       "accessor": null
     },
@@ -183,7 +166,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_type",
-      "id": null,
       "field": "donors.specimens.specimen_type",
       "accessor": null
     },
@@ -193,7 +175,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                submitter_specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.submitter_specimen_id",
-      "id": null,
       "field": "donors.specimens.submitter_specimen_id",
       "accessor": null
     },
@@ -203,7 +184,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                tumour_normal_designation\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.tumour_normal_designation",
-      "id": null,
       "field": "donors.specimens.tumour_normal_designation",
       "accessor": null
     },
@@ -213,7 +193,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "donors.specimens.hits.total",
       "accessor": "donors.hits.edges[0].node.specimens.hits.total"
     },
@@ -223,7 +202,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                submitter_donor_id\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.submitter_donor_id",
-      "id": null,
       "field": "donors.submitter_donor_id",
       "accessor": null
     },
@@ -233,7 +211,6 @@
       "canChangeShow": true,
       "query": "donors {\n                hits {\n                edges {\n                node {\n                vaccinated\n              }\n              }\n              }\n              }",
       "jsonPath": "$.donors.hits.edges[*].node.vaccinated",
-      "id": null,
       "field": "donors.vaccinated",
       "accessor": null
     },
@@ -243,7 +220,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "donors.hits.total",
       "accessor": "donors.hits.total"
     },
@@ -253,7 +229,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.index_file.file_type",
       "accessor": "file.index_file.file_type"
     },
@@ -263,7 +238,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.index_file.md5sum",
       "accessor": "file.index_file.md5sum"
     },
@@ -273,7 +247,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.index_file.name",
       "accessor": "file.index_file.name"
     },
@@ -283,19 +256,17 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.index_file.object_id",
       "accessor": "file.index_file.object_id"
     },
     {
-      "show": false,
-      "sortable": true,
       "canChangeShow": true,
-      "query": null,
-      "jsonPath": null,
-      "id": null,
       "field": "file.index_file.size",
-      "accessor": "file.index_file.size"
+      "jsonPath": null,
+      "query": null,
+      "show": true,
+      "sortable": true,
+      "type": "bytes"
     },
     {
       "show": false,
@@ -303,7 +274,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.md5sum",
       "accessor": "file.md5sum"
     },
@@ -313,19 +283,17 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file.name",
       "accessor": "file.name"
     },
     {
-      "show": false,
-      "sortable": true,
       "canChangeShow": true,
-      "query": null,
-      "jsonPath": null,
-      "id": null,
       "field": "file.size",
-      "accessor": "file.size"
+      "jsonPath": null,
+      "query": null,
+      "show": true,
+      "sortable": true,
+      "type": "bytes"
     },
     {
       "show": false,
@@ -333,7 +301,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file_access",
       "accessor": "file_access"
     },
@@ -343,7 +310,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file_autocomplete",
       "accessor": "file_autocomplete"
     },
@@ -353,7 +319,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "file_type",
       "accessor": "file_type"
     },
@@ -363,7 +328,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "object_id",
       "accessor": "object_id"
     },
@@ -373,7 +337,6 @@
       "canChangeShow": false,
       "query": "repositories {\n                hits {\n                edges {\n                node {\n                code\n              }\n              }\n              }\n              }",
       "jsonPath": "$.repositories.hits.edges[*].node.code",
-      "id": null,
       "field": "repositories.code",
       "accessor": null
     },
@@ -383,7 +346,6 @@
       "canChangeShow": false,
       "query": "repositories {\n                hits {\n                edges {\n                node {\n                country\n              }\n              }\n              }\n              }",
       "jsonPath": "$.repositories.hits.edges[*].node.country",
-      "id": null,
       "field": "repositories.country",
       "accessor": null
     },
@@ -393,7 +355,6 @@
       "canChangeShow": false,
       "query": "repositories {\n                hits {\n                edges {\n                node {\n                name\n              }\n              }\n              }\n              }",
       "jsonPath": "$.repositories.hits.edges[*].node.name",
-      "id": null,
       "field": "repositories.name",
       "accessor": null
     },
@@ -403,7 +364,6 @@
       "canChangeShow": false,
       "query": "repositories {\n                hits {\n                edges {\n                node {\n                organization\n              }\n              }\n              }\n              }",
       "jsonPath": "$.repositories.hits.edges[*].node.organization",
-      "id": null,
       "field": "repositories.organization",
       "accessor": null
     },
@@ -413,7 +373,6 @@
       "canChangeShow": false,
       "query": "repositories {\n                hits {\n                edges {\n                node {\n                url\n              }\n              }\n              }\n              }",
       "jsonPath": "$.repositories.hits.edges[*].node.url",
-      "id": null,
       "field": "repositories.url",
       "accessor": null
     },
@@ -423,7 +382,6 @@
       "canChangeShow": true,
       "query": null,
       "jsonPath": null,
-      "id": null,
       "field": "repositories.hits.total",
       "accessor": "repositories.hits.total"
     },
@@ -431,7 +389,6 @@
       "accessor": "study_id",
       "canChangeShow": true,
       "field": "study_id",
-      "id": null,
       "jsonPath": null,
       "query": null,
       "show": false,

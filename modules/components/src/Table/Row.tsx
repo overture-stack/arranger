@@ -5,16 +5,16 @@ import cx from 'classnames';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
+import { getDisplayValue } from './helpers';
+
 const TableRow = ({
   padding: themeTablePadding,
-  row,
   textOverflow: themeTableTextOverflow,
   ...props
 }: {
   padding?: string;
-  row: Row<Record<string, any>>;
   textOverflow?: string;
-}) => {
+} & Row<Record<string, any>>) => {
   const {
     components: {
       Table: {
@@ -41,6 +41,7 @@ const TableRow = ({
     } = emptyObj,
   } = useThemeContext({ callerName: 'Table - Row' });
 
+  const visibleCells = props.getVisibleCells();
   return (
     <tr
       className={cx('Row', themeClassName)}
@@ -62,10 +63,10 @@ const TableRow = ({
           border-bottom: ${themeBorderColor && `0.1rem solid ${themeBorderColor}`};
         }
       `}
-      {...props}
     >
-      {row.getVisibleCells().map((cellObj) => {
-        const { key: cellKey, ...otherCellProps } = cellObj.getCellProps();
+      {visibleCells.map((cellObj) => {
+
+        const value = getDisplayValue(cellObj?.row?.original, cellObj.column);
 
         return (
           <td
@@ -86,8 +87,9 @@ const TableRow = ({
               `,
               themeCSS,
             ]}
-            key={cellKey}
-            {...otherCellProps}
+            data-value={value}
+            key={cellObj.id}
+            title={value}
           >
             {cellObj.renderCell()}
           </td>

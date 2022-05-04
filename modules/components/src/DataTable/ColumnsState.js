@@ -146,7 +146,7 @@ class ColumnsState extends Component {
               columns: columnsState?.columns?.map((column) => {
                 return {
                   ...column,
-                  Header: column.header,
+                  Header: column.displayName,
                   show: column.field in toggled ? toggled[column.field] : column.show,
                 };
               }),

@@ -8,9 +8,10 @@ export const columnStateFields = `columnsState {
     columns {
       accessor
       canChangeShow
+      displayFormat
+      displayName
       displayValues
       field
-      header
       id
       isArray
       jsonPath

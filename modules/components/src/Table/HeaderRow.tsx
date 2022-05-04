@@ -1,21 +1,20 @@
 import { css } from '@emotion/react';
 import { HeaderGroup } from '@tanstack/react-table';
 import cx from 'classnames';
+import { get } from 'lodash';
 
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
 const TableHeaderRow = ({
-  headerGroup,
+  headers,
   padding: themeTablePadding,
   textOverflow: themeTableTextOverflow,
   ...props
 }: {
-  borderColor?: string;
-  headerGroup: HeaderGroup<any>;
   padding?: string;
   textOverflow?: string;
-}) => {
+} & HeaderGroup<any>) => {
   const {
     colors,
     components: {
@@ -63,10 +62,10 @@ const TableHeaderRow = ({
         `,
         themeCSS,
       ]}
-      {...props}
     >
-      {headerGroup.headers.map((headerObj) => {
-        const { key: headerKey, ...otherHeaderProps } = headerObj.getHeaderProps();
+      {headers.map((headerObj) => {
+        // TODO: lodash cheat to get around the hacky ReactTable TS mumbojumbo
+        const label = get(headerObj?.column, 'displayName');
 
         return (
           <th
@@ -83,9 +82,10 @@ const TableHeaderRow = ({
                 border-right: ${themeBorderColor && `0.1rem solid ${themeBorderColor}`};
               }
             `}
-            key={headerKey}
-            title={headerObj?.column?.header as string}
-            {...otherHeaderProps}
+            data-accessor={headerObj.id}
+            data-header={label}
+            key={headerObj.id}
+            title={label}
           >
             {headerObj.isPlaceholder ? null : headerObj.renderHeader()}
           </th>

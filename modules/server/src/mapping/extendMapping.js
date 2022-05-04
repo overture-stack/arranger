@@ -10,10 +10,10 @@ export const extendColumns = (columnState = {}, extendedFields = []) => ({
     return {
       ...column,
       accessor: column.accessor ?? column.field,
-      displayValues: fieldObj?.displayValues ?? {},
-      header: fieldObj?.displayName ?? '* ' + column.field,
+      displayName: column.displayName ?? fieldObj?.displayName ?? '* ' + column.field,
+      displayValues: column.displayValues ?? fieldObj?.displayValues ?? {},
       isArray: fieldObj?.isArray ?? false,
-      type: fieldObj?.displayType ?? fieldObj?.type,
+      type: column?.type ?? fieldObj?.displayType ?? fieldObj?.type,
     };
   }),
 });

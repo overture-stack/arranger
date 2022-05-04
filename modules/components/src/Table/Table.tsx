@@ -12,8 +12,10 @@ import TableRow from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
 
-const Table = ({ hideWarning = false }: TableProps) => {
-  const { isLoading, providerMissing, tableInstance } = useTableData();
+const Table = ({ customCells, hideWarning = false }: TableProps) => {
+  const { isLoading, providerMissing, tableInstance } = useTableData({
+    customCells,
+  });
   const {
     colors,
     components: {
@@ -90,7 +92,6 @@ const Table = ({ hideWarning = false }: TableProps) => {
             white-space: ${themeTableWhiteSpace};
             width: 100%;
           `}
-          {...tableInstance.getTableProps()}
         >
           <thead
             className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
@@ -107,20 +108,14 @@ const Table = ({ hideWarning = false }: TableProps) => {
               themeHeaderGroupCSS,
             ]}
           >
-            {tableInstance.getHeaderGroups().map((headerGroup) => {
-              const { key: headerGroupKey, ...headerGroupProps } =
-                headerGroup.getHeaderGroupProps();
-
-              return (
-                <TableHeaderRow
-                  headerGroup={headerGroup}
-                  key={headerGroupKey}
-                  padding={themeTablePadding}
-                  textOverflow={themeTableTextOverflow}
-                  {...headerGroupProps}
-                />
-              );
-            })}
+            {tableInstance.getHeaderGroups().map((headerGroup) => (
+              <TableHeaderRow
+                key={headerGroup.id}
+                padding={themeTablePadding}
+                textOverflow={themeTableTextOverflow}
+                {...headerGroup}
+              />
+            ))}
           </thead>
 
           <tbody
@@ -136,21 +131,15 @@ const Table = ({ hideWarning = false }: TableProps) => {
               `,
               themeTableBodyCSS,
             ]}
-            {...tableInstance.getTableBodyProps}
           >
-            {tableInstance.getRowModel().rows.map((row) => {
-              const { key: rowKey, ...rowProps } = row.getRowProps();
-
-              return (
-                <TableRow
-                  key={rowKey}
-                  padding={themeTablePadding}
-                  row={row}
-                  textOverflow={themeTableTextOverflow}
-                  {...rowProps}
-                />
-              );
-            })}
+            {tableInstance.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                padding={themeTablePadding}
+                textOverflow={themeTableTextOverflow}
+                {...row}
+              />
+            ))}
           </tbody>
         </table>
       )}

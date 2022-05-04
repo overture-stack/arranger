@@ -159,7 +159,7 @@ const TableToolbar = ({
               itemSelectionLegend={`Select columns to display`}
               selectAllAriaLabel={`Select all columns`}
               resetToDefaultAriaLabel={`Reset to default columns`}
-              itemToString={(i) => i.header}
+              itemToString={(i) => i.displayName}
               items={canChangeShowColumns}
               defaultColumns={defaultColumns}
               onChange={(item) => {
@@ -180,7 +180,7 @@ const TableToolbar = ({
           ) : (
             <DropDown
               aria-label={`Select columns`}
-              itemToString={(i) => i.header}
+              itemToString={(i) => i.displayName}
               items={canChangeShowColumns}
               onChange={(item) => {
                 setFilterVal('');

@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction } from 'react';
+import { Dispatch, ReactNode, SetStateAction } from 'react';
 
-import { ColumnMappingInterface, FetchDataFn } from '@/DataContext/types';
+import { ColumnMappingInterface, DisplayType, FetchDataFn } from '@/DataContext/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 
 export type FieldList = ColumnMappingInterface['field'][];
@@ -9,10 +9,15 @@ export type FieldList = ColumnMappingInterface['field'][];
 export type ColumnsDictionary = Record<FieldList[number], ColumnMappingInterface>;
 
 export interface TableContextInterface {
+  currentPage: number;
+  documentType: string;
   isLoading: boolean;
   fetchData: FetchDataFn;
+  pageSize: number;
   providerMissing?: boolean;
   selectedTableRows: string[];
+  setCurrentPage: Dispatch<SetStateAction<number>>;
+  setPageSize: Dispatch<SetStateAction<number>>;
   setSelectedTableRows: Dispatch<SetStateAction<string[]>>;
   tableData: unknown[];
   total: number;
@@ -31,16 +36,28 @@ export interface UseTableContextProps {
   customFetcher?: FetchDataFn;
 }
 
-type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'>;
+type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'> &
+  ThemeCommon.CustomCSS;
 
-/** Table types */
+type TableInnerBoxModelProperties = Omit<TableBoxModelProperties, 'margin'>;
+
+/** Table Component types */
 export interface TableThemeProps extends TableBoxModelProperties, ThemeCommon.FontProperties {
-  HeaderRow: TableBoxModelProperties;
+  HeaderGroup: Omit<TableInnerBoxModelProperties, 'padding'>;
+  HeaderRow: TableInnerBoxModelProperties & ThemeCommon.FontProperties;
+  Row: TableInnerBoxModelProperties & ThemeCommon.FontProperties;
+  TableBody: Omit<TableInnerBoxModelProperties, 'padding'>;
   TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS;
 }
 
+type TableCellComponent =
+  | ReactNode
+  | ((cell: ColumnMappingInterface & Row<any> & { value: any }) => ReactNode);
+
+export type TableCellTypes = Record<'all' | DisplayType | FieldList[number], TableCellComponent>;
+
 export interface TableProps {
+  customCells?: Partial<TableCellTypes>;
   hideWarning?: boolean;
   theme?: TableThemeProps;
 }
-
