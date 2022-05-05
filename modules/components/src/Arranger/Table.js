@@ -5,12 +5,15 @@ import TextInput from '@/Input';
 import defaultApiFetcher from '@/utils/api';
 import noopFn from '@/utils/noops';
 
+/**
+ * @param {SQONType} sqon
+ */
 const Table = ({
   onFilterChange = noopFn,
   documentType = '',
   fetchData = defaultApiFetcher,
-  setSQON,
-  sqon,
+  setSQON = noopFn,
+  sqon = null,
   fieldTypesForFilter = ['text', 'keyword'],
   apiFetcher,
   InputComponent = TextInput,

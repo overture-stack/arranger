@@ -26,7 +26,7 @@ interface BubbleProps extends ButtonProps {
   onClick?: () => void;
 }
 
-export const Bubble = ({ children, className, ...props }: BubbleProps) => {
+export const Bubble = ({ children, className, theme, ...props }: BubbleProps) => {
   const {
     components: {
       SQONViewer: { SQONBubble: themeSQONBubbleProps = emptyObj } = emptyObj,
@@ -37,8 +37,11 @@ export const Bubble = ({ children, className, ...props }: BubbleProps) => {
     <TransparentButton
       className={cx('sqon-bubble', className)}
       css={css``}
-      margin="0 0.2em"
-      {...themeSQONBubbleProps}
+      theme={{
+        margin: '0 0.2em',
+        ...themeSQONBubbleProps,
+        ...theme,
+      }}
       {...props}
     >
       {children}
@@ -104,28 +107,34 @@ export const useDataBubbles = ({
 
   const Clear = ({ nextSQON }: { nextSQON: GroupSQONInterface | null }) => (
     <Bubble
-      background={colors?.grey?.[200]}
-      borderRadius="0.3em"
       className="sqon-clear"
       css={css`
         margin-left: 0;
         margin-right: 0.5em;
       `}
-      disabledBackground={colors?.grey?.[100]}
-      hoverBackground={colors?.grey?.[300]}
       onClick={() => {
         onClear?.();
         setSQON?.(nextSQON);
       }}
-      padding="0.2em 0.5em"
-      {...themeSQONClearProps}
+      theme={{
+        background: colors?.grey?.[200],
+        borderRadius: '0.3em',
+        disabledBackground: colors?.grey?.[100],
+        hoverBackground: colors?.grey?.[300],
+        padding: '0.2em 0.5em',
+        ...themeSQONClearProps,
+      }}
     >
       Clear
     </Bubble>
   );
 
   const FieldCrumb = ({ field, ...fieldProps }: { field: string }) => (
-    <Field css={css``} fontWeight="bold" {...themeSQONFieldProps} {...{ field, ...fieldProps }}>
+    <Field
+      css={css``}
+      theme={{ fontWeight: 'bold', ...themeSQONFieldProps }}
+      {...{ field, ...fieldProps }}
+    >
       {findExtendedMappingForField(field)?.displayName || field}
     </Field>
   );
@@ -143,7 +152,7 @@ export const useDataBubbles = ({
         className={cx(showLess ? 'sqon-less' : 'sqon-more')}
         css={css``}
         onClick={lessOrMoreClickHandler(valueSQON)}
-        {...themeSQONLessOrMoreProps}
+        theme={themeSQONLessOrMoreProps}
       >
         {showLess ? 'less' : '\u2026'}
       </Bubble>
@@ -177,9 +186,11 @@ export const useDataBubbles = ({
       <Value
         onClick={() => setSQON?.(nextSQON)}
         css={[themeSQONValueCustomCSS, customCSS]}
-        textDecoration="underline"
         title={bubbleTitle}
-        {...themeSQONValueProps}
+        theme={{
+          textDecoration: 'underline',
+          ...themeSQONValueProps,
+        }}
         {...valueProps}
       >
         {truncatedValue}

@@ -1,3 +1,10 @@
+export const downloadsConfigs = `
+  downloads {
+    allowCustomMaxRows
+    maxRows
+  }
+`;
+
 export const facetsConfigs = `
   facets {
     aggregations {
@@ -37,9 +44,11 @@ export const componentConfigsQuery = (documentType: string, queryName = '') =>
   `query ${queryName} {
     ${documentType} {
       configs{
+        ${downloadsConfigs}
         extended
         ${facetsConfigs}
         ${tableConfigs}
       }
+      mapping
     }
   }`;

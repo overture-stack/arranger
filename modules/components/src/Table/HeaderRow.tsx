@@ -7,11 +7,12 @@ import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
 const TableHeaderRow = ({
+  hasVisibleRows,
   headers,
   padding: themeTablePadding,
   textOverflow: themeTableTextOverflow,
-  ...props
 }: {
+  hasVisibleRows?: boolean;
   padding?: string;
   textOverflow?: string;
 } & HeaderGroup<any>) => {
@@ -24,10 +25,13 @@ const TableHeaderRow = ({
           borderColor: themeBorderColor,
           className: themeClassName,
           css: themeCSS,
+          disabledBackground: themeDisabledBackground = colors?.grey?.[100],
+          disabledFontColor: themeDisabledFontColor = colors?.grey?.[500],
           fontColor: themeFontColor = colors?.grey?.[800],
           fontFamily: themeFontFamily,
           fontSize: themeFontSize = '0.9rem',
           fontWeight: themeFontWeight,
+          horizontalBorderColor: themeHorizontalBorderColor,
           letterSpacing: themeLetterSpacing,
           lineHeight: themeLineHeight,
           overflow: themeOverflow = 'hidden',
@@ -36,19 +40,24 @@ const TableHeaderRow = ({
           textDecoration: themeTextDecoration,
           textOverflow: themeTextOverflow = themeTableTextOverflow,
           textTransform: themeTextTransform,
+          verticalalBorderColor: themeVerticalBorderColor,
           whiteSpace: themeWhiteSpace,
         } = emptyObj,
       } = emptyObj,
     } = emptyObj,
   } = useThemeContext({ callerName: 'TableHeaderRow' });
 
+  const horizontalBorderColor = themeHorizontalBorderColor || themeBorderColor;
+  const verticalBorderColor = themeVerticalBorderColor || themeBorderColor;
+
   return (
     <tr
       className={cx('TableHeaderRow', themeClassName)}
       css={[
+        themeCSS,
         css`
-          background: ${themeBackground};
-          color: ${themeFontColor};
+          background: ${hasVisibleRows ? themeBackground : themeDisabledBackground};
+          color: ${hasVisibleRows ? themeFontColor : themeDisabledFontColor};
           font-family: ${themeFontFamily};
           font-size: ${themeFontSize};
           font-weight: ${themeFontWeight};
@@ -57,10 +66,9 @@ const TableHeaderRow = ({
           position: ${themePosition};
 
           &:not(:last-of-type) {
-            border-bottom: ${themeBorderColor && `0.1rem solid ${themeBorderColor}`};
+            border-bottom: ${horizontalBorderColor && `0.1rem solid ${horizontalBorderColor}`};
           }
         `,
-        themeCSS,
       ]}
     >
       {headers.map((headerObj) => {
@@ -69,6 +77,7 @@ const TableHeaderRow = ({
 
         return (
           <th
+            className={cx('table_header', headerObj.id)}
             css={css`
               overflow: ${themeOverflow};
               padding: ${themePadding};
@@ -79,7 +88,7 @@ const TableHeaderRow = ({
               white-space: ${themeWhiteSpace};
 
               &:not(:last-of-type) {
-                border-right: ${themeBorderColor && `0.1rem solid ${themeBorderColor}`};
+                border-right: ${verticalBorderColor && `1px solid ${verticalBorderColor}`};
               }
             `}
             data-accessor={headerObj.id}

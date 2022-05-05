@@ -1,8 +1,9 @@
-import { ColumnDef, Table, TableGenerics } from '@tanstack/react-table';
-import { get } from 'lodash';
+import { HTMLAttributes, useEffect, useRef } from 'react';
+import { Table } from '@tanstack/react-table';
+import { mergeWith } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
-import { ColumnsDictionary, TableCellTypes, TableHeaderTypes } from '@/Table/types';
+import { ColumnsDictionary, ColumnTypesObject, TableCellProps } from '@/Table/types';
 import { emptyObj } from '@/utils/noops';
 
 import { defaultCellTypes, getCellValue } from './cells';
@@ -38,45 +39,63 @@ export const columnsArrayToDictionary = (columns: ColumnMappingInterface[] = [])
     {} as ColumnsDictionary,
   );
 
-export const getVisibleColumns = (columns: ColumnMappingInterface[] = []) =>
-  columnsArrayToDictionary(columns.filter((column) => column.show));
+export const getColumnsByAttribute = (
+  columns: ColumnMappingInterface[] = [],
+  attribute: keyof ColumnMappingInterface,
+) => columns.filter((column) => column[attribute]);
+
+function IndeterminateCheckbox({
+  indeterminate,
+  className = '',
+  ...rest
+}: { indeterminate?: boolean } & HTMLAttributes<HTMLInputElement>) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const ref = useRef<HTMLInputElement>(null!);
+
+  useEffect(() => {
+    if (typeof indeterminate === 'boolean') {
+      ref.current.indeterminate = indeterminate;
+    }
+  }, [ref, indeterminate]);
+
+  return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
+}
 
 export const makeTableColumns = ({
-  customCells = emptyObj,
-  customHeaders = emptyObj,
+  allowRowSelection,
+  columnTypes: customColumnTypes = emptyObj,
   table,
+  total,
   visibleColumns = [],
 }: {
-  customCells?: Partial<TableCellTypes>;
-  customHeaders?: Partial<TableHeaderTypes>;
+  allowRowSelection?: boolean;
+  columnTypes?: Partial<ColumnTypesObject>;
   table: Table<any>;
+  total: number;
   visibleColumns: ColumnMappingInterface[];
 }) => {
-  const cellTypes = {
-    ...defaultCellTypes,
-    ...customCells,
-  } as TableCellTypes;
+  const hasData = total > 0;
+  const columnTypes = mergeWith(customColumnTypes, defaultCellTypes, (objValue, srcValue) => ({
+    ...objValue,
+    cellValue: objValue?.cellValue || srcValue,
+  })) as ColumnTypesObject;
 
-  const headerTypes = {
-    // ...defaultHeaderTypes,
-    ...customHeaders,
-  } as TableHeaderTypes;
+  const tableColumns = visibleColumns.map((visibleColumn) => {
+    const columnType =
+      columnTypes[visibleColumn?.accessor] || columnTypes[visibleColumn?.type] || columnTypes.all;
 
-  return visibleColumns.map((visibleColumn) =>
-    table.createDataColumn(visibleColumn?.accessor, {
+    return table.createDataColumn((row) => getCellValue(row, visibleColumn), {
       ...visibleColumn,
-      cell: ({ row }) => {
-        const valueFromRow = getCellValue(row?.original, visibleColumn);
-        const cellType =
-          cellTypes[visibleColumn?.accessor] || cellTypes[visibleColumn?.type] || cellTypes.all;
+      cell: ({ getValue, cell }) => {
+        const cellType = columnType?.cellValue;
+        const valueFromRow = getValue();
 
         if (cellType) {
           return typeof cellType === 'function'
             ? cellType({
-                ...visibleColumn,
-                ...row,
+                ...cell,
                 value: valueFromRow,
-              })
+              } as TableCellProps)
             : cellType;
         }
 
@@ -84,22 +103,50 @@ export const makeTableColumns = ({
       },
       header: ({ header }) => {
         const label = visibleColumn?.displayName || header.id;
-        const headerType =
-          headerTypes[visibleColumn?.accessor] ||
-          headerTypes[visibleColumn?.type] ||
-          headerTypes.all;
+        const headerType = columnType?.headerValue;
 
         if (headerType) {
           return typeof headerType === 'function'
             ? headerType({
                 ...visibleColumn,
                 ...header,
+                disabled: !hasData,
               })
             : headerType;
         }
 
         return label;
       },
-    }),
-  );
+      id: visibleColumn?.id || visibleColumn?.accessor,
+    });
+  });
+
+  return allowRowSelection
+    ? [
+        table.createDisplayColumn({
+          id: 'select',
+          header: ({ instance }) => (
+            <IndeterminateCheckbox
+              {...{
+                checked: instance.getIsAllRowsSelected(),
+                disabled: !hasData,
+                indeterminate: instance.getIsSomeRowsSelected(),
+                onChange: instance.getToggleAllRowsSelectedHandler(),
+              }}
+            />
+          ),
+          cell: ({ row }) => (
+            <div className="px-1">
+              <IndeterminateCheckbox
+                {...{
+                  checked: row.getIsSelected(),
+                  indeterminate: row.getIsSomeSelected(),
+                  onChange: row.getToggleSelectedHandler(),
+                }}
+              />
+            </div>
+          ),
+        }),
+      ].concat(tableColumns)
+    : tableColumns;
 };

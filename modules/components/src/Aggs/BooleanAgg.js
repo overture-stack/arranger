@@ -12,7 +12,7 @@ import AggsWrapper from './AggsWrapper';
 import BucketCount from './BucketCount';
 
 const BooleanAgg = ({
-  buckets,
+  buckets = [],
   collapsible,
   field,
   handleValueClick = noopFn,
@@ -40,11 +40,16 @@ const BooleanAgg = ({
   type,
 }) => {
   const {
+    colors,
     components: {
       Aggregations: {
         BooleanAgg: {
           BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
           ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = emptyObj,
+        } = emptyObj,
+        NoDataContainer: {
+          fontColor: themeNoDataFontColor = colors?.grey?.[600],
+          fontSize: themeNoDataFontSize = '0.8em',
         } = emptyObj,
       } = emptyObj,
     } = emptyObj,
@@ -101,6 +106,8 @@ const BooleanAgg = ({
     );
   };
 
+  const hasData = trueBucket?.doc_count + trueBucket?.doc_count > 0;
+
   const options = (
     displayKeys.any
       ? [
@@ -156,24 +163,37 @@ const BooleanAgg = ({
 
   return (
     <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
-      <div
-        css={css`
-          width: 100%;
-        `}
-      >
-        <ToggleButton
-          className={themeToggleButtonClassName}
-          onChange={({ value }) => {
-            handleChange(
-              value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
-              dotField,
-            );
-          }}
-          options={options}
-          theme={toggleButtonTheme}
-          value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
-        />
-      </div>
+      {hasData ? (
+        <div
+          css={css`
+            width: 100%;
+          `}
+        >
+          <ToggleButton
+            className={themeToggleButtonClassName}
+            onChange={({ value }) => {
+              handleChange(
+                value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
+                dotField,
+              );
+            }}
+            options={options}
+            theme={toggleButtonTheme}
+            value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
+          />
+        </div>
+      ) : (
+        <span
+          className="no-data"
+          css={css`
+            color: ${themeNoDataFontColor};
+            display: block;
+            font-size: ${themeNoDataFontSize};
+          `}
+        >
+          No data available
+        </span>
+      )}
     </AggsWrapper>
   );
 };

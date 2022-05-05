@@ -26,7 +26,7 @@ export interface UseDataBubblesProps {
 }
 export interface SQONViewerProps extends UseDataBubblesProps {
   emptyMessage?: string;
-  sqon: GroupSQONInterface | null;
+  sqon?: GroupSQONInterface | null;
 }
 
 // TODO: centralise all these

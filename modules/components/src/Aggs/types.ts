@@ -58,7 +58,7 @@ interface TermAgg {
   ActionIcon: IconButton;
   BucketCount: BucketCountThemeProps;
   collapsible: boolean;
-  FilterInput: ReactNode;
+  FilterInput: ThemeCommon.CustomCSS;
   IncludeExcludeButton: ToggleButtonThemeProps;
   MoreOrLessButton: ThemeCommon.CustomCSS;
   TreeJointIcon: IconButton;
@@ -69,7 +69,7 @@ export interface AggregationsThemeProps {
   AggsGroup: AggsGroup;
   BooleanAgg: BooleanAgg;
   BucketCount: BucketCountThemeProps;
-  FilterInput: ReactNode;
+  FilterInput: ThemeCommon.CustomCSS;
   InputRange: SerializedStyles;
   MoreOrLessButton: ThemedButtonProps;
   RangeAgg: RangeAgg;

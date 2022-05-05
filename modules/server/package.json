@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/overture-stack/arranger#readme",
   "dependencies": {
-    "@babel/runtime": "^7.17.9",
+    "@babel/runtime": "^7.18.3",
     "@elastic/elasticsearch": "^7.5.0",
     "apollo-server": "^3.7.0",
     "apollo-server-core": "^2.14.2",
@@ -62,16 +62,17 @@
     "through2": "^2.0.3",
     "tslib": "^2.4.0",
     "url-join": "^4.0.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "zlib": "^1.0.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
-    "@babel/core": "^7.17.10",
-    "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
-    "@babel/plugin-proposal-optional-chaining": "^7.16.7",
-    "@babel/plugin-transform-runtime": "^7.17.10",
-    "@babel/preset-env": "^7.17.10",
-    "@babel/preset-typescript": "^7.16.7",
+    "@babel/core": "^7.18.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.18.0",
+    "@babel/plugin-proposal-optional-chaining": "^7.17.12",
+    "@babel/plugin-transform-runtime": "^7.18.2",
+    "@babel/preset-env": "^7.18.2",
+    "@babel/preset-typescript": "^7.17.12",
     "@babel/register": "^7.17.7",
     "@types/convert-units": "^2.3.5",
     "@types/jest": "^27.5.1",
@@ -87,8 +88,8 @@
     "jest": "^27.5.1",
     "nodemon": "^2.0.16",
     "ts-jest": "^27.1.4",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.6.4",
+    "ts-node": "^10.8.0",
+    "typescript": "^4.7.2",
     "typescript-transform-paths": "^3.3.1"
   },
   "overrides": {

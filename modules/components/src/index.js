@@ -12,6 +12,7 @@ export {
   default as Table,
   TableContext,
   TableContextProvider,
+  TableCounter,
   Toolbar,
   useTableContext,
   withTableContext,

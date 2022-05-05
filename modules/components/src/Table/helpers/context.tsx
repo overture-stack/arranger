@@ -1,6 +1,9 @@
 import { ComponentType, createContext, ReactElement, useContext, useEffect, useState } from 'react';
+import { RowSelectionState } from '@tanstack/react-table';
 
 import { useDataContext } from '@/DataContext';
+import { ColumnSortingInterface } from '@/DataContext/types';
+import { useThemeContext } from '@/ThemeContext';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
 import { emptyObj } from '@/utils/noops';
@@ -12,10 +15,10 @@ import {
   UseTableContextProps,
 } from '../types';
 
-import { aggregateCustomColumns, getVisibleColumns } from './columns';
+import { aggregateCustomColumns, columnsArrayToDictionary, getColumnsByAttribute } from './columns';
 
 export const TableContext = createContext<TableContextInterface>({
-  providerMissing: true,
+  missingProvider: 'TableContext',
   tableData: [],
   visibleColumnsDict: {},
 } as unknown as TableContextInterface);
@@ -31,35 +34,83 @@ export const TableContextProvider = ({
   customFetcher,
   documentType: customDocumentType,
 }: TableContextProviderProps): ReactElement<TableContextInterface> => {
-  const { documentType, fetchData, isLoadingConfigs, providerMissing, sqon, tableConfigs } =
-    useDataContext({ callerName: 'TableContextProvider' });
-
-  const [currentPage, setCurrentPage] = useState(0);
+  // Table content state values
+  const [isFreshTable, setIsFreshTable] = useState(true);
   const [isLoadingTableData, setIsLoadingTableData] = useState(false);
   const [isStaleTableData, setIsStaleTableData] = useState(true);
-  const [pageSize, setPageSize] = useState(20);
-  const [selectedTableRows, setSelectedTableRows] = useState<string[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [selectedRowsDict, setSelectedRowsDict] = useState<RowSelectionState>({});
+  const [sorting, setSorting] = useState<ColumnSortingInterface[]>([]);
   const [tableData, setTableData] = useState<unknown[]>([]);
   const [total, setTotal] = useState(0);
+  // the default Server + UI-provided columns
+  const [allColumnsDict, setAllColumnsDict] = useState<ColumnsDictionary>({});
+  const [hasShowableColumns, setHasShowableColumns] = useState(false);
+  // all the columns, in their runtime state.
+  const [currentColumnsDict, setCurrentColumnsDict] = useState<ColumnsDictionary>({});
+  // same as above, but only the ones that are visible
   const [visibleColumnsDict, setVisibleColumnsDict] = useState<ColumnsDictionary>({});
+  const [hasVisibleColumns, setHasVisibleColumns] = useState(false);
+
+  // Pagination state values
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+
+  // Arranger data context values
+  const { documentType, fetchData, isLoadingConfigs, missingProvider, sqon, tableConfigs } =
+    useDataContext({ callerName: 'TableContextProvider' });
+
+  const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } =
+    useThemeContext({ callerName: 'TableContextProvider' });
 
   useEffect(() => {
-    isLoadingConfigs ||
-      setVisibleColumnsDict(
-        getVisibleColumns(aggregateCustomColumns(customColumns, tableConfigs?.columns)),
+    if (isLoadingConfigs) {
+      const columns = aggregateCustomColumns(customColumns, tableConfigs?.columns);
+
+      setAllColumnsDict(columnsArrayToDictionary(columns)); // these will be the default to fallback to
+      setCurrentColumnsDict(columnsArrayToDictionary(columns)); // and these the ones to work with
+      setHasShowableColumns(
+        getColumnsByAttribute(columns, 'canChangeShow').length > 0 ||
+          getColumnsByAttribute(columns, 'show').length > 0,
       );
-  }, [customColumns, isLoadingConfigs, tableConfigs]);
+      setSorting(
+        (Array.isArray(themeDefaultSorting) &&
+          themeDefaultSorting.length > 0 &&
+          themeDefaultSorting) ||
+          tableConfigs?.defaultSorting ||
+          [],
+      );
+    }
+  }, [tableConfigs, customColumns, isLoadingConfigs, themeDefaultSorting]);
+
+  useEffect(() => {
+    const visibleColumns = getColumnsByAttribute(Object.values(currentColumnsDict), 'show');
+    setVisibleColumnsDict(columnsArrayToDictionary(visibleColumns));
+    setHasVisibleColumns(visibleColumns.length > 0);
+  }, [currentColumnsDict]);
+
+  useEffect(() => {
+    setSelectedRows(
+      Object.entries(selectedRowsDict).reduce(
+        (acc: string[], [fieldName, selected]) => (selected ? acc.concat(fieldName) : acc),
+        [],
+      ),
+    );
+  }, [selectedRowsDict]);
 
   useEffect(() => {
     setIsStaleTableData(true);
-  }, [sqon]);
+    setTableData([]);
+  }, [currentColumnsDict, sqon]);
 
   useEffect(() => {
-    !isLoadingConfigs && // there's configs
+    if (
+      !isLoadingConfigs && // there's configs
       !isLoadingTableData && // data is not already being fetched
-      Object.keys(visibleColumnsDict).length > 0 && // there are visible columns to query
-      isStaleTableData && // any data available needs to be updated
-      (setIsLoadingTableData(true),
+      hasVisibleColumns && // there are visible columns to query
+      isStaleTableData // any data available needs to be updated
+    ) {
+      setIsLoadingTableData(true);
       fetchData({
         config: {
           columns: Object.values(visibleColumnsDict),
@@ -67,36 +118,62 @@ export const TableContextProvider = ({
         },
         endpoint: '/graphql/TableDataQuery',
         queryName: 'tableData',
+        sort: sorting.map(({ field, desc }) => ({
+          field,
+          order: desc ? 'desc' : 'asc',
+        })),
       })
         .then(({ total = 0, data } = emptyObj) => {
-          setTotal(total);
-          setTableData(data);
+          isFreshTable && setIsFreshTable(false);
           setIsStaleTableData(false);
+          setTableData(data);
+          setTotal(total);
         })
         .catch((err) => {
           console.error(err);
         })
-        .finally(() => setIsLoadingTableData(false)));
+        .finally(() => setIsLoadingTableData(false));
+    }
   }, [
     documentType,
     fetchData,
+    hasVisibleColumns,
+    isFreshTable,
     isLoadingConfigs,
     isLoadingTableData,
     isStaleTableData,
+    sorting,
     visibleColumnsDict,
   ]);
 
   const contextValues = {
+    allColumnsDict,
+    currentColumnsDict,
     currentPage,
+    defaultSorting: themeDefaultSorting,
     documentType,
     fetchData: customFetcher || fetchData,
-    isLoading: isLoadingConfigs || isLoadingTableData || isStaleTableData,
+    hasSelectedRows: selectedRows.length > 0,
+    hasShowableColumns,
+    hasVisibleColumns,
+    isFreshTable,
+    isLoading:
+      isLoadingConfigs ||
+      isFreshTable ||
+      isLoadingTableData ||
+      (hasVisibleColumns && isStaleTableData),
+    keyField: tableConfigs?.keyField,
+    missingProvider:
+      // ideally allows for passing in sufficient props to cover the absence of a data context.
+      !(customColumns && customDocumentType && customFetcher) && missingProvider,
     pageSize,
-    providerMissing: providerMissing && !(customColumns && customDocumentType && customFetcher),
-    selectedTableRows,
+    selectedRows,
+    selectedRowsDict,
     setCurrentPage,
     setPageSize,
-    setSelectedTableRows,
+    setCurrentColumnsDict,
+    setSelectedRowsDict,
+    sqon,
     tableData,
     total,
     visibleColumnsDict,
@@ -116,7 +193,7 @@ export const useTableContext = ({
 }: UseTableContextProps = emptyObj): TableContextInterface => {
   const defaultContext = useContext(TableContext);
 
-  defaultContext.providerMissing && missingProviderHandler(TableContext.displayName, callerName);
+  defaultContext.missingProvider && missingProviderHandler(TableContext.displayName, callerName);
 
   return {
     ...defaultContext,

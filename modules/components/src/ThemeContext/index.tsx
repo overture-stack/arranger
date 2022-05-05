@@ -29,7 +29,7 @@ import {
 import { isProviderNested, mergeThemes } from './utils';
 
 export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
-  providerMissing: true,
+  missingProvider: 'ThemeContext',
   theme: {},
 } as ThemeContextInterface<ThemeOptions>);
 
@@ -38,7 +38,7 @@ export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
  * @returns {Theme} theme object
  */
 export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): ThemeOptions => {
-  const { aggregateTheme = noopFn, providerMissing, theme } = useContext(ThemeContext);
+  const { aggregateTheme = noopFn, missingProvider, theme } = useContext(ThemeContext);
 
   useEffect(() => {
     aggregateTheme(
@@ -46,7 +46,7 @@ export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): T
     );
   }, [aggregateTheme, customTheme, theme]);
 
-  providerMissing && missingProviderHandler(ThemeContext.displayName, customTheme.callerName);
+  missingProvider && missingProviderHandler(ThemeContext.displayName, customTheme.callerName);
 
   return useMemo(() => theme, [theme]);
 };

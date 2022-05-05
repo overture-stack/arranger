@@ -9,7 +9,7 @@ import { emptyObj } from '@/utils/noops';
 
 export const getCellValue = (
   row = emptyObj,
-  { accessor = '', id = '', jsonPath = '' } = emptyObj,
+  { accessor = '', id = '', jsonPath = '', isArray = false } = emptyObj,
 ): string =>
   jsonPath ? JSONPath({ json: row, path: jsonPath }) : get(row, (id || accessor).split('.'), '');
 

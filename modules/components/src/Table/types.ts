@@ -1,8 +1,19 @@
 import { Dispatch, ReactNode, SetStateAction } from 'react';
-import { Header, Row } from '@tanstack/react-table';
+import { Cell, Column, Header, RowSelectionState } from '@tanstack/react-table';
 
-import { ColumnMappingInterface, DisplayType, FetchDataFn } from '@/DataContext/types';
+import {
+  ColumnMappingInterface,
+  ColumnSortingInterface,
+  DisplayType,
+  FetchDataFn,
+  SQONType,
+} from '@/DataContext/types';
+import { DropDownThemeProps } from '@/DropDown/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+
+import { DownloadButtonThemeProps } from './DownloadButton/types';
+import { TableToolbarThemeProps } from './Toolbar/types';
+import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
 
 export type FieldList = ColumnMappingInterface['field'][];
 
@@ -10,16 +21,25 @@ export type FieldList = ColumnMappingInterface['field'][];
 export type ColumnsDictionary = Record<FieldList[number], ColumnMappingInterface>;
 
 export interface TableContextInterface {
+  allColumnsDict: ColumnsDictionary;
+  currentColumnsDict: ColumnsDictionary;
   currentPage: number;
   documentType: string;
+  hasSelectedRows: boolean;
+  hasShowableColumns: boolean;
+  hasVisibleColumns: boolean;
   isLoading: boolean;
   fetchData: FetchDataFn;
+  keyField: string;
   pageSize: number;
-  providerMissing?: boolean;
-  selectedTableRows: string[];
+  missingProvider?: string | false;
+  selectedRows: string[];
+  selectedRowsDict: RowSelectionState;
+  setCurrentColumnsDict: Dispatch<SetStateAction<ColumnsDictionary>>;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setPageSize: Dispatch<SetStateAction<number>>;
-  setSelectedTableRows: Dispatch<SetStateAction<string[]>>;
+  setSelectedRowsDict: Dispatch<SetStateAction<RowSelectionState>>;
+  sqon: SQONType;
   tableData: unknown[];
   total: number;
   visibleColumnsDict: ColumnsDictionary;
@@ -43,37 +63,80 @@ type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'> &
 type TableInnerBoxModelProperties = Omit<TableBoxModelProperties, 'margin'>;
 
 /** Table Component types */
-export interface TableThemeProps extends TableBoxModelProperties, ThemeCommon.FontProperties {
-  HeaderGroup: Omit<TableInnerBoxModelProperties, 'padding'>;
-  HeaderRow: TableInnerBoxModelProperties & ThemeCommon.FontProperties;
-  Row: TableInnerBoxModelProperties & ThemeCommon.FontProperties;
-  TableBody: Omit<TableInnerBoxModelProperties, 'padding'>;
-  TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS;
-}
+export type TableCellProps = Cell<any> & {
+  column: Column<any> & ColumnMappingInterface;
+  value: any;
+};
 
-type TableCellComponent =
-  | ReactNode
-  | ((cell: ColumnMappingInterface & Row<any> & { value: any }) => ReactNode);
+type TableCellComponent = ReactNode | ((cell: TableCellProps) => ReactNode);
 
-export type TableCellTypes = Record<'all' | DisplayType | FieldList[number], TableCellComponent>;
+export type TableHeaderProps = Header<any> & ColumnMappingInterface & { disabled?: boolean };
 
-type TableHeaderComponent =
-  | ReactNode
-  | ((header: ColumnMappingInterface & Header<any>) => ReactNode);
+type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode);
 
-export type TableHeaderTypes = Record<
-  'all' | DisplayType | FieldList[number],
-  TableHeaderComponent
+export type ColumnType = 'all' | DisplayType | FieldList[number];
+
+export type ColumnTypesObject = Record<
+  ColumnType,
+  {
+    cellValue: TableCellComponent;
+    headerValue: TableHeaderComponent;
+    initialWidth: number | string;
+    maxWidth: number | string;
+    minWidth: number | string;
+    resizable: boolean;
+    sortable: boolean;
+    // sortFn:
+  }
 >;
 
+export interface TableThemeProps
+  extends ThemeCommon.FontProperties,
+    Omit<TableBoxModelProperties, 'borderRadius'> {
+  columnTypes: ColumnTypesObject;
+  defaultSort: ColumnSortingInterface[];
+  hideLoader: boolean;
+  noColumnsMessage?: ThemeCommon.ChildrenType;
+  noDataMessage?: ThemeCommon.ChildrenType;
+
+  // Child components
+  ColumnSelectButton: ColumnSelectButtonThemeProps;
+  DownloadButton: DownloadButtonThemeProps;
+  DropDown: DropDownThemeProps;
+  HeaderGroup: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
+  HeaderRow: TableInnerBoxModelProperties &
+    ThemeCommon.FontProperties & {
+      disabledBackground: string;
+      disabledFontColor: string;
+      horizontalBorderColor: string;
+      hoverBackground: string;
+      hoverFontColor: string;
+      verticalBorderColor: string;
+    };
+  Row: TableInnerBoxModelProperties &
+    ThemeCommon.FontProperties & {
+      horizontalBorderColor: string;
+      hoverBackground: string;
+      hoverFontColor: string;
+      selectedBackground: string;
+      verticalBorderColor: string;
+    };
+  TableBody: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
+  TableToolbar: TableToolbarThemeProps;
+  TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS & { width?: string };
+}
+
 export interface TableProps {
-  customCells?: Partial<TableCellTypes>;
-  customHeaders?: Partial<TableHeaderTypes>;
+  disableRowSelection?: boolean;
   hideWarning?: boolean;
-  theme?: TableThemeProps;
+  theme?: Partial<TableThemeProps>;
 }
 
 export interface UseTableDataProps {
-  customCells?: Partial<TableCellTypes>;
-  customHeaders?: Partial<TableHeaderTypes>;
+  columnTypes?: ColumnTypesObject;
+  disableRowSelection?: boolean;
 }
+
+export * from './ColumnsSelectButton/types';
+export * from './Counter/types';
+export * from './DownloadButton/types';

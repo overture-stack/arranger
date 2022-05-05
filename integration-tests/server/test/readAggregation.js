@@ -139,7 +139,7 @@ export default ({ api, documentType, gqlPath }) => {
                       }
                     }
                   ]
-                }, 
+                },
                 aggregations_filter_themselves: true
               ) {
                 clinical_diagnosis__clinical_stage_grouping {

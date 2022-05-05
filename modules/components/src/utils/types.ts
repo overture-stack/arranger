@@ -11,5 +11,5 @@ export type RecursivePartial<T> = {
 
 // TODO: enhance this to take a list of prefixes
 export type PrefixKeys<T, Prefix extends string> = {
-  [P in keyof T & string as `${Prefix}${Capitalize<P>}`]: T[P];
+  [P in keyof T as `${Prefix}${Capitalize<string & P>}`]: T[P];
 };

@@ -4,8 +4,6 @@ import { compose, defaultProps } from 'recompose';
 import jsonpath from 'jsonpath/jsonpath.min';
 import DetectScrollbarSize from 'react-scrollbar-size';
 
-import { withData } from '@/DataContext';
-
 import createStyle from './style';
 import ReactTable from './EnhancedReactTable';
 import CustomPagination from './CustomPagination';
@@ -16,7 +14,6 @@ const enhance = compose(
     onPaginationChange: noop,
     selectedTableRows: null,
   }),
-  withData,
 );
 
 class DataTable extends React.Component {
@@ -167,6 +164,7 @@ class DataTable extends React.Component {
       selectType: 'checkbox',
       keyField,
     };
+
     return (
       <>
         <DetectScrollbarSize

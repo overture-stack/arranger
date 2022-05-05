@@ -66,11 +66,7 @@ const getLabelId = (displayName) => {
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    const {
-      sqonValues,
-      stats: { max = 0, min = 0 },
-      unit,
-    } = props;
+    const { sqonValues, stats: { max = 0, min = 0 } = emptyObj, unit } = props;
 
     const supportedConversions = supportedConversionFromUnit(unit);
 
@@ -179,7 +175,7 @@ class RangeAgg extends Component {
       displayName = 'Unnamed Field',
       field,
       rangeStep,
-      stats: { max, min },
+      stats: { max, min } = emptyObj,
       step,
       theme: {
         colors,

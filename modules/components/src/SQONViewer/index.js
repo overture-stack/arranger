@@ -2,6 +2,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 import { take } from 'lodash';
 
+import { withData } from '@/DataContext';
 import { useThemeContext } from '@/ThemeContext';
 import noopFn, { emptyObj } from '@/utils/noops';
 
@@ -9,12 +10,15 @@ import EmptyMessage from './EmptyMessage';
 import { Op, SQONGroup, SQONValueGroup, SQONWrapper, useDataBubbles } from './helpers';
 import { toggleSQON, replaceFilterSQON } from './utils';
 
+/**
+ * @param {GroupSQONInterface} sqon
+ */
 const SQONViewer = ({
   dateFormat = undefined,
   emptyMessage = 'Start by selecting filters',
   onClear = noopFn,
-  setSQON,
-  sqon, // : GroupSQONInterface;
+  setSQON = noopFn,
+  sqon = null, // : GroupSQONInterface;
   translateSQONValue = undefined,
   valueCharacterLimit = undefined,
 }) => {
@@ -149,7 +153,7 @@ const SQONViewer = ({
   );
 };
 
-export default SQONViewer;
+export default withData(SQONViewer);
 
 export const CurrentSQON = (props) => {
   console.warn(

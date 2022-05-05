@@ -38,7 +38,7 @@ export type ThemeAggregatorFn = <Theme extends object = BaseThemeInterface>(
 
 export interface ThemeContextInterface<Theme = BaseThemeInterface> {
   aggregateTheme: ThemeAggregatorFn;
-  providerMissing?: boolean;
+  missingProvider?: string;
   theme: Theme;
 }
 

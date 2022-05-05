@@ -1,11 +1,11 @@
-import { ElementType } from 'react';
 import { css } from '@emotion/react';
 import Spinkit from 'react-spinkit';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
-import { ThemeCommon } from '@/ThemeContext/types';
 import { emptyObj } from '@/utils/noops';
+
+import { SpinnerProps } from './types';
 
 const DefaultSpinner = ({ color, size }: { color?: string; size?: string | number }) => {
   return (
@@ -21,17 +21,18 @@ const DefaultSpinner = ({ color, size }: { color?: string; size?: string | numbe
   );
 };
 
-const Spinner = ({
+const Loader = ({
+  children,
   className = '',
-  color: customColor,
-  css: customCSS,
-  size: customSize,
-  Spinner = DefaultSpinner,
-}: {
-  color?: string;
-  size?: string | number;
-  Spinner?: ElementType;
-} & ThemeCommon.CustomCSS) => {
+  theme: {
+    css: customCSS,
+    color: customColor,
+    inverted,
+    size: customSize,
+    Spinner = DefaultSpinner,
+    vertical,
+  } = emptyObj,
+}: SpinnerProps) => {
   const {
     colors,
     components: {
@@ -39,26 +40,41 @@ const Spinner = ({
     } = emptyObj,
   } = useThemeContext({ callerName: 'Spinner' });
 
+  const spacingFromSpinner = `margin-${
+    vertical ? (inverted ? 'bottom' : 'top') : inverted ? 'right' : 'left'
+  }: 0.5rem;`;
+
   return (
-    <div
+    <figure
       className={cx('Spinner', className)}
       css={[
         css`
-          position: absolute;
-          left: 0px;
-          right: 0px;
-          top: 0px;
+          align-items: center;
           bottom: 0px;
           display: flex;
+          flex-direction: ${vertical ? 'column' : 'row'}${inverted ? '-reverse' : ''};
           justify-content: center;
-          align-items: center;
+          left: 0px;
+          margin: 0;
+          right: 0px;
+          top: 0px;
         `,
         customCSS,
       ]}
     >
       <Spinner color={customColor || themeColor} size={customSize || themeSize} />
-    </div>
+
+      {children && (
+        <figcaption
+          css={css`
+            ${spacingFromSpinner}
+          `}
+        >
+          {children}
+        </figcaption>
+      )}
+    </figure>
   );
 };
 
-export default Spinner;
+export default Loader;

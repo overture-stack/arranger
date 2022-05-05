@@ -90,7 +90,7 @@ export interface DataContextInterface {
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;
   isLoadingConfigs: boolean;
-  providerMissing?: boolean;
+  missingProvider?: string;
   sqon: SQONType;
   setSQON: Dispatch<SetStateAction<SQONType>>;
   tableConfigs: TableConfigsInterface;

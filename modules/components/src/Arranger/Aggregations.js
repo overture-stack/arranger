@@ -3,6 +3,7 @@ import cx from 'classnames';
 
 import { AggsState, AggsQuery } from '@/Aggs';
 import aggComponents from '@/Aggs/aggComponentsMap';
+import { withData } from '@/DataContext';
 import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
 
 const BaseWrapper = ({ className, ...props }) => (
@@ -31,8 +32,8 @@ export const AggregationsListDisplay = ({
     aggs
       .map((agg) => ({
         ...agg,
-        ...data[documentType].aggregations[agg.field],
-        ...data[documentType].configs.extended.find(
+        ...data?.data?.[documentType]?.aggregations?.[agg?.field],
+        ...data?.data?.[documentType]?.configs?.extended?.find(
           (x) => x.field.replace(/\./g, '__') === agg.field,
         ),
         onValueChange: ({ sqon, value }) => {
@@ -124,6 +125,7 @@ export const AggregationsList = ({
  *       },
  *     },
  *   ]
+ * @param {SQONType} sqon
  */
 const Aggregations = ({
   apiFetcher,
@@ -138,8 +140,8 @@ const Aggregations = ({
   customFacets = [],
   documentType = '',
   onValueChange = noopFn,
-  setSQON,
-  sqon,
+  setSQON = noopFn,
+  sqon = null,
   style = emptyObj,
   Wrapper = BaseWrapper,
 }) => {
@@ -150,7 +152,6 @@ const Aggregations = ({
         documentType={documentType}
         render={(aggsState) => {
           const aggs = aggsState.aggs.filter((agg) => agg.show);
-
           return (
             <AggregationsList
               aggs={aggs}
@@ -171,4 +172,4 @@ const Aggregations = ({
   );
 };
 
-export default Aggregations;
+export default withData(Aggregations);

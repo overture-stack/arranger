@@ -22,6 +22,7 @@ export const useConfigs = ({
   documentType: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [documentMapping, setDocumentMapping] = useState({});
   const [downloadsConfigs, setDownloadsConfigs] = useState({});
   const [facetsConfigs, setFacetsConfigs] = useState({});
   const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(
@@ -37,9 +38,12 @@ export const useConfigs = ({
       },
     })
       .then((response) => {
-        const { configs: { downloads, extended, facets, table } = emptyObj } =
-          response?.data?.[documentType] || emptyObj;
+        const {
+          configs: { downloads, extended, facets, table },
+          mapping = emptyObj,
+        } = response?.data?.[documentType] || emptyObj;
 
+        setDocumentMapping(mapping);
         setDownloadsConfigs(downloads);
         setExtendedMapping(extended);
         setFacetsConfigs(facets);
@@ -52,6 +56,7 @@ export const useConfigs = ({
   }, [apiFetcher, documentType]);
 
   return {
+    documentMapping,
     downloadsConfigs,
     extendedMapping,
     facetsConfigs,
@@ -63,19 +68,25 @@ export const useConfigs = ({
 export const useDataFetcher = ({
   apiFetcher,
   documentType,
+  keyField,
   sqon,
   url,
 }: {
   apiFetcher: APIFetcherFn;
   documentType: string;
+  keyField?: string;
   sqon?: SQONType;
   url?: string;
 }): FetchDataFn =>
   useCallback<FetchDataFn>(
-    ({ endpoint = `/graphql`, ...options } = emptyObj) =>
+    ({ endpoint = `/graphql`, config, ...options } = emptyObj) =>
       apiFetcher({
         endpoint,
         body: columnsToGraphql({
+          config: {
+            keyField, // use keyField from server configs if available
+            ...config, // yet allow overwritting it at request time
+          },
           documentType,
           sqon,
           ...options,
@@ -88,5 +99,5 @@ export const useDataFetcher = ({
 
         return { total, data };
       }),
-    [apiFetcher, documentType, sqon, url],
+    [apiFetcher, documentType, keyField, sqon, url],
   );

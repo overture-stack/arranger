@@ -1,6 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
+import MetaMorphicChild from '@/MetaMorphicChild';
 import Spinner from '@/Spinner';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -12,16 +13,28 @@ import TableRow from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
 
-const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) => {
-  const { isLoading, providerMissing, tableInstance } = useTableData({
-    customCells,
-    customHeaders,
-  });
+const Table = ({
+  disableRowSelection = false,
+  hideWarning = false,
+  theme: { columnTypes, hideLoader: customHideLoader } = emptyObj,
+}: TableProps) => {
+  const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } =
+    useTableData({
+      columnTypes,
+      disableRowSelection,
+    });
   const {
     colors,
     components: {
       Table: {
+        // functionality
+        hideLoader: themeHideLoader,
+        noColumnsMessage = 'No columns to display.',
+
+        // appearance
+        background: themeTableBackground,
         borderColor: themeTableBorderColor = colors?.grey?.[200],
+        css: themeTableCSS,
         fontColor: themeTableFontColor = colors?.grey?.[700],
         fontFamily: themeTableFontFamily,
         fontSize: themeTableFontSize = '0.8rem',
@@ -39,7 +52,6 @@ const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) 
         HeaderGroup: {
           background: themeHeaderGroupBackground,
           borderColor: themeHeaderGroupBorderColor = themeTableBorderColor,
-          borderRadius: themeHeaderGroupBorderRadius,
           className: themeHeaderGroupClassName,
           css: themeHeaderGroupCSS,
           margin: themeHeaderGroupMargin,
@@ -49,7 +61,6 @@ const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) 
         TableBody: {
           background: themeTableBodyBackground,
           borderColor: themeTableBodyBorderColor = themeTableBorderColor,
-          borderRadius: themeTableBodyBorderRadius,
           className: themeTableBodyClassName,
           css: themeTableBodyCSS,
           margin: themeTableBodyMargin,
@@ -66,7 +77,29 @@ const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) 
     } = emptyObj,
   } = useThemeContext({ callerName: 'Table' });
 
-  return hideWarning ? (
+  const hideLoader = customHideLoader || themeHideLoader;
+  const headerGroups = tableInstance.getHeaderGroups();
+  const rows = tableInstance.getRowModel().rows;
+  const hasVisibleRows = rows.length > 0;
+
+  const containerStyles = css`
+    background: ${themeTableBackground};
+    border-collapse: collapse;
+    color: ${themeTableFontColor};
+    font-family: ${themeTableFontFamily};
+    font-size: ${themeTableFontSize};
+    font-weight: ${themeTableFontWeight};
+    letter-spacing: ${themeTableLetterSpacing};
+    line-height: ${themeTableLineHeight};
+    text-decoration: ${themeTableTextDecoration};
+    text-transform: ${themeTableTextTransform};
+    white-space: ${themeTableWhiteSpace};
+    width: 100%;
+  `;
+
+  // temporary bypass for the warning if a provider is given
+  // remove related code once the new Table is ready for primetime
+  return hideWarning || !missingProvider ? (
     <TableWrapper
       className={cx('TableWrapper', themeTableWrapperClassName)}
       css={themeTableWrapperCSS}
@@ -74,75 +107,95 @@ const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) 
       margin={themeTableMargin}
       {...themeTableWrapperProps}
     >
-      {providerMissing ? (
-        <div>The table is missing one of its Context providers.</div>
-      ) : isLoading ? (
-        <Spinner />
-      ) : (
-        <table
+      {missingProvider ? (
+        <div
           css={css`
-            border-collapse: collapse;
-            color: ${themeTableFontColor};
-            font-family: ${themeTableFontFamily};
-            font-size: ${themeTableFontSize};
-            font-weight: ${themeTableFontWeight};
-            letter-spacing: ${themeTableLetterSpacing};
-            line-height: ${themeTableLineHeight};
-            text-decoration: ${themeTableTextDecoration};
-            text-transform: ${themeTableTextTransform};
-            white-space: ${themeTableWhiteSpace};
+            background: ${colors?.grey?.[200]};
+            font-style: italic;
+            padding: 0.7rem 0.5rem;
             width: 100%;
           `}
         >
-          <thead
-            className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
+          The table is missing its {missingProvider || 'context'} provider.
+        </div>
+      ) : isLoading ? (
+        hideLoader ? null : (
+          <Spinner
             css={[
               css`
-                background: ${themeHeaderGroupBackground};
-                border: ${themeHeaderGroupBorderColor &&
-                `1px solid ${themeHeaderGroupBorderColor}`};
-                border-radius: ${themeHeaderGroupBorderRadius};
-                margin: ${themeHeaderGroupMargin};
-                overflow: ${themeHeaderGroupOverflow};
-                position: ${themeHeaderGroupPosition};
+                border: 1px solid ${themeHeaderGroupBorderColor};
+                padding: 1rem;
               `,
-              themeHeaderGroupCSS,
+              containerStyles,
             ]}
+            theme={{ vertical: true }}
           >
-            {tableInstance.getHeaderGroups().map((headerGroup) => (
-              <TableHeaderRow
-                key={headerGroup.id}
-                padding={themeTablePadding}
-                textOverflow={themeTableTextOverflow}
-                {...headerGroup}
-              />
-            ))}
-          </thead>
+            Loading table data...
+          </Spinner>
+        )
+      ) : hasShowableColumns ? (
+        hasVisibleColumns ? (
+          <table css={[containerStyles, themeTableCSS]}>
+            <thead
+              className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
+              css={[
+                css`
+                  background: ${themeHeaderGroupBackground};
+                  border: ${themeHeaderGroupBorderColor &&
+                  `1px solid ${themeHeaderGroupBorderColor}`};
+                  margin: ${themeHeaderGroupMargin};
+                  overflow: ${themeHeaderGroupOverflow};
+                  position: ${themeHeaderGroupPosition};
+                `,
+                themeHeaderGroupCSS,
+              ]}
+            >
+              {headerGroups.map((headerGroup) => (
+                <TableHeaderRow
+                  hasVisibleRows={hasVisibleRows}
+                  key={headerGroup.id}
+                  padding={themeTablePadding}
+                  textOverflow={themeTableTextOverflow}
+                  {...headerGroup}
+                />
+              ))}
+            </thead>
 
-          <tbody
-            className={cx('TableBody', themeTableBodyClassName)}
-            css={[
-              css`
-                background: ${themeTableBodyBackground};
-                border: ${themeTableBodyBorderColor && `1px solid ${themeTableBodyBorderColor}`};
-                border-radius: ${themeTableBodyBorderRadius};
-                margin: ${themeTableBodyMargin};
-                overflow: ${themeTableBodyOverflow};
-                position: ${themeTableBodyPosition};
-              `,
-              themeTableBodyCSS,
-            ]}
-          >
-            {tableInstance.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                padding={themeTablePadding}
-                textOverflow={themeTableTextOverflow}
-                {...row}
-              />
-            ))}
-          </tbody>
-        </table>
+            <tbody
+              className={cx('TableBody', themeTableBodyClassName)}
+              css={[
+                css`
+                  background: ${themeTableBodyBackground};
+                  border: ${themeTableBodyBorderColor && `1px solid ${themeTableBodyBorderColor}`};
+                  margin: ${themeTableBodyMargin};
+                  overflow: ${themeTableBodyOverflow};
+                  position: ${themeTableBodyPosition};
+                `,
+                themeTableBodyCSS,
+              ]}
+            >
+              {hasVisibleRows ? (
+                rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    theme={{
+                      padding: themeTablePadding,
+                      textOverflow: themeTableTextOverflow,
+                    }}
+                    {...row}
+                  />
+                ))
+              ) : (
+                // Reuse Row + Cell to display "no data" message
+                <TableRow />
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <MetaMorphicChild>{noColumnsMessage}</MetaMorphicChild>
+        )
+      ) : (
+        'Something went wrong with the request. Please try again after refreshing the browser.'
       )}
     </TableWrapper>
   ) : (

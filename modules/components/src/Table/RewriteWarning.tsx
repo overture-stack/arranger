@@ -42,11 +42,11 @@ const RewriteWarning = ({ hide = false }) => {
       <br />
       <br />
       (If you still wish to use this unfinished table version, you may remove this warning message
-      by passing a`hideWarning` (boolean) props to the Table. e.g.{' '}
+      either by passing a`hideWarning` (boolean) props to the Table. e.g.{' '}
       <span className="code">
         &lt;<span className="tag">Table</span>hideWarning /&gt;
       </span>
-      )
+      , or by giving it a `TableContextProvider`.
     </div>
   );
 };

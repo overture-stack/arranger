@@ -1,6 +1,6 @@
 import { PassThrough } from 'stream';
 
-import { CONFIG } from '@/config';
+import { ENV_CONFIG } from '@/config';
 import { ConfigProperties } from '@/config/types';
 import { mapHits } from '@/mapping';
 import { buildQuery, esToSafeJsInt } from '@/middleware';
@@ -14,7 +14,7 @@ import runQuery from './runQuery';
  * -- This props may be ignored depending on Server configs.
  */
 export default async ({
-  chunkSize = CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
+  chunkSize = ENV_CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
   columns = [],
   ctx = {},
   maxRows,

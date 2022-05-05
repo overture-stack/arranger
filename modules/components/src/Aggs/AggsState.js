@@ -35,7 +35,7 @@ const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
 };
 
 class AggsState extends Component {
-  state = { aggs: [], temp: [], mapping: {} };
+  state = { aggs: [], temp: [] };
 
   componentDidUpdate(prev) {
     if (
@@ -48,29 +48,14 @@ class AggsState extends Component {
     }
   }
 
-  fetchAggsState = debounce(async ({ documentType }) => {
-    const { apiFetcher = defaultApiFetcher, facetsConfigs } = this.props;
-
+  fetchAggsState = debounce(async ({ facetsConfigs, documentMapping }) => {
     try {
-      let { data } = await apiFetcher({
-        endpoint: `/graphql/MappingAtAggsStateQuery`,
-        body: {
-          query: `query mappingAtAggsStateQuery
-            {
-              ${documentType} {
-                mapping
-              }
-            }
-          `,
-        },
-      });
-
       const aggregations = facetsConfigs.aggregations || [];
 
       this.setState({
         aggs: aggregations,
         temp: aggregations,
-        mapping: data[documentType].mapping,
+        mapping: documentMapping,
       });
     } catch (error) {
       console.warn(error);

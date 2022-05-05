@@ -1,9 +1,13 @@
+import { ReactNode } from 'react';
 import { Interpolation } from '@emotion/react';
+import { EmotionJSX } from '@emotion/react/types/jsx-namespace';
 
 import { PrefixKeys } from '@/utils/types';
 
 import { ThemeOptions } from '.';
 
+// hacky, but Emotion typing is finicky
+export type ChildrenType = () => EmotionJSX.Element | ReactNode;
 export type cssInterpolation = Interpolation<ThemeOptions>;
 
 export interface BoxModelProperties {
@@ -19,6 +23,7 @@ export interface BoxModelProperties {
 
 export type BoxModelActiveProperties = PrefixKeys<BoxModelProperties, 'active'>;
 export type BoxModelDisabledProperties = PrefixKeys<BoxModelProperties, 'disabled'>;
+export type BoxModelHoverProperties = PrefixKeys<BoxModelProperties, 'hover'>;
 
 export interface CustomCSS {
   className?: string;
@@ -41,6 +46,7 @@ export interface FontProperties {
 
 export type FontActiveProperties = PrefixKeys<FontProperties, 'active'>;
 export type FontDisabledProperties = PrefixKeys<FontProperties, 'disabled'>;
+export type FontHoverProperties = PrefixKeys<FontProperties, 'hover'>;
 
 export interface MouseEventProperties extends Partial<PrefixKeys<BoxModelProperties, 'hover'>> {
   cursor?: string;
@@ -50,5 +56,6 @@ export interface MouseEventProperties extends Partial<PrefixKeys<BoxModelPropert
 
 export type MouseEventActiveProperties = PrefixKeys<MouseEvent, 'active'>;
 export type MouseEventDisabledProperties = PrefixKeys<MouseEvent, 'disabled'>;
+export type MouseEventHoverProperties = PrefixKeys<MouseEvent, 'hover'>;
 
 export type NonButtonThemeProps = BoxModelProperties & CustomCSS & FontProperties;

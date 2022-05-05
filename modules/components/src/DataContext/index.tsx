@@ -11,7 +11,7 @@ import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps 
 
 export const DataContext = createContext<DataContextInterface>({
   documentType: '',
-  providerMissing: true,
+  missingProvider: 'DataContext',
 } as DataContextInterface);
 
 /** Context provider for Arranger's data and functionality
@@ -36,15 +36,29 @@ export const DataProvider = ({
     setSQON(legacyProps?.sqon);
   }, [legacyProps?.sqon]);
 
-  const { downloadsConfigs, extendedMapping, facetsConfigs, isLoadingConfigs, tableConfigs } =
-    useConfigs({
-      apiFetcher,
-      documentType,
-    });
+  const {
+    documentMapping,
+    downloadsConfigs,
+    extendedMapping,
+    facetsConfigs,
+    isLoadingConfigs,
+    tableConfigs,
+  } = useConfigs({
+    apiFetcher,
+    documentType,
+  });
 
-  const fetchData = useDataFetcher({ apiFetcher, documentType, sqon, url });
+  const fetchData = useDataFetcher({
+    apiFetcher,
+    documentType,
+    keyField: tableConfigs?.keyField,
+    sqon,
+    url,
+  });
 
   const contextValues = {
+    ...legacyProps,
+    documentMapping,
     downloadsConfigs,
     extendedMapping,
     facetsConfigs,
@@ -74,7 +88,7 @@ export const useDataContext = ({
 }: UseDataContextProps = emptyObj): DataContextInterface => {
   const defaultContext = useContext(DataContext);
 
-  defaultContext.providerMissing && missingProviderHandler(DataContext.displayName, callerName);
+  defaultContext.missingProvider && missingProviderHandler(DataContext.displayName, callerName);
 
   return {
     ...defaultContext,
