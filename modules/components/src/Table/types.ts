@@ -1,4 +1,5 @@
 import { Dispatch, ReactNode, SetStateAction } from 'react';
+import { Header, Row } from '@tanstack/react-table';
 
 import { ColumnMappingInterface, DisplayType, FetchDataFn } from '@/DataContext/types';
 import { ThemeCommon } from '@/ThemeContext/types';
@@ -56,8 +57,23 @@ type TableCellComponent =
 
 export type TableCellTypes = Record<'all' | DisplayType | FieldList[number], TableCellComponent>;
 
+type TableHeaderComponent =
+  | ReactNode
+  | ((header: ColumnMappingInterface & Header<any>) => ReactNode);
+
+export type TableHeaderTypes = Record<
+  'all' | DisplayType | FieldList[number],
+  TableHeaderComponent
+>;
+
 export interface TableProps {
   customCells?: Partial<TableCellTypes>;
+  customHeaders?: Partial<TableHeaderTypes>;
   hideWarning?: boolean;
   theme?: TableThemeProps;
+}
+
+export interface UseTableDataProps {
+  customCells?: Partial<TableCellTypes>;
+  customHeaders?: Partial<TableHeaderTypes>;
 }

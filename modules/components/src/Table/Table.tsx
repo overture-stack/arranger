@@ -12,9 +12,10 @@ import TableRow from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
 
-const Table = ({ customCells, hideWarning = false }: TableProps) => {
+const Table = ({ customCells, customHeaders, hideWarning = false }: TableProps) => {
   const { isLoading, providerMissing, tableInstance } = useTableData({
     customCells,
+    customHeaders,
   });
   const {
     colors,

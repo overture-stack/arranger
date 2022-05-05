@@ -1,7 +1,8 @@
-import { Table } from '@tanstack/react-table';
+import { ColumnDef, Table, TableGenerics } from '@tanstack/react-table';
+import { get } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
-import { ColumnsDictionary, TableCellTypes } from '@/Table/types';
+import { ColumnsDictionary, TableCellTypes, TableHeaderTypes } from '@/Table/types';
 import { emptyObj } from '@/utils/noops';
 
 import { defaultCellTypes, getCellValue } from './cells';
@@ -42,10 +43,12 @@ export const getVisibleColumns = (columns: ColumnMappingInterface[] = []) =>
 
 export const makeTableColumns = ({
   customCells = emptyObj,
+  customHeaders = emptyObj,
   table,
   visibleColumns = [],
 }: {
   customCells?: Partial<TableCellTypes>;
+  customHeaders?: Partial<TableHeaderTypes>;
   table: Table<any>;
   visibleColumns: ColumnMappingInterface[];
 }) => {
@@ -54,6 +57,10 @@ export const makeTableColumns = ({
     ...customCells,
   } as TableCellTypes;
 
+  const headerTypes = {
+    // ...defaultHeaderTypes,
+    ...customHeaders,
+  } as TableHeaderTypes;
 
   return visibleColumns.map((visibleColumn) =>
     table.createDataColumn(visibleColumn?.accessor, {
@@ -75,5 +82,24 @@ export const makeTableColumns = ({
 
         return valueFromRow;
       },
+      header: ({ header }) => {
+        const label = visibleColumn?.displayName || header.id;
+        const headerType =
+          headerTypes[visibleColumn?.accessor] ||
+          headerTypes[visibleColumn?.type] ||
+          headerTypes.all;
+
+        if (headerType) {
+          return typeof headerType === 'function'
+            ? headerType({
+                ...visibleColumn,
+                ...header,
+              })
+            : headerType;
+        }
+
+        return label;
+      },
+    }),
   );
 };

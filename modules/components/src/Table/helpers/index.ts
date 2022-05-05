@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  createTable,
-  useTableInstance,
-  ColumnDef,
-  getCoreRowModelSync,
-} from '@tanstack/react-table';
+import { createTable, useTableInstance, ColumnDef, getCoreRowModel } from '@tanstack/react-table';
 
-import { TableCellTypes } from '@/Table/types';
+import { UseTableDataProps } from '@/Table/types';
 
 import { makeTableColumns } from './columns';
 import { useTableContext } from './context';
 
 const table = createTable();
 
-export const useTableData = ({ customCells }: { customCells?: Partial<TableCellTypes> }) => {
+export const useTableData = ({ customCells, customHeaders }: UseTableDataProps) => {
   const { isLoading, providerMissing, tableData, visibleColumnsDict } = useTableContext({
     callerName: 'Table - useTableData',
   });
@@ -22,13 +17,13 @@ export const useTableData = ({ customCells }: { customCells?: Partial<TableCellT
   useEffect(() => {
     const visibleColumns = Object.values(visibleColumnsDict);
     visibleColumns.length > 0 &&
-      setTableColumns(makeTableColumns({ customCells, table, visibleColumns }));
-  }, [customCells, visibleColumnsDict]);
+      setTableColumns(makeTableColumns({ customCells, customHeaders, table, visibleColumns }));
+  }, [customCells, customHeaders, visibleColumnsDict]);
 
   const tableInstance = useTableInstance(table, {
     columns: tableColumns,
     data: tableData,
-    getCoreRowModel: getCoreRowModelSync(),
+    getCoreRowModel: getCoreRowModel(),
   });
 
   const tableDataValues = useMemo(

@@ -98,7 +98,7 @@ export const useDataBubbles = ({
 
   const { extendedMapping } = useDataContext({ callerName: 'SQONViewer - useDataBubbles' });
   const findExtendedMappingForField = useCallback(
-    (wantedField) => extendedMapping.find((mapping) => mapping.field === wantedField),
+    (wantedField: string) => extendedMapping.find((mapping) => mapping.field === wantedField),
     [extendedMapping],
   );
 
@@ -131,7 +131,7 @@ export const useDataBubbles = ({
   );
 
   const lessOrMoreClickHandler = useCallback(
-    (valueSQON) => () => setExpanded(xor(expanded, [valueSQON])),
+    (valueSQON: ValueSQONInterface) => () => setExpanded(xor(expanded, [valueSQON])),
     [expanded],
   );
 
