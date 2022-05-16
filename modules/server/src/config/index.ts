@@ -1,7 +1,7 @@
 import { ConfigObject, ConfigRequiredProperties } from './types';
 import getConfigFromFiles from './utils/getConfigFromFiles';
 
-export * as CONFIG from './constants';
+export * as ENV_CONFIG from './constants';
 export { initializeSets } from './utils';
 
 const validateProperties = (configs: ConfigObject) => {

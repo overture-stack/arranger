@@ -1,16 +1,20 @@
 {
-  "document-type": "model",
+  "documentType": "model",
   "index": "models",
-  "aggs-state": [
-    {
-      "field": "analysis__analysis_id",
-      "active": true,
-      "show": true
-    }
-  ],
-  "columns-state": {},
+  "facets": {
+    "aggregations": [
+      {
+        "field": "analysis__analysis_id",
+        "active": true,
+        "show": true
+      }
+    ]
+  },
+  "table": {
+    "columns": []
+  },
   "extended": [],
-  "matchbox-state": [
+  "matchbox": [
     {
       "displayName": "file",
       "field": "",
