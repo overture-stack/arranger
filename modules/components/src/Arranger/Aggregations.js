@@ -32,7 +32,9 @@ export const AggregationsListDisplay = ({
       .map((agg) => ({
         ...agg,
         ...data[documentType].aggregations[agg.field],
-        ...data[documentType].extended.find((x) => x.field.replace(/\./g, '__') === agg.field),
+        ...data[documentType].configs.extended.find(
+          (x) => x.field.replace(/\./g, '__') === agg.field,
+        ),
         onValueChange: ({ sqon, value }) => {
           onValueChange(value);
           setSQON(sqon);

@@ -25,12 +25,14 @@ export interface ColumnMappingInterface {
   type: DisplayType;
 }
 
-export interface ColumnsStateInterface {
+export interface ColumnSortingInterface {
+  desc: boolean;
+  field: string;
+}
+
+export interface TableConfigsInterface {
   columns: ColumnMappingInterface[];
-  defaultSorted: {
-    desc: boolean;
-    id: string;
-  };
+  defaultSorting: ColumnSortingInterface[];
   keyField: string;
 }
 
@@ -49,8 +51,8 @@ export interface ExtendedMappingInterface {
 }
 
 export interface ConfigsInterface {
-  columnsState: ColumnsStateInterface;
   extendedMapping: ExtendedMappingInterface[];
+  tableConfigs: TableConfigsInterface;
 }
 
 export type APIFetcherFn = (options: {
@@ -84,7 +86,6 @@ export interface DataProviderProps<Theme = BaseThemeInterface> {
 export type SQONType = typeof SQON | null;
 
 export interface DataContextInterface {
-  columnsState: ColumnsStateInterface;
   documentType: string;
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;
@@ -92,6 +93,7 @@ export interface DataContextInterface {
   providerMissing?: boolean;
   sqon: SQONType;
   setSQON: Dispatch<SetStateAction<SQONType>>;
+  tableConfigs: TableConfigsInterface;
 }
 
 export interface UseDataContextProps {

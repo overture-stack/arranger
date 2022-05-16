@@ -1,10 +1,15 @@
-export const columnStateFields = `columnsState {
-  state {
-    keyField
-    defaultSorted {
-      id
-      desc
+export const facetsConfigs = `
+  facets {
+    aggregations {
+      field
+      show
+      active
     }
+  }
+`;
+
+export const tableConfigs = `
+  table {
     columns {
       accessor
       canChangeShow
@@ -20,14 +25,21 @@ export const columnStateFields = `columnsState {
       sortable
       type
     }
+    keyField
+    defaultSorting {
+      desc
+      field
+    }
   }
-}`;
+`;
 
 export const componentConfigsQuery = (documentType: string, queryName = '') =>
   `query ${queryName} {
     ${documentType} {
-      ${columnStateFields}
-      extended
-      mapping
+      configs{
+        extended
+        ${facetsConfigs}
+        ${tableConfigs}
+      }
     }
   }`;

@@ -80,14 +80,14 @@ class DataTable extends React.Component {
 
     return fetchData?.({
       config,
+      documentType,
       endpoint: '/graphql/OldTableDataQuery',
       first: state.pageSize,
-      documentType,
       offset: state.page * state.pageSize,
       queryName: 'Table',
       sort: [
         ...state.sorted.map((sort) => ({
-          field: sort.id,
+          field: sort.field,
           order: sort.desc ? 'desc' : 'asc',
         })),
         ...alwaysSorted,
@@ -149,7 +149,7 @@ class DataTable extends React.Component {
       maxPagesOptions,
       sorted,
     } = this.props;
-    const { columns, keyField, defaultSorted } = config;
+    const { columns, keyField, defaultSorting } = config;
     const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
 
     const fetchFromServerProps = {
@@ -181,7 +181,7 @@ class DataTable extends React.Component {
           onPageChange={(page) => this.props.onPaginationChange({ page })}
           onPageSizeChange={(pageSize, page) => this.props.onPaginationChange({ pageSize, page })}
           data={propsData?.data || data}
-          defaultSorted={sorted ? sorted : defaultSorted}
+          defaultSorted={sorted ? sorted : defaultSorting}
           columns={columns.map(
             ({ Cell, ...c }) => ({
               ...c,

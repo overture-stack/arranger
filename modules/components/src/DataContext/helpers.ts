@@ -5,20 +5,16 @@ import { emptyObj } from '@/utils/noops';
 
 import {
   APIFetcherFn,
-  ColumnsStateInterface,
   ConfigsInterface,
   ExtendedMappingInterface,
   FetchDataFn,
   SQONType,
+  TableConfigsInterface,
 } from './types';
 import { componentConfigsQuery } from './dataQueries';
 
 export const useConfigs = ({
   apiFetcher,
-  configs: {
-    columnsState: customColumnsState = emptyObj as ColumnsStateInterface,
-    extendedMapping: customExtendedMapping = [] as ExtendedMappingInterface[],
-  } = emptyObj as ConfigsInterface,
   documentType,
 }: {
   apiFetcher: APIFetcherFn;
@@ -26,9 +22,12 @@ export const useConfigs = ({
   documentType: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [columnsState, setColumnsState] = useState<ColumnsStateInterface>(customColumnsState);
-  const [extendedMapping, setExtendedMapping] =
-    useState<ExtendedMappingInterface[]>(customExtendedMapping);
+  const [downloadsConfigs, setDownloadsConfigs] = useState({});
+  const [facetsConfigs, setFacetsConfigs] = useState({});
+  const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(
+    emptyObj as TableConfigsInterface,
+  );
+  const [extendedMapping, setExtendedMapping] = useState<ExtendedMappingInterface[]>([]);
 
   useEffect(() => {
     apiFetcher({
@@ -38,10 +37,13 @@ export const useConfigs = ({
       },
     })
       .then((response) => {
-        const { columnsState, extended } = response?.data?.[documentType] || {};
+        const { configs: { downloads, extended, facets, table } = emptyObj } =
+          response?.data?.[documentType] || emptyObj;
 
-        setColumnsState(columnsState?.state);
+        setDownloadsConfigs(downloads);
         setExtendedMapping(extended);
+        setFacetsConfigs(facets);
+        setTableConfigs(table);
       })
       .catch((error) => console.warn(error))
       .finally(() => {
@@ -50,9 +52,11 @@ export const useConfigs = ({
   }, [apiFetcher, documentType]);
 
   return {
-    columnsState,
+    downloadsConfigs,
     extendedMapping,
+    facetsConfigs,
     isLoadingConfigs: isLoading,
+    tableConfigs,
   };
 };
 

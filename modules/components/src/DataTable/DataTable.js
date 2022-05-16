@@ -16,7 +16,7 @@ class DataTableWithToolbar extends React.Component {
     super(props);
 
     let pageSize = 20;
-    let sorted = props.config.defaultSorted || [];
+    let sorted = props.config.defaultSorting || [];
     let selectedTableRows = [];
 
     // Read initial config settings from session storage, if enabled:
@@ -32,7 +32,7 @@ class DataTableWithToolbar extends React.Component {
       );
       if (storedSorted) {
         sorted = storedSorted;
-        this.props.config.defaultSorted = sorted;
+        this.props.config.defaultSorting = sorted;
       }
       if (storedPageSize) {
         pageSize = storedPageSize;
@@ -179,7 +179,7 @@ class DataTableWithToolbar extends React.Component {
             this.storeProperty(STORED_PROPS.SORT_ORDER, sorted);
           }}
           defaultPageSize={pageSize}
-          defaultSorted={sorted}
+          defaultSorting={sorted}
           sorted={sorted}
           loading={loading}
           maxPagesOptions={maxPagesOptions}

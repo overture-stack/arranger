@@ -31,7 +31,7 @@ export const TableContextProvider = ({
   customFetcher,
   documentType: customDocumentType,
 }: TableContextProviderProps): ReactElement<TableContextInterface> => {
-  const { columnsState, documentType, fetchData, isLoadingConfigs, providerMissing, sqon } =
+  const { documentType, fetchData, isLoadingConfigs, providerMissing, sqon, tableConfigs } =
     useDataContext({ callerName: 'TableContextProvider' });
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -46,9 +46,9 @@ export const TableContextProvider = ({
   useEffect(() => {
     isLoadingConfigs ||
       setVisibleColumnsDict(
-        getVisibleColumns(aggregateCustomColumns(customColumns, columnsState?.columns)),
+        getVisibleColumns(aggregateCustomColumns(customColumns, tableConfigs?.columns)),
       );
-  }, [columnsState, customColumns, isLoadingConfigs]);
+  }, [customColumns, isLoadingConfigs, tableConfigs]);
 
   useEffect(() => {
     setIsStaleTableData(true);

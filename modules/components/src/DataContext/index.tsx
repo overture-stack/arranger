@@ -36,21 +36,24 @@ export const DataProvider = ({
     setSQON(legacyProps?.sqon);
   }, [legacyProps?.sqon]);
 
-  const { columnsState, extendedMapping, isLoadingConfigs } = useConfigs({
-    apiFetcher,
-    documentType,
-  });
+  const { downloadsConfigs, extendedMapping, facetsConfigs, isLoadingConfigs, tableConfigs } =
+    useConfigs({
+      apiFetcher,
+      documentType,
+    });
 
   const fetchData = useDataFetcher({ apiFetcher, documentType, sqon, url });
 
   const contextValues = {
-    columnsState,
+    downloadsConfigs,
     extendedMapping,
+    facetsConfigs,
     fetchData,
     documentType,
     isLoadingConfigs,
     setSQON,
     sqon,
+    tableConfigs,
   };
 
   return (
