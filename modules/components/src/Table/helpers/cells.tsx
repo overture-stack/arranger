@@ -1,15 +1,16 @@
+import { ReactNode } from 'react';
 import { css } from '@emotion/react';
+import cx from 'classnames';
 import filesize from 'filesize';
 import { JSONPath } from 'jsonpath-plus';
 import { get, isNil } from 'lodash';
 
 import dateFormatter from '@/utils/dates';
 import { emptyObj } from '@/utils/noops';
-// import { getSingleValue } from './utils';
 
 export const getCellValue = (
   row = emptyObj,
-  { accessor = '', id = '', jsonPath = '', isArray = false } = emptyObj,
+  { accessor = '', id = '', jsonPath = '' } = emptyObj,
 ): string =>
   jsonPath ? JSONPath({ json: row, path: jsonPath }) : get(row, (id || accessor).split('.'), '');
 
@@ -40,11 +41,18 @@ export const defaultCellTypes = {
   boolean: ({ value } = emptyObj) => (isNil(value) ? '' : `${value}`),
   bytes: (props = emptyObj) => <FileSize {...props} />,
   date: ({ value, ...props } = emptyObj) => dateFormatter(value, props),
-  list: (props = emptyObj) => {
-    const values = getCellValue(props.original, props.column.jsonPath);
-    // const total = values.length;
-    // const firstValue = getSingleValue(values[0]);
-    // return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
+  list: ({ column, id, value: valuesArr, ...props } = emptyObj) => {
+    return Array.isArray(valuesArr) ? (
+      <ul className={cx('list-values', column.displayFormat || 'none')}>
+        {valuesArr.map((value: ReactNode, index: number) => (
+          <li key={`${id}-${index}`} data-value={value}>
+            {value}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      valuesArr
+    );
   },
   number: Number,
 };

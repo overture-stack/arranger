@@ -37,6 +37,18 @@
       "rangeStep": 1
     },
     {
+      "field": "analysis.analysis_tools",
+      "displayName": "Analysis Tools",
+      "displayType": "keyword",
+      "active": false,
+      "isArray": true,
+      "primaryKey": false,
+      "quickSearchEnabled": false,
+      "unit": null,
+      "displayValues": {},
+      "rangeStep": 1
+    },
+    {
       "field": "analysis.analysis_type",
       "displayName": "Analysis Type",
       "displayType": "keyword",

@@ -81,8 +81,12 @@ export const makeTableColumns = ({
   })) as ColumnTypesObject;
 
   const tableColumns = visibleColumns.map((visibleColumn) => {
-    const columnType =
-      columnTypes[visibleColumn?.accessor] || columnTypes[visibleColumn?.type] || columnTypes.all;
+    const columnType = mergeWith(
+      {},
+      columnTypes.all,
+      columnTypes[visibleColumn?.isArray ? 'list' : visibleColumn?.type],
+      columnTypes[visibleColumn?.accessor],
+    );
 
     return table.createDataColumn((row) => getCellValue(row, visibleColumn), {
       ...visibleColumn,
@@ -94,6 +98,10 @@ export const makeTableColumns = ({
           return typeof cellType === 'function'
             ? cellType({
                 ...cell,
+                column: {
+                  ...visibleColumn,
+                  ...cell.column,
+                },
                 value: valueFromRow,
               } as TableCellProps)
             : cellType;

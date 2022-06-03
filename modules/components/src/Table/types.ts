@@ -82,6 +82,7 @@ export type ColumnTypesObject = Record<
     cellValue: TableCellComponent;
     headerValue: TableHeaderComponent;
     initialWidth: number | string;
+    listStyle: string;
     maxWidth: number | string;
     minWidth: number | string;
     resizable: boolean;

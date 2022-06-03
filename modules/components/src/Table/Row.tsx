@@ -89,6 +89,7 @@ const TableRow = ({
 
           return (
             <Cell
+              accessor={cellObj.column.id}
               key={cellObj.id}
               value={value}
               theme={{ padding: themeTablePadding, textOverflow: themeTableTextOverflow }}

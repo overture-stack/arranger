@@ -1,0 +1,142 @@
+{
+  "analysis": {
+    "analysis_id": "bcdd0859-0111-45d8-9d08-59011165d848",
+    "analysis_state": "PUBLISHED",
+    "analysis_tools": [
+      "GATK:FilterMutectCalls",
+      "gatk-mutect2",
+      "ILLUMINA"
+    ],
+    "analysis_type": "sequencing_alignment",
+    "analysis_version": 1,
+    "experiment": {
+      "info": {
+        "analysis_tools": [
+          "GATK:FilterMutectCalls"
+        ],
+        "data_category": "Quality Control Metrics",
+        "data_subtypes": [
+          "Variant Filtering Stats"
+        ],
+        "description": "Information on the probability threshold chosen to optimize the F score and the number of false positives and false negatives from each filter to be expected from this choice.",
+        "files_in_tgz": [
+          "filter-mutect-calls.filtering-stats",
+          "filtering_stats.extra_info.json"
+        ],
+        "metrics": {
+          "fdr": 0.036,
+          "filtering_stats": {
+            "contamination": {
+              "FDR": 0,
+              "FN": 10.35,
+              "FNR": 0,
+              "FP": 7.55
+            },
+            "germline": {
+              "FDR": 0,
+              "FN": 93.75,
+              "FNR": 0,
+              "FP": 87.74
+            },
+            "haplotype": {
+              "FDR": 0,
+              "FN": 47.63,
+              "FNR": 0,
+              "FP": 28.45
+            },
+            "normal_artifact": {
+              "FDR": 0,
+              "FN": 115.86,
+              "FNR": 0,
+              "FP": 93.05
+            },
+            "orientation": {
+              "FDR": 0,
+              "FN": 6.71,
+              "FNR": 0,
+              "FP": 27.68
+            },
+            "slippage": {
+              "FDR": 0,
+              "FN": 117.97,
+              "FNR": 0,
+              "FP": 98.12
+            },
+            "strand_bias": {
+              "FDR": 0.02,
+              "FN": 384.6,
+              "FNR": 0.02,
+              "FP": 501.32
+            },
+            "weak_evidence": {
+              "FDR": 0,
+              "FN": 202.33,
+              "FNR": 0.01,
+              "FP": 120.87
+            }
+          },
+          "sensitivity": 0.962,
+          "threshold": 0.518
+        }
+      },
+      "matched_normal_submitter_sample_id": "LP6005934-DNA_B04",
+      "variantCallingTool": "smufin"
+    }
+  },
+  "data_type": "Analysis QC",
+  "donors": [
+    {
+      "age": "96",
+      "donor_id": "DO234262",
+      "gender": "Male",
+      "specimens": [
+        {
+          "samples": [
+            {
+              "collection_date": "2019-07-12T13:41:34.555Z",
+              "matched_normal_submitter_sample_id": "LP6005934-DNA_B04",
+              "sample_id": "SA597274",
+              "sample_type": "Total DNA",
+              "submitter_sample_id": "LP6005935-DNA_B04"
+            }
+          ],
+          "specimen_id": "SP203216",
+          "specimen_tissue_source": "Solid tissue",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "40fd84c8fcade203c431ce7204f9840873a14cf1654e3d95a5ad95a7c1f51752",
+          "tumour_normal_designation": "Tumour"
+        }
+      ],
+      "submitter_donor_id": "e7af9a8f5176677e829f051de9d912d834c516322635042e4780a570683898ab",
+      "vaccinated": false
+    }
+  ],
+  "file": {
+    "data_type": "Analysis QC",
+    "index_file": {
+      "data_type": "Variant Calling Index",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "name": "example9.vcf.gz.idx",
+      "object_id": "70a2aa66-28d9-535e-b609-2743ed74e686",
+      "size": "394729"
+    },
+    "md5sum": "21a0ec0b701fd2c8a7669810f0e67f12",
+    "name": "OCCAMS-GB.DO234262.SA597274.wgs.20210508.gatk-mutect2.somatic.mutect_filtering_metrics.tgz",
+    "size": 1227
+  },
+  "file_access": "controlled",
+  "file_type": "TGZ",
+  "object_id": "fe75938a-03e9-520f-8ed0-fb7d10360d18",
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "study_id": "OCCAMS-GB"
+}

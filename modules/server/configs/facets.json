@@ -12,6 +12,11 @@
         "show": true
       },
       {
+        "field": "analysis__analysis_tools",
+        "active": true,
+        "show": true
+      },
+      {
         "field": "analysis__analysis_type",
         "active": true,
         "show": true

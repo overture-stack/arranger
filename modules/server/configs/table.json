@@ -30,6 +30,16 @@
         "show": true,
         "sortable": true,
         "canChangeShow": true,
+        "displayFormat": "commas",
+        "query": null,
+        "jsonPath": null,
+        "field": "analysis.analysis_tools",
+        "accessor": "analysis.analysis_tools"
+      },
+      {
+        "show": true,
+        "sortable": true,
+        "canChangeShow": true,
         "query": null,
         "jsonPath": null,
         "field": "analysis.analysis_type",
@@ -139,7 +149,7 @@
         "sortable": true,
         "canChangeShow": true,
         "query": null,
-        "jsonPath": null,
+        "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.total",
         "field": "donors.specimens.samples.hits.total",
         "accessor": "donors.hits.edges[0].node.specimens.hits.edges[0].node.samples.hits.total"
       },
@@ -193,7 +203,7 @@
         "sortable": true,
         "canChangeShow": true,
         "query": null,
-        "jsonPath": null,
+        "jsonPath": "$.donors.hits.edges[*].node.specimens.hits.total",
         "field": "donors.specimens.hits.total",
         "accessor": "donors.hits.edges[0].node.specimens.hits.total"
       },
@@ -308,7 +318,7 @@
       {
         "show": false,
         "sortable": true,
-        "canChangeShow": true,
+        "canChangeShow": false,
         "query": null,
         "jsonPath": null,
         "field": "file_autocomplete",
