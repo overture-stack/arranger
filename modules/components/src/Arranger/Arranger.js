@@ -1,14 +1,19 @@
 import React from 'react';
-import { get } from 'lodash';
 
 import { DataProvider } from '@/DataContext';
 
-import columnsToGraphql from '../utils/columnsToGraphql';
 import defaultApiFetcher from '../utils/api';
 
 // TODO: This is a dummy object, exported for the DataContext's types, to ensure that a TS
 // error comes up when this component is deprecated in a later version, after the rewrite
 export let legacyProps;
+
+/** Arranger Root Component
+ * @deprecated
+ * This component used to serve as a makeshift context provider in older versions of Arranger.
+ *
+ * Please review the migration instructions to update your app as soon as possible.
+ */
 
 class Arranger extends React.Component {
   constructor(props) {
@@ -19,20 +24,6 @@ class Arranger extends React.Component {
       sqon: null,
     };
   }
-
-  fetchData = (options) => {
-    const { apiFetcher = defaultApiFetcher } = this.props;
-
-    return apiFetcher({
-      endpoint: `/graphql`,
-      body: columnsToGraphql(options),
-    }).then((response) => {
-      const hits = get(response, `data.${options.config.type}.hits`) || {};
-      const data = get(hits, 'edges', []).map((e) => e.node);
-      const total = hits.total || 0;
-      return { total, data };
-    });
-  };
 
   UNSAFE_componentWillMount() {
     const hasChildren = this.props.children && React.Children.count(this.props.children) !== 0;
@@ -62,7 +53,7 @@ class Arranger extends React.Component {
   render() {
     const {
       index,
-      graphqlField,
+      documentType,
       children,
       render,
       component,
@@ -73,8 +64,7 @@ class Arranger extends React.Component {
 
     const childProps = {
       apiFetcher,
-      fetchData: this.fetchData,
-      graphqlField,
+      documentType,
       index,
       selectedTableRows,
       setSelectedTableRows,
@@ -87,7 +77,7 @@ class Arranger extends React.Component {
     return (
       <DataProvider
         customFetcher={apiFetcher}
-        graphqlField={graphqlField}
+        documentType={documentType}
         legacyProps={legacyProps}
       >
         {component

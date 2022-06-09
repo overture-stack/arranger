@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-export default ({ api, graphqlField, gqlPath }) => {
+export default ({ api, documentType, gqlPath }) => {
   let setId = undefined;
 
   it('creates set successfully', async () => {
@@ -12,7 +12,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         body: {
           query: print(gql`
           mutation {
-            newSet: saveSet(type: ${graphqlField}, path: "name", sqon: {}) {
+            newSet: saveSet(type: ${documentType}, path: "name", sqon: {}) {
               setId
             }
           }

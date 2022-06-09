@@ -13,9 +13,9 @@ export const accessor = ({ aggsField, dataAccessor }) =>
     dataAccessor || (aggsField?.isTerms ? `buckets.length` : `stats.count`)
   }`;
 
-const constructQuery = ({ graphqlField, query, resolver = 'aggregations' }) => `
+const constructQuery = ({ documentType, query, resolver = 'aggregations' }) => `
   query($sqon: JSON) {
-    data: ${graphqlField} {
+    data: ${documentType} {
       ${resolver}(
         filters: $sqon
         ${resolver === 'aggregations' ? 'include_missing: false' : ''}
@@ -40,14 +40,14 @@ const LoadingSpinner = () => (
   />
 );
 
-const RootQuery = ({ graphqlField, render, sqon, ...props }) => (
+const RootQuery = ({ documentType, render, sqon, ...props }) => (
   <Query
     {...props}
     shouldFetch
     renderError
     variables={{ sqon }}
     name="StatsRootQuery"
-    query={constructQuery({ graphqlField, resolver: 'hits', query: 'total' })}
+    query={constructQuery({ documentType, resolver: 'hits', query: 'total' })}
     render={({ data, error, loading, value }) =>
       render({ loading, value: get(data, `data.hits.total`, '') })
     }
@@ -59,7 +59,7 @@ const FieldQuery = ({
   field,
   render,
   sqon,
-  graphqlField,
+  documentType,
   dataAccessor,
   formatResult = (x) => x,
   aggsField = aggs.find((x) => x.field === underscoreField(field)),
@@ -71,7 +71,7 @@ const FieldQuery = ({
     name={`StatsFieldQuery`}
     shouldFetch={aggs.length}
     variables={{ sqon }}
-    query={constructQuery({ graphqlField, query: aggsField?.query })}
+    query={constructQuery({ documentType, query: aggsField?.query })}
     render={({ data, loading }) =>
       render({
         loading,
@@ -105,9 +105,9 @@ const Stat = ({
   );
 };
 
-export default ({
+const Stats = ({
   apiFetcher,
-  graphqlField,
+  documentType,
   stats,
   className,
   render,
@@ -129,7 +129,7 @@ export default ({
     `}
   >
     <AggsState
-      {...{ apiFetcher, graphqlField }}
+      {...{ apiFetcher, documentType }}
       render={(aggsState) =>
         stats.map((stat, i) => (
           <Fragment key={stat.label}>
@@ -138,7 +138,7 @@ export default ({
               {...{
                 aggsState,
                 apiFetcher,
-                graphqlField,
+                documentType,
                 LoadingSpinnerComponent,
               }}
               {...props}
@@ -150,3 +150,5 @@ export default ({
     />
   </div>
 );
+
+export default Stats;

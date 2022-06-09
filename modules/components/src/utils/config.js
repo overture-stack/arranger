@@ -15,9 +15,10 @@ export function deleteValue(key) {
   delete localStorage[key];
 }
 
-export const ARRANGER_API = getValue('ARRANGER_API', 'http://localhost:5050');
-export const ES_HOST = getValue('ES_HOST', 'http://localhost:9200');
 export const ACTIVE_INDEX = getValue('ACTIVE_INDEX', null);
-export const ACTIVE_INDEX_NAME = getValue('ACTIVE_INDEX_NAME', '');
-export const PORTAL_NAME = getValue('PORTAL_NAME', 'Data Portal');
+export const ARRANGER_API = getValue('ARRANGER_API', 'http://localhost:5050');
+export const DEBUG = getValue('ARRANGER_DEBUG', 'false') === 'true';
 export const DISABLE_SOCKET = getValue('DISABLE_SOCKET', 'false') === 'true';
+export const DOCUMENT_TYPE = getValue('DOCUMENT_TYPE', '');
+export const ES_HOST = getValue('ES_HOST', 'http://localhost:9200');
+export const PORTAL_NAME = getValue('PORTAL_NAME', 'Data Portal');

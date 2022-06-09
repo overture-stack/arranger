@@ -4,31 +4,60 @@ import express from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
+import { DEBUG_MODE } from './config/constants';
+import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
+import { extendColumns } from './mapping/extendMapping';
 import makeSchema from './schema';
 
 const getTypesWithMappings = async (esClient, configs = {}) => {
   if (Object.keys(configs).length > 0) {
     try {
       console.log(' \nNow creating a GraphQL mapping based on the ES index:');
-      const { mapping } = await fetchMapping({ esClient, index: configs?.index });
+      const { mapping } = await fetchMapping({
+        esClient,
+        index: configs?.[ConfigProperties.INDEX],
+      });
 
       if (mapping) {
         const extendedFields = await (async () => {
           try {
-            return extendFields(mapping, configs?.extended);
+            return extendFields(mapping, configs?.[ConfigProperties.EXTENDED]);
           } catch (err) {
-            return configs?.extended || [];
+            console.log(
+              '  Something happened while extending the ES mappings.\n' +
+                '  Defaulting to "extended" config from files.\n',
+            );
+            DEBUG_MODE && console.log(err);
+
+            return configs?.[ConfigProperties.EXTENDED] || [];
+          }
+        })();
+
+        const extendedTableConfigs = await (async () => {
+          try {
+            return extendColumns(configs?.[ConfigProperties.TABLE], extendedFields);
+          } catch (err) {
+            console.log(
+              '  Something happened while extending the column mappings.\n' +
+                '  Defaulting to "table" config from files.\n',
+            );
+            DEBUG_MODE && console.log(err);
+
+            return configs?.[ConfigProperties.TABLE] || [];
           }
         })();
 
         const typesWithMapping = addMappingsToTypes({
           graphQLType: {
-            index: configs?.index,
-            name: configs?.name,
+            index: configs?.[ConfigProperties.INDEX],
+            name: configs?.[ConfigProperties.DOCUMENT_TYPE],
             extendedFields,
             customFields: '',
-            config: configs,
+            config: {
+              ...configs,
+              [ConfigProperties.TABLE]: extendedTableConfigs,
+            },
           },
           mapping,
         });
@@ -36,6 +65,11 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
         console.log('  Success!\n');
         return typesWithMapping;
       }
+
+      // We should never see this log, but if it does, there may be a bug in `fetchMapping`
+      console.error(
+        'Mapping could not be created for some reason, but no error was generated... this needs research!',
+      );
     } catch (error) {
       console.error(error?.message || error);
       throw '  Something went wrong while creating the GraphQL mapping';
@@ -68,11 +102,11 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 };
 
 const createEndpoint = async ({
-  esClient,
-  graphqlOptions = {},
   enableAdmin,
-  typesWithMappings,
+  esClient,
   getServerSideFilter,
+  graphqlOptions = {},
+  typesWithMappings,
 }) => {
   const router = express.Router();
 

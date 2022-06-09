@@ -17,7 +17,7 @@ const tableConfig = {
   timestamp: '2018-01-12T16:42:07.495Z',
   type: 'models',
   keyField: 'name',
-  defaultSorted: [{ id: 'age_at_diagnosis', desc: false }],
+  defaultSorting: [{ field: 'age_at_diagnosis', desc: false }],
   columns: [
     {
       show: true,
@@ -42,7 +42,7 @@ const dummyConfig = {
   timestamp: '2018-01-12T16:42:07.495Z',
   type: 'files',
   keyField: 'file_id',
-  defaultSorted: [{ id: 'access', desc: false }],
+  defaultSorting: [{ field: 'access', desc: false }],
   columns: [
     {
       show: true,

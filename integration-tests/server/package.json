@@ -6,22 +6,22 @@
     "test": "mocha --require @babel/register --timeout 240000"
   },
   "dependencies": {
-    "@babel/runtime": "^7.17.8",
-    "@elastic/elasticsearch": "^8.1.0",
+    "@babel/runtime": "^7.18.3",
+    "@elastic/elasticsearch": "^8.2.1",
     "@overture-stack/arranger-server": "^3.0.0-beta.11",
     "babel-polyfill": "^6.26.0",
-    "graphql": "^16.3.0",
+    "graphql": "^16.5.0",
     "graphql-tag": "^2.12.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.17.8",
-    "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
-    "@babel/plugin-transform-runtime": "^7.17.0",
-    "@babel/preset-env": "^7.16.11",
+    "@babel/core": "^7.18.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.18.0",
+    "@babel/plugin-transform-runtime": "^7.18.2",
+    "@babel/preset-env": "^7.18.2",
     "@babel/register": "^7.17.7",
     "chai": "^4.3.6",
     "lodash": "^4.17.21",
-    "mocha": "^9.2.2",
+    "mocha": "^10.0.0",
     "regenerator-runtime": "^0.13.9"
   },
   "prettier": {

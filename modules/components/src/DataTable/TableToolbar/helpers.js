@@ -7,7 +7,7 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     ...options,
     params: {
       fileName,
-      files: files.map(({ allColumns, columns, exporterColumns = null, ...file }, i) => ({
+      files: files.map(({ allColumns, columns, exporterColumns = null, ...file }) => ({
         ...file,
         columns: exporterColumns // if the component gave you custom columns to show
           ? Object.values(

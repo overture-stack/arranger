@@ -1,0 +1,90 @@
+{
+  "analysis": {
+    "analysis_id": "e35d0e9e-e869-4792-9d0e-9ee86947922a",
+    "analysis_state": "NOT PUBLISHED",
+    "analysis_tools": [
+      "GATK:Mutect2",
+      "gatk-mutect2",
+      "ILLUMINA"
+    ],
+    "analysis_type": "sequencing_alignment",
+    "analysis_version": 1,
+    "experiment": {
+      "info": {
+        "analysis_tools": [
+          "GATK:Mutect2"
+        ],
+        "data_category": "Quality Control Metrics",
+        "data_subtypes": [
+          "Variant Callable Stats"
+        ],
+        "description": "Number of sites that are considered callable for Mutect stats with read depth equals or is higher than callable-depth which we set to default 10",
+        "files_in_tgz": [
+          "merged-mutect-stats.stats",
+          "callable_stats.extra_info.json"
+        ],
+        "metrics": {
+          "callable": 2843010613
+        }
+      },
+      "matched_normal_submitter_sample_id": "LP6008201-DNA_C01",
+      "variantCallingTool": "silver bullet"
+    }
+  },
+  "data_type": "Analysis QC",
+  "donors": [
+    {
+      "age": "41",
+      "donor_id": "DO234204",
+      "gender": "Male",
+      "specimens": [
+        {
+          "samples": [
+            {
+              "collection_date": "2022-05-16T04:20:57.306Z",
+              "matched_normal_submitter_sample_id": "LP6008201-DNA_C01",
+              "sample_id": "SA597188",
+              "sample_type": "Total DNA",
+              "submitter_sample_id": "LP6008202-DNA_C01"
+            }
+          ],
+          "specimen_id": "SP203445",
+          "specimen_tissue_source": "Solid tissue",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "4e134a61bff7458317b3cd84b049ecc8d12acf54c314719278db4b8e9d71e825",
+          "tumour_normal_designation": "Tumour"
+        }
+      ],
+      "submitter_donor_id": "7873d357d8c24ff28988da18280b1bfe16205f96d8cdcdc27166cd20b2158200",
+      "vaccinated": true
+    }
+  ],
+  "file": {
+    "data_type": "Analysis QC",
+    "index_file": {
+      "data_type": "Variant Calling Index",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "name": "example4.vcf.gz.idx",
+      "object_id": "70a2aa66-28d9-535e-b609-2743ed74e686",
+      "size": "52739"
+    },
+    "md5sum": "510e925a98fe9323b05230da4924f121",
+    "name": "OCCAMS-GB.DO234204.SA597188.wgs.20210508.gatk-mutect2.somatic.mutect_callable_metrics.tgz",
+    "size": 368
+  },
+  "file_access": "controlled",
+  "file_type": "TGZ",
+  "object_id": "00d81e63-710c-5f86-b8bb-2da14e128569",
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "study_id": "OCCAMS-GB"
+}

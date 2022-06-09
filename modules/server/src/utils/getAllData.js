@@ -1,12 +1,20 @@
 import { PassThrough } from 'stream';
 
-import { mapHits } from '../mapping';
-import { buildQuery, esToSafeJsInt } from '../middleware';
-import { CONFIG } from '../config';
+import { ENV_CONFIG } from '@/config';
+import { ConfigProperties } from '@/config/types';
+import { mapHits } from '@/mapping';
+import { buildQuery, esToSafeJsInt } from '@/middleware';
+
 import runQuery from './runQuery';
 
+/**
+ * @param maxRows (Optional. Default: null) Limits the maximum number of rows to include in the results.
+ *
+ * If zero (0) is given, it will include up to Server's own limit (Default: 100).
+ * -- This props may be ignored depending on Server configs.
+ */
 export default async ({
-  chunkSize = CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
+  chunkSize = ENV_CONFIG.DOWNLOAD_STREAM_BUFFER_SIZE,
   columns = [],
   ctx = {},
   maxRows,
@@ -42,11 +50,13 @@ export default async ({
   })
     .then(({ data }) => {
       const allowCustomMaxRows =
-        configs.config.allowCustomDownloadMaxRows || CONFIG.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS;
-      const maxHits = (allowCustomMaxRows && maxRows) || configs.config.downloadMaxRows;
+        configs.config[ConfigProperties.DOWNLOADS][ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
+      const maxHits = allowCustomMaxRows
+        ? maxRows || configs.config[ConfigProperties.MAX_DOWNLOAD_ROWS]
+        : configs.config[ConfigProperties.MAX_DOWNLOAD_ROWS];
 
       const hitsCount = data?.[configs.name]?.hits?.total || 0;
-      const total = Math.min(hitsCount, maxHits) || hitsCount;
+      const total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount; // i.e. 'maxHits == 0' => hitCounts
       const steps = Array(Math.ceil(total / chunkSize)).fill(null);
 
       // async reduce because each cycle is dependent on result of the previous

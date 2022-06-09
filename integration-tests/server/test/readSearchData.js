@@ -2,14 +2,14 @@ import { expect } from 'chai';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-export default ({ api, graphqlField, gqlPath }) => {
+export default ({ api, documentType, gqlPath }) => {
   it('reads hits with sqon properly', async () => {
     const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               hits(
                 filters: {
                   op: "and",
@@ -60,7 +60,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           body: {
             query: print(gql`
             {
-              ${graphqlField} {
+              ${documentType} {
                 hits (first: 1, offset: 0) {
                   total
                   edges {
@@ -99,7 +99,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           body: {
             query: print(gql`
             {
-              ${graphqlField} {
+              ${documentType} {
                 hits (first: 1, offset: 1) {
                   total
                   edges {
@@ -138,7 +138,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           body: {
             query: print(gql`
             {
-              ${graphqlField} {
+              ${documentType} {
                 hits (first: 2, offset: 0) {
                   total
                   edges {
@@ -182,7 +182,7 @@ export default ({ api, graphqlField, gqlPath }) => {
           body: {
             query: print(gql`
             {
-              ${graphqlField} {
+              ${documentType} {
                 hits (first: 2, offset: 1) {
                   total
                   edges {
@@ -226,7 +226,7 @@ export default ({ api, graphqlField, gqlPath }) => {
       body: {
         query: print(gql`
           {
-            ${graphqlField} {
+            ${documentType} {
               hits(first: 1000) {
                 edges {
                   node {
@@ -263,7 +263,7 @@ export default ({ api, graphqlField, gqlPath }) => {
         },
         query: print(gql`
           query ($sqon: JSON) {
-            ${graphqlField} {
+            ${documentType} {
               hits(first: 1000, filters: $sqon) {
                 edges {
                   node {

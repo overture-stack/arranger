@@ -126,7 +126,7 @@ clear-es-documents:
 		-H 'Content-Type: application/json' \
 		-d '{"query":{"match_all":{}}}'
 
-populate-es:
+seed-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Initializing file_centric index" $(END)
 	@$(ES_LOAD_SCRIPT) $(ES_DATA_DIR) $(ES_USER) $(ES_PASS)
 
@@ -151,20 +151,23 @@ start:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following services: Elasticsearch, Kibana, and Arranger Server" $(END)
 	@$(DC_UP_CMD)
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started all Arranger services! $(GREEN)
-	@echo $(MAGENTA) "You may have to populate ES and restart the Server container. (Use 'make populate-es' for mock data)" $(END)
+	@echo $(MAGENTA) "You may have to populate ES and restart the Server container. (Use 'make seed-es' for mock data)" $(END)
 
 start-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Elasticsearch" $(END)
 	@COMPOSE_PROJECT_NAME=Arranger_ES $(DC_UP_CMD) elasticsearch
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
-	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make populate-es' for mock data)" $(END)
+	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
 
 start-server:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Arranger Server" $(END)
-	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server 
+	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 
 test:
+	@echo $(YELLOW)$(INFO_HEADER) "Testing all services and integrations" $(END)
+	@ES_USER=$(ES_USER) ES_PASS=$(ES_PASS) npm run test
+	@echo $(GREEN)$(INFO_HEADER) Finished testing! $(GREEN)
 
 #############################################################
 #  Dev targets

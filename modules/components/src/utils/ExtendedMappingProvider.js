@@ -4,18 +4,18 @@ import Component from 'react-component-component';
 import defaultApiFetcher, { fetchExtendedMapping } from './api';
 
 const memoHash = {};
-const memoizedExtendedMapping = ({ graphqlField, apiFetcher }) => {
-  if (!memoHash[graphqlField]) {
-    memoHash[graphqlField] = fetchExtendedMapping({ graphqlField, apiFetcher });
+const memoizedExtendedMapping = ({ documentType, apiFetcher }) => {
+  if (!memoHash[documentType]) {
+    memoHash[documentType] = fetchExtendedMapping({ documentType, apiFetcher });
   }
-  return memoHash[graphqlField];
+  return memoHash[documentType];
 };
 
-const memoizedExtendedMappingField = ({ contentField, graphqlField, apiFetcher }) => {
-  const key = `${graphqlField}/${contentField}`;
+const memoizedExtendedMappingField = ({ contentField, documentType, apiFetcher }) => {
+  const key = `${documentType}/${contentField}`;
   if (!memoHash[key]) {
     memoHash[key] = memoizedExtendedMapping({
-      graphqlField,
+      documentType,
       apiFetcher,
     }).then(({ extendedMapping }) => extendedMapping.filter(({ field }) => field === contentField));
   }
@@ -23,7 +23,7 @@ const memoizedExtendedMappingField = ({ contentField, graphqlField, apiFetcher }
 };
 
 const ExtendedMappingProvider = ({
-  graphqlField,
+  documentType,
   apiFetcher = defaultApiFetcher,
   useCache = true,
   field: contentField,
@@ -34,7 +34,7 @@ const ExtendedMappingProvider = ({
     if (contentField) {
       const extendedMapping = !useCache
         ? await fetchExtendedMapping({
-            graphqlField,
+            documentType,
             apiFetcher,
           }).then(({ extendedMapping }) =>
             extendedMapping.filter(({ field }) => {
@@ -42,7 +42,7 @@ const ExtendedMappingProvider = ({
             }),
           )
         : await memoizedExtendedMappingField({
-            graphqlField,
+            documentType,
             apiFetcher,
             contentField,
           });
@@ -50,11 +50,11 @@ const ExtendedMappingProvider = ({
     } else {
       const { extendedMapping } = !useCache
         ? await fetchExtendedMapping({
-            graphqlField,
+            documentType,
             apiFetcher,
           })
         : await memoizedExtendedMapping({
-            graphqlField,
+            documentType,
             apiFetcher,
           });
       s.setState({ loading: false, extendedMapping: extendedMapping });
@@ -71,7 +71,7 @@ ExtendedMappingProvider.prototype = {
   apiFetcher: PropTypes.func,
   useCache: PropTypes.bool,
   field: PropTypes.string,
-  graphqlField: PropTypes.string.isRequired,
+  documentType: PropTypes.string.isRequired,
   children: PropTypes.func.isRequired,
 };
 

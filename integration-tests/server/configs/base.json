@@ -1,24 +1,26 @@
 {
+  "documentType": "model",
   "index": "models",
-  "name": "model",
-  "aggs-state": [
-    {
-      "field": "analysis__analysis_id",
-      "active": true,
-      "show": true,
-      "__typename": "AggState"
-    }
-  ],
-  "columns-state": {},
+  "facets": {
+    "aggregations": [
+      {
+        "field": "analysis__analysis_id",
+        "active": true,
+        "show": true
+      }
+    ]
+  },
+  "table": {
+    "columns": []
+  },
   "extended": [],
-  "matchbox-state": [
+  "matchbox": [
     {
       "displayName": "file",
       "field": "",
       "isActive": false,
       "keyField": null,
-      "searchFields": [],
-      "__typename": "MatchBoxField"
+      "searchFields": []
     }
   ]
 }

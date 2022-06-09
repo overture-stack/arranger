@@ -27,12 +27,14 @@ export default ({
           $sqon: JSON
         ) {
           ${index} {
-            extended(fields: $fields)
             aggregations (
               aggregations_filter_themselves: false
               filters: $sqon
             ){
               ${aggs.map((x) => x.query || queryFromAgg(x))}
+            }
+            configs {
+              extended(fields: $fields)
             }
           }
         }

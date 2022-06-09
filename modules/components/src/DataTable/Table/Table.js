@@ -63,24 +63,33 @@ class DataTable extends React.Component {
 
   // QUESTION: onFetchData? isn't this doing the actual fetching
   onFetchData = (state) => {
-    const { fetchData, config, sqon, alwaysSorted = [], keepSelectedOnPageChange } = this.props;
+    const {
+      fetchData,
+      documentType,
+      config,
+      sqon,
+      alwaysSorted = [],
+      keepSelectedOnPageChange,
+    } = this.props;
     const { selectedTableRows } = this.state;
 
     this.setState({ loading: true, lastState: state });
 
     return fetchData?.({
       config,
-      sqon,
+      documentType,
+      endpoint: '/graphql/OldTableDataQuery',
+      first: state.pageSize,
+      offset: state.page * state.pageSize,
       queryName: 'Table',
       sort: [
         ...state.sorted.map((sort) => ({
-          field: sort.id,
+          field: sort.field,
           order: sort.desc ? 'desc' : 'asc',
         })),
         ...alwaysSorted,
       ],
-      offset: state.page * state.pageSize,
-      first: state.pageSize,
+      sqon,
     })
       .then(({ total, data }) => {
         if (total !== this.state.total) {
@@ -110,6 +119,7 @@ class DataTable extends React.Component {
 
   componentDidUpdate(lastProps) {
     if (
+      !this.props.isLoadingConfigs &&
       !this.state.loading &&
       lastProps.config.columns.some(
         (lastColumn, i) => lastColumn.show !== this.props.config.columns[i].show,
@@ -136,7 +146,7 @@ class DataTable extends React.Component {
       maxPagesOptions,
       sorted,
     } = this.props;
-    const { columns, keyField, defaultSorted } = config;
+    const { columns, keyField, defaultSorting } = config;
     const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
 
     const fetchFromServerProps = {
@@ -154,6 +164,7 @@ class DataTable extends React.Component {
       selectType: 'checkbox',
       keyField,
     };
+
     return (
       <>
         <DetectScrollbarSize
@@ -168,17 +179,18 @@ class DataTable extends React.Component {
           onPageChange={(page) => this.props.onPaginationChange({ page })}
           onPageSizeChange={(pageSize, page) => this.props.onPaginationChange({ pageSize, page })}
           data={propsData?.data || data}
-          defaultSorted={sorted ? sorted : defaultSorted}
+          defaultSorted={sorted ? sorted : defaultSorting}
           columns={columns.map(
             ({ Cell, ...c }) => ({
               ...c,
-              ...(!c.hasCustomType && !isEmpty(c.extendedDisplayValues)
+              ...(!c.hasCustomType && !isEmpty(c.displayValues)
                 ? {
                     accessor: (x) => {
                       const values = c.accessor
                         ? [get(x, c.accessor)]
                         : jsonpath.query(x, c.jsonPath);
-                      return values.map((x) => c.extendedDisplayValues[`${x}`] || x).join(', ');
+
+                      return values.map((x) => c.displayValues[`${x}`] || x).join(', ');
                     },
                     id: c.field,
                   }

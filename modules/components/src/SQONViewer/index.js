@@ -2,32 +2,36 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 import { take } from 'lodash';
 
+import { withData } from '@/DataContext';
 import { useThemeContext } from '@/ThemeContext';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import EmptyMessage from './EmptyMessage';
 import { Op, SQONGroup, SQONValueGroup, SQONWrapper, useDataBubbles } from './helpers';
 import { toggleSQON, replaceFilterSQON } from './utils';
 
+/**
+ * @param {GroupSQONInterface} sqon
+ */
 const SQONViewer = ({
   dateFormat = undefined,
   emptyMessage = 'Start by selecting filters',
   onClear = noopFn,
-  setSQON,
-  sqon, // : GroupSQONInterface;
+  setSQON = noopFn,
+  sqon = null, // : GroupSQONInterface;
   translateSQONValue = undefined,
   valueCharacterLimit = undefined,
 }) => {
   const {
     components: {
       SQONViewer: {
-        SQONGroup: themeSQONGroupProps = {},
-        SQONOp: themeSQONOpProps = {},
-        SQONValueGroup: themeSQONVaueGroupProps = {},
-        SQONWrapper: themeSQONWrapperProps = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+        SQONGroup: themeSQONGroupProps = emptyObj,
+        SQONOp: themeSQONOpProps = emptyObj,
+        SQONValueGroup: themeSQONVaueGroupProps = emptyObj,
+        SQONWrapper: themeSQONWrapperProps = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'SQONViewer' });
   const sqonContent = sqon?.content || [];
   const isEmpty = sqonContent.length === 0;
   const { Clear, FieldCrumb, isExpanded, LessOrMore, ValueCrumb } = useDataBubbles({
@@ -149,15 +153,17 @@ const SQONViewer = ({
   );
 };
 
-export default SQONViewer;
+export default withData(SQONViewer);
 
-export const CurrentSQON =
-  (console.warn(
+export const CurrentSQON = (props) => {
+  console.warn(
     'Arranger deprecation warning --\n This component has been renamed to `SQONViewer` for declarativeness. ' +
       'Please update your integration accordingly to prevent errors, ' +
       'as the old name will be deprecated in a future Arranger version.',
-  ),
-  SQONViewer);
+  );
+
+  return <SQONViewer {...props} />;
+};
 
 export const SQONView = CurrentSQON;
 

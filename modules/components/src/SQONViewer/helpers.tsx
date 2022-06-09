@@ -11,8 +11,9 @@ import ButtonProps from '@/Button/types';
 import { useDataContext } from '@/DataContext';
 import { Row } from '@/Flex';
 import { useThemeContext } from '@/ThemeContext';
-import internalTranslateSQONValue from '@/utils/translateSQONValue';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { emptyObj } from '@/utils/noops';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import {
   GroupSQONInterface,
@@ -25,16 +26,22 @@ interface BubbleProps extends ButtonProps {
   onClick?: () => void;
 }
 
-export const Bubble = ({ children, className = undefined, ...props }: BubbleProps) => {
-  const { components: { SQONViewer: { SQONBubble: themeSQONBubbleProps = {} } = {} } = {} } =
-    useThemeContext();
+export const Bubble = ({ children, className, theme, ...props }: BubbleProps) => {
+  const {
+    components: {
+      SQONViewer: { SQONBubble: themeSQONBubbleProps = emptyObj } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'SQONViewer - Bubble' });
 
   return (
     <TransparentButton
       className={cx('sqon-bubble', className)}
       css={css``}
-      margin="0 0.2em"
-      {...themeSQONBubbleProps}
+      theme={{
+        margin: '0 0.2em',
+        ...themeSQONBubbleProps,
+        ...theme,
+      }}
       {...props}
     >
       {children}
@@ -42,19 +49,19 @@ export const Bubble = ({ children, className = undefined, ...props }: BubbleProp
   );
 };
 
-export const Field = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Field = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-field', className)} {...props}>
     {children}
   </Bubble>
 );
 
-export const Op = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Op = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-op', className)} {...props}>
     {children}
   </Bubble>
 );
 
-export const Value = ({ children, className = undefined, ...props }: BubbleProps) => (
+export const Value = ({ children, className, ...props }: BubbleProps) => (
   <Bubble className={cx('sqon-value', className)} {...props}>
     {children}
   </Bubble>
@@ -74,17 +81,17 @@ export const useDataBubbles = ({
     colors,
     components: {
       SQONViewer: {
-        SQONClear: themeSQONClearProps = {},
-        SQONField: themeSQONFieldProps = {},
-        SQONLessOrMore: themeSQONLessOrMoreProps = {},
+        SQONClear: themeSQONClearProps = emptyObj,
+        SQONField: themeSQONFieldProps = emptyObj,
+        SQONLessOrMore: themeSQONLessOrMoreProps = emptyObj,
         SQONValue: {
           characterLimit: themeCharacterLimit = 30,
-          css: themeSQONValueCustomCSS = {},
+          css: themeSQONValueCustomCSS = emptyObj,
           ...themeSQONValueProps
-        } = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'SQONViewer - useDataBubbles' });
   const [expanded, setExpanded] = useState<GroupValueSQONType>([]);
 
   const isExpanded = useCallback(
@@ -92,42 +99,48 @@ export const useDataBubbles = ({
     [expanded],
   );
 
-  const { extendedMapping } = useDataContext();
+  const { extendedMapping } = useDataContext({ callerName: 'SQONViewer - useDataBubbles' });
   const findExtendedMappingForField = useCallback(
-    (wantedField) => extendedMapping.find((mapping) => mapping.field === wantedField),
+    (wantedField: string) => extendedMapping.find((mapping) => mapping.field === wantedField),
     [extendedMapping],
   );
 
   const Clear = ({ nextSQON }: { nextSQON: GroupSQONInterface | null }) => (
     <Bubble
-      background={colors?.grey?.[200]}
-      borderRadius="0.3em"
       className="sqon-clear"
       css={css`
         margin-left: 0;
         margin-right: 0.5em;
       `}
-      disabledBackground={colors?.grey?.[100]}
-      hoverBackground={colors?.grey?.[300]}
       onClick={() => {
         onClear?.();
         setSQON?.(nextSQON);
       }}
-      padding="0.2em 0.5em"
-      {...themeSQONClearProps}
+      theme={{
+        background: colors?.grey?.[200],
+        borderRadius: '0.3em',
+        disabledBackground: colors?.grey?.[100],
+        hoverBackground: colors?.grey?.[300],
+        padding: '0.2em 0.5em',
+        ...themeSQONClearProps,
+      }}
     >
       Clear
     </Bubble>
   );
 
   const FieldCrumb = ({ field, ...fieldProps }: { field: string }) => (
-    <Field css={css``} fontWeight="bold" {...themeSQONFieldProps} {...{ field, ...fieldProps }}>
+    <Field
+      css={css``}
+      theme={{ fontWeight: 'bold', ...themeSQONFieldProps }}
+      {...{ field, ...fieldProps }}
+    >
       {findExtendedMappingForField(field)?.displayName || field}
     </Field>
   );
 
   const lessOrMoreClickHandler = useCallback(
-    (valueSQON) => () => setExpanded(xor(expanded, [valueSQON])),
+    (valueSQON: ValueSQONInterface) => () => setExpanded(xor(expanded, [valueSQON])),
     [expanded],
   );
 
@@ -139,7 +152,7 @@ export const useDataBubbles = ({
         className={cx(showLess ? 'sqon-less' : 'sqon-more')}
         css={css``}
         onClick={lessOrMoreClickHandler(valueSQON)}
-        {...themeSQONLessOrMoreProps}
+        theme={themeSQONLessOrMoreProps}
       >
         {showLess ? 'less' : '\u2026'}
       </Bubble>
@@ -173,9 +186,11 @@ export const useDataBubbles = ({
       <Value
         onClick={() => setSQON?.(nextSQON)}
         css={[themeSQONValueCustomCSS, customCSS]}
-        textDecoration="underline"
         title={bubbleTitle}
-        {...themeSQONValueProps}
+        theme={{
+          textDecoration: 'underline',
+          ...themeSQONValueProps,
+        }}
         {...valueProps}
       >
         {truncatedValue}
@@ -200,7 +215,7 @@ export const SQONGroup = styled(
   {
     shouldForwardProp: isPropValid,
   },
-)<ThemeCommon.NonButtomThemeProps>`
+)<ThemeCommon.NonButtonThemeProps>`
   align-items: center;
 `;
 
@@ -211,7 +226,7 @@ export const SQONValueGroup = styled(
   {
     shouldForwardProp: isPropValid,
   },
-)<ThemeCommon.NonButtomThemeProps>`
+)<ThemeCommon.NonButtonThemeProps>`
   background: ${({ background }) => background};
   border-color: ${({ borderColor }) => borderColor};
   border-radius: ${({ borderRadius }) => borderRadius};
@@ -225,7 +240,7 @@ export const SQONValueGroup = styled(
   text-transform: ${({ textTransform }) => textTransform};
 `;
 
-export const SQONWrapper = styled.article<ThemeCommon.NonButtomThemeProps>`
+export const SQONWrapper = styled.article<ThemeCommon.NonButtonThemeProps>`
   align-items: center;
   color: ${({ fontColor }) => fontColor};
   display: flex;

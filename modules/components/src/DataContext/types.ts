@@ -7,6 +7,54 @@ import SQON from 'sqon-builder';
 import { legacyProps } from '@/Arranger/Arranger';
 import { CustomThemeType, BaseThemeInterface } from '@/ThemeContext/types';
 
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+
+export interface ColumnMappingInterface {
+  accessor: string;
+  canChangeShow: boolean;
+  displayFormat?: string;
+  displayName?: string;
+  displayValues?: Record<string, string>;
+  field: string;
+  id: string;
+  isArray?: boolean;
+  jsonPath?: string | null;
+  query?: string | null;
+  show: boolean;
+  sortable: boolean;
+  type: DisplayType;
+}
+
+export interface ColumnSortingInterface {
+  desc: boolean;
+  field: string;
+}
+
+export interface TableConfigsInterface {
+  columns: ColumnMappingInterface[];
+  defaultSorting: ColumnSortingInterface[];
+  keyField: string;
+}
+
+export interface ExtendedMappingInterface {
+  active: boolean; // *
+  displayName: string;
+  displayType: string;
+  displayValues: Record<string, string>;
+  field: string;
+  isArray: boolean;
+  primaryKey: boolean;
+  quickSearchEnabled: boolean;
+  rangeStep: number | null | undefined;
+  type: DisplayType;
+  unit: string | null;
+}
+
+export interface ConfigsInterface {
+  extendedMapping: ExtendedMappingInterface[];
+  tableConfigs: TableConfigsInterface;
+}
+
 export type APIFetcherFn = (options: {
   body: any;
   endpoint?: string;
@@ -15,48 +63,40 @@ export type APIFetcherFn = (options: {
   url?: string;
 }) => Promise<any>;
 
+export type FetchDataFn = (options?: {
+  config?: Record<string, any>;
+  endpoint?: string;
+  first?: any;
+  offset?: any;
+  sort?: any;
+  sqon?: any;
+  queryName?: string;
+}) => Promise<{ total?: number; data?: any } | void>;
+
 export interface DataProviderProps<Theme = BaseThemeInterface> {
   children?: React.ReactNode;
+  configs?: ConfigsInterface;
   customFetcher?: APIFetcherFn;
-  graphqlField: string;
+  documentType: string;
   legacyProps?: typeof legacyProps; // TODO: deprecate along with <Arranger/>
   url?: string;
   theme?: CustomThemeType<Theme>;
 }
 
-export interface ExtendedMappingInterface {
-  active: boolean;
-  displayName: string;
-  displayValues: Record<string, string>;
-  field: string;
-  isArray: boolean;
-  primaryKey: boolean;
-  quickSearchEnabled: boolean;
-  rangeStep: number | null | undefined;
-  type: string;
-  unit: string | null;
-}
-
-export type FetchDataFn = (options?: {
-  config?: Record<string, any>;
-  sqon?: any;
-  queryName?: string;
-  sort?: any;
-  offset?: any;
-  first?: any;
-}) => Promise<{ total?: number; data?: any }> | Error | void;
-
 export type SQONType = typeof SQON | null;
 
 export interface DataContextInterface {
+  documentType: string;
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;
-  selectedTableRows: string[];
-  setSelectedTableRows: Dispatch<SetStateAction<string[]>>;
+  isLoadingConfigs: boolean;
+  missingProvider?: string;
   sqon: SQONType;
   setSQON: Dispatch<SetStateAction<SQONType>>;
+  tableConfigs: TableConfigsInterface;
 }
 
 export interface UseDataContextProps {
+  callerName?: string;
   customFetcher?: FetchDataFn;
 }

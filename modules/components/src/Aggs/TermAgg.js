@@ -11,7 +11,7 @@ import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
-import noopFn, { emptyStrFn } from '@/utils/noopFns';
+import noopFn, { emptyObj, emptyStrFn } from '@/utils/noops';
 import strToReg from '@/utils/strToReg';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
@@ -128,6 +128,7 @@ const TermAgg = ({
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
   const dotField = field.replace(/__/g, '.');
   const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
+  const hasData = decoratedBuckets.length > 0;
   const hasSearchHit =
     highlightText && decoratedBuckets.some((x) => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
@@ -138,27 +139,34 @@ const TermAgg = ({
   };
 
   const {
+    colors,
     components: {
       Aggregations: {
-        FilterInput: themeAggregationsFilterInputProps = {},
-        MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = {},
+        FilterInput: themeAggregationsFilterInputProps = emptyObj,
+        MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = emptyObj,
+        NoDataContainer: {
+          fontColor: themeNoDataFontColor = colors?.grey?.[600],
+          fontSize: themeNoDataFontSize = '0.8em',
+        } = emptyObj,
         TermAgg: {
-          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
           collapsible: themeTermAggCollapsible = true,
-          FilterInput: themeTermAggFilterInputProps = {},
-          IncludeExcludeButton: ToggleButtonThemeProps = {},
-          MoreOrLessButton: themeTermAggMoreOrLessButtonProps = {},
-        } = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+          FilterInput: themeTermAggFilterInputProps = emptyObj,
+          IncludeExcludeButton: ToggleButtonThemeProps = emptyObj,
+          MoreOrLessButton: themeTermAggMoreOrLessButtonProps = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'TermAgg' });
 
   return (
     <AggsWrapper
-      actionIcon={{
-        onClick: () => setShowingSearch(!stateShowingSearch),
-        Icon: FaSearch,
-      }}
+      actionIcon={
+        hasData && {
+          onClick: () => setShowingSearch(!stateShowingSearch),
+          Icon: FaSearch,
+        }
+      }
       collapsible={customCollapsible || themeTermAggCollapsible}
       componentRef={aggWrapperRef}
       dataFields={dataFields}
@@ -216,89 +224,102 @@ const TermAgg = ({
             {headerTitle}
           </div>
         )}
-
-        <div
-          css={css`
-            width: 100%;
-          `}
-        >
-          {decoratedBuckets.slice(0, showingMore ? Infinity : maxTerms).map((bucket, i, array) => (
-            <Content
-              id={constructEntryId({
-                value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
-              })}
-              key={bucket.name}
-              className={cx(
-                'bucket-item',
-                constructBucketItemClassName({
-                  bucket,
-                  i,
-                  showingBuckets: array,
-                  showingMore,
-                }),
-              )}
-              content={{
-                field: dotField,
-                value: bucket.name,
-              }}
-              css={css`
-                cursor: pointer;
-                display: flex;
-                font-size: 0.8rem;
-                justify-content: space-between;
-                margin: 0.15rem 0;
-              `}
-              onClick={() =>
-                handleValueClick({
-                  field: dotField,
-                  value: bucket,
-                  isExclude,
-                  generateNextSQON: (sqon) =>
-                    generateNextSQON({ isExclude, dotField, bucket, sqon }),
-                })
-              }
-            >
-              <span
-                className="bucket-link"
-                css={css`
-                  display: flex;
-                  line-height: 1rem;
-                `}
-                merge="toggle"
-              >
-                <input
-                  aria-label={`Select ${bucket.name}`}
-                  checked={isActive({
+        {hasData ? (
+          <div
+            css={css`
+              width: 100%;
+            `}
+          >
+            {decoratedBuckets
+              .slice(0, showingMore ? Infinity : maxTerms)
+              .map((bucket, i, array) => (
+                <Content
+                  id={constructEntryId({
+                    value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
+                  })}
+                  key={bucket.name}
+                  className={cx(
+                    'bucket-item',
+                    constructBucketItemClassName({
+                      bucket,
+                      i,
+                      showingBuckets: array,
+                      showingMore,
+                    }),
+                  )}
+                  content={{
                     field: dotField,
                     value: bucket.name,
-                  })}
+                  }}
                   css={css`
-                    margin: 0.2rem 0.3rem 0 0;
+                    cursor: pointer;
+                    display: flex;
+                    font-size: 0.8rem;
+                    justify-content: space-between;
+                    margin: 0.15rem 0;
                   `}
-                  id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                  name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                  readOnly
-                  type="checkbox"
-                />
-
-                <TextHighlight
-                  content={
-                    truncate(internalTranslateSQONValue(bucket.name), {
-                      length: valueCharacterLimit || Infinity,
-                    }) + ' '
+                  onClick={() =>
+                    handleValueClick({
+                      field: dotField,
+                      value: bucket,
+                      isExclude,
+                      generateNextSQON: (sqon) =>
+                        generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                    })
                   }
-                  highlightText={searchText}
-                />
-              </span>
+                >
+                  <span
+                    className="bucket-link"
+                    css={css`
+                      display: flex;
+                    `}
+                    merge="toggle"
+                  >
+                    <input
+                      aria-label={`Select ${bucket.name}`}
+                      checked={isActive({
+                        field: dotField,
+                        value: bucket.name,
+                      })}
+                      css={css`
+                        margin: 0.2rem 0.3rem 0 0;
+                      `}
+                      id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                      name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                      readOnly
+                      type="checkbox"
+                    />
 
-              {bucket.doc_count && (
-                <BucketCount className={themeBucketCountClassName} theme={bucketCountTheme}>
-                  {formatNumber(bucket.doc_count)}
-                </BucketCount>
-              )}
-            </Content>
-          ))}
-        </div>
+                    <TextHighlight
+                      content={
+                        truncate(internalTranslateSQONValue(bucket.name), {
+                          length: valueCharacterLimit || Infinity,
+                        }) + ' '
+                      }
+                      highlightText={searchText}
+                    />
+                  </span>
+
+                  {bucket.doc_count && (
+                    <BucketCount className={themeBucketCountClassName} theme={bucketCountTheme}>
+                      {formatNumber(bucket.doc_count)}
+                    </BucketCount>
+                  )}
+                </Content>
+              ))}
+          </div>
+        ) : (
+          <span
+            className="no-data"
+            css={css`
+              color: ${themeNoDataFontColor};
+              display: block;
+              font-size: ${themeNoDataFontSize};
+            `}
+          >
+            No data available
+          </span>
+        )}
 
         {isMoreEnabled && (
           <MoreOrLessButton

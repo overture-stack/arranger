@@ -3,14 +3,17 @@ import Spinner from 'react-spinkit';
 import DataTable, { ColumnsState } from '@/DataTable';
 import TextInput from '@/Input';
 import defaultApiFetcher from '@/utils/api';
-import noopFn from '@/utils/noopFns';
+import noopFn from '@/utils/noops';
 
+/**
+ * @param {SQONType} sqon
+ */
 const Table = ({
   onFilterChange = noopFn,
-  graphqlField = '',
+  documentType = '',
   fetchData = defaultApiFetcher,
-  setSQON,
-  sqon,
+  setSQON = noopFn,
+  sqon = null,
   fieldTypesForFilter = ['text', 'keyword'],
   apiFetcher,
   InputComponent = TextInput,
@@ -22,12 +25,12 @@ const Table = ({
 }) => {
   return (
     <ColumnsState
-      graphqlField={graphqlField}
+      documentType={documentType}
       apiFetcher={apiFetcher}
       sessionStorage={sessionStorage}
       storageKey={storageKey}
-      render={(columnState) => {
-        return columnState.loading ? (
+      render={(tableConfigs = {}) => {
+        return tableConfigs.loading ? (
           <Spinner fadeIn="full" name="circle" />
         ) : (
           <DataTable
@@ -35,27 +38,27 @@ const Table = ({
             InputComponent={InputComponent}
             sqon={sqon}
             config={{
-              ...columnState.state,
+              ...tableConfigs.state,
               // generates a handy dictionary with all the available columns
-              allColumns: columnState.state.columns.reduce(
+              allColumns: tableConfigs.state.columns?.reduce(
                 (columnsDict, column) => ({
                   ...columnsDict,
                   [column.field]: column,
                 }),
                 {},
               ),
-              type: graphqlField,
+              documentType,
             }}
             fetchData={fetchData}
-            onColumnsChange={columnState.toggle}
-            onMultipleColumnsChange={columnState.toggleMultiple}
+            onColumnsChange={tableConfigs.toggle}
+            onMultipleColumnsChange={tableConfigs.toggleMultiple}
             onFilterChange={({ generateNextSQON, value }) => {
               onFilterChange(value);
               setSQON(
                 generateNextSQON({
                   sqon,
-                  fields: columnState.state.columns
-                    .filter((x) => fieldTypesForFilter.includes(x.extendedType) && x.show)
+                  fields: tableConfigs.state.columns
+                    .filter((x) => fieldTypesForFilter.includes(x.type) && x.show)
                     .map((x) => x.field),
                 }),
               );

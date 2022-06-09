@@ -4,6 +4,7 @@ import { isEqual } from 'lodash';
 import cx from 'classnames';
 
 import { withTheme } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 import strToReg from '@/utils/strToReg';
 
 // TODO: turn into function... component could use hooks.
@@ -35,9 +36,9 @@ class TextHighlight extends React.Component {
             padding: themePadding,
             wrapperClassName: themeWrapperClassName,
             wrapperCSS: themeWrapperCSS,
-          } = {},
-        } = {},
-      } = {},
+          } = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
     } = this.props;
 
     if (highlightText) {

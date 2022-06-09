@@ -1,13 +1,15 @@
 import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import { applyMiddleware } from 'graphql-middleware';
-import { CONSTANTS } from '../middleware';
-import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
-import { AggsStateTypeDefs, ColumnStateTypeDefs, MatchBoxStateTypeDefs } from './State';
 
-export const StateTypeDefs = {
-  AggsStateTypeDefs,
-  ColumnStateTypeDefs,
-  MatchBoxStateTypeDefs,
+import { CONSTANTS } from '../middleware';
+
+import { FacetsConfigTypeDefs, MatchBoxConfigTypeDefs, TableConfigTypeDefs } from './Configs';
+import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
+
+export const ConfigsTypeDefs = {
+  FacetsConfigTypeDefs,
+  TableConfigTypeDefs,
+  MatchBoxConfigTypeDefs,
 };
 
 export const setsMapping = {
@@ -22,13 +24,13 @@ export const setsMapping = {
 };
 
 export default ({
-  types = [],
-  rootTypes = [],
-  scalarTypes = [],
-  middleware = [],
-  mock = false,
   enableAdmin = false,
   getServerSideFilter,
+  middleware = [],
+  mock = false,
+  rootTypes = [],
+  scalarTypes = [],
+  types = [],
 } = {}) => {
   const typesWithSets = [
     types,
@@ -58,18 +60,17 @@ export default ({
   ];
 
   const typeDefs = generateTypeDefs({
-    types: typesWithSets,
     rootTypes,
     scalarTypes,
-    enableAdmin,
+    types: typesWithSets,
   });
 
   const resolvers = generateResolvers({
-    types: typesWithSets,
-    rootTypes,
-    scalarTypes,
     enableAdmin,
     getServerSideFilter,
+    rootTypes,
+    scalarTypes,
+    types: typesWithSets,
   });
 
   const schema = makeExecutableSchema({

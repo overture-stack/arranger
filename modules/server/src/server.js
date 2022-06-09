@@ -2,13 +2,22 @@ import elasticsearch from '@elastic/elasticsearch';
 import express from 'express';
 import morgan from 'morgan';
 
-import { CONFIG } from './config';
+import { ENV_CONFIG } from './config';
 import { ENABLE_LOGS } from './config/constants';
 import downloadRoutes from './download';
 import getGraphQLRoutes from './graphqlRoutes';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
-const { CONFIG_FILES_PATH, DEBUG_MODE, ES_HOST, ES_USER, ES_PASS, ES_LOG, PING_PATH } = CONFIG;
+const {
+  CONFIG_FILES_PATH,
+  DEBUG_MODE,
+  ENABLE_ADMIN,
+  ES_HOST,
+  ES_USER,
+  ES_PASS,
+  ES_LOG,
+  PING_PATH,
+} = ENV_CONFIG;
 
 export const buildEsClient = (esHost = '', esUser = '', esPass = '', esLog = 'error') => {
   if (!esHost) {
@@ -39,7 +48,7 @@ export const buildEsClientViaEnv = () => {
 
 export default async ({
   configsSource = CONFIG_FILES_PATH,
-  enableAdmin = false,
+  enableAdmin = ENABLE_ADMIN,
   enableLogs = ENABLE_LOGS,
   esHost = ES_HOST,
   esPass = ES_PASS,

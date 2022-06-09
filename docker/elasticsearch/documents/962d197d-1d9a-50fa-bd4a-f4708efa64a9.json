@@ -1,0 +1,99 @@
+{
+  "analysis": {
+    "analysis_id": "bfae3633-b7c7-400e-ae36-33b7c7e00e0b",
+    "analysis_state": "NOT PUBLISHED",
+    "analysis_tools": [
+      "Sanger:verifyBamHomChk",
+      "sanger-wgs",
+      "ILLUMINA"
+    ],
+    "analysis_type": "sequencing_alignment",
+    "analysis_version": 1,
+    "experiment": {
+      "info": {
+        "analysis_tools": [
+          "Sanger:verifyBamHomChk"
+        ],
+        "data_category": "Quality Control Metrics",
+        "data_subtypes": [
+          "Cross Sample Contamination"
+        ],
+        "description": "Cross sample contamination estimated by Sanger verifyBamHomChk.pl script",
+        "files_in_tgz": [
+          "SA597317_snps.vcf",
+          "SA597317.log",
+          "SA597317.selfSM",
+          "SA597317.selfRG",
+          "SA597317.depthSM",
+          "SA597317.depthRG",
+          "result.json"
+        ],
+        "metrics": {
+          "avg_depth": 54.71,
+          "contamination": 0.28244,
+          "reads_used": 1930022,
+          "sample_id": "SA597317",
+          "snps_used": 35275
+        }
+      },
+      "matched_normal_submitter_sample_id": "LP6008220-DNA_A01",
+      "variantCallingTool": "silver bullet"
+    }
+  },
+  "data_type": "Sample QC",
+  "donors": [
+    {
+      "age": "16",
+      "donor_id": "DO234268",
+      "gender": "Female",
+      "specimens": [
+        {
+          "samples": [
+            {
+              "collection_date": "2021-01-16T15:41:51.492Z",
+              "matched_normal_submitter_sample_id": "LP6008220-DNA_A01",
+              "sample_id": "SA597317",
+              "sample_type": "Total DNA",
+              "submitter_sample_id": "LP6008221-DNA_A01"
+            }
+          ],
+          "specimen_id": "SP203501",
+          "specimen_tissue_source": "Solid tissue",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "0058c322727437d0f3ab1efc6336db4c535d7231c99cbc6a1dc4ce77279d6bc9",
+          "tumour_normal_designation": "Tumour"
+        }
+      ],
+      "submitter_donor_id": "91b806330d0e632a29aac57bb4c22564728a6732fc25d7393a6075cc86ec86d8",
+      "vaccinated": true
+    }
+  ],
+  "file": {
+    "data_type": "Sample QC",
+    "index_file": {
+      "data_type": "Variant Calling Index",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "name": "example6.vcf.gz.idx",
+      "object_id": "70a2aa66-28d9-535e-b609-2743ed74e686",
+      "size": "544355"
+    },
+    "md5sum": "b266d0c552b7eebcef7beec10a4d89d1",
+    "name": "OCCAMS-GB.DO234268.SA597317.wgs.20210511.sanger-wgs.somatic.contamination_metrics.tgz",
+    "size": 498133
+  },
+  "file_access": "controlled",
+  "file_type": "TGZ",
+  "object_id": "962d197d-1d9a-50fa-bd4a-f4708efa64a9",
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "study_id": "OCCAMS-GB"
+}

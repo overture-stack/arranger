@@ -2,8 +2,8 @@ import { Abortable } from 'events';
 import fs, { ObjectEncodingOptions } from 'fs';
 import path from 'path';
 
-import { CONFIG } from '..';
-import { ConfigObject } from '../types';
+import { ENV_CONFIG } from '@/config';
+import { ConfigObject, ConfigProperties } from '@/config/types';
 
 type FileEncodingType =
   | BufferEncoding
@@ -32,9 +32,18 @@ const isDataFile = (filename: string) => {
   return fileNameParts[fileNameParts.length - 1].toLowerCase() === 'json';
 };
 
-export default (dirname: string): Promise<ConfigObject> => {
+const getConfigFromFiles = (dirname: string): Promise<ConfigObject> => {
   const configsPath = path.resolve(global.__basedir || '', dirname);
   console.log(`  Reading files from '${configsPath}'...`);
+
+  const configsFromEnv = {
+    [ConfigProperties.DOCUMENT_TYPE]: ENV_CONFIG.DOCUMENT_TYPE,
+    [ConfigProperties.DOWNLOADS]: {
+      [ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: ENV_CONFIG.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
+      [ConfigProperties.MAX_DOWNLOAD_ROWS]: ENV_CONFIG.MAX_DOWNLOAD_ROWS,
+    },
+    [ConfigProperties.INDEX]: ENV_CONFIG.ES_INDEX,
+  };
 
   return readDirectoryAsync(configsPath)
     .then((filenames = []) =>
@@ -47,23 +56,18 @@ export default (dirname: string): Promise<ConfigObject> => {
     .then((files = []) => {
       if (files.length === 0) throw new Error('Could not find any config files');
 
-      const configObj = files.reduce(
-        (configsAcc: ConfigObject, file) => {
-          const [fileName, fileData] = file as [string, any];
-          var fileDataJSON = JSON.parse(fileData);
+      const configObj = files.reduce((configsAcc: Partial<ConfigObject>, file) => {
+        const [fileName, fileData] = file as [string, any];
+        const fileDataJSON = JSON.parse(fileData);
 
-          return {
-            ...configsAcc,
-            ...(fileName.includes('base') ? fileDataJSON : { [fileName]: fileDataJSON }),
-          };
-        },
-        {
-          index: CONFIG.ES_INDEX,
-          name: CONFIG.GRAPHQL_FIELD,
-          downloadMaxRows: CONFIG.DOWNLOAD_MAX_ROWS,
-        } as ConfigObject,
-      );
+        return {
+          ...configsAcc,
+          ...fileDataJSON,
+        };
+      }, configsFromEnv) as ConfigObject; // hopefully
 
       return configObj;
     });
 };
+
+export default getConfigFromFiles;

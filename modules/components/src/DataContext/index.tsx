@@ -1,63 +1,73 @@
-import { ComponentType, createContext, useContext, useState } from 'react';
+import { ComponentType, createContext, ReactElement, useContext, useEffect, useState } from 'react';
 
-import defaultApiFetcher from '@/utils/api';
-import columnsToGraphql from '@/utils/columnsToGraphql';
-import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import { ThemeProvider } from '@/ThemeContext';
+import defaultApiFetcher from '@/utils/api';
+import getComponentDisplayName from '@/utils/getComponentDisplayName';
+import missingProviderHandler from '@/utils/missingProvider';
+import { emptyObj } from '@/utils/noops';
 
-import { useExtendedMapping } from './helpers';
-import {
-  DataContextInterface,
-  DataProviderProps,
-  FetchDataFn,
-  SQONType,
-  UseDataContextProps,
-} from './types';
+import { useConfigs, useDataFetcher } from './helpers';
+import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
 
-export const DataContext = createContext<DataContextInterface>({} as DataContextInterface);
-// returning "as interface" so the type is explicit while integrating into another app
+export const DataContext = createContext<DataContextInterface>({
+  documentType: '',
+  missingProvider: 'DataContext',
+} as DataContextInterface);
 
-/** Context provider for Arranger's theme functionalities
- * @param {APIFetcherFn} customFetcher function to make customised request and subsequent data handling (e.g. middlewares);
- * @param {object} legacyProps allows passing items currently managed by `<Arranger />`, to ease migration. For internal use only.
+/** Context provider for Arranger's data and functionality
+ * @param {APIFetcherFn} [customFetcher=apiFetcher] function to make customised request and subsequent data handling (e.g. middlewares).
+ * @param {string} [documentType] the GraphQL field that Arranger should use to collect the data for this provider.
+ * @param {object} [legacyProps] allows passing items currently managed by `<Arranger />`, to ease migration. For maintainer use only.
  * **Highly discouraged props, as it will be deprecated in an upcoming version.**
- * @param {Theme} theme allows giving the provider a custom version of the theme for the consumers.
+ * @param {Theme} [theme] allows giving the provider a custom version of the theme for the consumers.
+ * @param {string} [url] customises where requests should be made by the data fetcher.
  */
 export const DataProvider = ({
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
-  graphqlField,
+  documentType,
   legacyProps,
   theme,
   url,
-}: DataProviderProps): React.ReactElement<DataContextInterface> => {
-  const [selectedTableRows, setSelectedTableRows] = useState<string[]>([]);
+}: DataProviderProps): ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
-  const extendedMapping = useExtendedMapping({
+
+  useEffect(() => {
+    setSQON(legacyProps?.sqon);
+  }, [legacyProps?.sqon]);
+
+  const {
+    documentMapping,
+    downloadsConfigs,
+    extendedMapping,
+    facetsConfigs,
+    isLoadingConfigs,
+    tableConfigs,
+  } = useConfigs({
     apiFetcher,
-    graphqlField,
+    documentType,
   });
 
-  const fetchData: FetchDataFn = (options = {}) =>
-    apiFetcher({
-      endpoint: `/graphql`,
-      body: columnsToGraphql(options),
-      url,
-    }).then((response) => {
-      const hits = options?.config?.type ? response?.data?.[options.config.type]?.hits : {};
-      const data = (hits.edges || []).map((e: any) => e.node);
-      const total = hits.total || 0;
-
-      return { total, data };
-    });
+  const fetchData = useDataFetcher({
+    apiFetcher,
+    documentType,
+    keyField: tableConfigs?.keyField,
+    sqon,
+    url,
+  });
 
   const contextValues = {
+    ...legacyProps,
+    documentMapping,
+    downloadsConfigs,
     extendedMapping,
+    facetsConfigs,
     fetchData,
-    selectedTableRows,
-    setSelectedTableRows,
+    documentType,
+    isLoadingConfigs,
     setSQON,
     sqon,
+    tableConfigs,
   };
 
   return (
@@ -67,28 +77,41 @@ export const DataProvider = ({
   );
 };
 
+/** hook for data access and aggregation
+ * @param {string} [callerName] (optional) usually your component name. used to assist troubleshooting context issues.
+ * @param {FetchDataFn} [customFetcher] (optional) takes a custom data fetching function to override requests locally.
+ * @returns {DataContextInterface} data object
+ */
 export const useDataContext = ({
+  callerName,
   customFetcher: localFetcher,
-}: UseDataContextProps = {}): DataContextInterface => {
+}: UseDataContextProps = emptyObj): DataContextInterface => {
   const defaultContext = useContext(DataContext);
+
+  defaultContext.missingProvider && missingProviderHandler(DataContext.displayName, callerName);
 
   return {
     ...defaultContext,
-    fetchData: localFetcher || defaultContext.fetchData,
+    fetchData: localFetcher || defaultContext?.fetchData,
   };
 };
 
+/** HOC for data access
+ * @param {ComponentType} Component the component you want to provide Arranger data to.
+ * @returns {DataContextInterface} data object
+ */
 export const withData = <Props extends object>(Component: ComponentType<Props>) => {
+  const callerName = getComponentDisplayName(Component);
   const ComponentWithData = (props: Props) => {
     const dataProps = {
       ...props,
-      ...useDataContext(),
-    } as Props;
+      ...useDataContext({ callerName }),
+    };
 
     return <Component {...dataProps} />;
   };
 
-  ComponentWithData.displayName = `WithArrangerTheme(${getComponentDisplayName(Component)})`;
+  ComponentWithData.displayName = `WithArrangerData(${callerName})`;
 
   return ComponentWithData;
 };

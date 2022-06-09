@@ -1,15 +1,15 @@
-import { capitalize, flatMap } from 'lodash';
+import { capitalize, flatMap, isArray } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
-import { head, isArray } from 'lodash';
 
 import { withQuery } from '../../Query';
 import splitString from '../../utils/splitString';
 
 const isValidValue = (value) => value?.trim()?.length > 1;
 
-export const decorateFieldWithColumnsState = ({ columnsState, field }) => {
-  const columnsStateField = columnsState?.columns?.find((y) => y.field === field);
+export const decorateFieldWithColumnsState = ({ tableConfigs, field }) => {
+  const columnsStateField = tableConfigs?.columns?.find((y) => y.field === field);
+
   return columnsStateField
     ? {
         ...columnsStateField,

@@ -3,9 +3,10 @@ import cx from 'classnames';
 
 import { AggsState, AggsQuery } from '@/Aggs';
 import aggComponents from '@/Aggs/aggComponentsMap';
-import noopFn, { emptyArrFn, emptyObjFn } from '@/utils/noopFns';
+import { withData } from '@/DataContext';
+import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
 
-const BaseWrapper = ({ className, theme, ...props }) => (
+const BaseWrapper = ({ className, ...props }) => (
   <section {...props} className={cx('aggregations', className)} />
 );
 
@@ -21,7 +22,7 @@ export const AggregationsListDisplay = ({
   customFacets = [],
   data,
   getCustomItems = emptyArrFn, // ({ aggs }) => Array<{index: number, component: Component | Function}>
-  graphqlField,
+  documentType,
   onValueChange = noopFn,
   setSQON,
   sqon,
@@ -31,8 +32,10 @@ export const AggregationsListDisplay = ({
     aggs
       .map((agg) => ({
         ...agg,
-        ...data[graphqlField].aggregations[agg.field],
-        ...data[graphqlField].extended.find((x) => x.field.replace(/\./g, '__') === agg.field),
+        ...data?.data?.[documentType]?.aggregations?.[agg?.field],
+        ...data?.data?.[documentType]?.configs?.extended?.find(
+          (x) => x.field.replace(/\./g, '__') === agg.field,
+        ),
         onValueChange: ({ sqon, value }) => {
           onValueChange(value);
           setSQON(sqon);
@@ -82,7 +85,7 @@ export const AggregationsList = ({
   customFacets = [],
   debounceTime = 300,
   getCustomItems,
-  graphqlField,
+  documentType,
   onValueChange = noopFn,
   setSQON,
   sqon,
@@ -91,7 +94,7 @@ export const AggregationsList = ({
     aggs={aggs}
     apiFetcher={apiFetcher}
     debounceTime={debounceTime}
-    index={graphqlField}
+    index={documentType}
     render={({ data }) =>
       AggregationsListDisplay({
         aggs,
@@ -100,7 +103,7 @@ export const AggregationsList = ({
         customFacets,
         data,
         getCustomItems,
-        graphqlField,
+        documentType,
         onValueChange,
         setSQON,
         sqon,
@@ -122,6 +125,7 @@ export const AggregationsList = ({
  *       },
  *     },
  *   ]
+ * @param {SQONType} sqon
  */
 const Aggregations = ({
   apiFetcher,
@@ -134,21 +138,20 @@ const Aggregations = ({
   },
   containerRef = null,
   customFacets = [],
-  graphqlField = '',
+  documentType = '',
   onValueChange = noopFn,
-  setSQON,
-  sqon,
-  style = {},
+  setSQON = noopFn,
+  sqon = null,
+  style = emptyObj,
   Wrapper = BaseWrapper,
 }) => {
   return (
     <Wrapper className={className} style={style}>
       <AggsState
         apiFetcher={apiFetcher}
-        graphqlField={graphqlField}
+        documentType={documentType}
         render={(aggsState) => {
           const aggs = aggsState.aggs.filter((agg) => agg.show);
-
           return (
             <AggregationsList
               aggs={aggs}
@@ -156,7 +159,7 @@ const Aggregations = ({
               componentProps={componentProps}
               containerRef={containerRef}
               customFacets={customFacets}
-              graphqlField={graphqlField}
+              documentType={documentType}
               onValueChange={onValueChange}
               setSQON={setSQON}
               sqon={sqon}
@@ -169,4 +172,4 @@ const Aggregations = ({
   );
 };
 
-export default Aggregations;
+export default withData(Aggregations);

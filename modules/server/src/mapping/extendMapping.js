@@ -2,8 +2,24 @@ import { startCase } from 'lodash';
 
 import flattenMapping from './flattenMapping';
 
+export const extendColumns = (tableConfig = {}, extendedFromFile = []) => ({
+  ...tableConfig,
+  columns: tableConfig?.columns?.map((column) => {
+    const fieldObj = extendedFromFile?.find((obj) => obj.field === column?.field);
+
+    return {
+      ...column,
+      accessor: column.accessor ?? column.field,
+      displayName: column.displayName ?? fieldObj?.displayName ?? '* ' + column.field,
+      displayValues: column.displayValues ?? fieldObj?.displayValues ?? {},
+      isArray: fieldObj?.isArray ?? false,
+      type: column?.type ?? fieldObj?.displayType ?? fieldObj?.type,
+    };
+  }),
+});
+
 export const extendFields = (mappingFields, extendedFromFile) => {
-  return flattenMapping(mappingFields).map(({ field = '', type = '', ...rest }, index) => {
+  return flattenMapping(mappingFields)?.map(({ field = '', type = '', ...rest }) => {
     const {
       active = false,
       displayName = startCase(field.replace(/\./g, ' ')),

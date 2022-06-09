@@ -1,5 +1,6 @@
-import express from 'express';
 import zlib from 'zlib';
+
+import express from 'express';
 import tar from 'tar-stream';
 import { defaults } from 'lodash';
 
@@ -56,6 +57,14 @@ const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
     }),
   ).then(() => pack.finalize());
 
+  /** NOTE from zlib's maintainers:
+   * (This library) is only intended for small (< 128 KB) data
+   * that you already have buffered. It is not meant for input/output streams.
+   * -- Found at: https://www.npmjs.com/package/zlib
+   *
+   * TODO: may have to find one that manages larger buffer sizes.
+   * Must do testing for this
+   */
   return pack.pipe(zlib.createGzip());
 };
 
@@ -92,10 +101,10 @@ export default function () {
   router.use(express.urlencoded({ extended: true }));
 
   router.post('/', async function (req, res) {
-    const { params } = req.body;
-    console.time('download');
-
     try {
+      console.time('download');
+
+      const { params } = req.body;
       const { output, responseFileName, contentType } = await dataStream({
         ctx: req.context,
         params: JSON.parse(params),
@@ -107,6 +116,9 @@ export default function () {
         console.timeEnd('download');
       });
     } catch (err) {
+      console.error(err);
+      console.timeEnd('download');
+
       res.status(400).send(err?.message || err?.details || 'An unknown error occurred.');
     }
   });

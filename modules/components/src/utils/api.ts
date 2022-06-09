@@ -5,29 +5,38 @@ import { APIFetcherFn } from '@/DataContext/types';
 
 import { ARRANGER_API } from './config';
 import { addDownloadHttpHeaders } from './download';
+import { emptyObj } from './noops';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 
-const defaultApiFetcher: APIFetcherFn = ({
-  endpoint = '',
-  body,
-  headers = {},
-  method = 'POST',
-  url = ARRANGER_API,
-}) =>
-  axios(urlJoin(url, endpoint), {
+// TODO: create a different cache per context/caller;
+const cache = new Map();
+
+const defaultApiFetcher: APIFetcherFn = async (args) => {
+  const key = JSON.stringify(args);
+
+  if (cache.has(key)) return cache.get(key);
+
+  const { endpoint = '', body, headers = emptyObj, method = 'POST', url = ARRANGER_API } = args;
+
+  const response = await axios(urlJoin(url, endpoint), {
     data: JSON.stringify(body),
     headers: { ...alwaysSendHeaders, ...headers },
     method,
   });
 
+  cache.set(key, response);
+
+  return response;
+};
+
 export const graphql = (body: unknown) => defaultApiFetcher({ endpoint: 'graphql', body });
 
 export const fetchExtendedMapping = ({
-  graphqlField,
+  documentType,
   apiFetcher = defaultApiFetcher,
 }: {
-  graphqlField: string;
+  documentType: string;
   apiFetcher: APIFetcherFn;
 }) =>
   apiFetcher({
@@ -35,14 +44,14 @@ export const fetchExtendedMapping = ({
     body: {
       query: `query extendedMapping
         {
-          ${graphqlField}{
+          ${documentType}{
             extended
           }
         }
       `,
     },
   }).then((response) => ({
-    extendedMapping: response.data[graphqlField].extended,
+    extendedMapping: response.data[documentType].extended,
   }));
 
 export const addHeaders = (headers: Headers) => {

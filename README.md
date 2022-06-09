@@ -85,14 +85,14 @@ A bit more friendly "quickstart", if you just want to get things started
 # ES_USER=elastic ES_PASS=myelasticpassword docker-compose -f docker-compose.yml up -d -build
 
 # Alternatively, you could start the services separately, like so:
-  make startES # Elasticsearch
-  make startServer # Arranger Server
+  make start-es # Elasticsearch
+  make start-server # Arranger Server
 
 # Note: The ES_* environment values may be customized when running your own Arranger instance. They can be found atop the `Makefile`.
 
 ---
 # Afterwards, in another bash process, you may seed an example/mock file_centric index:
-  make populate-es
+  make seed-es
 
 # ^^^^ ^^^^^^^ which runs the following command behind the scenes:
 # ./docker/elasticsearch/load-es-data.sh ./docker/elasticsearch elastic myelasticpassword

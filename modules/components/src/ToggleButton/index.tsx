@@ -3,7 +3,7 @@ import cx from 'classnames';
 
 import Button from '@/Button';
 import { useThemeContext } from '@/ThemeContext';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import Props, { ToggleButtonThemeProps } from './types';
 
@@ -29,7 +29,7 @@ const ToggleButton = ({
     fontColor: customFontColor,
     fontSize: customFontSize,
     OptionCSS: customOptionCSS,
-  } = {} as ToggleButtonThemeProps,
+  } = emptyObj as ToggleButtonThemeProps,
 }: Props) => {
   const {
     colors,
@@ -37,25 +37,25 @@ const ToggleButton = ({
       Aggregations: {
         ToggleButton: {
           activeBackground: themeActiveBackground = colors?.grey?.[200],
-          activeBorderColor: themeActiveBorderColor = undefined,
-          activeFontColor: themeActiveFontColor = undefined,
-          activeFontSize: themeActiveFontSize = undefined,
+          activeBorderColor: themeActiveBorderColor,
+          activeFontColor: themeActiveFontColor,
+          activeFontSize: themeActiveFontSize,
           background: themeBackground = colors?.grey?.[50],
           borderRadius: themeBorderRadius = '0.9rem 50%',
           borderColor: themeBorderColor = colors?.grey?.[600],
           className: themeClassName = '',
-          css: themeCSS = undefined,
+          css: themeCSS,
           disabledBackground: themeDisabledBackground = colors?.grey?.[200],
-          disabledBorderColor: themeDisabledBorderColor = undefined,
+          disabledBorderColor: themeDisabledBorderColor,
           disabledFontColor: themeDisabledFontColor = colors?.grey?.[700],
-          disabledFontSize: themeDisabledFontSize = undefined,
-          fontColor: themeFontColor = undefined,
+          disabledFontSize: themeDisabledFontSize,
+          fontColor: themeFontColor,
           fontSize: themeFontSize = '0.9rem',
-          OptionCSS: themeOptionCSS = undefined,
-        } = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+          OptionCSS: themeOptionCSS,
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'ToggleButton' });
 
   return (
     <div

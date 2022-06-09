@@ -2,33 +2,12 @@ import { Component } from 'react';
 import { debounce, sortBy } from 'lodash';
 
 import { withData } from '@/DataContext';
-
-let columnFields = `
-  state {
-    type
-    keyField
-    defaultSorted {
-      id
-      desc
-    }
-    columns {
-      field
-      accessor
-      show
-      type
-      sortable
-      canChangeShow
-      query
-      jsonPath
-    }
-  }
-`;
+import { columnStateFields } from '@/DataContext/dataQueries';
 
 class ColumnsState extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      config: null,
       toggled: {},
     };
   }
@@ -51,36 +30,16 @@ class ColumnsState extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(next) {
-    if (this.props.graphqlField !== next.graphqlField) {
+    if (this.props.documentType !== next.documentType) {
       this.fetchColumnsState(next);
     }
   }
 
-  fetchColumnsState = debounce(async ({ graphqlField }) => {
-    const { apiFetcher } = this.props;
+  fetchColumnsState = debounce(async () => {
     try {
-      let { data } = await apiFetcher({
-        endpoint: `/graphql/columnsStateQuery`,
-        body: {
-          query: `query columnsStateQuery
-            {
-              ${graphqlField} {
-                columnsState {
-                  ${columnFields}
-                }
-              }
-            }
-          `,
-        },
-      });
-
-      const config = data[graphqlField].columnsState.state;
       const toggled = this.getStoredToggled();
 
-      this.setState({
-        config,
-        toggled,
-      });
+      this.setState({ toggled });
     } catch (e) {
       console.warn(e);
       // this.setState({ })
@@ -88,7 +47,7 @@ class ColumnsState extends Component {
   }, 300);
 
   save = debounce(async (state) => {
-    const { apiFetcher } = this.props;
+    const { apiFetcher, documentType } = this.props;
     let { data } = await apiFetcher({
       endpoint: `/graphql`,
       body: {
@@ -97,9 +56,9 @@ class ColumnsState extends Component {
         mutation($state: JSON!) {
           saveColumnsState(
             state: $state
-            graphqlField: "${this.props.graphqlField}"
+            documentType: "${documentType}"
           ) {
-            ${columnFields}
+            ${columnStateFields}
           }
         }
       `,
@@ -153,13 +112,14 @@ class ColumnsState extends Component {
   };
 
   saveOrder = (orderedFields) => {
-    const columns = this.state.config.columns;
+    let { tableConfigs = { columns: [] } } = this.props;
+    const { columns } = tableConfigs;
     if (
       orderedFields.every((field) => columns.find((column) => column.field === field)) &&
       columns.every((column) => orderedFields.find((field) => field === column.field))
     ) {
       this.save({
-        ...this.state.config,
+        ...tableConfigs,
         columns: sortBy(columns, ({ field }) => orderedFields.indexOf(field)),
       });
     } else {
@@ -168,33 +128,32 @@ class ColumnsState extends Component {
   };
 
   render() {
-    let { extendedMapping = [] } = this.props;
-    let { config, toggled } = this.state;
-    return config
-      ? this.props.render({
-          loading: false,
-          update: this.update,
-          add: this.add,
-          toggle: this.toggle,
-          toggleMultiple: this.toggleMultiple,
-          saveOrder: this.saveOrder,
-          state: {
-            ...config,
-            columns: config.columns.map((column) => {
-              const extendedField = extendedMapping.find((e) => e.field === column.field);
+    let { tableConfigs = { columns: [] }, isLoadingConfigs } = this.props;
+    let { toggled } = this.state;
 
-              return {
-                ...column,
-                Header: extendedField?.displayName || column.field,
-                extendedType: extendedField?.type,
-                show: column.field in toggled ? toggled[column.field] : column.show,
-                extendedDisplayValues: extendedField?.displayValues,
-              };
-            }),
-            defaultColumns: config.columns.filter((column) => column.show),
+    return this.props.render(
+      isLoadingConfigs
+        ? { loading: true, state: {} }
+        : {
+            loading: false,
+            update: this.update,
+            add: this.add,
+            toggle: this.toggle,
+            toggleMultiple: this.toggleMultiple,
+            saveOrder: this.saveOrder,
+            state: {
+              ...tableConfigs,
+              columns: tableConfigs?.columns?.map((column) => {
+                return {
+                  ...column,
+                  Header: column.displayName,
+                  show: column.field in toggled ? toggled[column.field] : column.show,
+                };
+              }),
+              defaultColumns: tableConfigs?.columns?.filter((column) => column.show),
+            },
           },
-        })
-      : this.props.render({ loading: true, state: { config: null } });
+    );
   }
 }
 
