@@ -10,14 +10,16 @@ export default ({ api, documentType, gqlPath }) => {
         query: print(gql`
           {
             ${documentType} {
-              extended
+              configs {
+                extended
+              }
             }
           }
         `),
       },
     });
 
-    expect(data?.data?.[documentType]?.extended).to.be.not.empty;
+    expect(data?.data?.[documentType]?.configs?.extended).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -39,19 +41,20 @@ export default ({ api, documentType, gqlPath }) => {
     expect(data?.errors).to.be.undefined;
   });
 
-  it('reads aggsState properly', async () => {
+  it('reads aggregations properly', async () => {
     const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
           {
             ${documentType} {
-              aggsState {
-                timestamp
-                state {
-                  field
-                  active
-                  show
+              configs {
+                facets {
+                  aggregations {
+                    field
+                    active
+                    show
+                  }
                 }
               }
             }
@@ -60,19 +63,19 @@ export default ({ api, documentType, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[documentType]?.aggsState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.configs?.facets?.aggregations).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
-  it('reads columns state properly', async () => {
+  it('reads table configs properly', async () => {
     const { data } = await api.post({
       endpoint: gqlPath,
       body: {
         query: print(gql`
           {
             ${documentType} {
-              columnsState {
-                state {
+              configs {
+                table {
                   keyField
                 }
               }
@@ -82,7 +85,7 @@ export default ({ api, documentType, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[documentType]?.columnsState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.configs?.table).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 
@@ -93,8 +96,8 @@ export default ({ api, documentType, gqlPath }) => {
         query: print(gql`
           {
             ${documentType} {
-              matchBoxState {
-                state {
+              configs {
+                matchbox {
                   field
                 }
               }
@@ -104,7 +107,7 @@ export default ({ api, documentType, gqlPath }) => {
       },
     });
 
-    expect(data?.data?.[documentType]?.matchBoxState?.state).to.be.not.empty;
+    expect(data?.data?.[documentType]?.configs?.matchbox).to.be.not.empty;
     expect(data?.errors).to.be.undefined;
   });
 };

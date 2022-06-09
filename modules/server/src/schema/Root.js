@@ -8,7 +8,7 @@ import { createConnectionResolvers, saveSet, mappingToFields } from '../mapping'
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
-import { typeDefs as StateTypeDefs } from './State';
+import { typeDefs as ConfigsTypeDefs } from './Configs';
 
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
   scalar JSON
@@ -66,13 +66,13 @@ export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
   AggregationsTypeDefs,
   SetTypeDefs,
   SortTypeDefs,
-  StateTypeDefs,
+  ConfigsTypeDefs,
   ...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) => {
+export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter }) => {
   return {
     JSON: GraphQLJSON,
     Date: GraphQLDate,
@@ -96,10 +96,11 @@ export let resolvers = ({ types, rootTypes, scalarTypes, getServerSideFilter }) 
       (acc, [key, type]) => ({
         ...acc,
         ...createConnectionResolvers({
-          type,
           createStateResolvers: 'createState' in type ? type.createState : true,
-          Parallel,
+          enableAdmin,
           getServerSideFilter,
+          Parallel,
+          type,
         }),
       }),
       {},

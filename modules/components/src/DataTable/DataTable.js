@@ -2,7 +2,11 @@ import React from 'react';
 import { isEqual } from 'lodash';
 import urlJoin from 'url-join';
 
+import { withData } from '@/DataContext';
+import noopFn from '@/utils/noops';
+
 import { ARRANGER_API } from '../utils/config';
+
 import { Table, TableToolbar } from './';
 
 const STORED_PROPS = {
@@ -16,7 +20,7 @@ class DataTableWithToolbar extends React.Component {
     super(props);
 
     let pageSize = 20;
-    let sorted = props.config.defaultSorted || [];
+    let sorted = props.config.defaultSorting || [];
     let selectedTableRows = [];
 
     // Read initial config settings from session storage, if enabled:
@@ -32,7 +36,7 @@ class DataTableWithToolbar extends React.Component {
       );
       if (storedSorted) {
         sorted = storedSorted;
-        this.props.config.defaultSorted = sorted;
+        this.props.config.defaultSorting = sorted;
       }
       if (storedPageSize) {
         pageSize = storedPageSize;
@@ -87,6 +91,7 @@ class DataTableWithToolbar extends React.Component {
       customActions = null,
       customHeaderContent = null,
       data = null,
+      documentType,
       downloadUrl = '',
       enableDropDownControls = false,
       enableSelectedTableRowsExporterFilter,
@@ -103,13 +108,13 @@ class DataTableWithToolbar extends React.Component {
       keepSelectedOnPageChange = false,
       loading = null,
       maxPagesOptions,
-      onColumnsChange = () => {},
-      onFilterChange = () => {},
-      onMultipleColumnsChange = () => {},
-      onSortedChange = () => {},
+      onColumnsChange = noopFn,
+      onFilterChange = noopFn,
+      onMultipleColumnsChange = noopFn,
+      onSortedChange = noopFn,
       sessionStorage,
       selectedTableRows = [],
-      setSelectedTableRows = () => {},
+      setSelectedTableRows = noopFn,
       showFilterInput = true,
       sqon,
       tableStyle,
@@ -158,6 +163,7 @@ class DataTableWithToolbar extends React.Component {
           type={config.type}
         />
         <Table
+          documentType={documentType}
           style={tableStyle}
           propsData={data}
           sqon={sqon}
@@ -179,7 +185,7 @@ class DataTableWithToolbar extends React.Component {
             this.storeProperty(STORED_PROPS.SORT_ORDER, sorted);
           }}
           defaultPageSize={pageSize}
-          defaultSorted={sorted}
+          defaultSorting={sorted}
           sorted={sorted}
           loading={loading}
           maxPagesOptions={maxPagesOptions}
@@ -193,4 +199,4 @@ class DataTableWithToolbar extends React.Component {
   }
 }
 
-export default DataTableWithToolbar;
+export default withData(DataTableWithToolbar);

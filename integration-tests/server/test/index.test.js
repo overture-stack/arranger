@@ -17,7 +17,7 @@ const mapppings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
-const esIndex = process.env.ES_INDEX || 'models';
+const esIndex = process.env.ES_INDEX || 'models_1.0';
 const esPwd = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const port = process.env.PORT || 5678;
@@ -57,7 +57,7 @@ describe('@overture-stack/arranger-server', () => {
 
     await esClient.indices.create({
       index: esIndex,
-      body: mapppings,
+      ...mapppings,
     });
 
     for (let datum of data) {
@@ -71,10 +71,11 @@ describe('@overture-stack/arranger-server', () => {
 
     try {
       const router = await Arranger({
+        // needed to see the mapping
+        enableAdmin: true,
         // This may be useful when troubleshooting tests
         enableLogs: true,
         esHost,
-        enableAdmin: false,
         getServerSideFilter: () => ({
           op: 'not',
           content: [

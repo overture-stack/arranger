@@ -1,8 +1,10 @@
 import React from 'react';
 import { isEqual } from 'lodash';
 
-import defaultApiFetcher from '../utils/api';
-import esToAggTypeMap from '../utils/esToAggTypeMap';
+import defaultApiFetcher from '@/utils/api';
+import esToAggTypeMap from '@/utils/esToAggTypeMap';
+import noopFn, { emptyObj } from '@/utils/noops';
+
 import AdvancedFacetView from './';
 
 const fetchGraphqlQuery = async ({ query, variables = null, apiFetcher = defaultApiFetcher }) =>
@@ -19,10 +21,12 @@ const fetchMappingData = async (fetchConfig) =>
     query: `{
       ${fetchConfig.index} {
         mapping,
-        extended,
-        aggsState {
-          state {
-            field, active
+        configs {
+          extended,
+          facets {
+            aggregations {
+              field, active
+            }
           }
         }
       }
@@ -122,62 +126,67 @@ export default class LiveAdvancedFacetView extends React.Component {
     this.state = {
       mapping: {},
       extended: [],
-      aggsState: {},
+      facets: {},
       aggregations: null,
       sqon: sqon || null,
     };
     this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
   }
 
-  filterExtendedForFetchingAggs = ({ extended, aggsState }) =>
-    extended.filter(
+  filterExtendedForFetchingAggs = ({ extended, facets }) =>
+    extended?.filter(
       (e) =>
         !this.blackListedAggTypes.includes(e.type) &&
-        aggsState.state.find((s) => s.field.split('__').join('.') === e.field)?.active,
+        facets?.aggregations?.find((s) => s.field.split('__').join('.') === e.field)?.active,
     );
 
   componentDidMount() {
     const { index, apiFetcher } = this.props;
     const { sqon } = this.state;
     const fetchConfig = { index, sqon, apiFetcher };
-    fetchMappingData(fetchConfig).then(({ extended, mapping, aggsState }) =>
-      fetchAggregationData({
-        extended: this.filterExtendedForFetchingAggs({ extended, aggsState }),
+    fetchMappingData(fetchConfig).then(({ configs: { extended, facets } = emptyObj, mapping }) => {
+      return fetchAggregationData({
+        extended: this.filterExtendedForFetchingAggs({ extended, facets }),
         ...fetchConfig,
       }).then(({ aggregations }) => {
         const { fieldTypesToExclude = defaultFieldTypesToExclude } = this.props;
+
         this.setState({
           mapping: removeFieldTypesFromMapping({
             mapping,
             extended,
             fieldTypesToExclude,
           }),
-          aggsState,
+          facets,
           extended,
           aggregations,
         });
-      }),
-    );
+      });
+    });
   }
+
   UNSAFE_componentWillReceiveProps({ sqon }) {
     if (!isEqual(sqon, this.state.sqon)) {
       this.setState({ sqon });
     }
   }
+
   onSqonFieldChange = ({ sqon }) => {
-    const { onSqonChange = () => {} } = this.props;
-    const { aggsState } = this.state;
+    const { onSqonChange = noopFn } = this.props;
+    const { extended, facets } = this.state;
+
     fetchAggregationData({
       ...this.props,
       extended: this.filterExtendedForFetchingAggs({
-        extended: this.state.extended,
-        aggsState,
+        extended,
+        facets,
       }),
       sqon,
     }).then(({ aggregations }) =>
       this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
     );
   };
+
   render() {
     const { fieldTypesToExclude = defaultFieldTypesToExclude, ...props } = this.props;
     return (

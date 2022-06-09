@@ -3,17 +3,20 @@ import { debounce } from 'lodash';
 import pluralize from 'pluralize';
 import { css } from '@emotion/react';
 
+import Button from '@/Button';
+import { useDataContext } from '@/DataContext';
+import DropDown, { MultiSelectDropDown } from '@/DropDown';
+import MetaMorphicChild from '@/MetaMorphicChild';
 import { currentFilterValue } from '@/SQONViewer/utils';
+import { isPlural } from '@/Table/Counter/helpers';
+import TextFilter, { generateNextSQON } from '@/TextFilter';
 import { useThemeContext } from '@/ThemeContext';
-
-import DropDown, { MultiSelectDropDown } from '../../DropDown';
-import TextFilter, { generateNextSQON } from '../../TextFilter';
-import download from '../../utils/download';
-import stringCleaner from '../../utils/stringCleaner';
+import download from '@/utils/download';
+import { emptyObj } from '@/utils/noops';
+import stringCleaner from '@/utils/stringCleaner';
 
 import exporterProcessor from './helpers';
 import './Toolbar.css';
-import { useDataContext } from '@/DataContext';
 
 const enhance = compose(
   withProps(({ columns }) => ({
@@ -83,17 +86,20 @@ const TableToolbar = ({
   selectedTableRows = [],
   setFilterVal,
   showFilterInput = true,
-  sqon = {},
+  sqon = null,
   style,
   total = propsData?.total || 0,
   transformParams = (params) => params,
 }) => {
-  const { documentType } = useDataContext();
-  const { components: { Table: { DropDown: themeDropDownProps = {} } = {} } = {} } =
-    useThemeContext();
+  const { documentType } = useDataContext({ callerName: 'OldTableToolbar' });
+  const {
+    components: { Table: { DropDown: themeDropDownProps = emptyObj } = emptyObj } = emptyObj,
+  } = useThemeContext({ callerName: 'OldTableToolBar' });
 
-  const isPlural =
-    total > 1 && pageSize > 1 && (Math.ceil(total / pageSize) !== page || total % pageSize > 1);
+  const oneOrManyDocuments = pluralize(
+    documentType,
+    isPlural({ total, pageSize, currentPage: page }) ? 2 : 1,
+  );
 
   const { singleExporter, exporterArray, multipleExporters } = exporterProcessor(
     exporter,
@@ -130,7 +136,7 @@ const TableToolbar = ({
           ).toLocaleString()}`}
         </span>{' '}
         <span className="ofTotal">of {total?.toLocaleString()}</span>{' '}
-        <span className="type">{pluralize(documentType, isPlural ? 2 : 1)}</span>
+        <span className="type">{oneOrManyDocuments}</span>
       </div>
       {customHeaderContent || null}
 
@@ -152,12 +158,14 @@ const TableToolbar = ({
         {allowTogglingColumns &&
           (enableDropDownControls ? (
             <MultiSelectDropDown
+              allowControls
+              allowSelection
               buttonAriaLabelClosed={`Open column selection menu`}
               buttonAriaLabelOpen={`Close column selection menu`}
               itemSelectionLegend={`Select columns to display`}
               selectAllAriaLabel={`Select all columns`}
               resetToDefaultAriaLabel={`Reset to default columns`}
-              itemToString={(i) => i.header}
+              itemToString={(i) => i.displayName}
               items={canChangeShowColumns}
               defaultColumns={defaultColumns}
               onChange={(item) => {
@@ -171,14 +179,14 @@ const TableToolbar = ({
               onMultipleChange={(changes) => {
                 onMultipleColumnsChange(changes);
               }}
-              {...themeDropDownProps}
+              theme={themeDropDownProps}
             >
               {columnDropdownText}
             </MultiSelectDropDown>
           ) : (
             <DropDown
               aria-label={`Select columns`}
-              itemToString={(i) => i.header}
+              itemToString={(i) => i.displayName}
               items={canChangeShowColumns}
               onChange={(item) => {
                 setFilterVal('');
@@ -188,7 +196,7 @@ const TableToolbar = ({
                 });
                 onColumnsChange({ ...item, show: !item.show });
               }}
-              {...themeDropDownProps}
+              theme={themeDropDownProps}
             >
               {columnDropdownText}
             </DropDown>
@@ -200,9 +208,7 @@ const TableToolbar = ({
               aria-label={`Download options`}
               hasSelectedRows={hasSelectedRows}
               items={exporterArray}
-              itemToString={(i) =>
-                typeof i.exporterLabel === 'function' ? <i.exporterLabel /> : i.exporterLabel
-              }
+              itemToString={(i) => <MetaMorphicChild>{i.exporterLabel}</MetaMorphicChild>}
               onChange={({
                 exporterColumns,
                 exporterLabel,
@@ -237,7 +243,7 @@ const TableToolbar = ({
                 )
               }
               singleSelect={true}
-              {...themeDropDownProps}
+              theme={themeDropDownProps}
             >
               {exporterLabel}
             </DropDown>
@@ -246,8 +252,7 @@ const TableToolbar = ({
           // else, use a custom function if any is given, or use the default saveTSV if the flag is on
           singleExporter && (
             <div className="buttonWrapper">
-              <button
-                disabled={exporter?.[0]?.requiresRowSelection && !hasSelectedRows}
+              <Button
                 css={css`
                   display: flex;
                   min-height: 16;
@@ -257,6 +262,7 @@ const TableToolbar = ({
                     cursor: pointer;
                   }
                 `}
+                disabled={exporter?.[0]?.requiresRowSelection && !hasSelectedRows}
                 onClick={() => {
                   (exporter?.[0]?.requiresRowSelection && !hasSelectedRows) ||
                     singleExporter(
@@ -278,7 +284,7 @@ const TableToolbar = ({
                 }}
               >
                 {exportTSVText}
-              </button>
+              </Button>
             </div>
           )
         )}

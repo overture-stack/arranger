@@ -5,15 +5,15 @@ import cx from 'classnames';
 import { TransparentButton } from '@/Button';
 import { ArrowIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeContext';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 const AggsWrapper = ({
-  actionIcon: { Icon: CustomActionIcon, onClick: customActionIconHandler } = {},
+  actionIcon: { Icon: CustomActionIcon, onClick: customActionIconHandler } = emptyObj,
   children,
   className: aggTypeCustomClassName,
   collapsible: customCollapsible,
   componentRef,
-  dataFields = {},
+  dataFields = emptyObj,
   displayName,
   filters,
   headerRef,
@@ -36,22 +36,22 @@ const AggsWrapper = ({
           headerFontColor: themeAggsHeaderFontColor = colors?.grey?.[900],
           headerSticky: themeAggsHeaderSticky = false,
           ...aggsGroupTheme
-        } = {},
+        } = emptyObj,
         ActionIcon: {
           Icon: ThemeActionIcon,
           onClick: themeActionIconHandler = noopFn,
           size: themeActionIconSize = '14',
           ...actionIconTheme
-        } = {},
+        } = emptyObj,
         TreeJointIcon: {
           className: themeTreeJointIconClassName,
           size: themeTreeJointIconSize = 9,
           Icon: ThemeTreeJointIcon = ArrowIcon,
           ...treeJointIconTheme
-        } = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'AggsWrapper' });
 
   const ActionIcon = CustomActionIcon || ThemeActionIcon;
   const TreeJointIcon = ThemeTreeJointIcon;

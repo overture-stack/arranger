@@ -10,6 +10,9 @@ export default {
       analysis_id: {
         type: 'keyword',
       },
+      analysis_tools: {
+        type: 'keyword',
+      },
       analysis_type: {
         type: 'keyword',
       },

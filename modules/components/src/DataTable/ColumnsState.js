@@ -112,14 +112,14 @@ class ColumnsState extends Component {
   };
 
   saveOrder = (orderedFields) => {
-    let { columnsState = { columns: [] } } = this.props;
-    const { columns } = columnsState;
+    let { tableConfigs = { columns: [] } } = this.props;
+    const { columns } = tableConfigs;
     if (
       orderedFields.every((field) => columns.find((column) => column.field === field)) &&
       columns.every((column) => orderedFields.find((field) => field === column.field))
     ) {
       this.save({
-        ...columnsState,
+        ...tableConfigs,
         columns: sortBy(columns, ({ field }) => orderedFields.indexOf(field)),
       });
     } else {
@@ -128,7 +128,7 @@ class ColumnsState extends Component {
   };
 
   render() {
-    let { columnsState = { columns: [] }, isLoadingConfigs } = this.props;
+    let { tableConfigs = { columns: [] }, isLoadingConfigs } = this.props;
     let { toggled } = this.state;
 
     return this.props.render(
@@ -142,15 +142,15 @@ class ColumnsState extends Component {
             toggleMultiple: this.toggleMultiple,
             saveOrder: this.saveOrder,
             state: {
-              ...columnsState,
-              columns: columnsState?.columns?.map((column) => {
+              ...tableConfigs,
+              columns: tableConfigs?.columns?.map((column) => {
                 return {
                   ...column,
-                  Header: column.header,
+                  Header: column.displayName,
                   show: column.field in toggled ? toggled[column.field] : column.show,
                 };
               }),
-              defaultColumns: columnsState?.columns?.filter((column) => column.show),
+              defaultColumns: tableConfigs?.columns?.filter((column) => column.show),
             },
           },
     );

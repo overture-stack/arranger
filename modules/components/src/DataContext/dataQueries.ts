@@ -1,16 +1,29 @@
-export const columnStateFields = `columnsState {
-  state {
-    keyField
-    defaultSorted {
-      id
-      desc
+export const downloadsConfigs = `
+  downloads {
+    allowCustomMaxRows
+    maxRows
+  }
+`;
+
+export const facetsConfigs = `
+  facets {
+    aggregations {
+      field
+      show
+      active
     }
+  }
+`;
+
+export const tableConfigs = `
+  table {
     columns {
       accessor
       canChangeShow
+      displayFormat
+      displayName
       displayValues
       field
-      header
       id
       isArray
       jsonPath
@@ -19,13 +32,23 @@ export const columnStateFields = `columnsState {
       sortable
       type
     }
+    keyField
+    defaultSorting {
+      desc
+      field
+    }
   }
-}`;
+`;
 
 export const componentConfigsQuery = (documentType: string, queryName = '') =>
   `query ${queryName} {
     ${documentType} {
-      ${columnStateFields}
-      extended
+      configs{
+        ${downloadsConfigs}
+        extended
+        ${facetsConfigs}
+        ${tableConfigs}
+      }
+      mapping
     }
   }`;

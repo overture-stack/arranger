@@ -7,29 +7,33 @@ import SQON from 'sqon-builder';
 import { legacyProps } from '@/Arranger/Arranger';
 import { CustomThemeType, BaseThemeInterface } from '@/ThemeContext/types';
 
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+
 export interface ColumnMappingInterface {
-  accessor?: string;
+  accessor: string;
   canChangeShow: boolean;
+  displayFormat?: string;
+  displayName?: string;
   displayValues?: Record<string, string>;
   field: string;
-  header?: string;
-  id?: string | null;
+  id: string;
   isArray?: boolean;
   jsonPath?: string | null;
   query?: string | null;
   show: boolean;
   sortable: boolean;
-  type: string;
+  type: DisplayType;
 }
 
-export interface ColumnsStateInterface {
-  type: string;
-  keyField: string;
-  defaultSorted: {
-    id: string;
-    desc: boolean;
-  };
+export interface ColumnSortingInterface {
+  desc: boolean;
+  field: string;
+}
+
+export interface TableConfigsInterface {
   columns: ColumnMappingInterface[];
+  defaultSorting: ColumnSortingInterface[];
+  keyField: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -42,13 +46,13 @@ export interface ExtendedMappingInterface {
   primaryKey: boolean;
   quickSearchEnabled: boolean;
   rangeStep: number | null | undefined;
-  type: string;
+  type: DisplayType;
   unit: string | null;
 }
 
 export interface ConfigsInterface {
-  columnsState: ColumnsStateInterface;
   extendedMapping: ExtendedMappingInterface[];
+  tableConfigs: TableConfigsInterface;
 }
 
 export type APIFetcherFn = (options: {
@@ -82,17 +86,17 @@ export interface DataProviderProps<Theme = BaseThemeInterface> {
 export type SQONType = typeof SQON | null;
 
 export interface DataContextInterface {
-  columnsState: ColumnsStateInterface;
   documentType: string;
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;
   isLoadingConfigs: boolean;
-  selectedTableRows: string[];
-  setSelectedTableRows: Dispatch<SetStateAction<string[]>>;
+  missingProvider?: string;
   sqon: SQONType;
   setSQON: Dispatch<SetStateAction<SQONType>>;
+  tableConfigs: TableConfigsInterface;
 }
 
 export interface UseDataContextProps {
+  callerName?: string;
   customFetcher?: FetchDataFn;
 }

@@ -1,20 +1,20 @@
 import { ThemedButtonProps } from '@/Button/types';
 import { ThemeCommon } from '@/ThemeContext/types';
-import { GenericFn } from '@/utils/noopFns';
+import { GenericFn } from '@/utils/noops';
 
 export interface SQONViewerThemeProps {
-  EmptyMessage: ThemeCommon.NonButtomThemeProps;
+  EmptyMessage: ThemeCommon.NonButtonThemeProps;
   SQONBubble: ThemedButtonProps;
   SQONClear: ThemedButtonProps;
   SQONField: ThemedButtonProps;
-  SQONGroup: ThemeCommon.NonButtomThemeProps;
+  SQONGroup: ThemeCommon.NonButtonThemeProps;
   SQONLessOrMore: ThemedButtonProps;
-  SQONOp: ThemeCommon.NonButtomThemeProps;
+  SQONOp: ThemeCommon.NonButtonThemeProps;
   SQONValue: {
     characterLimit?: number | string;
   } & ThemedButtonProps;
-  SQONValueGroup: ThemeCommon.NonButtomThemeProps;
-  SQONWrapper: ThemeCommon.NonButtomThemeProps;
+  SQONValueGroup: ThemeCommon.NonButtonThemeProps;
+  SQONWrapper: ThemeCommon.NonButtonThemeProps;
 }
 
 export interface UseDataBubblesProps {
@@ -26,7 +26,7 @@ export interface UseDataBubblesProps {
 }
 export interface SQONViewerProps extends UseDataBubblesProps {
   emptyMessage?: string;
-  sqon: GroupSQONInterface | null;
+  sqon?: GroupSQONInterface | null;
 }
 
 // TODO: centralise all these

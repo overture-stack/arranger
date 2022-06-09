@@ -1,0 +1,109 @@
+{
+  "analysis": {
+    "analysis_id": "e351fd1d-2563-412b-91fd-1d2563e12b9a",
+    "analysis_state": "NOT PUBLISHED",
+    "analysis_tools": [
+      "Sanger:compareBamGenotypes",
+      "sanger-wgs",
+      "ILLUMINA"
+    ],
+    "analysis_type": "sequencing_alignment",
+    "analysis_version": 1,
+    "experiment": {
+      "info": {
+        "analysis_tools": [
+          "Sanger:compareBamGenotypes"
+        ],
+        "data_category": "Quality Control Metrics",
+        "data_subtypes": [
+          "Genotyping Stats"
+        ],
+        "description": "Compare genotypes of CRAM files from the same donor and produces the fraction of matched genotypes. It also checks if the inferred genders are matched.",
+        "files_in_tgz": [
+          "SA594698.full_genotype.tsv",
+          "SA594698.full_gender.tsv",
+          "SA594704.full_genotype.tsv",
+          "SA594704.full_gender.tsv",
+          "SA594704_vs_SA594698.genotype.txt",
+          "result.json"
+        ],
+        "metrics": {
+          "compared_against": "SA594698",
+          "total_loci_gender": 4,
+          "total_loci_genotype": 92,
+          "tumours": [
+            {
+              "gender": {
+                "frac_match_gender": 1,
+                "gender": "XY"
+              },
+              "genotype": {
+                "frac_informative_genotype": 1,
+                "frac_matched_genotype": 0.967391304347826
+              },
+              "sample_id": "SA594704"
+            }
+          ]
+        }
+      },
+      "matched_normal_submitter_sample_id": "LP6005408-DNA_B04",
+      "variantCallingTool": "silver bullet"
+    }
+  },
+  "data_type": "Analysis QC",
+  "donors": [
+    {
+      "age": "4",
+      "donor_id": "DO234415",
+      "gender": "Male",
+      "specimens": [
+        {
+          "samples": [
+            {
+              "collection_date": "2020-08-03T15:01:14.749Z",
+              "matched_normal_submitter_sample_id": "LP6005408-DNA_B04",
+              "sample_id": "SA594704",
+              "sample_type": "Total DNA",
+              "submitter_sample_id": "LP6005409-DNA_B04"
+            }
+          ],
+          "specimen_id": "SP203152",
+          "specimen_tissue_source": "Solid tissue",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "36f500d497189420f381be2740d54314b52e30c038a3766adbe965f5959347ec",
+          "tumour_normal_designation": "Tumour"
+        }
+      ],
+      "submitter_donor_id": "d40d194d9493bd72f8125a6aa6e6cdeca41845e8ab0fc204301d01c3f9559bbd",
+      "vaccinated": true
+    }
+  ],
+  "file": {
+    "data_type": "Analysis QC",
+    "index_file": {
+      "data_type": "Variant Calling Index",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "name": "example6.vcf.gz.idx",
+      "object_id": "70a2aa66-28d9-535e-b609-2743ed74e686",
+      "size": "588924"
+    },
+    "md5sum": "d24327aaa4475e451aab3e3f09a06b2c",
+    "name": "OCCAMS-GB.DO234415.SA594704.wgs.20210510.sanger-wgs.somatic.genotyped_gender_metrics.tgz",
+    "size": 2886
+  },
+  "file_access": "controlled",
+  "file_type": "TGZ",
+  "object_id": "36884aba-2683-5f45-a6b4-670cafc4f9d5",
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "study_id": "OCCAMS-GB"
+}

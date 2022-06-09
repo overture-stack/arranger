@@ -1,22 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import columnsToGraphql from '@/utils/columnsToGraphql';
+import { emptyObj } from '@/utils/noops';
 
 import {
   APIFetcherFn,
-  ColumnsStateInterface,
   ConfigsInterface,
   ExtendedMappingInterface,
   FetchDataFn,
+  SQONType,
+  TableConfigsInterface,
 } from './types';
 import { componentConfigsQuery } from './dataQueries';
 
 export const useConfigs = ({
   apiFetcher,
-  configs: {
-    columnsState: customColumnsState = {} as ColumnsStateInterface,
-    extendedMapping: customExtendedMapping = [] as ExtendedMappingInterface[],
-  } = {} as ConfigsInterface,
   documentType,
 }: {
   apiFetcher: APIFetcherFn;
@@ -24,9 +22,13 @@ export const useConfigs = ({
   documentType: string;
 }) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [columnsState, setColumnsState] = useState<ColumnsStateInterface>(customColumnsState);
-  const [extendedMapping, setExtendedMapping] =
-    useState<ExtendedMappingInterface[]>(customExtendedMapping);
+  const [documentMapping, setDocumentMapping] = useState({});
+  const [downloadsConfigs, setDownloadsConfigs] = useState({});
+  const [facetsConfigs, setFacetsConfigs] = useState({});
+  const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(
+    emptyObj as TableConfigsInterface,
+  );
+  const [extendedMapping, setExtendedMapping] = useState<ExtendedMappingInterface[]>([]);
 
   useEffect(() => {
     apiFetcher({
@@ -36,10 +38,16 @@ export const useConfigs = ({
       },
     })
       .then((response) => {
-        const { columnsState, extended } = response?.data?.[documentType] || {};
+        const {
+          configs: { downloads, extended, facets, table },
+          mapping = emptyObj,
+        } = response?.data?.[documentType] || emptyObj;
 
-        setColumnsState(columnsState?.state);
+        setDocumentMapping(mapping);
+        setDownloadsConfigs(downloads);
         setExtendedMapping(extended);
+        setFacetsConfigs(facets);
+        setTableConfigs(table);
       })
       .catch((error) => console.warn(error))
       .finally(() => {
@@ -48,35 +56,48 @@ export const useConfigs = ({
   }, [apiFetcher, documentType]);
 
   return {
-    columnsState,
+    documentMapping,
+    downloadsConfigs,
     extendedMapping,
+    facetsConfigs,
     isLoadingConfigs: isLoading,
+    tableConfigs,
   };
 };
 
-export const fetchDataInitialiser =
-  ({
-    apiFetcher,
-    documentType,
-    url,
-  }: {
-    apiFetcher: APIFetcherFn;
-    documentType: string;
-    url?: string;
-  }): FetchDataFn =>
-  ({ endpoint = `/graphql`, ...options } = {}) => {
-    return apiFetcher({
-      endpoint,
-      body: columnsToGraphql({
-        documentType,
-        ...options,
-      }),
-      url,
-    }).then((response) => {
-      const hits = response?.data?.[documentType]?.hits || {};
-      const data = (hits.edges || []).map((e: any) => e.node);
-      const total = hits.total || 0;
+export const useDataFetcher = ({
+  apiFetcher,
+  documentType,
+  keyField,
+  sqon,
+  url,
+}: {
+  apiFetcher: APIFetcherFn;
+  documentType: string;
+  keyField?: string;
+  sqon?: SQONType;
+  url?: string;
+}): FetchDataFn =>
+  useCallback<FetchDataFn>(
+    ({ endpoint = `/graphql`, config, ...options } = emptyObj) =>
+      apiFetcher({
+        endpoint,
+        body: columnsToGraphql({
+          config: {
+            keyField, // use keyField from server configs if available
+            ...config, // yet allow overwritting it at request time
+          },
+          documentType,
+          sqon,
+          ...options,
+        }),
+        url,
+      }).then((response) => {
+        const hits = response?.data?.[documentType]?.hits || {};
+        const data = (hits.edges || []).map((e: any) => e.node);
+        const total = hits.total || 0;
 
-      return { total, data };
-    });
-  };
+        return { total, data };
+      }),
+    [apiFetcher, documentType, keyField, sqon, url],
+  );

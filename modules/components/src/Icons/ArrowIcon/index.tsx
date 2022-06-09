@@ -2,6 +2,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import { useThemeContext } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import Props from './types';
 
@@ -17,6 +18,8 @@ import Props from './types';
 const ArrowIcon = ({
   className,
   css: customCSS,
+  disabled,
+  disabledFill,
   fill,
   isTreeJoint,
   pointUp,
@@ -27,15 +30,16 @@ const ArrowIcon = ({
     colors,
     components: {
       ArrowIcon: {
-        className: themeClassName = '',
-        css: themeCSS = '',
+        className: themeClassName,
+        css: themeCSS,
+        disabledFill: themeDisabledFill = colors?.grey?.[400],
         fill: themeFill = colors?.grey?.[600],
         size: themeSize = 12,
         transition: themeTransition = 'all 0.2s',
         ...themeArrowIconProps
-      } = {},
-    } = {},
-  } = useThemeContext();
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'ArrowIcon' });
 
   return (
     <svg
@@ -62,7 +66,7 @@ const ArrowIcon = ({
       {...themeArrowIconProps}
     >
       <path
-        fill={fill || themeFill}
+        fill={disabled ? disabledFill || themeDisabledFill : fill || themeFill}
         d="M9.952 3.342c.468-.456 1.228-.456 1.697 0 .234.228.351.526.351.825 0
       .298-.117.597-.351.825l-4.8 4.666c-.469.456-1.23.456-1.697 0l-4.8-4.666c-.47-.456-.47-1.194
       0-1.65.468-.456 1.228-.456 1.696 0L6 7.184l3.952-3.842z"

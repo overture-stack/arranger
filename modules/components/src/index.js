@@ -8,7 +8,15 @@ export {
 // TODO: Deprecate "CurrentSQON" component name as unsemantical,
 // remove SQONView (duplicate of CurrentSQON to produce the same log warning)
 export { CurrentSQON, SQONView, default as SQONViewer } from './SQONViewer';
-export { default as Table, Toolbar } from './Table';
+export {
+  default as Table,
+  TableContext,
+  TableContextProvider,
+  TableCounter,
+  Toolbar,
+  useTableContext,
+  withTableContext,
+} from './Table';
 export {
   arrangerTheme,
   ThemeContext as ArrangerThemeContext,

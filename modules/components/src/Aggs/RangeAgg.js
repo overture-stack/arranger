@@ -9,6 +9,7 @@ import 'react-input-range/lib/css/index.css';
 import { replaceFieldSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
 import formatNumber from '@/utils/formatNumber';
+import { emptyObj } from '@/utils/noops';
 
 import AggsWrapper from './AggsWrapper';
 
@@ -65,11 +66,7 @@ const getLabelId = (displayName) => {
 class RangeAgg extends Component {
   constructor(props) {
     super(props);
-    const {
-      sqonValues,
-      stats: { max = 0, min = 0 },
-      unit,
-    } = props;
+    const { sqonValues, stats: { max = 0, min = 0 } = emptyObj, unit } = props;
 
     const supportedConversions = supportedConversionFromUnit(unit);
 
@@ -87,11 +84,11 @@ class RangeAgg extends Component {
 
   UNSAFE_componentWillReceiveProps(nextProps) {
     const {
-      sqonValues: { max: sqonMax, min: sqonMin } = {},
-      stats: { max: newMax, min: newMin } = {},
+      sqonValues: { max: sqonMax, min: sqonMin } = emptyObj,
+      stats: { max: newMax, min: newMin } = emptyObj,
     } = nextProps;
-    const { stats: { max: oldMax, min: oldMin } = {} } = this.props;
-    const { currentValues: { max: selectedMax, min: selectedMin } = {} } = this.state;
+    const { stats: { max: oldMax, min: oldMin } = emptyObj } = this.props;
+    const { currentValues: { max: selectedMax, min: selectedMin } = emptyObj } = this.state;
 
     const resetMax = isNil(sqonMax)
       ? isNil(oldMax) || (newMax > oldMax && oldMax === selectedMax) || newMax !== selectedMax
@@ -178,26 +175,26 @@ class RangeAgg extends Component {
       displayName = 'Unnamed Field',
       field,
       rangeStep,
-      stats: { max, min },
+      stats: { max, min } = emptyObj,
       step,
       theme: {
         colors,
         components: {
           Aggregations: {
             RangeAgg: {
-              InputRange: { css: themeInputRangeCSS } = {},
+              InputRange: { css: themeInputRangeCSS } = emptyObj,
               NoDataContainer: {
                 fontColor: themeNoDataFontColor = colors?.grey?.[600],
                 fontSize: themeNoDataFontSize = '0.8em',
-              } = {},
-              RangeLabel: themeRangeLabelProps = {},
+              } = emptyObj,
+              RangeLabel: themeRangeLabelProps = emptyObj,
               RangeSlider: {
                 background: themeRangeSliderBackground = colors?.common?.white,
                 borderColor: themeRangeSliderBorderColor = colors?.grey?.[500],
-                css: themeRangeSliderCSS = {},
+                css: themeRangeSliderCSS,
                 disabledBackground: themeRangeSliderDisabledBackground = colors?.grey?.[200],
                 disabledBorderColor: themeRangeSliderDisabledBorderColor = colors?.grey?.[500],
-              } = {},
+              } = emptyObj,
               RangeTrack: {
                 background: themeRangeTrackBackground = 'none',
                 disabledBackground: themeRangeTrackDisabledBackground = colors?.grey?.[200],
@@ -205,12 +202,12 @@ class RangeAgg extends Component {
                 disabledOutBackground: themeRangeTrackDisabledOutBackground = colors?.grey?.[200],
                 inBackground: themeRangeTrackInBackground = colors?.grey?.[600],
                 outBackground: themeRangeTrackOutBackground = colors?.grey?.[200],
-              } = {},
-              RangeWrapper: { css: themeRangeWrapperCSS, ...RangeWrapperProps } = {},
-            } = {},
-          } = {},
-        } = {},
-      } = {},
+              } = emptyObj,
+              RangeWrapper: { css: themeRangeWrapperCSS, ...RangeWrapperProps } = emptyObj,
+            } = emptyObj,
+          } = emptyObj,
+        } = emptyObj,
+      } = emptyObj,
       type,
       WrapperComponent,
     } = this.props;

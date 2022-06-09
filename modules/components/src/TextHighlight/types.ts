@@ -1,9 +1,6 @@
 import { ThemeCommon } from '@/ThemeContext/types';
 
-export interface TextHighlightThemeProps
-  extends ThemeCommon.BoxModelProperties,
-    ThemeCommon.CustomCSS,
-    ThemeCommon.FontProperties {
+export interface TextHighlightThemeProps extends ThemeCommon.NonButtonThemeProps {
   wrapperClassName?: string;
   wrapperCSS?: ThemeCommon.cssInterpolation;
 }

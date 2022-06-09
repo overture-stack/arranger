@@ -1,4 +1,7 @@
 {
+  "aliases": {
+    "models": {}
+  },
   "settings": {
     "mapping": {
       "nested_fields": {

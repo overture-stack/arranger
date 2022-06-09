@@ -1,0 +1,96 @@
+{
+  "analysis": {
+    "analysis_id": "b29211b4-f24c-41c5-9211-b4f24c81c557",
+    "analysis_state": "PUBLISHED",
+    "analysis_tools": [
+      "ASCAT",
+      "sanger-wgs",
+      "ILLUMINA"
+    ],
+    "analysis_type": "sequencing_alignment",
+    "analysis_version": 1,
+    "experiment": {
+      "info": {
+        "analysis_tools": [
+          "ASCAT"
+        ],
+        "data_category": "Quality Control Metrics",
+        "data_subtypes": [
+          "Ploidy",
+          "Tumour Purity"
+        ],
+        "description": "Purity and ploidy estimated by ASCAT",
+        "files_in_tgz": [
+          "SA130952.samplestatistics.txt"
+        ],
+        "metrics": {
+          "GenderChr": "chrY",
+          "GenderChrFound": "chrY",
+          "NormalContamination": 0.106139924441931,
+          "Ploidy": 3.69725507812987,
+          "goodnessOfFit": 92.1531537789201,
+          "psi": 3.55,
+          "rho": 0.82
+        }
+      },
+      "matched_normal_submitter_sample_id": "SS6003313",
+      "variantCallingTool": "smufin"
+    }
+  },
+  "data_type": "Analysis QC",
+  "donors": [
+    {
+      "age": "9",
+      "donor_id": "DO234328",
+      "gender": "Female",
+      "specimens": [
+        {
+          "samples": [
+            {
+              "collection_date": "2020-11-03T14:33:57.621Z",
+              "matched_normal_submitter_sample_id": "SS6003313",
+              "sample_id": "SA130952",
+              "sample_type": "Total DNA",
+              "submitter_sample_id": "SS6003315"
+            }
+          ],
+          "specimen_id": "SP203788",
+          "specimen_tissue_source": "Solid tissue",
+          "specimen_type": "Primary tumour",
+          "submitter_specimen_id": "daecb5a4b015037db84180506893e95e26170920eab9d9244caf534f56a9688e",
+          "tumour_normal_designation": "Tumour"
+        }
+      ],
+      "submitter_donor_id": "3abbfc149ac774b3bfed61438c5b709a473c0c6162b6707b4bfebef67eba2260",
+      "vaccinated": false
+    }
+  ],
+  "file": {
+    "data_type": "Analysis QC",
+    "index_file": {
+      "data_type": "Variant Calling Index",
+      "file_type": "IDX",
+      "md5sum": "c03274816eb4907a92b8e5632cd6eb81",
+      "name": "example2.vcf.gz.idx",
+      "object_id": "70a2aa66-28d9-535e-b609-2743ed74e686",
+      "size": "170875"
+    },
+    "md5sum": "7e0dfd1ef8ac75418a0f8f38b0e45655",
+    "name": "OCCAMS-GB.DO234328.SA130952.wgs.20210512.sanger-wgs.somatic.ascat_metrics.tgz",
+    "size": 493
+  },
+  "file_access": "controlled",
+  "file_type": "TGZ",
+  "object_id": "788a5f00-bf85-515d-81e2-515a65dd36e0",
+  "repositories": [
+    {
+      "code": "local_song",
+      "organization": "local_song_organization",
+      "name": "local_song_city",
+      "type": "S3",
+      "country": "local_song_country",
+      "url": "http://song-server:8080"
+    }
+  ],
+  "study_id": "OCCAMS-GB"
+}

@@ -11,11 +11,11 @@ const enhance = compose(
   withQuery(({ index }) => ({
     key: 'extendedFields',
     query: `
-      query ${capitalize(index)}ExtendedQuery {
+      query ${capitalize(index)}QuickSearchExtendedQuery {
         ${index} {
-          extended
-          columnsState {
-            state {
+          configs {
+            extended
+            table {
               columns {
                 field
                 query
@@ -32,8 +32,8 @@ const enhance = compose(
       index,
       whitelist,
       extendedFields: { data, loading, error },
-      nestedFields = data?.[index]?.extended?.filter((x) => x.type === 'nested'),
-      quickSearchFields = data?.[index]?.extended
+      nestedFields = data?.[index]?.configs?.extended?.filter((x) => x.type === 'nested'),
+      quickSearchFields = data?.[index]?.configs?.extended
         ?.filter((x) => x.quickSearchEnabled)
         ?.filter((x) => {
           const {
@@ -47,7 +47,7 @@ const enhance = compose(
         })
         ?.map(({ field }) =>
           decorateFieldWithColumnsState({
-            columnsState: data?.[index]?.columnsState?.state,
+            tableConfigs: data?.[index]?.configs?.table,
             field,
           }),
         )
@@ -60,8 +60,8 @@ const enhance = compose(
         quickSearchFields,
         quickSearchEntities: uniq(quickSearchFields.map((x) => x.entityName)),
         primaryKeyField: decorateFieldWithColumnsState({
-          columnsState: data?.[index]?.columnsState?.state,
-          field: data?.[index]?.extended?.find((x) => x.primaryKey)?.field,
+          tableConfigs: data?.[index]?.configs?.tableConfigs,
+          field: data?.[index]?.configs?.extended?.find((x) => x.primaryKey)?.field,
         }),
         nestedFields,
       };

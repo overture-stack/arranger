@@ -6,13 +6,13 @@ import TextHighlight from '@/TextHighlight';
 import { useThemeContext } from '@/ThemeContext';
 import ToggleButton from '@/ToggleButton';
 import formatNumber from '@/utils/formatNumber';
-import noopFn from '@/utils/noopFns';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import AggsWrapper from './AggsWrapper';
 import BucketCount from './BucketCount';
 
 const BooleanAgg = ({
-  buckets,
+  buckets = [],
   collapsible,
   field,
   handleValueClick = noopFn,
@@ -29,7 +29,7 @@ const BooleanAgg = ({
     true: 'Yes',
     false: 'No',
   },
-  displayValues: extendedDisplayKeys = {},
+  displayValues: extendedDisplayKeys = emptyObj,
   displayKeys = Object.keys(defaultDisplayKeys).reduce(
     (obj, x) => ({
       ...obj,
@@ -40,15 +40,20 @@ const BooleanAgg = ({
   type,
 }) => {
   const {
+    colors,
     components: {
       Aggregations: {
         BooleanAgg: {
-          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = {},
-          ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = {},
-        } = {},
-      } = {},
-    } = {},
-  } = useThemeContext();
+          BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
+          ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = emptyObj,
+        } = emptyObj,
+        NoDataContainer: {
+          fontColor: themeNoDataFontColor = colors?.grey?.[600],
+          fontSize: themeNoDataFontSize = '0.8em',
+        } = emptyObj,
+      } = emptyObj,
+    } = emptyObj,
+  } = useThemeContext({ callerName: 'BooleanAgg' });
 
   const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true);
   const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false);
@@ -101,6 +106,8 @@ const BooleanAgg = ({
     );
   };
 
+  const hasData = trueBucket?.doc_count + trueBucket?.doc_count > 0;
+
   const options = (
     displayKeys.any
       ? [
@@ -114,7 +121,7 @@ const BooleanAgg = ({
     {
       value: valueKeys.true,
       disabled: isTrueBucketDisabled,
-      title: ({ toggleStatus = '' } = {}) => (
+      title: ({ toggleStatus = '' } = emptyObj) => (
         <>
           <TextHighlight content={displayKeys.true} highlightText={highlightText} />
           <BucketCount
@@ -132,7 +139,7 @@ const BooleanAgg = ({
     {
       value: valueKeys.false,
       disabled: isFalseBucketDisabled,
-      title: ({ toggleStatus = '' } = {}) => (
+      title: ({ toggleStatus = '' } = emptyObj) => (
         <>
           <TextHighlight content={displayKeys.false} highlightText={highlightText} />
           <BucketCount
@@ -156,24 +163,37 @@ const BooleanAgg = ({
 
   return (
     <AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
-      <div
-        css={css`
-          width: 100%;
-        `}
-      >
-        <ToggleButton
-          className={themeToggleButtonClassName}
-          onChange={({ value }) => {
-            handleChange(
-              value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
-              dotField,
-            );
-          }}
-          options={options}
-          theme={toggleButtonTheme}
-          value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
-        />
-      </div>
+      {hasData ? (
+        <div
+          css={css`
+            width: 100%;
+          `}
+        >
+          <ToggleButton
+            className={themeToggleButtonClassName}
+            onChange={({ value }) => {
+              handleChange(
+                value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
+                dotField,
+              );
+            }}
+            options={options}
+            theme={toggleButtonTheme}
+            value={isTrueActive ? valueKeys.true : isFalseActive ? valueKeys.false : undefined}
+          />
+        </div>
+      ) : (
+        <span
+          className="no-data"
+          css={css`
+            color: ${themeNoDataFontColor};
+            display: block;
+            font-size: ${themeNoDataFontSize};
+          `}
+        >
+          No data available
+        </span>
+      )}
     </AggsWrapper>
   );
 };

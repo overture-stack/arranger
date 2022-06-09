@@ -15,6 +15,9 @@
           "analysis_state": {
             "type": "keyword"
           },
+          "analysis_tools": {
+            "type": "keyword"
+          },
           "analysis_type": {
             "type": "keyword"
           },
