@@ -35,7 +35,7 @@ const enhance = compose(
  *   label: '' || () => </>,
  *   fileName?: '',
  *   function?: () => {},
- *   columns?: [''],
+ *   columns?: [''] | [{ fieldName, displayName }],
  *   requiresRowSelection?: false,
  * }, ...]
  *
@@ -44,6 +44,8 @@ const enhance = compose(
  * The function attribute accepts 'saveTSV' as well, in case you wish to use a custom label for it.
  * When a fileName is given without a custom function, Arranger will also produce a TSV file.
  * Columns passed here override the ones being displayed in the table.
+ * the format for these is always an array, which could consist of one of the following types:
+ * accessor strings, or objects with "fieldName" and "displayName" function/string.
  * If columns is undefined/null, the exporter will use all the columns shown in the table.
  * However, if columns is an empty array, the exporter will use all the columns declared in the column-state config.
  */
@@ -92,7 +94,6 @@ const TableToolbar = ({
     exporter,
     allowTSVExport,
     exportTSVText,
-    columns,
   );
 
   const hasSelectedRows = selectedTableRows.length > 0;

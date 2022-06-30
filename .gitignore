@@ -10,3 +10,4 @@ yarn.lock
 integration-tests/ui
 .vscode
 .groovylintrc.json
+.env
