@@ -221,7 +221,7 @@ class RangeAgg extends Component {
                 onChangeComplete={this.onChangeComplete}
               />
 
-              <RangeLabel>{this.formatRangeLabel(currentValues.min)}</RangeLabel>
+              <RangeLabel>{this.formatRangeLabel(min)}</RangeLabel>
               {!minIsMax && <RangeLabel position="right">{this.formatRangeLabel(max)}</RangeLabel>}
               <span
                 id={getLabelId(displayName)}
