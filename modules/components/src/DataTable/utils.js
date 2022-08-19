@@ -29,7 +29,7 @@ export function normalizeColumns({
       return {
         ...column,
         show: typeof column.show === 'boolean' ? column.show : true,
-        Cell: column.Cell || types[column.type],
+        Cell: column.Cell || types[column.isArray ? 'list' : column.type],
         hasCustomType: isNil(column.hasCustomType)
           ? !!(customTypes || {})[column.type]
           : column.hasCustomType,

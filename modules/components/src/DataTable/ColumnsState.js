@@ -204,6 +204,7 @@ export default class extends Component {
                 ...column,
                 Header: extendedField?.displayName || column.field,
                 extendedType: extendedField?.type,
+                isArray: extendedField?.isArray,
                 show: column.field in toggled ? toggled[column.field] : column.show,
                 extendedDisplayValues: extendedField?.displayValues,
               };

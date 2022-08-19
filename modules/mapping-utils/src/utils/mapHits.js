@@ -1,1 +1,1 @@
-export default (x) => x.hits.hits.map((x) => x._source);
+export default (x) => x.hits.hits.map((x) => x?._source);

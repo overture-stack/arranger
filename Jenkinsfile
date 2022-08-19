@@ -156,11 +156,13 @@ pipeline {
 
     stage('Push images') {
       when {
-        branch 'legacy'
+        anyOf {
+          branch 'legacy'
+        }
       }
       steps {
         container('docker') {
-        // dockerhub
+          // dockerhub
           withCredentials([usernamePassword(
             credentialsId:'OvertureDockerHub',
             passwordVariable: 'PASSWORD',
@@ -168,22 +170,28 @@ pipeline {
           )]) {
             sh "docker login -u $USERNAME -p $PASSWORD"
 
-          // server:commit tag
+            // server:commit tag
             sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${commit}"
             sh "docker push ${dockerHubRepo}-server:${commit}"
-          // server:version tag
-            sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${version}"
-            sh "docker push ${dockerHubRepo}-server:${version}"
 
-          // (admin) ui:commit tag
+            // (admin) ui:commit tag
             sh "docker tag arranger-ui:${commit} ${dockerHubRepo}-ui:${commit}"
             sh "docker push ${dockerHubRepo}-ui:${commit}"
-          // (admin) ui:version tag
-            sh "docker tag arranger-ui:${commit} ${dockerHubRepo}-ui:${version}"
-            sh "docker push ${dockerHubRepo}-ui:${version}"
+
+            script {
+              if (env.BRANCH_NAME ==~ 'legacy') {
+                // server:version tag
+                sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${version}"
+                sh "docker push ${dockerHubRepo}-server:${version}"
+
+                // (admin) ui:version tag
+                sh "docker tag arranger-ui:${commit} ${dockerHubRepo}-ui:${version}"
+                sh "docker push ${dockerHubRepo}-ui:${version}"
+              }
+            }
           }
 
-        // github
+          // github
           withCredentials([usernamePassword(
             credentialsId:'OvertureBioGithub',
             passwordVariable: 'PASSWORD',
@@ -191,47 +199,53 @@ pipeline {
           )]) {
             sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
 
-          // server:commit tag
+            // server:commit tag
             sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
             sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-          // server:version tag
-            sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
-            sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
 
-          // (admin) ui:commit tag
+            // (admin) ui:commit tag
             sh "docker tag arranger-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
             sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
-          // (admin) ui:version tag
-            sh "docker tag arranger-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
-            sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+
+            script {
+              if (env.BRANCH_NAME ==~ 'legacy') {
+                // server:version tag
+                sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
+                sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
+
+                // (admin) ui:version tag
+                sh "docker tag arranger-ui:${commit} ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+                sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${version}"
+              }
+            }
           }
         }
       }
     }
 
     stage('Publish tag to npm') {
-        when {
-            branch 'legacy'
-        }
-        steps {
-            container('node') {
-                withCredentials([
-                    string(credentialsId: 'OvertureNPMAutomationToken', variable: 'NPM_TOKEN')
-                ]) {
-                    script {
-                        // we still want to run the platform deploy even if this fails, hence try-catch
-                        try {
-                            sh 'git reset --hard HEAD'
-                            sh 'git pull --tags'
-                            sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
-                            sh 'npm run publish::ci'
-                        } catch (err) {
-                            echo 'There was an error while publishing packages'
-                        }
-                    }
-                }
+      when {
+        branch 'legacy'
+      }
+      steps {
+        container('node') {
+          withCredentials([
+            string(credentialsId: 'OvertureNPMAutomationToken', variable: 'NPM_TOKEN')
+          ]) {
+            script {
+              // we still want to run the platform deploy even if this fails, hence try-catch
+              try {
+                sh 'git reset --hard HEAD'
+                sh 'git pull --tags'
+                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                sh 'npm run publish::ci'
+              } catch (err) {
+                echo 'There was an error while publishing packages'
+              }
             }
+          }
         }
+      }
     }
 
     stage('Deploy to Overture QA') {

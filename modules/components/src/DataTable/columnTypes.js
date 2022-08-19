@@ -1,4 +1,5 @@
 import React from 'react';
+import cx from 'classnames';
 import { format, isValid, parseISO } from 'date-fns';
 import filesize from 'filesize';
 import jsonPath from 'jsonpath/jsonpath.min';
@@ -8,7 +9,7 @@ import { getSingleValue } from './utils';
 
 const STANDARD_DATE = 'yyyy-MM-dd';
 
-const dateHandler = ({ value, ...props }) => {
+const dateHandler = ({ value, ...props } = {}) => {
   switch (true) {
     case isNil(value):
       return '';
@@ -35,15 +36,33 @@ const FileSize = ({ options = {}, ...props }) => (
 );
 
 export default {
-  bits: ({ value, ...props }) => <FileSize {...props} value={(value || 0) / 8} />,
-  boolean: ({ value }) => (isNil(value) ? '' : `${value}`),
+  bits: ({ value = 0, ...props } = {}) => <FileSize {...props} value={value / 8} />,
+  boolean: ({ value = undefined } = {}) => (isNil(value) ? '' : `${value}`),
   bytes: (props) => <FileSize {...props} />,
   date: dateHandler,
-  list: (props) => {
-    const values = jsonPath.query(props.original, props.column.jsonPath);
-    const total = values.length;
-    const firstValue = getSingleValue(values[0]);
-    return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
+  list: ({ column, id, original }) => {
+    const valuesArr = jsonPath.query(original, column.jsonPath ?? column.field)?.[0];
+    const arrHasValues = Array.isArray(valuesArr) && valuesArr?.filter((v) => v).length > 0; // table shouldn't display Nulls
+
+    if (Array.isArray(valuesArr)) {
+      if (column.isArray && arrHasValues) {
+        return (
+          <ul className={cx('list-values', column.displayFormat || 'commas')}>
+            {valuesArr.map((value, index) => (
+              <li key={`${id}-${index}`} data-value={value}>
+                {value}
+              </li>
+            ))}
+          </ul>
+        );
+      }
+
+      const total = valuesArr.length;
+      const firstValue = getSingleValue(valuesArr[0]);
+      return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
+    }
+
+    return valuesArr;
   },
   number: Number,
 };

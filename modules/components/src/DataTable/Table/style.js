@@ -27,4 +27,46 @@ export default ({ scrollbarSize: { scrollbarWidth } } = {}) => css`
     background: lightgrey;
     color: #f0f1f6;
   }
+
+  ul.list-values {
+    margin: 0;
+    padding-left: 1rem;
+
+    > li {
+      line-height: 1rem;
+      margin-bottom: 0.3rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &.none {
+      list-style: none;
+      padding: 0;
+    }
+
+    &.commas {
+      display: flex;
+      flex-wrap: wrap;
+      list-style: none;
+      padding: 0;
+
+      > li:not(:last-of-type)::after {
+        content: ', ';
+        margin-right: 0.2rem;
+      }
+    }
+
+    &.letters {
+      list-style: lower-alpha;
+    }
+
+    &.numbers {
+      list-style: decimal;
+    }
+
+    &.roman {
+      list-style: upper-roman;
+    }
+  }
 `;

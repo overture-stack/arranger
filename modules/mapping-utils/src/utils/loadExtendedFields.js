@@ -28,9 +28,9 @@ export default async ({ projectId, index, es }) => {
     const metaData = await esSearch(es)({
       index: `arranger-projects-${projectId}`,
     });
-    const projectIndexData = get(metaData, 'hits.hits').find(
-      ({ _source }) => _source.index === index,
-    )._source;
-    return projectIndexData.config['extended'];
+    const projectIndexData = get(metaData, 'hits.hits')?.find(
+      ({ _source }) => _source?.index === index,
+    )?._source;
+    return projectIndexData?.config?.['extended'];
   }
 };

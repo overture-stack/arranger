@@ -62,6 +62,7 @@
   "prettier": {
     "printWidth": 100,
     "trailingComma": "all",
+    "semi": true,
     "singleQuote": true
   },
   "husky": {
