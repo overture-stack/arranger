@@ -14,7 +14,9 @@ const getAllValue = (data) => {
 
 const getValue = (row, column) => {
   const valueFromExtended = (value) =>
-    (column.extendedDisplayValues || {})[value] || column.isArray ? value.join(';') : value;
+    (column.extendedDisplayValues || {})[value] || (column.isArray && Array.isArray(value))
+      ? value.join(';')
+      : value;
 
   if (column.jsonPath) {
     return jsonPath
@@ -123,7 +125,14 @@ export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
   });
 };
 
-export default ({ index, columns, uniqueBy, emptyValue = '--', fileType = 'tsv' }) => {
+export default ({
+  index,
+  columns,
+  emptyValue, // kept for backwards compatibility. To be deprecated
+  uniqueBy,
+  valueWhenEmpty = emptyValue || '--',
+  fileType = 'tsv',
+}) => {
   let isFirst = true;
   let chunkCounts = 0;
 
@@ -134,7 +143,7 @@ export default ({ index, columns, uniqueBy, emptyValue = '--', fileType = 'tsv' 
       index,
       columns,
       uniqueBy,
-      emptyValue,
+      valueWhenEmpty,
       hits,
       total,
       pipe: outputStream,
@@ -158,33 +167,33 @@ const transformData = ({
   index,
   uniqueBy,
   columns,
-  emptyValue,
+  valueWhenEmpty,
   dataTransformer,
   pipe,
 }) => {
   hits
-    .map((row) => dataTransformer({ row, uniqueBy, columns, emptyValue }))
+    .map((row) => dataTransformer({ row, uniqueBy, columns, valueWhenEmpty }))
     .forEach((transformedRow) => {
       pushToStream(transformedRow, pipe);
     });
 };
 
-const transformDataToTSV = ({ row, uniqueBy, columns, emptyValue }) => {
+const transformDataToTSV = ({ row, uniqueBy, columns, valueWhenEmpty }) => {
   return getRows({
     row: row._source,
     paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
     columns: columns,
-    emptyValue,
-  }).map((r) => rowToTSV({ row: r, emptyValue }));
+    valueWhenEmpty,
+  }).map((r) => rowToTSV({ row: r, valueWhenEmpty }));
 };
 
-const transformDataToJSON = ({ row, uniqueBy, columns, emptyValue }) => {
+const transformDataToJSON = ({ row, uniqueBy, columns, valueWhenEmpty }) => {
   return JSON.stringify(
     rowToJSON({
       row: row._source,
       paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
       columns: columns,
-      emptyValue,
+      valueWhenEmpty,
     }),
   );
 };
@@ -193,7 +202,7 @@ const dataToStream = ({
   index,
   columns,
   uniqueBy,
-  emptyValue = '--',
+  valueWhenEmpty = '--',
   hits,
   total,
   pipe,
@@ -205,7 +214,7 @@ const dataToStream = ({
     index,
     uniqueBy,
     columns,
-    emptyValue,
+    valueWhenEmpty,
     pipe,
     isFirst,
   };
@@ -220,7 +229,7 @@ const dataToStream = ({
   }
 };
 
-const rowToTSV = ({ row, emptyValue }) => row.map((r) => r || emptyValue).join('\t');
+const rowToTSV = ({ row, valueWhenEmpty }) => row.map((r) => r || valueWhenEmpty).join('\t');
 
 /*
 example args:
@@ -259,14 +268,14 @@ example args:
        extendedType: 'keyword',
        extendedDisplayValues: {},
        hasCustomType: false } ],
-  emptyValue: '--' }
+  valueWhenEmpty: '--' }
 */
 const rowToJSON = (args) => {
-  const { row, data = row, paths, pathIndex = 0, columns, emptyValue, entities = [] } = args;
+  const { row, data = row, paths, pathIndex = 0, columns, valueWhenEmpty, entities = [] } = args;
   return (columns || [])
     .filter((col) => col.show)
     .reduce((output, col) => {
-      output[[col.accessor]] = row[col.accessor] || emptyValue;
+      output[[col.accessor]] = row[col.accessor] || valueWhenEmpty;
       return output;
     }, {});
 };

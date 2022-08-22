@@ -201,6 +201,7 @@ const TableToolbar = ({
                 exporterFileName,
                 exporterFunction,
                 exporterRequiresRowSelection,
+                exporterValueWhenEmpty: valueWhenEmpty,
               }) =>
                 (exporterRequiresRowSelection && !hasSelectedRows) ||
                 exporterFunction?.(
@@ -209,6 +210,7 @@ const TableToolbar = ({
                       {
                         allColumns,
                         columns,
+                        exporterColumns,
                         fileName: exporterFileName
                           ? `${exporterFileName}${
                               exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
@@ -217,7 +219,7 @@ const TableToolbar = ({
                         fileType: 'tsv',
                         index: type,
                         sqon: downloadSqon,
-                        ...(exporterColumns && { exporterColumns }),
+                        valueWhenEmpty,
                       },
                     ],
                     selectedTableRows,

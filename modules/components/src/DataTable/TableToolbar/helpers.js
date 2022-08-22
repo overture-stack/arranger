@@ -57,7 +57,8 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
               exporterFileName: item?.fileName,
               exporterRequiresRowSelection: item?.requiresRowSelection,
               ...(item?.columns &&
-                Array.isArray(item.columns) && { exporterColumns: item?.columns }),
+                Array.isArray(item.columns) && { exporterColumns: item.columns }),
+              ...(item?.valueWhenEmpty != null && { exporterValueWhenEmpty: item.valueWhenEmpty }),
             }
           : Object.entries(item).reduce(
               (exporterItem, [key, value]) => ({
