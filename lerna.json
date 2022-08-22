@@ -1,8 +1,5 @@
 {
   "lerna": "2.5.1",
-  "version": "2.19.0",
-  "packages": [
-    "integration-tests/**",
-    "modules/**"
-  ]
+  "version": "2.19.1",
+  "packages": ["integration-tests/**", "modules/**"]
 }
