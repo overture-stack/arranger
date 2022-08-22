@@ -1,5 +1,11 @@
 import download from '../../utils/download';
 
+const useCustomisers = (extendedColumn) => ([customiserLabel, customiserValue]) =>
+  customiserValue && {
+    [customiserLabel]:
+      typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
+  };
+
 const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
   download({
     url,
@@ -15,17 +21,19 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
                 ? // use them
                   exporterColumns.map((column) => {
                     switch (typeof column) {
-                      // checking if the columns are customised
+                      // checking if each column is customised
                       case 'object': {
                         const extendedColumn = allColumns[column.fieldName];
+                        const useExtendedCustomisers = useCustomisers(extendedColumn);
                         return {
                           ...extendedColumn,
-                          ...(column.displayName && {
-                            displayName:
-                              typeof column.displayName === 'function'
-                                ? column.displayName(extendedColumn)
-                                : column.displayName,
-                          }),
+                          ...Object.entries(column).reduce(
+                            (customisers, customiser) => ({
+                              ...customisers,
+                              ...useExtendedCustomisers(customiser),
+                            }),
+                            {},
+                          ),
                         };
                       }
 
@@ -48,26 +56,28 @@ const exporterProcessor = (exporter, allowTSVExport, exportTSVText) => {
     Array.isArray(exporter) &&
     exporter
       .filter((item) => item)
-      .map((item) =>
-        [item, item.function].some((fnName) => fnName === 'saveTSV') ||
-        (item.hasOwnProperty('fileName') && !item.hasOwnProperty('function'))
-          ? {
-              exporterLabel: item?.label || exportTSVText,
-              exporterFunction: saveTSV,
-              exporterFileName: item?.fileName,
-              exporterRequiresRowSelection: item?.requiresRowSelection,
-              ...(item?.columns &&
-                Array.isArray(item.columns) && { exporterColumns: item.columns }),
-              ...(item?.valueWhenEmpty != null && { exporterValueWhenEmpty: item.valueWhenEmpty }),
-            }
-          : Object.entries(item).reduce(
-              (exporterItem, [key, value]) => ({
-                ...exporterItem,
-                [`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
-              }),
-              {},
-            ),
-      );
+      .map((item) => {
+        const exporterObj = Object.entries(item).reduce(
+          (exporterItem, [key, value]) => ({
+            ...exporterItem,
+            [`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
+          }),
+          {},
+        );
+
+        if (
+          [item, item.function].some((fnName) => fnName === 'saveTSV') ||
+          (item.hasOwnProperty('fileName') && !item.hasOwnProperty('function'))
+        ) {
+          return {
+            ...exporterObj,
+            exporterLabel: item.label || exportTSVText,
+            exporterFunction: saveTSV,
+          };
+        }
+
+        return exporterObj;
+      });
 
   const multipleExporters = exporterArray && exporter.length > 1;
 

@@ -1,6 +1,30 @@
-import { get, flatten } from 'lodash';
-import through2 from 'through2';
+import { format, isValid, parseISO } from 'date-fns';
 import jsonPath from 'jsonpath';
+import { get, flatten, isNil } from 'lodash';
+import through2 from 'through2';
+
+const STANDARD_DATE = 'yyyy-MM-dd';
+
+const dateHandler = (value, { dateFormat = STANDARD_DATE }) => {
+  switch (true) {
+    case isNil(value):
+      return '';
+
+    case isValid(new Date(value)):
+      return format(new Date(value), dateFormat);
+
+    case isValid(parseISO(value)):
+      return format(parseISO(value), dateFormat);
+
+    case !isNaN(parseInt(value, 10)):
+      return format(parseInt(value, 10), dateFormat);
+
+    default: {
+      console.error('unhandled "date"', value, dateFormat);
+      return value;
+    }
+  }
+};
 
 const getAllValue = (data) => {
   if (typeof data === 'object') {
@@ -13,10 +37,25 @@ const getAllValue = (data) => {
 };
 
 const getValue = (row, column) => {
-  const valueFromExtended = (value) =>
-    (column.extendedDisplayValues || {})[value] || (column.isArray && Array.isArray(value))
-      ? value.join(';')
-      : value;
+  const valueFromExtended = (value) => {
+    switch (true) {
+      case column?.extendedDisplayValues?.constructor === Object &&
+        Object.keys(column.extendedDisplayValues).length > 0:
+        return column.extendedDisplayValues[value];
+
+      case column.isArray && Array.isArray(value):
+        return value
+          .map((each) => valueFromExtended(each))
+          .join(';')
+          .replace(';;', ';');
+
+      case [column.displayType, column.type].includes('date'):
+        return dateHandler(value, { dateFormat: column.displayFormat });
+
+      default:
+        return value;
+    }
+  };
 
   if (column.jsonPath) {
     return jsonPath
