@@ -12,6 +12,9 @@ import './DatesAgg.css';
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
 
+const dateFormat = 'yyyy/MM/dd';
+const fieldPlaceholder = dateFormat.toUpperCase();
+
 class DatesAgg extends React.Component {
   constructor(props) {
     super(props);
@@ -88,6 +91,7 @@ class DatesAgg extends React.Component {
       WrapperComponent,
     } = this.props;
     const { minDate, maxDate, startDate, endDate } = this.state;
+    const hasData = minDate && maxDate;
 
     const dataFields = {
       ...(field && { 'data-field': field }),
@@ -108,12 +112,18 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             aria-label={`Pick start date`}
             className="start-date"
+            closeOnScroll
+            dateFormat={dateFormat}
+            disabled={!hasData}
             isClearable
             onChange={this.handleDateChange('start')}
             openToDate={startDate || minDate}
-            placeholderText="YYYY/MM/DD"
+            placeholderText={fieldPlaceholder}
             popperPlacement={facetView ? 'bottom-start' : 'top-start'}
             selected={startDate}
+            showMonthDropdown
+            showYearDropdown
+            todayButton="Select Today"
           />
           <span
             css={css`
@@ -127,12 +137,18 @@ class DatesAgg extends React.Component {
             {...{ minDate, maxDate }}
             aria-label={`Pick end date`}
             className="end-date"
+            closeOnScroll
+            dateFormat={dateFormat}
+            disabled={!hasData}
             isClearable
             onChange={this.handleDateChange('end')}
             openToDate={endDate || maxDate}
-            placeholderText="YYYY/MM/DD"
+            placeholderText={fieldPlaceholder}
             popperPlacement={facetView ? 'bottom-end' : 'top-start'}
             selected={endDate}
+            showMonthDropdown
+            showYearDropdown
+            todayButton="Select Today"
           />
         </div>
       </AggsWrapper>

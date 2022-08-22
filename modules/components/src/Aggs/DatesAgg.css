@@ -24,3 +24,38 @@
   line-height: 1.4rem;
   width: 1.5rem;
 }
+
+.react-datepicker__current-month {
+  display: none;
+}
+
+.react-datepicker__header__dropdown {
+  display: flex;
+  justify-content: center;
+}
+
+.react-datepicker__month-option--selected {
+  left: 10px;
+}
+
+.react-datepicker__month-read-view,
+.react-datepicker__year-read-view {
+  border: none;
+  visibility: visible !important;
+  /* ^^ otherwise the current becomes invisible when dropdown is displayed */
+  width: fit-content;
+}
+
+.react-datepicker__month-read-view--down-arrow {
+  display: none;
+}
+
+.react-datepicker__year-read-view--down-arrow {
+  display: none;
+}
+
+.react-datepicker__month-read-view--selected-month,
+.react-datepicker__year-read-view--selected-year {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
