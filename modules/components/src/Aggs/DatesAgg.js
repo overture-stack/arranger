@@ -25,10 +25,11 @@ class DatesAgg extends React.Component {
     this.setState(this.initializeState(nextProps));
   }
 
-  initializeState = ({ stats = {}, getActiveValue = () => null }) => {
+  initializeState = ({ getActiveValue = () => null, stats = {}, enforceStatsMax = false }) => {
     const { field } = this.props;
     const minDate = stats.min && subDays(stats.min, 1);
-    const maxDate = stats.max && addDays(stats.max, 1);
+    const statsMax = stats.max && addDays(stats.max, 1);
+    const maxDate = enforceStatsMax ? statsMax : Math.max(Date.now(), statsMax);
     const startFromSqon = getActiveValue({ op: '>=', field });
     const endFromSqon = getActiveValue({ op: '<=', field });
 
