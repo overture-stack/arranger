@@ -3,5 +3,5 @@ src/
 .babelrc*
 .eslintrc*
 
-index.js
+./index.js
 tsconfig*
