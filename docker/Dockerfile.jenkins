@@ -21,9 +21,10 @@ RUN apk --no-cache add curl g++ make python3 shadow \
 
 WORKDIR $APP_FOLDER
 
-USER $APP_USER
-
 COPY . .
+RUN chown -R $APP_USER $APP_FOLDER
+
+USER $APP_USER
 
 CMD /bin/sh
 
