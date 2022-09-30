@@ -1,6 +1,6 @@
 import { flattenDeep } from 'lodash';
 
-let getNestedFields = (mapping, parent = '') => {
+const getNestedFields = (mapping, parent = '') => {
   return flattenDeep(
     Object.entries(mapping || {}).map(([field, metadata]) => {
       const fullPath = parent ? `${parent}.${field}` : field;

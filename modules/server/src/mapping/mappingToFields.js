@@ -1,11 +1,12 @@
 import { capitalize } from 'lodash';
+
 import mappingToNestedFields from './mappingToNestedFields';
 import mappingToScalarFields from './mappingToScalarFields';
 import createConnectionTypeDefs from './createConnectionTypeDefs';
 import mappingToObjectTypes from './mappingToObjectTypes';
 
-let mappingToFields = ({ type, parent }) => {
-  return [
+const mappingToFields = ({ type, parent }) =>
+  [
     mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
     Object.entries(type.mapping)
       .filter(([, metadata]) => metadata.type === 'nested')
@@ -29,6 +30,5 @@ let mappingToFields = ({ type, parent }) => {
       createStateTypeDefs: 'createState' in type ? type.createState : true,
     }),
   ].join();
-};
 
 export default mappingToFields;

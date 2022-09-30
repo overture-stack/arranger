@@ -86,6 +86,7 @@ export interface DataProviderProps<Theme = BaseThemeInterface> {
 export type SQONType = typeof SQON | null;
 
 export interface DataContextInterface {
+  apiFetcher?: APIFetcherFn;
   documentType: string;
   extendedMapping: ExtendedMappingInterface[];
   fetchData: FetchDataFn;

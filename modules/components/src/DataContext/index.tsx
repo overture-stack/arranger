@@ -58,6 +58,7 @@ export const DataProvider = ({
 
   const contextValues = {
     ...legacyProps,
+    apiFetcher,
     documentMapping,
     downloadsConfigs,
     extendedMapping,

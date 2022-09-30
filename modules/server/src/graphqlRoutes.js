@@ -13,7 +13,7 @@ import makeSchema from './schema';
 const getTypesWithMappings = async (esClient, configs = {}) => {
   if (Object.keys(configs).length > 0) {
     try {
-      console.log(' \nNow creating a GraphQL mapping based on the ES index:');
+      console.log('Now creating a GraphQL mapping based on the ES index:');
       const { mapping } = await fetchMapping({
         esClient,
         index: configs?.[ConfigProperties.INDEX],
@@ -71,12 +71,12 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
         'Mapping could not be created for some reason, but no error was generated... this needs research!',
       );
     } catch (error) {
-      console.error(error?.message || error);
-      throw '  Something went wrong while creating the GraphQL mapping';
+      DEBUG_MODE && console.error(`  ${error?.message || error}`);
+      throw 'Something went wrong while creating the GraphQL mapping';
     }
   }
 
-  throw Error('  No configs available at getTypesWithMappings');
+  throw 'No configs available at getTypesWithMappings';
 };
 
 const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
@@ -108,6 +108,7 @@ const createEndpoint = async ({
   graphqlOptions = {},
   typesWithMappings,
 }) => {
+  console.log(' \nAnd finally, generating the GraphQL endpoint(s):');
   const router = express.Router();
 
   const { schema, mockSchema } = await createSchema({
@@ -123,8 +124,6 @@ const createEndpoint = async ({
         'schema is undefined. Make sure you provide a valid GraphQL Schema. https://www.apollographql.com/docs/graphql-tools/generate-schema.html',
     });
 
-  console.log('------------------------------------');
-
   if (schema) {
     const buildContext = async (req, res, connection) => {
       const externalContext =
@@ -138,28 +137,36 @@ const createEndpoint = async ({
       };
     };
 
-    new ApolloServer({
+    const server = new ApolloServer({
       schema,
       context: ({ req, res, con }) => buildContext(req, res, con),
-    }).applyMiddleware({
+    });
+
+    await server.start();
+
+    server.applyMiddleware({
       app: router,
       path: '/graphql',
     });
 
-    console.log('- GraphQL server running at .../graphql');
+    console.log('  - GraphQL server running at .../graphql');
   } else {
     router.use('/graphql', noSchemaHandler);
   }
 
   if (mockSchema) {
-    new ApolloServer({
+    const mockServer = new ApolloServer({
       schema: mockSchema,
-    }).applyMiddleware({
+    });
+
+    await mockServer.start();
+
+    mockServer.applyMiddleware({
       app: router,
       path: '/mock/graphql',
     });
 
-    console.log('- GraphQL mock server running at .../mock/graphql');
+    console.log('  - GraphQL mock server running at .../mock/graphql');
   } else {
     router.use('/mock/graphql', noSchemaHandler);
   }
@@ -221,7 +228,7 @@ export default async ({
   } catch (error) {
     // if enpoint creation fails, follow to the next server step to respond with an error
     console.info('\n---\nError thrown while generating the GraphQL endpoints.');
-    console.error(error?.message || error);
+    console.error(`  ${error?.message || error}`);
 
     return (req, res) =>
       res.status(500).send({

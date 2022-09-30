@@ -1,7 +1,9 @@
-import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { addMocksToSchema } from '@graphql-tools/mock';
 import { applyMiddleware } from 'graphql-middleware';
 
-import { CONSTANTS } from '../middleware';
+import { DEBUG_MODE } from '@/config/constants';
+import { CONSTANTS } from '@/middleware';
 
 import { FacetsConfigTypeDefs, MatchBoxConfigTypeDefs, TableConfigTypeDefs } from './Configs';
 import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
@@ -76,14 +78,15 @@ export default ({
   const schema = makeExecutableSchema({
     typeDefs,
     resolvers,
-    resolverValidationOptions: {
-      // this disables a warning which we are ok with (https://github.com/prisma/prisma/issues/2225)
-      requireResolversForResolveType: false,
-    },
+    ...(DEBUG_MODE && {
+      resolverValidationOptions: {
+        requireResolversForResolveType: 'warn',
+      },
+    }),
   });
 
   if (mock) {
-    addMockFunctionsToSchema({
+    addMocksToSchema({
       schema,
       mocks: { JSON: () => JSON.stringify({ key: 'value' }) },
     });
