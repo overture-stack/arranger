@@ -40,7 +40,10 @@ export const isEmptySqon = (sqonObj) =>
   !sqonObj ? true : BOOLEAN_OPS.includes(sqonObj.op) && !Boolean(sqonObj.content.length);
 export const isReference = (syntheticSqon) => !isNaN(syntheticSqon);
 export const isValueObj = (sqonObj) =>
-  typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && 'value' in sqonObj && 'field' in sqonObj;
+  typeof sqonObj === 'object' &&
+  !isEmptySqon(sqonObj) &&
+  'value' in sqonObj &&
+  'fieldName' in sqonObj;
 export const isBooleanOp = (sqonObj) =>
   typeof sqonObj === 'object' && !isEmptySqon(sqonObj) && BOOLEAN_OPS.includes(sqonObj.op);
 export const isFieldOp = (sqonObj) =>

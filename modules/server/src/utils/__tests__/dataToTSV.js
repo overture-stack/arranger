@@ -1,5 +1,6 @@
-import dataToTSVStream, { dataToTSV, columnsToHeader } from '../dataToExportFormat';
 import { PassThrough } from 'stream';
+
+import dataToTSVStream, { dataToTSV, columnsToHeader } from '../dataToExportFormat';
 
 describe('esHitsToTSV accessor columns', () => {
   it('should handle string accessors', () => {
@@ -12,12 +13,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          fieldName: 'test2',
           accessor: 'test2',
         },
       ],
@@ -43,12 +44,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          fieldName: 'test2',
           accessor: 'test2',
         },
       ],
@@ -71,12 +72,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2',
+          fieldName: 'test2',
           accessor: 'test2',
         },
       ],
@@ -134,12 +135,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2.nestedValue',
+          fieldName: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
@@ -192,12 +193,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2.nestedValue',
+          fieldName: 'test2.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nestedValue',
         },
       ],
@@ -265,12 +266,12 @@ describe('esHitsToTSV accessor columns', () => {
       columns: [
         {
           Header: 'Test1',
-          field: 'test1',
+          fieldName: 'test1',
           accessor: 'test1',
         },
         {
           Header: 'Test2',
-          field: 'test2.nestedValue.nesting.nestedValue',
+          fieldName: 'test2.nestedValue.nesting.nestedValue',
           jsonPath: '$.test2.hits.edges[*].node.nesting.hits.edges[*].node.nestedValue',
         },
       ],

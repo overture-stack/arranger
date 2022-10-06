@@ -69,8 +69,8 @@ class ColumnsState extends Component {
     });
   }, 300);
 
-  update = ({ field, key, value }) => {
-    let index = this.state.config.columns.findIndex((x) => x.field === field);
+  update = ({ fieldName, key, value }) => {
+    let index = this.state.config.columns.findIndex((x) => x.fieldName === fieldName);
     let column = this.state.config.columns[index];
     let temp = {
       ...this.state.config,
@@ -101,8 +101,8 @@ class ColumnsState extends Component {
     }
   }
 
-  toggle = ({ field, show }) => {
-    const toggled = { ...this.state.toggled, [field]: show };
+  toggle = ({ fieldName, show }) => {
+    const toggled = { ...this.state.toggled, [fieldName]: show };
     this.setColumnSelections(toggled);
   };
 
@@ -115,12 +115,14 @@ class ColumnsState extends Component {
     let { tableConfigs = { columns: [] } } = this.props;
     const { columns } = tableConfigs;
     if (
-      orderedFields.every((field) => columns.find((column) => column.field === field)) &&
-      columns.every((column) => orderedFields.find((field) => field === column.field))
+      orderedFields.every((fieldName) =>
+        columns.find((column) => column.fieldName === fieldName),
+      ) &&
+      columns.every((column) => orderedFields.find((fieldName) => fieldName === column.fieldName))
     ) {
       this.save({
         ...tableConfigs,
-        columns: sortBy(columns, ({ field }) => orderedFields.indexOf(field)),
+        columns: sortBy(columns, ({ fieldName }) => orderedFields.indexOf(fieldName)),
       });
     } else {
       console.warn('provided orderedFields are not clean: ', orderedFields);
@@ -147,7 +149,7 @@ class ColumnsState extends Component {
                 return {
                   ...column,
                   Header: column.displayName,
-                  show: column.field in toggled ? toggled[column.field] : column.show,
+                  show: column.fieldName in toggled ? toggled[column.fieldName] : column.show,
                 };
               }),
               defaultColumns: tableConfigs?.columns?.filter((column) => column.show),

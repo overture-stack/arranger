@@ -22,7 +22,7 @@ const retrieveSetIds = async ({
 
     const response = await esSearch(esClient)({
       index,
-      sort: sort.map(({ field, order }) => `${field}:${order || 'asc'}`),
+      sort: sort.map(({ fieldName, order }) => `${fieldName}:${order || 'asc'}`),
       size: BULK_SIZE,
       track_total_hits: trackTotalHits,
       body,
@@ -32,7 +32,7 @@ const retrieveSetIds = async ({
     );
 
     const nextSearchAfter = sort
-      .map(({ field }) => response.hits.hits.map((x) => x._source[field] || x[field]))
+      .map(({ fieldName }) => response.hits.hits.map((x) => x._source[fieldName] || x[fieldName]))
       .reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
 
     return {
@@ -52,11 +52,11 @@ const retrieveSetIds = async ({
 export const saveSet =
   ({ types, getServerSideFilter }) =>
   async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
-    const { nested_fields: nestedFields, index } = types.find(([, x]) => x.name === type)[1];
+    const { nested_fields: nestedFieldNames, index } = types.find(([, x]) => x.name === type)[1];
     const { esClient } = context;
 
     const query = buildQuery({
-      nestedFields,
+      nestedFieldNames,
       filters: compileFilter({
         clientSideFilter: sqon,
         serverSideFilter: getServerSideFilter(context),
@@ -67,7 +67,7 @@ export const saveSet =
       index,
       query,
       path,
-      sort: sort && sort.length ? sort : [{ field: '_id', order: 'asc' }],
+      sort: sort && sort.length ? sort : [{ fieldName: '_id', order: 'asc' }],
     });
 
     const body = {

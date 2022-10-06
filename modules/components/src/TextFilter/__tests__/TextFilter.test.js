@@ -11,7 +11,7 @@ const sqonWithoutFilter = {
     {
       op: 'in',
       content: {
-        field: 'field1',
+        fieldName: 'field1',
         value: ['one', 'two', 'three'],
       },
     },
@@ -24,14 +24,14 @@ const sqonWithFilter = {
     {
       op: 'in',
       content: {
-        field: 'field1',
+        fieldName: 'field1',
         value: ['one', 'two', 'three'],
       },
     },
     {
       op: 'filter',
       content: {
-        fields: ['field1', 'field2'],
+        fieldNames: ['field1', 'field2'],
         value: 'search value',
       },
     },
@@ -43,7 +43,7 @@ describe('generateNextSQON', () => {
     expect(
       generateNextSQON('new value')({
         sqon: emptySQON,
-        fields: ['field3', 'field4'],
+        fieldNames: ['field3', 'field4'],
       }),
     ).toEqual({
       op: 'and',
@@ -51,7 +51,7 @@ describe('generateNextSQON', () => {
         {
           op: 'filter',
           content: {
-            fields: ['field3', 'field4'],
+            fieldNames: ['field3', 'field4'],
             value: 'new value',
           },
         },
@@ -72,7 +72,7 @@ describe('generateNextSQON', () => {
       expect(
         generateNextSQON(value)({
           sqon: sqonWithFilter,
-          fields: ['field3, field4'],
+          fieldNames: ['field3, field4'],
         }),
       ).toEqual(sqonWithoutFilter),
     );
@@ -82,7 +82,7 @@ describe('generateNextSQON', () => {
     expect(
       generateNextSQON('another value')({
         sqon: sqonWithFilter,
-        fields: ['field3', 'field4'],
+        fieldNames: ['field3', 'field4'],
       }),
     ).toEqual({
       op: 'and',
@@ -90,14 +90,14 @@ describe('generateNextSQON', () => {
         {
           op: 'in',
           content: {
-            field: 'field1',
+            fieldName: 'field1',
             value: ['one', 'two', 'three'],
           },
         },
         {
           op: 'filter',
           content: {
-            fields: ['field3', 'field4'],
+            fieldNames: ['field3', 'field4'],
             value: 'another value',
           },
         },

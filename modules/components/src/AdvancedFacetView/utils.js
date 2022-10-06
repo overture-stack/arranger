@@ -23,7 +23,7 @@ const elasticMappingToDisplayTreeData = (elasticMapping, parentPath) => {
 const injectExtensionToElasticMapping = ({ elasticMapping, extendedMapping, rootTypeName }) => {
   const rawDisplayData = elasticMappingToDisplayTreeData(elasticMapping);
   const extend = (node) => {
-    const extension = extendedMapping.find((x) => x.field === node.path);
+    const extension = extendedMapping.find((x) => x.fieldName === node.path);
     return {
       ...node,
       ...(extension && {
@@ -71,7 +71,9 @@ const filterOutNonValue = ({ aggregations, displayTreeData, extendedMapping }) =
       displayTreeDataWithValue: applyFilterToDisplayNodeCollection(displayTreeData),
     }),
     ...(extendedMapping && {
-      extendedMappingWithValue: extendedMapping?.filter?.((x) => aggregationsWithValue[x.field]),
+      extendedMappingWithValue: extendedMapping?.filter?.(
+        (x) => aggregationsWithValue[x.fieldName],
+      ),
     }),
   };
 };

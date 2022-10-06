@@ -1,10 +1,11 @@
-import React from 'react';
 import { capitalize } from 'lodash';
+
 import Query from '../Query';
 import defaultApiFetcher from '../utils/api';
+
 import { queryFromAgg } from './AggsState';
 
-export default ({
+const AggsQuery = ({
   index = '',
   aggs = [],
   sqon = null,
@@ -18,12 +19,12 @@ export default ({
       renderError
       name={`${capitalize(index)}AggregationsQuery`}
       variables={{
-        fields: aggs.map((x) => x.field.replace(/__/g, '.')),
+        fieldNames: aggs.map((x) => x.fieldName.replace(/__/g, '.')),
         sqon,
       }}
       query={`
         query ${capitalize(index)}AggregationsQuery(
-          $fields: [String]
+          $fieldNames: [String]
           $sqon: JSON
         ) {
           ${index} {
@@ -34,7 +35,7 @@ export default ({
               ${aggs.map((x) => x.query || queryFromAgg(x))}
             }
             configs {
-              extended(fields: $fields)
+              extended(fieldNames: $fieldNames)
             }
           }
         }
@@ -43,3 +44,5 @@ export default ({
     />
   );
 };
+
+export default AggsQuery;

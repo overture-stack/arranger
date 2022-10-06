@@ -5,22 +5,23 @@ let joinWith =
   (x) =>
     x ? x + s : '';
 
-let flattenMapping = (properties, parent = '') => {
+const flattenMapping = (properties, parent = '') => {
   return flattenDeep(
-    Object.entries(properties).map(([field, data]) =>
+    Object.entries(properties).map(([fieldName, data]) =>
       !data.properties
         ? {
-            field: joinWith()(parent) + field,
+            fieldName: joinWith()(parent) + fieldName,
             type: data.type,
           }
         : [
             {
-              field: joinWith()(parent) + field,
+              fieldName: joinWith()(parent) + fieldName,
               type: data.type || 'object',
             },
-            ...flattenMapping(data.properties, joinWith()(parent) + field),
+            ...flattenMapping(data.properties, joinWith()(parent) + fieldName),
           ],
     ),
   );
 };
+
 export default flattenMapping;

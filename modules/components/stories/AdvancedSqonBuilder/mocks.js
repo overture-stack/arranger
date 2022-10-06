@@ -1,7 +1,7 @@
 export const sqons = [
   {
     op: 'and',
-    content: [{ op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } }],
+    content: [{ op: 'in', content: { fieldName: 'kf_id', value: ['GF_9V1MT6CM'] } }],
   },
   {
     op: 'or',
@@ -9,14 +9,14 @@ export const sqons = [
       {
         op: 'in',
         content: {
-          field: 'diagnoses.diagnosis_category',
+          fieldName: 'diagnoses.diagnosis_category',
           value: ['Cancer', 'Acute Myeloid Leukemia'],
         },
       },
       {
         op: 'in',
         content: {
-          field: 'study.short_name',
+          fieldName: 'study.short_name',
           value: [
             'Ewing Sarcoma: Genetic Risk',
             'Pediatric Brain Tumors: CBTTC',
@@ -29,21 +29,21 @@ export const sqons = [
   {
     op: 'and',
     content: [
-      { op: 'in', content: { field: 'kf_id', value: ['GF_9V1MT6CM'] } },
+      { op: 'in', content: { fieldName: 'kf_id', value: ['GF_9V1MT6CM'] } },
       {
         op: 'or',
         content: [
           {
             op: 'in',
             content: {
-              field: 'diagnoses.diagnosis_category',
+              fieldName: 'diagnoses.diagnosis_category',
               value: ['Cancer', 'Acute Myeloid Leukemia'],
             },
           },
           {
             op: 'in',
             content: {
-              field: 'study.short_name',
+              fieldName: 'study.short_name',
               value: [
                 'Ewing Sarcoma: Genetic Risk',
                 'Pediatric Brain Tumors: CBTTC',
@@ -54,8 +54,8 @@ export const sqons = [
           {
             op: 'and',
             content: [
-              { op: '>=', content: { field: 'size', value: [123] } },
-              { op: '<=', content: { field: 'size', value: [192471969710] } },
+              { op: '>=', content: { fieldName: 'size', value: [123] } },
+              { op: '<=', content: { fieldName: 'size', value: [192471969710] } },
             ],
           },
           0,
@@ -69,7 +69,7 @@ export const sqons = [
       {
         op: 'in',
         content: {
-          field: 'diagnoses.diagnosis_category',
+          fieldName: 'diagnoses.diagnosis_category',
           value: ['Cancer', 'Acute Myeloid Leukemia'],
         },
       },
@@ -79,7 +79,7 @@ export const sqons = [
           {
             op: 'in',
             content: {
-              field: 'study.short_name',
+              fieldName: 'study.short_name',
               value: [
                 'Ewing Sarcoma: Genetic Risk',
                 'Pediatric Brain Tumors: CBTTC',
@@ -89,7 +89,7 @@ export const sqons = [
           },
           {
             op: 'in',
-            content: { field: 'is_proband', value: ['true'] },
+            content: { fieldName: 'is_proband', value: ['true'] },
           },
         ],
       },
@@ -103,7 +103,7 @@ export const sqons = [
       {
         op: 'in',
         content: {
-          field: 'study.short_name',
+          fieldName: 'study.short_name',
           value: [
             'Ewing Sarcoma: Genetic Risk',
             'Pediatric Brain Tumors: CBTTC',

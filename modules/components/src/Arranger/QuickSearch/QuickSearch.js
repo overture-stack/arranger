@@ -14,7 +14,7 @@ import QuickSearchQuery from './QuickSearchQuery';
 import QuickSearchFieldsQuery from './QuickSearchFieldsQuery';
 
 const currentValues = ({ sqon, primaryKeyField }) =>
-  currentFieldValue({ sqon, dotField: primaryKeyField?.field, op: 'in' });
+  currentFieldValue({ sqon, dotFieldName: primaryKeyField?.fieldName, op: 'in' });
 
 const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
   setSQON(
@@ -25,7 +25,7 @@ const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
           {
             op: 'in',
             content: {
-              field: primaryKeyField?.field,
+              fieldName: primaryKeyField?.fieldName,
               value: [].concat(primaryKey || []),
             },
           },

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+
 import {
   ES_NESTED,
   ES_QUERY,
@@ -26,7 +27,6 @@ import {
   ES_SHOULD,
   ES_WILDCARD,
 } from '../constants';
-import normalizeFilters from './normalizeFilters';
 import {
   isNested,
   readPath,
@@ -38,78 +38,80 @@ import {
   toEsRangeValue,
 } from '../utils/esFilter';
 
-const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
-  return filter.content.field
+import normalizeFilters from './normalizeFilters';
+
+const wrapFilter = ({ esFilter, nestedFieldNames, filter, isNot = false }) => {
+  return filter.content.fieldName
     .split('.')
     .slice(0, -1)
-    .map((p, i, segments) => segments.slice(0, i + 1).join('.'))
-    .filter((p) => nestedFields.includes(p))
+    .map((segment, i, allSegments) => allSegments.slice(0, i + 1).join('.'))
+    .filter((segment) => nestedFieldNames.includes(segment))
     .reverse()
     .reduce(
-      (esFilter, path, i) => wrapNested(esFilter, path),
+      (esFilter, path) => wrapNested(esFilter, path),
       isNot ? wrapMustNot(esFilter) : esFilter,
     );
 };
 
-function getRegexFilter({ nestedFields, filter }) {
+function getRegexFilter({ nestedFieldNames, filter }) {
   const {
     op,
     content: {
-      field,
+      fieldName,
       value: [value],
     },
   } = filter;
   const esFilter = wrapFilter({
     filter,
-    nestedFields,
-    esFilter: { regexp: { [field]: value.replace('*', '.*') } },
+    nestedFieldNames,
+    esFilter: { regexp: { [fieldName]: value.replace('*', '.*') } },
     isNot: NOT_IN_OP === op,
   });
 
   return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-function getTermFilter({ nestedFields, filter }) {
+function getTermFilter({ nestedFieldNames, filter }) {
   const {
     op,
-    content: { value, field },
+    content: { value, fieldName },
   } = filter;
   const esFilter = wrapFilter({
     filter,
-    nestedFields,
-    esFilter: { terms: { [field]: value.map((item) => item || ''), boost: 0 } },
+    nestedFieldNames,
+    esFilter: { terms: { [fieldName]: value.map((item) => item || ''), boost: 0 } },
     isNot: NOT_IN_OP === op,
   });
 
   return op === SOME_NOT_IN_OP ? wrapMustNot(esFilter) : esFilter;
 }
 
-function getFuzzyFilter({ nestedFields, filter }) {
+function getFuzzyFilter({ nestedFieldNames, filter }) {
   const { content } = filter;
-  const { value, fields } = content;
+  const { value, fieldNames } = content;
 
   // group queries by their nesting level
-  const sortedNested = nestedFields.slice().sort((a, b) => b.length - a.length);
-  const nestedMap = fields.reduce((acc, field) => {
-    const group = sortedNested.find((y) => field.includes(y)) || '';
+  const sortedNested = nestedFieldNames.slice().sort((a, b) => b.length - a.length);
+  const nestedMap = fieldNames.reduce((acc, fieldName) => {
+    const group = sortedNested.find((segment) => fieldName.includes(segment)) || '';
     if (acc[group]) {
-      acc[group].push(field);
+      acc[group].push(fieldName);
     } else {
-      acc[group] = [field];
+      acc[group] = [fieldName];
     }
     return acc;
   }, {});
 
   // construct one multi match per nested group
   return wrapShould(
-    Object.values(nestedMap).map((fields) =>
+    Object.values(nestedMap).map((fieldNames) =>
       wrapFilter({
-        filter: { ...filter, content: { ...content, field: fields[0] } },
-        nestedFields,
+        filter: { ...filter, content: { ...content, fieldName: fieldNames[0] } },
+        nestedFieldNames,
         esFilter: wrapShould(
-          fields.map((field) => ({
+          fieldNames.map((fieldName) => ({
             [ES_WILDCARD]: {
-              [field]: {
+              [fieldName]: {
                 value: `${value}`,
               },
             },
@@ -120,29 +122,29 @@ function getFuzzyFilter({ nestedFields, filter }) {
   );
 }
 
-function getMissingFilter({ nestedFields, filter }) {
+function getMissingFilter({ nestedFieldNames, filter }) {
   const {
-    content: { field },
+    content: { fieldName },
   } = filter;
   return wrapFilter({
-    esFilter: { exists: { field: field, boost: 0 } },
-    nestedFields,
+    esFilter: { exists: { fieldName, boost: 0 } },
+    nestedFieldNames,
     filter,
     isNot: true,
   });
 }
 
-function getRangeFilter({ nestedFields, filter }) {
+function getRangeFilter({ nestedFieldNames, filter }) {
   const {
     op,
-    content: { field, value },
+    content: { fieldName, value },
   } = filter;
   return wrapFilter({
     filter,
-    nestedFields,
+    nestedFieldNames,
     esFilter: {
       range: {
-        [field]: {
+        [fieldName]: {
           boost: 0,
           [op]: toEsRangeValue([GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value)),
         },
@@ -186,9 +188,9 @@ const wrappers = {
   [OR_OP]: wrapShould,
   [NOT_OP]: wrapMustNot,
 };
-function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
+function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
   const applyBooleanWrapper = wrappers[op];
-  const esFilters = content.map((filter) => opSwitch({ nestedFields, filter }));
+  const esFilters = content.map((filter) => opSwitch({ nestedFieldNames, filter }));
   const isNested = !!esFilters[0]?.nested;
   if (isNested && esFilters.map((f) => f.nested?.path).includes(pivot)) {
     const flattned = esFilters.reduce(
@@ -204,15 +206,15 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   }
 }
 
-function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
+function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
   return wrapFilter({
     isNot: op === NOT_IN_OP,
     filter,
-    nestedFields,
+    nestedFieldNames,
     esFilter: {
       terms: {
         boost: 0,
-        [content.field]: {
+        [content.fieldName]: {
           index: ES_ARRANGER_SET_INDEX,
           type: ES_ARRANGER_SET_TYPE,
           id: _.flatMap([content.value])[0].replace('set_id:', ''),
@@ -223,16 +225,16 @@ function getSetFilter({ nestedFields, filter, filter: { content, op } }) {
   });
 }
 
-const getBetweenFilter = ({ nestedFields, filter }) => {
+const getBetweenFilter = ({ nestedFieldNames, filter }) => {
   const {
-    content: { field, value },
+    content: { fieldName, value },
   } = filter;
   return wrapFilter({
     filter,
-    nestedFields,
+    nestedFieldNames,
     esFilter: {
       range: {
-        [field]: {
+        [fieldName]: {
           boost: 0,
           [GTE_OP]: _.min(value),
           [LTE_OP]: _.max(value),
@@ -242,58 +244,58 @@ const getBetweenFilter = ({ nestedFields, filter }) => {
   });
 };
 
-export const opSwitch = ({ nestedFields, filter }) => {
+export const opSwitch = ({ nestedFieldNames, filter }) => {
   const {
     op,
     pivot,
     content: { value },
   } = filter;
   // we need a way to handle object fields before the following error is valid
-  // if (pivot && pivot !== '.' && !nestedFields.includes(pivot)) {
+  // if (pivot && pivot !== '.' && !nestedFieldNames.includes(pivot)) {
   //   throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
   // }
   if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
-    return getGroupFilter({ nestedFields, filter });
+    return getGroupFilter({ nestedFieldNames, filter });
   } else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
     if (`${value[0]}`.includes(REGEX)) {
-      return getRegexFilter({ nestedFields, filter });
+      return getRegexFilter({ nestedFieldNames, filter });
     } else if (`${value[0]}`.includes(SET_ID)) {
-      return getSetFilter({ nestedFields, filter });
+      return getSetFilter({ nestedFieldNames, filter });
     } else if (`${value[0]}`.includes(MISSING)) {
-      return getMissingFilter({ nestedFields, filter });
+      return getMissingFilter({ nestedFieldNames, filter });
     } else {
-      return getTermFilter({ nestedFields, filter });
+      return getTermFilter({ nestedFieldNames, filter });
     }
   } else if ([ALL_OP].includes(op)) {
     return getGroupFilter({
-      nestedFields,
+      nestedFieldNames,
       filter: {
         op: AND_OP,
         pivot: pivot || '.',
         content: filter.content.value.map((v) => ({
           op: IN_OP,
           content: {
-            field: filter.content.field,
+            fieldName: filter.content.fieldName,
             value: [v],
           },
         })),
       },
     });
   } else if ([GT_OP, GTE_OP, LT_OP, LTE_OP].includes(op)) {
-    return getRangeFilter({ nestedFields, filter });
+    return getRangeFilter({ nestedFieldNames, filter });
   } else if ([BETWEEN_OP].includes(op)) {
-    return getBetweenFilter({ nestedFields, filter });
+    return getBetweenFilter({ nestedFieldNames, filter });
   } else if (FILTER_OP === op) {
-    return getFuzzyFilter({ nestedFields, filter });
+    return getFuzzyFilter({ nestedFieldNames, filter });
   } else {
     throw new Error('unknown op');
   }
 };
 
-export default function ({ nestedFields, filters: rawFilters }) {
+export default function ({ nestedFieldNames, filters: rawFilters }) {
   if (Object.keys(rawFilters || {}).length === 0) return {};
   return opSwitch({
-    nestedFields,
+    nestedFieldNames,
     filter: normalizeFilters(rawFilters),
   });
 }

@@ -78,11 +78,11 @@ const EntitySelectionSection = ({
     <select onChange={onEntityChange}>
       <option value={null}>{entitySelectPlaceholder}</option>
       {activeFields
-        .filter(({ keyField: { field } }) =>
-          uploadableFields ? uploadableFields.includes(field) : true,
+        .filter(({ keyField: { fieldName } }) =>
+          uploadableFields ? uploadableFields.includes(fieldName) : true,
         )
-        .map(({ field, displayName }) => (
-          <option key={field} value={field}>
+        .map(({ fieldName, displayName }) => (
+          <option key={fieldName} value={fieldName}>
             {capitalize(displayName)}
           </option>
         ))}
@@ -117,7 +117,7 @@ const MatchBox = ({
   onTextChange,
   onFileUpload,
   onEntityChange,
-  activeEntityField,
+  activeEntityFieldName,
   uploadableFields = null,
   setActiveEntityField,
   ...props
@@ -130,19 +130,19 @@ const MatchBox = ({
         onInitialLoaded={({ activeFields }) => {
           if (!selectableEntityType) {
             const activeFieldToSet = activeFields.find(
-              ({ keyField: { field } }) => uploadableFields[0] === field,
+              ({ keyField: { fieldName } }) => uploadableFields[0] === fieldName,
             );
             if (activeFieldToSet) {
-              setActiveEntityField(activeFieldToSet.field);
+              setActiveEntityField(activeFieldToSet.fieldName);
             } else {
-              throw new Error(`no no active field found by the path ${uploadableFields[0]}`);
+              throw new Error(`no active field found by the path ${uploadableFields[0]}`);
             }
           }
         }}
         render={({
           primaryKeyField,
           activeFields,
-          activeField = activeFields.find((x) => x.field === activeEntityField),
+          activeField = activeFields.find((x) => x.fieldName === activeEntityFieldName),
         }) => (
           <Fragment>
             {!selectableEntityType ? null : (
@@ -273,7 +273,7 @@ const MatchBox = ({
                           sqon: quickSearchSqon,
                           type: props.documentType,
                           userId,
-                          path: primaryKeyField.field,
+                          path: primaryKeyField.fieldName,
                           apiFetcher,
                         }),
                         dataPath,
@@ -285,7 +285,7 @@ const MatchBox = ({
                             {
                               op: 'in',
                               content: {
-                                field: primaryKeyField?.field,
+                                fieldName: primaryKeyField?.fieldName,
                                 value: [`set_id:${data.setId}`],
                               },
                             },

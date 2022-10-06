@@ -4,7 +4,7 @@
   "facets": {
     "aggregations": [
       {
-        "field": "analysis__analysis_id",
+        "fieldName": "analysis__analysis_id",
         "active": true,
         "show": true
       }
@@ -17,9 +17,9 @@
   "matchbox": [
     {
       "displayName": "file",
-      "field": "",
+      "fieldName": "",
       "isActive": false,
-      "keyField": null,
+      "keyFieldName": null,
       "searchFields": []
     }
   ]

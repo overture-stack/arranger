@@ -7,7 +7,7 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
     ...options,
     params: {
       fileName,
-      files: files.map(({ allColumns, columns, exporterColumns = null, ...file }) => ({
+      files: files.map(({ allColumnsDict, columns, exporterColumns = null, ...file }) => ({
         ...file,
         columns: exporterColumns // if the component gave you custom columns to show
           ? Object.values(
@@ -15,12 +15,12 @@ const saveTSV = async ({ url, files = [], fileName, options = {} }) =>
                 ? exporterColumns
                     .map(
                       (fieldName) =>
-                        allColumns[fieldName] || // get the column data from the extended configs
+                        allColumnsDict[fieldName] || // get the column data from the extended configs
                         // or let the user know if the column isn't valid
                         console.info('Could not include a column into the file:', fieldName),
                     )
                     .filter((column) => column) // and then, use the valid ones
-                : allColumns, // else, they're asking for all the columns
+                : allColumnsDict, // else, they're asking for all the columns
             )
           : columns.filter((column) => column.show), // no custom columns, use admin's
       })),

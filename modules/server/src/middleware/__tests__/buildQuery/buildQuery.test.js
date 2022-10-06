@@ -3,7 +3,7 @@ import buildQuery from '../../buildQuery';
 test('buildQuery should handle empty sqon', () => {
   expect(
     buildQuery({
-      nestedFields: [],
+      nestedFieldNames: [],
       filters: {
         op: 'and',
         content: [],
@@ -16,13 +16,13 @@ test('buildQuery "and" and "or" ops', () => {
   const tests = [
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: 'in',
-              content: { field: 'project_code', value: ['ACC'] },
+              content: { fieldName: 'project_code', value: ['ACC'] },
             },
           ],
         },
@@ -33,13 +33,13 @@ test('buildQuery "and" and "or" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'or',
           content: [
             {
               op: 'in',
-              content: { field: 'project_code', value: ['ACC'] },
+              content: { fieldName: 'project_code', value: ['ACC'] },
             },
           ],
         },
@@ -50,13 +50,13 @@ test('buildQuery "and" and "or" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'or',
           content: [
             {
               op: 'in',
-              content: { field: 'project_code', value: ['__missing__'] },
+              content: { fieldName: 'project_code', value: ['__missing__'] },
             },
           ],
         },
@@ -66,7 +66,7 @@ test('buildQuery "and" and "or" ops', () => {
           should: [
             {
               bool: {
-                must_not: [{ exists: { boost: 0, field: 'project_code' } }],
+                must_not: [{ exists: { boost: 0, fieldName: 'project_code' } }],
               },
             },
           ],
@@ -85,14 +85,14 @@ test('buildQuery "all" ops', () => {
   const tests = [
     {
       input: {
-        nestedFields: ['diagnoses'],
+        nestedFieldNames: ['diagnoses'],
         filters: {
           op: 'and',
           content: [
             {
               op: 'all',
               content: {
-                field: 'diagnoses.diagnosis',
+                fieldName: 'diagnoses.diagnosis',
                 value: ['ganglioglioma', 'low grade glioma'],
               },
             },
@@ -148,7 +148,7 @@ test('buildQuery "all" ops', () => {
     },
     {
       input: {
-        nestedFields: ['diagnoses'],
+        nestedFieldNames: ['diagnoses'],
         filters: {
           op: 'and',
           content: [
@@ -156,7 +156,7 @@ test('buildQuery "all" ops', () => {
               op: 'all',
               pivot: 'diagnoses',
               content: {
-                field: 'diagnoses.diagnosis',
+                fieldName: 'diagnoses.diagnosis',
                 value: ['ganglioglioma', 'low grade glioma'],
               },
             },
@@ -211,7 +211,7 @@ test('buildQuery "and", "or" ops nested inside each other', () => {
   const tests = [
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
@@ -220,7 +220,7 @@ test('buildQuery "and", "or" ops nested inside each other', () => {
               content: [
                 {
                   op: 'in',
-                  content: { field: 'project_code', value: ['ACC'] },
+                  content: { fieldName: 'project_code', value: ['ACC'] },
                 },
               ],
             },
@@ -251,18 +251,18 @@ test('buildQuery "=" and "!=" ops', () => {
   const tests = [
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: '=',
-          content: { field: 'project_code', value: ['ACC'] },
+          content: { fieldName: 'project_code', value: ['ACC'] },
         },
       },
       output: { terms: { project_code: ['ACC'], boost: 0 } },
     },
     {
       input: {
-        nestedFields: [],
-        filters: { op: '!=', content: { field: 'project_code', value: 'ACC' } },
+        nestedFieldNames: [],
+        filters: { op: '!=', content: { fieldName: 'project_code', value: 'ACC' } },
       },
       output: {
         bool: { must_not: [{ terms: { project_code: ['ACC'], boost: 0 } }] },
@@ -270,12 +270,12 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
-            { op: '=', content: { field: 'program', value: ['TCGA'] } },
-            { op: '=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+            { op: '=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -290,12 +290,12 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
-            { op: '=', content: { field: 'program', value: ['TCGA'] } },
-            { op: '!=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+            { op: '!=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -312,18 +312,18 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'program', value: ['TCGA'] } },
-                { op: '=', content: { field: 'project', value: ['ACC'] } },
+                { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+                { op: '=', content: { fieldName: 'project', value: ['ACC'] } },
               ],
             },
-            { op: '=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -339,18 +339,18 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'program', value: ['TCGA'] } },
-                { op: '=', content: { field: 'project', value: ['ACC'] } },
+                { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+                { op: '=', content: { fieldName: 'project', value: ['ACC'] } },
               ],
             },
-            { op: '!=', content: { field: 'status', value: ['legacy'] } },
+            { op: '!=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -368,18 +368,18 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'program', value: ['TCGA'] } },
-                { op: '!=', content: { field: 'project', value: ['ACC'] } },
+                { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+                { op: '!=', content: { fieldName: 'project', value: ['ACC'] } },
               ],
             },
-            { op: '=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -395,18 +395,18 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'program', value: ['TCGA'] } },
-                { op: '!=', content: { field: 'project', value: ['ACC'] } },
+                { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+                { op: '!=', content: { fieldName: 'project', value: ['ACC'] } },
               ],
             },
-            { op: '!=', content: { field: 'status', value: ['legacy'] } },
+            { op: '!=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -424,12 +424,12 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'or',
           content: [
-            { op: '=', content: { field: 'program', value: ['TCGA'] } },
-            { op: '=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+            { op: '=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -444,12 +444,12 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'or',
           content: [
-            { op: '=', content: { field: 'program', value: ['TCGA'] } },
-            { op: '!=', content: { field: 'status', value: ['legacy'] } },
+            { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+            { op: '!=', content: { fieldName: 'status', value: ['legacy'] } },
           ],
         },
       },
@@ -466,16 +466,16 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'or',
           content: [
-            { op: '=', content: { field: 'project', value: ['ACC'] } },
+            { op: '=', content: { fieldName: 'project', value: ['ACC'] } },
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'program', value: ['TCGA'] } },
-                { op: '=', content: { field: 'status', value: ['legacy'] } },
+                { op: '=', content: { fieldName: 'program', value: ['TCGA'] } },
+                { op: '=', content: { fieldName: 'status', value: ['legacy'] } },
               ],
             },
           ],
@@ -499,19 +499,19 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
-            { op: '!=', content: { field: 'access', value: 'protected' } },
+            { op: '!=', content: { fieldName: 'access', value: 'protected' } },
             {
               op: 'and',
               content: [
-                { op: '=', content: { field: 'center.code', value: '01' } },
+                { op: '=', content: { fieldName: 'center.code', value: '01' } },
                 {
                   op: '=',
                   content: {
-                    field: 'cases.project.primary_site',
+                    fieldName: 'cases.project.primary_site',
                     value: 'Brain',
                   },
                 },
@@ -536,15 +536,15 @@ test('buildQuery "=" and "!=" ops', () => {
     },
     {
       input: {
-        nestedFields: [],
-        filters: { op: '=', content: { field: 'is_canonical', value: [true] } },
+        nestedFieldNames: [],
+        filters: { op: '=', content: { fieldName: 'is_canonical', value: [true] } },
       },
       output: { terms: { is_canonical: [true], boost: 0 } },
     },
     {
       input: {
-        nestedFields: [],
-        filters: { op: '=', content: { field: 'case_count', value: [24601] } },
+        nestedFieldNames: [],
+        filters: { op: '=', content: { fieldName: 'case_count', value: [24601] } },
       },
       output: { terms: { case_count: [24601], boost: 0 } },
     },
@@ -560,11 +560,11 @@ test('buildQuery "<=" and "=>"', () => {
   const tests = [
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: '<=',
           content: {
-            field: 'cases.clinical.age_at_diagnosis',
+            fieldName: 'cases.clinical.age_at_diagnosis',
             value: ['20'],
           },
         },
@@ -575,14 +575,14 @@ test('buildQuery "<=" and "=>"', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: '<=',
               content: {
-                field: 'cases.clinical.age_at_diagnosis',
+                fieldName: 'cases.clinical.age_at_diagnosis',
                 value: ['20'],
               },
             },
@@ -603,21 +603,21 @@ test('buildQuery "<=" and "=>"', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: '<=',
               content: {
-                field: 'cases.clinical.age_at_diagnosis',
+                fieldName: 'cases.clinical.age_at_diagnosis',
                 value: ['30'],
               },
             },
             {
               op: '>=',
               content: {
-                field: 'cases.clinical.age_at_diagnosis',
+                fieldName: 'cases.clinical.age_at_diagnosis',
                 value: ['20'],
               },
             },
@@ -643,28 +643,28 @@ test('buildQuery "<=" and "=>"', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: '<=',
               content: {
-                field: 'cases.clinical.age_at_diagnosis',
+                fieldName: 'cases.clinical.age_at_diagnosis',
                 value: ['30'],
               },
             },
             {
               op: '>=',
               content: {
-                field: 'cases.clinical.age_at_diagnosis',
+                fieldName: 'cases.clinical.age_at_diagnosis',
                 value: ['20'],
               },
             },
             {
               op: '>=',
               content: {
-                field: 'cases.clinical.days_to_death',
+                fieldName: 'cases.clinical.days_to_death',
                 value: ['100'],
               },
             },
@@ -695,21 +695,21 @@ test('buildQuery "<=" and "=>"', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: '>=',
               content: {
-                field: 'cases.clinical.date_of_birth',
+                fieldName: 'cases.clinical.date_of_birth',
                 value: ['2017-01-01'],
               },
             },
             {
               op: '<=',
               content: {
-                field: 'cases.clinical.date_of_birth',
+                fieldName: 'cases.clinical.date_of_birth',
                 value: ['2017-12-01'],
               },
             },
@@ -741,21 +741,21 @@ test('buildQuery "<=" and "=>"', () => {
     },
     {
       input: {
-        nestedFields: [],
+        nestedFieldNames: [],
         filters: {
           op: 'and',
           content: [
             {
               op: '>=',
               content: {
-                field: 'cases.clinical.date_of_birth',
+                fieldName: 'cases.clinical.date_of_birth',
                 value: ['2017-01-01 00:00:00.000000'],
               },
             },
             {
               op: '<=',
               content: {
-                field: 'cases.clinical.date_of_birth',
+                fieldName: 'cases.clinical.date_of_birth',
                 value: ['2017-12-01 00:00:00.000000'],
               },
             },
@@ -795,7 +795,7 @@ test('buildQuery "<=" and "=>"', () => {
 
 test('buildQuery "all"', () => {
   const input = {
-    nestedFields: [
+    nestedFieldNames: [
       'biospecimens',
       'diagnoses',
       'family.family_compositions',
@@ -810,7 +810,7 @@ test('buildQuery "all"', () => {
         {
           op: 'all',
           content: {
-            field: 'files.kf_id',
+            fieldName: 'files.kf_id',
             value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
           },
         },
@@ -855,14 +855,14 @@ test('buildQuery "all"', () => {
 
 test('buildQuery "between"', () => {
   const input = {
-    nestedFields: ['biospecimens'],
+    nestedFieldNames: ['biospecimens'],
     filters: {
       op: 'and',
       content: [
         {
           op: 'between',
           content: {
-            field: 'biospecimens.age_at_event_days',
+            fieldName: 'biospecimens.age_at_event_days',
             value: [200, '10000'],
           },
         },
@@ -901,14 +901,14 @@ test('buildQuery "between"', () => {
 
 test('buildQuery "not-in" op', () => {
   const input = {
-    nestedFields: [],
+    nestedFieldNames: [],
     filters: {
       op: 'and',
       content: [
         {
           op: 'not-in',
           content: {
-            field: 'kf_id',
+            fieldName: 'kf_id',
             value: ['id_1', 'id_2', 'id_3'],
           },
         },
@@ -941,7 +941,7 @@ test('buildQuery "not-in" op', () => {
 // test('it must reject invalid pivot fields', () => {
 //   const testFunction = () => {
 //     const input = {
-//       nestedFields: ['files'],
+//       nestedFieldNames: ['files'],
 //       filters: {
 //         op: 'and',
 //         content: [
@@ -949,7 +949,7 @@ test('buildQuery "not-in" op', () => {
 //             op: 'all',
 //             pivot: 'asdf',
 //             content: {
-//               field: 'files.kf_id',
+//               fieldName: 'files.kf_id',
 //               value: ['GF_JBMG9T1M', 'GF_WCYF2AH4'],
 //             },
 //           },

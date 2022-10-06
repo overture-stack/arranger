@@ -1,4 +1,3 @@
-import React from 'react';
 import Component from 'react-component-component';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { Tooltip } from 'react-tippy';
@@ -16,23 +15,21 @@ import defaultApiFetcher from '../../utils/api';
 
 import { PillRemoveButton } from './common';
 
-export default (props) => {
-  const {
-    onSqonChange = (fullSqon) => {},
-    onContentRemove = () => {},
-    fullSyntheticSqon,
-    sqonPath = [],
-    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-    arrangerIndex,
-    FieldOpModifierContainer = undefined,
-    apiFetcher = defaultApiFetcher,
-    getActiveExecutableSqon,
-  } = props;
-
+const FieldOp = ({
+  onSqonChange = (fullSqon) => {},
+  onContentRemove = () => {},
+  fullSyntheticSqon,
+  sqonPath = [],
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  arrangerIndex,
+  FieldOpModifierContainer = undefined,
+  apiFetcher = defaultApiFetcher,
+  getActiveExecutableSqon,
+}) => {
   const fieldOpObj = getOperationAtPath(sqonPath)(fullSyntheticSqon);
   const {
     op,
-    content: { field, value },
+    content: { fieldName, value },
   } = fieldOpObj;
   const initialState = { isOpen: false };
   const onClickAway = (s) => () => {
@@ -53,7 +50,7 @@ export default (props) => {
           {(fieldDisplayNameMap = {}) => (
             <span className={`fieldOp pill`}>
               <span className={'opContainer'}>
-                <span className={`fieldName`}>{fieldDisplayNameMap[field] || field} </span>
+                <span className={`fieldName`}>{fieldDisplayNameMap[fieldName] || fieldName} </span>
                 <span className={`opName`}>{` is ${
                   (Array.isArray(value) && value.length > 1) || RANGE_OPS.includes(op)
                     ? opDisplayNameMap[op]
@@ -75,7 +72,7 @@ export default (props) => {
                   <div className={`fieldFilterContainer`}>
                     <FieldOpModifier
                       arrangerIndex={arrangerIndex}
-                      field={field}
+                      fieldName={fieldName}
                       sqonPath={sqonPath}
                       initialSqon={fullSyntheticSqon}
                       onSubmit={onNewSqonSubmitted(s)}
@@ -97,3 +94,5 @@ export default (props) => {
     </Component>
   );
 };
+
+export default FieldOp;

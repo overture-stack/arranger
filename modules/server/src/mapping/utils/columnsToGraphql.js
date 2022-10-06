@@ -20,9 +20,10 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
   const fields = config.columns
     .filter(
       (column) =>
-        !(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
+        !(column.accessor && column.accessor === config.keyFieldName) &&
+        (column.fetch || column.show),
     )
-    .concat(config.keyField ? { accessor: config.keyField } : [])
+    .concat(config.keyFieldName ? { accessor: config.keyFieldName } : [])
     .map(toQuery)
     .join('\n');
 
@@ -47,20 +48,20 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
       sort:
         sort &&
         sort.map((s) => {
-          if (s.field.indexOf('hits.total') >= 0) {
-            return Object.assign({}, s, { field: '_score' });
+          if (s.fieldName.indexOf('hits.total') >= 0) {
+            return Object.assign({}, s, { fieldName: '_score' });
           } else {
-            const nested = s.field.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
+            const nested = s.fieldName.match(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
 
-            return Object.assign({}, s, nested ? { field: `${nested[1]}${nested[2]}` } : {});
+            return Object.assign({}, s, nested ? { fieldName: `${nested[1]}${nested[2]}` } : {});
           }
         }),
       score:
         (sort &&
           sort
-            .filter((s) => s.field.indexOf('hits.total') >= 0)
+            .filter((s) => s.fieldName.indexOf('hits.total') >= 0)
             .map((s) => {
-              const match = s.field.match(/((.*)s)\.hits\.total/);
+              const match = s.fieldName.match(/((.*)s)\.hits\.total/);
               return `${match[1]}.${match[2]}_id`;
             })
             .join(',')) ||

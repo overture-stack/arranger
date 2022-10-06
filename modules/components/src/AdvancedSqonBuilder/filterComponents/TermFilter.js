@@ -38,12 +38,12 @@ export const TermFilterUI = (props) => {
     buckets,
     fieldDisplayNameMap = {},
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-    field,
+    fieldName,
   } = props;
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
     op: IN_OP,
-    content: { value: [], field },
+    content: { value: [], fieldName },
   };
   const initialState = { searchString: '', localSqon: initialSqon };
   const onSearchChange = (s) => (e) => {
@@ -52,7 +52,7 @@ export const TermFilterUI = (props) => {
   const isFilterActive = (s) => (d) =>
     inCurrentSQON({
       value: d.value,
-      dotField: d.field,
+      dotFieldName: d.fieldName,
       currentSQON: getOperationAtPath(sqonPath)(s.state.localSqon),
     });
   const getCurrentFieldOp = (s) => getOperationAtPath(sqonPath)(s.state.localSqon);
@@ -63,7 +63,7 @@ export const TermFilterUI = (props) => {
       (bucket) =>
         !inCurrentSQON({
           value: bucket.key,
-          dotField: initialFieldSqon.content.field,
+          dotFieldName: initialFieldSqon.content.fieldName,
           currentSQON: getOperationAtPath(sqonPath)(initialSqon),
         }),
     );
@@ -136,8 +136,8 @@ export const TermFilterUI = (props) => {
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <div className="contentSection">
             <span>
-              {fieldDisplayNameMap[initialFieldSqon.content.field] ||
-                initialFieldSqon.content.field}
+              {fieldDisplayNameMap[initialFieldSqon.content.fieldName] ||
+                initialFieldSqon.content.fieldName}
             </span>{' '}
             is{' '}
             <span className="select">
@@ -164,7 +164,7 @@ export const TermFilterUI = (props) => {
           <div className="contentSection termAggContainer">
             <TermAgg
               WrapperComponent={AggsWrapper}
-              field={initialFieldSqon.content.field}
+              fieldName={initialFieldSqon.content.fieldName}
               displayName="Disease Type"
               buckets={computeBuckets(s, buckets)}
               handleValueClick={onFilterClick(s)}
@@ -180,7 +180,7 @@ export const TermFilterUI = (props) => {
 
 export default (props) => {
   const {
-    field,
+    fieldName,
     arrangerIndex,
     apiFetcher = defaultApiFetcher,
     executableSqon = {
@@ -198,7 +198,7 @@ export default (props) => {
     opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
   } = props;
 
-  const gqlField = field.split('.').join('__');
+  const gqlField = fieldName.split('.').join('__');
   const query = `query($sqon: JSON){
     ${arrangerIndex} {
       aggregations(filters: $sqon) {
@@ -223,7 +223,7 @@ export default (props) => {
               {children}
             </ContainerComponent>
           )}
-          field={field}
+          fieldName={fieldName}
           initialSqon={initialSqon}
           onSubmit={onSubmit}
           onCancel={onCancel}

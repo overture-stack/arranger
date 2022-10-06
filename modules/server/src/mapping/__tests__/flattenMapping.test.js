@@ -52,21 +52,21 @@ const testMapping = {
 };
 
 const expectedOutput = [
-  { field: 'level_1_1', type: 'nested' },
-  { field: 'level_1_1.level_2_1', type: 'keyword' },
-  { field: 'level_1_1.level_2_2', type: 'nested' },
-  { field: 'level_1_1.level_2_2.level_3_1', type: 'keyword' },
-  { field: 'level_1_1.level_2_2.level_3_2', type: 'keyword' },
-  { field: 'level_1_1.level_2_3', type: 'long' },
-  { field: 'level_1_1.level_2_4', type: 'keyword' },
+  { fieldName: 'level_1_1', type: 'nested' },
+  { fieldName: 'level_1_1.level_2_1', type: 'keyword' },
+  { fieldName: 'level_1_1.level_2_2', type: 'nested' },
+  { fieldName: 'level_1_1.level_2_2.level_3_1', type: 'keyword' },
+  { fieldName: 'level_1_1.level_2_2.level_3_2', type: 'keyword' },
+  { fieldName: 'level_1_1.level_2_3', type: 'long' },
+  { fieldName: 'level_1_1.level_2_4', type: 'keyword' },
 
-  { field: 'level_1_2', type: 'object' },
-  { field: 'level_1_2.level_2_1', type: 'keyword' },
-  { field: 'level_1_2.level_2_2', type: 'object' },
-  { field: 'level_1_2.level_2_2.level_3_1', type: 'keyword' },
-  { field: 'level_1_2.level_2_2.level_3_2', type: 'keyword' },
-  { field: 'level_1_2.level_2_3', type: 'long' },
-  { field: 'level_1_2.level_2_4', type: 'keyword' },
+  { fieldName: 'level_1_2', type: 'object' },
+  { fieldName: 'level_1_2.level_2_1', type: 'keyword' },
+  { fieldName: 'level_1_2.level_2_2', type: 'object' },
+  { fieldName: 'level_1_2.level_2_2.level_3_1', type: 'keyword' },
+  { fieldName: 'level_1_2.level_2_2.level_3_2', type: 'keyword' },
+  { fieldName: 'level_1_2.level_2_3', type: 'long' },
+  { fieldName: 'level_1_2.level_2_4', type: 'keyword' },
 ];
 
 test('flattenMapping', () => {

@@ -30,7 +30,7 @@ test('getNestedFields', () => {
   let expected = ['diagnoses', 'diagnoses.treatments'];
 
   expect(actual.length).toBe(expected.length);
-  expected.forEach((field, i) => expect(field).toEqual(actual[i]));
+  expected.forEach((fieldName, i) => expect(fieldName).toEqual(actual[i]));
 });
 
 test('getNestedFields deep nested', () => {
@@ -54,5 +54,5 @@ test('getNestedFields deep nested', () => {
   let expected = ['family.family_members'];
 
   expect(actual.length).toBe(expected.length);
-  expected.forEach((field, i) => expect(field).toEqual(actual[i]));
+  expected.forEach((fieldName, i) => expect(fieldName).toEqual(actual[i]));
 });

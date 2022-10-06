@@ -50,7 +50,7 @@ export default ({
           {
             active: false,
             displayName: 'ids',
-            field: 'ids',
+            fieldName: 'ids',
             isArray: true,
             type: 'keyword',
             unit: null,

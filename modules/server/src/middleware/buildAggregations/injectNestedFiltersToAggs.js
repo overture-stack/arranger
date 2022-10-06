@@ -1,12 +1,13 @@
+import { cloneDeep } from 'lodash';
+
 import { opSwitch } from '../buildQuery';
 import normalizeFilters from '../buildQuery/normalizeFilters';
 import { AGGS_WRAPPER_FILTERED } from '../constants';
-import { cloneDeep } from 'lodash';
 
 /*
  * due to this problem: https://github.com/kids-first/kf-portal-ui/issues/488
- * queries that are on a term that shares a parent with a aggregation field
- * needs to be dropped down to the aggregation level as a filter.
+ * queries that are on a term that shares a parent with an aggregation field
+ * need to be dropped down to the aggregation level as a filter.
  */
 const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilterThemselves }) =>
   Object.entries(aggs).reduce((acc, [aggName, aggContent]) => {
@@ -32,11 +33,11 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
                   .filter(
                     (sqonFilter) =>
                       aggregationsFilterThemselves ||
-                      aggName.split(':')[0] !== sqonFilter.content.field,
+                      aggName.split(':')[0] !== sqonFilter.content.fieldName,
                   )
                   .map((sqonFilter) =>
                     opSwitch({
-                      nestedFields: [],
+                      nestedFieldNames: [],
                       filter: normalizeFilters(sqonFilter),
                     }),
                   ),

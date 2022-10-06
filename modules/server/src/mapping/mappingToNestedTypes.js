@@ -1,4 +1,5 @@
 import { capitalize } from 'lodash';
+
 import mappingToNestedFields from './mappingToNestedFields';
 import mappingToScalarFields from './mappingToScalarFields';
 import createConnectionTypeDefs from './createConnectionTypeDefs';
@@ -8,35 +9,35 @@ let mappingToNestedTypes = (type, mapping, parent, extendedFields) => {
   return Object.entries(mapping)
     .filter(([, metadata]) => metadata.type === 'nested')
     .map(
-      ([field, metadata]) => `
+      ([fieldName, metadata]) => `
         ${mappingToObjectTypes(
-          type + capitalize(field),
+          type + capitalize(fieldName),
           metadata.properties,
-          [parent, field].filter(Boolean).join('.'),
+          [parent, fieldName].filter(Boolean).join('.'),
           extendedFields,
         )},
          ${mappingToNestedTypes(
-           type + capitalize(field),
+           type + capitalize(fieldName),
            metadata.properties,
-           [parent, field].filter(Boolean).join('.'),
+           [parent, fieldName].filter(Boolean).join('.'),
            extendedFields,
          ).join('\n')}
         ${createConnectionTypeDefs({
           type: {
             ...type,
-            name: type + capitalize(field),
+            name: type + capitalize(fieldName),
             mapping: metadata.properties,
           },
           fields: [
             mappingToScalarFields(
               metadata.properties,
               extendedFields,
-              [parent, field].filter(Boolean).join('.'),
+              [parent, fieldName].filter(Boolean).join('.'),
             ),
             mappingToNestedFields(
-              type + capitalize(field),
+              type + capitalize(fieldName),
               metadata.properties,
-              [parent, field].filter(Boolean).join('.'),
+              [parent, fieldName].filter(Boolean).join('.'),
               extendedFields,
             ),
           ],

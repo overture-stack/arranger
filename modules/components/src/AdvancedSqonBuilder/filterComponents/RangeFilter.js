@@ -1,9 +1,8 @@
-import React from 'react';
 import Component from 'react-component-component';
 import { min, max } from 'lodash';
 import PropTypes from 'prop-types';
 import convert from 'convert-units';
-import './FilterContainerStyle.css';
+
 import {
   getOperationAtPath,
   setSqonAtPath,
@@ -15,7 +14,9 @@ import {
   LTE_OP,
   LT_OP,
 } from '../utils';
+
 import { FilterContainer } from './common';
+import './FilterContainerStyle.css';
 
 const SUPPORTED_CONVERSIONS = {
   time: ['d', 'month', 'year'],
@@ -45,32 +46,32 @@ const convertUnit = (sourceUnit, targetUnit) => (num) => {
   return sourceUnit && targetUnit ? convert(num).from(sourceUnit).to(targetUnit) : num;
 };
 
-export const RangeFilterUi = (props) => {
-  const {
-    field: fieldName = null,
-    sqonPath = [],
-    initialSqon = null,
-    onSubmit = (sqon) => {},
-    onCancel = () => {},
-    fieldDisplayNameMap = {},
-    opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
-    ContainerComponent = FilterContainer,
-    InputComponent = (props) => (
-      <input {...props} className={`rangeFilterInput ${props.className || ''}`} />
-    ),
-    unit: originalUnit = null,
-  } = props;
-
+export const RangeFilterUi = ({
+  fieldName = null,
+  sqonPath = [],
+  initialSqon = null,
+  onSubmit = (sqon) => {},
+  onCancel = () => {},
+  fieldDisplayNameMap = {},
+  opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
+  ContainerComponent = FilterContainer,
+  InputComponent = (props) => (
+    <input {...props} className={`rangeFilterInput ${props.className || ''}`} />
+  ),
+  unit: originalUnit = null,
+}) => {
   const initialFieldOp = (() => {
     const fieldOp = getOperationAtPath(sqonPath)(initialSqon);
+
     return fieldOp
       ? normalizeNumericFieldOp(fieldOp)
       : {
           op: BETWEEN_OP,
-          content: { value: [], field: fieldName || fieldOp.content.field },
+          content: { value: [], fieldName: fieldName || fieldOp.content.fieldName },
         };
   })();
-  const field = fieldName || initialFieldOp.content.field;
+
+  const _fieldName = fieldName || initialFieldOp.content.fieldName;
   const initialState = {
     selectedOperation: initialFieldOp.op,
     minValue: min(initialFieldOp.content.value),
@@ -92,7 +93,7 @@ export const RangeFilterUi = (props) => {
     const sqonToSubmit = {
       op,
       content: {
-        field,
+        fieldName: _fieldName,
         value,
       },
     };
@@ -138,7 +139,7 @@ export const RangeFilterUi = (props) => {
         <ContainerComponent onSubmit={onSqonSubmit(s)} onCancel={onCancel}>
           <div className="filterContent">
             <div className="contentSection">
-              <span>{fieldDisplayNameMap[field] || field}</span> is{' '}
+              <span>{fieldDisplayNameMap[_fieldName] || _fieldName}</span> is{' '}
               <select onChange={onOptionTypeChange(s)}>
                 {RANGE_OPS.map((option) => (
                   <option
@@ -213,10 +214,10 @@ const RangeFilter = ({
   ContainerComponent = FilterContainer,
   InputComponent = (props) => <input {...props} />,
   unit = null,
-  field,
+  fieldName,
 }) => (
   <RangeFilterUi
-    field={field}
+    fieldName={fieldName}
     ContainerComponent={ContainerComponent}
     sqonPath={sqonPath}
     initialSqon={initialSqon}
@@ -230,7 +231,7 @@ const RangeFilter = ({
 );
 
 RangeFilter.prototype = {
-  field: PropTypes.string,
+  fieldName: PropTypes.string,
   sqonPath: PropTypes.arrayOf(PropTypes.number),
   initialSqon: PropTypes.object,
   onSubmit: PropTypes.func,

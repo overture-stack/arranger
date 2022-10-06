@@ -25,7 +25,7 @@ const fetchMappingData = async (fetchConfig) =>
           extended,
           facets {
             aggregations {
-              field, active
+              fieldName, active
             }
           }
         }
@@ -38,11 +38,13 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
   const fetchConfig = { index, apiFetcher };
   const serializeToGraphQl = (aggName) => aggName.split('.').join('__');
   const serializeToPath = (aggName) => aggName.split('__').join('.');
-  const allAggsNames = extended.map((entry) => entry.field).map(serializeToGraphQl);
+  const allAggsNames = extended.map((entry) => entry.fieldName).map(serializeToGraphQl);
   const getAggregationQuery = () =>
     allAggsNames
       .map((aggName) => {
-        const aggType = extended.find((entry) => serializeToGraphQl(entry.field) === aggName).type;
+        const aggType = extended.find(
+          (entry) => serializeToGraphQl(entry.fieldName) === aggName,
+        ).type;
         return `
           ${aggName} {
             ${
@@ -80,14 +82,14 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 const removeFieldTypesFromMapping = ({
   mapping,
   extended,
-  parentField = null,
+  parentFieldName = '',
   fieldTypesToExclude = [],
 }) => {
   const output = {
     ...Object.entries(mapping).reduce((acc, [key, val]) => {
-      const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
+      const currentFieldName = `${parentFieldName ? `${parentFieldName}.` : ''}${key}`;
       const isId = fieldTypesToExclude.some(
-        (type) => type === extended.find((ex) => ex.field === currentField)?.type,
+        (type) => type === extended.find((ex) => ex.fieldName === currentField)?.type,
       );
       const toSpread = !isId
         ? {
@@ -98,7 +100,7 @@ const removeFieldTypesFromMapping = ({
                     properties: removeFieldTypesFromMapping({
                       mapping: val.properties,
                       extended,
-                      parentField: currentField,
+                      parentFieldName: currentFieldName,
                       fieldTypesToExclude,
                     }),
                   },
@@ -137,7 +139,8 @@ export default class LiveAdvancedFacetView extends React.Component {
     extended?.filter(
       (e) =>
         !this.blackListedAggTypes.includes(e.type) &&
-        facets?.aggregations?.find((s) => s.field.split('__').join('.') === e.field)?.active,
+        facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)
+          ?.active,
     );
 
   componentDidMount() {

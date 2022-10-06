@@ -6,9 +6,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 import { removeSQON, replaceSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import AggsWrapper from './AggsWrapper';
-import { emptyObj } from '@/utils/noops';
 
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
@@ -27,11 +27,11 @@ class DatesAgg extends React.Component {
   }
 
   initializeState = ({ stats = {}, getActiveValue = () => null }) => {
-    const { field } = this.props;
+    const { fieldName } = this.props;
     const minDate = stats.min && subDays(stats.min, 1);
     const maxDate = stats.max && addDays(stats.max, 1);
-    const startFromSqon = getActiveValue({ op: '>=', field });
-    const endFromSqon = getActiveValue({ op: '<=', field });
+    const startFromSqon = getActiveValue({ op: '>=', fieldName });
+    const endFromSqon = getActiveValue({ op: '<=', fieldName });
 
     return {
       minDate,
@@ -43,15 +43,15 @@ class DatesAgg extends React.Component {
 
   updateSqon = () => {
     const { startDate, endDate } = this.state;
-    const { field, handleDateChange } = this.props;
-    if (handleDateChange && field) {
+    const { fieldName, handleDateChange } = this.props;
+    if (handleDateChange && fieldName) {
       const content = [
         ...(startDate
           ? [
               {
                 op: '>=',
                 content: {
-                  field,
+                  fieldName,
                   value: toSqonDate(startOfDay(startDate)),
                 },
               },
@@ -62,7 +62,7 @@ class DatesAgg extends React.Component {
               {
                 op: '<=',
                 content: {
-                  field,
+                  fieldName,
                   value: toSqonDate(endOfDay(endDate)),
                 },
               },
@@ -70,10 +70,10 @@ class DatesAgg extends React.Component {
           : []),
       ];
       handleDateChange({
-        field,
+        fieldName,
         value: content,
         generateNextSQON: (sqon) =>
-          replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(field, sqon)),
+          replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(fieldName, sqon)),
       });
     }
   };
@@ -87,7 +87,7 @@ class DatesAgg extends React.Component {
       collapsible = true,
       displayName = 'Date Range',
       facetView = false,
-      field,
+      fieldName,
       theme: {
         colors,
         components: {
@@ -106,7 +106,7 @@ class DatesAgg extends React.Component {
     const hasData = minDate && maxDate;
 
     const dataFields = {
-      ...(field && { 'data-field': field }),
+      ...(fieldName && { 'data-fieldname': fieldName }),
       ...(type && { 'data-type': type }),
     };
 

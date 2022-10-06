@@ -11,13 +11,15 @@ const memoizedExtendedMapping = ({ documentType, apiFetcher }) => {
   return memoHash[documentType];
 };
 
-const memoizedExtendedMappingField = ({ contentField, documentType, apiFetcher }) => {
-  const key = `${documentType}/${contentField}`;
+const memoizedExtendedMappingField = ({ contentFieldName, documentType, apiFetcher }) => {
+  const key = `${documentType}/${contentFieldName}`;
   if (!memoHash[key]) {
     memoHash[key] = memoizedExtendedMapping({
       documentType,
       apiFetcher,
-    }).then(({ extendedMapping }) => extendedMapping.filter(({ field }) => field === contentField));
+    }).then(({ extendedMapping }) =>
+      extendedMapping.filter(({ fieldName }) => fieldName === contentFieldName),
+    );
   }
   return memoHash[key];
 };
@@ -26,27 +28,27 @@ const ExtendedMappingProvider = ({
   documentType,
   apiFetcher = defaultApiFetcher,
   useCache = true,
-  field: contentField,
+  fieldName: contentFieldName,
   children,
 }) => {
   const initialState = { loading: true, extendedMapping: undefined };
   const didMount = async (s) => {
-    if (contentField) {
+    if (contentFieldName) {
       const extendedMapping = !useCache
         ? await fetchExtendedMapping({
             documentType,
             apiFetcher,
           }).then(({ extendedMapping }) =>
-            extendedMapping.filter(({ field }) => {
-              return field === contentField;
+            extendedMapping.filter(({ fieldName }) => {
+              return fieldName === contentFieldName;
             }),
           )
         : await memoizedExtendedMappingField({
             documentType,
             apiFetcher,
-            contentField,
+            contentFieldName,
           });
-      s.setState({ loading: false, extendedMapping: extendedMapping });
+      s.setState({ loading: false, extendedMapping });
     } else {
       const { extendedMapping } = !useCache
         ? await fetchExtendedMapping({
@@ -57,7 +59,7 @@ const ExtendedMappingProvider = ({
             documentType,
             apiFetcher,
           });
-      s.setState({ loading: false, extendedMapping: extendedMapping });
+      s.setState({ loading: false, extendedMapping });
     }
   };
   return (
@@ -70,7 +72,7 @@ const ExtendedMappingProvider = ({
 ExtendedMappingProvider.prototype = {
   apiFetcher: PropTypes.func,
   useCache: PropTypes.bool,
-  field: PropTypes.string,
+  fieldName: PropTypes.string,
   documentType: PropTypes.string.isRequired,
   children: PropTypes.func.isRequired,
 };

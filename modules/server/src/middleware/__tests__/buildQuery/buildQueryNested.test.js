@@ -1,7 +1,7 @@
 import buildQuery from '../../buildQuery';
 
 test('buildQuery ">=" and "<=" nested', () => {
-  const nestedFields = [
+  const nestedFieldNames = [
     'participants',
     'participants.diagnoses',
     'participants.family.family_data',
@@ -14,21 +14,21 @@ test('buildQuery ">=" and "<=" nested', () => {
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           op: 'and',
           content: [
             {
               op: 'in',
               content: {
-                field: 'participants.family.family_data.available_data_types',
+                fieldName: 'participants.family.family_data.available_data_types',
                 value: ['submitted aligned reads'],
               },
             },
             {
               op: 'in',
               content: {
-                field: 'participants.samples.anatomical_site',
+                fieldName: 'participants.samples.anatomical_site',
                 value: ['C40.0: Long bones of upper limb, scapula and associated joints'],
               },
             },
@@ -111,13 +111,13 @@ test('buildQuery ">=" and "<=" nested', () => {
 });
 
 test('buildQuery single ">="', () => {
-  const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
+  const nestedFieldNames = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: [{ content: { field: 'files.foo.name', value: 7 }, op: '>=' }],
+          content: [{ content: { fieldName: 'files.foo.name', value: 7 }, op: '>=' }],
           op: 'and',
         },
       },
@@ -164,27 +164,27 @@ test('buildQuery single ">="', () => {
 });
 
 test('buildQuery "missing" nested', () => {
-  const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
+  const nestedFieldNames = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
               content: {
-                field: 'files.data_category',
+                fieldName: 'files.data_category',
                 value: ['Simple Nucleotide Variation'],
               },
               op: 'in',
             },
             {
-              content: { field: 'files.experimental_strategy', value: ['WXS'] },
+              content: { fieldName: 'files.experimental_strategy', value: ['WXS'] },
               op: 'in',
             },
             {
               content: {
-                field: 'files.analysis.metadata.read_groups.is_paired_end',
+                fieldName: 'files.analysis.metadata.read_groups.is_paired_end',
                 value: ['__missing__'],
               },
               op: 'in',
@@ -238,7 +238,7 @@ test('buildQuery "missing" nested', () => {
                     must_not: [
                       {
                         exists: {
-                          field: 'files.analysis.metadata.read_groups.is_paired_end',
+                          fieldName: 'files.analysis.metadata.read_groups.is_paired_end',
                           boost: 0,
                         },
                       },
@@ -260,13 +260,13 @@ test('buildQuery "missing" nested', () => {
 });
 
 test('buildQuery "some-not-in" nested', () => {
-  const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
+  const nestedFieldNames = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { field: 'files.foo.code', value: ['01'] },
+          content: { fieldName: 'files.foo.code', value: ['01'] },
           op: 'some-not-in',
         },
       },
@@ -304,15 +304,15 @@ test('buildQuery "some-not-in" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.foo.bar.name', value: ['cname'] },
+              content: { fieldName: 'files.foo.bar.name', value: ['cname'] },
               op: 'some-not-in',
             },
             {
-              content: { field: 'files.foo.bar.code', value: '01' },
+              content: { fieldName: 'files.foo.bar.code', value: '01' },
               op: '=',
             },
           ],
@@ -419,16 +419,16 @@ test('buildQuery "some-not-in" nested', () => {
 });
 
 test('buildQuery "=" and "!=" nested', () => {
-  const nestedFields = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
+  const nestedFieldNames = ['files', 'files.foo', 'files.foo.bar', 'files.nn.baz'];
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
               content: {
-                field: 'files.data_subtype',
+                fieldName: 'files.data_subtype',
                 value: 'Copy number segmentation',
               },
               op: '=',
@@ -437,13 +437,13 @@ test('buildQuery "=" and "!=" nested', () => {
               content: [
                 {
                   content: {
-                    field: 'files.experimental_strategy',
+                    fieldName: 'files.experimental_strategy',
                     value: 'WGS',
                   },
                   op: '=',
                 },
                 {
-                  content: { field: 'project.project_id', value: 'TCGA-BRCA' },
+                  content: { fieldName: 'project.project_id', value: 'TCGA-BRCA' },
                   op: '=',
                 },
               ],
@@ -497,22 +497,22 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
               content: {
-                field: 'files.data_subtype',
+                fieldName: 'files.data_subtype',
                 value: 'Copy number segmentation',
               },
               op: '=',
             },
             {
-              content: { field: 'files.experimental_strategy', value: 'WGS' },
+              content: { fieldName: 'files.experimental_strategy', value: 'WGS' },
               op: '=',
             },
             {
-              content: { field: 'project.project_id', value: 'TCGA-BRCA' },
+              content: { fieldName: 'project.project_id', value: 'TCGA-BRCA' },
               op: '=',
             },
           ],
@@ -563,18 +563,18 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
-            { content: { field: 'files.access', value: 'open' }, op: '=' },
+            { content: { fieldName: 'files.access', value: 'open' }, op: '=' },
             {
               content: [
                 {
-                  content: { field: 'files.center.code', value: '01' },
+                  content: { fieldName: 'files.center.code', value: '01' },
                   op: '=',
                 },
                 {
-                  content: { field: 'project.primary_site', value: 'Brain' },
+                  content: { fieldName: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -614,21 +614,21 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.access', value: 'protected' },
+              content: { fieldName: 'files.access', value: 'protected' },
               op: '!=',
             },
             {
               content: [
                 {
-                  content: { field: 'files.center.code', value: '01' },
+                  content: { fieldName: 'files.center.code', value: '01' },
                   op: '=',
                 },
                 {
-                  content: { field: 'project.primary_site', value: 'Brain' },
+                  content: { fieldName: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -668,17 +668,17 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.access', value: 'protected4' },
+              content: { fieldName: 'files.access', value: 'protected4' },
               op: '=',
             },
             {
               content: [
                 {
-                  content: { field: 'files.center.code', value: '04' },
+                  content: { fieldName: 'files.center.code', value: '04' },
                   op: '!=',
                 },
               ],
@@ -717,18 +717,18 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
-            { content: { field: 'files.access', value: 'protected' }, op: '=' },
+            { content: { fieldName: 'files.access', value: 'protected' }, op: '=' },
             {
               content: [
                 {
-                  content: { field: 'files.center.code', value: '01' },
+                  content: { fieldName: 'files.center.code', value: '01' },
                   op: '!=',
                 },
                 {
-                  content: { field: 'project.primary_site', value: 'Brain' },
+                  content: { fieldName: 'project.primary_site', value: 'Brain' },
                   op: '=',
                 },
               ],
@@ -768,11 +768,11 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
-            { content: { field: 'files.foo.name', value: 'cname' }, op: '=' },
-            { content: { field: 'files.foo.code', value: '01' }, op: '=' },
+            { content: { fieldName: 'files.foo.name', value: 'cname' }, op: '=' },
+            { content: { fieldName: 'files.foo.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -839,11 +839,11 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
-            { content: { field: 'files.foo.name', value: 'cname' }, op: '=' },
-            { content: { field: 'files.foo.code', value: '01' }, op: '!=' },
+            { content: { fieldName: 'files.foo.name', value: 'cname' }, op: '=' },
+            { content: { fieldName: 'files.foo.code', value: '01' }, op: '!=' },
           ],
           op: 'and',
         },
@@ -910,11 +910,11 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
-            { content: { field: 'files.foo.name', value: 'cname' }, op: '!=' },
-            { content: { field: 'files.foo.code', value: '01' }, op: '=' },
+            { content: { fieldName: 'files.foo.name', value: 'cname' }, op: '!=' },
+            { content: { fieldName: 'files.foo.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -981,9 +981,9 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: [{ content: { field: 'files.foo.name', value: 'cname' }, op: '!=' }],
+          content: [{ content: { fieldName: 'files.foo.name', value: 'cname' }, op: '!=' }],
           op: 'and',
         },
       },
@@ -1024,9 +1024,9 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { field: 'files.foo.code', value: ['01'] },
+          content: { fieldName: 'files.foo.code', value: ['01'] },
           op: 'not-in',
         },
       },
@@ -1054,14 +1054,14 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.foo.bar.name', value: 'cname' },
+              content: { fieldName: 'files.foo.bar.name', value: 'cname' },
               op: '=',
             },
-            { content: { field: 'files.foo.bar.code', value: '01' }, op: '=' },
+            { content: { fieldName: 'files.foo.bar.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1153,14 +1153,14 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.foo.bar.name', value: 'cname' },
+              content: { fieldName: 'files.foo.bar.name', value: 'cname' },
               op: '!=',
             },
-            { content: { field: 'files.foo.bar.code', value: '01' }, op: '=' },
+            { content: { fieldName: 'files.foo.bar.code', value: '01' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1252,14 +1252,14 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
-              content: { field: 'files.nn.baz.name', value: 'cname' },
+              content: { fieldName: 'files.nn.baz.name', value: 'cname' },
               op: '!=',
             },
-            { content: { field: 'files.code', value: 'beep' }, op: '=' },
+            { content: { fieldName: 'files.code', value: 'beep' }, op: '=' },
           ],
           op: 'and',
         },
@@ -1311,23 +1311,23 @@ test('buildQuery "=" and "!=" nested', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
           content: [
             {
               content: {
-                field: 'files.data_category',
+                fieldName: 'files.data_category',
                 value: ['Simple Nucleotide Variation'],
               },
               op: 'in',
             },
             {
-              content: { field: 'files.experimental_strategy', value: ['WXS'] },
+              content: { fieldName: 'files.experimental_strategy', value: ['WXS'] },
               op: 'in',
             },
             {
               content: {
-                field: 'files.analysis.metadata.read_groups.is_paired_end',
+                fieldName: 'files.analysis.metadata.read_groups.is_paired_end',
                 value: ['__missing__'],
               },
               op: 'in',
@@ -1381,7 +1381,7 @@ test('buildQuery "=" and "!=" nested', () => {
                     must_not: [
                       {
                         exists: {
-                          field: 'files.analysis.metadata.read_groups.is_paired_end',
+                          fieldName: 'files.analysis.metadata.read_groups.is_paired_end',
                           boost: 0,
                         },
                       },

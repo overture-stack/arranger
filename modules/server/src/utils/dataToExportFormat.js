@@ -36,12 +36,12 @@ const getRows = (args) => {
         const entity = entities
           .slice()
           .reverse()
-          .find((entity) => column.field.indexOf(entity.field) === 0);
+          .find((entity) => column.fieldName.indexOf(entity.fieldName) === 0);
 
         if (entity) {
           return getValue(entity.data, {
             ...column,
-            jsonPath: column.field.replace(`${entity.path.join('.')}.`, ''),
+            jsonPath: column.fieldName.replace(`${entity.path.join('.')}.`, ''),
           });
         } else {
           return getValue(row, column);
@@ -60,7 +60,7 @@ const getRows = (args) => {
             ...entities,
             {
               path: paths.slice(0, pathIndex + 1),
-              field: paths.slice(0, pathIndex + 1).join(''),
+              fieldName: paths.slice(0, pathIndex + 1).join(''),
               // TODO: don't assume hits.edges.node.
               // .replace(/(\.hits.edges(node)?)/g, ''),
               data: node,
@@ -232,7 +232,7 @@ example args:
     },
   paths: [],
   columns:
-   [ { field: 'name',
+   [ { fieldName: 'name',
        accessor: 'name',
        show: true,
        type: 'entity',
@@ -245,7 +245,7 @@ example args:
        extendedDisplayValues: {},
        hasCustomType: true,
        minWidth: 140 },
-       { field: 'split_ratio',
+       { fieldName: 'split_ratio',
        accessor: 'split_ratio',
        show: true,
        type: 'string',

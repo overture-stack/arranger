@@ -23,11 +23,13 @@ const createConnectionResolvers: TcreateConnectionResolvers = ({
 }) => ({
   [type.name]: {
     aggregations: resolveAggregations({ type, getServerSideFilter }),
-    configs: async (obj, { fields }, ctx) => {
+    configs: async (obj, { fieldNames }, ctx) => {
       return {
         downloads: type.config?.[ConfigProperties.DOWNLOADS],
-        extended: fields
-          ? type.extendedFields.filter((extendedField) => fields.includes(extendedField.field))
+        extended: fieldNames
+          ? type.extendedFields.filter((extendedField) =>
+              fieldNames.includes(extendedField.fieldName),
+            )
           : type.extendedFields,
         ...(createStateResolvers && {
           facets: type.config?.[ConfigProperties.FACETS],

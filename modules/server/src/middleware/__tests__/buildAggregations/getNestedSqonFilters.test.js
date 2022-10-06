@@ -5,28 +5,28 @@ test('getNestedSqonFilters should be able to extract filters applied on nested f
   const sqon = {
     op: AND_OP,
     content: [
-      { op: IN_OP, content: { field: 'a', value: [] } },
-      { op: IN_OP, content: { field: 'a', value: [] } },
-      { op: IN_OP, content: { field: 'a.c', value: [] } },
-      { op: IN_OP, content: { field: 'a.b.c', value: [] } },
-      { op: IN_OP, content: { field: 'a.b.d', value: [] } },
+      { op: IN_OP, content: { fieldName: 'a', value: [] } },
+      { op: IN_OP, content: { fieldName: 'a', value: [] } },
+      { op: IN_OP, content: { fieldName: 'a.c', value: [] } },
+      { op: IN_OP, content: { fieldName: 'a.b.c', value: [] } },
+      { op: IN_OP, content: { fieldName: 'a.b.d', value: [] } },
     ],
   };
-  const nestedFields = ['a', 'a.b'];
+  const nestedFieldNames = ['a', 'a.b'];
   const expectedOutput = {
-    a: [{ op: IN_OP, pivot: null, content: { field: 'a.c', value: [] } }],
+    a: [{ op: IN_OP, pivot: null, content: { fieldName: 'a.c', value: [] } }],
     'a.b': [
-      { op: IN_OP, pivot: null, content: { field: 'a.b.c', value: [] } },
-      { op: IN_OP, pivot: null, content: { field: 'a.b.d', value: [] } },
+      { op: IN_OP, pivot: null, content: { fieldName: 'a.b.c', value: [] } },
+      { op: IN_OP, pivot: null, content: { fieldName: 'a.b.d', value: [] } },
     ],
   };
-  expect(getNestedSqonFilters({ sqon, nestedFields })).toEqual(expectedOutput);
+  expect(getNestedSqonFilters({ sqon, nestedFieldNames })).toEqual(expectedOutput);
 });
 
 test('getNestedSqonFilters should handle faulsey sqon', () => {
   const sqon = null;
-  const nestedFields = [];
-  expect(getNestedSqonFilters({ sqon, nestedFields })).toEqual({});
+  const nestedFieldNames = [];
+  expect(getNestedSqonFilters({ sqon, nestedFieldNames })).toEqual({});
 });
 
 test('getNestedSqonFilters should handle nested sqons', () => {
@@ -41,7 +41,7 @@ test('getNestedSqonFilters should handle nested sqons', () => {
             op: IN_OP,
             pivot: null,
             content: {
-              field: 'files.kf_id',
+              fieldName: 'files.kf_id',
               value: ['GF_V1C32MZ6'],
             },
           },
@@ -49,7 +49,7 @@ test('getNestedSqonFilters should handle nested sqons', () => {
             op: IN_OP,
             pivot: null,
             content: {
-              field: 'files.kf_id',
+              fieldName: 'files.kf_id',
               value: ['GF_C78A0NP8'],
             },
           },
@@ -57,14 +57,14 @@ test('getNestedSqonFilters should handle nested sqons', () => {
       },
     ],
   };
-  const nestedFields = ['files'];
-  expect(getNestedSqonFilters({ sqon, nestedFields })).toEqual({
+  const nestedFieldNames = ['files'];
+  expect(getNestedSqonFilters({ sqon, nestedFieldNames })).toEqual({
     files: [
       {
         op: IN_OP,
         pivot: null,
         content: {
-          field: 'files.kf_id',
+          fieldName: 'files.kf_id',
           value: ['GF_V1C32MZ6'],
         },
       },
@@ -72,7 +72,7 @@ test('getNestedSqonFilters should handle nested sqons', () => {
         op: IN_OP,
         pivot: null,
         content: {
-          field: 'files.kf_id',
+          fieldName: 'files.kf_id',
           value: ['GF_C78A0NP8'],
         },
       },
@@ -92,18 +92,18 @@ test('getNestedSqonFilters should ignore fields pivotted operations', () => {
           {
             op: IN_OP,
             pivot: null,
-            content: { field: 'files.kf_id', value: ['GF_V1C32MZ6'] },
+            content: { fieldName: 'files.kf_id', value: ['GF_V1C32MZ6'] },
           },
           {
             op: IN_OP,
             pivot: null,
-            content: { field: 'files.kf_id', value: ['GF_C78A0NP8'] },
+            content: { fieldName: 'files.kf_id', value: ['GF_C78A0NP8'] },
           },
         ],
       },
     ],
   };
-  const nestedFields = ['files'];
-  const output = getNestedSqonFilters({ sqon, nestedFields });
+  const nestedFieldNames = ['files'];
+  const output = getNestedSqonFilters({ sqon, nestedFieldNames });
   expect(output).toEqual({});
 });

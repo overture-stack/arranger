@@ -20,21 +20,25 @@ const FieldOpModifier = ({
   opDisplayNameMap,
   ContainerComponent = FilterContainer,
   apiFetcher = defaultApiFetcher,
-  field,
+  fieldName,
   arrangerIndex,
   getExecutableSqon = () => initialSqon,
 }) => (
-  <ExtendedMappingProvider apiFetcher={apiFetcher} documentType={arrangerIndex} field={field}>
+  <ExtendedMappingProvider
+    apiFetcher={apiFetcher}
+    documentType={arrangerIndex}
+    fieldName={fieldName}
+  >
     {({ loading, extendedMapping }) => {
       const fieldExtendedMapping = (extendedMapping || []).find(
-        ({ field: _field }) => field === _field,
+        ({ fieldName: _fieldName }) => fieldName === _fieldName,
       );
 
       // temporary, needs to handle errors too
       const { type, unit } = fieldExtendedMapping || {};
       return ['keyword', 'id', 'string', 'text'].includes(type) ? (
         <TermFilter
-          field={field}
+          fieldName={fieldName}
           arrangerIndex={arrangerIndex}
           apiFetcher={apiFetcher}
           loading={loading}
@@ -59,7 +63,7 @@ const FieldOpModifier = ({
           'unsigned_long',
         ].includes(type) ? (
         <RangeFilter
-          field={field}
+          fieldName={fieldName}
           loading={loading}
           sqonPath={sqonPath}
           initialSqon={initialSqon}
@@ -73,7 +77,7 @@ const FieldOpModifier = ({
         />
       ) : ['boolean'].includes(type) ? (
         <BooleanFilter
-          field={field}
+          fieldName={fieldName}
           apiFetcher={apiFetcher}
           arrangerIndex={arrangerIndex}
           sqonPath={sqonPath}
@@ -104,7 +108,7 @@ FieldOpModifier.prototype = {
   opDisplayNameMap: PropTypes.objectOf(PropTypes.string),
   ContainerComponent: PropTypes.any,
   apiFetcher: PropTypes.func,
-  field: PropTypes.string,
+  fieldName: PropTypes.string,
   arrangerIndex: PropTypes.string.isRequired,
   getExecutableSqon: PropTypes.func,
 };

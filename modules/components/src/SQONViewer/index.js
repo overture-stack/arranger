@@ -56,7 +56,7 @@ const SQONViewer = ({
           {sqonContent.map((valueSQON, index) => {
             const {
               op,
-              content: { field, fields, entity },
+              content: { fieldName, fieldNames, entity },
             } = valueSQON;
 
             const value = [].concat(valueSQON.content.value || []);
@@ -70,11 +70,11 @@ const SQONViewer = ({
                   margin: 0.1rem 0;
                   width: fit-content;
                 `}
-                key={`${field || fields?.join()}.${op}.${value.join()}`}
+                key={`${fieldName || fieldNames?.join()}.${op}.${value.join()}`}
                 {...themeSQONGroupProps}
               >
                 {FieldCrumb({
-                  field: op === 'filter' ? (entity ? `${entity}.${op}` : op) : field,
+                  fieldName: op === 'filter' ? (entity ? `${entity}.${op}` : op) : fieldName,
                 })}
 
                 <Op
@@ -86,7 +86,7 @@ const SQONViewer = ({
                   {(op === 'in' && hasMultipleValues) || op !== 'in' ? op : 'is'}
                 </Op>
 
-                {hasMultipleValues && (
+                {hasMultipleValues && ( // parenthesis opens
                   <SQONValueGroup className="sqon-value-group-start" {...themeSQONVaueGroupProps}>
                     (
                   </SQONValueGroup>
@@ -95,7 +95,7 @@ const SQONViewer = ({
                 {valuesToDisplay.map((value) =>
                   ValueCrumb({
                     className: cx({ 'sqon-value-single': !hasMultipleValues }),
-                    field,
+                    fieldName,
                     key: value,
                     nextSQON:
                       op === 'filter'
@@ -120,8 +120,8 @@ const SQONViewer = ({
                                 {
                                   op: op,
                                   content: {
-                                    field: field,
-                                    value: value,
+                                    fieldName,
+                                    value,
                                   },
                                 },
                               ],
@@ -134,7 +134,7 @@ const SQONViewer = ({
 
                 {hasMultipleValues && value.length > 2 && <LessOrMore valueSQON={valueSQON} />}
 
-                {hasMultipleValues && (
+                {hasMultipleValues && ( // parenthesis closes
                   <SQONValueGroup className="sqon-value-group-end" {...themeSQONVaueGroupProps}>
                     )
                   </SQONValueGroup>
@@ -167,4 +167,4 @@ export const CurrentSQON = (props) => {
 
 export const SQONView = CurrentSQON;
 
-export { Bubble, Field, Op, SQONGroup, SQONWrapper, useDataBubbles, Value } from './helpers';
+export { Bubble, FieldName, Op, SQONGroup, SQONWrapper, useDataBubbles, Value } from './helpers';

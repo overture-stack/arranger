@@ -8,7 +8,7 @@ export const downloadsConfigs = `
 export const facetsConfigs = `
   facets {
     aggregations {
-      field
+      fieldName
       show
       active
     }
@@ -23,7 +23,7 @@ export const tableConfigs = `
       displayFormat
       displayName
       displayValues
-      field
+      fieldName
       id
       isArray
       jsonPath
@@ -32,11 +32,11 @@ export const tableConfigs = `
       sortable
       type
     }
-    keyField
     defaultSorting {
       desc
-      field
+      fieldName
     }
+    keyFieldName
   }
 `;
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { withFormik, Field } from 'formik';
 import { compose } from 'recompose';
 
@@ -11,7 +10,7 @@ const enhance = compose(
       accessor: '',
     }),
     handleSubmit: async (values, { props: { addColumn }, setSubmitting }) => {
-      await addColumn({ ...values, id: values.field });
+      await addColumn({ ...values, id: values.fieldName });
       setSubmitting(false);
     },
   }),
@@ -26,7 +25,7 @@ const AddCustomColumn = ({ values, submitForm, style }) => {
         ...style,
       }}
     >
-      <Field name="field" placeholder="field" value={values.field} />
+      <Field name="fieldName" placeholder="field name" value={values.fieldName} />
       <Field name="type" placeholder="type" value={values.type} />
       <Field name="query" placeholder="query" value={values.query} />
       <Field name="accessor" placeholder="accessor" value={values.accessor} />

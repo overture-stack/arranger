@@ -15,7 +15,7 @@ import { DownloadButtonThemeProps } from './DownloadButton/types';
 import { TableToolbarThemeProps } from './Toolbar/types';
 import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
 
-export type FieldList = ColumnMappingInterface['field'][];
+export type FieldList = ColumnMappingInterface['fieldName'][];
 
 /** TableContext types */
 export type ColumnsDictionary = Record<FieldList[number], ColumnMappingInterface>;
@@ -30,7 +30,7 @@ export interface TableContextInterface {
   hasVisibleColumns: boolean;
   isLoading: boolean;
   fetchData: FetchDataFn;
-  keyField: string;
+  keyFieldName: string;
   pageSize: number;
   missingProvider?: string | false;
   selectedRows: string[];

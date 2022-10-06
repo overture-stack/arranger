@@ -1,6 +1,6 @@
 export type GetServerSideFilterFn = () => {
   op: string;
-  content: { op: string; content: { field: string; value: string[] } }[] | never[];
+  content: { op: string; content: { fieldName: string; value: string[] } }[] | never[];
 };
 
 const getDefaultServerSideFilter: GetServerSideFilterFn = () => ({

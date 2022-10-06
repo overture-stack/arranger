@@ -20,7 +20,7 @@ test('injectNestedFiltersToAggs should not be mutative', () => {
               },
             },
             terms: {
-              field: 'participants.diagnoses.source_text_diagnosis',
+              fieldName: 'participants.diagnoses.source_text_diagnosis',
               size: 300000,
             },
           },
@@ -31,7 +31,7 @@ test('injectNestedFiltersToAggs should not be mutative', () => {
               },
             },
             missing: {
-              field: 'participants.diagnoses.source_text_diagnosis',
+              fieldName: 'participants.diagnoses.source_text_diagnosis',
             },
           },
         },
@@ -43,14 +43,14 @@ test('injectNestedFiltersToAggs should not be mutative', () => {
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.mondo_id_diagnosis',
+          fieldName: 'participants.diagnoses.mondo_id_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.source_text_diagnosis',
+          fieldName: 'participants.diagnoses.source_text_diagnosis',
           value: ['SOME_VALUE'],
         },
       },

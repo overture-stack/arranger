@@ -15,16 +15,23 @@ export let esToGraphqlTypeMap = {
   unsigned_long: 'Int',
 };
 
-const maybeArray = (field, extendedFields, type, parent) => {
-  const fullField = [parent, field].filter(Boolean).join('.');
-  return extendedFields?.find((x) => x.field === fullField)?.isArray ? `[${type}]` : type;
+const maybeArray = (fieldName, extendedFields, type, parent) => {
+  const fullFieldName = [parent, fieldName].filter(Boolean).join('.');
+  return extendedFields?.find((fieldName) => fieldName.fieldName === fullFieldName)?.isArray
+    ? `[${type}]`
+    : type;
 };
 
 export default (mapping, extendedFields, parent) => {
   return Object.entries(mapping)
     .filter(([, metadata]) => Object.keys(esToGraphqlTypeMap).includes(metadata.type))
     .map(
-      ([field, metadata]) =>
-        `${field}: ${maybeArray(field, extendedFields, esToGraphqlTypeMap[metadata.type], parent)}`,
+      ([fieldName, metadata]) =>
+        `${fieldName}: ${maybeArray(
+          fieldName,
+          extendedFields,
+          esToGraphqlTypeMap[metadata.type],
+          parent,
+        )}`,
     );
 };

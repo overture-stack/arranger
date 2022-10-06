@@ -1,4 +1,5 @@
 import { capitalize } from 'lodash';
+
 import mappingToNestedFields from './mappingToNestedFields';
 import mappingToScalarFields from './mappingToScalarFields';
 import mappingToNestedTypes from './mappingToNestedTypes';
@@ -7,50 +8,50 @@ let mappingToObjectTypes = (type, mapping, parent, extendedFields) => {
   return Object.entries(mapping)
     .filter(([, metadata]) => !metadata.type && metadata.properties)
     .map(
-      ([field, metadata]) => `
+      ([fieldName, metadata]) => `
         ${mappingToObjectTypes(
-          type + capitalize(field),
+          type + capitalize(fieldName),
           metadata.properties,
-          [parent, field].filter(Boolean).join('.'),
+          [parent, fieldName].filter(Boolean).join('.'),
           extendedFields,
         )},
         ${mappingToNestedTypes(
-          type + capitalize(field),
+          type + capitalize(fieldName),
           metadata.properties,
-          [parent, field].filter(Boolean).join('.'),
+          [parent, fieldName].filter(Boolean).join('.'),
           extendedFields,
         ).join('\n')}
-        type ${type + capitalize(field)} {
+        type ${type + capitalize(fieldName)} {
           ${mappingToNestedFields(
-            type + capitalize(field),
+            type + capitalize(fieldName),
             metadata.properties,
-            [parent, field].filter(Boolean).join('.'),
+            [parent, fieldName].filter(Boolean).join('.'),
             extendedFields,
           )}
           ${mappingToScalarFields(
             metadata.properties,
             extendedFields,
-            [parent, field].filter(Boolean).join('.'),
+            [parent, fieldName].filter(Boolean).join('.'),
           )}
         }
       `,
     );
 };
 
-// TODO: figure out where this is making a dupe fiel
+// TODO: figure out where this is making a dupe field
 
 // let mappingToObjectTypes = (type, mapping) => {
 //   return Object.entries(mapping)
 //     .filter(([, metadata]) => !metadata.type)
 //     .map(
-//       ([field, metadata]) => `
+//       ([fieldName, metadata]) => `
 //         ${mappingToFields({
 //           type: {
-//             name: type.name + capitalize(field),
+//             name: type.name + capitalize(fieldName),
 //             mapping: metadata.properties,
 //           },
 //         })}
-//         type ${type + capitalize(field)} {
+//         type ${type + capitalize(fieldName)} {
 //           ${mappingToScalarFields(metadata.properties, type.extendedFields)}
 //         }
 //       `,

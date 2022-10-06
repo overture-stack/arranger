@@ -1,6 +1,7 @@
 import getFields from 'graphql-fields';
 
 import { buildQuery, buildAggregations, flattenAggregations } from '../middleware';
+
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
@@ -14,7 +15,7 @@ export default ({ type, getServerSideFilter }) =>
     context,
     info,
   ) => {
-    const nestedFields = type.nested_fields;
+    const nestedFieldNames = type.nested_fields;
 
     const { esClient } = context;
 
@@ -24,7 +25,7 @@ export default ({ type, getServerSideFilter }) =>
     const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
 
     const query = buildQuery({
-      nestedFields,
+      nestedFieldNames,
       filters: compileFilter({
         clientSideFilter: resolvedFilter,
         serverSideFilter: getServerSideFilter(context),
@@ -41,17 +42,19 @@ export default ({ type, getServerSideFilter }) =>
       query,
       sqon: resolvedFilter,
       graphqlFields,
-      nestedFields,
+      nestedFieldNames,
       aggregationsFilterThemselves: aggregations_filter_themselves,
     });
 
     const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
+
     const response = await esSearch(esClient)({
       index: type.index,
       size: 0,
       _source: false,
       body,
     });
+
     const aggregations = flattenAggregations({
       aggregations: response.aggregations,
       includeMissing: include_missing,

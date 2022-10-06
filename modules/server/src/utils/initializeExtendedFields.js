@@ -4,19 +4,19 @@ import replaceBy from './replaceBy';
 
 const initializeExtendedFields = async ({ indexPrefix, fields, config, esClient }) => {
   const mergedFields = fields?.length
-    ? replaceBy(fields, config.extended, (x, y) => x.field === y.field)
+    ? replaceBy(fields, config.extended, (x, y) => x.fieldName === y.fieldName)
     : config.extended;
 
   let body = flattenDeep(
-    mergedFields.map((f) => [
+    mergedFields.map((field) => [
       {
         index: {
           _index: indexPrefix,
           _type: indexPrefix,
-          _id: f.field,
+          _id: field.fieldName,
         },
       },
-      JSON.stringify(f),
+      JSON.stringify(field),
     ]),
   );
 

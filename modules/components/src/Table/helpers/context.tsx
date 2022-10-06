@@ -24,7 +24,7 @@ export const TableContext = createContext<TableContextInterface>({
 } as unknown as TableContextInterface);
 
 /** Context provider for Arranger's table data and functionality
- * @param {ColumnMappingInterface[]} [columns] array with column customisations (overrides the ones from the Arranger server using 'field');
+ * @param {ColumnMappingInterface[]} [columns] array with column customisations (overrides the ones from the Arranger server, matching 'fieldName');
  * @param {FetchDataFn} [customFetcher] function to make customised request and subsequent data handling (e.g. middlewares);
  * @param {string} [documentType] the GraphQL field that the table should use to collect data.
  */
@@ -118,8 +118,8 @@ export const TableContextProvider = ({
         },
         endpoint: '/graphql/TableDataQuery',
         queryName: 'tableData',
-        sort: sorting.map(({ field, desc }) => ({
-          field,
+        sort: sorting.map(({ fieldName, desc }) => ({
+          fieldName,
           order: desc ? 'desc' : 'asc',
         })),
       })
@@ -162,7 +162,7 @@ export const TableContextProvider = ({
       isFreshTable ||
       isLoadingTableData ||
       (hasVisibleColumns && isStaleTableData),
-    keyField: tableConfigs?.keyField,
+    keyFieldName: tableConfigs?.keyFieldName,
     missingProvider:
       // ideally allows for passing in sufficient props to cover the absence of a data context.
       !(customColumns && customDocumentType && customFetcher) && missingProvider,

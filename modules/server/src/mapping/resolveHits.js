@@ -20,7 +20,7 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 
 export const hitsToEdges = ({
   hits,
-  nestedFields,
+  nestedFieldNames,
   Parallel,
   copyToSourceFields = {},
   systemCores = process?.env?.SYSTEM_CORES || 2,
@@ -40,8 +40,8 @@ export const hitsToEdges = ({
       (chunk) =>
         //Parallel.spawn output has a .then but it's not returning an actual promise
         new Promise((resolve) => {
-          new Parallel({ hits: chunk, nestedFields, copyToSourceFields })
-            .spawn(({ hits, nestedFields, copyToSourceFields }) => {
+          new Parallel({ hits: chunk, nestedFieldNames, copyToSourceFields })
+            .spawn(({ hits, nestedFieldNames, copyToSourceFields }) => {
               /*
                 everthing inside spawn is executed in a separate thread, so we have
                 to use good old ES5 and require for run-time dependecy bundling.
@@ -53,7 +53,7 @@ export const hitsToEdges = ({
                 const foundValues = Object.entries(copyToSourceFields).reduce((acc, pair) => {
                   const copyToField = pair[0];
                   const sourceField = pair[1];
-                  let found = {};
+                  const found = {};
                   found[copyToField] = flattenDeep(
                     sourceField.map((path) =>
                       jp.query(
@@ -73,56 +73,64 @@ export const hitsToEdges = ({
               };
 
               return hits.map((x) => {
-                let joinParent = (parent, field) => (parent ? `${parent}.${field}` : field);
+                const joinParent = (parent, fieldName) =>
+                  parent ? `${parent}.${fieldName}` : fieldName;
 
-                let resolveNested = ({ node, nestedFields, parent = '' }) => {
+                const resolveNested = ({ node, nestedFieldNames, parent = '' }) => {
                   if (!isObject(node) || !node) return node;
 
-                  return Object.entries(node).reduce((acc, pair) => {
-                    const field = pair[0];
-                    const hits = pair[1];
+                  return Object.entries(node).reduce((acc, entry) => {
+                    const fieldName = entry[0];
+                    const hits = entry[1];
+
                     // TODO: inner hits query if necessary
-                    const fullPath = joinParent(parent, field);
-                    acc[field] = nestedFields.includes(fullPath)
-                      ? {
-                          hits: {
-                            edges: hits.map((node) => ({
-                              node: Object.assign(
-                                {},
-                                node,
-                                resolveNested({
+                    const fullPath = joinParent(parent, fieldName);
+
+                    return Object.assign({}, acc, {
+                      fieldName: nestedFieldNames.includes(fullPath)
+                        ? {
+                            hits: {
+                              edges: hits.map((node) => ({
+                                node: Object.assign(
+                                  {},
                                   node,
-                                  nestedFields,
-                                  parent: fullPath,
-                                }),
-                              ),
-                            })),
-                            total: hits.length,
-                          },
-                        }
-                      : isObject(hits) && hits
-                      ? Object.assign(
-                          hits.constructor(),
-                          resolveNested({
+                                  resolveNested({
+                                    node,
+                                    nestedFieldNames,
+                                    parent: fullPath,
+                                  }),
+                                ),
+                              })),
+                              total: hits.length,
+                            },
+                          }
+                        : isObject(hits) && hits
+                        ? Object.assign(
+                            hits.constructor(),
+                            resolveNested({
+                              node: hits,
+                              nestedFieldNames,
+                              parent: fullPath,
+                            }),
+                          )
+                        : resolveNested({
                             node: hits,
-                            nestedFields,
+                            nestedFieldNames,
                             parent: fullPath,
                           }),
-                        )
-                      : resolveNested({
-                          node: hits,
-                          nestedFields,
-                          parent: fullPath,
-                        });
-                    return acc;
+                    });
                   }, {});
                 };
-                let source = x._source;
-                let nested_nodes = resolveNested({
+
+                const source = x._source;
+
+                const nested_nodes = resolveNested({
                   node: source,
-                  nestedFields,
+                  nestedFieldNames,
                 });
-                let copied_to_nodes = resolveCopiedTo({ node: source });
+
+                const copied_to_nodes = resolveCopiedTo({ node: source });
+
                 return {
                   searchAfter: x.sort
                     ? x.sort.map((x) =>
@@ -156,7 +164,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
     info,
   ) => {
     let fields = getFields(info);
-    let nestedFields = type.nested_fields;
+    let nestedFieldNames = type.nested_fields;
 
     const { esClient } = context;
 
@@ -166,7 +174,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
     if (filters || score) {
       // TODO: something with score?
       query = buildQuery({
-        nestedFields,
+        nestedFieldNames,
         filters: compileFilter({
           clientSideFilter: filters,
           serverSideFilter: getServerSideFilter(context),
@@ -176,7 +184,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
     */
 
     const query = buildQuery({
-      nestedFields,
+      nestedFieldNames,
       filters: compileFilter({
         clientSideFilter: filters || { op: 'and', content: [] },
         serverSideFilter: getServerSideFilter(context),
@@ -191,16 +199,16 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
     if (sort && sort.length) {
       // TODO: add query here to sort based on result. https://www.elastic.co/guide/en/elasticsearch/guide/current/nested-sorting.html
-      body.sort = sort.map(({ field, missing, order, ...rest }) => {
-        const nested_path = nestedFields
-          .filter((nestedField) => field.indexOf(nestedField) === 0)
+      body.sort = sort.map(({ fieldName, missing, order, ...rest }) => {
+        const nested_path = nestedFieldNames
+          .filter((nestedFieldName) => fieldName.indexOf(nestedFieldName) === 0)
           .reduce(
             (deepestPath, path) => (deepestPath.length > path.length ? deepestPath : path),
             '',
           );
 
         return {
-          [field]: {
+          [fieldName]: {
             missing: missing
               ? missing === 'first'
                 ? '_first'
@@ -239,7 +247,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
       edges: () =>
         hitsToEdges({
           hits,
-          nestedFields,
+          nestedFieldNames,
           Parallel,
           copyToSourceFields,
         }),

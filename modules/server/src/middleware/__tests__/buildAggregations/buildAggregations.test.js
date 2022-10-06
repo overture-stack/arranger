@@ -2,7 +2,7 @@ import buildAggregations from '../../buildAggregations';
 import buildQuery from '../../buildQuery';
 
 test('buildAggregations should handle nested aggregations', () => {
-  const nestedFields = [
+  const nestedFieldNames = [
     'annotations',
     'associated_entities',
     'cases',
@@ -29,8 +29,8 @@ test('buildAggregations should handle nested aggregations', () => {
 
   const input = {
     sqon: null,
-    query: buildQuery({ nestedFields, filters: {} }),
-    nestedFields,
+    query: buildQuery({ nestedFieldNames, filters: {} }),
+    nestedFieldNames,
     graphqlFields: {
       access: { buckets: { key: {} } },
       cases__samples__portions__is_ffpe: { buckets: { key: {} } },
@@ -45,8 +45,8 @@ test('buildAggregations should handle nested aggregations', () => {
   };
 
   const expectedOutput = {
-    access: { terms: { field: 'access', size: 300000 } },
-    'access:missing': { missing: { field: 'access' } },
+    access: { terms: { fieldName: 'access', size: 300000 } },
+    'access:missing': { missing: { fieldName: 'access' } },
     'cases.samples.portions.is_ffpe:nested': {
       nested: { path: 'cases' },
       aggs: {
@@ -58,12 +58,12 @@ test('buildAggregations should handle nested aggregations', () => {
               aggs: {
                 'cases.samples.portions.is_ffpe:missing': {
                   aggs: { rn: { reverse_nested: {} } },
-                  missing: { field: 'cases.samples.portions.is_ffpe' },
+                  missing: { fieldName: 'cases.samples.portions.is_ffpe' },
                 },
                 'cases.samples.portions.is_ffpe': {
                   aggs: { rn: { reverse_nested: {} } },
                   terms: {
-                    field: 'cases.samples.portions.is_ffpe',
+                    fieldName: 'cases.samples.portions.is_ffpe',
                     size: 300000,
                   },
                 },
@@ -93,13 +93,13 @@ test('buildAggregations should handle nested aggregations', () => {
                         'cases.samples.portions.slides.annotations.notes:missing': {
                           aggs: { rn: { reverse_nested: {} } },
                           missing: {
-                            field: 'cases.samples.portions.slides.annotations.notes',
+                            fieldName: 'cases.samples.portions.slides.annotations.notes',
                           },
                         },
                         'cases.samples.portions.slides.annotations.notes': {
                           aggs: { rn: { reverse_nested: {} } },
                           terms: {
-                            field: 'cases.samples.portions.slides.annotations.notes',
+                            fieldName: 'cases.samples.portions.slides.annotations.notes',
                             size: 300000,
                           },
                         },
@@ -133,13 +133,13 @@ test('buildAggregations should handle nested aggregations', () => {
                         'cases.samples.portions.slides.annotations.category:missing': {
                           aggs: { rn: { reverse_nested: {} } },
                           missing: {
-                            field: 'cases.samples.portions.slides.annotations.category',
+                            fieldName: 'cases.samples.portions.slides.annotations.category',
                           },
                         },
                         'cases.samples.portions.slides.annotations.category': {
                           aggs: { rn: { reverse_nested: {} } },
                           terms: {
-                            field: 'cases.samples.portions.slides.annotations.category',
+                            fieldName: 'cases.samples.portions.slides.annotations.category',
                             size: 300000,
                           },
                         },
@@ -159,14 +159,14 @@ test('buildAggregations should handle nested aggregations', () => {
 });
 
 test('buildAggregations should handle nested aggregations with filters on same field', () => {
-  const nestedFields = ['participants'];
+  const nestedFieldNames = ['participants'];
   const input = {
     sqon: {
       op: 'and',
       content: [
         {
           op: 'in',
-          content: { field: 'participants.kf_id', value: ['PT_87QW2JKA'] },
+          content: { fieldName: 'participants.kf_id', value: ['PT_87QW2JKA'] },
         },
       ],
     },
@@ -193,7 +193,7 @@ test('buildAggregations should handle nested aggregations with filters on same f
         ],
       },
     },
-    nestedFields,
+    nestedFieldNames,
     graphqlFields: {
       participants__kf_id: { buckets: { key: {} } },
     },
@@ -216,11 +216,11 @@ test('buildAggregations should handle nested aggregations with filters on same f
               aggs: {
                 'participants.kf_id:missing': {
                   aggs: { rn: { reverse_nested: {} } },
-                  missing: { field: 'participants.kf_id' },
+                  missing: { fieldName: 'participants.kf_id' },
                 },
                 'participants.kf_id': {
                   aggs: { rn: { reverse_nested: {} } },
-                  terms: { field: 'participants.kf_id', size: 300000 },
+                  terms: { fieldName: 'participants.kf_id', size: 300000 },
                 },
               },
             },
@@ -237,15 +237,15 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
   const sqon = {
     op: 'and',
     content: [
-      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-      { op: '>=', content: { field: 'mdx', value: 100 } },
-      { op: '<=', content: { field: 'mdx', value: 200 } },
+      { op: 'in', content: { fieldName: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { fieldName: 'mdx', value: 100 } },
+      { op: '<=', content: { fieldName: 'mdx', value: 200 } },
     ],
   };
   let input = {
     sqon,
-    query: buildQuery({ nestedFields: [], filters: sqon }),
-    nestedFields: [],
+    query: buildQuery({ nestedFieldNames: [], filters: sqon }),
+    nestedFieldNames: [],
     graphqlFields: {
       mdx: {
         stats: {
@@ -269,9 +269,9 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
         'acl:filtered': {
           aggs: {
             'acl:missing': {
-              missing: { field: 'acl' },
+              missing: { fieldName: 'acl' },
             },
-            acl: { terms: { field: 'acl', size: 300000 } },
+            acl: { terms: { fieldName: 'acl', size: 300000 } },
           },
           filter: {
             bool: {
@@ -288,7 +288,7 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
     'mdx:global': {
       aggs: {
         'mdx:filtered': {
-          aggs: { 'mdx:stats': { stats: { field: 'mdx' } } },
+          aggs: { 'mdx:stats': { stats: { fieldName: 'mdx' } } },
           filter: {
             bool: {
               must: [{ terms: { acl: ['phs000178'], boost: 0 } }],
@@ -307,13 +307,13 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
   const sqon = {
     op: 'and',
     content: [
-      { op: 'in', content: { field: 'acl', value: ['phs000178'] } },
-      { op: '>=', content: { field: 'mdx', value: 100 } },
-      { op: '<=', content: { field: 'mdx', value: 200 } },
+      { op: 'in', content: { fieldName: 'acl', value: ['phs000178'] } },
+      { op: '>=', content: { fieldName: 'mdx', value: 100 } },
+      { op: '<=', content: { fieldName: 'mdx', value: 200 } },
     ],
   };
   let input = {
-    nestedFields: [],
+    nestedFieldNames: [],
     graphqlFields: {
       mdx: {
         stats: {
@@ -329,29 +329,29 @@ test('buildAggregations should handle `aggregations_filter_themselves` variable 
       },
     },
     sqon,
-    query: buildQuery({ nestedFields: [], filters: sqon }),
+    query: buildQuery({ nestedFieldNames: [], filters: sqon }),
     aggregationsFilterThemselves: true,
   };
 
   let expected = {
-    acl: { terms: { field: 'acl', size: 300000 } },
-    'acl:missing': { missing: { field: 'acl' } },
-    'mdx:stats': { stats: { field: 'mdx' } },
+    acl: { terms: { fieldName: 'acl', size: 300000 } },
+    'acl:missing': { missing: { fieldName: 'acl' } },
+    'mdx:stats': { stats: { fieldName: 'mdx' } },
   };
   const actualOutput = buildAggregations(input);
   expect(actualOutput).toEqual(expected);
 });
 
 test('buildAggregations should handle queries not in a group', () => {
-  const nestedFields = [];
+  const nestedFieldNames = [];
   const sqon = {
     op: 'and',
-    content: [{ op: 'in', content: { field: 'case', value: [1] } }],
+    content: [{ op: 'in', content: { fieldName: 'case', value: [1] } }],
   };
   const input = {
     sqon,
-    query: buildQuery({ nestedFields, filters: sqon }),
-    nestedFields,
+    query: buildQuery({ nestedFieldNames, filters: sqon }),
+    nestedFieldNames,
     graphqlFields: {
       access: { buckets: { key: {} } },
       case: { buckets: { key: {} } },
@@ -360,12 +360,12 @@ test('buildAggregations should handle queries not in a group', () => {
   };
 
   const expectedOutput = {
-    access: { terms: { field: 'access', size: 300000 } },
-    'access:missing': { missing: { field: 'access' } },
+    access: { terms: { fieldName: 'access', size: 300000 } },
+    'access:missing': { missing: { fieldName: 'access' } },
     'case:global': {
       aggs: {
-        case: { terms: { field: 'case', size: 300000 } },
-        'case:missing': { missing: { field: 'case' } },
+        case: { terms: { fieldName: 'case', size: 300000 } },
+        'case:missing': { missing: { fieldName: 'case' } },
       },
       global: {},
     },
@@ -381,17 +381,17 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.mondo_id_diagnosis',
+          fieldName: 'participants.diagnoses.mondo_id_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
     ],
   };
-  const nestedFields = ['participants', 'participants.diagnoses'];
+  const nestedFieldNames = ['participants', 'participants.diagnoses'];
   const input = {
-    nestedFields,
+    nestedFieldNames,
     sqon,
-    query: buildQuery({ nestedFields, filters: sqon }),
+    query: buildQuery({ nestedFieldNames, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },
@@ -429,7 +429,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
                     },
                   },
                   terms: {
-                    field: 'participants.diagnoses.source_text_diagnosis',
+                    fieldName: 'participants.diagnoses.source_text_diagnosis',
                     size: 300000,
                   },
                 },
@@ -440,7 +440,7 @@ test('buildAggregations should drop nested sqon filters down to appropriate aggr
                     },
                   },
                   missing: {
-                    field: 'participants.diagnoses.source_text_diagnosis',
+                    fieldName: 'participants.diagnoses.source_text_diagnosis',
                   },
                 },
               },
@@ -461,24 +461,24 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.mondo_id_diagnosis',
+          fieldName: 'participants.diagnoses.mondo_id_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.source_text_diagnosis',
+          fieldName: 'participants.diagnoses.source_text_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
     ],
   };
-  const nestedFields = ['participants', 'participants.diagnoses'];
+  const nestedFieldNames = ['participants', 'participants.diagnoses'];
   const input = {
-    nestedFields,
+    nestedFieldNames,
     sqon,
-    query: buildQuery({ nestedFields, filters: sqon }),
+    query: buildQuery({ nestedFieldNames, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },
@@ -555,7 +555,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                             },
                           },
                           terms: {
-                            field: 'participants.diagnoses.source_text_diagnosis',
+                            fieldName: 'participants.diagnoses.source_text_diagnosis',
                             size: 300000,
                           },
                         },
@@ -566,7 +566,7 @@ test('buildAggregations can drop nested sqon filters down to filters excluding a
                             },
                           },
                           missing: {
-                            field: 'participants.diagnoses.source_text_diagnosis',
+                            fieldName: 'participants.diagnoses.source_text_diagnosis',
                           },
                         },
                       },
@@ -591,24 +591,24 @@ test('buildAggregations can drop nested sqon filters down to filters including a
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.mondo_id_diagnosis',
+          fieldName: 'participants.diagnoses.mondo_id_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
       {
         op: 'in',
         content: {
-          field: 'participants.diagnoses.source_text_diagnosis',
+          fieldName: 'participants.diagnoses.source_text_diagnosis',
           value: ['SOME_VALUE'],
         },
       },
     ],
   };
-  const nestedFields = ['participants', 'participants.diagnoses'];
+  const nestedFieldNames = ['participants', 'participants.diagnoses'];
   const input = {
-    nestedFields,
+    nestedFieldNames,
     sqon,
-    query: buildQuery({ nestedFields, filters: sqon }),
+    query: buildQuery({ nestedFieldNames, filters: sqon }),
     graphqlFields: {
       participants__diagnoses__source_text_diagnosis: { buckets: { key: {} } },
     },
@@ -652,7 +652,7 @@ test('buildAggregations can drop nested sqon filters down to filters including a
                     },
                   },
                   terms: {
-                    field: 'participants.diagnoses.source_text_diagnosis',
+                    fieldName: 'participants.diagnoses.source_text_diagnosis',
                     size: 300000,
                   },
                 },
@@ -663,7 +663,7 @@ test('buildAggregations can drop nested sqon filters down to filters including a
                     },
                   },
                   missing: {
-                    field: 'participants.diagnoses.source_text_diagnosis',
+                    fieldName: 'participants.diagnoses.source_text_diagnosis',
                   },
                 },
               },

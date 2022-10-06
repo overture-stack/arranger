@@ -2,7 +2,7 @@ import createFieldAggregation from '../../buildAggregations/createFieldAggregati
 
 test('it should compute aggregation cardinality (for field files.kf_id)', () => {
   const input = {
-    field: 'files.kf_id',
+    fieldName: 'files.kf_id',
     graphqlField: {
       cardinality: {},
     },
@@ -10,7 +10,7 @@ test('it should compute aggregation cardinality (for field files.kf_id)', () => 
   };
   const output = {
     'files.kf_id:cardinality': {
-      cardinality: { field: 'files.kf_id', precision_threshold: 40000 },
+      cardinality: { fieldName: 'files.kf_id', precision_threshold: 40000 },
     },
   };
   expect(createFieldAggregation(input)).toEqual(output);
@@ -18,7 +18,7 @@ test('it should compute aggregation cardinality (for field files.kf_id)', () => 
 
 test('it should compute aggregation cardinality (for field family_id)', () => {
   const input = {
-    field: 'family_id',
+    fieldName: 'family_id',
     graphqlField: {
       cardinality: {},
     },
@@ -26,7 +26,7 @@ test('it should compute aggregation cardinality (for field family_id)', () => {
   };
   const output = {
     'family_id:cardinality': {
-      cardinality: { field: 'family_id', precision_threshold: 40000 },
+      cardinality: { fieldName: 'family_id', precision_threshold: 40000 },
     },
   };
   expect(createFieldAggregation(input)).toEqual(output);
@@ -34,7 +34,7 @@ test('it should compute aggregation cardinality (for field family_id)', () => {
 
 test('it should compute top hits aggregation', () => {
   const input = {
-    field: 'observed_phenotype.name',
+    fieldName: 'observed_phenotype.name',
     size: 1,
     source: ['observed_Phenotype.parents'],
     graphqlField: {
@@ -63,7 +63,7 @@ test('it should compute top hits aggregation', () => {
   const output = {
     'observed_phenotype.name': {
       terms: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
         size: 300000,
       },
       aggs: {
@@ -77,7 +77,7 @@ test('it should compute top hits aggregation', () => {
     },
     'observed_phenotype.name:missing': {
       missing: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
       },
     },
   };
@@ -86,7 +86,7 @@ test('it should compute top hits aggregation', () => {
 
 test('it should compute top hits aggregation and revert nested', () => {
   const input = {
-    field: 'observed_phenotype.name',
+    fieldName: 'observed_phenotype.name',
     size: 1,
     source: ['observed_Phenotype.parents'],
     isNested: 1,
@@ -116,7 +116,7 @@ test('it should compute top hits aggregation and revert nested', () => {
   const output = {
     'observed_phenotype.name': {
       terms: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
         size: 300000,
       },
       aggs: {
@@ -131,7 +131,7 @@ test('it should compute top hits aggregation and revert nested', () => {
     },
     'observed_phenotype.name:missing': {
       missing: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
       },
       aggs: {
         rn: { reverse_nested: {} },
@@ -146,12 +146,14 @@ test('it should compute top hits aggregation and filter by term aggregation', ()
     kind: 'Variable',
     value: {
       op: 'and',
-      content: [{ op: 'in', content: { field: 'observed_phenotype.is_tagged', value: 'true' } }],
+      content: [
+        { op: 'in', content: { fieldName: 'observed_phenotype.is_tagged', value: 'true' } },
+      ],
     },
   };
 
   const input = {
-    field: 'observed_phenotype.name',
+    fieldName: 'observed_phenotype.name',
     size: 1,
     source: ['observed_Phenotype.parents'],
     graphqlField: {
@@ -187,7 +189,7 @@ test('it should compute top hits aggregation and filter by term aggregation', ()
   const output = {
     'observed_phenotype.name': {
       terms: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
         size: 300000,
       },
       aggs: {
@@ -215,7 +217,7 @@ test('it should compute top hits aggregation and filter by term aggregation', ()
     },
     'observed_phenotype.name:missing': {
       missing: {
-        field: 'observed_phenotype.name',
+        fieldName: 'observed_phenotype.name',
       },
     },
   };
@@ -224,7 +226,7 @@ test('it should compute top hits aggregation and filter by term aggregation', ()
 
 test('it should handle multiple aggregation types per field', () => {
   const input = {
-    field: 'sequencing_experiments.mean_depth',
+    fieldName: 'sequencing_experiments.mean_depth',
     graphqlField: {
       stats: { max: {} },
       histogram: {
@@ -237,11 +239,11 @@ test('it should handle multiple aggregation types per field', () => {
 
   const output = {
     'sequencing_experiments.mean_depth:stats': {
-      stats: { field: 'sequencing_experiments.mean_depth' },
+      stats: { fieldName: 'sequencing_experiments.mean_depth' },
     },
     'sequencing_experiments.mean_depth:histogram': {
       histogram: {
-        field: 'sequencing_experiments.mean_depth',
+        fieldName: 'sequencing_experiments.mean_depth',
         interval: '5',
       },
     },
@@ -252,7 +254,7 @@ test('it should handle multiple aggregation types per field', () => {
 
 test('it should generate nested terms filters in aggs ', () => {
   const input = {
-    field: 'donors.zygosity',
+    fieldName: 'donors.zygosity',
     graphqlField: {
       buckets: {
         key: {},
@@ -279,11 +281,11 @@ test('it should generate nested terms filters in aggs ', () => {
       aggs: {
         'donors.zygosity': {
           aggs: { rn: { reverse_nested: {} } },
-          terms: { field: 'donors.zygosity', size: 300000 },
+          terms: { fieldName: 'donors.zygosity', size: 300000 },
         },
         'donors.zygosity:missing': {
           aggs: { rn: { reverse_nested: {} } },
-          missing: { field: 'donors.zygosity' },
+          missing: { fieldName: 'donors.zygosity' },
         },
       },
     },

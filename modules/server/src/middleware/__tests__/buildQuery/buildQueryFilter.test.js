@@ -1,13 +1,13 @@
 import buildQuery from '../../buildQuery';
 test('buildQuery filter', () => {
-  const nestedFields = ['files', 'files.foo'];
+  const nestedFieldNames = ['files', 'files.foo'];
 
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { fields: ['files.foo', 'test'], value: '*v*' },
+          content: { fieldNames: ['files.foo', 'test'], value: '*v*' },
           op: 'filter',
         },
       },

@@ -61,7 +61,7 @@ export default ({ api, documentType, gqlPath }) => {
                     {
                       op: "in",
                       content: {
-                        field: "clinical_diagnosis.clinical_stage_grouping",
+                        fieldName: "clinical_diagnosis.clinical_stage_grouping",
                         value: "Stage I"
                       }
                     }
@@ -128,7 +128,7 @@ export default ({ api, documentType, gqlPath }) => {
                     {
                       op: "filter",
                       content: {
-                        fields: [
+                        fieldNames: [
                           "name",
                           "primary_site",
                           "clinical_diagnosis.clinical_tumor_diagnosis",
@@ -201,7 +201,7 @@ export default ({ api, documentType, gqlPath }) => {
                     {
                       op: "filter",
                       content: {
-                        fields: [
+                        fieldNames: [
                           "name",
                           "primary_site",
                           "clinical_diagnosis.clinical_tumor_diagnosis",
@@ -274,7 +274,7 @@ export default ({ api, documentType, gqlPath }) => {
                     {
                       op: "filter",
                       content: {
-                        fields: [
+                        fieldNames: [
                           "name",
                           "primary_site",
                           "clinical_diagnosis.clinical_tumor_diagnosis",

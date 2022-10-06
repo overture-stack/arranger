@@ -10,12 +10,12 @@ const mappingToFields = ({ type, parent }) =>
     mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
     Object.entries(type.mapping)
       .filter(([, metadata]) => metadata.type === 'nested')
-      .map(([field, metadata]) =>
+      .map(([fieldName, metadata]) =>
         mappingToFields({
-          parent: [parent, field].filter(Boolean).join('.'),
+          parent: [parent, fieldName].filter(Boolean).join('.'),
           type: {
             ...type,
-            name: type.name + capitalize(field),
+            name: type.name + capitalize(fieldName),
             mapping: metadata.properties,
           },
         }),

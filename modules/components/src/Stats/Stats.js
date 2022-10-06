@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import Spinner from 'react-spinkit';
 import { get } from 'lodash';
 
@@ -6,10 +6,10 @@ import Query from '../Query';
 import { AggsState } from '../Aggs';
 import formatNumber from '../utils/formatNumber';
 
-export const underscoreField = (str) => (str || '').split('.').join('__');
+export const underscoreFieldName = (fieldName) => (fieldName || '').split('.').join('__');
 
 export const accessor = ({ aggsField, dataAccessor }) =>
-  `${underscoreField(aggsField?.field)}.${
+  `${underscoreFieldName(aggsField?.fieldName)}.${
     dataAccessor || (aggsField?.isTerms ? `buckets.length` : `stats.count`)
   }`;
 
@@ -56,13 +56,13 @@ const RootQuery = ({ documentType, render, sqon, ...props }) => (
 
 const FieldQuery = ({
   aggsState: { aggs },
-  field,
+  fieldName,
   render,
   sqon,
   documentType,
   dataAccessor,
   formatResult = (x) => x,
-  aggsField = aggs.find((x) => x.field === underscoreField(field)),
+  aggsField = aggs.find((x) => x.fieldName === underscoreFieldName(fieldName)),
   ...props
 }) => (
   <Query

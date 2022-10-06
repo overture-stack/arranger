@@ -7,15 +7,15 @@ import splitString from '../../utils/splitString';
 
 const isValidValue = (value) => value?.trim()?.length > 1;
 
-export const decorateFieldWithColumnsState = ({ tableConfigs, field }) => {
-  const columnsStateField = tableConfigs?.columns?.find((y) => y.field === field);
+export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
+  const columnsStateField = tableConfigs?.columns?.find((y) => y.fieldName === fieldName);
 
   return columnsStateField
     ? {
         ...columnsStateField,
-        gqlField: field.split('.').join('__'),
-        query: columnsStateField.query || field,
-        jsonPath: columnsStateField.jsonPath || `$.${field}`,
+        gqlField: fieldName.split('.').join('__'),
+        query: columnsStateField.query || fieldName,
+        jsonPath: columnsStateField.jsonPath || `$.${fieldName}`,
       }
     : {};
 };
@@ -40,10 +40,10 @@ const enhance = compose(
       sqon: {
         op: 'or',
         content: exact
-          ? quickSearchFields?.map(({ field }) => ({
+          ? quickSearchFields?.map(({ fieldName }) => ({
               op: 'in',
               content: {
-                field,
+                fieldName,
                 value: searchTextParts,
               },
             }))
@@ -51,7 +51,7 @@ const enhance = compose(
               op: 'filter',
               content: {
                 value: `*${x}*`,
-                fields: quickSearchFields?.map((x) => x.field),
+                fieldNames: quickSearchFields?.map((x) => x.fieldName),
               },
             })),
       },
@@ -104,10 +104,10 @@ const enhance = compose(
             ({
               node,
               primaryKey = jp.query(
-                { [primaryKeyField.field.split('.')[0]]: node.primaryKey },
+                { [primaryKeyField.fieldName.split('.')[0]]: node.primaryKey },
                 primaryKeyField.jsonPath,
               )[0],
-              result = jp.query({ [x.field.split('.')[0]]: node[x.gqlField] }, x.jsonPath)[0],
+              result = jp.query({ [x.fieldName.split('.')[0]]: node[x.gqlField] }, x.jsonPath)[0],
             }) => ({
               primaryKey,
               entityName: x.entityName,
@@ -140,7 +140,7 @@ const enhance = compose(
           ?.map(({ entityName, field, results }) =>
             results?.map(({ input, primaryKey, result }) => ({
               entityName,
-              field,
+              field, // TODO: this may be a field or a fieldName. Rename?
               input,
               primaryKey,
               result,

@@ -51,7 +51,7 @@ export const DataProvider = ({
   const fetchData = useDataFetcher({
     apiFetcher,
     documentType,
-    keyField: tableConfigs?.keyField,
+    keyFieldName: tableConfigs?.keyFieldName,
     sqon,
     url,
   });

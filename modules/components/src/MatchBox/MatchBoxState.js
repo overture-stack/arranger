@@ -1,15 +1,15 @@
 import { Component } from 'react';
 import { debounce } from 'lodash';
-import api from '../utils/api';
 
+import api from '../utils/api';
 import { decorateFieldWithColumnsState } from '../Arranger/QuickSearch/QuickSearchQuery';
 
 let matchBoxFields = `
   state {
     displayName
-    field
+    fieldName
     isActive
-    keyField
+    keyFieldName
     searchFields
   }
 `;
@@ -57,7 +57,7 @@ class MatchBoxState extends Component {
                 columnsState {
                   state {
                     columns {
-                      field
+                      fieldName
                       query
                       jsonPath
                     }
@@ -111,9 +111,9 @@ class MatchBoxState extends Component {
     });
   }, 300);
 
-  update = ({ field, key, value }) => {
-    let matchBoxField = this.state.temp.find((x) => x.field === field);
-    let index = this.state.temp.findIndex((x) => x.field === field);
+  update = ({ fieldName, key, value }) => {
+    let matchBoxField = this.state.temp.find((x) => x.fieldName === fieldName);
+    let index = this.state.temp.findIndex((x) => x.fieldName === fieldName);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...matchBoxField, [key]: value },
     });
@@ -127,18 +127,18 @@ class MatchBoxState extends Component {
         return {
           ...x,
           keyField: {
-            field: x.keyField,
+            fieldName: x.keyFieldName,
             ...decorateFieldWithColumnsState({
               columnsState: this.state.columnsState,
-              field: x.keyField,
+              fieldName: x.keyFieldName,
             }),
           },
-          searchFields: x.searchFields.map((y) => ({
-            field: y,
+          searchFields: x.searchFields.map((fieldName) => ({
+            fieldName,
             entityName: x.displayName,
             ...decorateFieldWithColumnsState({
               columnsState: this.state.columnsState,
-              field: y,
+              fieldName,
             }),
           })),
         };

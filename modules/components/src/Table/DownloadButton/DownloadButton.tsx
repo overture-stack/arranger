@@ -65,6 +65,7 @@ const DownloadButton = ({
   } = useTableContext({
     callerName: 'Table - ColumnSelectButton',
   });
+
   const {
     components: {
       Table: {
@@ -74,7 +75,7 @@ const DownloadButton = ({
           downloadUrl: themeDownloadUrl = urlJoin(ARRANGER_API, 'download'),
           label: themeDownloadButtonLabel = 'Download',
           maxRows: themeMaxRows = 100,
-          exportSelectedRowsField = 'file_autocomplete',
+          exportSelectedRowsFieldName = 'file_autocomplete',
           ...themeDownloadButtonProps
         } = emptyObj,
         DropDown: { label: themeDropDownLabel, ...themeDropDownProps } = emptyObj,
@@ -99,7 +100,7 @@ const DownloadButton = ({
           content: [
             {
               op: 'in',
-              content: { field: exportSelectedRowsField, value: selectedRows },
+              content: { fieldName: exportSelectedRowsFieldName, value: selectedRows },
             },
           ],
         } as unknown as SQONType)

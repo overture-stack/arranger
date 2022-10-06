@@ -16,8 +16,8 @@ const withSQON = withState('sqon', 'setSQON', null);
 const tableConfig = {
   timestamp: '2018-01-12T16:42:07.495Z',
   type: 'models',
-  keyField: 'name',
-  defaultSorting: [{ field: 'age_at_diagnosis', desc: false }],
+  keyFieldName: 'name',
+  defaultSorting: [{ fieldName: 'age_at_diagnosis', desc: false }],
   columns: [
     {
       show: true,
@@ -41,8 +41,8 @@ const tableConfig = {
 const dummyConfig = {
   timestamp: '2018-01-12T16:42:07.495Z',
   type: 'files',
-  keyField: 'file_id',
-  defaultSorting: [{ field: 'access', desc: false }],
+  keyFieldName: 'file_id',
+  defaultSorting: [{ fieldName: 'access', desc: false }],
   columns: [
     {
       show: true,
@@ -131,7 +131,7 @@ function fetchDummyData({ config, sort, offset, first }) {
     total: dummyData.length,
     data: orderBy(
       dummyData,
-      sort.map((s) => s.field),
+      sort.map((s) => s.fieldName),
       sort.map((s) => s.order),
     ).slice(offset, offset + first),
   });

@@ -47,7 +47,7 @@ export default class AdvancedFacetView extends React.Component {
         ) || {}
     );
   };
-  constructFilterId = ({ field, value }) => (value ? `${field}---${value}` : field);
+  constructFilterId = ({ fieldName, value }) => (value ? `${fieldName}---${value}` : fieldName);
 
   handleSqonChange = ({ sqon }) => {
     const { onSqonFieldChange = noopFn } = this.props;

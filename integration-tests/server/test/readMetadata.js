@@ -51,7 +51,7 @@ export default ({ api, documentType, gqlPath }) => {
               configs {
                 facets {
                   aggregations {
-                    field
+                    fieldName
                     active
                     show
                   }
@@ -76,7 +76,7 @@ export default ({ api, documentType, gqlPath }) => {
             ${documentType} {
               configs {
                 table {
-                  keyField
+                  keyFieldName
                 }
               }
             }
@@ -98,7 +98,7 @@ export default ({ api, documentType, gqlPath }) => {
             ${documentType} {
               configs {
                 matchbox {
-                  field
+                  fieldName
                 }
               }
             }

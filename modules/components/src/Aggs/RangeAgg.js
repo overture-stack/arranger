@@ -110,7 +110,7 @@ class RangeAgg extends Component {
   onChangeComplete = () => {
     let {
       displayName,
-      field,
+      fieldName,
       handleChange,
       stats: { max, min },
     } = this.props;
@@ -118,19 +118,23 @@ class RangeAgg extends Component {
     const [currentMax, currentMin] = [currentValues.max, currentValues.min].map((x) => round(x));
 
     return handleChange?.({
-      field: {
+      fieldName: {
         displayName,
         displayUnit,
-        field,
+        fieldName,
       },
       generateNextSQON: (sqon) =>
         replaceFieldSQON(
-          field,
+          fieldName,
           {
             op: 'and',
             content: [
-              ...(currentMin > min ? [{ op: '>=', content: { field, value: currentMin } }] : []),
-              ...(currentMax < max ? [{ op: '<=', content: { field, value: currentMax } }] : []),
+              ...(currentMin > min
+                ? [{ op: '>=', content: { fieldName, value: currentMin } }]
+                : []),
+              ...(currentMax < max
+                ? [{ op: '<=', content: { fieldName, value: currentMax } }]
+                : []),
             ],
           },
           sqon,
@@ -173,7 +177,7 @@ class RangeAgg extends Component {
     const {
       collapsible = true,
       displayName = 'Unnamed Field',
-      field,
+      fieldName,
       rangeStep,
       stats: { max, min } = emptyObj,
       step,
@@ -217,7 +221,7 @@ class RangeAgg extends Component {
 
     const dataFields = {
       'data-available': hasData,
-      ...(field && { 'data-field': field }),
+      ...(fieldName && { 'data-fieldname': fieldName }),
       ...(type && { 'data-type': type }),
     };
 

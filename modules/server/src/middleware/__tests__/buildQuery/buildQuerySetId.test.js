@@ -1,14 +1,14 @@
 import buildQuery from '../../buildQuery';
 import { ES_ARRANGER_SET_INDEX, ES_ARRANGER_SET_TYPE } from '../../constants';
 test('buildQuery sets', () => {
-  const nestedFields = ['files', 'files.foo'];
+  const nestedFieldNames = ['files', 'files.foo'];
 
   const tests = [
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { field: 'case_id', value: ['set_id:aaa'] },
+          content: { fieldName: 'case_id', value: ['set_id:aaa'] },
           op: 'in',
         },
       },
@@ -26,9 +26,9 @@ test('buildQuery sets', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { field: 'ssms.ssm_id', value: ['set_id:aaa'] },
+          content: { fieldName: 'ssms.ssm_id', value: ['set_id:aaa'] },
           op: 'in',
         },
       },
@@ -46,9 +46,9 @@ test('buildQuery sets', () => {
     },
     {
       input: {
-        nestedFields,
+        nestedFieldNames,
         filters: {
-          content: { field: 'files.file_id', value: ['set_id:aaa'] },
+          content: { fieldName: 'files.file_id', value: ['set_id:aaa'] },
           op: 'in',
         },
       },

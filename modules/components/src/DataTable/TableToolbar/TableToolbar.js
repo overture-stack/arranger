@@ -68,7 +68,7 @@ const TableToolbar = ({
   downloadUrl,
   enableDropDownControls = false,
   enableSelectedTableRowsExporterFilter = false,
-  selectedRowsFilterPropertyName = 'file_autocomplete',
+  selectedRowsFilterFieldName = 'file_autocomplete',
   exporter = null,
   exporterLabel = 'Download',
   exportMaxRows,
@@ -117,7 +117,7 @@ const TableToolbar = ({
           content: [
             {
               op: 'in',
-              content: { field: selectedRowsFilterPropertyName, value: selectedTableRows },
+              content: { fieldName: selectedRowsFilterFieldName, value: selectedTableRows },
             },
           ],
         }

@@ -32,21 +32,21 @@ export const AggregationsListDisplay = ({
     aggs
       .map((agg) => ({
         ...agg,
-        ...data?.data?.[documentType]?.aggregations?.[agg?.field],
-        ...data?.data?.[documentType]?.configs?.extended?.find(
-          (x) => x.field.replace(/\./g, '__') === agg.field,
+        ...data[documentType]?.aggregations?.[agg?.fieldName],
+        ...data[documentType]?.configs?.extended?.find(
+          (x) => x.fieldName.replace(/\./g, '__') === agg.fieldName,
         ),
         onValueChange: ({ sqon, value }) => {
           onValueChange(value);
           setSQON(sqon);
         },
-        key: agg.field,
+        key: agg.fieldName,
         sqon,
         containerRef,
       }))
       .map((agg) => {
         const customContent =
-          customFacets.find((x) => x.content.field === agg.field)?.content || {};
+          customFacets.find((x) => x.content.fieldName === agg.fieldName)?.content || {};
 
         return {
           ...agg,
@@ -120,7 +120,7 @@ export const AggregationsList = ({
  *   [
  *     {
  *       content: {
- *         field: 'field_name', // identify which facet this object customizes
+ *         fieldName: 'field_name', // identify which facet this object customizes
  *         displayName: 'New Display Name for This Field', // modify displayName of the facet
  *       },
  *     },
@@ -152,6 +152,7 @@ const Aggregations = ({
         documentType={documentType}
         render={(aggsState) => {
           const aggs = aggsState.aggs.filter((agg) => agg.show);
+
           return (
             <AggregationsList
               aggs={aggs}

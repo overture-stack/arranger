@@ -1,15 +1,14 @@
 import { Component } from 'react';
-import { debounce, get, isEqual, sortBy } from 'lodash';
+import { debounce, get, isEqual } from 'lodash';
 
 import { withData } from '@/DataContext';
 
-import defaultApiFetcher from '../utils/api';
 import esToAggTypeMap from '../utils/esToAggTypeMap';
 
-export const queryFromAgg = ({ field, type }) =>
+export const queryFromAgg = ({ fieldName, type }) =>
   type === 'Aggregations'
     ? `
-        ${field} {
+        ${fieldName} {
           buckets {
             doc_count
             key_as_string
@@ -18,7 +17,7 @@ export const queryFromAgg = ({ field, type }) =>
         }
       `
     : `
-      ${field} {
+      ${fieldName} {
         stats {
           max
           min
@@ -29,8 +28,8 @@ export const queryFromAgg = ({ field, type }) =>
       }
       `;
 
-const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
-  const mappingPath = field.split('__').join('.properties.');
+const getMappingTypeOfField = ({ mapping = {}, fieldName = '' }) => {
+  const mappingPath = fieldName.split('__').join('.properties.');
   return esToAggTypeMap[get(mapping, mappingPath)?.type];
 };
 
@@ -77,7 +76,7 @@ class AggsState extends Component {
   //             documentType: "${this.props.documentType}"
   //           ) {
   //             state {
-  //               field
+  //               fieldName
   //               show
   //               active
   //             }
@@ -93,9 +92,9 @@ class AggsState extends Component {
   //   });
   // }, 300);
 
-  update = ({ field, key, value }) => {
-    let agg = this.state.temp.find((x) => x.field === field);
-    let index = this.state.temp.findIndex((x) => x.field === field);
+  update = ({ fieldName, key, value }) => {
+    let agg = this.state.temp.find((x) => x.fieldName === fieldName);
+    let index = this.state.temp.findIndex((x) => x.fieldName === fieldName);
     let temp = Object.assign([], this.state.temp, {
       [index]: { ...agg, [key]: value },
     });
@@ -107,10 +106,10 @@ class AggsState extends Component {
   // saveOrder = (orderedFields) => {
   //   const aggs = this.state.temp;
   //   if (
-  //     orderedFields.every((field) => aggs.find((agg) => agg.field === field)) &&
-  //     aggs.every((agg) => orderedFields.find((field) => field === agg.field))
+  //     orderedFields.every((fieldName) => aggs.find((agg) => agg.fieldName === fieldName)) &&
+  //     aggs.every((agg) => orderedFields.find((fieldName) => fieldName === agg.fieldName))
   //   ) {
-  //     this.save(sortBy(aggs, (agg) => orderedFields.indexOf(agg.field)));
+  //     this.save(sortBy(aggs, (agg) => orderedFields.indexOf(agg.fieldName)));
   //   } else {
   //     console.warn('provided orderedFields are not clean: ', orderedFields);
   //   }
@@ -122,7 +121,7 @@ class AggsState extends Component {
     return this.props.render({
       update: this.update,
       aggs: temp.map((x) => {
-        const type = getMappingTypeOfField({ field: x.field, mapping }) || x.type;
+        const type = getMappingTypeOfField({ fieldName: x.fieldName, mapping }) || x.type;
         return {
           ...x,
           type,

@@ -73,7 +73,7 @@ const TableColumnsSelectButton = ({
 
           return setCurrentColumnsDict({
             ...currentColumnsDict,
-            [column.field]: {
+            [column.fieldName]: {
               ...column,
               show: !column.show,
             },

@@ -43,7 +43,7 @@ const Table = ({
               allColumns: tableConfigs.state.columns?.reduce(
                 (columnsDict, column) => ({
                   ...columnsDict,
-                  [column.field]: column,
+                  [column.fieldName]: column,
                 }),
                 {},
               ),
@@ -57,9 +57,9 @@ const Table = ({
               setSQON(
                 generateNextSQON({
                   sqon,
-                  fields: tableConfigs.state.columns
+                  fieldNames: tableConfigs.state.columns
                     .filter((x) => fieldTypesForFilter.includes(x.type) && x.show)
-                    .map((x) => x.field),
+                    .map((x) => x.fieldName),
                 }),
               );
             }}

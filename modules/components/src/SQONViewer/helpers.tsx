@@ -49,8 +49,8 @@ export const Bubble = ({ children, className, theme, ...props }: BubbleProps) =>
   );
 };
 
-export const Field = ({ children, className, ...props }: BubbleProps) => (
-  <Bubble className={cx('sqon-field', className)} {...props}>
+export const FieldName = ({ children, className, ...props }: BubbleProps) => (
+  <Bubble className={cx('sqon-fieldName', className)} {...props}>
     {children}
   </Bubble>
 );
@@ -82,7 +82,7 @@ export const useDataBubbles = ({
     components: {
       SQONViewer: {
         SQONClear: themeSQONClearProps = emptyObj,
-        SQONField: themeSQONFieldProps = emptyObj,
+        SQONFieldName: themeSQONFieldNameProps = emptyObj,
         SQONLessOrMore: themeSQONLessOrMoreProps = emptyObj,
         SQONValue: {
           characterLimit: themeCharacterLimit = 30,
@@ -101,7 +101,8 @@ export const useDataBubbles = ({
 
   const { extendedMapping } = useDataContext({ callerName: 'SQONViewer - useDataBubbles' });
   const findExtendedMappingForField = useCallback(
-    (wantedField: string) => extendedMapping.find((mapping) => mapping.field === wantedField),
+    (wantedFieldName: string) =>
+      extendedMapping.find((mapping) => mapping.fieldName === wantedFieldName),
     [extendedMapping],
   );
 
@@ -129,14 +130,14 @@ export const useDataBubbles = ({
     </Bubble>
   );
 
-  const FieldCrumb = ({ field, ...fieldProps }: { field: string }) => (
-    <Field
+  const FieldCrumb = ({ fieldName, ...fieldProps }: { fieldName: string }) => (
+    <FieldName
       css={css``}
-      theme={{ fontWeight: 'bold', ...themeSQONFieldProps }}
-      {...{ field, ...fieldProps }}
+      theme={{ fontWeight: 'bold', ...themeSQONFieldNameProps }}
+      {...{ fieldName, ...fieldProps }}
     >
-      {findExtendedMappingForField(field)?.displayName || field}
-    </Field>
+      {findExtendedMappingForField(fieldName)?.displayName || fieldName}
+    </FieldName>
   );
 
   const lessOrMoreClickHandler = useCallback(
@@ -161,19 +162,19 @@ export const useDataBubbles = ({
 
   const ValueCrumb = ({
     css: customCSS,
-    field,
+    fieldName,
     nextSQON,
     value,
     ...valueProps
   }: {
-    field: string;
+    fieldName: string;
     nextSQON: GroupSQONInterface;
     value: any;
   } & ThemeCommon.CustomCSS) => {
     const displayValue = translateSQONValue(
       internalTranslateSQONValue(
-        (findExtendedMappingForField(field)?.type === 'date' && format(value, dateFormat)) ||
-          (findExtendedMappingForField(field)?.displayValues || {})[value] ||
+        (findExtendedMappingForField(fieldName)?.type === 'date' && format(value, dateFormat)) ||
+          (findExtendedMappingForField(fieldName)?.displayValues || {})[value] ||
           value,
       ),
     );

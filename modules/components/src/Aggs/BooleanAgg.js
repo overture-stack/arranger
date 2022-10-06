@@ -14,7 +14,7 @@ import BucketCount from './BucketCount';
 const BooleanAgg = ({
   buckets = [],
   collapsible,
-  field,
+  fieldName,
   handleValueClick = noopFn,
   isActive = () => false,
   WrapperComponent,
@@ -31,9 +31,9 @@ const BooleanAgg = ({
   },
   displayValues: extendedDisplayKeys = emptyObj,
   displayKeys = Object.keys(defaultDisplayKeys).reduce(
-    (obj, x) => ({
+    (obj, displayKey) => ({
       ...obj,
-      [x]: extendedDisplayKeys[x] || defaultDisplayKeys[x],
+      [displayKey]: extendedDisplayKeys[displayKey] || defaultDisplayKeys[displayKey],
     }),
     {},
   ),
@@ -60,31 +60,31 @@ const BooleanAgg = ({
 
   const missingKeyBucket = buckets.find(({ key_as_string }) => !key_as_string);
 
-  const dotField = field.replace(/__/g, '.');
+  const dotFieldName = fieldName.replace(/__/g, '.');
 
   const isTrueActive = isActive({
     value: valueKeys.true,
-    field: dotField,
+    fieldName: dotFieldName,
   });
   const isFalseActive = isActive({
     value: valueKeys.false,
-    field: dotField,
+    fieldName: dotFieldName,
   });
 
   const isTrueBucketDisabled = trueBucket === undefined || trueBucket?.doc_count <= 0;
   const isFalseBucketDisabled = falseBucket === undefined || falseBucket?.doc_count <= 0;
 
-  const handleChange = (isTrue, field) => {
+  const handleChange = (isTrue, fieldName) => {
     handleValueClick(
       isTrue === undefined // aka "Any" button clicked
         ? {
-            field,
-            generateNextSQON: (sqon) => removeSQON(dotField, sqon),
+            fieldName,
+            generateNextSQON: (sqon) => removeSQON(dotFieldName, sqon),
             value: 'Any',
           }
         : {
             bucket: isTrue ? trueBucket : falseBucket,
-            field,
+            fieldName,
             generateNextSQON: (sqon) =>
               replaceSQON(
                 {
@@ -93,7 +93,7 @@ const BooleanAgg = ({
                     {
                       op: 'in',
                       content: {
-                        field: dotField,
+                        fieldName: dotFieldName,
                         value: [valueKeys[isTrue ? 'true' : 'false']],
                       },
                     },
@@ -157,7 +157,7 @@ const BooleanAgg = ({
   ]);
 
   const dataFields = {
-    ...(field && { 'data-field': field }),
+    ...(fieldName && { 'data-fieldname': fieldName }),
     ...(type && { 'data-type': type }),
   };
 
@@ -174,7 +174,7 @@ const BooleanAgg = ({
             onChange={({ value }) => {
               handleChange(
                 value === valueKeys.true ? true : value === valueKeys.false ? false : undefined,
-                dotField,
+                dotFieldName,
               );
             }}
             options={options}

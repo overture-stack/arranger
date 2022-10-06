@@ -5,7 +5,7 @@ import Location from '../Location';
 import TermAgg from './TermAgg';
 import AggsQuery from './AggsQuery';
 
-export default ({ index, aggs = [], ...props }) =>
+const AggsPanel = ({ index, aggs = [], ...props }) =>
   !aggs.length ? null : (
     <AggsQuery
       index={index}
@@ -15,17 +15,17 @@ export default ({ index, aggs = [], ...props }) =>
           'loading'
         ) : (
           <div className="remainder">
-            {Object.entries(data[index].aggregations).map(([field, data]) => (
+            {Object.entries(data[index].aggregations).map(([fieldName, data]) => (
               <Location
-                key={field}
+                key={fieldName}
                 render={(search) => (
                   <TermAgg
-                    field={field}
+                    fieldName={fieldName}
                     buckets={data.buckets}
                     isActive={(d) =>
                       inCurrentSQON({
                         currentSQON: (search.filters || {}).content,
-                        dotField: d.field,
+                        dotFieldName: d.fieldName,
                         value: d.value,
                       })
                     }
@@ -38,7 +38,7 @@ export default ({ index, aggs = [], ...props }) =>
                       //         {
                       //           op: 'in',
                       //           content: {
-                      //             field: d.field,
+                      //             fieldName: d.fieldName,
                       //             value: [d.value],
                       //           },
                       //         },
@@ -57,3 +57,5 @@ export default ({ index, aggs = [], ...props }) =>
       {...props}
     />
   );
+
+export default AggsPanel;

@@ -18,7 +18,7 @@ import internalTranslateSQONValue from '@/utils/translateSQONValue';
 import AggsWrapper from './AggsWrapper';
 import BucketCount from './BucketCount';
 
-const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
+const generateNextSQON = ({ dotFieldName, bucket, isExclude, sqon }) =>
   toggleSQON(
     {
       op: 'and',
@@ -26,7 +26,7 @@ const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
         {
           op: isExclude ? 'not-in' : 'in',
           content: {
-            field: dotField,
+            fieldName: dotFieldName,
             value: [].concat(bucket.name || []),
           },
         },
@@ -37,7 +37,7 @@ const generateNextSQON = ({ dotField, bucket, isExclude, sqon }) =>
 
 const IncludeExcludeButton = ({
   buckets,
-  dotField,
+  dotFieldName,
   handleIncludeExcludeChange,
   isActive,
   isExclude,
@@ -46,14 +46,16 @@ const IncludeExcludeButton = ({
 }) => (
   <ToggleButton
     onChange={({ value, isExclude = value === 'exclude' }) => {
-      const activeBuckets = buckets.filter((b) => isActive({ field: dotField, value: b.name }));
+      const activeBuckets = buckets.filter((b) =>
+        isActive({ fieldName: dotFieldName, value: b.name }),
+      );
       handleIncludeExcludeChange({
         isExclude,
         buckets: activeBuckets,
         generateNextSQON: (sqon) =>
           activeBuckets.reduce(
-            (q, bucket) => generateNextSQON({ dotField, isExclude, bucket, sqon: q }),
-            removeSQON(dotField, sqon),
+            (q, bucket) => generateNextSQON({ dotFieldName, isExclude, bucket, sqon: q }),
+            removeSQON(dotFieldName, sqon),
           ),
       });
       updateIsExclude(isExclude);
@@ -101,7 +103,7 @@ const TermAgg = ({
   containerRef,
   Content = 'div',
   displayName = 'Unnamed Field',
-  field = '',
+  fieldName = '',
   handleIncludeExcludeChange = noopFn,
   handleValueClick = noopFn,
   headerTitle = null,
@@ -126,15 +128,15 @@ const TermAgg = ({
   const [stateShowingSearch, setShowingSearch] = useState(false);
   const [searchText, setSearchText] = useState('');
   const decoratedBuckets = decorateBuckets({ buckets, searchText });
-  const dotField = field.replace(/__/g, '.');
-  const isExclude = externalIsExclude({ field: dotField }) || stateIsExclude;
+  const dotFieldName = fieldName.replace(/__/g, '.');
+  const isExclude = externalIsExclude({ fieldName: dotFieldName }) || stateIsExclude;
   const hasData = decoratedBuckets.length > 0;
   const hasSearchHit =
     highlightText && decoratedBuckets.some((x) => x.name.match(strToReg(searchText)));
   const showingMore = stateShowingMore || hasSearchHit;
   const isMoreEnabled = decoratedBuckets.length > maxTerms;
   const dataFields = {
-    ...(field && { 'data-field': field }),
+    ...(fieldName && { 'data-fieldname': fieldName }),
     ...(type && { 'data-type': type }),
   };
 
@@ -200,7 +202,7 @@ const TermAgg = ({
           <IncludeExcludeButton
             {...{
               buckets: decoratedBuckets,
-              dotField,
+              dotFieldName,
               handleIncludeExcludeChange,
               isActive,
               isExclude,
@@ -235,7 +237,7 @@ const TermAgg = ({
               .map((bucket, i, array) => (
                 <Content
                   id={constructEntryId({
-                    value: `${field}--${bucket.name.replace(/\s/g, '-')}`,
+                    value: `${fieldName}--${bucket.name.replace(/\s/g, '-')}`,
                   })}
                   key={bucket.name}
                   className={cx(
@@ -248,7 +250,7 @@ const TermAgg = ({
                     }),
                   )}
                   content={{
-                    field: dotField,
+                    fieldName: dotFieldName,
                     value: bucket.name,
                   }}
                   css={css`
@@ -260,11 +262,11 @@ const TermAgg = ({
                   `}
                   onClick={() =>
                     handleValueClick({
-                      field: dotField,
+                      fieldName: dotFieldName,
                       value: bucket,
                       isExclude,
                       generateNextSQON: (sqon) =>
-                        generateNextSQON({ isExclude, dotField, bucket, sqon }),
+                        generateNextSQON({ isExclude, dotFieldName, bucket, sqon }),
                     })
                   }
                 >
@@ -278,14 +280,14 @@ const TermAgg = ({
                     <input
                       aria-label={`Select ${bucket.name}`}
                       checked={isActive({
-                        field: dotField,
+                        fieldName: dotFieldName,
                         value: bucket.name,
                       })}
                       css={css`
                         margin: 0.2rem 0.3rem 0 0;
                       `}
-                      id={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
-                      name={`input-${field}-${bucket.name.replace(/\s/g, '-')}`}
+                      id={`input-${fieldName}-${bucket.name.replace(/\s/g, '-')}`}
+                      name={`input-${fieldName}-${bucket.name.replace(/\s/g, '-')}`}
                       readOnly
                       type="checkbox"
                     />

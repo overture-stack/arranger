@@ -6,7 +6,7 @@ import noopFn from '@/utils/noops';
 
 export const generateNextSQON =
   (value) =>
-  ({ sqon, fields, entity }) =>
+  ({ sqon, fieldNames, entity }) =>
     replaceFilterSQON(
       {
         op: 'and',
@@ -14,7 +14,7 @@ export const generateNextSQON =
           {
             op: 'filter',
             content: {
-              fields: fields,
+              fieldNames,
               value,
               ...(entity && { entity }),
             },

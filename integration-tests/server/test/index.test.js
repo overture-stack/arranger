@@ -82,7 +82,7 @@ describe('@overture-stack/arranger-server', () => {
             {
               op: 'in',
               content: {
-                field: 'access_denied',
+                fieldName: 'access_denied',
                 value: ['true'],
               },
             },

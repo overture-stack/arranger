@@ -2,8 +2,9 @@ import React from 'react';
 import { css } from '@emotion/react';
 import { storiesOf } from '@storybook/react';
 
-import { themeDecorator } from './decorators';
 import LiveAdvancedFacetView from '../src/AdvancedFacetView/LiveAdvancedFacetView';
+
+import { themeDecorator } from './decorators';
 
 const injectMockBuckets = (node) =>
   Object.keys(node).reduce(
@@ -53,7 +54,7 @@ storiesOf('AdvancedFacetView', module)
             {
               op: 'in',
               content: {
-                field: 'data_type',
+                fieldName: 'data_type',
                 value: ['submitted aligned reads'],
               },
             },

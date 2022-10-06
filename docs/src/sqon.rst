@@ -36,7 +36,7 @@ A SQON object consists of nested objects of two types: **Operations** and **Valu
   ::
 
     {
-      "field":"", //name of the field this operation applies to
+      "fieldName":"", //name of the field this operation applies to
       "value":[] //List of values for the field if using the "in" operation, or a scalar value for ">=" and "<=" operations
     }
 
@@ -55,7 +55,7 @@ Sample
           {
             op: "in",
             content: {
-              field: "id",
+              fieldName: "id",
               value: ["id123"]
             }
           }
@@ -64,7 +64,7 @@ Sample
       {
         op: "in",
         content: {
-          field: "id",
+          fieldName: "id",
           value: ["id123"]
         }
       }

@@ -13,7 +13,7 @@ const CombinedStatsQuery = ({ apiFetcher, documentType, sqon, stats, render }) =
       const decoratedStats = stats.map((s, i) => ({
         key: `q${i}`,
         formatResult: (x) => x,
-        aggsField: aggs.find((x) => x.field === underscoreField(s.field)),
+        aggsField: aggs.find((x) => x.fieldName === underscoreField(s.fieldName)),
         ...s,
       }));
       return (

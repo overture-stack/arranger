@@ -1,13 +1,13 @@
 import mappingToAggsType from './mappingToAggsType';
 
-export default ({ type, fields = '', createStateTypeDefs = true }) => {
+export default ({ type, fields = [], createStateTypeDefs = true }) => {
   return `
     type ${type.name} {
       aggregations(
         filters: JSON
 
         include_missing: Boolean
-        # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
+        # Should term aggregations be affected by queries that contain filters on their fieldName. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
         aggregations_filter_themselves: Boolean
       ): ${type.name}Aggregations
 

@@ -54,13 +54,13 @@ export default class FacetView extends React.Component {
     return (
       <div className="facetView" ref={(el) => (this.root = el)}>
         {flattenDisplayTreeData(displayTreeData).map(({ path }) => {
-          const metaData = extendedMapping.find(({ field }) => field === path);
+          const metaData = extendedMapping.find(({ fieldName }) => fieldName === path);
           const { type } = metaData || {};
           const paths = path
             .split('.')
             .reduce((acc, node, i, paths) => [...acc, [...paths.slice(0, i), node].join('.')], []);
           const pathDisplayNames = paths.map(
-            (path) => extendedMapping.find(({ field }) => field === path)?.displayName,
+            (path) => extendedMapping.find(({ fieldName }) => fieldName === path)?.displayName,
           );
           const agg = aggregations[path];
           return aggComponentsMap[type]?.({
@@ -83,7 +83,7 @@ export default class FacetView extends React.Component {
                 })()
               : {}),
             key: path,
-            field: path,
+            fieldName: path,
             getRangeAggProps: () => {
               return {
                 step: metaData.rangeStep,

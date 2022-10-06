@@ -1,19 +1,19 @@
-import { get } from 'lodash';
-import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '../constants';
-import isEmpty from 'lodash/isEmpty';
+import { get, isEmpty } from 'lodash';
+
 import { opSwitch } from '../buildQuery';
 import normalizeFilters from '../buildQuery/normalizeFilters';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '../constants';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
 const CARDINALITY_DEFAULT_PRECISION_THRESHOLD = 40000; // max precision for ES6-7
 
-const createNumericAggregation = ({ type, field, graphqlField }) => {
+const createNumericAggregation = ({ type, fieldName, graphqlField }) => {
   const args = get(graphqlField, [type, '__arguments', 0]) || {};
   return {
-    [`${field}:${type}`]: {
+    [`${fieldName}:${type}`]: {
       [type]: {
-        field,
+        field: fieldName,
         ...(type === HISTOGRAM
           ? {
               interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
@@ -24,7 +24,7 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
   };
 };
 
-const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) => {
+const createTermAggregation = ({ fieldName, isNested, graphqlField, termFilters }) => {
   const maxAggregations = get(
     graphqlField,
     ['buckets', '__arguments', 0, 'max', 'value'],
@@ -42,7 +42,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
   if (topHits) {
     innerAggs = {
       ...innerAggs,
-      [`${field}.hits`]: {
+      [`${fieldName}.hits`]: {
         top_hits: {
           _source: source?.value || [],
           size: size?.value,
@@ -56,7 +56,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
 
     const aggsFilters = terms?.content?.map((sqonFilter) =>
       opSwitch({
-        nestedFields: [],
+        nestedFieldNames: [],
         filter: normalizeFilters(sqonFilter),
       }),
     );
@@ -78,19 +78,19 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
   }
 
   const aggs = {
-    [field]: {
+    [fieldName]: {
       ...(!isEmpty(innerAggs) ? { aggs: { ...innerAggs } } : {}),
-      terms: { field, size: maxAggregations },
+      terms: { field: fieldName, size: maxAggregations },
     },
-    [`${field}:missing`]: {
+    [`${fieldName}:missing`]: {
       ...(isNested ? { aggs: { rn: { reverse_nested: {} } } } : {}),
-      missing: { field: field },
+      missing: { field: fieldName },
     },
   };
 
   return isNested && termFilters.length > 0
     ? {
-        [`${field}:nested_filtered`]: {
+        [`${fieldName}:nested_filtered`]: {
           filter: {
             bool: {
               must: termFilters,
@@ -107,10 +107,10 @@ const getPrecisionThreshold = (graphqlField) => {
   return args?.precision_threshold?.value || CARDINALITY_DEFAULT_PRECISION_THRESHOLD;
 };
 
-const computeCardinalityAggregation = ({ field, graphqlField }) => ({
-  [`${field}:${CARDINALITY}`]: {
+const computeCardinalityAggregation = ({ fieldName, graphqlField }) => ({
+  [`${fieldName}:${CARDINALITY}`]: {
     cardinality: {
-      field,
+      field: fieldName,
       precision_threshold: getPrecisionThreshold(graphqlField),
     },
   },
@@ -119,7 +119,7 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
-export default ({ field, graphqlField = {}, isNested = false, termFilters = [] }) => {
+export default ({ fieldName, graphqlField = {}, isNested = false, termFilters = [] }) => {
   const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter(
     (t) => graphqlField[t],
   );
@@ -128,12 +128,12 @@ export default ({ field, graphqlField = {}, isNested = false, termFilters = [] }
     if (type === BUCKETS || type === BUCKET_COUNT) {
       return Object.assign(
         acc,
-        createTermAggregation({ field, isNested, graphqlField, termFilters }),
+        createTermAggregation({ fieldName, isNested, graphqlField, termFilters }),
       );
     } else if ([STATS, HISTOGRAM].includes(type)) {
-      return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
+      return Object.assign(acc, createNumericAggregation({ type, fieldName, graphqlField }));
     } else if (type === CARDINALITY) {
-      return Object.assign(acc, computeCardinalityAggregation({ type, field, graphqlField }));
+      return Object.assign(acc, computeCardinalityAggregation({ type, fieldName, graphqlField }));
     } else {
       return acc;
     }

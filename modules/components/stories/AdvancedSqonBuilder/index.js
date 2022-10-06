@@ -210,7 +210,7 @@ storiesOf('AdvancedSqonBuilder', module)
     <ProjectsProvider>
       {({ project, index }) => (
         <TermFilter
-          field={'kf_id'}
+          fieldName={'kf_id'}
           arrangerProjectId={project}
           arrangerProjectIndex={index}
           apiFetcher={undefined}
@@ -229,7 +229,7 @@ storiesOf('AdvancedSqonBuilder', module)
         buckets={mockBooleanBuckets}
         initialSqon={mockSqons[3]}
         sqonPath={[1, 1]}
-        field={'is_proband'}
+        fieldName={'is_proband'}
         fieldDisplayNameMap={mockFieldDisplayMap}
         onSubmit={action('submitted')}
         onCancel={action('canceled')}
@@ -239,7 +239,7 @@ storiesOf('AdvancedSqonBuilder', module)
   .add('filters/RangeFilter', () => {
     return (
       <RangeFilterUi
-        field={''}
+        fieldName={''}
         sqonPath={[1, 2, 0]}
         initialSqon={mockSqons[2]}
         onSubmit={action('submitted')}

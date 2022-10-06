@@ -1,11 +1,14 @@
 import { capitalize, uniq } from 'lodash';
 import { compose, withProps } from 'recompose';
+
 import { withQuery } from '../../Query';
 
 import { decorateFieldWithColumnsState } from './QuickSearchQuery';
 
 const nestedField = ({ field, nestedFields }) =>
-  nestedFields.find((x) => x.field === field.field.split('.').slice(0, -1).join('.'));
+  nestedFields.find(
+    (nestedField) => nestedField.fieldName === field.fieldName.split('.').slice(0, -1).join('.'),
+  );
 
 const enhance = compose(
   withQuery(({ index }) => ({
@@ -17,7 +20,7 @@ const enhance = compose(
             extended
             table {
               columns {
-                field
+                fieldName
                 query
                 jsonPath
               }
@@ -32,28 +35,28 @@ const enhance = compose(
       index,
       whitelist,
       extendedFields: { data, loading, error },
-      nestedFields = data?.[index]?.configs?.extended?.filter((x) => x.type === 'nested'),
+      nestedFields = data?.[index]?.configs?.extended?.filter((field) => field.type === 'nested'),
       quickSearchFields = data?.[index]?.configs?.extended
-        ?.filter((x) => x.quickSearchEnabled)
-        ?.filter((x) => {
+        ?.filter((field) => field.quickSearchEnabled)
+        ?.filter((field) => {
           const {
-            field: parentField = '',
-          } = //defaults to "" because a root field's parent would evaluate to such
+            fieldName: parentFieldName = '', // defaults to "" because a root field would have no parent, and therefor no name.
+          } =
             nestedField({
               nestedFields,
-              field: x,
+              fieldName: field,
             }) || {};
-          return whitelist ? whitelist.includes(parentField) : true;
+          return whitelist ? whitelist.includes(parentFieldName) : true;
         })
-        ?.map(({ field }) =>
+        ?.map(({ fieldName }) =>
           decorateFieldWithColumnsState({
             tableConfigs: data?.[index]?.configs?.table,
-            field,
+            fieldName,
           }),
         )
-        ?.map((x) => ({
-          ...x,
-          entityName: nestedField({ field: x, nestedFields })?.displayName || index,
+        ?.map((field) => ({
+          ...field,
+          entityName: nestedField({ field, nestedFields })?.displayName || index,
         })) || [],
     }) => {
       return {
@@ -61,9 +64,9 @@ const enhance = compose(
         quickSearchEntities: uniq(quickSearchFields.map((x) => x.entityName)),
         primaryKeyField: decorateFieldWithColumnsState({
           tableConfigs: data?.[index]?.configs?.tableConfigs,
-          field: data?.[index]?.configs?.extended?.find((x) => x.primaryKey)?.field,
+          fieldName: data?.[index]?.configs?.extended?.find((x) => x.primaryKey)?.fieldName,
         }),
-        nestedFields,
+        nestedFields, // TODO: unused?
       };
     },
   ),

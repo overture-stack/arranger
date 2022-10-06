@@ -7,7 +7,7 @@ const baseFilter = {
     {
       op: 'in',
       content: {
-        field: 'file.file_id',
+        fieldName: 'file.file_id',
         value: ['fileA'],
       },
     },
@@ -20,7 +20,7 @@ const fileBFilter = {
     {
       op: 'in',
       content: {
-        field: 'file.file_id',
+        fieldName: 'file.file_id',
         value: ['fileB'],
       },
     },
@@ -33,7 +33,7 @@ const caseFilter = {
     {
       op: 'in',
       content: {
-        field: 'case.case_id',
+        fieldName: 'case.case_id',
         value: ['somecase'],
       },
     },
@@ -43,7 +43,7 @@ const caseFilter = {
 const rangeFromFilter = {
   op: '>=',
   content: {
-    field: 'cases.diagnoses.age_at_diagnosis',
+    fieldName: 'cases.diagnoses.age_at_diagnosis',
     value: [5113],
   },
 };
@@ -51,7 +51,7 @@ const rangeFromFilter = {
 const rangeToFilter = {
   op: '<=',
   content: {
-    field: 'cases.diagnoses.age_at_diagnosis',
+    fieldName: 'cases.diagnoses.age_at_diagnosis',
     value: [33236],
   },
 };
@@ -59,7 +59,7 @@ const rangeToFilter = {
 const primarySiteFilter = {
   op: 'in',
   content: {
-    field: 'cases.primary_site',
+    fieldName: 'cases.primary_site',
     value: ['Lung'],
   },
 };
@@ -82,7 +82,7 @@ describe('addInSQON', () => {
         {
           op: 'in',
           content: {
-            field: 'file.file_id',
+            fieldName: 'file.file_id',
             value: ['fileA', 'fileB'],
           },
         },
@@ -98,14 +98,14 @@ describe('addInSQON', () => {
         {
           op: 'in',
           content: {
-            field: 'case.case_id',
+            fieldName: 'case.case_id',
             value: ['somecase'],
           },
         },
         {
           op: 'in',
           content: {
-            field: 'file.file_id',
+            fieldName: 'file.file_id',
             value: ['fileA', 'fileB'],
           },
         },
@@ -128,7 +128,7 @@ describe('toggleSQON', () => {
         {
           op: 'in',
           content: {
-            field: 'file.file_id',
+            fieldName: 'file.file_id',
             value: ['fileA', 'fileB'],
           },
         },

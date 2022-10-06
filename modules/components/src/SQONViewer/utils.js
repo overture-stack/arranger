@@ -18,16 +18,18 @@ import { parseSQONParam } from '../utils/uri';
 function compareTerms(a, b) {
   return (
     a.op.toLowerCase() === b.op.toLowerCase() &&
-    (a.content.field ? a.content.field === b.content.field : a.content.entity === b.content.entity)
+    (a.content.fieldName
+      ? a.content.fieldName === b.content.fieldName
+      : a.content.entity === b.content.entity)
   );
 }
 
 // const sortSQON: TSortSQON = (a, b) => {
 const sortSQON = (a, b) => {
-  if (a.content.field && b.content.field) {
-    return a.content.field.localeCompare(b.content.field);
-  } else if (a.content.field || b.content.field) {
-    return a.content.field ? -1 : 1;
+  if (a.content.fieldName && b.content.fieldName) {
+    return a.content.fieldName.localeCompare(b.content.fieldName);
+  } else if (a.content.fieldName || b.content.fieldName) {
+    return a.content.fieldName ? -1 : 1;
   } else {
     return 0;
   }
@@ -45,7 +47,7 @@ export const combineValues = (x, y) => {
   const merged = {
     op: x.op,
     content: {
-      field: x.content.field,
+      fieldName: x.content.fieldName,
       value: xValue
         .reduce((acc, v) => {
           if (acc.includes(v)) return acc.filter((f) => f !== v);
@@ -70,7 +72,7 @@ export const addInValue = (x, y) => {
   const merged = {
     op: 'in',
     content: {
-      field: x.content.field,
+      fieldName: x.content.fieldName,
       value: xValue
         .reduce((acc, v) => {
           if (acc.includes(v)) return acc;
@@ -138,7 +140,7 @@ export const addInSQON = (q, ctxq) => {
         const found = acc.find((a) => compareTerms(a, ctx));
         if (!found) return [...acc, ctx];
         return [
-          ...acc.filter((y) => y.content.field !== found.content.field),
+          ...acc.filter((y) => y.content.fieldName !== found.content.fieldName),
           addInValue(found, ctx),
         ].filter(Boolean);
       }, q.content)
@@ -148,8 +150,8 @@ export const addInSQON = (q, ctxq) => {
   return merged.content.length ? merged : null;
 };
 
-// export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
-export const replaceFieldSQON = (field, q, ctxq) => {
+// export const replaceFieldSQON: TMergeSQON = (fieldName, q, ctxq) => {
+export const replaceFieldSQON = (fieldName, q, ctxq) => {
   if (!ctxq && !q) return null;
   if (!ctxq) return q;
   if (!q) return ctxq;
@@ -157,7 +159,7 @@ export const replaceFieldSQON = (field, q, ctxq) => {
   const merged = {
     op: 'and',
     content: ctxq.content
-      .filter((condition) => condition?.content?.field !== field)
+      .filter((condition) => condition?.content?.fieldName !== fieldName)
       .concat(q?.content || [])
       .sort(sortSQON),
   };
@@ -167,14 +169,14 @@ export const replaceFieldSQON = (field, q, ctxq) => {
 
 // export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
 export const replaceFilterSQON = (q, ctxq) => {
-  const { entity, fields, value } = q?.content?.[0]?.content || {};
+  const { entity, fieldNames, value } = q?.content?.[0]?.content || {};
   const merged = {
     op: 'and',
     content: [
       ...(ctxq?.content?.filter((x) =>
         entity ? !(x.op === 'filter' && x.content.entity === entity) : x.op !== 'filter',
       ) || []),
-      ...(!fields?.length || !value?.length ? [] : q.content),
+      ...(!fieldNames?.length || !value?.length ? [] : q.content),
     ].sort(sortSQON),
   };
   return merged.content.length ? merged : null;
@@ -219,13 +221,13 @@ export const mergeQuery = (q, c, mergeType, whitelist) => {
   };
 };
 
-// export const setSQON = ({ value, field }: TValueContent) => ({
-export const setSQON = ({ value, field }) => ({
+// export const setSQON = ({ value, fieldName }: TValueContent) => ({
+export const setSQON = ({ value, fieldName }) => ({
   op: 'and',
   content: [
     {
       op: 'in',
-      content: { field, value: [].concat(value || []) },
+      content: { fieldName, value: [].concat(value || []) },
     },
   ],
 });
@@ -239,75 +241,76 @@ export const setSQONContent = (sqonContent) =>
       }
     : null;
 
-// returns current value for a given field / operation
-export const currentFieldValue = ({ sqon, dotField, op }) =>
-  sqon?.content?.find((content) => content.content?.field === dotField && content.op === op)
+// returns current value for a given fieldName / operation
+export const currentFieldValue = ({ sqon, dotFieldName, op }) =>
+  sqon?.content?.find((content) => content.content?.fieldName === dotFieldName && content.op === op)
     ?.content.value;
 
-// true if field and value in
+// true if fieldName and value in
 export const inCurrentSQON = ({
   currentSQON,
   value,
-  dotField,
+  dotFieldName,
   // }: {
   //   currentSQON: TGroupSQON,
-  //   dotField: string,
+  //   dotFieldName: string,
   //   value: string,
   // }): boolean => {
 }) => {
   const content = currentSQON?.content;
   return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
-    (f) => f.content?.field === dotField && [].concat(f.content.value || []).includes(value),
+    (f) =>
+      f.content?.fieldName === dotFieldName && [].concat(f.content.value || []).includes(value),
   );
 };
 
-// true if field in
+// true if fieldName in
 export const fieldInCurrentSQON = ({
   currentSQON = [],
-  field,
+  fieldName,
   // }: {
   //   currentSQON: TGroupContent,
-  //   field: string,
-}) => currentSQON.some((f) => f?.content?.field === field);
+  //   fieldName: string,
+}) => currentSQON.some((f) => f?.content?.fieldName === fieldName);
 
 export const getSQONValue = ({
   currentSQON,
-  dotField,
+  dotFieldName,
   // }: {
   //   currentSQON: TGroupContent,
-  // dotField: string,
-}) => currentSQON.find((f) => f.content.field === dotField);
+  // dotFieldName: string,
+}) => currentSQON.find((f) => f.content.fieldName === dotFieldName);
 
-// type TMakeSQON = (fields: [{ field: string, value: string }]) => Object | string;
+// type TMakeSQON = (fields: [{ fieldName: string, value: string }]) => Object | string;
 // export const makeSQON: TMakeSQON = (fields) => {
 export const makeSQON = (fields) => {
   if (!fields.length) return {};
   return {
     op: 'and',
-    content: fields.map((item) => {
+    content: fields.map((field) => {
       return {
         op: 'in',
         content: {
-          field: item.field,
-          value: [].concat(item.value || []),
+          fieldName: field.fieldName,
+          value: [].concat(field.value || []),
         },
       };
     }),
   };
 };
 
-// export const removeSQON: TRemoveSQON = (field, sqon) => {
-export const removeSQON = (field, sqon) => {
+// export const removeSQON: TRemoveSQON = (fieldName, sqon) => {
+export const removeSQON = (fieldName, sqon) => {
   if (!sqon) return null;
-  if (!field) return sqon;
+  if (!fieldName) return sqon;
   if (Object.keys(sqon).length === 0) return sqon;
 
   if (!Array.isArray(sqon.content)) {
-    const fieldFilter = typeof field === 'function' ? field : (f) => f === field;
-    return fieldFilter(sqon.content.field) ? null : sqon;
+    const fieldFilter = typeof fieldName === 'function' ? fieldName : (f) => f === fieldName;
+    return fieldFilter(sqon.content.fieldName) ? null : sqon;
   }
 
-  const filteredContent = sqon.content.map((q) => removeSQON(field, q)).filter(Boolean);
+  const filteredContent = sqon.content.map((q) => removeSQON(fieldName, q)).filter(Boolean);
 
   return filteredContent.length
     ? {

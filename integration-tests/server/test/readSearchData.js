@@ -17,7 +17,7 @@ export default ({ api, documentType, gqlPath }) => {
                     {
                       op: "in",
                       content: {
-                        field: "clinical_diagnosis.clinical_stage_grouping",
+                        fieldName: "clinical_diagnosis.clinical_stage_grouping",
                         value: "Stage I"
                       }
                     }
@@ -254,7 +254,7 @@ export default ({ api, documentType, gqlPath }) => {
               {
                 op: 'in',
                 content: {
-                  field: 'access_denied',
+                  fieldName: 'access_denied',
                   value: ['true'],
                 },
               },

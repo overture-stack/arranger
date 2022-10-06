@@ -24,7 +24,7 @@ export function normalizeColumns({
   const mappedColumns = columns
     .map((column) => {
       const customCol =
-        customColumns.find((cc) => cc.content.field === column.field)?.content || {};
+        customColumns.find((cc) => cc.content.fieldName === column.fieldName)?.content || {};
 
       return {
         ...column,
@@ -33,7 +33,7 @@ export function normalizeColumns({
         hasCustomType: isNil(column.hasCustomType)
           ? !!(customTypes || {})[column.type]
           : column.hasCustomType,
-        ...(!column.accessor && !column.id ? { id: column.field } : {}),
+        ...(!column.accessor && !column.id ? { id: column.fieldName } : {}),
         ...(customTypeConfigs[column.type] || {}),
         ...customCol,
       };
@@ -42,7 +42,7 @@ export function normalizeColumns({
 
   // filter out override columns
   const filteredCustomCols = customColumns.filter(
-    (cc) => !mappedColumns.some((col) => col.field === cc.content.field),
+    (cc) => !mappedColumns.some((col) => col.fieldName === cc.content.fieldName),
   );
 
   return sortBy(filteredCustomCols, 'index').reduce(

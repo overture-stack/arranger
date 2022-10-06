@@ -11,7 +11,9 @@ import './FilterContainerStyle.css';
 import Query from '../../Query';
 
 const getFieldDisplayName = (fieldDisplayNameMap, initialFieldSqon) => {
-  return fieldDisplayNameMap[initialFieldSqon.content.field] || initialFieldSqon.content.field;
+  return (
+    fieldDisplayNameMap[initialFieldSqon.content.fieldName] || initialFieldSqon.content.fieldName
+  );
 };
 
 const AggsWrapper = ({ children }) => <div className="aggregation-group">{children}</div>;
@@ -23,7 +25,7 @@ export const BooleanFilterUI = (props) => {
     ContainerComponent = FilterContainer,
     sqonPath = [],
     initialSqon = {},
-    field,
+    fieldName,
     fieldDisplayNameMap = {},
     buckets = [],
   } = props;
@@ -34,7 +36,7 @@ export const BooleanFilterUI = (props) => {
 
   const initialFieldSqon = getOperationAtPath(sqonPath)(initialSqon) || {
     op: IN_OP,
-    content: { field, value: [] },
+    content: { fieldName, value: [] },
   };
 
   const onSqonSubmit = (s) => () => onSubmit(s.state.localSqon);
@@ -46,7 +48,7 @@ export const BooleanFilterUI = (props) => {
         const newOp = {
           op: IN_OP,
           content: {
-            field,
+            fieldName,
             value: [value.key_as_string],
           },
         };
@@ -77,7 +79,7 @@ export const BooleanFilterUI = (props) => {
             <div key="body" className="contentSection bodyContainer">
               <BooleanAgg
                 WrapperComponent={AggsWrapper}
-                field={initialFieldSqon.content.field}
+                fieldName={initialFieldSqon.content.fieldName}
                 displayName={fieldDisplayName}
                 buckets={buckets}
                 defaultDisplayKeys={{
@@ -101,19 +103,19 @@ BooleanFilterUI.propTypes = {
   ContainerComponent: PropTypes.func,
   sqonPath: PropTypes.array,
   initialSqon: PropTypes.object,
-  field: PropTypes.string.isRequired,
+  fieldName: PropTypes.string.isRequired,
   fieldDisplayNameMap: PropTypes.object,
   buckets: PropTypes.array,
 };
 
-export default (props) => {
+const BooleanFilter = (props) => {
   const {
     apiFetcher = defaultApiFetcher,
     arrangerIndex,
     initialSqon,
     executableSqon,
     sqonPath,
-    field,
+    fieldName,
 
     onSubmit,
     onCancel,
@@ -122,11 +124,11 @@ export default (props) => {
     ContainerComponent,
   } = props;
 
-  const gqlField = field.split('.').join('__');
+  const gqlFieldName = fieldName.split('.').join('__');
   const query = `query($sqon: JSON){
     ${arrangerIndex} {
       aggregations(filters: $sqon) {
-        ${gqlField} {
+        ${gqlFieldName} {
           buckets {
             key
             key_as_string
@@ -148,16 +150,18 @@ export default (props) => {
               {children}
             </ContainerComponent>
           )}
-          field={field}
+          fieldName={fieldName}
           initialSqon={initialSqon}
           onSubmit={onSubmit}
           onCancel={onCancel}
           sqonPath={sqonPath}
           fieldDisplayNameMap={fieldDisplayNameMap}
           opDisplayNameMap={opDisplayNameMap}
-          buckets={data ? get(data, `${arrangerIndex}.aggregations.${gqlField}.buckets`) : []}
+          buckets={data ? get(data, `${arrangerIndex}.aggregations.${gqlFieldName}.buckets`) : []}
         />
       )}
     />
   );
 };
+
+export default BooleanFilter;

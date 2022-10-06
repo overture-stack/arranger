@@ -1,20 +1,20 @@
 const defaults = {
   isActive: false,
-  keyField: null,
+  keyFieldName: null,
   searchFields: [],
 };
 
 export default ({ name, extendedFields }) => [
   {
     displayName: name,
-    field: '',
+    fieldName: '',
     ...defaults,
   },
   ...extendedFields
-    .filter((x) => x.type === 'nested')
-    .map(({ field, displayName }) => ({
+    .filter((field) => field.type === 'nested')
+    .map(({ fieldName, displayName }) => ({
       displayName,
-      field,
+      fieldName,
       ...defaults,
     })),
 ];

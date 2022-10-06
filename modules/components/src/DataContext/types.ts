@@ -15,7 +15,7 @@ export interface ColumnMappingInterface {
   displayFormat?: string;
   displayName?: string;
   displayValues?: Record<string, string>;
-  field: string;
+  fieldName: string;
   id: string;
   isArray?: boolean;
   jsonPath?: string | null;
@@ -27,13 +27,13 @@ export interface ColumnMappingInterface {
 
 export interface ColumnSortingInterface {
   desc: boolean;
-  field: string;
+  fieldName: string;
 }
 
 export interface TableConfigsInterface {
   columns: ColumnMappingInterface[];
   defaultSorting: ColumnSortingInterface[];
-  keyField: string;
+  keyFieldName: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -41,7 +41,7 @@ export interface ExtendedMappingInterface {
   displayName: string;
   displayType: string;
   displayValues: Record<string, string>;
-  field: string;
+  fieldName: string;
   isArray: boolean;
   primaryKey: boolean;
   quickSearchEnabled: boolean;

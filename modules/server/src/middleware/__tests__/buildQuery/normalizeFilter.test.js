@@ -15,7 +15,7 @@ test(`normalizeFilters must preserve pivots`, () => {
         op: IN_OP,
         pivot: 'nested',
         content: {
-          field: 'nested.some_field',
+          fieldName: 'nested.some_field',
           value: ['val1'],
         },
       },
@@ -29,7 +29,7 @@ test(`normalizeFilters must preserve pivots`, () => {
         op: IN_OP,
         pivot: 'nested',
         content: {
-          field: 'nested.some_field',
+          fieldName: 'nested.some_field',
           value: ['val1'],
         },
       },

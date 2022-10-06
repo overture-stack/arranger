@@ -3,11 +3,11 @@
 export const FacetsConfigTypeDefs = `
   type AggregationMapping {
     active: Boolean
-    field: String
+    fieldName: String
     show: Boolean
     type: String
       @deprecated(
-        reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with @Arranger/components. Projects created with 0.4.6 will return null for this query"
+        reason: "This property is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with arranger-components. Projects created with 0.4.6 will return null for this query"
       )
   }
 
@@ -23,7 +23,7 @@ export const TableConfigTypeDefs = `
     displayFormat: String
     displayName: String
     displayValues: JSON
-    field: String
+    fieldName: String
     id: String
     isArray: Boolean
     jsonPath: String
@@ -34,14 +34,14 @@ export const TableConfigTypeDefs = `
   }
 
   type ColumnSorting {
-    field: String
+    fieldName: String
     desc: Boolean
   }
 
   type TableConfig {
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
-    keyField: String
+    keyFieldName: String
   }
 `;
 
@@ -55,9 +55,9 @@ export const DownloadsConfigTypeDefs = `
 export const MatchBoxConfigTypeDefs = `
   type MatchBoxMapping {
     displayName: String
-    field: String
+    fieldName: String
     isActive: Boolean
-    keyField: String
+    keyFieldName: String
     searchFields: [String]
   }
 `;
@@ -71,13 +71,13 @@ export const typeDefs = `
   type ConfigsWithState {
     facets: FacetsConfig
     downloads: DownloadsConfig
-    extended(fields: [String]): JSON
+    extended(fieldNames: [String]): JSON
     matchbox: [MatchBoxMapping] # we may want to rethink this one later
     table: TableConfig
   }
 
   type ConfigsWithoutState {
     downloads: DownloadsConfig
-    extended(fields: [String]): JSON
+    extended(fieldNames: [String]): JSON
   }
 `;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+
 import { themeDecorator } from './decorators';
 import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
 import { inCurrentSQON, currentFieldValue } from '../src/SQONView/utils';
@@ -11,7 +12,7 @@ import './Aggs.css';
 
 const bolleanAggs = [
   {
-    field: 'participants__is_proband',
+    fieldName: 'participants__is_proband',
     displayName: 'Participants is proband',
     active: false,
     type: 'Aggregations',
@@ -31,7 +32,7 @@ const bolleanAggs = [
     ],
   },
   {
-    field: 'sequencing_experiments__is_paired_end',
+    fieldName: 'sequencing_experiments__is_paired_end',
     displayName: 'Is Paired Ende',
     active: false,
     type: 'Aggregations',
@@ -51,7 +52,7 @@ const bolleanAggs = [
     ],
   },
   {
-    field: 'sequencing_experiments__is_paired_end_0',
+    fieldName: 'sequencing_experiments__is_paired_end_0',
     displayName: 'Is Paired Ende',
     active: false,
     type: 'Aggregations',
@@ -71,7 +72,7 @@ const bolleanAggs = [
     ],
   },
   {
-    field: 'sequencing_experiments__is_paired_end_1',
+    fieldName: 'sequencing_experiments__is_paired_end_1',
     displayName: 'Is Paired Ende',
     active: false,
     type: 'Aggregations',
@@ -94,7 +95,7 @@ const bolleanAggs = [
 
 let aggs = [
   {
-    field: 'color',
+    fieldName: 'color',
     displayName: 'Color',
     active: false,
     type: 'Aggregations',
@@ -116,7 +117,7 @@ let aggs = [
     ],
   },
   {
-    field: 'taste',
+    fieldName: 'taste',
     displayName: 'Taste',
     active: false,
     type: 'Aggregations',
@@ -156,7 +157,7 @@ storiesOf('Aggs', module)
   .add('TermAgg', () => (
     <div className="term-agg-wrapper">
       <TermAgg
-        field="disease_type"
+        fieldName="disease_type"
         displayName="Disease Type"
         buckets={[
           {
@@ -175,7 +176,7 @@ storiesOf('Aggs', module)
   .add('TermAgg with headerTitle', () => (
     <div className="term-agg-wrapper">
       <TermAgg
-        field="disease_type"
+        fieldName="disease_type"
         displayName="Disease Type"
         buckets={[
           {
@@ -205,7 +206,7 @@ storiesOf('Aggs', module)
             {aggs.map((agg) => (
               // TODO: switch on agg type
               <TermAgg
-                key={agg.field}
+                key={agg.fieldName}
                 {...agg}
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
@@ -213,7 +214,7 @@ storiesOf('Aggs', module)
                 isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
-                    dotField: d.field,
+                    dotFieldName: d.fieldName,
                     currentSQON: sqon,
                   })
                 }
@@ -227,7 +228,7 @@ storiesOf('Aggs', module)
   .add('DatesAgg', () => (
     <div className="term-agg-wrapper">
       <DatesAgg
-        field="disease_type"
+        fieldName="disease_type"
         displayName="Disease Type"
         stats={{
           // expects linux timestamp
@@ -249,7 +250,7 @@ storiesOf('Aggs', module)
             `}
           >
             <DatesAgg
-              field="disease_type"
+              fieldName="disease_type"
               displayName="Disease Type"
               stats={{
                 min: 1529539200125,
@@ -258,10 +259,10 @@ storiesOf('Aggs', module)
               handleDateChange={({ generateNextSQON = () => {} } = {}) =>
                 setState({ sqon: generateNextSQON(sqon) })
               }
-              getActiveValue={({ op, field }) =>
+              getActiveValue={({ op, fieldName }) =>
                 currentFieldValue({
                   op,
-                  dotField: field,
+                  dotFieldName: fieldName,
                   sqon,
                 })
               }
@@ -273,7 +274,7 @@ storiesOf('Aggs', module)
   ))
   .add('RangeAgg', () => (
     <RangeAgg
-      field="cases__diagnoses__days_to_death"
+      fieldName="cases__diagnoses__days_to_death"
       displayName="Diagnoses Days To Death"
       stats={{
         min: 15,
@@ -292,7 +293,7 @@ storiesOf('Aggs', module)
         <div className="range with sqon">
           <div>SQON: {JSON.stringify(sqon)}</div>
           <RangeAgg
-            field="cases__diagnoses__days_to_death"
+            fieldName="cases__diagnoses__days_to_death"
             displayName="Diagnoses Days To Death"
             unit={'d'}
             stats={{
@@ -310,7 +311,7 @@ storiesOf('Aggs', module)
   ))
   .add('BooleanAgg', () => (
     <BooleanAgg
-      field="cases__diagnoses__days_to_death"
+      fieldName="cases__diagnoses__days_to_death"
       displayName="Diagnoses Days To Death"
       buckets={[
         {
@@ -340,7 +341,7 @@ storiesOf('Aggs', module)
           >
             {bolleanAggs.map((agg) => (
               <BooleanAgg
-                key={agg.field}
+                key={agg.fieldName}
                 {...agg}
                 handleValueClick={({ generateNextSQON }) =>
                   update({ sqon: generateNextSQON(sqon) })
@@ -348,7 +349,7 @@ storiesOf('Aggs', module)
                 isActive={(d) =>
                   inCurrentSQON({
                     value: d.value,
-                    dotField: d.field,
+                    dotFieldName: d.fieldName,
                     currentSQON: sqon,
                   })
                 }

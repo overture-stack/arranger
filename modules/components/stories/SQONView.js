@@ -15,7 +15,7 @@ storiesOf('SQONView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: ['lung'],
             },
           },
@@ -31,7 +31,7 @@ storiesOf('SQONView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: ['lung', 'heart'],
             },
           },
@@ -47,7 +47,7 @@ storiesOf('SQONView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: ['lung', 'heart', 'brain', 'blood', 'kidney'],
             },
           },
@@ -63,7 +63,7 @@ storiesOf('SQONView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: [
                 'lung',
                 'heart',
@@ -100,14 +100,14 @@ storiesOf('SQONView', module)
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: ['lung', 'heart', 'brain'],
             },
           },
           {
             op: 'in',
             content: {
-              field: 'gender',
+              fieldName: 'gender',
               value: ['female', 'male', 'unknown'],
             },
           },
@@ -123,14 +123,14 @@ storiesOf('SQONView', module)
           {
             op: '>=',
             content: {
-              field: 'cases.exposures.cigarettes_per_day',
+              fieldName: 'cases.exposures.cigarettes_per_day',
               value: ['1'],
             },
           },
           {
             op: '<=',
             content: {
-              field: 'cases.exposures.cigarettes_per_day',
+              fieldName: 'cases.exposures.cigarettes_per_day',
               value: ['5'],
             },
           },
@@ -146,21 +146,21 @@ storiesOf('SQONView', module)
           {
             op: '>=',
             content: {
-              field: 'cases.exposures.cigarettes_per_day',
+              fieldName: 'cases.exposures.cigarettes_per_day',
               value: ['1'],
             },
           },
           {
             op: '<=',
             content: {
-              field: 'cases.exposures.cigarettes_per_day',
+              fieldName: 'cases.exposures.cigarettes_per_day',
               value: ['5'],
             },
           },
           {
             op: 'in',
             content: {
-              field: 'primary_site',
+              fieldName: 'primary_site',
               value: ['heart', 'lung', 'bone', 'blood', 'liver'],
             },
           },
@@ -176,14 +176,14 @@ storiesOf('SQONView', module)
           {
             op: 'is',
             content: {
-              field: 'gender',
+              fieldName: 'gender',
               value: 'female',
             },
           },
           {
             op: 'is',
             content: {
-              field: 'cases.exposures.cigarettes_per_day',
+              fieldName: 'cases.exposures.cigarettes_per_day',
               value: 5,
             },
           },
@@ -199,7 +199,7 @@ storiesOf('SQONView', module)
           {
             op: 'filter',
             content: {
-              fields: ['gender', 'state', 'country'],
+              fieldNames: ['gender', 'state', 'country'],
               value: 'fema',
             },
           },
