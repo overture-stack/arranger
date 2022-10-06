@@ -13,7 +13,7 @@ import readSearchData from './readSearchData';
 import readAggregation from './readAggregation';
 import manageSets from './manageSets';
 
-const mapppings = require('./assets/model_centric.mappings.json');
+const mappings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
@@ -57,7 +57,7 @@ describe('@overture-stack/arranger-server', () => {
 
     await esClient.indices.create({
       index: esIndex,
-      ...mapppings,
+      body: mappings,
     });
 
     for (let datum of data) {

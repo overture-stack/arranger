@@ -14,11 +14,11 @@ const appendUnderscores: TAppendUnderscores = (x) => (x ? x + '__' : '');
 const mappingToAggsType = (properties, parent = '') =>
   flattenDeep(
     Object.entries(properties)
-      .filter(([field, data]) => data?.properties || data?.type)
-      .map(([field, data]) =>
+      .filter(([fieldName, data]) => data?.properties || data?.type)
+      .map(([fieldName, data]) =>
         data?.properties
-          ? mappingToAggsType(data.properties, appendUnderscores(parent) + field)
-          : `${appendUnderscores(parent) + field}: ${esToAggTypeMap[data.type]}`,
+          ? mappingToAggsType(data.properties, appendUnderscores(parent) + fieldName)
+          : `${appendUnderscores(parent) + fieldName}: ${esToAggTypeMap[data.type]}`,
       ),
   );
 
