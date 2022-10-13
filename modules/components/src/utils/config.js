@@ -2,7 +2,7 @@ function getValue(key, defaultValue) {
   return (
     process.env[`STORYBOOK_${key}`] ||
     process.env[`REACT_APP_${key}`] ||
-    localStorage[key] ||
+    (typeof window !== 'undefined' && localStorage[key]) ||
     defaultValue
   );
 }
