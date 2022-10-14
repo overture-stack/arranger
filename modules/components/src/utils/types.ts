@@ -13,3 +13,7 @@ export type RecursivePartial<T> = {
 export type PrefixKeys<T, Prefix extends string> = {
   [P in keyof T as `${Prefix}${Capitalize<string & P>}`]: T[P];
 };
+
+export type WithFunctionOptions<T, Input = T> = {
+  [key in keyof T]: T[key] | ((input: Input) => T[key]);
+};

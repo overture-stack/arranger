@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { ColumnMappingInterface } from '@/DataContext/types';
+import { ColumnMappingInterface, ExtendedMappingInterface } from '@/DataContext/types';
 import download from '@/utils/download';
 import { emptyObj } from '@/utils/noops';
 
@@ -9,42 +9,72 @@ import {
   CustomExportersInput,
   ExporterDetailsInterface,
   ExporterFileInterface,
-  ExporterFnProps,
+  ExporterFunctionProps,
   ProcessedExporterDetailsInterface,
   ProcessedExporterList,
 } from './types';
 
+const useCustomisers =
+  (extendedColumn: ExtendedMappingInterface) =>
+  ([customiserLabel, customiserValue]): Partial<ColumnMappingInterface> => {
+    console.log('extendedColumn', extendedColumn);
+    return (
+      customiserValue && {
+        [customiserLabel]:
+          typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
+      }
+    );
+  };
 export const saveTSV = async ({
   fileName = '',
   files = [],
   options = {},
   url = '',
-}: ExporterFnProps) =>
+}: ExporterFunctionProps) =>
   download({
     url,
     method: 'POST',
+    ...options,
     params: {
       fileName,
       files: files.map(
-        ({ allColumnsDict, columns, exporterColumns, ...file }: ExporterFileInterface) => ({
+        ({ allColumnsDict, columns, exporterColumns = null, ...file }: ExporterFileInterface) => ({
           ...file,
           columns: exporterColumns // if the component gave you custom columns to show
             ? Object.values(
                 exporterColumns.length > 0 // if they ask for any specific columns
-                  ? exporterColumns
-                      .map(
-                        (fieldName) =>
-                          allColumnsDict[fieldName] || // get the column data from the extended configs
-                          // or let the user know if the column isn't valid
-                          console.info('Could not include a column into the file:', fieldName),
-                      )
-                      .filter((column) => column) // and then, use the valid ones
+                  ? // use them
+                    exporterColumns.map((column) => {
+                      switch (typeof column) {
+                        // checking if each column is customised
+                        case 'object': {
+                          const extendedColumn = allColumnsDict[column.fieldName];
+                          const useExtendedCustomisers = useCustomisers(extendedColumn);
+
+                          return {
+                            ...extendedColumn,
+                            ...Object.entries(column).reduce(
+                              (customisers, customiser: ColumnCustomiserTuple) => ({
+                                ...customisers,
+                                ...useExtendedCustomisers(customiser),
+                              }),
+                              {},
+                            ),
+                          };
+                        }
+
+                        // or not
+                        case 'string':
+                        default:
+                          return allColumnsDict[column];
+                      }
+                    })
                   : allColumnsDict, // else, they're asking for all the columns
               )
-            : columns.filter((column: ColumnMappingInterface) => column.show), // no custom columns, use admin's
+            : columns.filter((column) => column.show), // no custom columns, use admin's
         }),
       ),
-      ...options,
+      ...options.params,
     },
   });
 
@@ -62,13 +92,13 @@ const processExporter = (
   item = 'saveTSV' as any as CustomExportersInput,
 ): ProcessedExporterDetailsInterface =>
   (item as any) === 'saveTSV' ||
-  item?.fn === 'saveTSV' ||
+  item?.function === 'saveTSV' ||
   // or if they give us a filename without giving us a function
   ('fileName' in item && !('fn' in item))
     ? {
         ...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item?.columns }),
         exporterFileName: item?.fileName || 'unnamed.tsv',
-        exporterFn: saveTSV,
+        exporterFunction: saveTSV,
         exporterLabel: item?.label || 'Export TSV',
         exporterMaxRows: item?.maxRows || 0,
         exporterRequiresRowSelection: item?.requiresRowSelection || false,

@@ -5,8 +5,10 @@ import { GenericFn } from '@/utils/noops';
 export interface SQONViewerThemeProps {
   EmptyMessage: ThemeCommon.NonButtonThemeProps;
   SQONBubble: ThemedButtonProps;
-  SQONClear: ThemedButtonProps;
-  SQONField: ThemedButtonProps;
+  SQONClear: {
+    label?: string;
+  } & ThemedButtonProps;
+  SQONFieldName: ThemedButtonProps;
   SQONGroup: ThemeCommon.NonButtonThemeProps;
   SQONLessOrMore: ThemedButtonProps;
   SQONOp: ThemeCommon.NonButtonThemeProps;
@@ -42,7 +44,7 @@ export type ArrayFieldValue = Array<string | number> | string;
 export type ScalarFieldValue = number;
 
 export interface FilterField {
-  fields: string[];
+  fieldNames: string[];
   value: ArrayFieldValue;
 }
 
@@ -52,12 +54,12 @@ export interface FilterFieldOperator {
 }
 
 export interface ArrayField {
-  field: string;
+  fieldName: string;
   value: ArrayFieldValue;
 }
 
 export interface ScalarField {
-  field: string;
+  fieldName: string;
   value: ScalarFieldValue;
 }
 
@@ -82,8 +84,8 @@ export type ValueOpTypes = ArrayFieldKeys & CombinationKeys & ScalarFieldKeys;
 
 export interface ValueContentInterface {
   entity?: string;
-  field: string;
-  fields?: string[];
+  fieldName: string;
+  fieldNames?: string[];
   value: any | any[];
 }
 
@@ -115,4 +117,4 @@ export interface GroupSQONInterface {
 
 // export type TFilterByWhitelist = (o?: TRawQuery, w?: Array<string>) => TRawQuery;
 
-// export type TRemoveSQON = (field: string, query: TGroupSQON) => TGroupSQON | void;
+// export type TRemoveSQON = (fieldName: string, query: TGroupSQON) => TGroupSQON | void;

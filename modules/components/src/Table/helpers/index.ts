@@ -1,5 +1,14 @@
-import { useEffect, useState } from 'react';
-import { createTable, useTableInstance, ColumnDef, getCoreRowModel } from '@tanstack/react-table';
+import { ReactNode, useEffect, useState } from 'react';
+import { useReactTable, ColumnDef, getCoreRowModel } from '@tanstack/react-table';
+/* Column,
+  Table as ReactTable,
+  PaginationState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  ColumnDef,
+  OnChangeFn,
+  flexRender, */
 
 import { UseTableDataProps } from '@/Table/types';
 import { useThemeContext } from '@/ThemeContext';
@@ -8,7 +17,13 @@ import { emptyObj } from '@/utils/noops';
 import { makeTableColumns } from './columns';
 import { useTableContext } from './context';
 
-const table = createTable();
+export const getSingleValue = (data: Record<string, any> | ReactNode): ReactNode => {
+  if (typeof data === 'object' && data) {
+    return getSingleValue(Object.values(data)[0]);
+  } else {
+    return data;
+  }
+};
 
 export const useTableData = ({
   columnTypes: customColumnTypes,
@@ -39,7 +54,7 @@ export const useTableData = ({
   } = useThemeContext({ callerName: 'Table - useTableData' });
 
   const allowRowSelection = !(customDisableRowSelection || themeDisableRowSelection);
-  const [tableColumns, setTableColumns] = useState<ColumnDef<any>[]>([]);
+  const [tableColumns, setTableColumns] = useState<ColumnDef<unknown, unknown>[]>([]);
 
   useEffect(() => {
     const visibleColumns = Object.values(visibleColumnsDict);
@@ -52,14 +67,13 @@ export const useTableData = ({
           ...customColumnTypes, // then prioritise the ones given directly into the table
           // this is useful if there are multiple sibling tables with different "settings"
         },
-        table,
         total,
         visibleColumns,
       }),
     );
   }, [customColumnTypes, allowRowSelection, themeColumnTypes, visibleColumnsDict, total]);
 
-  const tableInstance = useTableInstance(table, {
+  const tableInstance = useReactTable({
     columns: tableColumns,
     data: tableData,
     getCoreRowModel: getCoreRowModel(),

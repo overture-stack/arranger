@@ -3,6 +3,7 @@ import { merge } from 'lodash';
 import urlJoin from 'url-join';
 
 import { TransparentButton } from '@/Button';
+import { useDataContext } from '@/DataContext';
 import { SQONType } from '@/DataContext/types';
 import MultiSelectDropDown from '@/DropDown/MultiSelectDropDown';
 import MetaMorphicChild from '@/MetaMorphicChild';
@@ -24,8 +25,10 @@ import { ProcessedExporterDetailsInterface, DownloadButtonProps } from './types'
  *
  * Either case must follow the following pattern (all params are optional):
  *
- *   @param {string[]} columns
+ *   @param {string[] | { fieldName }} columns
  *   Columns passed here override the ones currently being displayed in the table.
+ *   the format for these is always an array, which could consist of one of the following types:
+ *   accessor strings, or objects with a "fieldName" and any other properties as functions or their desired values.
  *   If columns is missing or `null`, the exporter will use all columns shown in the table.
  *   Bonus: if an empty array is given, the exporter will use every (showable) column declared in the config.
  *   @param {ExporterFn} exporterFn
@@ -51,6 +54,7 @@ const DownloadButton = ({
     ...customThemeProps
   } = emptyObj,
 }: DownloadButtonProps) => {
+  const { apiUrl = ARRANGER_API } = useDataContext();
   const {
     allColumnsDict,
     currentColumnsDict,
@@ -71,7 +75,7 @@ const DownloadButton = ({
         DownloadButton: {
           customExporters: themeCustomExporters,
           disableRowSelection: themeDisableRowSelection,
-          downloadUrl: themeDownloadUrl = urlJoin(ARRANGER_API, 'download'),
+          downloadUrl: themeDownloadUrl = urlJoin(apiUrl, 'download'),
           label: themeDownloadButtonLabel = 'Download',
           maxRows: themeMaxRows = 100,
           exportSelectedRowsField = 'file_autocomplete',
@@ -109,15 +113,15 @@ const DownloadButton = ({
     exporterColumns,
     exporterDownloadUrl = downloadUrl,
     exporterFileName,
-    exporterFn,
+    exporterFunction,
     exporterLabel,
     exporterMaxRows = maxRows,
     exporterRequiresRowSelection,
   }: ProcessedExporterDetailsInterface) =>
-    (exporterFn && exporterRequiresRowSelection && !hasSelectedRows) || !exporterFn
+    (exporterFunction && exporterRequiresRowSelection && !hasSelectedRows) || !exporterFunction
       ? undefined
       : () =>
-          exporterFn?.(
+          exporterFunction?.(
             {
               files: [
                 {

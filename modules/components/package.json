@@ -71,6 +71,7 @@
     "storybook-router": "^0.3.3",
     "ts-jest": "^29.0.3",
     "ttypescript": "^1.5.13",
+    "type-fest": "^3.0.0",
     "typescript-transform-paths": "^3.3.1"
   },
   "peerDependencies": {
@@ -135,9 +136,10 @@
   },
   "prettier": {
     "printWidth": 100,
+    "trailingComma": "all",
     "semi": true,
     "singleQuote": true,
-    "trailingComma": "all"
+    "useTabs": true
   },
   "husky": {
     "hooks": {

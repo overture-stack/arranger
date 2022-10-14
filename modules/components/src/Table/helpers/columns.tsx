@@ -1,5 +1,5 @@
 import { HTMLAttributes, useEffect, useRef } from 'react';
-import { Table } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { mergeWith } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
@@ -64,16 +64,15 @@ function IndeterminateCheckbox({
 export const makeTableColumns = ({
   allowRowSelection,
   columnTypes: customColumnTypes = emptyObj,
-  table,
   total,
   visibleColumns = [],
 }: {
   allowRowSelection?: boolean;
   columnTypes?: Partial<ColumnTypesObject>;
-  table: Table<any>;
   total: number;
   visibleColumns: ColumnMappingInterface[];
 }) => {
+  const columnHelper = createColumnHelper();
   const hasData = total > 0;
   const columnTypes = mergeWith(customColumnTypes, defaultCellTypes, (objValue, srcValue) => ({
     ...objValue,
@@ -84,11 +83,11 @@ export const makeTableColumns = ({
     const columnType = mergeWith(
       {},
       columnTypes.all,
-      columnTypes[visibleColumn?.isArray ? 'list' : visibleColumn?.type],
-      columnTypes[visibleColumn?.accessor],
+      columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.type],
+      columnTypes[visibleColumn.accessor],
     );
 
-    return table.createDataColumn((row) => getCellValue(row, visibleColumn), {
+    return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
       ...visibleColumn,
       cell: ({ getValue, cell }) => {
         const cellType = columnType?.cellValue;
@@ -131,15 +130,15 @@ export const makeTableColumns = ({
 
   return allowRowSelection
     ? [
-        table.createDisplayColumn({
+        columnHelper.display({
           id: 'select',
-          header: ({ instance }) => (
+          header: ({ table }) => (
             <IndeterminateCheckbox
               {...{
-                checked: instance.getIsAllRowsSelected(),
+                checked: table.getIsAllRowsSelected(),
                 disabled: !hasData,
-                indeterminate: instance.getIsSomeRowsSelected(),
-                onChange: instance.getToggleAllRowsSelectedHandler(),
+                indeterminate: table.getIsSomeRowsSelected(),
+                onChange: table.getToggleAllRowsSelectedHandler(),
               }}
             />
           ),
@@ -155,6 +154,7 @@ export const makeTableColumns = ({
             </div>
           ),
         }),
-      ].concat(tableColumns)
+        ...tableColumns,
+      ]
     : tableColumns;
 };

@@ -63,14 +63,15 @@ type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'> &
 type TableInnerBoxModelProperties = Omit<TableBoxModelProperties, 'margin'>;
 
 /** Table Component types */
-export type TableCellProps = Cell<any> & {
+export type TableCellProps = Cell<any, string> & {
   column: Column<any> & ColumnMappingInterface;
   value: any;
 };
 
 type TableCellComponent = ReactNode | ((cell: TableCellProps) => ReactNode);
 
-export type TableHeaderProps = Header<any> & ColumnMappingInterface & { disabled?: boolean };
+export type TableHeaderProps = Header<any, string> &
+  ColumnMappingInterface & { disabled?: boolean };
 
 type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode);
 

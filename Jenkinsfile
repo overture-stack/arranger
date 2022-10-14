@@ -132,6 +132,13 @@ pipeline {
     }
 
     stage('Build images') {
+      when {
+        anyOf {
+          branch 'develop'
+          branch 'main'
+          branch 'test'
+        }
+      }
       steps {
         container('docker') {
           sh "DOCKER_BUILDKIT=1 \

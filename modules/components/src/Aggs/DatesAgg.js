@@ -6,9 +6,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 import { removeSQON, replaceSQON } from '@/SQONViewer/utils';
 import { withTheme } from '@/ThemeContext';
+import { emptyObj } from '@/utils/noops';
 
 import AggsWrapper from './AggsWrapper';
-import { emptyObj } from '@/utils/noops';
 
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
@@ -26,12 +26,13 @@ class DatesAgg extends React.Component {
     this.setState(this.initializeState(nextProps));
   }
 
-  initializeState = ({ stats = {}, getActiveValue = () => null }) => {
-    const { field } = this.props;
+  initializeState = ({ getActiveValue = () => null, stats = {}, enforceStatsMax = false }) => {
+    const { fieldName } = this.props;
     const minDate = stats.min && subDays(stats.min, 1);
-    const maxDate = stats.max && addDays(stats.max, 1);
-    const startFromSqon = getActiveValue({ op: '>=', field });
-    const endFromSqon = getActiveValue({ op: '<=', field });
+    const statsMax = stats.max && addDays(stats.max, 1);
+    const maxDate = enforceStatsMax ? statsMax : Math.max(Date.now(), statsMax);
+    const startFromSqon = getActiveValue({ op: '>=', fieldName });
+    const endFromSqon = getActiveValue({ op: '<=', fieldName });
 
     return {
       minDate,
@@ -43,15 +44,15 @@ class DatesAgg extends React.Component {
 
   updateSqon = () => {
     const { startDate, endDate } = this.state;
-    const { field, handleDateChange } = this.props;
-    if (handleDateChange && field) {
+    const { fieldName, handleDateChange } = this.props;
+    if (handleDateChange && fieldName) {
       const content = [
         ...(startDate
           ? [
               {
                 op: '>=',
                 content: {
-                  field,
+                  fieldName,
                   value: toSqonDate(startOfDay(startDate)),
                 },
               },
@@ -62,7 +63,7 @@ class DatesAgg extends React.Component {
               {
                 op: '<=',
                 content: {
-                  field,
+                  fieldName,
                   value: toSqonDate(endOfDay(endDate)),
                 },
               },
@@ -70,10 +71,10 @@ class DatesAgg extends React.Component {
           : []),
       ];
       handleDateChange({
-        field,
+        fieldName,
         value: content,
         generateNextSQON: (sqon) =>
-          replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(field, sqon)),
+          replaceSQON(content.length ? { op: 'and', content } : null, removeSQON(fieldName, sqon)),
       });
     }
   };
@@ -87,7 +88,7 @@ class DatesAgg extends React.Component {
       collapsible = true,
       displayName = 'Date Range',
       facetView = false,
-      field,
+      fieldName,
       theme: {
         colors,
         components: {
@@ -106,7 +107,7 @@ class DatesAgg extends React.Component {
     const hasData = minDate && maxDate;
 
     const dataFields = {
-      ...(field && { 'data-field': field }),
+      ...(fieldName && { 'data-fieldname': fieldName }),
       ...(type && { 'data-type': type }),
     };
 
@@ -120,14 +121,65 @@ class DatesAgg extends React.Component {
               justify-content: space-around;
               padding-left: 5px;
 
-              .react-datepicker__current-month,
+              .react-datepicker__current-month {
+                display: none;
+              }
+
               .react-datepicker-time__header,
               .react-datepicker-year-header {
                 color: ${colors?.grey?.[700]};
               }
 
+              .react-datepicker__day-name,
+              .react-datepicker__day,
+              .react-datepicker__time-name {
+                line-height: 1.4rem;
+                width: 1.5rem;
+              }
+
+              .react-datepicker__header__dropdown {
+                display: flex;
+                justify-content: center;
+              }
+
               .react-datepicker__input-container {
                 width: 100%;
+
+                .react-datepicker__close-icon::after {
+                  align-items: center;
+                  background-color: ${colors?.grey?.[500]};
+                  border-radius: 30%;
+                  display: flex;
+                  font-size: 14px;
+                  justify-content: center;
+                  height: 10px;
+                  line-height: 0;
+                  padding: 0.1rem;
+                  width: 10px;
+                }
+              }
+
+              .react-datepicker__month-option--selected {
+                left: 10px;
+              }
+
+              .react-datepicker__month-read-view,
+              .react-datepicker__year-read-view {
+                border: none;
+                visibility: visible !important;
+                /* ^^ otherwise the current becomes invisible when dropdown is displayed */
+                width: fit-content;
+              }
+
+              .react-datepicker__month-read-view--down-arrow,
+              .react-datepicker__year-read-view--down-arrow {
+                display: none;
+              }
+
+              .react-datepicker__month-read-view--selected-month,
+              .react-datepicker__year-read-view--selected-year {
+                font-size: 0.9rem;
+                font-weight: bold;
               }
 
               .react-datepicker-wrapper input {
@@ -138,32 +190,13 @@ class DatesAgg extends React.Component {
                 padding: 6px 5px 5px 7px;
                 width: 100%;
               }
-
-              .react-datepicker__input-container .react-datepicker__close-icon::after {
-                align-items: center;
-                background-color: ${colors?.grey?.[500]};
-                border-radius: 30%;
-                display: flex;
-                font-size: 14px;
-                justify-content: center;
-                height: 10px;
-                line-height: 0;
-                padding: 0.1rem;
-                width: 10px;
-              }
-
-              .react-datepicker__day-name,
-              .react-datepicker__day,
-              .react-datepicker__time-name {
-                line-height: 1.4rem;
-                width: 1.5rem;
-              }
             `}
           >
             <DatePicker
               {...{ minDate, maxDate }}
               aria-label={`Pick start date`}
               className="start-date"
+              closeOnScroll
               dateFormat={dateFormat}
               disabled={!hasData}
               isClearable
@@ -172,6 +205,9 @@ class DatesAgg extends React.Component {
               placeholderText={fieldPlaceholder}
               popperPlacement={facetView ? 'bottom-start' : 'top-start'}
               selected={startDate}
+              showMonthDropdown
+              showYearDropdown
+              todayButton="Select Today"
             />
             <span
               css={css`
@@ -185,6 +221,7 @@ class DatesAgg extends React.Component {
               {...{ minDate, maxDate }}
               aria-label={`Pick end date`}
               className="end-date"
+              closeOnScroll
               dateFormat={dateFormat}
               disabled={!hasData}
               isClearable
@@ -193,6 +230,9 @@ class DatesAgg extends React.Component {
               placeholderText={fieldPlaceholder}
               popperPlacement={facetView ? 'bottom-end' : 'top-start'}
               selected={endDate}
+              showMonthDropdown
+              showYearDropdown
+              todayButton="Select Today"
             />
           </div>
         ) : (

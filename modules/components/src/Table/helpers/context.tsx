@@ -64,7 +64,7 @@ export const TableContextProvider = ({
     useThemeContext({ callerName: 'TableContextProvider' });
 
   useEffect(() => {
-    if (isLoadingConfigs) {
+    if (tableConfigs?.columns && Object.values(allColumnsDict).length === 0) {
       const columns = aggregateCustomColumns(customColumns, tableConfigs?.columns);
 
       setAllColumnsDict(columnsArrayToDictionary(columns)); // these will be the default to fallback to

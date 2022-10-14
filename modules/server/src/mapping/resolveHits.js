@@ -1,9 +1,11 @@
 import getFields from 'graphql-fields';
 import { chunk } from 'lodash';
 
-import { buildQuery } from '../middleware';
+import { buildQuery } from '@/middleware';
+
 import compileFilter from './utils/compileFilter';
 import esSearch from './utils/esSearch';
+import loadExtendedFields from './utils/loadExtendedFields';
 
 const findCopyToSourceFields = (mapping, path = '', results = {}) => {
   Object.entries(mapping).forEach(([k, v]) => {
@@ -19,12 +21,21 @@ const findCopyToSourceFields = (mapping, path = '', results = {}) => {
 };
 
 export const hitsToEdges = ({
+  copyToSourceFields = {},
+  extendedFields = [],
   hits,
   nestedFieldNames,
   Parallel,
-  copyToSourceFields = {},
   systemCores = process?.env?.SYSTEM_CORES || 2,
 }) => {
+  const extendedFieldsObj = extendedFields.reduce(
+    (acc, field) => ({
+      ...acc,
+      [field.fieldName]: field,
+    }),
+    {},
+  );
+
   /*
     If there's a large request, we'll trigger ludicrous mode and do some parallel
     map-reduce based on # of cores available. Otherwise, only one child-process
@@ -40,8 +51,8 @@ export const hitsToEdges = ({
       (chunk) =>
         //Parallel.spawn output has a .then but it's not returning an actual promise
         new Promise((resolve) => {
-          new Parallel({ hits: chunk, nestedFieldNames, copyToSourceFields })
-            .spawn(({ hits, nestedFieldNames, copyToSourceFields }) => {
+          new Parallel({ copyToSourceFields, extendedFieldsObj, hits: chunk, nestedFieldNames })
+            .spawn(({ copyToSourceFields, extendedFieldsObj, hits, nestedFieldNames }) => {
               /*
                 everthing inside spawn is executed in a separate thread, so we have
                 to use good old ES5 and require for run-time dependecy bundling.
@@ -77,7 +88,12 @@ export const hitsToEdges = ({
                   parent ? `${parent}.${fieldName}` : fieldName;
 
                 const resolveNested = ({ node, nestedFieldNames, parent = '' }) => {
-                  if (!isObject(node) || !node) return node;
+                  if (!isObject(node) || !node) {
+                    // Backwards compatibility for Array fields when data has not been migrated
+                    return extendedFieldsObj?.[parent]?.isArray && !Array.isArray(node)
+                      ? [node]
+                      : node;
+                  }
 
                   return Object.entries(node).reduce((acc, entry) => {
                     const fieldName = entry[0];
@@ -86,7 +102,7 @@ export const hitsToEdges = ({
                     // TODO: inner hits query if necessary
                     const fullPath = joinParent(parent, fieldName);
 
-                    acc[fieldName] = nestedFieldNames.includes(fullPath)
+                    acc[fieldName] = nestedFieldNames?.includes(fullPath)
                       ? {
                           hits: {
                             edges: hits.map((node) => ({
@@ -167,6 +183,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
     let nestedFieldNames = type.nested_fields;
 
     const { esClient } = context;
+    const { extendedFields } = type;
 
     /**
    * @todo: I left this chunk here for reference, in case someone actually understands what it actually is trying to do
@@ -246,10 +263,11 @@ export default ({ type, Parallel, getServerSideFilter }) =>
     return {
       edges: () =>
         hitsToEdges({
+          copyToSourceFields,
+          extendedFields,
           hits,
           nestedFieldNames,
           Parallel,
-          copyToSourceFields,
         }),
       total: () => hits.total.value,
     };

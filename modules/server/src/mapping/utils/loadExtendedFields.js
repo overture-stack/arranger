@@ -1,22 +1,11 @@
-import mapHits from './mapHits';
 import { get } from 'lodash';
+
 import esSearch from './esSearch';
+import mapHits from './mapHits';
 
 export default async ({ esClient, index }) => {
   try {
-    const {
-      hits: { total },
-    } = await esSearch(esClient)({
-      index,
-      size: 0,
-      _source: false,
-    });
-    const fields = mapHits(
-      await esSearch(esClient)({
-        index,
-        size: total,
-      }),
-    );
+    const fields = mapHits(await esSearch(esClient)({ index }));
     return fields;
   } catch (err) {
     const metaData = await esSearch(esClient)({ index });

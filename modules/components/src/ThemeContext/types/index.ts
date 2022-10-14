@@ -36,13 +36,13 @@ export type ThemeAggregatorFn = <Theme extends object = BaseThemeInterface>(
   partial: CustomThemeType<Theme> | CustomThemeType<Theme>[],
 ) => ThemeOptions;
 
-export interface ThemeContextInterface<Theme = BaseThemeInterface> {
+export interface ThemeContextInterface<Theme = ThemeOptions> {
   aggregateTheme: ThemeAggregatorFn;
   missingProvider?: string;
   theme: Theme;
 }
 
-export interface ThemeProviderProps<Theme = BaseThemeInterface> {
+export interface ThemeProviderProps<Theme = ThemeOptions> {
   children?: React.ReactNode;
   location?: string; // helpful for troubleshooting multiple theme providers
   theme?: CustomThemeType<Theme>;
@@ -53,7 +53,7 @@ export type UseThemeContextProps = CustomThemeType<ThemeOptions> & {
   callerName?: string;
 };
 
-export interface WithThemeProps<Theme = BaseThemeInterface> {
+export interface WithThemeProps<Theme = ThemeOptions> {
   theme?: Theme;
 }
 

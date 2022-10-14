@@ -3,7 +3,7 @@ export {
   DataContext as ArrangerDataContext,
   DataProvider as ArrangerDataProvider,
   useDataContext as useArrangerData,
-  withTheme as withArrangerTheme,
+  withData as withArrangerData,
 } from './DataContext';
 // TODO: Deprecate "CurrentSQON" component name as unsemantical,
 // remove SQONView (duplicate of CurrentSQON to produce the same log warning)
@@ -22,6 +22,7 @@ export {
   ThemeContext as ArrangerThemeContext,
   ThemeProvider as ArrangerThemeProvider,
   useThemeContext as useArrangerTheme,
+  withTheme as withArrangerTheme,
 } from './ThemeContext';
 export { default as apiFetcher, addHeaders } from './utils/api';
 export { default as Query, withQuery } from './Query';

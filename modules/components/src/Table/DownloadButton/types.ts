@@ -1,12 +1,13 @@
 import { ComponentType } from 'react';
+import type { Merge } from 'type-fest';
 
-import { ColumnMappingInterface, SQONType } from '@/DataContext/types';
+import { ColumnMappingInterface, ExtendedMappingInterface, SQONType } from '@/DataContext/types';
 import { DropDownThemeProps } from '@/DropDown/types';
 import { ColumnsDictionary, FieldList } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
-import { PrefixKeys } from '@/utils/types';
+import { PrefixKeys, WithFunctionOptions } from '@/utils/types';
 
-export type DownloadFn = (options: {
+export type DownloadFunction = (options: {
   url: any;
   params: any;
   method?: string;
@@ -17,34 +18,46 @@ export interface ExporterFileInterface {
   allColumnsDict: ColumnsDictionary;
   columns: ColumnMappingInterface[];
   documentType: string;
-  exporterColumns?: string[];
+  exporterColumns?: FieldList | ColumnMappingInterface[] | null;
   fileName: string;
   fileType: 'tsv' | string;
   maxRows: number;
   sqon: SQONType;
 }
 
-export interface ExporterFnProps {
+export interface ExporterFunctionProps {
   fileName?: string;
   files: ExporterFileInterface[];
   options?: Record<string, any>;
-  selectedRows?: string[];
+  selectedRows: string[];
   url: string;
 }
 
-export type ExporterFn = (exporter: ExporterFnProps, downloadFn?: DownloadFn) => void;
+export type ExporterFunction = (
+  exporter: ExporterFunctionProps,
+  downloadFunction?: DownloadFunction,
+) => void;
+
+export type CustomColumnMappingInterface = WithFunctionOptions<Partial<ColumnMappingInterface>>;
+// export type CustomColumnMappingInterface = WithFunctionOptions<Partial<ExtendedMappingInterface>>;
 
 export interface ExporterDetailsInterface {
-  columns?: FieldList | null;
+  columns?: (string | CustomColumnMappingInterface)[] | null;
   downloadUrl?: string;
   fileName?: string;
-  fn?: ExporterFn;
+  function?: ExporterFunction;
   label?: ComponentType | string;
   maxRows?: number;
   requiresRowSelection?: boolean;
+  valueWhenEmpty?: unknown;
 }
 
-export type CustomExportersInput = ExporterDetailsInterface & { fn?: ExporterFn | 'saveTSV' };
+export type CustomExportersInput = Merge<
+  ExporterDetailsInterface,
+  {
+    function?: ExporterFunction | 'saveTSV';
+  }
+>;
 
 export type ProcessedExporterDetailsInterface = PrefixKeys<ExporterDetailsInterface, 'exporter'>;
 
