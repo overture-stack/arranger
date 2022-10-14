@@ -17,10 +17,10 @@
     "@overture-stack/arranger-components": "^3.0.0-beta.14"
   },
   "devDependencies": {
-    "@babel/core": "^7.18.2",
-    "@babel/preset-env": "^7.18.2",
-    "jest-localstorage-mock": "^2.4.21",
-    "regenerator-runtime": "^0.13.9"
+    "@babel/core": "^7.19.3",
+    "@babel/preset-env": "^7.19.4",
+    "jest-localstorage-mock": "^2.4.22",
+    "regenerator-runtime": "^0.13.10"
   },
   "prettier": {
     "printWidth": 100,

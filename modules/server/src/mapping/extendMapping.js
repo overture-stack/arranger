@@ -28,7 +28,7 @@ export const extendFields = (mappingFields, extendedFromFile) => {
       primaryKey = false,
       quickSearchEnabled = false,
       rangeStep = type === 'float' || type === 'double' ? 0.01 : 1,
-      type: displayType,
+      type: displayType = 'keyword',
       unit = null,
     } = extendedFromFile.find((customData) => customData.field === field) || {};
 
