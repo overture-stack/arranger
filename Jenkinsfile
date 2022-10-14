@@ -149,6 +149,7 @@ pipeline {
         anyOf {
           branch 'develop'
           branch 'main'
+          branch 'test'
         }
       }
       parallel {
@@ -163,20 +164,20 @@ pipeline {
                 sh "docker login -u $USERNAME -p $PASSWORD"
 
                 script {
-                  if (env.BRANCH_NAME ==~ 'develop') { //push edge and commit tags
-                    sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${commit}"
-                    sh "docker push ${dockerHubRepo}-server:${commit}"
-
-                    sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:edge"
-                    sh "docker push ${dockerHubRepo}-server:edge"
-                  }
-
-                  if (env.BRANCH_NAME ==~ 'main') { // push latest and version tags
+                  if (env.BRANCH_NAME ==~ /(main)/) { // push latest and version tags
                     sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${version}"
                     sh "docker push ${dockerHubRepo}-server:${version}"
 
                     sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:latest"
                     sh "docker push ${dockerHubRepo}-server:latest"
+                  } else { // push commit tags
+                    sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${commit}"
+                    sh "docker push ${dockerHubRepo}-server:${commit}"
+                  }
+
+                  if (env.BRANCH_NAME ==~ /(develop)/) { // push edge and commit tags
+                    sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:edge"
+                    sh "docker push ${dockerHubRepo}-server:edge"
                   }
                 }
               }
@@ -195,20 +196,20 @@ pipeline {
                 sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
 
                 script {
-                  if (env.BRANCH_NAME ==~ 'develop') { //push edge and commit tags
-                    sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-
-                    sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                  }
-
-                  if (env.BRANCH_NAME ==~ 'main') { //push edge and commit tags
+                  if (env.BRANCH_NAME ==~ /(main)/) { //push edge and commit tags
                     sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
 
                     sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
+                  } else { // push commit tags
+                    sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
+                  }
+
+                  if (env.BRANCH_NAME ==~ /(develop)/) { // push edge and commit tags
+                    sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
                   }
                 }
               }
@@ -304,7 +305,7 @@ pipeline {
     success {
       withCredentials([string(
         credentialsId: 'OvertureSlackJenkinsWebhookURL',
-        variable: 'failed_slackChannelURL'
+        variable: 'success_slackChannelURL'
       )]) {
         container('node') {
           script {
@@ -316,7 +317,7 @@ pipeline {
                   \"text\":\"New Arranger published succesfully: \
                   v.${version} [Build ${env.BUILD_NUMBER}] (${env.BUILD_URL}) \" \
                 }' \
-                ${failed_slackChannelURL}"
+                ${success_slackChannelURL}"
             }
           }
         }
