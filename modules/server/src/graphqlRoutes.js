@@ -20,6 +20,11 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
       });
 
       if (mapping) {
+        if (Object.hasOwn(mapping, 'id')) {
+          // FIXME: Figure out a solution to map this to something else rather than dropping it
+          console.log('Detected reserved field "id" in mapping, dropping it from GraphQL...');
+          delete mapping.id;
+        }
         const extendedFields = await (async () => {
           try {
             return extendFields(mapping, configs?.[ConfigProperties.EXTENDED]);
