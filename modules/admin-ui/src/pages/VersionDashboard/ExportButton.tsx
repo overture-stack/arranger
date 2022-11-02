@@ -35,7 +35,7 @@ const download = (content: IGqlData) => {
     }
     zip.generateAsync({ type: 'blob' }).then((content) => {
       saveAs(content, `${rootName}.zip`);
-      resolve();
+      resolve(null);
     });
   });
 };

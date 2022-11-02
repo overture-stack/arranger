@@ -1,4 +1,4 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import express from 'express';
 import { Server } from 'http';
 import Arranger from '@arranger/server';
@@ -95,7 +95,7 @@ describe('@arranger/server', () => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation($projectId: String!) {
+          mutation ($projectId: String!) {
             newProject(id: $projectId) {
               id
               __typename
@@ -111,7 +111,7 @@ describe('@arranger/server', () => {
       endpoint: adminPath,
       body: {
         query: print(gql`
-          mutation($projectId: String!, $graphqlField: String!, $esIndex: String!) {
+          mutation ($projectId: String!, $graphqlField: String!, $esIndex: String!) {
             newIndex(projectId: $projectId, graphqlField: $graphqlField, esIndex: $esIndex) {
               id
             }

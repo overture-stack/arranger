@@ -1,4 +1,4 @@
-import 'babel-polyfill';
+import '@babel/polyfill';
 import express from 'express';
 import { Server } from 'http';
 import addProject from './addProject';
