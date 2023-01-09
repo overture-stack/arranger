@@ -8,7 +8,7 @@
 <img align="right" width="120vw" src="icon-arranger.png" alt="arranger-logo"/>
 </div>
 
-As the complexity and volume of genomics data grow, researchers will require specialized and adaptable tools to interpret the data and generate meaningful insights. Arranger addresses this by providing a search API that interfaces between an Elasticsearch index and pre-built portal UI components. With Arranger, researchers can create and customize functional data portals for accessing, querying, transforming, and analyzing their data in meaningful and interpretable ways.
+Arranger is a data-agnostic search API that interfaces between an Elasticsearch index and pre-built portal UI components. This allows you to quickly create and customize functional data portal UI's, enabling researchers with a custom GUI to query data, build cohorts and export these filtered data sets for further analysis and interpretation.
 
 Arranger consists of three elements:
 
