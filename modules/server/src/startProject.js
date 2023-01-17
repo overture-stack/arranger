@@ -39,7 +39,10 @@ const getTypesWithMappings = async ({ es, id }) => {
   const hits = mapHits(types);
   const mappings = await fetchMappings({ es, types: hits });
   if (!mappings.length) return; // gate to not start a project that doesn't exist
-
+  //  Enable ID field
+  if (mappings[0]['mapping']['metadata-items']) {
+    delete mappings[0]['mapping']['metadata-items']['mappings']['properties']['id'];
+  }
   const extended = await Promise.all(
     hits.map(async (type) => {
       const indexPrefix = getIndexPrefix({ projectId: id, index: type.index });
