@@ -122,13 +122,14 @@ function getFuzzyFilter({ nestedFields, filter }) {
 
 function getMissingFilter({ nestedFields, filter }) {
   const {
+    op,
     content: { field },
   } = filter;
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
     filter,
-    isNot: true,
+    isNot: op === IN_OP,
   });
 }
 
