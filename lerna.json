@@ -1,5 +1,10 @@
 {
   "lerna": "2.5.1",
   "version": "2.19.3",
-  "packages": ["integration-tests/**", "modules/**"]
+  "packages": ["integration-tests/**", "modules/**"],
+  "command": {
+    "version": {
+      "npmClientArgs": ["--legacy-peer-deps"]
+    }
+  }
 }

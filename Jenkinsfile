@@ -95,7 +95,7 @@ pipeline {
     version = sh(
       returnStdout: true,
       script: 'cat lerna.json | ' +
-        'grep "version" | ' +
+        'grep "version" -m 1 | ' +
         'cut -d : -f2 | ' +
         "sed \'s:[\",]::g\'"
     ).trim()
@@ -158,6 +158,7 @@ pipeline {
       when {
         anyOf {
           branch 'legacy'
+          // branch 'test'
         }
       }
       steps {
@@ -247,23 +248,6 @@ pipeline {
         }
       }
     }
-
-    stage('Deploy to Overture QA') {
-      when {
-        branch 'legacy'
-      }
-      steps {
-        build(job: '/Overture.bio/provision/helm', parameters: [
-          [$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'qa' ],
-          [$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
-          [$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
-          [$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest
-          [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: chartsServer],
-          [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: 'false'],
-          [$class: 'StringParameterValue', name: 'OVERTURE_ARGS_LINE', value: "--set-string apiImage.tag=${commit} --set-string uiImage.tag=${commit}"]
-        ])
-      }
-    }
   }
 
   post {
@@ -284,6 +268,24 @@ pipeline {
                 ${fixed_slackChannelURL}"
             }
           }
+        }
+      }
+    }
+
+    success {
+      script {
+        if (env.BRANCH_NAME ==~ 'legacy') {
+          echo 'Deploying to Overture QA'
+          build(job: '/Overture.bio/provision/helm', parameters: [
+              booleanParam(name: 'OVERTURE_HELM_REUSE_VALUES', value: false),
+              string(name: 'OVERTURE_ARGS_LINE',
+                value: "--set-string apiImage.tag=${commit} --set-string uiImage.tag=${commit}"),
+              string(name: 'OVERTURE_CHART_NAME', value: 'arranger'),
+              string(name: 'OVERTURE_ENV', value: 'qa'),
+              string(name: 'OVERTURE_HELM_CHART_VERSION', value: ''), // use latest
+              string(name: 'OVERTURE_HELM_REPO_URL', value: chartsServer),
+              string(name: 'OVERTURE_RELEASE_NAME', value: 'arranger'),
+            ], wait: false)
         }
       }
     }
