@@ -143,10 +143,14 @@ const createEndpoint = async ({
       };
     };
 
-    new ApolloServer({
+    const apolloServer = new ApolloServer({
       schema,
       context: ({ req, res, con }) => buildContext(req, res, con),
-    }).applyMiddleware({
+    });
+
+    await apolloServer.start();
+
+    apolloServer.applyMiddleware({
       app: router,
       path: '/graphql',
     });
@@ -157,9 +161,13 @@ const createEndpoint = async ({
   }
 
   if (mockSchema) {
-    new ApolloServer({
+    const apolloMockServer = new ApolloServer({
       schema: mockSchema,
-    }).applyMiddleware({
+    });
+
+    await apolloMockServer.start();
+
+    apolloMockServer.applyMiddleware({
       app: router,
       path: '/mock/graphql',
     });

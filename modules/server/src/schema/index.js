@@ -1,4 +1,5 @@
-import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
+import { addMocksToSchema } from '@graphql-tools/mock';
+import { makeExecutableSchema } from 'graphql-tools';
 import { applyMiddleware } from 'graphql-middleware';
 
 import { CONSTANTS } from '../middleware';
@@ -83,7 +84,7 @@ export default ({
   });
 
   if (mock) {
-    addMockFunctionsToSchema({
+    addMocksToSchema({
       schema,
       mocks: { JSON: () => JSON.stringify({ key: 'value' }) },
     });

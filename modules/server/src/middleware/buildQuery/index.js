@@ -43,7 +43,7 @@ const wrapFilter = ({ esFilter, nestedFields, filter, isNot }) => {
     .split('.')
     .slice(0, -1)
     .map((p, i, segments) => segments.slice(0, i + 1).join('.'))
-    .filter((p) => nestedFields.includes(p))
+    .filter((p) => nestedFields?.includes?.(p))
     .reverse()
     .reduce(
       (esFilter, path, i) => wrapNested(esFilter, path),
@@ -91,7 +91,7 @@ function getFuzzyFilter({ nestedFields, filter }) {
   // group queries by their nesting level
   const sortedNested = nestedFields.slice().sort((a, b) => b.length - a.length);
   const nestedMap = fields.reduce((acc, field) => {
-    const group = sortedNested.find((y) => field.includes(y)) || '';
+    const group = sortedNested.find((y) => field?.includes?.(y)) || '';
     if (acc[group]) {
       acc[group].push(field);
     } else {
@@ -123,12 +123,13 @@ function getFuzzyFilter({ nestedFields, filter }) {
 function getMissingFilter({ nestedFields, filter }) {
   const {
     content: { field },
+    op,
   } = filter;
   return wrapFilter({
     esFilter: { exists: { field: field, boost: 0 } },
     nestedFields,
     filter,
-    isNot: true,
+    isNot: op === IN_OP,
   });
 }
 
@@ -144,7 +145,7 @@ function getRangeFilter({ nestedFields, filter }) {
       range: {
         [field]: {
           boost: 0,
-          [op]: toEsRangeValue([GT_OP, GTE_OP].includes(op) ? _.max(value) : _.min(value)),
+          [op]: toEsRangeValue([GT_OP, GTE_OP]?.includes?.(op) ? _.max(value) : _.min(value)),
         },
       },
     },
@@ -190,7 +191,7 @@ function getGroupFilter({ nestedFields, filter: { content, op, pivot } }) {
   const applyBooleanWrapper = wrappers[op];
   const esFilters = content.map((filter) => opSwitch({ nestedFields, filter }));
   const isNested = !!esFilters[0]?.nested;
-  if (isNested && esFilters.map((f) => f.nested?.path).includes(pivot)) {
+  if (isNested && esFilters.map((f) => f.nested?.path)?.includes?.(pivot)) {
     const flattned = esFilters.reduce(
       (bools, esFilter) =>
         op === AND_OP || op === NOT_OP

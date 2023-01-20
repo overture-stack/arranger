@@ -311,7 +311,7 @@ pipeline {
     success {
       withCredentials([string(
         credentialsId: 'OvertureSlackJenkinsWebhookURL',
-        variable: 'failed_slackChannelURL'
+        variable: 'success_slackChannelURL'
       )]) {
         container('node') {
           script {
@@ -323,7 +323,7 @@ pipeline {
                   \"text\":\"New Arranger published succesfully: \
                   v.${version} [Build ${env.BUILD_NUMBER}] (${env.BUILD_URL}) \" \
                 }' \
-                ${failed_slackChannelURL}"
+                ${success_slackChannelURL}"
             }
           }
         }
