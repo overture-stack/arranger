@@ -5,23 +5,23 @@ import defaultApiFetcher from '../utils/api';
 import { queryFromAgg } from './AggsState';
 
 export default ({
-  index = '',
-  aggs = [],
-  sqon = null,
-  apiFetcher = defaultApiFetcher,
-  ...props
+	index = '',
+	aggs = [],
+	sqon = null,
+	apiFetcher = defaultApiFetcher,
+	...props
 }) => {
-  return !index || !aggs.length ? (
-    ''
-  ) : (
-    <Query
-      renderError
-      name={`${capitalize(index)}AggregationsQuery`}
-      variables={{
-        fields: aggs.map((x) => x.field.replace(/__/g, '.')),
-        sqon,
-      }}
-      query={`
+	return !index || !aggs.length ? (
+		''
+	) : (
+		<Query
+			renderError
+			name={`${capitalize(index)}AggregationsQuery`}
+			variables={{
+				fields: aggs.map((x) => x?.field?.replace?.(/__/g, '.')),
+				sqon,
+			}}
+			query={`
         query ${capitalize(index)}AggregationsQuery(
           $fields: [String]
           $sqon: JSON
@@ -39,7 +39,7 @@ export default ({
           }
         }
       `}
-      {...{ apiFetcher, ...props }}
-    />
-  );
+			{...{ apiFetcher, ...props }}
+		/>
+	);
 };
