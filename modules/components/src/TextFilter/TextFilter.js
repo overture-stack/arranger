@@ -5,49 +5,49 @@ import { replaceFilterSQON } from '@/SQONViewer/utils';
 import noopFn from '@/utils/noops';
 
 export const generateNextSQON =
-  (value) =>
-  ({ sqon, fields, entity }) =>
-    replaceFilterSQON(
-      {
-        op: 'and',
-        content: [
-          {
-            op: 'filter',
-            content: {
-              fields: fields,
-              value,
-              ...(entity && { entity }),
-            },
-          },
-        ],
-      },
-      sqon,
-    );
+	(value) =>
+	({ sqon, fieldNames, entity }) =>
+		replaceFilterSQON(
+			{
+				op: 'and',
+				content: [
+					{
+						op: 'filter',
+						content: {
+							fieldNames,
+							value,
+							...(entity && { entity }),
+						},
+					},
+				],
+			},
+			sqon,
+		);
 
 const TextFilter = ({
-  Component = TextInput,
-  leftIcon = { Icon: FaSearch },
-  onChange = noopFn,
-  placeholder = 'Filter',
-  ...props
+	Component = TextInput,
+	leftIcon = { Icon: FaSearch },
+	onChange = noopFn,
+	placeholder = 'Filter',
+	...props
 }) => {
-  const handleChange = ({ target: { value } = {} } = {}) => {
-    onChange({
-      value,
-      generateNextSQON: generateNextSQON(value),
-    });
-  };
+	const handleChange = ({ target: { value } = {} } = {}) => {
+		onChange({
+			value,
+			generateNextSQON: generateNextSQON(value),
+		});
+	};
 
-  return (
-    <Component
-      aria-label={`Data filter`}
-      leftIcon={leftIcon}
-      onChange={handleChange}
-      placeholder={placeholder}
-      type="text"
-      {...props}
-    />
-  );
+	return (
+		<Component
+			aria-label={`Data filter`}
+			leftIcon={leftIcon}
+			onChange={handleChange}
+			placeholder={placeholder}
+			type="text"
+			{...props}
+		/>
+	);
 };
 
 export default TextFilter;

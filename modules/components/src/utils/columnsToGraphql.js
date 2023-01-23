@@ -9,12 +9,14 @@ export function toQuery(column) {
 					return segment;
 				} else {
 					return `${segment.indexOf('edges[') === 0 ? 'edges' : segment} {
-                ${acc}
-              }`;
+						${acc}
+					}`;
 				}
 			}, '')
 	);
 }
+
+// TODO check for field vs fieldName
 
 /**
  * @param {SQONType} [sqon] typescript validation placeholder
@@ -31,43 +33,46 @@ export default function columnsToGraphql({
 	const fields = config?.columns
 		?.filter(
 			(column) =>
-				!(column.accessor && column.accessor === config.keyField) && (column.fetch || column.show),
+				!(column.accessor && column.accessor === config.keyFieldName) &&
+				(column.fetch || column.show),
 		)
-		.concat(config.keyField ? { accessor: config.keyField } : [])
+		.concat(config.keyFieldName ? { accessor: config.keyFieldName } : [])
 		.map(toQuery)
 		.join('\n');
 
 	return {
 		fields,
-		query: `query ${queryName}($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
-      ${documentType} {
-        hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
-          total
-          edges {
-            node {
-              ${fields}
-            }
-          }
-        }
-      }
-    }`,
+		query: `
+			query ${queryName}($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {
+				${documentType} {
+					hits(first: $first, offset: $offset, sort: $sort, score: $score, filters: $sqon) {
+						edges {
+							node {
+								${fields}
+							}
+						}
+						total
+					}
+				}
+			}
+		`,
 		variables: {
 			sqon,
 			sort: sort.map((s) => {
-				if (s?.field?.indexOf?.('hits.total') >= 0) {
-					return Object.assign({}, s, { field: '_score' });
+				if (s?.fieldName?.indexOf?.('hits.total') >= 0) {
+					return Object.assign({}, s, { fieldName: '_score' });
 				} else {
-					const nested = s?.field?.match?.(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
+					const nested = s?.fieldName?.match?.(/(.*)\.hits\.edges\[\d+\]\.node(.*)/);
 
-					return Object.assign({}, s, nested ? { field: `${nested[1]}${nested[2]}` } : {});
+					return Object.assign({}, s, nested ? { fieldName: `${nested[1]}${nested[2]}` } : {});
 				}
 			}),
 			score:
 				sort.length > 0
 					? sort
-							.filter((s) => s?.field?.indexOf?.('hits.total') >= 0)
+							.filter((s) => s?.fieldName?.indexOf?.('hits.total') >= 0)
 							.map((s) => {
-								const match = s?.field?.match?.(/((.*)s)\.hits\.total/);
+								const match = s?.fieldName?.match?.(/((.*)s)\.hits\.total/);
 								return `${match[1]}.${match[2]}_id`;
 							})
 							.join(',')

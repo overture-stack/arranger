@@ -7,14 +7,14 @@ const defaults = {
 export default ({ name, extendedFields }) => [
   {
     displayName: name,
-    field: '',
+    fieldName: '',
     ...defaults,
   },
   ...extendedFields
     .filter((x) => x.type === 'nested')
-    .map(({ field, displayName }) => ({
+    .map(({ fieldName, displayName }) => ({
       displayName,
-      field,
+      fieldName,
       ...defaults,
     })),
 ];

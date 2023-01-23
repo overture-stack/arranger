@@ -1,32 +1,27 @@
 {
-  "name": "integration-tests-server",
-  "version": "3.0.0-beta.15",
-  "private": "true",
-  "scripts": {
-    "test": "mocha --require @babel/register --timeout 240000"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.20.13",
-    "@elastic/elasticsearch": "^7.17.0",
-    "@overture-stack/arranger-server": "^3.0.0-beta.15",
-    "babel-polyfill": "^6.26.0",
-    "graphql": "^16.6.0",
-    "graphql-tag": "^2.12.6"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.20.12",
-    "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
-    "@babel/plugin-transform-runtime": "^7.19.6",
-    "@babel/preset-env": "^7.20.2",
-    "@babel/register": "^7.18.9",
-    "chai": "^4.3.7",
-    "lodash": "^4.17.21",
-    "mocha": "^10.2.0",
-    "regenerator-runtime": "^0.13.11"
-  },
-  "prettier": {
-    "printWidth": 100,
-    "trailingComma": "all",
-    "singleQuote": true
-  }
+	"name": "integration-tests-server",
+	"version": "3.0.0-beta.15",
+	"private": "true",
+	"scripts": {
+		"test": "mocha --require @babel/register --timeout 240000"
+	},
+	"dependencies": {
+		"@babel/runtime": "^7.20.13",
+		"@elastic/elasticsearch": "^7.17.0",
+		"@overture-stack/arranger-server": "^3.0.0-beta.15",
+		"babel-polyfill": "^6.26.0",
+		"graphql": "^16.6.0",
+		"graphql-tag": "^2.12.6"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.20.12",
+		"@babel/plugin-proposal-object-rest-spread": "^7.20.7",
+		"@babel/plugin-transform-runtime": "^7.19.6",
+		"@babel/preset-env": "^7.20.2",
+		"@babel/register": "^7.18.9",
+		"chai": "^4.3.7",
+		"lodash": "^4.17.21",
+		"mocha": "^10.2.0",
+		"regenerator-runtime": "^0.13.11"
+	}
 }

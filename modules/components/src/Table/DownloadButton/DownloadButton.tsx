@@ -45,138 +45,138 @@ import { ProcessedExporterDetailsInterface, DownloadButtonProps } from './types'
  *   Disables the exporter in the abscence of row selections.
  */
 const DownloadButton = ({
-  theme: {
-    customExporters,
-    disableRowSelection: customDisableRowSelection,
-    downloadUrl: customDownloadUrl,
-    label: customLabel,
-    maxRows: customMaxRows,
-    ...customThemeProps
-  } = emptyObj,
+	theme: {
+		customExporters,
+		disableRowSelection: customDisableRowSelection,
+		downloadUrl: customDownloadUrl,
+		label: customLabel,
+		maxRows: customMaxRows,
+		...customThemeProps
+	} = emptyObj,
 }: DownloadButtonProps) => {
-  const { apiUrl = ARRANGER_API } = useDataContext();
-  const {
-    allColumnsDict,
-    currentColumnsDict,
-    documentType,
-    hasSelectedRows,
-    hasVisibleColumns,
-    isLoading,
-    missingProvider,
-    selectedRows,
-    sqon,
-    total,
-  } = useTableContext({
-    callerName: 'Table - ColumnSelectButton',
-  });
-  const {
-    components: {
-      Table: {
-        DownloadButton: {
-          customExporters: themeCustomExporters,
-          disableRowSelection: themeDisableRowSelection,
-          downloadUrl: themeDownloadUrl = urlJoin(apiUrl, 'download'),
-          label: themeDownloadButtonLabel = 'Download',
-          maxRows: themeMaxRows = 100,
-          exportSelectedRowsField = 'file_autocomplete',
-          ...themeDownloadButtonProps
-        } = emptyObj,
-        DropDown: { label: themeDropDownLabel, ...themeDropDownProps } = emptyObj,
-      } = emptyObj,
-    } = emptyObj,
-  } = useThemeContext({ callerName: 'Table - ColumnSelectButton' });
+	const { apiUrl = ARRANGER_API } = useDataContext();
+	const {
+		allColumnsDict,
+		currentColumnsDict,
+		documentType,
+		hasSelectedRows,
+		hasVisibleColumns,
+		isLoading,
+		missingProvider,
+		selectedRows,
+		sqon,
+		total,
+	} = useTableContext({
+		callerName: 'Table - ColumnSelectButton',
+	});
+	const {
+		components: {
+			Table: {
+				DownloadButton: {
+					customExporters: themeCustomExporters,
+					disableRowSelection: themeDisableRowSelection,
+					downloadUrl: themeDownloadUrl = urlJoin(apiUrl, 'download'),
+					label: themeDownloadButtonLabel = 'Download',
+					maxRows: themeMaxRows = 100,
+					exportSelectedRowsField = 'file_autocomplete',
+					...themeDownloadButtonProps
+				} = emptyObj,
+				DropDown: { label: themeDropDownLabel, ...themeDropDownProps } = emptyObj,
+			} = emptyObj,
+		} = emptyObj,
+	} = useThemeContext({ callerName: 'Table - ColumnSelectButton' });
 
-  const disableButton = isLoading || !!missingProvider || !hasVisibleColumns || !total;
-  const disableRowSelection = customDisableRowSelection || themeDisableRowSelection;
-  const downloadUrl = customDownloadUrl || themeDownloadUrl;
-  const exporters = customExporters || themeCustomExporters;
-  const Label = customLabel || themeDownloadButtonLabel || themeDropDownLabel;
-  const maxRows = customMaxRows || themeMaxRows;
-  const theme = merge({}, themeDropDownProps, themeDownloadButtonProps, customThemeProps);
+	const disableButton = isLoading || !!missingProvider || !hasVisibleColumns || !total;
+	const disableRowSelection = customDisableRowSelection || themeDisableRowSelection;
+	const downloadUrl = customDownloadUrl || themeDownloadUrl;
+	const exporters = customExporters || themeCustomExporters;
+	const Label = customLabel || themeDownloadButtonLabel || themeDropDownLabel;
+	const maxRows = customMaxRows || themeMaxRows;
+	const theme = merge({}, themeDropDownProps, themeDownloadButtonProps, customThemeProps);
 
-  const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
+	const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
 
-  const downloadSqon =
-    !disableRowSelection && hasSelectedRows
-      ? ({
-          op: 'and',
-          content: [
-            {
-              op: 'in',
-              content: { field: exportSelectedRowsField, value: selectedRows },
-            },
-          ],
-        } as unknown as SQONType)
-      : sqon;
+	const downloadSqon =
+		!disableRowSelection && hasSelectedRows
+			? ({
+					op: 'and',
+					content: [
+						{
+							op: 'in',
+							content: { field: exportSelectedRowsField, value: selectedRows },
+						},
+					],
+			  } as unknown as SQONType)
+			: sqon;
 
-  const handleExporterClick = ({
-    exporterColumns,
-    exporterDownloadUrl = downloadUrl,
-    exporterFileName,
-    exporterFunction,
-    exporterLabel,
-    exporterMaxRows = maxRows,
-    exporterRequiresRowSelection,
-  }: ProcessedExporterDetailsInterface) =>
-    (exporterFunction && exporterRequiresRowSelection && !hasSelectedRows) || !exporterFunction
-      ? undefined
-      : () =>
-          exporterFunction?.(
-            {
-              files: [
-                {
-                  allColumnsDict,
-                  columns: Object.values(currentColumnsDict),
-                  documentType,
-                  fileName: exporterFileName
-                    ? `${exporterFileName}${
-                        exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
-                      }`
-                    : `${stringCleaner((exporterLabel as string).toLowerCase())}.tsv`,
-                  fileType: 'tsv',
-                  maxRows: exporterMaxRows,
-                  sqon: downloadSqon,
-                  ...(exporterColumns && { exporterColumns }),
-                },
-              ],
-              selectedRows,
-              url: exporterDownloadUrl,
-            },
-            download,
-          );
+	const handleExporterClick = ({
+		exporterColumns,
+		exporterDownloadUrl = downloadUrl,
+		exporterFileName,
+		exporterFunction,
+		exporterLabel,
+		exporterMaxRows = maxRows,
+		exporterRequiresRowSelection,
+	}: ProcessedExporterDetailsInterface) =>
+		(exporterFunction && exporterRequiresRowSelection && !hasSelectedRows) || !exporterFunction
+			? undefined
+			: () =>
+					exporterFunction?.(
+						{
+							files: [
+								{
+									allColumnsDict,
+									columns: Object.values(currentColumnsDict),
+									documentType,
+									fileName: exporterFileName
+										? `${exporterFileName}${
+												exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
+										  }`
+										: `${stringCleaner((exporterLabel as string).toLowerCase())}.tsv`,
+									fileType: 'tsv',
+									maxRows: exporterMaxRows,
+									sqon: downloadSqon,
+									...(exporterColumns && { exporterColumns }),
+								},
+							],
+							selectedRows,
+							url: exporterDownloadUrl,
+						},
+						download,
+					);
 
-  // check if we're given more than one custom exporter
-  return hasMultipleExporters ? (
-    <MultiSelectDropDown
-      buttonAriaLabelClosed="Open downloads menu"
-      buttonAriaLabelOpen="Close downloads menu"
-      disabled={disableButton}
-      itemSelectionLegend="Select on of the download options"
-      items={exporterDetails as ProcessedExporterDetailsInterface[]}
-      itemToString={(exporter) => {
-        return (
-          <TransparentButton
-            css={css`
-              width: 100%;
-            `}
-            onClick={handleExporterClick(exporter)}
-          >
-            <MetaMorphicChild>{exporter.exporterLabel || 'unlabeled exporter'}</MetaMorphicChild>
-          </TransparentButton>
-        );
-      }}
-      theme={theme}
-    >
-      <MetaMorphicChild>{Label}</MetaMorphicChild>
-    </MultiSelectDropDown>
-  ) : (
-    // else, use a custom function if any is given, or use the default saveTSV if the flag is on
-    <SingleDownloadButton
-      clickHandler={handleExporterClick(exporterDetails as ProcessedExporterDetailsInterface)}
-      disabled={isLoading || !!missingProvider}
-      {...exporterDetails}
-    />
-  );
+	// check if we're given more than one custom exporter
+	return hasMultipleExporters ? (
+		<MultiSelectDropDown
+			buttonAriaLabelClosed="Open downloads menu"
+			buttonAriaLabelOpen="Close downloads menu"
+			disabled={disableButton}
+			itemSelectionLegend="Select on of the download options"
+			items={exporterDetails as ProcessedExporterDetailsInterface[]}
+			itemToString={(exporter) => {
+				return (
+					<TransparentButton
+						css={css`
+							width: 100%;
+						`}
+						onClick={handleExporterClick(exporter)}
+					>
+						<MetaMorphicChild>{exporter.exporterLabel || 'unlabeled exporter'}</MetaMorphicChild>
+					</TransparentButton>
+				);
+			}}
+			theme={theme}
+		>
+			<MetaMorphicChild>{Label}</MetaMorphicChild>
+		</MultiSelectDropDown>
+	) : (
+		// else, use a custom function if any is given, or use the default saveTSV if the flag is on
+		<SingleDownloadButton
+			clickHandler={handleExporterClick(exporterDetails as ProcessedExporterDetailsInterface)}
+			disabled={isLoading || !!missingProvider}
+			{...exporterDetails}
+		/>
+	);
 };
 
 export default DownloadButton;

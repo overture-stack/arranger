@@ -9,152 +9,152 @@ import { emptyObj } from '@/utils/noops';
 import { defaultCellTypes, getCellValue } from './cells';
 
 export const aggregateCustomColumns = (
-  customColumns: ColumnMappingInterface[] = [],
-  serverColumns: ColumnMappingInterface[] = [],
+	customColumns: ColumnMappingInterface[] = [],
+	serverColumns: ColumnMappingInterface[] = [],
 ) => {
-  const existingColumns = serverColumns.map((serverColumn) => {
-    const customColumn = customColumns.find((column) => column.field === serverColumn.field) || {};
+	const existingColumns = serverColumns.map((serverColumn) => {
+		const customColumn = customColumns.find((column) => column.field === serverColumn.field) || {};
 
-    return {
-      ...serverColumn,
-      ...customColumn,
-    };
-  });
+		return {
+			...serverColumn,
+			...customColumn,
+		};
+	});
 
-  const existingColumnFields = existingColumns
-    .map((column) => column.field)
-    .filter((field) => !!field);
+	const existingColumnFields = existingColumns
+		.map((column) => column.field)
+		.filter((field) => !!field);
 
-  return existingColumns.concat(
-    customColumns.filter((column) => !existingColumnFields.includes(column.field)),
-  );
+	return existingColumns.concat(
+		customColumns.filter((column) => !existingColumnFields.includes(column.field)),
+	);
 };
 
 export const columnsArrayToDictionary = (columns: ColumnMappingInterface[] = []) =>
-  columns.reduce(
-    (dict, column) => ({
-      ...dict,
-      [column.field]: column,
-    }),
-    {} as ColumnsDictionary,
-  );
+	columns.reduce(
+		(dict, column) => ({
+			...dict,
+			[column.fieldName]: column,
+		}),
+		{} as ColumnsDictionary,
+	);
 
 export const getColumnsByAttribute = (
-  columns: ColumnMappingInterface[] = [],
-  attribute: keyof ColumnMappingInterface,
+	columns: ColumnMappingInterface[] = [],
+	attribute: keyof ColumnMappingInterface,
 ) => columns.filter((column) => column[attribute]);
 
 function IndeterminateCheckbox({
-  indeterminate,
-  className = '',
-  ...rest
+	indeterminate,
+	className = '',
+	...rest
 }: { indeterminate?: boolean } & HTMLAttributes<HTMLInputElement>) {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const ref = useRef<HTMLInputElement>(null!);
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+	const ref = useRef<HTMLInputElement>(null!);
 
-  useEffect(() => {
-    if (typeof indeterminate === 'boolean') {
-      ref.current.indeterminate = indeterminate;
-    }
-  }, [ref, indeterminate]);
+	useEffect(() => {
+		if (typeof indeterminate === 'boolean') {
+			ref.current.indeterminate = indeterminate;
+		}
+	}, [ref, indeterminate]);
 
-  return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
+	return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
 }
 
 export const makeTableColumns = ({
-  allowRowSelection,
-  columnTypes: customColumnTypes = emptyObj,
-  total,
-  visibleColumns = [],
+	allowRowSelection,
+	columnTypes: customColumnTypes = emptyObj,
+	total,
+	visibleColumns = [],
 }: {
-  allowRowSelection?: boolean;
-  columnTypes?: Partial<ColumnTypesObject>;
-  total: number;
-  visibleColumns: ColumnMappingInterface[];
+	allowRowSelection?: boolean;
+	columnTypes?: Partial<ColumnTypesObject>;
+	total: number;
+	visibleColumns: ColumnMappingInterface[];
 }) => {
-  const columnHelper = createColumnHelper();
-  const hasData = total > 0;
-  const columnTypes = mergeWith(customColumnTypes, defaultCellTypes, (objValue, srcValue) => ({
-    ...objValue,
-    cellValue: objValue?.cellValue || srcValue,
-  })) as ColumnTypesObject;
+	const columnHelper = createColumnHelper();
+	const hasData = total > 0;
+	const columnTypes = mergeWith(customColumnTypes, defaultCellTypes, (objValue, srcValue) => ({
+		...objValue,
+		cellValue: objValue?.cellValue || srcValue,
+	})) as ColumnTypesObject;
 
-  const tableColumns = visibleColumns.map((visibleColumn) => {
-    const columnType = mergeWith(
-      {},
-      columnTypes.all,
-      columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.type],
-      columnTypes[visibleColumn.accessor],
-    );
+	const tableColumns = visibleColumns.map((visibleColumn) => {
+		const columnType = mergeWith(
+			{},
+			columnTypes.all,
+			columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.type],
+			columnTypes[visibleColumn.accessor],
+		);
 
-    return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
-      ...visibleColumn,
-      cell: ({ getValue, cell }) => {
-        const cellType = columnType?.cellValue;
-        const valueFromRow = getValue();
+		return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
+			...visibleColumn,
+			cell: ({ getValue, cell }) => {
+				const cellType = columnType?.cellValue;
+				const valueFromRow = getValue();
 
-        if (cellType) {
-          return typeof cellType === 'function'
-            ? cellType({
-                ...cell,
-                column: {
-                  ...visibleColumn,
-                  ...cell.column,
-                },
-                value: valueFromRow,
-              } as TableCellProps)
-            : cellType;
-        }
+				if (cellType) {
+					return typeof cellType === 'function'
+						? cellType({
+								...cell,
+								column: {
+									...visibleColumn,
+									...cell.column,
+								},
+								value: valueFromRow,
+						  } as TableCellProps)
+						: cellType;
+				}
 
-        return valueFromRow;
-      },
-      header: ({ header }) => {
-        const label = visibleColumn?.displayName || header.id;
-        const headerType = columnType?.headerValue;
+				return valueFromRow;
+			},
+			header: ({ header }) => {
+				const label = visibleColumn?.displayName || header.id;
+				const headerType = columnType?.headerValue;
 
-        if (headerType) {
-          return typeof headerType === 'function'
-            ? headerType({
-                ...visibleColumn,
-                ...header,
-                disabled: !hasData,
-              })
-            : headerType;
-        }
+				if (headerType) {
+					return typeof headerType === 'function'
+						? headerType({
+								...visibleColumn,
+								...header,
+								disabled: !hasData,
+						  })
+						: headerType;
+				}
 
-        return label;
-      },
-      id: visibleColumn?.id || visibleColumn?.accessor,
-    });
-  });
+				return label;
+			},
+			id: visibleColumn?.id || visibleColumn?.accessor,
+		});
+	});
 
-  return allowRowSelection
-    ? [
-        columnHelper.display({
-          id: 'select',
-          header: ({ table }) => (
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                disabled: !hasData,
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-              }}
-            />
-          ),
-          cell: ({ row }) => (
-            <div className="px-1">
-              <IndeterminateCheckbox
-                {...{
-                  checked: row.getIsSelected(),
-                  indeterminate: row.getIsSomeSelected(),
-                  onChange: row.getToggleSelectedHandler(),
-                }}
-              />
-            </div>
-          ),
-        }),
-        ...tableColumns,
-      ]
-    : tableColumns;
+	return allowRowSelection
+		? [
+				columnHelper.display({
+					id: 'select',
+					header: ({ table }) => (
+						<IndeterminateCheckbox
+							{...{
+								checked: table.getIsAllRowsSelected(),
+								disabled: !hasData,
+								indeterminate: table.getIsSomeRowsSelected(),
+								onChange: table.getToggleAllRowsSelectedHandler(),
+							}}
+						/>
+					),
+					cell: ({ row }) => (
+						<div className="px-1">
+							<IndeterminateCheckbox
+								{...{
+									checked: row.getIsSelected(),
+									indeterminate: row.getIsSomeSelected(),
+									onChange: row.getToggleSelectedHandler(),
+								}}
+							/>
+						</div>
+					),
+				}),
+				...tableColumns,
+		  ]
+		: tableColumns;
 };
