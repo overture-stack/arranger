@@ -1,7 +1,7 @@
 {
   "extended": [
     {
-      "field": "analysis",
+      "fieldName": "analysis",
       "displayName": "Analysis",
       "displayType": "object",
       "active": false,
@@ -13,7 +13,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.analysis_id",
+      "fieldName": "analysis.analysis_id",
       "displayName": "Analysis ID",
       "displayType": "id",
       "active": false,
@@ -25,7 +25,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.analysis_state",
+      "fieldName": "analysis.analysis_state",
       "displayName": "Analysis State",
       "displayType": "keyword",
       "active": false,
@@ -37,7 +37,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.analysis_tools",
+      "fieldName": "analysis.analysis_tools",
       "displayName": "Analysis Tools",
       "displayType": "keyword",
       "active": false,
@@ -49,7 +49,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.analysis_type",
+      "fieldName": "analysis.analysis_type",
       "displayName": "Analysis Type",
       "displayType": "keyword",
       "active": false,
@@ -61,7 +61,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.analysis_version",
+      "fieldName": "analysis.analysis_version",
       "displayName": "Analysis Version",
       "displayType": "integer",
       "active": false,
@@ -73,7 +73,7 @@
       "rangeStep": 1
     },
     {
-      "field": "analysis.experiment",
+      "fieldName": "analysis.experiment",
       "displayName": "Analysis Experiment",
       "displayType": "object",
       "active": false,
@@ -85,7 +85,7 @@
       "rangeStep": 1
     },
     {
-      "field": "data_type",
+      "fieldName": "data_type",
       "displayName": "Data Type",
       "displayType": "keyword",
       "active": false,
@@ -97,7 +97,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors",
+      "fieldName": "donors",
       "displayName": "Donors",
       "displayType": "nested",
       "active": false,
@@ -109,7 +109,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.donor_id",
+      "fieldName": "donors.donor_id",
       "displayName": "Donor ID",
       "displayType": "id",
       "active": false,
@@ -121,7 +121,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.age",
+      "fieldName": "donors.age",
       "displayName": "Age",
       "displayType": "byte",
       "active": true,
@@ -133,7 +133,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.gender",
+      "fieldName": "donors.gender",
       "displayName": "Gender",
       "displayType": "keyword",
       "active": false,
@@ -145,7 +145,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens",
+      "fieldName": "donors.specimens",
       "displayName": "Specimens",
       "displayType": "nested",
       "active": false,
@@ -157,7 +157,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples",
+      "fieldName": "donors.specimens.samples",
       "displayName": "Samples",
       "displayType": "nested",
       "active": false,
@@ -169,7 +169,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples.matched_normal_submitter_sample_id",
+      "fieldName": "donors.specimens.samples.matched_normal_submitter_sample_id",
       "displayName": "Matched Normal Submitter Sample ID",
       "displayType": "id",
       "active": false,
@@ -181,7 +181,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples.sample_id",
+      "fieldName": "donors.specimens.samples.sample_id",
       "displayName": "Sample ID",
       "displayType": "id",
       "active": false,
@@ -193,7 +193,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples.sample_type",
+      "fieldName": "donors.specimens.samples.sample_type",
       "displayName": "Sample Type",
       "displayType": "keyword",
       "active": false,
@@ -205,7 +205,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples.collection_date",
+      "fieldName": "donors.specimens.samples.collection_date",
       "displayName": "Sample Collection Date",
       "displayType": "date",
       "active": true,
@@ -217,7 +217,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.samples.submitter_sample_id",
+      "fieldName": "donors.specimens.samples.submitter_sample_id",
       "displayName": "Submitter Sample ID",
       "displayType": "id",
       "active": false,
@@ -229,7 +229,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.specimen_id",
+      "fieldName": "donors.specimens.specimen_id",
       "displayName": "Specimen ID",
       "displayType": "id",
       "active": false,
@@ -241,7 +241,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.specimen_tissue_source",
+      "fieldName": "donors.specimens.specimen_tissue_source",
       "displayName": "Specimen Tissue Source",
       "displayType": "keyword",
       "active": false,
@@ -253,7 +253,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.specimen_type",
+      "fieldName": "donors.specimens.specimen_type",
       "displayName": "Specimen Type",
       "displayType": "keyword",
       "active": false,
@@ -265,7 +265,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.submitter_specimen_id",
+      "fieldName": "donors.specimens.submitter_specimen_id",
       "displayName": "Submitter Specimen ID",
       "displayType": "id",
       "active": false,
@@ -277,7 +277,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.specimens.tumour_normal_designation",
+      "fieldName": "donors.specimens.tumour_normal_designation",
       "displayName": "Tumour Normal Designation",
       "displayType": "keyword",
       "active": false,
@@ -289,7 +289,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.submitter_donor_id",
+      "fieldName": "donors.submitter_donor_id",
       "displayName": "Submitter Donor ID",
       "displayType": "id",
       "active": false,
@@ -301,7 +301,7 @@
       "rangeStep": 1
     },
     {
-      "field": "donors.vaccinated",
+      "fieldName": "donors.vaccinated",
       "displayName": "Donor Vaccinated",
       "displayType": "boolean",
       "active": true,
@@ -313,7 +313,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file",
+      "fieldName": "file",
       "displayName": "File",
       "displayType": "object",
       "active": false,
@@ -325,7 +325,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file",
+      "fieldName": "file.index_file",
       "displayName": "Index File",
       "displayType": "object",
       "active": false,
@@ -337,7 +337,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file.file_type",
+      "fieldName": "file.index_file.file_type",
       "displayName": "Index File Type",
       "displayType": "keyword",
       "active": false,
@@ -349,7 +349,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file.md5sum",
+      "fieldName": "file.index_file.md5sum",
       "displayName": "Index File Md5Sum",
       "displayType": "keyword",
       "active": false,
@@ -361,7 +361,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file.name",
+      "fieldName": "file.index_file.name",
       "displayName": "Index File Name",
       "displayType": "keyword",
       "active": false,
@@ -373,7 +373,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file.object_id",
+      "fieldName": "file.index_file.object_id",
       "displayName": "Index File Object ID",
       "displayType": "id",
       "active": false,
@@ -385,7 +385,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.index_file.size",
+      "fieldName": "file.index_file.size",
       "displayName": "Index File Size",
       "displayType": "long",
       "active": false,
@@ -397,7 +397,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.md5sum",
+      "fieldName": "file.md5sum",
       "displayName": "File Md5Sum",
       "displayType": "keyword",
       "active": "active",
@@ -409,7 +409,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.name",
+      "fieldName": "file.name",
       "displayName": "File Name",
       "displayType": "keyword",
       "active": false,
@@ -421,7 +421,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file.size",
+      "fieldName": "file.size",
       "displayName": "File Size",
       "displayType": "long",
       "active": false,
@@ -433,7 +433,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file_access",
+      "fieldName": "file_access",
       "displayName": "File Access",
       "displayType": "keyword",
       "active": false,
@@ -445,7 +445,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file_autocomplete",
+      "fieldName": "file_autocomplete",
       "displayName": "File Autocomplete",
       "displayType": "keyword",
       "active": false,
@@ -457,7 +457,7 @@
       "rangeStep": 1
     },
     {
-      "field": "file_type",
+      "fieldName": "file_type",
       "displayName": "File Type",
       "displayType": "keyword",
       "active": false,
@@ -469,7 +469,7 @@
       "rangeStep": 1
     },
     {
-      "field": "object_id",
+      "fieldName": "object_id",
       "displayName": "Object ID",
       "displayType": "id",
       "active": false,
@@ -481,7 +481,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories",
+      "fieldName": "repositories",
       "displayName": "Repositories",
       "displayType": "nested",
       "active": false,
@@ -493,7 +493,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories.code",
+      "fieldName": "repositories.code",
       "displayName": "Repositories Code",
       "displayType": "keyword",
       "active": false,
@@ -505,7 +505,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories.country",
+      "fieldName": "repositories.country",
       "displayName": "Repositories Country",
       "displayType": "keyword",
       "active": false,
@@ -517,7 +517,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories.name",
+      "fieldName": "repositories.name",
       "displayName": "Repositories Name",
       "displayType": "keyword",
       "active": false,
@@ -529,7 +529,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories.organization",
+      "fieldName": "repositories.organization",
       "displayName": "Repositories Organization",
       "displayType": "keyword",
       "active": false,
@@ -541,7 +541,7 @@
       "rangeStep": 1
     },
     {
-      "field": "repositories.url",
+      "fieldName": "repositories.url",
       "displayName": "Repositories Url",
       "displayType": "keyword",
       "active": false,
@@ -553,7 +553,7 @@
       "rangeStep": 1
     },
     {
-      "field": "study_id",
+      "fieldName": "study_id",
       "displayName": "Study ID",
       "displayType": "id",
       "active": false,

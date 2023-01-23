@@ -93,7 +93,7 @@ pipeline {
     version = sh(
       returnStdout: true,
       script: 'cat lerna.json | ' +
-        'grep "version" | ' +
+        'grep "version" -m 1 | ' +
         'cut -d : -f2 | ' +
         "sed \'s:[\",]::g\'"
     ).trim()

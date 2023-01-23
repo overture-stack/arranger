@@ -1,12 +1,16 @@
 import getNestedFields from './getNestedFields';
 
-let addMappingsToTypes = ({ graphQLType, mapping }) => [
-  graphQLType.name,
-  {
-    ...graphQLType,
-    mapping,
-    nested_fields: getNestedFields(mapping),
-  },
-];
+let addMappingsToTypes = ({ graphQLType, mapping }) => {
+	const nested_fieldNames = getNestedFields(mapping);
+
+	return [
+		graphQLType.name,
+		{
+			...graphQLType,
+			mapping,
+			nested_fieldNames,
+		},
+	];
+};
 
 export default addMappingsToTypes;

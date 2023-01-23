@@ -11,7 +11,9 @@
     "moduleNameMapper": {
       "\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
     },
-    "testURL": "http://localhost/"
+    "testEnvironmentOptions": {
+      "url": "http://localhost/"
+    }
   },
   "dependencies": {
     "@overture-stack/arranger-components": "^3.0.0-beta.14"
@@ -24,8 +26,10 @@
   },
   "prettier": {
     "printWidth": 100,
+    "semi": true,
+    "singleQuote": true,
     "trailingComma": "all",
-    "singleQuote": true
+    "useTabs": true
   },
   "version": "3.0.0-beta.14"
 }

@@ -20,7 +20,7 @@ export const extendColumns = (tableConfig = {}, extendedFields = []) => ({
 
 export const extendFields = (mappingFields, extendedFromFile) => {
   return flattenMapping(mappingFields)?.map(
-    ({ fieldName = '', type: typeFromMapping = 'keyword', ...rest }) => {
+    ({ field: fieldName = '', type: typeFromMapping = 'keyword', ...rest }) => {
       const {
         active = false,
         displayName = startCase(fieldName.replace(/\./g, ' ')),

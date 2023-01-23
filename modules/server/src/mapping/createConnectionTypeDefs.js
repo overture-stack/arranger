@@ -1,7 +1,7 @@
 import mappingToAggsType from './mappingToAggsType';
 
 export default ({ type, fields = '', createStateTypeDefs = true }) => {
-  return `
+	return `
     type ${type.name} {
       aggregations(
         filters: JSON

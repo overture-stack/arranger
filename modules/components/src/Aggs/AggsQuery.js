@@ -11,35 +11,36 @@ export default ({
 	apiFetcher = defaultApiFetcher,
 	...props
 }) => {
-	return !index || !aggs.length ? (
-		''
-	) : (
+	return index && aggs.length ? (
 		<Query
+			endpointTag={`${capitalize(index)}AggregationsQuery`}
+			query={`
+				query ${capitalize(index)}AggregationsQuery(
+					$fieldNames: [String]
+					$sqon: JSON
+				) {
+					${index} {
+						aggregations (
+							aggregations_filter_themselves: false
+							filters: $sqon
+						){
+							${aggs.map((x) => x.query || queryFromAgg(x))}
+						}
+
+						configs {
+							extended(fieldNames: $fieldNames)
+						}
+					}
+				}
+			`}
 			renderError
-			name={`${capitalize(index)}AggregationsQuery`}
 			variables={{
-				fields: aggs.map((x) => x?.field?.replace?.(/__/g, '.')),
+				fieldNames: aggs.map((x) => x?.fieldName?.replace?.(/__/g, '.')),
 				sqon,
 			}}
-			query={`
-        query ${capitalize(index)}AggregationsQuery(
-          $fields: [String]
-          $sqon: JSON
-        ) {
-          ${index} {
-            aggregations (
-              aggregations_filter_themselves: false
-              filters: $sqon
-            ){
-              ${aggs.map((x) => x.query || queryFromAgg(x))}
-            }
-            configs {
-              extended(fields: $fields)
-            }
-          }
-        }
-      `}
 			{...{ apiFetcher, ...props }}
 		/>
+	) : (
+		''
 	);
 };

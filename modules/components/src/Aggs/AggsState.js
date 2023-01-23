@@ -6,32 +6,34 @@ import { withData } from '@/DataContext';
 import defaultApiFetcher from '../utils/api';
 import esToAggTypeMap from '../utils/esToAggTypeMap';
 
-export const queryFromAgg = ({ field, type }) =>
+export const queryFromAgg = ({ fieldName, type }) =>
 	type === 'Aggregations'
 		? `
-        ${field} {
-          buckets {
-            doc_count
-            key_as_string
-            key
-          }
-        }
-      `
+			${fieldName} {
+				buckets {
+					doc_count
+					key_as_string
+					key
+				}
+			}
+		`
 		: `
-      ${field} {
-        stats {
-          max
-          min
-          count
-          avg
-          sum
-        }
-      }
-      `;
+			${fieldName} {
+				stats {
+					max
+					min
+					count
+					avg
+					sum
+				}
+			}
+		`;
 
-const getMappingTypeOfField = ({ mapping = {}, field = '' }) => {
-	const mappingPath = field?.split?.('__')?.join?.('.properties.');
-	return esToAggTypeMap[get(mapping, mappingPath)?.type];
+const getMappingTypeOfField = ({ mapping = {}, fieldName = '' }) => {
+	const mappingPath = fieldName?.split?.('__')?.join?.('.properties.');
+	const fieldType = get(mapping, mappingPath)?.type;
+
+	return esToAggTypeMap[fieldType];
 };
 
 class AggsState extends Component {
@@ -41,7 +43,8 @@ class AggsState extends Component {
 		if (
 			!(
 				isEqual(this.props.documentType, prev.documentType) &&
-				isEqual(this.props.facetsConfigs, prev.facetsConfigs)
+				isEqual(this.props.facetsConfigs, prev.facetsConfigs) &&
+				this.props.facetsConfigs?.aggregations?.length === this.state.aggs.length
 			)
 		) {
 			this.fetchAggsState(this.props);
@@ -93,9 +96,9 @@ class AggsState extends Component {
 	//   });
 	// }, 300);
 
-	update = ({ field, key, value }) => {
-		let agg = this.state.temp.find((x) => x.field === field);
-		let index = this.state.temp.findIndex((x) => x.field === field);
+	update = ({ fieldName, key, value }) => {
+		let agg = this.state.temp.find((x) => x.fieldName === fieldName);
+		let index = this.state.temp.findIndex((x) => x.fieldName === fieldName);
 		let temp = Object.assign([], this.state.temp, {
 			[index]: { ...agg, [key]: value },
 		});
@@ -122,7 +125,8 @@ class AggsState extends Component {
 		return this.props.render({
 			update: this.update,
 			aggs: temp.map((x) => {
-				const type = getMappingTypeOfField({ field: x.field, mapping }) || x.type;
+				const type = getMappingTypeOfField({ fieldName: x.fieldName, mapping }) || x.type;
+
 				return {
 					...x,
 					type,

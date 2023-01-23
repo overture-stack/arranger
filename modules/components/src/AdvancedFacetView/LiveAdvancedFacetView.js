@@ -8,52 +8,55 @@ import noopFn, { emptyObj } from '@/utils/noops';
 import AdvancedFacetView from './';
 
 const fetchGraphqlQuery = async ({ query, variables = null, apiFetcher = defaultApiFetcher }) =>
-  apiFetcher({
-    endpoint: `/graphql`,
-    body: {
-      query: query,
-      variables,
-    },
-  }).then((data) => data.data);
+	apiFetcher({
+		endpoint: `/graphql`,
+		body: {
+			query: query,
+			variables,
+		},
+	}).then((data) => data.data);
 
 const fetchMappingData = async (fetchConfig) =>
-  fetchGraphqlQuery({
-    query: `{
+	fetchGraphqlQuery({
+		query: `{
       ${fetchConfig.index} {
-        mapping,
         configs {
           extended,
           facets {
             aggregations {
-              field, active
+              active,
+              fieldName
             }
           }
         }
+        mapping,
       }
     }`,
-    ...fetchConfig,
-  }).then((data) => data[fetchConfig.index]);
+		...fetchConfig,
+	}).then((data) => data[fetchConfig.index]);
 
 const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
-  const fetchConfig = { index, apiFetcher };
-  const serializeToGraphQl = (aggName) => aggName.split('.').join('__');
-  const serializeToPath = (aggName) => aggName.split('__').join('.');
-  const allAggsNames = extended.map((entry) => entry.field).map(serializeToGraphQl);
-  const getAggregationQuery = () =>
-    allAggsNames
-      .map((aggName) => {
-        const aggType = extended.find((entry) => serializeToGraphQl(entry.field) === aggName).type;
-        return `
+	const fetchConfig = { index, apiFetcher };
+	const serializeToGraphQl = (aggName) => aggName.split('.').join('__');
+	const serializeToPath = (aggName) => aggName.split('__').join('.');
+	const allAggsNames = extended.map((entry) => entry.fieldName).map(serializeToGraphQl);
+	const getAggregationQuery = () =>
+		allAggsNames
+			.map((aggName) => {
+				const aggType = extended.find(
+					(entry) => serializeToGraphQl(entry.fieldName) === aggName,
+				).type;
+				return `
           ${aggName} {
             ${
-              esToAggTypeMap[aggType] === 'Aggregations'
-                ? `buckets { key key_as_string doc_count }`
-                : `stats { max min avg sum }`
-            }
+							esToAggTypeMap[aggType] === 'Aggregations'
+								? `buckets { key key_as_string doc_count }`
+								: `stats { max min avg sum }`
+						}
           }`;
-      })
-      .join('');
-  const query = `
+			})
+			.join('');
+	const query = `
     query ($sqon: JSON){
       ${index} {
         aggregations (
@@ -62,145 +65,146 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
         ) { ${getAggregationQuery()} }
       }
     }`;
-  return fetchGraphqlQuery({
-    query,
-    variables: { sqon },
-    ...fetchConfig,
-  }).then((data) => ({
-    aggregations: Object.keys(data[index].aggregations || {}).reduce(
-      (agg, key) => ({
-        ...agg,
-        [serializeToPath(key)]: data[index].aggregations[key],
-      }),
-      {},
-    ),
-  }));
+	return fetchGraphqlQuery({
+		query,
+		variables: { sqon },
+		...fetchConfig,
+	}).then((data) => ({
+		aggregations: Object.keys(data[index].aggregations || {}).reduce(
+			(agg, key) => ({
+				...agg,
+				[serializeToPath(key)]: data[index].aggregations[key],
+			}),
+			{},
+		),
+	}));
 };
 
 const removeFieldTypesFromMapping = ({
-  mapping,
-  extended,
-  parentField = null,
-  fieldTypesToExclude = [],
+	mapping,
+	extended,
+	parentField = null,
+	fieldTypesToExclude = [],
 }) => {
-  const output = {
-    ...Object.entries(mapping).reduce((acc, [key, val]) => {
-      const currentField = `${parentField ? `${parentField}.` : ''}${key}`;
-      const isId = fieldTypesToExclude.some(
-        (type) => type === extended.find((ex) => ex.field === currentField)?.type,
-      );
-      const toSpread = !isId
-        ? {
-            ...(val.properties
-              ? {
-                  [key]: {
-                    ...val,
-                    properties: removeFieldTypesFromMapping({
-                      mapping: val.properties,
-                      extended,
-                      parentField: currentField,
-                      fieldTypesToExclude,
-                    }),
-                  },
-                }
-              : {
-                  [key]: val,
-                }),
-          }
-        : {};
-      return {
-        ...acc,
-        ...toSpread,
-      };
-    }, {}),
-  };
-  return output;
+	const output = {
+		...Object.entries(mapping).reduce((acc, [key, val]) => {
+			const currentFieldName = `${parentField ? `${parentField}.` : ''}${key}`;
+			const isId = fieldTypesToExclude.some(
+				(type) => type === extended.find((ex) => ex.fieldName === currentFieldName)?.type,
+			);
+			const toSpread = !isId
+				? {
+						...(val.properties
+							? {
+									[key]: {
+										...val,
+										properties: removeFieldTypesFromMapping({
+											mapping: val.properties,
+											extended,
+											parentField: currentFieldName,
+											fieldTypesToExclude,
+										}),
+									},
+							  }
+							: {
+									[key]: val,
+							  }),
+				  }
+				: {};
+			return {
+				...acc,
+				...toSpread,
+			};
+		}, {}),
+	};
+	return output;
 };
 
 const defaultFieldTypesToExclude = ['id', 'text'];
 
 export default class LiveAdvancedFacetView extends React.Component {
-  constructor(props) {
-    super(props);
-    const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
-    this.state = {
-      mapping: {},
-      extended: [],
-      facets: {},
-      aggregations: null,
-      sqon: sqon || null,
-    };
-    this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
-  }
+	constructor(props) {
+		super(props);
+		const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
+		this.state = {
+			mapping: {},
+			extended: [],
+			facets: {},
+			aggregations: null,
+			sqon: sqon || null,
+		};
+		this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
+	}
 
-  filterExtendedForFetchingAggs = ({ extended, facets }) =>
-    extended?.filter(
-      (e) =>
-        !this.blackListedAggTypes.includes(e.type) &&
-        facets?.aggregations?.find((s) => s.field.split('__').join('.') === e.field)?.active,
-    );
+	filterExtendedForFetchingAggs = ({ extended, facets }) =>
+		extended?.filter(
+			(e) =>
+				!this.blackListedAggTypes.includes(e.type) &&
+				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)
+					?.active,
+		);
 
-  componentDidMount() {
-    const { index, apiFetcher } = this.props;
-    const { sqon } = this.state;
-    const fetchConfig = { index, sqon, apiFetcher };
-    fetchMappingData(fetchConfig).then(({ configs: { extended, facets } = emptyObj, mapping }) => {
-      return fetchAggregationData({
-        extended: this.filterExtendedForFetchingAggs({ extended, facets }),
-        ...fetchConfig,
-      }).then(({ aggregations }) => {
-        const { fieldTypesToExclude = defaultFieldTypesToExclude } = this.props;
+	componentDidMount() {
+		const { index, apiFetcher } = this.props;
+		const { sqon } = this.state;
+		const fetchConfig = { index, sqon, apiFetcher };
+		fetchMappingData(fetchConfig).then(({ configs: { extended, facets } = emptyObj, mapping }) => {
+			return fetchAggregationData({
+				extended: this.filterExtendedForFetchingAggs({ extended, facets }),
+				...fetchConfig,
+			}).then(({ aggregations }) => {
+				const { fieldTypesToExclude = defaultFieldTypesToExclude } = this.props;
 
-        this.setState({
-          mapping: removeFieldTypesFromMapping({
-            mapping,
-            extended,
-            fieldTypesToExclude,
-          }),
-          facets,
-          extended,
-          aggregations,
-        });
-      });
-    });
-  }
+				this.setState({
+					mapping: removeFieldTypesFromMapping({
+						mapping,
+						extended,
+						fieldTypesToExclude,
+					}),
+					facets,
+					extended,
+					aggregations,
+				});
+			});
+		});
+	}
 
-  UNSAFE_componentWillReceiveProps({ sqon }) {
-    if (!isEqual(sqon, this.state.sqon)) {
-      this.setState({ sqon });
-    }
-  }
+	UNSAFE_componentWillReceiveProps({ sqon }) {
+		if (!isEqual(sqon, this.state.sqon)) {
+			this.setState({ sqon });
+		}
+	}
 
-  onSqonFieldChange = ({ sqon }) => {
-    const { onSqonChange = noopFn } = this.props;
-    const { extended, facets } = this.state;
+	onSqonFieldChange = ({ sqon }) => {
+		const { onSqonChange = noopFn } = this.props;
+		const { extended, facets } = this.state;
 
-    fetchAggregationData({
-      ...this.props,
-      extended: this.filterExtendedForFetchingAggs({
-        extended,
-        facets,
-      }),
-      sqon,
-    }).then(({ aggregations }) =>
-      this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
-    );
-  };
+		fetchAggregationData({
+			...this.props,
+			extended: this.filterExtendedForFetchingAggs({
+				extended,
+				facets,
+			}),
+			sqon,
+		}).then(({ aggregations }) =>
+			this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
+		);
+	};
 
-  render() {
-    const { fieldTypesToExclude = defaultFieldTypesToExclude, ...props } = this.props;
-    return (
-      <AdvancedFacetView
-        {...props}
-        rootTypeName={props.documentType}
-        elasticMapping={this.state.mapping}
-        extendedMapping={this.state.extended.filter(
-          (ex) => !fieldTypesToExclude.some((type) => ex.type === type),
-        )}
-        aggregations={this.state.aggregations}
-        onSqonFieldChange={this.onSqonFieldChange}
-        sqon={this.state.sqon}
-      />
-    );
-  }
+	render() {
+		const { fieldTypesToExclude = defaultFieldTypesToExclude, ...props } = this.props;
+		return (
+			<AdvancedFacetView
+				{...props}
+				rootTypeName={props.documentType}
+				elasticMapping={this.state.mapping}
+				extendedMapping={this.state.extended.filter(
+					(ex) => !fieldTypesToExclude.some((type) => ex.type === type),
+				)}
+				aggregations={this.state.aggregations}
+				onSqonFieldChange={this.onSqonFieldChange}
+				sqon={this.state.sqon}
+			/>
+		);
+	}
 }

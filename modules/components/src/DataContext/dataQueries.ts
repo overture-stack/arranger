@@ -1,54 +1,54 @@
 export const downloadsConfigs = `
-  downloads {
-    allowCustomMaxRows
-    maxRows
-  }
+	downloads {
+		allowCustomMaxRows
+		maxRows
+	}
 `;
 
 export const facetsConfigs = `
-  facets {
-    aggregations {
-      field
-      show
-      active
-    }
-  }
+	facets {
+		aggregations {
+			fieldName
+			show
+			active
+		}
+	}
 `;
 
 export const tableConfigs = `
-  table {
-    columns {
-      accessor
-      canChangeShow
-      displayFormat
-      displayName
-      displayValues
-      field
-      id
-      isArray
-      jsonPath
-      query
-      show
-      sortable
-      type
-    }
-    keyField
-    defaultSorting {
-      desc
-      field
-    }
-  }
+	table {
+		columns {
+			accessor
+			canChangeShow
+			displayFormat
+			displayName
+			displayValues
+			fieldName
+			id
+			isArray
+			jsonPath
+			query
+			show
+			sortable
+			type
+		}
+		keyFieldName
+		defaultSorting {
+			desc
+			fieldName
+		}
+	}
 `;
 
 export const componentConfigsQuery = (documentType: string, queryName = '') =>
-  `query ${queryName} {
-    ${documentType} {
-      configs{
-        ${downloadsConfigs}
-        extended
-        ${facetsConfigs}
-        ${tableConfigs}
-      }
-      mapping
-    }
-  }`;
+	`query ${queryName} {
+		${documentType} {
+			configs {
+				${downloadsConfigs}
+				extended
+				${facetsConfigs}
+				${tableConfigs}
+			}
+			mapping
+		}
+	}`;

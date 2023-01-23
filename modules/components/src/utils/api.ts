@@ -13,50 +13,59 @@ let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 const cache = new Map();
 
 const defaultApiFetcher: APIFetcherFn = async (args) => {
-  const key = JSON.stringify(args);
+	const key = JSON.stringify(args);
 
-  if (cache.has(key)) return cache.get(key);
+	if (cache.has(key)) return cache.get(key);
 
-  const { endpoint = '', body, headers = emptyObj, method = 'POST', url = ARRANGER_API } = args;
+	const {
+		body,
+		endpoint = '',
+		endpointTag = '',
+		headers = emptyObj,
+		method = 'POST',
+		url = ARRANGER_API,
+	} = args;
 
-  const response = await axios(urlJoin(url, endpoint), {
-    data: JSON.stringify(body),
-    headers: { ...alwaysSendHeaders, ...headers },
-    method,
-  });
+	const response = await axios(urlJoin(url, endpoint, endpointTag), {
+		data: JSON.stringify(body),
+		headers: { ...alwaysSendHeaders, ...headers },
+		method,
+	});
 
-  cache.set(key, response);
+	cache.set(key, response);
 
-  return response;
+	return response;
 };
 
-export const graphql = (body: unknown) => defaultApiFetcher({ endpoint: 'graphql', body });
+export const graphql = (body = { endpointTag: '' }) =>
+	defaultApiFetcher({ endpoint: 'graphql', endpointTag: body?.endpointTag, body });
 
 export const fetchExtendedMapping = ({
-  documentType,
-  apiFetcher = defaultApiFetcher,
+	documentType,
+	apiFetcher = defaultApiFetcher,
 }: {
-  documentType: string;
-  apiFetcher: APIFetcherFn;
+	documentType: string;
+	apiFetcher: APIFetcherFn;
 }) =>
-  apiFetcher({
-    endpoint: `/graphql/extendedMapping`,
-    body: {
-      query: `query extendedMapping
-        {
-          ${documentType}{
-            extended
-          }
-        }
-      `,
-    },
-  }).then((response) => ({
-    extendedMapping: response.data[documentType].extended,
-  }));
+	apiFetcher({
+		endpoint: `graphql`,
+		endpointTag: `extendedMapping`,
+		body: {
+			query: `
+				query extendedMapping {
+					${documentType} {
+						extended
+					}
+				}
+			`,
+		},
+	}).then((response) => ({
+		extendedMapping: response.data[documentType].extended,
+	}));
 
 export const addHeaders = (headers: Headers) => {
-  alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
-  addDownloadHttpHeaders(headers);
+	alwaysSendHeaders = { ...alwaysSendHeaders, ...headers };
+	addDownloadHttpHeaders(headers);
 };
 
 export const getAlwaysAddHeaders = () => alwaysSendHeaders;
