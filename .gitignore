@@ -11,3 +11,6 @@ integration-tests/ui
 .vscode
 .groovylintrc.json
 .env
+
+# pycharm
+.idea

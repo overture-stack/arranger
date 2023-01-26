@@ -1,0 +1,14 @@
+{
+   "op":"and",
+   "content":[
+      {
+         "op":"in",
+         "content":{
+            "field":"container_code",
+            "value":[
+               "project"
+            ]
+         }
+      }
+   ]
+}
