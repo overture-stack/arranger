@@ -11,12 +11,11 @@ NodeJs version: `v14.21.0`; NPM version: `6.14.17`. Recommended to use node vers
 ### Installation
 1. ``cd server-filter``
 2. ``npm install``
-3. Set ``.env`` to point to desired server port, arranger project ID, and elasticsearch instance.
 
-```
-npm i -g @arranger/server
-arranger-server
-```
+### Start-up
+1. Set ``.env`` to point to desired server port, arranger project ID, and elasticsearch instance.
+2. Run `node server.js`
+
 
 ### Important notes
 1. User role filters are under `/auth`, which represents a SQON in JSON.
