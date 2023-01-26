@@ -1,0 +1,30 @@
+{
+  "name": "testerserver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@arranger/schema": "^2.19.4",
+    "@arranger/server": "2.19.3",
+    "@elastic/elasticsearch": "^7.17.0",
+    "@types/express-serve-static-core": "4.17.24",
+    "apollo-server-express": "^2.14.2",
+    "express": "^4.18.2",
+    "graphql": "^14.5.3",
+    "graphql-playground-middleware-express": "^1.7.12",
+    "jwt-decode": "^3.1.2",
+    "kind-of": "^6.0.3",
+    "lodash": "^4.17.20",
+    "minimist": "^1.2.5",
+    "through2": "^2.0.3",
+    "jsonpath": "^1.0.0",
+    "date-fns": "^2.29.2"
+  }
+}
