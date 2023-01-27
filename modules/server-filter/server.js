@@ -42,9 +42,9 @@ const server = new ApolloServer({
 const app = express();
 
 // Add Arranger middleware
-server.applyMiddleware({ app, path: '/graphql' });
-server.applyMiddleware({ app, path: `/*/graphql/*`});
-server.applyMiddleware({ app, path: `/*/graphql`});
+server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql`});
+server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql/*`});
+
 
 
 app.listen(PORT, () => {
