@@ -66,7 +66,7 @@ export async function getAllData ({
     esClient: project_info.es,
     query: `
         query ($sqon: JSON) {
-          m1facetalias {
+          ${index} {
             hits(filters: $sqon) {
               total
             }
