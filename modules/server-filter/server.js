@@ -2,6 +2,7 @@ import express from 'express';
 import { Client } from '@elastic/elasticsearch';
 import {ApolloServer} from 'apollo-server-express';
 import {arrangerAuthFilter} from './authFilter.js';
+import {downloader} from "./export/export-file.js";
 
 import {
 	ARRANGER_PROJECT_ID,
@@ -22,12 +23,21 @@ const arrangerFilterFromContext = (context) => (arrangerAuthFilter(context));
 // Manually create ES Client, we need to give arranger this access directly
 const esClient = new Client({node: ELASTICSEARCH});
 
+// Schema for server-side filtering
 const arrangerSchema = await createProjectSchema({
 	es: esClient,
 	id: ARRANGER_PROJECT_ID,
 	graphqlOptions: {},
 	enableAdmin: false,
 	getServerSideFilter: arrangerFilterFromContext,
+})
+
+// Schema for download functionality
+const arrangerSchemaDownload = await createProjectSchema({
+	es: esClient,
+	id: ARRANGER_PROJECT_ID,
+	graphqlOptions: {},
+	enableAdmin: false,
 })
 
 
@@ -46,6 +56,9 @@ server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql`});
 server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql/*`});
 
 
+// Enable export file
+app.use(`/${ARRANGER_PROJECT_ID}/download`, downloader({ projectId: ARRANGER_PROJECT_ID, es: esClient,
+arranger_schema: arrangerSchemaDownload}))
 
 app.listen(PORT, () => {
 	console.log(`Server running on ${PORT}`);
