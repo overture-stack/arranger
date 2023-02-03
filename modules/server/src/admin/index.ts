@@ -1,17 +1,11 @@
-import { addMockFunctionsToSchema, IResolversParameter, mergeSchemas } from 'graphql-tools';
+// import { IResolversParameter } from 'graphql-tools';
+import { addMocksToSchema } from '@graphql-tools/mock';
+import { mergeSchemas } from '@graphql-tools/schema';
 import { ApolloServer } from 'apollo-server-express';
 import { Client } from '@elastic/elasticsearch';
 import { print } from 'graphql/language/printer';
-import { createClient as createElasticsearchClient } from './services/elasticsearch';
+import { GraphQLSchema } from 'graphql';
 
-import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
-import { createSchema as createIndexSchema } from './schemas/IndexSchema';
-import { createSchema as createAggsStateSchema } from './schemas/AggsState';
-import { createSchema as createMatchboxStateSchema } from './schemas/MatchboxState';
-import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
-import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
-import mergedTypeDefs from './schemaTypeDefs';
-import { AdminApiConfig, IQueryContext } from './types';
 import {
   createAggsStateByIndexResolver,
   createColumnsStateByIndexResolver,
@@ -20,7 +14,16 @@ import {
   createIndicesByProjectResolver,
   createMatchBoxStateByIndexResolver,
 } from './resolvers';
+import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
+import { createSchema as createIndexSchema } from './schemas/IndexSchema';
+import { createSchema as createAggsStateSchema } from './schemas/AggsState';
+import { createSchema as createMatchboxStateSchema } from './schemas/MatchboxState';
+import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
+import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
+import mergedTypeDefs from './schemaTypeDefs';
 import { constants } from './services/constants';
+import { createClient as createElasticsearchClient } from './services/elasticsearch';
+import { AdminApiConfig, IQueryContext } from './types';
 
 const createSchema = async () => {
   const typeDefs = mergedTypeDefs;
@@ -40,7 +43,7 @@ const createSchema = async () => {
       collumnsStateSchema,
       extendedMappingShema,
       matchBoxStateSchema,
-      print(typeDefs),
+      print(typeDefs) as unknown as GraphQLSchema, // TODO: this type coercion is smelly
     ],
     resolvers: {
       Project: {
@@ -53,9 +56,9 @@ const createSchema = async () => {
         aggsState: createAggsStateByIndexResolver(aggsStateSchema),
         matchBoxState: createMatchBoxStateByIndexResolver(matchBoxStateSchema),
       },
-    } as IResolversParameter,
+    },
   });
-  addMockFunctionsToSchema({ schema: mergedSchema, preserveResolvers: true });
+  addMocksToSchema({ schema: mergedSchema, preserveResolvers: true });
   return mergedSchema;
 };
 

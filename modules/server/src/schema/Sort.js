@@ -17,7 +17,7 @@ export let typeDefs = `
   }
 
   input Sort {
-    field: String!
+    fieldName: String!
     order: Order
     mode: Mode
     missing: Missing

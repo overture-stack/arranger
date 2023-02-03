@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { HeaderGroup } from '@tanstack/react-table';
+import { flexRender, HeaderGroup } from '@tanstack/react-table';
 import cx from 'classnames';
 import { get } from 'lodash';
 
@@ -96,7 +96,9 @@ const TableHeaderRow = ({
             key={headerObj.id}
             title={label}
           >
-            {headerObj.isPlaceholder ? null : headerObj.renderHeader()}
+            {headerObj.isPlaceholder
+              ? null
+              : flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
           </th>
         );
       })}

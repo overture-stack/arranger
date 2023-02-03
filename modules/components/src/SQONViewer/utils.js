@@ -16,305 +16,311 @@ import { parseSQONParam } from '../utils/uri';
 // } from './types';
 
 function compareTerms(a, b) {
-  return (
-    a.op.toLowerCase() === b.op.toLowerCase() &&
-    (a.content.field ? a.content.field === b.content.field : a.content.entity === b.content.entity)
-  );
+	return (
+		a.op.toLowerCase() === b.op.toLowerCase() &&
+		(a.content.fieldName
+			? a.content.fieldName === b.content.fieldName
+			: a.content.entity === b.content.entity)
+	);
 }
 
 // const sortSQON: TSortSQON = (a, b) => {
 const sortSQON = (a, b) => {
-  if (a.content.field && b.content.field) {
-    return a.content.field.localeCompare(b.content.field);
-  } else if (a.content.field || b.content.field) {
-    return a.content.field ? -1 : 1;
-  } else {
-    return 0;
-  }
+	if (a.content.fieldName && b.content.fieldName) {
+		return a.content.fieldName.localeCompare(b.content.fieldName);
+	} else if (a.content.fieldName || b.content.fieldName) {
+		return a.content.fieldName ? -1 : 1;
+	} else {
+		return 0;
+	}
 };
 
 // export const combineValues: TCombineValues = (x, y) => {
 export const combineValues = (x, y) => {
-  const xValue = [].concat(x.content.value || []);
-  const yValue = [].concat(y.content.value || []);
+	const xValue = [].concat(x.content.value || []);
+	const yValue = [].concat(y.content.value || []);
 
-  if (xValue.length === 0 && yValue.length === 0) return null;
-  if (xValue.length === 0) return y;
-  if (yValue.length === 0) return x;
+	if (xValue.length === 0 && yValue.length === 0) return null;
+	if (xValue.length === 0) return y;
+	if (yValue.length === 0) return x;
 
-  const merged = {
-    op: x.op,
-    content: {
-      field: x.content.field,
-      value: xValue
-        .reduce((acc, v) => {
-          if (acc.includes(v)) return acc.filter((f) => f !== v);
-          return [...acc, v];
-        }, yValue)
-        .sort(),
-    },
-  };
+	const merged = {
+		op: x.op,
+		content: {
+			fieldName: x.content.fieldName,
+			value: xValue
+				.reduce((acc, v) => {
+					if (acc.includes(v)) return acc.filter((f) => f !== v);
+					return [...acc, v];
+				}, yValue)
+				.sort(),
+		},
+	};
 
-  return merged.content.value.length ? merged : null;
+	return merged.content.value.length ? merged : null;
 };
 
 // export const addInValue: TCombineValues = (x, y) => {
 export const addInValue = (x, y) => {
-  const xValue = [].concat(x.content.value || []);
-  const yValue = [].concat(y.content.value || []);
+	const xValue = [].concat(x.content.value || []);
+	const yValue = [].concat(y.content.value || []);
 
-  if (xValue.length === 0 && yValue.length === 0) return null;
-  if (xValue.length === 0) return y;
-  if (yValue.length === 0) return x;
+	if (xValue.length === 0 && yValue.length === 0) return null;
+	if (xValue.length === 0) return y;
+	if (yValue.length === 0) return x;
 
-  const merged = {
-    op: 'in',
-    content: {
-      field: x.content.field,
-      value: xValue
-        .reduce((acc, v) => {
-          if (acc.includes(v)) return acc;
-          return [...acc, v];
-        }, yValue)
-        .sort(),
-    },
-  };
+	const merged = {
+		op: 'in',
+		content: {
+			fieldName: x.content.fieldName,
+			value: xValue
+				.reduce((acc, v) => {
+					if (acc.includes(v)) return acc;
+					return [...acc, v];
+				}, yValue)
+				.sort(),
+		},
+	};
 
-  return merged.content.value.length ? merged : null;
+	return merged.content.value.length ? merged : null;
 };
 
 // export const toggleSQON: TMergeSQON = (q, ctxq) => {
 export const toggleSQON = (q, ctxq) => {
-  if (!ctxq && !q) return null;
-  if (!ctxq) return q;
-  if (!q) return ctxq;
+	if (!ctxq && !q) return null;
+	if (!ctxq) return q;
+	if (!q) return ctxq;
 
-  const merged = {
-    op: 'and',
-    content: ctxq.content
-      .reduce((acc, ctx) => {
-        const found = acc.find((a) => compareTerms(a, ctx));
-        if (!found) return [...acc, ctx];
-        return [...acc.filter((y) => !compareTerms(y, found)), combineValues(found, ctx)].filter(
-          Boolean,
-        );
-      }, q.content)
-      .sort(sortSQON),
-  };
+	const merged = {
+		op: 'and',
+		content: ctxq.content
+			.reduce((acc, ctx) => {
+				const found = acc.find((a) => compareTerms(a, ctx));
+				if (!found) return [...acc, ctx];
+				return [...acc.filter((y) => !compareTerms(y, found)), combineValues(found, ctx)].filter(
+					Boolean,
+				);
+			}, q.content)
+			.sort(sortSQON),
+	};
 
-  return merged.content.length ? merged : null;
+	return merged.content.length ? merged : null;
 };
 
 // export const replaceSQON: TMergeSQON = (q, ctxq) => {
 export const replaceSQON = (q, ctxq) => {
-  if (!ctxq && !q) return null;
-  if (!ctxq) return q;
-  if (!q) return ctxq;
+	if (!ctxq && !q) return null;
+	if (!ctxq) return q;
+	if (!q) return ctxq;
 
-  const merged = {
-    op: 'and',
-    content: ctxq.content
-      .reduce((acc, ctx) => {
-        const found = acc.find((a) => compareTerms(a, ctx));
-        if (!found) return [...acc, ctx];
-        return acc;
-      }, q.content)
-      .sort(sortSQON),
-  };
+	const merged = {
+		op: 'and',
+		content: ctxq.content
+			.reduce((acc, ctx) => {
+				const found = acc.find((a) => compareTerms(a, ctx));
+				if (!found) return [...acc, ctx];
+				return acc;
+			}, q.content)
+			.sort(sortSQON),
+	};
 
-  return merged.content.length ? merged : null;
+	return merged.content.length ? merged : null;
 };
 
 // export const addInSQON: TMergeSQON = (q, ctxq) => {
 export const addInSQON = (q, ctxq) => {
-  if (!ctxq && !q) return null;
-  if (!ctxq) return q;
-  if (!q) return ctxq;
+	if (!ctxq && !q) return null;
+	if (!ctxq) return q;
+	if (!q) return ctxq;
 
-  const merged = {
-    op: 'and',
-    content: ctxq.content
-      .reduce((acc, ctx) => {
-        const found = acc.find((a) => compareTerms(a, ctx));
-        if (!found) return [...acc, ctx];
-        return [
-          ...acc.filter((y) => y.content.field !== found.content.field),
-          addInValue(found, ctx),
-        ].filter(Boolean);
-      }, q.content)
-      .sort(sortSQON),
-  };
+	const merged = {
+		op: 'and',
+		content: ctxq.content
+			.reduce((acc, ctx) => {
+				const found = acc.find((a) => compareTerms(a, ctx));
+				if (!found) return [...acc, ctx];
+				return [
+					...acc.filter((y) => y.content.fieldName !== found.content.fieldName),
+					addInValue(found, ctx),
+				].filter(Boolean);
+			}, q.content)
+			.sort(sortSQON),
+	};
 
-  return merged.content.length ? merged : null;
+	return merged.content.length ? merged : null;
 };
 
-// export const replaceFieldSQON: TMergeSQON = (field, q, ctxq) => {
-export const replaceFieldSQON = (field, q, ctxq) => {
-  if (!ctxq && !q) return null;
-  if (!ctxq) return q;
-  if (!q) return ctxq;
+// export const replaceFieldSQON: TMergeSQON = (fieldName, q, ctxq) => {
+export const replaceFieldSQON = (fieldName, q, ctxq) => {
+	if (!ctxq && !q) return null;
+	if (!ctxq) return q;
+	if (!q) return ctxq;
 
-  const merged = {
-    op: 'and',
-    content: ctxq.content
-      .filter((condition) => condition?.content?.field !== field)
-      .concat(q?.content || [])
-      .sort(sortSQON),
-  };
+	const merged = {
+		op: 'and',
+		content: ctxq.content
+			.filter((condition) => condition?.content?.fieldName !== fieldName)
+			.concat(q?.content || [])
+			.sort(sortSQON),
+	};
 
-  return merged.content.length ? merged : null;
+	return merged.content.length ? merged : null;
 };
 
 // export const replaceFilterSQON: TMergeSQON = (q, ctxq) => {
 export const replaceFilterSQON = (q, ctxq) => {
-  const { entity, fields, value } = q?.content?.[0]?.content || {};
-  const merged = {
-    op: 'and',
-    content: [
-      ...(ctxq?.content?.filter((x) =>
-        entity ? !(x.op === 'filter' && x.content.entity === entity) : x.op !== 'filter',
-      ) || []),
-      ...(!fields?.length || !value?.length ? [] : q.content),
-    ].sort(sortSQON),
-  };
-  return merged.content.length ? merged : null;
+	const { entity, fieldNames, value } = q?.content?.[0]?.content || {};
+	const merged = {
+		op: 'and',
+		content: [
+			...(ctxq?.content?.filter((x) =>
+				entity ? !(x.op === 'filter' && x.content.entity === entity) : x.op !== 'filter',
+			) || []),
+			...(!fieldNames?.length || !value?.length ? [] : q.content),
+		].sort(sortSQON),
+	};
+	return merged.content.length ? merged : null;
 };
 
 export const currentFilterValue = (sqon, entity = null) =>
-  sqon?.content?.find(
-    ({ op, content }) => op === 'filter' && (!entity || entity === content.entity),
-  )?.content?.value || '';
+	sqon?.content?.find(
+		({ op, content }) => op === 'filter' && (!entity || entity === content.entity),
+	)?.content?.value || '';
 
 // const mergeFns: TMergeFns = (v) => {
 const mergeFns = (v) => {
-  switch (v) {
-    case 'toggle':
-      return toggleSQON;
-    case 'add':
-      return addInSQON;
-    default:
-      return replaceSQON;
-  }
+	switch (v) {
+		case 'toggle':
+			return toggleSQON;
+		case 'add':
+			return addInSQON;
+		default:
+			return replaceSQON;
+	}
 };
 
 // const filterByWhitelist: TFilterByWhitelist = (obj, wls) =>
 const filterByWhitelist = (obj, wls) =>
-  Object.keys(obj || {}).reduce((acc, k) => (wls.includes(k) ? { ...acc, [k]: obj[k] } : acc), {});
+	Object.keys(obj || {}).reduce((acc, k) => (wls.includes(k) ? { ...acc, [k]: obj[k] } : acc), {});
 
 // export const mergeQuery: TMergeQuery = (q, c, mergeType, whitelist) => {
 export const mergeQuery = (q, c, mergeType, whitelist) => {
-  const ctx = c || {};
-  const query = q || {};
-  const wlCtx = whitelist ? filterByWhitelist(ctx, whitelist) : ctx;
+	const ctx = c || {};
+	const query = q || {};
+	const wlCtx = whitelist ? filterByWhitelist(ctx, whitelist) : ctx;
 
-  // const mQs: Object = {
-  const mQs = {
-    ...wlCtx,
-    ...query,
-  };
+	// const mQs: Object = {
+	const mQs = {
+		...wlCtx,
+		...query,
+	};
 
-  return {
-    ...mQs,
-    sqon: mergeFns(mergeType)(query.sqon, parseSQONParam(wlCtx.sqon, null)),
-  };
+	return {
+		...mQs,
+		sqon: mergeFns(mergeType)(query.sqon, parseSQONParam(wlCtx.sqon, null)),
+	};
 };
 
 // export const setSQON = ({ value, field }: TValueContent) => ({
-export const setSQON = ({ value, field }) => ({
-  op: 'and',
-  content: [
-    {
-      op: 'in',
-      content: { field, value: [].concat(value || []) },
-    },
-  ],
+export const setSQON = ({ value, fieldName }) => ({
+	op: 'and',
+	content: [
+		{
+			op: 'in',
+			content: { fieldName, value: [].concat(value || []) },
+		},
+	],
 });
 
 // export const setSQONContent = (sqonContent: Array<TValueSQON>): ?TGroupSQON =>
 export const setSQONContent = (sqonContent) =>
-  sqonContent.length
-    ? {
-        op: 'and',
-        content: sqonContent,
-      }
-    : null;
+	sqonContent.length
+		? {
+				op: 'and',
+				content: sqonContent,
+		  }
+		: null;
 
 // returns current value for a given field / operation
-export const currentFieldValue = ({ sqon, dotField, op }) =>
-  sqon?.content?.find((content) => content.content?.field === dotField && content.op === op)
-    ?.content.value;
+export const currentFieldValue = ({ sqon, dotFieldName, op }) =>
+	sqon?.content?.find((content) => content.content?.fieldName === dotFieldName && content.op === op)
+		?.content.value;
 
 // true if field and value in
 export const inCurrentSQON = ({
-  currentSQON,
-  value,
-  dotField,
-  // }: {
-  //   currentSQON: TGroupSQON,
-  //   dotField: string,
-  //   value: string,
-  // }): boolean => {
+	currentSQON,
+	value,
+	dotFieldName,
+	// }: {
+	//   currentSQON: TGroupSQON,
+	//   dotFieldName: string,
+	//   value: string,
+	// }): boolean => {
 }) => {
-  const content = currentSQON?.content;
-  return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
-    (f) => f.content?.field === dotField && [].concat(f.content.value || []).includes(value),
-  );
+	const content = currentSQON?.content;
+	return (Array.isArray(content) ? content : [].concat(currentSQON || [])).some(
+		(f) =>
+			f.content?.fieldName === dotFieldName && [].concat(f.content.value || []).includes(value),
+	);
 };
 
 // true if field in
 export const fieldInCurrentSQON = ({
-  currentSQON = [],
-  field,
-  // }: {
-  //   currentSQON: TGroupContent,
-  //   field: string,
-}) => currentSQON.some((f) => f?.content?.field === field);
-
-export const getSQONValue = ({
-  currentSQON,
-  dotField,
-  // }: {
-  //   currentSQON: TGroupContent,
-  // dotField: string,
-}) => currentSQON.find((f) => f.content.field === dotField);
-
-// type TMakeSQON = (fields: [{ field: string, value: string }]) => Object | string;
-// export const makeSQON: TMakeSQON = (fields) => {
-export const makeSQON = (fields) => {
-  if (!fields.length) return {};
-  return {
-    op: 'and',
-    content: fields.map((item) => {
-      return {
-        op: 'in',
-        content: {
-          field: item.field,
-          value: [].concat(item.value || []),
-        },
-      };
-    }),
-  };
+	currentSQON = [],
+	fieldName,
+	// }: {
+	//   currentSQON: TGroupContent,
+	//   fieldName: string,
+}) => {
+	return currentSQON.some((f) => f?.content?.fieldName === fieldName);
 };
 
-// export const removeSQON: TRemoveSQON = (field, sqon) => {
-export const removeSQON = (field, sqon) => {
-  if (!sqon) return null;
-  if (!field) return sqon;
-  if (Object.keys(sqon).length === 0) return sqon;
+export const getSQONValue = ({
+	currentSQON,
+	dotFieldName,
+	// }: {
+	//   currentSQON: TGroupContent,
+	// dotFieldName: string,
+}) => currentSQON.find((f) => f.content.fieldName === dotFieldName);
 
-  if (!Array.isArray(sqon.content)) {
-    const fieldFilter = typeof field === 'function' ? field : (f) => f === field;
-    return fieldFilter(sqon.content.field) ? null : sqon;
-  }
+// type TMakeSQON = (fields: [{ fieldName: string, value: string }]) => Object | string;
+// export const makeSQON: TMakeSQON = (fields) => {
+export const makeSQON = (fields) => {
+	if (!fields.length) return {};
+	return {
+		op: 'and',
+		content: fields.map((field) => {
+			return {
+				op: 'in',
+				content: {
+					fieldName: field.fieldName,
+					value: [].concat(field.value || []),
+				},
+			};
+		}),
+	};
+};
 
-  const filteredContent = sqon.content.map((q) => removeSQON(field, q)).filter(Boolean);
+// export const removeSQON: TRemoveSQON = (fieldName, sqon) => {
+export const removeSQON = (fieldName, sqon) => {
+	if (!sqon) return null;
+	if (!fieldName) return sqon;
+	if (Object.keys(sqon).length === 0) return sqon;
 
-  return filteredContent.length
-    ? {
-        ...sqon,
-        content: filteredContent,
-      }
-    : null;
+	if (!Array.isArray(sqon.content)) {
+		const fieldFilter =
+			typeof fieldName === 'function' ? fieldName : (input) => input === fieldName;
+		return fieldFilter(sqon.content.fieldName) ? null : sqon;
+	}
+
+	const filteredContent = sqon.content.map((q) => removeSQON(fieldName, q)).filter(Boolean);
+
+	return filteredContent.length
+		? {
+				...sqon,
+				content: filteredContent,
+		  }
+		: null;
 };
 
 export default makeSQON;

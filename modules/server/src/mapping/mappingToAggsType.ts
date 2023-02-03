@@ -1,4 +1,5 @@
 import { flattenDeep } from 'lodash';
+
 import esToAggTypeMap from './esToAggTypeMap';
 
 // add two underscores after a value if it's truthy (not an empty string)
@@ -8,17 +9,17 @@ import esToAggTypeMap from './esToAggTypeMap';
 // vs
 // diagnoses__treatments 👍
 type TAppendUnderscores = (a: string) => string;
-let appendUnderscores: TAppendUnderscores = (x) => (x ? x + '__' : '');
+const appendUnderscores: TAppendUnderscores = (x) => (x ? x + '__' : '');
 
-let mappingToAggsType = (properties, parent = '') => {
-  return flattenDeep(
+const mappingToAggsType = (properties, parent = '') =>
+  flattenDeep(
     Object.entries(properties)
-      .filter(([field, data]) => (data.type && data.type !== 'nested') || data.properties)
-      .map(([field, data]) =>
-        data.type && data.type !== 'nested'
-          ? `${appendUnderscores(parent) + field}: ${esToAggTypeMap[data.type]}`
-          : mappingToAggsType(data.properties, appendUnderscores(parent) + field),
+      .filter(([fieldName, data]) => data?.properties || data?.type)
+      .map(([fieldName, data]) =>
+        data?.properties
+          ? mappingToAggsType(data.properties, appendUnderscores(parent) + fieldName)
+          : `${appendUnderscores(parent) + fieldName}: ${esToAggTypeMap[data.type]}`,
       ),
   );
-};
+
 export default mappingToAggsType;

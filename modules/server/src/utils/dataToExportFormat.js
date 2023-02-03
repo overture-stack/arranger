@@ -13,7 +13,9 @@ const getAllValue = (data) => {
 };
 
 const getValue = (row, column) => {
-  const valueFromExtended = (value) => (column.displayValues || {})[value] || value;
+  const valueFromExtended = (value) =>
+    (column.extendedDisplayValues || {})[value] || column.isArray ? value.join(';') : value;
+
   if (column.jsonPath) {
     return jsonPath
       .query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))

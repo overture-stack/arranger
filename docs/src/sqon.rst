@@ -19,7 +19,7 @@ A SQON object consists of nested objects of two types: **Operations** and **Valu
 
   OR
 
-  **Field Operation** 
+  **Field Operation**
     that applies to a filter to Value Object
 
     ::
@@ -30,13 +30,13 @@ A SQON object consists of nested objects of two types: **Operations** and **Valu
       }
 
 
-**Value objects** 
+**Value objects**
   specify a list the field name and values for it that the wrapping . This filter can specify to include or exclude fields with any of the listed values. It will have the following format:
 
   ::
 
     {
-      "field":"", //name of the field this operation applies to
+      "fieldName":"", //name of the field this operation applies to
       "value":[] //List of values for the field if using the "in" operation, or a scalar value for ">=" and "<=" operations
     }
 
@@ -55,7 +55,7 @@ Sample
           {
             op: "in",
             content: {
-              field: "id",
+              fieldName: "id",
               value: ["id123"]
             }
           }
@@ -64,7 +64,7 @@ Sample
       {
         op: "in",
         content: {
-          field: "id",
+          fieldName: "id",
           value: ["id123"]
         }
       }

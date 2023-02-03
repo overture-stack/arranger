@@ -3,7 +3,8 @@ import { isNil } from 'lodash';
 
 export const STANDARD_DATE = 'yyyy-MM-dd';
 
-const displayFormatter = (value: string, { displayFormat = STANDARD_DATE, ...props }: any) => {
+const displayFormatter = (value: string, { displayFormat, ...props }: any) => {
+  displayFormat ??= STANDARD_DATE; // handle `null`
   switch (true) {
     case isNil(value):
       return '';

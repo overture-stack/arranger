@@ -1,6 +1,7 @@
-import columnTypes from './columnTypes';
 import { withProps } from 'recompose';
 import { isNil, sortBy } from 'lodash';
+
+import columnTypes from './columnTypes';
 
 export function getSingleValue(data) {
   if (typeof data === 'object' && data) {
@@ -28,8 +29,8 @@ export function normalizeColumns({
 
       return {
         ...column,
-        show: typeof column.show === 'boolean' ? column.show : true,
-        Cell: column.Cell || types[column.type],
+        show: typeof column.show === 'boolean' ? column.show : false,
+        Cell: column.Cell || types[column.isArray ? 'list' : column.type],
         hasCustomType: isNil(column.hasCustomType)
           ? !!(customTypes || {})[column.type]
           : column.hasCustomType,

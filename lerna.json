@@ -1,4 +1,9 @@
 {
-  "version": "3.0.0-beta.15",
-  "packages": ["integration-tests/**", "modules/components", "modules/server"]
+	"version": "3.0.0-beta.15",
+	"packages": ["integration-tests/**", "modules/components", "modules/server"],
+	"command": {
+		"bootstrap": {
+			"npmClientArgs": ["--legacy-peer-deps"]
+		}
+	}
 }

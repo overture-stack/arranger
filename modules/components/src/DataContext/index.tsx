@@ -1,7 +1,9 @@
 import { ComponentType, createContext, ReactElement, useContext, useEffect, useState } from 'react';
+import { isEqual } from 'lodash';
 
 import { ThemeProvider } from '@/ThemeContext';
 import defaultApiFetcher from '@/utils/api';
+import { ARRANGER_API, DEBUG } from '@/utils/config';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
 import { emptyObj } from '@/utils/noops';
@@ -23,18 +25,21 @@ export const DataContext = createContext<DataContextInterface>({
  * @param {string} [url] customises where requests should be made by the data fetcher.
  */
 export const DataProvider = ({
+  apiUrl = ARRANGER_API,
   children,
   customFetcher: apiFetcher = defaultApiFetcher,
   documentType,
   legacyProps,
   theme,
-  url,
 }: DataProviderProps): ReactElement<DataContextInterface> => {
   const [sqon, setSQON] = useState<SQONType>(null);
 
   useEffect(() => {
-    setSQON(legacyProps?.sqon);
-  }, [legacyProps?.sqon]);
+    if (legacyProps?.sqon && !isEqual(legacyProps.sqon, sqon)) {
+      DEBUG && console.log('setting sqon from legacyProps');
+      setSQON(legacyProps?.sqon);
+    }
+  }, [legacyProps?.sqon, sqon]);
 
   const {
     documentMapping,
@@ -51,13 +56,15 @@ export const DataProvider = ({
   const fetchData = useDataFetcher({
     apiFetcher,
     documentType,
-    keyField: tableConfigs?.keyField,
+    keyFieldName: tableConfigs?.keyFieldName,
     sqon,
-    url,
+    url: apiUrl,
   });
 
   const contextValues = {
     ...legacyProps,
+    apiFetcher,
+    apiUrl,
     documentMapping,
     downloadsConfigs,
     extendedMapping,
@@ -83,6 +90,7 @@ export const DataProvider = ({
  * @returns {DataContextInterface} data object
  */
 export const useDataContext = ({
+  apiUrl: localApiUrl,
   callerName,
   customFetcher: localFetcher,
 }: UseDataContextProps = emptyObj): DataContextInterface => {
@@ -92,6 +100,7 @@ export const useDataContext = ({
 
   return {
     ...defaultContext,
+    apiUrl: localApiUrl || defaultContext?.apiUrl,
     fetchData: localFetcher || defaultContext?.fetchData,
   };
 };

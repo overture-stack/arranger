@@ -3,7 +3,7 @@
 export const FacetsConfigTypeDefs = `
   type AggregationMapping {
     active: Boolean
-    field: String
+    fieldName: String
     show: Boolean
     type: String
       @deprecated(
@@ -23,7 +23,7 @@ export const TableConfigTypeDefs = `
     displayFormat: String
     displayName: String
     displayValues: JSON
-    field: String
+    fieldName: String
     id: String
     isArray: Boolean
     jsonPath: String
@@ -34,14 +34,14 @@ export const TableConfigTypeDefs = `
   }
 
   type ColumnSorting {
-    field: String
+    fieldName: String
     desc: Boolean
   }
 
   type TableConfig {
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
-    keyField: String
+    keyFieldName: String
   }
 `;
 
@@ -55,10 +55,10 @@ export const DownloadsConfigTypeDefs = `
 export const MatchBoxConfigTypeDefs = `
   type MatchBoxMapping {
     displayName: String
-    field: String
+    fieldName: String
     isActive: Boolean
     keyField: String
-    searchFields: [String]
+    searchFieldNames: [String]
   }
 `;
 
@@ -71,13 +71,13 @@ export const typeDefs = `
   type ConfigsWithState {
     facets: FacetsConfig
     downloads: DownloadsConfig
-    extended(fields: [String]): JSON
+    extended(fieldNames: [String]): JSON
     matchbox: [MatchBoxMapping] # we may want to rethink this one later
     table: TableConfig
   }
 
   type ConfigsWithoutState {
     downloads: DownloadsConfig
-    extended(fields: [String]): JSON
+    extended(fieldNames: [String]): JSON
   }
 `;

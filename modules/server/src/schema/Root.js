@@ -62,65 +62,65 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 `;
 
 export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
-  RootTypeDefs({ types, rootTypes, scalarTypes }),
-  AggregationsTypeDefs,
-  SetTypeDefs,
-  SortTypeDefs,
-  ConfigsTypeDefs,
-  ...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
+	RootTypeDefs({ types, rootTypes, scalarTypes }),
+	AggregationsTypeDefs,
+	SetTypeDefs,
+	SortTypeDefs,
+	ConfigsTypeDefs,
+	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
 
 export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter }) => {
-  return {
-    JSON: GraphQLJSON,
-    Date: GraphQLDate,
-    Root: {
-      viewer: resolveObject,
-      hasValidConfig: async (obj, { documentType, index }) => {
-        const [_, type] = types.find(([name]) => name === documentType) || [];
+	return {
+		JSON: GraphQLJSON,
+		Date: GraphQLDate,
+		Root: {
+			viewer: resolveObject,
+			hasValidConfig: async (obj, { documentType, index }) => {
+				const [_, type] = types.find(([name]) => name === documentType) || [];
 
-        // TODO: make this more useful/verbose;
-        return !!type && index === type.index && Object.keys(type.config).length > 0;
-      },
-      ...[...types, ...rootTypes].reduce(
-        (acc, [key, type]) => ({
-          ...acc,
-          [type.name || key]: resolveObject,
-        }),
-        {},
-      ),
-    },
-    ...types.reduce(
-      (acc, [key, type]) => ({
-        ...acc,
-        ...createConnectionResolvers({
-          createStateResolvers: 'createState' in type ? type.createState : true,
-          enableAdmin,
-          getServerSideFilter,
-          Parallel,
-          type,
-        }),
-      }),
-      {},
-    ),
-    ...rootTypes.reduce(
-      (acc, [key, type]) => ({
-        ...acc,
-        ...(type.resolvers ? { [startCase(key).replace(/\s/g, '')]: type.resolvers } : {}),
-      }),
-      {},
-    ),
-    ...scalarTypes.reduce(
-      (acc, [scalar, resolver]) => ({
-        ...acc,
-        [scalar]: resolver,
-      }),
-      {},
-    ),
-    Mutation: {
-      saveSet: saveSet({ types, getServerSideFilter }),
-    },
-  };
+				// TODO: make this more useful/verbose;
+				return !!type && index === type.index && Object.keys(type.config).length > 0;
+			},
+			...[...types, ...rootTypes].reduce(
+				(acc, [key, type]) => ({
+					...acc,
+					[type.name || key]: resolveObject,
+				}),
+				{},
+			),
+		},
+		...types.reduce(
+			(acc, [key, type]) => ({
+				...acc,
+				...createConnectionResolvers({
+					createStateResolvers: 'createState' in type ? type.createState : true,
+					enableAdmin,
+					getServerSideFilter,
+					Parallel,
+					type,
+				}),
+			}),
+			{},
+		),
+		...rootTypes.reduce(
+			(acc, [key, type]) => ({
+				...acc,
+				...(type.resolvers ? { [startCase(key).replace(/\s/g, '')]: type.resolvers } : {}),
+			}),
+			{},
+		),
+		...scalarTypes.reduce(
+			(acc, [scalar, resolver]) => ({
+				...acc,
+				[scalar]: resolver,
+			}),
+			{},
+		),
+		Mutation: {
+			saveSet: saveSet({ types, getServerSideFilter }),
+		},
+	};
 };

@@ -20,6 +20,7 @@ module.exports = {
     '@emotion/pkg-renaming': 'error',
     '@emotion/styled-import': 'error',
     'jsx-a11y/href-no-hash': 'off',
+    'react/no-unknown-property': ['error', { ignore: ['css'] }],
     'react/prop-types': 'off',
   },
   settings: {

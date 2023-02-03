@@ -2,11 +2,11 @@
   "table": {
     "defaultSorting": [
       {
-        "field": "analysis.analysis_id",
+        "fieldName": "analysis.analysis_id",
         "desc": false
       }
     ],
-    "keyField": "id",
+    "keyFieldName": "id",
     "columns": [
       {
         "accessor": "analysis.analysis_id",

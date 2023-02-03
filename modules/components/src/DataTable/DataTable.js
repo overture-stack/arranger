@@ -3,9 +3,8 @@ import { isEqual } from 'lodash';
 import urlJoin from 'url-join';
 
 import { withData } from '@/DataContext';
+import { ARRANGER_API } from '@/utils/config';
 import noopFn from '@/utils/noops';
-
-import { ARRANGER_API } from '../utils/config';
 
 import { Table, TableToolbar } from './';
 
@@ -86,6 +85,7 @@ class DataTableWithToolbar extends React.Component {
       allowTogglingColumns = true,
       allowTSVExport = true,
       alwaysSorted = [],
+      apiUrl = ARRANGER_API,
       columnDropdownText,
       config,
       customActions = null,
@@ -123,7 +123,7 @@ class DataTableWithToolbar extends React.Component {
     } = this.props;
     const { page, pageSize, sorted, total } = this.state;
 
-    const url = downloadUrl || urlJoin(ARRANGER_API, 'download');
+    const url = downloadUrl || urlJoin(apiUrl, 'download');
 
     return (
       <>
