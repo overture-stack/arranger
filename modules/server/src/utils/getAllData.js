@@ -26,11 +26,13 @@ export default async ({
 	const { configs, esClient, mockSchema, schema } = ctx;
 
 	const stream = new PassThrough({ objectMode: true });
-	const esSort = sort.map(({ field, order }) => ({ [field]: order })).concat({ _id: 'asc' });
+	const esSort = sort
+		.map(({ fieldName, order }) => ({ [fieldName]: order }))
+		.concat({ _id: 'asc' });
 
 	const nestedFieldNames = configs.extendedFields
 		.filter(({ type }) => type === 'nested')
-		.map(({ field }) => field);
+		.map(({ fieldName }) => fieldName);
 
 	const query = buildQuery({ nestedFieldNames, filters: sqon });
 

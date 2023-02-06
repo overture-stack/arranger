@@ -34,7 +34,7 @@ describe('esHitsToTSV accessor columns', () => {
 		dataToTSV({ pipe: stream, ...config });
 	});
 
-	it('2.should accept emptyValue', () => {
+	it('2.should accept valueWhenEmpty', () => {
 		const config = {
 			index: 'file',
 			data: {
@@ -53,7 +53,7 @@ describe('esHitsToTSV accessor columns', () => {
 					accessor: 'test2',
 				},
 			],
-			emptyValue: 'empty',
+			valueWhenEmpty: 'empty',
 		};
 
 		const expected = 'Test1\tTest2\n1\ttxt1\n2\tempty\n';

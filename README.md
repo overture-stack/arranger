@@ -181,7 +181,7 @@ Arranger is a [lerna](https://github.com/lerna/lerna) flavored [monorepo](https:
 
 #### Releasing Instructions
 
-- From `main` branch, run `npm run tag <version>`
-- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=main)
+- Run `npm run tag <version>` from your main local branch, and follow the instructions
+- The publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=main)
 
 _\* The GDC contains many features that are out of Arranger's scope_

@@ -1,26 +1,26 @@
 {
-  "documentType": "model",
-  "index": "models",
-  "facets": {
-    "aggregations": [
-      {
-        "field": "analysis__analysis_id",
-        "active": true,
-        "show": true
-      }
-    ]
-  },
-  "table": {
-    "columns": []
-  },
-  "extended": [],
-  "matchbox": [
-    {
-      "displayName": "file",
-      "field": "",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    }
-  ]
+	"documentType": "model",
+	"index": "models",
+	"facets": {
+		"aggregations": [
+			{
+				"fieldName": "analysis__analysis_id",
+				"active": true,
+				"show": true
+			}
+		]
+	},
+	"table": {
+		"columns": []
+	},
+	"extended": [],
+	"matchbox": [
+		{
+			"displayName": "file",
+			"fieldName": "",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		}
+	]
 }

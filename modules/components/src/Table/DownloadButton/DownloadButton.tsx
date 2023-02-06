@@ -11,7 +11,7 @@ import { useTableContext } from '@/Table/helpers';
 import { useThemeContext } from '@/ThemeContext';
 import { ARRANGER_API } from '@/utils/config';
 import download from '@/utils/download';
-import { emptyObj } from '@/utils/noops';
+import noopFn, { emptyObj } from '@/utils/noops';
 import stringCleaner from '@/utils/stringCleaner';
 
 import { useExporters } from './helpers';
@@ -103,31 +103,37 @@ const DownloadButton = ({
 					content: [
 						{
 							op: 'in',
-							content: { field: exportSelectedRowsField, value: selectedRows },
+							content: { fieldName: exportSelectedRowsField, value: selectedRows },
 						},
 					],
 			  } as unknown as SQONType)
 			: sqon;
 
-	const handleExporterClick = ({
-		exporterColumns,
-		exporterDownloadUrl = downloadUrl,
-		exporterFileName,
-		exporterFunction,
-		exporterLabel,
-		exporterMaxRows = maxRows,
-		exporterRequiresRowSelection,
-	}: ProcessedExporterDetailsInterface) =>
+	const handleExporterClick = (
+		{
+			exporterColumns,
+			exporterDownloadUrl = downloadUrl,
+			exporterFileName,
+			exporterFunction,
+			exporterLabel,
+			exporterMaxRows = maxRows,
+			exporterRequiresRowSelection,
+			exporterValueWhenEmpty: valueWhenEmpty,
+		}: ProcessedExporterDetailsInterface,
+		closeDropDownFn = noopFn,
+	) =>
 		(exporterFunction && exporterRequiresRowSelection && !hasSelectedRows) || !exporterFunction
 			? undefined
-			: () =>
-					exporterFunction?.(
+			: () => {
+					closeDropDownFn();
+					return exporterFunction?.(
 						{
 							files: [
 								{
 									allColumnsDict,
 									columns: Object.values(currentColumnsDict),
 									documentType,
+									exporterColumns,
 									fileName: exporterFileName
 										? `${exporterFileName}${
 												exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
@@ -136,7 +142,7 @@ const DownloadButton = ({
 									fileType: 'tsv',
 									maxRows: exporterMaxRows,
 									sqon: downloadSqon,
-									...(exporterColumns && { exporterColumns }),
+									valueWhenEmpty,
 								},
 							],
 							selectedRows,
@@ -144,6 +150,7 @@ const DownloadButton = ({
 						},
 						download,
 					);
+			  };
 
 	// check if we're given more than one custom exporter
 	return hasMultipleExporters ? (
@@ -153,13 +160,13 @@ const DownloadButton = ({
 			disabled={disableButton}
 			itemSelectionLegend="Select on of the download options"
 			items={exporterDetails as ProcessedExporterDetailsInterface[]}
-			itemToString={(exporter) => {
+			itemToString={(exporter, closeDropDownFn) => {
 				return (
 					<TransparentButton
 						css={css`
 							width: 100%;
 						`}
-						onClick={handleExporterClick(exporter)}
+						onClick={handleExporterClick(exporter, closeDropDownFn)}
 					>
 						<MetaMorphicChild>{exporter.exporterLabel || 'unlabeled exporter'}</MetaMorphicChild>
 					</TransparentButton>

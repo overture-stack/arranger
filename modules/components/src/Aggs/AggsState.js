@@ -125,7 +125,11 @@ class AggsState extends Component {
 		return this.props.render({
 			update: this.update,
 			aggs: temp.map((x) => {
+				// TODO: Refactor here to get aggregation type through extended, rather than mapping
+				// This, to not rely on server "ENABLE_ADMIN"
 				const type = getMappingTypeOfField({ fieldName: x.fieldName, mapping }) || x.type;
+
+				console.log('type', type, x);
 
 				return {
 					...x,

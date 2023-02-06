@@ -110,18 +110,18 @@ const TableToolbar = ({
 
   const hasSelectedRows = selectedTableRows.length > 0;
 
-  const downloadSqon =
-    enableSelectedTableRowsExporterFilter && hasSelectedRows
-      ? {
-          op: 'and',
-          content: [
-            {
-              op: 'in',
-              content: { field: selectedRowsFilterPropertyName, value: selectedTableRows },
-            },
-          ],
-        }
-      : sqon;
+	const downloadSqon =
+		enableSelectedTableRowsExporterFilter && hasSelectedRows
+			? {
+					op: 'and',
+					content: [
+						{
+							op: 'in',
+							content: { fieldName: selectedRowsFilterPropertyName, value: selectedTableRows },
+						},
+					],
+			  }
+			: sqon;
 
   return (
     <div style={{ display: 'flex', flex: 'none', ...style }} className="tableToolbar">

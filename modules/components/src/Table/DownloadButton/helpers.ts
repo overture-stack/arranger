@@ -92,19 +92,21 @@ const prefixExporter = (item: ExporterDetailsInterface) =>
 
 const processExporter = (
 	// type scapehatch for functionality convenience
-	item = 'saveTSV' as any as CustomExportersInput,
+	item = 'saveTSV' as CustomExportersInput,
 ): ProcessedExporterDetailsInterface =>
-	(item as any) === 'saveTSV' ||
-	item?.function === 'saveTSV' ||
-	// or if they give us a filename without giving us a function
+	// if they want to use the internal saveTSV function
+	[item, item?.function].includes('saveTSV') ||
+	// or if they give us a filename without giving us their own function
 	('fileName' in item && !('fn' in item))
 		? {
-				...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item?.columns }),
+				...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item.columns }),
+				// downloadUrl?
 				exporterFileName: item?.fileName || 'unnamed.tsv',
 				exporterFunction: saveTSV,
 				exporterLabel: item?.label || 'Export TSV',
 				exporterMaxRows: item?.maxRows || 0,
 				exporterRequiresRowSelection: item?.requiresRowSelection || false,
+				...(item?.valueWhenEmpty != null && { exporterValueWhenEmpty: item.valueWhenEmpty }),
 		  }
 		: prefixExporter(item);
 
@@ -118,7 +120,7 @@ export const useExporters = (customExporters?: CustomExporterList) => {
 		if (Array.isArray(customExporters)) {
 			if (customExporters.length > 0) {
 				setHasMultiple(customExporters.length > 1);
-				setExporters(customExporters.filter((item) => item).map(processExporter));
+				setExporters(customExporters.filter(Boolean).map(processExporter));
 			}
 		} else {
 			setExporters(processExporter(customExporters));
