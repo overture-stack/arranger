@@ -57,7 +57,7 @@ export const MatchBoxConfigTypeDefs = `
     displayName: String
     fieldName: String
     isActive: Boolean
-    keyField: String
+    keyFieldName: String
     searchFieldNames: [String]
   }
 `;

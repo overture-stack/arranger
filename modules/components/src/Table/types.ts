@@ -30,7 +30,7 @@ export interface TableContextInterface {
 	hasVisibleColumns: boolean;
 	isLoading: boolean;
 	fetchData: FetchDataFn;
-	keyField: string;
+	keyFieldName: string;
 	pageSize: number;
 	missingProvider?: string | false;
 	selectedRows: string[];

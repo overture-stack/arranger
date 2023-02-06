@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
+import cx from 'classnames';
 import { merge } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
@@ -9,442 +10,443 @@ import { useThemeContext } from '@/ThemeContext';
 import noopFn, { emptyObj } from '@/utils/noops';
 
 const DropDownMenu = ({
-  align = 'right',
-  allowControls = false,
-  allowSelection = false,
-  buttonAriaLabelClosed = 'Open selection menu',
-  buttonAriaLabelOpen = 'Close selection menu',
-  children,
-  disabled = false,
-  items = [],
-  itemSelectionLegend = 'Select items',
-  itemToString = (item) => item.label,
-  onChange = noopFn,
-  resetToDefaultAriaLabel = 'Reset to default selection',
-  selectAllAriaLabel = 'Select all items',
-  selectionProperty = 'show',
-  selectionValues = [true],
-  theme: {
-    arrowColor: customArrowColor,
-    arrowDisabledColor: customArrowDisabledColor,
-    arrowTransition: customArrowTransition,
-    css: customDropDownButtonCSS,
-    fontColor: customDropDownFontColor,
+	align = 'right',
+	allowControls = false,
+	allowSelection = false,
+	buttonAriaLabelClosed = 'Open selection menu',
+	buttonAriaLabelOpen = 'Close selection menu',
+	children,
+	className: customClassName = '',
+	disabled = false,
+	items = [],
+	itemSelectionLegend = 'Select items',
+	itemToString = (item, closeDropDown) => item.label,
+	onChange = noopFn,
+	resetToDefaultAriaLabel = 'Reset to default selection',
+	selectAllAriaLabel = 'Select all items',
+	selectionProperty = 'show',
+	selectionValues = [true],
+	theme: {
+		arrowColor: customArrowColor,
+		arrowDisabledColor: customArrowDisabledColor,
+		arrowTransition: customArrowTransition,
+		css: customDropDownButtonCSS,
+		fontColor: customDropDownFontColor,
 
-    // Child Components
-    ListWrapper: {
-      background: customListWrapperBackground,
-      borderColor: customListWrapperBorderColor,
-      borderRadius: customListWrapperBorderRadius,
-      fontColor: customListWrapperFontColor = customDropDownFontColor,
-      fontSize: customListWrapperFontSize,
-      hoverBackground: customListWrapperHoverBackground,
-      maxHeight: customListWrapperMaxHeight,
-      width: customListWrapperWidth,
-    } = emptyObj,
-    SelectionControls: {
-      fontColor: customSelectionControlFontColor = customListWrapperFontColor,
-      fontSize: customSelectionControlFontSize = customListWrapperFontSize,
-      hoverBackground: customSelectionControlHoverBackground = customListWrapperHoverBackground,
-      ...customSelectionControlProps
-    } = emptyObj,
-    ...customDropDownButtonProps
-  } = emptyObj,
+		// Child Components
+		ListWrapper: {
+			background: customListWrapperBackground,
+			borderColor: customListWrapperBorderColor,
+			borderRadius: customListWrapperBorderRadius,
+			fontColor: customListWrapperFontColor = customDropDownFontColor,
+			fontSize: customListWrapperFontSize,
+			hoverBackground: customListWrapperHoverBackground,
+			maxHeight: customListWrapperMaxHeight,
+			width: customListWrapperWidth,
+		} = emptyObj,
+		SelectionControls: {
+			fontColor: customSelectionControlFontColor = customListWrapperFontColor,
+			fontSize: customSelectionControlFontSize = customListWrapperFontSize,
+			hoverBackground: customSelectionControlHoverBackground = customListWrapperHoverBackground,
+			...customSelectionControlProps
+		} = emptyObj,
+		...customDropDownButtonProps
+	} = emptyObj,
 }) => {
-  const [instanceId] = useState(uuid()); // to prevent ID collisions between different dropdowns
-  const [allSelected, setAllSelected] = useState(null);
-  const [isDisabled, setIsDisabled] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef();
-  const itemsRef = useRef([]);
-  const panelRef = useRef();
-  const renderRef = useRef();
-  const {
-    colors,
-    components: {
-      DropDown: {
-        arrowColor: themeArrowColor,
-        arrowDisabledColor: themeArrowDisabledColor,
-        arrowTransition: themeArrowTransition,
-        css: themeDropDownButtonCSS,
-        fontColor: themeDropDownFontColor = colors?.grey?.[800],
+	const [instanceId] = useState(uuid()); // to prevent ID collisions between different dropdowns
+	const [allSelected, setAllSelected] = useState(null);
+	const [isDisabled, setIsDisabled] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
+	const buttonRef = useRef();
+	const itemsRef = useRef([]);
+	const panelRef = useRef();
+	const renderRef = useRef();
+	const {
+		colors,
+		components: {
+			DropDown: {
+				arrowColor: themeArrowColor,
+				arrowDisabledColor: themeArrowDisabledColor,
+				arrowTransition: themeArrowTransition,
+				className: themeClassName,
+				css: themeDropDownButtonCSS,
+				fontColor: themeDropDownFontColor = colors?.grey?.[800],
 
-        // Child Components
-        ListWrapper: {
-          background: themeListWrapperBackground = colors?.grey?.[100],
-          borderColor: themeListWrapperBorderColor = colors?.grey?.[200],
-          borderRadius: themeListWrapperBorderRadius = '0.3rem',
-          fontColor: themeListWrapperFontColor = themeDropDownFontColor,
-          fontSize: themeListWrapperFontSize = '0.8rem',
-          hoverBackground: themeListWrapperHoverBackground = colors?.grey?.[200],
-          maxHeight: themeListWrapperMaxHeight = '15rem',
-          width: themeListWrapperWidth = '12rem',
-        } = emptyObj,
-        SelectionControls: {
-          fontColor: themeSelectionControlFontColor = themeListWrapperFontColor,
-          fontSize: themeSelectionControlFontSize = themeListWrapperFontSize,
-          hoverBackground: themeSelectionControlHoverBackground = themeListWrapperHoverBackground,
-          ...themeSelectionControlProps
-        } = emptyObj,
-        ...themeDropDownButtonProps
-      } = emptyObj,
-    } = emptyObj,
-  } = useThemeContext({ callerName: 'DropDownMenu' });
+				// Child Components
+				ListWrapper: {
+					background: themeListWrapperBackground = colors?.grey?.[100],
+					borderColor: themeListWrapperBorderColor = colors?.grey?.[200],
+					borderRadius: themeListWrapperBorderRadius = '0.3rem',
+					fontColor: themeListWrapperFontColor = themeDropDownFontColor,
+					fontSize: themeListWrapperFontSize = '0.8rem',
+					hoverBackground: themeListWrapperHoverBackground = colors?.grey?.[200],
+					maxHeight: themeListWrapperMaxHeight = '15rem',
+					width: themeListWrapperWidth = '12rem',
+				} = emptyObj,
+				SelectionControls: {
+					fontColor: themeSelectionControlFontColor = themeListWrapperFontColor,
+					fontSize: themeSelectionControlFontSize = themeListWrapperFontSize,
+					hoverBackground: themeSelectionControlHoverBackground = themeListWrapperHoverBackground,
+					...themeSelectionControlProps
+				} = emptyObj,
+				...themeDropDownButtonProps
+			} = emptyObj,
+		} = emptyObj,
+	} = useThemeContext({ callerName: 'DropDownMenu' });
 
-  const buttonTheme = merge(
-    {
-      fontColor: themeDropDownFontColor,
-    },
-    themeDropDownButtonProps,
-    customDropDownButtonProps,
-  );
+	const buttonTheme = merge(
+		{
+			fontColor: themeDropDownFontColor,
+		},
+		themeDropDownButtonProps,
+		customDropDownButtonProps,
+	);
 
-  const checkSelected = useCallback(
-    (item, values) => (values || selectionValues).includes(item[selectionProperty]),
-    [selectionProperty, selectionValues],
-  );
+	const checkSelected = useCallback(
+		(item, values) => (values || selectionValues).includes(item[selectionProperty]),
+		[selectionProperty, selectionValues],
+	);
 
-  const checkIfAllSelected = useCallback(
-    (values) => items.length > 0 && items.every((item) => checkSelected(item, values)),
-    [checkSelected, items],
-  );
+	const checkIfAllSelected = useCallback(
+		(values) => items.length > 0 && items.every((item) => checkSelected(item, values)),
+		[checkSelected, items],
+	);
 
-  const focusNext = (item) => {
-    itemsRef.current?.[(item + 1) % items.length]?.focus?.();
-  };
+	const focusNext = (item) => {
+		itemsRef.current?.[(item + 1) % items.length]?.focus?.();
+	};
 
-  const focusPrev = (item) => {
-    itemsRef.current?.[(item - 1 + items.length) % items.length]?.focus?.();
-  };
+	const focusPrev = (item) => {
+		itemsRef.current?.[(item - 1 + items.length) % items.length]?.focus?.();
+	};
 
-  const focusFirst = () => {
-    itemsRef.current?.[0]?.focus?.();
-  };
+	const focusFirst = () => {
+		itemsRef.current?.[0]?.focus?.();
+	};
 
-  const focusLast = () => {
-    itemsRef.current?.[items.length - 1]?.focus?.();
-  };
+	const focusLast = () => {
+		itemsRef.current?.[items.length - 1]?.focus?.();
+	};
 
-  const handleEsc = useCallback(
-    (event) => {
-      if (isOpen && event.key === 'Escape') {
-        setIsOpen(false);
-        buttonRef.current?.focus?.();
-      }
-    },
-    [isOpen],
-  );
+	const handleAction = useCallback((event) => {
+		event?.preventDefault?.();
+		setIsOpen((isOpen) => !isOpen);
+	}, []);
 
-  const handleBlur = useCallback(
-    (event) => {
-      const nextTarget = event.relatedTarget;
+	const handleBlur = useCallback(
+		(event) => {
+			const nextTarget = event.relatedTarget;
 
-      if (isOpen && panelRef.current && !panelRef.current?.contains?.(nextTarget)) {
-        setIsOpen(false);
-      }
-    },
-    [isOpen],
-  );
+			panelRef.current && !panelRef.current?.contains?.(nextTarget) && handleAction();
+		},
+		[handleAction, panelRef],
+	);
 
-  const handleClickOutside = useCallback(
-    (event) => {
-      if (
-        isOpen &&
-        panelRef.current &&
-        !panelRef.current?.contains?.(event.target) &&
-        event.target !== buttonRef.current
-      ) {
-        setIsOpen(false);
-      }
-    },
-    [buttonRef, isOpen, panelRef],
-  );
+	const handleClickOutside = useCallback(
+		(event) => {
+			if (
+				panelRef.current &&
+				!panelRef.current?.contains?.(event.target) &&
+				event.target !== buttonRef.current
+			) {
+				handleAction();
+			}
+		},
+		[buttonRef, handleAction, panelRef],
+	);
 
-  const handleKeyPress = (item) => (event) => {
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        focusNext(item);
-        break;
+	const handleEsc = useCallback(
+		(event) => {
+			if (event.key === 'Escape') {
+				handleAction();
+				isOpen && buttonRef.current?.focus?.();
+			}
+		},
+		[handleAction, isOpen],
+	);
 
-      case 'ArrowUp':
-        event.preventDefault();
-        focusPrev(item);
-        break;
+	const handleKeyPress = (item) => (event) => {
+		switch (event.key) {
+			case 'ArrowDown':
+				event.preventDefault();
+				focusNext(item);
+				break;
 
-      case 'Home':
-        event.preventDefault();
-        focusFirst();
-        break;
+			case 'ArrowUp':
+				event.preventDefault();
+				focusPrev(item);
+				break;
 
-      case 'End':
-        event.preventDefault();
-        focusLast();
-        break;
+			case 'Home':
+				event.preventDefault();
+				focusFirst();
+				break;
 
-      default:
-        break;
-    }
-  };
+			case 'End':
+				event.preventDefault();
+				focusLast();
+				break;
 
-  const handleReset = (event) => {
-    event.preventDefault();
+			default:
+				break;
+		}
+	};
 
-    onChange?.(event, 'reset');
-  };
+	const handleReset = (event) => {
+		event.preventDefault();
 
-  const handleSelectAll = useCallback(
-    (event) => {
-      event.preventDefault();
+		onChange?.(event, 'reset');
+	};
 
-      const value =
-        // if (allSelected === 'all') then it needs to turn to 'none' (make all items show:false)
-        !allSelected === 'all' ||
-        // or (allSelected === 'none') then it needs to turn to 'all' (make all items show:true)
-        allSelected === 'none' ||
-        // or (allSelected === false), then same as above (all items show:true)
-        !allSelected;
+	const handleSelectAll = useCallback(
+		(event) => {
+			event.preventDefault();
 
-      onChange?.(event, 'all', value);
-    },
-    [allSelected, onChange],
-  );
+			const value =
+				// if (allSelected === 'all') then it needs to turn to 'none' (make all items show:false)
+				!allSelected === 'all' ||
+				// or (allSelected === 'none') then it needs to turn to 'all' (make all items show:true)
+				allSelected === 'none' ||
+				// or (allSelected === false), then same as above (all items show:true)
+				!allSelected;
 
-  const handleSelectOne = (item) => (event) => {
-    onChange?.(event, 'one', item);
-  };
+			onChange?.(event, 'all', value);
+		},
+		[allSelected, onChange],
+	);
 
-  const selectionButtonsTheme = merge(
-    {
-      fontColor: customSelectionControlFontColor || themeSelectionControlFontColor,
-      fontSize: customSelectionControlFontSize || themeSelectionControlFontSize,
-      hoverBackground:
-        customSelectionControlHoverBackground || themeSelectionControlHoverBackground,
-      whiteSpace: 'nowrap',
-    },
-    themeSelectionControlProps,
-    customSelectionControlProps,
-  );
+	const handleSelectOne = (item) => (event) => {
+		onChange?.(event, 'one', item);
+	};
 
-  useEffect(() => {
-    // check if all items are selected
-    if (checkIfAllSelected([true])) {
-      setAllSelected('all');
-    }
-    // or if all items are deselected
-    else if (checkIfAllSelected([false])) {
-      setAllSelected('none');
-    }
-  }, [allSelected, checkIfAllSelected]);
+	const selectionButtonsTheme = merge(
+		{
+			fontColor: customSelectionControlFontColor || themeSelectionControlFontColor,
+			fontSize: customSelectionControlFontSize || themeSelectionControlFontSize,
+			hoverBackground:
+				customSelectionControlHoverBackground || themeSelectionControlHoverBackground,
+			whiteSpace: 'nowrap',
+		},
+		themeSelectionControlProps,
+		customSelectionControlProps,
+	);
 
-  useEffect(() => {
-    if (renderRef && !renderRef.current) {
-      itemsRef.current = new Array(items.length);
-      renderRef.current = true;
-    }
-  }, [items, renderRef]);
+	useEffect(() => {
+		// check if all items are selected
+		if (checkIfAllSelected([true])) {
+			setAllSelected('all');
+		}
+		// or if all items are deselected
+		else if (checkIfAllSelected([false])) {
+			setAllSelected('none');
+		}
+	}, [allSelected, checkIfAllSelected]);
 
-  useEffect(() => {
-    if (isOpen) {
-      window.addEventListener('click', handleClickOutside);
-      window.addEventListener('keydown', handleEsc);
-      focusFirst();
-    }
+	useEffect(() => {
+		if (renderRef && !renderRef.current) {
+			itemsRef.current = new Array(items.length);
+			renderRef.current = true;
+		}
+	}, [items, renderRef]);
 
-    return () => {
-      window.removeEventListener('click', handleClickOutside);
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, [handleClickOutside, handleEsc, isOpen]);
+	useEffect(() => {
+		if (isOpen) {
+			window.addEventListener('click', handleClickOutside);
+			window.addEventListener('keydown', handleEsc);
+			focusFirst();
+		}
 
-  useEffect(() => {
-    setIsDisabled(disabled, items.length < 1);
-  }, [disabled, items]);
+		return () => {
+			window.removeEventListener('click', handleClickOutside);
+			window.removeEventListener('keydown', handleEsc);
+		};
+	}, [handleClickOutside, handleEsc, isOpen]);
 
-  return (
-    <div
-      className="DropdownContainer"
-      css={css`
-        position: relative;
-      `}
-    >
-      <Button
-        aria-label={isOpen ? buttonAriaLabelOpen : buttonAriaLabelClosed}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-        className="dropDownButton"
-        css={[themeDropDownButtonCSS, customDropDownButtonCSS]}
-        disabled={isDisabled}
-        onBlur={handleBlur}
-        onClick={(e) => {
-          e.preventDefault();
-          setIsOpen((isOpen) => !isOpen);
-        }}
-        ref={buttonRef}
-        theme={buttonTheme}
-      >
-        {children}
+	useEffect(() => {
+		setIsDisabled(disabled || items.length < 1);
+	}, [disabled, items]);
 
-        <ArrowIcon
-          css={css`
-            margin-left: 0.3rem;
-            margin-top: 0.1rem;
-          `}
-          disabled={isDisabled}
-          disabledFill={customArrowDisabledColor || themeArrowDisabledColor}
-          fill={customArrowColor || themeArrowColor}
-          pointUp={isOpen}
-          transition={customArrowTransition || themeArrowTransition}
-        />
-      </Button>
+	return (
+		<article
+			className={cx('DropdownContainer', customClassName, themeClassName)}
+			css={css`
+				position: relative;
+			`}
+		>
+			<Button
+				aria-label={isOpen ? buttonAriaLabelOpen : buttonAriaLabelClosed}
+				aria-haspopup="true"
+				aria-expanded={isOpen}
+				className="DropDownButton"
+				css={[themeDropDownButtonCSS, customDropDownButtonCSS]}
+				disabled={isDisabled}
+				onBlur={handleBlur}
+				onClick={handleAction}
+				ref={buttonRef}
+				theme={buttonTheme}
+			>
+				{children}
 
-      {isOpen && (
-        <fieldset
-          className="ListWrapper"
-          css={css`
-            background: ${customListWrapperBackground || themeListWrapperBackground};
-            border: solid 1px ${customListWrapperBorderColor || themeListWrapperBorderColor};
-            border-radius: ${customListWrapperBorderRadius || themeListWrapperBorderRadius};
-            box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-            left: ${align === 'right' ? 'auto' : 0};
-            max-height: unset !important;
-            overflow-y: hidden !important;
-            padding: 0;
-            position: absolute;
-            right: ${align === 'right' ? 0 : 'auto'};
-            width: ${customListWrapperWidth || themeListWrapperWidth};
-            z-index: 100;
-          `}
-          ref={panelRef}
-        >
-          <legend style={{ position: 'absolute', clip: 'rect(0 0 0 0)' }}>
-            {itemSelectionLegend}
-          </legend>
+				<ArrowIcon
+					css={css`
+						margin-left: 0.3rem;
+						margin-top: 0.1rem;
+					`}
+					disabled={isDisabled}
+					disabledFill={customArrowDisabledColor || themeArrowDisabledColor}
+					fill={customArrowColor || themeArrowColor}
+					pointUp={isOpen}
+					transition={customArrowTransition || themeArrowTransition}
+				/>
+			</Button>
 
-          {allowControls && allowSelection && (
-            <section
-              className="SelectionControls"
-              css={css`
-                border-bottom: 1px solid #d9d9df;
-                box-sizing: border-box;
-                display: flex;
-                justify-content: space-between;
-                left: 0;
-                padding: 4px 8px;
-                position: sticky;
-                right: 0;
-                top: 0;
+			{isOpen && (
+				<fieldset
+					className="ListWrapper"
+					css={css`
+						background: ${customListWrapperBackground || themeListWrapperBackground};
+						border: solid 1px ${customListWrapperBorderColor || themeListWrapperBorderColor};
+						border-radius: ${customListWrapperBorderRadius || themeListWrapperBorderRadius};
+						box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+						left: ${align === 'right' ? 'auto' : 0};
+						max-height: unset !important;
+						overflow-y: hidden !important;
+						padding: 0;
+						position: absolute;
+						right: ${align === 'right' ? 0 : 'auto'};
+						width: ${customListWrapperWidth || themeListWrapperWidth};
+						z-index: 100;
+					`}
+					ref={panelRef}
+				>
+					<legend style={{ position: 'absolute', clip: 'rect(0 0 0 0)' }}>
+						{itemSelectionLegend}
+					</legend>
 
-                > button {
-                  &:not(:first-of-type) {
-                    margin-left: 0.5rem;
-                  }
+					{allowControls && allowSelection && (
+						<section
+							className="SelectionControls"
+							css={css`
+								border-bottom: 1px solid #d9d9df;
+								box-sizing: border-box;
+								display: flex;
+								justify-content: space-between;
+								left: 0;
+								padding: 4px 8px;
+								position: sticky;
+								right: 0;
+								top: 0;
 
-                  svg {
-                    margin-right: 0.3rem;
-                  }
-                }
-              `}
-            >
-              <TransparentButton
-                aria-label={selectAllAriaLabel}
-                className="SelectAllButton"
-                onClick={handleSelectAll}
-                theme={selectionButtonsTheme}
-              >
-                <CheckIcon />
-                {allSelected === 'all' ? 'Deselect' : 'Select'} All
-              </TransparentButton>
+								> button {
+									&:not(:first-of-type) {
+										margin-left: 0.5rem;
+									}
 
-              <TransparentButton
-                aria-label={resetToDefaultAriaLabel}
-                className="ResetSelectionButton"
-                onClick={handleReset}
-                theme={selectionButtonsTheme}
-              >
-                <ResetIcon />
-                Reset
-              </TransparentButton>
-            </section>
-          )}
+									svg {
+										margin-right: 0.3rem;
+									}
+								}
+							`}
+						>
+							<TransparentButton
+								aria-label={selectAllAriaLabel}
+								className="SelectAllButton"
+								onClick={handleSelectAll}
+								theme={selectionButtonsTheme}
+							>
+								<CheckIcon />
+								{allSelected === 'all' ? 'Deselect' : 'Select'} All
+							</TransparentButton>
 
-          {items.length > 0 ? (
-            <ul
-              className="List"
-              css={css`
-                list-style: none;
-                padding: 0 0.2rem;
-                overflow-y: scroll;
-                max-height: ${customListWrapperMaxHeight || themeListWrapperMaxHeight};
-                margin-bottom: 0;
+							<TransparentButton
+								aria-label={resetToDefaultAriaLabel}
+								className="ResetSelectionButton"
+								onClick={handleReset}
+								theme={selectionButtonsTheme}
+							>
+								<ResetIcon />
+								Reset
+							</TransparentButton>
+						</section>
+					)}
 
-                > li:first-of-type {
-                  margin-top: 0.2rem;
-                }
+					{items.length > 0 ? (
+						<ul
+							className="List"
+							css={css`
+								list-style: none;
+								padding: 0 0.2rem;
+								overflow-y: scroll;
+								max-height: ${customListWrapperMaxHeight || themeListWrapperMaxHeight};
+								margin-bottom: 0;
 
-                > li:last-of-type {
-                  margin-bottom: 0.2rem;
-                }
-              `}
-            >
-              {items.map((item, index) => {
-                // TODO: find a better fallback than "index"
-                const itemId = `${instanceId}--${item.accessor || index}`;
+								> li:first-of-type {
+									margin-top: 0.2rem;
+								}
 
-                return (
-                  <li
-                    className="ListItem"
-                    css={css`
-                      padding: 0.2rem 0.3rem;
+								> li:last-of-type {
+									margin-bottom: 0.2rem;
+								}
+							`}
+						>
+							{items.map((item, index) => {
+								// TODO: find a better fallback than "index"
+								const itemId = `${instanceId}--${item.accessor || index}`;
 
-                      &:hover {
-                        background: ${customListWrapperHoverBackground ||
-                        themeListWrapperHoverBackground};
-                      }
-                    `}
-                    key={itemId}
-                  >
-                    <label
-                      className="ListItemLabel"
-                      css={css`
-                        align-items: flex-start;
-                        color: ${customListWrapperFontColor || themeListWrapperFontColor};
-                        cursor: ${allowSelection && 'pointer'};
-                        display: flex;
-                        font-size: ${customListWrapperFontSize || themeListWrapperFontSize};
-                        word-break: break-word;
-                      `}
-                    >
-                      {allowSelection && (
-                        <input
-                          checked={checkSelected(item)}
-                          className="ListItemCheckbox"
-                          css={css`
-                            margin: 0.1rem 0.4rem 0 0;
-                          `}
-                          id={itemId}
-                          name={itemId}
-                          onBlur={index === items.length - 1 ? handleBlur : undefined}
-                          onChange={handleSelectOne(item)}
-                          onKeyDown={handleKeyPress(index)}
-                          ref={(el) => (itemsRef.current[index] = el)}
-                          type="checkbox"
-                        />
-                      )}
+								return (
+									<li
+										className="ListItem"
+										css={css`
+											padding: 0.2rem 0.3rem;
 
-                      {itemToString(item)}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            'No items to display'
-          )}
-        </fieldset>
-      )}
-    </div>
-  );
+											&:hover {
+												background: ${customListWrapperHoverBackground ||
+												themeListWrapperHoverBackground};
+											}
+										`}
+										key={itemId}
+									>
+										<label
+											className="ListItemLabel"
+											css={css`
+												align-items: flex-start;
+												color: ${customListWrapperFontColor || themeListWrapperFontColor};
+												cursor: ${allowSelection && 'pointer'};
+												display: flex;
+												font-size: ${customListWrapperFontSize || themeListWrapperFontSize};
+												word-break: break-word;
+											`}
+										>
+											{allowSelection && (
+												<input
+													checked={checkSelected(item)}
+													className="ListItemCheckbox"
+													css={css`
+														margin: 0.1rem 0.4rem 0 0;
+													`}
+													id={itemId}
+													name={itemId}
+													onBlur={index === items.length - 1 ? handleBlur : undefined}
+													onChange={handleSelectOne(item)}
+													onKeyDown={handleKeyPress(index)}
+													ref={(el) => (itemsRef.current[index] = el)}
+													type="checkbox"
+												/>
+											)}
+
+											{itemToString(item, handleAction)}
+										</label>
+									</li>
+								);
+							})}
+						</ul>
+					) : (
+						'No items to display'
+					)}
+				</fieldset>
+			)}
+		</article>
+	);
 };
 
 export default DropDownMenu;

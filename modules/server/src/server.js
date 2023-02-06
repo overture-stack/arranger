@@ -9,92 +9,99 @@ import getGraphQLRoutes from './graphqlRoutes';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
 const {
-  CONFIG_FILES_PATH,
-  DEBUG_MODE,
-  ENABLE_ADMIN,
-  ES_HOST,
-  ES_USER,
-  ES_PASS,
-  ES_LOG,
-  PING_PATH,
+	CONFIG_FILES_PATH,
+	DEBUG_MODE,
+	ENABLE_ADMIN,
+	ES_HOST,
+	ES_USER,
+	ES_PASS,
+	ES_LOG, //TODO: ES doesn't include a logger anymore
+	PING_PATH,
 } = ENV_CONFIG;
 
-export const buildEsClient = (esHost = '', esUser = '', esPass = '', esLog = 'error') => {
-  if (!esHost) {
-    console.error('no elasticsearch host was provided');
-  }
+export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
+	if (!esHost) {
+		console.error('no elasticsearch host was provided');
+	}
 
-  let esConfig = {
-    node: esHost,
-    log: esLog,
-  };
+	const esConfig = {
+		node: esHost,
+	};
 
-  if (esUser) {
-    if (!esPass) {
-      console.error('ES user was defined, but password was not');
-    }
-    esConfig['auth'] = {
-      username: esUser,
-      password: esPass,
-    };
-  }
+	if (esUser) {
+		if (!esPass) {
+			console.error('ES user was defined, but password was not');
+		}
+		esConfig['auth'] = {
+			username: esUser,
+			password: esPass,
+		};
+	}
 
-  return new elasticsearch.Client(esConfig);
+	return new elasticsearch.Client(esConfig);
 };
 
 export const buildEsClientViaEnv = () => {
-  return buildEsClient(ES_HOST, ES_USER, ES_PASS, ES_LOG);
+	return buildEsClient(ES_HOST, ES_USER, ES_PASS);
 };
 
 export default async ({
-  configsSource = CONFIG_FILES_PATH,
-  enableAdmin = ENABLE_ADMIN,
-  enableLogs = ENABLE_LOGS,
-  esHost = ES_HOST,
-  esPass = ES_PASS,
-  esUser = ES_USER,
-  getServerSideFilter = getDefaultServerSideFilter,
-  graphqlOptions = {},
-  pingPath = PING_PATH,
+	configsSource = CONFIG_FILES_PATH,
+	enableAdmin = ENABLE_ADMIN,
+	enableLogs = ENABLE_LOGS,
+	esHost = ES_HOST,
+	esPass = ES_PASS,
+	esUser = ES_USER,
+	getServerSideFilter = getDefaultServerSideFilter,
+	graphqlOptions = {},
+	pingPath = PING_PATH,
 } = {}) => {
-  const esClient = buildEsClient(esHost, esUser, esPass);
-  const router = express.Router();
+	const esClient = buildEsClient(esHost, esUser, esPass);
+	const router = express.Router();
 
-  console.log('------------------------------------');
-  console.log(
-    `\nStarting Arranger server... ${
-      enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'})` : ''
-    }`,
-  );
+	console.log('------------------------------------');
+	console.log(
+		`\nStarting Arranger server... ${
+			enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'})` : ''
+		}`,
+	);
 
-  if (enableLogs) {
-    console.log('  Extensive console logging enabled.');
-    DEBUG_MODE && console.log('  (Everything but health checks)');
+	if (enableLogs) {
+		console.log('  Extensive console logging enabled.');
+		DEBUG_MODE && console.log('  (Everything but health checks)');
 
-    router.use(
-      morgan('dev', {
-        skip: (req, res) => {
-          // log everything but health checks on dev/debug. errors only otherwise
-          return DEBUG_MODE ? req.originalUrl.includes(pingPath) : res.statusCode < 400;
-        },
-      }),
-    );
-  }
+		router.use(
+			morgan('dev', {
+				skip: (req, res) => {
+					// log everything but health checks on dev/debug. errors only otherwise
+					return DEBUG_MODE ? req.originalUrl.includes(pingPath) : res.statusCode < 400;
+				},
+			}),
+		);
+	}
 
-  const graphQLRoutes = await getGraphQLRoutes({
-    configsSource,
-    esClient,
-    graphqlOptions,
-    enableAdmin,
-    getServerSideFilter,
-  });
+	const graphQLRoutes = await getGraphQLRoutes({
+		configsSource,
+		enableAdmin,
+		esClient,
+		getServerSideFilter,
+		graphqlOptions,
+	});
 
-  router.use('/', graphQLRoutes); // also adds esClient to request context
-  router.use(`/download`, downloadRoutes());
+	router.use('/', (req, res, next) => {
+		/* Context contents:
+			'graphQLRoutes' provides esClient, schemas, and server configs.
+			'downloadRoutes' consumes esClient, schemas, as well as download and table configs.
+		*/
+		req.context = req.context || {};
+		return next();
+	});
+	router.use('/', graphQLRoutes);
+	router.use(`/download`, downloadRoutes()); // consumes
 
-  router.get(pingPath, (_req, res) =>
-    res.send({ message: 'Arranger is functioning correctly...' }),
-  );
+	router.get(pingPath, (_req, res) =>
+		res.send({ message: 'Arranger is functioning correctly...' }),
+	);
 
-  return router;
+	return router;
 };
