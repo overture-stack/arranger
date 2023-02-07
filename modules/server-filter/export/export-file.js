@@ -4,26 +4,35 @@ import tar from 'tar-stream';
 import pkg from 'lodash';
 const { defaults } = pkg;
 
-import {getAllData} from "./utils/getAllData.js";
-import {dataToExportFormat} from './utils/dataToExportFormat.js';
+import { getAllData } from './utils/getAllData.js';
+import { dataToExportFormat } from './utils/dataToExportFormat.js';
 
-const convertDataToExportFormat =
-  ({ project_info, params, headers, ctx, fileType }) =>
-  async (args) =>
-    (
-      await getAllData({
-        project_info,
-        params,
-        headers,
-        ctx,
-        ...args,
-      })
-    ).pipe(dataToExportFormat({ ...args, fileType }));
+const convertDataToExportFormat = ({ project_info, params, headers, ctx, fileType }) => async (
+  args,
+) =>
+  (
+    await getAllData({
+      project_info,
+      params,
+      headers,
+      ctx,
+      ...args,
+    })
+  ).pipe(dataToExportFormat({ ...args, fileType }));
 
-const getFileStream = async ({ project_info, params, headers, chunkSize, ctx, file, fileType, mock }) => {
+const getFileStream = async ({
+  project_info,
+  params,
+  headers,
+  chunkSize,
+  ctx,
+  file,
+  fileType,
+  mock,
+}) => {
   const exportArgs = defaults(file, { chunkSize, fileType, mock });
 
-  return convertDataToExportFormat({project_info, params, headers, ctx, fileType })({
+  return convertDataToExportFormat({ project_info, params, headers, ctx, fileType })({
     ...exportArgs,
     mock,
   });
@@ -112,17 +121,20 @@ export function downloader(project_info) {
   router.post('/', async function (req, res) {
     try {
       const { params } = req.body;
+      const requestHeaders = {
+        ...req.headers,
+        Authorization: `Bearer ${process.env.STORYBOOK_TOKEN}`,
+      };
       const { output, responseFileName, contentType } = await dataStream({
         project_info,
-        headers: req.headers,
+        headers: requestHeaders,
         ctx: req.context,
         params: JSON.parse(params),
       });
 
       res.set('Content-Type', contentType);
       res.set('Content-disposition', `attachment; filename=${responseFileName}`);
-      output.pipe(res).on('finish', () => {
-      });
+      output.pipe(res).on('finish', () => {});
     } catch (err) {
       console.error(err);
 
