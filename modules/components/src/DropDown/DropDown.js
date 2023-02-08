@@ -53,6 +53,8 @@ class DropDown extends React.Component {
 		const disableDownloads =
 			items.every((item) => item.exporterRequiresRowSelection) && !hasSelectedRows;
 
+		const handleChangeSearchText = ({ value }) => this.setState({ searchText: value || '' });
+
 		return (
 			<Downshift
 				itemToString={itemToString}
@@ -106,7 +108,7 @@ class DropDown extends React.Component {
 								{enableSelectColumnDropdownTextFilter && (
 									<TextFilter
 										aria-label={`Search data`}
-										onChange={({ value }) => this.setState({ searchText: value || '' })}
+										onChange={handleChangeSearchText}
 										placeholder={searchPlaceholder}
 										type="text"
 										value={searchText}
