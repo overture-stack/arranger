@@ -118,7 +118,6 @@ class DropDown extends React.Component {
 											!searchText ||
 											internalTranslateSQONValue(itemToString(item)).match(strToReg(searchText)),
 									)
-									// .filter((item) => itemToString(item).toLowerCase() == searchText)
 									.map((item, index) => {
 										const { id, ...itemProps } = getItemProps({
 											item,
