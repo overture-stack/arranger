@@ -115,6 +115,7 @@ class DropDown extends React.Component {
 								{items
 									.filter(
 										(item) =>
+											// Filters out values that don't match the TextFilter's input
 											!searchText ||
 											internalTranslateSQONValue(itemToString(item)).match(strToReg(searchText)),
 									)
