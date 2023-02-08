@@ -163,12 +163,10 @@ const TableToolbar = ({
 							allowSelection
 							buttonAriaLabelClosed={`Open column selection menu`}
 							buttonAriaLabelOpen={`Close column selection menu`}
-							itemSelectionLegend={`Select columns to display`}
-							selectAllAriaLabel={`Select all columns`}
-							resetToDefaultAriaLabel={`Reset to default columns`}
-							itemToString={(i) => i.displayName}
-							items={canChangeShowColumns}
 							defaultColumns={defaultColumns}
+							items={canChangeShowColumns}
+							itemSelectionLegend={`Select columns to display`}
+							itemToString={(i) => i.displayName}
 							onChange={(item) => {
 								setFilterVal('');
 								onFilterChange({
@@ -180,6 +178,8 @@ const TableToolbar = ({
 							onMultipleChange={(changes) => {
 								onMultipleColumnsChange(changes);
 							}}
+							resetToDefaultAriaLabel={`Reset to default columns`}
+							selectAllAriaLabel={`Select all columns`}
 							theme={themeDropDownProps}
 						>
 							{columnDropdownText}
@@ -187,8 +187,9 @@ const TableToolbar = ({
 					) : (
 						<DropDown
 							aria-label={`Select columns`}
-							itemToString={(i) => i.displayName}
+							enableSelectColumnDropdownTextFilter={enableSelectColumnDropdownTextFilter}
 							items={canChangeShowColumns}
+							itemToString={(i) => i.displayName}
 							onChange={(item) => {
 								setFilterVal('');
 								onFilterChange({
@@ -198,7 +199,6 @@ const TableToolbar = ({
 								onColumnsChange({ ...item, show: !item.show });
 							}}
 							theme={themeDropDownProps}
-							enableSelectColumnDropdownTextFilter={enableSelectColumnDropdownTextFilter}
 						>
 							{columnDropdownText}
 						</DropDown>
