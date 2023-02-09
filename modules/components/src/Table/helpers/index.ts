@@ -33,7 +33,7 @@ export const useTableData = ({
 		hasShowableColumns,
 		hasVisibleColumns,
 		isLoading,
-		keyField,
+		keyFieldName,
 		missingProvider,
 		selectedRowsDict,
 		setSelectedRowsDict,
@@ -78,7 +78,7 @@ export const useTableData = ({
 		data: tableData,
 		getCoreRowModel: getCoreRowModel(),
 		getRowId: (row, index, parent) =>
-			`${parent ? [parent.id, row[keyField]].join('.') : row[keyField]}`,
+			`${parent ? [parent.id, row[keyFieldName]].join('.') : row[keyFieldName]}`,
 		...(allowRowSelection && {
 			state: {
 				rowSelection: selectedRowsDict,

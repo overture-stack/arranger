@@ -14,6 +14,7 @@ export const ES_PASS = process.env.ES_PASS || '';
 export const ES_USER = process.env.ES_USER || '';
 export const MAX_DOWNLOAD_ROWS = Number(process.env.MAX_DOWNLOAD_ROWS || '') || 100;
 export const MAX_LIVE_VERSIONS = process.env.MAX_LIVE_VERSIONS || 3;
+export const MAX_RESULTS_WINDOW = Number(process.env.MAX_RESULTS_WINDOW || '') || 10000;
 export const PING_MS = Number(process.env.PING_MS || '') || 2200;
 export const PING_PATH = process.env.PING_PATH || '/ping';
 export const PORT = Number(process.env.PORT || '') || 5050;

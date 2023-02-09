@@ -13,7 +13,8 @@ export const aggregateCustomColumns = (
 	serverColumns: ColumnMappingInterface[] = [],
 ) => {
 	const existingColumns = serverColumns.map((serverColumn) => {
-		const customColumn = customColumns.find((column) => column.field === serverColumn.field) || {};
+		const customColumn =
+			customColumns.find((column) => column.fieldName === serverColumn.fieldName) || {};
 
 		return {
 			...serverColumn,
@@ -22,11 +23,11 @@ export const aggregateCustomColumns = (
 	});
 
 	const existingColumnFields = existingColumns
-		.map((column) => column.field)
+		.map((column) => column.fieldName)
 		.filter((field) => !!field);
 
 	return existingColumns.concat(
-		customColumns.filter((column) => !existingColumnFields.includes(column.field)),
+		customColumns.filter((column) => !existingColumnFields.includes(column.fieldName)),
 	);
 };
 

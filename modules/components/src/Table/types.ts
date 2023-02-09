@@ -11,9 +11,13 @@ import {
 import { DropDownThemeProps } from '@/DropDown/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 
-import { DownloadButtonThemeProps } from './DownloadButton/types';
-import { TableToolbarThemeProps } from './Toolbar/types';
 import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
+import { CountDisplayThemeProps } from './CountDisplay/types';
+import { DownloadButtonThemeProps } from './DownloadButton/types';
+import { MaxRowsSelectorThemeProps } from './MaxRowsSelector/types';
+import { PageSelectorThemeProps } from './PageSelector/types';
+import { PaginationThemeProps } from './Pagination/types';
+import { ToolbarThemeProps } from './Toolbar/types';
 
 export type FieldList = ColumnMappingInterface['fieldName'][];
 
@@ -25,14 +29,16 @@ export interface TableContextInterface {
 	currentColumnsDict: ColumnsDictionary;
 	currentPage: number;
 	documentType: string;
+	fetchData: FetchDataFn;
 	hasSelectedRows: boolean;
 	hasShowableColumns: boolean;
 	hasVisibleColumns: boolean;
 	isLoading: boolean;
-	fetchData: FetchDataFn;
 	keyFieldName: string;
-	pageSize: number;
+	maxPages: number;
+	maxResultsWindow: number;
 	missingProvider?: string | false;
+	pageSize: number;
 	selectedRows: string[];
 	selectedRowsDict: RowSelectionState;
 	setCurrentColumnsDict: Dispatch<SetStateAction<ColumnsDictionary>>;
@@ -42,6 +48,7 @@ export interface TableContextInterface {
 	sqon: SQONType;
 	tableData: unknown[];
 	total: number;
+	totalPages: number;
 	visibleColumnsDict: ColumnsDictionary;
 }
 
@@ -103,6 +110,7 @@ export interface TableThemeProps
 
 	// Child components
 	ColumnSelectButton: ColumnSelectButtonThemeProps;
+	CountDisplay: CountDisplayThemeProps;
 	DownloadButton: DownloadButtonThemeProps;
 	DropDown: DropDownThemeProps;
 	HeaderGroup: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
@@ -115,6 +123,9 @@ export interface TableThemeProps
 			hoverFontColor: string;
 			verticalBorderColor: string;
 		};
+	MaxRowsSelector: MaxRowsSelectorThemeProps;
+	PageSelector: PageSelectorThemeProps;
+	Pagination: PaginationThemeProps;
 	Row: TableInnerBoxModelProperties &
 		ThemeCommon.FontProperties & {
 			horizontalBorderColor: string;
@@ -124,11 +135,12 @@ export interface TableThemeProps
 			verticalBorderColor: string;
 		};
 	TableBody: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
-	TableToolbar: TableToolbarThemeProps;
 	TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS & { width?: string };
+	Toolbar: ToolbarThemeProps;
 }
 
 export interface TableProps {
+	className?: string;
 	disableRowSelection?: boolean;
 	hideWarning?: boolean;
 	theme?: Partial<TableThemeProps>;
@@ -140,5 +152,5 @@ export interface UseTableDataProps {
 }
 
 export * from './ColumnsSelectButton/types';
-export * from './Counter/types';
+export * from './CountDisplay/types';
 export * from './DownloadButton/types';

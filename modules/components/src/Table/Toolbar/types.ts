@@ -1,10 +1,10 @@
-import { CounterThemeProps } from '@/Table/Counter/types';
+import { CountDisplayThemeProps } from '@/Table/CountDisplay/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 
-export interface TableToolbarThemeProps extends ThemeCommon.FontProperties {
-  TableCounter: CounterThemeProps;
+export interface ToolbarThemeProps extends ThemeCommon.FontProperties {
+	CountDisplay: CountDisplayThemeProps;
 }
 
-export interface TableToolbarProps extends ThemeCommon.CustomCSS {
-  theme?: Partial<TableToolbarThemeProps>;
+export interface ToolbarProps extends ThemeCommon.CustomCSS {
+	theme?: Partial<ToolbarThemeProps>;
 }

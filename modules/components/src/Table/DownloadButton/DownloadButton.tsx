@@ -1,4 +1,5 @@
 import { css } from '@emotion/react';
+import cx from 'classnames';
 import { merge } from 'lodash';
 import urlJoin from 'url-join';
 
@@ -45,6 +46,7 @@ import { ProcessedExporterDetailsInterface, DownloadButtonProps } from './types'
  *   Disables the exporter in the abscence of row selections.
  */
 const DownloadButton = ({
+	className: customClassName,
 	theme: {
 		customExporters,
 		disableRowSelection: customDisableRowSelection,
@@ -73,6 +75,7 @@ const DownloadButton = ({
 		components: {
 			Table: {
 				DownloadButton: {
+					className: themeClassName,
 					customExporters: themeCustomExporters,
 					disableRowSelection: themeDisableRowSelection,
 					downloadUrl: themeDownloadUrl = urlJoin(apiUrl, 'download'),
@@ -157,6 +160,7 @@ const DownloadButton = ({
 		<MultiSelectDropDown
 			buttonAriaLabelClosed="Open downloads menu"
 			buttonAriaLabelOpen="Close downloads menu"
+			className={cx('DownloadButton', customClassName, themeClassName)}
 			disabled={disableButton}
 			itemSelectionLegend="Select on of the download options"
 			items={exporterDetails as ProcessedExporterDetailsInterface[]}
@@ -179,6 +183,7 @@ const DownloadButton = ({
 	) : (
 		// else, use a custom function if any is given, or use the default saveTSV if the flag is on
 		<SingleDownloadButton
+			className={cx('DownloadButton', customClassName, themeClassName)}
 			clickHandler={handleExporterClick(exporterDetails as ProcessedExporterDetailsInterface)}
 			disabled={isLoading || !!missingProvider}
 			{...exporterDetails}

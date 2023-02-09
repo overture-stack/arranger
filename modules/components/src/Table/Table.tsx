@@ -14,6 +14,7 @@ import TableWrapper from './Wrapper';
 import { TableProps } from './types';
 
 const Table = ({
+	className: customClassName,
 	disableRowSelection = false,
 	hideWarning = false,
 	theme: { columnTypes, hideLoader: customHideLoader } = emptyObj,
@@ -101,7 +102,7 @@ const Table = ({
 	// remove related code once the new Table is ready for primetime
 	return hideWarning || !missingProvider ? (
 		<TableWrapper
-			className={cx('TableWrapper', themeTableWrapperClassName)}
+			className={cx('TableWrapper', customClassName, themeTableWrapperClassName)}
 			css={themeTableWrapperCSS}
 			key={themeTableWrapperKey}
 			margin={themeTableMargin}

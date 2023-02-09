@@ -42,6 +42,7 @@ export const TableConfigTypeDefs = `
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
     keyFieldName: String
+    maxResultsWindow: Int
   }
 `;
 

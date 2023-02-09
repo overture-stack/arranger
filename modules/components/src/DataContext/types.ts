@@ -36,6 +36,7 @@ export interface TableConfigsInterface {
 	columns: ColumnMappingInterface[];
 	defaultSorting: ColumnSortingInterface[];
 	keyFieldName: string;
+	maxResultsWindow: number;
 }
 
 export interface ExtendedMappingInterface {
@@ -56,6 +57,7 @@ export interface ConfigsInterface {
 	extendedMapping: ExtendedMappingInterface[];
 	tableConfigs: TableConfigsInterface & {
 		columns: (string | ColumnMappingInterface)[];
+		maxResultsWindow: number;
 	};
 }
 

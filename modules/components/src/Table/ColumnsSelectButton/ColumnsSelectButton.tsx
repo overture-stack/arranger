@@ -1,4 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import cx from 'classnames';
 import { merge } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
@@ -17,7 +18,8 @@ const getShowableColumns = (columnsDict = emptyObj as ColumnsDictionary) =>
 /**
  * This component can only access the columns that allow changing their visibility
  */
-const TableColumnsSelectButton = ({
+const ColumnsSelectButton = ({
+	className: customClassName,
 	theme: { label: customLabel, ...customThemeProps } = emptyObj,
 }: ColumnSelectButtonProps) => {
 	const [showableColumns, setShowableColumns] = useState<ColumnMappingInterface[]>([]);
@@ -36,6 +38,7 @@ const TableColumnsSelectButton = ({
 		components: {
 			Table: {
 				ColumnSelectButton: {
+					className: themeClassName,
 					label: themeColumnSelectButtonLabel = 'Columns',
 					...themeColumnSelectButtonProps
 				} = emptyObj,
@@ -109,6 +112,7 @@ const TableColumnsSelectButton = ({
 			allowSelection
 			buttonAriaLabelClosed="Open column selection menu"
 			buttonAriaLabelOpen="Close column selection menu"
+			className={cx('ColumnSelectButton', customClassName, themeClassName)}
 			disabled={disableButton}
 			itemSelectionLegend="Select columns to display"
 			items={showableColumns}
@@ -123,4 +127,4 @@ const TableColumnsSelectButton = ({
 	);
 };
 
-export default TableColumnsSelectButton;
+export default ColumnsSelectButton;
