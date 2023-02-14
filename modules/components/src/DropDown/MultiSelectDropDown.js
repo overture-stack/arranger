@@ -8,6 +8,10 @@ import Button, { TransparentButton } from '@/Button';
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
 import { useThemeContext } from '@/ThemeContext';
 import noopFn, { emptyObj } from '@/utils/noops';
+import TextFilter from '@/TextFilter';
+import TextHighlight from '@/TextHighlight';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
+import strToReg from '@/utils/strToReg';
 
 const DropDownMenu = ({
 	align = 'right',
@@ -31,6 +35,8 @@ const DropDownMenu = ({
 		arrowDisabledColor: customArrowDisabledColor,
 		arrowTransition: customArrowTransition,
 		css: customDropDownButtonCSS,
+		enableFilter: customDropdownEnableFilter,
+		filterPlaceholder: customDropdownFilterPlaceholder,
 		fontColor: customDropDownFontColor,
 
 		// Child Components
@@ -57,6 +63,7 @@ const DropDownMenu = ({
 	const [allSelected, setAllSelected] = useState(null);
 	const [isDisabled, setIsDisabled] = useState(false);
 	const [isOpen, setIsOpen] = useState(false);
+	const [searchText, setSearchText] = useState('');
 	const buttonRef = useRef();
 	const itemsRef = useRef([]);
 	const panelRef = useRef();
@@ -70,6 +77,8 @@ const DropDownMenu = ({
 				arrowTransition: themeArrowTransition,
 				className: themeClassName,
 				css: themeDropDownButtonCSS,
+				enableFilter: themeDropdownEnableFilter,
+				filterPlaceholder: themeDropdownFilterPlaceholder,
 				fontColor: themeDropDownFontColor = colors?.grey?.[800],
 
 				// Child Components
@@ -94,6 +103,8 @@ const DropDownMenu = ({
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'DropDownMenu' });
 
+	const enableFilter = customDropdownEnableFilter || themeDropdownEnableFilter;
+	const filterPlaceholder = customDropdownFilterPlaceholder || themeDropdownFilterPlaceholder;
 	const buttonTheme = merge(
 		{
 			fontColor: themeDropDownFontColor,
@@ -164,6 +175,10 @@ const DropDownMenu = ({
 		},
 		[handleAction, isOpen],
 	);
+
+	const handleChangeSearchText = ({ value }) => {
+		setSearchText(value || '');
+	};
 
 	const handleKeyPress = (item) => (event) => {
 		switch (event.key) {
@@ -370,6 +385,16 @@ const DropDownMenu = ({
 						</section>
 					)}
 
+					{enableFilter && (
+						<TextFilter
+							aria-label={`Search data`}
+							onChange={handleChangeSearchText}
+							placeholder={filterPlaceholder}
+							type="text"
+							value={searchText}
+						/>
+					)}
+
 					{items.length > 0 ? (
 						<ul
 							className="List"
@@ -389,56 +414,66 @@ const DropDownMenu = ({
 								}
 							`}
 						>
-							{items.map((item, index) => {
-								// TODO: find a better fallback than "index"
-								const itemId = `${instanceId}--${item.accessor || index}`;
+							{items
+								.filter(
+									(item) =>
+										// Filters out values that don't match the TextFilter's input
+										!searchText ||
+										internalTranslateSQONValue(itemToString(item)).match(strToReg(searchText)),
+								)
+								.map((item, index) => {
+									// TODO: find a better fallback than "index"
+									const itemId = `${instanceId}--${item.accessor || index}`;
 
-								return (
-									<li
-										className="ListItem"
-										css={css`
-											padding: 0.2rem 0.3rem;
-
-											&:hover {
-												background: ${customListWrapperHoverBackground ||
-												themeListWrapperHoverBackground};
-											}
-										`}
-										key={itemId}
-									>
-										<label
-											className="ListItemLabel"
+									return (
+										<li
+											className="ListItem"
 											css={css`
-												align-items: flex-start;
-												color: ${customListWrapperFontColor || themeListWrapperFontColor};
-												cursor: ${allowSelection && 'pointer'};
-												display: flex;
-												font-size: ${customListWrapperFontSize || themeListWrapperFontSize};
-												word-break: break-word;
-											`}
-										>
-											{allowSelection && (
-												<input
-													checked={checkSelected(item)}
-													className="ListItemCheckbox"
-													css={css`
-														margin: 0.1rem 0.4rem 0 0;
-													`}
-													id={itemId}
-													name={itemId}
-													onBlur={index === items.length - 1 ? handleBlur : undefined}
-													onChange={handleSelectOne(item)}
-													onKeyDown={handleKeyPress(index)}
-													ref={(el) => (itemsRef.current[index] = el)}
-													type="checkbox"
-												/>
-											)}
+												padding: 0.2rem 0.3rem;
 
-											{itemToString(item, handleAction)}
-										</label>
-									</li>
-								);
-							})}
+												&:hover {
+													background: ${customListWrapperHoverBackground ||
+													themeListWrapperHoverBackground};
+												}
+											`}
+											key={itemId}
+										>
+											<label
+												className="ListItemLabel"
+												css={css`
+													align-items: flex-start;
+													color: ${customListWrapperFontColor || themeListWrapperFontColor};
+													cursor: ${allowSelection && 'pointer'};
+													display: flex;
+													font-size: ${customListWrapperFontSize || themeListWrapperFontSize};
+													word-break: break-word;
+												`}
+											>
+												{allowSelection && (
+													<input
+														checked={checkSelected(item)}
+														className="ListItemCheckbox"
+														css={css`
+															margin: 0.1rem 0.4rem 0 0;
+														`}
+														id={itemId}
+														name={itemId}
+														onBlur={index === items.length - 1 ? handleBlur : undefined}
+														onChange={handleSelectOne(item)}
+														onKeyDown={handleKeyPress(index)}
+														ref={(el) => (itemsRef.current[index] = el)}
+														type="checkbox"
+													/>
+												)}
+												{enableFilter ? (
+													<TextHighlight content={itemToString(item)} highlightText={searchText} />
+												) : (
+													itemToString(item, handleAction)
+												)}
+											</label>
+										</li>
+									);
+								})}
 						</ul>
 					) : (
 						'No items to display'
