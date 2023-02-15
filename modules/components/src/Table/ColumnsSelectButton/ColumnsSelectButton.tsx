@@ -39,7 +39,7 @@ const TableColumnsSelectButton = ({
 					label: themeColumnSelectButtonLabel = 'Columns',
 					...themeColumnSelectButtonProps
 				} = emptyObj,
-				DropDown: { label: themeDropDownLabel, ...themeDropDownProps } = emptyObj,
+				DropDown: { label: themeTableDropDownLabel, ...themeTableDropDownProps } = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'Table - ColumnSelectButton' });
@@ -88,8 +88,16 @@ const TableColumnsSelectButton = ({
 		[allColumnsDict, currentColumnsDict, setCurrentColumnsDict],
 	);
 	const disableButton = !total || (!hasShowableColumns && (isLoading || !!missingProvider));
-	const Label = customLabel || themeColumnSelectButtonLabel || themeDropDownLabel;
-	const theme = merge({}, themeDropDownProps, themeColumnSelectButtonProps, customThemeProps);
+	const Label = customLabel || themeColumnSelectButtonLabel || themeTableDropDownLabel;
+	const multiSelectDropDownProps = merge(
+		{
+			enableFilter: true,
+			filterPlaceholder: 'Search',
+		},
+		themeColumnSelectButtonProps,
+		themeTableDropDownProps,
+		customThemeProps,
+	);
 
 	useEffect(() => {
 		setShowableColumns(getShowableColumns(currentColumnsDict));
@@ -108,7 +116,7 @@ const TableColumnsSelectButton = ({
 			onChange={handleSelectionChanges}
 			resetToDefaultAriaLabel="Reset to default columns"
 			selectAllAriaLabel="Select all columns"
-			theme={theme}
+			theme={multiSelectDropDownProps}
 		>
 			<MetaMorphicChild>{Label}</MetaMorphicChild>
 		</MultiSelectDropDown>
