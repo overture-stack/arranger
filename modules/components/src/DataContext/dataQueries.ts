@@ -32,11 +32,12 @@ export const tableConfigs = `
 			sortable
 			type
 		}
-		keyFieldName
 		defaultSorting {
 			desc
 			fieldName
 		}
+		keyFieldName
+		maxResultsWindow
 	}
 `;
 

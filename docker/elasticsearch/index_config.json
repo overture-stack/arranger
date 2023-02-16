@@ -1,223 +1,223 @@
 {
-  "aliases": {
-    "file_centric": {}
-  },
-  "mappings": {
-    "dynamic": "false",
-    "date_detection": false,
-    "properties": {
-      "analysis": {
-        "properties": {
-          "analysis_id": {
-            "type": "keyword",
-            "copy_to": ["file_autocomplete"]
-          },
-          "analysis_state": {
-            "type": "keyword"
-          },
-          "analysis_tools": {
-            "type": "keyword"
-          },
-          "analysis_type": {
-            "type": "keyword"
-          },
-          "analysis_version": {
-            "type": "integer"
-          },
-          "experiment": {
-            "type": "object"
-          }
-        }
-      },
-      "data_type": {
-        "type": "keyword",
-        "copy_to": ["file_autocomplete"]
-      },
-      "donors": {
-        "type": "nested",
-        "properties": {
-          "donor_id": {
-            "type": "keyword",
-            "copy_to": ["file_autocomplete"]
-          },
-          "age": {
-            "type": "byte"
-          },
-          "gender": {
-            "type": "keyword"
-          },
-          "specimens": {
-            "type": "nested",
-            "properties": {
-              "samples": {
-                "type": "nested",
-                "properties": {
-                  "matched_normal_submitter_sample_id": {
-                    "type": "keyword",
-                    "copy_to": ["file_autocomplete"]
-                  },
-                  "sample_id": {
-                    "type": "keyword",
-                    "copy_to": ["file_autocomplete"]
-                  },
-                  "sample_type": {
-                    "type": "keyword"
-                  },
-                  "submitter_sample_id": {
-                    "type": "keyword",
-                    "copy_to": ["file_autocomplete"]
-                  },
-                  "collection_date": {
-                    "type": "date",
-                    "copy_to": ["file_autocomplete"]
-                  }
-                }
-              },
-              "specimen_id": {
-                "type": "keyword",
-                "copy_to": ["file_autocomplete"]
-              },
-              "specimen_tissue_source": {
-                "type": "keyword"
-              },
-              "specimen_type": {
-                "type": "keyword"
-              },
-              "submitter_specimen_id": {
-                "type": "keyword",
-                "copy_to": ["file_autocomplete"]
-              },
-              "tumour_normal_designation": {
-                "type": "keyword"
-              }
-            }
-          },
-          "submitter_donor_id": {
-            "type": "keyword",
-            "copy_to": ["file_autocomplete"]
-          },
-          "vaccinated": {
-            "type": "boolean"
-          }
-        }
-      },
-      "file": {
-        "properties": {
-          "index_file": {
-            "properties": {
-              "file_type": {
-                "type": "keyword"
-              },
-              "md5sum": {
-                "type": "keyword"
-              },
-              "name": {
-                "type": "keyword"
-              },
-              "object_id": {
-                "type": "keyword"
-              },
-              "size": {
-                "type": "long"
-              }
-            }
-          },
-          "md5sum": {
-            "type": "keyword"
-          },
-          "name": {
-            "type": "keyword",
-            "copy_to": ["file_autocomplete"]
-          },
-          "size": {
-            "type": "long"
-          }
-        }
-      },
-      "file_access": {
-        "type": "keyword"
-      },
-      "file_autocomplete": {
-        "type": "keyword",
-        "fields": {
-          "analyzed": {
-            "type": "text",
-            "analyzer": "autocomplete_analyzed",
-            "search_analyzer": "lowercase_keyword"
-          },
-          "lowercase": {
-            "type": "text",
-            "analyzer": "lowercase_keyword"
-          },
-          "prefix": {
-            "type": "text",
-            "analyzer": "autocomplete_prefix",
-            "search_analyzer": "lowercase_keyword"
-          }
-        }
-      },
-      "file_type": {
-        "type": "keyword"
-      },
-      "object_id": {
-        "type": "keyword",
-        "copy_to": ["file_autocomplete"]
-      },
-      "repositories": {
-        "type": "nested",
-        "properties": {
-          "code": {
-            "type": "keyword"
-          },
-          "country": {
-            "type": "keyword"
-          },
-          "name": {
-            "type": "keyword"
-          },
-          "organization": {
-            "type": "keyword"
-          },
-          "url": {
-            "type": "keyword"
-          }
-        }
-      },
-      "study_id": {
-        "type": "keyword",
-        "copy_to": ["file_autocomplete"]
-      }
-    }
-  },
-  "settings": {
-    "index": {
-      "number_of_shards": "3",
-      "max_result_window": "300000",
-      "analysis": {
-        "filter": {
-          "edge_ngram": {
-            "min_gram": "1",
-            "side": "front",
-            "type": "edge_ngram",
-            "max_gram": "20"
-          }
-        },
-        "analyzer": {
-          "autocomplete_analyzed": {
-            "filter": ["lowercase", "edge_ngram"],
-            "tokenizer": "standard"
-          },
-          "autocomplete_prefix": {
-            "filter": ["lowercase", "edge_ngram"],
-            "tokenizer": "keyword"
-          },
-          "lowercase_keyword": {
-            "filter": ["lowercase"],
-            "tokenizer": "keyword"
-          }
-        }
-      },
-      "number_of_replicas": "1"
-    }
-  }
+	"aliases": {
+		"file_centric": {}
+	},
+	"mappings": {
+		"dynamic": "false",
+		"date_detection": false,
+		"properties": {
+			"analysis": {
+				"properties": {
+					"analysis_id": {
+						"type": "keyword",
+						"copy_to": ["file_autocomplete"]
+					},
+					"analysis_state": {
+						"type": "keyword"
+					},
+					"analysis_tools": {
+						"type": "keyword"
+					},
+					"analysis_type": {
+						"type": "keyword"
+					},
+					"analysis_version": {
+						"type": "integer"
+					},
+					"experiment": {
+						"type": "object"
+					}
+				}
+			},
+			"data_type": {
+				"type": "keyword",
+				"copy_to": ["file_autocomplete"]
+			},
+			"donors": {
+				"type": "nested",
+				"properties": {
+					"donor_id": {
+						"type": "keyword",
+						"copy_to": ["file_autocomplete"]
+					},
+					"age": {
+						"type": "byte"
+					},
+					"gender": {
+						"type": "keyword"
+					},
+					"specimens": {
+						"type": "nested",
+						"properties": {
+							"samples": {
+								"type": "nested",
+								"properties": {
+									"matched_normal_submitter_sample_id": {
+										"type": "keyword",
+										"copy_to": ["file_autocomplete"]
+									},
+									"sample_id": {
+										"type": "keyword",
+										"copy_to": ["file_autocomplete"]
+									},
+									"sample_type": {
+										"type": "keyword"
+									},
+									"submitter_sample_id": {
+										"type": "keyword",
+										"copy_to": ["file_autocomplete"]
+									},
+									"collection_date": {
+										"type": "date",
+										"copy_to": ["file_autocomplete"]
+									}
+								}
+							},
+							"specimen_id": {
+								"type": "keyword",
+								"copy_to": ["file_autocomplete"]
+							},
+							"specimen_tissue_source": {
+								"type": "keyword"
+							},
+							"specimen_type": {
+								"type": "keyword"
+							},
+							"submitter_specimen_id": {
+								"type": "keyword",
+								"copy_to": ["file_autocomplete"]
+							},
+							"tumour_normal_designation": {
+								"type": "keyword"
+							}
+						}
+					},
+					"submitter_donor_id": {
+						"type": "keyword",
+						"copy_to": ["file_autocomplete"]
+					},
+					"vaccinated": {
+						"type": "boolean"
+					}
+				}
+			},
+			"file": {
+				"properties": {
+					"index_file": {
+						"properties": {
+							"file_type": {
+								"type": "keyword"
+							},
+							"md5sum": {
+								"type": "keyword"
+							},
+							"name": {
+								"type": "keyword"
+							},
+							"object_id": {
+								"type": "keyword"
+							},
+							"size": {
+								"type": "long"
+							}
+						}
+					},
+					"md5sum": {
+						"type": "keyword"
+					},
+					"name": {
+						"type": "keyword",
+						"copy_to": ["file_autocomplete"]
+					},
+					"size": {
+						"type": "long"
+					}
+				}
+			},
+			"file_access": {
+				"type": "keyword"
+			},
+			"file_autocomplete": {
+				"type": "keyword",
+				"fields": {
+					"analyzed": {
+						"type": "text",
+						"analyzer": "autocomplete_analyzed",
+						"search_analyzer": "lowercase_keyword"
+					},
+					"lowercase": {
+						"type": "text",
+						"analyzer": "lowercase_keyword"
+					},
+					"prefix": {
+						"type": "text",
+						"analyzer": "autocomplete_prefix",
+						"search_analyzer": "lowercase_keyword"
+					}
+				}
+			},
+			"file_type": {
+				"type": "keyword"
+			},
+			"object_id": {
+				"type": "keyword",
+				"copy_to": ["file_autocomplete"]
+			},
+			"repositories": {
+				"type": "nested",
+				"properties": {
+					"code": {
+						"type": "keyword"
+					},
+					"country": {
+						"type": "keyword"
+					},
+					"name": {
+						"type": "keyword"
+					},
+					"organization": {
+						"type": "keyword"
+					},
+					"url": {
+						"type": "keyword"
+					}
+				}
+			},
+			"study_id": {
+				"type": "keyword",
+				"copy_to": ["file_autocomplete"]
+			}
+		}
+	},
+	"settings": {
+		"index": {
+			"number_of_shards": "3",
+			"max_result_window": "10000",
+			"analysis": {
+				"filter": {
+					"edge_ngram": {
+						"min_gram": "1",
+						"side": "front",
+						"type": "edge_ngram",
+						"max_gram": "20"
+					}
+				},
+				"analyzer": {
+					"autocomplete_analyzed": {
+						"filter": ["lowercase", "edge_ngram"],
+						"tokenizer": "standard"
+					},
+					"autocomplete_prefix": {
+						"filter": ["lowercase", "edge_ngram"],
+						"tokenizer": "keyword"
+					},
+					"lowercase_keyword": {
+						"filter": ["lowercase"],
+						"tokenizer": "keyword"
+					}
+				}
+			},
+			"number_of_replicas": "1"
+		}
+	}
 }

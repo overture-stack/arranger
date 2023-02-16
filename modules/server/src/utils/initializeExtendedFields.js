@@ -6,7 +6,7 @@ import replaceBy from './replaceBy';
 
 const initializeExtendedFields = async ({ indexPrefix, fields, config, esClient }) => {
 	const mergedFields = fields?.length
-		? replaceBy(fields, config.extended, (x, y) => x.field === y.field)
+		? replaceBy(fields, config.extended, (x, y) => x.fieldName === y.fieldName)
 		: config.extended;
 
 	let body = flattenDeep(
@@ -15,7 +15,7 @@ const initializeExtendedFields = async ({ indexPrefix, fields, config, esClient 
 				index: {
 					_index: indexPrefix,
 					_type: indexPrefix,
-					_id: f.field,
+					_id: f.fieldName,
 				},
 			},
 			JSON.stringify(f),

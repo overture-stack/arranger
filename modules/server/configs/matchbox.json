@@ -1,39 +1,39 @@
 {
-  "matchbox": [
-    {
-      "displayName": "file",
-      "fieldName": "",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    },
-    {
-      "displayName": "Donors",
-      "fieldName": "donors",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    },
-    {
-      "displayName": "Donors Specimens",
-      "fieldName": "donors.specimens",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    },
-    {
-      "displayName": "Donors Specimens Samples",
-      "fieldName": "donors.specimens.samples",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    },
-    {
-      "displayName": "Repositories",
-      "fieldName": "repositories",
-      "isActive": false,
-      "keyField": null,
-      "searchFields": []
-    }
-  ]
+	"matchbox": [
+		{
+			"displayName": "file",
+			"fieldName": "",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		},
+		{
+			"displayName": "Donors",
+			"fieldName": "donors",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		},
+		{
+			"displayName": "Donors Specimens",
+			"fieldName": "donors.specimens",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		},
+		{
+			"displayName": "Donors Specimens Samples",
+			"fieldName": "donors.specimens.samples",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		},
+		{
+			"displayName": "Repositories",
+			"fieldName": "repositories",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		}
+	]
 }

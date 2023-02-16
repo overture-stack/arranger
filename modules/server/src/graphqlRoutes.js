@@ -13,7 +13,7 @@ import makeSchema from './schema';
 const getTypesWithMappings = async (esClient, configs = {}) => {
 	if (Object.keys(configs).length > 0) {
 		try {
-			console.log(' \nNow creating a GraphQL mapping based on the ES index:');
+			console.log('Now creating a GraphQL mapping based on the ES index:');
 			const { mapping } = await fetchMapping({
 				esClient,
 				index: configs?.[ConfigProperties.INDEX],
@@ -73,7 +73,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 
 			// We should never see this log, but if it does, there may be a bug in `fetchMapping`
 			console.error(
-				'Mapping could not be created for some reason, but no error was generated... this needs research!',
+				'  Mapping could not be created for some reason, but no error was generated... this needs research!',
 			);
 		} catch (error) {
 			console.error(error?.message || error);
@@ -122,10 +122,13 @@ const createEndpoint = async ({
 		types: typesWithMappings,
 	});
 
-	const noSchemaHandler = (req, res) =>
-		res.json({
+	const noSchemaHandler = (req, res) => {
+		console.log('Something went wrong initialising a GraphQL endpoint');
+
+		return res.json({
 			error: 'schema is undefined. Make sure you provide a valid GraphQL Schema.',
 		});
+	};
 
 	if (schema) {
 		const buildContext = async (req, res, connection) => {
@@ -140,6 +143,8 @@ const createEndpoint = async ({
 			};
 		};
 
+		console.log('Starting GraphQL server:');
+
 		const apolloServer = new ApolloServer({
 			schema,
 			context: ({ req, res, con }) => buildContext(req, res, con),
@@ -152,12 +157,15 @@ const createEndpoint = async ({
 			path: '/graphql',
 		});
 
-		console.log('  - GraphQL server running at .../graphql');
+		console.log('  GraphQL server running at .../graphql');
+		console.log('  Success!');
 	} else {
 		router.use('/graphql', noSchemaHandler);
 	}
 
 	if (mockSchema) {
+		console.log('\nStarting GraphQL mock server:');
+
 		const apolloMockServer = new ApolloServer({
 			schema: mockSchema,
 		});
@@ -169,7 +177,8 @@ const createEndpoint = async ({
 			path: '/mock/graphql',
 		});
 
-		console.log('  - GraphQL mock server running at .../mock/graphql');
+		console.log('  GraphQL mock server running at .../mock/graphql');
+		console.log('  Success!');
 	} else {
 		router.use('/mock/graphql', noSchemaHandler);
 	}
@@ -183,7 +192,6 @@ const createEndpoint = async ({
 
 	router.use('/', (req, res, next) => {
 		// this middleware makes the esClient available in all requests in a "context"
-		req.context = req.context || {};
 		req.context.schema = schema;
 		req.context.mockSchema = mockSchema;
 
@@ -231,7 +239,7 @@ export default async ({
 	} catch (error) {
 		const message = error?.message || error;
 		// if enpoint creation fails, follow to the next server step to respond with an error
-		console.info('\n---\nError thrown while generating the GraphQL endpoints.');
+		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
 
 		return (req, res) =>

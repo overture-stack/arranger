@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { debounce } from 'lodash';
+
 import api from '../utils/api';
 
 import { decorateFieldWithColumnsState } from '../Arranger/QuickSearch/QuickSearchQuery';
@@ -9,7 +10,7 @@ let matchBoxFields = `
     displayName
     fieldName
     isActive
-    keyField
+    keyFieldName
     searchFields
   }
 `;
@@ -126,11 +127,11 @@ class MatchBoxState extends Component {
 			?.map((x) => {
 				return {
 					...x,
-					keyField: {
-						field: x.keyField,
+					keyFieldName: {
+						fieldName: x.keyFieldName,
 						...decorateFieldWithColumnsState({
 							columnsState: this.state.columnsState,
-							field: x.keyField,
+							field: x.keyFieldName,
 						}),
 					},
 					searchFields: x.searchFields.map((y) => ({

@@ -10,17 +10,21 @@ export const initializeSets = async ({ esClient }: { esClient: Client }): Promis
 	if (
 		(await esClient.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))?.statusCode === 404
 	) {
-		(
-			await esClient.indices.create({
-				index: CONSTANTS.ES_ARRANGER_SET_INDEX,
-				body: {
-					mappings: {
-						properties: setsMapping,
-					},
+		const setsIndex = await esClient.indices.create({
+			index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+			body: {
+				mappings: {
+					properties: setsMapping,
 				},
-			})
-		)?.statusCode !== 200 || new Error(`Problem creating ${CONSTANTS.ES_ARRANGER_SET_INDEX} index`);
-		DEBUG_MODE && console.log(` Success!\n`);
+			},
+		});
+
+		if (setsIndex) {
+			DEBUG_MODE && console.log('  Success!');
+			return;
+		}
+
+		throw new Error(`Problem creating ${CONSTANTS.ES_ARRANGER_SET_INDEX} index`);
 	} else {
 		DEBUG_MODE && console.log(`  This index already exists. Moving on!\n`);
 	}

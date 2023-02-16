@@ -18,7 +18,7 @@ export interface ExporterFileInterface {
 	allColumnsDict: ColumnsDictionary;
 	columns: ColumnMappingInterface[];
 	documentType: string;
-	exporterColumns?: FieldList | ColumnMappingInterface[] | null;
+	exporterColumns?: (ColumnMappingInterface['fieldName'] | ColumnMappingInterface)[] | null;
 	fileName: string;
 	fileType: 'tsv' | string;
 	maxRows: number;
@@ -92,6 +92,7 @@ export interface DownloadButtonProps extends ThemeCommon.CustomCSS {
 }
 
 export interface SingleDownloadButtonProps extends Partial<ProcessedExporterDetailsInterface> {
+	className?: string;
 	clickHandler?: () => void;
 	disabled: boolean;
 }

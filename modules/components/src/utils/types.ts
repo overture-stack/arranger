@@ -25,3 +25,7 @@ export type TypesIntersectionPropertiesOfInterface<I, T> = {
 export type TypesUnionPropertiesOfInterface<I, T> = {
 	[key in keyof I]: T | I[key];
 };
+
+export type Permutations<T extends string, U extends string = T> = T extends any
+	? T | `${T} ${Permutations<Exclude<U, T>>}`
+	: never;

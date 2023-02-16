@@ -54,6 +54,7 @@ export const TableContextProvider = ({
 
 	// Pagination state values
 	const [currentPage, setCurrentPage] = useState(0);
+	const [maxResultsWindow, setMaxResultsWindow] = useState(0);
 	const [pageSize, setPageSize] = useState(20);
 
 	// Arranger data context values
@@ -62,6 +63,19 @@ export const TableContextProvider = ({
 
 	const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } =
 		useThemeContext({ callerName: 'TableContextProvider' });
+
+	useEffect(() => {
+		const defaultMaxResultsWindow = tableConfigs?.maxResultsWindow;
+
+		defaultMaxResultsWindow &&
+			(defaultMaxResultsWindow === maxResultsWindow ||
+				setMaxResultsWindow(defaultMaxResultsWindow));
+	}, [maxResultsWindow, tableConfigs]);
+
+	// pagination effects
+	useEffect(() => {
+		setCurrentPage(0);
+	}, [pageSize, sqon]);
 
 	useEffect(() => {
 		if (tableConfigs?.columns && Object.values(allColumnsDict).length === 0) {
@@ -100,8 +114,8 @@ export const TableContextProvider = ({
 
 	useEffect(() => {
 		setIsStaleTableData(true);
-		setTableData([]);
-	}, [currentColumnsDict, sqon]);
+		// setTableData([]);
+	}, [currentColumnsDict, currentPage, sqon, pageSize]);
 
 	useEffect(() => {
 		if (
@@ -118,6 +132,8 @@ export const TableContextProvider = ({
 				},
 				endpoint: 'graphql',
 				endpointTag: 'TableDataQuery',
+				first: pageSize,
+				offset: currentPage * pageSize,
 				queryName: 'tableData',
 				sort: sorting.map(({ fieldName, desc }) => ({
 					fieldName,
@@ -136,6 +152,7 @@ export const TableContextProvider = ({
 				.finally(() => setIsLoadingTableData(false));
 		}
 	}, [
+		currentPage,
 		documentType,
 		fetchData,
 		hasVisibleColumns,
@@ -143,6 +160,7 @@ export const TableContextProvider = ({
 		isLoadingConfigs,
 		isLoadingTableData,
 		isStaleTableData,
+		pageSize,
 		sorting,
 		visibleColumnsDict,
 	]);
@@ -163,7 +181,9 @@ export const TableContextProvider = ({
 			isFreshTable ||
 			isLoadingTableData ||
 			(hasVisibleColumns && isStaleTableData),
-		keyField: tableConfigs?.keyFieldName,
+		keyFieldName: tableConfigs?.keyFieldName,
+		maxPages: Math.ceil(Math.min(maxResultsWindow, total) / pageSize),
+		maxResultsWindow,
 		missingProvider:
 			// ideally allows for passing in sufficient props to cover the absence of a data context.
 			!(customColumns && customDocumentType && customFetcher) && missingProvider,
@@ -177,6 +197,7 @@ export const TableContextProvider = ({
 		sqon,
 		tableData,
 		total,
+		totalPages: Math.ceil(total / pageSize),
 		visibleColumnsDict,
 	};
 

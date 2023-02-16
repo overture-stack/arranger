@@ -7,5 +7,3 @@ lerna-debug.log
 **/.DS_Store
 **/*.env*
 !**/.env.schema
-
-.vscode/*log

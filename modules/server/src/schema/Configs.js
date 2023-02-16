@@ -42,6 +42,7 @@ export const TableConfigTypeDefs = `
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
     keyFieldName: String
+    maxResultsWindow: Int
   }
 `;
 
@@ -57,7 +58,7 @@ export const MatchBoxConfigTypeDefs = `
     displayName: String
     fieldName: String
     isActive: Boolean
-    keyField: String
+    keyFieldName: String
     searchFieldNames: [String]
   }
 `;

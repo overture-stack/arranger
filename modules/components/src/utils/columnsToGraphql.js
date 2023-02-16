@@ -58,6 +58,7 @@ export default function columnsToGraphql({
 		`,
 		variables: {
 			sqon,
+			// TODO we may have a graphql field vs arranger fieldname issue here. Must test and validate
 			sort: sort.map((s) => {
 				if (s?.fieldName?.indexOf?.('hits.total') >= 0) {
 					return Object.assign({}, s, { fieldName: '_score' });

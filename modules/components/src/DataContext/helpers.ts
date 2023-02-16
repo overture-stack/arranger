@@ -85,7 +85,7 @@ export const useDataFetcher = ({
 				endpointTag,
 				body: columnsToGraphql({
 					config: {
-						keyFieldName, // use keyField from server configs if available
+						keyFieldName, // use keyFieldName from server configs if available
 						...config, // yet allow overwritting it at request time
 					},
 					documentType,

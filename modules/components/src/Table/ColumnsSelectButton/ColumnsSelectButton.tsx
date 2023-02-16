@@ -1,4 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import cx from 'classnames';
 import { merge } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
@@ -17,7 +18,8 @@ const getShowableColumns = (columnsDict = emptyObj as ColumnsDictionary) =>
 /**
  * This component can only access the columns that allow changing their visibility
  */
-const TableColumnsSelectButton = ({
+const ColumnsSelectButton = ({
+	className: customClassName,
 	theme: { label: customLabel, ...customThemeProps } = emptyObj,
 }: ColumnSelectButtonProps) => {
 	const [showableColumns, setShowableColumns] = useState<ColumnMappingInterface[]>([]);
@@ -36,10 +38,11 @@ const TableColumnsSelectButton = ({
 		components: {
 			Table: {
 				ColumnSelectButton: {
+					className: themeClassName,
 					label: themeColumnSelectButtonLabel = 'Columns',
 					...themeColumnSelectButtonProps
 				} = emptyObj,
-				DropDown: { label: themeDropDownLabel, ...themeDropDownProps } = emptyObj,
+				DropDown: { label: themeTableDropDownLabel, ...themeTableDropDownProps } = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'Table - ColumnSelectButton' });
@@ -88,8 +91,16 @@ const TableColumnsSelectButton = ({
 		[allColumnsDict, currentColumnsDict, setCurrentColumnsDict],
 	);
 	const disableButton = !total || (!hasShowableColumns && (isLoading || !!missingProvider));
-	const Label = customLabel || themeColumnSelectButtonLabel || themeDropDownLabel;
-	const theme = merge({}, themeDropDownProps, themeColumnSelectButtonProps, customThemeProps);
+	const Label = customLabel || themeColumnSelectButtonLabel || themeTableDropDownLabel;
+	const multiSelectDropDownProps = merge(
+		{
+			enableFilter: true,
+			filterPlaceholder: 'Search',
+		},
+		themeColumnSelectButtonProps,
+		themeTableDropDownProps,
+		customThemeProps,
+	);
 
 	useEffect(() => {
 		setShowableColumns(getShowableColumns(currentColumnsDict));
@@ -101,6 +112,7 @@ const TableColumnsSelectButton = ({
 			allowSelection
 			buttonAriaLabelClosed="Open column selection menu"
 			buttonAriaLabelOpen="Close column selection menu"
+			className={cx('ColumnSelectButton', customClassName, themeClassName)}
 			disabled={disableButton}
 			itemSelectionLegend="Select columns to display"
 			items={showableColumns}
@@ -108,11 +120,11 @@ const TableColumnsSelectButton = ({
 			onChange={handleSelectionChanges}
 			resetToDefaultAriaLabel="Reset to default columns"
 			selectAllAriaLabel="Select all columns"
-			theme={theme}
+			theme={multiSelectDropDownProps}
 		>
 			<MetaMorphicChild>{Label}</MetaMorphicChild>
 		</MultiSelectDropDown>
 	);
 };
 
-export default TableColumnsSelectButton;
+export default ColumnsSelectButton;
