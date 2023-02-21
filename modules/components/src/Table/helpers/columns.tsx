@@ -3,7 +3,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import { mergeWith } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
-import { ColumnsDictionary, ColumnTypesObject, TableCellProps } from '@/Table/types';
+import { ColumnsDictionary, ColumnType, ColumnTypesObject, TableCellProps } from '@/Table/types';
 import { emptyObj } from '@/utils/noops';
 
 import { defaultCellTypes, getCellValue } from './cells';
@@ -75,10 +75,14 @@ export const makeTableColumns = ({
 }) => {
 	const columnHelper = createColumnHelper();
 	const hasData = total > 0;
-	const columnTypes = mergeWith(customColumnTypes, defaultCellTypes, (objValue, srcValue) => ({
-		...objValue,
-		cellValue: objValue?.cellValue || srcValue,
-	})) as ColumnTypesObject;
+	const columnTypes = mergeWith(
+		customColumnTypes,
+		defaultCellTypes,
+		(objValue, srcValue): ColumnTypesObject[ColumnType] => ({
+			...objValue,
+			cellValue: objValue?.cellValue || srcValue,
+		}),
+	) as ColumnTypesObject;
 
 	const tableColumns = visibleColumns.map((visibleColumn) => {
 		const columnType = mergeWith(
@@ -126,13 +130,13 @@ export const makeTableColumns = ({
 				return label;
 			},
 			id: visibleColumn?.id || visibleColumn?.accessor,
+			size: columnType?.size,
 		});
 	});
 
 	return allowRowSelection
 		? [
 				columnHelper.display({
-					id: 'select',
 					header: ({ table }) => (
 						<IndeterminateCheckbox
 							{...{
@@ -143,6 +147,7 @@ export const makeTableColumns = ({
 							}}
 						/>
 					),
+					id: 'select',
 					cell: ({ row }) => (
 						<div className="px-1">
 							<IndeterminateCheckbox
@@ -154,6 +159,7 @@ export const makeTableColumns = ({
 							/>
 						</div>
 					),
+					size: 20,
 				}),
 				...tableColumns,
 		  ]

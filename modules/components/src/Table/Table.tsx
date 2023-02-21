@@ -92,6 +92,7 @@ const Table = ({
 		font-weight: ${themeTableFontWeight};
 		letter-spacing: ${themeTableLetterSpacing};
 		line-height: ${themeTableLineHeight};
+		table-layout: fixed;
 		text-decoration: ${themeTableTextDecoration};
 		text-transform: ${themeTableTextTransform};
 		white-space: ${themeTableWhiteSpace};

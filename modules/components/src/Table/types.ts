@@ -94,6 +94,7 @@ export type ColumnTypesObject = Record<
 		maxWidth: number | string;
 		minWidth: number | string;
 		resizable: boolean;
+		size: number;
 		sortable: boolean;
 		// sortFn:
 	}
@@ -148,6 +149,7 @@ export interface TableProps {
 
 export interface UseTableDataProps {
 	columnTypes?: ColumnTypesObject;
+	disableColumnResizing?: boolean;
 	disableRowSelection?: boolean;
 }
 

@@ -73,26 +73,30 @@ const PageSelector = ({
 	const isLastPage = displayPage === lastPage;
 
 	const [currentInput, setCurrentInput] = useState(displayPage?.toString?.());
-	const isInputbeyondRange = lastPage && Number(currentInput) > lastPage;
+	const isInputbeyondRange = lastPage && Number(currentInput) > lastPage; // triggers "too large" tooltip
 
 	const debouncedNewPage = useDebounce(
 		currentInput?.length ? Number(currentInput) : displayPage,
 		1000,
 	);
 
+	// handles page change requests, and edge cases
 	const attemptToChangePage = useCallback(
 		(value: number) => {
+			// ensure the are pages to show, and the values is within valid bounds
 			const newPageIsInvalid = !(lastPage > 0 && value > 0 && value <= lastPage);
 
 			newPageIsInvalid || setCurrentPage(value - 1);
+			// highlight the field if value is invalid
 			setInputHasError(newPageIsInvalid);
 		},
 		[lastPage, setCurrentPage],
 	);
 
+	// respond to the arrows (e.g. next, previous)
 	const handlePageJump =
 		(selected = 1): MouseEventHandler =>
-		() => {
+		(event) => {
 			if (selected > 0 && selected <= lastPage) {
 				setCurrentPage(selected - 1);
 			} else {
@@ -100,28 +104,31 @@ const PageSelector = ({
 			}
 		};
 
+	// resets the value in the field if the user leaves it before applying it
 	const handlePageInputBlur: ChangeEventHandler<HTMLInputElement> = (event) => {
-		// const value = event.target.value;
-
 		setCurrentInput((currentPage + 1).toString());
 	};
 
+	// update the value in the field as the user types it
 	const handlePageInputChange: ChangeEventHandler<HTMLInputElement> = (event) => {
 		const value = event.target.value;
 
 		setCurrentInput(value);
 	};
 
+	// Handle when users press enter while the "input" is focused
 	const handlePageInputSubmit: FormEventHandler<HTMLFormElement> = (event) => {
-		event?.preventDefault();
+		event?.preventDefault(); // form submit, prevents refresh
 
 		attemptToChangePage(Number(currentInput));
 	};
 
+	// changes page upon debounce timeout, if enabled
 	useEffect(() => {
 		shouldChangeOntimeout && attemptToChangePage(debouncedNewPage);
 	}, [attemptToChangePage, debouncedNewPage, shouldChangeOntimeout]);
 
+	// updates the value in the field if the page is changed outside the component
 	useEffect(() => {
 		setCurrentInput((currentPage + 1).toString());
 	}, [currentPage]);
@@ -209,6 +216,7 @@ const PageSelector = ({
 									tooltipText: isInputbeyondRange
 										? `Page ${lastPage} is the last available`
 										: `Press "Enter" to go`,
+									// either show "enter" instructions on hover, or "too large" regardless of mouse
 									tooltipVisibility: isInputbeyondRange ? 'always' : 'hover',
 								}}
 							>
@@ -229,11 +237,11 @@ const PageSelector = ({
 											margin: 0;
 										}
 									`}
-									min={1}
+									min={firstPage} // there's no page < 1, duh
 									max={lastPage}
 									name="page-selection-input"
-									onChange={handlePageInputChange}
-									onBlur={handlePageInputBlur}
+									onChange={handlePageInputChange} // to update the value
+									onBlur={handlePageInputBlur} // to reset it if not applied
 									type="number"
 									value={currentInput}
 								/>

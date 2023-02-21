@@ -165,7 +165,7 @@ pipeline {
                         ),
                         string(
                             credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                            variable: 'punlished_slackChannelURL'
+                            variable: 'published_slackChannelURL'
                         )
                     ]) {
                         script {
@@ -175,6 +175,7 @@ pipeline {
                                 sh 'git pull --tags'
                                 sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
                                 sh 'PUBLISH_DECLARATIONS=true npm run publish::ci'
+                                // send a notification to the slack #overture-jenkins channel in OICR workspace
                                 sh "curl \
                                     -X POST \
                                     -H 'Content-type: application/json' \

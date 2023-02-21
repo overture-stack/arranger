@@ -12,15 +12,18 @@ const StyledTooltip = styled('div', {
 })<TooltipProperties>`
 	${({ theme: { tooltipAlign = 'top', tooltipText = '', tooltipVisibility = 'hover' } }) => {
 		if (tooltipText && typeof tooltipText === 'string') {
-			const isLongEnough = tooltipText.length > 6;
 			const isBottom = tooltipAlign.includes('bottom');
 			const isLeft = tooltipAlign.includes('left');
 			const isRight = tooltipAlign.includes('right');
 			const isTop = tooltipAlign.includes('top');
 
+			// long enough to not remain centred over the arrow
+			const isLongEnough = tooltipText.length > 6;
+
 			const visibleByDefault = ['always'].includes(tooltipVisibility);
 			const visibleOnHover = ['always', 'hover'].includes(tooltipVisibility);
 
+			// Look and position of arrow
 			const arrowBorder = isBottom
 				? 'transparent transparent #d4b943 transparent'
 				: isTop
@@ -30,17 +33,19 @@ const StyledTooltip = styled('div', {
 				: 'transparent #d4b943 transparent transparent'; // isRight
 			const arrowX = isBottom || isTop ? '-50%' : isLeft ? '-100%' : '0'; // isRight
 			const arrowY = isTop ? '-0.8rem' : isBottom ? '0.8rem' : 0; // isRight
-			const mainX =
+
+			// position of box
+			const boxX =
 				isBottom || isTop
 					? isLeft && isLongEnough
 						? 'calc(10px - 95%)'
 						: isRight && isLongEnough
 						? 'calc(-10px - 5%)'
-						: '-50%' // short or centred
+						: '-50%' // too short or left centred on purpose
 					: isLeft
 					? 'calc(-100% - 1.2rem)'
 					: '1.2rem'; // isRight
-			const mainY = isTop ? 'calc(-1.1rem - 70%)' : isBottom ? 'calc(1.1rem + 70%)' : 0;
+			const boxY = isTop ? 'calc(-1.1rem - 70%)' : isBottom ? 'calc(1.1rem + 70%)' : 0;
 
 			return css`
 				position: relative;
@@ -72,7 +77,7 @@ const StyledTooltip = styled('div', {
 					font-weight: normal;
 					padding: 3px;
 					text-align: left;
-					transform: translate(${mainX}, ${mainY});
+					transform: translate(${boxX}, ${boxY});
 					white-space: pre;
 				}
 
