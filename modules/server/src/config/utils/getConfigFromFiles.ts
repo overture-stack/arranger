@@ -3,7 +3,7 @@ import fs, { ObjectEncodingOptions } from 'fs';
 import path from 'path';
 
 import { ENV_CONFIG } from '@/config';
-import { ConfigObject, ConfigProperties } from '@/config/types';
+import { ConfigObject, ConfigProperties, SortingInterface } from '@/config/types';
 
 type FileEncodingType =
 	| BufferEncoding
@@ -60,17 +60,35 @@ const getConfigFromFiles = (dirname: string): Promise<ConfigObject> => {
 		.then((files = []) => {
 			if (files.length === 0) throw new Error('Could not find any config files');
 
-			const configObj = files.reduce((configsAcc: Partial<ConfigObject>, file) => {
-				const [fileName, fileData] = file as [string, any];
-				const fileDataJSON = JSON.parse(fileData);
+			const configObj = (files as [string, any][]).reduce(
+				(configsAcc: Partial<ConfigObject>, [fileName, fileData]) => {
+					const fileDataJSON = JSON.parse(fileData);
 
-				return {
-					...configsAcc,
-					...fileDataJSON,
-				};
-			}, configsFromEnv) as ConfigObject; // hopefully
+					if (fileDataJSON?.[ConfigProperties.TABLE]?.[ConfigProperties.DEFAULT_SORTING]) {
+						return {
+							...configsAcc,
+							...fileDataJSON,
+							[ConfigProperties.TABLE]: {
+								...fileDataJSON[ConfigProperties.TABLE],
+								[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
+									ConfigProperties.DEFAULT_SORTING
+								].map((sorting: SortingInterface) => ({
+									...sorting,
+									desc: sorting.desc || false,
+								})),
+							},
+						};
+					}
 
-			return configObj;
+					return {
+						...configsAcc,
+						...fileDataJSON,
+					};
+				},
+				configsFromEnv,
+			);
+
+			return configObj as ConfigObject;
 		});
 };
 

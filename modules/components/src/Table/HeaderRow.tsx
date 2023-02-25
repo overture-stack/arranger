@@ -1,22 +1,30 @@
 import { css } from '@emotion/react';
 import { flexRender, HeaderGroup } from '@tanstack/react-table';
 import cx from 'classnames';
-import { get } from 'lodash';
 
 import { TransparentButton } from '@/Button';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
+import { useTableContext } from './helpers';
+
 const TableHeaderRow = ({
 	hasVisibleRows,
 	headers,
-	padding: themeTablePadding,
-	textOverflow: themeTableTextOverflow,
+	theme: {
+		padding: customPadding,
+		sortingHighlightColor: customSortingHighlightColor,
+		textOverflow: themeTableTextOverflow,
+	} = emptyObj,
 }: {
 	hasVisibleRows?: boolean;
-	padding?: string;
-	textOverflow?: string;
+	theme?: {
+		padding?: string;
+		textOverflow?: string;
+		sortingHighlightColor?: string;
+	};
 } & HeaderGroup<any>) => {
+	const { allColumnsDict } = useTableContext({ callerName: 'TableHeaderrow' });
 	const {
 		colors,
 		components: {
@@ -32,24 +40,27 @@ const TableHeaderRow = ({
 					fontFamily: themeFontFamily,
 					fontSize: themeFontSize = '0.9rem',
 					fontWeight: themeFontWeight,
-					horizontalBorderColor: themeHorizontalBorderColor,
+					horizontalBorderColor: themeBorderColor_horizontal,
 					letterSpacing: themeLetterSpacing,
 					lineHeight: themeLineHeight,
 					overflow: themeOverflow = 'hidden',
-					padding: themePadding = themeTablePadding,
+					padding: themePadding = '0.2rem 0.4rem',
 					position: themePosition,
+					sortingHighlightColor: themeSortingHighlightColor = colors?.grey?.[500],
 					textDecoration: themeTextDecoration,
 					textOverflow: themeTextOverflow = themeTableTextOverflow,
 					textTransform: themeTextTransform,
-					verticalalBorderColor: themeVerticalBorderColor,
+					verticalalBorderColor: themeBorderColor_vertical,
 					whiteSpace: themeWhiteSpace,
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'TableHeaderRow' });
 
-	const horizontalBorderColor = themeHorizontalBorderColor || themeBorderColor;
-	const verticalBorderColor = themeVerticalBorderColor || themeBorderColor;
+	const headerHighlightColor = customSortingHighlightColor || themeSortingHighlightColor;
+	const headerPadding = customPadding || themePadding;
+	const borderColor_horizontal = themeBorderColor_horizontal || themeBorderColor;
+	const borderColor_vertical = themeBorderColor_vertical || themeBorderColor;
 
 	return (
 		<tr
@@ -67,21 +78,29 @@ const TableHeaderRow = ({
 					position: ${themePosition};
 
 					&:not(:last-of-type) {
-						border-bottom: ${horizontalBorderColor && `0.1rem solid ${horizontalBorderColor}`};
+						border-bottom: ${borderColor_horizontal && `0.1rem solid ${borderColor_horizontal}`};
 					}
 				`,
 			]}
 		>
 			{headers.map((headerObj) => {
-				// TODO: lodash cheat to get around the hacky ReactTable TS mumbojumbo
-				const label = get(headerObj?.column, 'displayName');
+				const { displayName, sortable } = allColumnsDict[headerObj.id] || {
+					displayName: '',
+					sortable: false,
+				};
+
+				const isSorted = headerObj.column.getIsSorted();
 
 				return (
 					<th
-						className={cx('table_header', headerObj.id)}
+						className={cx('table_header', headerObj.id, {
+							asc: isSorted === 'asc',
+							desc: isSorted === 'desc',
+							sortable,
+						})}
 						css={css`
 							overflow: ${themeOverflow};
-							padding: ${themePadding};
+							padding: ${headerPadding};
 							position: relative;
 							text-align: left;
 							text-decoration: ${themeTextDecoration};
@@ -92,13 +111,26 @@ const TableHeaderRow = ({
 							width: ${headerObj.getSize()}px;
 
 							&:not(:last-of-type) {
-								border-right: ${verticalBorderColor && `1px solid ${verticalBorderColor}`};
+								border-right: ${borderColor_vertical && `1px solid ${borderColor_vertical}`};
+							}
+
+							&.sortable {
+								cursor: pointer;
+
+								&.asc {
+									box-shadow: inset 0 3px 0 0 ${headerHighlightColor};
+								}
+
+								&.desc {
+									box-shadow: inset 0 -3px 0 0 ${headerHighlightColor};
+								}
 							}
 						`}
 						data-accessor={headerObj.id}
-						data-header={label}
+						data-header={displayName}
 						key={headerObj.id}
-						title={label}
+						onClick={headerObj.column.getToggleSortingHandler()}
+						title={displayName}
 					>
 						{headerObj.isPlaceholder
 							? null

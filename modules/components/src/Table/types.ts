@@ -28,6 +28,7 @@ export interface TableContextInterface {
 	allColumnsDict: ColumnsDictionary;
 	currentColumnsDict: ColumnsDictionary;
 	currentPage: number;
+	defaultSorting: ColumnSortingInterface[];
 	documentType: string;
 	fetchData: FetchDataFn;
 	hasSelectedRows: boolean;
@@ -45,6 +46,8 @@ export interface TableContextInterface {
 	setCurrentPage: Dispatch<SetStateAction<number>>;
 	setPageSize: Dispatch<SetStateAction<number>>;
 	setSelectedRowsDict: Dispatch<SetStateAction<RowSelectionState>>;
+	setSorting: Dispatch<React.SetStateAction<ColumnSortingInterface[]>>;
+	sorting: ColumnSortingInterface[];
 	sqon: SQONType;
 	tableData: unknown[];
 	total: number;
@@ -84,13 +87,21 @@ type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode
 
 export type ColumnType = 'all' | DisplayType | FieldList[number];
 
+export enum ColumnListStyles {
+	NONE = 'none',
+	COMMAS = 'commas',
+	LETTERS = 'letters',
+	NUMBERS = 'numbers',
+	ROMAN = 'roman',
+}
+
 export type ColumnTypesObject = Record<
 	ColumnType,
 	{
 		cellValue: TableCellComponent;
 		headerValue: TableHeaderComponent;
 		initialWidth: number | string;
-		listStyle: string;
+		listStyle: `${ColumnListStyles}`;
 		maxWidth: number | string;
 		minWidth: number | string;
 		resizable: boolean;
@@ -105,6 +116,9 @@ export interface TableThemeProps
 		Omit<TableBoxModelProperties, 'borderRadius'> {
 	columnTypes: ColumnTypesObject;
 	defaultSort: ColumnSortingInterface[];
+	disableColumnResizing: boolean;
+	disableRowSelection: boolean;
+	disableRowSorting: boolean;
 	hideLoader: boolean;
 	noColumnsMessage?: ThemeCommon.ChildrenType;
 	noDataMessage?: ThemeCommon.ChildrenType;
@@ -151,6 +165,7 @@ export interface UseTableDataProps {
 	columnTypes?: ColumnTypesObject;
 	disableColumnResizing?: boolean;
 	disableRowSelection?: boolean;
+	disableRowSorting?: boolean;
 }
 
 export * from './ColumnsSelectButton/types';

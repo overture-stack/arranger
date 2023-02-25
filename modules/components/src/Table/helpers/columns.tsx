@@ -1,4 +1,5 @@
 import { HTMLAttributes, useEffect, useRef } from 'react';
+import { css } from '@emotion/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import { mergeWith } from 'lodash';
 
@@ -59,7 +60,17 @@ function IndeterminateCheckbox({
 		}
 	}, [ref, indeterminate]);
 
-	return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
+	return (
+		<input
+			css={css`
+				margin: 0.2rem 0 0;
+			`}
+			className={className + ' cursor-pointer'}
+			ref={ref}
+			type="checkbox"
+			{...rest}
+		/>
+	);
 }
 
 export const makeTableColumns = ({
@@ -75,6 +86,7 @@ export const makeTableColumns = ({
 }) => {
 	const columnHelper = createColumnHelper();
 	const hasData = total > 0;
+
 	const columnTypes = mergeWith(
 		customColumnTypes,
 		defaultCellTypes,
@@ -85,7 +97,12 @@ export const makeTableColumns = ({
 	) as ColumnTypesObject;
 
 	const tableColumns = visibleColumns.map((visibleColumn) => {
-		const columnType = mergeWith(
+		const {
+			cellValue: cellType,
+			headerValue: headerType,
+			size,
+			...theme
+		} = mergeWith(
 			{},
 			columnTypes.all,
 			columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.type],
@@ -95,7 +112,6 @@ export const makeTableColumns = ({
 		return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
 			...visibleColumn,
 			cell: ({ getValue, cell }) => {
-				const cellType = columnType?.cellValue;
 				const valueFromRow = getValue();
 
 				if (cellType) {
@@ -106,6 +122,7 @@ export const makeTableColumns = ({
 									...visibleColumn,
 									...cell.column,
 								},
+								theme,
 								value: valueFromRow,
 						  } as TableCellProps)
 						: cellType;
@@ -115,7 +132,6 @@ export const makeTableColumns = ({
 			},
 			header: ({ header }) => {
 				const label = visibleColumn?.displayName || header.id;
-				const headerType = columnType?.headerValue;
 
 				if (headerType) {
 					return typeof headerType === 'function'
@@ -130,24 +146,13 @@ export const makeTableColumns = ({
 				return label;
 			},
 			id: visibleColumn?.id || visibleColumn?.accessor,
-			size: columnType?.size,
+			size,
 		});
 	});
 
 	return allowRowSelection
 		? [
 				columnHelper.display({
-					header: ({ table }) => (
-						<IndeterminateCheckbox
-							{...{
-								checked: table.getIsAllRowsSelected(),
-								disabled: !hasData,
-								indeterminate: table.getIsSomeRowsSelected(),
-								onChange: table.getToggleAllRowsSelectedHandler(),
-							}}
-						/>
-					),
-					id: 'select',
 					cell: ({ row }) => (
 						<div className="px-1">
 							<IndeterminateCheckbox
@@ -159,7 +164,19 @@ export const makeTableColumns = ({
 							/>
 						</div>
 					),
-					size: 20,
+					enableResizing: false,
+					header: ({ table }) => (
+						<IndeterminateCheckbox
+							{...{
+								checked: table.getIsAllRowsSelected(),
+								disabled: !hasData,
+								indeterminate: table.getIsSomeRowsSelected(),
+								onChange: table.getToggleAllRowsSelectedHandler(),
+							}}
+						/>
+					),
+					id: 'select',
+					size: 15,
 				}),
 				...tableColumns,
 		  ]

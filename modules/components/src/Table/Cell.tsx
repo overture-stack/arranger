@@ -5,7 +5,7 @@ import cx from 'classnames';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
-import { ColumnTypesObject, FieldList } from './types';
+import { ColumnListStyles, ColumnTypesObject, FieldList } from './types';
 
 const Cell = ({
 	accessor = '',
@@ -31,7 +31,7 @@ const Cell = ({
 		components: {
 			Table: {
 				columnTypes: {
-					list: { listStyle: themeListStyle, padding: themeListPadding = '0.8rem' } = emptyObj,
+					list: { listStyle: themeListStyle } = emptyObj,
 					...otherThemeColumnTypes
 				} = emptyObj as ColumnTypesObject,
 				Row: {
@@ -49,8 +49,7 @@ const Cell = ({
 	} = useThemeContext({ callerName: 'Table - Row' });
 	const verticalBorderColor = themeVerticalBorderColor || themeBorderColor;
 
-	const { listStyle = themeListStyle, padding: listPadding = themeListPadding } =
-		otherThemeColumnTypes[accessor] || emptyObj;
+	const { listStyle = themeListStyle } = otherThemeColumnTypes[accessor] || emptyObj;
 
 	return (
 		<td
@@ -72,48 +71,51 @@ const Cell = ({
 				}
 
 				ul.list-values {
-					margin: 0.2rem 0 0;
-					padding-left: ${listPadding};
+					margin: 0;
+					padding: 0;
 
 					> li {
 						line-height: 1rem;
+						list-style-position: inside;
+						overflow: hidden;
+						text-overflow: ellipsis;
 					}
 
-					${listStyle
-						? css`
-								list-style: ${listStyle};
-								padding-left: ${listStyle === 'none' && 0};
-						  `
-						: css`
-								&.none {
-									list-style: none;
-									padding: 0;
-								}
+					&.none {
+						list-style: none;
+						padding: 0;
+					}
 
-								&.commas {
-									display: flex;
-									flex-wrap: wrap;
-									list-style: none;
-									padding: 0;
+					&.commas {
+						display: flex;
+						flex-wrap: wrap;
+						list-style: none;
+						padding: 0;
 
-									> li:not(:last-of-type)::after {
-										content: ', ';
-										margin-right: 0.2rem;
-									}
-								}
+						> li:not(:last-of-type)::after {
+							content: ', ';
+							margin-right: 0.2rem;
+						}
+					}
 
-								&.letters {
-									list-style: lower-alpha;
-								}
+					&.letters {
+						list-style: lower-alpha;
+					}
 
-								&.numbers {
-									list-style: decimal;
-								}
+					&.numbers {
+						list-style: decimal;
+					}
 
-								&.roman {
-									list-style: upper-roman;
-								}
-						  `}
+					&.roman {
+						list-style: upper-roman;
+					}
+
+					${listStyle &&
+					!Object.values(ColumnListStyles).includes(listStyle) &&
+					css`
+						list-style: ${listStyle};
+						padding-left: ${listStyle === 'none' && 0};
+					`}
 				}
 			`}
 			data-accessor={accessor}
