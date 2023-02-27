@@ -97,6 +97,7 @@
 		"minimist": "^1.2.6"
 	},
 	"jest": {
+		"maxWorkers": "20%",
 		"modulePathIgnorePatterns": [
 			"dist"
 		],

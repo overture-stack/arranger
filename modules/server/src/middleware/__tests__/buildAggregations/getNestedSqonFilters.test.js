@@ -25,7 +25,7 @@ test('1.getNestedSqonFilters should be able to extract filters applied on nested
 	expect(getNestedSqonFilters({ nestedFieldNames, sqon })).toEqual(expectedOutput);
 });
 
-test('2.getNestedSqonFilters should handle faulsey sqon', () => {
+test('2.getNestedSqonFilters should handle falsy sqon', () => {
 	const nestedFieldNames = [];
 	const sqon = null;
 

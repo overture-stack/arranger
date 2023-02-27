@@ -1073,7 +1073,8 @@ test('9.buildQuery "not-in" op', () => {
 });
 
 // we need a way to handle object fields before the following is valid
-// test('it must reject invalid pivot fields', () => {
+// TODO: is this already possible?
+// test('10.buildQuery must reject invalid pivot fields', () => {
 //   const testFunction = () => {
 //     const input = {
 //       nestedFieldNames: ['files'],

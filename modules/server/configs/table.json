@@ -1,130 +1,91 @@
 {
 	"table": {
-		"defaultSorting": [
-			{
-				"fieldName": "analysis.analysis_id",
-				"desc": false
-			}
-		],
-		"keyFieldName": "id",
 		"columns": [
 			{
 				"accessor": "analysis.analysis_id",
 				"canChangeShow": true,
 				"fieldName": "analysis.analysis_id",
-				"jsonPath": null,
-				"query": null,
 				"show": true,
 				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": true,
+				"accessor": "analysis.analysis_state",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "analysis.analysis_state",
-				"accessor": "analysis.analysis_state"
+				"show": true,
+				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": true,
+				"accessor": "analysis.analysis_tools",
 				"canChangeShow": true,
-				"displayFormat": "commas",
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "analysis.analysis_tools",
-				"accessor": "analysis.analysis_tools"
+				"show": true,
+				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": true,
+				"accessor": "analysis.analysis_type",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "analysis.analysis_type",
-				"accessor": "analysis.analysis_type"
+				"show": true,
+				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": true,
+				"accessor": "analysis.analysis_version",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "analysis.analysis_version",
-				"accessor": "analysis.analysis_version"
+				"show": true,
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
-				"canChangeShow": false,
-				"query": null,
-				"jsonPath": null,
+				"accessor": "analysis.experiment",
 				"fieldName": "analysis.experiment",
-				"accessor": "analysis.experiment"
+				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": true,
+				"accessor": "data_type",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "data_type",
-				"accessor": "data_type"
+				"show": true,
+				"sortable": true
 			},
 			{
-				"show": true,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                donor_id\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.donor_id",
 				"fieldName": "donors.donor_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.donor_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                donor_id\n              }\n              }\n              }\n              }",
+				"show": true
 			},
 			{
-				"show": true,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                age\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.age",
 				"fieldName": "donors.age",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.age",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                age\n              }\n              }\n              }\n              }",
+				"show": true
 			},
 			{
-				"show": true,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                gender\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.gender",
 				"fieldName": "donors.gender",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.gender",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                gender\n              }\n              }\n              }\n              }",
+				"show": true
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                matched_normal_submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.matched_normal_submitter_sample_id",
 				"fieldName": "donors.specimens.samples.matched_normal_submitter_sample_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.matched_normal_submitter_sample_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                matched_normal_submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_id",
 				"fieldName": "donors.specimens.samples.sample_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_type",
 				"fieldName": "donors.specimens.samples.sample_type",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.sample_type",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                sample_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
 				"canChangeShow": true,
@@ -132,279 +93,193 @@
 				"fieldName": "donors.specimens.samples.collection_date",
 				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.collection_date",
 				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                collection_date\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"show": true,
-				"sortable": false
+				"show": true
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.submitter_sample_id",
 				"fieldName": "donors.specimens.samples.submitter_sample_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.edges[*].node.submitter_sample_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                samples {\n                hits {\n                edges {\n                node {\n                submitter_sample_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "donors.hits.edges[0].node.specimens.hits.edges[0].node.samples.hits.total",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.total",
 				"fieldName": "donors.specimens.samples.hits.total",
-				"accessor": "donors.hits.edges[0].node.specimens.hits.edges[0].node.samples.hits.total"
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.samples.hits.total",
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_id",
 				"fieldName": "donors.specimens.specimen_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_tissue_source\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_tissue_source",
 				"fieldName": "donors.specimens.specimen_tissue_source",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_tissue_source",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_tissue_source\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_type",
 				"fieldName": "donors.specimens.specimen_type",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.specimen_type",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                specimen_type\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                submitter_specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.submitter_specimen_id",
 				"fieldName": "donors.specimens.submitter_specimen_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.submitter_specimen_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                submitter_specimen_id\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                tumour_normal_designation\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.tumour_normal_designation",
 				"fieldName": "donors.specimens.tumour_normal_designation",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.edges[*].node.tumour_normal_designation",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                specimens {\n                hits {\n                edges {\n                node {\n                tumour_normal_designation\n              }\n              }\n              }\n              }\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "donors.hits.edges[0].node.specimens.hits.total",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.total",
 				"fieldName": "donors.specimens.hits.total",
-				"accessor": "donors.hits.edges[0].node.specimens.hits.total"
+				"jsonPath": "$.donors.hits.edges[*].node.specimens.hits.total",
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                submitter_donor_id\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.submitter_donor_id",
 				"fieldName": "donors.submitter_donor_id",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.submitter_donor_id",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                submitter_donor_id\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
 				"canChangeShow": true,
-				"query": "donors {\n                hits {\n                edges {\n                node {\n                vaccinated\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.donors.hits.edges[*].node.vaccinated",
 				"fieldName": "donors.vaccinated",
-				"accessor": null
+				"jsonPath": "$.donors.hits.edges[*].node.vaccinated",
+				"query": "donors {\n                hits {\n                edges {\n                node {\n                vaccinated\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "donors.hits.total",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "donors.hits.total",
-				"accessor": "donors.hits.total"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.index_file.file_type",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.index_file.file_type",
-				"accessor": "file.index_file.file_type"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.index_file.md5sum",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.index_file.md5sum",
-				"accessor": "file.index_file.md5sum"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.index_file.name",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.index_file.name",
-				"accessor": "file.index_file.name"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.index_file.object_id",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.index_file.object_id",
-				"accessor": "file.index_file.object_id"
+				"sortable": true
 			},
 			{
 				"canChangeShow": true,
 				"fieldName": "file.index_file.size",
-				"jsonPath": null,
-				"query": null,
 				"show": true,
 				"sortable": true,
 				"type": "bytes"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.md5sum",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.md5sum",
-				"accessor": "file.md5sum"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file.name",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file.name",
-				"accessor": "file.name"
+				"sortable": true
 			},
 			{
 				"canChangeShow": true,
 				"fieldName": "file.size",
-				"jsonPath": null,
-				"query": null,
 				"show": true,
 				"sortable": true,
 				"type": "bytes"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file_access",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file_access",
-				"accessor": "file_access"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
-				"canChangeShow": false,
-				"query": null,
-				"jsonPath": null,
+				"accessor": "file_autocomplete",
 				"fieldName": "file_autocomplete",
-				"accessor": "file_autocomplete"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "file_type",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "file_type",
-				"accessor": "file_type"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "object_id",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "object_id",
-				"accessor": "object_id"
+				"sortable": true
 			},
 			{
-				"show": false,
-				"sortable": false,
-				"canChangeShow": false,
-				"query": "repositories {\n                hits {\n                edges {\n                node {\n                code\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.repositories.hits.edges[*].node.code",
 				"fieldName": "repositories.code",
-				"accessor": null
+				"jsonPath": "$.repositories.hits.edges[*].node.code",
+				"query": "repositories {\n                hits {\n                edges {\n                node {\n                code\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
-				"canChangeShow": false,
-				"query": "repositories {\n                hits {\n                edges {\n                node {\n                country\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.repositories.hits.edges[*].node.country",
 				"fieldName": "repositories.country",
-				"accessor": null
+				"jsonPath": "$.repositories.hits.edges[*].node.country",
+				"query": "repositories {\n                hits {\n                edges {\n                node {\n                country\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
-				"canChangeShow": false,
-				"query": "repositories {\n                hits {\n                edges {\n                node {\n                name\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.repositories.hits.edges[*].node.name",
 				"fieldName": "repositories.name",
-				"accessor": null
+				"jsonPath": "$.repositories.hits.edges[*].node.name",
+				"query": "repositories {\n                hits {\n                edges {\n                node {\n                name\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
-				"canChangeShow": false,
-				"query": "repositories {\n                hits {\n                edges {\n                node {\n                organization\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.repositories.hits.edges[*].node.organization",
 				"fieldName": "repositories.organization",
-				"accessor": null
+				"jsonPath": "$.repositories.hits.edges[*].node.organization",
+				"query": "repositories {\n                hits {\n                edges {\n                node {\n                organization\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": false,
-				"canChangeShow": false,
-				"query": "repositories {\n                hits {\n                edges {\n                node {\n                url\n              }\n              }\n              }\n              }",
-				"jsonPath": "$.repositories.hits.edges[*].node.url",
 				"fieldName": "repositories.url",
-				"accessor": null
+				"jsonPath": "$.repositories.hits.edges[*].node.url",
+				"query": "repositories {\n                hits {\n                edges {\n                node {\n                url\n              }\n              }\n              }\n              }"
 			},
 			{
-				"show": false,
-				"sortable": true,
+				"accessor": "repositories.hits.total",
 				"canChangeShow": true,
-				"query": null,
-				"jsonPath": null,
 				"fieldName": "repositories.hits.total",
-				"accessor": "repositories.hits.total"
+				"sortable": true
 			},
 			{
 				"accessor": "study_id",
 				"canChangeShow": true,
 				"fieldName": "study_id",
-				"jsonPath": null,
-				"query": null,
-				"show": false,
 				"sortable": true
 			}
-		]
+		],
+		"defaultSorting": [
+			{
+				"desc": false,
+				"fieldName": "analysis.analysis_id"
+			}
+		],
+		"keyFieldName": "id"
 	}
 }
