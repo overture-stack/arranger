@@ -1,6 +1,0 @@
-Dockerfile*
-docker-compose.yml
-.git
-docker
-!docker/ui/**
-.npmrc

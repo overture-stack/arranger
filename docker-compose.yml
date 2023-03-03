@@ -1,70 +1,48 @@
-version: '3.7'
+version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    container_name: elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
     ports:
       - 9200:9200
       - 9300:9300
+  server:
+    build:
+      target: arranger-server
     environment:
-      discovery.type: single-node
-      cluster.name: workflow.elasticsearch
-      ES_JAVA_OPTS: -Xms512m -Xmx2048m
-      ELASTIC_PASSWORD: '$ES_PASSWORD'
-      xpack.security.enabled: 'true'
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '50m'
-        max-file: '10'
-    healthcheck:
-      test: 'curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1'
-      interval: 1m30s
-      timeout: 50s
-      retries: 5
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.5.0
-    ports:
-      - 5601:5601
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '50m'
-        max-file: '10'
+      - SERVER_PORT=6060
+      - ARRANGER_PROJECT_ID=testproject
+      - ELASTICSEARCH=http://elasticsearch:9200
     depends_on:
       - elasticsearch
-    environment:
-      LOGGING_QUIET: 'true'
-      ELASTICSEARCH_USERNAME: '$ES_USERNAME'
-      ELASTICSEARCH_PASSWORD: '$ES_PASSWORD'
-
-  arranger-server:
+  admin_server:
     build:
-      context: ./
-      target: server
-      dockerfile: ./docker/Dockerfile.local
-    container_name: arranger-server.local
+      target: arranger-admin-server
+    environment:
+      - ADMIN_SERVER_PORT=5050
+      - ELASTICSEARCH=http://elasticsearch:9200
     depends_on:
+      - server
       - elasticsearch
-    ports:
-      - 5050:5050
-    environment:
-      ES_HOST: http://elasticsearch:9200
-      ES_USER: '$ES_USERNAME'
-      ES_PASS: '$ES_PASSWORD'
-
-  arranger-ui:
+  admin_ui:
     build:
-      context: ./
-      target: ui
-      dockerfile: ./docker/Dockerfile.local
-    hostname: arranger-ui.local
-    container_name: arranger-ui.local
-    depends_on:
-      - arranger-server
+      target: arranger-admin-ui
     environment:
-      REACT_APP_ARRANGER_ADMIN_ROOT: 'http://arranger-server:5050'
-      PORT: 3000
-    ports:
-      - 8080:3000
+      - REACT_APP_ARRANGER_ADMIN_ROOT=http://admin_server:5050/admin/graphql
+      - HOST=0.0.0.0
+      - PORT=4000
+    depends_on:
+      - admin_server

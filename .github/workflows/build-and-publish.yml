@@ -1,0 +1,156 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [patched-version]
+
+jobs:
+  extract-branch-name:
+    runs-on: ubuntu-20.04
+    outputs:
+      branch: ${{steps.extract_branch.outputs.branch}}
+    steps:
+      - name: Extract Branch Name
+        id: extract_branch
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+  get-version:
+    runs-on: ubuntu-20.04
+    outputs:
+      app_version: ${{steps.get-version.outputs.app_version}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get Version
+        id: get-version
+        shell: bash
+        run: echo "app_version=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`" >> $GITHUB_OUTPUT
+
+  build-and-push-server-docker-image:
+    needs: [extract-branch-name, get-version]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
+    name: Build server filter Docker image and push to repositories
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: indoc-devops
+          password: ${{ secrets.GHCR_PAT }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/pilotdataplatform/arranger-server
+          # generate Docker tags based on the following events/attributes
+          sep-tags: ','
+          tags: |
+            type=sha,enable=true,prefix=arranger-server-,suffix=,format=short
+            type=raw,prefix=arranger-server-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Build image and push to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: ${{ steps.meta.outputs.tags }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.event_name != 'pull_request' }}
+          # Sets the target stage to build
+          target: arranger-server
+
+  build-and-push-admin-server-docker-image:
+    needs: [extract-branch-name, get-version]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
+    name: Build admin server Docker image and push to repositories
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: indoc-devops
+          password: ${{ secrets.GHCR_PAT }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/pilotdataplatform/arranger-admin-server
+          # generate Docker tags based on the following events/attributes
+          sep-tags: ','
+          tags: |
+            type=sha,enable=true,prefix=arranger-admin-server-,suffix=,format=short
+            type=raw,prefix=arranger-admin-server-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Build image and push to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: ${{ steps.meta.outputs.tags }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.event_name != 'pull_request' }}
+          # Sets the target stage to build
+          target: arranger-admin-server
+
+  build-and-push-admin-ui-docker-image:
+    needs: [extract-branch-name, get-version]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
+    name: Build admin-ui Docker image and push to repositories
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: indoc-devops
+          password: ${{ secrets.GHCR_PAT }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/pilotdataplatform/arranger-admin-ui
+          # generate Docker tags based on the following events/attributes
+          sep-tags: ','
+          tags: |
+            type=sha,enable=true,prefix=arranger-admin-ui-,suffix=,format=short
+            type=raw,prefix=arranger-admin-ui-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Build image and push to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: ${{ steps.meta.outputs.tags }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.event_name != 'pull_request' }}
+          # Sets the target stage to build
+          target: arranger-admin-ui

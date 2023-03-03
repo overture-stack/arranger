@@ -6,7 +6,7 @@ import {downloader} from "./export/export-file.js";
 
 import {
 	ARRANGER_PROJECT_ID,
-	PORT,
+	SERVER_PORT,
   ELASTICSEARCH
 } from './config.js';
 // We need to pull the createProjectSchema method out of the arranger server dist because this gives us access to the `getServerSideFilter` method
@@ -60,6 +60,6 @@ server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql/*`});
 app.use(`/${ARRANGER_PROJECT_ID}/download`, downloader({ projectId: ARRANGER_PROJECT_ID, es: esClient,
 arranger_schema: arrangerSchemaDownload}))
 
-app.listen(PORT, () => {
-	console.log(`Server running on ${PORT}`);
+app.listen(SERVER_PORT, () => {
+	console.log(`Arranger server running on ${SERVER_PORT}`);
 });

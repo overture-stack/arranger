@@ -3,7 +3,7 @@ import adminGraphql from '@arranger/admin/dist/index.js';
 
 
 import {
-	PORT,
+	ADMIN_SERVER_PORT,
   ELASTICSEARCH
 } from './config.js';
 
@@ -18,6 +18,6 @@ const app = express();
 adminApp.applyMiddleware({app, path: '/admin/graphql'})
 
 
-app.listen(PORT, () => {
-	console.log(`Admin server running on ${PORT}`);
+app.listen(ADMIN_SERVER_PORT, () => {
+	console.log(`Admin server running on ${ADMIN_SERVER_PORT}`);
 });
