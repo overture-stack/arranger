@@ -50,14 +50,14 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/pilotdataplatform/arranger
+            ghcr.io/pilotdataplatform/arranger-admin-server
           # generate Docker tags based on the following events/attributes
           sep-tags: ','
           tags: |
             type=sha,enable=true,prefix=arranger-admin-server-,suffix=,format=short
             type=raw,prefix=arranger-admin-server-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
-      - name: Image digest
-        run: echo ${{ steps.meta.outputs.tags }}
+#      - name: Image digest
+#        run: echo ${{ steps.meta.outputs.tags }}
       - name: Build image and push to GitHub Container Registry
         uses: docker/build-push-action@v2
         with:
