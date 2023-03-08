@@ -1,0 +1,126 @@
+name: Build and Publish admin server
+
+on:
+  push:
+    branches: [patched-version]
+    paths:
+      - 'modules/server-filter/**'
+jobs:
+  extract-branch-name:
+    runs-on: ubuntu-20.04
+    outputs:
+      branch: ${{steps.extract_branch.outputs.branch}}
+    steps:
+      - name: Extract Branch Name
+        id: extract_branch
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+  get-version:
+    runs-on: ubuntu-20.04
+    outputs:
+      app_version: ${{steps.get-version.outputs.app_version}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get Version
+        id: get-version
+        shell: bash
+        run: echo "app_version=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`" >> $GITHUB_OUTPUT
+
+  build-and-push-docker-image:
+    needs: [extract-branch-name, get-version]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
+    name: Build admin server Docker image and push to repositories
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Github Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: indoc-devops
+          password: ${{ secrets.GHCR_PAT }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/pilotdataplatform/arranger-server
+          # generate Docker tags based on the following events/attributes
+          sep-tags: ','
+          tags: |
+            type=sha,enable=true,prefix=arranger-server-filter-,suffix=,format=short
+            type=raw,prefix=arranger-server-filter-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
+#      - name: Image digest
+#        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Build image and push to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: ${{ steps.meta.outputs.tags }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.event_name != 'pull_request' }}
+          # Sets the target stage to build
+          target: arranger-server
+
+  Trigger:
+    needs: [build-and-push-docker-image, extract-branch-name]
+    #if: ${{ (github.event.workflow_run.conclusion == 'success' && needs.extract-branch-name.outputs.branch == 'patched-version') || (needs.extract-branch-name.outputs.branch == 'main') }}
+    if: ${{ (needs.extract-branch-name.outputs.branch == 'patched-version') || (needs.extract-branch-name.outputs.branch == 'main') }}
+    name: Trigger jenkins job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set branch-based environment variables
+        uses: iamtheyammer/branch-env-vars@v1.2.0
+        with:
+          bevOverwrite: true
+          ENV: |
+            main:staging
+            patched-version:dev
+          CI_EXTERNAL_URL: |
+            main:https://ci-external.staging.pilot.indocresearch.org
+            patched-version:https://ci-external.dev.pilot.indocresearch.org
+          CI_API_TOKEN: |
+            main:${{ secrets.CI_API_TOKEN_STG  }}
+            patched-version:${{ secrets.CI_API_TOKEN_DEV  }}
+      - name: echo commit sha
+        # run:  full_commit_SHA="${{ github.event.workflow_run.head_sha }}" && short_commit_SHA=$(echo "${full_commit_SHA:0:7}") && echo "SHA=$short_commit_SHA" >> $GITHUB_ENV
+        # getting commit_SHA for when this job has been trigger by push (not workflow_run)
+        run:  full_commit_SHA="${{ github.sha }}" && short_commit_SHA=$(echo "${full_commit_SHA:0:7}") && echo "SHA=$short_commit_SHA" >> $GITHUB_ENV
+      - name: trigger the jenkins pipeline with curl
+        run: |
+          target_release=arranger-server-filter
+          env=${ENV}
+          echo "The CI external URL is ${CI_EXTERNAL_URL}"
+          curl --silent -i -X POST -m 60 -L -o output.txt --user jenkins:${CI_API_TOKEN} ${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/buildWithParameters --data TF_TARGET_ENV=$env --data TARGET_RELEASE=$target_release --data NEW_APP_VERSION="${{ env.SHA }}"
+          location=$(cat output.txt | grep location | cut -d " " -f2 | sed 's/\r//')
+          link=${location}api/json && echo $link && echo -n "location_link=$link" >> $GITHUB_ENV
+      - name: getting the json
+        run: |
+          sleep 10
+          curl --silent -o output.json --user jenkins:${CI_API_TOKEN} -X GET "${{ env.location_link }}"
+      - name: getting the build number
+        uses: sergeysova/jq-action@v2
+        id: build_number
+        with:
+          cmd: |
+            cd /github/workspace
+            build_num=$(jq .executable.number output.json -r)
+            echo $build_num && echo "build_number=$build_num" >> $GITHUB_ENV
+      - name: getting the result of the pipeline
+        run: |
+         timer=0;
+         timeout=300;
+         step=5;
+         echo "${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/${{ env.build_number }}/api/json"
+         result=$(curl --silent --user jenkins:${CI_API_TOKEN} -X GET "${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/${{ env.build_number }}/api/json" | grep -Eo '"result"[^,]*' | grep -Eo '[^:]*$' |  tr -d '"')
+         while [[ "$result" != "SUCCESS" && "$result" != "FAILURE" && $timer -lt $timeout ]]; do result=$(curl --silent --user jenkins:${CI_API_TOKEN} -X GET "${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/${{ env.build_number }}/api/json" | grep -Eo '"result"[^,]*' | grep -Eo '[^:]*$' |  tr -d '"') && sleep $step && ((timer=timer+step)) && echo "result=$result in $timer seconds"; done
+         if [ "$result" != "SUCCESS" ]; then exit 1; fi
+
