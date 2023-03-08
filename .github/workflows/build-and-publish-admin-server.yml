@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: echo "app_version=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`" >> $GITHUB_OUTPUT
 
-  build-and-push-admin-server-docker-image:
+  build-and-push-docker-image:
     needs: [extract-branch-name, get-version]
     if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
     name: Build admin server Docker image and push to repositories
