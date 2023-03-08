@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react';
 
-import { ColumnMappingInterface, ExtendedMappingInterface } from '@/DataContext/types';
+import { ColumnMappingInterface } from '@/DataContext/types';
 import download from '@/utils/download';
 import { emptyObj } from '@/utils/noops';
 
 import {
-	CustomExporterList,
-	CustomExportersInput,
-	ExporterDetailsInterface,
+	CustomExporterDetailsInterface,
+	CustomExporterInput,
 	ExporterFileInterface,
 	ExporterFunctionProps,
 	ProcessedExporterDetailsInterface,
-	ProcessedExporterList,
+	ProcessedExporterInput,
 } from './types';
 
 const useCustomisers =
-	(extendedColumn: ExtendedMappingInterface) =>
+	(extendedColumn: ColumnMappingInterface) =>
 	([customiserLabel, customiserValue]: [
 		key: string,
 		value: any,
@@ -41,7 +40,7 @@ export const saveTSV = async ({
 		params: {
 			fileName,
 			files: files.map(
-				({ allColumnsDict, columns, exporterColumns = null, ...file }: ExporterFileInterface) => ({
+				({ allColumnsDict, columns, exporterColumns, ...file }: ExporterFileInterface) => ({
 					...file,
 					columns: exporterColumns // if the component gave you custom columns to show
 						? Object.values(
@@ -51,13 +50,18 @@ export const saveTSV = async ({
 											switch (typeof column) {
 												// checking if each column is customised
 												case 'object': {
-													const extendedColumn = allColumnsDict[column.fieldName];
+													const fieldName =
+														typeof column.fieldName === 'function'
+															? column.fieldName?.(column)
+															: column.fieldName;
+
+													const extendedColumn = allColumnsDict[fieldName];
 													const useExtendedCustomisers = useCustomisers(extendedColumn);
 
 													return {
 														...extendedColumn,
 														...Object.entries(column).reduce(
-															(customisers, customiser: ColumnCustomiserTuple) => ({
+															(customisers, customiser) => ({
 																...customisers,
 																...useExtendedCustomisers(customiser),
 															}),
@@ -74,56 +78,73 @@ export const saveTSV = async ({
 									  })
 									: allColumnsDict, // else, they're asking for all the columns
 						  )
-						: columns.filter((column) => column.show), // no custom columns, use admin's
+						: columns?.filter((column) => typeof column === 'object' && column.show), // no custom columns, use admin's
 				}),
 			),
 			...options.params,
 		},
 	});
 
-const prefixExporter = (item: ExporterDetailsInterface) =>
+const prefixExporter = (item: CustomExporterDetailsInterface): ProcessedExporterDetailsInterface =>
 	Object.entries(item).reduce(
 		(exporterItem, [key, value]) => ({
 			...exporterItem,
 			[`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
 		}),
-		{} as ProcessedExporterDetailsInterface,
+		{},
 	);
 
 const processExporter = (
 	// type scapehatch for functionality convenience
-	item = 'saveTSV' as CustomExportersInput,
-): ProcessedExporterDetailsInterface =>
-	// if they want to use the internal saveTSV function
-	[item, item?.function].includes('saveTSV') ||
-	// or if they give us a filename without giving us their own function
-	('fileName' in item && !('fn' in item))
-		? {
-				...(item?.columns && Array.isArray(item.columns) && { exporterColumns: item.columns }),
-				// downloadUrl?
-				exporterFileName: item?.fileName || 'unnamed.tsv',
-				exporterFunction: saveTSV,
-				exporterLabel: item?.label || 'Export TSV',
-				exporterMaxRows: item?.maxRows || 0,
-				exporterRequiresRowSelection: item?.requiresRowSelection || false,
-				...(item?.valueWhenEmpty != null && { exporterValueWhenEmpty: item.valueWhenEmpty }),
-		  }
-		: prefixExporter(item);
+	item: CustomExporterDetailsInterface,
+): ProcessedExporterDetailsInterface => {
+	// default values for an exporter
+	const baseExporter = {
+		// downloadUrl?
+		exporterFileName: 'unnamed.tsv',
+		exporterFunction: saveTSV,
+		exporterLabel: 'Export TSV',
+		exporterMaxRows: 0,
+		exporterRequiresRowSelection: false,
+	};
 
-export const useExporters = (customExporters?: CustomExporterList) => {
+	// if they want to use the internal saveTSV function with its default settings
+	if (item === 'saveTSV') return baseExporter;
+
+	if (
+		item?.function === 'saveTSV' || // or using the internal saveTSV function, while customising things
+		('fileName' in item && !('function' in item)) // or they pass a filename without a custom function
+	) {
+		const { columns, fileName, label, maxRows, requiresRowSelection, valueWhenEmpty } = item;
+
+		return {
+			...baseExporter,
+			...(columns && Array.isArray(columns) && { exporterColumns: columns }),
+			...(fileName && { exporterFileName: fileName }),
+			...(label && { exporterLabel: label }),
+			...(maxRows && { exporterMaxRows: maxRows }),
+			...(requiresRowSelection && { exporterRequiresRowSelection: requiresRowSelection }),
+			...(valueWhenEmpty && { exporterValueWhenEmpty: valueWhenEmpty }),
+		};
+	}
+
+	return prefixExporter(item);
+};
+
+export const useExporters = (customExporters?: CustomExporterInput) => {
 	const [hasMultiple, setHasMultiple] = useState<boolean>(false);
-	const [exporters, setExporters] = useState<ProcessedExporterList>(
-		emptyObj as ProcessedExporterList,
-	);
+	const [exporters, setExporters] = useState<ProcessedExporterInput>(emptyObj);
 
 	useEffect(() => {
-		if (Array.isArray(customExporters)) {
-			if (customExporters.length > 0) {
-				setHasMultiple(customExporters.length > 1);
-				setExporters(customExporters.filter(Boolean).map(processExporter));
+		if (customExporters) {
+			if (Array.isArray(customExporters)) {
+				if (customExporters.length > 0) {
+					setHasMultiple(customExporters.length > 1);
+					setExporters(customExporters.filter(Boolean).map(processExporter));
+				}
+			} else {
+				setExporters(processExporter(customExporters));
 			}
-		} else {
-			setExporters(processExporter(customExporters));
 		}
 	}, [customExporters]);
 

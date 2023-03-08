@@ -2,6 +2,7 @@ import Spinner from 'react-spinkit';
 
 import DataTable, { ColumnsState } from '@/DataTable';
 import TextInput from '@/Input';
+import { withTableContext } from '@/Table';
 import defaultApiFetcher from '@/utils/api';
 import noopFn from '@/utils/noops';
 
@@ -72,4 +73,4 @@ const Table = ({
 	);
 };
 
-export default Table;
+export default withTableContext(Table);

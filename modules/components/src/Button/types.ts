@@ -1,4 +1,4 @@
-import { MouseEvent, PropsWithChildren } from 'react';
+import { MouseEventHandler, PropsWithChildren, TouchEventHandler } from 'react';
 
 import { ThemeCommon } from '@/ThemeContext/types';
 import { TooltipThemeProperties } from '@/Tooltip';
@@ -15,16 +15,18 @@ export type ButtonStyleProps = ThemeCommon.BoxModelProperties &
 	ThemeCommon.FontHoverProperties &
 	TooltipThemeProperties;
 
-export interface MouseEventProps<T = HTMLButtonElement> {
-	onClick?: (event: MouseEvent<T>) => unknown;
+export interface MouseEventProps {
+	onClick?: MouseEventHandler;
+	onMouseDown?: MouseEventHandler;
+	onTouchStart?: TouchEventHandler;
 }
 
 // To be used in the theme interface.
 export type ThemedButtonProps = ButtonCustomProps & ButtonStyleProps;
 
 // To be used in components.
-type ButtonProps<T = HTMLButtonElement> = PropsWithChildren<
-	MouseEventProps<T> &
+type ButtonProps = PropsWithChildren<
+	MouseEventProps &
 		ButtonCustomProps & {
 			theme?: Partial<ButtonStyleProps>;
 		}

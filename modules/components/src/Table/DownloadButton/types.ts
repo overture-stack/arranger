@@ -3,40 +3,9 @@ import type { Merge } from 'type-fest';
 
 import { ColumnMappingInterface, SQONType } from '@/DataContext/types';
 import { DropDownThemeProps } from '@/DropDown/types';
-import { ColumnsDictionary, FieldList } from '@/Table/types';
+import { ColumnsDictionary } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
-import { PrefixKeys, WithFunctionOptions, TypesUnionPropertiesOfInterface } from '@/utils/types';
-
-export type DownloadFunction = (options: {
-	url: any;
-	params: any;
-	method?: string;
-	body?: Record<string, any>;
-}) => () => Promise<void>;
-
-export interface ExporterFileInterface {
-	allColumnsDict: ColumnsDictionary;
-	columns: ColumnMappingInterface[];
-	documentType: string;
-	exporterColumns?: (ColumnMappingInterface['fieldName'] | ColumnMappingInterface)[] | null;
-	fileName: string;
-	fileType: 'tsv' | string;
-	maxRows: number;
-	sqon: SQONType;
-}
-
-export interface ExporterFunctionProps {
-	fileName?: string;
-	files: ExporterFileInterface[];
-	options?: Record<string, any>;
-	selectedRows: string[];
-	url: string;
-}
-
-export type ExporterFunction = (
-	exporter: ExporterFunctionProps,
-	downloadFunction?: DownloadFunction,
-) => void;
+import { PrefixKeys, TypesUnionPropertiesOfInterface } from '@/utils/types';
 
 export interface TableColumnMappingInterface extends ColumnMappingInterface {
 	Header: ReactNode;
@@ -47,11 +16,42 @@ export type CustomColumnMappingInterface = TypesUnionPropertiesOfInterface<
 	(TableColumnMappingInterface: any) => any
 >;
 
-// export type CustomColumnMappingInterface = WithFunctionOptions<Partial<ColumnMappingInterface>>;
-// export type CustomColumnMappingInterface = WithFunctionOptions<Partial<ExtendedMappingInterface>>;
+type ExporterColumnMappingInterface = (string | CustomColumnMappingInterface)[] | null;
+
+export interface ExporterFileInterface {
+	allColumnsDict: ColumnsDictionary;
+	columns: ExporterColumnMappingInterface;
+	documentType: string;
+	exporterColumns?: ExporterColumnMappingInterface;
+	fileName: string;
+	fileType: 'tsv' | string;
+	maxRows: number;
+	sqon: SQONType;
+	valueWhenEmpty: ReactNode;
+}
+
+export interface ExporterFunctionProps {
+	fileName?: string;
+	files: ExporterFileInterface[];
+	options?: Record<string, any>;
+	selectedRows: string[];
+	url: string;
+}
+
+export type DownloadFunction = (options: {
+	url: any;
+	params: any;
+	method?: string;
+	body?: Record<string, any>;
+}) => () => Promise<void>;
+
+export type ExporterFunction = (
+	exporter: ExporterFunctionProps,
+	downloadFunction?: DownloadFunction,
+) => void;
 
 export interface ExporterDetailsInterface {
-	columns?: (string | CustomColumnMappingInterface)[] | null;
+	columns?: ExporterColumnMappingInterface;
 	downloadUrl?: string;
 	fileName?: string;
 	function?: ExporterFunction;
@@ -61,23 +61,25 @@ export interface ExporterDetailsInterface {
 	valueWhenEmpty?: ReactNode;
 }
 
-export type CustomExportersInput = Merge<
-	ExporterDetailsInterface,
-	{
-		function?: ExporterFunction | 'saveTSV';
-	}
->;
+export type ExporterInput = ExporterDetailsInterface | ExporterDetailsInterface[];
 
 export type ProcessedExporterDetailsInterface = PrefixKeys<ExporterDetailsInterface, 'exporter'>;
-
-export type CustomExporterList = CustomExportersInput | CustomExportersInput[];
-export type ExporterList = ExporterDetailsInterface | ExporterDetailsInterface[];
-export type ProcessedExporterList =
+export type ProcessedExporterInput =
 	| ProcessedExporterDetailsInterface
 	| ProcessedExporterDetailsInterface[];
 
+export type CustomExporterDetailsInterface =
+	| Merge<
+			ExporterDetailsInterface,
+			{
+				function?: ExporterFunction | 'saveTSV';
+			}
+	  >
+	| 'saveTSV';
+export type CustomExporterInput = CustomExporterDetailsInterface | CustomExporterDetailsInterface[];
+
 export interface ExporterCustomisationProps {
-	customExporters: CustomExporterList;
+	customExporters: CustomExporterInput;
 	downloadUrl: string;
 	maxRows: number;
 	label: ThemeCommon.ChildrenType;

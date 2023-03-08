@@ -55,7 +55,7 @@ const composedRangeAgg = ({
 					value,
 					active: fieldInCurrentSQON({
 						currentSQON: nextSQON?.content,
-						field: fieldName,
+						fieldName,
 					}),
 				},
 			});

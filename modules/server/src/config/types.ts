@@ -41,6 +41,11 @@ export const ConfigProperties = {
 
 export type ConfigProperties = ConfigRequiredProperties | ConfigOptionalProperties;
 
+export interface SortingInterface {
+	[ConfigProperties.DESCENDING]: boolean;
+	[ConfigProperties.FIELD_NAME]: string;
+}
+
 // TODO: will tighten these later with a TS migration
 export interface ConfigObject {
 	[ConfigProperties.DOCUMENT_TYPE]: string;
@@ -56,10 +61,7 @@ export interface ConfigObject {
 	[ConfigProperties.MATCHBOX]: any[];
 	[ConfigProperties.TABLE]: {
 		[ConfigProperties.COLUMNS]: any[];
-		[ConfigProperties.DEFAULT_SORTING]?: {
-			[ConfigProperties.DESCENDING]: boolean;
-			[ConfigProperties.FIELD_NAME]: string;
-		}[];
+		[ConfigProperties.DEFAULT_SORTING]?: SortingInterface[];
 		[ConfigProperties.KEY_FIELD_NAME]?: string;
 		[ConfigProperties.MAX_RESULTS_WINDOW]?: number;
 	};

@@ -13,7 +13,7 @@ spec:
           value: http://localhost:9200
       resources:
         requests:
-          memory: 512Mi
+          memory: 768Mi
           cpu: 1000m
         limits:
           memory: 2560Mi
@@ -34,7 +34,7 @@ spec:
           cpu: 1024m
         limits:
           memory: 1024Mi
-          cpu: 1024m
+          cpu: 1536M
     - name: docker
       image: docker:20-git
       tty: true
@@ -49,7 +49,7 @@ spec:
           cpu: 100m
         limits:
           memory: 512Mi
-          cpu: 1000m
+          cpu: 1024m
     - name: dind-daemon
       image: docker:18-dind
       securityContext:
@@ -80,9 +80,10 @@ pipeline {
     }
 
     environment {
-        dockerHubRepo = 'overture/arranger'
+        dockerHubImageName = 'overture/arranger'
         gitHubRegistry = 'ghcr.io'
         gitHubRepo = 'overture-stack/arranger'
+        githubImageName = "${gitHubRegistry}/${gitHubRepo}"
         chartsServer = 'https://overture-stack.github.io/charts-server/'
 
         commit = sh(
@@ -147,47 +148,7 @@ pipeline {
                         --target server \
                         --network=host \
                         -f ./docker/Dockerfile.jenkins \
-                        -t arranger-server:${commit} ."
-                }
-            }
-        }
-
-        stage('Publish tag to npm') {
-            when {
-                branch 'main'
-            }
-            steps {
-                container('node') {
-                    withCredentials([
-                        string(
-                            credentialsId: 'OvertureNPMAutomationToken',
-                            variable: 'NPM_TOKEN'
-                        ),
-                        string(
-                            credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                            variable: 'punlished_slackChannelURL'
-                        )
-                    ]) {
-                        script {
-                            // we still want to run the platform deploy even if this fails, hence try-catch
-                            try {
-                                sh 'git reset --hard HEAD'
-                                sh 'git pull --tags'
-                                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
-                                sh 'PUBLISH_DECLARATIONS=true npm run publish::ci'
-                                sh "curl \
-                                    -X POST \
-                                    -H 'Content-type: application/json' \
-                                        --data '{ \
-                                            \"text\":\"New Arranger published succesfully: v.${version}\
-                                            \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
-                                        }' \
-                                    ${published_slackChannelURL}"
-                            } catch (err) {
-                                echo 'There was an error while publishing packages'
-                            }
-                        }
-                    }
+                        -t server:${commit} ."
                 }
             }
         }
@@ -212,19 +173,19 @@ pipeline {
 
                                 script {
                                     if (env.BRANCH_NAME ==~ 'main') { // push latest and version tags
-                                        sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${version}"
-                                        sh "docker push ${dockerHubRepo}-server:${version}"
+                                        sh "docker tag server:${commit} ${dockerHubImageName}-server:${version}"
+                                        sh "docker push ${dockerHubImageName}-server:${version}"
 
-                                        sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:latest"
-                                        sh "docker push ${dockerHubRepo}-server:latest"
+                                        sh "docker tag server:${commit} ${dockerHubImageName}-server:latest"
+                                        sh "docker push ${dockerHubImageName}-server:latest"
                                     } else { // push commit tag
-                                        sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${commit}"
-                                        sh "docker push ${dockerHubRepo}-server:${commit}"
+                                        sh "docker tag server:${commit} ${dockerHubImageName}-server:${commit}"
+                                        sh "docker push ${dockerHubImageName}-server:${commit}"
                                     }
 
                                     if (env.BRANCH_NAME ==~ 'develop') { // push edge tag
-                                        sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:edge"
-                                        sh "docker push ${dockerHubRepo}-server:edge"
+                                        sh "docker tag server:${commit} ${dockerHubImageName}-server:edge"
+                                        sh "docker push ${dockerHubImageName}-server:edge"
                                     }
                                 }
                             }
@@ -244,21 +205,80 @@ pipeline {
 
                                 script {
                                     if (env.BRANCH_NAME ==~ 'main') { //push edge and commit tags
-                                        sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
-                                        sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
+                                        sh "docker tag server:${commit} ${githubImageName}-server:${version}"
+                                        sh "docker push ${githubImageName}-server:${version}"
 
-                                        sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:latest"
-                                        sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
+                                        sh "docker tag server:${commit} ${githubImageName}-server:latest"
+                                        sh "docker push ${githubImageName}-server:latest"
                                     } else { // push commit tag
-                                        sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-                                        sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
+                                        sh "docker tag server:${commit} ${githubImageName}-server:${commit}"
+                                        sh "docker push ${githubImageName}-server:${commit}"
                                     }
 
                                     if (env.BRANCH_NAME ==~ 'develop') { // push edge tag
-                                        sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:edge"
-                                        sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
+                                        sh "docker tag server:${commit} ${githubImageName}-server:edge"
+                                        sh "docker push ${githubImageName}-server:edge"
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Tag git version') {
+            when {
+                branch 'main'
+            }
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'OvertureBioGithub',
+                        passwordVariable: 'GIT_PASSWORD',
+                        usernameVariable: 'GIT_USERNAME'
+                    )]) {
+                        sh "git tag ${version}"
+                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${gitHubRepo} --tags"
+                    }
+                }
+            }
+        }
+
+        stage('Publish tag to npm') {
+            when {
+                branch 'main'
+            }
+            steps {
+                container('node') {
+                    withCredentials([
+                        string(
+                            credentialsId: 'OvertureNPMAutomationToken',
+                            variable: 'NPM_TOKEN'
+                        ),
+                        string(
+                            credentialsId: 'OvertureSlackJenkinsWebhookURL',
+                            variable: 'published_slackChannelURL'
+                        )
+                    ]) {
+                        script {
+                            // we still want to run the platform deploy even if this fails, hence try-catch
+                            try {
+                                sh 'git reset --hard HEAD'
+                                sh 'git pull --tags'
+                                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                                sh 'PUBLISH_DECLARATIONS=true npm run publish::ci'
+                                // send a notification to the slack #overture-jenkins channel in OICR workspace
+                                sh "curl \
+                                    -X POST \
+                                    -H 'Content-type: application/json' \
+                                        --data '{ \
+                                            \"text\":\"New Arranger published succesfully: v.${version}\
+                                            \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                                        }' \
+                                    ${published_slackChannelURL}"
+                            } catch (err) {
+                                echo 'There was an error while publishing packages'
                             }
                         }
                     }

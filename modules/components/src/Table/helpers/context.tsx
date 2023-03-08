@@ -1,4 +1,12 @@
-import { ComponentType, createContext, ReactElement, useContext, useEffect, useState } from 'react';
+import {
+	ComponentType,
+	createContext,
+	ReactElement,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import { RowSelectionState } from '@tanstack/react-table';
 
 import { useDataContext } from '@/DataContext';
@@ -64,6 +72,16 @@ export const TableContextProvider = ({
 	const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } =
 		useThemeContext({ callerName: 'TableContextProvider' });
 
+	const defaultSorting = useMemo(
+		() =>
+			(Array.isArray(themeDefaultSorting) &&
+				themeDefaultSorting.length > 0 &&
+				themeDefaultSorting) ||
+			tableConfigs?.defaultSorting ||
+			[],
+		[tableConfigs?.defaultSorting, themeDefaultSorting],
+	);
+
 	useEffect(() => {
 		const defaultMaxResultsWindow = tableConfigs?.maxResultsWindow;
 
@@ -87,15 +105,9 @@ export const TableContextProvider = ({
 				getColumnsByAttribute(columns, 'canChangeShow').length > 0 ||
 					getColumnsByAttribute(columns, 'show').length > 0,
 			);
-			setSorting(
-				(Array.isArray(themeDefaultSorting) &&
-					themeDefaultSorting.length > 0 &&
-					themeDefaultSorting) ||
-					tableConfigs?.defaultSorting ||
-					[],
-			);
+			setSorting(defaultSorting);
 		}
-	}, [allColumnsDict, customColumns, isLoadingConfigs, tableConfigs, themeDefaultSorting]);
+	}, [allColumnsDict, customColumns, defaultSorting, tableConfigs]);
 
 	useEffect(() => {
 		const visibleColumns = getColumnsByAttribute(Object.values(currentColumnsDict), 'show');
@@ -115,7 +127,7 @@ export const TableContextProvider = ({
 	useEffect(() => {
 		setIsStaleTableData(true);
 		// setTableData([]);
-	}, [currentColumnsDict, currentPage, sqon, pageSize]);
+	}, [currentColumnsDict, currentPage, sorting, sqon, pageSize]);
 
 	useEffect(() => {
 		if (
@@ -169,7 +181,7 @@ export const TableContextProvider = ({
 		allColumnsDict,
 		currentColumnsDict,
 		currentPage,
-		defaultSorting: themeDefaultSorting,
+		defaultSorting,
 		documentType,
 		fetchData: customFetcher || fetchData,
 		hasSelectedRows: selectedRows.length > 0,
@@ -194,6 +206,8 @@ export const TableContextProvider = ({
 		setPageSize,
 		setCurrentColumnsDict,
 		setSelectedRowsDict,
+		setSorting,
+		sorting,
 		sqon,
 		tableData,
 		total,

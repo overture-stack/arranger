@@ -1,14 +1,14 @@
 import normalizeFilters from '../../buildQuery/normalizeFilters';
 import { IN_OP, OR_OP, AND_OP, ALL_OP } from '../../constants';
 
-test(`normalizeFilters must handle falsy sqon`, () => {
+test(`1.normalizeFilters must handle falsy sqon`, () => {
 	const input = null;
 	const output = null;
 
 	expect(normalizeFilters(input)).toEqual(output);
 });
 
-test(`normalizeFilters must preserve pivots`, () => {
+test(`2.normalizeFilters must preserve pivots`, () => {
 	const input = {
 		content: [
 			{

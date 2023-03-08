@@ -169,7 +169,7 @@ class DataTable extends React.Component {
 			toggleSelection: toggleSelectedTableRow,
 			toggleAll,
 			selectType: 'checkbox',
-			keyFieldName,
+			keyField: keyFieldName,
 		};
 
 		return (

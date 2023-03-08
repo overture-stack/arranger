@@ -92,6 +92,7 @@ const Table = ({
 		font-weight: ${themeTableFontWeight};
 		letter-spacing: ${themeTableLetterSpacing};
 		line-height: ${themeTableLineHeight};
+		table-layout: fixed;
 		text-decoration: ${themeTableTextDecoration};
 		text-transform: ${themeTableTextTransform};
 		white-space: ${themeTableWhiteSpace};
@@ -155,8 +156,10 @@ const Table = ({
 								<TableHeaderRow
 									hasVisibleRows={hasVisibleRows}
 									key={headerGroup.id}
-									padding={themeTablePadding}
-									textOverflow={themeTableTextOverflow}
+									theme={{
+										padding: themeTablePadding,
+										textOverflow: themeTableTextOverflow,
+									}}
 									{...headerGroup}
 								/>
 							))}

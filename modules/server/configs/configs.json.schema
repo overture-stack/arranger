@@ -1,0 +1,56 @@
+{
+	"documentType": "file",
+	"extended": [
+		{
+			"active": false,
+			"displayName": "Analysis",
+			"displayType": "object",
+			"displayValues": {},
+			"fieldName": "analysis",
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"rangeStep": 1,
+			"unit": null
+		}
+	],
+	"facets": {
+		"aggregations": [
+			{
+				"active": true,
+				"fieldName": "analysis__analysis_id",
+				"show": true
+			}
+		]
+	},
+	"index": "file_centric_1.0",
+	"matchbox": [
+		{
+			"displayName": "file",
+			"fieldName": "",
+			"isActive": false,
+			"keyFieldName": null,
+			"searchFields": []
+		}
+	],
+	"table": {
+		"columns": [
+			{
+				"accessor": "analysis.analysis_id",
+				"canChangeShow": true,
+				"fieldName": "analysis.analysis_id",
+				"jsonPath": null,
+				"query": null,
+				"show": true,
+				"sortable": true
+			}
+		],
+		"defaultSorting": [
+			{
+				"desc": false,
+				"fieldName": "analysis.analysis_id"
+			}
+		],
+		"keyFieldName": "id"
+	}
+}

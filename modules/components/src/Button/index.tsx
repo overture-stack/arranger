@@ -1,11 +1,11 @@
-import { createRef, ForwardedRef, forwardRef } from 'react';
+import { createRef, ForwardedRef, forwardRef, MouseEventHandler } from 'react';
 import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
 import Color from 'color';
 
 import { useThemeContext } from '@/ThemeContext';
 import { withTooltip } from '@/Tooltip';
-import { emptyObj } from '@/utils/noops';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 import ButtonProps from './types';
 
@@ -49,6 +49,13 @@ const BaseButton = withTooltip(styled('button', {
 	}
 `);
 
+const propagationStopper =
+	(clickHandler = noopFn): MouseEventHandler =>
+	(event) => {
+		event.stopPropagation();
+		clickHandler?.(event);
+	};
+
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 	(
 		{
@@ -65,6 +72,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 				lineHeight: customLineHeight,
 				...customThemeProps
 			} = emptyObj,
+			onClick,
 			...props
 		},
 		ref?: ForwardedRef<HTMLButtonElement>,
@@ -109,6 +117,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 					...themeProps,
 					...customThemeProps,
 				}}
+				onClick={propagationStopper(onClick)}
 				ref={forwardedRef}
 				{...props}
 			>
@@ -118,7 +127,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 	},
 );
 
-export const TransparentButton = styled(BaseButton)<ButtonProps>`
+const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 	background: ${({ theme: { background = 'none' } }) => background};
 	border: ${({ theme: { borderColor } }) => (borderColor ? `0.1rem solid ${borderColor}` : 'none')};
 	color: ${({ theme: { fontColor = 'inherit' } }) => fontColor};
@@ -135,5 +144,14 @@ export const TransparentButton = styled(BaseButton)<ButtonProps>`
 			(fontColor && fontColor !== 'inherit' && Color(fontColor).lighten(0.3).string())};
 	}
 `;
+
+export const TransparentButton = ({
+	onClick,
+	...props
+}: {
+	onClick?: MouseEventHandler<HTMLButtonElement>;
+} & ButtonProps) => {
+	return <TransparentButtonBase onClick={propagationStopper(onClick)} {...props} />;
+};
 
 export default Button;

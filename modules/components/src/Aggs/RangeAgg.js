@@ -294,9 +294,9 @@ class RangeAgg extends Component {
 								width: 90%;
 
 								/** InputRange doesn't allow customisation through props
-                 * The following classes, and theme overrides are the
-                 * only way available for now. May implement our own slider.
-                 */
+									* The following classes, and theme overrides are the
+									* only way available for now. May implement our own slider.
+									*/
 								.input-range {
 									background: ${themeRangeTrackBackground};
 

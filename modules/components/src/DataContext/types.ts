@@ -74,10 +74,10 @@ export type FetchDataFn = (options?: {
 	config?: Record<string, any>;
 	endpoint?: string;
 	endpointTag?: string;
-	first?: any;
-	offset?: any;
+	first?: number;
+	offset?: number;
 	sort?: any;
-	sqon?: any;
+	sqon?: SQONType;
 	queryName?: string;
 }) => Promise<{ total?: number; data?: any } | void>;
 

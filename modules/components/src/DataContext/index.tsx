@@ -12,8 +12,8 @@ import { useConfigs, useDataFetcher } from './helpers';
 import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
 
 export const DataContext = createContext<DataContextInterface>({
-  documentType: '',
-  missingProvider: 'DataContext',
+	documentType: '',
+	missingProvider: 'DataContext',
 } as DataContextInterface);
 
 /** Context provider for Arranger's data and functionality
@@ -25,63 +25,63 @@ export const DataContext = createContext<DataContextInterface>({
  * @param {string} [url] customises where requests should be made by the data fetcher.
  */
 export const DataProvider = ({
-  apiUrl = ARRANGER_API,
-  children,
-  customFetcher: apiFetcher = defaultApiFetcher,
-  documentType,
-  legacyProps,
-  theme,
+	apiUrl = ARRANGER_API,
+	children,
+	customFetcher: apiFetcher = defaultApiFetcher,
+	documentType,
+	legacyProps,
+	theme,
 }: DataProviderProps): ReactElement<DataContextInterface> => {
-  const [sqon, setSQON] = useState<SQONType>(null);
+	const [sqon, setSQON] = useState<SQONType>(null);
 
-  useEffect(() => {
-    if (legacyProps?.sqon && !isEqual(legacyProps.sqon, sqon)) {
-      DEBUG && console.log('setting sqon from legacyProps');
-      setSQON(legacyProps?.sqon);
-    }
-  }, [legacyProps?.sqon, sqon]);
+	useEffect(() => {
+		if (legacyProps?.sqon && !isEqual(legacyProps.sqon, sqon)) {
+			DEBUG && console.log('setting sqon from legacyProps');
+			setSQON(legacyProps?.sqon);
+		}
+	}, [legacyProps?.sqon, sqon]);
 
-  const {
-    documentMapping,
-    downloadsConfigs,
-    extendedMapping,
-    facetsConfigs,
-    isLoadingConfigs,
-    tableConfigs,
-  } = useConfigs({
-    apiFetcher,
-    documentType,
-  });
+	const {
+		documentMapping,
+		downloadsConfigs,
+		extendedMapping,
+		facetsConfigs,
+		isLoadingConfigs,
+		tableConfigs,
+	} = useConfigs({
+		apiFetcher,
+		documentType,
+	});
 
-  const fetchData = useDataFetcher({
-    apiFetcher,
-    documentType,
-    keyFieldName: tableConfigs?.keyFieldName,
-    sqon,
-    url: apiUrl,
-  });
+	const fetchData = useDataFetcher({
+		apiFetcher,
+		documentType,
+		keyFieldName: tableConfigs?.keyFieldName,
+		sqon,
+		url: apiUrl,
+	});
 
-  const contextValues = {
-    ...legacyProps,
-    apiFetcher,
-    apiUrl,
-    documentMapping,
-    downloadsConfigs,
-    extendedMapping,
-    facetsConfigs,
-    fetchData,
-    documentType,
-    isLoadingConfigs,
-    setSQON,
-    sqon,
-    tableConfigs,
-  };
+	const contextValues = {
+		...legacyProps,
+		apiFetcher,
+		apiUrl,
+		documentMapping,
+		downloadsConfigs,
+		extendedMapping,
+		facetsConfigs,
+		fetchData,
+		documentType,
+		isLoadingConfigs,
+		setSQON,
+		sqon,
+		tableConfigs,
+	};
 
-  return (
-    <DataContext.Provider value={contextValues}>
-      <ThemeProvider theme={theme}>{children}</ThemeProvider>
-    </DataContext.Provider>
-  );
+	return (
+		<DataContext.Provider value={contextValues}>
+			<ThemeProvider theme={theme}>{children}</ThemeProvider>
+		</DataContext.Provider>
+	);
 };
 
 /** hook for data access and aggregation
@@ -90,19 +90,19 @@ export const DataProvider = ({
  * @returns {DataContextInterface} data object
  */
 export const useDataContext = ({
-  apiUrl: localApiUrl,
-  callerName,
-  customFetcher: localFetcher,
+	apiUrl: localApiUrl,
+	callerName,
+	customFetcher: localFetcher,
 }: UseDataContextProps = emptyObj): DataContextInterface => {
-  const defaultContext = useContext(DataContext);
+	const defaultContext = useContext(DataContext);
 
-  defaultContext.missingProvider && missingProviderHandler(DataContext.displayName, callerName);
+	defaultContext.missingProvider && missingProviderHandler(DataContext.displayName, callerName);
 
-  return {
-    ...defaultContext,
-    apiUrl: localApiUrl || defaultContext?.apiUrl,
-    fetchData: localFetcher || defaultContext?.fetchData,
-  };
+	return {
+		...defaultContext,
+		apiUrl: localApiUrl || defaultContext?.apiUrl,
+		fetchData: localFetcher || defaultContext?.fetchData,
+	};
 };
 
 /** HOC for data access
@@ -110,22 +110,22 @@ export const useDataContext = ({
  * @returns {DataContextInterface} data object
  */
 export const withData = <Props extends object>(Component: ComponentType<Props>) => {
-  const callerName = getComponentDisplayName(Component);
-  const ComponentWithData = (props: Props) => {
-    const dataProps = {
-      ...props,
-      ...useDataContext({ callerName }),
-    };
+	const callerName = getComponentDisplayName(Component);
+	const ComponentWithData = (props: Props) => {
+		const dataProps = {
+			...props,
+			...useDataContext({ callerName }),
+		};
 
-    return <Component {...dataProps} />;
-  };
+		return <Component {...dataProps} />;
+	};
 
-  ComponentWithData.displayName = `WithArrangerData(${callerName})`;
+	ComponentWithData.displayName = `WithArrangerData(${callerName})`;
 
-  return ComponentWithData;
+	return ComponentWithData;
 };
 
 if (process.env.NODE_ENV === 'development') {
-  DataContext.displayName = 'ArrangerDataContext';
-  DataProvider.displayName = 'ArrangerDataProvider';
+	DataContext.displayName = 'ArrangerDataContext';
+	DataProvider.displayName = 'ArrangerDataProvider';
 }

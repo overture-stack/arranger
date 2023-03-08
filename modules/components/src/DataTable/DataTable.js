@@ -114,6 +114,7 @@ class DataTableWithToolbar extends React.Component {
 			onSortedChange = noopFn,
 			sessionStorage,
 			selectedTableRows = [],
+			setSelectedRows = noopFn,
 			setSelectedTableRows = noopFn,
 			showFilterInput = true,
 			sqon,
@@ -171,6 +172,7 @@ class DataTableWithToolbar extends React.Component {
 					fetchData={fetchData}
 					setSelectedTableRows={(selectedTableRows) => {
 						setSelectedTableRows(selectedTableRows);
+						setSelectedRows(selectedTableRows);
 						this.storeProperty(STORED_PROPS.SELECTED_ROWS, selectedTableRows);
 					}}
 					onPaginationChange={(state) => {
