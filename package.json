@@ -13,6 +13,7 @@
 		"lerna": "lerna",
 		"link": "npm-link-shared modules",
 		"publish::ci": "lerna publish from-package --yes --no-verify-access --force-publish=*",
+		"reset": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
 		"test": "lerna run test --stream",
 		"server": "cd modules/server && npm run start",
 		"server:prod": "cd modules/server && npm run start:prod",
