@@ -34,6 +34,12 @@ This file is meant as a quick introduction, but for more in-detail documentation
 While our team is actively working on a new Arranger (see the `develop` branch), the version in this branch is considered "legacy";
 being maintained only to support existing projects, it has been tested using NodeJS v14. It may not work well with other versions.
 
+> **Note**: Arranger is undergoing refactoring work, for what will become version 3+. While we do not foresee too many breaking changes, an _upgrade guide_ is already in the works. Until that version is release, we will continue fixing newly reported bugs in this `legacy` branch.
+>
+> For the time being, you may need to add the `--legacy-peer-deps` flag when integrating our modules into your apps. Along with the v3 rewrite, we're steadily updating the internal dependencies so this flag stops being necessary.
+>
+> Thanks for your patience while we finish that work. It'll be worth the wait!
+
 #### - Development Setup
 
 Setting up the project, and prepare things to make changes
