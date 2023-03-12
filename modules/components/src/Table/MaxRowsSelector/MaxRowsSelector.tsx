@@ -13,6 +13,7 @@ const MaxRowsSelector = ({
 	css: customCSS,
 	disabled: customDisabled,
 	theme: {
+		background: customBackground,
 		borderColor: customBorderColor,
 		borderRadius: customBorderRadius,
 		fontColor: customFontColor,
@@ -29,6 +30,7 @@ const MaxRowsSelector = ({
 		components: {
 			Table: {
 				MaxRowsSelector: {
+					background: themeBackground = colors?.common?.white,
 					borderColor: themeBorderColor = colors?.grey?.[300],
 					borderRadius: themeBorderRadius = '0.3rem',
 					className: themeClassName,
@@ -56,6 +58,8 @@ const MaxRowsSelector = ({
 			css={[
 				css`
 					color: ${customFontColor || themeFontColor};
+					align-items: center;
+					display: flex;
 					font-size: ${customFontSize || themeFontSize};
 				`,
 				themeCSS,
@@ -66,12 +70,15 @@ const MaxRowsSelector = ({
 
 			<select
 				css={css`
+					background: ${customBackground || themeBackground};
 					border: 0.1rem solid ${customBorderColor || themeBorderColor};
 					border-radius: ${customBorderRadius || themeBorderRadius};
+					box-sizing: border-box;
 					color: ${customFontColor || themeFontColor};
 					font-size: calc(${customFontSize || themeFontSize} * 0.9);
-					margin: 0.1rem;
-					padding: 0.1rem 0;
+					height: calc(${customFontSize || themeFontSize} * 1.5);
+					margin: 0 0.1rem;
+					padding: 0 0.2rem;
 					text-align: center;
 				`}
 				disabled={customDisabled || themeDisabled}

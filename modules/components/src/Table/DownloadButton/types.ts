@@ -6,6 +6,7 @@ import { DropDownThemeProps } from '@/DropDown/types';
 import { ColumnsDictionary } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 import { PrefixKeys, TypesUnionPropertiesOfInterface } from '@/utils/types';
+import { ButtonStyleProps, ThemedButtonProps } from '@/Button/types';
 
 export interface TableColumnMappingInterface extends ColumnMappingInterface {
 	Header: ReactNode;
@@ -79,13 +80,17 @@ export type CustomExporterDetailsInterface =
 export type CustomExporterInput = CustomExporterDetailsInterface | CustomExporterDetailsInterface[];
 
 export interface ExporterCustomisationProps {
-	customExporters: CustomExporterInput;
 	downloadUrl: string;
 	maxRows: number;
 	label: ThemeCommon.ChildrenType;
 }
 
-export interface DownloadButtonThemeProps extends ExporterCustomisationProps, DropDownThemeProps {
+export interface DownloadBaseButtonThemeProps
+	extends ExporterCustomisationProps,
+		ThemedButtonProps {}
+
+export interface DownloadButtonThemeProps extends DownloadBaseButtonThemeProps, DropDownThemeProps {
+	customExporters: CustomExporterInput;
 	disableRowSelection: boolean;
 }
 
@@ -97,4 +102,5 @@ export interface SingleDownloadButtonProps extends Partial<ProcessedExporterDeta
 	className?: string;
 	clickHandler?: () => void;
 	disabled: boolean;
+	theme?: Partial<DownloadBaseButtonThemeProps>;
 }

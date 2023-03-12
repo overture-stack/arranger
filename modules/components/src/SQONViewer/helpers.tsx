@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
-import { truncate, xor } from 'lodash';
+import { merge, truncate, xor } from 'lodash';
 import { format } from 'date-fns';
 import cx from 'classnames';
 
@@ -18,6 +18,7 @@ import internalTranslateSQONValue from '@/utils/translateSQONValue';
 import {
 	GroupSQONInterface,
 	GroupValueSQONType,
+	SQONViewerThemeProps,
 	UseDataBubblesProps,
 	ValueSQONInterface,
 } from './types';
@@ -37,11 +38,13 @@ export const Bubble = ({ children, className, theme, ...props }: BubbleProps) =>
 		<TransparentButton
 			className={cx('sqon-bubble', className)}
 			css={css``}
-			theme={{
-				margin: '0 0.2em',
-				...themeSQONBubbleProps,
-				...theme,
-			}}
+			theme={merge(
+				{
+					margin: '0 0.2em',
+				},
+				themeSQONBubbleProps,
+				theme,
+			)}
 			{...props}
 		>
 			{children}
@@ -49,14 +52,32 @@ export const Bubble = ({ children, className, theme, ...props }: BubbleProps) =>
 	);
 };
 
-export const FieldName = ({ children, className, ...props }: BubbleProps) => (
-	<Bubble className={cx('sqon-fieldName', className)} {...props}>
+export const FieldName = ({ children, className, css: customCss, ...props }: BubbleProps) => (
+	<Bubble
+		className={cx('sqon-fieldName', className)}
+		css={[
+			css`
+				cursor: default;
+			`,
+			customCss,
+		]}
+		{...props}
+	>
 		{children}
 	</Bubble>
 );
 
-export const Op = ({ children, className, ...props }: BubbleProps) => (
-	<Bubble className={cx('sqon-op', className)} {...props}>
+export const Op = ({ children, className, css: customCss, ...props }: BubbleProps) => (
+	<Bubble
+		className={cx('sqon-op', className)}
+		css={[
+			css`
+				cursor: default;
+			`,
+			customCss,
+		]}
+		{...props}
+	>
 		{children}
 	</Bubble>
 );
@@ -148,10 +169,11 @@ export const useDataBubbles = ({
 	const LessOrMore = ({ valueSQON }: { valueSQON: ValueSQONInterface }) => {
 		const showLess = isExpanded(valueSQON);
 
+		// console.log('themeSQONLessOrMoreCss', themeSQONLessOrMoreCss);
+
 		return (
 			<Bubble
 				className={cx(showLess ? 'sqon-less' : 'sqon-more')}
-				css={css``}
 				onClick={lessOrMoreClickHandler(valueSQON)}
 				theme={themeSQONLessOrMoreProps}
 			>
@@ -216,7 +238,7 @@ export const SQONGroup = styled(
 	{
 		shouldForwardProp: isPropValid,
 	},
-)<ThemeCommon.NonButtonThemeProps>`
+)<SQONViewerThemeProps['SQONGroup']>`
 	align-items: center;
 `;
 
@@ -227,11 +249,13 @@ export const SQONValueGroup = styled(
 	{
 		shouldForwardProp: isPropValid,
 	},
-)<ThemeCommon.NonButtonThemeProps>`
+)<SQONViewerThemeProps['SQONValueGroup']>`
+	align-items: center;
 	background: ${({ background }) => background};
 	border-color: ${({ borderColor }) => borderColor};
 	border-radius: ${({ borderRadius }) => borderRadius};
 	color: ${({ fontColor }) => fontColor};
+	display: flex;
 	font-size: ${({ fontSize }) => fontSize};
 	font-weight: ${({ fontWeight }) => fontWeight};
 	letter-spacing: ${({ letterSpacing }) => letterSpacing};
@@ -241,7 +265,7 @@ export const SQONValueGroup = styled(
 	text-transform: ${({ textTransform }) => textTransform};
 `;
 
-export const SQONWrapper = styled.article<ThemeCommon.NonButtonThemeProps>`
+export const SQONWrapper = styled.article<SQONViewerThemeProps['SQONWrapper']>`
 	align-items: center;
 	color: ${({ fontColor }) => fontColor};
 	display: flex;

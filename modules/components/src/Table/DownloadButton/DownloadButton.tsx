@@ -186,6 +186,7 @@ const DownloadButton = ({
 			className={cx('DownloadButton', customClassName, themeClassName)}
 			clickHandler={handleExporterClick(exporterDetails as ProcessedExporterDetailsInterface)}
 			disabled={isLoading || !!missingProvider}
+			theme={theme}
 			{...exporterDetails}
 		/>
 	);

@@ -9,6 +9,7 @@ export type ButtonStyleProps = ThemeCommon.BoxModelProperties &
 	ThemeCommon.BoxModelActiveProperties &
 	ThemeCommon.BoxModelDisabledProperties &
 	ThemeCommon.BoxModelHoverProperties &
+	ThemeCommon.CustomCSS &
 	ThemeCommon.FontProperties &
 	ThemeCommon.FontActiveProperties &
 	ThemeCommon.FontDisabledProperties &

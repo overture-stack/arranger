@@ -8,9 +8,15 @@ const SingleDownloadButton = ({
 	clickHandler,
 	disabled,
 	exporterLabel: Label = 'Download',
+	theme,
 }: SingleDownloadButtonProps) => {
 	return (
-		<Button className={className} disabled={disabled || !clickHandler} onClick={clickHandler}>
+		<Button
+			className={className}
+			disabled={disabled || !clickHandler}
+			onClick={clickHandler}
+			theme={theme}
+		>
 			<MetaMorphicChild>{Label}</MetaMorphicChild>
 		</Button>
 	);

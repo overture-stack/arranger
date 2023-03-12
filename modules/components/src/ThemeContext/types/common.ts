@@ -15,10 +15,12 @@ export interface BoxModelProperties {
 	borderColor?: string;
 	borderRadius?: string;
 	flex?: string;
-	margin?: string;
+	height?: string;
+	margin?: string | 0;
 	overflow?: string;
-	padding?: string;
+	padding?: string | 0;
 	position?: string;
+	width?: string;
 }
 
 export type BoxModelActiveProperties = PrefixKeys<BoxModelProperties, 'active'>;

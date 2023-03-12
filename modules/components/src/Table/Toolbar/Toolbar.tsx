@@ -3,9 +3,9 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 import { merge } from 'lodash';
 
-import TableColumnSelectButton from '@/Table/ColumnsSelectButton';
+import ColumnSelectButton from '@/Table/ColumnsSelectButton';
 import DownloadButton from '@/Table/DownloadButton';
-import TableCounter from '@/Table/CountDisplay';
+import CountDisplay from '@/Table/CountDisplay';
 import { useThemeContext } from '@/ThemeContext';
 import getDisplayName from '@/utils/getComponentDisplayName';
 import { emptyObj } from '@/utils/noops';
@@ -39,7 +39,7 @@ const Toolbar = ({
 					justify-content: space-between;
 				`}
 			>
-				<TableCounter
+				<CountDisplay
 					css={css`
 						flex-shrink: 0;
 						margin: 0.3rem 0 0 0.3rem;
@@ -64,7 +64,7 @@ const Toolbar = ({
 					`}
 				>
 					{/* TODO: Allow adding buttons here */}
-					{[TableColumnSelectButton, DownloadButton].map((Component) => (
+					{[ColumnSelectButton, DownloadButton].map((Component) => (
 						<li
 							css={css`
 								margin-left: 0.3rem;

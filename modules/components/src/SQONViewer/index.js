@@ -25,7 +25,11 @@ const SQONViewer = ({
 	const {
 		components: {
 			SQONViewer: {
-				SQONGroup: themeSQONGroupProps = emptyObj,
+				SQONGroup: {
+					margin: themeSQONGroupMargin = '0.1rem 0',
+					padding: themeSQONGroupPadding,
+					...themeSQONGroupProps
+				} = emptyObj,
 				SQONOp: themeSQONOpProps = emptyObj,
 				SQONValueGroup: themeSQONVaueGroupProps = emptyObj,
 				SQONWrapper: themeSQONWrapperProps = emptyObj,
@@ -67,7 +71,8 @@ const SQONViewer = ({
 							<SQONGroup
 								css={css`
 									min-height: 1.2em;
-									margin: 0.1rem 0;
+									margin: ${themeSQONGroupMargin};
+									padding: ${themeSQONGroupPadding};
 									width: fit-content;
 								`}
 								key={`${fieldName || fieldNames?.join()}.${op}.${value.join()}`}
