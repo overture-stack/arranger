@@ -1,4 +1,5 @@
 import { createRef, ForwardedRef, forwardRef, MouseEventHandler } from 'react';
+import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
 import Color from 'color';
@@ -24,6 +25,7 @@ const BaseButton = withTooltip(styled('button', {
 	font-family: ${({ theme: { fontFamily } }) => fontFamily};
 	font-size: ${({ theme: { fontSize } }) => fontSize};
 	font-weight: ${({ theme: { fontWeight } }) => fontWeight};
+	height: ${({ theme: { height } }) => height};
 	justify-content: center;
 	letter-spacing: ${({ theme: { letterSpacing } }) => letterSpacing};
 	line-height: ${({ theme: { lineHeight } }) => lineHeight};
@@ -34,6 +36,7 @@ const BaseButton = withTooltip(styled('button', {
 	text-transform: ${({ theme: { textTransform } }) => textTransform};
 	visibility: ${({ hidden }) => hidden && 'hidden'};
 	white-space: ${({ theme: { whiteSpace } }) => whiteSpace};
+	width: ${({ theme: { width } }) => width};
 
 	&:not(.disabled):not(:disabled):hover {
 		background: ${({ theme: { hoverBackground } }) => hoverBackground};
@@ -147,11 +150,19 @@ const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 
 export const TransparentButton = ({
 	onClick,
+	theme: { css: themeCss, ...theme } = emptyObj,
 	...props
 }: {
 	onClick?: MouseEventHandler<HTMLButtonElement>;
 } & ButtonProps) => {
-	return <TransparentButtonBase onClick={propagationStopper(onClick)} {...props} />;
+	return (
+		<TransparentButtonBase
+			onClick={propagationStopper(onClick)}
+			css={themeCss}
+			theme={theme}
+			{...props}
+		/>
+	);
 };
 
 export default Button;

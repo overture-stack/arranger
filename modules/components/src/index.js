@@ -29,5 +29,5 @@ export {
 	useThemeContext as useArrangerTheme,
 	withTheme as withArrangerTheme,
 } from './ThemeContext';
-export { default as apiFetcher, addHeaders } from './utils/api';
 export { default as Query, withQuery } from './Query';
+export * from './utils';

@@ -157,11 +157,11 @@ const PageSelector = ({
 						display: flex;
 
 						&:first-of-type {
-							margin-right: 0.8rem;
+							margin-right: 0.6rem;
 						}
 
 						&:last-of-type {
-							margin-left: 0.8rem;
+							margin-left: 0.6rem;
 						}
 					}
 				`}
@@ -199,63 +199,67 @@ const PageSelector = ({
 					)}
 				</TooltippedLI>
 
-				<TooltippedLI
-					className="current"
-					css={css`
-						display: flex;
-					`}
-				>
-					<span>Page</span>
+				<TooltippedLI className="current">
+					<label
+						css={css`
+							display: flex;
+						`}
+					>
+						<span
+							css={css`
+								margin: 0 0.2rem 0 0;
+							`}
+						>
+							Page
+						</span>
 
-					{
-						// is it worth showing an input field?
-						totalPages > 2 ? (
-							<TooltippedForm
-								onSubmit={handlePageInputSubmit}
-								theme={{
-									tooltipText: isInputbeyondRange
-										? `Page ${lastPage} is the last available`
-										: `Press "Enter" to go`,
-									// either show "enter" instructions on hover, or "too large" regardless of mouse
-									tooltipVisibility: isInputbeyondRange ? 'always' : 'hover',
-								}}
-							>
-								<input
-									css={css`
-										border: 0.1rem solid ${inputBorderColor};
-										border-radius: ${customBorderRadius || themeBorderRadius};
-										color: ${customFontColor || themeFontColor};
-										font-size: calc(${customFontSize || themeFontSize} * 0.9);
-										margin: 0.1rem 0.2rem 0;
-										width: 1.4rem;
-										padding: 0.1rem 0.3rem;
-										text-align: right;
+						{
+							// is it worth showing an input field?
+							totalPages > 2 ? (
+								<TooltippedForm
+									onSubmit={handlePageInputSubmit}
+									theme={{
+										tooltipText: isInputbeyondRange
+											? `Page ${lastPage} is the last available`
+											: `Press "Enter" to go`,
+										// either show "enter" instructions on hover, or "too large" regardless of mouse
+										tooltipVisibility: isInputbeyondRange ? 'always' : 'hover',
+									}}
+								>
+									<input
+										css={css`
+											border: 0.1rem solid ${inputBorderColor};
+											border-radius: ${customBorderRadius || themeBorderRadius};
+											box-sizing: border-box;
+											color: ${customFontColor || themeFontColor};
+											font-size: calc(${customFontSize || themeFontSize} * 0.9);
+											height: calc(${customFontSize || themeFontSize} * 1.5);
+											padding: 0 0.3rem;
+											text-align: center;
+											width: 2rem;
 
-										&::-webkit-inner-spin-button,
-										&::-webkit-outer-spin-button {
-											-webkit-appearance: none;
-											margin: 0;
-										}
-									`}
-									min={firstPage} // there's no page < 1, duh
-									max={lastPage}
-									name="page-selection-input"
-									onChange={handlePageInputChange} // to update the value
-									onBlur={handlePageInputBlur} // to reset it if not applied
-									type="number"
-									value={currentInput}
-								/>
-							</TooltippedForm>
-						) : (
-							<span
-								css={css`
-									margin: 0 0.3rem;
-								`}
-							>
-								{total > 0 ? displayPage : '...'}
-							</span>
-						)
-					}
+											// the following lines remove the spin button
+											-moz-appearance: textfield;
+											&::-webkit-inner-spin-button,
+											&::-webkit-outer-spin-button {
+												-webkit-appearance: none;
+												margin: 0;
+											}
+										`}
+										min={firstPage} // there's no page < 1, duh
+										max={lastPage}
+										name="page-selection-input"
+										onChange={handlePageInputChange} // to update the value
+										onBlur={handlePageInputBlur} // to reset it if not applied
+										type="number"
+										value={currentInput}
+									/>
+								</TooltippedForm>
+							) : (
+								<span>{total > 0 ? displayPage : '...'}</span>
+							)
+						}
+					</label>
 
 					{
 						// do we have more than 1 page?

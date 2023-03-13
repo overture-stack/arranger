@@ -35,6 +35,7 @@ const DropDownMenu = ({
 		arrowDisabledColor: customArrowDisabledColor,
 		arrowTransition: customArrowTransition,
 		css: customDropDownButtonCSS,
+		disabledFontColor: customDropDownDisabledFontColor,
 		enableFilter: customDropdownEnableFilter,
 		filterPlaceholder: customDropdownFilterPlaceholder,
 		fontColor: customDropDownFontColor,
@@ -77,6 +78,7 @@ const DropDownMenu = ({
 				arrowTransition: themeArrowTransition,
 				className: themeClassName,
 				css: themeDropDownButtonCSS,
+				disabledFontColor: themeDropDownDisabledFontColor,
 				enableFilter: themeDropdownEnableFilter,
 				filterPlaceholder: themeDropdownFilterPlaceholder,
 				fontColor: themeDropDownFontColor = colors?.grey?.[800],
@@ -105,9 +107,12 @@ const DropDownMenu = ({
 
 	const enableFilter = customDropdownEnableFilter || themeDropdownEnableFilter;
 	const filterPlaceholder = customDropdownFilterPlaceholder || themeDropdownFilterPlaceholder;
+	const fontColor = customDropDownFontColor || themeDropDownFontColor;
+	const disabledFontColor = customDropDownDisabledFontColor || themeDropDownDisabledFontColor;
 	const buttonTheme = merge(
 		{
-			fontColor: themeDropDownFontColor,
+			fontColor,
+			disabledFontColor,
 		},
 		themeDropDownButtonProps,
 		customDropDownButtonProps,
@@ -308,8 +313,8 @@ const DropDownMenu = ({
 						margin-top: 0.1rem;
 					`}
 					disabled={isDisabled}
-					disabledFill={customArrowDisabledColor || themeArrowDisabledColor}
-					fill={customArrowColor || themeArrowColor}
+					disabledFill={customArrowDisabledColor || themeArrowDisabledColor || disabledFontColor}
+					fill={customArrowColor || themeArrowColor || fontColor}
 					pointUp={isOpen}
 					transition={customArrowTransition || themeArrowTransition}
 				/>
