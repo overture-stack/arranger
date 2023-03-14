@@ -32,6 +32,8 @@ const RangeLabel = ({
 	fontWeight = 'inherit',
 	isRight,
 	isTop,
+	margin,
+	padding,
 	...props
 }) => (
 	<div
@@ -47,6 +49,8 @@ const RangeLabel = ({
 				color: ${isTop ? 'inherit' : '#666'};
 				font-size: ${isTop ? 0.9 : 0.7}rem;
 				font-weight: ${fontWeight};
+				margin: ${margin};
+				padding: ${padding};
 				position: absolute;
 				${isRight && `right: 0;`}
 				top: ${isTop ? `-` : ``}1.2rem;
@@ -176,6 +180,7 @@ class RangeAgg extends Component {
 	render() {
 		const {
 			collapsible = true,
+			disabled,
 			displayName = 'Unnamed Field',
 			fieldName,
 			rangeStep,
@@ -186,6 +191,7 @@ class RangeAgg extends Component {
 				components: {
 					Aggregations: {
 						RangeAgg: {
+							// disableUnitSelection: themeDisableUnitSelection,
 							InputRange: { css: themeInputRangeCSS } = emptyObj,
 							NoDataContainer: {
 								fontColor: themeNoDataFontColor = colors?.grey?.[600],
@@ -208,6 +214,7 @@ class RangeAgg extends Component {
 								outBackground: themeRangeTrackOutBackground = colors?.grey?.[200],
 							} = emptyObj,
 							RangeWrapper: { css: themeRangeWrapperCSS, ...RangeWrapperProps } = emptyObj,
+							...themeRangeAggProps
 						} = emptyObj,
 					} = emptyObj,
 				} = emptyObj,
@@ -226,7 +233,10 @@ class RangeAgg extends Component {
 		};
 
 		const minIsMax = min === max;
-		const unusable = min + rangeStep === max || minIsMax;
+		const unusable = disabled || min + rangeStep === max || minIsMax;
+
+		// TODO: implement unit selection disability per fieldname.
+		// const enableUnitSelection = !themeDisableUnitSelection;
 
 		return (
 			<AggsWrapper
@@ -235,6 +245,7 @@ class RangeAgg extends Component {
 					displayUnit ? ` (${convert().describe(displayUnit).plural})` : ``
 				}`}
 				{...{ WrapperComponent, collapsible }}
+				theme={themeRangeAggProps}
 			>
 				{hasData ? (
 					<div
@@ -298,51 +309,46 @@ class RangeAgg extends Component {
 									* only way available for now. May implement our own slider.
 									*/
 								.input-range {
-									background: ${themeRangeTrackBackground};
+									background: ${unusable
+										? themeRangeTrackDisabledBackground
+										: themeRangeTrackBackground};
 
 									.input-range__label {
 										display: none;
 									}
 
 									.input-range__slider {
-										background: ${themeRangeSliderBackground};
-										border-color: ${themeRangeSliderBorderColor};
+										background: ${unusable
+											? themeRangeSliderDisabledBackground
+											: themeRangeSliderBackground};
+										border-color: ${unusable
+											? themeRangeSliderDisabledBorderColor
+											: themeRangeSliderBorderColor};
 										padding: 0;
 
 										${themeRangeSliderCSS}
 									}
 
-									.input-range__track {
-										background: ${themeRangeTrackInBackground};
+									.input-range__track--background {
+										background: ${unusable
+											? themeRangeTrackDisabledOutBackground
+											: themeRangeTrackOutBackground};
 
-										&.input-range__track--background {
-											background: ${themeRangeTrackOutBackground};
+										.input-range__track--active {
+											background: ${unusable
+												? themeRangeTrackDisabledInBackground
+												: themeRangeTrackInBackground};
 										}
 									}
 
 									&.input-range--disabled {
-										background: ${themeRangeTrackDisabledBackground};
-
 										.input-range__slider,
 										.input-range__track {
 											cursor: default;
 										}
-
-										.input-range__slider {
-											background: ${themeRangeSliderDisabledBackground};
-											border-color: ${themeRangeSliderDisabledBorderColor};
-										}
-
-										.input-range__track {
-											background: ${themeRangeTrackDisabledInBackground};
-
-											&.input-range__track--background {
-												background: ${themeRangeTrackDisabledOutBackground};
-											}
-										}
 									}
 
-									/* ${themeInputRangeCSS} */
+									${themeInputRangeCSS}
 								}
 							`}
 						>

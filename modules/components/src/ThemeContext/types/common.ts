@@ -30,7 +30,7 @@ export type BoxModelHoverProperties = PrefixKeys<BoxModelProperties, 'hover'>;
 export interface CustomCSS {
 	className?: string;
 	css?: cssInterpolation;
-	key?: string;
+	key?: string | number | null;
 }
 
 export interface FontProperties {

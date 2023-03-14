@@ -1,6 +1,6 @@
 import { createRef, useState } from 'react';
 import { css } from '@emotion/react';
-import { isEmpty, orderBy, partition, truncate } from 'lodash';
+import { isEmpty, merge, orderBy, partition, truncate } from 'lodash';
 import { FaSearch } from 'react-icons/fa';
 import cx from 'classnames';
 
@@ -331,8 +331,11 @@ const TermAgg = ({
 							setShowingMore(!showingMore);
 							if (showingMore) scrollToAgg();
 						}}
-						{...themeAggregationsMoreOrLessButtonProps}
-						{...themeTermAggMoreOrLessButtonProps}
+						theme={merge(
+							{},
+							themeAggregationsMoreOrLessButtonProps,
+							themeTermAggMoreOrLessButtonProps,
+						)}
 					/>
 				)}
 			</>

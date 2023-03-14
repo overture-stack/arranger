@@ -18,6 +18,7 @@ const AggsWrapper = ({
 	filters,
 	headerRef,
 	stickyHeader,
+	theme: { css: customAggsWrapperCSS } = emptyObj,
 	WrapperComponent,
 }) => {
 	const [isCollapsed, setIsCollapsed] = useState(false);
@@ -72,6 +73,7 @@ const AggsWrapper = ({
 					padding-bottom: ${isCollapsed ? 0 : '0.3rem'};
 				`,
 				themeAggsGroupCSS,
+				customAggsWrapperCSS,
 			]}
 			ref={componentRef}
 			{...aggsGroupTheme}
