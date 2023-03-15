@@ -50,7 +50,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            registry-gitlab.indocresearch.org/pilotdataplatform/arranger-admin-server
+            registry-gitlab.indocresearch.org/pilotdataplatform/arranger/arranger-admin-server
           # generate Docker tags based on the following events/attributes
           sep-tags: ','
           tags: |
