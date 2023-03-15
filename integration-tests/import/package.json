@@ -16,7 +16,7 @@
 		}
 	},
 	"dependencies": {
-		"@overture-stack/arranger-components": "^3.0.0-beta.20"
+		"@overture-stack/arranger-components": "^3.0.0-beta.21"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.20.12",
@@ -24,5 +24,5 @@
 		"jest-localstorage-mock": "^2.4.26",
 		"regenerator-runtime": "^0.13.11"
 	},
-	"version": "3.0.0-beta.20"
+	"version": "3.0.0-beta.21"
 }
