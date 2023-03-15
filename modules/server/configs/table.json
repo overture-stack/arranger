@@ -280,6 +280,7 @@
 				"fieldName": "analysis.analysis_id"
 			}
 		],
-		"keyFieldName": "id"
+		"keyFieldName": "id",
+		"maxResultsWindow": 10000
 	}
 }

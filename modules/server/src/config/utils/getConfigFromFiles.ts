@@ -2,6 +2,8 @@ import { Abortable } from 'events';
 import fs, { ObjectEncodingOptions } from 'fs';
 import path from 'path';
 
+import { merge } from 'lodash';
+
 import { ENV_CONFIG } from '@/config';
 import { ConfigObject, ConfigProperties, SortingInterface } from '@/config/types';
 
@@ -65,9 +67,7 @@ const getConfigFromFiles = (dirname: string): Promise<ConfigObject> => {
 					const fileDataJSON = JSON.parse(fileData);
 
 					if (fileDataJSON?.[ConfigProperties.TABLE]?.[ConfigProperties.DEFAULT_SORTING]) {
-						return {
-							...configsAcc,
-							...fileDataJSON,
+						return merge({}, configsAcc, fileDataJSON, {
 							[ConfigProperties.TABLE]: {
 								...fileDataJSON[ConfigProperties.TABLE],
 								[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
@@ -77,13 +77,10 @@ const getConfigFromFiles = (dirname: string): Promise<ConfigObject> => {
 									desc: sorting.desc || false,
 								})),
 							},
-						};
+						});
 					}
 
-					return {
-						...configsAcc,
-						...fileDataJSON,
-					};
+					return merge({}, configsAcc, fileDataJSON);
 				},
 				configsFromEnv,
 			);

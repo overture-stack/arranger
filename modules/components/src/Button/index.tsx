@@ -150,7 +150,7 @@ const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 
 export const TransparentButton = ({
 	onClick,
-	theme: { css: themeCss, ...theme } = emptyObj,
+	theme: { css: themeCSS, ...theme } = emptyObj,
 	...props
 }: {
 	onClick?: MouseEventHandler<HTMLButtonElement>;
@@ -158,7 +158,7 @@ export const TransparentButton = ({
 	return (
 		<TransparentButtonBase
 			onClick={propagationStopper(onClick)}
-			css={themeCss}
+			css={themeCSS}
 			theme={theme}
 			{...props}
 		/>

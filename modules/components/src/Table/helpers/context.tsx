@@ -177,6 +177,11 @@ export const TableContextProvider = ({
 		visibleColumnsDict,
 	]);
 
+	const maxPages = useMemo(
+		() => Math.ceil(Math.min(maxResultsWindow, total) / pageSize),
+		[maxResultsWindow, pageSize, total],
+	);
+
 	const contextValues = {
 		allColumnsDict,
 		currentColumnsDict,
@@ -194,7 +199,7 @@ export const TableContextProvider = ({
 			isLoadingTableData ||
 			(hasVisibleColumns && isStaleTableData),
 		keyFieldName: tableConfigs?.keyFieldName,
-		maxPages: Math.ceil(Math.min(maxResultsWindow, total) / pageSize),
+		maxPages,
 		maxResultsWindow,
 		missingProvider:
 			// ideally allows for passing in sufficient props to cover the absence of a data context.

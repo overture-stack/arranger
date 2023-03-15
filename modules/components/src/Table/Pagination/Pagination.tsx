@@ -12,6 +12,7 @@ import { PaginationProps } from './types';
 
 const Pagination = ({
 	className: customClassName,
+	css: customCSS,
 	theme: {
 		MaxRowSelector: customMaxRowSelectorProps,
 		PageSelector: customPageSelectorProps,
@@ -22,7 +23,7 @@ const Pagination = ({
 			Table: {
 				Pagination: {
 					className: themeClassName,
-					css: themeCss,
+					css: themeCSS,
 					MaxRowsSelector: themeMaxRowsSelectorProps = emptyObj,
 					PageSelector: themePageSelectorProps = emptyObj,
 				} = emptyObj,
@@ -43,7 +44,8 @@ const Pagination = ({
 						display: flex;
 						justify-content: space-between;
 					`,
-					themeCss,
+					themeCSS,
+					customCSS,
 				]}
 			>
 				<MaxRowsSelector
@@ -61,7 +63,7 @@ const Pagination = ({
 				<PageSelector theme={pageSelectorTheme} />
 			</section>
 		),
-		[className, maxRowsSelectorTheme, pageSelectorTheme, themeCss],
+		[className, customCSS, maxRowsSelectorTheme, pageSelectorTheme, themeCSS],
 	);
 };
 

@@ -52,14 +52,14 @@ export const Bubble = ({ children, className, theme, ...props }: BubbleProps) =>
 	);
 };
 
-export const FieldName = ({ children, className, css: customCss, ...props }: BubbleProps) => (
+export const FieldName = ({ children, className, css: customCSS, ...props }: BubbleProps) => (
 	<Bubble
 		className={cx('sqon-fieldName', className)}
 		css={[
 			css`
 				cursor: default;
 			`,
-			customCss,
+			customCSS,
 		]}
 		{...props}
 	>
@@ -67,14 +67,14 @@ export const FieldName = ({ children, className, css: customCss, ...props }: Bub
 	</Bubble>
 );
 
-export const Op = ({ children, className, css: customCss, ...props }: BubbleProps) => (
+export const Op = ({ children, className, css: customCSS, ...props }: BubbleProps) => (
 	<Bubble
 		className={cx('sqon-op', className)}
 		css={[
 			css`
 				cursor: default;
 			`,
-			customCss,
+			customCSS,
 		]}
 		{...props}
 	>
@@ -168,8 +168,6 @@ export const useDataBubbles = ({
 
 	const LessOrMore = ({ valueSQON }: { valueSQON: ValueSQONInterface }) => {
 		const showLess = isExpanded(valueSQON);
-
-		// console.log('themeSQONLessOrMoreCss', themeSQONLessOrMoreCss);
 
 		return (
 			<Bubble
