@@ -1,4 +1,4 @@
-name: Build and Publish admin server
+name: Build and Publish server filter
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
   build-and-push-docker-image:
     needs: [extract-branch-name, get-version]
     if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
-    name: Build admin server Docker image and push to repositories
+    name: Build server filter Docker image and push to repositories
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
