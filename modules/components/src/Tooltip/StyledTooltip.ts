@@ -2,15 +2,22 @@ import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
 
-import TooltipProperties from './types';
+import TooltipProps from './types';
 
 /**
  * @param tooltipVisibilty: Use it to provide conditional display
  */
 const StyledTooltip = styled('div', {
 	shouldForwardProp: isPropValid,
-})<TooltipProperties>`
-	${({ theme: { tooltipAlign = 'top', tooltipText = '', tooltipVisibility = 'hover' } }) => {
+})<TooltipProps>`
+	${({
+		theme: {
+			tooltipAlign = 'top',
+			tooltipFontColor = '#333',
+			tooltipText = '',
+			tooltipVisibility = 'hover',
+		},
+	}) => {
 		if (tooltipText && typeof tooltipText === 'string') {
 			const isBottom = tooltipAlign.includes('bottom');
 			const isLeft = tooltipAlign.includes('left');
@@ -45,7 +52,7 @@ const StyledTooltip = styled('div', {
 					: isLeft
 					? 'calc(-100% - 1.2rem)'
 					: '1.2rem'; // isRight
-			const boxY = isTop ? 'calc(-1.1rem - 70%)' : isBottom ? 'calc(1.1rem + 70%)' : 0;
+			const boxY = isTop ? 'calc(-15px - 70%)' : isBottom ? 'calc(15px + 70%)' : 0;
 
 			return css`
 				position: relative;
@@ -71,10 +78,12 @@ const StyledTooltip = styled('div', {
 					background-color: #fef4c5;
 					border: 1px solid #d4b943;
 					border-radius: 2px;
+					color: ${tooltipFontColor};
 					content: '${tooltipText}';
 					display: block;
 					font-size: 13px;
 					font-weight: normal;
+					line-height: 15px;
 					padding: 3px;
 					text-align: left;
 					transform: translate(${boxX}, ${boxY});

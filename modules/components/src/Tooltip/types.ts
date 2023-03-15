@@ -1,17 +1,17 @@
-import { ThemeCommon } from '@/ThemeContext/types';
 import { Permutations } from '@/utils/types';
 
 // To be used in components.
-interface TooltipThemeProperties {
+export interface TooltipThemeProperties {
 	tooltipAlign:
 		| Permutations<'bottom' | 'left'>
 		| Permutations<'bottom' | 'right'>
 		| Permutations<'top' | 'left'>
 		| Permutations<'top' | 'right'>;
-	tooltipVisibility: 'always' | 'hover' | 'never';
+	tooltipFontColor: string;
 	tooltipText: string | false;
+	tooltipVisibility: 'always' | 'hover' | 'never';
 }
 
-export default interface TooltipProperties {
+export default interface TooltipProps {
 	theme?: Partial<TooltipThemeProperties>;
 }

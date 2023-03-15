@@ -18,6 +18,8 @@ import { MaxRowsSelectorThemeProps } from './MaxRowsSelector/types';
 import { PageSelectorThemeProps } from './PageSelector/types';
 import { PaginationThemeProps } from './Pagination/types';
 import { ToolbarThemeProps } from './Toolbar/types';
+import { HeaderRowThemeProps } from './HeaderRow/type';
+import { RowThemeProps } from './Row/types';
 
 export type FieldList = ColumnMappingInterface['fieldName'][];
 
@@ -67,10 +69,9 @@ export interface UseTableContextProps {
 	customFetcher?: FetchDataFn;
 }
 
-type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'> &
-	ThemeCommon.CustomCSS;
+type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'>;
 
-type TableInnerBoxModelProperties = Omit<TableBoxModelProperties, 'margin'>;
+export type TableInnerBoxModelProperties = Omit<TableBoxModelProperties, 'margin'>;
 
 /** Table Component types */
 export type TableCellProps = Cell<any, string> & {
@@ -129,26 +130,11 @@ export interface TableThemeProps
 	DownloadButton: DownloadButtonThemeProps;
 	DropDown: DropDownThemeProps;
 	HeaderGroup: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
-	HeaderRow: TableInnerBoxModelProperties &
-		ThemeCommon.FontProperties & {
-			disabledBackground: string;
-			disabledFontColor: string;
-			horizontalBorderColor: string;
-			hoverBackground: string;
-			hoverFontColor: string;
-			verticalBorderColor: string;
-		};
+	HeaderRow: HeaderRowThemeProps;
 	MaxRowsSelector: MaxRowsSelectorThemeProps;
 	PageSelector: PageSelectorThemeProps;
 	Pagination: PaginationThemeProps;
-	Row: TableInnerBoxModelProperties &
-		ThemeCommon.FontProperties & {
-			horizontalBorderColor: string;
-			hoverBackground: string;
-			hoverFontColor: string;
-			selectedBackground: string;
-			verticalBorderColor: string;
-		};
+	Row: RowThemeProps;
 	TableBody: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
 	TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS & { width?: string };
 	Toolbar: ToolbarThemeProps;
