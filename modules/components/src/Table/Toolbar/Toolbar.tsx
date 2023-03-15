@@ -21,6 +21,7 @@ const Toolbar = ({
 			Table: {
 				Toolbar: {
 					className: themeClassName,
+					css: themeCss,
 					CountDisplay: themeCountDisplayProps = emptyObj,
 				} = emptyObj,
 			} = emptyObj,
@@ -33,11 +34,14 @@ const Toolbar = ({
 		() => (
 			<section
 				className={className}
-				css={css`
-					align-items: flex-start;
-					display: flex;
-					justify-content: space-between;
-				`}
+				css={[
+					css`
+						align-items: flex-start;
+						display: flex;
+						justify-content: space-between;
+					`,
+					themeCss,
+				]}
 			>
 				<CountDisplay
 					css={css`
@@ -78,7 +82,7 @@ const Toolbar = ({
 				</ul>
 			</section>
 		),
-		[className, countDisplayTheme],
+		[className, countDisplayTheme, themeCss],
 	);
 };
 

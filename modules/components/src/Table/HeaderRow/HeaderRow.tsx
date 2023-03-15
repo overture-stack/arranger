@@ -1,34 +1,33 @@
 import { css } from '@emotion/react';
-import { flexRender, HeaderGroup } from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 import cx from 'classnames';
 
 import { TransparentButton } from '@/Button';
+import { useTableContext } from '@/Table/helpers';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
-import { useTableContext } from './helpers';
+import { HeaderRowProps } from './type';
 
 const TableHeaderRow = ({
+	css: customCss,
 	hasVisibleRows,
 	headers,
 	theme: {
+		horizontalBorderColor: customHorizontalBorderColor,
 		padding: customPadding,
 		sortingHighlightColor: customSortingHighlightColor,
-		textOverflow: themeTableTextOverflow,
+		textOverflow: customTableTextOverflow,
+		verticalBorderColor: customVerticalBorderColor,
 	} = emptyObj,
-}: {
-	hasVisibleRows?: boolean;
-	theme?: {
-		padding?: string;
-		textOverflow?: string;
-		sortingHighlightColor?: string;
-	};
-} & HeaderGroup<any>) => {
+}: HeaderRowProps) => {
 	const { allColumnsDict } = useTableContext({ callerName: 'TableHeaderrow' });
 	const {
 		colors,
 		components: {
 			Table: {
+				padding: themeTablePadding = '0.1rem 0.4rem',
+				textOverflow: themeTableTextOverflow = 'ellipsis',
 				HeaderRow: {
 					background: themeBackground,
 					borderColor: themeBorderColor,
@@ -40,33 +39,33 @@ const TableHeaderRow = ({
 					fontFamily: themeFontFamily,
 					fontSize: themeFontSize = '0.9rem',
 					fontWeight: themeFontWeight,
-					horizontalBorderColor: themeBorderColor_horizontal,
+					horizontalBorderColor: themeBorderColor_horizontal = themeBorderColor,
 					letterSpacing: themeLetterSpacing,
 					lineHeight: themeLineHeight,
 					overflow: themeOverflow = 'hidden',
-					padding: themePadding = '0.2rem 0.4rem',
+					padding: themePadding = themeTablePadding,
 					position: themePosition,
 					sortingHighlightColor: themeSortingHighlightColor = colors?.grey?.[500],
 					textDecoration: themeTextDecoration,
 					textOverflow: themeTextOverflow = themeTableTextOverflow,
 					textTransform: themeTextTransform,
-					verticalalBorderColor: themeBorderColor_vertical,
+					verticalBorderColor: themeBorderColor_vertical = themeBorderColor,
 					whiteSpace: themeWhiteSpace,
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'TableHeaderRow' });
 
+	const borderColor_horizontal = customHorizontalBorderColor || themeBorderColor_horizontal;
+	const borderColor_vertical = customVerticalBorderColor || themeBorderColor_vertical;
 	const headerHighlightColor = customSortingHighlightColor || themeSortingHighlightColor;
 	const headerPadding = customPadding || themePadding;
-	const borderColor_horizontal = themeBorderColor_horizontal || themeBorderColor;
-	const borderColor_vertical = themeBorderColor_vertical || themeBorderColor;
+	const textOverflow = customTableTextOverflow || themeTextOverflow;
 
 	return (
 		<tr
 			className={cx('TableHeaderRow', themeClassName)}
 			css={[
-				themeCSS,
 				css`
 					background: ${hasVisibleRows ? themeBackground : themeDisabledBackground};
 					color: ${hasVisibleRows ? themeFontColor : themeDisabledFontColor};
@@ -81,6 +80,8 @@ const TableHeaderRow = ({
 						border-bottom: ${borderColor_horizontal && `0.1rem solid ${borderColor_horizontal}`};
 					}
 				`,
+				themeCSS,
+				customCss,
 			]}
 		>
 			{headers.map((headerObj) => {
@@ -104,7 +105,7 @@ const TableHeaderRow = ({
 							position: relative;
 							text-align: left;
 							text-decoration: ${themeTextDecoration};
-							text-overflow: ${themeTextOverflow};
+							text-overflow: ${textOverflow};
 							text-transform: ${themeTextTransform};
 							white-space: ${themeWhiteSpace};
 							/* left: header.getStart(), */

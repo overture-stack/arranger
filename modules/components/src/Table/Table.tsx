@@ -7,9 +7,9 @@ import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
 import { useTableData } from './helpers';
-import TableHeaderRow from './HeaderRow';
+import HeaderRow from './HeaderRow';
 import RewriteWarning from './RewriteWarning';
-import TableRow from './Row';
+import Row from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
 
@@ -43,9 +43,7 @@ const Table = ({
 				letterSpacing: themeTableLetterSpacing,
 				lineHeight: themeTableLineHeight,
 				margin: themeTableMargin,
-				padding: themeTablePadding = '0.1rem 0.4rem',
 				textDecoration: themeTableTextDecoration,
-				textOverflow: themeTableTextOverflow = 'ellipsis',
 				textTransform: themeTableTextTransform,
 				whiteSpace: themeTableWhiteSpace = 'nowrap',
 
@@ -153,15 +151,7 @@ const Table = ({
 							]}
 						>
 							{headerGroups.map((headerGroup) => (
-								<TableHeaderRow
-									hasVisibleRows={hasVisibleRows}
-									key={headerGroup.id}
-									theme={{
-										padding: themeTablePadding,
-										textOverflow: themeTableTextOverflow,
-									}}
-									{...headerGroup}
-								/>
+								<HeaderRow hasVisibleRows={hasVisibleRows} key={headerGroup.id} {...headerGroup} />
 							))}
 						</thead>
 
@@ -179,19 +169,10 @@ const Table = ({
 							]}
 						>
 							{hasVisibleRows ? (
-								rows.map((row) => (
-									<TableRow
-										key={row.id}
-										theme={{
-											padding: themeTablePadding,
-											textOverflow: themeTableTextOverflow,
-										}}
-										{...row}
-									/>
-								))
+								rows.map((row) => <Row key={row.id} {...row} />)
 							) : (
 								// Reuse Row + Cell to display "no data" message
-								<TableRow />
+								<Row />
 							)}
 						</tbody>
 					</table>

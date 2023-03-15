@@ -1,7 +1,7 @@
 import { MouseEventHandler, PropsWithChildren, TouchEventHandler } from 'react';
 
 import { ThemeCommon } from '@/ThemeContext/types';
-import { TooltipThemeProperties } from '@/Tooltip';
+import { TooltipThemeProperties } from '@/Tooltip/types';
 
 export type ButtonCustomProps = ThemeCommon.MouseEventProperties & ThemeCommon.CustomCSS;
 

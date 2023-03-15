@@ -22,6 +22,7 @@ const Pagination = ({
 			Table: {
 				Pagination: {
 					className: themeClassName,
+					css: themeCss,
 					MaxRowsSelector: themeMaxRowsSelectorProps = emptyObj,
 					PageSelector: themePageSelectorProps = emptyObj,
 				} = emptyObj,
@@ -36,11 +37,14 @@ const Pagination = ({
 		() => (
 			<section
 				className={className}
-				css={css`
-					align-items: flex-start;
-					display: flex;
-					justify-content: space-between;
-				`}
+				css={[
+					css`
+						align-items: flex-start;
+						display: flex;
+						justify-content: space-between;
+					`,
+					themeCss,
+				]}
 			>
 				<MaxRowsSelector
 					css={css`
@@ -57,7 +61,7 @@ const Pagination = ({
 				<PageSelector theme={pageSelectorTheme} />
 			</section>
 		),
-		[className, maxRowsSelectorTheme],
+		[className, maxRowsSelectorTheme, pageSelectorTheme, themeCss],
 	);
 };
 
