@@ -106,21 +106,8 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 	};
 };
 
-const createEndpoint = async ({
-	enableAdmin,
-	esClient,
-	getServerSideFilter,
-	graphqlOptions = {},
-	typesWithMappings,
-}) => {
+const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
 	const router = express.Router();
-
-	const { schema, mockSchema } = await createSchema({
-		enableAdmin,
-		getServerSideFilter,
-		graphqlOptions,
-		types: typesWithMappings,
-	});
 
 	const noSchemaHandler = (req, res) => {
 		console.log('Something went wrong initialising a GraphQL endpoint');
@@ -201,7 +188,7 @@ const createEndpoint = async ({
 	return router;
 };
 
-export default async ({
+export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
 	esClient,
@@ -211,12 +198,49 @@ export default async ({
 	try {
 		const configsFromFiles = await getConfigObject(configsSource);
 		const typesWithMappings = await getTypesWithMappings(esClient, configsFromFiles);
-		const graphQLEndpoints = await createEndpoint({
+
+		const { mockSchema, schema } = await createSchema({
+			enableAdmin,
+			getServerSideFilter,
+			graphqlOptions,
+			types: typesWithMappings,
+		});
+
+		return {
+			mockSchema,
+			schema,
+			typesWithMappings,
+		};
+	} catch (error) {
+		const message = error?.message || error;
+		console.info('\n------\nError thrown while creating the GraphQL schemas.');
+		console.error(message);
+
+		throw '  Something went wrong while creating the GraphQL schemas';
+	}
+};
+
+export default async ({
+	configsSource = '',
+	enableAdmin,
+	esClient,
+	getServerSideFilter,
+	graphqlOptions = {},
+}) => {
+	try {
+		const { mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+			configsSource,
 			enableAdmin,
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
-			typesWithMappings,
+		});
+
+		const graphQLEndpoints = await createEndpoint({
+			esClient,
+			graphqlOptions,
+			mockSchema,
+			schema,
 		});
 
 		await initializeSets({ esClient });

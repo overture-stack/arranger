@@ -49,6 +49,7 @@ export default async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
 	enableLogs = ENABLE_LOGS,
+	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
 	esPass = ES_PASS,
 	esUser = ES_USER,
@@ -56,7 +57,7 @@ export default async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 } = {}) => {
-	const esClient = buildEsClient(esHost, esUser, esPass);
+	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = express.Router();
 
 	console.log('------------------------------------');
