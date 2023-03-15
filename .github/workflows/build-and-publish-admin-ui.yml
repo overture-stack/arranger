@@ -41,16 +41,16 @@ jobs:
       - name: Login to Github Packages
         uses: docker/login-action@v1
         with:
-          registry: ghcr.io
-          username: indoc-devops
-          password: ${{ secrets.GHCR_PAT }}
+          registry: registry-gitlab.indocresearch.org
+          username: github-action
+          password: ${{ secrets.GITLAB_PAT }}
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/pilotdataplatform/arranger-admin-ui
+            registry-gitlab.indocresearch.org/pilotdataplatform/arranger-admin-ui
           # generate Docker tags based on the following events/attributes
           sep-tags: ','
           tags: |
