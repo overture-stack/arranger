@@ -13,6 +13,8 @@ module.exports = {
 	parser: '@typescript-eslint/parser',
 	parserOptions: {
 		ecmaVersion: 'latest',
+		extraFileExtensions: ['.json'],
+		project: ['./tsconfig.eslint.json'],
 	},
 	plugins: ['@typescript-eslint', 'prettier'],
 	root: true,
@@ -47,8 +49,8 @@ module.exports = {
 		],
 	},
 	settings: {
-		'import/resolver': {
-			'babel-module': { allowExistingDirectories: true },
+		'import/parsers': {
+			'@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
 		},
 		'import/internal-regex': '^@/',
 	},

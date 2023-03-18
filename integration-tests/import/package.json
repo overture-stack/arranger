@@ -1,28 +1,31 @@
 {
 	"name": "integration-tests-import",
-	"private": "true",
-	"scripts": {
-		"test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
-	},
-	"jest": {
-		"setupFiles": [
-			"jest-localstorage-mock"
-		],
-		"moduleNameMapper": {
-			"\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
-		},
-		"testEnvironmentOptions": {
-			"url": "http://localhost/"
-		}
-	},
 	"dependencies": {
 		"@overture-stack/arranger-components": "^3.0.0-beta.21"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.20.12",
-		"@babel/preset-env": "^7.20.2",
 		"jest-localstorage-mock": "^2.4.26",
-		"regenerator-runtime": "^0.13.11"
+		"ts-jest": "^29.0.5",
+		"typescript": "^4.9.5"
+	},
+	"jest": {
+		"moduleNameMapper": {
+			"\\.(css|less)$": "<rootDir>/__mocks__/styleMock.js"
+		},
+		"preset": "ts-jest",
+		"setupFiles": [
+			"jest-localstorage-mock"
+		],
+		"testEnvironmentOptions": {
+			"url": "http://localhost/"
+		},
+		"transform": {
+			"^.+\\.[jt]sx?$": "ts-jest"
+		}
+	},
+	"private": "true",
+	"scripts": {
+		"test": "jest"
 	},
 	"version": "3.0.0-beta.21"
 }

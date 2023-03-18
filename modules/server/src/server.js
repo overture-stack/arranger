@@ -1,5 +1,5 @@
 import elasticsearch from '@elastic/elasticsearch';
-import express from 'express';
+import { Router } from 'express';
 import morgan from 'morgan';
 
 import { ENV_CONFIG } from './config';
@@ -58,7 +58,7 @@ export default async ({
 	pingPath = PING_PATH,
 } = {}) => {
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
-	const router = express.Router();
+	const router = Router();
 
 	console.log('------------------------------------');
 	console.log(

@@ -46,4 +46,4 @@ USER $APP_USER
 
 EXPOSE 5050
 
-CMD make _ping_elasticsearch_server -e && BABEL_DISABLE_CACHE=1 npm run server:prod
+CMD make _ping_elasticsearch_server -e && npm run server:prod

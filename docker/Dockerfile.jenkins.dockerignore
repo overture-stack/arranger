@@ -1,5 +1,12 @@
+.*
 Dockerfile
 docker-compose.yml
-.git
 docker
-.npmrc
+docks
+integration-tests
+modules/**/*
+!modules/server
+scripts
+Jenkinsfile
+lerna*
+prettier*

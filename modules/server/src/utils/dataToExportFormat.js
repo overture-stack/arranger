@@ -4,6 +4,7 @@ import { get, flatten, isNil } from 'lodash';
 import through2 from 'through2';
 
 const STANDARD_DATE = 'yyyy-MM-dd';
+const DEBUG = process.env.DEBUG;
 
 const dateHandler = (value, { dateFormat = STANDARD_DATE }) => {
 	switch (true) {
@@ -302,7 +303,7 @@ export default ({
 		) || {};
 
 	return through2.obj(function ({ hits, total }, enc, callback) {
-		console.time(`esHitsToTsv_${chunkCounts}`);
+		DEBUG && console.time(`esHitsToTsv_${chunkCounts}`);
 		const outputStream = this;
 		const args = {
 			columns,
@@ -323,7 +324,7 @@ export default ({
 		}
 
 		callback();
-		console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+		DEBUG && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
 		chunkCounts++;
 	});
 };
