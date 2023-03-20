@@ -2,8 +2,8 @@ import { capitalize, flatMap, isArray } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
 
-import { withQuery } from '../../Query';
-import splitString from '../../utils/splitString';
+import { withQuery } from '@/Query';
+import splitString from '@/utils/splitString';
 
 const isValidValue = (value) => value?.trim()?.length > 1;
 
@@ -15,22 +15,23 @@ export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
 				...columnsStateField,
 				gqlField: fieldName.split('.').join('__'),
 				query: columnsStateField.query || fieldName,
-				jsonPath: columnsStateField.jsonPath || `$.${fieldName}`,
+				jsonPath: `$..${fieldName.split('.').slice(-1)}`,
 		  }
 		: {};
 };
 
-const isMatching = ({ value = '', searchText = '', exact = false }) =>
-	exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
+const isMatching = ({ value = '', searchText = '', exact = false }) => {
+	return exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
+};
 
 const enhance = compose(
 	withProps(
 		({
 			exact,
-			searchLowercase,
 			quickSearchFields,
-			searchTextDelimiters,
+			searchLowercase,
 			searchText,
+			searchTextDelimiters,
 			searchTextParts = splitString({
 				str: searchText,
 				split: searchTextDelimiters,
@@ -51,22 +52,14 @@ const enhance = compose(
 							op: 'filter',
 							content: {
 								value: `*${x}*`,
-								fieldNames: quickSearchFields?.map((x) => x.fieldName),
+								fieldNames: quickSearchFields?.map((x) => x.fieldName || x),
 							},
 					  })),
 			},
 		}),
 	),
 	withQuery(
-		({
-			index,
-			primaryKeyField,
-			quickSearchFields,
-			searchText,
-			searchTextParts,
-			size = 5,
-			sqon,
-		}) => ({
+		({ index, primaryKeyField, quickSearchFields, queryFields, searchText, size = 5, sqon }) => ({
 			debounceTime: 300,
 			shouldFetch: isValidValue(searchText) && (quickSearchFields || []).length,
 			key: 'rawSearchResults',
@@ -78,7 +71,7 @@ const enhance = compose(
               edges {
                 node {
                   primaryKey: ${primaryKeyField?.query}
-                  ${quickSearchFields?.map((f) => `${f.gqlField}: ${f.query}`)?.join('\n')}
+                  ${queryFields?.map((f) => `${f.gqlField}: ${f.query}`)?.join('\n') || ''}
                 }
               }
             }
@@ -90,44 +83,45 @@ const enhance = compose(
 	),
 	withProps(
 		({
-			index,
 			exact,
+			index,
+			primaryKeyField,
+			queryFields,
+			rawSearchResults: { data, loading },
 			searchText,
 			searchTextParts,
-			primaryKeyField,
-			quickSearchFields,
-			rawSearchResults: { data, loading },
-			searchResultsByEntity = quickSearchFields?.map((x) => ({
+			searchResultsByEntity = queryFields?.map((x) => ({
 				...x,
 				results: data?.[index]?.hits?.edges
 					?.map(
 						({
 							node,
-							primaryKey = jp.query(
-								{ [primaryKeyField.fieldName.split('.')[0]]: node.primaryKey },
-								primaryKeyField.jsonPath,
-							)[0],
-							result = jp.query({ [x.fieldName.split('.')[0]]: node[x.gqlField] }, x.jsonPath)[0],
-						}) => ({
-							primaryKey,
-							entityName: x.entityName,
-							...searchTextParts.reduce(
-								(acc, part) => {
-									if (isArray(result)) {
-										const r = result.find((r) => isMatching({ value: r, searchText: part, exact }));
-										if (r) {
-											return { input: part, result: r };
+							primaryKey = jp.query(node.primaryKey, primaryKeyField.jsonPath)[0],
+							result = jp.query(node, x.jsonPath),
+						}) => {
+							return {
+								primaryKey,
+								entityName: x.entityName,
+								...searchTextParts.reduce(
+									(acc, part) => {
+										if (isArray(result)) {
+											const r = result.find((r) =>
+												isMatching({ value: r, searchText: part, exact }),
+											);
+											if (r) {
+												return { input: part, result: r };
+											}
+											return acc;
+										}
+										if (isMatching({ value: result, searchText: part, exact })) {
+											return { input: part, result };
 										}
 										return acc;
-									}
-									if (isMatching({ value: result, searchText: part, exact })) {
-										return { input: part, result };
-									}
-									return acc;
-								},
-								{ input: '', result: '' },
-							),
-						}),
+									},
+									{ input: '', result: '' },
+								),
+							};
+						},
 					)
 					?.filter((x) => isValidValue(searchText) && x.input),
 			})) || [],
@@ -152,19 +146,21 @@ const enhance = compose(
 );
 
 const QuickSearchQuery = ({
-	render,
+	apiFetcher,
 	mapResults = () => ({}),
+	render,
 	sqon,
 	searchResults,
 	searchResultsByEntity,
 	searchResultsLoading,
 	searchTextParts,
 	props = {
-		searchTextParts,
-		sqon,
+		apiFetcher,
+		loading: searchResultsLoading,
 		results: searchResults,
 		resultsByEntity: searchResultsByEntity,
-		loading: searchResultsLoading,
+		searchTextParts,
+		sqon,
 	},
 }) => render({ ...props, ...mapResults(props) });
 

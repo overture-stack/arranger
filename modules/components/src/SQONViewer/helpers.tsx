@@ -23,7 +23,7 @@ import {
 	ValueSQONInterface,
 } from './types';
 
-interface BubbleProps extends ButtonProps {
+export interface BubbleProps extends ButtonProps {
 	onClick?: () => void;
 }
 

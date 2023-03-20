@@ -12,7 +12,7 @@ import saveSet from '../utils/saveSet';
 import formatNumber from '../utils/formatNumber';
 import parseInputFiles from '../utils/parseInputFiles';
 
-import QuickSearchQuery from './QuickSearch/QuickSearchQuery';
+import QuickSearchQuery from '../QuickSearch/QuickSearchQuery';
 
 const layoutStyle = css`
 	&.match-box {

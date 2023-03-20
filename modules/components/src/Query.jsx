@@ -59,6 +59,7 @@ export const withQuery = (getOptions) => (Component) => (props) => {
 
 	return (
 		<EnhancedQuery
+			apiFetcher={props.apiFetcher}
 			{...options}
 			render={(data) => <Component {...props} {...{ [options.key]: data }} />}
 		/>
