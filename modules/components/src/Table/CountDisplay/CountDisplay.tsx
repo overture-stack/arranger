@@ -30,6 +30,7 @@ const CountDisplay = ({
 			Table: {
 				CountDisplay: {
 					className: themeClassName,
+					css: themeCSS,
 					hideLoader: themeHideLoader,
 					fontColor: themeFontColor = colors?.grey?.[700],
 					fontSize: themeFontSize = '0.8rem',
@@ -60,6 +61,7 @@ const CountDisplay = ({
 						flex: 0 0 auto;
 					}
 				`,
+				themeCSS,
 				customCSS,
 			]}
 		>

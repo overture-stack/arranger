@@ -1,3 +1,5 @@
+import { IResolvers } from '@graphql-tools/utils';
+
 import { ConfigProperties } from '@/config/types';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 
@@ -5,16 +7,31 @@ import resolveAggregations from './resolveAggregations';
 import resolveHits from './resolveHits';
 
 // TODO: tighten these types
-type TcreateConnectionResolversArgs = {
+type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
 };
-type TcreateConnectionResolvers = (args: TcreateConnectionResolversArgs) => Record<string, any>;
+type CreateConnectionResolversFn = (args: CreateConnectionResolversArgs) => IResolvers;
 
-const createConnectionResolvers: TcreateConnectionResolvers = ({
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+export interface ExtendedMappingInterface {
+	active: boolean; // *
+	displayName: string;
+	displayType: string;
+	displayValues: Record<string, string>;
+	fieldName: string;
+	isArray: boolean;
+	primaryKey: boolean;
+	quickSearchEnabled: boolean;
+	rangeStep: number | null | undefined;
+	type: DisplayType;
+	unit: string | null;
+}
+
+const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
 	getServerSideFilter,
@@ -23,11 +40,11 @@ const createConnectionResolvers: TcreateConnectionResolvers = ({
 }) => ({
 	[type.name]: {
 		aggregations: resolveAggregations({ type, getServerSideFilter }),
-		configs: async (obj, { fieldNames }, ctx) => {
+		configs: async (parentObj, { fieldNames }: { fieldNames: string[] }) => {
 			return {
 				downloads: type.config?.[ConfigProperties.DOWNLOADS],
 				extended: fieldNames
-					? type.extendedFields.filter((extendedField) =>
+					? type.extendedFields.filter((extendedField: ExtendedMappingInterface) =>
 							fieldNames.includes(extendedField.fieldName),
 					  )
 					: type.extendedFields,

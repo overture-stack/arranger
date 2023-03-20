@@ -11,7 +11,7 @@ const Cell = ({
 	accessor = '',
 	children,
 	colSpan,
-	css: customCss,
+	css: customCSS,
 	theme: {
 		columnWidth: themeTableColumnWidth,
 		hoverVerticalBorderColor: customHoverVerticalBorderColor,
@@ -32,7 +32,7 @@ const Cell = ({
 					list: { listStyle: themeListStyle } = emptyObj,
 					...otherThemeColumnTypes
 				} = emptyObj,
-				Cell: { css: themeCss } = emptyObj,
+				Cell: { css: themeCSS } = emptyObj,
 				Row: {
 					borderColor: themeBorderColor,
 					hoverVerticalBorderColor: themeHoverVerticalBorderColor,
@@ -127,8 +127,8 @@ const Cell = ({
 						`}
 					}
 				`,
-				themeCss,
-				customCss,
+				themeCSS,
+				customCSS,
 			]}
 			data-accessor={accessor}
 			data-value={value}

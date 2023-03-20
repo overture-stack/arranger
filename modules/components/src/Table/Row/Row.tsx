@@ -11,7 +11,7 @@ import Cell from './Cell';
 import { RowProps } from './types';
 
 const TableRow = ({
-	css: customCss,
+	css: customCSS,
 	id,
 	theme: { borderColor: customBorderColor, textOverflow: customTextOverflow } = emptyObj,
 	...props
@@ -52,7 +52,6 @@ const TableRow = ({
 		<tr
 			className={cx('Row', themeClassName, { selected: props?.getIsSelected?.() })}
 			css={[
-				themeCSS,
 				css`
 					background: ${themeBackground};
 					color: ${themeFontColor};
@@ -81,8 +80,8 @@ const TableRow = ({
 						background: ${themeHoverBackground};
 					}
 				`,
-
-				customCss,
+				themeCSS,
+				customCSS,
 			]}
 			data-row-id={id}
 		>

@@ -236,7 +236,7 @@ const PageSelector = ({
 											height: calc(${customFontSize || themeFontSize} * 1.5);
 											padding: 0 0.3rem;
 											text-align: center;
-											width: 2rem;
+											width: 2.5rem;
 
 											// the following lines remove the spin button
 											-moz-appearance: textfield;

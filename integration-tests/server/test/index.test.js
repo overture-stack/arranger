@@ -16,6 +16,7 @@ import manageSets from './manageSets';
 const mappings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
+const DEBUG = process.env.DEBUG;
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'models_1.0';
 const esPwd = process.env.ES_PASS;
@@ -26,7 +27,7 @@ const useAuth = !!esPwd && !!esUser;
 
 const app = express();
 
-const api = ajax(`http://localhost:${port}`, 'debug!');
+const api = ajax(`http://localhost:${port}`, DEBUG);
 const esClient = new Client({
 	...(useAuth && {
 		auth: {

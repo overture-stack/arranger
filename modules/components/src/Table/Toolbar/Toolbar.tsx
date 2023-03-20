@@ -13,6 +13,7 @@ import { emptyObj } from '@/utils/noops';
 import { ToolbarProps } from './types';
 
 const Toolbar = ({
+	css: customCSS,
 	className: customClassName,
 	theme: { CountDisplay: customCountDisplayProps } = emptyObj,
 }: ToolbarProps) => {
@@ -21,7 +22,7 @@ const Toolbar = ({
 			Table: {
 				Toolbar: {
 					className: themeClassName,
-					css: themeCss,
+					css: themeCSS,
 					CountDisplay: themeCountDisplayProps = emptyObj,
 				} = emptyObj,
 			} = emptyObj,
@@ -40,7 +41,8 @@ const Toolbar = ({
 						display: flex;
 						justify-content: space-between;
 					`,
-					themeCss,
+					themeCSS,
+					customCSS,
 				]}
 			>
 				<CountDisplay
@@ -82,7 +84,7 @@ const Toolbar = ({
 				</ul>
 			</section>
 		),
-		[className, countDisplayTheme, themeCss],
+		[className, countDisplayTheme, customCSS, themeCSS],
 	);
 };
 

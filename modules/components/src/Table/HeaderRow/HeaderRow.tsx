@@ -10,7 +10,7 @@ import { emptyObj } from '@/utils/noops';
 import { HeaderRowProps } from './type';
 
 const TableHeaderRow = ({
-	css: customCss,
+	css: customCSS,
 	hasVisibleRows,
 	headers,
 	theme: {
@@ -81,7 +81,7 @@ const TableHeaderRow = ({
 					}
 				`,
 				themeCSS,
-				customCss,
+				customCSS,
 			]}
 		>
 			{headers.map((headerObj) => {

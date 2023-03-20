@@ -1,5 +1,5 @@
 import elasticsearch from '@elastic/elasticsearch';
-import express from 'express';
+import { Router } from 'express';
 import morgan from 'morgan';
 
 import { ENV_CONFIG } from './config';
@@ -49,6 +49,7 @@ export default async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
 	enableLogs = ENABLE_LOGS,
+	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
 	esPass = ES_PASS,
 	esUser = ES_USER,
@@ -56,8 +57,8 @@ export default async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 } = {}) => {
-	const esClient = buildEsClient(esHost, esUser, esPass);
-	const router = express.Router();
+	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
+	const router = Router();
 
 	console.log('------------------------------------');
 	console.log(
