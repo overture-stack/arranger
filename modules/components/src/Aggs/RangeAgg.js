@@ -271,8 +271,8 @@ class RangeAgg extends Component {
 							>
 								{supportedConversions
 									.map((x) => convert().describe(x))
-									.map((x) => ({ ...x, active: x.abbr === displayUnit }))
-									.map(({ abbr, plural, active }) => (
+									.map((x) => ({ ...x, isActive: x.abbr === displayUnit }))
+									.map(({ abbr, plural, isActive }) => (
 										<label
 											css={css`
 												margin: 0 5px;
@@ -284,7 +284,7 @@ class RangeAgg extends Component {
 											key={abbr}
 										>
 											<input
-												checked={active}
+												checked={isActive}
 												id={abbr}
 												onChange={this.setNewUnit}
 												type="radio"

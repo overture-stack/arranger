@@ -1,6 +1,6 @@
 import { IResolvers } from '@graphql-tools/utils';
 
-import { ConfigProperties } from '@/config/types';
+import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 
 import resolveAggregations from './resolveAggregations';
@@ -16,21 +16,6 @@ type CreateConnectionResolversArgs = {
 };
 type CreateConnectionResolversFn = (args: CreateConnectionResolversArgs) => IResolvers;
 
-export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
-export interface ExtendedMappingInterface {
-	active: boolean; // *
-	displayName: string;
-	displayType: string;
-	displayValues: Record<string, string>;
-	fieldName: string;
-	isArray: boolean;
-	primaryKey: boolean;
-	quickSearchEnabled: boolean;
-	rangeStep: number | null | undefined;
-	type: DisplayType;
-	unit: string | null;
-}
-
 const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
@@ -44,7 +29,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 			return {
 				downloads: type.config?.[ConfigProperties.DOWNLOADS],
 				extended: fieldNames
-					? type.extendedFields.filter((extendedField: ExtendedMappingInterface) =>
+					? type.extendedFields.filter((extendedField: ExtendedConfigsInterface) =>
 							fieldNames.includes(extendedField.fieldName),
 					  )
 					: type.extendedFields,
