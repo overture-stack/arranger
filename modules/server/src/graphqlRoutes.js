@@ -95,7 +95,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 			throw `  Something went wrong while creating the GraphQL mapping${
 				ES_USER && ES_PASS
 					? ', this needs research by an Arranger maintainer!'
-					: '. Likely cause: ES Auth parameters may be missing.'
+					: '.\n  Likely cause: ES Auth parameters may be missing.'
 			}`;
 		}
 	}
