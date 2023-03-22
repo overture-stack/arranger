@@ -4,7 +4,7 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE } from './config/constants';
+import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets } from './mapping/extendMapping';
@@ -90,12 +90,13 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 			}
 
 			// We should never see this log, else there may be a bug in `fetchMapping`
-			console.error(
-				'  Mapping could not be created for some reason, but no error was generated... this needs research!',
-			);
 		} catch (error) {
 			console.error(error?.message || error);
-			throw '  Something went wrong while creating the GraphQL mapping';
+			throw `  Something went wrong while creating the GraphQL mapping${
+				ES_USER && ES_PASS
+					? ', this needs research by an Arranger maintainer!'
+					: '. Likely cause: ES Auth parameters may be missing.'
+			}`;
 		}
 	}
 
