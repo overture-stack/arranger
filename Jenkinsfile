@@ -238,7 +238,7 @@ pipeline {
                         passwordVariable: 'GIT_PASSWORD',
                         usernameVariable: 'GIT_USERNAME'
                     )]) {
-                        sh "git tag ${version}"
+                        sh "git tag v${version}"
                         sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${gitHubRepo} --tags"
                     }
                 }
