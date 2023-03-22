@@ -107,14 +107,13 @@
 		"skipLibCheck": true /* Skip type checking all .d.ts files. */
 	},
 	"exclude": ["dist/**/*", "src/admin/*"],
-	"include": ["src/**/*", "__tests__/**/*"],
+	"include": ["src/**/*"],
 	"typeRoots": ["src/globals.d.ts"],
 	"ts-node": {
 		"compilerOptions": {
 			// parameters specified here will override those declared above, but *only* in ts-node.
 		},
 		"files": true,
-		// Required for Prod. Remove if you want ts-node to do typechecking.
-		"transpileOnly": true
+		"logError": true
 	}
 }

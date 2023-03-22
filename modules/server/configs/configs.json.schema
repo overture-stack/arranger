@@ -1,23 +1,29 @@
 {
 	"documentType": "file",
+	"downloads": {
+		"allowCustomMaxRows": true,
+		"maxRows": 10000,
+	},
 	"extended": [
 		{
-			"active": false,
+			"isActive": false,
 			"displayName": "Analysis",
-			"displayType": "object",
+			"displayType": "object", // custom "default" for aggs and columns
 			"displayValues": {},
 			"fieldName": "analysis",
 			"isArray": false,
 			"primaryKey": false,
 			"quickSearchEnabled": false,
 			"rangeStep": 1,
-			"unit": null
+			"unit": null,
+			"type": "object" // from the ES mapping
 		}
 	],
 	"facets": {
 		"aggregations": [
 			{
-				"active": true,
+				"isActive": true,
+				"displayType": "keyword", // defaults to the field from extended
 				"fieldName": "analysis__analysis_id",
 				"show": true
 			}
@@ -26,9 +32,9 @@
 	"index": "file_centric_1.0",
 	"matchbox": [
 		{
+			"isActive": false,
 			"displayName": "file",
 			"fieldName": "",
-			"isActive": false,
 			"keyFieldName": null,
 			"searchFields": []
 		}
@@ -38,7 +44,12 @@
 			{
 				"accessor": "analysis.analysis_id",
 				"canChangeShow": true,
+				"displayFormat": "", // used for formattable fields e.g. 'YY-MM-DD'
+				"displayName": "Analysis ID",
+				"displayType": "id", // useful to use a different Cell type. defaults to the field from extended
+				"displayValues": "", // used for "readable" replacements e.g. true as "yes"
 				"fieldName": "analysis.analysis_id",
+				"isArray": false, // should it be displayed as a list of items, or leave as a single string
 				"jsonPath": null,
 				"query": null,
 				"show": true,

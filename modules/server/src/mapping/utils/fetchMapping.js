@@ -1,3 +1,5 @@
+import { ES_USER, ES_PASS } from '@/config/constants';
+
 export const getESAliases = async (esClient) => {
 	const { body } = await esClient?.cat.aliases({ format: 'json' });
 
@@ -22,6 +24,7 @@ export const fetchMapping = async ({ esClient, index }) => {
 			})
 			.catch((error) => {
 				console.error(error?.message || error);
+				ES_USER || ES_PASS || console.info('  Posible cause: ES Auth parameters may be missing.');
 				// TODO: analyse returning something more useful than false
 				return false;
 			})

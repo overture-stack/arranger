@@ -5,7 +5,7 @@ import path from 'path';
 import { merge } from 'lodash';
 
 import { ENV_CONFIG } from '@/config';
-import { ConfigObject, ConfigProperties, SortingInterface } from '@/config/types';
+import { ConfigObject, ConfigProperties, SortingConfigsInterface } from '@/config/types';
 
 type FileEncodingType =
 	| BufferEncoding
@@ -72,7 +72,7 @@ const getConfigFromFiles = (dirname: string): Promise<ConfigObject> => {
 								...fileDataJSON[ConfigProperties.TABLE],
 								[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
 									ConfigProperties.DEFAULT_SORTING
-								].map((sorting: SortingInterface) => ({
+								].map((sorting: SortingConfigsInterface) => ({
 									...sorting,
 									desc: sorting.desc || false,
 								})),

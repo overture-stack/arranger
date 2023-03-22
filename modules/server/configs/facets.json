@@ -3,196 +3,196 @@
 		"aggregations": [
 			{
 				"fieldName": "analysis__analysis_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "analysis__analysis_state",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "analysis__analysis_tools",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "analysis__analysis_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "analysis__analysis_version",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "analysis__experiment",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "data_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__donor_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__age",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__gender",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__samples__matched_normal_submitter_sample_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__samples__sample_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__samples__sample_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__samples__collection_date",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__samples__submitter_sample_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__specimen_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__specimen_tissue_source",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__specimen_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__submitter_specimen_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__specimens__tumour_normal_designation",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__submitter_donor_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "donors__vaccinated",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__index_file__file_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__index_file__md5sum",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "file__index_file__name",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__index_file__object_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__index_file__size",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__md5sum",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "file__name",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file__size",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file_access",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "file_autocomplete",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "file_type",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "object_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "repositories__code",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "repositories__country",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "repositories__name",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "repositories__organization",
-				"active": true,
+				"isActive": true,
 				"show": true
 			},
 			{
 				"fieldName": "repositories__url",
-				"active": true
+				"isActive": true
 			},
 			{
 				"fieldName": "study_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			}
 		]

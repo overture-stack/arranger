@@ -40,11 +40,11 @@ export interface TableConfigsInterface {
 }
 
 export interface ExtendedMappingInterface {
-	active: boolean; // *
 	displayName: string;
 	displayType: string;
 	displayValues: Record<string, string>;
 	fieldName: string;
+	isActive: boolean; // TODO: what does this do?
 	isArray: boolean;
 	primaryKey: boolean;
 	quickSearchEnabled: boolean;

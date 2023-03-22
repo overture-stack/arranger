@@ -1,13 +1,13 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { ApolloServer } from 'apollo-server-express';
-import express from 'express';
+import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
 import { DEBUG_MODE } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
-import { extendColumns } from './mapping/extendMapping';
+import { extendColumns, extendFacets } from './mapping/extendMapping';
 import makeSchema from './schema';
 
 const getTypesWithMappings = async (esClient, configs = {}) => {
@@ -25,6 +25,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 					console.log('Detected reserved field "id" in mapping, dropping it from GraphQL...');
 					delete mapping.id;
 				}
+				// Combines the mapping from ES with the "extended" custom configs
 				const extendedFields = await (async () => {
 					try {
 						return extendFields(mapping, configs?.[ConfigProperties.EXTENDED]);
@@ -39,6 +40,22 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 					}
 				})();
 
+				// Uses the "extended" fields to enhance the "facets" custom configs
+				const extendedFacetsConfigs = await (async () => {
+					try {
+						return extendFacets(configs?.[ConfigProperties.FACETS], extendedFields);
+					} catch (err) {
+						console.log(
+							'  Something happened while extending the column mappings.\n' +
+								'  Defaulting to "table" config from files.\n',
+						);
+						DEBUG_MODE && console.log(err);
+
+						return configs?.[ConfigProperties.TABLE] || [];
+					}
+				})();
+
+				// Uses the "extended" fields to enhance the "table" custom configs
 				const extendedTableConfigs = await (async () => {
 					try {
 						return extendColumns(configs?.[ConfigProperties.TABLE], extendedFields);
@@ -61,6 +78,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 						customFields: '',
 						config: {
 							...configs,
+							[ConfigProperties.FACETS]: extendedFacetsConfigs,
 							[ConfigProperties.TABLE]: extendedTableConfigs,
 						},
 					},
@@ -71,7 +89,7 @@ const getTypesWithMappings = async (esClient, configs = {}) => {
 				return typesWithMapping;
 			}
 
-			// We should never see this log, but if it does, there may be a bug in `fetchMapping`
+			// We should never see this log, else there may be a bug in `fetchMapping`
 			console.error(
 				'  Mapping could not be created for some reason, but no error was generated... this needs research!',
 			);
@@ -107,7 +125,7 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 };
 
 const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
-	const router = express.Router();
+	const router = Router();
 
 	const noSchemaHandler = (req, res) => {
 		console.log('Something went wrong initialising a GraphQL endpoint');
@@ -133,6 +151,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 		console.log('Starting GraphQL server:');
 
 		const apolloServer = new ApolloServer({
+			cache: 'bounded',
 			schema,
 			context: ({ req, res, con }) => buildContext(req, res, con),
 		});
@@ -154,6 +173,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 		console.log('\nStarting GraphQL mock server:');
 
 		const apolloMockServer = new ApolloServer({
+			cache: 'bounded',
 			schema: mockSchema,
 		});
 

@@ -15,7 +15,7 @@
 		"cleanDist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS & npm run cleanDist && npm run build",
-		"start": "NODE_ENV=development nodemon index.ts -e js,ts",
+		"start": "NODE_ENV=development nodemon -e js,json,ts index.ts",
 		"start:prod": "ts-node index.ts",
 		"test": "jest",
 		"watch": "npm run cleanDist && npm run build -- --watch"
