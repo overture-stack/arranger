@@ -41,17 +41,11 @@ export const DataProvider = ({
 		}
 	}, [legacyProps?.sqon, sqon]);
 
-	const {
-		documentMapping,
-		downloadsConfigs,
-		extendedMapping,
-		facetsConfigs,
-		isLoadingConfigs,
-		tableConfigs,
-	} = useConfigs({
-		apiFetcher,
-		documentType,
-	});
+	const { downloadsConfigs, extendedMapping, facetsConfigs, isLoadingConfigs, tableConfigs } =
+		useConfigs({
+			apiFetcher,
+			documentType,
+		});
 
 	const fetchData = useDataFetcher({
 		apiFetcher,
@@ -65,7 +59,6 @@ export const DataProvider = ({
 		...legacyProps,
 		apiFetcher,
 		apiUrl,
-		documentMapping,
 		downloadsConfigs,
 		extendedMapping,
 		facetsConfigs,

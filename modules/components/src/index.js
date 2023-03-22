@@ -30,4 +30,5 @@ export {
 	withTheme as withArrangerTheme,
 } from './ThemeContext';
 export { default as Query, withQuery } from './Query';
+export { default as QuickSearch } from './QuickSearch';
 export * from './utils';

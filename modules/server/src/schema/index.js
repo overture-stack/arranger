@@ -4,14 +4,7 @@ import { applyMiddleware } from 'graphql-middleware';
 
 import { CONSTANTS } from '../middleware';
 
-import { FacetsConfigTypeDefs, MatchBoxConfigTypeDefs, TableConfigTypeDefs } from './Configs';
 import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
-
-export const ConfigsTypeDefs = {
-	FacetsConfigTypeDefs,
-	TableConfigTypeDefs,
-	MatchBoxConfigTypeDefs,
-};
 
 export const setsMapping = {
 	userId: { type: 'keyword' },
@@ -24,7 +17,7 @@ export const setsMapping = {
 	createdAt: { type: 'date' },
 };
 
-export default ({
+const makeSchema = ({
 	enableAdmin = false,
 	getServerSideFilter,
 	middleware = [],
@@ -47,9 +40,9 @@ export default ({
 				customFields: '',
 				extendedFields: [
 					{
-						active: false,
 						displayName: 'ids',
 						fieldName: 'ids',
+						isActive: false,
 						isArray: true,
 						type: 'keyword',
 						unit: null,
@@ -92,3 +85,5 @@ export default ({
 
 	return applyMiddleware(schema, ...middleware);
 };
+
+export default makeSchema;

@@ -3,7 +3,7 @@ import { debounce } from 'lodash';
 
 import api from '../utils/api';
 
-import { decorateFieldWithColumnsState } from '../Arranger/QuickSearch/QuickSearchQuery';
+import { decorateFieldWithColumnsState } from '../QuickSearch/QuickSearchQuery';
 
 let matchBoxFields = `
   state {
