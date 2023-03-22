@@ -31,6 +31,7 @@ export interface UseDataBubblesProps {
 export interface SQONViewerProps extends UseDataBubblesProps {
 	emptyMessage?: string;
 	sqon?: GroupSQONInterface | null;
+	theme?: SQONViewerThemeProps;
 }
 
 // TODO: centralise all these

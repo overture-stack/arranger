@@ -22,7 +22,6 @@ export const useConfigs = ({
 	documentType: string;
 }) => {
 	const [isLoading, setIsLoading] = useState(true);
-	const [documentMapping, setDocumentMapping] = useState({});
 	const [downloadsConfigs, setDownloadsConfigs] = useState({});
 	const [facetsConfigs, setFacetsConfigs] = useState({});
 	const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(
@@ -40,10 +39,8 @@ export const useConfigs = ({
 			.then((response) => {
 				const {
 					configs: { downloads, extended, facets, table },
-					mapping = emptyObj,
 				} = response?.data?.[documentType] || emptyObj;
 
-				setDocumentMapping(mapping);
 				setDownloadsConfigs(downloads);
 				setExtendedMapping(extended);
 				setFacetsConfigs(facets);
@@ -56,7 +53,6 @@ export const useConfigs = ({
 	}, [apiFetcher, documentType]);
 
 	return {
-		documentMapping,
 		downloadsConfigs,
 		extendedMapping,
 		facetsConfigs,

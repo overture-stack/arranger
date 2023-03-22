@@ -8,9 +8,10 @@ export const downloadsConfigs = `
 export const facetsConfigs = `
 	facets {
 		aggregations {
+			displayType
 			fieldName
+			isActive
 			show
-			active
 		}
 	}
 `;
@@ -50,6 +51,5 @@ export const componentConfigsQuery = (documentType: string, queryName = '') =>
 				${facetsConfigs}
 				${tableConfigs}
 			}
-			mapping
 		}
 	}`;

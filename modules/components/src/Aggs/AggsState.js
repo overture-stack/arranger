@@ -1,9 +1,8 @@
 import { Component } from 'react';
-import { debounce, get, isEqual, sortBy } from 'lodash';
+import { debounce, isEqual } from 'lodash';
 
 import { withData } from '@/DataContext';
 
-import defaultApiFetcher from '../utils/api';
 import esToAggTypeMap from '../utils/esToAggTypeMap';
 
 export const queryFromAgg = ({ fieldName, type }) =>
@@ -29,13 +28,6 @@ export const queryFromAgg = ({ fieldName, type }) =>
 			}
 		`;
 
-const getMappingTypeOfField = ({ mapping = {}, fieldName = '' }) => {
-	const mappingPath = fieldName?.split?.('__')?.join?.('.properties.');
-	const fieldType = get(mapping, mappingPath)?.type;
-
-	return esToAggTypeMap[fieldType];
-};
-
 class AggsState extends Component {
 	state = { aggs: [], temp: [] };
 
@@ -51,22 +43,21 @@ class AggsState extends Component {
 		}
 	}
 
-	fetchAggsState = debounce(async ({ facetsConfigs, documentMapping }) => {
+	fetchAggsState = debounce(async ({ facetsConfigs }) => {
 		try {
 			const aggregations = facetsConfigs.aggregations || [];
 
 			this.setState({
 				aggs: aggregations,
 				temp: aggregations,
-				mapping: documentMapping,
 			});
 		} catch (error) {
 			console.warn(error);
 		}
 	}, 300);
 
-	// TODO: this function is likely broken as we remove mutation from Server
-	// however, leaving this here for documentation and follow-up
+	// TODO: this function is broken as we removed Server configs from ES
+	// however, leaving this here for documentation and follow-up on what to remove server-side
 	// save = debounce(async (state) => {
 	//   const { apiFetcher = defaultApiFetcher } = this.props;
 	//   let { data } = await apiFetcher({
@@ -82,7 +73,7 @@ class AggsState extends Component {
 	//             state {
 	//               field
 	//               show
-	//               active
+	//               isActive
 	//             }
 	//           }
 	//         }
@@ -120,20 +111,18 @@ class AggsState extends Component {
 	// };
 
 	render() {
-		const { mapping, temp } = this.state;
+		const { temp } = this.state;
 
 		return this.props.render({
 			update: this.update,
-			aggs: temp.map((x) => {
-				// TODO: Refactor here to get aggregation type through extended, rather than mapping
-				// This, to not rely on server "ENABLE_ADMIN"
-				const type = getMappingTypeOfField({ fieldName: x.fieldName, mapping }) || x.type;
+			aggs: temp.map((agg) => {
+				const type = esToAggTypeMap[agg.displayType];
 
 				return {
-					...x,
+					...agg,
 					type,
 					query: queryFromAgg({
-						...x,
+						...agg,
 						type,
 					}),
 					isTerms: type === 'Aggregations',

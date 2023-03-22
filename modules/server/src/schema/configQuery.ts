@@ -1,22 +1,24 @@
-// TODO: Add "descriptions" for the fields
+// TODO1: Add "descriptions" for the fields. Could use the comments in '@/mapping/extendMapping'
+// TODO2: these "as const" can be removed with TS v5
 
-export const FacetsConfigTypeDefs = `
+const FacetsConfigTypeDefs = `
   type AggregationMapping {
-    active: Boolean
+    displayType: String
     fieldName: String
+    isActive: Boolean
     show: Boolean
     type: String
       @deprecated(
-        reason: "This field is deprecated in favour of client-side deduction of the type using the es mapping and @arranger/mapping-utils/esToAggTypeMap. This computation will already be done with @Arranger/components. Projects created with 0.4.6 will return null for this query"
+        reason: "This field is deprecated in favour of displayType. Projects created with v0.4.6 will return null for this query"
       )
   }
 
   type FacetsConfig {
     aggregations: [AggregationMapping]
   }
-`;
+` as const;
 
-export const TableConfigTypeDefs = `
+const TableConfigTypeDefs = `
   type ColumnMapping {
     accessor: String
     canChangeShow: Boolean
@@ -31,6 +33,9 @@ export const TableConfigTypeDefs = `
     show: Boolean
     sortable: Boolean
     type: String
+      @deprecated(
+        reason: "This field is deprecated in favour of displayType. Projects created with v3.0.0 will return null for this query"
+      )
   }
 
   type ColumnSorting {
@@ -44,16 +49,16 @@ export const TableConfigTypeDefs = `
     keyFieldName: String
     maxResultsWindow: Int
   }
-`;
+` as const;
 
-export const DownloadsConfigTypeDefs = `
+const DownloadsConfigTypeDefs = `
   type DownloadsConfig {
     allowCustomMaxRows: Boolean
     maxRows: Int
   }
-`;
+` as const;
 
-export const MatchBoxConfigTypeDefs = `
+const MatchBoxConfigTypeDefs = `
   type MatchBoxMapping {
     displayName: String
     fieldName: String
@@ -61,11 +66,11 @@ export const MatchBoxConfigTypeDefs = `
     keyFieldName: String
     searchFieldNames: [String]
   }
-`;
+` as const;
 
-export const typeDefs = `
-  ${FacetsConfigTypeDefs}
+export default `
   ${DownloadsConfigTypeDefs}
+  ${FacetsConfigTypeDefs}
   ${MatchBoxConfigTypeDefs}
   ${TableConfigTypeDefs}
 
@@ -81,4 +86,4 @@ export const typeDefs = `
     downloads: DownloadsConfig
     extended(fieldNames: [String]): JSON
   }
-`;
+` as const;

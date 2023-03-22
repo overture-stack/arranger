@@ -5,7 +5,7 @@
 		"aggregations": [
 			{
 				"fieldName": "analysis__analysis_id",
-				"active": true,
+				"isActive": true,
 				"show": true
 			}
 		]

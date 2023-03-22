@@ -2,11 +2,14 @@ import { BooleanAgg, DatesAgg, TermAgg, RangeAgg } from '@/Aggs';
 import { currentFieldValue, fieldInCurrentSQON, inCurrentSQON } from '@/SQONViewer/utils';
 import noopFn from '@/utils/noops';
 
+// TODO: should these "isActive" functions be renamed to "getWhatever"?
+
 const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
 	<TermAgg
+		{...{ ...rest, ...getTermAggProps() }}
 		handleValueClick={({ fieldName, generateNextSQON, value }) => {
 			let nextSQON = generateNextSQON(sqon);
-			const active = fieldInCurrentSQON({
+			const isActive = fieldInCurrentSQON({
 				currentSQON: nextSQON?.content || [],
 				fieldName,
 			});
@@ -14,8 +17,8 @@ const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ..
 				sqon: nextSQON,
 				value: {
 					fieldName,
+					isActive,
 					value,
-					active,
 				},
 			});
 		}}
@@ -26,7 +29,6 @@ const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ..
 				currentSQON: sqon,
 			});
 		}}
-		{...{ ...rest, ...getTermAggProps() }}
 	/>
 );
 
@@ -39,12 +41,7 @@ const composedRangeAgg = ({
 	...rest
 }) => (
 	<RangeAgg
-		sqonValues={
-			!!sqon && {
-				min: currentFieldValue({ sqon, dotFieldName: fieldName, op: '>=' }),
-				max: currentFieldValue({ sqon, dotFieldName: fieldName, op: '<=' }),
-			}
-		}
+		{...{ ...rest, stats, fieldName, ...getRangeAggProps() }}
 		handleChange={({ generateNextSQON, field: { displayName, displayUnit, fieldName }, value }) => {
 			const nextSQON = generateNextSQON(sqon);
 
@@ -52,15 +49,20 @@ const composedRangeAgg = ({
 				sqon: nextSQON,
 				value: {
 					fieldName: `${displayName} (${displayUnit})`,
-					value,
-					active: fieldInCurrentSQON({
+					isActive: fieldInCurrentSQON({
 						currentSQON: nextSQON?.content,
 						fieldName,
 					}),
+					value,
 				},
 			});
 		}}
-		{...{ ...rest, stats, fieldName, ...getRangeAggProps() }}
+		sqonValues={
+			!!sqon && {
+				min: currentFieldValue({ sqon, dotFieldName: fieldName, op: '>=' }),
+				max: currentFieldValue({ sqon, dotFieldName: fieldName, op: '<=' }),
+			}
+		}
 	/>
 );
 
@@ -72,6 +74,21 @@ const composedBooleanAgg = ({
 	...rest
 }) => (
 	<BooleanAgg
+		{...{ ...rest, ...getBooleanAggProps() }}
+		handleValueClick={({ fieldName, generateNextSQON, value }) => {
+			const nextSQON = generateNextSQON(sqon);
+			onValueChange({
+				sqon: nextSQON,
+				value: {
+					fieldName,
+					isActive: fieldInCurrentSQON({
+						currentSQON: nextSQON ? nextSQON.content : [],
+						fieldName,
+					}),
+					value,
+				},
+			});
+		}}
 		isActive={(field) =>
 			inCurrentSQON({
 				value: field.value,
@@ -79,40 +96,12 @@ const composedBooleanAgg = ({
 				currentSQON: sqon,
 			})
 		}
-		handleValueClick={({ fieldName, generateNextSQON, value }) => {
-			const nextSQON = generateNextSQON(sqon);
-			onValueChange({
-				sqon: nextSQON,
-				value: {
-					value,
-					fieldName,
-					active: fieldInCurrentSQON({
-						currentSQON: nextSQON ? nextSQON.content : [],
-						fieldName,
-					}),
-				},
-			});
-		}}
-		{...{ ...rest, ...getBooleanAggProps() }}
 	/>
 );
 
 const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), ...rest }) => (
 	<DatesAgg
-		handleDateChange={({ fieldName, generateNextSQON = noopFn, value } = {}) => {
-			const nextSQON = generateNextSQON(sqon);
-			onValueChange({
-				sqon: nextSQON,
-				value: {
-					fieldName,
-					value,
-					active: fieldInCurrentSQON({
-						currentSQON: nextSQON ? nextSQON.content : [],
-						fieldName,
-					}),
-				},
-			});
-		}}
+		{...{ ...rest, ...getDatesAggProps() }}
 		getActiveValue={({ op, fieldName }) =>
 			currentFieldValue({
 				op,
@@ -120,7 +109,20 @@ const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), 
 				sqon,
 			})
 		}
-		{...{ ...rest, ...getDatesAggProps() }}
+		handleDateChange={({ fieldName, generateNextSQON = noopFn, value } = {}) => {
+			const nextSQON = generateNextSQON(sqon);
+			onValueChange({
+				sqon: nextSQON,
+				value: {
+					fieldName,
+					isActive: fieldInCurrentSQON({
+						currentSQON: nextSQON ? nextSQON.content : [],
+						fieldName,
+					}),
+					value,
+				},
+			});
+		}}
 	/>
 );
 
