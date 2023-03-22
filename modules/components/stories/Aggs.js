@@ -14,7 +14,7 @@ const bolleanAggs = [
 	{
 		fieldName: 'participants__is_proband',
 		displayName: 'Participants is proband',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,
@@ -34,7 +34,7 @@ const bolleanAggs = [
 	{
 		fieldName: 'sequencing_experiments__is_paired_end',
 		displayName: 'Is Paired Ende',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,
@@ -54,7 +54,7 @@ const bolleanAggs = [
 	{
 		fieldName: 'sequencing_experiments__is_paired_end_0',
 		displayName: 'Is Paired Ende',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,
@@ -74,7 +74,7 @@ const bolleanAggs = [
 	{
 		fieldName: 'sequencing_experiments__is_paired_end_1',
 		displayName: 'Is Paired Ende',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,
@@ -97,7 +97,7 @@ let aggs = [
 	{
 		fieldName: 'color',
 		displayName: 'Color',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,
@@ -119,7 +119,7 @@ let aggs = [
 	{
 		fieldName: 'taste',
 		displayName: 'Taste',
-		active: false,
+		isActive: false,
 		type: 'Aggregations',
 		allowedValues: [],
 		restricted: false,

@@ -61,7 +61,7 @@ export default ({ api, documentType, gqlPath }) => {
 								facets {
 									aggregations {
 										fieldName
-										active
+										isActive
 										show
 									}
 								}

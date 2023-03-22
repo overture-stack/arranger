@@ -6,11 +6,11 @@ import { TextHighlightThemeProps } from '@/TextHighlight/types';
 import { RecursivePartial } from '@/utils/types';
 
 export interface Components {
-  Aggregations: AggregationsThemeProps;
-  ArrowIcon: ArrowIconThemeProps;
-  Table: TableThemeProps;
-  TextHighlight: TextHighlightThemeProps;
-  SQONViewer: SQONViewerThemeProps;
+	Aggregations: AggregationsThemeProps;
+	ArrowIcon: ArrowIconThemeProps;
+	SQONViewer: SQONViewerThemeProps;
+	Table: TableThemeProps;
+	TextHighlight: TextHighlightThemeProps;
 }
 
 export type ComponentsOptions = RecursivePartial<Components>;

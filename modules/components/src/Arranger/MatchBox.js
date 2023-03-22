@@ -135,7 +135,7 @@ const MatchBox = ({
 						if (activeFieldToSet) {
 							setActiveEntityField(activeFieldToSet.field);
 						} else {
-							throw new Error(`no no active field found by the path ${uploadableFieldNames[0]}`);
+							throw new Error(`no active field found by the path ${uploadableFieldNames[0]}`);
 						}
 					}
 				}}

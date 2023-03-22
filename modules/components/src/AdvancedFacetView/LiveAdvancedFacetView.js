@@ -16,6 +16,7 @@ const fetchGraphqlQuery = async ({ query, variables = null, apiFetcher = default
 		},
 	}).then((data) => data.data);
 
+// TODO: remove dependence on "mapping"
 const fetchMappingData = async (fetchConfig) =>
 	fetchGraphqlQuery({
 		query: `{
@@ -24,8 +25,8 @@ const fetchMappingData = async (fetchConfig) =>
           extended,
           facets {
             aggregations {
-              active,
-              fieldName
+				fieldName
+				isActive,
             }
           }
         }
@@ -141,7 +142,7 @@ export default class LiveAdvancedFacetView extends React.Component {
 			(e) =>
 				!this.blackListedAggTypes.includes(e.type) &&
 				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)
-					?.active,
+					?.isActive,
 		);
 
 	componentDidMount() {

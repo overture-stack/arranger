@@ -55,7 +55,7 @@
 			"fieldName": "donors.age",
 			"displayName": "Age",
 			"displayType": "byte",
-			"active": true,
+			"isActive": true,
 			"unit": "year"
 		},
 		{
@@ -92,7 +92,7 @@
 			"fieldName": "donors.specimens.samples.collection_date",
 			"displayName": "Sample Collection Date",
 			"displayType": "date",
-			"active": true,
+			"isActive": true,
 			"unit": "time"
 		},
 		{
@@ -134,7 +134,7 @@
 			"fieldName": "donors.vaccinated",
 			"displayName": "Donor Vaccinated",
 			"displayType": "boolean",
-			"active": true
+			"isActive": true
 		},
 		{
 			"fieldName": "file",
@@ -175,7 +175,7 @@
 			"fieldName": "file.md5sum",
 			"displayName": "File Md5Sum",
 			"displayType": "keyword",
-			"active": "active"
+			"isActive": true
 		},
 		{
 			"fieldName": "file.name",

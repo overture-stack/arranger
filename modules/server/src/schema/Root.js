@@ -1,4 +1,4 @@
-import GraphQLJSON from 'graphql-type-json';
+import { GraphQLJSON } from 'graphql-type-json';
 import { GraphQLDate } from 'graphql-scalars';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
@@ -9,7 +9,7 @@ import { checkESAlias, getESAliases } from '@/mapping/utils/fetchMapping';
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
-import { typeDefs as ConfigsTypeDefs } from './Configs';
+import ConfigsTypeDefs from './configQuery';
 
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	scalar JSON
