@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { FC } from 'react';
 
 import { ThemedButtonProps } from '@/Button/types';
 import { ThemeCommon } from '@/ThemeContext/types';
@@ -13,17 +13,19 @@ interface QuickSearchWrapperProps extends ThemeCommon.CustomCSS {
 	headerDividerColor: string;
 	headerFontColor: string;
 	headerSticky: boolean;
+	headerTitle: string;
 }
 
-interface IconButton extends ThemeCommon.CustomCSS {
+interface IconButtonProps extends ThemeCommon.CustomCSS {
 	fill: string;
-	Icon: ReactNode;
+	Icon: FC;
 	onClick: GenericFn;
 	size: number | string;
 	transition: string;
 }
 
 interface DropDownResultsProps extends ThemeCommon.CustomCSS {
+	DropdownItemComponent: FC;
 	logoEntityEnabled: boolean;
 	logoEntityColor1: string;
 	logoEntityColor2: string;
@@ -34,15 +36,33 @@ interface DropDownResultsProps extends ThemeCommon.CustomCSS {
 
 interface PinnedValuesProps extends ThemeCommon.CustomCSS {
 	enabled: boolean;
+	PinnedValueComponent: FC;
+}
+
+interface FilterInputProps extends ThemeCommon.CustomCSS {
+	Icon: FC;
+	InputComponent: FC;
+	LoadingIcon: FC;
+	placeholder: string;
+}
+
+interface QuickSearchQueryProps {
+	searchLowercase: boolean;
+	searchTextDelimiters: string[];
 }
 
 export interface QuickSearchThemeProps {
-	ActionIcon: IconButton;
-	DropDownItems: DropDownResultsProps;
-	FilterInput: ThemeCommon.CustomCSS;
-	MoreOrLessButton: ThemedButtonProps;
-	PinnedValues: PinnedValuesProps;
-	QuickSearchWrapper: QuickSearchWrapperProps;
-	ToggleButton: ToggleButtonThemeProps;
-	TreeJointIcon: IconButton;
+	ActionIcon?: IconButtonProps;
+	DropDownItems?: DropDownResultsProps;
+	FilterInput?: FilterInputProps;
+	MoreOrLessButton?: ThemedButtonProps;
+	PinnedValues?: PinnedValuesProps;
+	quickSearchQuery?: QuickSearchQueryProps;
+	QuickSearchWrapper?: QuickSearchWrapperProps;
+	ToggleButton?: ToggleButtonThemeProps;
+	TreeJointIcon?: IconButtonProps;
+}
+
+export interface QuickSearchProps {
+	theme: QuickSearchThemeProps;
 }
