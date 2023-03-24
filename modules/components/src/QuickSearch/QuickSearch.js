@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { createRef, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import Component from 'react-component-component';
 import { css } from '@emotion/react';
 
-import { withData } from '@/DataContext';
+import { useDataContext, withData } from '@/DataContext';
 import TextInput from '@/Input';
 import { Value as SQONBubble } from '@/SQONViewer';
 import { currentFieldValue, toggleSQON } from '@/SQONViewer/utils';
@@ -38,42 +38,47 @@ const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
 		),
 	);
 
-const inputRef = React.createRef();
-const QuickSearch = ({
-	apiFetcher,
-	className,
-	documentType,
-	DropdownItemComponent = DropdownItem,
-	headerTitle = 'Search by ID',
-	Icon = FaSearch,
-	InputComponent = TextInput,
-	LoadingIcon = FaSearch,
-	PinnedValueComponent = SQONBubble,
-	placeholder = 'Quick Search',
-	searchLowercase = false,
-	searchTextDelimiters = ['\\s', ','],
-	setSQON,
-	sqon,
-	style = emptyObj,
-	...props
-}) => {
+const inputRef = createRef();
+const QuickSearch = ({ ...props }) => {
 	const [value, setValue] = useState('');
+	const { apiFetcher, documentType, sqon, setSQON } = useDataContext();
 	const {
 		components: {
 			QuickSearch: {
-				FilterInput: themeQuickSearchFilterInput = emptyObj,
+				DropDownItems: { DropdownItemComponent = DropdownItem } = emptyObj,
+				FilterInput: {
+					css: themeFilterInputCSS,
+					Icon = FaSearch,
+					InputComponent = TextInput,
+					LoadingIcon = FaSearch,
+					placeholder: themeFilterInputPlaceholder = 'Quick Search',
+				} = emptyObj,
+				QuickSearchQuery: {
+					searchLowercase: themeQuickSearchQuerySearchLowercase = false,
+					searchTextDelimiters: themeQuickSearchQuerySearchTextDelimiters = ['\\s', ','],
+				} = emptyObj,
+				QuickSearchWrapper: {
+					headerTitle: themeQuickSearchWrapperHeaderTitle = 'Search by ID',
+					className: themeQuickSearchWrapperClassName = '',
+					style: themeQUickSearchWrapperStyle = emptyObj,
+				} = emptyObj,
 				PinnedValues: {
 					enabled: themePinnedValuesEnabled = true,
-					theme: themePinnedValuesTheme,
+					PinnedValueComponent = SQONBubble,
+					css: themePinnedValuesCss,
+					...themePinnedValuesTheme
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'QuickSearch' });
 
 	return (
-		<QuickSearchWrapper displayName={headerTitle} className={className} style={style}>
+		<QuickSearchWrapper
+			displayName={themeQuickSearchWrapperHeaderTitle}
+			className={themeQuickSearchWrapperClassName}
+			style={themeQUickSearchWrapperStyle}
+		>
 			<QuickSearchFieldsQuery
-				{...props}
 				apiFetcher={apiFetcher}
 				index={documentType}
 				primaryKeyField
@@ -94,8 +99,8 @@ const QuickSearch = ({
 						apiFetcher={apiFetcher}
 						index={documentType}
 						searchText={value}
-						searchLowercase={searchLowercase}
-						searchTextDelimiters={searchTextDelimiters}
+						searchLowercase={themeQuickSearchQuerySearchLowercase}
+						searchTextDelimiters={themeQuickSearchQuerySearchTextDelimiters}
 						render={({ results: searchResults, loading }) => (
 							<Component initialState={{ dropDownExpanded: false }}>
 								{({ state: { dropDownExpanded }, setState }) => {
@@ -104,6 +109,22 @@ const QuickSearch = ({
 
 									return (
 										<>
+											<InputComponent
+												aria-label={`Quick search`}
+												componentRef={inputRef}
+												disabled={!enabled}
+												className="filter"
+												leftIcon={{
+													Icon: loading ? LoadingIcon : Icon,
+												}}
+												onBlur={hideDropdown}
+												onChange={({ target: { value } = {} } = {}) => setValue(value || '')}
+												onFocus={showDropdown}
+												placeholder={themeFilterInputPlaceholder}
+												type="text"
+												value={value}
+												css={themeFilterInputCSS}
+											/>
 											{themePinnedValuesEnabled && (
 												<div className="quick-search-pinned-values">
 													{currentValues({
@@ -118,6 +139,9 @@ const QuickSearch = ({
 															`}
 														>
 															<PinnedValueComponent
+																css={css`
+																	${themePinnedValuesCss}
+																`}
 																theme={themePinnedValuesTheme}
 																onClick={() =>
 																	toggleValue({
@@ -134,22 +158,6 @@ const QuickSearch = ({
 													))}
 												</div>
 											)}
-											<InputComponent
-												aria-label={`Quick search`}
-												componentRef={inputRef}
-												disabled={!enabled}
-												className="filter"
-												leftIcon={{
-													Icon: loading ? LoadingIcon : Icon,
-												}}
-												onBlur={hideDropdown}
-												onChange={({ target: { value } = {} } = {}) => setValue(value || '')}
-												onFocus={showDropdown}
-												placeholder={placeholder}
-												type="text"
-												value={value}
-												{...themeQuickSearchFilterInput}
-											/>
 											<>
 												{!dropDownExpanded ? null : (
 													<div className="quick-search-results">
