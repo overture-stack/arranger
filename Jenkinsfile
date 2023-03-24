@@ -153,6 +153,24 @@ pipeline {
             }
         }
 
+        stage('Tag git version') {
+            when {
+                branch 'main'
+            }
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'OvertureBioGithub',
+                        passwordVariable: 'GIT_PASSWORD',
+                        usernameVariable: 'GIT_USERNAME'
+                    )]) {
+                        sh "git tag v${version}"
+                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${gitHubRepo} --tags"
+                    }
+                }
+            }
+        }
+
         stage('Push images') {
             when {
                 anyOf {
@@ -227,24 +245,6 @@ pipeline {
             }
         }
 
-        stage('Tag git version') {
-            when {
-                branch 'main'
-            }
-            steps {
-                container('docker') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'OvertureBioGithub',
-                        passwordVariable: 'GIT_PASSWORD',
-                        usernameVariable: 'GIT_USERNAME'
-                    )]) {
-                        sh "git tag v${version}"
-                        sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${gitHubRepo} --tags"
-                    }
-                }
-            }
-        }
-
         stage('Publish tag to npm') {
             when {
                 branch 'main'
@@ -303,24 +303,24 @@ pipeline {
         //     }
         //   }
 
-        //   stage('Deploy to Overture Staging') {
-        //     when {
-        //       branch 'master'
-        //     }
-        //     steps {
-        //       build(job: '/Overture.bio/provision/helm', parameters: [
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'staging' ],
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest chart
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: chartsServer],
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ],
-        //         [$class: 'StringParameterValue', name: 'OVERTURE_ARGS_LINE', value: "--set-string apiImage.tag=${version} --set-string uiImage.tag=${version}" ]
-        //       ])
-        //     }
-        //   }
-        // }
-    }
+//   stage('Deploy to Overture Staging') {
+//     when {
+//       branch 'master'
+//     }
+//     steps {
+//       build(job: '/Overture.bio/provision/helm', parameters: [
+//         [$class: 'StringParameterValue', name: 'OVERTURE_ENV', value: 'staging' ],
+//         [$class: 'StringParameterValue', name: 'OVERTURE_CHART_NAME', value: 'arranger'],
+//         [$class: 'StringParameterValue', name: 'OVERTURE_RELEASE_NAME', value: 'arranger'],
+//         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_CHART_VERSION', value: ''], // use latest chart
+//         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REPO_URL', value: chartsServer],
+//         [$class: 'StringParameterValue', name: 'OVERTURE_HELM_REUSE_VALUES', value: "false" ],
+//         [$class: 'StringParameterValue', name: 'OVERTURE_ARGS_LINE', value: "--set-string apiImage.tag=${version} --set-string uiImage.tag=${version}" ]
+//       ])
+//     }
+//   }
+// }
+}
 
     post {
         fixed {
@@ -390,4 +390,3 @@ pipeline {
         }
     }
 }
-

@@ -1,7 +1,7 @@
 {
 	"name": "integration-tests-import",
 	"dependencies": {
-		"@overture-stack/arranger-components": "^3.0.0-beta.23"
+		"@overture-stack/arranger-components": "^3.0.0-beta.24"
 	},
 	"devDependencies": {
 		"jest-localstorage-mock": "^2.4.26",
@@ -27,5 +27,5 @@
 	"scripts": {
 		"test": "jest"
 	},
-	"version": "3.0.0-beta.23"
+	"version": "3.0.0-beta.24"
 }
