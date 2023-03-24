@@ -79,7 +79,6 @@ const QuickSearch = ({ ...props }) => {
 			style={themeQUickSearchWrapperStyle}
 		>
 			<QuickSearchFieldsQuery
-				{...props}
 				apiFetcher={apiFetcher}
 				index={documentType}
 				primaryKeyField
