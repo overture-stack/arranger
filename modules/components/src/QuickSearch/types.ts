@@ -26,12 +26,25 @@ interface IconButtonProps extends ThemeCommon.CustomCSS {
 
 interface DropDownResultsProps extends ThemeCommon.CustomCSS {
 	DropdownItemComponent: FC;
-	logoEntityEnabled: boolean;
-	logoEntityColor1: string;
-	logoEntityColor2: string;
-	logoEntityColor3: string;
-	logoEntityColor4: string;
-	logoEntityColor5: string;
+	evenRowColor: string;
+	entityLogo: {
+		borderRadius: string;
+		color1: string;
+		color2: string;
+		color3: string;
+		color4: string;
+		color5: string;
+		enabled: boolean;
+		margin: string;
+		width: string;
+	} & ThemeCommon.CustomCSS;
+	lineHeight: string;
+	resultKeyText: {
+		fontSize: string;
+	} & ThemeCommon.CustomCSS;
+	resultValue: {
+		fontSize: string;
+	} & ThemeCommon.CustomCSS;
 }
 
 interface PinnedValuesProps extends ThemeCommon.CustomCSS {

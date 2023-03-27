@@ -45,7 +45,10 @@ const QuickSearch = () => {
 	const {
 		components: {
 			QuickSearch: {
-				DropDownItems: { DropdownItemComponent = DropdownItem } = emptyObj,
+				DropDownItems: {
+					DropdownItemComponent = DropdownItem,
+					css: themeDropDownItemsCss = emptyObj,
+				} = emptyObj,
 				FilterInput: {
 					css: themeFilterInputCSS,
 					Icon = FaSearch,
@@ -125,6 +128,57 @@ const QuickSearch = () => {
 												value={value}
 												css={themeFilterInputCSS}
 											/>
+											{dropDownExpanded && searchResults?.length > 0 && (
+												<div
+													className="quick-search-results"
+													css={css`
+														${themeDropDownItemsCss}
+													`}
+												>
+													{searchResults?.map(
+														(
+															{
+																entityName,
+																result,
+																primaryKey,
+																input,
+																index = (entityIndexLookup[entityName] % 5) + 1,
+															},
+															i,
+														) => {
+															return (
+																<DropdownItemComponent
+																	aria-label={`${result}-${i}`}
+																	entityName={entityName}
+																	inputValue={input}
+																	key={`${result}-${i}`}
+																	onMouseDown={() => {
+																		// onMouseDown because the input's onBlur would prevent onClick from triggering
+																		setValue('');
+
+																		if (
+																			!currentValues({
+																				primaryKeyField,
+																				sqon,
+																			})?.includes(primaryKey)
+																		) {
+																			toggleValue({
+																				primaryKey,
+																				primaryKeyField,
+																				setSQON,
+																				sqon,
+																			});
+																		}
+																	}}
+																	optionIndex={index}
+																	primaryKey={primaryKey}
+																	result={result}
+																/>
+															);
+														},
+													)}
+												</div>
+											)}
 											{themePinnedValuesEnabled && (
 												<div className="quick-search-pinned-values">
 													{currentValues({
@@ -158,54 +212,6 @@ const QuickSearch = () => {
 													))}
 												</div>
 											)}
-											<>
-												{!dropDownExpanded ? null : (
-													<div className="quick-search-results">
-														{searchResults?.map(
-															(
-																{
-																	entityName,
-																	result,
-																	primaryKey,
-																	input,
-																	index = (entityIndexLookup[entityName] % 5) + 1,
-																},
-																i,
-															) => {
-																return (
-																	<DropdownItemComponent
-																		aria-label={`${result}-${i}`}
-																		entityName={entityName}
-																		inputValue={input}
-																		key={`${result}-${i}`}
-																		onMouseDown={() => {
-																			// onMouseDown because the input's onBlur would prevent onClick from triggering
-																			setValue('');
-
-																			if (
-																				!currentValues({
-																					primaryKeyField,
-																					sqon,
-																				})?.includes(primaryKey)
-																			) {
-																				toggleValue({
-																					primaryKey,
-																					primaryKeyField,
-																					setSQON,
-																					sqon,
-																				});
-																			}
-																		}}
-																		optionIndex={index}
-																		primaryKey={primaryKey}
-																		result={result}
-																	/>
-																);
-															},
-														)}
-													</div>
-												)}
-											</>
 										</>
 									);
 								}}
