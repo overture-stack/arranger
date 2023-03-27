@@ -1,7 +1,6 @@
 import Spinner from 'react-spinkit';
 
 import DataTable, { ColumnsState } from '@/DataTable';
-import TextInput from '@/Input';
 import { withTableContext } from '@/Table';
 import defaultApiFetcher from '@/utils/api';
 import noopFn from '@/utils/noops';
@@ -17,7 +16,7 @@ const Table = ({
 	sqon = null,
 	fieldTypesForFilter = ['text', 'keyword'],
 	apiFetcher,
-	InputComponent = TextInput,
+	InputComponent,
 	showFilterInput = true,
 	customHeaderContent = null,
 	sessionStorage = false, // Use session storage to save selected columns, page size, and column sort.

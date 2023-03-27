@@ -8,7 +8,7 @@ import splitString from '@/utils/splitString';
 const isValidValue = (value) => value?.trim()?.length > 1;
 
 export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
-	const columnsStateField = tableConfigs?.columns?.find((y) => y.fieldName === fieldName);
+	const columnsStateField = tableConfigs?.columns?.find((column) => column.fieldName === fieldName);
 
 	return columnsStateField
 		? {

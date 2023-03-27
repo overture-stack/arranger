@@ -17,9 +17,9 @@ export type ButtonStyleProps = ThemeCommon.BoxModelProperties &
 	TooltipThemeProperties;
 
 export interface MouseEventProps {
-	onClick?: MouseEventHandler;
-	onMouseDown?: MouseEventHandler;
-	onTouchStart?: TouchEventHandler;
+	onClick: MouseEventHandler;
+	onMouseDown: MouseEventHandler;
+	onTouchStart: TouchEventHandler;
 }
 
 // To be used in the theme interface.
@@ -27,8 +27,8 @@ export type ThemedButtonProps = ButtonCustomProps & ButtonStyleProps;
 
 // To be used in components.
 type ButtonProps = PropsWithChildren<
-	MouseEventProps &
-		ButtonCustomProps & {
+	Partial<MouseEventProps> &
+		Partial<ButtonCustomProps> & {
 			theme?: Partial<ButtonStyleProps>;
 		}
 >;

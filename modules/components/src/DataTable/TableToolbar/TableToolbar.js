@@ -143,12 +143,14 @@ const TableToolbar = ({
 			{showFilterInput && (
 				<div className="group">
 					<TextFilter
-						Component={InputComponent}
 						onChange={({ value, generateNextSQON } = {}) => {
 							setFilterVal(value);
 							debouncedOnFilterChange({ value, generateNextSQON });
 						}}
-						placeholder={filterInputPlaceholder}
+						theme={{
+							Component: InputComponent,
+							placeholder: filterInputPlaceholder,
+						}}
 						value={filterVal}
 					/>
 				</div>

@@ -97,8 +97,8 @@ const ColumnsSelectButton = ({
 			enableFilter: true,
 			filterPlaceholder: 'Search',
 		},
-		themeColumnSelectButtonProps,
 		themeTableDropDownProps,
+		themeColumnSelectButtonProps,
 		customThemeProps,
 	);
 

@@ -159,11 +159,13 @@ const MatchBox = ({
 						<div className="match-box-id-form">
 							<div className="match-box-selection-text">{instructionText}</div>
 							<Input
-								aria-label={`Match box`}
-								Component="textarea"
-								disabled={!activeField}
 								onChange={onTextChange}
-								placeholder={placeholderText}
+								theme={{
+									altText: `Match box`,
+									Component: 'textarea',
+									disabled: !activeField,
+									placeholder: placeholderText,
+								}}
 								value={searchText}
 							/>
 							<div className="match-box-upload-instruction-text">{uploadInstructionText}</div>

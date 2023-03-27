@@ -9,15 +9,11 @@ import { emptyObj } from '@/utils/noops';
 
 const InputWrapper = styled.div`
 	align-items: center;
-	border: solid 2px lightgrey;
 	display: flex;
+	flex: 1;
 	justify-content: center;
 	overflow: hidden;
 	padding: 5px;
-
-	&.focused {
-		box-shadow: 0px 0px 10px skyblue;
-	}
 
 	input:focus {
 		outline: none;
@@ -45,16 +41,20 @@ const InputWrapper = styled.div`
 const Input = (
 	{
 		className,
-		clearAltText: customClearAltText,
-		ClearButton: CustomClearButton,
-		Component: CustomComponent,
-		css: customCSS,
-		leftIcon: { Icon: CustomLeftIcon, ...customLeftIconProps } = emptyObj,
 		onBlur: customBlurHandler,
 		onChange: customChangeHandler,
 		onFocus: customFocusHandler,
-		rightIcon: { Icon: CustomRightIcon, ...customRightIconProps } = emptyObj,
-		showClear: customShowClear,
+		theme: {
+			borderColor: customBorderColor,
+			boxShadow: customBoxShadow,
+			ClearButton: CustomClearButton,
+			clearButtonAltText: customClearAltText,
+			Component: CustomComponent,
+			css: customCSS,
+			leftIcon: { Icon: CustomLeftIcon, ...customLeftIconProps } = emptyObj,
+			rightIcon: { Icon: CustomRightIcon, ...customRightIconProps } = emptyObj,
+			showClear: customShowClear,
+		} = emptyObj,
 		...props
 	},
 	ref,
@@ -62,8 +62,11 @@ const Input = (
 	const [internalValue, setInternalValue] = useState('');
 	const [isFocused, setIsFocused] = useState(false);
 	const {
+		colors,
 		components: {
 			Input: {
+				borderColor: themeBorderColor = colors?.grey?.[600],
+				boxShadow: themeBoxShadow = `inset 0 0 3px 0 ${colors?.grey?.[400]}`,
 				clearAltText: themeClearAltText = 'Clear text',
 				Component: ThemeComponent = 'input',
 				ClearButton: ThemeClearButton = Button,
@@ -83,6 +86,8 @@ const Input = (
 	const LeftIcon = CustomLeftIcon || ThemeLeftIcon;
 	const RightIcon = CustomRightIcon || ThemeRightIcon;
 
+	const borderColor = customBorderColor || themeBorderColor;
+	const boxShadow = customBoxShadow || themeBoxShadow;
 	const clearAltText = `${customClearAltText || themeClearAltText}${
 		internalValue ? '' : ' (disabled)'
 	}`;
@@ -122,12 +127,18 @@ const Input = (
 	return (
 		<InputWrapper
 			className={cx('inputWrapper', { focused: isFocused }, className)}
-			css={css`
-				align-items: center;
-				flex: 1;
-				${customCSS}
-				${themeCSS}
-			`}
+			css={[
+				css`
+					border: solid 1px ${borderColor};
+					border-radius: 5px;
+
+					&.focused {
+						box-shadow: ${boxShadow};
+					}
+				`,
+				customCSS,
+				themeCSS,
+			]}
 			onClick={(e) => {
 				if (inputRef.current && e.target !== clearButtonRef?.current) inputRef.current.focus();
 			}}

@@ -11,16 +11,17 @@ export type ChildrenType = () => EmotionJSX.Element | ReactNode;
 export type cssInterpolation = Interpolation<ThemeOptions>;
 
 export interface BoxModelProperties {
-	background?: string;
-	borderColor?: string;
-	borderRadius?: string;
-	flex?: string;
-	height?: string;
-	margin?: string | 0;
-	overflow?: string;
-	padding?: string | 0;
-	position?: string;
-	width?: string;
+	background: string;
+	borderColor: string;
+	borderRadius: string;
+	boxShadow: string;
+	flex: string;
+	height: string;
+	margin: string | 0;
+	overflow: string;
+	padding: string | 0;
+	position: string;
+	width: string;
 }
 
 export type BoxModelActiveProperties = PrefixKeys<BoxModelProperties, 'active'>;
@@ -34,16 +35,16 @@ export interface CustomCSS {
 }
 
 export interface FontProperties {
-	fontColor?: string;
-	fontFamily?: string;
-	fontSize?: string;
-	fontWeight?: number | string;
-	letterSpacing?: string;
-	lineHeight?: string;
-	textOverflow?: string;
-	textDecoration?: string;
-	textTransform?: string;
-	whiteSpace?: string;
+	fontColor: string;
+	fontFamily: string;
+	fontSize: string;
+	fontWeight: number | string;
+	letterSpacing: string;
+	lineHeight: string;
+	textOverflow: string;
+	textDecoration: string;
+	textTransform: string;
+	whiteSpace: string;
 }
 
 export type FontActiveProperties = PrefixKeys<FontProperties, 'active'>;
@@ -51,9 +52,9 @@ export type FontDisabledProperties = PrefixKeys<FontProperties, 'disabled'>;
 export type FontHoverProperties = PrefixKeys<FontProperties, 'hover'>;
 
 export interface MouseEventProperties extends Partial<PrefixKeys<BoxModelProperties, 'hover'>> {
-	cursor?: string;
-	disabled?: boolean;
-	title?: string;
+	cursor: string;
+	disabled: boolean;
+	title: string;
 }
 
 export type MouseEventActiveProperties = PrefixKeys<MouseEvent, 'active'>;

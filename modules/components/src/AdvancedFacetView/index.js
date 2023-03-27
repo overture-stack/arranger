@@ -182,23 +182,25 @@ export default class AdvancedFacetView extends React.Component {
 									<Component initialState={{ value: searchTerm || '' }}>
 										{({ state: { value }, setState }) => (
 											<InputComponent
-												aria-label="Data filter"
 												className="filterInput"
-												leftIcon={{ Icon: FaFilter }}
 												onChange={({ target: { value } }) => {
 													setState({ value }, () => {
 														this.setSearchTerm(value);
 													});
 												}}
-												placeholder="Filter"
-												rightIcon={{
-													Icon: FaTimesCircle,
-													onClick: () => {
-														setState({ value: null }, () => {
-															this.setState({
-																searchTerm: null,
+												theme={{
+													altText: 'Data filter',
+													leftIcon: { Icon: FaFilter },
+													placeholder: 'Filter',
+													rightIcon: {
+														Icon: FaTimesCircle,
+														onClick: () => {
+															setState({ value: null }, () => {
+																this.setState({
+																	searchTerm: null,
+																});
 															});
-														});
+														},
 													},
 												}}
 												type="text"
