@@ -30,7 +30,7 @@ export function arrangerAuthFilterDownload(params, sqon, header) {
   const data = fs.readFileSync(`./auth/${role_filter}.json`, 'utf8');
   const filtered = JSON.parse(data);
 
-  // update project_id
+	// update project_id
   filtered['content'][0]['content']['value'] = [project_code];
 
   // add user-selected identifiers
@@ -45,8 +45,8 @@ export function arrangerAuthFilterDownload(params, sqon, header) {
       }
     for (const id of params['identifiers']){
       sqon_id.content.value.push(id)
-      filtered.content.push(sqon_id)
     }
+    filtered.content.push(sqon_id)
   }
 
   // update parent_path based on role
