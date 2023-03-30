@@ -123,7 +123,7 @@ export function downloader(project_info) {
       const { params } = req.body;
       const requestHeaders = {
         ...req.headers,
-        Authorization: `Bearer ${process.env.STORYBOOK_TOKEN}`,
+        Authorization: `Bearer ${req.headers.authorization}`,
       };
       const { output, responseFileName, contentType } = await dataStream({
         project_info,
