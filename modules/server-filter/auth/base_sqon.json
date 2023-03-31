@@ -9,6 +9,10 @@
                "project"
             ]
          }
+      },
+      {
+         "op":"or",
+         "content":[]
       }
    ]
 }
