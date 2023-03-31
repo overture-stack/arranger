@@ -57,7 +57,7 @@ export function arrangerAuthFilterDownload(params, sqon, header) {
     filtered['content'][1]['content'][0]['content'][0]['content']['value'] = [`${username}*`];
   }
 
-  // Append download SQON to auth SQON
+  // Append download SQON to SQON model
   if (sqon) {
     for (const i of sqon['content'])
     filtered.content.push(i)
