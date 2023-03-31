@@ -17,7 +17,7 @@ export function runQuery ( { project_id, esClient, query, schema, variables }) {
   })
 }
 
-export async function getAllData ({
+export async function getAllData ({   req,
                                       project_info,
                                       params,
                                       headers,
@@ -58,7 +58,7 @@ export async function getAllData ({
   const nestedFields = extended.filter(({ type }) => type === 'nested').map(({ field }) => field);
 
   const es_schema = project_info.arranger_schema['schema']
-  sqon = arrangerAuthFilterDownload(params, sqon, headers)
+  sqon = arrangerAuthFilterDownload(req, params, sqon)
   const query = buildQuery({ nestedFields, filters: sqon });
 
   runQuery({
