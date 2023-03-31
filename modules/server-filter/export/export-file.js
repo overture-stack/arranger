@@ -116,20 +116,20 @@ export const dataStream = async ({ project_info, headers, ctx, params }) => {
 export function downloader(project_info) {
   const router = express.Router();
 
-  router.use(express.urlencoded({ extended: true }));
+  router.use(express.json());
 
   router.post('/', async function (req, res) {
     try {
-      const { params } = req.body;
+      const data = req.body;
       const requestHeaders = {
         ...req.headers,
-        Authorization: `Bearer ${req.headers.authorization}`,
+        Authorization: req.headers.authorization,
       };
       const { output, responseFileName, contentType } = await dataStream({
         project_info,
         headers: requestHeaders,
         ctx: req.context,
-        params: JSON.parse(params),
+        params: data,
       });
 
       res.set('Content-Type', contentType);
