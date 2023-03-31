@@ -46,7 +46,7 @@ function UserRoleCheck(project_code, user_roles) {
         if (project_role.length !== 0) {
             const filtered_project = project_role[0].split('-')[0]
             if (filtered_project === project_code) {
-                return project_role[0]
+                return project_role[0].split("-").pop()
             }
         } else {
             return null;
@@ -106,18 +106,17 @@ const getRBAC = async (project_code, user_roles) => {
             }
         }
         // obtain permissions for project role from auth service
-        const role_name = validated_role.split("-").pop()
         const rbac = await getPermissions(project_code);
         // filter permissions based on realm role
         for (const entry of rbac) {
             if (entry.operation === 'view' && entry.category === 'Data Operation Permissions') {
-                if (entry.permissions[role_name]) {
+                if (entry.permissions[validated_role]) {
                     permitted[entry.resource].push(entry.zone);
                 }
             }
         }
         return {
-            "role": role_name,
+            "role": validated_role,
             "permissions": permitted
         };
 
