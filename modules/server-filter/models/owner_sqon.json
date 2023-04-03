@@ -4,15 +4,6 @@
       {
          "op":"in",
          "content":{
-            "field":"container_code",
-            "value":[
-               "project"
-            ]
-         }
-      },
-      {
-         "op":"in",
-         "content":{
             "field":"parent_path",
             "value":[
                "user*"

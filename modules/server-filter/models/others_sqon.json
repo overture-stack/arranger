@@ -1,0 +1,9 @@
+{
+   "op":"in",
+   "content":{
+      "field":"zonefilter",
+      "value":[
+         "zone"
+      ]
+   }
+}

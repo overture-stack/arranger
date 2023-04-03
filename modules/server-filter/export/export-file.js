@@ -7,11 +7,12 @@ const { defaults } = pkg;
 import { getAllData } from './utils/getAllData.js';
 import { dataToExportFormat } from './utils/dataToExportFormat.js';
 
-const convertDataToExportFormat = ({ project_info, params, headers, ctx, fileType }) => async (
+const convertDataToExportFormat = ({ req, project_info, params, headers, ctx, fileType }) => async (
   args,
 ) =>
   (
     await getAllData({
+      req,
       project_info,
       params,
       headers,
@@ -21,6 +22,7 @@ const convertDataToExportFormat = ({ project_info, params, headers, ctx, fileTyp
   ).pipe(dataToExportFormat({ ...args, fileType }));
 
 const getFileStream = async ({
+  req,
   project_info,
   params,
   headers,
@@ -32,13 +34,13 @@ const getFileStream = async ({
 }) => {
   const exportArgs = defaults(file, { chunkSize, fileType, mock });
 
-  return convertDataToExportFormat({ project_info, params, headers, ctx, fileType })({
+  return convertDataToExportFormat({ req, project_info, params, headers, ctx, fileType })({
     ...exportArgs,
     mock,
   });
 };
 
-const multipleFiles = async ({ project_info, params, headers, chunkSize, ctx, files, mock }) => {
+const multipleFiles = async ({ req, project_info, params, headers, chunkSize, ctx, files, mock }) => {
   const pack = tar.pack();
 
   Promise.all(
@@ -48,6 +50,7 @@ const multipleFiles = async ({ project_info, params, headers, chunkSize, ctx, fi
         // This collects all the data before adding it.
         let data = '';
         const fileStream = await getFileStream({
+          req,
           project_info,
           params,
           headers,
@@ -83,7 +86,7 @@ const multipleFiles = async ({ project_info, params, headers, chunkSize, ctx, fi
   return pack.pipe(zlib.createGzip());
 };
 
-export const dataStream = async ({ project_info, headers, ctx, params }) => {
+export const dataStream = async ({ req, project_info, headers, ctx, params }) => {
   const { chunkSize, files, fileName = 'file.tar.gz', fileType = 'tsv', mock } = params;
 
   if (files?.length > 0) {
@@ -91,6 +94,7 @@ export const dataStream = async ({ project_info, headers, ctx, params }) => {
       ? {
           contentType: 'text/plain',
           output: await getFileStream({
+            req,
             project_info,
             params,
             headers,
@@ -104,7 +108,7 @@ export const dataStream = async ({ project_info, headers, ctx, params }) => {
         }
       : {
           contentType: 'application/gzip',
-          output: multipleFiles({ project_info, headers, chunkSize, ctx, files, mock }),
+          output: multipleFiles({ req, project_info, headers, chunkSize, ctx, files, mock }),
           responseFileName: fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'), // make sure file ends with '.tar.gz'
         };
   }
@@ -126,6 +130,7 @@ export function downloader(project_info) {
         Authorization: req.headers.authorization,
       };
       const { output, responseFileName, contentType } = await dataStream({
+        req,
         project_info,
         headers: requestHeaders,
         ctx: req.context,
