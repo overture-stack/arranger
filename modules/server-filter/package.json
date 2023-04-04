@@ -1,12 +1,10 @@
 {
-  "name": "testerserver",
+  "name": "server-filter",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -25,6 +23,7 @@
     "jwt-decode": "^3.1.2",
     "kind-of": "^6.0.3",
     "lodash": "^4.17.20",
+    "memoizee": "^0.4.15",
     "minimist": "^1.2.5",
     "through2": "^2.0.3"
   }
