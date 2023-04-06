@@ -98,7 +98,8 @@ export default async ({
 		return next();
 	});
 	router.use('/', graphQLRoutes);
-	router.use(`/download`, downloadRoutes()); // consumes
+	router.use(`/download`, downloadRoutes({ enableAdmin })); // consumes
+	router.get('/favicon.ico', (req, res) => res.status(204));
 
 	router.get(pingPath, (_req, res) =>
 		res.send({ message: 'Arranger is functioning correctly...' }),

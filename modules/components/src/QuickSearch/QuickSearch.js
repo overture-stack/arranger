@@ -39,7 +39,7 @@ const toggleValue = ({ sqon, setSQON, primaryKeyField, primaryKey }) =>
 	);
 
 const inputRef = createRef();
-const QuickSearch = ({ ...props }) => {
+const QuickSearch = () => {
 	const [value, setValue] = useState('');
 	const { apiFetcher, documentType, sqon, setSQON } = useDataContext();
 	const {
@@ -218,4 +218,4 @@ const QuickSearch = ({ ...props }) => {
 	);
 };
 
-export default withData(QuickSearch);
+export default QuickSearch;

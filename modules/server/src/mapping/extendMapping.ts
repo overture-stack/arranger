@@ -4,6 +4,7 @@ import {
 	ConfigProperties,
 	ExtendedConfigsInterface,
 	FacetsConfigsInterface,
+	FieldFromMapping,
 	TableConfigsInterface,
 } from '@/config/types';
 
@@ -87,40 +88,47 @@ export const extendFacets = (
 });
 
 export const extendFields = (
-	mappingFields: Record<string, unknown>,
+	mappingFields: FieldFromMapping[],
 	extendedFromFile: ExtendedConfigsInterface[],
 ) => {
-	return flattenMapping(mappingFields)?.map(
-		({ field: fieldName = '', type: typeFromMapping = 'keyword', ...rest }) => {
-			const {
-				displayName = startCase(fieldName.replace(/\./g, ' ')),
-				displayType = typeFromMapping,
-				displayValues = {},
-				isActive = false, // TODO: what does "active" do in general?
-				isArray = false,
-				primaryKey = false,
-				quickSearchEnabled = false,
-				rangeStep = typeFromMapping === 'float' || typeFromMapping === 'double' ? 0.01 : 1,
-				unit = null,
-			} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
+	return mappingFields.map(({ fieldName, type, ...rest }) => {
+		const {
+			displayName = startCase(fieldName.replace(/\./g, ' ')),
+			displayType = type,
+			displayValues = {},
+			isActive = false, // TODO: what does "active" do in general?
+			isArray = false,
+			primaryKey = false,
+			quickSearchEnabled = false,
+			rangeStep = type === 'float' || type === 'double' ? 0.01 : 1,
+			unit = null,
+		} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
 
-			return {
-				displayName,
-				displayType,
-				displayValues,
-				fieldName,
-				isActive,
-				isArray,
-				primaryKey,
-				quickSearchEnabled,
-				rangeStep,
-				type: typeFromMapping,
-				unit,
-				...rest,
-			};
-		},
-	);
+		return {
+			displayName,
+			displayType,
+			displayValues,
+			fieldName,
+			isActive,
+			isArray,
+			primaryKey,
+			quickSearchEnabled,
+			rangeStep,
+			type,
+			unit,
+			...rest,
+		};
+	});
 };
+
+export const flattenMappingToFields = async (
+	mapping: Record<string, unknown> = {},
+): Promise<FieldFromMapping[]> =>
+	flattenMapping(mapping).map(({ field: fieldName = '', type = 'keyword', ...rest }) => ({
+		fieldName,
+		type,
+		...rest,
+	}));
 
 // TODO: disabled because its purpose is unclear
 // export default (mapping) => extendFields(flattenMapping(mapping));

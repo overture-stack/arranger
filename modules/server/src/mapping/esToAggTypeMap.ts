@@ -1,4 +1,4 @@
-export default {
+const esToAggTypes = {
 	boolean: 'Aggregations',
 	byte: 'NumericAggregations',
 	date: 'NumericAggregations',
@@ -15,3 +15,6 @@ export default {
 	text: 'Aggregations',
 	unsigned_long: 'NumericAggregations',
 } as const;
+
+export default esToAggTypes;
+export type ES_TYPES = keyof typeof esToAggTypes;

@@ -18,7 +18,7 @@ const QuickSearchWrapper = ({
 	collapsible: customCollapsible,
 	componentRef,
 	dataFields = emptyObj,
-	displayName,
+	displayName: customHeaderTitle,
 	filters,
 	headerRef,
 	stickyHeader,
@@ -39,6 +39,7 @@ const QuickSearchWrapper = ({
 					headerDividerColor: themeQuickSearchWrapperHeaderDividerColor = colors?.grey?.[200],
 					headerFontColor: themeQuickSearchWrapperHeaderFontColor = colors?.grey?.[900],
 					headerSticky: themeQuickSearchWrapperHeaderSticky = false,
+					headerTitle: themeWrapperHeaderTitle,
 					...quickSearchWrapperTheme
 				} = emptyObj,
 				ActionIcon: {
@@ -60,6 +61,7 @@ const QuickSearchWrapper = ({
 	const ActionIcon = CustomActionIcon || ThemeActionIcon;
 	const TreeJointIcon = ThemeTreeJointIcon;
 	const collapsible = customCollapsible || themeQuickSearchWrapperCollapsible;
+	const headerTitle = customHeaderTitle || themeWrapperHeaderTitle;
 
 	return (
 		<BaseWrapper className={quickSearchCustomClassName} style={style}>
@@ -137,7 +139,7 @@ const QuickSearchWrapper = ({
 									${ActionIcon && `padding-right: calc(${themeActionIconSize}* 1.3px);`}
 								`}
 							>
-								{displayName}
+								{headerTitle}
 							</span>
 						</TransparentButton>
 

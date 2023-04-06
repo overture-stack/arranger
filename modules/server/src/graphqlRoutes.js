@@ -7,89 +7,102 @@ import getConfigObject, { initializeSets } from './config';
 import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
-import { extendColumns, extendFacets } from './mapping/extendMapping';
+import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
 import makeSchema from './schema';
 
-const getTypesWithMappings = async (esClient, configs = {}) => {
+const getESMapping = async (esClient, index) => {
+	if (esClient && index) {
+		const { mapping } = await fetchMapping({
+			esClient,
+			index,
+		});
+
+		if (Object.hasOwn(mapping, 'id')) {
+			// FIXME: Figure out a solution to map this to something else rather than dropping it
+			DEBUG_MODE &&
+				console.log('  Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			delete mapping.id;
+		}
+
+		console.log('  Success!\n');
+		return mapping;
+	}
+
+	throw new Error(`Could not get ES mappings for ${index}`);
+};
+
+const getTypesWithMappings = async (mapping, configs = {}) => {
 	if (Object.keys(configs).length > 0) {
 		try {
 			console.log('Now creating a GraphQL mapping based on the ES index:');
-			const { mapping } = await fetchMapping({
-				esClient,
-				index: configs?.[ConfigProperties.INDEX],
+
+			const fieldsFromMapping = await flattenMappingToFields(mapping);
+
+			// Combines the mapping from ES with the "extended" custom configs
+			const extendedFields = await (async () => {
+				try {
+					return extendFields(fieldsFromMapping, configs?.[ConfigProperties.EXTENDED]);
+				} catch (err) {
+					console.log(
+						'  Something happened while extending the ES mappings.\n' +
+							'  Defaulting to "extended" config from files.\n',
+					);
+					DEBUG_MODE && console.log(err);
+
+					return configs?.[ConfigProperties.EXTENDED] || [];
+				}
+			})();
+
+			// Uses the "extended" fields to enhance the "facets" custom configs
+			const extendedFacetsConfigs = await (async () => {
+				try {
+					return extendFacets(configs?.[ConfigProperties.FACETS], extendedFields);
+				} catch (err) {
+					console.log(
+						'  Something happened while extending the column mappings.\n' +
+							'  Defaulting to "table" config from files.\n',
+					);
+					DEBUG_MODE && console.log(err);
+
+					return configs?.[ConfigProperties.TABLE] || [];
+				}
+			})();
+
+			// Uses the "extended" fields to enhance the "table" custom configs
+			const extendedTableConfigs = await (async () => {
+				try {
+					return extendColumns(configs?.[ConfigProperties.TABLE], extendedFields);
+				} catch (err) {
+					console.log(
+						'  Something happened while extending the column mappings.\n' +
+							'  Defaulting to "table" config from files.\n',
+					);
+					DEBUG_MODE && console.log(err);
+
+					return configs?.[ConfigProperties.TABLE] || [];
+				}
+			})();
+
+			const typesWithMappings = addMappingsToTypes({
+				graphQLType: {
+					index: configs?.[ConfigProperties.INDEX],
+					name: configs?.[ConfigProperties.DOCUMENT_TYPE],
+					extendedFields,
+					customFields: '',
+					config: {
+						...configs,
+						[ConfigProperties.FACETS]: extendedFacetsConfigs,
+						[ConfigProperties.TABLE]: extendedTableConfigs,
+					},
+				},
+				mapping,
 			});
 
-			if (mapping) {
-				if (Object.hasOwn(mapping, 'id')) {
-					// FIXME: Figure out a solution to map this to something else rather than dropping it
-					console.log('Detected reserved field "id" in mapping, dropping it from GraphQL...');
-					delete mapping.id;
-				}
-				// Combines the mapping from ES with the "extended" custom configs
-				const extendedFields = await (async () => {
-					try {
-						return extendFields(mapping, configs?.[ConfigProperties.EXTENDED]);
-					} catch (err) {
-						console.log(
-							'  Something happened while extending the ES mappings.\n' +
-								'  Defaulting to "extended" config from files.\n',
-						);
-						DEBUG_MODE && console.log(err);
-
-						return configs?.[ConfigProperties.EXTENDED] || [];
-					}
-				})();
-
-				// Uses the "extended" fields to enhance the "facets" custom configs
-				const extendedFacetsConfigs = await (async () => {
-					try {
-						return extendFacets(configs?.[ConfigProperties.FACETS], extendedFields);
-					} catch (err) {
-						console.log(
-							'  Something happened while extending the column mappings.\n' +
-								'  Defaulting to "table" config from files.\n',
-						);
-						DEBUG_MODE && console.log(err);
-
-						return configs?.[ConfigProperties.TABLE] || [];
-					}
-				})();
-
-				// Uses the "extended" fields to enhance the "table" custom configs
-				const extendedTableConfigs = await (async () => {
-					try {
-						return extendColumns(configs?.[ConfigProperties.TABLE], extendedFields);
-					} catch (err) {
-						console.log(
-							'  Something happened while extending the column mappings.\n' +
-								'  Defaulting to "table" config from files.\n',
-						);
-						DEBUG_MODE && console.log(err);
-
-						return configs?.[ConfigProperties.TABLE] || [];
-					}
-				})();
-
-				const typesWithMapping = addMappingsToTypes({
-					graphQLType: {
-						index: configs?.[ConfigProperties.INDEX],
-						name: configs?.[ConfigProperties.DOCUMENT_TYPE],
-						extendedFields,
-						customFields: '',
-						config: {
-							...configs,
-							[ConfigProperties.FACETS]: extendedFacetsConfigs,
-							[ConfigProperties.TABLE]: extendedTableConfigs,
-						},
-					},
-					mapping,
-				});
-
-				console.log('  Success!\n');
-				return typesWithMapping;
-			}
-
-			// We should never see this log, else there may be a bug in `fetchMapping`
+			console.log('  Success!\n');
+			return {
+				fieldsFromMapping,
+				typesWithMappings,
+			};
 		} catch (error) {
 			console.error(error?.message || error);
 			throw `  Something went wrong while creating the GraphQL mapping${
@@ -165,13 +178,13 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 		});
 
 		console.log('  GraphQL server running at .../graphql');
-		console.log('  Success!');
+		console.log('  Success!\n');
 	} else {
 		router.use('/graphql', noSchemaHandler);
 	}
 
 	if (mockSchema) {
-		console.log('\nStarting GraphQL mock server:');
+		console.log('Starting GraphQL mock server:');
 
 		const apolloMockServer = new ApolloServer({
 			cache: 'bounded',
@@ -186,7 +199,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 		});
 
 		console.log('  GraphQL mock server running at .../mock/graphql');
-		console.log('  Success!');
+		console.log('  Success!\n');
 	} else {
 		router.use('/mock/graphql', noSchemaHandler);
 	}
@@ -218,7 +231,11 @@ export const createSchemasFromConfigs = async ({
 }) => {
 	try {
 		const configsFromFiles = await getConfigObject(configsSource);
-		const typesWithMappings = await getTypesWithMappings(esClient, configsFromFiles);
+		const mappingFromES = await getESMapping(esClient, configsFromFiles[ConfigProperties.INDEX]);
+		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings(
+			mappingFromES,
+			configsFromFiles,
+		);
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
@@ -228,6 +245,7 @@ export const createSchemasFromConfigs = async ({
 		});
 
 		return {
+			fieldsFromMapping,
 			mockSchema,
 			schema,
 			typesWithMappings,
@@ -249,13 +267,14 @@ export default async ({
 	graphqlOptions = {},
 }) => {
 	try {
-		const { mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
-			configsSource,
-			enableAdmin,
-			esClient,
-			getServerSideFilter,
-			graphqlOptions,
-		});
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } =
+			await createSchemasFromConfigs({
+				configsSource,
+				enableAdmin,
+				esClient,
+				getServerSideFilter,
+				graphqlOptions,
+			});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
@@ -275,6 +294,7 @@ export default async ({
 					...req.context,
 					configs: typesWithMappings?.[1],
 					esClient,
+					fieldsFromMapping,
 				};
 
 				return next();

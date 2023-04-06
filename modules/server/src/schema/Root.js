@@ -89,7 +89,9 @@ export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerS
 							const aliases = await getESAliases(esClient);
 							const foundAlias = checkESAlias(aliases, index);
 
-							return (foundAlias || index) === type.index && Object.keys(type.config).length > 0;
+							const isValidIndex = [foundAlias, index].includes(type.index);
+
+							return isValidIndex && Object.keys(type.config).length > 0;
 						}
 						return new Error(`No index was found by the name/alias "${index}"`);
 					}
@@ -99,13 +101,16 @@ export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerS
 
 				return new Error(`This endpoint requires a "Document Type"`);
 			},
-			...[...types, ...rootTypes].reduce(
-				(acc, [key, type]) => ({
-					...acc,
-					[type.name || key]: resolveObject,
-				}),
-				{},
-			),
+			...[...types, ...rootTypes].reduce((acc, [key, type]) => {
+				const accessor = type.name || key;
+
+				return accessor.length > 0
+					? {
+							...acc,
+							[accessor]: resolveObject,
+					  }
+					: acc;
+			}, {}),
 		},
 		...types.reduce(
 			(acc, [key, type]) => ({

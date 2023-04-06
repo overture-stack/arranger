@@ -1,3 +1,6 @@
+// this file serves as an example of a basic config
+// and shows the allowed/expected properties
+
 {
 	"documentType": "file",
 	"downloads": {
@@ -17,7 +20,8 @@
 			"rangeStep": 1,
 			"unit": null,
 			"type": "object" // from the ES mapping
-		}
+		},
+		...
 	],
 	"facets": {
 		"aggregations": [
@@ -26,10 +30,11 @@
 				"displayType": "keyword", // defaults to the field from extended
 				"fieldName": "analysis__analysis_id",
 				"show": true
-			}
+			},
+			...
 		]
 	},
-	"index": "file_centric_1.0",
+	"index": "file_centric_1.0", // ES alias or index name
 	"matchbox": [
 		{
 			"isActive": false,
@@ -37,7 +42,8 @@
 			"fieldName": "",
 			"keyFieldName": null,
 			"searchFields": []
-		}
+		},
+		...
 	],
 	"table": {
 		"columns": [
@@ -54,13 +60,15 @@
 				"query": null,
 				"show": true,
 				"sortable": true
-			}
+			},
+			...
 		],
 		"defaultSorting": [
 			{
 				"desc": false,
 				"fieldName": "analysis.analysis_id"
-			}
+			},
+			...
 		],
 		"keyFieldName": "id"
 	}
