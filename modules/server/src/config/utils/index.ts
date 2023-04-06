@@ -1,12 +1,14 @@
 import { Client } from '@elastic/elasticsearch';
 
-import { CONSTANTS } from '../../middleware';
-import { setsMapping } from '../../schema';
-import { DEBUG_MODE } from '../constants';
+import { ENV_CONFIG } from '@/config/';
+import { ConfigObject, ConfigProperties } from '@/config/types';
+import { CONSTANTS } from '@/middleware';
+import { setsMapping } from '@/schema';
 
 export const initializeSets = async ({ esClient }: { esClient: Client }): Promise<void> => {
-	DEBUG_MODE &&
-		console.log(` \nAttempting to create Sets index "${CONSTANTS.ES_ARRANGER_SET_INDEX}"...`);
+	ENV_CONFIG.DEBUG_MODE &&
+		console.log(`Attempting to create Sets index "${CONSTANTS.ES_ARRANGER_SET_INDEX}"...`);
+
 	if (
 		(await esClient.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))?.statusCode === 404
 	) {
@@ -20,12 +22,30 @@ export const initializeSets = async ({ esClient }: { esClient: Client }): Promis
 		});
 
 		if (setsIndex) {
-			DEBUG_MODE && console.log('  Success!');
+			ENV_CONFIG.DEBUG_MODE && console.log('  Success!\n');
 			return;
 		}
 
 		throw new Error(`Problem creating ${CONSTANTS.ES_ARRANGER_SET_INDEX} index`);
 	} else {
-		DEBUG_MODE && console.log(`  This index already exists. Moving on!\n`);
+		ENV_CONFIG.DEBUG_MODE && console.log(`  This index already exists. Moving on!\n`);
 	}
 };
+
+export const makeConfigsFromEnv = (): Partial<ConfigObject> => ({
+	[ConfigProperties.DOCUMENT_TYPE]: ENV_CONFIG.DOCUMENT_TYPE,
+	[ConfigProperties.DOWNLOADS]: {
+		[ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: ENV_CONFIG.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
+		[ConfigProperties.MAX_DOWNLOAD_ROWS]: ENV_CONFIG.MAX_DOWNLOAD_ROWS,
+	},
+	[ConfigProperties.EXTENDED]: [],
+	[ConfigProperties.FACETS]: {
+		[ConfigProperties.AGGS]: [],
+	},
+	[ConfigProperties.INDEX]: ENV_CONFIG.ES_INDEX,
+	[ConfigProperties.MATCHBOX]: [],
+	[ConfigProperties.TABLE]: {
+		[ConfigProperties.COLUMNS]: [],
+		[ConfigProperties.MAX_RESULTS_WINDOW]: ENV_CONFIG.MAX_RESULTS_WINDOW,
+	},
+});

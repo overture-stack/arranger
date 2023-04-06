@@ -1,22 +1,11 @@
-import { ReactNode, useCallback, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import {
 	useReactTable,
 	ColumnDef,
 	getCoreRowModel,
-	getSortedRowModel,
 	SortingState,
 	OnChangeFn,
-	Updater,
 } from '@tanstack/react-table';
-/* Column,
-  Table as ReactTable,
-  PaginationState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  ColumnDef,
-  OnChangeFn,
-  flexRender, */
 import { merge } from 'lodash';
 
 import { UseTableDataProps } from '@/Table/types';

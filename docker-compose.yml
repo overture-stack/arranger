@@ -56,4 +56,4 @@ services:
     ports:
       - 5050:5050
     volumes:
-      - '${CONFIG_PATH:-./modules/server/configs}:/app/modules/server/configs'
+      - '${CONFIG_PATH:-./docker/server}:/app/modules/server/configs'

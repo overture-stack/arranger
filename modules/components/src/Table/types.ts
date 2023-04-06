@@ -143,7 +143,6 @@ export interface TableThemeProps
 export interface TableProps {
 	className?: string;
 	disableRowSelection?: boolean;
-	hideWarning?: boolean;
 	theme?: Partial<TableThemeProps>;
 }
 

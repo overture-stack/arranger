@@ -1,4 +1,6 @@
-// TODO: will tighten these later with a TS migration
+// TODO: will gradually tighten these as we migrate to TS
+
+import { ES_TYPES } from '@/mapping/esToAggTypeMap';
 
 export enum ConfigOptionalProperties {
 	DOWNLOADS = 'downloads',
@@ -137,4 +139,9 @@ export interface ConfigObject {
 	[ConfigProperties.INDEX]: string;
 	[ConfigProperties.MATCHBOX]: any[];
 	[ConfigProperties.TABLE]: TableConfigsInterface;
+}
+
+export interface FieldFromMapping {
+	fieldName: string;
+	type: ES_TYPES;
 }

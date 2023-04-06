@@ -1,8 +1,8 @@
 import zlib from 'zlib';
 
-import express from 'express';
-import tar from 'tar-stream';
+import { Router, urlencoded } from 'express';
 import { defaults } from 'lodash';
+import { pack as tarPack } from 'tar-stream';
 
 import getAllData from '../utils/getAllData';
 import dataToExportFormat from '../utils/dataToExportFormat';
@@ -27,10 +27,11 @@ const getFileStream = async ({ chunkSize, ctx, file, fileType, mock }) => {
 };
 
 const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
-	const pack = tar.pack();
+	const pack = tarPack();
 
 	Promise.all(
 		files.map((file, i) => {
+			// TODO: this async as the executor of a Promise is smelly
 			return new Promise(async (resolve, reject) => {
 				// pack needs the size of the stream. We don't know that until we get all the data.
 				// This collects all the data before adding it.
@@ -95,10 +96,10 @@ export const dataStream = async ({ ctx, params }) => {
 	throw new Error('files array was missing or empty');
 };
 
-export default function () {
-	const router = express.Router();
+export default function ({ enableAdmin }) {
+	const router = Router();
 
-	router.use(express.urlencoded({ extended: true }));
+	router.use(urlencoded({ extended: true }));
 
 	router.post('/', async function (req, res) {
 		try {
@@ -123,6 +124,15 @@ export default function () {
 			res.status(400).send(err?.message || err?.details || 'An unknown error occurred.');
 		}
 	});
+
+	if (enableAdmin) {
+		router.get('/fields', async (req, res) => {
+			// all the fields, as flattened from the ES mapping
+			const { fieldsFromMapping } = req.context;
+
+			res.json(fieldsFromMapping);
+		});
+	}
 
 	return router;
 }

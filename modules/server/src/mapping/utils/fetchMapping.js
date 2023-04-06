@@ -1,5 +1,3 @@
-import { ES_USER, ES_PASS } from '@/config/constants';
-
 export const getESAliases = async (esClient) => {
 	const { body } = await esClient.cat.aliases({ format: 'json' });
 
@@ -11,10 +9,10 @@ export const checkESAlias = (aliases, possibleAlias) =>
 
 export const fetchMapping = async ({ esClient, index }) => {
 	if (esClient) {
-		console.log(`  Fetching ES mapping for "${index}"...`);
+		console.log(`Fetching ES mapping for "${index}"...`);
 		const aliases = await getESAliases(esClient);
 		const alias = checkESAlias(aliases, index);
-		alias && console.log(`Found it as an alias for index "${alias}".`);
+		alias && console.log(`  Found it as an alias for index "${alias}".`);
 
 		const accessor = alias || index;
 
@@ -30,7 +28,7 @@ export const fetchMapping = async ({ esClient, index }) => {
 					return { index: accessor, mappings, mapping, alias };
 				}
 
-				console.info(`Response could not be used to map "${accessor}":`, response?.body);
+				console.info(`  Response could not be used to map "${accessor}":`, response?.body);
 				throw new Error(`Could not create a mapping for "${accessor}"`);
 			});
 

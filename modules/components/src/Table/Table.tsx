@@ -1,3 +1,4 @@
+import { PropsWithChildren } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
@@ -8,7 +9,6 @@ import { emptyObj } from '@/utils/noops';
 
 import { useTableData } from './helpers';
 import HeaderRow from './HeaderRow';
-import RewriteWarning from './RewriteWarning';
 import Row from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
@@ -16,7 +16,6 @@ import { TableProps } from './types';
 const Table = ({
 	className: customClassName,
 	disableRowSelection = false,
-	hideWarning = false,
 	theme: { columnTypes, hideLoader: customHideLoader } = emptyObj,
 }: TableProps) => {
 	const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } =
@@ -29,6 +28,7 @@ const Table = ({
 		components: {
 			Table: {
 				// functionality
+				errorMessage = 'The table failed to load. Please try again later.',
 				hideLoader: themeHideLoader,
 				noColumnsMessage = 'No columns to display.',
 
@@ -97,9 +97,26 @@ const Table = ({
 		width: 100%;
 	`;
 
-	// temporary bypass for the warning if a provider is given
-	// remove related code once the new Table is ready for primetime
-	return hideWarning || !missingProvider ? (
+	const MessageContainer = ({ Component = 'figure', children }: PropsWithChildren<any>) => (
+		<Component
+			css={[
+				css`
+					background: ${colors?.grey?.[200]};
+					border: 1px solid ${themeHeaderGroupBorderColor};
+					display: flex;
+					font-style: italic;
+					justify-content: center;
+					margin: 0;
+					padding: 0.7rem 0.5rem;
+				`,
+				containerStyles,
+			]}
+		>
+			<MetaMorphicChild>{children}</MetaMorphicChild>
+		</Component>
+	);
+
+	return (
 		<TableWrapper
 			className={cx('TableWrapper', customClassName, themeTableWrapperClassName)}
 			css={themeTableWrapperCSS}
@@ -108,16 +125,9 @@ const Table = ({
 			{...themeTableWrapperProps}
 		>
 			{missingProvider ? (
-				<div
-					css={css`
-						background: ${colors?.grey?.[200]};
-						font-style: italic;
-						padding: 0.7rem 0.5rem;
-						width: 100%;
-					`}
-				>
+				<MessageContainer>
 					The table is missing its {missingProvider || 'context'} provider.
-				</div>
+				</MessageContainer>
 			) : isLoading ? (
 				hideLoader ? null : (
 					<Spinner
@@ -177,14 +187,12 @@ const Table = ({
 						</tbody>
 					</table>
 				) : (
-					<MetaMorphicChild>{noColumnsMessage}</MetaMorphicChild>
+					<MessageContainer>{noColumnsMessage}</MessageContainer>
 				)
 			) : (
-				'Something went wrong with the request. Please try again after refreshing the browser.'
+				<MessageContainer>{errorMessage}</MessageContainer>
 			)}
 		</TableWrapper>
-	) : (
-		<RewriteWarning />
 	);
 };
 

@@ -1,4 +1,4 @@
-import elasticsearch from '@elastic/elasticsearch';
+import { Client } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
@@ -38,7 +38,7 @@ export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
 		};
 	}
 
-	return new elasticsearch.Client(esConfig);
+	return new Client(esConfig);
 };
 
 export const buildEsClientViaEnv = () => {
@@ -98,7 +98,8 @@ export default async ({
 		return next();
 	});
 	router.use('/', graphQLRoutes);
-	router.use(`/download`, downloadRoutes()); // consumes
+	router.use(`/download`, downloadRoutes({ enableAdmin })); // consumes
+	router.get('/favicon.ico', (req, res) => res.status(204));
 
 	router.get(pingPath, (_req, res) =>
 		res.send({ message: 'Arranger is functioning correctly...' }),
