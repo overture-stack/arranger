@@ -11,7 +11,7 @@ import { parseSQONParam } from '../utils/uri';
 //   TMergeFns,
 //   TMergeQuery,
 //   TSortSQON,
-//   TFilterByWhitelist,
+//   TFilterByAllowlist,
 //   TRemoveSQON,
 // } from './types';
 
@@ -199,15 +199,15 @@ const mergeFns = (v) => {
 	}
 };
 
-// const filterByWhitelist: TFilterByWhitelist = (obj, wls) =>
-const filterByWhitelist = (obj, wls) =>
+// const filterByAllowlist: TFilterByAllowlist = (obj, wls) =>
+const filterByAllowlist = (obj, wls) =>
 	Object.keys(obj || {}).reduce((acc, k) => (wls.includes(k) ? { ...acc, [k]: obj[k] } : acc), {});
 
-// export const mergeQuery: TMergeQuery = (q, c, mergeType, whitelist) => {
-export const mergeQuery = (q, c, mergeType, whitelist) => {
+// export const mergeQuery: TMergeQuery = (q, c, mergeType, allowlist) => {
+export const mergeQuery = (q, c, mergeType, allowlist) => {
 	const ctx = c || {};
 	const query = q || {};
-	const wlCtx = whitelist ? filterByWhitelist(ctx, whitelist) : ctx;
+	const wlCtx = allowlist ? filterByAllowlist(ctx, allowlist) : ctx;
 
 	// const mQs: Object = {
 	const mQs = {

@@ -7,7 +7,7 @@
 
 Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fdevelop)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/develop/)
 
-Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
+Main (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmain)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/main/)
 
 > **Note**: Arranger is undergoing refactoring work, for what will become version 3+. While we do not foresee too many breaking changes, an _upgrade guide_ is already in the works. Current users of v2 may look at the `legacy` branch meanwhile, where we will continue fixing newly reported bugs until the new version is released.
 >
@@ -15,7 +15,7 @@ Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/bu
 
 ## Documentation
 
-This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
+This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/main/LICENSE)
 
 - [Getting Started](#getting-started)
   - [Development Setup](#--development-setup)

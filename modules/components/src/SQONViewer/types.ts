@@ -118,6 +118,6 @@ export interface GroupSQONInterface {
 
 // export type TSortSQON = (a: TValueSQON, b: TValueSQON) => number;
 
-// export type TFilterByWhitelist = (o?: TRawQuery, w?: Array<string>) => TRawQuery;
+// export type TFilterByAllowlist = (o?: TRawQuery, w?: Array<string>) => TRawQuery;
 
 // export type TRemoveSQON = (fieldName: string, query: TGroupSQON) => TGroupSQON | void;

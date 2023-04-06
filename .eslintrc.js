@@ -50,7 +50,7 @@ module.exports = {
 	},
 	settings: {
 		'import/parsers': {
-			'@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
+			'@typescript-eslint/parser': ['.js', '.jsx', '.json', '.ts', '.tsx'],
 		},
 		'import/internal-regex': '^@/',
 	},
