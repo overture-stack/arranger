@@ -2,7 +2,7 @@ import express from 'express';
 import { Client } from '@elastic/elasticsearch';
 import { ApolloServer } from 'apollo-server-express';
 import { downloader } from './export/export-file.js';
-import { arrangerAuthFilter } from './authFilter.js';
+import { decodeToken, memoizedProcess } from './authFilter.js';
 import { ARRANGER_PROJECT_ID, ELASTICSEARCH, SERVER_PORT } from './config.js';
 
 // We need to pull the createProjectSchema method out of the arranger server dist because this gives us access to the `getServerSideFilter` method
@@ -12,14 +12,18 @@ import { createProjectSchema } from '@arranger/server/dist/startProject.js';
 const esClient = new Client({node: ELASTICSEARCH});
 
 /**
- * Execute RBAC filter to the incoming request
+ * Execute server filter on the incoming request
  * @param req request from express server
  * @param res response from express server
  * @param next next middleware function from express server
  */
 
-async function executeRBAC (req, res, next) {
-	req.sqon = await arrangerAuthFilter({ es: esClient, req, projectId: ARRANGER_PROJECT_ID })
+async function serverFilter (req, res, next) {
+	const decoded = decodeToken(req)
+	const project_code = req.body['project_code'];
+	const username = decoded['username']
+	const realm_roles = decoded['roles']
+	req.sqon = await memoizedProcess(project_code, username, JSON.stringify(req.body), realm_roles)
   next()
 }
 
@@ -28,7 +32,7 @@ async function executeRBAC (req, res, next) {
  * @param context The context provided by the ApolloServer based on the incoming request
  * @returns a SQON filter to apply to the entire request and to all aggregations
  */
-function arrangerSQONFilter(context){
+function SQONFilter(context){
 	return context.req.sqon
 }
 
@@ -38,7 +42,7 @@ const arrangerSchema = await createProjectSchema({
 	id: ARRANGER_PROJECT_ID,
 	graphqlOptions: {},
 	enableAdmin: false,
-	getServerSideFilter: arrangerSQONFilter,
+	getServerSideFilter: SQONFilter,
 })
 
 // Schema for download functionality
@@ -60,7 +64,7 @@ const server = new ApolloServer({
 // Setup express server
 const app = express();
 app.use(express.json()); // support json encoded bodies
-app.use(executeRBAC)
+app.use(serverFilter)
 
 // Add Arranger middleware
 server.applyMiddleware({ app, path: `/${ARRANGER_PROJECT_ID}/graphql`});

@@ -1,10 +1,12 @@
 import jwt_decode from 'jwt-decode';
 import * as fs from 'fs';
 import axios from 'axios';
+import memoize from 'memoizee';
 
 import {
     AUTH_SERVICE,
-    AUTH_SERVICE_PAGE_SIZE
+    AUTH_SERVICE_PAGE_SIZE,
+    MEMOIZE_TIMEOUT
 } from './config.js';
 
 /**
@@ -25,6 +27,31 @@ async function readFile(path) {
 
     } catch (error) {
         console.error(`Failed to read sqon model: ${error}`);
+    }
+
+}
+
+/**
+ * Function will decode auth token and return user and realm role information
+ * @param request The incoming request
+ * @returns Username and respective keycloak realm roles
+ */
+export function decodeToken(request) {
+    try {
+        // get user roles
+        const decoded = jwt_decode(request.headers.authorization);
+        const user_roles = decoded['realm_access']['roles'];
+
+        // get username
+        const username = decoded['preferred_username'];
+
+        return {
+            'username': username,
+            'roles': user_roles
+        }
+
+    } catch (error) {
+        console.error(`Failed to decode token: ${error}`);
     }
 
 }
@@ -85,11 +112,10 @@ const getPermissions = async (project_code, page = 0, data = []) => {
  * Function will obtain rbac permissions for a project and filter based on realm role
  * @param project_code The project code for a project
  * @param user_roles The realm roles obtained by decoded token
- * @returns An array of RBAC permissions data for a project
+ * @returns Role and respective RBAC permissions for a project
  */
 
 const getRBAC = async (project_code, user_roles) => {
-
     try {
         // define base RBAC
         const permitted = {
@@ -127,10 +153,10 @@ const getRBAC = async (project_code, user_roles) => {
 };
 
 /**
- * Function will build sqon based on rbac permissions
- * @param role_metadata The realm role and filtered permissions based on project
+ * Function will build SQON based on RBAC permissions
+ * @param role_metadata The realm role and respective permissions based on project
  * @param project_code The project code
- * @param username Username
+ * @param username Username of requester
  * @returns a JSON encoded SQON filter to apply to graphql query, including aggregations
  */
 
@@ -185,21 +211,14 @@ const buildSQON = async (role_metadata, project_code, username) => {
 
 /**
  * Function will create custom SQON filter, based on RBAC, for both query and aggregation results
- * @param context This is the context provided by the ApolloServer based on the incoming request
+ * @param project_code project code for faceted search interface
+ * @param username username of requester
+ * @param user_roles user realm roles
  * @returns a JSON encoded SQON filter to apply to graphql query, including aggregations
  */
 
-export async function arrangerAuthFilter(context) {
+export async function arrangerAuthFilter(project_code, username, user_roles) {
     try {
-        // get project
-        const project_code = context.req.body['project_code'];
-
-        // get user roles
-        const decoded = jwt_decode(context.req.headers.authorization);
-        const user_roles = decoded['realm_access']['roles'];
-
-        // get username
-        const username = decoded['preferred_username'];
 
         // get rbac permissions (if any)
         const rbac = await getRBAC(project_code, user_roles);
@@ -213,3 +232,34 @@ export async function arrangerAuthFilter(context) {
 
     }
 }
+
+
+/**
+ * Function will process incoming request to obtain SQON filter based on RBAC
+ * @param project_code project code of faceted search interface
+ * @param username username of requester
+ * @param request_body JSON of the incoming request body
+ * @param realm_roles keycloak realm roles for user
+ * @returns a JSON encoded SQON filter to apply to graphql query, including aggregations
+ */
+
+export async function processRequest(project_code, username, request_body, realm_roles) {
+
+    try {
+        return await arrangerAuthFilter(project_code, username, realm_roles)
+
+    } catch (error) {
+        console.log(`Failed to process request: ${error}`)
+    }
+
+
+}
+
+// memoize processRequest function, based on project code, username, and request body parameters.
+// request body is passed in order to ensure specific facet selections and identifiers (during download) are cached
+
+export const memoizedProcess = memoize(processRequest, {
+    promise: true,
+    maxAge: MEMOIZE_TIMEOUT,
+    length: 3
+}) // length designates first 3 parameters are cached
