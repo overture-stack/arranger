@@ -4,7 +4,13 @@ import { createColumnHelper } from '@tanstack/react-table';
 import { mergeWith } from 'lodash';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
-import { ColumnsDictionary, ColumnType, ColumnTypesObject, TableCellProps } from '@/Table/types';
+import {
+	ColumnsDictionary,
+	ColumnType,
+	ColumnTypesObject,
+	SELECTION_COLUMN_ID,
+	TableCellProps,
+} from '@/Table/types';
 import { emptyObj } from '@/utils/noops';
 
 import { defaultCellTypes, getCellValue } from './cells';
@@ -150,6 +156,8 @@ export const makeTableColumns = ({
 		});
 	});
 
+	const selectionColumnWidth = columnTypes[SELECTION_COLUMN_ID].size;
+
 	return allowRowSelection
 		? [
 				columnHelper.display({
@@ -175,8 +183,10 @@ export const makeTableColumns = ({
 							}}
 						/>
 					),
-					id: 'select',
-					size: 15,
+					id: SELECTION_COLUMN_ID,
+					maxSize: selectionColumnWidth,
+					minSize: selectionColumnWidth,
+					size: selectionColumnWidth,
 				}),
 				...tableColumns,
 		  ]

@@ -4,6 +4,7 @@ import cx from 'classnames';
 
 import { TransparentButton } from '@/Button';
 import { useTableContext } from '@/Table/helpers';
+import { SELECTION_COLUMN_ID } from '@/Table/types';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
@@ -86,7 +87,7 @@ const TableHeaderRow = ({
 		>
 			{headers.map((headerObj) => {
 				const { displayName, sortable } = allColumnsDict[headerObj.id] || {
-					displayName: '',
+					displayName: headerObj.id === SELECTION_COLUMN_ID ? 'Select all rows' : '',
 					sortable: false,
 				};
 

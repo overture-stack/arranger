@@ -25,6 +25,7 @@ export type FieldList = ColumnMappingInterface['fieldName'][];
 
 /** TableContext types */
 export type ColumnsDictionary = Record<FieldList[number], ColumnMappingInterface>;
+export const SELECTION_COLUMN_ID = 'select';
 
 export interface TableContextInterface {
 	allColumnsDict: ColumnsDictionary;
@@ -112,14 +113,19 @@ export type ColumnTypesObject = Record<
 	}
 >;
 
-export interface TableThemeProps
-	extends ThemeCommon.FontProperties,
-		Omit<TableBoxModelProperties, 'borderRadius'> {
+interface TableContextThemeProps {
 	columnTypes: ColumnTypesObject;
-	defaultSort: ColumnSortingInterface[];
+	defaultColumnWidth: number;
 	disableColumnResizing: boolean;
 	disableRowSelection: boolean;
 	disableRowSorting: boolean;
+}
+
+export interface TableThemeProps
+	extends TableContextThemeProps,
+		ThemeCommon.FontProperties,
+		Omit<TableBoxModelProperties, 'borderRadius'> {
+	defaultSort: ColumnSortingInterface[];
 	hideLoader: boolean;
 	noColumnsMessage?: ThemeCommon.ChildrenType;
 	noDataMessage?: ThemeCommon.ChildrenType;
@@ -146,11 +152,8 @@ export interface TableProps {
 	theme?: Partial<TableThemeProps>;
 }
 
-export interface UseTableDataProps {
-	columnTypes?: ColumnTypesObject;
-	disableColumnResizing?: boolean;
-	disableRowSelection?: boolean;
-	disableRowSorting?: boolean;
+export interface UseTableDataProps extends Partial<TableContextThemeProps> {
+	visibleTableWidth: number;
 }
 
 export * from './ColumnsSelectButton/types';

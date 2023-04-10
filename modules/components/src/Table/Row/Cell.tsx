@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { ColumnListStyles } from '@/Table/types';
+import { ColumnListStyles, SELECTION_COLUMN_ID } from '@/Table/types';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
@@ -132,7 +132,7 @@ const Cell = ({
 			]}
 			data-accessor={accessor}
 			data-value={value}
-			title={value}
+			title={accessor === SELECTION_COLUMN_ID ? 'Select this row' : value}
 		>
 			{children}
 		</td>

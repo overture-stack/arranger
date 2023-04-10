@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { merge } from 'lodash';
 
-import { UseTableDataProps } from '@/Table/types';
+import { SELECTION_COLUMN_ID, UseTableDataProps } from '@/Table/types';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
@@ -23,11 +23,15 @@ export const getSingleValue = (data: Record<string, any> | ReactNode): ReactNode
 	}
 };
 
+const defaultSelectionColumnWidth = 28;
+
 export const useTableData = ({
 	columnTypes: customColumnTypes,
+	defaultColumnWidth: customColumnWidth,
 	disableColumnResizing: customDisableColumnResizing,
 	disableRowSelection: customDisableRowSelection,
 	disableRowSorting: customDisableRowSorting,
+	visibleTableWidth,
 }: UseTableDataProps) => {
 	const {
 		defaultSorting,
@@ -50,6 +54,7 @@ export const useTableData = ({
 		components: {
 			Table: {
 				columnTypes: themeColumnTypes = emptyObj,
+				defaultColumnWidth: themeColumnWidth = 100,
 				disableColumnResizing: themeDisableColumnResizing,
 				disableRowSelection: themeDisableRowSelection,
 				disableRowSorting: themeDisableRowSorting,
@@ -60,25 +65,8 @@ export const useTableData = ({
 	const allowColumnResizing = !(customDisableColumnResizing || themeDisableColumnResizing);
 	const allowRowSelection = !(customDisableRowSelection || themeDisableRowSelection);
 	const allowRowSorting = !(customDisableRowSorting || themeDisableRowSorting);
+	const defaultColumnWidth = customColumnWidth || themeColumnWidth;
 	const [tableColumns, setTableColumns] = useState<ColumnDef<unknown, string>[]>([]);
-
-	useEffect(() => {
-		const visibleColumns = Object.values(visibleColumnsDict);
-		setTableColumns(
-			makeTableColumns({
-				allowRowSelection,
-				// these column customisations are added over Arranger's default column types
-				columnTypes: merge(
-					{ all: { size: 80 } }, // the column defaults
-					themeColumnTypes, // first we account for the themed columns
-					customColumnTypes, // then prioritise the ones given directly into the table
-					// this is useful if there are multiple sibling tables with different "settings"
-				),
-				total,
-				visibleColumns,
-			}),
-		);
-	}, [customColumnTypes, allowRowSelection, themeColumnTypes, visibleColumnsDict, total]);
 
 	const [reactTableSorting, setReactTableSorting] = useState<SortingState>([]);
 
@@ -125,6 +113,48 @@ export const useTableData = ({
 			}),
 		},
 	});
+
+	useEffect(() => {
+		const visibleColumns = Object.values(visibleColumnsDict);
+		const visibleColumnsCount = visibleColumns.length;
+		const actualTableWidth =
+			visibleTableWidth - (allowRowSelection ? defaultSelectionColumnWidth : 0);
+		const columnSize =
+			actualTableWidth <= visibleColumnsCount * defaultColumnWidth
+				? defaultColumnWidth
+				: actualTableWidth / visibleColumnsCount;
+
+		setTableColumns(
+			makeTableColumns({
+				allowRowSelection,
+				// these column customisations are added over Arranger's default column types
+				columnTypes: merge(
+					// the column defaults
+					{
+						all: { size: columnSize },
+						[SELECTION_COLUMN_ID]: { size: defaultSelectionColumnWidth },
+					},
+					// { all: { size: columnSize } },
+					themeColumnTypes, // first we account for the themed columns
+					customColumnTypes, // then prioritise the ones given directly into the table
+					// this is useful if there are multiple sibling tables with different "settings"
+				),
+				total,
+				visibleColumns,
+			}),
+		);
+	}, [
+		allowRowSelection,
+		customColumnTypes,
+		customColumnWidth,
+		defaultColumnWidth,
+		tableInstance,
+		themeColumnTypes,
+		themeColumnWidth,
+		total,
+		visibleColumnsDict,
+		visibleTableWidth,
+	]);
 
 	const tableDataValues = {
 		hasShowableColumns,

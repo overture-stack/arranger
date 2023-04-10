@@ -37,6 +37,7 @@ export const TableContext = createContext<TableContextInterface>({
  * @param {FetchDataFn} [customFetcher] function to make customised request and subsequent data handling (e.g. middlewares);
  * @param {string} [documentType] the GraphQL field that the table should use to collect data.
  */
+// TODO: make this context merge its local instances (like theme provider does)
 export const TableContextProvider = ({
 	children,
 	columns: customColumns,
@@ -120,8 +121,13 @@ export const TableContextProvider = ({
 
 	useEffect(() => {
 		const visibleColumns = getColumnsByAttribute(Object.values(currentColumnsDict), 'show');
+		const hasVisibleColumns = visibleColumns.length > 0;
+
+		setHasVisibleColumns(hasVisibleColumns);
 		setVisibleColumnsDict(columnsArrayToDictionary(visibleColumns));
-		setHasVisibleColumns(visibleColumns.length > 0);
+
+		// no need to "load" an empty table
+		hasVisibleColumns || setIsLoadingTableData(false);
 	}, [currentColumnsDict]);
 
 	useEffect(() => {

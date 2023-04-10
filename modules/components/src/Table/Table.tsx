@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
@@ -18,10 +18,13 @@ const Table = ({
 	disableRowSelection = false,
 	theme: { columnTypes, hideLoader: customHideLoader } = emptyObj,
 }: TableProps) => {
+	const ref = useRef<HTMLElement>(null);
+	const [visibleTableWidth, setVisibleTableWidth] = useState(0);
 	const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } =
 		useTableData({
 			columnTypes,
 			disableRowSelection,
+			visibleTableWidth,
 		});
 	const {
 		colors,
@@ -30,6 +33,7 @@ const Table = ({
 				// functionality
 				errorMessage = 'The table failed to load. Please try again later.',
 				hideLoader: themeHideLoader,
+				loadingMessage = 'Loading table data...',
 				noColumnsMessage = 'No columns to display.',
 
 				// appearance
@@ -95,6 +99,10 @@ const Table = ({
 		text-transform: ${themeTableTextTransform};
 		white-space: ${themeTableWhiteSpace};
 		width: 100%;
+
+		* {
+			box-sizing: border-box;
+		}
 	`;
 
 	const MessageContainer = ({ Component = 'figure', children }: PropsWithChildren<any>) => (
@@ -116,17 +124,23 @@ const Table = ({
 		</Component>
 	);
 
+	useLayoutEffect(() => {
+		const { width } = ref?.current?.getBoundingClientRect?.() || { width: 0 };
+		setVisibleTableWidth(width);
+	}, []);
+
 	return (
 		<TableWrapper
 			className={cx('TableWrapper', customClassName, themeTableWrapperClassName)}
 			css={themeTableWrapperCSS}
 			key={themeTableWrapperKey}
 			margin={themeTableMargin}
+			ref={ref}
 			{...themeTableWrapperProps}
 		>
 			{missingProvider ? (
 				<MessageContainer>
-					The table is missing its {missingProvider || 'context'} provider.
+					This table is missing its {missingProvider || 'context'} provider.
 				</MessageContainer>
 			) : isLoading ? (
 				hideLoader ? null : (
@@ -140,7 +154,7 @@ const Table = ({
 						]}
 						theme={{ vertical: true }}
 					>
-						Loading table data...
+						{loadingMessage}
 					</Spinner>
 				)
 			) : hasShowableColumns ? (
