@@ -41,16 +41,16 @@ jobs:
       - name: Login to Github Packages
         uses: docker/login-action@v1
         with:
-          registry: registry-gitlab.indocresearch.org
-          username: github-action
-          password: ${{ secrets.GITLAB_PAT }}
+          registry: pilotdataplatform.azurecr.io
+          username: ${{ secrets.ACR_CLIENT }}
+          password: ${{ secrets.ACR_SECRET }}
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v4
         with:
           # list of Docker images to use as base name for tags
           images: |
-            registry-gitlab.indocresearch.org/pilotdataplatform/arranger/arranger-admin-ui
+            pilotdataplatform.azurecr.io/arranger/arranger-admin-ui
           # generate Docker tags based on the following events/attributes
           sep-tags: ','
           tags: |
@@ -85,8 +85,8 @@ jobs:
             main:staging
             patched-version:dev
           CI_EXTERNAL_URL: |
-            main:https://ci-external.staging.pilot.indocresearch.org
-            patched-version:https://ci-external.dev.pilot.indocresearch.org
+            main:https://ci-external.staging.pilot.indocresearch.com
+            patched-version:https://ci-external.dev.pilot.indocresearch.com
           CI_API_TOKEN: |
             main:${{ secrets.CI_API_TOKEN_STG  }}
             patched-version:${{ secrets.CI_API_TOKEN_DEV  }}
