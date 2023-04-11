@@ -59,9 +59,19 @@ interface FilterInputProps extends ThemeCommon.CustomCSS {
 	placeholder: string;
 }
 
+interface FilterQueryField {
+	entityName?: string;
+	fieldName: string;
+	gqlField: string;
+	jsonPath: string;
+	query: string;
+}
+
 interface QuickSearchQueryProps {
-	searchLowercase: boolean;
-	searchTextDelimiters: string[];
+	searchLowercase?: boolean;
+	searchTextDelimiters?: string[];
+	quickSearchFields?: FilterQueryField[];
+	primaryKeyField?: FilterQueryField;
 }
 
 export interface QuickSearchThemeProps {
@@ -70,7 +80,7 @@ export interface QuickSearchThemeProps {
 	FilterInput?: FilterInputProps;
 	MoreOrLessButton?: ThemedButtonProps;
 	PinnedValues?: PinnedValuesProps;
-	quickSearchQuery?: QuickSearchQueryProps;
+	QuickSearchQuery?: QuickSearchQueryProps;
 	QuickSearchWrapper?: QuickSearchWrapperProps;
 	ToggleButton?: ToggleButtonThemeProps;
 	TreeJointIcon?: IconButtonProps;

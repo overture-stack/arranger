@@ -1,4 +1,4 @@
-import { capitalize, flatMap, isArray } from 'lodash';
+import { capitalize, flatMap, isArray, isEmpty } from 'lodash';
 import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
 
@@ -70,8 +70,13 @@ const enhance = compose(
               total
               edges {
                 node {
-                  primaryKey: ${primaryKeyField?.query}
-                  ${queryFields?.map((f) => `${f.gqlField}: ${f.query}`)?.join('\n') || ''}
+                  ${!isEmpty(primaryKeyField?.query) ? `primaryKey: ${primaryKeyField?.query}` : ''}
+                  ${
+										queryFields
+											?.filter((f) => f.gqlField && f.query)
+											?.map((f) => `${f.gqlField}: ${f.query}`)
+											?.join('\n') || ''
+									}
                 }
               }
             }
@@ -97,7 +102,7 @@ const enhance = compose(
 						({
 							node,
 							primaryKey = jp.query(node.primaryKey, primaryKeyField.jsonPath)[0],
-							result = jp.query(node, x.jsonPath),
+							result = x.jsonPath && jp.query(node, x.jsonPath),
 						}) => {
 							return {
 								primaryKey,
