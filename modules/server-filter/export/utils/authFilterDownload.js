@@ -6,9 +6,8 @@
  */
 export function arrangerAuthFilterDownload(req, params, sqon) {
     try {
-
         // add user-selected identifiers
-        if (params['identifiers'].length > 0) {
+        if (params['identifiers'] && params['identifiers'].length > 0) {
             const sqon_id = {
                 "op": "in",
                 "content": {
