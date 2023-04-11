@@ -67,6 +67,8 @@ const QuickSearch = ({
 					placeholder: themeFilterInputPlaceholder = 'Quick Search',
 				} = emptyObj,
 				QuickSearchQuery: {
+					quickSearchFields: themeQuickSearchQueryQuickSearchFields = [],
+					primaryKeyField: themeQuickSearchQueryPrimaryKeyField = emptyObj,
 					searchLowercase: themeQuickSearchQuerySearchLowercase = false,
 					searchTextDelimiters: themeQuickSearchQuerySearchTextDelimiters = ['\\s', ','],
 				} = emptyObj,
@@ -97,7 +99,8 @@ const QuickSearch = ({
 			<QuickSearchFieldsQuery
 				apiFetcher={apiFetcher}
 				documentType={documentType}
-				primaryKeyField
+				primaryKeyField={themeQuickSearchQueryPrimaryKeyField}
+				quickSearchFields={themeQuickSearchQueryQuickSearchFields}
 				render={({
 					enabled,
 					primaryKeyField,

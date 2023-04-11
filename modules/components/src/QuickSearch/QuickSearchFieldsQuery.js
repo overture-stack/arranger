@@ -1,4 +1,4 @@
-import { capitalize, uniq } from 'lodash';
+import { capitalize, uniq, isEmpty } from 'lodash';
 import { compose, withProps } from 'recompose';
 
 import { withQuery } from '@/Query';
@@ -57,14 +57,15 @@ const enhance = compose(
 					...x,
 					entityName: nestedField({ field: x, nestedFields })?.fieldName || index,
 				})) || [],
+			primaryKeyField = decorateFieldWithColumnsState({
+				tableConfigs: data?.[index]?.configs?.table,
+				fieldName: data?.[index]?.configs?.extended?.find((x) => x.primaryKey)?.fieldName,
+			}),
 		}) => {
 			return {
 				quickSearchFields,
 				quickSearchEntities: uniq(quickSearchFields),
-				primaryKeyField: decorateFieldWithColumnsState({
-					tableConfigs: data?.[index]?.configs?.table,
-					fieldName: data?.[index]?.configs?.extended?.find((x) => x.primaryKey)?.fieldName,
-				}),
+				primaryKeyField,
 				nestedFields,
 			};
 		},
@@ -81,7 +82,7 @@ const QuickSearchFieldsQuery = ({
 }) => {
 	return render({
 		apiFetcher,
-		enabled: primaryKeyField && quickSearchFields?.length,
+		enabled: !isEmpty(primaryKeyField) && quickSearchFields?.length > 0,
 		primaryKeyField,
 		queryFields: queryFields || quickSearchFields,
 		quickSearchEntities,

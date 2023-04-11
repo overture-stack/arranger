@@ -24,6 +24,7 @@ test('1.buildQuery filter', () => {
 											{
 												wildcard: {
 													'files.foo': {
+														case_insensitive: true,
 														value: '*v*',
 													},
 												},
@@ -39,6 +40,7 @@ test('1.buildQuery filter', () => {
 									{
 										wildcard: {
 											test: {
+												case_insensitive: true,
 												value: '*v*',
 											},
 										},
