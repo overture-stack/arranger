@@ -26,7 +26,8 @@ async function readFile(path) {
         });
 
     } catch (error) {
-        console.error(`Failed to read sqon model: ${error}`);
+        console.error(error)
+        throw Error('Failed to read sqon model')
     }
 
 }
@@ -38,8 +39,14 @@ async function readFile(path) {
  */
 export function decodeToken(request) {
     try {
-        // get user roles
+        // decode token
         const decoded = jwt_decode(request.headers.authorization);
+
+        if ((!decoded['preferred_username']) || (!decoded['realm_access']['roles'])) {
+            throw Error('Invalid decoded token format')
+        }
+
+        // get user roles
         const user_roles = decoded['realm_access']['roles'];
 
         // get username
@@ -51,7 +58,8 @@ export function decodeToken(request) {
         }
 
     } catch (error) {
-        console.error(`Failed to decode token: ${error}`);
+        console.error(error)
+        throw Error('Failed to decode token')
     }
 
 }
@@ -80,7 +88,9 @@ function UserRoleCheck(project_code, user_roles) {
         }
 
     } catch (error) {
-        console.error(`Failed to check realm roles against project: ${error}`)
+        console.error(error)
+        throw Error(`Failed to check realm roles against project ${project_code}`)
+
     }
 
 }
@@ -104,7 +114,8 @@ const getPermissions = async (project_code, page = 0, data = []) => {
         }
         return data;
     } catch (error) {
-        console.error(`Failed to call auth service: ${error}`);
+        console.error(error.message)
+        throw Error(`Failed to call auth service`);
     }
 };
 
@@ -147,7 +158,8 @@ const getRBAC = async (project_code, user_roles) => {
         };
 
     } catch (error) {
-        console.log(`Failed to get RBAC info for project ${project_code}: ${error}`)
+        console.error(error)
+        throw Error(`Cannot retrieve RBAC info for project ${project_code}`)
     }
 
 };
@@ -203,7 +215,8 @@ const buildSQON = async (role_metadata, project_code, username) => {
 
 
     } catch (error) {
-        console.error(`Failed to build SQON for project ${project_code}: ${error}`)
+        console.error(error)
+        throw Error(`Cannot build SQON for project ${project_code}`)
     }
 
 };
@@ -218,19 +231,11 @@ const buildSQON = async (role_metadata, project_code, username) => {
  */
 
 export async function arrangerAuthFilter(project_code, username, user_roles) {
-    try {
+    // get rbac permissions (if any)
+    const rbac = await getRBAC(project_code, user_roles);
 
-        // get rbac permissions (if any)
-        const rbac = await getRBAC(project_code, user_roles);
-
-        // build sqon
-        return await buildSQON(rbac, project_code, username);
-
-
-    } catch (error) {
-        console.error(`Failed to execute auth filter: ${error} `)
-
-    }
+    // build sqon
+    return await buildSQON(rbac, project_code, username);
 }
 
 
@@ -244,13 +249,7 @@ export async function arrangerAuthFilter(project_code, username, user_roles) {
  */
 
 export async function processRequest(project_code, username, request_body, realm_roles) {
-
-    try {
-        return await arrangerAuthFilter(project_code, username, realm_roles)
-
-    } catch (error) {
-        console.log(`Failed to process request: ${error}`)
-    }
+    return await arrangerAuthFilter(project_code, username, realm_roles)
 
 
 }
