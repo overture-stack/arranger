@@ -12,6 +12,7 @@ import { RowSelectionState } from '@tanstack/react-table';
 import { useDataContext } from '@/DataContext';
 import { ColumnSortingInterface } from '@/DataContext/types';
 import { useThemeContext } from '@/ThemeContext';
+import { DEBUG } from '@/utils/config';
 import getComponentDisplayName from '@/utils/getComponentDisplayName';
 import missingProviderHandler from '@/utils/missingProvider';
 import { emptyObj } from '@/utils/noops';
@@ -36,6 +37,7 @@ export const TableContext = createContext<TableContextInterface>({
  * @param {FetchDataFn} [customFetcher] function to make customised request and subsequent data handling (e.g. middlewares);
  * @param {string} [documentType] the GraphQL field that the table should use to collect data.
  */
+// TODO: make this context merge its local instances (like theme provider does)
 export const TableContextProvider = ({
 	children,
 	columns: customColumns,
@@ -96,23 +98,36 @@ export const TableContextProvider = ({
 	}, [pageSize, sqon]);
 
 	useEffect(() => {
-		if (tableConfigs?.columns && Object.values(allColumnsDict).length === 0) {
-			const columns = aggregateCustomColumns(customColumns, tableConfigs?.columns);
+		if (!isLoadingConfigs) {
+			const columnsFromConfigs = tableConfigs?.columns?.length;
 
-			setAllColumnsDict(columnsArrayToDictionary(columns)); // these will be the default to fallback to
-			setCurrentColumnsDict(columnsArrayToDictionary(columns)); // and these the ones to work with
-			setHasShowableColumns(
-				getColumnsByAttribute(columns, 'canChangeShow').length > 0 ||
-					getColumnsByAttribute(columns, 'show').length > 0,
-			);
-			setSorting(defaultSorting);
+			if (columnsFromConfigs > 0 && Object.values(allColumnsDict).length === 0) {
+				const columns = aggregateCustomColumns(customColumns, tableConfigs?.columns);
+
+				setAllColumnsDict(columnsArrayToDictionary(columns)); // these will be the default to fallback to
+				setCurrentColumnsDict(columnsArrayToDictionary(columns)); // and these the ones to work with
+				setHasShowableColumns(
+					getColumnsByAttribute(columns, 'canChangeShow').length > 0 ||
+						getColumnsByAttribute(columns, 'show').length > 0,
+				);
+				setSorting(defaultSorting);
+			} else if (columnsFromConfigs === 0) {
+				DEBUG && console.error('It seems the Arranger Server configs have no columns');
+				setIsLoadingTableData(false);
+				setIsFreshTable(false);
+			}
 		}
-	}, [allColumnsDict, customColumns, defaultSorting, tableConfigs]);
+	}, [allColumnsDict, customColumns, defaultSorting, isLoadingConfigs, tableConfigs]);
 
 	useEffect(() => {
 		const visibleColumns = getColumnsByAttribute(Object.values(currentColumnsDict), 'show');
+		const hasVisibleColumns = visibleColumns.length > 0;
+
+		setHasVisibleColumns(hasVisibleColumns);
 		setVisibleColumnsDict(columnsArrayToDictionary(visibleColumns));
-		setHasVisibleColumns(visibleColumns.length > 0);
+
+		// no need to "load" an empty table
+		hasVisibleColumns || setIsLoadingTableData(false);
 	}, [currentColumnsDict]);
 
 	useEffect(() => {

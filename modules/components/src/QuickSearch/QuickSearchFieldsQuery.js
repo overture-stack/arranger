@@ -31,10 +31,10 @@ const enhance = compose(
 	})),
 	withProps(
 		({
+			allowlist,
 			extendedFields: { data, loading, error },
 			index,
 			nestedFields = data?.[index]?.configs?.extended?.filter((x) => x.type === 'nested'),
-			whitelist,
 			quickSearchFields = data?.[index]?.configs?.extended
 				?.filter((x) => x.quickSearchEnabled)
 				?.filter((x) => {
@@ -45,7 +45,7 @@ const enhance = compose(
 							nestedFields,
 							field: x,
 						}) || {};
-					return whitelist ? whitelist.includes(parentField) : true;
+					return allowlist?.includes?.(parentField) || true;
 				})
 				?.map(({ fieldName }) =>
 					decorateFieldWithColumnsState({

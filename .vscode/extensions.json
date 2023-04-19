@@ -1,9 +1,10 @@
 {
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "anthonycjw.vscode-styled-components-cre-edition",
-    "wayou.vscode-todo-highlight",
-    "ms-vscode.makefile-tools"
-  ]
+	"recommendations": [
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"anthonycjw.vscode-styled-components-cre-edition",
+		"wayou.vscode-todo-highlight",
+		"ms-vscode.makefile-tools",
+		"yoavbls.pretty-ts-errors"
+	]
 }

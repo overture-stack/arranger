@@ -1,3 +1,4 @@
+import { PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
@@ -8,7 +9,6 @@ import { emptyObj } from '@/utils/noops';
 
 import { useTableData } from './helpers';
 import HeaderRow from './HeaderRow';
-import RewriteWarning from './RewriteWarning';
 import Row from './Row';
 import TableWrapper from './Wrapper';
 import { TableProps } from './types';
@@ -16,20 +16,24 @@ import { TableProps } from './types';
 const Table = ({
 	className: customClassName,
 	disableRowSelection = false,
-	hideWarning = false,
 	theme: { columnTypes, hideLoader: customHideLoader } = emptyObj,
 }: TableProps) => {
+	const ref = useRef<HTMLElement>(null);
+	const [visibleTableWidth, setVisibleTableWidth] = useState(0);
 	const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } =
 		useTableData({
 			columnTypes,
 			disableRowSelection,
+			visibleTableWidth,
 		});
 	const {
 		colors,
 		components: {
 			Table: {
 				// functionality
+				errorMessage = 'The table failed to load. Please try again later.',
 				hideLoader: themeHideLoader,
+				loadingMessage = 'Loading table data...',
 				noColumnsMessage = 'No columns to display.',
 
 				// appearance
@@ -95,29 +99,49 @@ const Table = ({
 		text-transform: ${themeTableTextTransform};
 		white-space: ${themeTableWhiteSpace};
 		width: 100%;
+
+		* {
+			box-sizing: border-box;
+		}
 	`;
 
-	// temporary bypass for the warning if a provider is given
-	// remove related code once the new Table is ready for primetime
-	return hideWarning || !missingProvider ? (
+	const MessageContainer = ({ Component = 'figure', children }: PropsWithChildren<any>) => (
+		<Component
+			css={[
+				css`
+					background: ${colors?.grey?.[200]};
+					border: 1px solid ${themeHeaderGroupBorderColor};
+					display: flex;
+					font-style: italic;
+					justify-content: center;
+					margin: 0;
+					padding: 0.7rem 0.5rem;
+				`,
+				containerStyles,
+			]}
+		>
+			<MetaMorphicChild>{children}</MetaMorphicChild>
+		</Component>
+	);
+
+	useLayoutEffect(() => {
+		const { width } = ref?.current?.getBoundingClientRect?.() || { width: 0 };
+		setVisibleTableWidth(width);
+	}, []);
+
+	return (
 		<TableWrapper
 			className={cx('TableWrapper', customClassName, themeTableWrapperClassName)}
 			css={themeTableWrapperCSS}
 			key={themeTableWrapperKey}
 			margin={themeTableMargin}
+			ref={ref}
 			{...themeTableWrapperProps}
 		>
 			{missingProvider ? (
-				<div
-					css={css`
-						background: ${colors?.grey?.[200]};
-						font-style: italic;
-						padding: 0.7rem 0.5rem;
-						width: 100%;
-					`}
-				>
-					The table is missing its {missingProvider || 'context'} provider.
-				</div>
+				<MessageContainer>
+					This table is missing its {missingProvider || 'context'} provider.
+				</MessageContainer>
 			) : isLoading ? (
 				hideLoader ? null : (
 					<Spinner
@@ -130,7 +154,7 @@ const Table = ({
 						]}
 						theme={{ vertical: true }}
 					>
-						Loading table data...
+						{loadingMessage}
 					</Spinner>
 				)
 			) : hasShowableColumns ? (
@@ -177,14 +201,12 @@ const Table = ({
 						</tbody>
 					</table>
 				) : (
-					<MetaMorphicChild>{noColumnsMessage}</MetaMorphicChild>
+					<MessageContainer>{noColumnsMessage}</MessageContainer>
 				)
 			) : (
-				'Something went wrong with the request. Please try again after refreshing the browser.'
+				<MessageContainer>{errorMessage}</MessageContainer>
 			)}
 		</TableWrapper>
-	) : (
-		<RewriteWarning />
 	);
 };
 

@@ -3,6 +3,7 @@ import { flexRender } from '@tanstack/react-table';
 import cx from 'classnames';
 
 import { getDisplayValue } from '@/Table/helpers';
+import { SELECTION_COLUMN_ID } from '@/Table/types';
 import MetaMorphicChild from '@/MetaMorphicChild';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -44,13 +45,14 @@ const TableRow = ({
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'Table - Row' });
 
+	const selected = props?.getIsSelected?.();
 	const textOverflow = customTextOverflow || themeTextOverflow;
 	const visibleCells = props?.getVisibleCells?.();
 	const hasVisibleCells = visibleCells && visibleCells.length > 0;
 
 	return (
 		<tr
-			className={cx('Row', themeClassName, { selected: props?.getIsSelected?.() })}
+			className={cx('Row', themeClassName, { selected })}
 			css={[
 				css`
 					background: ${themeBackground};
@@ -73,7 +75,7 @@ const TableRow = ({
 					}
 
 					&.selected {
-						background-color: ${themeSelectedBackground};
+						background-color: ${themeSelectedBackground} !important;
 					}
 
 					&[data-row-id]:hover {
@@ -87,16 +89,20 @@ const TableRow = ({
 		>
 			{hasVisibleCells ? (
 				visibleCells?.map((cellObj) => {
-					const value = getDisplayValue(cellObj?.row?.original, cellObj.column.columnDef);
+					const accessor = cellObj.column.id;
+					const value =
+						accessor === SELECTION_COLUMN_ID
+							? `${selected}`
+							: getDisplayValue(cellObj?.row?.original, cellObj.column.columnDef);
 
 					return (
 						<Cell
-							accessor={cellObj.column.id}
+							accessor={accessor}
 							key={cellObj.id}
-							value={value}
 							theme={{
 								columnWidth: `${cellObj.column.getSize()}px`,
 							}}
+							value={value}
 						>
 							{flexRender(cellObj.column.columnDef.cell, cellObj.getContext())}
 						</Cell>

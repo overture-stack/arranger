@@ -80,9 +80,10 @@ pipeline {
     }
 
     environment {
-        dockerHubImageName = 'overture/arranger'
+        appName = 'arranger'
+        dockerHubImageName = "overture/${appName}"
         gitHubRegistry = 'ghcr.io'
-        gitHubRepo = 'overture-stack/arranger'
+        gitHubRepo = "overture-stack/${appName}"
         githubImageName = "${gitHubRegistry}/${gitHubRepo}"
         chartsServer = 'https://overture-stack.github.io/charts-server/'
 
@@ -99,6 +100,8 @@ pipeline {
                 'cut -d : -f2 | ' +
                 "sed \'s:[\",]::g\'"
         ).trim()
+
+        slackNotificationsUrl = credentials('OvertureSlackJenkinsWebhookURL')
     }
 
     options {
@@ -255,10 +258,6 @@ pipeline {
                         string(
                             credentialsId: 'OvertureNPMAutomationToken',
                             variable: 'NPM_TOKEN'
-                        ),
-                        string(
-                            credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                            variable: 'published_slackChannelURL'
                         )
                     ]) {
                         script {
@@ -276,7 +275,7 @@ pipeline {
                                             \"text\":\"New Arranger published succesfully: v.${version}\
                                             \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
                                         }' \
-                                    ${published_slackChannelURL}"
+                                    ${slackNotificationsUrl}"
                             } catch (err) {
                                 echo 'There was an error while publishing packages'
                             }
@@ -324,66 +323,51 @@ pipeline {
 
     post {
         fixed {
-            withCredentials([string(
-                credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                variable: 'fixed_slackChannelURL'
-            )]) {
-                container('node') {
-                    script {
-                        if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
-                            sh "curl \
-                                -X POST \
-                                -H 'Content-type: application/json' \
-                                --data '{ \
-                                    \"text\":\"Build Fixed: ${env.JOB_NAME}#${commit} \
-                                    \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
-                                }' \
-                                ${fixed_slackChannelURL}"
-                        }
+            container('node') {
+                script {
+                    if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
+                        sh "curl \
+                            -X POST \
+                            -H 'Content-type: application/json' \
+                            --data '{ \
+                                \"text\":\"Build Fixed: ${env.JOB_NAME}#${commit} \
+                                \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                            }' \
+                            ${slackNotificationsUrl}"
                     }
                 }
             }
         }
 
         success {
-            withCredentials([string(
-                credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                variable: 'success_slackChannelURL'
-            )]) {
-                container('node') {
-                    script {
-                        if (env.BRANCH_NAME ==~ /(test\S*)/) {
-                            sh "curl \
-                                -X POST \
-                                -H 'Content-type: application/json' \
-                                --data '{ \
-                                    \"text\":\"Build tested: ${env.JOB_NAME}#${commit} \
-                                    \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
-                                }' \
-                                ${success_slackChannelURL}"
-                        }
+            container('node') {
+                script {
+                    if (env.BRANCH_NAME ==~ /(test\S*)/) {
+                        sh "curl \
+                            -X POST \
+                            -H 'Content-type: application/json' \
+                            --data '{ \
+                                \"text\":\"Build tested: ${env.JOB_NAME}#${commit} \
+                                \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                            }' \
+                            ${slackNotificationsUrl}"
                     }
                 }
             }
         }
 
         unsuccessful {
-            withCredentials([string(
-                credentialsId: 'OvertureSlackJenkinsWebhookURL',
-                variable: 'failed_slackChannelURL'
-            )]) {
-                container('node') {
-                    script {
-                        if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
-                            sh "curl \
-                                -X POST \
-                                -H 'Content-type: application/json' \
-                                --data '{ \
-                                    \"text\":\"Build Failed: ${env.JOB_NAME}#${commit} \
-                                    \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
-                                }' \
-                                ${failed_slackChannelURL}"
-                        }
+            container('node') {
+                script {
+                    if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
+                        sh "curl \
+                            -X POST \
+                            -H 'Content-type: application/json' \
+                            --data '{ \
+                                \"text\":\"Build Failed: ${env.JOB_NAME}#${commit} \
+                                \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                            }' \
+                            ${slackNotificationsUrl}"
                     }
                 }
             }

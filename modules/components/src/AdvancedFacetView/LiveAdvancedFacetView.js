@@ -134,13 +134,13 @@ export default class LiveAdvancedFacetView extends React.Component {
 			aggregations: null,
 			sqon: sqon || null,
 		};
-		this.blackListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
+		this.denyListedAggTypes = ['object', 'nested'].concat(fieldTypesToExclude);
 	}
 
 	filterExtendedForFetchingAggs = ({ extended, facets }) =>
 		extended?.filter(
 			(e) =>
-				!this.blackListedAggTypes.includes(e.type) &&
+				!this.denyListedAggTypes.includes(e.type) &&
 				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)
 					?.isActive,
 		);

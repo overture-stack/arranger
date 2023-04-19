@@ -11,6 +11,8 @@ export default ({
 	apiFetcher = defaultApiFetcher,
 	...props
 }) => {
+	// TODO: rename "index" to document type... removing index from Front end stuff
+
 	return index && aggs.length ? (
 		<Query
 			endpointTag={`${capitalize(index)}AggregationsQuery`}

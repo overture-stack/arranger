@@ -1,4 +1,4 @@
-.. Arranger documentation master file, created by
+.. Arranger documentation main file, created by
    sphinx-quickstart on Fri Mar 16 14:17:55 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
