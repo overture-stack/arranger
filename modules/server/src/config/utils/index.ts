@@ -47,5 +47,6 @@ export const makeConfigsFromEnv = (): Partial<ConfigObject> => ({
 	[ConfigProperties.TABLE]: {
 		[ConfigProperties.COLUMNS]: [],
 		[ConfigProperties.MAX_RESULTS_WINDOW]: ENV_CONFIG.MAX_RESULTS_WINDOW,
+		[ConfigProperties.KEY_FIELD_NAME]: ENV_CONFIG.KEY_FIELD_NAME,
 	},
 });

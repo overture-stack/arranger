@@ -12,7 +12,7 @@ export const fetchMapping = async ({ esClient, index }) => {
 		console.log(`Fetching ES mapping for "${index}"...`);
 		const aliases = await getESAliases(esClient);
 		const alias = checkESAlias(aliases, index);
-		alias && console.log(`  Found it as an alias for index "${alias}".`);
+		alias && console.log(`  - Found it as an alias for index "${alias}".`);
 
 		const accessor = alias || index;
 
@@ -28,7 +28,7 @@ export const fetchMapping = async ({ esClient, index }) => {
 					return { index: accessor, mappings, mapping, alias };
 				}
 
-				console.info(`  Response could not be used to map "${accessor}":`, response?.body);
+				console.info(`  - Response could not be used to map "${accessor}":`, response?.body);
 				throw new Error(`Could not create a mapping for "${accessor}"`);
 			});
 

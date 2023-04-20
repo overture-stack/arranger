@@ -1,11 +1,13 @@
-import React from 'react';
 import { capitalize } from 'lodash';
-import Query from '../Query';
-import defaultApiFetcher from '../utils/api';
+
+import Query from '@/Query';
+import defaultApiFetcher from '@/utils/api';
+import { DEBUG } from '@/utils/config';
+
 import { queryFromAgg } from './AggsState';
 
-export default ({
-	index = '',
+const AggsQuery = ({
+	index: documentType = '',
 	aggs = [],
 	sqon = null,
 	apiFetcher = defaultApiFetcher,
@@ -13,31 +15,25 @@ export default ({
 }) => {
 	// TODO: rename "index" to document type... removing index from Front end stuff
 
-	return index && aggs.length ? (
+	return documentType && aggs.length ? (
 		<Query
-			endpointTag={`${capitalize(index)}AggregationsQuery`}
+			endpointTag={`${capitalize(documentType)}AggregationsQuery`}
 			query={`
-				query ${capitalize(index)}AggregationsQuery(
-					$fieldNames: [String]
+				query ${capitalize(documentType)}AggregationsQuery(
 					$sqon: JSON
 				) {
-					${index} {
+					${documentType} {
 						aggregations (
 							aggregations_filter_themselves: false
 							filters: $sqon
 						){
 							${aggs.map((x) => x.query || queryFromAgg(x))}
 						}
-
-						configs {
-							extended(fieldNames: $fieldNames)
-						}
 					}
 				}
 			`}
-			renderError
+			renderError={DEBUG}
 			variables={{
-				fieldNames: aggs.map((x) => x?.fieldName?.replace?.(/__/g, '.')),
 				sqon,
 			}}
 			{...{ apiFetcher, ...props }}
@@ -46,3 +42,5 @@ export default ({
 		''
 	);
 };
+
+export default AggsQuery;

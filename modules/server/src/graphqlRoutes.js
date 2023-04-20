@@ -138,78 +138,90 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 	};
 };
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
-	const router = Router();
-
-	const noSchemaHandler = (req, res) => {
-		console.log('Something went wrong initialising a GraphQL endpoint');
+const noSchemaHandler =
+	(endpoint = 'unspecified') =>
+	(req, res) => {
+		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
 		return res.json({
-			error: 'schema is undefined. Make sure you provide a valid GraphQL Schema.',
+			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
 		});
 	};
 
-	if (schema) {
-		const buildContext = async (req, res, connection) => {
-			const externalContext =
-				typeof graphqlOptions.context === 'function'
-					? await graphqlOptions.context(req, res, connection)
-					: graphqlOptions.context;
+const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+	const mainPath = '/graphql';
+	const mockPath = '/mock/graphql';
+	const router = Router();
 
-			return {
-				esClient,
-				...(externalContext || {}),
+	console.log('Starting GraphQL server:');
+
+	try {
+		await router.get(
+			mainPath,
+			expressPlayground({
+				endpoint: 'graphql',
+			}),
+		);
+
+		console.log(`  - GraphQL playground available at ...${mainPath}`);
+
+		// TODO: D.R.Y this thing!
+
+		if (schema) {
+			const buildContext = async (req, res, connection) => {
+				const externalContext =
+					typeof graphqlOptions.context === 'function'
+						? await graphqlOptions.context(req, res, connection)
+						: graphqlOptions.context;
+
+				return {
+					esClient,
+					...(externalContext || {}),
+				};
 			};
-		};
 
-		console.log('Starting GraphQL server:');
+			const apolloServer = new ApolloServer({
+				cache: 'bounded',
+				schema,
+				context: ({ req, res, con }) => buildContext(req, res, con),
+			});
 
-		const apolloServer = new ApolloServer({
-			cache: 'bounded',
-			schema,
-			context: ({ req, res, con }) => buildContext(req, res, con),
-		});
+			await apolloServer.start();
 
-		await apolloServer.start();
+			apolloServer.applyMiddleware({
+				app: router,
+				path: mainPath,
+			});
 
-		apolloServer.applyMiddleware({
-			app: router,
-			path: '/graphql',
-		});
+			console.log(`  - GraphQL endpoint running at ...${mainPath}`);
+		} else {
+			router.use(mainPath, noSchemaHandler(mainPath));
+		}
 
-		console.log('  GraphQL server running at .../graphql');
+		if (mockSchema) {
+			const apolloMockServer = new ApolloServer({
+				cache: 'bounded',
+				schema: mockSchema,
+			});
+
+			await apolloMockServer.start();
+
+			apolloMockServer.applyMiddleware({
+				app: router,
+				path: '/mock/graphql',
+			});
+
+			console.log(`  - GraphQL mock endpoint running at ...${mockPath}`);
+		} else {
+			router.use(mockPath, noSchemaHandler(mockPath));
+		}
+
 		console.log('  Success!\n');
-	} else {
-		router.use('/graphql', noSchemaHandler);
+	} catch (err) {
+		DEBUG_MODE && console.error(err);
+		// TODO: Throw better?
+		throw err;
 	}
-
-	if (mockSchema) {
-		console.log('Starting GraphQL mock server:');
-
-		const apolloMockServer = new ApolloServer({
-			cache: 'bounded',
-			schema: mockSchema,
-		});
-
-		await apolloMockServer.start();
-
-		apolloMockServer.applyMiddleware({
-			app: router,
-			path: '/mock/graphql',
-		});
-
-		console.log('  GraphQL mock server running at .../mock/graphql');
-		console.log('  Success!\n');
-	} else {
-		router.use('/mock/graphql', noSchemaHandler);
-	}
-
-	router.get(
-		'/graphql',
-		expressPlayground({
-			endpoint: 'graphql',
-		}),
-	);
 
 	router.use('/', (req, res, next) => {
 		// this middleware makes the esClient available in all requests in a "context"

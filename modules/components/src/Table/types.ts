@@ -63,6 +63,7 @@ export interface TableContextProviderProps {
 	columns?: ColumnMappingInterface[];
 	customFetcher?: FetchDataFn;
 	documentType?: string;
+	fetchRetryLimit?: number;
 }
 
 export interface UseTableContextProps {
