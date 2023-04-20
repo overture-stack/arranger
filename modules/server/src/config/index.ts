@@ -32,7 +32,7 @@ const getAndValidateConfigs = async (configsSource = '') => {
 
 		return validateProperties(configs);
 	} catch (error) {
-		console.log('  Defaulting to config values from the environment...');
+		console.log('  - Defaulting to config values from the environment...');
 
 		return (
 			validateProperties(configsFromEnv) ||

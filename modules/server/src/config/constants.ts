@@ -4,7 +4,7 @@ export const ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = stringToBool(
 	process.env.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
 );
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
-export const DEBUG_MODE = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
+export const DEBUG_MODE = stringToBool(process.env.DEBUG);
 export const DOCUMENT_TYPE = process.env.DOCUMENT_TYPE || '';
 export const DOWNLOAD_STREAM_BUFFER_SIZE =
 	stringToNumber(process.env.DOWNLOAD_STREAM_BUFFER_SIZE) || 2000;
@@ -15,6 +15,7 @@ export const ES_INDEX = process.env.ES_INDEX || '';
 export const ES_LOG = process.env.ES_LOG?.split?.(',') || 'error';
 export const ES_PASS = process.env.ES_PASS || '';
 export const ES_USER = process.env.ES_USER || '';
+export const KEY_FIELD_NAME = process.env.KEY_FIELD_NAME || 'id';
 export const MAX_DOWNLOAD_ROWS = stringToNumber(process.env.MAX_DOWNLOAD_ROWS) || 100;
 export const MAX_LIVE_VERSIONS = process.env.MAX_LIVE_VERSIONS || 3;
 export const MAX_RESULTS_WINDOW = stringToNumber(process.env.MAX_RESULTS_WINDOW) || 10000;

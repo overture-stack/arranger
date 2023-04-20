@@ -43,8 +43,10 @@ export const TableContextProvider = ({
 	columns: customColumns,
 	customFetcher,
 	documentType: customDocumentType,
+	fetchRetryLimit = 5,
 }: TableContextProviderProps): ReactElement<TableContextInterface> => {
 	// Table content state values
+	const [fetchRetries, setFetchRetries] = useState(0);
 	const [isFreshTable, setIsFreshTable] = useState(true);
 	const [isLoadingTableData, setIsLoadingTableData] = useState(false);
 	const [isStaleTableData, setIsStaleTableData] = useState(true);
@@ -149,9 +151,10 @@ export const TableContextProvider = ({
 			!isLoadingConfigs && // there's configs
 			!isLoadingTableData && // data is not already being fetched
 			hasVisibleColumns && // there are visible columns to query
-			isStaleTableData // any data available needs to be updated
+			isStaleTableData // any data available needs to be updates
 		) {
 			setIsLoadingTableData(true);
+
 			fetchData({
 				config: {
 					columns: Object.values(visibleColumnsDict),
@@ -172,16 +175,27 @@ export const TableContextProvider = ({
 					setIsStaleTableData(false);
 					setTableData(data);
 					setTotal(total);
+					setFetchRetries(0);
 				})
 				.catch((err) => {
+					const nextRetryCount = fetchRetries + 1;
 					console.error(err);
+
+					setFetchRetries(nextRetryCount);
+					if (nextRetryCount === fetchRetryLimit) {
+						setIsStaleTableData(false);
+						DEBUG && console.log(`Bailing after ${fetchRetryLimit} attempts...`);
+					}
 				})
-				.finally(() => setIsLoadingTableData(false));
+				.finally(() => {
+					setIsLoadingTableData(false);
+				});
 		}
 	}, [
 		currentPage,
 		documentType,
 		fetchData,
+		fetchRetries,
 		hasVisibleColumns,
 		isFreshTable,
 		isLoadingConfigs,

@@ -21,6 +21,7 @@ export const AggregationsListDisplay = ({
 	containerRef,
 	customFacets = [],
 	data,
+	extendedMapping,
 	getCustomItems = emptyArrFn, // ({ aggs }) => Array<{index: number, component: Component | Function}>
 	documentType,
 	onValueChange = noopFn,
@@ -33,8 +34,8 @@ export const AggregationsListDisplay = ({
 			.map((agg) => ({
 				...agg,
 				...data?.[documentType]?.aggregations?.[agg?.fieldName],
-				...data?.[documentType]?.configs?.extended?.find(
-					(extendedField) => extendedField.fieldName.replace(/\./g, '__') === agg.fieldName,
+				...extendedMapping.find(
+					(extendedField) => extendedField.fieldName.replaceAll('.', '__') === agg.fieldName,
 				),
 				onValueChange: ({ sqon, value }) => {
 					onValueChange(value);
@@ -84,6 +85,7 @@ export const AggregationsList = ({
 	containerRef,
 	customFacets = [],
 	debounceTime = 300,
+	extendedMapping,
 	getCustomItems,
 	documentType,
 	onValueChange = noopFn,
@@ -102,6 +104,7 @@ export const AggregationsList = ({
 				containerRef,
 				customFacets,
 				data,
+				extendedMapping,
 				getCustomItems,
 				documentType,
 				onValueChange,
@@ -139,6 +142,7 @@ const Aggregations = ({
 	containerRef = null,
 	customFacets = [],
 	documentType = '',
+	extendedMapping,
 	onValueChange = noopFn,
 	setSQON = noopFn,
 	sqon = null,
@@ -161,6 +165,7 @@ const Aggregations = ({
 							containerRef={containerRef}
 							customFacets={customFacets}
 							documentType={documentType}
+							extendedMapping={extendedMapping}
 							onValueChange={onValueChange}
 							setSQON={setSQON}
 							sqon={sqon}

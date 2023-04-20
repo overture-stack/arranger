@@ -19,7 +19,7 @@ const readDirectoryAsync = (dirname: string) =>
 		}),
 	) // this catches the
 		.catch((error) => {
-			console.error('  Could not find usable config files in that path.');
+			console.error('  - Could not find usable config files in that path.');
 			throw error;
 		});
 
@@ -41,7 +41,7 @@ const getConfigFromFiles = (
 	configsFromEnv: Partial<ConfigObject>,
 ): Promise<ConfigObject> => {
 	const configsPath = path.resolve(global.__basedir || '', dirname);
-	console.log(`  Looking for files in '${configsPath}'...`);
+	console.log(`  - Looking for files in '${configsPath}'...`);
 
 	return readDirectoryAsync(configsPath)
 		.then((filenames = []) =>
@@ -52,7 +52,7 @@ const getConfigFromFiles = (
 			),
 		)
 		.then((files = []) => {
-			if (files.length === 0) throw new Error('Could not find any config files');
+			if (files.length === 0) throw new Error('  - Could not find any config files');
 
 			const configObj = (files as [string, any][]).reduce(
 				(configsAcc: Partial<ConfigObject>, [fileName, fileData]) => {
