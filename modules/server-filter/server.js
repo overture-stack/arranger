@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { Client } from '@elastic/elasticsearch';
 import { ApolloServer } from 'apollo-server-express';
 import { downloader } from './export/export-file.js';
@@ -92,7 +93,12 @@ const server = new ApolloServer({
 // Setup express server
 const app = express();
 app.use(express.json()); // support json encoded bodies
+
+// Use serverFilter for incoming requests
 app.use(serverFilter)
+
+// Enable all CORS requests
+app.use(cors())
 
 // Add Arranger middleware
 server.applyMiddleware({
