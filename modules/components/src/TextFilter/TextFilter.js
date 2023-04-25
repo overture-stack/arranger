@@ -44,6 +44,7 @@ const TextFilter = ({
 			leftIcon={leftIcon}
 			onChange={handleChange}
 			placeholder={placeholder}
+			showClear
 			type="text"
 			{...props}
 		/>

@@ -297,8 +297,6 @@ export default async ({
 
 		await initializeSets({ esClient });
 
-		console.log('\n');
-
 		return [
 			// this middleware makes the esClient and config available in all requests, in a "context" object
 			(req, res, next) => {

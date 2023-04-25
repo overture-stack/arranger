@@ -3,7 +3,7 @@ import { FaSearch } from 'react-icons/fa';
 import Component from 'react-component-component';
 import { css } from '@emotion/react';
 
-import { useDataContext, withData } from '@/DataContext';
+import { useDataContext } from '@/DataContext';
 import TextInput from '@/Input';
 import { Value as SQONBubble } from '@/SQONViewer';
 import { currentFieldValue, toggleSQON } from '@/SQONViewer/utils';
@@ -111,7 +111,6 @@ const QuickSearch = () => {
 										<>
 											<InputComponent
 												aria-label={`Quick search`}
-												componentRef={inputRef}
 												disabled={!enabled}
 												className="filter"
 												leftIcon={{
@@ -121,6 +120,8 @@ const QuickSearch = () => {
 												onChange={({ target: { value } = {} } = {}) => setValue(value || '')}
 												onFocus={showDropdown}
 												placeholder={themeFilterInputPlaceholder}
+												ref={inputRef}
+												showClear
 												type="text"
 												value={value}
 												css={themeFilterInputCSS}
