@@ -111,7 +111,7 @@ export const makeTableColumns = ({
 		} = mergeWith(
 			{},
 			columnTypes.all,
-			columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.type],
+			columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.displayType],
 			columnTypes[visibleColumn.accessor],
 		);
 

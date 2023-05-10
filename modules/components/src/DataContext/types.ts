@@ -16,6 +16,7 @@ export interface ColumnMappingInterface {
 	canChangeShow: boolean;
 	displayFormat?: string | null;
 	displayName?: string;
+	displayType: DisplayType;
 	displayValues?: Record<string, string>;
 	fieldName: string;
 	id: string;
@@ -24,7 +25,7 @@ export interface ColumnMappingInterface {
 	query?: string | null;
 	show: boolean;
 	sortable: boolean;
-	type: DisplayType;
+	type?: DisplayType; // being deprecated
 }
 
 export interface ColumnSortingInterface {

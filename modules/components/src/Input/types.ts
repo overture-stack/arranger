@@ -1,4 +1,5 @@
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface InputThemeProps
 	extends ThemeCommon.BoxModelProperties,
@@ -11,5 +12,5 @@ export interface InputThemeProps
 }
 
 export interface InputProps extends ThemeCommon.CustomCSS {
-	theme?: Partial<InputThemeProps>;
+	theme?: RecursivePartial<InputThemeProps>;
 }

@@ -1,4 +1,5 @@
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface PageSelectorThemeProps
 	extends ThemeCommon.FontProperties,
@@ -11,5 +12,5 @@ export interface PageSelectorThemeProps
 }
 
 export interface PageSelectorProps extends ThemeCommon.CustomCSS {
-	theme?: Partial<PageSelectorThemeProps>;
+	theme?: RecursivePartial<PageSelectorThemeProps>;
 }

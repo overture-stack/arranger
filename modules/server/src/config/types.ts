@@ -2,56 +2,56 @@
 
 import { ES_TYPES } from '@/mapping/esToAggTypeMap';
 
-export enum ConfigOptionalProperties {
-	DOWNLOADS = 'downloads',
-}
+export const ConfigOptionalProperties = {
+	DOWNLOADS: 'downloads',
+	MATCHBOX: 'matchbox',
+} as const;
 
-export enum ConfigRequiredProperties {
-	DOCUMENT_TYPE = 'documentType',
-	EXTENDED = 'extended',
-	FACETS = 'facets',
-	INDEX = 'index',
-	MATCHBOX = 'matchbox',
-	TABLE = 'table',
-}
+export const ConfigRequiredProperties = {
+	DOCUMENT_TYPE: 'documentType',
+	EXTENDED: 'extended',
+	FACETS: 'facets',
+	INDEX: 'index',
+	TABLE: 'table',
+} as const;
 
-export enum DataFieldProperties {
-	ACCESSOR = 'accessor',
-	CAN_CHANGE_SHOW = 'canChangeShow',
-	DISPLAY_FORMAT = 'displayFormat',
-	DISPLAY_NAME = 'displayName',
-	DISPLAY_TYPE = 'displayType',
-	DISPLAY_VALUES = 'displayValues',
-	IS_ACTIVE = 'isActive',
-	IS_ARRAY = 'isArray',
-	JSON_PATH = 'jsonPath',
-	FIELD_NAME = 'fieldName',
-	PRIMARY_KEY = 'primaryKey',
-	QUERY = 'query',
-	QUICKSEARCH_ENABLED = 'quickSearchEnabled',
-	RANGE_STEP = 'rangeStep',
-	SHOW = 'show',
-	SORTABLE = 'sortable',
-	TYPE = 'type',
-	UNIT = 'unit',
-}
+export const DataFieldProperties = {
+	ACCESSOR: 'accessor',
+	CAN_CHANGE_SHOW: 'canChangeShow',
+	DISPLAY_FORMAT: 'displayFormat',
+	DISPLAY_NAME: 'displayName',
+	DISPLAY_TYPE: 'displayType',
+	DISPLAY_VALUES: 'displayValues',
+	IS_ACTIVE: 'isActive',
+	IS_ARRAY: 'isArray',
+	JSON_PATH: 'jsonPath',
+	FIELD_NAME: 'fieldName',
+	PRIMARY_KEY: 'primaryKey',
+	QUERY: 'query',
+	QUICKSEARCH_ENABLED: 'quickSearchEnabled',
+	RANGE_STEP: 'rangeStep',
+	SHOW: 'show',
+	SORTABLE: 'sortable',
+	TYPE: 'type',
+	UNIT: 'unit',
+} as const;
 
-export enum DownloadProperties {
-	ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = 'allowCustomMaxRows',
-	MAX_DOWNLOAD_ROWS = 'maxRows',
-}
+export const DownloadProperties = {
+	ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS: 'allowCustomMaxRows',
+	MAX_DOWNLOAD_ROWS: 'maxRows',
+} as const;
 
-export enum FacetsProperties {
-	AGGS = 'aggregations',
-}
+export const FacetsProperties = {
+	AGGS: 'aggregations',
+} as const;
 
-export enum TableProperties {
-	COLUMNS = 'columns',
-	DESCENDING = 'desc',
-	DEFAULT_SORTING = 'defaultSorting',
-	KEY_FIELD_NAME = 'keyFieldName',
-	MAX_RESULTS_WINDOW = 'maxResultsWindow',
-}
+export const TableProperties = {
+	COLUMNS: 'columns',
+	DESCENDING: 'desc',
+	DEFAULT_SORTING: 'defaultSorting',
+	KEY_FIELD_NAME: 'keyFieldName',
+	MAX_RESULTS_WINDOW: 'maxResultsWindow',
+} as const;
 
 //////////////////////////////////
 
@@ -64,13 +64,17 @@ export const ConfigProperties = {
 	...TableProperties,
 };
 
-export type ConfigProperties = ConfigRequiredProperties | ConfigOptionalProperties;
+export type ConfigProperties = typeof ConfigRequiredProperties | typeof ConfigOptionalProperties;
 
 export interface AggConfigsInterface {
+	[ConfigProperties.DISPLAY_NAME]: string;
 	[ConfigProperties.DISPLAY_TYPE]: string;
 	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ACTIVE]: boolean;
+	[ConfigProperties.IS_ACTIVE]: boolean; // TODO: what is this? active = API vs show = UI? "isActive"
 	[ConfigProperties.SHOW]: boolean;
+	// TODO: implement these
+	// max results
+	// collapsible
 }
 
 export interface ColumnConfigsInterface {
@@ -100,7 +104,7 @@ export interface ExtendedConfigsInterface {
 	[ConfigProperties.DISPLAY_TYPE]: string;
 	[ConfigProperties.DISPLAY_VALUES]: Record<string, any>;
 	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ACTIVE]: boolean;
+	[ConfigProperties.IS_ACTIVE]: boolean; // TODO: what is this?
 	[ConfigProperties.IS_ARRAY]: boolean;
 	[ConfigProperties.PRIMARY_KEY]: boolean;
 	[ConfigProperties.QUICKSEARCH_ENABLED]: boolean;

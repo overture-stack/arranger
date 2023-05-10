@@ -5,8 +5,8 @@ import { ColumnMappingInterface, SQONType } from '@/DataContext/types';
 import { DropDownThemeProps } from '@/DropDown/types';
 import { ColumnsDictionary } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
-import { PrefixKeys, TypesUnionPropertiesOfInterface } from '@/utils/types';
-import { ButtonStyleProps, ThemedButtonProps } from '@/Button/types';
+import { PrefixKeys, RecursivePartial, TypesUnionPropertiesOfInterface } from '@/utils/types';
+import { ThemedButtonProps } from '@/Button/types';
 
 export interface TableColumnMappingInterface extends ColumnMappingInterface {
 	Header: ReactNode;
@@ -82,7 +82,7 @@ export type CustomExporterInput = CustomExporterDetailsInterface | CustomExporte
 export interface ExporterCustomisationProps {
 	downloadUrl: string;
 	maxRows: number;
-	label: ThemeCommon.ChildrenType;
+	label: ReactNode;
 }
 
 export interface DownloadBaseButtonThemeProps
@@ -95,12 +95,12 @@ export interface DownloadButtonThemeProps extends DownloadBaseButtonThemeProps, 
 }
 
 export interface DownloadButtonProps extends ThemeCommon.CustomCSS {
-	theme?: Partial<DownloadButtonThemeProps>;
+	theme?: RecursivePartial<DownloadButtonThemeProps>;
 }
 
 export interface SingleDownloadButtonProps extends Partial<ProcessedExporterDetailsInterface> {
 	className?: string;
 	clickHandler?: () => void;
 	disabled: boolean;
-	theme?: Partial<DownloadBaseButtonThemeProps>;
+	theme?: RecursivePartial<DownloadBaseButtonThemeProps>;
 }

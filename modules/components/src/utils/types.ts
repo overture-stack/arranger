@@ -1,17 +1,19 @@
+// TODO: enhance this to take a list of prefixes
+export type PrefixKeys<T, Prefix extends string> = {
+	[P in keyof T as `${Prefix}${Capitalize<string & P>}`]: T[P];
+};
+
 /** Makes all properties optional recursively including nested objects.
  *
  * Bear in mind that this should be used on json / plain objects only;
  * otherwise, it will make class methods optional as well.
  */
-export type RecursivePartial<T> = {
+export type RecursivePartial<T = object> = {
 	[P in keyof T]?: T[P] extends Array<infer I>
 		? Array<RecursivePartial<I>>
-		: RecursivePartial<T[P]>;
-};
-
-// TODO: enhance this to take a list of prefixes
-export type PrefixKeys<T, Prefix extends string> = {
-	[P in keyof T as `${Prefix}${Capitalize<string & P>}`]: T[P];
+		: T[P] extends Record<string, any>
+		? RecursivePartial<T[P]>
+		: T[P];
 };
 
 export type WithFunctionOptions<T, Input = T> = {
@@ -29,3 +31,7 @@ export type TypesUnionPropertiesOfInterface<I, T> = {
 export type Permutations<T extends string, U extends string = T> = T extends any
 	? T | `${T} ${Permutations<Exclude<U, T>>}`
 	: never;
+
+export type Prettify<T> = {
+	[K in keyof T]: T[K];
+};

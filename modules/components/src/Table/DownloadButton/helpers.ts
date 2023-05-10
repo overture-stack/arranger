@@ -139,8 +139,11 @@ export const useExporters = (customExporters?: CustomExporterInput) => {
 		if (customExporters) {
 			if (Array.isArray(customExporters)) {
 				if (customExporters.length > 0) {
-					setHasMultiple(customExporters.length > 1);
-					setExporters(customExporters.filter(Boolean).map(processExporter));
+					const processedExporters = customExporters.filter(Boolean).map(processExporter);
+					const hasMultiple = processedExporters.length > 1;
+
+					setHasMultiple(hasMultiple);
+					setExporters(hasMultiple ? processedExporters : processedExporters[0]);
 				}
 			} else {
 				setExporters(processExporter(customExporters));

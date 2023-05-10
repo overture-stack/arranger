@@ -2,6 +2,7 @@ import { MouseEventHandler, PropsWithChildren, TouchEventHandler } from 'react';
 
 import { ThemeCommon } from '@/ThemeContext/types';
 import { TooltipThemeProperties } from '@/Tooltip/types';
+import { RecursivePartial } from '@/utils/types';
 
 export type ButtonCustomProps = ThemeCommon.MouseEventProperties & ThemeCommon.CustomCSS;
 
@@ -29,7 +30,7 @@ export type ThemedButtonProps = ButtonCustomProps & ButtonStyleProps;
 type ButtonProps = PropsWithChildren<
 	Partial<MouseEventProps> &
 		Partial<ButtonCustomProps> & {
-			theme?: Partial<ButtonStyleProps>;
+			theme?: RecursivePartial<ButtonStyleProps>;
 		}
 >;
 export default ButtonProps;

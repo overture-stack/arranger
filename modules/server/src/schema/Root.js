@@ -10,6 +10,7 @@ import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
 import ConfigsTypeDefs from './configQuery';
+import { DEBUG_MODE } from '@/config/constants';
 
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	scalar JSON
@@ -86,12 +87,19 @@ export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerS
 
 						// TODO: make this more useful/verbose;
 						if (type) {
-							const aliases = await getESAliases(esClient);
-							const foundAlias = checkESAlias(aliases, index);
+							try {
+								const aliases = await getESAliases(esClient);
+								const foundAlias = checkESAlias(aliases, index);
 
-							const isValidIndex = [foundAlias, index].includes(type.index);
+								const isValidIndex = [foundAlias, index].includes(type.index);
 
-							return isValidIndex && Object.keys(type.config).length > 0;
+								return isValidIndex && Object.keys(type.config).length > 0;
+							} catch (err) {
+								const message = 'Something went wrong reaching ES';
+
+								DEBUG_MODE && console.error(message, err.message || err);
+								return new Error(message);
+							}
 						}
 						return new Error(`No index was found by the name/alias "${index}"`);
 					}

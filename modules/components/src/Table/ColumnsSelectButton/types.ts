@@ -2,6 +2,7 @@ import { ThemedButtonProps } from '@/Button/types';
 import { DropDownThemeProps } from '@/DropDown/types';
 import { InputThemeProps } from '@/Input/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface ColumnSelectButtonThemeProps extends ThemedButtonProps, DropDownThemeProps {
 	enableFilter: boolean;
@@ -11,5 +12,5 @@ export interface ColumnSelectButtonThemeProps extends ThemedButtonProps, DropDow
 }
 
 export interface ColumnSelectButtonProps extends ThemeCommon.CustomCSS {
-	theme?: Partial<ColumnSelectButtonThemeProps>;
+	theme?: RecursivePartial<ColumnSelectButtonThemeProps>;
 }

@@ -123,14 +123,17 @@ export const extendFacets = (
 					return agg.fieldName
 						? {
 								...agg,
+								[ConfigProperties.DISPLAY_NAME]:
+									agg[ConfigProperties.DISPLAY_NAME] ??
+									extendedObj?.[ConfigProperties.DISPLAY_NAME],
 								// defines aggregation type (component used in facets)
 								[ConfigProperties.DISPLAY_TYPE]:
 									agg[ConfigProperties.DISPLAY_TYPE] ??
 									extendedObj?.[ConfigProperties.DISPLAY_TYPE],
 								// TODO: determine what "isActive" does, vs "show"
-								[ConfigProperties.IS_ACTIVE]: agg[ConfigProperties.IS_ACTIVE],
+								[ConfigProperties.IS_ACTIVE]: agg[ConfigProperties.IS_ACTIVE] || false,
 								// should it be shown in the facets panel
-								[ConfigProperties.SHOW]: agg[ConfigProperties.SHOW],
+								[ConfigProperties.SHOW]: agg[ConfigProperties.SHOW] || false,
 						  }
 						: null;
 				})

@@ -1,6 +1,7 @@
 import { ThemedButtonProps } from '@/Button/types';
 import { InputThemeProps } from '@/Input/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface DropDownThemeProps extends ThemedButtonProps {
 	arrowColor: string;
@@ -18,5 +19,5 @@ export interface DropDownThemeProps extends ThemedButtonProps {
 }
 
 export interface DropDownProps extends ThemeCommon.CustomCSS {
-	theme?: Partial<DropDownThemeProps>;
+	theme?: RecursivePartial<DropDownThemeProps>;
 }

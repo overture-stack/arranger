@@ -22,6 +22,7 @@ DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
 # Variables
 DOCKER_DIR := $(ROOT_DIR)/docker
+DOCS_DIR := $(ROOT_DIR)/elasticsearch
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
 ES_HOST := http://localhost:9200
 ES_INDEX := file_centric_1.0
@@ -129,7 +130,7 @@ clear-es-documents:
 
 seed-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Initializing file_centric index" $(END)
-	@$(ES_LOAD_SCRIPT) $(ES_DATA_DIR) $(ES_USER) $(ES_PASS) $(ES_HOST) $(ES_INDEX)
+	@$(ES_LOAD_SCRIPT) $(DOCS_DIR) $(ES_USER) $(ES_PASS) $(ES_HOST) $(ES_INDEX)
 
 get-es-indices:
 	@echo $(YELLOW)$(INFO_HEADER) "Available indices:" $(END)

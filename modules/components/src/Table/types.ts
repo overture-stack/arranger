@@ -10,6 +10,7 @@ import {
 } from '@/DataContext/types';
 import { DropDownThemeProps } from '@/DropDown/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
 import { CountDisplayThemeProps } from './CountDisplay/types';
@@ -128,8 +129,8 @@ export interface TableThemeProps
 		Omit<TableBoxModelProperties, 'borderRadius'> {
 	defaultSort: ColumnSortingInterface[];
 	hideLoader: boolean;
-	noColumnsMessage?: ThemeCommon.ChildrenType;
-	noDataMessage?: ThemeCommon.ChildrenType;
+	noColumnsMessage?: ReactNode;
+	noDataMessage?: ReactNode;
 
 	// Child components
 	ColumnSelectButton: ColumnSelectButtonThemeProps;
@@ -150,10 +151,10 @@ export interface TableThemeProps
 export interface TableProps {
 	className?: string;
 	disableRowSelection?: boolean;
-	theme?: Partial<TableThemeProps>;
+	theme?: RecursivePartial<TableThemeProps>;
 }
 
-export interface UseTableDataProps extends Partial<TableContextThemeProps> {
+export interface UseTableDataProps extends RecursivePartial<TableContextThemeProps> {
 	visibleTableWidth: number;
 }
 
