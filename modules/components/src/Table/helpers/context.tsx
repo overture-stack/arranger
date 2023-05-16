@@ -227,13 +227,13 @@ export const TableContextProvider = ({
 			isFreshTable ||
 			isLoadingTableData ||
 			(hasVisibleColumns && isStaleTableData),
-		keyFieldName: tableConfigs?.keyFieldName,
 		maxPages,
 		maxResultsWindow,
 		missingProvider:
 			// ideally allows for passing in sufficient props to cover the absence of a data context.
 			!(customColumns && customDocumentType && customFetcher) && missingProvider,
 		pageSize,
+		rowIdFieldName: tableConfigs?.rowIdFieldName,
 		selectedRows,
 		selectedRowsDict,
 		setCurrentPage,

@@ -1,4 +1,4 @@
-import {} from 'mocha'; // Removes error ts2304 from "before" and "after" testing hooks
+import { after, before } from 'mocha';
 import { Client } from '@elastic/elasticsearch';
 import express from 'express';
 // import { print } from 'graphql';
@@ -16,7 +16,7 @@ import manageSets from './manageSets';
 const mappings = require('./assets/model_centric.mappings.json');
 const data = require('./assets/model_centric.data.json');
 
-const DEBUG = process.env.DEBUG;
+const DEBUG = (process.env.DEBUG || '').toLowerCase() === 'true';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'models_1.0';
 const esPwd = process.env.ES_PASS;
@@ -54,7 +54,9 @@ describe('@overture-stack/arranger-server', () => {
 
 		try {
 			await cleanup();
-		} catch (err) {}
+		} catch (err) {
+			//
+		}
 
 		await esClient.indices.create({
 			index: esIndex,
@@ -153,7 +155,9 @@ describe('@overture-stack/arranger-server', () => {
 
 		try {
 			await cleanup();
-		} catch (err) {}
+		} catch (err) {
+			//
+		}
 	});
 
 	const env = {

@@ -29,6 +29,7 @@ const TextFilter = ({
 	theme: {
 		altText = `Data filter`,
 		Component = TextInput,
+		disabled: customDisabled,
 		leftIcon = { Icon: FaSearch },
 		placeholder = 'Filter',
 		showClear = true,
@@ -45,6 +46,7 @@ const TextFilter = ({
 
 	return (
 		<Component
+			disabled={customDisabled}
 			onChange={handleChange}
 			theme={{
 				altText,

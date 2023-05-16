@@ -3,24 +3,34 @@ import { compose, withProps } from 'recompose';
 import jp from 'jsonpath/jsonpath.min';
 
 import { withQuery } from '@/Query';
+import { DEBUG } from '@/utils/config';
 import splitString from '@/utils/splitString';
 
 const isValidValue = (value) => value?.trim()?.length > 1;
 
 export const decorateFieldWithColumnsState = ({ tableConfigs, fieldName }) => {
-	const columnsStateField = tableConfigs?.columns?.find((column) => column.fieldName === fieldName);
+	if (fieldName) {
+		const columnsStateField =
+			tableConfigs?.columns?.find((column) => column.fieldName === fieldName) ||
+			tableConfigs?.columns?.find((column) => column.fieldName === tableConfigs.rowIdFieldName) ||
+			{};
 
-	return columnsStateField
-		? {
-				...columnsStateField,
-				gqlField: fieldName.split('.').join('__'),
-				query: columnsStateField.query || fieldName,
-				jsonPath: `$..${fieldName.split('.').slice(-1)}`,
-		  }
-		: {};
+		const splitFieldName = fieldName?.split?.('.');
+
+		return {
+			...columnsStateField,
+			gqlField: splitFieldName.join('__'),
+			jsonPath: `$..${splitFieldName?.length === 1 ? fieldName : splitFieldName.slice(-1)}`,
+			query: columnsStateField.query || fieldName,
+		};
+	}
+
+	DEBUG && console.info('Could not find fieldName to use for QuickSearch');
+
+	return null;
 };
 
-const isMatching = ({ value = '', searchText = '', exact = false }) => {
+const isMatching = ({ value = '', searchText = '', exact = false, who }) => {
 	return exact ? value === searchText : value.toLowerCase().includes(searchText.toLowerCase());
 };
 
@@ -28,125 +38,142 @@ const enhance = compose(
 	withProps(
 		({
 			exact,
-			quickSearchFields,
+			searchFields,
 			searchLowercase,
 			searchText,
 			searchTextDelimiters,
 			searchTextParts = splitString({
-				str: searchText,
 				split: searchTextDelimiters,
+				str: searchText,
 			}).map((part) => (searchLowercase ? part.toLowerCase() : part)),
-		}) => ({
-			searchTextParts,
-			sqon: {
-				op: 'or',
-				content: exact
-					? quickSearchFields?.map(({ fieldName }) => ({
-							op: 'in',
-							content: {
-								fieldName,
-								value: searchTextParts,
-							},
-					  }))
-					: searchTextParts.map((x) => ({
-							op: 'filter',
-							content: {
-								value: `*${x}*`,
-								fieldNames: quickSearchFields?.map((x) => x.fieldName || x),
-							},
-					  })),
-			},
-		}),
+		}) => {
+			return {
+				searchTextParts,
+				sqon: {
+					content: exact
+						? searchFields?.map(({ fieldName }) => ({
+								content: {
+									fieldName,
+									value: searchTextParts,
+								},
+								op: 'in',
+						  }))
+						: searchTextParts.map((part) => ({
+								content: {
+									fieldNames: searchFields?.map((field) => field.fieldName || field),
+									value: `*${part}*`,
+								},
+								op: 'filter',
+						  })),
+					op: 'or',
+				},
+			};
+		},
 	),
 	withQuery(
-		({ index, primaryKeyField, quickSearchFields, queryFields, searchText, size = 5, sqon }) => ({
-			debounceTime: 300,
-			shouldFetch: isValidValue(searchText) && (quickSearchFields || []).length,
-			key: 'rawSearchResults',
-			query: `
-        query ${capitalize(index)}QuickSearchResults($sqon: JSON, $size: Int) {
-          ${index} {
-            hits(filters: $sqon, first: $size) {
-              total
-              edges {
-                node {
-                  ${!isEmpty(primaryKeyField?.query) ? `primaryKey: ${primaryKeyField?.query}` : ''}
-                  ${
-										queryFields
-											?.filter((f) => f.gqlField && f.query)
-											?.map((f) => `${f.gqlField}: ${f.query}`)
-											?.join('\n') || ''
-									}
-                }
-              }
-            }
-          }
-        }
-      `,
-			variables: { size, sqon },
-		}),
+		({ displayField, documentType, queryCallback, searchFields, searchText, size = 5, sqon }) => {
+			return {
+				callback: queryCallback,
+				debounceTime: 300,
+				endpointTag: 'QuickSearchQuery',
+				query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
+				${documentType} {
+					hits(filters: $sqon, first: $size) {
+					total
+					edges {
+						node {
+						${!isEmpty(displayField?.query) ? `primaryKey: ${displayField?.query}` : ''}
+						${
+							searchFields
+								?.filter?.((field) => field.gqlField && field.query)
+								.map?.((field) => `${field.gqlField}: ${field.query}`)
+								.join?.('\n') || ''
+						}
+						}
+					}
+					}
+				}
+				}
+			`,
+				shouldFetch: isValidValue(searchText) && (searchFields || []).length,
+				variables: { size, sqon },
+			};
+		},
 	),
 	withProps(
 		({
+			displayField,
+			documentType,
 			exact,
-			index,
-			primaryKeyField,
-			queryFields,
-			rawSearchResults: { data, loading },
+			isNewSearch,
+			response: { data, loading },
+			searchFields,
+			searchResultsByEntity: givenSearchResultsByEntity,
 			searchText,
 			searchTextParts,
-			searchResultsByEntity = queryFields?.map((x) => ({
-				...x,
-				results: data?.[index]?.hits?.edges
-					?.map(
-						({
-							node,
-							primaryKey = jp.query(node.primaryKey, primaryKeyField.jsonPath)[0],
-							result = x.jsonPath && jp.query(node, x.jsonPath),
-						}) => {
-							return {
-								primaryKey,
-								entityName: x.entityName,
-								...searchTextParts.reduce(
-									(acc, part) => {
-										if (isArray(result)) {
-											const r = result.find((r) =>
-												isMatching({ value: r, searchText: part, exact }),
-											);
-											if (r) {
-												return { input: part, result: r };
+		}) => {
+			const searchResultsByEntity =
+				givenSearchResultsByEntity ||
+				searchFields?.map((field) => {
+					return {
+						...field,
+						results: data?.[documentType]?.hits?.edges
+							?.map(({ node }) => {
+								const primaryKey =
+									typeof node.primaryKey === 'string'
+										? node.primaryKey
+										: jp.query(node.primaryKey, displayField.jsonPath)[0];
+								const result = field?.jsonPath && jp.query(node, field.jsonPath);
+
+								return {
+									primaryKey,
+									entityName: field.entityName,
+									...searchTextParts?.reduce(
+										(acc, part) => {
+											if (isArray(result)) {
+												const r = result.find((value) => {
+													return value ? isMatching({ value, searchText: part, exact }) : value;
+												});
+
+												if (r) {
+													return { input: part, result: r };
+												}
+												return acc;
 											}
+
+											if (result && isMatching({ value: result, searchText: part, exact })) {
+												return { input: part, result };
+											}
+
 											return acc;
-										}
-										if (isMatching({ value: result, searchText: part, exact })) {
-											return { input: part, result };
-										}
-										return acc;
-									},
-									{ input: '', result: '' },
-								),
-							};
-						},
-					)
-					?.filter((x) => isValidValue(searchText) && x.input),
-			})) || [],
-		}) => ({
-			searchResultsByEntity,
-			searchResultsLoading: loading,
-			searchResults: flatMap(
-				searchResultsByEntity
-					?.filter((x) => x?.results?.length)
-					?.map(({ entityName, field, results }) =>
-						results?.map(({ input, primaryKey, result }) => ({
-							entityName,
-							field,
-							input,
-							primaryKey,
-							result,
-						})),
-					),
-			),
-		}),
+										},
+										{ input: '', result: '' },
+									),
+								};
+							})
+							?.filter((x) => isValidValue(searchText) && x.input),
+					};
+				}) ||
+				[];
+
+			return {
+				searchResultsByEntity,
+				searchResultsLoading: isNewSearch || loading,
+				searchResults: flatMap(
+					searchResultsByEntity
+						?.filter((value) => value?.results?.length)
+						?.map(({ entityName, field, results }) =>
+							results?.map(({ input, primaryKey, result }) => ({
+								entityName,
+								field,
+								input,
+								primaryKey,
+								result,
+							})),
+						),
+				),
+			};
+		},
 	),
 );
 
@@ -154,19 +181,22 @@ const QuickSearchQuery = ({
 	apiFetcher,
 	mapResults = () => ({}),
 	render,
-	sqon,
 	searchResults,
 	searchResultsByEntity,
 	searchResultsLoading,
 	searchTextParts,
-	props = {
+	sqon,
+}) => {
+	const props = {
 		apiFetcher,
 		loading: searchResultsLoading,
 		results: searchResults,
 		resultsByEntity: searchResultsByEntity,
 		searchTextParts,
 		sqon,
-	},
-}) => render({ ...props, ...mapResults(props) });
+	};
+
+	return render({ ...props, ...mapResults(props) });
+};
 
 export default enhance(QuickSearchQuery);

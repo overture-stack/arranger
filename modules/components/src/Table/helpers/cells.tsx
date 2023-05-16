@@ -15,6 +15,8 @@ export const getCellValue = (
 	row = emptyObj as unknown,
 	{ accessor = '', id = '', jsonPath = '' } = emptyObj,
 ): string =>
+	// TODO: generate json mapping for nested automatically
+	// remove jsonPath from configs
 	jsonPath
 		? JSONPath({ json: row as Record<string, any>, path: jsonPath })
 		: get(row, (id || accessor).split('.'), '');

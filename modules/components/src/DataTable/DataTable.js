@@ -148,7 +148,7 @@ class DataTableWithToolbar extends React.Component {
 					exporterLabel={exporterLabel}
 					filterInputPlaceholder={filterInputPlaceholder}
 					InputComponent={InputComponent}
-					keyFieldName={config.keyFieldName}
+					keyFieldName={config.rowIdFieldName}
 					onColumnsChange={onColumnsChange}
 					onFilterChange={onFilterChange}
 					onMultipleColumnsChange={onMultipleColumnsChange}

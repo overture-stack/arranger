@@ -39,11 +39,11 @@ export interface TableContextInterface {
 	hasShowableColumns: boolean;
 	hasVisibleColumns: boolean;
 	isLoading: boolean;
-	keyFieldName: string;
 	maxPages: number;
 	maxResultsWindow: number;
 	missingProvider?: string | false;
 	pageSize: number;
+	rowIdFieldName: string;
 	selectedRows: string[];
 	selectedRowsDict: RowSelectionState;
 	setCurrentColumnsDict: Dispatch<SetStateAction<ColumnsDictionary>>;
@@ -91,13 +91,15 @@ type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode
 
 export type ColumnType = 'all' | DisplayType | FieldList[number];
 
-export enum ColumnListStyles {
-	NONE = 'none',
-	COMMAS = 'commas',
-	LETTERS = 'letters',
-	NUMBERS = 'numbers',
-	ROMAN = 'roman',
-}
+export const ColumnListStyles = {
+	NONE: 'none',
+	COMMAS: 'commas',
+	LETTERS: 'letters',
+	NUMBERS: 'numbers',
+	ROMAN: 'roman',
+} as const;
+
+type ColumnListStylesType = typeof ColumnListStyles;
 
 export type ColumnTypesObject = Record<
 	ColumnType,
@@ -105,7 +107,7 @@ export type ColumnTypesObject = Record<
 		cellValue: TableCellComponent;
 		headerValue: TableHeaderComponent;
 		initialWidth: number | string;
-		listStyle: `${ColumnListStyles}`;
+		listStyle: `${ColumnListStylesType[keyof ColumnListStylesType]}`;
 		maxWidth: number | string;
 		minWidth: number | string;
 		resizable: boolean;
@@ -144,7 +146,7 @@ export interface TableThemeProps
 	Pagination: PaginationThemeProps;
 	Row: RowThemeProps;
 	TableBody: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
-	TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS & { width?: string };
+	TableWrapper: { width?: string } & ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS;
 	Toolbar: ToolbarThemeProps;
 }
 

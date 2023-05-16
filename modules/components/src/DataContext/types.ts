@@ -7,7 +7,15 @@ import SQON from '@overture-stack/sqon-builder';
 import { legacyProps } from '@/Arranger/Arranger';
 import { CustomThemeType, ThemeOptions } from '@/ThemeContext/types';
 
-export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+export type DisplayType =
+	| 'all'
+	| 'bits'
+	| 'boolean'
+	| 'bytes'
+	| 'date'
+	| 'list'
+	| 'nested'
+	| 'number';
 
 export type ColumnCustomiserFn = <Output>(input: ExtendedMappingInterface) => Output;
 
@@ -36,8 +44,8 @@ export interface ColumnSortingInterface {
 export interface TableConfigsInterface {
 	columns: ColumnMappingInterface[];
 	defaultSorting: ColumnSortingInterface[];
-	keyFieldName: string;
 	maxResultsWindow: number;
+	rowIdFieldName: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -47,7 +55,6 @@ export interface ExtendedMappingInterface {
 	fieldName: string;
 	isActive: boolean; // TODO: what does this do?
 	isArray: boolean;
-	primaryKey: boolean;
 	quickSearchEnabled: boolean;
 	rangeStep: number | null | undefined;
 	type: DisplayType;

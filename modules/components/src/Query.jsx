@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import { isEqual, debounce } from 'lodash';
-import { defaultProps } from 'recompose';
+import { defaultProps } from 'recompose'; // Get rid of this garbage
 
 import defaultApiFetcher from './utils/api';
 
@@ -25,7 +25,7 @@ class Query extends Component {
 	componentDidCatch(error, info) {
 		this.setState({ error });
 	}
-	fetch = debounce(async ({ query, variables, ...options }) => {
+	fetch = debounce(async ({ callback, query, variables, ...options }) => {
 		const { apiFetcher = defaultApiFetcher } = this.props;
 		this.setState({ loading: true });
 		try {
@@ -33,11 +33,14 @@ class Query extends Component {
 				...options,
 				body: { query, variables },
 			});
+
 			this.setState({
 				data,
 				error: errors ? { errors } : null,
 				loading: false,
 			});
+
+			callback?.({ data, errors });
 		} catch (error) {
 			this.setState({ data: null, error: error.message, loading: false });
 		}
@@ -61,7 +64,7 @@ export const withQuery = (getOptions) => (Component) => (props) => {
 		<EnhancedQuery
 			apiFetcher={props.apiFetcher}
 			{...options}
-			render={(data) => <Component {...props} {...{ [options.key]: data }} />}
+			render={(data) => <Component {...props} {...{ [options.key || 'response']: data }} />}
 		/>
 	);
 };

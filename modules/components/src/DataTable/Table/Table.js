@@ -52,7 +52,7 @@ class DataTable extends React.Component {
 		const selectedTableRows =
 			this.state.selectedTableRows.length === this.state.data.length
 				? []
-				: this.state.data.map((item) => item[this.props.config.keyFieldName]);
+				: this.state.data.map((item) => item[this.props.config.rowIdFieldName]);
 
 		this.setSelectedTableRows(selectedTableRows);
 	};
@@ -112,7 +112,7 @@ class DataTable extends React.Component {
 				if (!keepSelectedOnPageChange) {
 					this.setSelectedTableRows(
 						intersection(
-							data.map((item) => item[this.props.config.keyFieldName]),
+							data.map((item) => item[this.props.config.rowIdFieldName]),
 							selectedTableRows,
 						),
 					);
@@ -153,7 +153,7 @@ class DataTable extends React.Component {
 			maxPagesOptions,
 			sorted,
 		} = this.props;
-		const { columns, keyFieldName, defaultSorting } = config;
+		const { columns, rowIdFieldName, defaultSorting } = config;
 		const { data, selectedTableRows, pages, loading, scrollbarSize } = this.state;
 
 		const fetchFromServerProps = {
@@ -169,7 +169,7 @@ class DataTable extends React.Component {
 			toggleSelection: toggleSelectedTableRow,
 			toggleAll,
 			selectType: 'checkbox',
-			keyField: keyFieldName,
+			keyField: rowIdFieldName,
 		};
 
 		return (

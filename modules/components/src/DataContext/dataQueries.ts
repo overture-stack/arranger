@@ -39,8 +39,8 @@ export const tableConfigs = `
 			desc
 			fieldName
 		}
-		keyFieldName
 		maxResultsWindow
+		rowIdFieldName
 	}
 `;
 

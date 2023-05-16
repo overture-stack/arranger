@@ -34,7 +34,7 @@ spec:
           cpu: 1024m
         limits:
           memory: 1024Mi
-          cpu: 1536M
+          cpu: 1536m
     - name: docker
       image: docker:20-git
       tty: true

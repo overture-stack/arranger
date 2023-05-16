@@ -1,13 +1,13 @@
-import { ReactNode } from 'react';
+// import { ReactNode } from 'react';
 import { Interpolation } from '@emotion/react';
-import { EmotionJSX } from '@emotion/react/types/jsx-namespace';
+// import { EmotionJSX } from '@emotion/react/types/jsx-namespace';
 
 import { PrefixKeys } from '@/utils/types';
 
 import { ThemeOptions } from '.';
 
 // hacky, but Emotion typing is finicky
-export type ChildrenType = () => EmotionJSX.Element | ReactNode;
+// export type ChildrenType = EmotionJSX.Element | ReactNode; // TODO: is this still necessary?
 export type cssInterpolation = Interpolation<ThemeOptions>;
 
 export interface BoxModelProperties {

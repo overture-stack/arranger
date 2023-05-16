@@ -7,7 +7,7 @@ import Input from '@/Input';
 import { toggleSQON } from '@/SQONViewer/utils';
 
 import Tabs, { TabsTable } from '../Tabs';
-import { MatchBoxState } from '../MatchBox';
+import { MatchBoxState, MATCHBOX_CHILD } from '../MatchBox';
 import saveSet from '../utils/saveSet';
 import formatNumber from '../utils/formatNumber';
 import parseInputFiles from '../utils/parseInputFiles';
@@ -198,13 +198,14 @@ const MatchBox = ({
 						</div>
 						<QuickSearchQuery
 							exact
+							instanceId={MATCHBOX_CHILD}
 							size={9999999} // TODO: pagination - this will currently choke on large input
 							{...props}
 							searchText={searchText}
 							primaryKeyField={activeField?.keyField}
 							quickSearchFields={activeField?.searchFields}
 							mapResults={({ results, searchTextParts }) => ({
-								results: uniqBy(results, 'primaryKey'),
+								results: uniqBy(results, 'primaryKey'), // TODO: primaryKey removed from individual fields
 								unmatchedKeys: difference(
 									searchTextParts,
 									results.map((x) => x.input),
@@ -301,6 +302,7 @@ const MatchBox = ({
 									})}
 								</div>
 							)}
+							searchTextParts={searchTextParts}
 						/>
 					</Fragment>
 				)}

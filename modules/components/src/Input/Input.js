@@ -41,6 +41,7 @@ const InputWrapper = styled.div`
 const Input = (
 	{
 		className,
+		disabled: customDisabled,
 		onBlur: customBlurHandler,
 		onChange: customChangeHandler,
 		onFocus: customFocusHandler,
@@ -52,6 +53,9 @@ const Input = (
 			Component: CustomComponent,
 			css: customCSS,
 			leftIcon: { Icon: CustomLeftIcon, ...customLeftIconProps } = emptyObj,
+			margin: customMargin,
+			padding: customPadding,
+			placeholder: customPlaceholder,
 			rightIcon: { Icon: CustomRightIcon, ...customRightIconProps } = emptyObj,
 			showClear: customShowClear,
 		} = emptyObj,
@@ -71,10 +75,15 @@ const Input = (
 				Component: ThemeComponent = 'input',
 				ClearButton: ThemeClearButton = Button,
 				css: themeCSS,
+				disabled: themeDisabled,
+				disabledBorderColor: themeDisabledBorderColor = colors?.grey?.[300],
 				LeftIcon: ThemeLeftIcon,
+				margin: themeMargin = '0',
+				padding: themePadding,
 				onChange: themeChangeHandler,
 				onBlur: themeBlurHandler,
 				onFocus: themeFocusHandler,
+				placeholder: themePlaceHolder,
 				RightIcon: ThemeRightIcon,
 				showClear: themeShowClear = false,
 			} = emptyObj,
@@ -91,12 +100,16 @@ const Input = (
 	const clearAltText = `${customClearAltText || themeClearAltText}${
 		internalValue ? '' : ' (disabled)'
 	}`;
+	const margin = customMargin || themeMargin;
+	const padding = customPadding || themePadding;
+	const placeholder = customPlaceholder || themePlaceHolder;
 	const showClear = customShowClear || themeShowClear;
 
 	// const inputRef = (ref || React.createRef()) as React.RefObject<HTMLInputElement>;
 	const inputRef = ref || createRef();
 	// const clearButtonRef = createRef() as RefObject<HTMLButtonElement>;
 	const clearButtonRef = createRef();
+	const inputDisabled = customDisabled || themeDisabled;
 
 	const blurHandler = (event) => {
 		setIsFocused(false);
@@ -126,11 +139,13 @@ const Input = (
 
 	return (
 		<InputWrapper
-			className={cx('inputWrapper', { focused: isFocused }, className)}
+			className={cx('inputWrapper', { disabled: inputDisabled, focused: isFocused }, className)}
 			css={[
 				css`
-					border: solid 1px ${borderColor};
+					border: solid 1px ${inputDisabled ? themeDisabledBorderColor : borderColor};
 					border-radius: 5px;
+					margin: ${margin};
+					padding: ${padding};
 
 					&.focused {
 						box-shadow: ${boxShadow};
@@ -161,9 +176,11 @@ const Input = (
 						outline: none;
 					}
 				`}
+				disabled={inputDisabled}
 				onBlur={blurHandler}
 				onChange={changeHandler}
 				onFocus={focusHandler}
+				placeholder={placeholder}
 				ref={inputRef}
 				value={internalValue}
 				{...props}
@@ -177,7 +194,7 @@ const Input = (
 						margin-left: 5px;
 						padding: 0 0.3rem;
 					`}
-					disabled={!internalValue}
+					disabled={inputDisabled || !internalValue}
 					onClick={clearHandler}
 					ref={clearButtonRef}
 					title={clearAltText}

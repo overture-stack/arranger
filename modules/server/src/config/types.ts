@@ -49,8 +49,8 @@ export const TableProperties = {
 	COLUMNS: 'columns',
 	DESCENDING: 'desc',
 	DEFAULT_SORTING: 'defaultSorting',
-	KEY_FIELD_NAME: 'keyFieldName',
 	MAX_RESULTS_WINDOW: 'maxResultsWindow',
+	ROW_ID_FIELD_NAME: 'rowIdFieldName',
 } as const;
 
 //////////////////////////////////
@@ -97,7 +97,15 @@ export interface DownloadsConfigsInterface {
 	[ConfigProperties.MAX_DOWNLOAD_ROWS]?: number;
 }
 
-export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+export type DisplayType =
+	| 'all'
+	| 'bits'
+	| 'boolean'
+	| 'bytes'
+	| 'date'
+	| 'list'
+	| 'nested'
+	| 'number';
 
 export interface ExtendedConfigsInterface {
 	[ConfigProperties.DISPLAY_NAME]: string;
@@ -131,8 +139,8 @@ export interface SortingConfigsInterface {
 export interface TableConfigsInterface {
 	[ConfigProperties.COLUMNS]: ColumnConfigsInterface[];
 	[ConfigProperties.DEFAULT_SORTING]?: SortingConfigsInterface[];
-	[ConfigProperties.KEY_FIELD_NAME]?: string;
 	[ConfigProperties.MAX_RESULTS_WINDOW]?: number;
+	[ConfigProperties.ROW_ID_FIELD_NAME]?: string;
 }
 
 export interface ConfigObject {

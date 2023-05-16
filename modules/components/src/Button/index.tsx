@@ -1,5 +1,4 @@
 import { createRef, ForwardedRef, forwardRef, MouseEventHandler } from 'react';
-import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
 import Color from 'color';

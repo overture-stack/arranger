@@ -48,8 +48,8 @@ const TableConfigTypeDefs = `
   type TableConfig {
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
-    keyFieldName: String
     maxResultsWindow: Int
+    rowIdFieldName: String
   }
 ` as const;
 

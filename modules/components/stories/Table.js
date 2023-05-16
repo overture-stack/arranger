@@ -16,7 +16,7 @@ const withSQON = withState('sqon', 'setSQON', null);
 const tableConfig = {
 	timestamp: '2018-01-12T16:42:07.495Z',
 	type: 'models',
-	keyFieldName: 'name',
+	rowIdFieldName: 'name',
 	defaultSorting: [{ field: 'age_at_diagnosis', desc: false }],
 	columns: [
 		{
@@ -41,7 +41,7 @@ const tableConfig = {
 const dummyConfig = {
 	timestamp: '2018-01-12T16:42:07.495Z',
 	type: 'files',
-	keyFieldName: 'file_id',
+	rowIdFieldName: 'file_id',
 	defaultSorting: [{ field: 'access', desc: false }],
 	columns: [
 		{

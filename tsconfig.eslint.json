@@ -7,6 +7,8 @@
 		"prettier.config.js",
 		"modules/**/.eslintrc.js",
 		"modules/**/*",
-		"**/*.json"
+		"**/*.json",
+		"integration-tests/**/*test.js",
+		"integration-tests/**/*test.ts"
 	]
 }
