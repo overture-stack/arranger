@@ -10,6 +10,7 @@ import {
 } from '@/DataContext/types';
 import { DropDownThemeProps } from '@/DropDown/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
 import { CountDisplayThemeProps } from './CountDisplay/types';
@@ -38,11 +39,11 @@ export interface TableContextInterface {
 	hasShowableColumns: boolean;
 	hasVisibleColumns: boolean;
 	isLoading: boolean;
-	keyFieldName: string;
 	maxPages: number;
 	maxResultsWindow: number;
 	missingProvider?: string | false;
 	pageSize: number;
+	rowIdFieldName: string;
 	selectedRows: string[];
 	selectedRowsDict: RowSelectionState;
 	setCurrentColumnsDict: Dispatch<SetStateAction<ColumnsDictionary>>;
@@ -90,13 +91,15 @@ type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode
 
 export type ColumnType = 'all' | DisplayType | FieldList[number];
 
-export enum ColumnListStyles {
-	NONE = 'none',
-	COMMAS = 'commas',
-	LETTERS = 'letters',
-	NUMBERS = 'numbers',
-	ROMAN = 'roman',
-}
+export const ColumnListStyles = {
+	NONE: 'none',
+	COMMAS: 'commas',
+	LETTERS: 'letters',
+	NUMBERS: 'numbers',
+	ROMAN: 'roman',
+} as const;
+
+type ColumnListStylesType = typeof ColumnListStyles;
 
 export type ColumnTypesObject = Record<
 	ColumnType,
@@ -104,7 +107,7 @@ export type ColumnTypesObject = Record<
 		cellValue: TableCellComponent;
 		headerValue: TableHeaderComponent;
 		initialWidth: number | string;
-		listStyle: `${ColumnListStyles}`;
+		listStyle: `${ColumnListStylesType[keyof ColumnListStylesType]}`;
 		maxWidth: number | string;
 		minWidth: number | string;
 		resizable: boolean;
@@ -128,8 +131,8 @@ export interface TableThemeProps
 		Omit<TableBoxModelProperties, 'borderRadius'> {
 	defaultSort: ColumnSortingInterface[];
 	hideLoader: boolean;
-	noColumnsMessage?: ThemeCommon.ChildrenType;
-	noDataMessage?: ThemeCommon.ChildrenType;
+	noColumnsMessage?: ReactNode;
+	noDataMessage?: ReactNode;
 
 	// Child components
 	ColumnSelectButton: ColumnSelectButtonThemeProps;
@@ -143,17 +146,17 @@ export interface TableThemeProps
 	Pagination: PaginationThemeProps;
 	Row: RowThemeProps;
 	TableBody: Omit<TableInnerBoxModelProperties, 'borderRadius' | 'padding'>;
-	TableWrapper: ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS & { width?: string };
+	TableWrapper: { width?: string } & ThemeCommon.BoxModelProperties & ThemeCommon.CustomCSS;
 	Toolbar: ToolbarThemeProps;
 }
 
 export interface TableProps {
 	className?: string;
 	disableRowSelection?: boolean;
-	theme?: Partial<TableThemeProps>;
+	theme?: RecursivePartial<TableThemeProps>;
 }
 
-export interface UseTableDataProps extends Partial<TableContextThemeProps> {
+export interface UseTableDataProps extends RecursivePartial<TableContextThemeProps> {
 	visibleTableWidth: number;
 }
 

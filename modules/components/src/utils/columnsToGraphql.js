@@ -33,10 +33,10 @@ export default function columnsToGraphql({
 	const fields = config?.columns
 		?.filter(
 			(column) =>
-				!(column.accessor && column.accessor === config.keyFieldName) &&
+				!(column.accessor && column.accessor === config.rowIdFieldName) &&
 				(column.fetch || column.show),
 		)
-		.concat(config.keyFieldName ? { accessor: config.keyFieldName } : [])
+		.concat(config.rowIdFieldName ? { accessor: config.rowIdFieldName } : [])
 		.map(toQuery)
 		.join('\n');
 

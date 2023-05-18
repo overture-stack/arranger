@@ -7,7 +7,15 @@ import SQON from '@overture-stack/sqon-builder';
 import { legacyProps } from '@/Arranger/Arranger';
 import { CustomThemeType, ThemeOptions } from '@/ThemeContext/types';
 
-export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'number';
+export type DisplayType =
+	| 'all'
+	| 'bits'
+	| 'boolean'
+	| 'bytes'
+	| 'date'
+	| 'list'
+	| 'nested'
+	| 'number';
 
 export type ColumnCustomiserFn = <Output>(input: ExtendedMappingInterface) => Output;
 
@@ -16,6 +24,7 @@ export interface ColumnMappingInterface {
 	canChangeShow: boolean;
 	displayFormat?: string | null;
 	displayName?: string;
+	displayType: DisplayType;
 	displayValues?: Record<string, string>;
 	fieldName: string;
 	id: string;
@@ -24,7 +33,7 @@ export interface ColumnMappingInterface {
 	query?: string | null;
 	show: boolean;
 	sortable: boolean;
-	type: DisplayType;
+	type?: DisplayType; // being deprecated
 }
 
 export interface ColumnSortingInterface {
@@ -35,8 +44,8 @@ export interface ColumnSortingInterface {
 export interface TableConfigsInterface {
 	columns: ColumnMappingInterface[];
 	defaultSorting: ColumnSortingInterface[];
-	keyFieldName: string;
 	maxResultsWindow: number;
+	rowIdFieldName: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -46,7 +55,6 @@ export interface ExtendedMappingInterface {
 	fieldName: string;
 	isActive: boolean; // TODO: what does this do?
 	isArray: boolean;
-	primaryKey: boolean;
 	quickSearchEnabled: boolean;
 	rangeStep: number | null | undefined;
 	type: DisplayType;

@@ -11,7 +11,8 @@
 		]
 	},
 	"table": {
-		"columns": []
+		"columns": [],
+		"rowIdFieldName": "analysis__analysis_id"
 	},
 	"extended": [],
 	"matchbox": [

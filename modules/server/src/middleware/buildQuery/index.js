@@ -113,6 +113,7 @@ function getFuzzyFilter({ nestedFieldNames, filter }) {
 						[ES_WILDCARD]: {
 							[fieldName]: {
 								value: `${value}`,
+								case_insensitive: true,
 							},
 						},
 					})),

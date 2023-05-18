@@ -14,7 +14,7 @@ const mappingToColumnsState = (mapping) => {
 			fieldName: id,
 			...(type === 'list'
 				? {
-						query: toQuery({ accessor: fieldName }),
+						query: toQuery(fieldName),
 						jsonPath: `$.${fieldName.replace(/\[\d*\]/g, '[*]')}`,
 				  }
 				: { accessor: fieldName }),

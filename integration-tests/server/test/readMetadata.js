@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
+const logError = (origin, err) => console.log(origin, err?.response?.data?.errors || err);
+
 export default ({ api, documentType, gqlPath }) => {
 	it('1.reads extended mapping properly', async () => {
 		const { data } = await api
@@ -20,10 +22,10 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readMetadata error', err);
+				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.extended).to.be.not.empty;
+		expect(data?.data?.[documentType]?.configs?.extended || {}).to.be.not.empty;
 		expect(data?.errors).to.be.undefined;
 	});
 
@@ -42,10 +44,10 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readMetadata error', err);
+				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.mapping).to.be.not.empty;
+		expect(data?.data?.[documentType]?.mapping || {}).to.be.not.empty;
 		expect(data?.errors).to.be.undefined;
 	});
 
@@ -72,10 +74,10 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readMetadata error', err);
+				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.facets?.aggregations).to.be.not.empty;
+		expect(data?.data?.[documentType]?.configs?.facets?.aggregations || {}).to.be.not.empty;
 		expect(data?.errors).to.be.undefined;
 	});
 
@@ -85,23 +87,23 @@ export default ({ api, documentType, gqlPath }) => {
 				endpoint: gqlPath,
 				body: {
 					query: print(gql`
-					{
-						${documentType} {
-							configs {
-								table {
-									keyFieldName
+						{
+							${documentType} {
+								configs {
+									table {
+										rowIdFieldName
+									}
 								}
 							}
 						}
-					}
-				`),
+					`),
 				},
 			})
 			.catch((err) => {
-				console.log('readMetadata error', err);
+				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.table).to.be.not.empty;
+		expect(data?.data?.[documentType]?.configs?.table || {}).to.be.not.empty;
 		expect(data?.errors).to.be.undefined;
 	});
 
@@ -124,10 +126,10 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readMetadata error', err);
+				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.matchbox).to.be.not.empty;
+		expect(data?.data?.[documentType]?.configs?.matchbox || {}).to.be.not.empty;
 		expect(data?.errors).to.be.undefined;
 	});
 };

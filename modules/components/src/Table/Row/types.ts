@@ -3,6 +3,7 @@ import { Row } from '@tanstack/react-table';
 
 import { FieldList, TableInnerBoxModelProperties } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface CellThemeProps {
 	columnWidth: string;
@@ -15,7 +16,7 @@ export interface CellThemeProps {
 export interface CellProps extends PropsWithChildren, ThemeCommon.CustomCSS {
 	accessor?: FieldList[number];
 	colSpan?: number;
-	theme?: Partial<CellThemeProps>;
+	theme?: RecursivePartial<CellThemeProps>;
 	value?: string;
 }
 
@@ -33,5 +34,5 @@ export interface RowThemeProps extends TableInnerBoxModelProperties {
 
 export interface RowProps extends Partial<Row<unknown>>, ThemeCommon.CustomCSS {
 	id?: string;
-	theme?: Partial<RowThemeProps>;
+	theme?: RecursivePartial<RowThemeProps>;
 }

@@ -243,7 +243,7 @@ export const setSQONContent = (sqonContent) =>
 
 // returns current value for a given field / operation
 export const currentFieldValue = ({ sqon, dotFieldName, op }) =>
-	sqon?.content?.find((content) => content.content?.fieldName === dotFieldName && content.op === op)
+	sqon?.content?.find((filter) => filter.content?.fieldName === dotFieldName && filter.op === op)
 		?.content.value;
 
 // true if field and value in

@@ -15,6 +15,8 @@ export const getCellValue = (
 	row = emptyObj as unknown,
 	{ accessor = '', id = '', jsonPath = '' } = emptyObj,
 ): string =>
+	// TODO: generate json mapping for nested automatically
+	// remove jsonPath from configs
 	jsonPath
 		? JSONPath({ json: row as Record<string, any>, path: jsonPath })
 		: get(row, (id || accessor).split('.'), '');
@@ -29,6 +31,19 @@ export const getDisplayValue = (row = emptyObj as unknown, column = emptyObj): s
 			return value;
 	}
 };
+
+const Link = (props = emptyObj) => (
+	<a
+		css={css`
+			text-align: right;
+		`}
+		href={props.value}
+		rel="noopener noreferrer"
+		target="_blank"
+	>
+		{props.value}
+	</a>
+);
 
 const Number = (props = emptyObj) => (
 	<span
@@ -49,6 +64,7 @@ export const defaultCellTypes = {
 	boolean: ({ value = undefined } = {}) => (isNil(value) ? '' : `${value}`),
 	bytes: (props = emptyObj) => <FileSize {...props} />,
 	date: ({ value, ...props } = emptyObj) => dateFormatter(value, props),
+	link: Link,
 	list: ({ column, id, theme, value: valuesArr } = emptyObj) => {
 		const arrHasValues = Array.isArray(valuesArr) && valuesArr?.filter((v) => v).length > 0; // table shouldn't display Nulls
 

@@ -1,4 +1,4 @@
-import { Permutations } from '@/utils/types';
+import { Permutations, RecursivePartial } from '@/utils/types';
 
 // To be used in components.
 export interface TooltipThemeProperties {
@@ -13,5 +13,5 @@ export interface TooltipThemeProperties {
 }
 
 export default interface TooltipProps {
-	theme?: Partial<TooltipThemeProperties>;
+	theme?: RecursivePartial<TooltipThemeProperties>;
 }

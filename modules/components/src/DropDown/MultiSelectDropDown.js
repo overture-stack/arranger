@@ -57,6 +57,7 @@ const DropDownMenu = ({
 			hoverBackground: customSelectionControlHoverBackground = customListWrapperHoverBackground,
 			...customSelectionControlProps
 		} = emptyObj,
+		TextFilter: customTextFilterProps,
 		...customDropDownButtonProps
 	} = emptyObj,
 }) => {
@@ -100,6 +101,7 @@ const DropDownMenu = ({
 					hoverBackground: themeSelectionControlHoverBackground = themeListWrapperHoverBackground,
 					...themeSelectionControlProps
 				} = emptyObj,
+				TextFilter: themeTextFilterProps,
 				...themeDropDownButtonProps
 			} = emptyObj,
 		} = emptyObj,
@@ -392,10 +394,13 @@ const DropDownMenu = ({
 
 					{enableFilter && (
 						<TextFilter
-							aria-label={`Search data`}
 							onChange={handleChangeSearchText}
-							placeholder={filterPlaceholder}
-							type="text"
+							theme={{
+								altText: `Search data`,
+								placeholder: filterPlaceholder,
+								...themeTextFilterProps,
+								...customTextFilterProps,
+							}}
 							value={searchText}
 						/>
 					)}

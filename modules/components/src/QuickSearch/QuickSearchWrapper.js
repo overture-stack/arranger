@@ -12,17 +12,19 @@ const BaseWrapper = ({ className, ...props }) => (
 );
 
 const QuickSearchWrapper = ({
-	actionIcon: { Icon: CustomActionIcon, onClick: customActionIconHandler } = emptyObj,
+	actionIcon: {
+		Icon: CustomActionIcon = undefined,
+		onClick: customActionIconHandler = undefined,
+	} = emptyObj,
 	children,
-	className: quickSearchCustomClassName,
-	collapsible: customCollapsible,
-	componentRef,
+	className: customClassName = '',
+	collapsible: customCollapsible = true,
+	componentRef = undefined,
 	dataFields = emptyObj,
-	displayName: customHeaderTitle,
-	filters,
-	headerRef,
-	stickyHeader,
-	style,
+	displayName: customHeaderTitle = '',
+	filters = undefined,
+	headerRef = undefined,
+	stickyHeader = true,
 }) => {
 	const [isCollapsed, setIsCollapsed] = useState(false);
 	const {
@@ -30,7 +32,7 @@ const QuickSearchWrapper = ({
 		components: {
 			QuickSearch: {
 				QuickSearchWrapper: {
-					className: themeQuickSearchWrapperClassName,
+					className: themeClassName,
 					css: themeQuickSearchWrapperCSS,
 					collapsedBackground: themeQuickSearchWrapperCollapsedBackground = colors?.grey?.[200],
 					collapsible: themeQuickSearchWrapperCollapsible = true,
@@ -64,12 +66,9 @@ const QuickSearchWrapper = ({
 	const headerTitle = customHeaderTitle || themeWrapperHeaderTitle;
 
 	return (
-		<BaseWrapper className={quickSearchCustomClassName} style={style}>
+		<BaseWrapper className={customClassName}>
 			<article
-				className={cx(
-					'quicksearch-wrapper',
-					themeQuickSearchWrapperClassName || quickSearchCustomClassName,
-				)}
+				className={cx('quicksearch-wrapper', customClassName || themeClassName)}
 				css={[
 					css`
 						border-bottom: 0.05rem solid transparent;

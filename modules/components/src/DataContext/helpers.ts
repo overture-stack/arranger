@@ -64,13 +64,13 @@ export const useConfigs = ({
 export const useDataFetcher = ({
 	apiFetcher,
 	documentType,
-	keyFieldName,
+	rowIdFieldName,
 	sqon,
 	url,
 }: {
 	apiFetcher: APIFetcherFn;
 	documentType: string;
-	keyFieldName?: string;
+	rowIdFieldName?: string;
 	sqon?: SQONType;
 	url?: string;
 }): FetchDataFn =>
@@ -81,7 +81,7 @@ export const useDataFetcher = ({
 				endpointTag,
 				body: columnsToGraphql({
 					config: {
-						keyFieldName, // use keyFieldName from server configs if available
+						rowIdFieldName, // use rowIdFieldName from server configs if available
 						...config, // yet allow overwritting it at request time
 					},
 					documentType,
@@ -96,5 +96,5 @@ export const useDataFetcher = ({
 
 				return { total, data };
 			}),
-		[apiFetcher, documentType, keyFieldName, sqon, url],
+		[apiFetcher, documentType, rowIdFieldName, sqon, url],
 	);

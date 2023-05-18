@@ -2,7 +2,7 @@ import { FaSearch } from 'react-icons/fa';
 
 import TextInput from '@/Input';
 import { replaceFilterSQON } from '@/SQONViewer/utils';
-import noopFn from '@/utils/noops';
+import noopFn, { emptyObj } from '@/utils/noops';
 
 export const generateNextSQON =
 	(value) =>
@@ -25,13 +25,19 @@ export const generateNextSQON =
 		);
 
 const TextFilter = ({
-	Component = TextInput,
-	leftIcon = { Icon: FaSearch },
 	onChange = noopFn,
-	placeholder = 'Filter',
+	theme: {
+		altText = `Data filter`,
+		Component = TextInput,
+		disabled: customDisabled,
+		leftIcon = { Icon: FaSearch },
+		placeholder = 'Filter',
+		showClear = true,
+		...theme
+	} = emptyObj,
 	...props
 }) => {
-	const handleChange = ({ target: { value } = {} } = {}) => {
+	const handleChange = ({ target: { value = '' } = {} } = {}) => {
 		onChange({
 			value,
 			generateNextSQON: generateNextSQON(value),
@@ -40,10 +46,15 @@ const TextFilter = ({
 
 	return (
 		<Component
-			aria-label={`Data filter`}
-			leftIcon={leftIcon}
+			disabled={customDisabled}
 			onChange={handleChange}
-			placeholder={placeholder}
+			theme={{
+				altText,
+				leftIcon,
+				placeholder,
+				showClear,
+				...theme,
+			}}
 			type="text"
 			{...props}
 		/>

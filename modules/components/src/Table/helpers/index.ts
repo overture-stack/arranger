@@ -38,8 +38,8 @@ export const useTableData = ({
 		hasShowableColumns,
 		hasVisibleColumns,
 		isLoading,
-		keyFieldName,
 		missingProvider,
+		rowIdFieldName,
 		selectedRowsDict,
 		setSelectedRowsDict,
 		setSorting,
@@ -99,8 +99,8 @@ export const useTableData = ({
 			// TODO: figure out how to avoid needing type cohercion for "row"
 			`${
 				parent
-					? [parent.id, (row as Record<string, any>)[keyFieldName]].join('.')
-					: (row as Record<string, any>)[keyFieldName]
+					? [parent.id, (row as Record<string, any>)[rowIdFieldName]].join('.')
+					: (row as Record<string, any>)[rowIdFieldName]
 			}`,
 		manualSorting: true,
 		onRowSelectionChange: setSelectedRowsDict,

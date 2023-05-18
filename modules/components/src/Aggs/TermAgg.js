@@ -177,13 +177,14 @@ const TermAgg = ({
 				stateShowingSearch && (
 					<>
 						<InputComponent
-							aria-label={`Search data`}
 							onChange={({ value }) => setSearchText(value || '')}
-							placeholder={searchPlaceholder}
-							type="text"
+							theme={{
+								altText: 'Search data',
+								placeholder: searchPlaceholder,
+								...themeAggregationsFilterInputProps,
+								...themeTermAggFilterInputProps,
+							}}
 							value={searchText}
-							{...themeAggregationsFilterInputProps}
-							{...themeTermAggFilterInputProps}
 						/>
 
 						{showingMore && isMoreEnabled && (

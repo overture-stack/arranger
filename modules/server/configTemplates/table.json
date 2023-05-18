@@ -2,7 +2,7 @@
 	"table": {
 		"columns": [],
 		"defaultSorting": [],
-		"keyFieldName": "",
-		"maxResultsWindow": 10000
+		"maxResultsWindow": 10000,
+		"rowIdFieldName": ""
 	}
 }

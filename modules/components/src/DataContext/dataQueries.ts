@@ -8,6 +8,7 @@ export const downloadsConfigs = `
 export const facetsConfigs = `
 	facets {
 		aggregations {
+			displayName
 			displayType
 			fieldName
 			isActive
@@ -23,6 +24,7 @@ export const tableConfigs = `
 			canChangeShow
 			displayFormat
 			displayName
+			displayType
 			displayValues
 			fieldName
 			id
@@ -37,8 +39,8 @@ export const tableConfigs = `
 			desc
 			fieldName
 		}
-		keyFieldName
 		maxResultsWindow
+		rowIdFieldName
 	}
 `;
 

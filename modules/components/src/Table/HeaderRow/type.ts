@@ -2,6 +2,7 @@ import { HeaderGroup } from '@tanstack/react-table';
 
 import { TableInnerBoxModelProperties } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
+import { RecursivePartial } from '@/utils/types';
 
 export interface HeaderRowThemeProps extends TableInnerBoxModelProperties {
 	horizontalBorderColor: string;
@@ -23,5 +24,5 @@ export interface HeaderRowThemeProps extends TableInnerBoxModelProperties {
 
 export interface HeaderRowProps extends HeaderGroup<any>, ThemeCommon.CustomCSS {
 	hasVisibleRows?: boolean;
-	theme?: Partial<HeaderRowThemeProps>;
+	theme?: RecursivePartial<HeaderRowThemeProps>;
 }

@@ -3,6 +3,7 @@
 
 const FacetsConfigTypeDefs = `
   type AggregationMapping {
+    displayName: String
     displayType: String
     fieldName: String
     isActive: Boolean
@@ -24,6 +25,7 @@ const TableConfigTypeDefs = `
     canChangeShow: Boolean
     displayFormat: String
     displayName: String
+    displayType: String
     displayValues: JSON
     fieldName: String
     id: String
@@ -46,8 +48,8 @@ const TableConfigTypeDefs = `
   type TableConfig {
     columns: [ColumnMapping]
     defaultSorting: [ColumnSorting]
-    keyFieldName: String
     maxResultsWindow: Int
+    rowIdFieldName: String
   }
 ` as const;
 
