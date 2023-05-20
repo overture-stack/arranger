@@ -32,7 +32,11 @@ const Cell = ({
 					list: { listStyle: themeListStyle } = emptyObj,
 					...otherThemeColumnTypes
 				} = emptyObj,
-				Cell: { css: themeCSS } = emptyObj,
+				Cell: {
+					css: themeCSS,
+					hoverBackgroundColor: themeHoverBackgroundColor,
+					//
+				} = emptyObj,
 				Row: {
 					borderColor: themeBorderColor,
 					hoverVerticalBorderColor: themeHoverVerticalBorderColor,
@@ -48,6 +52,7 @@ const Cell = ({
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'Table - Row' });
 
+	const hoverBackgroundColor = themeHoverBackgroundColor;
 	const hoverVerticalBorderColor = customHoverVerticalBorderColor || themeHoverVerticalBorderColor;
 	const padding = customPadding || themePadding;
 	const textOverflow = customTextOverflow || themeTextOverflow;
@@ -61,8 +66,10 @@ const Cell = ({
 			colSpan={colSpan}
 			css={[
 				css`
+					box-sizing: border-box;
 					overflow: ${themeOverflow};
 					padding: ${padding};
+					position: relative;
 					text-align: left;
 					text-decoration: ${themeTextDecoration};
 					text-overflow: ${textOverflow};
@@ -73,10 +80,13 @@ const Cell = ({
 
 					&:not(:last-of-type) {
 						border-right: ${verticalBorderColor && `1px solid ${verticalBorderColor}`};
+					}
 
-						&:hover {
-							border-right: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
-						}
+					&:hover {
+						background: ${hoverBackgroundColor};
+						border-left: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
+						border-right: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
+						z-index: 666;
 					}
 
 					ul.list-values {

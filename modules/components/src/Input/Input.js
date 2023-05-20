@@ -144,11 +144,19 @@ const Input = (
 				css`
 					border: solid 1px ${inputDisabled ? themeDisabledBorderColor : borderColor};
 					border-radius: 5px;
+					box-sizing: border-box;
 					margin: ${margin};
 					padding: ${padding};
 
-					&.focused {
+					&.focused,
+					&:focus-visible {
 						box-shadow: ${boxShadow};
+						outline-color: currentcolor;
+						outline-color: activeborder;
+						outline-color: -moz-mac-focusring;
+						outline-color: -webkit-focus-ring-color;
+						outline-style: auto;
+						outline-width: thin;
 					}
 				`,
 				customCSS,
@@ -170,11 +178,7 @@ const Input = (
 			<Component
 				css={css`
 					border: none;
-					flex: 1;
-
-					&:focus {
-						outline: none;
-					}
+					width: 100%;
 				`}
 				disabled={inputDisabled}
 				onBlur={blurHandler}
@@ -189,17 +193,18 @@ const Input = (
 			{showClear && (
 				<ClearButton
 					aria-label={clearAltText}
-					css={css`
-						line-height: 1rem;
-						margin-left: 5px;
-						padding: 0 0.3rem;
-					`}
 					disabled={inputDisabled || !internalValue}
 					onClick={clearHandler}
 					ref={clearButtonRef}
+					theme={{
+						fontSize: '0.65rem',
+						lineHeight: '1rem',
+						margin: '0 0 0 5px',
+						padding: '0 0.3rem',
+					}}
 					title={clearAltText}
 				>
-					x
+					X
 				</ClearButton>
 			)}
 
