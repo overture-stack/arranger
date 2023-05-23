@@ -12,8 +12,13 @@ const Cell = ({
 	children,
 	colSpan,
 	css: customCSS,
+	size: columnWidth,
 	theme: {
-		columnWidth: themeTableColumnWidth,
+		background: customBackground,
+		borderColor: customBorderColor,
+		horizontalBorderColor: customHorizontalBorderColor,
+		hoverBackground: customHoverBackground,
+		hoverHorizontalBorderColor: customHoverHorizontalBorderColor,
 		hoverVerticalBorderColor: customHoverVerticalBorderColor,
 		padding: customPadding,
 		textOverflow: customTextOverflow,
@@ -22,6 +27,7 @@ const Cell = ({
 	value,
 }: CellProps) => {
 	const {
+		colors,
 		components: {
 			Table: {
 				padding: themeTablePadding = '0.1rem 0.4rem',
@@ -33,40 +39,62 @@ const Cell = ({
 					...otherThemeColumnTypes
 				} = emptyObj,
 				Cell: {
+					background: themeBackground,
+					borderColor: themeBorderColor = 'transparent',
+					className: themeClassName,
 					css: themeCSS,
-					hoverBackgroundColor: themeHoverBackgroundColor,
-					//
-				} = emptyObj,
-				Row: {
-					borderColor: themeBorderColor,
+					fontColor: themeFontColor,
+					horizontalBorderColor: themeHorizontalBorderColor,
+					hoverBackground: themeHoverBackground = colors?.grey?.[300],
+					hoverBorderColor: themeHoverBorderColor,
+					hoverFontColor: themeHoverFontColor,
+					hoverHorizontalBorderColor: themeHoverHorizontalBorderColor,
 					hoverVerticalBorderColor: themeHoverVerticalBorderColor,
 					overflow: themeOverflow = 'hidden',
 					padding: themePadding = themeTablePadding,
 					textDecoration: themeTextDecoration,
 					textOverflow: themeTextOverflow = themeTableTextOverflow,
 					textTransform: themeTextTransform,
-					verticalBorderColor: themeVerticalBorderColor = themeBorderColor,
+					verticalBorderColor: themeVerticalBorderColor,
 					whiteSpace: themeWhiteSpace,
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
-	} = useThemeContext({ callerName: 'Table - Row' });
+	} = useThemeContext({ callerName: 'Table - Cell' });
 
-	const hoverBackgroundColor = themeHoverBackgroundColor;
-	const hoverVerticalBorderColor = customHoverVerticalBorderColor || themeHoverVerticalBorderColor;
+	const background = customBackground || themeBackground;
+	const horizontalBorderColor =
+		customHorizontalBorderColor ||
+		themeHorizontalBorderColor ||
+		customBorderColor ||
+		themeBorderColor;
+	const verticalBorderColor =
+		customVerticalBorderColor || themeVerticalBorderColor || customBorderColor || themeBorderColor;
+	const hoverBackground = customHoverBackground || themeHoverBackground;
+	const hoverHorizontalBorderColor =
+		customHoverHorizontalBorderColor || themeHoverHorizontalBorderColor || themeHoverBorderColor;
+	const hoverVerticalBorderColor =
+		customHoverVerticalBorderColor || themeHoverVerticalBorderColor || themeHoverBorderColor;
 	const padding = customPadding || themePadding;
 	const textOverflow = customTextOverflow || themeTextOverflow;
-	const verticalBorderColor = customVerticalBorderColor || themeVerticalBorderColor;
 
 	const { listStyle = themeListStyle } = otherThemeColumnTypes[accessor] || emptyObj;
 
 	return (
 		<td
-			className={cx('cell')}
+			className={cx('cell', themeClassName)}
 			colSpan={colSpan}
 			css={[
 				css`
+					background: ${background};
+					border-bottom-color: ${horizontalBorderColor};
+					border-left-color: ${verticalBorderColor};
+					border-right-color: ${verticalBorderColor};
+					border-top-color: ${horizontalBorderColor};
+					border-style: solid;
+					border-width: 1px;
 					box-sizing: border-box;
+					color: ${themeFontColor};
 					overflow: ${themeOverflow};
 					padding: ${padding};
 					position: relative;
@@ -76,16 +104,15 @@ const Cell = ({
 					text-transform: ${themeTextTransform};
 					vertical-align: top;
 					white-space: ${themeWhiteSpace};
-					width: ${themeTableColumnWidth};
-
-					&:not(:last-of-type) {
-						border-right: ${verticalBorderColor && `1px solid ${verticalBorderColor}`};
-					}
+					width: ${columnWidth};
 
 					&:hover {
-						background: ${hoverBackgroundColor};
-						border-left: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
-						border-right: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
+						background: ${hoverBackground};
+						border-bottom-color: ${hoverHorizontalBorderColor};
+						border-left-color: ${hoverVerticalBorderColor};
+						border-right-color: ${hoverVerticalBorderColor};
+						border-top-color: ${hoverHorizontalBorderColor};
+						color: ${themeHoverFontColor};
 						z-index: 666;
 					}
 

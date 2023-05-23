@@ -285,6 +285,7 @@ const TermAgg = ({
 												value: bucket.name,
 											})}
 											css={css`
+												cursor: pointer;
 												margin: 0.2rem 0.3rem 0 0;
 											`}
 											id={`input-${fieldName}-${bucket.name.replace(/\s/g, '-')}`}
