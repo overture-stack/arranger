@@ -3,7 +3,7 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 
 import MetaMorphicChild from '@/MetaMorphicChild';
-import Spinner from '@/Spinner';
+import Spinner, { LoaderContainer } from '@/Loader';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
@@ -142,64 +142,71 @@ const Table = ({
 				<MessageContainer>
 					This table is missing its {missingProvider || 'context'} provider.
 				</MessageContainer>
-			) : isLoading ? (
-				hideLoader ? null : (
-					<Spinner
-						css={[
-							css`
-								border: 1px solid ${themeHeaderGroupBorderColor};
-								padding: 1rem;
-							`,
-							containerStyles,
-						]}
-						theme={{ vertical: true }}
-					>
-						{loadingMessage}
-					</Spinner>
-				)
-			) : hasShowableColumns ? (
+			) : // ) : isLoading ? (
+			// 	hideLoader ? null : (
+			// 		<Spinner
+			// 			css={[
+			// 				css`
+			// 					border: 1px solid ${themeHeaderGroupBorderColor};
+			// 					padding: 1rem;
+			// 				`,
+			// 				containerStyles,
+			// 			]}
+			// 			theme={{ vertical: true }}
+			// 		>
+			// 			{loadingMessage}
+			// 		</Spinner>
+			// 	)
+			hasShowableColumns ? (
 				hasVisibleColumns ? (
-					<table css={[containerStyles, themeTableCSS]}>
-						<thead
-							className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
-							css={[
-								css`
-									background: ${themeHeaderGroupBackground};
-									border: ${themeHeaderGroupBorderColor &&
-									`1px solid ${themeHeaderGroupBorderColor}`};
-									margin: ${themeHeaderGroupMargin};
-									overflow: ${themeHeaderGroupOverflow};
-									position: ${themeHeaderGroupPosition};
-								`,
-								themeHeaderGroupCSS,
-							]}
-						>
-							{headerGroups.map((headerGroup) => (
-								<HeaderRow hasVisibleRows={hasVisibleRows} key={headerGroup.id} {...headerGroup} />
-							))}
-						</thead>
+					<LoaderContainer {...{ isLoading }}>
+						<table css={[containerStyles, themeTableCSS]}>
+							<thead
+								className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
+								css={[
+									css`
+										background: ${themeHeaderGroupBackground};
+										border: ${themeHeaderGroupBorderColor &&
+										`1px solid ${themeHeaderGroupBorderColor}`};
+										margin: ${themeHeaderGroupMargin};
+										overflow: ${themeHeaderGroupOverflow};
+										position: ${themeHeaderGroupPosition};
+									`,
+									themeHeaderGroupCSS,
+								]}
+							>
+								{headerGroups.map((headerGroup) => (
+									<HeaderRow
+										hasVisibleRows={hasVisibleRows}
+										key={headerGroup.id}
+										{...headerGroup}
+									/>
+								))}
+							</thead>
 
-						<tbody
-							className={cx('TableBody', themeTableBodyClassName)}
-							css={[
-								css`
-									background: ${themeTableBodyBackground};
-									border: ${themeTableBodyBorderColor && `1px solid ${themeTableBodyBorderColor}`};
-									margin: ${themeTableBodyMargin};
-									overflow: ${themeTableBodyOverflow};
-									position: ${themeTableBodyPosition};
-								`,
-								themeTableBodyCSS,
-							]}
-						>
-							{hasVisibleRows ? (
-								rows.map((row) => <Row key={row.id} {...row} />)
-							) : (
-								// Reuse Row + Cell to display "no data" message
-								<Row />
-							)}
-						</tbody>
-					</table>
+							<tbody
+								className={cx('TableBody', themeTableBodyClassName)}
+								css={[
+									css`
+										background: ${themeTableBodyBackground};
+										border: ${themeTableBodyBorderColor &&
+										`1px solid ${themeTableBodyBorderColor}`};
+										margin: ${themeTableBodyMargin};
+										overflow: ${themeTableBodyOverflow};
+										position: ${themeTableBodyPosition};
+									`,
+									themeTableBodyCSS,
+								]}
+							>
+								{hasVisibleRows ? (
+									rows.map((row) => <Row key={row.id} {...row} />)
+								) : (
+									// Reuse Row + Cell to display "no data" message
+									<Row />
+								)}
+							</tbody>
+						</table>
+					</LoaderContainer>
 				) : (
 					<MessageContainer>{noColumnsMessage}</MessageContainer>
 				)

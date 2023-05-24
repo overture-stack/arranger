@@ -5,10 +5,13 @@ import { FieldList, TableInnerBoxModelProperties } from '@/Table/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 import { RecursivePartial } from '@/utils/types';
 
-export interface CellThemeProps {
-	columnWidth: string;
+export interface CellThemeProps extends TableInnerBoxModelProperties {
+	horizontalBorderColor: string;
+	hoverBackground: string;
+	hoverBorderColor: string;
+	hoverFontColor: string;
+	hoverHorizontalBorderColor: string;
 	hoverVerticalBorderColor: string;
-	padding: string;
 	textOverflow: string;
 	verticalBorderColor: string;
 }
@@ -16,17 +19,18 @@ export interface CellThemeProps {
 export interface CellProps extends PropsWithChildren, ThemeCommon.CustomCSS {
 	accessor?: FieldList[number];
 	colSpan?: number;
+	size?: string;
 	theme?: RecursivePartial<CellThemeProps>;
 	value?: string;
 }
 
 export interface RowThemeProps extends TableInnerBoxModelProperties {
-	columnWidth: string;
 	horizontalBorderColor: string;
 	hoverBackground: string;
+	hoverBorderColor: string;
 	hoverFontColor: string;
+	hoverHorizontalBorderColor: string;
 	hoverVerticalBorderColor: string;
-	padding: string;
 	selectedBackground: string;
 	textOverflow: string;
 	verticalBorderColor: string;

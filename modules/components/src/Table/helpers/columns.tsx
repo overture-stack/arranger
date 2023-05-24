@@ -69,6 +69,7 @@ function IndeterminateCheckbox({
 	return (
 		<input
 			css={css`
+				cursor: pointer;
 				margin: 0.2rem 0 0;
 			`}
 			className={className + ' cursor-pointer'}

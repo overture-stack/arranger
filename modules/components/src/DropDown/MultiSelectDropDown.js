@@ -459,11 +459,12 @@ const DropDownMenu = ({
 													word-break: break-word;
 												`}
 											>
-												{allowSelection && (
+												{allowSelection && ( // checkbox
 													<input
 														checked={checkSelected(item)}
 														className="ListItemCheckbox"
 														css={css`
+															cursor: pointer;
 															margin: 0.1rem 0.4rem 0 0;
 														`}
 														id={itemId}

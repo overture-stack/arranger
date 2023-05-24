@@ -2,7 +2,7 @@ import { css } from '@emotion/react';
 import pluralize from 'pluralize';
 import cx from 'classnames';
 
-import Spinner from '@/Spinner';
+import Spinner from '@/Loader';
 import { useTableContext } from '@/Table/helpers';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -17,7 +17,7 @@ const CountDisplay = ({
 		fontColor: customFontColor,
 		fontSize: customFontSize,
 		hideLoader: customHideLoader,
-		Spinner: customSpinnerProps = emptyObj,
+		Loader: customSpinnerProps = emptyObj,
 	} = emptyObj,
 }: CountDisplayProps) => {
 	const { currentPage, documentType, isLoading, pageSize, missingProvider, total } =
@@ -70,15 +70,7 @@ const CountDisplay = ({
 					The counter is missing its {missingProvider || 'context'} provider.
 				</span>
 			) : isLoading ? (
-				hideLoader ? null : (
-					<Spinner
-						theme={{
-							inverted: true,
-							...themeSpinnerProps,
-							...customSpinnerProps,
-						}}
-					>{`Loading ${oneOrManyDocuments}...`}</Spinner>
-				)
+				<span className="loading">{`Loading ${oneOrManyDocuments}...`}</span>
 			) : (
 				<>
 					<span className="showing">Showing</span>

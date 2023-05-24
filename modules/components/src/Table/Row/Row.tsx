@@ -14,7 +14,13 @@ import { RowProps } from './types';
 const TableRow = ({
 	css: customCSS,
 	id,
-	theme: { borderColor: customBorderColor, textOverflow: customTextOverflow } = emptyObj,
+	theme: {
+		borderColor: customBorderColor,
+		hoverBackground: customHoverBackground,
+		hoverHorizontalBorderColor: customHoverHorizontalBorderColor,
+		hoverVerticalBorderColor: customHoverVerticalBorderColor,
+		textOverflow: customTextOverflow,
+	} = emptyObj,
 	...props
 }: RowProps) => {
 	const {
@@ -35,11 +41,16 @@ const TableRow = ({
 					fontWeight: themeFontWeight,
 					horizontalBorderColor: themeHorizontalBorderColor = themeBorderColor,
 					hoverBackground: themeHoverBackground = colors?.grey?.[100],
+					hoverBorderColor: themeHoverBorderColor,
+					hoverFontColor: themeHoverFontColor,
+					hoverHorizontalBorderColor: themeHoverHorizontalBorderColor,
+					hoverVerticalBorderColor: themeHoverVerticalBorderColor,
 					letterSpacing: themeLetterSpacing,
 					lineHeight: themeLineHeight,
 					position: themePosition,
 					selectedBackground: themeSelectedBackground = colors?.grey?.[300],
 					textOverflow: themeTextOverflow,
+					verticalBorderColor: themeVerticalBorderColor = themeBorderColor,
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
@@ -50,12 +61,20 @@ const TableRow = ({
 	const visibleCells = props?.getVisibleCells?.();
 	const hasVisibleCells = visibleCells && visibleCells.length > 0;
 
+	const hoverBackground = customHoverBackground || themeHoverBackground;
+	const hoverHorizontalBorderColor =
+		customHoverHorizontalBorderColor || themeHoverHorizontalBorderColor || themeHoverBorderColor;
+	const hoverVerticalBorderColor =
+		customHoverVerticalBorderColor || themeHoverVerticalBorderColor || themeHoverBorderColor;
+
 	return (
 		<tr
 			className={cx('Row', themeClassName, { selected })}
 			css={[
 				css`
 					background: ${themeBackground};
+					border-left: ${themeVerticalBorderColor && `0.1rem solid ${themeVerticalBorderColor}`};
+					border-right: ${themeVerticalBorderColor && `0.1rem solid ${themeVerticalBorderColor}`};
 					color: ${themeFontColor};
 					font-family: ${themeFontFamily};
 					font-size: ${themeFontSize};
@@ -76,6 +95,21 @@ const TableRow = ({
 
 					&.selected {
 						background-color: ${themeSelectedBackground} !important;
+
+						&:hover: {
+							// TODO: extend styles for this
+						}
+					}
+
+					&:hover {
+						background: ${hoverBackground} !important;
+						border-bottom: ${hoverHorizontalBorderColor &&
+						`1px solid ${hoverHorizontalBorderColor}`};
+						border-left: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
+						border-right: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
+						border-top: ${hoverHorizontalBorderColor && `1px solid ${hoverHorizontalBorderColor}`};
+						color: ${themeHoverFontColor};
+						z-index: 666;
 					}
 
 					&[data-row-id]:hover {
@@ -99,9 +133,7 @@ const TableRow = ({
 						<Cell
 							accessor={accessor}
 							key={cellObj.id}
-							theme={{
-								columnWidth: `${cellObj.column.getSize()}px`,
-							}}
+							size={`${cellObj.column.getSize()}px`}
 							value={value}
 						>
 							{flexRender(cellObj.column.columnDef.cell, cellObj.getContext())}

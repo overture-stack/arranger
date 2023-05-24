@@ -20,7 +20,7 @@ import { PageSelectorThemeProps } from './PageSelector/types';
 import { PaginationThemeProps } from './Pagination/types';
 import { ToolbarThemeProps } from './Toolbar/types';
 import { HeaderRowThemeProps } from './HeaderRow/type';
-import { RowThemeProps } from './Row/types';
+import { CellThemeProps, RowThemeProps } from './Row/types';
 
 export type FieldList = ColumnMappingInterface['fieldName'][];
 
@@ -135,6 +135,7 @@ export interface TableThemeProps
 	noDataMessage?: ReactNode;
 
 	// Child components
+	Cell: CellThemeProps;
 	ColumnSelectButton: ColumnSelectButtonThemeProps;
 	CountDisplay: CountDisplayThemeProps;
 	DownloadButton: DownloadButtonThemeProps;

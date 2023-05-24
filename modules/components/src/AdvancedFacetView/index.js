@@ -6,7 +6,7 @@ import { FaFilter, FaTimesCircle } from 'react-icons/fa';
 
 import TextInput from '@/Input';
 import NestedTreeView from '@/NestedTreeView';
-import Spinner from '@/Spinner';
+import Spinner from '@/Loader';
 import SQONViewer from '@/SQONViewer';
 import Stats from '@/Stats';
 import noopFn from '@/utils/noops';
