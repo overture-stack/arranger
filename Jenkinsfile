@@ -356,7 +356,7 @@ pipeline {
             }
         }
 
-        unsuccessful {
+        failure {
             container('node') {
                 script {
                     if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
