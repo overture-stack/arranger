@@ -1,3 +1,4 @@
+import { css } from '@emotion/react';
 import { sortBy } from 'lodash';
 import cx from 'classnames';
 
@@ -5,9 +6,19 @@ import { AggsState, AggsQuery } from '@/Aggs';
 import aggComponents from '@/Aggs/aggComponentsMap';
 import { withData } from '@/DataContext';
 import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
+import { LoaderContainer } from '@/Loader';
+import { DEBUG } from '@/utils/config';
+import Loader from '@/Loader/Loader';
 
 const BaseWrapper = ({ className, ...props }) => (
-	<section {...props} className={cx('aggregations', className)} />
+	<section
+		css={css`
+			height: 100%;
+			width: 100%;
+		`}
+		{...props}
+		className={cx('aggregations', className)}
+	/>
 );
 
 export const AggregationsListDisplay = ({
@@ -68,8 +79,14 @@ export const AggregationsListDisplay = ({
 
 		return inserted;
 	} else {
-		// TODO: study what is returned here if !aggComponentInstances, are we handling it?
-		return aggComponentInstances;
+		return (
+			<Loader
+				css={css`
+					height: 100%;
+					width: 100%;
+				`}
+			/>
+		);
 	}
 };
 
@@ -85,9 +102,10 @@ export const AggregationsList = ({
 	containerRef,
 	customFacets = [],
 	debounceTime = 300,
+	documentType,
 	extendedMapping,
 	getCustomItems,
-	documentType,
+	isLoadingConfigs,
 	onValueChange = noopFn,
 	setSQON,
 	sqon,
@@ -97,21 +115,34 @@ export const AggregationsList = ({
 		apiFetcher={apiFetcher}
 		debounceTime={debounceTime}
 		index={documentType}
-		render={({ data }) =>
-			AggregationsListDisplay({
-				aggs,
-				componentProps,
-				containerRef,
-				customFacets,
-				data,
-				extendedMapping,
-				getCustomItems,
-				documentType,
-				onValueChange,
-				setSQON,
-				sqon,
-			})
-		}
+		render={({ data, loading, error }) => {
+			DEBUG && error && console.error(error);
+
+			return (
+				<LoaderContainer
+					css={css`
+						height: 100%;
+						width: 100%;
+					`}
+					disabled={true} // TODO: implement with theme
+					isLoading={isLoadingConfigs || loading}
+				>
+					{AggregationsListDisplay({
+						aggs,
+						componentProps,
+						containerRef,
+						customFacets,
+						data,
+						extendedMapping,
+						getCustomItems,
+						documentType,
+						onValueChange,
+						setSQON,
+						sqon,
+					})}
+				</LoaderContainer>
+			);
+		}}
 		sqon={sqon}
 	/>
 );
@@ -143,6 +174,7 @@ const Aggregations = ({
 	customFacets = [],
 	documentType = '',
 	extendedMapping,
+	isLoadingConfigs,
 	onValueChange = noopFn,
 	setSQON = noopFn,
 	sqon = null,
@@ -159,17 +191,20 @@ const Aggregations = ({
 
 					return (
 						<AggregationsList
-							aggs={aggs}
-							apiFetcher={apiFetcher}
-							componentProps={componentProps}
-							containerRef={containerRef}
-							customFacets={customFacets}
-							documentType={documentType}
-							extendedMapping={extendedMapping}
-							onValueChange={onValueChange}
-							setSQON={setSQON}
-							sqon={sqon}
-							Wrapper={Wrapper}
+							{...{
+								aggs,
+								apiFetcher,
+								componentProps,
+								containerRef,
+								customFacets,
+								documentType,
+								extendedMapping,
+								isLoadingConfigs,
+								onValueChange,
+								setSQON,
+								sqon,
+								Wrapper,
+							}}
 						/>
 					);
 				}}

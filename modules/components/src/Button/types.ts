@@ -6,7 +6,7 @@ import { RecursivePartial } from '@/utils/types';
 
 export type ButtonCustomProps = ThemeCommon.MouseEventProperties & ThemeCommon.CustomCSS;
 
-export type ButtonStyleProps = ThemeCommon.BoxModelProperties &
+export type ButtonThemeProps = ThemeCommon.BoxModelProperties &
 	ThemeCommon.BoxModelActiveProperties &
 	ThemeCommon.BoxModelDisabledProperties &
 	ThemeCommon.BoxModelHoverProperties &
@@ -24,13 +24,13 @@ export interface MouseEventProps {
 }
 
 // To be used in the theme interface.
-export type ThemedButtonProps = ButtonCustomProps & ButtonStyleProps;
+export type ThemedButtonProps = ButtonCustomProps & ButtonThemeProps;
 
 // To be used in components.
 type ButtonProps = PropsWithChildren<
 	Partial<MouseEventProps> &
 		Partial<ButtonCustomProps> & {
-			theme?: RecursivePartial<ButtonStyleProps>;
+			theme?: RecursivePartial<ButtonThemeProps>;
 		}
 >;
 export default ButtonProps;

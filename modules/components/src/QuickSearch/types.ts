@@ -1,6 +1,6 @@
 import { FC, ReactElement } from 'react';
 
-import { ButtonStyleProps, ThemedButtonProps } from '@/Button/types';
+import { ButtonThemeProps, ThemedButtonProps } from '@/Button/types';
 import { ThemeCommon } from '@/ThemeContext/types';
 import { ToggleButtonThemeProps } from '@/ToggleButton/types';
 import { GenericFn } from '@/utils/noops';
@@ -57,7 +57,7 @@ interface DropDownResultsProps extends ThemeCommon.CustomCSS {
 	} & ThemeCommon.CustomCSS;
 }
 
-interface PinnedValuesProps extends ButtonStyleProps {
+interface PinnedValuesProps extends ButtonThemeProps {
 	enabled: boolean;
 	PinnedValueComponent: FC;
 }
