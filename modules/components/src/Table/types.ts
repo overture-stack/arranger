@@ -53,7 +53,7 @@ export interface TableContextInterface {
 	setSorting: Dispatch<React.SetStateAction<ColumnSortingInterface[]>>;
 	sorting: ColumnSortingInterface[];
 	sqon: SQONType;
-	tableData: unknown[];
+	tableData: unknown[] | [];
 	total: number;
 	totalPages: number;
 	visibleColumnsDict: ColumnsDictionary;

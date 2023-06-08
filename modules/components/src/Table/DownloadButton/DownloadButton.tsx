@@ -149,6 +149,7 @@ const DownloadButton = ({
 								},
 							],
 							selectedRows,
+							sqon: downloadSqon,
 							url: exporterDownloadUrl,
 						},
 						download,

@@ -75,7 +75,7 @@ const enhance = compose(
 			return {
 				callback: queryCallback,
 				debounceTime: 300,
-				endpointTag: 'QuickSearchQuery',
+				endpointTag: 'Arranger-QuickSearch',
 				query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
 				${documentType} {
 					hits(filters: $sqon, first: $size) {

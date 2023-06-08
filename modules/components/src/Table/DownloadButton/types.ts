@@ -36,6 +36,7 @@ export interface ExporterFunctionProps {
 	files: ExporterFileInterface[];
 	options?: Record<string, any>;
 	selectedRows: string[];
+	sqon: SQONType;
 	url: string;
 }
 

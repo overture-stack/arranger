@@ -79,7 +79,7 @@ class DataTable extends React.Component {
 			config,
 			documentType,
 			endpoint: 'graphql',
-			endpointTag: 'OldTableDataQuery',
+			endpointTag: 'Arranger-OldTable',
 			first: state.pageSize,
 			offset: state.page * state.pageSize,
 			queryName: 'Table',

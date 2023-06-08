@@ -49,7 +49,7 @@ export const fetchExtendedMapping = ({
 }) =>
 	apiFetcher({
 		endpoint: `graphql`,
-		endpointTag: `extendedMapping`,
+		endpointTag: `Arranger-ExtendedMapping`,
 		body: {
 			query: `
 				query extendedMapping {
