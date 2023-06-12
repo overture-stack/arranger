@@ -25,7 +25,14 @@ jobs:
       - name: Get Version
         id: get-version
         shell: bash
-        run: echo "app_version=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`" >> $GITHUB_OUTPUT
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          BASE_VERSION=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`
+          if [ $BRANCH == "patched-version" ]; then
+            echo "app_version=$BASE_VERSION-`git rev-parse --short HEAD`" >> $GITHUB_OUTPUT
+          else
+            echo "app_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          fi
 
   build-and-push-docker-image:
     needs: [extract-branch-name, get-version]
@@ -54,8 +61,7 @@ jobs:
           # generate Docker tags based on the following events/attributes
           sep-tags: ','
           tags: |
-            type=sha,enable=true,prefix=arranger-admin-ui-,suffix=,format=short
-            type=raw,prefix=arranger-admin-ui-,suffix=,value=${{needs.get-version.outputs.app_version}}, enable=${{needs.extract-branch-name.outputs.branch=='patched-version'}}
+            type=raw,prefix=arranger-admin-ui-,suffix=,value=${{needs.get-version.outputs.app_version}}
 #      - name: Image digest
 #        run: echo ${{ steps.meta.outputs.tags }}
       - name: Build image and push to GitHub Container Registry
@@ -71,7 +77,7 @@ jobs:
           target: arranger-admin-ui
 
   Trigger:
-    needs: [build-and-push-docker-image, extract-branch-name]
+    needs: [build-and-push-docker-image, extract-branch-name, get-version]
     #if: ${{ (github.event.workflow_run.conclusion == 'success' && needs.extract-branch-name.outputs.branch == 'patched-version') || (needs.extract-branch-name.outputs.branch == 'main') }}
     if: ${{ (needs.extract-branch-name.outputs.branch == 'patched-version') || (needs.extract-branch-name.outputs.branch == 'main') }}
     name: Trigger jenkins job
@@ -99,7 +105,7 @@ jobs:
           target_release=arranger-admin-ui
           env=${ENV}
           echo "The CI external URL is ${CI_EXTERNAL_URL}"
-          curl --silent -i -X POST -m 60 -L -o output.txt --user jenkins:${CI_API_TOKEN} ${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/buildWithParameters --data TF_TARGET_ENV=$env --data TARGET_RELEASE=$target_release --data NEW_APP_VERSION="${{ env.SHA }}"
+          curl --silent -i -X POST -m 60 -L -o output.txt --user jenkins:${CI_API_TOKEN} ${CI_EXTERNAL_URL}/job/Infra/job/UpdateAppVersion/buildWithParameters --data TF_TARGET_ENV=$env --data TARGET_RELEASE=$target_release --data NEW_APP_VERSION="${{needs.get-version.outputs.app_version}}"
           location=$(cat output.txt | grep location | cut -d " " -f2 | sed 's/\r//')
           link=${location}api/json && echo $link && echo -n "location_link=$link" >> $GITHUB_ENV
       - name: getting the json
