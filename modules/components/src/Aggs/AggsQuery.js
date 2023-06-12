@@ -17,7 +17,7 @@ const AggsQuery = ({
 
 	return documentType && aggs.length ? (
 		<Query
-			endpointTag={`${capitalize(documentType)}AggregationsQuery`}
+			endpointTag={`Arranger-${capitalize(documentType)}Aggregations`}
 			query={`
 				query ${capitalize(documentType)}AggregationsQuery(
 					$sqon: JSON

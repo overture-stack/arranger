@@ -31,7 +31,7 @@ export const useConfigs = ({
 
 	useEffect(() => {
 		apiFetcher({
-			endpoint: `/graphql/ArrangerConfigsQuery`,
+			endpoint: `/graphql/Arranger-ConfigsQuery`,
 			body: {
 				query: componentConfigsQuery(documentType, 'ArrangerConfigs'),
 			},

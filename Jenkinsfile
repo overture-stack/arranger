@@ -322,10 +322,27 @@ pipeline {
 }
 
     post {
+        failure {
+            container('node') {
+                script {
+                    if (env.BRANCH_NAME ==~ /(develop|main|\S*[Tt]est\S*)/) {
+                        sh "curl \
+                            -X POST \
+                            -H 'Content-type: application/json' \
+                            --data '{ \
+                                \"text\":\"Build Failed: ${env.JOB_NAME}#${commit} \
+                                \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                            }' \
+                            ${slackNotificationsUrl}"
+                    }
+                }
+            }
+        }
+
         fixed {
             container('node') {
                 script {
-                    if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
+                    if (env.BRANCH_NAME ==~ /(develop|main|\S*[Tt]est\S*)/) {
                         sh "curl \
                             -X POST \
                             -H 'Content-type: application/json' \
@@ -342,29 +359,12 @@ pipeline {
         success {
             container('node') {
                 script {
-                    if (env.BRANCH_NAME ==~ /(test\S*)/) {
+                    if (env.BRANCH_NAME ==~ /(\S*[Tt]est\S*)/) {
                         sh "curl \
                             -X POST \
                             -H 'Content-type: application/json' \
                             --data '{ \
                                 \"text\":\"Build tested: ${env.JOB_NAME}#${commit} \
-                                \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
-                            }' \
-                            ${slackNotificationsUrl}"
-                    }
-                }
-            }
-        }
-
-        unsuccessful {
-            container('node') {
-                script {
-                    if (env.BRANCH_NAME ==~ /(develop|main|test\S*)/) {
-                        sh "curl \
-                            -X POST \
-                            -H 'Content-type: application/json' \
-                            --data '{ \
-                                \"text\":\"Build Failed: ${env.JOB_NAME}#${commit} \
                                 \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
                             }' \
                             ${slackNotificationsUrl}"

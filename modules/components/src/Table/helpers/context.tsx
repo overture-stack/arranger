@@ -30,7 +30,7 @@ export const TableContext = createContext<TableContextInterface>({
 	missingProvider: 'TableContext',
 	tableData: [],
 	visibleColumnsDict: {},
-} as unknown as TableContextInterface);
+} as TableContextInterface);
 
 /** Context provider for Arranger's table data and functionality
  * @param {ColumnMappingInterface[]} [columns] array with column customisations (overrides the ones from the Arranger server using 'field');
@@ -161,7 +161,7 @@ export const TableContextProvider = ({
 					documentType,
 				},
 				endpoint: 'graphql',
-				endpointTag: 'TableDataQuery',
+				endpointTag: 'Arranger-Table',
 				first: pageSize,
 				offset: currentPage * pageSize,
 				queryName: 'tableData',
@@ -196,6 +196,7 @@ export const TableContextProvider = ({
 		documentType,
 		fetchData,
 		fetchRetries,
+		fetchRetryLimit,
 		hasVisibleColumns,
 		isFreshTable,
 		isLoadingConfigs,

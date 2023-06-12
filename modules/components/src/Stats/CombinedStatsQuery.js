@@ -1,4 +1,3 @@
-import React from 'react';
 import { get } from 'lodash';
 
 import { AggsState } from '../Aggs';
@@ -19,25 +18,25 @@ const CombinedStatsQuery = ({ apiFetcher, documentType, sqon, stats, render }) =
 			return (
 				<Query
 					{...{ apiFetcher, documentType }}
-					endpointTag={`CombinedStatsQuery`}
+					endpointTag="Arranger-CombinedStats"
 					query={`
-            query($sqon: JSON) {
-              data: ${documentType} {
-                ${decoratedStats.map(
+						query($sqon: JSON) {
+							data: ${documentType} {
+								${decoratedStats.map(
 									({ key, aggsField, isRoot }) =>
 										`${key}: ${
 											isRoot
 												? `hits(filters: $sqon) {
-                            total
-                          }`
+													total
+												}`
 												: `aggregations(filters: $sqon, aggregations_filter_themselves: true) {
-                            ${aggsField?.query || ``}
-                          }`
+													${aggsField?.query || ``}
+												}`
 										}`,
 								)}
-              }
-            }
-          `}
+							}
+						}
+					`}
 					render={({ data, loading }) =>
 						render({
 							loading,

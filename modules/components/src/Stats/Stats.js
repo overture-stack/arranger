@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import Spinner from 'react-spinkit';
 import { get } from 'lodash';
 
@@ -43,7 +43,7 @@ const LoadingSpinner = () => (
 const RootQuery = ({ documentType, render, sqon, ...props }) => (
 	<Query
 		{...props}
-		endpointTag="StatsRootQuery"
+		endpointTag="Arranger-StatsRoot"
 		query={constructQuery({ documentType, resolver: 'hits', query: 'total' })}
 		render={({ data, error, loading, value }) =>
 			render({ loading, value: get(data, `data.hits.total`, '') })
@@ -67,7 +67,7 @@ const FieldQuery = ({
 }) => (
 	<Query
 		{...props}
-		endpointTag="StatsFieldQuery"
+		endpointTag="Arranger-StatsField"
 		query={constructQuery({ documentType, query: aggsField?.query })}
 		render={({ data, loading }) =>
 			render({
