@@ -81,10 +81,10 @@ export default async ({
 							...(Object.entries(query).length ? { query } : {}),
 						},
 					})
-					.then(({ body }) => mapHits(body));
+					.then(({ body }) => body.hits.hits);
 				console.timeEnd(timerLabel);
 
-				stream.write({ hits, total });
+				stream.write({ hits: hits.map((hit) => hit?._source), total });
 
 				return hits;
 			}, Promise.resolve());
