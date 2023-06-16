@@ -20,10 +20,15 @@ export function arrangerAuthFilterDownload(req, params, sqon) {
             }
             req.sqon.content.push(sqon_id)
         }
+        if (sqon !== null) {
+            if (sqon.content){
+                // add facet selections to sqon
+                for (const filter of sqon.content){
+                    req.sqon.content.push(filter)
 
-        // add facet selections to sqon
-        for (const filter of sqon.content){
-            req.sqon.content.push(filter)
+                }
+            }
+
         }
 
         // return custom sqon
