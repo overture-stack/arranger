@@ -1,11 +1,11 @@
 import { css } from '@emotion/react';
+import SQON from '@overture-stack/sqon-builder';
 import cx from 'classnames';
 import { merge } from 'lodash';
 import urlJoin from 'url-join';
 
 import { TransparentButton } from '@/Button';
 import { useDataContext } from '@/DataContext';
-import { SQONType } from '@/DataContext/types';
 import MultiSelectDropDown from '@/DropDown/MultiSelectDropDown';
 import MetaMorphicChild from '@/MetaMorphicChild';
 import { useTableContext } from '@/Table/helpers';
@@ -100,17 +100,7 @@ const DownloadButton = ({
 	const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
 
 	const downloadSqon =
-		!disableRowSelection && hasSelectedRows
-			? ({
-					op: 'and',
-					content: [
-						{
-							op: 'in',
-							content: { fieldName: exportSelectedRowsField, value: selectedRows },
-						},
-					],
-			  } as unknown as SQONType)
-			: sqon;
+		!disableRowSelection && hasSelectedRows ? SQON.in(exportSelectedRowsField, selectedRows) : sqon;
 
 	const handleExporterClick = (
 		{
