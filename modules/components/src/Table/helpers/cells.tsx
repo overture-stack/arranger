@@ -1,9 +1,9 @@
-import { ReactNode } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import { filesize } from 'filesize';
 import { JSONPath } from 'jsonpath-plus';
 import { get, isNil } from 'lodash';
+import { ReactNode } from 'react';
 
 import { ColumnListStyles } from '@/Table/types';
 import dateFormatter from '@/utils/dates';

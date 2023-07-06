@@ -38,7 +38,7 @@ module.exports = {
 		],
 		'import/newline-after-import': 'warn',
 		'prettier/prettier': [
-			'error',
+			'warn',
 			{
 				printWidth: 100,
 				trailingComma: 'all',
