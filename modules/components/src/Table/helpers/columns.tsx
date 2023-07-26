@@ -1,7 +1,7 @@
-import { HTMLAttributes, useEffect, useRef } from 'react';
 import { css } from '@emotion/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import { mergeWith } from 'lodash';
+import { HTMLAttributes, useEffect, useRef } from 'react';
 
 import { ColumnMappingInterface } from '@/DataContext/types';
 import {
@@ -97,11 +97,11 @@ export const makeTableColumns = ({
 	const columnTypes = mergeWith(
 		customColumnTypes,
 		defaultCellTypes,
-		(objValue, srcValue): ColumnTypesObject[ColumnType] => ({
+		(objValue: any, srcValue: any): Partial<ColumnTypesObject[ColumnType]> => ({
 			...objValue,
 			cellValue: objValue?.cellValue || srcValue,
 		}),
-	) as ColumnTypesObject;
+	);
 
 	const tableColumns = visibleColumns.map((visibleColumn) => {
 		const {
@@ -157,7 +157,7 @@ export const makeTableColumns = ({
 		});
 	});
 
-	const selectionColumnWidth = columnTypes[SELECTION_COLUMN_ID].size;
+	const selectionColumnWidth = columnTypes[SELECTION_COLUMN_ID]?.size;
 
 	return allowRowSelection
 		? [
