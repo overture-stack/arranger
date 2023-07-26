@@ -9,17 +9,20 @@ import { ColumnListStyles } from '@/Table/types';
 import dateFormatter from '@/utils/dates';
 import { emptyObj } from '@/utils/noops';
 
-import { getSingleValue } from '.';
+import { getSingleValue } from './';
 
 export const getCellValue = (
 	row = emptyObj as unknown,
 	{ accessor = '', id = '', jsonPath = '' } = emptyObj,
-): string =>
+): string => {
 	// TODO: generate json mapping for nested automatically
 	// remove jsonPath from configs
-	jsonPath
-		? JSONPath({ json: row as Record<string, any>, path: jsonPath })
+	const value = jsonPath
+		? JSONPath({ json: row as Record<string, any>, path: jsonPath, wrap: false })
 		: get(row, (id || accessor).split('.'), '');
+
+	return value ?? null; // prevents React "return" errors when the value is undefined
+};
 
 export const getDisplayValue = (row = emptyObj as unknown, column = emptyObj): string => {
 	const value = getCellValue(row, column);
@@ -86,7 +89,7 @@ export const defaultCellTypes = {
 			}
 
 			const total = valuesArr.length;
-			const firstValue = getSingleValue(valuesArr[0]);
+			const firstValue = total > 0 && getSingleValue(valuesArr[0]);
 			return [firstValue || '', ...(total > 1 ? [<br key="br" />, '...'] : [])];
 		}
 

@@ -1,3 +1,4 @@
+import { RowSelectionState } from '@tanstack/react-table';
 import {
 	ComponentType,
 	createContext,
@@ -7,7 +8,6 @@ import {
 	useMemo,
 	useState,
 } from 'react';
-import { RowSelectionState } from '@tanstack/react-table';
 
 import { useDataContext } from '@/DataContext';
 import { ColumnSortingInterface } from '@/DataContext/types';
@@ -143,7 +143,6 @@ export const TableContextProvider = ({
 
 	useEffect(() => {
 		setIsStaleTableData(true);
-		// setTableData([]);
 	}, [currentColumnsDict, currentPage, sorting, sqon, pageSize]);
 
 	useEffect(() => {

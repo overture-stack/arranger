@@ -1,10 +1,13 @@
 import { format, isValid, parseISO } from 'date-fns';
 import jsonPath from 'jsonpath';
-import { get, flatten, isNil } from 'lodash';
+import { flatten, get, isNil } from 'lodash';
 import through2 from 'through2';
 
+import { ENV_CONFIG } from '@/config';
+
+const { DEBUG_MODE } = ENV_CONFIG;
+
 const STANDARD_DATE = 'yyyy-MM-dd';
-const DEBUG = process.env.DEBUG;
 
 const dateHandler = (value, { dateFormat = STANDARD_DATE }) => {
 	switch (true) {
@@ -21,7 +24,7 @@ const dateHandler = (value, { dateFormat = STANDARD_DATE }) => {
 			return format(parseInt(value, 10), dateFormat);
 
 		default: {
-			console.error('unhandled "date"', value, dateFormat);
+			DEBUG_MODE && console.error('unhandled "date"', value, dateFormat);
 			return value;
 		}
 	}
@@ -303,7 +306,7 @@ export default ({
 		) || {};
 
 	return through2.obj(function ({ hits, total }, enc, callback) {
-		DEBUG && console.time(`esHitsToTsv_${chunkCounts}`);
+		DEBUG_MODE && console.time(`esHitsToTsv_${chunkCounts}`);
 		const outputStream = this;
 		const args = {
 			columns,
@@ -324,7 +327,7 @@ export default ({
 		}
 
 		callback();
-		DEBUG && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+		DEBUG_MODE && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
 		chunkCounts++;
 	});
 };
