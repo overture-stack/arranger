@@ -7,99 +7,99 @@ import { emptyObj } from '@/utils/noops';
 import Props from './types';
 
 const BucketCount = ({
-  className,
-  children,
-  css: customCSS,
-  theme: {
-    activeBackground: customActiveBackground,
-    activeBorderColor: customActiveBorderColor,
-    activeFontColor: customActiveFontColor,
-    activeFontSize: customActiveFontSize,
-    background,
-    borderColor,
-    borderRadius,
-    className: customClassName,
-    css: parentCSS,
-    disabledBackground: customDisabledBackground,
-    disabledBorderColor: customDisabledBorderColor,
-    disabledFontColor: customDisabledFontColor,
-    disabledFontSize: customDisabledFontSize,
-    fontColor,
-    fontSize,
-  } = emptyObj,
-  ...props
+	className,
+	children,
+	css: customCSS,
+	theme: {
+		activeBackground: customActiveBackground,
+		activeBorderColor: customActiveBorderColor,
+		activeFontColor: customActiveFontColor,
+		activeFontSize: customActiveFontSize,
+		background,
+		borderColor,
+		borderRadius,
+		className: customClassName,
+		css: parentCSS,
+		disabledBackground: customDisabledBackground,
+		disabledBorderColor: customDisabledBorderColor,
+		disabledFontColor: customDisabledFontColor,
+		disabledFontSize: customDisabledFontSize,
+		fontColor,
+		fontSize,
+	} = emptyObj,
+	...props
 }: Props) => {
-  const {
-    colors,
-    components: {
-      Aggregations: {
-        BucketCount: {
-          activeBackground: themeActiveBackground,
-          activeBorderColor: themeActiveBorderColor,
-          activeFontColor: themeActiveFontColor,
-          activeFontSize: themeActiveFontSize,
-          background: themeBackground = colors?.grey?.[200],
-          borderColor: themeBorderColor,
-          borderRadius: themeBorderRadius = '0.2rem',
-          className: themeClassName,
-          css: themeCSS,
-          disabledBackground: themeDisabledBackground = colors?.common?.white,
-          disabledBorderColor: themeDisabledBorderColor,
-          disabledFontColor: themeDisabledFontColor = colors?.grey?.[700],
-          disabledFontSize: themeDisabledFontSize,
-          fontColor: themeFontColor = colors?.grey?.[900],
-          fontSize: themeFontSize = '0.7rem',
-        } = emptyObj,
-      } = emptyObj,
-    } = emptyObj,
-  } = useThemeContext({ callerName: 'BucketCount' });
+	const {
+		colors,
+		components: {
+			Aggregations: {
+				BucketCount: {
+					activeBackground: themeActiveBackground,
+					activeBorderColor: themeActiveBorderColor,
+					activeFontColor: themeActiveFontColor,
+					activeFontSize: themeActiveFontSize,
+					background: themeBackground = colors?.grey?.[200],
+					borderColor: themeBorderColor,
+					borderRadius: themeBorderRadius = '0.2rem',
+					className: themeClassName,
+					css: themeCSS,
+					disabledBackground: themeDisabledBackground = colors?.common?.white,
+					disabledBorderColor: themeDisabledBorderColor,
+					disabledFontColor: themeDisabledFontColor = colors?.grey?.[700],
+					disabledFontSize: themeDisabledFontSize,
+					fontColor: themeFontColor = colors?.grey?.[900],
+					fontSize: themeFontSize = '0.7rem',
+				} = emptyObj,
+			} = emptyObj,
+		} = emptyObj,
+	} = useThemeContext({ callerName: 'BucketCount' });
 
-  const hasBorder =
-    borderColor ||
-    themeBorderColor ||
-    customActiveBorderColor ||
-    themeActiveBorderColor ||
-    customDisabledBorderColor ||
-    themeDisabledBorderColor;
+	const hasBorder =
+		borderColor ||
+		themeBorderColor ||
+		customActiveBorderColor ||
+		themeActiveBorderColor ||
+		customDisabledBorderColor ||
+		themeDisabledBorderColor;
 
-  return (
-    <span
-      className={cx(`bucket-count`, className, customClassName, themeClassName)}
-      css={[
-        css`
-          background: ${background || themeBackground};
-          border: ${hasBorder && '0.1rem solid transparent'};
-          border-color: ${borderColor || themeBorderColor};
-          border-radius: ${borderRadius || themeBorderRadius};
-          color: ${fontColor || themeFontColor};
-          display: inline-block;
-          font-size: ${fontSize || themeFontSize};
-          height: fit-content;
-          padding: 0 0.2rem;
+	return (
+		<span
+			className={cx(`bucket-count`, className, customClassName, themeClassName)}
+			css={[
+				themeCSS,
+				css`
+					background: ${background || themeBackground};
+					border: ${hasBorder && '0.1rem solid transparent'};
+					border-color: ${borderColor || themeBorderColor};
+					border-radius: ${borderRadius || themeBorderRadius};
+					color: ${fontColor || themeFontColor};
+					display: inline-block;
+					font-size: ${fontSize || themeFontSize};
+					height: fit-content;
+					padding: 0 0.2rem;
 
-          &.active {
-            background: ${customActiveBackground || themeActiveBackground};
-            border-color: ${customActiveBorderColor || themeActiveBorderColor};
-            color: ${customActiveFontColor || themeActiveFontColor};
-            font-size: ${customActiveFontSize || themeActiveFontSize};
-          }
+					&.active {
+						background: ${customActiveBackground || themeActiveBackground};
+						border-color: ${customActiveBorderColor || themeActiveBorderColor};
+						color: ${customActiveFontColor || themeActiveFontColor};
+						font-size: ${customActiveFontSize || themeActiveFontSize};
+					}
 
-          &.disabled {
-            background: ${customDisabledBackground || themeDisabledBackground};
-            border-color: ${customDisabledBorderColor || themeDisabledBorderColor};
-            color: ${customDisabledFontColor || themeDisabledFontColor};
-            font-size: ${customDisabledFontSize || themeDisabledFontSize};
-          }
-        `,
-        themeCSS,
-        parentCSS,
-        customCSS,
-      ]}
-      {...props}
-    >
-      {children}
-    </span>
-  );
+					&.disabled {
+						background: ${customDisabledBackground || themeDisabledBackground};
+						border-color: ${customDisabledBorderColor || themeDisabledBorderColor};
+						color: ${customDisabledFontColor || themeDisabledFontColor};
+						font-size: ${customDisabledFontSize || themeDisabledFontSize};
+					}
+				`,
+				parentCSS,
+				customCSS,
+			]}
+			{...props}
+		>
+			{children}
+		</span>
+	);
 };
 
 export default BucketCount;

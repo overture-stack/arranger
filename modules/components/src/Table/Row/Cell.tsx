@@ -85,6 +85,7 @@ const Cell = ({
 			className={cx('cell', themeClassName)}
 			colSpan={colSpan}
 			css={[
+				themeCSS,
 				css`
 					background: ${background};
 					border-bottom-color: ${horizontalBorderColor};
@@ -164,7 +165,6 @@ const Cell = ({
 						`}
 					}
 				`,
-				themeCSS,
 				customCSS,
 			]}
 			data-accessor={accessor}

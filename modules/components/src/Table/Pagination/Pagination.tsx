@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import { merge } from 'lodash';
+import { useMemo } from 'react';
 
 import MaxRowsSelector from '@/Table/MaxRowsSelector';
 import PageSelector from '@/Table/PageSelector';
@@ -39,12 +39,12 @@ const Pagination = ({
 			<section
 				className={className}
 				css={[
+					themeCSS,
 					css`
 						align-items: flex-start;
 						display: flex;
 						justify-content: space-between;
 					`,
-					themeCSS,
 					customCSS,
 				]}
 			>

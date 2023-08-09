@@ -1,8 +1,8 @@
-import { createRef, useState } from 'react';
 import { css } from '@emotion/react';
-import { isEmpty, merge, orderBy, partition, truncate } from 'lodash';
-import { FaSearch } from 'react-icons/fa';
 import cx from 'classnames';
+import { isEmpty, merge, orderBy, partition, truncate } from 'lodash';
+import { createRef, useState } from 'react';
+import { FaSearch } from 'react-icons/fa';
 
 import { TransparentButton } from '@/Button';
 import { removeSQON, toggleSQON } from '@/SQONViewer/utils';
@@ -72,11 +72,13 @@ const IncludeExcludeButton = ({
 const MoreOrLessButton = ({ className, css: customCSS, howManyMore, isMore, ...props }) => (
 	<TransparentButton
 		className={cx('showMore-wrapper', isMore ? 'more' : 'less', className)}
-		css={css`
-			margin-left: 0.5rem;
-			text-decoration: underline;
-			${customCSS}
-		`}
+		css={[
+			css`
+				margin-left: 0.5rem;
+				text-decoration: underline;
+			`,
+			customCSS,
+		]}
 		{...props}
 	>
 		{isMore ? `${howManyMore} More` : 'Less'}

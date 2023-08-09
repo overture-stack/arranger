@@ -1,14 +1,14 @@
 import { css } from '@emotion/react';
-import { sortBy } from 'lodash';
 import cx from 'classnames';
+import { sortBy } from 'lodash';
 
-import { AggsState, AggsQuery } from '@/Aggs';
+import { AggsQuery, AggsState } from '@/Aggs';
 import aggComponents from '@/Aggs/aggComponentsMap';
 import { withData } from '@/DataContext';
-import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
 import { LoaderContainer } from '@/Loader';
-import { DEBUG } from '@/utils/config';
 import Loader from '@/Loader/Loader';
+import { DEBUG } from '@/utils/config';
+import noopFn, { emptyArrFn, emptyObj, emptyObjFn } from '@/utils/noops';
 
 const BaseWrapper = ({ className, ...props }) => (
 	<section
@@ -65,11 +65,12 @@ export const AggregationsListDisplay = ({
 					...customContent,
 				};
 			})
-			.map((agg) => aggComponents[agg.type]?.({ ...agg, ...componentProps }));
+			.map((agg) => aggComponents[agg.displayType]?.({ ...agg, ...componentProps }));
 
 	if (data && aggComponentInstances) {
 		// sort the list by the index specified for each component to prevent order bumping
 		const componentListToInsert = sortBy(getCustomItems({ aggs }), 'index');
+
 		// go through the list of inserts and inject them by splitting and joining
 		const inserted = componentListToInsert.reduce((acc, { index, component }) => {
 			const firstChunk = acc.slice(0, index);

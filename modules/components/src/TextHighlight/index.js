@@ -1,7 +1,7 @@
-import React from 'react';
 import { css } from '@emotion/react';
-import { isEqual } from 'lodash';
 import cx from 'classnames';
+import { isEqual } from 'lodash';
+import React from 'react';
 
 import { withTheme } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -58,16 +58,17 @@ class TextHighlight extends React.Component {
 				<span
 					className={cx('textHighlight active', themeWrapperClassName)}
 					css={[
+						themeWrapperCSS,
 						css`
 							// internal customisation should go here
 						`,
-						themeWrapperCSS,
 					]}
 				>
 					{seg1}
 					<span
 						className={cx('highlighted', highlightClassName, themeClassName)}
 						css={[
+							themeCSS,
 							css`
 								background: ${themeBackground || highlightColor};
 								border: ${themeBorderColor && `1px solid ${themeBorderColor}`};
@@ -79,7 +80,6 @@ class TextHighlight extends React.Component {
 								padding: ${themePadding};
 								text-decoration: ${themeFontDecoration};
 							`,
-							themeCSS,
 							customCSS,
 						]}
 					>
@@ -94,10 +94,10 @@ class TextHighlight extends React.Component {
 			<span
 				className={cx('textHighlight active', themeWrapperClassName)}
 				css={[
+					themeWrapperCSS,
 					css`
 						// internal customisation should go here
 					`,
-					themeWrapperCSS,
 				]}
 			>
 				{content}

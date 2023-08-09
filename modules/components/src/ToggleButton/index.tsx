@@ -61,13 +61,13 @@ const ToggleButton = ({
 		<div
 			className={cx('toggle-button', className, customClassName, themeClassName)}
 			css={[
+				themeCSS,
 				css`
 					display: flex;
 					flex-direction: row;
 					justify-content: center;
 					height: calc(${themeFontSize} * 2);
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>
@@ -82,6 +82,7 @@ const ToggleButton = ({
 							disabled,
 						})}
 						css={[
+							themeOptionCSS,
 							css`
 								background: ${customBackground || themeBackground};
 								border: 0.1rem solid;
@@ -130,7 +131,6 @@ const ToggleButton = ({
 									border-bottom-right-radius: ${customBorderRadius || themeBorderRadius};
 								}
 							`,
-							themeOptionCSS,
 							customOptionCSS,
 						]}
 						disabled={disabled}

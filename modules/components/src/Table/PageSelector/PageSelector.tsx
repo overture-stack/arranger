@@ -1,3 +1,5 @@
+import { css } from '@emotion/react';
+import cx from 'classnames';
 import {
 	ChangeEventHandler,
 	FormEventHandler,
@@ -6,8 +8,6 @@ import {
 	useEffect,
 	useState,
 } from 'react';
-import { css } from '@emotion/react';
-import cx from 'classnames';
 
 import { TransparentButton } from '@/Button';
 import { useTableContext } from '@/Table/helpers';
@@ -137,11 +137,11 @@ const PageSelector = ({
 		<article
 			className={cx('PageSelector', customClassName, themeClassName)}
 			css={[
+				themeCSS,
 				css`
 					color: ${customFontColor || themeFontColor};
 					font-size: ${customFontSize || themeFontSize};
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>

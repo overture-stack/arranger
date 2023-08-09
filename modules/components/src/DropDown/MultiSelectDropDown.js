@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import { merge } from 'lodash';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
 import Button, { TransparentButton } from '@/Button';
 import { ArrowIcon, CheckIcon, ResetIcon } from '@/Icons';
-import { useThemeContext } from '@/ThemeContext';
-import noopFn, { emptyObj } from '@/utils/noops';
 import TextFilter from '@/TextFilter';
 import TextHighlight from '@/TextHighlight';
-import internalTranslateSQONValue from '@/utils/translateSQONValue';
+import { useThemeContext } from '@/ThemeContext';
+import noopFn, { emptyObj } from '@/utils/noops';
 import strToReg from '@/utils/strToReg';
+import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 const DropDownMenu = ({
 	align = 'right',
@@ -45,6 +45,7 @@ const DropDownMenu = ({
 			background: customListWrapperBackground,
 			borderColor: customListWrapperBorderColor,
 			borderRadius: customListWrapperBorderRadius,
+			css: customListWrapperCSS,
 			fontColor: customListWrapperFontColor = customDropDownFontColor,
 			fontSize: customListWrapperFontSize,
 			hoverBackground: customListWrapperHoverBackground,
@@ -89,6 +90,7 @@ const DropDownMenu = ({
 					background: themeListWrapperBackground = colors?.grey?.[100],
 					borderColor: themeListWrapperBorderColor = colors?.grey?.[200],
 					borderRadius: themeListWrapperBorderRadius = '0.3rem',
+					css: themeListWrapperCSS,
 					fontColor: themeListWrapperFontColor = themeDropDownFontColor,
 					fontSize: themeListWrapperFontSize = '0.8rem',
 					hoverBackground: themeListWrapperHoverBackground = colors?.grey?.[200],
@@ -325,20 +327,24 @@ const DropDownMenu = ({
 			{isOpen && (
 				<fieldset
 					className="ListWrapper"
-					css={css`
-						background: ${customListWrapperBackground || themeListWrapperBackground};
-						border: solid 1px ${customListWrapperBorderColor || themeListWrapperBorderColor};
-						border-radius: ${customListWrapperBorderRadius || themeListWrapperBorderRadius};
-						box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-						left: ${align === 'right' ? 'auto' : 0};
-						max-height: unset !important;
-						overflow-y: hidden !important;
-						padding: 0;
-						position: absolute;
-						right: ${align === 'right' ? 0 : 'auto'};
-						width: ${customListWrapperWidth || themeListWrapperWidth};
-						z-index: 100;
-					`}
+					css={[
+						themeListWrapperCSS,
+						css`
+							background: ${customListWrapperBackground || themeListWrapperBackground};
+							border: solid 1px ${customListWrapperBorderColor || themeListWrapperBorderColor};
+							border-radius: ${customListWrapperBorderRadius || themeListWrapperBorderRadius};
+							box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+							left: ${align === 'right' ? 'auto' : 0};
+							max-height: unset !important;
+							overflow-y: hidden !important;
+							padding: 0;
+							position: absolute;
+							right: ${align === 'right' ? 0 : 'auto'};
+							width: ${customListWrapperWidth || themeListWrapperWidth};
+							z-index: 100;
+						`,
+						customListWrapperCSS,
+					]}
 					ref={panelRef}
 				>
 					<legend style={{ position: 'absolute', clip: 'rect(0 0 0 0)' }}>
@@ -413,7 +419,7 @@ const DropDownMenu = ({
 								padding: 0 0.2rem;
 								overflow-y: scroll;
 								max-height: ${customListWrapperMaxHeight || themeListWrapperMaxHeight};
-								margin-bottom: 0;
+								margin: 0;
 
 								> li:first-of-type {
 									margin-top: 0.2rem;

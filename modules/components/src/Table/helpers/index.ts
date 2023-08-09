@@ -1,12 +1,12 @@
-import { ReactNode, useEffect, useState } from 'react';
 import {
-	useReactTable,
 	ColumnDef,
 	getCoreRowModel,
-	SortingState,
 	OnChangeFn,
+	SortingState,
+	useReactTable,
 } from '@tanstack/react-table';
 import { merge } from 'lodash';
+import { ReactNode, useEffect, useState } from 'react';
 
 import { SELECTION_COLUMN_ID, UseTableDataProps } from '@/Table/types';
 import { useThemeContext } from '@/ThemeContext';
