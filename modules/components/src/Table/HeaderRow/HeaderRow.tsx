@@ -42,7 +42,7 @@ const TableHeaderRow = ({
 					fontWeight: themeFontWeight,
 					horizontalBorderColor: themeBorderColor_horizontal = themeBorderColor,
 					letterSpacing: themeLetterSpacing,
-					lineHeight: themeLineHeight,
+					lineHeight: themeLineHeight = '1rem',
 					overflow: themeOverflow = 'hidden',
 					padding: themePadding = themeTablePadding,
 					position: themePosition,
@@ -67,6 +67,7 @@ const TableHeaderRow = ({
 		<tr
 			className={cx('TableHeaderRow', themeClassName)}
 			css={[
+				themeCSS,
 				css`
 					background: ${hasVisibleRows ? themeBackground : themeDisabledBackground};
 					color: ${hasVisibleRows ? themeFontColor : themeDisabledFontColor};
@@ -81,7 +82,6 @@ const TableHeaderRow = ({
 						border-bottom: ${borderColor_horizontal && `0.1rem solid ${borderColor_horizontal}`};
 					}
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>
@@ -92,6 +92,7 @@ const TableHeaderRow = ({
 				};
 
 				const isSorted = headerObj.column.getIsSorted();
+				const handleSorting = sortable ? headerObj.column.getToggleSortingHandler() : undefined;
 
 				return (
 					<th
@@ -131,7 +132,7 @@ const TableHeaderRow = ({
 						data-accessor={headerObj.id}
 						data-header={displayName}
 						key={headerObj.id}
-						onClick={headerObj.column.getToggleSortingHandler()}
+						onClick={handleSorting}
 						title={displayName}
 					>
 						{headerObj.isPlaceholder

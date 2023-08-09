@@ -1,6 +1,6 @@
-import { ChangeEventHandler } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
+import { ChangeEventHandler } from 'react';
 
 import { useTableContext } from '@/Table/helpers';
 import { useThemeContext } from '@/ThemeContext';
@@ -56,13 +56,13 @@ const MaxRowsSelector = ({
 		<article
 			className={className}
 			css={[
+				themeCSS,
 				css`
 					color: ${customFontColor || themeFontColor};
 					align-items: center;
 					display: flex;
 					font-size: ${customFontSize || themeFontSize};
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>

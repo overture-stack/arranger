@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import { merge } from 'lodash';
+import { useMemo } from 'react';
 
 import ColumnSelectButton from '@/Table/ColumnsSelectButton';
-import DownloadButton from '@/Table/DownloadButton';
 import CountDisplay from '@/Table/CountDisplay';
+import DownloadButton from '@/Table/DownloadButton';
 import { useThemeContext } from '@/ThemeContext';
 import getDisplayName from '@/utils/getComponentDisplayName';
 import { emptyObj } from '@/utils/noops';
@@ -36,12 +36,12 @@ const Toolbar = ({
 			<section
 				className={className}
 				css={[
+					themeCSS,
 					css`
 						align-items: flex-start;
 						display: flex;
 						justify-content: space-between;
 					`,
-					themeCSS,
 					customCSS,
 				]}
 			>

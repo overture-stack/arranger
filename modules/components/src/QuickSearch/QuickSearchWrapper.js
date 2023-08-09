@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import cx from 'classnames';
 import { css } from '@emotion/react';
+import cx from 'classnames';
+import { useState } from 'react';
 
 import { TransparentButton } from '@/Button';
 import { ArrowIcon } from '@/Icons';
@@ -70,13 +70,13 @@ const QuickSearchWrapper = ({
 			<article
 				className={cx('quicksearch-wrapper', customClassName || themeClassName)}
 				css={[
+					themeQuickSearchWrapperCSS,
 					css`
 						border-bottom: 0.05rem solid transparent;
 						border-color: ${themeQuickSearchWrapperDividerColor};
 						box-sizing: border-box;
 						padding-bottom: ${isCollapsed ? 0 : '0.3rem'};
 					`,
-					themeQuickSearchWrapperCSS,
 				]}
 				ref={componentRef}
 				{...quickSearchWrapperTheme}

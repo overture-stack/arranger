@@ -1,4 +1,4 @@
-import { BooleanAgg, DatesAgg, TermAgg, RangeAgg } from '@/Aggs';
+import { BooleanAgg, DatesAgg, RangeAgg, TermAgg } from '@/Aggs';
 import { currentFieldValue, fieldInCurrentSQON, inCurrentSQON } from '@/SQONViewer/utils';
 import noopFn from '@/utils/noops';
 
@@ -66,13 +66,7 @@ const composedRangeAgg = ({
 	/>
 );
 
-const composedBooleanAgg = ({
-	sqon,
-	onValueChange,
-	componentProps,
-	getBooleanAggProps = () => ({}),
-	...rest
-}) => (
+const composedBooleanAgg = ({ sqon, onValueChange, getBooleanAggProps = () => ({}), ...rest }) => (
 	<BooleanAgg
 		{...{ ...rest, ...getBooleanAggProps() }}
 		handleValueClick={({ fieldName, generateNextSQON, value }) => {
@@ -136,5 +130,6 @@ export default {
 	keyword: composedTermAgg,
 	long: composedRangeAgg,
 	scaled_float: composedRangeAgg,
+	text: composedTermAgg,
 	unsigned_long: composedRangeAgg,
 };

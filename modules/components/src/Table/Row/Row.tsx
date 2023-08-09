@@ -2,9 +2,9 @@ import { css } from '@emotion/react';
 import { flexRender } from '@tanstack/react-table';
 import cx from 'classnames';
 
+import MetaMorphicChild from '@/MetaMorphicChild';
 import { getDisplayValue } from '@/Table/helpers';
 import { SELECTION_COLUMN_ID } from '@/Table/types';
-import MetaMorphicChild from '@/MetaMorphicChild';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
@@ -71,6 +71,7 @@ const TableRow = ({
 		<tr
 			className={cx('Row', themeClassName, { selected })}
 			css={[
+				themeCSS,
 				css`
 					background: ${themeBackground};
 					border-left: ${themeVerticalBorderColor && `0.1rem solid ${themeVerticalBorderColor}`};
@@ -116,7 +117,6 @@ const TableRow = ({
 						background: ${themeHoverBackground};
 					}
 				`,
-				themeCSS,
 				customCSS,
 			]}
 			data-row-id={id}

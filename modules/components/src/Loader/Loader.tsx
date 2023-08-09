@@ -1,10 +1,10 @@
+import isPropValid from '@emotion/is-prop-valid';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
-import isPropValid from '@emotion/is-prop-valid';
-import { merge } from 'lodash';
-import Spinkit from 'react-spinkit';
 import cx from 'classnames';
 import color from 'color';
+import { merge } from 'lodash';
+import Spinkit from 'react-spinkit';
 
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
@@ -69,6 +69,7 @@ const Loader = ({
 		<figure
 			className={cx('Spinner', className)}
 			css={[
+				themeCSS,
 				css`
 					align-items: center;
 					bottom: 0;
@@ -81,7 +82,6 @@ const Loader = ({
 					right: 0;
 					top: 0;
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>

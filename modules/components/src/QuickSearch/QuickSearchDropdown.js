@@ -23,7 +23,7 @@ const QuickSearchDropdownItem = ({
 						color3: themeEntityLogoColor3 = '#ff9324',
 						color4: themeEntityLogoColor4 = '#009bb8',
 						color5: themeEntityLogoColor5 = '#d8202f',
-						css: themeEntityLogoCss = emptyObj,
+						css: themeEntityLogoCSS = emptyObj,
 						enabled: themeEntityLogoEnabled = true,
 						margin: themeEntityLogoMargin = '6px',
 						width: themeEntityLogoWidth = '14%',
@@ -31,11 +31,11 @@ const QuickSearchDropdownItem = ({
 					evenRowColor: themeDropDownItemsEvenRowColor = '#f4f5f8',
 					lineHeight: themeDropdownItemsLineHeight = '220%',
 					resultKeyText: {
-						css: themeResultKeyTextCss = emptyObj,
+						css: themeResultKeyTextCSS = emptyObj,
 						fontSize: themeResultKeyTextFontSize = '0.9em',
 					} = emptyObj,
 					resultValue: {
-						css: themeResultValueCss = emptyObj,
+						css: themeResultValueCSS = emptyObj,
 						fontSize: themeResultValueFontSize = '0.7em',
 					} = emptyObj,
 				} = emptyObj,
@@ -91,7 +91,7 @@ const QuickSearchDropdownItem = ({
 							float: left;
 							padding-top: 100%;
 						}
-						${themeEntityLogoCss}
+						${themeEntityLogoCSS}
 					`}
 				>
 					<div>{entityName.slice(0, 2).toUpperCase()}</div>
@@ -109,7 +109,7 @@ const QuickSearchDropdownItem = ({
 					css={css`
 						font-size: ${themeResultKeyTextFontSize};
 						line-height: ${themeDropdownItemsLineHeight};
-						${themeResultKeyTextCss}
+						${themeResultKeyTextCSS}
 					`}
 				>
 					<TextHighlight highlightText={inputValue} content={primaryKey} />
@@ -123,7 +123,7 @@ const QuickSearchDropdownItem = ({
 							text-overflow: ellipsis;
 							font-size: ${themeResultValueFontSize};
 							white-space: nowrap;
-							${themeResultValueCss}
+							${themeResultValueCSS}
 						`}
 					>
 						<TextHighlight highlightText={inputValue} content={result} />

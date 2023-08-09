@@ -1,8 +1,8 @@
-import { Component } from 'react';
 import { css } from '@emotion/react';
-import { isEqual, isNil } from 'lodash';
 import cx from 'classnames';
 import convert from 'convert-units';
+import { isEqual, isNil } from 'lodash';
+import { Component } from 'react';
 import InputRange from 'react-input-range'; // TODO: abandoned. use rc-slider instead
 import 'react-input-range/lib/css/index.css';
 
@@ -251,13 +251,13 @@ class RangeAgg extends Component {
 					<div
 						className="range-wrapper"
 						css={[
+							themeRangeWrapperCSS,
 							css`
 								align-items: center;
 								display: flex;
 								flex-direction: column;
 								width: 100%;
 							`,
-							themeRangeWrapperCSS,
 						]}
 						{...RangeWrapperProps}
 					>

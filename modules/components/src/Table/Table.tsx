@@ -1,17 +1,17 @@
-import { PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
 import { css } from '@emotion/react';
 import cx from 'classnames';
+import { PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
 
-import MetaMorphicChild from '@/MetaMorphicChild';
 import Spinner, { LoaderContainer } from '@/Loader';
+import MetaMorphicChild from '@/MetaMorphicChild';
 import { useThemeContext } from '@/ThemeContext';
 import { emptyObj } from '@/utils/noops';
 
-import { useTableData } from './helpers';
 import HeaderRow from './HeaderRow';
+import { useTableData } from './helpers';
 import Row from './Row';
-import TableWrapper from './Wrapper';
 import { TableProps } from './types';
+import TableWrapper from './Wrapper';
 
 const Table = ({
 	className: customClassName,
@@ -164,6 +164,7 @@ const Table = ({
 							<thead
 								className={cx('TableHeaderGroup', themeHeaderGroupClassName)}
 								css={[
+									themeHeaderGroupCSS,
 									css`
 										background: ${themeHeaderGroupBackground};
 										border: ${themeHeaderGroupBorderColor &&
@@ -172,7 +173,6 @@ const Table = ({
 										overflow: ${themeHeaderGroupOverflow};
 										position: ${themeHeaderGroupPosition};
 									`,
-									themeHeaderGroupCSS,
 								]}
 							>
 								{headerGroups.map((headerGroup) => (
@@ -187,6 +187,7 @@ const Table = ({
 							<tbody
 								className={cx('TableBody', themeTableBodyClassName)}
 								css={[
+									themeTableBodyCSS,
 									css`
 										background: ${themeTableBodyBackground};
 										border: ${themeTableBodyBorderColor &&
@@ -195,7 +196,6 @@ const Table = ({
 										overflow: ${themeTableBodyOverflow};
 										position: ${themeTableBodyPosition};
 									`,
-									themeTableBodyCSS,
 								]}
 							>
 								{hasVisibleRows ? (

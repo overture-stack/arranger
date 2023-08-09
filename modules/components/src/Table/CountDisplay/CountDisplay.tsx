@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import pluralize from 'pluralize';
 import cx from 'classnames';
+import pluralize from 'pluralize';
 
 import Spinner from '@/Loader';
 import { useTableContext } from '@/Table/helpers';
@@ -50,6 +50,7 @@ const CountDisplay = ({
 		<article
 			className={cx('currentlyDisplayed', customClassName, themeClassName)}
 			css={[
+				themeCSS,
 				css`
 					align-items: center;
 					color: ${customFontColor || themeFontColor};
@@ -61,7 +62,6 @@ const CountDisplay = ({
 						flex: 0 0 auto;
 					}
 				`,
-				themeCSS,
 				customCSS,
 			]}
 		>

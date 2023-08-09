@@ -1,7 +1,7 @@
-import { createRef, forwardRef, RefObject, useState } from 'react';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import cx from 'classnames';
+import { createRef, forwardRef, RefObject, useState } from 'react';
 
 import Button from '@/Button';
 import { useThemeContext } from '@/ThemeContext';
@@ -141,6 +141,7 @@ const Input = (
 		<InputWrapper
 			className={cx('inputWrapper', { disabled: inputDisabled, focused: isFocused }, className)}
 			css={[
+				themeCSS,
 				css`
 					border: solid 1px ${inputDisabled ? themeDisabledBorderColor : borderColor};
 					border-radius: 5px;
@@ -160,7 +161,6 @@ const Input = (
 					}
 				`,
 				customCSS,
-				themeCSS,
 			]}
 			onClick={(e) => {
 				if (inputRef.current && e.target !== clearButtonRef?.current) inputRef.current.focus();

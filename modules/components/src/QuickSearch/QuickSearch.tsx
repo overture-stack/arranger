@@ -1,6 +1,6 @@
+import { css } from '@emotion/react';
 import { useRef, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
-import { css } from '@emotion/react';
 
 import { useDataContext } from '@/DataContext';
 import { SQONType } from '@/DataContext/types';
@@ -13,8 +13,8 @@ import { emptyObj } from '@/utils/noops';
 import internalTranslateSQONValue from '@/utils/translateSQONValue';
 
 import { useSearchFields } from './helpers';
-import QuickSearchQuery from './QuickSearchQuery';
 import DropdownItem from './QuickSearchDropdown';
+import QuickSearchQuery from './QuickSearchQuery';
 import QuickSearchWrapper from './QuickSearchWrapper';
 import { QuickSearchProps, SearchResult } from './types';
 
@@ -86,7 +86,7 @@ const QuickSearch = ({
 
 				DropDownItems: {
 					DropdownItemComponent = DropdownItem,
-					css: themeDropDownItemsCss = emptyObj,
+					css: themeDropDownItemsCSS = emptyObj,
 				} = emptyObj,
 				FilterInput: {
 					Icon = FaSearch,
@@ -103,7 +103,7 @@ const QuickSearch = ({
 				PinnedValues: {
 					disabled: themePinnedValuesDisabled,
 					PinnedValueComponent = SQONBubble,
-					css: themePinnedValuesCss,
+					css: themePinnedValuesCSS,
 					...themePinnedValuesTheme
 				} = emptyObj,
 			} = emptyObj,
@@ -189,10 +189,12 @@ const QuickSearch = ({
 						{isDropdownOpen && !searchDisabled && (
 							<div
 								className="quick-search-results"
-								css={css`
-									margin-bottom: 0.2rem;
-									${themeDropDownItemsCss}
-								`}
+								css={[
+									themeDropDownItemsCSS,
+									css`
+										margin-bottom: 0.2rem;
+									`,
+								]}
 							>
 								{searchResults.length ? (
 									searchResults?.map(
@@ -263,7 +265,7 @@ const QuickSearch = ({
 									) => (
 										<div className="quick-search-pinned-value" key={primaryKey} css={css``}>
 											<PinnedValueComponent
-												css={themePinnedValuesCss}
+												css={themePinnedValuesCSS}
 												theme={themePinnedValuesTheme}
 												onClick={() =>
 													setSQON(

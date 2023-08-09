@@ -1,6 +1,6 @@
 import { ConfigObject, ConfigRequiredProperties } from './types';
-import getConfigFromFiles from './utils/getConfigFromFiles';
 import { makeConfigsFromEnv } from './utils';
+import getConfigFromFiles from './utils/getConfigFromFiles';
 
 export * as ENV_CONFIG from './constants';
 export { initializeSets } from './utils';
