@@ -14,7 +14,7 @@ import {
 } from './types';
 
 const useCustomisers =
-	(extendedColumn: ColumnMappingInterface) =>
+	(extendedColumn?: ColumnMappingInterface) =>
 	([customiserLabel, customiserValue]: [
 		key: string,
 		value: any,
@@ -89,7 +89,7 @@ const prefixExporter = (item: CustomExporterDetailsInterface): ProcessedExporter
 	Object.entries(item).reduce(
 		(exporterItem, [key, value]) => ({
 			...exporterItem,
-			[`exporter${key[0].toUpperCase()}${key.slice(1)}`]: value,
+			[`exporter${key[0]?.toUpperCase()}${key.slice(1)}`]: value,
 		}),
 		{},
 	);
@@ -141,9 +141,10 @@ export const useExporters = (customExporters?: CustomExporterInput) => {
 				if (customExporters.length > 0) {
 					const processedExporters = customExporters.filter(Boolean).map(processExporter);
 					const hasMultiple = processedExporters.length > 1;
+					const firstExporter = processedExporters[0];
 
 					setHasMultiple(hasMultiple);
-					setExporters(hasMultiple ? processedExporters : processedExporters[0]);
+					firstExporter && setExporters(hasMultiple ? processedExporters : firstExporter);
 				}
 			} else {
 				setExporters(processExporter(customExporters));
