@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Arranger'
-copyright = '2018, overture.bio'
+copyright = '2023, Overture'
 author = 'overture.bio'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -2,7 +2,7 @@
 SQON Filters
 =============
 
-Arranger uses a custom JSON object format for filtering that is called SQON (pronounced like "Scone"). SQON provides a flexible system for combining many different filters.
+Arranger uses a custom JSON object format for filtering that is called SQON (Serializable Query Object Notation, pronounced like "Scone"). SQON provides a flexible system for combining many different filters.
 
 
 A SQON object consists of nested objects of two types: **Operations** and **Values**.
@@ -13,31 +13,31 @@ A SQON object consists of nested objects of two types: **Operations** and **Valu
     ::
 
       {
-        "op":"", //Operation to apply to content ["and", "or", "not"]
-        "content":[] //List of Operation objects that the boolean operation will apply to
+        "content":[] // List of Operation objects that the boolean operation will apply to
+        "op":"", // Operation to apply to content ["and", "or", "not"]
       }
 
   OR
 
-  **Field Operation** 
+  **Field Operation**
     that applies to a filter to Value Object
 
     ::
 
       {
-        "op":"", //Operation to apply to content ["in", "<=", ">="]
-        "content":{} //Value object specifying the field and list of values that the field must be "in" or "not-in"
+        "content":{} // Value object specifying the field and list of values that the field must be "in" or "not-in"
+        "op":"", // Operation to apply to content ["in", "<=", ">="]
       }
 
 
-**Value objects** 
+**Value objects**
   specify a list the field name and values for it that the wrapping . This filter can specify to include or exclude fields with any of the listed values. It will have the following format:
 
   ::
 
     {
-      "field":"", //name of the field this operation applies to
-      "value":[] //List of values for the field if using the "in" operation, or a scalar value for ">=" and "<=" operations
+      "field":"", // name of the field this operation applies to
+      "value":[] // List of values for the field if using the "in" operation, or a scalar value for ">=" and "<=" operations
     }
 
 **The top level of a SQON must always be a Combination Operation, even if only a single filter is being applied.**
@@ -47,26 +47,30 @@ Sample
 ::
 
   {
-    op: "and",
     content: [
       {
-        op: "or",
         content: [
           {
-            op: "in",
             content: {
               field: "id",
-              value: ["id123"]
-            }
+              value: [
+                "id123"
+              ]
+            },
+            op: "in"
           }
-        ]
+        ],
+        op: "or"
       },
       {
-        op: "in",
         content: {
           field: "id",
-          value: ["id123"]
-        }
+          value: [
+            "id123"
+          ]
+        },
+        op: "in"
       }
-    ]
+    ],
+    op: "and"
   }

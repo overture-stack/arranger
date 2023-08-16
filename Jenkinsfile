@@ -251,6 +251,27 @@ pipeline {
   }
 
   post {
+    failure {
+      withCredentials([string(
+        credentialsId: 'OvertureSlackJenkinsWebhookURL',
+        variable: 'failed_slackChannelURL'
+      )]) {
+        container('node') {
+          script {
+            if (env.BRANCH_NAME ==~ 'legacy') {
+              sh "curl \
+                -X POST \
+                -H 'Content-type: application/json' \
+                --data '{ \
+                  \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
+                }' \
+                ${failed_slackChannelURL}"
+            }
+          }
+        }
+      }
+    }
+
     fixed {
       withCredentials([string(
         credentialsId: 'OvertureSlackJenkinsWebhookURL',
@@ -286,27 +307,6 @@ pipeline {
               string(name: 'OVERTURE_HELM_REPO_URL', value: chartsServer),
               string(name: 'OVERTURE_RELEASE_NAME', value: 'arranger'),
             ], wait: false)
-        }
-      }
-    }
-
-    unsuccessful {
-      withCredentials([string(
-        credentialsId: 'OvertureSlackJenkinsWebhookURL',
-        variable: 'failed_slackChannelURL'
-      )]) {
-        container('node') {
-          script {
-            if (env.BRANCH_NAME ==~ 'legacy') {
-              sh "curl \
-                -X POST \
-                -H 'Content-type: application/json' \
-                --data '{ \
-                  \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
-                }' \
-                ${failed_slackChannelURL}"
-            }
-          }
         }
       }
     }

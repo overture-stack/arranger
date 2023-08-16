@@ -1,11 +1,8 @@
-.. Arranger documentation master file, created by
-   sphinx-quickstart on Fri Mar 16 14:17:55 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 ============
 Arranger Documentation
 ============
+
+Note: This project is undergoing refactoring work, for what will become version 3+. Covering great feedback we've received from the community, there will be some breaking changes, and an upgrade guide is already in the works.
 
 .. toctree::
     :maxdepth: 4
@@ -21,15 +18,6 @@ Arranger Documentation
     src/admins.rst
     src/appdevelopers.rst
     src/sqon.rst
-
-.. toctree::
-    :maxdepth: 4
-    :caption: Developer Documentation
-
-    src/installation.rst
-    src/architecture.rst
-    src/technology.rst
-    src/contribution.rst
 
 
 Contribute

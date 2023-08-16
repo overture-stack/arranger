@@ -11,13 +11,9 @@ All new implementation is being done in v3+ at the `main` and `develop` branches
 
 [![Slack](http://slack.overture.bio/badge.svg)](http://slack.overture.bio)
 
-Develop (Edge): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fdevelop)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/develop/)
-
-Master (Release): [![Build Status](https://jenkins.qa.cancercollaboratory.org/buildStatus/icon?job=Overture.bio%2Farranger%2Fmaster)](https://jenkins.qa.cancercollaboratory.org/job/Overture.bio/job/arranger/job/master/)
-
 ## Documentation
 
-This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/master/LICENSE)
+This file is meant as a quick introduction, but for more in-detail documentation, you should explore Arranger's "[Read the Docs](https://arranger.readthedocs.io/en/latest)". If interested, see our Open Source [License](https://github.com/overture-stack/arranger/blob/legacy/LICENSE)
 
 - [Getting Started](#getting-started)
   - [Development Setup](#--development-setup)
@@ -34,7 +30,7 @@ This file is meant as a quick introduction, but for more in-detail documentation
 While our team is actively working on a new Arranger (see the `develop` branch), the version in this branch is considered "legacy";
 being maintained only to support existing projects, it has been tested using NodeJS v14. It may not work well with other versions.
 
-> **Note**: Arranger is undergoing refactoring work, for what will become version 3+. While we do not foresee too many breaking changes, an _upgrade guide_ is already in the works. Until that version is release, we will continue fixing newly reported bugs in this `legacy` branch.
+> **Note**: Arranger is undergoing refactoring work, for what will become version 3+. Covering great feedback we've received from the community, there will be some breaking changes, and an _upgrade guide_ is already in the works. Until that version is released, we will continue fixing newly reported bugs in this `legacy` branch.
 >
 > For the time being, you may need to add the `--legacy-peer-deps` flag when integrating our modules into your apps. Along with the v3 rewrite, we're steadily updating the internal dependencies so this flag stops being necessary.
 >
@@ -159,7 +155,7 @@ If you're coming from an older version of Arranger and you use the Docker images
 
 #### Releasing Instructions
 
-- From `master` branch, run `npm run tag <version>`
-- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=master)
+- From the `legacy` branch, run `npm run tag <version>`
+- Publishing process will be run [by Jenkins](https://jenkins.qa.cancercollaboratory.org/blue/organizations/jenkins/Overture.bio%2Farranger/activity?branch=legacy)
 
 _\* The GDC contains many features that are out of Arranger's scope_

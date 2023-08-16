@@ -5,7 +5,7 @@ Introduction
 
 What is Arranger?
 =================
-`Arranger <https://www.overture.bio/products/arranger>`_ is a collection of reusable components for creating centric search portals with `Elasticsearch <https://www.elastic.co/products/elasticsearch/>`_. Arranger consists of the following components:
+`Arranger <https://www.overture.bio/products/arranger>`_ is a collection of reusable components for creating "-centric" search portals with `Elasticsearch <https://www.elastic.co/products/elasticsearch/>`_. Arranger consists of the following components:
     - *Arranger Search API* provides a layer that sits above your Elasticsearch cluster to expose a data-model aware `GraphQL <https://graphql.org/>`_ API, generated from your own Elasticsearch index mapping.
     - *Arranger Components* provides a rich set of UI components that are configured to speak to the search API.
     - *Arranger Admin* provides the API and UI for configuring the search API and content management for the search portal.
@@ -27,7 +27,7 @@ Features
 
 License
 ==========
-Copyright (c) 2018. Ontario Institute for Cancer Research
+Copyright (c) 2023. Ontario Institute for Cancer Research
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
