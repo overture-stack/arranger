@@ -105,6 +105,7 @@ export const useTableData = ({
 		manualSorting: true,
 		onRowSelectionChange: setSelectedRowsDict,
 		onSortingChange,
+		sortDescFirst: false,
 		state: {
 			...(allowRowSelection && { rowSelection: selectedRowsDict }),
 			...(allowRowSorting && {
