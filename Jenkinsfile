@@ -86,6 +86,7 @@ pipeline {
     gitHubRegistry = 'ghcr.io'
     gitHubRepo = 'overture-stack/arranger'
     chartsServer = 'https://overture-stack.github.io/charts-server/'
+    PUBLISH = false
 
     commit = sh(
       returnStdout: true,
@@ -99,10 +100,20 @@ pipeline {
         'cut -d : -f2 | ' +
         "sed \'s:[\",]::g\'"
     ).trim()
+
+    slackNotificationsUrl = credentials('OvertureSlackJenkinsWebhookURL')
   }
 
   options {
     timestamps()
+  }
+
+  parameters {
+    booleanParam(
+      name: 'PUBLISH',
+      defaultValue: "${env.PUBLISH}",
+      description: 'Publishes a docker image and an NPM package, using version tag'
+    )
   }
 
   stages {
@@ -154,11 +165,47 @@ pipeline {
       }
     }
 
+    stage('Tag git version and publish it to npm') {
+      when {
+        anyOf {
+          expression { return params.PUBLISH }
+        }
+      }
+      steps {
+        container('node') {
+          withCredentials([
+            string(credentialsId: 'OvertureNPMAutomationToken', variable: 'NPM_TOKEN')
+          ]) {
+            script {
+              // we still want to run the platform deploy even if this fails, hence try-catch
+              try {
+                sh 'git reset --hard HEAD'
+                sh 'git pull --tags'
+                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
+                sh 'npm run publish::ci'
+                sh "curl \
+                  -X POST \
+                  -H 'Content-type: application/json' \
+                  --data '{ \
+                    \"text\":\"New Arranger published succesfully: v.${version}\
+                    \n[Build ${env.BUILD_NUMBER}] (${env.BUILD_URL})\" \
+                  }' \
+                  ${slackNotificationsUrl}"
+              } catch (err) {
+                echo 'There was an error while publishing packages'
+              }
+            }
+          }
+        }
+      }
+    }
+
     stage('Push images') {
       when {
         anyOf {
           branch 'legacy'
           // branch 'test'
+          expression { return params.PUBLISH }
         }
       }
       steps {
@@ -180,7 +227,7 @@ pipeline {
             sh "docker push ${dockerHubRepo}-ui:${commit}"
 
             script {
-              if (env.BRANCH_NAME ==~ 'legacy') {
+              if (params.PUBLISH) {
                 // server:version tag
                 sh "docker tag arranger-server:${commit} ${dockerHubRepo}-server:${version}"
                 sh "docker push ${dockerHubRepo}-server:${version}"
@@ -209,7 +256,7 @@ pipeline {
             sh "docker push ${gitHubRegistry}/${gitHubRepo}-ui:${commit}"
 
             script {
-              if (env.BRANCH_NAME ==~ 'legacy') {
+              if (params.PUBLISH) {
                 // server:version tag
                 sh "docker tag arranger-server:${commit} ${gitHubRegistry}/${gitHubRepo}-server:${version}"
                 sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
@@ -223,92 +270,57 @@ pipeline {
         }
       }
     }
-
-    stage('Publish tag to npm') {
-      when {
-        branch 'legacy'
-      }
-      steps {
-        container('node') {
-          withCredentials([
-            string(credentialsId: 'OvertureNPMAutomationToken', variable: 'NPM_TOKEN')
-          ]) {
-            script {
-              // we still want to run the platform deploy even if this fails, hence try-catch
-              try {
-                sh 'git reset --hard HEAD'
-                sh 'git pull --tags'
-                sh "npm config set '//registry.npmjs.org/:_authToken' \"${NPM_TOKEN}\""
-                sh 'npm run publish::ci'
-              } catch (err) {
-                echo 'There was an error while publishing packages'
-              }
-            }
-          }
-        }
-      }
-    }
   }
 
   post {
     failure {
-      withCredentials([string(
-        credentialsId: 'OvertureSlackJenkinsWebhookURL',
-        variable: 'failed_slackChannelURL'
-      )]) {
-        container('node') {
-          script {
-            if (env.BRANCH_NAME ==~ 'legacy') {
-              sh "curl \
-                -X POST \
-                -H 'Content-type: application/json' \
-                --data '{ \
-                  \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
-                }' \
-                ${failed_slackChannelURL}"
-            }
+      container('node') {
+        script {
+          if (env.BRANCH_NAME ==~ 'legacy') {
+            sh "curl \
+              -X POST \
+              -H 'Content-type: application/json' \
+              --data '{ \
+                \"text\":\"Build Failed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
+              }' \
+              ${slackNotificationsUrl}"
           }
         }
       }
     }
 
     fixed {
-      withCredentials([string(
-        credentialsId: 'OvertureSlackJenkinsWebhookURL',
-        variable: 'fixed_slackChannelURL'
-      )]) {
-        container('node') {
-          script {
-            if (env.BRANCH_NAME ==~ 'legacy') {
-              sh "curl \
-                -X POST \
-                -H 'Content-type: application/json' \
-                --data '{ \
-                  \"text\":\"Build Fixed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
-                }' \
-                ${fixed_slackChannelURL}"
-            }
+      container('node') {
+        script {
+          if (env.BRANCH_NAME ==~ 'legacy') {
+            sh "curl \
+              -X POST \
+              -H 'Content-type: application/json' \
+              --data '{ \
+                \"text\":\"Build Fixed: ${env.JOB_NAME} [Build ${env.BUILD_NUMBER}](${env.BUILD_URL}) \" \
+              }' \
+              ${slackNotificationsUrl}"
           }
         }
       }
     }
 
-    success {
-      script {
-        if (env.BRANCH_NAME ==~ 'legacy') {
-          echo 'Deploying to Overture QA'
-          build(job: '/Overture.bio/provision/helm', parameters: [
-              booleanParam(name: 'OVERTURE_HELM_REUSE_VALUES', value: false),
-              string(name: 'OVERTURE_ARGS_LINE',
-                value: "--set-string apiImage.tag=${commit} --set-string uiImage.tag=${commit}"),
-              string(name: 'OVERTURE_CHART_NAME', value: 'arranger'),
-              string(name: 'OVERTURE_ENV', value: 'qa'),
-              string(name: 'OVERTURE_HELM_CHART_VERSION', value: ''), // use latest
-              string(name: 'OVERTURE_HELM_REPO_URL', value: chartsServer),
-              string(name: 'OVERTURE_RELEASE_NAME', value: 'arranger'),
-            ], wait: false)
-        }
-      }
-    }
+    // success {
+    //   script {
+    //   if (env.BRANCH_NAME ==~ 'legacy') {
+    //     echo 'Deploying to Overture QA'
+    //     build(job: '/Overture.bio/provision/helm', parameters: [
+    //         booleanParam(name: 'OVERTURE_HELM_REUSE_VALUES', value: false),
+    //         string(name: 'OVERTURE_ARGS_LINE',
+    //           value: "--set-string apiImage.tag=${commit} --set-string uiImage.tag=${commit}"),
+    //         string(name: 'OVERTURE_CHART_NAME', value: 'arranger'),
+    //         string(name: 'OVERTURE_ENV', value: 'qa'),
+    //         string(name: 'OVERTURE_HELM_CHART_VERSION', value: ''), // use latest
+    //         string(name: 'OVERTURE_HELM_REPO_URL', value: chartsServer),
+    //         string(name: 'OVERTURE_RELEASE_NAME', value: 'arranger'),
+    //       ], wait: false)
+    //   }
+    //   }
+    // }
   }
 }
