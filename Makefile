@@ -22,8 +22,8 @@ DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
 # Variables
 DOCKER_DIR := $(ROOT_DIR)/docker
-DOCS_DIR := $(ROOT_DIR)/elasticsearch
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
+# ES_DOCS_DIR can be given with a custom directory for docs to be seeded
 ES_HOST := http://localhost:9200
 ES_INDEX := file_centric_1.0
 ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
@@ -130,7 +130,7 @@ clear-es-documents:
 
 seed-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Initializing file_centric index" $(END)
-	@$(ES_LOAD_SCRIPT) $(DOCS_DIR) $(ES_USER) $(ES_PASS) $(ES_HOST) $(ES_INDEX)
+	@$(ES_LOAD_SCRIPT) $(ES_USER) $(ES_PASS) $(ES_HOST) $(ES_INDEX) $(ES_DATA_DIR) $(ES_DOCS_DIR)
 
 get-es-indices:
 	@echo $(YELLOW)$(INFO_HEADER) "Available indices:" $(END)
@@ -157,13 +157,13 @@ start:
 
 start-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Elasticsearch" $(END)
-	@COMPOSE_PROJECT_NAME=Arranger_ES $(DC_UP_CMD) elasticsearch
+	@COMPOSE_PROJECT_NAME=arranger_es $(DC_UP_CMD) elasticsearch
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
 
 start-server:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Arranger Server" $(END)
-	@COMPOSE_PROJECT_NAME=Arranger_SERVER $(DC_UP_CMD) arranger-server
+	@COMPOSE_PROJECT_NAME=arranger_server $(DC_UP_CMD) arranger-server
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 
 test:
