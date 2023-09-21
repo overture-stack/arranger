@@ -8,7 +8,7 @@
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.0",
 		"@overture-stack/arranger-server": "^3.0.0-beta.33",
-		"graphql": "^16.6.0",
+		"graphql": "^16.8.1",
 		"graphql-tag": "^2.12.6"
 	},
 	"devDependencies": {
