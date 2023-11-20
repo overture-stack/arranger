@@ -2,29 +2,6 @@
  * Class to manage and create shared project folder SQONs
  */
 export class ProjectFolder {
-
-    constructor(projectName) {
-        this.baseSQON = {
-            "op": "and",
-            "content": [{
-                "op": "in",
-                "content": {
-                    "field": "container_code",
-                    "value": [
-                        projectName
-                    ]
-                }
-            }, {
-                "op": "not",
-                "content": []
-            }]
-        }
-    }
-
-    get SQON(){
-      return this.baseSQON
-    }
-
     populateProjectFolderSQON(zone, folderName) {
       return {
         'op': 'and',

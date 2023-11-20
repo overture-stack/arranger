@@ -297,7 +297,7 @@ const buildSQON = async (role_metadata, project_code, username) => {
                 base_sqon['content'][1]['content'].push(owner_sqon);
             }
         }
-        permissions['project_folders'] = [{'name':'tester', 'zone': 'greenroom'}]
+
         if (permissions['project_folders'].length !== 0) {
             const projectFolder = new ProjectFolder(project_code);
             for (const p of permissions['project_folders']){
