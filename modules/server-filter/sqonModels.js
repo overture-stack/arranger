@@ -26,7 +26,6 @@ export class ProjectFolder {
     }
 
     populateProjectFolderSQON(zone, folderName) {
-      //this.baseSQON['content'][1]['content'].push(folderSQON);
       return {
         'op': 'and',
         'content': [{

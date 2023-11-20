@@ -304,8 +304,6 @@ const buildSQON = async (role_metadata, project_code, username) => {
                 const sqon = projectFolder.populateProjectFolderSQON(p.zone, p.name);
                 base_sqon['content'][2]['content'].push(sqon);
             }
-            // const projectFolderSQON = projectFolder.SQON;
-            // base_sqon['content'][2]['content'].push(projectFolderSQON);
         }
 
         // return sqon with user permissions in place
