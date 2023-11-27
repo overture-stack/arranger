@@ -145,7 +145,7 @@ const getProjectFolders = async (project_folder_ids, page = 0, data = []) => {
 
 const getProjectFolderPermissions = async (project_code, data = []) => {
     try {
-        for (const zone of ["0","1"]){
+        for (const zone of ["greenroom","core"]){
             const url = `${AUTH_SERVICE}/v1/permissions/project-folder?project_code=${project_code}&zone=${zone}`;
             const response = await axios.get(url);
             data.push(...response.data.result);
