@@ -86,12 +86,12 @@ See the links below for additional information on our other research software to
 
 |Software|Description|
 |---|---|
-|[Ego](https://www.overture.bio/products/ego/)|An authorization and user management service|
-|[Ego UI](https://www.overture.bio/products/ego-ui/)|A UI for managing Ego authentication and authorization services|
-|[Score](https://www.overture.bio/products/score/)| Transfer data to and from any cloud-based storage system|
-|[Song](https://www.overture.bio/products/song/)|Catalog and manage metadata associated to file data spread across cloud storage systems|
-|[Maestro](https://www.overture.bio/products/maestro/)|Organizing your distributed data into a centralized Elasticsearch index|
-|[Arranger](https://www.overture.bio/products/arranger/)|A search API with reusable UI components that build into configurable and functional data portals|
+|[Ego](https://github.com/overture-stack/ego)|An authorization and user management service|
+|[Ego UI](https://github.com/overture-stack/ego-ui)|A UI for managing Ego authentication and authorization services|
+|[Score](https://github.com/overture-stack/score)| Transfer data to and from any cloud-based storage system|
+|[Song](https://github.com/overture-stack/song)|Catalog and manage metadata associated to file data spread across cloud storage systems|
+|[Maestro](https://github.com/overture-stack/maestro)|Organizing your distributed data into a centralized Elasticsearch index|
+|[Arranger](https://github.com/overture-stack/arranger)|A search API with reusable UI components that build into configurable and functional data portals|
 |[DMS-UI](https://github.com/overture-stack/dms-ui)|A simple web browser UI that integrates Ego and Arranger|
 
 ## Acknowledgements
