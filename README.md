@@ -96,4 +96,4 @@ See the links below for additional information on our other research software to
 
 ## Acknowledgements
 
-Overture is supported by grant #U24CA253529 from the National Cancer Institute at the US National Institutes of Health, and additional funding from Genome Canada, the Canada Foundation for Innovation, the Canadian Institutes of Health Research, Canarie, and the Ontario Institute for Cancer Research.
+Overture is supported by grant #U24CA253529 from the National Cancer Institute at the US National Institutes of Health and additional funding from Genome Canada, the Canada Foundation for Innovation, the Canadian Institutes of Health Research, Canarie, and the Ontario Institute for Cancer Research.
