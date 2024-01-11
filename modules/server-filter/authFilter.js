@@ -6,8 +6,12 @@ import memoize from 'memoizee';
 import {
     AUTH_SERVICE,
     AUTH_SERVICE_PAGE_SIZE,
-    MEMOIZE_TIMEOUT
+    MEMOIZE_TIMEOUT, METADATA_SERVICE, METADATA_SERVICE_PAGE_SIZE
 } from './config.js';
+
+import {
+    ProjectFolder
+} from './sqonModels.js'
 
 /**
  * Function will read sqon json files
@@ -96,6 +100,65 @@ function UserRoleCheck(project_code, user_roles) {
 }
 
 /**
+ * Function will call metadata service to obtain project folder names that cannot be accessed by user
+ * @param project_folder_ids array of project folder ids a user does not have access to
+ * @param page The page number used for pagination
+ * @param data The resulting data for a single api call
+ * @returns An array of non user-accessible project folders for a project
+ */
+
+const getProjectFolders = async (project_folder_ids, page = 0, data = []) => {
+    try {
+        const zones = {0:'greenroom', 1:'core'}
+        const params = {
+            params: {
+            ids: project_folder_ids,
+            page: page,
+            page_size: METADATA_SERVICE_PAGE_SIZE
+            }
+        }
+        const url = `${METADATA_SERVICE}/v1/items/batch`;
+        const response = await axios.get(url, params);
+        page++;
+        if (response.data.result.length !== 0){
+            for (const entry of response.data.result) {
+                data.push(...{"name":entry.name, "zone":zones[entry.zone]});
+            }
+        }
+        if (response.data.num_of_pages > page) {
+            return getProjectFolders(project_folder_ids, page, data);
+        }
+        return data;
+    } catch (error) {
+        console.error(error.message)
+        throw Error(`Failed to call metadata service`);
+    }
+};
+
+
+/**
+ * Function will call auth service to obtain rbac permissions for project_folders
+ * @param project_code The project code for a project
+ * @param data The resulting data of api call
+ * @returns An array of RBAC permissions data for project folders
+ */
+
+const getProjectFolderPermissions = async (project_code, data = []) => {
+    try {
+        for (const zone of ["greenroom","core"]){
+            const url = `${AUTH_SERVICE}/v1/permissions/project-folder?project_code=${project_code}&zone=${zone}`;
+            const response = await axios.get(url);
+            data.push(...response.data.result);
+        }
+        return data;
+    } catch (error) {
+        console.error(error.message)
+        throw Error(`Failed to call auth service for project folders`);
+    }
+};
+
+
+/**
  * Function will call auth service to obtain rbac permissions for a project
  * @param project_code The project code for a project
  * @param page The page number used for pagination
@@ -131,7 +194,8 @@ const getRBAC = async (project_code, user_roles) => {
         // define base RBAC
         const permitted = {
             file_in_own_namefolder: [],
-            file_any: []
+            file_any: [],
+            project_folders: []
         };
 
         // check if user has role associated with project
@@ -152,6 +216,30 @@ const getRBAC = async (project_code, user_roles) => {
                 }
             }
         }
+
+        // obtain permissions for project folders from auth service
+        const rbacProjectFolder = await getProjectFolderPermissions(project_code);
+        // filter project folders that a user does not have access to
+        const folderIds = [];
+        if (rbacProjectFolder.length !==0){
+            for (const entry of rbacProjectFolder) {
+                if (!entry.permissions[validated_role]){
+                    folderIds.push(entry.folder_id);
+                }
+            }
+        }
+
+        // obtain names of non-accessible project folders from metadata service
+        if (folderIds.length !== 0){
+            const projectFolders = await getProjectFolders(folderIds);
+            // check for names of non-accessible project folders
+            if (projectFolders.length !== 0){
+                for (const folder of projectFolders) {
+                    permitted['project_folders'].push(folder)
+                }
+            }
+        }
+
         return {
             "role": validated_role,
             "permissions": permitted
@@ -207,6 +295,14 @@ const buildSQON = async (role_metadata, project_code, username) => {
                 owner_sqon['content'][0]['content']['value'] = [`${username}*`];
                 owner_sqon['content'][1]['content']['value'] = [p];
                 base_sqon['content'][1]['content'].push(owner_sqon);
+            }
+        }
+
+        if (permissions['project_folders'].length !== 0) {
+            const projectFolder = new ProjectFolder(project_code);
+            for (const p of permissions['project_folders']){
+                const sqon = projectFolder.populateProjectFolderSQON(p.zone, p.name);
+                base_sqon['content'][2]['content'].push(sqon);
             }
         }
 
