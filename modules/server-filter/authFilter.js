@@ -111,18 +111,22 @@ const getProjectFolders = async (project_folder_ids, page = 0, data = []) => {
     try {
         const zones = {0:'greenroom', 1:'core'}
         const params = {
-            params: {
+          params: {
             ids: project_folder_ids,
             page: page,
             page_size: METADATA_SERVICE_PAGE_SIZE
-            }
-        }
+          },
+          paramsSerializer: {
+            indexes: null // by default: false
+          }
+    }
+
         const url = `${METADATA_SERVICE}/v1/items/batch`;
         const response = await axios.get(url, params);
         page++;
         if (response.data.result.length !== 0){
             for (const entry of response.data.result) {
-                data.push(...{"name":entry.name, "zone":zones[entry.zone]});
+                data.push({"name":entry.name, "zone":zones[entry.zone]});
             }
         }
         if (response.data.num_of_pages > page) {
@@ -195,7 +199,8 @@ const getRBAC = async (project_code, user_roles) => {
         const permitted = {
             file_in_own_namefolder: [],
             file_any: [],
-            project_folders: []
+            project_folders_accessible: [],
+            project_folders_non_accessible: []
         };
 
         // check if user has role associated with project
@@ -217,25 +222,58 @@ const getRBAC = async (project_code, user_roles) => {
             }
         }
 
+
         // obtain permissions for project folders from auth service
         const rbacProjectFolder = await getProjectFolderPermissions(project_code);
-        // filter project folders that a user does not have access to
-        const folderIds = [];
+
+
+        // filter project folders that a user does and does not have access to
+        const folderIds_accessible = [];
+        const folderIds_non_accessible = [];
         if (rbacProjectFolder.length !==0){
             for (const entry of rbacProjectFolder) {
-                if (!entry.permissions[validated_role]){
-                    folderIds.push(entry.folder_id);
+                if (entry.operation === 'view'){
+                    if (!entry.permissions[validated_role]){
+                    folderIds_non_accessible.push(entry.folder_id);
+                    } else {
+                        folderIds_accessible.push(entry.folder_id);
+                    }
                 }
             }
         }
 
-        // obtain names of non-accessible project folders from metadata service
-        if (folderIds.length !== 0){
-            const projectFolders = await getProjectFolders(folderIds);
-            // check for names of non-accessible project folders
+        // if user does not have access to all namefolders (file_any) for both greenroom and core, but can access project folder(s) filter on project folder paths. If not, user will only see own name folder, if they have permission to view it.
+        if ((permitted['file_any'].length === 0 && folderIds_accessible.length !== 0)) {
+            // retrieve project folders a user has access to and filter on them by keyword
+            const projectFolders = await getProjectFolders(folderIds_accessible);
+            if (projectFolders.length !== 0) {
+                for (const folder of projectFolders) {
+                    permitted['project_folders_accessible'].push(folder)
+                }
+            }
+        }
+
+        // check if users have access to namefolder and project folder(s) for a zone but not all name folders in that same zone
+        if ((permitted['file_any'].length !== 0 && permitted['file_in_own_namefolder'].length !== 0 && folderIds_accessible.length !== 0)) {
+            const projectFolders = await getProjectFolders(folderIds_accessible);
+            if (projectFolders.length !== 0) {
+                for (const folder of projectFolders) {
+                    if (permitted['file_in_own_namefolder'].includes(folder.zone) && !permitted['file_any'].includes(folder.zone) ){
+                        permitted['project_folders_accessible'].push(folder)
+                    }
+                }
+            }
+        }
+
+        // if user has access to all namefolders (file_any) for either greenroom or core or both, exclude project folders that are non-accessible for that zone(s)
+        if (permitted['file_any'].length !== 0 && folderIds_non_accessible.length !== 0){
+            // retrieve project folders a user has access to and filter on them by keyword
+            const projectFolders = await getProjectFolders(folderIds_non_accessible);
             if (projectFolders.length !== 0){
                 for (const folder of projectFolders) {
-                    permitted['project_folders'].push(folder)
+                    if (permitted['file_any'].includes(folder.zone)){
+                        permitted['project_folders_non_accessible'].push(folder)
+                    }
                 }
             }
         }
@@ -298,10 +336,21 @@ const buildSQON = async (role_metadata, project_code, username) => {
             }
         }
 
-        if (permissions['project_folders'].length !== 0) {
+
+        // project folders accessible, select these only. User does not have access to all name folders in any zone
+        if (permissions['project_folders_accessible'].length !== 0) {
             const projectFolder = new ProjectFolder(project_code);
-            for (const p of permissions['project_folders']){
-                const sqon = projectFolder.populateProjectFolderSQON(p.zone, p.name);
+            for (const p of permissions['project_folders_accessible']){
+                const sqon = projectFolder.generateAccessibleSQON(p.zone, p.name);
+                base_sqon['content'][1]['content'].push(sqon);
+            }
+        }
+
+        // project folders that are non-accessible, filter them out
+        if (permissions['project_folders_non_accessible'].length !== 0) {
+            const projectFolder = new ProjectFolder(project_code);
+            for (const p of permissions['project_folders_non_accessible']){
+                const sqon = projectFolder.generateNonAccessibleSQON(p.zone, p.name);
                 base_sqon['content'][2]['content'].push(sqon);
             }
         }
