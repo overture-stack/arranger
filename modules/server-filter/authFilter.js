@@ -242,12 +242,6 @@ const getRBAC = async (project_code, user_roles) => {
             }
         }
 
-        // if user cannot access any project folder
-        if (folderIds_accessible.length === 0){
-
-
-        }
-
         // if user does not have access to all namefolders (file_any) for both greenroom and core, but can access project folder(s) filter on project folder paths. If not, user will only see own name folder, if they have permission to view it.
         if ((permitted['file_any'].length === 0 && folderIds_accessible.length !== 0)) {
             // retrieve project folders a user has access to and filter on them by keyword
@@ -255,6 +249,18 @@ const getRBAC = async (project_code, user_roles) => {
             if (projectFolders.length !== 0) {
                 for (const folder of projectFolders) {
                     permitted['project_folders_accessible'].push(folder)
+                }
+            }
+        }
+
+        // check if users have access to namefolder and project folder(s) for a zone but not all name folders in that same zone
+        if ((permitted['file_any'].length !== 0 && permitted['file_in_own_namefolder'].length !== 0 && folderIds_accessible.length !== 0)) {
+            const projectFolders = await getProjectFolders(folderIds_accessible);
+            if (projectFolders.length !== 0) {
+                for (const folder of projectFolders) {
+                    if (permitted['file_in_own_namefolder'].includes(folder.zone) && !permitted['file_any'].includes(folder.zone) ){
+                        permitted['project_folders_accessible'].push(folder)
+                    }
                 }
             }
         }
@@ -330,12 +336,6 @@ const buildSQON = async (role_metadata, project_code, username) => {
             }
         }
 
-        // no project folders accessible, filter out all shared/*
-        // if (permissions['project_folders_accessible'].length === 0) {
-        //     const projectFolder = new ProjectFolder(project_code);
-        //     const sqon = projectFolder.generateAbsentSQON()
-        //     base_sqon['content'][2]['content'].push(sqon)
-        // }
 
         // project folders accessible, select these only. User does not have access to all name folders in any zone
         if (permissions['project_folders_accessible'].length !== 0) {
