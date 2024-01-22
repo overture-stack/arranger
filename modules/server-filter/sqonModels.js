@@ -50,16 +50,6 @@ export class ProjectFolder {
       };
     }
 
-    generateAbsentSQON(){
-      return {
-        "op":"in",
-        "content":{
-        "field":"parent_path.keyword",
-        "value":["shared/*"]
-        }
-      }
-    }
-
     generateAccessibleSQON(zone, folderName){
       return {
         'op': 'and',
