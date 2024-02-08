@@ -23,7 +23,7 @@ Arranger integrates with your underlying Elasticsearch cluster to automatically 
 > <img align="left" src="ov-logo.png" height="90"/>
 > </div>
 > 
-> *Arranger is a core service within the [Overture](https://www.overture.bio/) research software ecosystem. See our [related products](#related-products) for more information on how Overture helps organize data and enable discovery.*
+> *Arranger is a core service within the [Overture](https://www.overture.bio/) research software ecosystem. Overture is a toolkit of modular software components made to build into scalable genomics data management systems. See our [related products](#related-products) for more information on what Overture can offer.*
 > 
 > 
 
@@ -67,7 +67,7 @@ The deployed services will be accessible through the following ports:
 
 - Filing an [issue](https://github.com/overture-stack/arranger/issues)
 - Making a [contribution](CONTRIBUTING.md)
-- Connect with us on [Slack](https://overture-bio.slack.com/)
+- Connect with us on [Slack](https://join.slack.com/t/overture-bio/shared_invite/zt-21tdumtdh-9fP1TFeLepK4~Lc377rOYw)
 - Add or Upvote a [feature request](https://github.com/overture-stack/arranger/issues?q=is%3Aopen+is%3Aissue+label%3Anew-feature+sort%3Areactions-%2B1-desc)
 
 ## Related Products 
