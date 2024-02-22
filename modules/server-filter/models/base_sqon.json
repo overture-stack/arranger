@@ -13,10 +13,6 @@
       {
          "op":"or",
          "content":[]
-      },
-      {
-         "op":"not",
-         "content":[]
       }
    ]
 }

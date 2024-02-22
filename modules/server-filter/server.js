@@ -40,7 +40,7 @@ async function serverFilter(req, res, next) {
             const project_code = req.body['project_code'];
             const username = decoded['username']
             const realm_roles = decoded['roles']
-            req.sqon = await memoizedProcess(project_code, username, JSON.stringify(req.body), realm_roles)
+            req.sqon = await memoizedProcess(project_code, username, JSON.stringify(req.body), realm_roles, req.headers.authorization)
 
         }
     } catch (error) {
