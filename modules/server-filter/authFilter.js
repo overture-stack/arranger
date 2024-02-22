@@ -123,7 +123,7 @@ const getProjectFolders = async (project_code = '', token = '',page = 0, data = 
             indexes: null // by default: false
           },
            headers: {
-                "Authorization" : `Bearer ${token}`
+                "Authorization" : `${token}`
 
             }
     }
@@ -246,7 +246,7 @@ const buildSQON = async (role_metadata, project_code, username) => {
         const base_sqon = await readFile('./models/base_sqon.json');
 
         // if user does not have any permissions, return no data
-        if (permissions['file_any'].length === 0 && permissions['file_in_own_namefolder'].length === 0) {
+        if (permissions['file_any'].length === 0 && permissions['file_in_own_namefolder'].length === 0 && permissions['project_folders_accessible'].length === 0) {
             base_sqon['content'][0]['content']['field'] = 'no_permissions'
             return base_sqon
         }
