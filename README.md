@@ -23,7 +23,7 @@ Arranger integrates with your underlying Elasticsearch cluster to automatically 
 > <img align="left" src="ov-logo.png" height="90"/>
 > </div>
 > 
-> *Arranger is a core service within the [Overture](https://www.overture.bio/) research software ecosystem. See our [related products](#related-products) for more information on how Overture helps organize data and enable discovery.*
+> *Arranger is a core service within the [Overture](https://www.overture.bio/) research software ecosystem. See our [related products](#related-products) for more information on how Overture helps organize data and enable discovery.*  
 > 
 > 
 
@@ -92,7 +92,7 @@ See the links below for additional information on our other research software to
 |[Song](https://www.overture.bio/products/song/)|Catalog and manage metadata associated to file data spread across cloud storage systems|
 |[Maestro](https://www.overture.bio/products/maestro/)|Organizing your distributed data into a centralized Elasticsearch index|
 |[Arranger](https://www.overture.bio/products/arranger/)|A search API with reusable UI components that build into configurable and functional data portals|
-|[DMS-UI](https://github.com/overture-stack/dms-ui)|A simple web browser UI that integrates Ego and Arranger|
+|[Stage](https://github.com/overture-stack/stage)|A simple web browser UI that integrates Ego and Arranger|
 
 ## Acknowledgements
 
