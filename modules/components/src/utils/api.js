@@ -21,7 +21,6 @@ export const fetchExtendedMapping = ({ graphqlField, projectId, api = defaultApi
   api({
     endpoint: `/${projectId}/graphql`,
     body: {
-      project_code: 'indoctestproject',
       query: `
         {
           ${graphqlField}{

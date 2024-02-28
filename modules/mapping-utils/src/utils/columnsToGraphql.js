@@ -27,7 +27,6 @@ export default function columnsToGraphql({ config = {}, sqon, queryName, sort, o
     .join('\n');
 
   return {
-    project_code: 'indoctestproject',
     fields,
     query: `
         query($sort: [Sort], $first: Int, $offset: Int, $score: String, $sqon: JSON) {

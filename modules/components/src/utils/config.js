@@ -16,6 +16,7 @@ export function deleteValue(key) {
 }
 
 export const ARRANGER_API = getValue('ARRANGER_API', 'http://localhost:5050');
+export const ARRANGER_ADMIN_API = getValue('ARRANGER_ADMIN_API', 'http://localhost:5051');
 export const ES_HOST = getValue('ES_HOST', 'http://localhost:9200');
 export const PROJECT_ID = getValue('PROJECT_ID', null);
 export const ACTIVE_INDEX = getValue('ACTIVE_INDEX', null);

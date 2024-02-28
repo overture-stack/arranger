@@ -32,7 +32,7 @@ class Query extends Component {
       let { data, errors } = await api({
         ...options,
         endpoint: path.join(projectId, 'graphql', name || ''),
-        body: { query, variables, project_code: 'indoctestproject' },
+        body: { query, variables },
       });
       this.setState({
         data,

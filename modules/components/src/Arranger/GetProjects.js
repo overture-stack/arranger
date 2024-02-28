@@ -1,11 +1,11 @@
 import React from 'react';
-import defaultApi from '../utils/api';
+import defaultAdminApi from '../utils/adminAPI';
 
 class GetProjects extends React.Component {
   state = { projects: [] };
 
   async componentDidMount() {
-    const { api = defaultApi } = this.props;
+    const { api = defaultAdminApi } = this.props;
     let { data } = await api({
       endpoint: '/admin/graphql',
       body: {
