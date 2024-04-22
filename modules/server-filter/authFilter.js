@@ -268,7 +268,7 @@ const buildSQON = async (role_metadata, project_code, username) => {
         if (permissions['file_in_own_namefolder'].length !== 0) {
             for (const p of permissions['file_in_own_namefolder']) {
                 let owner_sqon = await readFile('./models/owner_sqon.json');
-                owner_sqon['content'][0]['content']['value'] = [`namefolder/${username}*`];
+                owner_sqon['content'][0]['content']['value'] = [`users/${username}*`];
                 owner_sqon['content'][1]['content']['value'] = [p];
                 base_sqon['content'][1]['content'].push(owner_sqon);
             }
