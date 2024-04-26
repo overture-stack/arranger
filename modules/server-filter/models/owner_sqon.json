@@ -6,7 +6,7 @@
          "content":{
             "field":"parent_path",
             "value":[
-               "namefolder/user*"
+               "users/user*"
             ]
          }
       },
