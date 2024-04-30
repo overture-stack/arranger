@@ -116,6 +116,7 @@ const getProjectFolders = async (project_code = '', token = '',page = 0, data = 
             type: 'project_folder',
             container_code: project_code,
             status: 'ACTIVE',
+            parent_path: 'shared',
             page: page,
             page_size: METADATA_SERVICE_PAGE_SIZE
           },
