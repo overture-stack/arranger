@@ -1,0 +1,37 @@
+name: CI pipeline
+
+on:
+  push:
+    branches:
+      - patched-version
+    paths:
+      - 'modules/admin-ui/**'
+  pull_request:
+    branches:
+      - patched-version
+    paths:
+      - 'modules/admin-ui/**'
+
+jobs:
+  run_tests:
+   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_run_tests_pilot.yml@main
+   with:
+     min_coverage_percent: 86
+     python_version: "3.9.13"
+
+  build_and_publish:
+   needs: [run_tests]
+   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_build_and_publish_pilot.yml@main
+   with:
+     matrix_config: '["arranger-admin-ui"]'
+     docker_registry: 'pilotdataplatform.azurecr.io'
+     service_name: 'arranger-admin-ui'
+   secrets: inherit
+
+  trigger_deployment:
+    needs: [build_and_publish]
+    uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
+    with:
+      service_name: 'metadata'
+      app_version: "${{needs.build_and_publish.outputs.app_version}}"
+    secrets: inherit
