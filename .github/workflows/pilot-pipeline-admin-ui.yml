@@ -32,6 +32,6 @@ jobs:
     needs: [build_and_publish]
     uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
     with:
-      service_name: 'metadata'
+      service_name: 'arranger-admin-ui'
       app_version: "${{needs.build_and_publish.outputs.app_version}}"
     secrets: inherit

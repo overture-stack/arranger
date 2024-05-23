@@ -25,13 +25,13 @@ jobs:
    with:
      matrix_config: '["arranger-admin-server"]'
      docker_registry: 'pilotdataplatform.azurecr.io'
-     service_name: 'metadata'
+     service_name: 'arranger-admin-server'
    secrets: inherit
 
   trigger_deployment:
     needs: [build_and_publish]
     uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
     with:
-      service_name: 'metadata'
+      service_name: 'arranger-admin-server'
       app_version: "${{needs.build_and_publish.outputs.app_version}}"
     secrets: inherit
