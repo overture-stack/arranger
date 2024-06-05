@@ -153,7 +153,7 @@ export interface TableConfigsInterface {
 
 export interface NetworkAggregationInterface {
 	[NetworkAggregationProperties.ENDPOINT]: string;
-	[NetworkAggregationProperties.ARRANGER_FIELD]: string;
+	[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
 	[NetworkAggregationProperties.NAME]: string;
 }
 
