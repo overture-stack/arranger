@@ -92,10 +92,11 @@ jobs:
           # Sets the target stage to build
           target: arranger-admin-server
 
-  # trigger_deployment:
-  #   needs: [build_and_publish]
-  #   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
-  #   with:
-  #     service_name: 'arranger-admin-server'
-  #     app_version: "${{needs.build_and_publish.outputs.app_version}}"
-  #   secrets: inherit
+  trigger_deployment:
+    needs: [build_and_publish]
+    uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_shared_layer_pilot.yml@main
+    with:
+      service_name: 'arranger-admin-server'
+      app_version: "${{needs.build_and_publish.outputs.app_version}}"
+      service_pattern: 'arranger_admin_server'
+    secrets: inherit
