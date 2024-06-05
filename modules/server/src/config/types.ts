@@ -5,7 +5,7 @@ import { ES_TYPES } from '@/mapping/esToAggTypeMap';
 export const ConfigOptionalProperties = {
 	DOWNLOADS: 'downloads',
 	MATCHBOX: 'matchbox',
-	NETWORK_AGGREGATION: 'networkAggregation',
+	NETWORK_AGGREGATION: 'network',
 } as const;
 
 export const ConfigRequiredProperties = {
