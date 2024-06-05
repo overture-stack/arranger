@@ -4,10 +4,11 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
+import { createSchemaFromNetworkConfig, mergeSchemas } from './network';
 import makeSchema from './schema';
 
 const getESMapping = async (esClient, index) => {
@@ -237,6 +238,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -249,6 +251,8 @@ export const createSchemasFromConfigs = async ({
 			configsFromFiles,
 		);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
 			getServerSideFilter,
@@ -256,12 +260,26 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		return {
-			fieldsFromMapping,
-			mockSchema,
-			schema,
-			typesWithMappings,
-		};
+		if (enableNetworkAggregation) {
+			const { networkSchema } = await createSchemaFromNetworkConfig(
+				configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+			);
+			const [mergedSchema, mergedMockSchema] = mergeSchemas({
+				local: { schema, mockSchema },
+				network: { schema: mergedSchema, mockSchema: mergedMockSchema },
+			});
+			return {
+				...commonFields,
+				schema: mergedSchema,
+				mockSchema: mergedMockSchema,
+			};
+		} else {
+			return {
+				...commonFields,
+				mockSchema,
+				schema,
+			};
+		}
 	} catch (error) {
 		const message = error?.message || error;
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
@@ -274,6 +292,7 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -283,6 +302,7 @@ export default async ({
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
+				enableNetworkAggregation,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

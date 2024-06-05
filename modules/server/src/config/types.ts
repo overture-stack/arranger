@@ -5,6 +5,7 @@ import { ES_TYPES } from '@/mapping/esToAggTypeMap';
 export const ConfigOptionalProperties = {
 	DOWNLOADS: 'downloads',
 	MATCHBOX: 'matchbox',
+	NETWORK_AGGREGATION: 'networkAggregation',
 } as const;
 
 export const ConfigRequiredProperties = {
@@ -51,6 +52,12 @@ export const TableProperties = {
 	DEFAULT_SORTING: 'defaultSorting',
 	MAX_RESULTS_WINDOW: 'maxResultsWindow',
 	ROW_ID_FIELD_NAME: 'rowIdFieldName',
+} as const;
+
+export const NetworkAggregationProperties = {
+	ENDPOINT: 'endpoint',
+	ARRANGER_FIELD: 'arrangerField',
+	NAME: 'name',
 } as const;
 
 //////////////////////////////////
@@ -143,6 +150,12 @@ export interface TableConfigsInterface {
 	[ConfigProperties.ROW_ID_FIELD_NAME]?: string;
 }
 
+export interface NetworkAggregationInterface {
+	[NetworkAggregationProperties.ENDPOINT]: string;
+	[NetworkAggregationProperties.ARRANGER_FIELD]: string;
+	[NetworkAggregationProperties.NAME]: string;
+}
+
 export interface ConfigObject {
 	[ConfigProperties.DOCUMENT_TYPE]: string;
 	[ConfigProperties.DOWNLOADS]?: DownloadsConfigsInterface;
@@ -151,6 +164,7 @@ export interface ConfigObject {
 	[ConfigProperties.INDEX]: string;
 	[ConfigProperties.MATCHBOX]: any[];
 	[ConfigProperties.TABLE]: TableConfigsInterface;
+	[ConfigProperties.NETWORK_AGGREGATION]: NetworkAggregationInterface[];
 }
 
 export interface FieldFromMapping {

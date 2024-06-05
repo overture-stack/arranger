@@ -17,6 +17,7 @@ const {
 	ES_PASS,
 	ES_LOG, //TODO: ES doesn't include a logger anymore
 	PING_PATH,
+	ENABLE_NETWORK_AGGREGATION,
 } = ENV_CONFIG;
 
 export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
@@ -56,6 +57,7 @@ export default async ({
 	getServerSideFilter = getDefaultServerSideFilter,
 	graphqlOptions = {},
 	pingPath = PING_PATH,
+	enableNetworkAggregation = ENABLE_NETWORK_AGGREGATION,
 } = {}) => {
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = Router();
@@ -84,6 +86,7 @@ export default async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
+		enableNetworkAggregation,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,

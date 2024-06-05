@@ -18,3 +18,9 @@ Build (required before publish):
 ```
 npm run prepare
 ```
+
+## Federated Search
+
+### Config
+
+Pass `true` to the environment variable `ENABLE_NETWORK_AGGREGATION` to enabled federated search.
