@@ -238,7 +238,6 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
-	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -260,7 +259,7 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		if (enableNetworkAggregation) {
+		if (false) {
 			const { networkSchema } = await createSchemaFromNetworkConfig({
 				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
 			});
@@ -292,7 +291,6 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
-	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -302,7 +300,6 @@ export default async ({
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
-				enableNetworkAggregation,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

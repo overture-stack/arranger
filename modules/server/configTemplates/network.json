@@ -1,9 +1,11 @@
 {
-	"network": [
-		{
-			"name": "Toronto",
-			"endpoint": "www",
-			"documentType": "file"
-		}
-	]
+	"network": {
+		"servers": [
+			{
+				"displayName": "Toronto",
+				"graphqlUrl": "http://.../graphql",
+				"documentType": "file"
+			}
+		]
+	}
 }
