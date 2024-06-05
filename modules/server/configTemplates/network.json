@@ -1,0 +1,9 @@
+{
+	"network": [
+		{
+			"name": "Toronto",
+			"endpoint": "www",
+			"arrangerField": "file"
+		}
+	]
+}
