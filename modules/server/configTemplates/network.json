@@ -3,7 +3,7 @@
 		{
 			"name": "Toronto",
 			"endpoint": "www",
-			"arrangerField": "file"
+			"documentType": "file"
 		}
 	]
 }
