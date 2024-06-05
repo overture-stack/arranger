@@ -261,12 +261,12 @@ export const createSchemasFromConfigs = async ({
 		});
 
 		if (enableNetworkAggregation) {
-			const { networkSchema } = await createSchemaFromNetworkConfig(
-				configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-			);
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+			});
 			const [mergedSchema, mergedMockSchema] = mergeSchemas({
 				local: { schema, mockSchema },
-				network: { schema: mergedSchema, mockSchema: mergedMockSchema },
+				network: { schema: networkSchema, mockSchema: networkMockSchema },
 			});
 			return {
 				...commonFields,
