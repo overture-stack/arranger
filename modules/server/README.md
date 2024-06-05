@@ -23,4 +23,4 @@ npm run prepare
 
 ### Config
 
-Pass `true` to the environment variable `ENABLE_NETWORK_AGGREGATION` to enabled federated search.
+Pass `true` to the environment variable `ENABLE_NETWORK_AGGREGATION` to enable federated search.
