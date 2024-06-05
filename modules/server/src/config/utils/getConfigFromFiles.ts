@@ -56,23 +56,29 @@ const getConfigFromFiles = (
 
 			const configObj = (files as [string, any][]).reduce(
 				(configsAcc: Partial<ConfigObject>, [fileName, fileData]) => {
-					const fileDataJSON = JSON.parse(fileData);
+					try {
+						const fileDataJSON = JSON.parse(fileData);
 
-					if (fileDataJSON?.[ConfigProperties.TABLE]?.[ConfigProperties.DEFAULT_SORTING]) {
-						return merge({}, configsAcc, fileDataJSON, {
-							[ConfigProperties.TABLE]: {
-								...fileDataJSON[ConfigProperties.TABLE],
-								[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
-									ConfigProperties.DEFAULT_SORTING
-								].map((sorting: SortingConfigsInterface) => ({
-									...sorting,
-									desc: sorting.desc || false,
-								})),
-							},
-						});
+						if (fileDataJSON?.[ConfigProperties.TABLE]?.[ConfigProperties.DEFAULT_SORTING]) {
+							return merge({}, configsAcc, fileDataJSON, {
+								[ConfigProperties.TABLE]: {
+									...fileDataJSON[ConfigProperties.TABLE],
+									[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
+										ConfigProperties.DEFAULT_SORTING
+									].map((sorting: SortingConfigsInterface) => ({
+										...sorting,
+										desc: sorting.desc || false,
+									})),
+								},
+							});
+						}
+
+						return merge({}, configsAcc, fileDataJSON);
+					} catch (e) {
+						throw new Error(
+							'  - Could not parse all json config files. Please check validity of content. Empty files will not parse.',
+						);
 					}
-
-					return merge({}, configsAcc, fileDataJSON);
 				},
 				configsFromEnv,
 			);
