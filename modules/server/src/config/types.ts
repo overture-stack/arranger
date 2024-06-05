@@ -1,6 +1,7 @@
 // TODO: will gradually tighten these as we migrate to TS
 
 import { ES_TYPES } from '@/mapping/esToAggTypeMap';
+import { DOCUMENT_TYPE } from './constants';
 
 export const ConfigOptionalProperties = {
 	DOWNLOADS: 'downloads',
@@ -56,7 +57,7 @@ export const TableProperties = {
 
 export const NetworkAggregationProperties = {
 	ENDPOINT: 'endpoint',
-	ARRANGER_FIELD: 'arrangerField',
+	DOCUMENT_TYPE: 'documentType',
 	NAME: 'name',
 } as const;
 
