@@ -75,9 +75,7 @@ const getConfigFromFiles = (
 
 						return merge({}, configsAcc, fileDataJSON);
 					} catch (e) {
-						throw new Error(
-							'  - Could not parse all json config files. Please check validity of content. Empty files will not parse.',
-						);
+						throw new Error('Could not parse the provided configuration files');
 					}
 				},
 				configsFromEnv,
