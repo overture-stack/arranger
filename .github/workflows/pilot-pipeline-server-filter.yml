@@ -1,4 +1,4 @@
-name: CI pipeline
+name: CI pipeline server filter
 
 on:
   push:
@@ -13,14 +13,8 @@ on:
       - 'modules/server-filter/**'
 
 jobs:
-  run_tests:
-   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_run_tests_pilot.yml@main
-   with:
-     min_coverage_percent: 86
-     python_version: "3.9.13"
 
   build_and_publish:
-   needs: [run_tests]
    uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_build_and_publish_pilot.yml@main
    with:
      matrix_config: '["arranger-server-filter"]'

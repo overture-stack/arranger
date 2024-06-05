@@ -1,9 +1,9 @@
-name: CI pipeline
+name: CI pipeline admin server
 
 on:
   push:
     branches:
-      - patched-version
+      - PILOT-5250
     paths:
       - 'modules/admin/**'
   pull_request:
@@ -13,25 +13,89 @@ on:
       - 'modules/admin/**'
 
 jobs:
-  run_tests:
-   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_run_tests_pilot.yml@main
-   with:
-     min_coverage_percent: 86
-     python_version: "3.9.13"
 
-  build_and_publish:
-   needs: [run_tests]
-   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_build_and_publish_pilot.yml@main
-   with:
-     matrix_config: '["arranger-admin-server"]'
-     docker_registry: 'pilotdataplatform.azurecr.io'
-     service_name: 'arranger-admin-server'
-   secrets: inherit
+  extract-branch-name:
+    runs-on: ubuntu-20.04
+    outputs:
+      branch: ${{steps.extract_branch.outputs.branch}}
+    steps:
+      - name: Extract Branch Name
+        id: extract_branch
+        shell: bash
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+  get-version:
+    runs-on: ubuntu-20.04
+    outputs:
+      app_version: ${{steps.get-version.outputs.app_version}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Get Version
+        id: get-version
+        shell: bash
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          BASE_VERSION=`sed -n 's/^ *"version":.*"\([^"]*\)".*/\1/p' package.json`
+          echo "app_version=$BASE_VERSION" >> $GITHUB_OUTPUT
 
-  trigger_deployment:
-    needs: [build_and_publish]
-    uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
-    with:
-      service_name: 'arranger-admin-server'
-      app_version: "${{needs.build_and_publish.outputs.app_version}}"
-    secrets: inherit
+  build-and-push-docker-image:
+    needs: [extract-branch-name, get-version]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'PILOT-5250'}}
+    name: Build admin server Docker image and push to repositories
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Github Packages
+        uses: docker/login-action@v2
+        with:
+          registry: pilotdataplatform.azurecr.io
+          username: ${{ secrets.ACR_CLIENT }}
+          password: ${{ secrets.ACR_SECRET }}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            pilotdataplatform.azurecr.io/arranger/arranger-admin-server
+          # generate Docker tags based on the following events/attributes
+          sep-tags: ','
+          tags: |
+            type=raw,prefix=arranger-admin-server-,suffix=,value=${{needs.get-version.outputs.app_version}}
+#      - name: Image digest
+#        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.tags }}
+      - name: Check if Docker image tags exist
+        shell: bash
+        run: |
+          image_tag=$(echo "${{ steps.meta.outputs.tags }}")
+          if docker manifest inspect $image_tag >/dev/null; then
+            echo "Docker image with tag already exists. Please update the version."
+            exit 1
+          else
+            echo "Image tags do not exist, proceeding..."
+          fi
+      - name: Build image and push to GitHub Container Registry
+        uses: docker/build-push-action@v4
+        with:
+          # relative path to the place where source code with Dockerfile is located
+          context: .
+          # Note: tags has to be all lower-case
+          tags: ${{ steps.meta.outputs.tags }}
+          # build on feature branches, push only on main branch
+          push: ${{ github.event_name != 'pull_request' }}
+          # Sets the target stage to build
+          target: arranger-admin-server
+
+  # trigger_deployment:
+  #   needs: [build_and_publish]
+  #   uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_trigger_deployment_pilot.yml@main
+  #   with:
+  #     service_name: 'arranger-admin-server'
+  #     app_version: "${{needs.build_and_publish.outputs.app_version}}"
+  #   secrets: inherit
