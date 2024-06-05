@@ -40,7 +40,7 @@ jobs:
 
   build-and-push-docker-image:
     needs: [extract-branch-name, get-version]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'patched-version'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'PILOT-5250'}}
     name: Build admin ui Docker image and push to repositories
     runs-on: ubuntu-20.04
     steps:
@@ -117,5 +117,5 @@ jobs:
 
           sed -i "/$pattern/,/charts/ s/$current_version/    $pattern: ${{needs.get-version.outputs.app_version}}/" $BASE_FILE
           git add $BASE_FILE
-          git commit -m "Deploy arranger-admin-server ${{needs.get-version.outputs.app_version}} [app_name:arranger-admin-server, app_version:${{needs.get-version.outputs.app_version}}]"
+          git commit -m "Deploy arranger-admin-ui ${{needs.get-version.outputs.app_version}} [app_name:arranger-admin-ui, app_version:${{needs.get-version.outputs.app_version}}]"
           git push origin main
