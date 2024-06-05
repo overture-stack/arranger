@@ -84,7 +84,6 @@ export default async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
-		enableNetworkAggregation,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
