@@ -56,9 +56,9 @@ export const TableProperties = {
 } as const;
 
 export const NetworkAggregationProperties = {
-	ENDPOINT: 'endpoint',
+	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE: 'documentType',
-	NAME: 'name',
+	DISPLAY_NAME: 'displayName',
 } as const;
 
 //////////////////////////////////
@@ -152,9 +152,9 @@ export interface TableConfigsInterface {
 }
 
 export interface NetworkAggregationInterface {
-	[NetworkAggregationProperties.ENDPOINT]: string;
+	[NetworkAggregationProperties.GRAPHQL_URL]: string;
 	[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
-	[NetworkAggregationProperties.NAME]: string;
+	[NetworkAggregationProperties.DISPLAY_NAME]: string;
 }
 
 export interface ConfigObject {
