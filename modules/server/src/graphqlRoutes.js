@@ -4,10 +4,11 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
+import { createSchemaFromNetworkConfig, mergeSchemas } from './network';
 import makeSchema from './schema';
 
 const getESMapping = async (esClient, index) => {
@@ -249,6 +250,8 @@ export const createSchemasFromConfigs = async ({
 			configsFromFiles,
 		);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
 			getServerSideFilter,
@@ -256,12 +259,26 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		return {
-			fieldsFromMapping,
-			mockSchema,
-			schema,
-			typesWithMappings,
-		};
+		if (false) {
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+			});
+			const [mergedSchema, mergedMockSchema] = mergeSchemas({
+				local: { schema, mockSchema },
+				network: { schema: networkSchema, mockSchema: networkMockSchema },
+			});
+			return {
+				...commonFields,
+				schema: mergedSchema,
+				mockSchema: mergedMockSchema,
+			};
+		} else {
+			return {
+				...commonFields,
+				mockSchema,
+				schema,
+			};
+		}
 	} catch (error) {
 		const message = error?.message || error;
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
