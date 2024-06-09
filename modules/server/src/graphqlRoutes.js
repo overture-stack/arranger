@@ -259,7 +259,7 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		if (false) {
+		if (true) {
 			const { networkSchema } = await createSchemaFromNetworkConfig({
 				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
 			});

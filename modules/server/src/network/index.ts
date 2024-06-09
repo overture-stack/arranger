@@ -1,58 +1,55 @@
-import { NetworkAggregationInterface } from '@/config/types';
-import { buildClientSchema } from 'graphql';
+import { buildClientSchema, IntrospectionQuery } from 'graphql';
 import { fetchGql, getIntrospectionQuery } from './gql';
+import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 import { toJSON } from './util';
 
-/**
- * 
-network config:
-		{
-			"displayName": "Barc",
-			"graphqlUrl": "http://localhost:7070/",
-			"documentType": "Aggs"
-		}
- */
+type FetchRemoteSchemaResult = {
+	config: NetworkAggregationConfigInput;
+	schemaJSON: IntrospectionQuery | null;
+};
+const fetchRemoteSchema = async (
+	config: NetworkAggregationConfigInput,
+): Promise<FetchRemoteSchemaResult> => {
+	const { graphqlUrl } = config;
+	try {
+		/**
+		 * get full schema (needed for buildClientSchema) and convert json
+		 */
+		const remoteSchema = await fetchGql({
+			url: graphqlUrl,
+			gqlRequest: { query: getIntrospectionQuery() },
+		})
+			.then(toJSON)
+			.then((json) => json.data);
+
+		return { config, schemaJSON: remoteSchema };
+	} catch (error) {
+		console.log(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.error(error);
+		return { config, schemaJSON: null };
+	}
+};
 
 const fetchRemoteSchemas = async ({
 	networkConfig,
 }: {
-	networkConfig: NetworkAggregationInterface[];
-}) => {
-	const networkQueries = await Promise.allSettled(
-		networkConfig.map(async (config) => {
-			const { graphqlUrl } = config;
-			try {
-				/**
-				 * get full schema (needed for buildClientSchema) and convert json to gql object
-				 */
-				const remoteSchema = await fetchGql({
-					url: graphqlUrl,
-					gqlRequest: { query: getIntrospectionQuery() },
-				})
-					.then(toJSON)
-					.then((schemaJSON) => buildClientSchema(schemaJSON.data));
+	networkConfig: NetworkAggregationConfigInput[];
+}): Promise<NetworkAggregationConfig[]> => {
+	// query remote notes
+	// type cast because rejected errors are handled
+	const networkQueries = (await Promise.allSettled(
+		networkConfig.map(async (config) => fetchRemoteSchema(config)),
+	)) as PromiseFulfilledResult<FetchRemoteSchemaResult>[];
 
-				return { config, res: remoteSchema };
-			} catch (error) {
-				console.log(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
-				console.error(error);
-				return { config, res: error };
-			}
-		}),
-	);
-
+	// build schema
 	const schemaResults = networkQueries.map((networkResult) => {
-		// responses need to be cleaned up
-		const response = { id: '', schema: undefined, errors: undefined, config };
-		if (networkResult.status === 'fulfilled') {
-			return {
-				...response,
-				schema: networkResult.value.res,
-				config: networkResult.value.config,
-				errors: [],
-			};
-		} else {
-			return { ...response, schema: null, config: null, errors: [networkResult.reason] };
+		const { config, schemaJSON } = networkResult.value;
+		try {
+			const schema = schemaJSON !== null ? buildClientSchema(schemaJSON) : null;
+			return { ...config, schema };
+		} catch (error) {
+			console.error('build schema error', error);
+			return { ...config, schema: null };
 		}
 	});
 
@@ -62,23 +59,15 @@ const fetchRemoteSchemas = async ({
 export const createSchemaFromNetworkConfig = async ({
 	networkConfig,
 }: {
-	networkConfig: NetworkAggregationInterface[];
+	networkConfig: NetworkAggregationConfigInput[];
 }) => {
-	try {
-		// query remote nodes
-		const remoteSchemasResult = await fetchRemoteSchemas({
-			networkConfig,
-		});
+	const remoteSchemasResult = await fetchRemoteSchemas({
+		networkConfig,
+	});
 
-		// merge remote schemas
-		const mergedFields = mergeRemoteSchemas(remoteSchemasResult);
-	} catch (error) {
-		console.log(error);
-	}
+	const mergedFields = mergeRemoteSchemas(remoteSchemasResult);
 };
 
-const mergeRemoteSchemas = (remoteSchemasResult) => {
-	// want to reuse config in here to pull out `documentType`
-	// alternative is to it in as 2nd param to mergeRemoteSchemas
-	// but then I have to link remoteSchemasResult.schema <===> networkConfig[node].documentType
+const mergeRemoteSchemas = (input) => {
+	/**placeholder */
 };
