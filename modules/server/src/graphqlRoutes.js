@@ -149,12 +149,22 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+const createEndpoint = async ({
+	esClient,
+	graphqlOptions = {},
+	mockSchema,
+	schema,
+	networkSchema,
+}) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
 	console.log('Starting GraphQL server:');
+
+	const testServer = new ApolloServer({ schema: networkSchema });
+	await testServer.start();
+	testServer.applyMiddleware({ app: router, path: '/test' });
 
 	try {
 		await router.get(
@@ -259,26 +269,16 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		if (true) {
-			const { networkSchema } = await createSchemaFromNetworkConfig({
-				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-			});
-			const [mergedSchema, mergedMockSchema] = mergeSchemas({
-				local: { schema, mockSchema },
-				network: { schema: networkSchema, mockSchema: networkMockSchema },
-			});
-			return {
-				...commonFields,
-				schema: mergedSchema,
-				mockSchema: mergedMockSchema,
-			};
-		} else {
-			return {
-				...commonFields,
-				mockSchema,
-				schema,
-			};
-		}
+		const { networkSchema } = await createSchemaFromNetworkConfig({
+			networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+		});
+
+		return {
+			...commonFields,
+			mockSchema,
+			schema,
+			networkSchema,
+		};
 	} catch (error) {
 		const message = error?.message || error;
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
@@ -296,7 +296,7 @@ export default async ({
 	graphqlOptions = {},
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } =
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings, networkSchema } =
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
@@ -310,6 +310,7 @@ export default async ({
 			graphqlOptions,
 			mockSchema,
 			schema,
+			networkSchema,
 		});
 
 		await initializeSets({ esClient });

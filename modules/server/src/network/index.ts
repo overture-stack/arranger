@@ -1,4 +1,9 @@
-import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
+import {
+	buildClientSchema,
+	getIntrospectionQuery,
+	GraphQLSchema,
+	IntrospectionQuery,
+} from 'graphql';
 import { fetchGql } from './gql';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 import { toJSON } from './util';
@@ -61,13 +66,12 @@ export const createSchemaFromNetworkConfig = async ({
 }: {
 	networkConfig: NetworkAggregationConfigInput[];
 }) => {
-	const remoteSchemasResult = await fetchRemoteSchemas({
+	const newtworkConfigs = await fetchRemoteSchemas({
 		networkConfig,
 	});
 
-	const mergedFields = mergeRemoteSchemas(remoteSchemasResult);
-};
+	const networkSchema = createNetworkAggregationSchema(newtworkConfigs);
 
-const mergeRemoteSchemas = (input) => {
-	/**placeholder */
+	console.log(networkSchema);
+	return { networkSchema };
 };
