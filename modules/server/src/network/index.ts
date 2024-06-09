@@ -1,5 +1,5 @@
-import { buildClientSchema, IntrospectionQuery } from 'graphql';
-import { fetchGql, getIntrospectionQuery } from './gql';
+import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
+import { fetchGql } from './gql';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 import { toJSON } from './util';
 
