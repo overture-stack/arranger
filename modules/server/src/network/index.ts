@@ -1,10 +1,6 @@
-import {
-	buildClientSchema,
-	getIntrospectionQuery,
-	GraphQLSchema,
-	IntrospectionQuery,
-} from 'graphql';
+import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { fetchGql } from './gql';
+import { createNetworkAggregationSchema } from './schema';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 import { toJSON } from './util';
 
@@ -40,13 +36,13 @@ const fetchRemoteSchemas = async ({
 }: {
 	networkConfig: NetworkAggregationConfigInput[];
 }): Promise<NetworkAggregationConfig[]> => {
-	// query remote notes
+	// network calls
 	// type cast because rejected errors are handled
 	const networkQueries = (await Promise.allSettled(
 		networkConfig.map(async (config) => fetchRemoteSchema(config)),
 	)) as PromiseFulfilledResult<FetchRemoteSchemaResult>[];
 
-	// build schema
+	// json => GqlObject(s)
 	const schemaResults = networkQueries.map((networkResult) => {
 		const { config, schemaJSON } = networkResult.value;
 		try {
