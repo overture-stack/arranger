@@ -3,7 +3,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { GraphQLSchema } from 'graphql';
 import { NetworkAggregationConfig } from './types';
 
-const generateExclusions = () => {
+const generateExclusions = (): string[] => {
 	return [];
 };
 
@@ -21,16 +21,19 @@ export const createNetworkAggregationSchema = (newtworkConfigs: NetworkAggregati
 	// | DefinitionNode // gql-ref
 	// | Array<TypeSource>
 	// | (() => TypeSource);
-
+	const exclusions = generateExclusions();
 	const options = {
 		forceSchemaDefinition: true,
 		//onFieldTypeConflict: (x) => console.log(x),
 		//useSchemaDefinition: false,
-		exclusions: generateExclusions(), // string[]
+		exclusions, // string[]
 	};
 	const typeDefs = mergeTypeDefs(typesArr, options);
 
 	const networkSchema = makeExecutableSchema({ typeDefs });
+
+	console.log('Schema created with the following fields');
+	console.log('Exclusions: ');
 
 	return networkSchema;
 };
