@@ -36,7 +36,11 @@ const fetchRemoteSchema = async (
 			gqlRequest: { query: getIntrospectionQuery() },
 		});
 
-		const jsonData = await response.json();
+		if (response.status !== 200) {
+			throw Error('network error');
+		}
+
+		const jsonData = await response.data.json();
 
 		if (jsonData && jsonData.data && isGqlIntrospectionQuery(jsonData.data)) {
 			return { config, introspectionResult: jsonData };
