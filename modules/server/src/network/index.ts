@@ -20,7 +20,7 @@ type FetchRemoteSchemaResult = {
  *
  * @throws JSON parse error
  *
- * @throws Unexpected data error
+ * @throws Unexpected data error eg. Not a valid introspectionQuery result
  */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
@@ -43,7 +43,7 @@ const fetchRemoteSchema = async (
 			throw Error('response data unexpected');
 		}
 	} catch (error) {
-		console.log(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
 		console.error(error);
 		return { config, introspectionResult: null };
 	}
@@ -65,9 +65,6 @@ const fetchRemoteSchemas = async ({
 		const { config, introspectionResult } = networkResult.value;
 
 		try {
-			if (introspectionResult) {
-				throw Error('response data incorrect');
-			}
 			const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
 			return { ...config, schema };
 		} catch (error) {
