@@ -2,12 +2,27 @@ import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'gr
 import { fetchGql } from './gql';
 import { createNetworkAggregationSchema } from './schema';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
-import { toJSON } from './util';
+
+const isGqlIntrospectionQuery = (input: any): input is IntrospectionQuery => {
+	return (input as IntrospectionQuery).__schema !== undefined;
+};
 
 type FetchRemoteSchemaResult = {
 	config: NetworkAggregationConfigInput;
-	schemaJSON: IntrospectionQuery | null;
+	introspectionResult: IntrospectionQuery | null;
 };
+
+/**
+ *
+ * @param config - network config from env
+ * @returns a promise containing network config and the introspection query result
+ *
+ * @throws Fetch failed error
+ *
+ * @throws JSON parse error
+ *
+ * @throws Unexpected data error eg. Not a valid introspectionQuery result
+ */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
 ): Promise<FetchRemoteSchemaResult> => {
@@ -16,18 +31,22 @@ const fetchRemoteSchema = async (
 		/**
 		 * get full schema (needed for buildClientSchema) and convert json
 		 */
-		const remoteSchema = await fetchGql({
+		const response = await fetchGql({
 			url: graphqlUrl,
 			gqlRequest: { query: getIntrospectionQuery() },
-		})
-			.then(toJSON)
-			.then((json) => json.data);
+		});
 
-		return { config, schemaJSON: remoteSchema };
+		const jsonData = await response.json();
+
+		if (jsonData && jsonData.data && isGqlIntrospectionQuery(jsonData.data)) {
+			return { config, introspectionResult: jsonData };
+		} else {
+			throw Error('response data unexpected');
+		}
 	} catch (error) {
-		console.log(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
 		console.error(error);
-		return { config, schemaJSON: null };
+		return { config, introspectionResult: null };
 	}
 };
 
@@ -36,17 +55,19 @@ const fetchRemoteSchemas = async ({
 }: {
 	networkConfig: NetworkAggregationConfigInput[];
 }): Promise<NetworkAggregationConfig[]> => {
-	// network calls
+	// query remote notes
+	const networkQueryPromises = networkConfig.map(async (config) => fetchRemoteSchema(config));
 	// type cast because rejected errors are handled
 	const networkQueries = (await Promise.allSettled(
-		networkConfig.map(async (config) => fetchRemoteSchema(config)),
+		networkQueryPromises,
 	)) as PromiseFulfilledResult<FetchRemoteSchemaResult>[];
 
 	// json => GqlObject(s)
 	const schemaResults = networkQueries.map((networkResult) => {
-		const { config, schemaJSON } = networkResult.value;
+		const { config, introspectionResult } = networkResult.value;
+
 		try {
-			const schema = schemaJSON !== null ? buildClientSchema(schemaJSON) : null;
+			const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
 			return { ...config, schema };
 		} catch (error) {
 			console.error('build schema error', error);
