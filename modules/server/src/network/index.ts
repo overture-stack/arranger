@@ -13,8 +13,14 @@ type FetchRemoteSchemaResult = {
 
 /**
  *
- * @param config
- * @returns
+ * @param config - network config from env
+ * @returns a promise containing network config and the introspection query result
+ *
+ * @throws Fetch failed error
+ *
+ * @throws JSON parse error
+ *
+ * @throws Unexpected data error
  */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
