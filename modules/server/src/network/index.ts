@@ -1,12 +1,21 @@
 import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
 import { fetchGql } from './gql';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
-import { toJSON } from './util';
+
+const isGqlIntrospectionQuery = (input: any): input is IntrospectionQuery => {
+	return (input as IntrospectionQuery).__schema !== undefined;
+};
 
 type FetchRemoteSchemaResult = {
 	config: NetworkAggregationConfigInput;
-	schemaJSON: IntrospectionQuery | null;
+	introspectionResult: IntrospectionQuery | null;
 };
+
+/**
+ *
+ * @param config
+ * @returns
+ */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
 ): Promise<FetchRemoteSchemaResult> => {
@@ -15,18 +24,22 @@ const fetchRemoteSchema = async (
 		/**
 		 * get full schema (needed for buildClientSchema) and convert json
 		 */
-		const remoteSchema = await fetchGql({
+		const response = await fetchGql({
 			url: graphqlUrl,
 			gqlRequest: { query: getIntrospectionQuery() },
-		})
-			.then(toJSON)
-			.then((json) => json.data);
+		});
 
-		return { config, schemaJSON: remoteSchema };
+		const jsonData = await response.json();
+
+		if (jsonData && jsonData.data && isGqlIntrospectionQuery(jsonData.data)) {
+			return { config, introspectionResult: jsonData };
+		} else {
+			throw Error('response data unexpected');
+		}
 	} catch (error) {
 		console.log(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
 		console.error(error);
-		return { config, schemaJSON: null };
+		return { config, introspectionResult: null };
 	}
 };
 
@@ -43,9 +56,13 @@ const fetchRemoteSchemas = async ({
 
 	// build schema
 	const schemaResults = networkQueries.map((networkResult) => {
-		const { config, schemaJSON } = networkResult.value;
+		const { config, introspectionResult } = networkResult.value;
+
 		try {
-			const schema = schemaJSON !== null ? buildClientSchema(schemaJSON) : null;
+			if (introspectionResult) {
+				throw Error('response data incorrect');
+			}
+			const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
 			return { ...config, schema };
 		} catch (error) {
 			console.error('build schema error', error);
