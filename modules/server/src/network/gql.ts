@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { print } from 'graphql';
 
 export const createGqlQuery = ({ query: queryAST, variables }) => {
@@ -14,5 +15,5 @@ export const fetchGql = ({ url, gqlRequest }) => {
 		body: query,
 	};
 
-	return fetch(url, options);
+	return axios(url, options);
 };
