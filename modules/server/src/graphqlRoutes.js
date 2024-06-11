@@ -273,6 +273,11 @@ export const createSchemasFromConfigs = async ({
 			networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
 		});
 
+		const [mergedSchema] = mergeSchemas({
+			local: { schema, mockSchema },
+			network: { schema: networkSchema, mockSchema: networkMockSchema },
+		});
+
 		return {
 			...commonFields,
 			mockSchema,
