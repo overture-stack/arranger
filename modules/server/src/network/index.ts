@@ -35,16 +35,16 @@ const fetchRemoteSchema = async (
 			gqlRequest: { query: getIntrospectionQuery() },
 		});
 
-		if (response.status !== 200) {
-			throw Error('network error');
-		}
-
-		const jsonData = await response.data.json();
-
-		if (jsonData && jsonData.data && isGqlIntrospectionQuery(jsonData.data)) {
-			return { config, introspectionResult: jsonData };
+		if (response.status === 200 && response.statusText === 'OK') {
+			// axios response "data" field, graphql response "data" field
+			const responseData = response.data?.data;
+			if (isGqlIntrospectionQuery(responseData)) {
+				return { config, introspectionResult: responseData };
+			} else {
+				throw Error('response data unexpected');
+			}
 		} else {
-			throw Error('response data unexpected');
+			throw Error('network error');
 		}
 	} catch (error) {
 		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);

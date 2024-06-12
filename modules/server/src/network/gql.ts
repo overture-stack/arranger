@@ -8,12 +8,12 @@ export const createGqlQuery = ({ query: queryAST, variables }) => {
 };
 
 export const fetchGql = ({ url, gqlRequest }) => {
-	const query = JSON.stringify(gqlRequest);
 	const options = {
+		url,
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: query,
+		data: gqlRequest,
 	};
 
-	return axios(url, options);
+	return axios(options);
 };
