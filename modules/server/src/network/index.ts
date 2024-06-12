@@ -38,6 +38,7 @@ const fetchRemoteSchema = async (
 		if (response.status === 200 && response.statusText === 'OK') {
 			// axios response "data" field, graphql response "data" field
 			const responseData = response.data?.data;
+
 			if (isGqlIntrospectionQuery(responseData)) {
 				return { config, introspectionResult: responseData };
 			} else {
