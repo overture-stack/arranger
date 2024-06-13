@@ -2,9 +2,19 @@ import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'gr
 import { fetchGql } from './gql';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
-const isGqlIntrospectionQuery = (input: any): input is IntrospectionQuery => {
-	return (input as IntrospectionQuery).__schema !== undefined;
-};
+/**
+ * WARNING: Unsafe type check, basically a type assertion. Do not export please.
+ *
+ * This is doing a cursory check that the response from a GQL Server appears to be a IntrospectionQuery object.
+ * If this check passes we will optimistically treat the object as a GQL IntrospectionQuery.
+ *
+ * Should be used sparingly, and ideally all downstream consumers of the object operate within try/catch blocks.
+ *
+ * @param input
+ * @returns
+ */
+const isGqlIntrospectionQuery = (input: unknown): input is IntrospectionQuery =>
+	!!input && typeof input === 'object' && '__schema' in input && typeof input.__schema === 'object';
 
 type FetchRemoteSchemaResult = {
 	config: NetworkAggregationConfigInput;
@@ -42,9 +52,11 @@ const fetchRemoteSchema = async (
 			if (isGqlIntrospectionQuery(responseData)) {
 				return { config, introspectionResult: responseData };
 			} else {
-				throw Error('response data unexpected');
+				console.error('unexpected response data in fetchRemoteSchema');
+				throw Error('unexpected response data');
 			}
 		} else {
+			console.error('network error in fetchRemoteSchema');
 			throw Error('network error');
 		}
 	} catch (error) {
