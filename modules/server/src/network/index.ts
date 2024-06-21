@@ -100,17 +100,11 @@ const fetchRemoteSchemas = async ({
 };
 
 export const createSchemaFromNetworkConfig = async ({
-	networkConfig,
+	networkConfigs,
 }: {
-	networkConfig: NetworkAggregationConfigInput[];
+	networkConfigs: NetworkAggregationConfigInput[];
 }) => {
 	const remoteSchemasResult = await fetchRemoteSchemas({
-		networkConfig,
+		networkConfigs,
 	});
-
-	const mergedFields = mergeRemoteSchemas(remoteSchemasResult);
-};
-
-const mergeRemoteSchemas = (input) => {
-	/**placeholder */
 };
