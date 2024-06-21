@@ -19,7 +19,7 @@ const isGqlIntrospectionQuery = (input: unknown): input is IntrospectionQuery =>
 
 type FetchRemoteSchemaResult = {
 	config: NetworkAggregationConfigInput;
-	introspectionResult: IntrospectionQuery | null;
+	introspectionResult: IntrospectionQuery | undefined;
 };
 
 /**
@@ -67,7 +67,7 @@ const fetchRemoteSchema = async (
 	} catch (error) {
 		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
 		console.error(error);
-		return { config, introspectionResult: null };
+		return { config, introspectionResult: undefined };
 	}
 };
 
@@ -91,11 +91,12 @@ const fetchRemoteSchemas = async ({
 			const { config, introspectionResult } = networkResult.value;
 
 			try {
-				const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
+				const schema =
+					introspectionResult !== undefined ? buildClientSchema(introspectionResult) : undefined;
 				return { ...config, schema };
 			} catch (error) {
 				console.error('build schema error', error);
-				return { ...config, schema: null };
+				return { ...config, schema: undefined };
 			}
 		});
 
