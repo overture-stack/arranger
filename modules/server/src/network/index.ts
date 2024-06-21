@@ -103,8 +103,10 @@ export const createSchemaFromNetworkConfig = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkAggregationConfigInput[];
-}) => {
+}): Promise<NetworkAggregationConfig[]> => {
 	const remoteSchemasResult = await fetchRemoteSchemas({
 		networkConfigs,
 	});
+
+	return remoteSchemasResult;
 };
