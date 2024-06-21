@@ -1,4 +1,5 @@
 import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
+import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
@@ -53,11 +54,15 @@ const fetchRemoteSchema = async (
 				return { config, introspectionResult: responseData };
 			} else {
 				console.error('unexpected response data in fetchRemoteSchema');
-				throw Error('unexpected response data');
+				throw new NetworkAggregationError(
+					`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
+				);
 			}
 		} else {
 			console.error('network error in fetchRemoteSchema');
-			throw Error('network error');
+			throw new NetworkAggregationError(
+				`The request to endpoint ${graphqlUrl} has failed. Please verify the endpoint is accessible and responding to requests.`,
+			);
 		}
 	} catch (error) {
 		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
