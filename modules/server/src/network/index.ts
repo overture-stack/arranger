@@ -67,12 +67,12 @@ const fetchRemoteSchema = async (
 };
 
 const fetchRemoteSchemas = async ({
-	networkConfig,
+	networkConfigs,
 }: {
-	networkConfig: NetworkAggregationConfigInput[];
+	networkConfigs: NetworkAggregationConfigInput[];
 }): Promise<NetworkAggregationConfig[]> => {
-	// query remote notes
-	const networkQueryPromises = networkConfig.map(async (config) => fetchRemoteSchema(config));
+	// query remote nodes
+	const networkQueryPromises = networkConfigs.map((config) => fetchRemoteSchema(config));
 	// type cast because rejected errors are handled
 	const networkQueries = (await Promise.allSettled(
 		networkQueryPromises,

@@ -259,6 +259,9 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
+		/**
+		 * TODO: this is temporary. please add conditional based on arranger instance configuration profile (to be implemented)
+		 */
 		if (true) {
 			const { networkSchema } = await createSchemaFromNetworkConfig({
 				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
