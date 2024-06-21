@@ -78,23 +78,26 @@ const fetchRemoteSchemas = async ({
 }): Promise<NetworkAggregationConfig[]> => {
 	// query remote nodes
 	const networkQueryPromises = networkConfigs.map((config) => fetchRemoteSchema(config));
-	// type cast because rejected errors are handled
-	const networkQueries = (await Promise.allSettled(
-		networkQueryPromises,
-	)) as PromiseFulfilledResult<FetchRemoteSchemaResult>[];
+
+	const networkQueries = await Promise.allSettled(networkQueryPromises);
 
 	// build schema
-	const schemaResults = networkQueries.map((networkResult) => {
-		const { config, introspectionResult } = networkResult.value;
+	const schemaResults = networkQueries
+		.filter(
+			(result): result is PromiseFulfilledResult<FetchRemoteSchemaResult> =>
+				result.status === 'fulfilled',
+		)
+		.map((networkResult) => {
+			const { config, introspectionResult } = networkResult.value;
 
-		try {
-			const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
-			return { ...config, schema };
-		} catch (error) {
-			console.error('build schema error', error);
-			return { ...config, schema: null };
-		}
-	});
+			try {
+				const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
+				return { ...config, schema };
+			} catch (error) {
+				console.error('build schema error', error);
+				return { ...config, schema: null };
+			}
+		});
 
 	return schemaResults;
 };
