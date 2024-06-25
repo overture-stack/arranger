@@ -58,6 +58,7 @@ const fetchRemoteSchema = async (
 				`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
 			);
 		}
+		return { config };
 	} catch (error) {
 		console.error(`failed to retrieve schema from url: ${config.graphqlUrl}`);
 		return { config };
