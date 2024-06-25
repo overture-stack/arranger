@@ -20,6 +20,10 @@ export const createGqlQuery = ({
 	return JSON.stringify({ query, variables });
 };
 
+/**
+ * Creates axios request instance with request options configured for graphql request
+ * @returns axios instance
+ */
 export const fetchGql = ({ url, gqlRequest }: { url: string; gqlRequest: { query: string } }) => {
 	const options = {
 		url,
