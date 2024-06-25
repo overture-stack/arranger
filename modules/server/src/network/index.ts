@@ -49,24 +49,17 @@ const fetchRemoteSchema = async (
 		if (response.status === 200 && response.statusText === 'OK') {
 			// axios response "data" field, graphql response "data" field
 			const responseData = response.data?.data;
-
 			if (isGqlIntrospectionQuery(responseData)) {
 				return { config, introspectionResult: responseData };
-			} else {
-				console.error('unexpected response data in fetchRemoteSchema');
-				throw new NetworkAggregationError(
-					`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
-				);
 			}
 		} else {
-			console.error('network error in fetchRemoteSchema');
+			console.error('unexpected response data in fetchRemoteSchema');
 			throw new NetworkAggregationError(
-				`The request to endpoint ${graphqlUrl} has failed. Please verify the endpoint is accessible and responding to requests.`,
+				`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
 			);
 		}
 	} catch (error) {
-		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
-		console.error(error);
+		console.error(`failed to retrieve schema from url: ${config.graphqlUrl}`);
 		return { config };
 	}
 };
@@ -96,7 +89,7 @@ const fetchRemoteSchemas = async ({
 				return { ...config, schema };
 			} catch (error) {
 				console.error('build schema error', error);
-				return { ...config, schema: undefined };
+				return { ...config };
 			}
 		});
 
