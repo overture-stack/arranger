@@ -10,10 +10,7 @@ export const createGqlQuery = ({
 	variables,
 }: {
 	query: ASTNode;
-	/**
-	 * TODO: Add typing for variables. Type will be dependant on gql endpoint being queried.
-	 */
-	variables: unknown;
+	variables: Record<string, any>;
 }) => {
 	// queries need to be strings when using regular http
 	const query = print(queryAST);
