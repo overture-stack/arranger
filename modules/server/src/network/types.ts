@@ -9,5 +9,5 @@ export type NetworkAggregationConfigInput = {
 
 // additional properties after initialising network
 export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
-	schema: GraphQLSchema | undefined;
+	schema?: GraphQLSchema;
 };
