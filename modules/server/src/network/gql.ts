@@ -18,8 +18,11 @@ export const createGqlQuery = ({
 };
 
 /**
- * Creates axios request instance with request options configured for graphql request
- * @returns axios instance
+ * GQL fetch request with request options configured for graphql
+ *
+ * @returns AxiosResponse
+ *
+ * @throws AxiosError
  */
 export const fetchGql = ({ url, gqlRequest }: { url: string; gqlRequest: { query: string } }) => {
 	const options = {
