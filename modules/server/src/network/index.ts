@@ -6,6 +6,7 @@ import {
 } from 'graphql';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
+import { createNetworkAggregationSchema } from './schema';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
 /**
@@ -106,29 +107,19 @@ const fetchRemoteSchemas = async ({
 		});
 
 	return schemaResults;
-export const createSchemaFromNetworkConfig = async ({
-}: {
-	networkConfig,
-	networkConfig: NetworkAggregationConfigInput[];
-}) => {
-		networkConfig,
-	const newtworkConfigs = await fetchRemoteSchemas({
-	});
-
-	const networkSchema = createNetworkAggregationSchema(newtworkConfigs);
-
-	console.log(networkSchema);
-	return { networkSchema };
 };
 
 export const createSchemaFromNetworkConfig = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkAggregationConfigInput[];
-}): Promise<NetworkAggregationConfig[]> => {
-	const remoteSchemasResult = await fetchRemoteSchemas({
+}) => {
+	const newtworkConfigs = await fetchRemoteSchemas({
 		networkConfigs,
 	});
 
-	return remoteSchemasResult;
+	const networkSchema = createNetworkAggregationSchema(newtworkConfigs);
+
+	console.log(networkSchema);
+	return { networkSchema };
 };
