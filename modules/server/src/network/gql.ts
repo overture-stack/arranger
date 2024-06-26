@@ -1,13 +1,30 @@
 import axios from 'axios';
-import { print } from 'graphql';
+import { ASTNode, print } from 'graphql';
 
-export const createGqlQuery = ({ query: queryAST, variables }) => {
+/**
+ * Creates a graphql query string with variables for use in a POST request
+ * @returns string
+ */
+export const createGqlQuery = ({
+	query: queryAST,
+	variables,
+}: {
+	query: ASTNode;
+	variables: Record<string, any>;
+}) => {
 	// queries need to be strings when using regular http
 	const query = print(queryAST);
 	return JSON.stringify({ query, variables });
 };
 
-export const fetchGql = ({ url, gqlRequest }) => {
+/**
+ * GQL fetch request with request options configured for graphql
+ *
+ * @returns AxiosResponse
+ *
+ * @throws AxiosError
+ */
+export const fetchGql = ({ url, gqlRequest }: { url: string; gqlRequest: { query: string } }) => {
 	const options = {
 		url,
 		method: 'POST',

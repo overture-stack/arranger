@@ -1,6 +1,11 @@
-import { buildClientSchema, getIntrospectionQuery, IntrospectionQuery } from 'graphql';
+import {
+	buildClientSchema,
+	getIntrospectionQuery,
+	introspectionFromSchema,
+	IntrospectionQuery,
+} from 'graphql';
+import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
-import { createNetworkAggregationSchema } from './schema';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
 /**
@@ -17,11 +22,6 @@ import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types
 const isGqlIntrospectionQuery = (input: unknown): input is IntrospectionQuery =>
 	!!input && typeof input === 'object' && '__schema' in input && typeof input.__schema === 'object';
 
-type FetchRemoteSchemaResult = {
-	config: NetworkAggregationConfigInput;
-	introspectionResult: IntrospectionQuery | null;
-};
-
 /**
  *
  * @param config - network config from env
@@ -35,7 +35,7 @@ type FetchRemoteSchemaResult = {
  */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
-): Promise<FetchRemoteSchemaResult> => {
+): Promise<IntrospectionQuery | undefined> => {
 	const { graphqlUrl } = config;
 	try {
 		/**
@@ -46,66 +46,89 @@ const fetchRemoteSchema = async (
 			gqlRequest: { query: getIntrospectionQuery() },
 		});
 
-		if (response.status === 200 && response.statusText === 'OK') {
-			// axios response "data" field, graphql response "data" field
-			const responseData = response.data?.data;
-
-			if (isGqlIntrospectionQuery(responseData)) {
-				return { config, introspectionResult: responseData };
-			} else {
-				console.error('unexpected response data in fetchRemoteSchema');
-				throw Error('unexpected response data');
-			}
-		} else {
-			console.error('network error in fetchRemoteSchema');
-			throw Error('network error');
+		// axios response "data" field, graphql response "data" field
+		const responseData = response.data?.data;
+		if (
+			response.status === 200 &&
+			response.statusText === 'OK' &&
+			isGqlIntrospectionQuery(responseData)
+		) {
+			return responseData;
 		}
+
+		console.error('unexpected response data in fetchRemoteSchema');
+		throw new NetworkAggregationError(
+			`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
+		);
 	} catch (error) {
-		console.log(`failed to retrieve schema from url: ${config.graphqlUrl}`);
-		console.error(error);
-		return { config, introspectionResult: null };
+		/**
+		 * TODO: expand on error handling for instance of Axios error for example
+		 */
+		console.error(`failed to retrieve schema from url: ${config.graphqlUrl}`);
+		return;
 	}
 };
 
 const fetchRemoteSchemas = async ({
-	networkConfig,
+	networkConfigs,
 }: {
-	networkConfig: NetworkAggregationConfigInput[];
+	networkConfigs: NetworkAggregationConfigInput[];
 }): Promise<NetworkAggregationConfig[]> => {
-	// query remote notes
-	const networkQueryPromises = networkConfig.map(async (config) => fetchRemoteSchema(config));
-	// type cast because rejected errors are handled
-	const networkQueries = (await Promise.allSettled(
-		networkQueryPromises,
-	)) as PromiseFulfilledResult<FetchRemoteSchemaResult>[];
-
-	// json => GqlObject(s)
-	const schemaResults = networkQueries.map((networkResult) => {
-		const { config, introspectionResult } = networkResult.value;
-
-		try {
-			const schema = introspectionResult !== null ? buildClientSchema(introspectionResult) : null;
-			return { ...config, schema };
-		} catch (error) {
-			console.error('build schema error', error);
-			return { ...config, schema: null };
-		}
+	// query remote nodes
+	const networkQueryPromises = networkConfigs.map(async (config) => {
+		const introspectionSchema = await fetchRemoteSchema(config);
+		return { config, introspectionSchema };
 	});
 
-	return schemaResults;
-};
+	const networkQueries = await Promise.allSettled(networkQueryPromises);
 
+	// build schema
+	const schemaResults = networkQueries
+		.filter(
+			(
+				result,
+			): result is PromiseFulfilledResult<{
+				config: NetworkAggregationConfigInput;
+				introspectionSchema: IntrospectionQuery | undefined;
+			}> => result.status === 'fulfilled',
+		)
+		.map((networkResult) => {
+			const { config, introspectionSchema } = networkResult.value;
+
+			try {
+				const schema =
+					introspectionSchema !== undefined ? buildClientSchema(introspectionSchema) : undefined;
+				return { ...config, schema };
+			} catch (error) {
+				console.error('build schema error', error);
+				return { ...config };
+			}
+		});
+
+	return schemaResults;
 export const createSchemaFromNetworkConfig = async ({
-	networkConfig,
 }: {
+	networkConfig,
 	networkConfig: NetworkAggregationConfigInput[];
 }) => {
-	const newtworkConfigs = await fetchRemoteSchemas({
 		networkConfig,
+	const newtworkConfigs = await fetchRemoteSchemas({
 	});
 
 	const networkSchema = createNetworkAggregationSchema(newtworkConfigs);
 
 	console.log(networkSchema);
 	return { networkSchema };
+};
+
+export const createSchemaFromNetworkConfig = async ({
+	networkConfigs,
+}: {
+	networkConfigs: NetworkAggregationConfigInput[];
+}): Promise<NetworkAggregationConfig[]> => {
+	const remoteSchemasResult = await fetchRemoteSchemas({
+		networkConfigs,
+	});
+
+	return remoteSchemasResult;
 };
