@@ -88,6 +88,9 @@ describe('network aggregation', () => {
 		expect(isFieldDefined(typeDefs, 'Donor', 'gender')).toEqual(true);
 	});
 
+	/**
+	 * example: multiple remote connections have the same object definition
+	 */
 	test('it should de-deupe ObjectTypeDefinition', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
@@ -98,6 +101,9 @@ describe('network aggregation', () => {
 		expect(numberOfResults).toEqual(1);
 	});
 
+	/**
+	 * example: multiple remote connections have the same field
+	 */
 	test('it should de-deupe FieldDefinition', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
@@ -114,6 +120,9 @@ describe('network aggregation', () => {
 		expect(numberOfResults).toEqual(1);
 	});
 
+	/**
+	 * example: a remote connection has a typeA but others don't
+	 */
 	test('it should "union" (set operation) typedefs', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
