@@ -162,10 +162,6 @@ const createEndpoint = async ({
 
 	console.log('Starting GraphQL server:');
 
-	const testServer = new ApolloServer({ schema: networkSchema });
-	await testServer.start();
-	testServer.applyMiddleware({ app: router, path: '/test' });
-
 	try {
 		await router.get(
 			mainPath,
@@ -269,13 +265,11 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
+		/**
+		 * Federated Network Search
+		 */
 		const { networkSchema } = await createSchemaFromNetworkConfig({
-			networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-		});
-
-		const [mergedSchema] = mergeSchemas({
-			local: { schema, mockSchema },
-			network: { schema: networkSchema, mockSchema: networkMockSchema },
+			networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
 		});
 
 		return {
