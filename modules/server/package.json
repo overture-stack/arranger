@@ -18,7 +18,7 @@
 		"start": "NODE_ENV=development nodemon -e js,json,ts index.ts",
 		"start:prod": "ts-node index.ts",
 		"test": "jest",
-		"test-watch": "jest --watch",
+		"test:watch": "jest --watch",
 		"watch": "npm run cleanDist && npm run build -- --watch"
 	},
 	"repository": {
