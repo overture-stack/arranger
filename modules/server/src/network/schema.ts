@@ -12,10 +12,7 @@ import { DocumentNode, GraphQLSchema } from 'graphql';
  * @returns
  */
 export const createNetworkAggregationTypeDefs = (gqlTypes: GraphQLSchema[]): DocumentNode => {
-	const options: Omit<Partial<Config>, 'commentDescriptions'> = {
-		forceSchemaDefinition: true,
-	};
-	const typeDefs = mergeTypeDefs(gqlTypes, options);
+	const typeDefs = mergeTypeDefs(gqlTypes);
 
 	return typeDefs;
 };
