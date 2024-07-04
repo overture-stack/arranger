@@ -21,9 +21,9 @@ describe('network aggregation', () => {
 	});
 
 	/**
-	 * example: multiple remote connections have the same object definition
+	 * Example: multiple remote connections have the same object definition
 	 */
-	test('it should de-deupe ObjectTypeDefinition', () => {
+	test('it should de-dupe ObjectTypeDefinition', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
 		const numberOfResults = typeDefs.filter(
@@ -34,9 +34,9 @@ describe('network aggregation', () => {
 	});
 
 	/**
-	 * example: multiple remote connections have the same field
+	 * Example: multiple remote connections have the same field
 	 */
-	test('it should de-deupe FieldDefinition', () => {
+	test('it should de-dupe FieldDefinition', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
 		const numberOfResults = typeDefs
@@ -53,11 +53,23 @@ describe('network aggregation', () => {
 	});
 
 	/**
-	 * example: a remote connection has a typeA but others don't
+	 * Example: a remote connection has a typeA but others don't
 	 */
 	test('it should "union" (set operation) typedefs', () => {
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
 		expect(isTypeDefined(typeDefs, 'Analysis')).toBe(true);
 	});
+
+	/**
+	 * No overlapping fields
+	 */
+
+	/**
+	 * All types and fields should be present in output schema
+	 */
+
+	/**
+	 * Merging more than two schemas
+	 */
 });
