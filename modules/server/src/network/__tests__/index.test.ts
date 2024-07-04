@@ -1,75 +1,7 @@
-// @ts-nocheck
-// graphql types have readonly modifiers all the way down
-
 import { buildSchema } from 'graphql';
 import { createNetworkAggregationTypeDefs } from '../schema';
-
-/**
- *
- * @param typeDefs - Array of DefinitionNodes representing the schema type definitions
- * @param typeName - ObjectTypeDefinition
- * @returns true if type is defined
- */
-const isTypeDefined = (typeDefs, typeName) => {
-	return typeDefs.some(
-		(definition) =>
-			definition.kind === 'ObjectTypeDefinition' && definition.name.value === typeName,
-	);
-};
-
-/**
- *
- * @param typeDefs - Array of DefinitionNodes representing the schema type definitions
- * @param parent - ObjectTypeDefinition name
- * @param child - FieldDefinition name
- * @returns true if field is defined
- */
-const isFieldDefined = (typeDefs, parent, child) => {
-	const parentTypeDefFields = typeDefs.find(
-		(definition) => definition.kind === 'ObjectTypeDefinition' && definition.name.value === parent,
-	).fields;
-	return parentTypeDefFields.some(
-		(definitions) => (definitions.kind = 'FieldDefinition' && definitions.name.value === child),
-	);
-};
-
-/**
- * At no point do we modify the type definitions within the tests
- */
-const typeDefsA = /* GraphQL */ `
-	type Query {
-		aggs: Aggs
-	}
-
-	type Aggs {
-		donors: Donor
-	}
-
-	type Donor {
-		gender: String
-	}
-`;
-
-const typeDefsB = /* GraphQL */ `
-	type Query {
-		aggs: Aggs
-	}
-
-	type Aggs {
-		donors: Donor
-		analysis: Analysis
-	}
-
-	type Donor {
-		gender: String
-	}
-
-	type Analysis {
-		type: String
-	}
-`;
-
-const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
+import { networkSchemas } from './fixtures';
+import { isFieldDefined, isTypeDefined } from './utils';
 
 describe('network aggregation', () => {
 	test('it should have defined GQL Object types', () => {
