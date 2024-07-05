@@ -148,7 +148,7 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
@@ -251,28 +251,18 @@ export const createSchemasFromConfigs = async ({
 		});
 
 		/**
-		 * TODO: this is temporary. please add conditional based on arranger instance configuration profile (to be implemented)
+		 * Federated Network Search
 		 */
-		if (true) {
-			const { networkSchema } = await createSchemaFromNetworkConfig({
-				networkConfig: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-			});
-			const [mergedSchema, mergedMockSchema] = mergeSchemas({
-				local: { schema, mockSchema },
-				network: { schema: networkSchema, mockSchema: networkMockSchema },
-			});
-			return {
-				...commonFields,
-				schema: mergedSchema,
-				mockSchema: mergedMockSchema,
-			};
-		} else {
-			return {
-				...commonFields,
-				mockSchema,
-				schema,
-			};
-		}
+		const { networkSchema } = await createSchemaFromNetworkConfig({
+			networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+		});
+
+		return {
+			...commonFields,
+			mockSchema,
+			schema,
+			networkSchema,
+		};
 	} catch (error) {
 		const message = error?.message || error;
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
@@ -291,20 +281,22 @@ export default async ({
 	setsIndex,
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
-			configsSource,
-			enableAdmin,
-			esClient,
-			getServerSideFilter,
-			graphqlOptions,
-			setsIndex,
-		});
+		const { fieldsFromMapping, mockSchema, schema, typesWithMapping, networkSchemas } =
+			await createSchemasFromConfigs({
+				configsSource,
+				enableAdmin,
+				esClient,
+				getServerSideFilter,
+				graphqlOptions,
+				setsIndex,
+			});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
 			graphqlOptions,
 			mockSchema,
 			schema,
+			networkSchema,
 		});
 
 		await initializeSets({ esClient, setsIndex });
