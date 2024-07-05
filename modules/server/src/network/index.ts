@@ -1,11 +1,13 @@
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import {
 	buildClientSchema,
 	getIntrospectionQuery,
-	introspectionFromSchema,
+	GraphQLSchema,
 	IntrospectionQuery,
 } from 'graphql';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
+import { createNetworkAggregationTypeDefs } from './schema';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
 /**
@@ -69,6 +71,11 @@ const fetchRemoteSchema = async (
 	}
 };
 
+/**
+ * Fetch schemas from remote connections and converts to GQL Object
+ * @param {networkConfigs}
+ * @returns GQL object type to be used in functions
+ */
 const fetchRemoteSchemas = async ({
 	networkConfigs,
 }: {
@@ -108,14 +115,31 @@ const fetchRemoteSchemas = async ({
 	return schemaResults;
 };
 
+/**
+ * Connects to remote network connections, introspects their GQL schemas and merges to output single schema
+ * @param { networkConfigs }
+ * @returns graphql schema for the network - types and resolvers combined
+ */
 export const createSchemaFromNetworkConfig = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkAggregationConfigInput[];
-}): Promise<NetworkAggregationConfig[]> => {
-	const remoteSchemasResult = await fetchRemoteSchemas({
+}) => {
+	const networkConfigsWithSchemas = await fetchRemoteSchemas({
 		networkConfigs,
 	});
 
-	return remoteSchemasResult;
+	// filter remote connections with valid schemas
+	const gqlSchemas = networkConfigsWithSchemas
+		.filter((config) => config.schema !== null)
+		.map((config) => config.schema as GraphQLSchema);
+
+	const networkTypeDefs = createNetworkAggregationTypeDefs(gqlSchemas);
+
+	/**
+	 * TODO: Placeholder - schema will be the result of combining networkTypeDefs and resolvers
+	 */
+	const networkSchema = makeExecutableSchema({ typeDefs: networkTypeDefs });
+
+	return { networkSchema };
 };
