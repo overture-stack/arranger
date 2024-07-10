@@ -116,6 +116,20 @@ const fetchRemoteSchemas = async ({
 };
 
 /**
+ *
+ */
+const createRemoteConnectionResolvers = (networkConfigs: NetworkAggregationConfig[]) => {
+	const remoteNodeProperties = networkConfigs.map((config) => {
+		const { schema, ...configProperties } = config;
+		// includes default inbuilt GQL server types
+		const availableAggregations = schema ? schema.getTypeMap() : [];
+		return { ...configProperties, availableAggregations };
+	});
+
+	return remoteNodeProperties;
+};
+
+/**
  * Connects to remote network connections, introspects their GQL schemas and merges to output single schema
  * @param { networkConfigs }
  * @returns graphql schema for the network - types and resolvers combined
@@ -139,6 +153,7 @@ export const createSchemaFromNetworkConfig = async ({
 	/**
 	 * TODO: Placeholder - schema will be the result of combining networkTypeDefs and resolvers
 	 */
+	const remoteConnectionResolvers = createRemoteConnectionResolvers(networkConfigsWithSchemas);
 	const networkSchema = makeExecutableSchema({ typeDefs: networkTypeDefs });
 
 	return { networkSchema };
