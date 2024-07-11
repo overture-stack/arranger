@@ -56,7 +56,9 @@ export const createRemoteConnectionResolvers = async (
 		networkConfigs.map(async (config) => {
 			const { schema, ...configProperties } = config;
 			// includes default inbuilt GQL server types
-			const availableAggregations = schema ? schema.getTypeMap() : [];
+			const availableAggregations = schema
+				? schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name)
+				: [];
 			// connection status
 			const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
 			return { ...configProperties, availableAggregations, status };
