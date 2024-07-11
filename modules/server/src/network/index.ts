@@ -1,12 +1,10 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import axios from 'axios';
 import {
 	buildClientSchema,
 	getIntrospectionQuery,
 	GraphQLSchema,
 	IntrospectionQuery,
 } from 'graphql';
-import urljoin from 'url-join';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { createRemoteConnectionResolvers } from './resolvers/connections';
