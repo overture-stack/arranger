@@ -4,10 +4,7 @@ import axios from 'axios';
 import urljoin from 'url-join';
 
 /**
- * Check the status of remote connections
- *
- * @param url - Remote connection url
- * @returns A connection status
+ * Connection status types
  */
 const CONNECTION_STATUS = {
 	OK: 'OK',
@@ -16,6 +13,12 @@ const CONNECTION_STATUS = {
 
 type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
 
+/**
+ * Check the status of remote connections
+ *
+ * @param url - Remote connection url
+ * @returns A connection status
+ */
 const checkRemoteConnectionStatus = async (url: string): Promise<ConnectionStatus> => {
 	/**
 	 * recommended way to health check gql server is to run the `__typename` query that every server has
