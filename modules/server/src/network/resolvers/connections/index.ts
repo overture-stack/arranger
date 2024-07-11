@@ -1,4 +1,5 @@
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from '@/network/types';
+import { ObjectValues } from '@/utils/types';
 import axios from 'axios';
 import urljoin from 'url-join';
 
@@ -12,9 +13,10 @@ const CONNECTION_STATUS = {
 	OK: 'OK',
 	ERROR: 'ERROR',
 } as const;
-const checkRemoteConnectionStatus = async (
-	url: string,
-): Promise<keyof typeof CONNECTION_STATUS> => {
+
+type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
+
+const checkRemoteConnectionStatus = async (url: string): Promise<ConnectionStatus> => {
 	/**
 	 * recommended way to health check gql server is to run the `__typename` query that every server has
 	 * very small query with no additional params to, so using GET is not a concern for the GQL server
@@ -40,13 +42,13 @@ const checkRemoteConnectionStatus = async (
 	}
 };
 
-type T = NetworkAggregationConfigInput & {
+type RemoteConnectionData = NetworkAggregationConfigInput & {
 	availableAggregations: string[];
-	status: keyof typeof CONNECTION_STATUS;
+	status: ConnectionStatus;
 };
 export const createRemoteConnectionResolvers = async (
 	networkConfigs: NetworkAggregationConfig[],
-): T[] => {
+): Promise<RemoteConnectionData[]> => {
 	/**
 	 * Promise.all is safe because we handle errors in checkRemoteConnectionStatus
 	 */
