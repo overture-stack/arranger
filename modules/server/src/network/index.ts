@@ -1,10 +1,12 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import axios from 'axios';
 import {
 	buildClientSchema,
 	getIntrospectionQuery,
 	GraphQLSchema,
 	IntrospectionQuery,
 } from 'graphql';
+import urljoin from 'url-join';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { createNetworkAggregationTypeDefs } from './schema';
@@ -119,14 +121,51 @@ const fetchRemoteSchemas = async ({
  *
  */
 const createRemoteConnectionResolvers = (networkConfigs: NetworkAggregationConfig[]) => {
-	const remoteNodeProperties = networkConfigs.map((config) => {
-		const { schema, ...configProperties } = config;
-		// includes default inbuilt GQL server types
-		const availableAggregations = schema ? schema.getTypeMap() : [];
-		return { ...configProperties, availableAggregations };
-	});
+const connectionStatus = {
+	OK: 'OK',
+	ERROR: 'ERROR',
+};
+const checkRemoteConnectionStatus = async (url: string) => {
+	/**
+	 * recommended way to health check gql server is to run the `__typename` query that every server has
+	 * very small query with no additional params to, so using GET is not a concern for the GQL server
+	 * adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection
+	 */
+	const healthCheckQuery = '?query=%7B__typename%7D';
+	const fullUrl = urljoin(url, healthCheckQuery);
 
-	return remoteNodeProperties;
+	try {
+		const pong = await axios.get(fullUrl, {
+			headers: { 'apollo-require-preflight': 'true', 'Content-Type': 'application/json' },
+		});
+
+		// only need to check the expected query contacted the server and returns successfully (just a health check)
+		if (pong.data?.__typename) {
+			return connectionStatus.OK;
+		} else {
+			throw Error('no data object returned from GQL server __typname query');
+		}
+	} catch (error) {
+		console.error(error);
+		return connectionStatus.ERROR;
+	}
+};
+const createRemoteConnectionResolvers = async (networkConfigs: NetworkAggregationConfig[]) => {
+	/**
+	 * Promise.all is safe because we handle errors in checkRemoteConnectionStatus
+	 */
+	const remoteConnections = await Promise.all(
+		networkConfigs.map(async (config) => {
+			const { schema, ...configProperties } = config;
+			// includes default inbuilt GQL server types
+			const availableAggregations = schema ? schema.getTypeMap() : [];
+			// connection status
+			const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
+			return { ...configProperties, availableAggregations, status };
+		}),
+	);
+
+	return remoteConnections;
 };
 
 /**
@@ -153,7 +192,9 @@ export const createSchemaFromNetworkConfig = async ({
 	/**
 	 * TODO: Placeholder - schema will be the result of combining networkTypeDefs and resolvers
 	 */
-	const remoteConnectionResolvers = createRemoteConnectionResolvers(networkConfigsWithSchemas);
+	const remoteConnectionResolvers = await createRemoteConnectionResolvers(
+		networkConfigsWithSchemas,
+	);
 	const networkSchema = makeExecutableSchema({ typeDefs: networkTypeDefs });
 
 	return { networkSchema };
