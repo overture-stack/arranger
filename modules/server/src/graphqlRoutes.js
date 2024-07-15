@@ -155,6 +155,19 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 
 	console.log('Starting GraphQL server:');
 
+	/**
+	 * TODO: REMOVE
+	 * TEMP
+	 */
+	const networkPath = '/network';
+	const apolloNetworkServer = new ApolloServer({
+		cache: 'bounded',
+		schema: networkSchema,
+	});
+	await apolloNetworkServer.start();
+	apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	//
+
 	try {
 		console.log(`  - GraphQL playground available at ...${mainPath}`);
 
