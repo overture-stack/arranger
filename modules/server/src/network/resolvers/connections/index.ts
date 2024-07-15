@@ -20,7 +20,7 @@ type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
  * @returns A connection status
  */
 const checkRemoteConnectionStatus = async (url: string): Promise<ConnectionStatus> => {
-	/**
+	/*
 	 * recommended way to health check gql server is to run the `__typename` query that every server has
 	 * very small query with no additional params to, so using GET is not a concern for the GQL server
 	 * adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection
@@ -49,7 +49,15 @@ type RemoteConnectionData = NetworkAggregationConfigInput & {
 	availableAggregations: string[];
 	status: ConnectionStatus;
 };
-export const createRemoteConnectionResolvers = async (
+
+/**
+ * Returns available remote configuration data from in memory config
+ * Adds connection status data, and available GQL types from the remote servers
+ *
+ * @param networkConfigs
+ * @returns remote connection metadata
+ */
+export const resolveRemoteConnectionNodes = async (
 	networkConfigs: NetworkAggregationConfig[],
 ): Promise<RemoteConnectionData[]> => {
 	/**
