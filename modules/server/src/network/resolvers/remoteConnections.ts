@@ -1,4 +1,4 @@
-import { NetworkAggregationConfig, NetworkAggregationConfigInput } from '@/network/types';
+import { NetworkAggregationConfig } from '@/network/types';
 import { ObjectValues } from '@/utils/types';
 import axios from 'axios';
 import { GraphQLSchema } from 'graphql';
@@ -61,7 +61,12 @@ type RemoteConnectionData = {
  * Returns available types from schema
  */
 const getTypes = (schema: GraphQLSchema | undefined) => {
-	return schema ? schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name) : [];
+	if (schema) {
+		return schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name);
+	} else {
+		console.error('no schema');
+		return [];
+	}
 };
 
 /**

@@ -135,7 +135,7 @@ export const createSchemaFromNetworkConfig = async ({
 		.filter((config) => config.schema !== null)
 		.map((config) => config.schema as GraphQLSchema);
 
-	const resolvers = createResolvers(networkConfigs);
+	const resolvers = createResolvers(networkConfigsWithSchemas);
 
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 
