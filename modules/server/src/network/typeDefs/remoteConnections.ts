@@ -1,4 +1,4 @@
-export default `#graphql
+export const RemoteConnectionNode = `#graphql
   type Query {
     nodes: [RemoteConnectionNode]
   }
@@ -9,7 +9,7 @@ export default `#graphql
 		description: String
 		documentName: String
 		availableAggregations: [String]
-		totalHits: String
+		totalHits: Int
 		status: String
 		errors: [String]
 	}
