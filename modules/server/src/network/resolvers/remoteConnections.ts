@@ -20,7 +20,7 @@ type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
  * @param url - Remote connection url
  * @returns A connection status
  */
-const checkRemoteConnectionStatus = async (url: string): Promise<ConnectionStatus> => {
+const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => {
 	/*
 	 * recommended way to health check gql server is to run the `__typename` query that every server has
 	 * very small query with no additional params to, so using GET is not a concern for the GQL server
@@ -52,7 +52,7 @@ type RemoteConnectionData = {
 	description: string;
 	documentName: string;
 	availableAggregations: string[];
-	totalHits: string;
+	totalHits: number;
 	errors: string[];
 	status: ConnectionStatus;
 };
@@ -82,8 +82,10 @@ export const resolveRemoteConnectionNodes = async (
 			const { schema, ...configProperties } = config;
 			// includes default inbuilt GQL server types
 			const availableAggregations = getTypes(schema);
+
 			// connection status
-			const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
+			//const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
+			const status = 'OK';
 
 			const remoteConnectionData: RemoteConnectionData = {
 				url: configProperties.graphqlUrl,
@@ -92,7 +94,7 @@ export const resolveRemoteConnectionNodes = async (
 				documentName: configProperties.documentType,
 				availableAggregations,
 				status,
-				totalHits: '',
+				totalHits: 0,
 				errors: [],
 			};
 			return remoteConnectionData;
