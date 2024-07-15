@@ -7,7 +7,8 @@ import {
 } from 'graphql';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
-import { createNetworkAggregationTypeDefs } from './schema';
+import { createResolvers } from './resolvers';
+import { typeDefs } from './typeDefs';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
 /**
@@ -134,12 +135,9 @@ export const createSchemaFromNetworkConfig = async ({
 		.filter((config) => config.schema !== null)
 		.map((config) => config.schema as GraphQLSchema);
 
-	const networkTypeDefs = createNetworkAggregationTypeDefs(gqlSchemas);
+	const resolvers = createResolvers(networkConfigsWithSchemas);
 
-	/**
-	 * TODO: Placeholder - schema will be the result of combining networkTypeDefs and resolvers
-	 */
-	const networkSchema = makeExecutableSchema({ typeDefs: networkTypeDefs });
+	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 
 	return { networkSchema };
 };

@@ -162,6 +162,19 @@ const createEndpoint = async ({
 
 	console.log('Starting GraphQL server:');
 
+	/**
+	 * TODO: REMOVE
+	 * TEMP
+	 */
+	const networkPath = '/network';
+	const apolloNetworkServer = new ApolloServer({
+		cache: 'bounded',
+		schema: networkSchema,
+	});
+	await apolloNetworkServer.start();
+	apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	//
+
 	try {
 		await router.get(
 			mainPath,
