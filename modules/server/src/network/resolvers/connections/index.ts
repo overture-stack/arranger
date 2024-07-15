@@ -1,6 +1,7 @@
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from '@/network/types';
 import { ObjectValues } from '@/utils/types';
 import axios from 'axios';
+import { GraphQLSchema } from 'graphql';
 import urljoin from 'url-join';
 
 /**
@@ -45,9 +46,22 @@ const checkRemoteConnectionStatus = async (url: string): Promise<ConnectionStatu
 	}
 };
 
-type RemoteConnectionData = NetworkAggregationConfigInput & {
+type RemoteConnectionData = {
+	url: string;
+	name: string;
+	description: string;
+	documentName: string;
 	availableAggregations: string[];
+	totalHits: string;
+	errors: string[];
 	status: ConnectionStatus;
+};
+
+/**
+ * Returns available types from schema
+ */
+const getTypes = (schema: GraphQLSchema | undefined) => {
+	return schema ? schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name) : [];
 };
 
 /**
@@ -67,12 +81,21 @@ export const resolveRemoteConnectionNodes = async (
 		networkConfigs.map(async (config) => {
 			const { schema, ...configProperties } = config;
 			// includes default inbuilt GQL server types
-			const availableAggregations = schema
-				? schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name)
-				: [];
+			const availableAggregations = getTypes(schema);
 			// connection status
 			const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
-			return { ...configProperties, availableAggregations, status };
+
+			const remoteConnectionData: RemoteConnectionData = {
+				url: configProperties.graphqlUrl,
+				name: configProperties.displayName,
+				description: '',
+				documentName: configProperties.documentType,
+				availableAggregations,
+				status,
+				totalHits: '',
+				errors: [],
+			};
+			return remoteConnectionData;
 		}),
 	);
 };
