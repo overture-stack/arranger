@@ -61,11 +61,25 @@ type RemoteConnectionData = {
  * Returns available types from schema
  */
 const getTypes = (schema: GraphQLSchema | undefined) => {
+	// includes default inbuilt GQL server types
 	if (schema) {
 		return schema.toConfig().types.map((gqlObjectType) => gqlObjectType.name);
 	} else {
 		console.error('no schema');
 		return [];
+	}
+};
+
+/**
+ * Returns status of remote connection
+ * Error if schema could not be retrieved
+ */
+const getStatus = (schema: GraphQLSchema | undefined) => {
+	if (schema) {
+		return CONNECTION_STATUS.OK;
+	} else {
+		console.error('no schema');
+		return CONNECTION_STATUS.ERROR;
 	}
 };
 
@@ -85,12 +99,8 @@ export const resolveRemoteConnectionNodes = async (
 	return await Promise.all(
 		networkConfigs.map(async (config) => {
 			const { schema, ...configProperties } = config;
-			// includes default inbuilt GQL server types
 			const availableAggregations = getTypes(schema);
-
-			// connection status
-			//const status = await checkRemoteConnectionStatus(configProperties.graphqlUrl);
-			const status = 'OK';
+			const status = getStatus(schema);
 
 			const remoteConnectionData: RemoteConnectionData = {
 				url: configProperties.graphqlUrl,
