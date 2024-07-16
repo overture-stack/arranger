@@ -92,34 +92,6 @@ const fetchRemoteSchemas = async ({
 		return { config, gqlResponse };
 	});
 
-	// build schema
-	// const schemaResults = networkQueries
-	// 	.filter(
-	// 		(
-	// 			result,
-	// 		): result is PromiseFulfilledResult<{
-	// 			config: NetworkAggregationConfigInput;
-	// 			introspectionSchema: IntrospectionQuery | undefined;
-	// 		}> => result.status === 'fulfilled',
-	// 	)
-	// 	.map((networkResult) => {
-	// 		const { config, gqlResponse } = networkResult.value;
-
-	// 		const typeMap = getAvailableAggregations(gqlResponse);
-
-	// 		return typeMap;
-
-	// try {
-	// 	const schema =
-	// 		introspectionSchema !== undefined ? buildClientSchema(introspectionSchema) : undefined;
-	// 	return { ...config, schema };
-	// } catch (error) {
-	// 	console.error('build schema error', error);
-	// 	return { ...config };
-	// }
-	// });
-
-	//return schemaResults;
 	const networkQueries = await Promise.allSettled(networkQueryPromises);
 	const configs = networkQueries
 		.filter(
