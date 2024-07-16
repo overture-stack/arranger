@@ -33,7 +33,7 @@ export const createNetworkAggregationTypeDefs = (configs: NetworkAggregationConf
 		.flatMap((config) => config.availableAggregations)
 		.filter((agg) => filterAvailableAggregations(agg))
 		.reduce((fields, currentAgg) => {
-			const field = { [currentAgg.name]: { type: singleToNetworkAggMap[currentAgg.type] } };
+			const field = { [currentAgg.name]: { type: singleToNetworkAggMap['Aggregations'] } };
 			return { ...fields, ...field };
 		}, {});
 
@@ -42,9 +42,18 @@ export const createNetworkAggregationTypeDefs = (configs: NetworkAggregationConf
 		fields,
 	});
 
-	// can't return single GraphQLObjectType, GraphQLSchema works
+	// correct object structure to merge with other types
+	const rootType = new GraphQLObjectType({
+		name: 'Query',
+		fields: {
+			aggregations: {
+				type: typeDefs,
+			},
+		},
+	});
+
 	const schemaTypes = new GraphQLSchema({
-		query: typeDefs,
+		query: rootType,
 	});
 
 	return schemaTypes;
