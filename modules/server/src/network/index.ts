@@ -1,61 +1,56 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import {
-	buildClientSchema,
-	getIntrospectionQuery,
-	GraphQLSchema,
-	IntrospectionQuery,
-} from 'graphql';
+import { gql } from 'apollo-server-core';
+import { IntrospectionQuery } from 'graphql';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { createResolvers } from './resolvers';
-import { typeDefs } from './typeDefs';
+import { createTypeDefs } from './typeDefs';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 
 /**
- * WARNING: Unsafe type check, basically a type assertion. Do not export please.
- *
- * This is doing a cursory check that the response from a GQL Server appears to be a IntrospectionQuery object.
- * If this check passes we will optimistically treat the object as a GQL IntrospectionQuery.
- *
- * Should be used sparingly, and ideally all downstream consumers of the object operate within try/catch blocks.
- *
- * @param input
- * @returns
+ * Query to get field types
+ * eg. __type('aggregations')
  */
-const isGqlIntrospectionQuery = (input: unknown): input is IntrospectionQuery =>
-	!!input && typeof input === 'object' && '__schema' in input && typeof input.__schema === 'object';
+const gqlAggregationTypeQuery = `#graphql
+	query getAggregationTypes($documentName: String!) {
+		__type(name: $documentName) {
+			name
+			fields {
+				name
+				type {
+					name
+				}
+			}
+		}
+	}
+`;
 
 /**
+ * GQL query remote connection with __type query to retrieve list of types
  *
  * @param config - network config from env
- * @returns a promise containing network config and the introspection query result
+ * @returns a promise containing network config and the gql query result
  *
  * @throws Fetch failed error
  *
  * @throws JSON parse error
  *
- * @throws Unexpected data error eg. Not a valid introspectionQuery result
+ * @throws Unexpected data error
  */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
 ): Promise<IntrospectionQuery | undefined> => {
-	const { graphqlUrl } = config;
+	const { graphqlUrl, documentType } = config;
 	try {
-		/**
-		 * get full schema (needed for buildClientSchema) and convert json
-		 */
 		const response = await fetchGql({
 			url: graphqlUrl,
-			gqlRequest: { query: getIntrospectionQuery() },
+			gqlQuery: gqlAggregationTypeQuery,
+			variables: { documentName: documentType },
 		});
 
 		// axios response "data" field, graphql response "data" field
 		const responseData = response.data?.data;
-		if (
-			response.status === 200 &&
-			response.statusText === 'OK' &&
-			isGqlIntrospectionQuery(responseData)
-		) {
+		if (response.status === 200 && response.statusText === 'OK') {
 			return responseData;
 		}
 
@@ -73,8 +68,17 @@ const fetchRemoteSchema = async (
 };
 
 /**
+ * Type response into simplified object
+ * @param fields
+ * @returns
+ */
+const getFieldTypes = (fields: any) => {
+	return fields.map((field) => ({ name: field.name, type: field.type.name }));
+};
+
+/**
  * Fetch schemas from remote connections and converts to GQL Object
- * @param {networkConfigs}
+ * @param { networkConfigs }
  * @returns GQL object type to be used in functions
  */
 const fetchRemoteSchemas = async ({
@@ -82,42 +86,63 @@ const fetchRemoteSchemas = async ({
 }: {
 	networkConfigs: NetworkAggregationConfigInput[];
 }): Promise<NetworkAggregationConfig[]> => {
-	// query remote nodes
+	// query remote connection types
 	const networkQueryPromises = networkConfigs.map(async (config) => {
-		const introspectionSchema = await fetchRemoteSchema(config);
-		return { config, introspectionSchema };
+		const gqlResponse = await fetchRemoteSchema(config);
+		return { config, gqlResponse };
 	});
 
-	const networkQueries = await Promise.allSettled(networkQueryPromises);
-
 	// build schema
-	const schemaResults = networkQueries
+	// const schemaResults = networkQueries
+	// 	.filter(
+	// 		(
+	// 			result,
+	// 		): result is PromiseFulfilledResult<{
+	// 			config: NetworkAggregationConfigInput;
+	// 			introspectionSchema: IntrospectionQuery | undefined;
+	// 		}> => result.status === 'fulfilled',
+	// 	)
+	// 	.map((networkResult) => {
+	// 		const { config, gqlResponse } = networkResult.value;
+
+	// 		const typeMap = getAvailableAggregations(gqlResponse);
+
+	// 		return typeMap;
+
+	// try {
+	// 	const schema =
+	// 		introspectionSchema !== undefined ? buildClientSchema(introspectionSchema) : undefined;
+	// 	return { ...config, schema };
+	// } catch (error) {
+	// 	console.error('build schema error', error);
+	// 	return { ...config };
+	// }
+	// });
+
+	//return schemaResults;
+	const networkQueries = await Promise.allSettled(networkQueryPromises);
+	const configs = networkQueries
 		.filter(
 			(
 				result,
 			): result is PromiseFulfilledResult<{
 				config: NetworkAggregationConfigInput;
-				introspectionSchema: IntrospectionQuery | undefined;
+				gqlResponse: any;
 			}> => result.status === 'fulfilled',
 		)
 		.map((networkResult) => {
-			const { config, introspectionSchema } = networkResult.value;
+			const { config, gqlResponse } = networkResult.value;
+			const fields = gqlResponse.__type.fields;
 
-			try {
-				const schema =
-					introspectionSchema !== undefined ? buildClientSchema(introspectionSchema) : undefined;
-				return { ...config, schema };
-			} catch (error) {
-				console.error('build schema error', error);
-				return { ...config };
-			}
+			const remoteAggregationFields = getFieldTypes(fields);
+			return { ...config, availableAggregations: remoteAggregationFields };
 		});
 
-	return schemaResults;
+	return configs;
 };
 
 /**
- * Connects to remote network connections, introspects their GQL schemas and merges to output single schema
+ * Connects to remote network connections, runs type lookups and merges to output single schema
  * @param { networkConfigs }
  * @returns graphql schema for the network - types and resolvers combined
  */
@@ -126,18 +151,12 @@ export const createSchemaFromNetworkConfig = async ({
 }: {
 	networkConfigs: NetworkAggregationConfigInput[];
 }) => {
-	const networkConfigsWithSchemas = await fetchRemoteSchemas({
+	const configs = await fetchRemoteSchemas({
 		networkConfigs,
 	});
 
-	// filter remote connections with valid schemas
-	const gqlSchemas = networkConfigsWithSchemas
-		.filter((config) => config.schema !== null)
-		.map((config) => config.schema as GraphQLSchema);
-
-	const resolvers = createResolvers(networkConfigsWithSchemas);
-
+	const resolvers = createResolvers(configs);
+	const typeDefs = createTypeDefs(configs);
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
-
 	return { networkSchema };
 };
