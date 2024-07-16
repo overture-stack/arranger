@@ -1,10 +1,35 @@
 import { ObjectValues } from '@/utils/types';
+import { gql } from 'apollo-server-core';
+import { fetchGql } from '../gql';
 import { NetworkAggregationConfig } from '../types';
 
 const getConnectionsToQuery = (field, configs) => {
 	return configs
 		.filter((config) => config.availableAggregations.includes((agg) => agg.name === field.name))
 		.map((config) => config.graphqlUrl);
+};
+
+const q = `#graphql
+query q(x: String) 
+	{
+		aggs {
+                donors {
+                        gender
+                }
+        }
+}
+
+	
+`;
+
+const networkToSingleQuery = {
+	NetworkAggregations: q,
+	NumericNetworkAggregations: q,
+};
+
+const queryRemoteConnection = (url: string, fieldType: string) => {
+	const gqlQuery = networkToSingleQuery[fieldType];
+	return fetchGql({ url, gqlQuery });
 };
 
 /**
@@ -14,8 +39,10 @@ const getConnectionsToQuery = (field, configs) => {
  */
 const createResolver = (field, configs) => async () => {
 	const connectionsToQuery = getConnectionsToQuery(field, configs);
-	//const responsePromises = connectionsToQuery.map(queryRemoteConnection);
-	//const responses = responsePromises.allSettled();
+	const responsePromises = connectionsToQuery
+		.map((url) => queryRemoteConnection(url, field.type))
+		.allSettled();
+	const responses = responsePromises.filter((result) => result.status === 'fulfilled');
 	//const resolvedData = resolveAggregation(responses, field.type);
 	return { test: field.name };
 };
@@ -32,10 +59,6 @@ export const createAggregationResolvers = (configs: NetworkAggregationConfig[], 
 		{},
 	);
 };
-
-function queryRemoteConnection() {
-	throw new Error('Function not implemented.');
-}
 
 function resolveAggregation(response: any, type: any) {
 	throw new Error('Function not implemented.');
