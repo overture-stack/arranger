@@ -1,14 +1,21 @@
 import { NetworkAggregationConfig } from '../types';
-import { createAggregationResolvers, resolveNetworkAggregations } from './aggregations';
+import { createAggregationResolvers } from './aggregations';
 import { resolveRemoteConnectionNodes } from './remoteConnections';
 
 export const createResolvers = (
 	networkConfigsWithSchemas: NetworkAggregationConfig[],
 	allTypeDefs,
-) => ({
-	Query: {
-		nodes: async () => await resolveRemoteConnectionNodes(networkConfigsWithSchemas),
-		//aggregations: async () => await resolveNetworkAggregations(networkConfigsWithSchemas),
-		aggregations: createAggregationResolvers(networkConfigsWithSchemas, allTypeDefs),
-	},
-});
+) => {
+	const aggregationsResolvers = createAggregationResolvers(networkConfigsWithSchemas, allTypeDefs);
+
+	return {
+		Query: {
+			nodes: async () => await resolveRemoteConnectionNodes(networkConfigsWithSchemas),
+			aggregations: () => [], // TODO: Why need array returned? needs some truthy val?
+		},
+		Aggregations: aggregationsResolvers,
+		NetworkAggregations: {
+			test: () => 'working',
+		},
+	};
+};
