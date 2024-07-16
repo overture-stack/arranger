@@ -1,5 +1,3 @@
-import { GraphQLSchema } from 'graphql';
-
 // environment config
 export type NetworkAggregationConfigInput = {
 	graphqlUrl: string;
@@ -13,5 +11,10 @@ export type NetworkAggregationConfigInput = {
  * that are generated in the network search initialization process.
  */
 export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
-	schema?: GraphQLSchema;
+	availableAggregations?: NetworkFieldType[];
+};
+
+export type NetworkFieldType = {
+	name: string;
+	type: string;
 };

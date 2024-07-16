@@ -6,6 +6,7 @@ import { fetchGql } from './gql';
 import { createResolvers } from './resolvers';
 import { createTypeDefs } from './typeDefs';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
+import { getAllTypes } from './util';
 
 /**
  * Query to get field types
@@ -127,8 +128,12 @@ export const createSchemaFromNetworkConfig = async ({
 		networkConfigs,
 	});
 
-	const resolvers = createResolvers(configs);
-	const typeDefs = createTypeDefs(configs);
+	const networkFieldTypes = getAllTypes(configs);
+
+	const resolvers = createResolvers(configs, networkFieldTypes);
+	const typeDefs = createTypeDefs(networkFieldTypes);
+
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
+
 	return { networkSchema };
 };

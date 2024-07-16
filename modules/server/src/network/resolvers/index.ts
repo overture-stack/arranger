@@ -1,12 +1,15 @@
-import { NetworkAggregationConfig } from '../types';
+import { NetworkAggregationConfig, NetworkFieldType } from '../types';
 import { createAggregationResolvers } from './aggregations';
 import { resolveRemoteConnectionNodes } from './remoteConnections';
 
 export const createResolvers = (
 	networkConfigsWithSchemas: NetworkAggregationConfig[],
-	allTypeDefs,
+	networkFieldTypes: NetworkFieldType[],
 ) => {
-	const aggregationsResolvers = createAggregationResolvers(networkConfigsWithSchemas, allTypeDefs);
+	const aggregationsResolvers = createAggregationResolvers(
+		networkConfigsWithSchemas,
+		networkFieldTypes,
+	);
 
 	return {
 		Query: {
@@ -14,8 +17,5 @@ export const createResolvers = (
 			aggregations: () => [], // TODO: Why need array returned? needs some truthy val?
 		},
 		Aggregations: aggregationsResolvers,
-		NetworkAggregations: {
-			test: () => 'working',
-		},
 	};
 };

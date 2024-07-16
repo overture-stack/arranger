@@ -1,4 +1,4 @@
-import { NetworkAggregationConfig } from './types';
+import { NetworkAggregationConfig, NetworkFieldTypes } from './types';
 
 type AvailableAggregation = { name: string; type: string };
 const filterAvailableAggregations = (agg: unknown): agg is AvailableAggregation => {
@@ -10,7 +10,7 @@ const filterAvailableAggregations = (agg: unknown): agg is AvailableAggregation 
  */
 const filterSupportedAggregations = () => {};
 
-export const getAllTypes = (configs: NetworkAggregationConfig[]) => {
+export const getAllTypes = (configs: NetworkAggregationConfig[]): NetworkFieldTypes => {
 	return configs
 		.flatMap((config) => config.availableAggregations)
 		.filter((agg) => filterAvailableAggregations(agg));

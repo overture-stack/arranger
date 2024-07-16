@@ -1,16 +1,6 @@
 import { GraphQLObjectType, GraphQLSchema } from 'graphql';
-import { NetworkAggregationConfig } from '../types';
+import { NetworkAggregationConfig, NetworkFieldType } from '../types';
 import { singleToNetworkAggMap } from './networkAggregations';
-
-type AvailableAggregation = { name: string; type: string };
-const filterAvailableAggregations = (agg: unknown): agg is AvailableAggregation => {
-	return agg && agg.name !== undefined && agg.type !== undefined;
-};
-
-/**
- * TODO: Filter out unsupported aggs
- */
-const filterSupportedAggregations = () => {};
 
 /**
  * Returns available aggregations by filtering duplicates, and mapping from
@@ -24,22 +14,19 @@ const filterSupportedAggregations = () => {};
  * @param configs
  * @returns
  */
-export const createNetworkAggregationTypeDefs = (configs: NetworkAggregationConfig[]) => {
+export const createNetworkAggregationTypeDefs = (networkFieldTypes: NetworkFieldType[]) => {
 	/**
 	 * converts to GQLObjectType field shape
 	 * { name: "foo", type: "String" } => { foo: { type: "String" } }
 	 */
-	const fields = configs
-		.flatMap((config) => config.availableAggregations)
-		.filter((agg) => filterAvailableAggregations(agg))
-		.reduce((fields, currentAgg) => {
-			const field = { [currentAgg.name]: { type: singleToNetworkAggMap['Aggregations'] } };
-			return { ...fields, ...field };
-		}, {});
+	const allFields = networkFieldTypes.reduce((allFields, currentField) => {
+		const field = { [currentField.name]: { type: singleToNetworkAggMap['Aggregations'] } };
+		return { ...allFields, ...field };
+	}, {});
 
 	const typeDefs = new GraphQLObjectType({
-		name: 'aggregations',
-		fields,
+		name: 'Aggregations',
+		fields: allFields,
 	});
 
 	// correct object structure to merge with other types
