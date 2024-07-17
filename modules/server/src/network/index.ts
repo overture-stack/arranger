@@ -3,28 +3,11 @@ import { gql } from 'apollo-server-core';
 import { IntrospectionQuery } from 'graphql';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
+import { gqlAggregationTypeQuery } from './queries';
 import { createResolvers } from './resolvers';
 import { createTypeDefs } from './typeDefs';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
 import { getAllTypes } from './util';
-
-/**
- * Query to get field types
- * eg. __type('aggregations')
- */
-const gqlAggregationTypeQuery = `#graphql
-	query getAggregationTypes($documentName: String!) {
-		__type(name: $documentName) {
-			name
-			fields {
-				name
-				type {
-					name
-				}
-			}
-		}
-	}
-`;
 
 /**
  * GQL query remote connection with __type query to retrieve list of types

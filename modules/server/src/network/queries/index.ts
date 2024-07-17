@@ -7,6 +7,24 @@
 
 import { SupportedNetworkAggregation, SUPPORTED_NETWORK_AGGREGATIONS } from '../common';
 
+/**
+ * Query to get field types
+ * eg. __type('aggregations')
+ */
+export const gqlAggregationTypeQuery = `#graphql
+	query getAggregationTypes($documentName: String!) {
+		__type(name: $documentName) {
+			name
+			fields {
+				name
+				type {
+					name
+				}
+			}
+		}
+	}
+`;
+
 // TODO: queries with variables eg. top_hits(_source:[String], size:Int): JSON
 const aggregationsQuery = /* GraphQL */ `#graphql
       query AggregationsQuery() {
