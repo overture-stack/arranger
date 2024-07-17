@@ -61,7 +61,7 @@ const getFieldTypes = (fields: any) => {
 };
 
 /**
- * Fetch schemas from remote connections and converts to GQL Object
+ * Fetch fields and types from remote connections
  * @param { networkConfigs }
  * @returns GQL object type to be used in functions
  */
