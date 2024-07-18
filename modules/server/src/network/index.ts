@@ -1,12 +1,13 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { gql } from 'apollo-server-core';
 import { IntrospectionQuery } from 'graphql';
+import { SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { gqlAggregationTypeQuery } from './queries';
 import { createResolvers } from './resolvers';
 import { createTypeDefs } from './typeDefs';
-import { NetworkAggregationConfig, NetworkAggregationConfigInput } from './types';
+import { NetworkAggregationConfig, NetworkAggregationConfigInput, NetworkFieldType } from './types';
 import { getAllTypes } from './util';
 
 /**
@@ -54,10 +55,36 @@ const fetchRemoteSchema = async (
 /**
  * Type response into simplified object
  * @param fields
- * @returns
+ * @returns {supportedAggregations: [], unsupportedAggregations: []}
  */
-const getFieldTypes = (fields: any) => {
-	return fields.map((field) => ({ name: field.name, type: field.type.name }));
+export const getFieldTypes = (fields: any, supportedAggregationsList: string[]) => {
+	return fields.reduce(
+		(
+			aggregations: {
+				supportedAggregations: NetworkFieldType[];
+				unsupportedAggregations: NetworkFieldType[];
+			},
+			field: any,
+		) => {
+			const fieldType = field.type.name;
+			const fieldObject: NetworkFieldType = { name: field.name, type: fieldType };
+			if (supportedAggregationsList.includes(fieldType)) {
+				return {
+					...aggregations,
+					supportedAggregations: aggregations.supportedAggregations.concat(fieldObject),
+				};
+			} else {
+				return {
+					...aggregations,
+					unsupportedAggregations: aggregations.unsupportedAggregations.concat(fieldObject),
+				};
+			}
+		},
+		{
+			supportedAggregations: [],
+			unsupportedAggregations: [],
+		},
+	);
 };
 
 /**
@@ -90,8 +117,11 @@ const fetchRemoteSchemas = async ({
 			const { config, gqlResponse } = networkResult.value;
 			const fields = gqlResponse.__type.fields;
 
-			const remoteAggregationFields = getFieldTypes(fields);
-			return { ...config, availableAggregations: remoteAggregationFields };
+			const { supportedAggregations, unsupportedAggregations } = getFieldTypes(
+				fields,
+				SUPPORTED_AGGREGATIONS_LIST,
+			);
+			return { ...config, supportedAggregations, unsupportedAggregations };
 		});
 
 	return configs;
