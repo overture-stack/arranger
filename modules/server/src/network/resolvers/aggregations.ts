@@ -31,8 +31,6 @@ const getGQLQuery = (fieldType: string) => {
 	}
 };
 
-// TODO: narrow fieldType early?
-
 /**
  * Queries remote connection gql server with query for field
  * @param url
@@ -45,7 +43,6 @@ const queryRemoteConnection = async (url: string, fieldType: string) => {
 		const response = await fetchGql({ url, gqlQuery });
 		if (response.status === 200 && response.statusText === 'OK') {
 			const responseData = response.data?.data;
-			console.log('fetch success', responseData);
 			return responseData;
 		}
 		throw Error(`Query to ${url} failed`);
@@ -69,6 +66,7 @@ const createResolver = (field: NetworkFieldType, configs: NetworkAggregationConf
 	const connectionsToQuery = getConnectionURLs(field, configs);
 
 	return async () => {
+		// TODO: this into single func like other fetchgql call
 		const connectionResponses = await Promise.allSettled(
 			connectionsToQuery.map((url: string) => queryRemoteConnection(url, field.type)),
 		);

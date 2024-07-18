@@ -1,5 +1,4 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { gql } from 'apollo-server-core';
 import { IntrospectionQuery } from 'graphql';
 import { SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { NetworkAggregationError } from './errors';
@@ -53,19 +52,14 @@ const fetchRemoteSchema = async (
 };
 
 /**
- * Type response into simplified object
+ * Type response into simplified object, returning both supported and unsupported types
  * @param fields
- * @returns {supportedAggregations: [], unsupportedAggregations: []}
+ * @returns { supportedAggregations: [], unsupportedAggregations: [] }
  */
+
 export const getFieldTypes = (fields: any, supportedAggregationsList: string[]) => {
-	return fields.reduce(
-		(
-			aggregations: {
-				supportedAggregations: NetworkFieldType[];
-				unsupportedAggregations: NetworkFieldType[];
-			},
-			field: any,
-		) => {
+	const fieldTypes = fields.reduce(
+		(aggregations, field) => {
 			const fieldType = field.type.name;
 			const fieldObject: NetworkFieldType = { name: field.name, type: fieldType };
 			if (supportedAggregationsList.includes(fieldType)) {
@@ -85,6 +79,8 @@ export const getFieldTypes = (fields: any, supportedAggregationsList: string[]) 
 			unsupportedAggregations: [],
 		},
 	);
+
+	return fieldTypes;
 };
 
 /**
