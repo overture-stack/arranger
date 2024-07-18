@@ -1,3 +1,6 @@
+import { ObjectValues } from '@/utils/types';
+import { CONNECTION_STATUS } from './resolvers/remoteConnections';
+
 // environment config
 export type NetworkAggregationConfigInput = {
 	graphqlUrl: string;
@@ -11,10 +14,25 @@ export type NetworkAggregationConfigInput = {
  * that are generated in the network search initialization process.
  */
 export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
-	availableAggregations?: NetworkFieldType[];
+	supportedAggregations?: NetworkFieldType[];
+	unsupportedAggregations?: NetworkFieldType[];
 };
 
 export type NetworkFieldType = {
 	name: string;
 	type: string;
+};
+
+//
+export type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
+
+export type RemoteConnectionData = {
+	url: string;
+	name: string;
+	description: string;
+	documentName: string;
+	availableAggregations: string[];
+	totalHits: number;
+	errors: string[];
+	status: ConnectionStatus;
 };
