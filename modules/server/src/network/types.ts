@@ -15,16 +15,17 @@ export type NetworkAggregationConfigInput = {
  * that are generated in the network search initialization process.
  */
 export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
-	supportedAggregations: NetworkFieldType<SUPPORTED_AGGREGATIONS_TYPE>[];
+	supportedAggregations: SupportedNetworkFieldType[];
 	unsupportedAggregations: NetworkFieldType<string>[];
 };
+
+export type SupportedNetworkFieldType = NetworkFieldType<SUPPORTED_AGGREGATIONS_TYPE>;
 
 export type NetworkFieldType<T> = {
 	name: string;
 	type: T;
 };
 
-//
 export type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
 
 export type RemoteConnectionData = {

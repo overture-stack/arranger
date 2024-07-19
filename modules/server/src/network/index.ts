@@ -5,7 +5,12 @@ import { fetchGql } from './gql';
 import { gqlAggregationTypeQuery, GQLFieldType, GQLTypeQueryResponse } from './queries';
 import { createResolvers } from './resolvers';
 import { createTypeDefs } from './typeDefs';
-import { NetworkAggregationConfig, NetworkAggregationConfigInput, NetworkFieldType } from './types';
+import {
+	NetworkAggregationConfig,
+	NetworkAggregationConfigInput,
+	NetworkFieldType,
+	SupportedNetworkFieldType,
+} from './types';
 import { getAllTypes } from './util';
 
 /**
@@ -58,7 +63,7 @@ const fetchRemoteSchema = async (
 const isSupportedType = (
 	fieldObject: NetworkFieldType<string>,
 	supportedList: string[],
-): fieldObject is NetworkFieldType<SUPPORTED_AGGREGATIONS_TYPE> => {
+): fieldObject is SupportedNetworkFieldType => {
 	return supportedList.includes(fieldObject.type);
 };
 export const getFieldTypes = (fields: GQLFieldType[], supportedAggregationsList: string[]) => {

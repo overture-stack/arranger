@@ -1,6 +1,6 @@
 import { fetchGql } from '../gql';
 import { remoteConnectionQuery } from '../queries';
-import { NetworkAggregationConfig, NetworkFieldType } from '../types';
+import { NetworkAggregationConfig, SupportedNetworkFieldType } from '../types';
 
 /**
  * Returns an array of connection URLs
@@ -9,11 +9,11 @@ import { NetworkAggregationConfig, NetworkFieldType } from '../types';
  * @returns
  */
 const getConnectionURLs = (
-	field: NetworkFieldType,
+	field: SupportedNetworkFieldType,
 	configs: NetworkAggregationConfig[],
 ): string[] => {
 	return configs
-		.filter((config) => config.availableAggregations?.find((agg) => agg.name === field.name))
+		.filter((config) => config.supportedAggregations?.find((agg) => agg.name === field.name))
 		.map((config) => config.graphqlUrl);
 };
 
@@ -62,7 +62,7 @@ const resolveAggregation = (response: any, type: string) => {};
  * @param field
  * @returns
  */
-const createResolver = (field: NetworkFieldType, configs: NetworkAggregationConfig[]) => {
+const createResolver = (field: SupportedNetworkFieldType, configs: NetworkAggregationConfig[]) => {
 	const connectionsToQuery = getConnectionURLs(field, configs);
 
 	return async () => {
@@ -92,7 +92,7 @@ const createResolver = (field: NetworkFieldType, configs: NetworkAggregationConf
  */
 export const createAggregationResolvers = (
 	configs: NetworkAggregationConfig[],
-	networkFieldTypes: NetworkFieldType[],
+	networkFieldTypes: SupportedNetworkFieldType[],
 ) => {
 	return networkFieldTypes.reduce(
 		(resolvers, field) => ({ ...resolvers, [field.name]: createResolver(field, configs) }),
