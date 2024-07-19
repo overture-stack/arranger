@@ -1,5 +1,5 @@
 import { GraphQLObjectType, GraphQLSchema } from 'graphql';
-import { NetworkAggregationConfig, NetworkFieldType, SupportedNetworkFieldType } from '../types';
+import { SupportedNetworkFieldType } from '../types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**

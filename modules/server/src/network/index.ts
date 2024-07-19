@@ -1,5 +1,5 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS_LIST } from './common';
+import { SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
 import { gqlAggregationTypeQuery, GQLFieldType, GQLTypeQueryResponse } from './queries';

@@ -5,7 +5,7 @@
  * These are the GQL queries for the supported GQL types
  */
 
-import { NetworkAggregation, NETWORK_AGGREGATIONS } from '../common';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 
 export type GQLFieldType = {
 	name: string;
@@ -50,6 +50,9 @@ const aggregationsQuery = /* GraphQL */ `#graphql
         }
 }`;
 
-export const remoteConnectionQuery = new Map<NetworkAggregation, string>();
-remoteConnectionQuery.set(NETWORK_AGGREGATIONS.NetworkAggregation, aggregationsQuery);
-remoteConnectionQuery.set(NETWORK_AGGREGATIONS.NetworkNumericAggregations, '');
+/**
+ * Returns gql query for gql type
+ */
+export const remoteConnectionQuery = new Map<SupportedAggregation, string>();
+remoteConnectionQuery.set(SUPPORTED_AGGREGATIONS.Aggregations, aggregationsQuery);
+remoteConnectionQuery.set(SUPPORTED_AGGREGATIONS.NumericAggregations, '');

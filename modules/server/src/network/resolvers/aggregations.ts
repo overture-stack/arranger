@@ -1,7 +1,6 @@
 import { SupportedAggregation } from '../common';
 import { fetchGql } from '../gql';
 import { remoteConnectionQuery } from '../queries';
-import { singleToNetworkAggregationMap } from '../typeDefs/networkAggregations';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from '../types';
 
 /**
@@ -25,8 +24,7 @@ const getConnectionURLs = (
  * @returns
  */
 const getGQLQuery = (fieldType: SupportedAggregation) => {
-	const networkAggType = singleToNetworkAggregationMap.get(fieldType);
-	const query = remoteConnectionQuery.get(networkAggType);
+	const query = remoteConnectionQuery.get(fieldType);
 	if (query) {
 		return query;
 	} else {
