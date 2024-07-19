@@ -154,8 +154,8 @@ export const createSchemaFromNetworkConfig = async ({
 
 	const networkFieldTypes = getAllTypes(configs);
 
-	const resolvers = createResolvers(configs, networkFieldTypes);
 	const typeDefs = createTypeDefs(networkFieldTypes);
+	const resolvers = createResolvers(configs, networkFieldTypes);
 
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 

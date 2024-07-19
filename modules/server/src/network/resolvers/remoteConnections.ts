@@ -56,7 +56,7 @@ export const resolveRemoteConnectionNodes = async (
 		networkConfigs.map(async (config) => {
 			const status = await gqlHealthCheck(config.graphqlUrl);
 
-			return {
+			const remoteConnectionData: RemoteConnectionData = {
 				url: config.graphqlUrl,
 				name: config.displayName,
 				description: '',
@@ -66,6 +66,7 @@ export const resolveRemoteConnectionNodes = async (
 				totalHits: 0,
 				errors: [],
 			};
+			return remoteConnectionData;
 		}),
 	);
 };

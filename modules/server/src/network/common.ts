@@ -6,7 +6,7 @@ export const NETWORK_AGGREGATIONS = {
 } as const;
 export type NetworkAggregation = ObjectValues<typeof NETWORK_AGGREGATIONS>;
 
-const SUPPORTED_AGGREGATIONS = {
+export const SUPPORTED_AGGREGATIONS = {
 	Aggregations: 'Aggregations',
 	NumericAggregations: 'NumericAggregations',
 } as const;

@@ -1,3 +1,4 @@
+import { SUPPORTED_AGGREGATIONS_TYPE } from '../common';
 import { fetchGql } from '../gql';
 import { remoteConnectionQuery } from '../queries';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from '../types';
@@ -22,7 +23,7 @@ const getConnectionURLs = (
  * @param fieldType
  * @returns
  */
-const getGQLQuery = (fieldType: string) => {
+const getGQLQuery = (fieldType: SUPPORTED_AGGREGATIONS_TYPE) => {
 	const query = remoteConnectionQuery.get(fieldType);
 	if (query) {
 		return query;
@@ -37,7 +38,7 @@ const getGQLQuery = (fieldType: string) => {
  * @param fieldType
  * @returns
  */
-const queryRemoteConnection = async (url: string, fieldType: string) => {
+const queryRemoteConnection = async (url: string, fieldType: SUPPORTED_AGGREGATIONS_TYPE) => {
 	try {
 		const gqlQuery = getGQLQuery(fieldType);
 		const response = await fetchGql({ url, gqlQuery });
@@ -60,17 +61,16 @@ const resolveAggregation = (response: any, type: string) => {};
 /**
  * Creates resolver function
  * @param field
- * @returns
+ * @returns resolver function
  */
 const createResolver = (field: SupportedNetworkFieldType, configs: NetworkAggregationConfig[]) => {
 	const connectionsToQuery = getConnectionURLs(field, configs);
 
 	return async () => {
-		// TODO: this into single func like other fetchgql call
 		const connectionResponses = await Promise.allSettled(
 			connectionsToQuery.map((url: string) => queryRemoteConnection(url, field.type)),
 		);
-		// TODO: error or log if connection not made
+
 		const responses = connectionResponses.filter(
 			(result: { status: string }) => result.status === 'fulfilled',
 		);
@@ -88,7 +88,7 @@ const createResolver = (field: SupportedNetworkFieldType, configs: NetworkAggreg
  * Returns a resolver map of functions
  * @param configs
  * @param allTypeDefs
- * @returns
+ * @returns resolver map
  */
 export const createAggregationResolvers = (
 	configs: NetworkAggregationConfig[],

@@ -1,6 +1,6 @@
 import { GraphQLObjectType, GraphQLSchema } from 'graphql';
-import { NetworkAggregationConfig, NetworkFieldType } from '../types';
-import { singleToNetworkAggMap } from './networkAggregations';
+import { NetworkAggregationConfig, NetworkFieldType, SupportedNetworkFieldType } from '../types';
+import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**
  * Returns available aggregations by filtering duplicates, and mapping from
@@ -14,13 +14,19 @@ import { singleToNetworkAggMap } from './networkAggregations';
  * @param configs
  * @returns
  */
-export const createNetworkAggregationTypeDefs = (networkFieldTypes: NetworkFieldType[]) => {
+export const createNetworkAggregationTypeDefs = (
+	networkFieldTypes: SupportedNetworkFieldType[],
+) => {
 	/**
-	 * converts to GQLObjectType field shape
-	 * { name: "foo", type: "String" } => { foo: { type: "String" } }
+	 * Converts field/types to GQLObjectType definition shape
+	 *
+	 * @example
+	 * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
 	 */
 	const allFields = networkFieldTypes.reduce((allFields, currentField) => {
-		const field = { [currentField.name]: { type: singleToNetworkAggMap['Aggregations'] } };
+		const field = {
+			[currentField.name]: { type: singleToNetworkAggregationMap.get(currentField.type) },
+		};
 		return { ...allFields, ...field };
 	}, {});
 

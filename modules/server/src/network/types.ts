@@ -33,7 +33,7 @@ export type RemoteConnectionData = {
 	name: string;
 	description: string;
 	documentName: string;
-	availableAggregations: string[];
+	availableAggregations: SupportedNetworkFieldType[];
 	totalHits: number;
 	errors: string[];
 	status: ConnectionStatus;
