@@ -17,9 +17,9 @@ export const SUPPORTED_AGGREGATIONS = {
 	NumericAggregations: 'NumericAggregations',
 } as const;
 
-export type SUPPORTED_AGGREGATIONS_TYPE = ObjectValues<typeof SUPPORTED_AGGREGATIONS>;
+export type SupportedAggregation = ObjectValues<typeof SUPPORTED_AGGREGATIONS>;
 
-export const SUPPORTED_AGGREGATIONS_LIST: SUPPORTED_AGGREGATIONS_TYPE[] = [
+export const SUPPORTED_AGGREGATIONS_LIST: SupportedAggregation[] = [
 	SUPPORTED_AGGREGATIONS.Aggregations,
 	SUPPORTED_AGGREGATIONS.NumericAggregations,
 ];
@@ -30,7 +30,7 @@ export const SUPPORTED_AGGREGATIONS_LIST: SUPPORTED_AGGREGATIONS_TYPE[] = [
  * @example
  * "Aggregations" => "NetworkAggregations"
  */
-export const singleToNetworkNameMap = new Map<SUPPORTED_AGGREGATIONS_TYPE, NetworkAggregation>()
+export const singleToNetworkNameMap = new Map<SupportedAggregation, NetworkAggregation>()
 	.set(SUPPORTED_AGGREGATIONS.Aggregations, NETWORK_AGGREGATIONS.NetworkAggregations)
 	.set(SUPPORTED_AGGREGATIONS.NumericAggregations, NETWORK_AGGREGATIONS.NetworkNumericAggregations);
 
@@ -40,6 +40,6 @@ export const singleToNetworkNameMap = new Map<SUPPORTED_AGGREGATIONS_TYPE, Netwo
  * @example
  * "NetworkAggregations" => "Aggregations"
  */
-export const networkToSingleNameMap = new Map<NetworkAggregation, SUPPORTED_AGGREGATIONS_TYPE>()
+export const networkToSingleNameMap = new Map<NetworkAggregation, SupportedAggregation>()
 	.set(NETWORK_AGGREGATIONS.NetworkAggregations, SUPPORTED_AGGREGATIONS.Aggregations)
 	.set(NETWORK_AGGREGATIONS.NetworkNumericAggregations, SUPPORTED_AGGREGATIONS.NumericAggregations);

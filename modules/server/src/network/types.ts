@@ -1,5 +1,5 @@
 import { ObjectValues } from '@/utils/types';
-import { SUPPORTED_AGGREGATIONS_TYPE } from './common';
+import { SupportedAggregation } from './common';
 import { CONNECTION_STATUS } from './resolvers/remoteConnections';
 
 // environment config
@@ -19,7 +19,7 @@ export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
 	unsupportedAggregations: NetworkFieldType<string>[];
 };
 
-export type SupportedNetworkFieldType = NetworkFieldType<SUPPORTED_AGGREGATIONS_TYPE>;
+export type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
 
 export type NetworkFieldType<T> = {
 	name: string;

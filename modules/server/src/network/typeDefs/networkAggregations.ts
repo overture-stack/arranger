@@ -1,5 +1,5 @@
 import { GraphQLObjectType, GraphQLString } from 'graphql';
-import { SUPPORTED_AGGREGATIONS, SUPPORTED_AGGREGATIONS_TYPE } from '../common';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 
 // TODO: Placeholder to expand type
 const networkAggregations = new GraphQLObjectType({
@@ -24,10 +24,7 @@ const numericNetworkAggregations = new GraphQLObjectType({
 /**
  * return network aggregation gql type
  */
-export const singleToNetworkAggregationMap = new Map<
-	SUPPORTED_AGGREGATIONS_TYPE,
-	GraphQLObjectType
->();
+export const singleToNetworkAggregationMap = new Map<SupportedAggregation, GraphQLObjectType>();
 singleToNetworkAggregationMap.set(SUPPORTED_AGGREGATIONS.Aggregations, networkAggregations);
 singleToNetworkAggregationMap.set(
 	SUPPORTED_AGGREGATIONS.NumericAggregations,

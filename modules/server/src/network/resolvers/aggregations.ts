@@ -1,6 +1,7 @@
-import { SUPPORTED_AGGREGATIONS_TYPE } from '../common';
+import { SupportedAggregation } from '../common';
 import { fetchGql } from '../gql';
 import { remoteConnectionQuery } from '../queries';
+import { singleToNetworkAggregationMap } from '../typeDefs/networkAggregations';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from '../types';
 
 /**
@@ -23,8 +24,9 @@ const getConnectionURLs = (
  * @param fieldType
  * @returns
  */
-const getGQLQuery = (fieldType: SUPPORTED_AGGREGATIONS_TYPE) => {
-	const query = remoteConnectionQuery.get(fieldType);
+const getGQLQuery = (fieldType: SupportedAggregation) => {
+	const networkAggType = singleToNetworkAggregationMap.get(fieldType);
+	const query = remoteConnectionQuery.get(networkAggType);
 	if (query) {
 		return query;
 	} else {
@@ -38,7 +40,7 @@ const getGQLQuery = (fieldType: SUPPORTED_AGGREGATIONS_TYPE) => {
  * @param fieldType
  * @returns
  */
-const queryRemoteConnection = async (url: string, fieldType: SUPPORTED_AGGREGATIONS_TYPE) => {
+const queryRemoteConnection = async (url: string, fieldType: SupportedAggregation) => {
 	try {
 		const gqlQuery = getGQLQuery(fieldType);
 		const response = await fetchGql({ url, gqlQuery });
