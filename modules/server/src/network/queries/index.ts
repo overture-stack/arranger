@@ -7,6 +7,20 @@
 
 import { NetworkAggregation, NETWORK_AGGREGATIONS } from '../common';
 
+export type GQLFieldType = {
+	name: string;
+	type: {
+		name: string;
+	};
+};
+
+export type GQLTypeQueryResponse = {
+	__type: {
+		name: string;
+		fields: GQLFieldType[];
+	};
+};
+
 /**
  * Query to get field types
  * eg. __type('aggregations')

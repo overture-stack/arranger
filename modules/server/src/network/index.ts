@@ -1,9 +1,8 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { IntrospectionQuery } from 'graphql';
-import { SUPPORTED_AGGREGATIONS_LIST } from './common';
+import { SUPPORTED_AGGREGATIONS_LIST, SUPPORTED_AGGREGATIONS_TYPE } from './common';
 import { NetworkAggregationError } from './errors';
 import { fetchGql } from './gql';
-import { gqlAggregationTypeQuery } from './queries';
+import { gqlAggregationTypeQuery, GQLFieldType, GQLTypeQueryResponse } from './queries';
 import { createResolvers } from './resolvers';
 import { createTypeDefs } from './typeDefs';
 import { NetworkAggregationConfig, NetworkAggregationConfigInput, NetworkFieldType } from './types';
@@ -23,7 +22,7 @@ import { getAllTypes } from './util';
  */
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
-): Promise<IntrospectionQuery | undefined> => {
+): Promise<GQLTypeQueryResponse | undefined> => {
 	const { graphqlUrl, documentType } = config;
 	try {
 		const response = await fetchGql({
@@ -52,17 +51,28 @@ const fetchRemoteSchema = async (
 };
 
 /**
- * Type response into simplified object, returning both supported and unsupported types
+ * Reduce response into simplified object, returning both supported and unsupported types
  * @param fields
  * @returns { supportedAggregations: [], unsupportedAggregations: [] }
  */
-
-export const getFieldTypes = (fields: any, supportedAggregationsList: string[]) => {
+const isSupportedType = (
+	fieldObject: NetworkFieldType<string>,
+	supportedList: string[],
+): fieldObject is NetworkFieldType<SUPPORTED_AGGREGATIONS_TYPE> => {
+	return supportedList.includes(fieldObject.type);
+};
+export const getFieldTypes = (fields: GQLFieldType[], supportedAggregationsList: string[]) => {
 	const fieldTypes = fields.reduce(
-		(aggregations, field) => {
+		(
+			aggregations: Pick<
+				NetworkAggregationConfig,
+				'supportedAggregations' | 'unsupportedAggregations'
+			>,
+			field,
+		) => {
 			const fieldType = field.type.name;
-			const fieldObject: NetworkFieldType = { name: field.name, type: fieldType };
-			if (supportedAggregationsList.includes(fieldType)) {
+			const fieldObject = { name: field.name, type: fieldType };
+			if (isSupportedType(fieldObject, supportedAggregationsList)) {
 				return {
 					...aggregations,
 					supportedAggregations: aggregations.supportedAggregations.concat(fieldObject),
@@ -106,7 +116,7 @@ const fetchRemoteSchemas = async ({
 				result,
 			): result is PromiseFulfilledResult<{
 				config: NetworkAggregationConfigInput;
-				gqlResponse: any;
+				gqlResponse: GQLTypeQueryResponse;
 			}> => result.status === 'fulfilled',
 		)
 		.map((networkResult) => {
@@ -124,7 +134,7 @@ const fetchRemoteSchemas = async ({
 };
 
 /**
- * Connects to remote network connections, runs type lookups and merges to output single schema
+ * Connects to remote network connections, looks up field types, add field/type pairs to configs
  * @param { networkConfigs }
  * @returns graphql schema for the network - types and resolvers combined
  */

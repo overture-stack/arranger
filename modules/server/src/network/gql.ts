@@ -30,8 +30,8 @@ export const fetchGql = ({
 	variables,
 }: {
 	url: string;
-	gqlQuery: any;
-	variables?: any;
+	gqlQuery: string;
+	variables?: Record<string, string>;
 }) => {
 	const options = {
 		url,

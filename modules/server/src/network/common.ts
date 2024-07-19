@@ -11,7 +11,9 @@ const SUPPORTED_AGGREGATIONS = {
 	NumericAggregations: 'NumericAggregations',
 } as const;
 
-export const SUPPORTED_AGGREGATIONS_LIST: ObjectValues<typeof SUPPORTED_AGGREGATIONS>[] = [
+export type SUPPORTED_AGGREGATIONS_TYPE = ObjectValues<typeof SUPPORTED_AGGREGATIONS>;
+
+export const SUPPORTED_AGGREGATIONS_LIST: SUPPORTED_AGGREGATIONS_TYPE[] = [
 	SUPPORTED_AGGREGATIONS.Aggregations,
 	SUPPORTED_AGGREGATIONS.NumericAggregations,
 ];
