@@ -55,17 +55,18 @@ const fetchRemoteSchema = async (
 	}
 };
 
-/**
- * Reduce response into simplified object, returning both supported and unsupported types
- * @param fields
- * @returns { supportedAggregations: [], unsupportedAggregations: [] }
- */
 const isSupportedType = (
 	fieldObject: NetworkFieldType<string>,
 	supportedList: string[],
 ): fieldObject is SupportedNetworkFieldType => {
 	return supportedList.includes(fieldObject.type);
 };
+
+/**
+ * Reduce response into simplified object, returning both supported and unsupported types
+ * @param fields
+ * @returns { supportedAggregations: [], unsupportedAggregations: [] }
+ */
 export const getFieldTypes = (fields: GQLFieldType[], supportedAggregationsList: string[]) => {
 	const fieldTypes = fields.reduce(
 		(
