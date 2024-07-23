@@ -91,6 +91,35 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           # Sets the target stage to build
           target: arranger-admin-server
+          load: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: '${{ steps.meta.outputs.tags }}'
+          format: 'table'
+          severity: 'CRITICAL'
+          exit-code: '1'
+          hide-progress: true
+          trivyignores: .github/.trivyignore
+          output: scan-results.txt
+        env:
+          TRIVY_IGNORE_STATUS: 'will_not_fix'
+
+      - name: Publish Trivy Scan Results to Summary
+        if: always()
+        run: |
+          if [[ -s scan-results.txt ]]; then
+            {
+              echo "### Trivy Scan Results"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```arranger-admin-server'
+              cat scan-results.txt
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
 
   trigger_pilot_dev_deployment:
     needs: [build-and-push-docker-image, get-version]
