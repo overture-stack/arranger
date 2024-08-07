@@ -40,19 +40,21 @@ export const gqlAggregationTypeQuery = `#graphql
 `;
 
 // TODO: queries with variables eg. top_hits(_source:[String], size:Int): JSON
-const aggregationsQuery = /* GraphQL */ `#graphql
-      query AggregationsQuery() {
-        bucket_count
-        buckets {
-          key
-          doc_count
-          key_as_string
-        }
-}`;
+export const aggregationsQuery = /* GraphQL */ `
+	#graphql
+	{
+		bucket_count
+		buckets {
+			key
+			doc_count
+			key_as_string
+		}
+	}
+`;
 
 /**
  * Returns gql query for gql type
  */
-export const remoteConnectionQuery = new Map<SupportedAggregation, string>();
-remoteConnectionQuery.set(SUPPORTED_AGGREGATIONS.Aggregations, aggregationsQuery);
-remoteConnectionQuery.set(SUPPORTED_AGGREGATIONS.NumericAggregations, '');
+export const supportedAggregationQueries = new Map<SupportedAggregation, string>();
+supportedAggregationQueries.set(SUPPORTED_AGGREGATIONS.Aggregations, aggregationsQuery);
+supportedAggregationQueries.set(SUPPORTED_AGGREGATIONS.NumericAggregations, '');
