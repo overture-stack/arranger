@@ -14,6 +14,8 @@ export type NetworkFieldType<T> = {
 	type: T;
 };
 
+export type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
+
 /**
  * Complete aggregation config that defines the network search setup.
  * This includes the original config information plus computed fields
@@ -23,8 +25,6 @@ export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
 	supportedAggregations: SupportedNetworkFieldType[];
 	unsupportedAggregations: NetworkFieldType<string>[];
 };
-
-export type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
 
 export type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
 

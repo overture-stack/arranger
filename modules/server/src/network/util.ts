@@ -1,4 +1,4 @@
-import { OperationDefinitionNode, print } from 'graphql';
+import { DocumentNode, print } from 'graphql';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from './types';
 
 /**
@@ -13,6 +13,6 @@ export const getAllTypes = (configs: NetworkAggregationConfig[]): SupportedNetwo
 /**
  * GraphQL AST => String
  */
-export const ASTtoString = (ast: OperationDefinitionNode) => {
+export const ASTtoString = (ast: DocumentNode) => {
 	return print(ast);
 };
