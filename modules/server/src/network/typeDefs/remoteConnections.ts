@@ -1,4 +1,4 @@
-export const RemoteConnectionNode = `#graphql
+export const remoteConnectionTypes = `#graphql
   type Query {
     nodes: [RemoteConnectionNode]
   }

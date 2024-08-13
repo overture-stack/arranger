@@ -1,18 +1,53 @@
-import { Config, mergeTypeDefs } from '@graphql-tools/merge';
-import { DocumentNode, GraphQLSchema } from 'graphql';
+import { GraphQLObjectType, GraphQLSchema } from 'graphql';
+import { SupportedNetworkFieldType } from '../types';
+import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**
+ * Returns available aggregations by filtering duplicates, and mapping from
+ * singular remote aggregation type to network aggregation types
  *
- * @remarks
- * mergeTypeDefs function can handle a lot of options including
- * exclusions and customising how to handle conflicts.
- * See full documentation here: https://the-guild.dev/graphql/tools/docs/api/modules/merge_src#mergetypedefs
+ * eg. NumericAggregation to NetworkNumericAggregation
  *
- * @param networkConfigs
+ * There is no distinction on which types come from which remote connections
+ * This is the resolvers responsibility
+ *
+ * @param configs
  * @returns
  */
-export const createNetworkAggregationTypeDefs = (gqlTypes: GraphQLSchema[]): DocumentNode => {
-	const typeDefs = mergeTypeDefs(gqlTypes);
+export const createNetworkAggregationTypeDefs = (
+	networkFieldTypes: SupportedNetworkFieldType[],
+) => {
+	/**
+	 * Converts field/types to GQLObjectType definition shape
+	 *
+	 * @example
+	 * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
+	 */
+	const allFields = networkFieldTypes.reduce((allFields, currentField) => {
+		const field = {
+			[currentField.name]: { type: singleToNetworkAggregationMap.get(currentField.type) },
+		};
+		return { ...allFields, ...field };
+	}, {});
 
-	return typeDefs;
+	const typeDefs = new GraphQLObjectType({
+		name: 'Aggregations',
+		fields: allFields,
+	});
+
+	// correct object structure to merge with other types
+	const rootType = new GraphQLObjectType({
+		name: 'Query',
+		fields: {
+			aggregations: {
+				type: typeDefs,
+			},
+		},
+	});
+
+	const schemaTypes = new GraphQLSchema({
+		query: rootType,
+	});
+
+	return schemaTypes;
 };
