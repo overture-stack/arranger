@@ -96,7 +96,10 @@
 		},
 		"transform": {
 			"^.+\\.[jt]sx?$": [
-				"ts-jest"
+				"ts-jest",
+				{
+					"diagnostics": false
+				}
 			]
 		},
 		"verbose": true
