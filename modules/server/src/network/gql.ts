@@ -24,12 +24,20 @@ export const createGqlQuery = ({
  *
  * @throws AxiosError
  */
-export const fetchGql = ({ url, gqlRequest }: { url: string; gqlRequest: { query: string } }) => {
+export const fetchGql = ({
+	url,
+	gqlQuery,
+	variables,
+}: {
+	url: string;
+	gqlQuery: string;
+	variables?: Record<string, string>;
+}) => {
 	const options = {
 		url,
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		data: gqlRequest,
+		data: { query: gqlQuery, variables },
 	};
 
 	return axios(options);
