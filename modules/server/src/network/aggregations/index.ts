@@ -4,12 +4,15 @@ import { Aggregations, NetworkAggregation, NumericAggregations } from '../types'
 // TODO: implement
 export const resolveAggregations = (networkResults: void) => null;
 
-// agg object of N
+/**
+ * Resolve aggregation based on aggregation type
+ * @param type
+ * @param aggregations
+ */
 export const resolveToNetworkAggregation = <T>(
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
 ) => {
-	// TODO: agg length
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
