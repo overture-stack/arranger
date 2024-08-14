@@ -38,3 +38,20 @@ export type RemoteConnectionData = {
 	errors: string[];
 	status: ConnectionStatus;
 };
+
+export type Bucket = {
+	doc_count: number;
+	key: string;
+};
+
+export type Aggregations = {
+	bucket_count: number;
+	buckets: Bucket[];
+};
+
+export type NumericAggregations = {};
+
+export type NetworkAggregation = {
+	bucket_count: number;
+	buckets: Bucket[];
+};
