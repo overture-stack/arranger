@@ -34,8 +34,8 @@ export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggrega
 		const computedBucketCount = resolvedAggregation.bucket_count + agg.bucket_count;
 		const computedBuckets = agg.buckets.map(({ key, doc_count }) => {
 			// potentially expensive "find" if array of buckets is very large
-			const b = resolvedAggregation.buckets.find((bucket) => bucket.key === key);
-			return { key, doc_count: (b?.doc_count || 0) + doc_count };
+			const bucket = resolvedAggregation.buckets.find((bucket) => bucket.key === key);
+			return { key, doc_count: (bucket?.doc_count || 0) + doc_count };
 		});
 		return { bucket_count: computedBucketCount, buckets: computedBuckets };
 	}, emptyAggregation);

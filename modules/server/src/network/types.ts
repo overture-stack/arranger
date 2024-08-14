@@ -39,7 +39,6 @@ export type RemoteConnectionData = {
 	status: ConnectionStatus;
 };
 
-//
 export type Bucket = {
 	doc_count: number;
 	key: string;
