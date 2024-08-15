@@ -1,4 +1,5 @@
-import { DocumentNode, print } from 'graphql';
+import { DocumentNode, GraphQLResolveInfo, print } from 'graphql';
+import graphqlFields from 'graphql-fields';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from './types';
 
 /**
@@ -27,4 +28,16 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
 		'status' in result &&
 		result.status === 'fulfilled'
 	);
+};
+
+/**
+ * Returns only top level fields from a GQL request
+ *
+ * @param info GQL request info object
+ * @returns List of top level fields
+ */
+export const getRootFields = (info: GraphQLResolveInfo) => {
+	const requestedFields = graphqlFields(info);
+	const fieldsAsList = Object.keys(requestedFields);
+	return fieldsAsList;
 };

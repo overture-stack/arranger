@@ -1,22 +1,9 @@
 import { gql } from 'apollo-server-core';
-import { DocumentNode, GraphQLResolveInfo } from 'graphql';
-import graphqlFields from 'graphql-fields';
+import { DocumentNode } from 'graphql';
 import { fetchGql } from '../gql';
-import { supportedAggregationQueries } from '../queries';
+import { GQLResponse, supportedAggregationQueries } from '../queries';
 import { NetworkAggregationConfig } from '../types';
-import { ASTtoString } from '../util';
-
-/**
- * Returns only top level fields from a GQL request
- *
- * @param info GQL request info object
- * @returns List of top level fields
- */
-const getRootFields = (info: GraphQLResolveInfo) => {
-	const requestedFields = graphqlFields(info);
-	const fieldsAsList = Object.keys(requestedFields);
-	return fieldsAsList;
-};
+import { ASTtoString, fulfilledPromiseFilter } from '../util';
 
 /**
  * Query remote connections and handle network responses
@@ -40,7 +27,7 @@ const queryConnection = async (query: NetworkQuery) => {
 
 		console.error('unexpected response data');
 	} catch (error) {
-		/**
+		/*
 		 * TODO: expand on error handling for instance of Axios error for example
 		 */
 		console.error(`network failure!`);
@@ -61,7 +48,19 @@ export const queryConnections = async (queries: NetworkQuery[]) => {
 
 	// TODO: expand on network condition handling, eg. timeouts, single connection failure
 	const networkResults = await Promise.allSettled(networkQueryPromises);
-	return networkResults;
+	const networkData = networkResults
+		.filter(
+			fulfilledPromiseFilter<
+				PromiseFulfilledResult<{
+					gqlResponse: GQLResponse;
+				}>
+			>,
+		)
+		.map((result) => {
+			const { response } = result.value;
+			return response;
+		});
+	return networkData;
 };
 
 type NetworkQuery = {
@@ -89,10 +88,8 @@ const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName
  */
 export const createNetworkQueries = (
 	configs: NetworkAggregationConfig[],
-	info: GraphQLResolveInfo,
+	rootQueryFields: string[],
 ): NetworkQuery[] => {
-	const rootQueryFields = getRootFields(info);
-
 	// TODO: what if there are no matched findMatchedAggregationField
 	const queries = configs
 		.map((config) => {
