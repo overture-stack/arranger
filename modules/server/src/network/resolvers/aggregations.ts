@@ -1,7 +1,6 @@
 import { gql } from 'apollo-server-core';
 import { DocumentNode, GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
-import { config } from 'process';
 import { fetchGql } from '../gql';
 import { supportedAggregationQueries } from '../queries';
 import { NetworkAggregationConfig } from '../types';
@@ -44,7 +43,12 @@ const queryConnection = async (query: NetworkQuery) => {
 		/**
 		 * TODO: expand on error handling for instance of Axios error for example
 		 */
-		console.error(`network failure`, error);
+		console.error(`network failure!`);
+		console.log(error.response.data);
+		console.log(error.response.status);
+		console.log(error.response.headers);
+		console.log(error.toJSON());
+
 		return;
 	}
 };
@@ -52,7 +56,7 @@ const queryConnection = async (query: NetworkQuery) => {
 export const queryConnections = async (queries: NetworkQuery[]) => {
 	const networkQueryPromises = queries.map(async (query) => {
 		const response = await queryConnection(query);
-		return { config, response };
+		return { response };
 	});
 
 	// TODO: expand on network condition handling, eg. timeouts, single connection failure
@@ -89,10 +93,11 @@ export const createNetworkQueries = (
 ): NetworkQuery[] => {
 	const rootQueryFields = getRootFields(info);
 
+	// TODO: what if there are no matched findMatchedAggregationField
 	const queries = configs
 		.map((config) => {
 			// construct gql string { [fieldName] { [Aggregation query fields] } }
-			const gqlString = rootQueryFields.reduce((gqlString, fieldName) => {
+			const gqlStringFields = rootQueryFields.reduce((gqlString, fieldName) => {
 				const matchedAggregationField = findMatchedAggregationField(config, fieldName);
 				if (matchedAggregationField) {
 					const { name, type } = matchedAggregationField;
@@ -103,15 +108,21 @@ export const createNetworkQueries = (
 				return gqlString;
 			}, '');
 
+			// add top level field for query and format with correct brackets
+			const gqlString = `{${config.documentName} { ${gqlStringFields} }}`;
+
 			/*
 			 * convert string to AST object to use as query
 			 * not needed if gqlString is formatted correctly but this acts as a validity check
 			 */
 			try {
-				const gqlQuery = gql`{${gqlString}}`;
+				const gqlQuery = gql`
+					${gqlString}
+				`;
 				return { url: config.graphqlUrl, gqlQuery };
 			} catch (err) {
-				console.error(err);
+				console.error('invalid gql', err);
+
 				return false;
 			}
 		})
