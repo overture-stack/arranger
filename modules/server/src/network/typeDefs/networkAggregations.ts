@@ -1,12 +1,12 @@
-import { GraphQLObjectType, GraphQLString } from 'graphql';
+import { GraphQLInt, GraphQLObjectType, GraphQLString } from 'graphql';
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 
 // TODO: Placeholder to expand type
 const networkAggregations = new GraphQLObjectType({
 	name: 'NetworkAggregations',
 	fields: {
-		test: {
-			type: GraphQLString,
+		bucket_count: {
+			type: GraphQLInt,
 		},
 	},
 });

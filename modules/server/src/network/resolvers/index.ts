@@ -32,7 +32,10 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 				// Aggregate queried data
 				const resolvedResults = resolveAggregations(networkResults, rootQueryFields);
 				// TODO: format to well defined response object createResponse(resolvedResults) jon success/failure, conform to schema shape etc
-				return resolvedResults;
+				const response = resolvedResults.reduce((response, currentField) => {
+					return { ...response, ...{ [currentField.fieldName]: { ...currentField.aggregation } } };
+				}, {});
+				return response;
 			},
 		},
 	};
