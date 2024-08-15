@@ -10,9 +10,21 @@ export const getAllTypes = (configs: NetworkAggregationConfig[]): SupportedNetwo
 	return configs.flatMap((config) => config.supportedAggregations);
 };
 
-/**
+/*
  * GraphQL AST => String
  */
 export const ASTtoString = (ast: DocumentNode) => {
 	return print(ast);
+};
+
+/**
+ * Type guard to filter fulfilled Promises
+ */
+export const fulfilledPromiseFilter = <Result>(result: unknown): result is Result => {
+	return (
+		typeof result === 'object' &&
+		result !== null &&
+		'status' in result &&
+		result.status === 'fulfilled'
+	);
 };
