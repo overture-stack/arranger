@@ -1,6 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { resolveAggregations } from '../aggregations';
 import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
+import { getRootFields } from '../util';
 import { createNetworkQueries, queryConnections } from './aggregations';
 import { resolveRemoteConnectionNodes } from './remoteConnections';
 
@@ -25,11 +26,16 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
-				const networkQueries = createNetworkQueries(configs, info);
+				const rootQueryFields = getRootFields(info);
+				const networkQueries = createNetworkQueries(configs, rootQueryFields);
 				const networkResults = await queryConnections(networkQueries);
-				// TODO: implement aggregating
-				const resolvedResults = resolveAggregations(networkResults);
-				return resolvedResults;
+				// Aggregate queried data
+				const resolvedResults = resolveAggregations(networkResults, rootQueryFields);
+				// TODO: format to well defined response object createResponse(resolvedResults) jon success/failure, conform to schema shape etc
+				const response = resolvedResults.reduce((response, currentField) => {
+					return { ...response, ...{ [currentField.fieldName]: { ...currentField.aggregation } } };
+				}, {});
+				return response;
 			},
 		},
 	};
