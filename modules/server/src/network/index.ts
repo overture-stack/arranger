@@ -11,7 +11,7 @@ import {
 	NetworkFieldType,
 	SupportedNetworkFieldType,
 } from './types';
-import { getAllTypes } from './util';
+import { fulfilledPromiseFilter, getAllTypes } from './util';
 
 /**
  * GQL query remote connection with __type query to retrieve list of types
@@ -99,6 +99,11 @@ export const getFieldTypes = (fields: GQLFieldType[], supportedAggregationsList:
 	return fieldTypes;
 };
 
+type NetworkQueryResult = PromiseFulfilledResult<{
+	config: NetworkAggregationConfigInput;
+	gqlResponse: GQLTypeQueryResponse;
+}>;
+
 /**
  * Fetch fields and types from remote connections
  * @param { networkConfigs }
@@ -117,14 +122,7 @@ const fetchRemoteSchemas = async ({
 
 	const networkQueries = await Promise.allSettled(networkQueryPromises);
 	const configs = networkQueries
-		.filter(
-			(
-				result,
-			): result is PromiseFulfilledResult<{
-				config: NetworkAggregationConfigInput;
-				gqlResponse: GQLTypeQueryResponse;
-			}> => result.status === 'fulfilled',
-		)
+		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
 		.map((networkResult) => {
 			const { config, gqlResponse } = networkResult.value;
 			const fields = gqlResponse.__type.fields;
@@ -156,7 +154,7 @@ export const createSchemaFromNetworkConfig = async ({
 	const networkFieldTypes = getAllTypes(configs);
 
 	const typeDefs = createTypeDefs(networkFieldTypes);
-	const resolvers = createResolvers(configs, networkFieldTypes);
+	const resolvers = createResolvers(configs);
 
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 

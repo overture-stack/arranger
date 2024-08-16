@@ -6,6 +6,7 @@ import { CONNECTION_STATUS } from './resolvers/remoteConnections';
 export type NetworkAggregationConfigInput = {
 	graphqlUrl: string;
 	documentType: string;
+	documentName: string;
 	displayName: string;
 };
 
