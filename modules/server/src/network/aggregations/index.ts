@@ -1,22 +1,39 @@
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 import { Aggregations, NetworkAggregation, NumericAggregations } from '../types';
 
-// TODO: implement
-export const resolveAggregations = (networkResults: void) => null;
+/**
+ * Pick each field from network result aggregations and reduce into single aggregation
+ *
+ * @param networkResults
+ * @param rootQueryFields
+ */
+export const resolveAggregations = (networkResults, rootQueryFields) => {
+	const resolvedNetworkAggregations = rootQueryFields.map((fieldName) => {
+		const fieldAggregations = networkResults.map((networkResult) => {
+			const documentName = Object.keys(networkResult)[0];
+			return networkResult[documentName][fieldName];
+		});
+		const aggregationType = fieldAggregations[0].__typename;
+		const resolvedAggregation = resolveToNetworkAggregation(aggregationType, fieldAggregations);
+		return { fieldName: fieldName, aggregation: resolvedAggregation };
+	});
+
+	return resolvedNetworkAggregations;
+};
 
 /**
  * Resolve aggregation based on aggregation type
  * @param type
  * @param aggregations
  */
-export const resolveToNetworkAggregation = <T>(
+export const resolveToNetworkAggregation = (
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
-) => {
+): NetworkAggregation | undefined => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
-		resolveAggregation(aggregations);
+		return resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
-		resolveNumericAggregation(aggregations);
+		return resolveNumericAggregation(aggregations);
 	} else {
 		// no types match
 		throw Error('No matching aggregation type');

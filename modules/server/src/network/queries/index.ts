@@ -6,6 +6,7 @@
  */
 
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+import { Aggregations, NumericAggregations } from '../types';
 
 export type GQLFieldType = {
 	name: string;
@@ -18,6 +19,13 @@ export type GQLTypeQueryResponse = {
 	__type: {
 		name: string;
 		fields: GQLFieldType[];
+	};
+};
+
+// Data query response
+export type AggregationGQLResponse = {
+	[documentName: string]: {
+		[fieldName: string]: Aggregations;
 	};
 };
 
@@ -43,6 +51,7 @@ export const gqlAggregationTypeQuery = `#graphql
 export const aggregationsQuery = /* GraphQL */ `
 	#graphql
 	{
+		__typename
 		bucket_count
 		buckets {
 			key
