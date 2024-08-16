@@ -29,7 +29,7 @@ export const resolveAggregations = (networkResults, rootQueryFields) => {
 export const resolveToNetworkAggregation = (
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
-) => {
+): NetworkAggregation | undefined => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {

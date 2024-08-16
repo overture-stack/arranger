@@ -23,7 +23,7 @@ export type GQLTypeQueryResponse = {
 };
 
 // Data query response
-export type GQLResponse = {
+export type AggregationGQLResponse = {
 	[documentName: string]: {
 		[fieldName: string]: Aggregations;
 	};
