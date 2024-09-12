@@ -44,7 +44,7 @@ export const resolveToNetworkAggregation = (
  * Takes an array of the same aggregation type and computes the singular type
  * eg. NumericAggregation => NetworkNumericAggregation
  *
- * Note for operations on Buckets -  size can be large
+ * Note for operations on Buckets -  the size of the array can be large (e.g. total bucket count), complicating lookups, etc.
  *
  * @param aggregations
  * @returns
