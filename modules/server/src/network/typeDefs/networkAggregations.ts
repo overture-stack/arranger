@@ -1,5 +1,17 @@
-import { GraphQLInt, GraphQLObjectType, GraphQLString } from 'graphql';
+import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql';
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+
+const bucket = new GraphQLObjectType({
+	name: 'bucket',
+	fields: {
+		doc_count: {
+			type: GraphQLInt,
+		},
+		key: {
+			type: GraphQLString,
+		},
+	},
+});
 
 // TODO: Placeholder to expand type
 const networkAggregations = new GraphQLObjectType({
@@ -7,6 +19,9 @@ const networkAggregations = new GraphQLObjectType({
 	fields: {
 		bucket_count: {
 			type: GraphQLInt,
+		},
+		buckets: {
+			type: new GraphQLList(bucket),
 		},
 	},
 });
