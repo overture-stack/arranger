@@ -44,6 +44,8 @@ export const resolveToNetworkAggregation = (
  * Takes an array of the same aggregation type and computes the singular type
  * eg. NumericAggregation => NetworkNumericAggregation
  *
+ * Note for operations on Buckets -  the size of the array can be large (e.g. total bucket count), complicating lookups, etc.
+ *
  * @param aggregations
  * @returns
  */
@@ -51,14 +53,37 @@ export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggrega
 	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
 
 	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
-		const computedBucketCount = resolvedAggregation.bucket_count + agg.bucket_count;
-		const computedBuckets = agg.buckets.map(({ key, doc_count }) => {
-			// potentially expensive "find" if array of buckets is very large
-			const bucket = resolvedAggregation.buckets.find((bucket) => bucket.key === key);
-			return { key, doc_count: (bucket?.doc_count || 0) + doc_count };
+		const bucketCountAccumulator = resolvedAggregation.bucket_count + agg.bucket_count;
+
+		/*
+		 * Unable to use lookup key eg. buckets[key]
+		 * "buckets": [
+		 *  {
+		 *    "doc_count": 140,
+		 *    "key": "Dog"
+		 *   },
+		 */
+		const computedBuckets = resolvedAggregation.buckets;
+
+		agg.buckets.forEach((bucket) => {
+			const { key, doc_count } = bucket;
+			const existingBucketIndex = computedBuckets.findIndex((bucket) => bucket.key === key);
+			if (existingBucketIndex !== -1) {
+				const existingBucket = computedBuckets[existingBucketIndex];
+				if (existingBucket) {
+					// update existing bucket
+					computedBuckets[existingBucketIndex] = {
+						...existingBucket,
+						doc_count: existingBucket.doc_count + doc_count,
+					};
+				}
+			} else {
+				computedBuckets.push(bucket);
+			}
 		});
-		return { bucket_count: computedBucketCount, buckets: computedBuckets };
+		return { bucket_count: bucketCountAccumulator, buckets: computedBuckets };
 	}, emptyAggregation);
+
 	return resolvedAggregation;
 };
 
