@@ -50,7 +50,7 @@ const fetchRemoteSchema = async (
 		/**
 		 * TODO: expand on error handling for instance of Axios error for example
 		 */
-		console.error(`failed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.error(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
 		return;
 	}
 };
