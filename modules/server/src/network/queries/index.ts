@@ -56,7 +56,6 @@ export const aggregationsQuery = /* GraphQL */ `
 		buckets {
 			key
 			doc_count
-			key_as_string
 		}
 	}
 `;
