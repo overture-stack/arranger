@@ -70,6 +70,7 @@ type NetworkQuery = {
 
 /**
  * Find requested field in remote connection supported fields
+ * all nodes may not have all fields
  *
  * @param config
  * @param fieldName
@@ -77,6 +78,25 @@ type NetworkQuery = {
  */
 const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName: string) => {
 	return config.supportedAggregations.find((agg) => agg.name === fieldName);
+};
+
+/**
+ * construct gql string { [fieldName] { [Aggregation query fields] } }
+ *
+ * @param requestedAggregations
+ */
+const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggregations: any[]) => {
+	return requestedAggregations.reduce((gqlString, fieldName) => {
+		const matchedAggregationField = findMatchedAggregationField(config, fieldName);
+		if (matchedAggregationField) {
+			const { name, type } = matchedAggregationField;
+			// get gql query string for supported aggregation
+			// TODO: only query requested fields + bucket_count if nodes is requested
+			const aggregationFieldQueryString = supportedAggregationQueries.get(type);
+			return gqlString + `${name}${aggregationFieldQueryString}`;
+		}
+		return gqlString;
+	}, '');
 };
 
 /**
@@ -88,22 +108,12 @@ const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName
  */
 export const createNetworkQueries = (
 	configs: NetworkAggregationConfig[],
-	rootQueryFields: string[],
+	requestedAggregations: string[],
 ): NetworkQuery[] => {
 	// TODO: what if there are no matched findMatchedAggregationField
 	const queries = configs
 		.map((config) => {
-			// construct gql string { [fieldName] { [Aggregation query fields] } }
-			const gqlStringFields = rootQueryFields.reduce((gqlString, fieldName) => {
-				const matchedAggregationField = findMatchedAggregationField(config, fieldName);
-				if (matchedAggregationField) {
-					const { name, type } = matchedAggregationField;
-					// get gql query string for supported aggregation
-					const aggregationFieldQueryString = supportedAggregationQueries.get(type);
-					return gqlString + `${name}${aggregationFieldQueryString}`;
-				}
-				return gqlString;
-			}, '');
+			const gqlStringFields = createGqlFieldsString(config, requestedAggregations);
 
 			// add top level field for query and format with correct brackets
 			const gqlString = `{${config.documentName} { ${gqlStringFields} }}`;
@@ -119,10 +129,10 @@ export const createNetworkQueries = (
 				return { url: config.graphqlUrl, gqlQuery };
 			} catch (err) {
 				console.error('invalid gql', err);
-
 				return false;
 			}
 		})
 		.filter(Boolean);
+
 	return queries;
 };
