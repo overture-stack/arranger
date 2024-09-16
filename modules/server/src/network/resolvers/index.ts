@@ -4,6 +4,7 @@ import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
 import { getRootFields } from '../util';
 import { createNetworkQueries, queryConnections } from './aggregations';
 import { resolveRemoteConnectionNodes } from './remoteConnections';
+import { createResponse } from './response';
 
 type NetworkSearchRoot = {
 	nodes: RemoteConnectionData[];
@@ -29,12 +30,11 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 				const rootQueryFields = getRootFields(info);
 				const networkQueries = createNetworkQueries(configs, rootQueryFields);
 				const networkResults = await queryConnections(networkQueries);
+
 				// Aggregate queried data
 				const resolvedResults = resolveAggregations(networkResults, rootQueryFields);
-				// TODO: format to well defined response object createResponse(resolvedResults) jon success/failure, conform to schema shape etc
-				const response = resolvedResults.reduce((response, currentField) => {
-					return { ...response, ...{ [currentField.fieldName]: { ...currentField.aggregation } } };
-				}, {});
+
+				const response = createResponse(resolvedResults);
 				return response;
 			},
 		},
