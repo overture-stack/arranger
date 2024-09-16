@@ -142,6 +142,25 @@ const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggreg
 };
 
 /**
+ * Parse central query and build individual queries for remote connections based on available fields
+ *
+ * @param requestedAggregations
+ */
+const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggregations: any[]) => {
+	return requestedAggregations.reduce((gqlString, fieldName) => {
+		const matchedAggregationField = findMatchedAggregationField(config, fieldName);
+		if (matchedAggregationField) {
+			const { name, type } = matchedAggregationField;
+			// get gql query string for supported aggregation
+			// TODO: only query requested fields + bucket_count if nodes is requested
+			const aggregationFieldQueryString = supportedAggregationQueries.get(type);
+			return gqlString + `${name}${aggregationFieldQueryString}`;
+		}
+		return gqlString;
+	}, '');
+};
+
+/**
  * Create queries for remote nodes based on requested fields
  *
  * @param configs
