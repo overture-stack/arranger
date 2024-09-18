@@ -52,6 +52,8 @@ export type Aggregations = {
 
 export type NumericAggregations = {};
 
+export type RemoteAggregation = { [key: string]: Aggregations | NumericAggregations };
+
 export type NetworkAggregation = {
 	bucket_count: number;
 	buckets: Bucket[];

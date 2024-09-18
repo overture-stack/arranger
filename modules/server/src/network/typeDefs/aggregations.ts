@@ -1,4 +1,4 @@
-import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { SupportedNetworkFieldType } from '../types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
@@ -39,12 +39,17 @@ export const createNetworkAggregationTypeDefs = (
 		fields: allFields,
 	});
 
-	const remoteConnectionsType = new GraphQLObjectType({
-		name: 'RemoteConnections',
+	const remoteConnectionType = new GraphQLObjectType({
+		name: 'RemoteConnection',
 		fields: {
-			id: { type: GraphQLString },
+			name: { type: GraphQLString },
+			count: { type: GraphQLInt },
+			status: { type: GraphQLString },
+			errors: { type: GraphQLString },
 		},
 	});
+
+	const remoteConnectionsType = new GraphQLList(remoteConnectionType);
 
 	const networkType = new GraphQLObjectType({
 		name: 'Network',
