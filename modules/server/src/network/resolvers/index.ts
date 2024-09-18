@@ -32,9 +32,13 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 				const networkQueries = createNetworkQueries(configs, requestedAggregations);
 
 				// Query remote connections and aggregate results
-				const aggregationResults = await aggregationPipeline(networkQueries, requestedAggregations);
-
-				return aggregationResults;
+				const { aggregationResults, nodeInfo } = await aggregationPipeline(
+					networkQueries,
+					requestedAggregations,
+				);
+				const response = createResponse({ aggregationResults, nodeInfo });
+				console.log('resp', response);
+				return response;
 			},
 		},
 	};
