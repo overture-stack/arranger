@@ -1,9 +1,12 @@
 import { gql } from 'apollo-server-core';
 import { DocumentNode } from 'graphql';
+import { resolveAggregations } from '../aggregations';
 import { fetchGql } from '../gql';
+import { failure, isSuccess, success } from '../httpResponses';
 import { GQLResponse, supportedAggregationQueries } from '../queries';
-import { NetworkAggregationConfig } from '../types';
+import { NetworkAggregation, NetworkAggregationConfig } from '../types';
 import { ASTtoString, fulfilledPromiseFilter } from '../util';
+import { CONNECTION_STATUS, RemoteConnection } from './remoteConnections';
 
 /**
  * Query remote connections and handle network responses
@@ -11,8 +14,9 @@ import { ASTtoString, fulfilledPromiseFilter } from '../util';
  * @param query
  * @returns
  */
-const queryConnection = async (query: NetworkQuery) => {
+const fetchData = async (query: NetworkQuery) => {
 	const { url, gqlQuery } = query;
+	console.log(`Fetch data starting for ${url}`);
 	try {
 		const response = await fetchGql({
 			url,
@@ -22,45 +26,90 @@ const queryConnection = async (query: NetworkQuery) => {
 		// axios response "data" field, graphql response "data" field
 		const responseData = response.data?.data;
 		if (response.status === 200 && response.statusText === 'OK') {
-			return responseData;
+			return success(responseData);
 		}
-
-		console.error('unexpected response data');
 	} catch (error) {
-		/*
-		 * TODO: expand on error handling for instance of Axios error for example
-		 */
-		console.error(`network failure!`);
-		console.log(error.response.data);
-		console.log(error.response.status);
-		console.log(error.response.headers);
-		console.log(error.toJSON());
-
-		return;
+		const responseStatus = error.response.status;
+		if (responseStatus === 404) {
+			console.error(`Network failure: ${url}`);
+			return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+		} else {
+			return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
+		}
+	} finally {
+		console.log(`Fetch data completing for ${query.url}`);
 	}
 };
 
-export const queryConnections = async (queries: NetworkQuery[]) => {
-	const networkQueryPromises = queries.map(async (query) => {
-		const response = await queryConnection(query);
-		return { response };
+/**
+ * Query each remote connection
+ *
+ * @param queries - Query for each remote connection
+ * @param requestedAggregationFields
+ * @returns
+ */
+export const aggregationPipeline = async (
+	queries: NetworkQuery[],
+	requestedAggregationFields: any,
+) => {
+	/*
+	 * seed accumulator with the requested field keys
+	 * this will make it easier to add to because we can do key lookup instead of Array.find
+	 */
+	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
+	const aggregationAccumulator = requestedAggregationFields.reduce((accumulator, field) => {
+		return { ...accumulator, [field]: emptyAggregation };
+	}, {});
+
+	const aggregationResultPromises = queries.map<
+		Promise<{
+			aggregations: any;
+			remoteConnection: RemoteConnection;
+		}>
+	>(async (query) => {
+		const name = query.url; // TODO: use readable name not url
+		const response = await fetchData(query);
+
+		// 		// instead of return response mergeField() // to clearly manipulate the accumlators
+
+		// if (response && isSuccess(response)) {
+		// 	resolveAggregations({
+		// 		networkResult: response.data,
+		// 		requestedAggregationFields,
+		// 		accumulator: aggregationAccumulator,
+		// 	});
+		// }
+
+		return response && isSuccess(response)
+			? {
+					aggregations: resolveAggregations({
+						networkResult: response.data,
+						requestedAggregationFields,
+						accumulator: aggregationAccumulator,
+					}),
+					remoteConnection: {
+						name,
+						count: 0,
+						status: CONNECTION_STATUS.OK,
+						errors: '',
+					},
+			  }
+			: {
+					aggregations: [],
+					remoteConnection: {
+						name,
+						count: 0,
+						status: CONNECTION_STATUS.ERROR,
+						errors: response?.message || 'Error',
+					},
+			  };
 	});
 
-	// TODO: expand on network condition handling, eg. timeouts, single connection failure
-	const networkResults = await Promise.allSettled(networkQueryPromises);
-	const networkData = networkResults
-		.filter(
-			fulfilledPromiseFilter<
-				PromiseFulfilledResult<{
-					gqlResponse: GQLResponse;
-				}>
-			>,
-		)
-		.map((result) => {
-			const { response } = result.value;
-			return response;
-		});
-	return networkData;
+	Promise.allSettled(aggregationResultPromises).then((data) => {
+		// return accumulators
+		console.log('settled', aggregationAccumulator);
+		return aggregationAccumulator;
+	});
 };
 
 type NetworkQuery = {

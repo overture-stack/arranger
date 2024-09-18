@@ -1,9 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { resolveAggregations } from '../aggregations';
 import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
 import { getRequestedFields } from '../util';
-import { createNetworkQueries, queryConnections } from './aggregations';
-import { resolveRemoteConnectionNodes } from './remoteConnections';
+import { aggregationPipeline, createNetworkQueries } from './aggregations';
 import { createResponse } from './response';
 
 type NetworkSearchRoot = {
@@ -32,14 +30,11 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 			) => {
 				const { requestedAggregations } = getRequestedFields(info);
 				const networkQueries = createNetworkQueries(configs, requestedAggregations);
-				const networkResults = await queryConnections(networkQueries);
 
-				// Aggregate query results
-				const resolvedResults = resolveAggregations(networkResults, requestedAggregations);
+				// Query remote connections and aggregate results
+				const aggregationResults = await aggregationPipeline(networkQueries, requestedAggregations);
 
-				// Create response
-				const response = createResponse(resolvedResults);
-				return response;
+				return aggregationResults;
 			},
 		},
 	};

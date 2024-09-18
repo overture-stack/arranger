@@ -1,20 +1,41 @@
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
-import { Aggregations, NetworkAggregation, NumericAggregations } from '../types';
+import { Aggregations, NetworkAggregation, NumericAggregations, RemoteAggregation } from '../types';
 
 /**
  * Pick each field from network result aggregations and reduce into single aggregation
  *
- * @param networkResults
- * @param rootQueryFields
+ * @param networkResult
+ * @param accumulator
  */
-export const resolveAggregations = (networkResults, rootQueryFields) => {
-	const resolvedNetworkAggregations = rootQueryFields.map((fieldName) => {
-		const fieldAggregations = networkResults.map((networkResult) => {
-			const documentName = Object.keys(networkResult)[0];
-			return networkResult[documentName][fieldName];
-		});
-		const aggregationType = fieldAggregations[0].__typename;
-		const resolvedAggregation = resolveToNetworkAggregation(aggregationType, fieldAggregations);
+
+type NetworkResult = {
+	[key: string]: RemoteAggregation;
+};
+export const resolveAggregations = ({
+	networkResult,
+	requestedAggregationFields,
+	accumulator,
+}: {
+	networkResult: NetworkResult;
+	requestedAggregationFields: string[];
+	accumulator: any;
+}) => {
+	// TODO: get documentName somewhere else, [0] isn't guaranteed
+	const documentName = Object.keys(networkResult)[0];
+
+	const resolvedNetworkAggregations = requestedAggregationFields.map((fieldName) => {
+		const fieldAggregations = networkResult[documentName][fieldName];
+		const aggregationType = fieldAggregations.__typename;
+
+		//
+		const accumulatedFieldAggregations = accumulator[fieldName];
+		const resolvedAggregation = resolveToNetworkAggregation(aggregationType, [
+			fieldAggregations,
+			accumulatedFieldAggregations,
+		]);
+
+		// update accumulator
+		accumulator[fieldName] = resolvedAggregation;
 		return { fieldName: fieldName, aggregation: resolvedAggregation };
 	});
 
@@ -50,11 +71,7 @@ export const resolveToNetworkAggregation = (
  * @returns
  */
 export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggregation => {
-	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
-
 	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
-		const bucketCountAccumulator = resolvedAggregation.bucket_count + agg.bucket_count;
-
 		/*
 		 * Unable to use lookup key eg. buckets[key]
 		 * "buckets": [
@@ -81,8 +98,8 @@ export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggrega
 				computedBuckets.push(bucket);
 			}
 		});
-		return { bucket_count: bucketCountAccumulator, buckets: computedBuckets };
-	}, emptyAggregation);
+		return { bucket_count: computedBuckets.length, buckets: computedBuckets };
+	});
 
 	return resolvedAggregation;
 };
