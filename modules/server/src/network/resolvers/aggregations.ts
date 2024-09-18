@@ -61,6 +61,8 @@ export const aggregationPipeline = async (
 		return { ...accumulator, [field]: emptyAggregation };
 	}, {});
 
+	const nodeInfo: any = [];
+
 	const aggregationResultPromises = queries.map<
 		Promise<{
 			aggregations: any;
@@ -70,46 +72,34 @@ export const aggregationPipeline = async (
 		const name = query.url; // TODO: use readable name not url
 		const response = await fetchData(query);
 
-		// 		// instead of return response mergeField() // to clearly manipulate the accumlators
+		// 	TODO	// instead of return response mergeField() // to clearly manipulate the accumlators
 
-		// if (response && isSuccess(response)) {
-		// 	resolveAggregations({
-		// 		networkResult: response.data,
-		// 		requestedAggregationFields,
-		// 		accumulator: aggregationAccumulator,
-		// 	});
-		// }
+		if (response && isSuccess(response)) {
+			const nodeBucketCount = resolveAggregations({
+				networkResult: response.data,
+				requestedAggregationFields,
+				accumulator: aggregationAccumulator,
+			});
 
-		return response && isSuccess(response)
-			? {
-					aggregations: resolveAggregations({
-						networkResult: response.data,
-						requestedAggregationFields,
-						accumulator: aggregationAccumulator,
-					}),
-					remoteConnection: {
-						name,
-						count: 0,
-						status: CONNECTION_STATUS.OK,
-						errors: '',
-					},
-			  }
-			: {
-					aggregations: [],
-					remoteConnection: {
-						name,
-						count: 0,
-						status: CONNECTION_STATUS.ERROR,
-						errors: response?.message || 'Error',
-					},
-			  };
+			nodeInfo.push({
+				name,
+				count: nodeBucketCount,
+				status: CONNECTION_STATUS.OK,
+				errors: '',
+			});
+		} else {
+			nodeInfo.push({
+				name,
+				count: 0,
+				status: CONNECTION_STATUS.ERROR,
+				errors: response?.message || 'Error',
+			});
+		}
 	});
 
-	Promise.allSettled(aggregationResultPromises).then((data) => {
-		// return accumulators
-		console.log('settled', aggregationAccumulator);
-		return aggregationAccumulator;
-	});
+	// return accumulated results
+	await Promise.allSettled(aggregationResultPromises);
+	return { aggregationResults: aggregationAccumulator, nodeInfo };
 };
 
 type NetworkQuery = {
