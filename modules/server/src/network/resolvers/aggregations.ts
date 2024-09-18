@@ -142,7 +142,7 @@ const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggreg
 };
 
 /**
- * Parse central query and build individual queries for remote connections based on available fields
+ * Create queries for remote nodes based on requested fields
  *
  * @param requestedAggregations
  */
