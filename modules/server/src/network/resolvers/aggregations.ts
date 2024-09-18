@@ -54,7 +54,7 @@ export const aggregationPipeline = async (
 ) => {
 	/*
 	 * seed accumulator with the requested field keys
-	 * this will make it easier to add to because we can do key lookup instead of Array.find
+	 * this will make it easier to add to using key lookup instead of Array.find
 	 */
 	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
 	const aggregationAccumulator = requestedAggregationFields.reduce((accumulator, field) => {
@@ -71,8 +71,6 @@ export const aggregationPipeline = async (
 	>(async (query) => {
 		const name = query.url; // TODO: use readable name not url
 		const response = await fetchData(query);
-
-		// 	TODO	// instead of return response mergeField() // to clearly manipulate the accumlators
 
 		if (response && isSuccess(response)) {
 			const nodeBucketCount = resolveAggregations({
@@ -139,10 +137,10 @@ const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggreg
 };
 
 /**
- * Parse central query and build individual queries for remote connections based on available fields
+ * Create queries for remote nodes based on requested fields
  *
  * @param configs
- * @param info
+ * @param requestedAggregations
  * @returns
  */
 export const createNetworkQueries = (

@@ -47,7 +47,6 @@ export const gqlAggregationTypeQuery = `#graphql
 	}
 `;
 
-// TODO: queries with variables eg. top_hits(_source:[String], size:Int): JSON
 export const aggregationsQuery = /* GraphQL */ `
 	#graphql
 	{
