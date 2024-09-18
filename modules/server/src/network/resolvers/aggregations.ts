@@ -1,11 +1,12 @@
 import { gql } from 'apollo-server-core';
+import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { resolveAggregations } from '../aggregations';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, success } from '../httpResponses';
-import { GQLResponse, supportedAggregationQueries } from '../queries';
+import { supportedAggregationQueries } from '../queries';
 import { NetworkAggregation, NetworkAggregationConfig } from '../types';
-import { ASTtoString, fulfilledPromiseFilter } from '../util';
+import { ASTtoString } from '../util';
 import { CONNECTION_STATUS, RemoteConnection } from './remoteConnections';
 
 /**
@@ -29,6 +30,10 @@ const fetchData = async (query: NetworkQuery) => {
 			return success(responseData);
 		}
 	} catch (error) {
+		if (axios.isCancel(error)) {
+			return failure(CONNECTION_STATUS.ERROR, `Request cancelled: ${url}`);
+		}
+
 		const responseStatus = error.response.status;
 		if (responseStatus === 404) {
 			console.error(`Network failure: ${url}`);

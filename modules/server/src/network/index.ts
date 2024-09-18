@@ -28,12 +28,15 @@ import { fulfilledPromiseFilter, getAllTypes } from './util';
 const fetchRemoteSchema = async (
 	config: NetworkAggregationConfigInput,
 ): Promise<GQLTypeQueryResponse | undefined> => {
-	const { graphqlUrl, documentType } = config;
+	const { graphqlUrl, documentType, timeout } = config;
 	try {
 		const response = await fetchGql({
 			url: graphqlUrl,
 			gqlQuery: gqlAggregationTypeQuery,
 			variables: { documentName: documentType },
+			options: {
+				timeout,
+			},
 		});
 
 		// axios response "data" field, graphql response "data" field
