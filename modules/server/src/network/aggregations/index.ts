@@ -23,23 +23,24 @@ export const resolveAggregations = ({
 	// TODO: get documentName somewhere else, [0] isn't guaranteed
 	const documentName = Object.keys(networkResult)[0];
 
-	const resolvedNetworkAggregations = requestedAggregationFields.map((fieldName) => {
+	const nodeBucketCount = requestedAggregationFields.reduce((bucketCountAcc, fieldName) => {
 		const fieldAggregations = networkResult[documentName][fieldName];
+		const fieldBucketCount = fieldAggregations.bucket_count;
 		const aggregationType = fieldAggregations.__typename;
 
-		//
 		const accumulatedFieldAggregations = accumulator[fieldName];
 		const resolvedAggregation = resolveToNetworkAggregation(aggregationType, [
 			fieldAggregations,
 			accumulatedFieldAggregations,
 		]);
 
-		// update accumulator
+		// mutation - update accumulator
 		accumulator[fieldName] = resolvedAggregation;
-		return { fieldName: fieldName, aggregation: resolvedAggregation };
-	});
+		// return { fieldName: fieldName, aggregation: resolvedAggregation };
+		return bucketCountAcc + fieldBucketCount;
+	}, 0);
 
-	return resolvedNetworkAggregations;
+	return nodeBucketCount;
 };
 
 /**
@@ -82,6 +83,7 @@ export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggrega
 		 */
 		const computedBuckets = resolvedAggregation.buckets;
 
+		// TODO: extract
 		agg.buckets.forEach((bucket) => {
 			const { key, doc_count } = bucket;
 			const existingBucketIndex = computedBuckets.findIndex((bucket) => bucket.key === key);
