@@ -2,15 +2,6 @@ import { DocumentNode, GraphQLResolveInfo, print } from 'graphql';
 import graphqlFields from 'graphql-fields';
 import { NetworkAggregationConfig, SupportedNetworkFieldType } from './types';
 
-/**
- * Returns an array of all field/type
- * @param configs
- * @returns Returns an array of all field/type
- */
-export const getAllTypes = (configs: NetworkAggregationConfig[]): SupportedNetworkFieldType[] => {
-	return configs.flatMap((config) => config.supportedAggregations);
-};
-
 /*
  * GraphQL AST => String
  */
