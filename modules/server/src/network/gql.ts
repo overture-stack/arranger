@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { ASTNode, print } from 'graphql';
 
 /**
@@ -28,17 +28,21 @@ export const fetchGql = ({
 	url,
 	gqlQuery,
 	variables,
+	options,
 }: {
 	url: string;
 	gqlQuery: string;
 	variables?: Record<string, string>;
+	options?: { timeout: number };
 }) => {
-	const options = {
+	const timeout = options?.timeout || 10000;
+	const axiosOptions: AxiosRequestConfig = {
 		url,
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		data: { query: gqlQuery, variables },
+		signal: AbortSignal.timeout(timeout),
 	};
 
-	return axios(options);
+	return axios(axiosOptions);
 };

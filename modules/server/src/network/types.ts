@@ -8,6 +8,9 @@ export type NetworkAggregationConfigInput = {
 	documentType: string;
 	documentName: string;
 	displayName: string;
+	options: {
+		timeout: number;
+	};
 };
 
 export type NetworkFieldType<T> = {
