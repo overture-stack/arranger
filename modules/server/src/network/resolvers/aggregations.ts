@@ -1,9 +1,12 @@
 import { gql } from 'apollo-server-core';
 import { DocumentNode } from 'graphql';
+import { resolveAggregations } from '../aggregations';
 import { fetchGql } from '../gql';
+import { failure, isSuccess, success } from '../httpResponses';
 import { GQLResponse, supportedAggregationQueries } from '../queries';
-import { NetworkAggregationConfig } from '../types';
+import { NetworkAggregation, NetworkAggregationConfig } from '../types';
 import { ASTtoString, fulfilledPromiseFilter } from '../util';
+import { CONNECTION_STATUS, RemoteConnection } from './remoteConnections';
 
 /**
  * Query remote connections and handle network responses
@@ -11,8 +14,9 @@ import { ASTtoString, fulfilledPromiseFilter } from '../util';
  * @param query
  * @returns
  */
-const queryConnection = async (query: NetworkQuery) => {
+const fetchData = async (query: NetworkQuery) => {
 	const { url, gqlQuery } = query;
+	console.log(`Fetch data starting for ${url}`);
 	try {
 		const response = await fetchGql({
 			url,
@@ -22,45 +26,78 @@ const queryConnection = async (query: NetworkQuery) => {
 		// axios response "data" field, graphql response "data" field
 		const responseData = response.data?.data;
 		if (response.status === 200 && response.statusText === 'OK') {
-			return responseData;
+			return success(responseData);
 		}
-
-		console.error('unexpected response data');
 	} catch (error) {
-		/*
-		 * TODO: expand on error handling for instance of Axios error for example
-		 */
-		console.error(`network failure!`);
-		console.log(error.response.data);
-		console.log(error.response.status);
-		console.log(error.response.headers);
-		console.log(error.toJSON());
-
-		return;
+		const responseStatus = error.response.status;
+		if (responseStatus === 404) {
+			console.error(`Network failure: ${url}`);
+			return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+		} else {
+			return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
+		}
+	} finally {
+		console.log(`Fetch data completing for ${query.url}`);
 	}
 };
 
-export const queryConnections = async (queries: NetworkQuery[]) => {
-	const networkQueryPromises = queries.map(async (query) => {
-		const response = await queryConnection(query);
-		return { response };
+/**
+ * Query each remote connection
+ *
+ * @param queries - Query for each remote connection
+ * @param requestedAggregationFields
+ * @returns
+ */
+export const aggregationPipeline = async (
+	queries: NetworkQuery[],
+	requestedAggregationFields: any,
+) => {
+	/*
+	 * seed accumulator with the requested field keys
+	 * this will make it easier to add to using key lookup instead of Array.find
+	 */
+	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
+	const aggregationAccumulator = requestedAggregationFields.reduce((accumulator, field) => {
+		return { ...accumulator, [field]: emptyAggregation };
+	}, {});
+
+	const nodeInfo: any = [];
+
+	const aggregationResultPromises = queries.map<
+		Promise<{
+			aggregations: any;
+			remoteConnection: RemoteConnection;
+		}>
+	>(async (query) => {
+		const name = query.url; // TODO: use readable name not url
+		const response = await fetchData(query);
+
+		if (response && isSuccess(response)) {
+			const nodeBucketCount = resolveAggregations({
+				networkResult: response.data,
+				requestedAggregationFields,
+				accumulator: aggregationAccumulator,
+			});
+
+			nodeInfo.push({
+				name,
+				count: nodeBucketCount,
+				status: CONNECTION_STATUS.OK,
+				errors: '',
+			});
+		} else {
+			nodeInfo.push({
+				name,
+				count: 0,
+				status: CONNECTION_STATUS.ERROR,
+				errors: response?.message || 'Error',
+			});
+		}
 	});
 
-	// TODO: expand on network condition handling, eg. timeouts, single connection failure
-	const networkResults = await Promise.allSettled(networkQueryPromises);
-	const networkData = networkResults
-		.filter(
-			fulfilledPromiseFilter<
-				PromiseFulfilledResult<{
-					gqlResponse: GQLResponse;
-				}>
-			>,
-		)
-		.map((result) => {
-			const { response } = result.value;
-			return response;
-		});
-	return networkData;
+	// return accumulated results
+	await Promise.allSettled(aggregationResultPromises);
+	return { aggregationResults: aggregationAccumulator, nodeInfo };
 };
 
 type NetworkQuery = {
@@ -70,6 +107,7 @@ type NetworkQuery = {
 
 /**
  * Find requested field in remote connection supported fields
+ * all nodes may not have all fields
  *
  * @param config
  * @param fieldName
@@ -80,30 +118,39 @@ const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName
 };
 
 /**
- * Parse central query and build individual queries for remote connections based on available fields
+ * construct gql string { [fieldName] { [Aggregation query fields] } }
+ *
+ * @param requestedAggregations
+ */
+const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggregations: any[]) => {
+	return requestedAggregations.reduce((gqlString, fieldName) => {
+		const matchedAggregationField = findMatchedAggregationField(config, fieldName);
+		if (matchedAggregationField) {
+			const { name, type } = matchedAggregationField;
+			// get gql query string for supported aggregation
+			// TODO: only query requested fields + bucket_count if nodes is requested
+			const aggregationFieldQueryString = supportedAggregationQueries.get(type);
+			return gqlString + `${name}${aggregationFieldQueryString}`;
+		}
+		return gqlString;
+	}, '');
+};
+
+/**
+ * Create queries for remote nodes based on requested fields
  *
  * @param configs
- * @param info
+ * @param requestedAggregations
  * @returns
  */
 export const createNetworkQueries = (
 	configs: NetworkAggregationConfig[],
-	rootQueryFields: string[],
+	requestedAggregations: string[],
 ): NetworkQuery[] => {
 	// TODO: what if there are no matched findMatchedAggregationField
 	const queries = configs
 		.map((config) => {
-			// construct gql string { [fieldName] { [Aggregation query fields] } }
-			const gqlStringFields = rootQueryFields.reduce((gqlString, fieldName) => {
-				const matchedAggregationField = findMatchedAggregationField(config, fieldName);
-				if (matchedAggregationField) {
-					const { name, type } = matchedAggregationField;
-					// get gql query string for supported aggregation
-					const aggregationFieldQueryString = supportedAggregationQueries.get(type);
-					return gqlString + `${name}${aggregationFieldQueryString}`;
-				}
-				return gqlString;
-			}, '');
+			const gqlStringFields = createGqlFieldsString(config, requestedAggregations);
 
 			// add top level field for query and format with correct brackets
 			const gqlString = `{${config.documentName} { ${gqlStringFields} }}`;
@@ -119,10 +166,10 @@ export const createNetworkQueries = (
 				return { url: config.graphqlUrl, gqlQuery };
 			} catch (err) {
 				console.error('invalid gql', err);
-
 				return false;
 			}
 		})
 		.filter(Boolean);
+
 	return queries;
 };

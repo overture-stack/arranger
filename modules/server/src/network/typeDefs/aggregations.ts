@@ -1,4 +1,4 @@
-import { GraphQLObjectType, GraphQLSchema } from 'graphql';
+import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { SupportedNetworkFieldType } from '../types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
@@ -34,18 +34,36 @@ export const createNetworkAggregationTypeDefs = (
 ) => {
 	const allFields = convertToGQLObjectType(networkFieldTypes);
 
-	const typeDefs = new GraphQLObjectType({
+	const aggregationsType = new GraphQLObjectType({
 		name: 'Aggregations',
 		fields: allFields,
+	});
+
+	const remoteConnectionType = new GraphQLObjectType({
+		name: 'RemoteConnection',
+		fields: {
+			name: { type: GraphQLString },
+			count: { type: GraphQLInt },
+			status: { type: GraphQLString },
+			errors: { type: GraphQLString },
+		},
+	});
+
+	const remoteConnectionsType = new GraphQLList(remoteConnectionType);
+
+	const networkType = new GraphQLObjectType({
+		name: 'Network',
+		fields: {
+			remoteConnections: { type: remoteConnectionsType },
+			aggregations: { type: aggregationsType },
+		},
 	});
 
 	// correct object structure to merge with other types
 	const rootType = new GraphQLObjectType({
 		name: 'Query',
 		fields: {
-			aggregations: {
-				type: typeDefs,
-			},
+			network: { type: networkType },
 		},
 	});
 
