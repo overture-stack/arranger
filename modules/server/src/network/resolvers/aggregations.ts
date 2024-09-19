@@ -140,7 +140,7 @@ type NetworkQuery = {
  * `
  * ```
  */
-const createGqlFieldsString = (requestedFields, documentName) => {
+const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
 	const gqlFieldsString = JSON.stringify(requestedFields)
 		.replaceAll('"', '')
 		.replaceAll(':', '')
@@ -179,7 +179,10 @@ const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggreg
  * @param requestedFields
  * @returns
  */
-export const createNetworkQueries = (configs: NetworkConfig[], requestedFields): NetworkQuery[] => {
+export const createNetworkQueries = (
+	configs: NetworkConfig[],
+	requestedFields: {},
+): NetworkQuery[] => {
 	const queries = configs
 		.map((config) => {
 			const gqlString = createGqlFieldsString(requestedFields, config.documentName);
