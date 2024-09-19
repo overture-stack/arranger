@@ -1,6 +1,4 @@
-# Overview
-
-## Introduction
+# Arranger
 
 Arranger is a data-agnostic search API that utilizes <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/mapping.html" target="_blank" rel="noopener noreferrer">Elasticsearch index mappings</a> to generate interactive and configurable search components.
 
