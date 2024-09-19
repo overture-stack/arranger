@@ -31,13 +31,12 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
 };
 
 /**
- * Returns only top level fields from a GQL request
+ * Returns requested fields
  *
  * @param info GQL request info object
- * @returns List of top level fields
+ * @returns
  */
-export const getRootFields = (info: GraphQLResolveInfo) => {
+export const getRequestedFields = (info: GraphQLResolveInfo) => {
 	const requestedFields = graphqlFields(info);
-	const fieldsAsList = Object.keys(requestedFields);
-	return fieldsAsList;
+	return { requestedAggregations: Object.keys(requestedFields.aggregations) };
 };
