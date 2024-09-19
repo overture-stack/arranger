@@ -3,8 +3,8 @@ import { SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { createResolvers } from './resolvers';
 import { getAllFieldTypes } from './setup/fields';
 import { fetchRemoteSchemas } from './setup/query';
-import { NetworkConfig } from './setup/types';
 import { createTypeDefs } from './typeDefs';
+import { NetworkConfig } from './types/setup';
 
 /**
  * GQL Federated Search schema setup

@@ -7,7 +7,7 @@ export const CONNECTION_STATUS = {
  * Querying from resolvers remote connections
  */
 
-export type RemoteConnection = {
+export type NetworkNode = {
 	name: string;
 	count: number;
 	status: keyof typeof CONNECTION_STATUS;

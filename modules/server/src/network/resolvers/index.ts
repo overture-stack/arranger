@@ -1,12 +1,12 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { NetworkConfig } from '../setup/types';
-import { RemoteConnectionData } from '../types';
+import { NetworkConfig } from '../types/setup';
 import { resolveInfoToMap } from '../util';
 import { aggregationPipeline, createNetworkQueries } from './aggregations';
+import { NetworkNode } from './networkNode';
 import { createResponse } from './response';
 
-type NetworkSearchRoot = {
-	nodes: RemoteConnectionData[];
+export type NetworkSearchRoot = {
+	nodes: NetworkNode[];
 	aggregations: Record<string, unknown>;
 };
 

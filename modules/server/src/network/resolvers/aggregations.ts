@@ -11,7 +11,7 @@ import { supportedAggregationQueries } from '../queries';
 import { NetworkConfig } from '../setup/types';
 import { NetworkAggregation } from '../types';
 import { ASTtoString } from '../util';
-import { CONNECTION_STATUS, RemoteConnection } from './remoteConnections';
+import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
 /**
  * Query remote connections and handle network responses
@@ -70,12 +70,12 @@ export const aggregationPipeline = async (
 		return { ...accumulator, [field]: emptyAggregation };
 	}, {});
 
-	const nodeInfo: any = [];
+	const nodeInfo: NetworkNode[] = [];
 
 	const aggregationResultPromises = queries.map<
 		Promise<{
 			aggregations: any;
-			remoteConnection: RemoteConnection;
+			remoteConnection: NetworkNode;
 		}>
 	>(async (query) => {
 		const name = query.url; // TODO: use readable name not url
@@ -115,17 +115,7 @@ type NetworkQuery = {
 };
 
 /**
- * Find requested field in remote connection supported fields all nodes may not have all fields
- *
- * @param config
- * @param fieldName
- * @returns
- */
-const findMatchedAggregationField = (config: NetworkConfig, fieldName: string) => {
-	return config.supportedAggregations.find((agg) => agg.name === fieldName);
-};
-
-/**
+ * Converts info field object into string
  *
  * @param requestedFields
  *

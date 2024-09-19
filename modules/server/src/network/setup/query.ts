@@ -1,9 +1,9 @@
 import { NetworkAggregationError } from '../errors';
 import { fetchGql } from '../gql';
 import { gqlAggregationTypeQuery, GQLTypeQueryResponse } from '../queries';
+import { NetworkConfig } from '../types/setup';
 import { fulfilledPromiseFilter } from '../util';
 import { NetworkFields } from './fields';
-import { NetworkConfig } from './types';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
 	config: NetworkConfig;

@@ -5,7 +5,7 @@ import {
 	SupportedAggregations,
 	SupportedNetworkFieldType,
 	UnsupportedAggregations,
-} from '../types';
+} from '../types/types';
 
 export type NetworkFields = { name: string; fields: GQLFieldType[] };
 
