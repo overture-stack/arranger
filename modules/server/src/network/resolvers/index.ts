@@ -1,5 +1,6 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
+import { NetworkConfig } from '../setup/types';
+import { RemoteConnectionData } from '../types';
 import { getRequestedFields } from '../util';
 import { aggregationPipeline, createNetworkQueries } from './aggregations';
 import { createResponse } from './response';
@@ -19,7 +20,7 @@ type NetworkSearchRoot = {
  * @param networkFieldTypes
  * @returns
  */
-export const createResolvers = (configs: NetworkAggregationConfig[]) => {
+export const createResolvers = (configs: NetworkConfig[]) => {
 	return {
 		Query: {
 			network: async (

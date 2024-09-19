@@ -4,7 +4,7 @@ import { createResolvers } from './resolvers';
 import { getAllFieldTypes } from './setup/fields';
 import { fetchRemoteSchemas } from './setup/query';
 import { createTypeDefs } from './typeDefs';
-import { NetworkAggregationConfigInput } from './types';
+import { NetworkConfig } from './types';
 
 /**
  * GQL Federated Search schema setup
@@ -16,7 +16,7 @@ import { NetworkAggregationConfigInput } from './types';
 export const createSchemaFromNetworkConfig = async ({
 	networkConfigs,
 }: {
-	networkConfigs: NetworkAggregationConfigInput[];
+	networkConfigs: NetworkConfig[];
 }) => {
 	const networkFields = await fetchRemoteSchemas({
 		networkConfigs,
@@ -25,7 +25,8 @@ export const createSchemaFromNetworkConfig = async ({
 	const networkFieldTypes = getAllFieldTypes(networkFields, SUPPORTED_AGGREGATIONS_LIST);
 
 	const typeDefs = createTypeDefs(networkFieldTypes);
-	const resolvers = createResolvers(configs);
+
+	const resolvers = createResolvers(networkConfigs);
 
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 

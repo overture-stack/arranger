@@ -25,7 +25,7 @@ export type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
  * This includes the original config information plus computed fields
  * that are generated in the network search initialization process.
  */
-export type NetworkAggregationConfig = NetworkAggregationConfigInput & {
+export type NetworkAggregationConfig = NetworkConfig & {
 	supportedAggregations: SupportedNetworkFieldType[];
 	unsupportedAggregations: NetworkFieldType<string>[];
 };

@@ -7,6 +7,10 @@ import { failure, isSuccess, success } from '../httpResponses';
 import { supportedAggregationQueries } from '../queries';
 import { NetworkAggregation, NetworkAggregationConfig } from '../types';
 import { ASTtoString } from '../util';
+import { supportedAggregationQueries } from '../queries';
+import { NetworkConfig } from '../setup/types';
+import { NetworkAggregation } from '../types';
+import { ASTtoString, fulfilledPromiseFilter } from '../util';
 import { CONNECTION_STATUS, RemoteConnection } from './remoteConnections';
 
 /**
@@ -118,7 +122,7 @@ type NetworkQuery = {
  * @param fieldName
  * @returns
  */
-const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName: string) => {
+const findMatchedAggregationField = (config: NetworkConfig, fieldName: string) => {
 	return config.supportedAggregations.find((agg) => agg.name === fieldName);
 };
 
@@ -127,7 +131,7 @@ const findMatchedAggregationField = (config: NetworkAggregationConfig, fieldName
  *
  * @param requestedAggregations
  */
-const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggregations: any[]) => {
+const createGqlFieldsString = (config: NetworkConfig, requestedAggregations: any[]) => {
 	return requestedAggregations.reduce((gqlString, fieldName) => {
 		const matchedAggregationField = findMatchedAggregationField(config, fieldName);
 		if (matchedAggregationField) {
@@ -168,7 +172,7 @@ const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggreg
  * @returns
  */
 export const createNetworkQueries = (
-	configs: NetworkAggregationConfig[],
+	configs: NetworkConfig[],
 	requestedAggregations: string[],
 ): NetworkQuery[] => {
 	// TODO: what if there are no matched findMatchedAggregationField

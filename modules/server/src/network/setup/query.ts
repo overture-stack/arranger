@@ -1,12 +1,12 @@
 import { NetworkAggregationError } from '../errors';
 import { fetchGql } from '../gql';
 import { gqlAggregationTypeQuery, GQLTypeQueryResponse } from '../queries';
-import { NetworkAggregationConfigInput } from '../types';
+import { NetworkConfig } from '../types';
 import { fulfilledPromiseFilter } from '../util';
 import { NetworkFields } from './fields';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
-	config: NetworkAggregationConfigInput;
+	config: NetworkConfig;
 	gqlResponse: GQLTypeQueryResponse;
 }>;
 
@@ -23,7 +23,7 @@ type NetworkQueryResult = PromiseFulfilledResult<{
  * @throws Unexpected data error
  */
 const fetchRemoteSchema = async (
-	config: NetworkAggregationConfigInput,
+	config: NetworkConfig,
 ): Promise<GQLTypeQueryResponse | undefined> => {
 	const { graphqlUrl, documentType } = config;
 	try {
@@ -57,7 +57,7 @@ const fetchRemoteSchema = async (
 export const fetchRemoteSchemas = async ({
 	networkConfigs,
 }: {
-	networkConfigs: NetworkAggregationConfigInput[];
+	networkConfigs: NetworkConfig[];
 }): Promise<NetworkFields[]> => {
 	// query remote connection types
 	const networkQueryPromises = networkConfigs.map(async (config) => {

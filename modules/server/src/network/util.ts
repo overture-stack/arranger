@@ -1,6 +1,5 @@
 import { DocumentNode, GraphQLResolveInfo, print } from 'graphql';
 import graphqlFields from 'graphql-fields';
-import { NetworkAggregationConfig, SupportedNetworkFieldType } from './types';
 
 /*
  * GraphQL AST => String

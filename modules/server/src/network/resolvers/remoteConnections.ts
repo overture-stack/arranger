@@ -1,6 +1,7 @@
-import { ConnectionStatus, NetworkAggregationConfig, RemoteConnectionData } from '@/network/types';
+import { ConnectionStatus, RemoteConnectionData } from '@/network/types';
 import axios from 'axios';
 import urljoin from 'url-join';
+import { NetworkConfig } from '../setup/types';
 
 /*
  * Setup config connections
@@ -51,7 +52,7 @@ export const CONNECTION_STATUS = {
  * @returns remote connection metadata
  */
 export const resolveRemoteConnectionNodes = async (
-	networkConfigs: NetworkAggregationConfig[],
+	networkConfigs: NetworkConfig[],
 ): Promise<RemoteConnectionData[]> => {
 	/**
 	 * Promise.all is safe because we handle errors in checkRemoteConnectionStatus

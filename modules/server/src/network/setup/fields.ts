@@ -1,6 +1,7 @@
 import { SupportedAggregation } from '../common';
 import { GQLFieldType } from '../queries';
-import { NetworkAggregationConfig, NetworkFieldType, SupportedNetworkFieldType } from '../types';
+import { NetworkFieldType, SupportedNetworkFieldType } from '../types';
+import { NetworkConfig } from './types';
 
 export type NetworkFields = { name: string; fields: GQLFieldType[] };
 
@@ -22,10 +23,7 @@ export const getFieldTypes = (
 ) => {
 	const fieldTypes = fields.reduce(
 		(
-			aggregations: Pick<
-				NetworkAggregationConfig,
-				'supportedAggregations' | 'unsupportedAggregations'
-			>,
+			aggregations: Pick<NetworkConfig, 'supportedAggregations' | 'unsupportedAggregations'>,
 			field,
 		) => {
 			const fieldType = field.type.name;
