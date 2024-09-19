@@ -1,9 +1,8 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { resolveAggregations } from '../aggregations';
 import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
-import { getRootFields } from '../util';
-import { createNetworkQueries, queryConnections } from './aggregations';
-import { resolveRemoteConnectionNodes } from './remoteConnections';
+import { getRequestedFields } from '../util';
+import { aggregationPipeline, createNetworkQueries } from './aggregations';
+import { createResponse } from './response';
 
 type NetworkSearchRoot = {
 	nodes: RemoteConnectionData[];
@@ -12,6 +11,10 @@ type NetworkSearchRoot = {
 
 /**
  * Create GQL resolvers.
+ *
+ * It's important to have both remote connection data and aggregations under a single field
+ * as remote connection data is dependant on aggregations query
+ *
  * @param networkConfigsWithSchemas
  * @param networkFieldTypes
  * @returns
@@ -19,22 +22,22 @@ type NetworkSearchRoot = {
 export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 	return {
 		Query: {
-			nodes: async () => await resolveRemoteConnectionNodes(configs),
-			aggregations: async (
+			network: async (
 				parent: NetworkSearchRoot,
 				args: {},
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
-				const rootQueryFields = getRootFields(info);
-				const networkQueries = createNetworkQueries(configs, rootQueryFields);
-				const networkResults = await queryConnections(networkQueries);
-				// Aggregate queried data
-				const resolvedResults = resolveAggregations(networkResults, rootQueryFields);
-				// TODO: format to well defined response object createResponse(resolvedResults) jon success/failure, conform to schema shape etc
-				const response = resolvedResults.reduce((response, currentField) => {
-					return { ...response, ...{ [currentField.fieldName]: { ...currentField.aggregation } } };
-				}, {});
+				const { requestedAggregations } = getRequestedFields(info);
+				const networkQueries = createNetworkQueries(configs, requestedAggregations);
+
+				// Query remote connections and aggregate results
+				const { aggregationResults, nodeInfo } = await aggregationPipeline(
+					networkQueries,
+					requestedAggregations,
+				);
+				const response = createResponse({ aggregationResults, nodeInfo });
+
 				return response;
 			},
 		},

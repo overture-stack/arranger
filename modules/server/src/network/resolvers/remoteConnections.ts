@@ -2,6 +2,10 @@ import { ConnectionStatus, NetworkAggregationConfig, RemoteConnectionData } from
 import axios from 'axios';
 import urljoin from 'url-join';
 
+/*
+ * Setup config connections
+ */
+
 /**
  * Check the status of remote connections
  *
@@ -69,4 +73,15 @@ export const resolveRemoteConnectionNodes = async (
 			return remoteConnectionData;
 		}),
 	);
+};
+
+/*
+ * Querying from resolvers remote connections
+ */
+
+export type RemoteConnection = {
+	name: string;
+	count: number;
+	status: keyof typeof CONNECTION_STATUS;
+	errors: string;
 };
