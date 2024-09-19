@@ -115,8 +115,7 @@ type NetworkQuery = {
 };
 
 /**
- * Find requested field in remote connection supported fields
- * all nodes may not have all fields
+ * Find requested field in remote connection supported fields all nodes may not have all fields
  *
  * @param config
  * @param fieldName
@@ -127,7 +126,7 @@ const findMatchedAggregationField = (config: NetworkConfig, fieldName: string) =
 };
 
 /**
- * construct gql string { [fieldName] { [Aggregation query fields] } }
+ * Construct gql string { [fieldName] { [Aggregation query fields] } } based on requested fields
  *
  * @param requestedAggregations
  */
