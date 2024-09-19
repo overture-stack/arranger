@@ -21,12 +21,21 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
 };
 
 /**
- * Returns requested fields
+ * Turns GraphQLResolveInfo into a map of the requested fields
  *
  * @param info GQL request info object
- * @returns
  */
-export const getRequestedFields = (info: GraphQLResolveInfo) => {
+export const resolveInfoToMap = (info: GraphQLResolveInfo, key: string) => {
 	const requestedFields = graphqlFields(info);
-	return { requestedAggregations: Object.keys(requestedFields.aggregations) };
+	const aggregations = requestedFields[key];
+
+	// ensure __typename will be queried to network nodes
+	const aggs = Object.keys(aggregations).reduce((aggs, key) => {
+		const element = aggregations[key];
+		if (!element.hasOwnProperty('__typename')) {
+			element['__typename'] = {};
+		}
+		return { ...aggs, [key]: element };
+	}, {});
+	return aggs;
 };

@@ -1,7 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { NetworkConfig } from '../setup/types';
 import { RemoteConnectionData } from '../types';
-import { getRequestedFields } from '../util';
+import { resolveInfoToMap } from '../util';
 import { aggregationPipeline, createNetworkQueries } from './aggregations';
 import { createResponse } from './response';
 
@@ -29,13 +29,14 @@ export const createResolvers = (configs: NetworkConfig[]) => {
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
-				const { requestedAggregations } = getRequestedFields(info);
-				const networkQueries = createNetworkQueries(configs, requestedAggregations);
+				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
+				const networkQueries = createNetworkQueries(configs, requestedFieldsMap);
 
 				// Query remote connections and aggregate results
+				const requestedFields = Object.keys(requestedFieldsMap);
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					networkQueries,
-					requestedAggregations,
+					requestedFields,
 				);
 				const response = createResponse({ aggregationResults, nodeInfo });
 
