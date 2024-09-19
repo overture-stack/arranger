@@ -37,7 +37,7 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 					requestedAggregations,
 				);
 				const response = createResponse({ aggregationResults, nodeInfo });
-				console.log('resp', response);
+
 				return response;
 			},
 		},
