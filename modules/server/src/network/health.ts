@@ -11,9 +11,9 @@ import { ConnectionStatus } from './types/types';
  */
 export const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => {
 	/*
-	 * recommended way to health check gql server is to run the `__typename` query that every server has
-	 * very small query with no additional params to, so using GET is not a concern for the GQL server
-	 * adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection
+	 * recommended way to health check gql server is to run the `__typename` query that every server has.
+	 * very small query with no additional params, so using GET is not a concern for the GQL server.
+	 * adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection.
 	 */
 	const healthCheckQuery = '?query=%7B__typename%7D';
 	const fullUrl = urljoin(url, healthCheckQuery);

@@ -17,7 +17,7 @@ const isSupportedType = (
 };
 
 /**
- * Parse network fields into supporter and unsupported
+ * Parse network fields into supported and unsupported
  *
  * @param fields
  * @returns { supportedAggregations: [], unsupportedAggregations: [] }
