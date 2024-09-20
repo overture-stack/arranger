@@ -4,12 +4,7 @@ import { DocumentNode } from 'graphql';
 import { resolveAggregations } from '../aggregations';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, success } from '../httpResponses';
-import { supportedAggregationQueries } from '../queries';
-import { NetworkAggregation, NetworkAggregationConfig } from '../types';
-import { ASTtoString } from '../util';
-import { supportedAggregationQueries } from '../queries';
-import { NetworkConfig } from '../setup/types';
-import { NetworkAggregation } from '../types';
+import { NetworkAggregation } from '../types/types';
 import { ASTtoString } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
@@ -151,25 +146,6 @@ const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
 	const gqlString = `{${documentName} ${gqlFieldsString}}`;
 
 	return gqlString;
-};
-
-/**
- * Create queries for remote nodes based on requested fields
- *
- * @param requestedAggregations
- */
-const createGqlFieldsString = (config: NetworkAggregationConfig, requestedAggregations: any[]) => {
-	return requestedAggregations.reduce((gqlString, fieldName) => {
-		const matchedAggregationField = findMatchedAggregationField(config, fieldName);
-		if (matchedAggregationField) {
-			const { name, type } = matchedAggregationField;
-			// get gql query string for supported aggregation
-			// TODO: only query requested fields + bucket_count if nodes is requested
-			const aggregationFieldQueryString = supportedAggregationQueries.get(type);
-			return gqlString + `${name}${aggregationFieldQueryString}`;
-		}
-		return gqlString;
-	}, '');
 };
 
 /**
