@@ -1,11 +1,12 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { NetworkAggregationConfig, RemoteConnectionData } from '../types';
-import { getRequestedFields } from '../util';
+import { NetworkConfig } from '../types/setup';
+import { resolveInfoToMap } from '../util';
 import { aggregationPipeline, createNetworkQueries } from './aggregations';
+import { NetworkNode } from './networkNode';
 import { createResponse } from './response';
 
-type NetworkSearchRoot = {
-	nodes: RemoteConnectionData[];
+export type NetworkSearchRoot = {
+	nodes: NetworkNode[];
 	aggregations: Record<string, unknown>;
 };
 
@@ -19,7 +20,7 @@ type NetworkSearchRoot = {
  * @param networkFieldTypes
  * @returns
  */
-export const createResolvers = (configs: NetworkAggregationConfig[]) => {
+export const createResolvers = (configs: NetworkConfig[]) => {
 	return {
 		Query: {
 			network: async (
@@ -28,13 +29,14 @@ export const createResolvers = (configs: NetworkAggregationConfig[]) => {
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
-				const { requestedAggregations } = getRequestedFields(info);
-				const networkQueries = createNetworkQueries(configs, requestedAggregations);
+				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
+				const networkQueries = createNetworkQueries(configs, requestedFieldsMap);
 
 				// Query remote connections and aggregate results
+				const requestedFields = Object.keys(requestedFieldsMap);
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					networkQueries,
-					requestedAggregations,
+					requestedFields,
 				);
 				const response = createResponse({ aggregationResults, nodeInfo });
 
