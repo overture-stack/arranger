@@ -1,5 +1,5 @@
 import { mergeTypeDefs } from '@graphql-tools/merge';
-import { SupportedNetworkFieldType } from '../types';
+import { SupportedNetworkFieldType } from '../types/types';
 import { createNetworkAggregationTypeDefs } from './aggregations';
 import { remoteConnectionTypes } from './remoteConnections';
 

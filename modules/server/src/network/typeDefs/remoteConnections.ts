@@ -4,12 +4,8 @@ export const remoteConnectionTypes = `#graphql
   }
 
 	type RemoteConnectionNode {
-		url: String
 		name: String
-		description: String
-		documentName: String
-		availableAggregations: [String]
-		totalHits: Int
+		count: Int
 		status: String
 		errors: [String]
 	}
