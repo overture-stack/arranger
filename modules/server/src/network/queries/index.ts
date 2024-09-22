@@ -5,8 +5,7 @@
  * These are the GQL queries for the supported GQL types
  */
 
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
-import { Aggregations, NumericAggregations } from '../types';
+import { Aggregations } from '../types/aggregations';
 
 export type GQLFieldType = {
 	name: string;
@@ -46,22 +45,3 @@ export const gqlAggregationTypeQuery = `#graphql
 		}
 	}
 `;
-
-export const aggregationsQuery = /* GraphQL */ `
-	#graphql
-	{
-		__typename
-		bucket_count
-		buckets {
-			key
-			doc_count
-		}
-	}
-`;
-
-/**
- * Returns gql query for gql type
- */
-export const supportedAggregationQueries = new Map<SupportedAggregation, string>();
-supportedAggregationQueries.set(SUPPORTED_AGGREGATIONS.Aggregations, aggregationsQuery);
-supportedAggregationQueries.set(SUPPORTED_AGGREGATIONS.NumericAggregations, '');
