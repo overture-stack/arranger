@@ -1,85 +1,93 @@
 # Arranger
 
-Arranger is a data-agnostic search API that utilizes <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.4/mapping.html" target="_blank" rel="noopener noreferrer">Elasticsearch index mappings</a> to generate interactive and configurable search components.
+[Arranger](https://github.com/overture-stack/arranger) is a versatile, data-agnostic search API and UI component library that leverages [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html) to generate interactive and highly configurable search components. It's designed to simplify the process of creating powerful search interfaces for complex datasets.
 
 ## Key Features 
 
-- **Configurable Search UI:** Arranger provides a customizable search interface based on Elasticsearch index mappings, including interactive components like faceted search, data tables, and SQON viewers. These components are customizable without extensive manual coding.
-
-- **GraphQL API:** On the back-end Arranger generates a GraphQL-based API from Elasticsearch mappings, enabling efficient and customizable data retrieval that adapts to your data structure. This API Integrates with our filter notation, SQON, for human-readable and machine-processable search queries
+- **Configurable Search UI:** Arranger provides a suite of customizable search interface components based on Elasticsearch index mappings, These components can be easily customized to fit your specific data structure and user needs without extensive manual coding.
+- **GraphQL API:** Arranger Server generates a GraphQL API from your Elasticsearch mappings, this offers:
+    - **Efficient Data Retrieval:** Tailor your queries to fetch exactly the data you need.
+    - **Adaptable Structure:** The API automatically adjusts to your data structure.
+    - **SQON Integration:** Incorporates our custom filter notation for human-readable and machine-processable search queries.
+- **Data Agnostic:** Works with any properly structured Elasticsearch index.
+- **Integration-Ready:** Designed to work with any react-based front-end UIs.
 
 ## System Architecture
 
-Arranger integrates with your underlying Elasticsearch cluster to automatically generate a powerful search API based on your configured index mapping. It consists of two main modules, **Arranger Server** and **Arranger Components**.
+Arranger integrates with your underlying Elasticsearch cluster to automatically generate a powerful search API based on your configured index mapping. It consists of two main modules, `Arranger Server` and `Arranger Components`:
 
 ```mermaid
-
 graph LR
-    U(User)
-    AC(Arranger Components)
-    AS(Arranger Server)
-    CM(Configuration Metadata)
-    IM(ElasticSearch Index Mapping)
-    ES(ElasticSearch Index)
+    %% Define nodes
+    User((User))
+    Elasticsearch(Elasticsearch)
+    Arranger-server(Arranger Server)
+    Arranger-components(Arranger Components)
+    Stage(Stage)
+    ArrangerConfigs{{Configuration Files}}
+    IndexMapping{{Index Mapping}}
+    ElasticsearchDocuments{{Elasticsearch Documents}}
 
-    U <-- Portal UI Queries & Responses -->AC
-    U<-- GraphQL + SQON Queries & Responses -->AS
-    AC <--> AS 
-    AS <--> ES
-    CM -.- AS
-    IM -.- ES
-    style IM fill:#fff,stroke-width:0px
-    style CM fill:#fff,stroke-width:0px
+
+    User <--> Stage
+    User <--> Arranger-server
+    Stage --- Arranger-components
+    Arranger-components --- Arranger-server
+    Arranger-server --- Elasticsearch
+    IndexMapping -.-> Elasticsearch
+    ElasticsearchDocuments -.-> Elasticsearch
+    ArrangerConfigs -.-> Arranger-components
+    ArrangerConfigs -.-> Arranger-server
+
+    %% Styling
+    classDef default fill:#F2F5F8,stroke:#04518c,color:#282A35;
+    classDef service fill:#0669b64e,stroke:#03497e,color:#282A35;
+    classDef thirdParty fill:#ebeced,stroke:#a1a1a1,color:#282A35;
+    classDef local fill:#E2B7D0,stroke:#9E005D,color:#282A35;
+    classDef configs fill:#E4E775,stroke:#7D7D7D,color:#282A35;
+    classDef user fill:#FF9900,stroke:#FF6600,color:#282A35;
+
+    class Arranger-components,Arranger-server local;
+    class Stage service;
+    class Elasticsearch thirdParty;
+    class ElasticsearchDocuments,ArrangerConfigs,IndexMapping configs;
+    class User user;
 ```
 
-**Arranger Server** is a GraphQL API that communicates with an Elasticsearch index. One unique feature of Arranger Server is its use of a consistent and custom filter notation called <a href="./reference/sqon/" target="_blank" rel="noopener noreferrer">SQON</a>. SQON is designed to be user-friendly, allowing humans to easily understand and create custom filters while also being straightforward for software systems to interpret and process.
+**Arranger Server:** [Description] 
 
-**Arranger Components** are interactive and configurable UI components specifically designed to display and query complex datasets. The example below showcases the Arranger Components that form the foundation of the VirusSeq data portal.
+**Arranger Components:** A library of React components for building interactive search UIs. Includes faceted search, data tables, and SQON viewers. Communicates with Arranger Server to fetch and display data.
 
-![Entity](./assets/arrangercomponents.jpg 'Panels')
+![Arranger Components Example](./assets/arrangercomponents.jpg)
 
-- The left hand box (in red) is Arranger's **faceted search** component
-- The bottom box (in blue) is Arranger's **Data Table** component
-- The top box (in yellow) is Arranger's **SQON Viewer** component
+    - **Faceted Search (Red):** Allow users to filter data using multiple dimensions.
+    - **Data Tables (Blue):** Display search results in a customizable, interactive table format.
+    - **SQON Viewers (Yellow):** Visualize and manage complex search queries.
 
 ## Repository Structure
 
+The Arranger repository can be accessed from our Overture-Stack GitHub page [located here](https://github.com/overture-stack/arranger).
 
 ```
-.
-├── /docker/
-│   ├── /elasticsearch
-│   ├── /server
-│   ├── /test
-│   └── /ui
-├── /integration-tests
-├── /modules/
-│   ├── /admin-ui
-│   ├── /components
-│   └── /server
-└── /scripts
+arranger/
+├── docker/
+│   ├── elasticsearch/
+│   ├── server/
+│   ├── test/
+│   └── ui/
+├── integration-tests/
+├── modules/
+│   ├── admin-ui/
+│   ├── components/
+│   └── server/
+└── scripts/
 ```
 
-### docker
+- **`docker/`**: Contains Docker configurations for various components.
+- **`integration-tests/`**: Houses integration tests for system-wide functionality.
+- **`modules`/**: Core Arranger modules:
+  - **`admin-ui/`**: Administration interface for managing Arranger configurations.
+  - **`components/`**: React components for building search UIs.
+  - **`server/`**: Arranger Server implementation (GraphQL API).
+- **`scripts/`**: Utility scripts for development, deployment, and system management.
 
-Contains Docker-related files for various components of the system, including Elasticsearch, server, test environment, and UI.
-
-### modules
-
-Houses the core modules of the Arranger system:
-
-- **admin-ui:** Likely contains the administration interface for managing Arranger configurations.
-- **components:** Includes the Arranger Components for building the search UI.
-- **server:** Contains the Arranger Server implementation, which provides the GraphQL API.
-
-### integration-tests
-
-Holds integration tests to ensure different components of the system work together correctly.
-
-### scripts
-
-Contains utility scripts for development, deployment, or other system management tasks.
-
-## Integrations
-
-- We recommend using [Stage](https://www.overture.bio/documentation/stage/), an extensible React-based portal UI specifically designed to house Arrangers search UI components. Stage offers themeable web components including navigation menus, a login UI, profile page, and footer.

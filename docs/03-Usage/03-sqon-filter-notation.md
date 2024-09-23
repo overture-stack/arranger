@@ -1,4 +1,4 @@
-# Filter Notation
+# SQON Filter Notation
 
 
 Arranger uses a custom filter notation SQON (Serializable Query Object Notation, pronounced like "Scone") to provide a flexible system for combining filters in a JSON object format.
