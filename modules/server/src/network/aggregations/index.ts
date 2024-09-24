@@ -172,7 +172,7 @@ const resolveNumericAggregation = (aggregations: NumericAggregations) => {
 const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
 
 export class AggregationAccumulator {
-	totalAgg: any;
+	totalAgg: any; // TODO: Fix any typing
 
 	constructor(requestedFields: any) {
 		/*
