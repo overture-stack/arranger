@@ -133,7 +133,7 @@ export const aggregationPipeline = async (
 			totalAgg.resolve(response.data, requestedAggregationFields);
 			nodeInfo.push({
 				name: nodeName,
-				count: 1, //nodeBucketCount,
+				count: 1, // TODO total { hit } in query,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
 			});

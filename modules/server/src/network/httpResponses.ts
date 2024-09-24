@@ -26,9 +26,9 @@ export type Result<T, FailureStatus extends string, FailureData = void> =
  * @returns {boolean} Whether the Result was a Success or not
  */
 export function isSuccess<T, FailureStatus extends string, FailureData>(
-	result: Result<T, FailureStatus, FailureData>,
+	result?: Result<T, FailureStatus, FailureData>,
 ): result is Success<T> {
-	return result.status === 'SUCCESS';
+	return result !== undefined && result.status === 'SUCCESS';
 }
 
 /**
