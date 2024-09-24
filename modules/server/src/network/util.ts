@@ -25,7 +25,7 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
  *
  * @param info GQL request info object
  */
-export const resolveInfoToMap = (info: GraphQLResolveInfo, key: string) => {
+export const resolveInfoToMap = (info: GraphQLResolveInfo, key: string): Record<string, {}> => {
 	const requestedFields = graphqlFields(info);
 	const aggregations = requestedFields[key];
 

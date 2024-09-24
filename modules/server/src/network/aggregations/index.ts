@@ -15,18 +15,16 @@ type ResolveAggregationInput = {
  * Resolves returned aggregations from network queries into single accumulated aggregation
  *
  * @param
- * @returns number - Total bucket count for node
  */
-export const resolveAggregations = ({
+const resolveAggregations = ({
 	networkResult,
 	requestedAggregationFields,
 	accumulator,
-}: ResolveAggregationInput): number => {
+}: ResolveAggregationInput) => {
 	const documentName = Object.keys(networkResult)[0];
 
-	const nodeBucketCount = requestedAggregationFields.reduce((bucketCountAcc, fieldName) => {
+	Object.keys(requestedAggregationFields).forEach((fieldName) => {
 		const fieldAggregations = networkResult[documentName][fieldName];
-		const fieldBucketCount = fieldAggregations.bucket_count;
 		const aggregationType = fieldAggregations.__typename;
 
 		const accumulatedFieldAggregations = accumulator[fieldName];
@@ -37,11 +35,9 @@ export const resolveAggregations = ({
 
 		// mutation - updates accumulator
 		accumulator[fieldName] = resolvedAggregation;
-		// returns total bucket count for node
-		return bucketCountAcc + fieldBucketCount;
-	}, 0);
+	});
 
-	return nodeBucketCount;
+	return accumulator;
 };
 
 /**
@@ -172,3 +168,33 @@ const resolveNumericAggregation = (aggregations: NumericAggregations) => {
 	// TODO: implement
 	throw Error('Not implemented');
 };
+
+const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
+
+export class AggregationAccumulator {
+	totalAgg: any;
+
+	constructor(requestedFields: any) {
+		/*
+		 * seed accumulator with the requested field keys
+		 * this will make it easier to add to using key lookup instead of Array.find
+		 */
+		const a = Object.keys(requestedFields).reduce((accumulator: any, field: any) => {
+			return { ...accumulator, [field]: emptyAggregation };
+		}, {});
+
+		this.totalAgg = a;
+	}
+
+	resolve(data, fields) {
+		resolveAggregations({
+			accumulator: this.totalAgg,
+			networkResult: data,
+			requestedAggregationFields: fields,
+		});
+	}
+
+	result() {
+		return this.totalAgg;
+	}
+}
