@@ -29,15 +29,6 @@ export const createResolvers = (configs: NetworkConfig[]) => {
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
-				// const networkQueries = createNetworkQueries(configs, requestedFieldsMap);
-
-				// // Query remote connections and aggregate results
-				// const { aggregationResults, nodeInfo } = await aggregationPipeline(
-				// 	networkQueries,
-				// 	requestedFields,
-				// );
-				// const response = createResponse({ aggregationResults, nodeInfo });
-
 				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
 
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
