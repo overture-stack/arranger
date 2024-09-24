@@ -35,11 +35,11 @@ const fetchData = async (
 			return failure(CONNECTION_STATUS.ERROR, `Request cancelled: ${url}`);
 		}
 
-		// axios.isAxiosError()
-		const responseStatus = error.response.status;
-		if (responseStatus === 404) {
-			console.error(`Network failure: ${url}`);
-			return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+		if (axios.isAxiosError(error)) {
+			if (error.code === 'ECONNREFUSED') {
+				console.error(`Network failure: ${url}`);
+				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+			}
 		}
 		return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
 	} finally {
