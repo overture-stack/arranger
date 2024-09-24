@@ -117,7 +117,7 @@ const createNetworkQuery = (config: NetworkConfig, requestedFields: any): Docume
  */
 export const aggregationPipeline = async (
 	configs: NetworkConfig[],
-	requestedAggregationFields: any, // map object
+	requestedAggregationFields: any, // TODO:map object
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
