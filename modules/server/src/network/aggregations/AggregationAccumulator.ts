@@ -1,32 +1,30 @@
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
-import { Aggregations, NetworkAggregation, NumericAggregations, RemoteAggregation } from '../types';
+import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
+import { RemoteAggregation } from '../types/types';
+import { RequestedFieldsMap } from '../util';
 
-type NetworkResult = {
-	[key: string]: RemoteAggregation;
-};
+type NetworkResult = Partial<Record<string, RemoteAggregation>>;
 
 type ResolveAggregationInput = {
 	networkResult: NetworkResult;
 	requestedAggregationFields: string[];
-	accumulator: any;
+	accumulator: RemoteAggregation;
 };
 
 /**
  * Resolves returned aggregations from network queries into single accumulated aggregation
  *
  * @param
- * @returns number - Total bucket count for node
  */
-export const resolveAggregations = ({
+const resolveAggregations = ({
 	networkResult,
 	requestedAggregationFields,
 	accumulator,
-}: ResolveAggregationInput): number => {
+}: ResolveAggregationInput) => {
 	const documentName = Object.keys(networkResult)[0];
 
-	const nodeBucketCount = requestedAggregationFields.reduce((bucketCountAcc, fieldName) => {
+	requestedAggregationFields.forEach((fieldName) => {
 		const fieldAggregations = networkResult[documentName][fieldName];
-		const fieldBucketCount = fieldAggregations.bucket_count;
 		const aggregationType = fieldAggregations.__typename;
 
 		const accumulatedFieldAggregations = accumulator[fieldName];
@@ -37,11 +35,9 @@ export const resolveAggregations = ({
 
 		// mutation - updates accumulator
 		accumulator[fieldName] = resolvedAggregation;
-		// returns total bucket count for node
-		return bucketCountAcc + fieldBucketCount;
-	}, 0);
+	});
 
-	return nodeBucketCount;
+	return accumulator;
 };
 
 /**
@@ -53,7 +49,7 @@ export const resolveAggregations = ({
 export const resolveToNetworkAggregation = (
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
-): NetworkAggregation | undefined => {
+): RemoteAggregation | undefined => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
@@ -71,7 +67,7 @@ export const resolveToNetworkAggregation = (
  * @param bucket - Bucket being processed
  * @param computedBuckets - Existing buckets
  */
-const updateComputedBuckets = (bucket, computedBuckets) => {
+const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
 	/*
 	 * Unable to use lookup key eg. buckets[key]
 	 * "buckets": [
@@ -158,7 +154,7 @@ const updateComputedBuckets = (bucket, computedBuckets) => {
  *	}
  * ```
  */
-export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggregation => {
+export const resolveAggregation = (aggregations: Aggregations[]): Aggregations => {
 	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
 		const computedBuckets = resolvedAggregation.buckets;
 		agg.buckets.forEach((bucket) => updateComputedBuckets(bucket, computedBuckets));
@@ -172,3 +168,34 @@ const resolveNumericAggregation = (aggregations: NumericAggregations) => {
 	// TODO: implement
 	throw Error('Not implemented');
 };
+
+const emptyAggregation: Aggregations = { bucket_count: 0, buckets: [] };
+
+export class AggregationAccumulator {
+	requestedFields: string[];
+	totalAgg: RemoteAggregation;
+
+	constructor(requestedFieldsMap: RequestedFieldsMap) {
+		const requestedFields = Object.keys(requestedFieldsMap);
+		this.requestedFields = requestedFields;
+		/*
+		 * seed accumulator with the requested field keys
+		 * this will make it easier to add to using key lookup instead of Array.find
+		 */
+		this.totalAgg = requestedFields.reduce<RemoteAggregation>((accumulator: any, field: any) => {
+			return { ...accumulator, [field]: emptyAggregation };
+		}, {});
+	}
+
+	resolve(data: NetworkResult) {
+		resolveAggregations({
+			accumulator: this.totalAgg,
+			networkResult: data,
+			requestedAggregationFields: this.requestedFields,
+		});
+	}
+
+	result() {
+		return this.totalAgg;
+	}
+}
