@@ -1,5 +1,9 @@
+const RESULT_STATUS = {
+	SUCCESS: 'SUCCESS',
+} as const;
+
 // Success and Failure types
-export type Success<T> = { status: 'SUCCESS'; data: T };
+export type Success<T> = { status: typeof RESULT_STATUS.SUCCESS; data: T };
 export type Failure<FailureStatus extends string, T = void> = {
 	status: FailureStatus;
 	message: string;
@@ -28,7 +32,7 @@ export type Result<T, FailureStatus extends string, FailureData = void> =
 export function isSuccess<T, FailureStatus extends string, FailureData>(
 	result: Result<T, FailureStatus, FailureData>,
 ): result is Success<T> {
-	return result.status === 'SUCCESS';
+	return result.status === RESULT_STATUS.SUCCESS;
 }
 
 /**
@@ -36,7 +40,7 @@ export function isSuccess<T, FailureStatus extends string, FailureData>(
  * @param {T} data
  * @returns {Success<T>} `{status: 'SUCCESS', data}`
  */
-export const success = <T>(data: T): Success<T> => ({ status: 'SUCCESS', data });
+export const success = <T>(data: T): Success<T> => ({ status: RESULT_STATUS.SUCCESS, data });
 
 /**
  * Create a response indicating a failure with a status naming the reason and message describing the failure.
