@@ -1,11 +1,11 @@
 import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
-import { resolveAggregations } from '../aggregations';
+import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
-import { failure, isSuccess, success } from '../httpResponses';
-import { NetworkAggregation } from '../types/types';
-import { ASTtoString } from '../util';
+import { failure, isSuccess, Result, success } from '../httpResponses';
+import { NetworkConfig } from '../types/setup';
+import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
 /**
@@ -14,7 +14,9 @@ import { CONNECTION_STATUS, NetworkNode } from './networkNode';
  * @param query
  * @returns
  */
-const fetchData = async (query: NetworkQuery) => {
+const fetchData = async (
+	query: NetworkQuery,
+): Promise<Result<unknown, typeof CONNECTION_STATUS.error>> => {
 	const { url, gqlQuery } = query;
 	console.log(`Fetch data starting for ${url}`);
 	try {
@@ -33,75 +35,16 @@ const fetchData = async (query: NetworkQuery) => {
 			return failure(CONNECTION_STATUS.ERROR, `Request cancelled: ${url}`);
 		}
 
-		const responseStatus = error.response.status;
-		if (responseStatus === 404) {
-			console.error(`Network failure: ${url}`);
-			return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
-		} else {
-			return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
+		if (axios.isAxiosError(error)) {
+			if (error.code === 'ECONNREFUSED') {
+				console.error(`Network failure: ${url}`);
+				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+			}
 		}
+		return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
 	} finally {
 		console.log(`Fetch data completing for ${query.url}`);
 	}
-};
-
-/**
- * Query each remote connection
- *
- * @param queries - Query for each remote connection
- * @param requestedAggregationFields
- * @returns
- */
-export const aggregationPipeline = async (
-	queries: NetworkQuery[],
-	requestedAggregationFields: any,
-) => {
-	/*
-	 * seed accumulator with the requested field keys
-	 * this will make it easier to add to using key lookup instead of Array.find
-	 */
-	const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
-	const aggregationAccumulator = requestedAggregationFields.reduce((accumulator, field) => {
-		return { ...accumulator, [field]: emptyAggregation };
-	}, {});
-
-	const nodeInfo: NetworkNode[] = [];
-
-	const aggregationResultPromises = queries.map<
-		Promise<{
-			aggregations: any;
-			remoteConnection: NetworkNode;
-		}>
-	>(async (query) => {
-		const name = query.url; // TODO: use readable name not url
-		const response = await fetchData(query);
-
-		if (response && isSuccess(response)) {
-			const nodeBucketCount = resolveAggregations({
-				networkResult: response.data,
-				requestedAggregationFields,
-				accumulator: aggregationAccumulator,
-			});
-
-			nodeInfo.push({
-				name,
-				count: nodeBucketCount,
-				status: CONNECTION_STATUS.OK,
-				errors: '',
-			});
-		} else {
-			nodeInfo.push({
-				name,
-				count: 0,
-				status: CONNECTION_STATUS.ERROR,
-				errors: response?.message || 'Error',
-			});
-		}
-	});
-
-	// return accumulated results
-	await Promise.allSettled(aggregationResultPromises);
-	return { aggregationResults: aggregationAccumulator, nodeInfo };
 };
 
 type NetworkQuery = {
@@ -135,7 +78,7 @@ type NetworkQuery = {
  * `
  * ```
  */
-const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
+const createGqlFieldsString = (requestedFields: RequestedFieldsMap, documentName: string) => {
 	const gqlFieldsString = JSON.stringify(requestedFields)
 		.replaceAll('"', '')
 		.replaceAll(':', '')
@@ -148,36 +91,66 @@ const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
 	return gqlString;
 };
 
+const createNetworkQuery = (
+	config: NetworkConfig,
+	requestedFields: RequestedFieldsMap,
+): DocumentNode => {
+	const gqlString = createGqlFieldsString(requestedFields, config.documentName);
+
+	/*
+	 * convert string to AST object to use as query
+	 * not needed if gqlString is formatted correctly but this acts as a validity check
+	 */
+	try {
+		const gqlQuery = gql`
+			${gqlString}
+		`;
+		return gqlQuery;
+	} catch (err) {
+		console.error('invalid gql', err);
+	}
+};
+
 /**
- * Create queries for remote nodes based on requested fields
+ * Query each remote connection
  *
- * @param configs
- * @param requestedFields
+ * @param queries - Query for each remote connection
+ * @param requestedAggregationFields
  * @returns
  */
-export const createNetworkQueries = (
+export const aggregationPipeline = async (
 	configs: NetworkConfig[],
-	requestedFields: {},
-): NetworkQuery[] => {
-	const queries = configs
-		.map((config) => {
-			const gqlString = createGqlFieldsString(requestedFields, config.documentName);
+	requestedAggregationFields: RequestedFieldsMap,
+) => {
+	const nodeInfo: NetworkNode[] = [];
 
-			/*
-			 * convert string to AST object to use as query
-			 * not needed if gqlString is formatted correctly but this acts as a validity check
-			 */
-			try {
-				const gqlQuery = gql`
-					${gqlString}
-				`;
-				return { url: config.graphqlUrl, gqlQuery };
-			} catch (err) {
-				console.error('invalid gql', err);
-				return false;
-			}
-		})
-		.filter(Boolean);
+	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
-	return queries;
+	const aggregationResultPromises = configs.map(async (config) => {
+		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
+		const response = await fetchData({ url: config.graphqlUrl, gqlQuery });
+
+		const nodeName = config.displayName;
+
+		if (isSuccess(response)) {
+			totalAgg.resolve(response.data);
+			nodeInfo.push({
+				name: nodeName,
+				count: 1, // TODO total { hit } in query,
+				status: CONNECTION_STATUS.OK,
+				errors: '',
+			});
+		} else {
+			nodeInfo.push({
+				name: nodeName,
+				count: 0,
+				status: CONNECTION_STATUS.ERROR,
+				errors: response?.message || 'Error',
+			});
+		}
+	});
+
+	// return accumulated results
+	await Promise.allSettled(aggregationResultPromises);
+	return { aggregationResults: totalAgg.result(), nodeInfo };
 };
