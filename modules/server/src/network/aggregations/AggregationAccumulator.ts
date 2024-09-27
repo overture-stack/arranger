@@ -1,14 +1,14 @@
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
-import { Aggregations, NetworkAggregation, NumericAggregations, RemoteAggregation } from '../types';
+import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
+import { RemoteAggregation } from '../types/types';
+import { RequestedFieldsMap } from '../util';
 
-type NetworkResult = {
-	[key: string]: RemoteAggregation;
-};
+type NetworkResult = Partial<Record<string, RemoteAggregation>>;
 
 type ResolveAggregationInput = {
 	networkResult: NetworkResult;
 	requestedAggregationFields: string[];
-	accumulator: any;
+	accumulator: RemoteAggregation;
 };
 
 /**
@@ -23,7 +23,7 @@ const resolveAggregations = ({
 }: ResolveAggregationInput) => {
 	const documentName = Object.keys(networkResult)[0];
 
-	Object.keys(requestedAggregationFields).forEach((fieldName) => {
+	requestedAggregationFields.forEach((fieldName) => {
 		const fieldAggregations = networkResult[documentName][fieldName];
 		const aggregationType = fieldAggregations.__typename;
 
@@ -49,7 +49,7 @@ const resolveAggregations = ({
 export const resolveToNetworkAggregation = (
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
-): NetworkAggregation | undefined => {
+): RemoteAggregation | undefined => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
@@ -67,7 +67,7 @@ export const resolveToNetworkAggregation = (
  * @param bucket - Bucket being processed
  * @param computedBuckets - Existing buckets
  */
-const updateComputedBuckets = (bucket, computedBuckets) => {
+const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
 	/*
 	 * Unable to use lookup key eg. buckets[key]
 	 * "buckets": [
@@ -154,7 +154,7 @@ const updateComputedBuckets = (bucket, computedBuckets) => {
  *	}
  * ```
  */
-export const resolveAggregation = (aggregations: Aggregations[]): NetworkAggregation => {
+export const resolveAggregation = (aggregations: Aggregations[]): Aggregations => {
 	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
 		const computedBuckets = resolvedAggregation.buckets;
 		agg.buckets.forEach((bucket) => updateComputedBuckets(bucket, computedBuckets));
@@ -169,26 +169,29 @@ const resolveNumericAggregation = (aggregations: NumericAggregations) => {
 	throw Error('Not implemented');
 };
 
-const emptyAggregation: NetworkAggregation = { bucket_count: 0, buckets: [] };
+const emptyAggregation: Aggregations = { bucket_count: 0, buckets: [] };
 
 export class AggregationAccumulator {
-	totalAgg: any; // TODO: Fix any typing
+	requestedFields: string[];
+	totalAgg: RemoteAggregation;
 
-	constructor(requestedFields: any) {
+	constructor(requestedFieldsMap: RequestedFieldsMap) {
+		const requestedFields = Object.keys(requestedFieldsMap);
+		this.requestedFields = requestedFields;
 		/*
 		 * seed accumulator with the requested field keys
 		 * this will make it easier to add to using key lookup instead of Array.find
 		 */
-		this.totalAgg = Object.keys(requestedFields).reduce((accumulator: any, field: any) => {
+		this.totalAgg = requestedFields.reduce<RemoteAggregation>((accumulator: any, field: any) => {
 			return { ...accumulator, [field]: emptyAggregation };
 		}, {});
 	}
 
-	resolve(data, fields) {
+	resolve(data: NetworkResult) {
 		resolveAggregations({
 			accumulator: this.totalAgg,
 			networkResult: data,
-			requestedAggregationFields: fields,
+			requestedAggregationFields: this.requestedFields,
 		});
 	}
 

@@ -1,11 +1,11 @@
 import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
-import { AggregationAccumulator } from '../aggregations';
+import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, success } from '../httpResponses';
 import { NetworkConfig } from '../types/setup';
-import { ASTtoString } from '../util';
+import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
 /**
@@ -78,7 +78,7 @@ type NetworkQuery = {
  * `
  * ```
  */
-const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
+const createGqlFieldsString = (requestedFields: RequestedFieldsMap, documentName: string) => {
 	const gqlFieldsString = JSON.stringify(requestedFields)
 		.replaceAll('"', '')
 		.replaceAll(':', '')
@@ -91,7 +91,10 @@ const createGqlFieldsString = (requestedFields: {}, documentName: string) => {
 	return gqlString;
 };
 
-const createNetworkQuery = (config: NetworkConfig, requestedFields: any): DocumentNode => {
+const createNetworkQuery = (
+	config: NetworkConfig,
+	requestedFields: RequestedFieldsMap,
+): DocumentNode => {
 	const gqlString = createGqlFieldsString(requestedFields, config.documentName);
 
 	/*
@@ -117,7 +120,7 @@ const createNetworkQuery = (config: NetworkConfig, requestedFields: any): Docume
  */
 export const aggregationPipeline = async (
 	configs: NetworkConfig[],
-	requestedAggregationFields: any, // TODO:map object
+	requestedAggregationFields: RequestedFieldsMap,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
@@ -130,7 +133,7 @@ export const aggregationPipeline = async (
 		const nodeName = config.displayName;
 
 		if (isSuccess(response)) {
-			totalAgg.resolve(response.data, requestedAggregationFields);
+			totalAgg.resolve(response.data);
 			nodeInfo.push({
 				name: nodeName,
 				count: 1, // TODO total { hit } in query,
