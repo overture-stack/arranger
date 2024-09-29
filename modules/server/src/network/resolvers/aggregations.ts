@@ -78,16 +78,20 @@ type NetworkQuery = {
  * `
  * ```
  */
-const createGqlFieldsString = (requestedFields: RequestedFieldsMap, documentName: string) => {
+const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
 	const gqlFieldsString = JSON.stringify(requestedFields)
 		.replaceAll('"', '')
 		.replaceAll(':', '')
 		.replaceAll('{}', '')
-		.replaceAll(',', ' ');
+		.replaceAll(',', ' ')
+		.replaceAll('\\', ' ');
 
-	// add top level field for query and format with correct brackets
-	const gqlString = `{${documentName} ${gqlFieldsString}}`;
+	return gqlFieldsString;
+};
 
+const createNodeQueryString = (requestedFields: RequestedFieldsMap, documentName: string) => {
+	const fields = convertFieldsToString(requestedFields);
+	const gqlString = `{${documentName} { hits { total }  aggregations ${fields} }}`;
 	return gqlString;
 };
 
@@ -95,7 +99,7 @@ const createNetworkQuery = (
 	config: NetworkConfig,
 	requestedFields: RequestedFieldsMap,
 ): DocumentNode => {
-	const gqlString = createGqlFieldsString(requestedFields, config.documentName);
+	const gqlString = createNodeQueryString(requestedFields, config.documentName);
 
 	/*
 	 * convert string to AST object to use as query

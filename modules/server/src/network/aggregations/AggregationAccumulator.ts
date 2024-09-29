@@ -182,7 +182,7 @@ export class AggregationAccumulator {
 		 * seed accumulator with the requested field keys
 		 * this will make it easier to add to using key lookup instead of Array.find
 		 */
-		this.totalAgg = requestedFields.reduce<RemoteAggregation>((accumulator: any, field: any) => {
+		this.totalAgg = requestedFields.reduce<RemoteAggregation>((accumulator, field) => {
 			return { ...accumulator, [field]: emptyAggregation };
 		}, {});
 	}
