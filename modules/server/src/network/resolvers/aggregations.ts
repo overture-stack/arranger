@@ -89,17 +89,20 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
 	return gqlFieldsString;
 };
 
-const createNodeQueryString = (requestedFields: RequestedFieldsMap, documentName: string) => {
+export const createNodeQueryString = (
+	documentName: string,
+	requestedFields: RequestedFieldsMap,
+) => {
 	const fields = convertFieldsToString(requestedFields);
 	const gqlString = `{${documentName} { hits { total }  aggregations ${fields} }}`;
 	return gqlString;
 };
 
 const createNetworkQuery = (
-	config: NetworkConfig,
+	documentName: string,
 	requestedFields: RequestedFieldsMap,
 ): DocumentNode => {
-	const gqlString = createNodeQueryString(requestedFields, config.documentName);
+	const gqlString = createNodeQueryString(documentName, requestedFields);
 
 	/*
 	 * convert string to AST object to use as query
@@ -131,7 +134,7 @@ export const aggregationPipeline = async (
 	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
 	const aggregationResultPromises = configs.map(async (config) => {
-		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
+		const gqlQuery = createNetworkQuery(config.documentName, requestedAggregationFields);
 		const response = await fetchData({ url: config.graphqlUrl, gqlQuery });
 
 		const nodeName = config.displayName;
