@@ -1,14 +1,14 @@
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
-import { RemoteAggregation } from '../types/types';
+import { AllAggregations } from '../types/types';
 import { RequestedFieldsMap } from '../util';
 
-type NetworkResult = Partial<Record<string, RemoteAggregation>>;
+type NetworkResult = Partial<Record<string, AllAggregations>>;
 
 type ResolveAggregationInput = {
 	networkResult: NetworkResult;
 	requestedAggregationFields: string[];
-	accumulator: RemoteAggregation;
+	accumulator: AllAggregations;
 };
 
 /**
@@ -49,7 +49,7 @@ const resolveAggregations = ({
 export const resolveToNetworkAggregation = (
 	type: SupportedAggregation,
 	aggregations: Aggregations[],
-): RemoteAggregation | undefined => {
+): AllAggregations | undefined => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
@@ -173,7 +173,7 @@ const emptyAggregation: Aggregations = { bucket_count: 0, buckets: [] };
 
 export class AggregationAccumulator {
 	requestedFields: string[];
-	totalAgg: RemoteAggregation;
+	totalAgg: AllAggregations;
 
 	constructor(requestedFieldsMap: RequestedFieldsMap) {
 		const requestedFields = Object.keys(requestedFieldsMap);
@@ -182,7 +182,7 @@ export class AggregationAccumulator {
 		 * seed accumulator with the requested field keys
 		 * this will make it easier to add to using key lookup instead of Array.find
 		 */
-		this.totalAgg = requestedFields.reduce<RemoteAggregation>((accumulator, field) => {
+		this.totalAgg = requestedFields.reduce<AllAggregations>((accumulator, field) => {
 			return { ...accumulator, [field]: emptyAggregation };
 		}, {});
 	}
