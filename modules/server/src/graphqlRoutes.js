@@ -162,18 +162,18 @@ const createEndpoint = async ({
 
 	console.log('Starting GraphQL server:');
 
-	/**
-	 * TODO: REMOVE
-	 * TEMP
-	 */
-	const networkPath = '/network';
-	const apolloNetworkServer = new ApolloServer({
-		cache: 'bounded',
-		schema: networkSchema,
-	});
-	await apolloNetworkServer.start();
-	apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
-	//
+	if (ENABLE_NETWORK_AGGREGATION) {
+		/**
+		 * TODO: make available on one route
+		 */
+		const networkPath = '/network';
+		const apolloNetworkServer = new ApolloServer({
+			cache: 'bounded',
+			schema: networkSchema,
+		});
+		await apolloNetworkServer.start();
+		apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	}
 
 	try {
 		await router.get(
@@ -281,9 +281,11 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		const { networkSchema } = await createSchemaFromNetworkConfig({
-			networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-		});
+		if (ENABLE_NETWORK_AGGREGATION) {
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+			});
+		}
 
 		return {
 			...commonFields,
