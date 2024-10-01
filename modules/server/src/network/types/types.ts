@@ -26,7 +26,8 @@ export type UnsupportedAggregations = NetworkFieldType<string>[];
 
 export type ConnectionStatus = ObjectValues<typeof CONNECTION_STATUS>;
 
-export type RemoteAggregation = Partial<Record<string, Aggregations | NumericAggregations>>;
+// the name "Aggregations" is already taken by a type
+export type AllAggregations = Record<string, Aggregations | NumericAggregations>;
 
 export type NetworkAggregation = {
 	bucket_count: number;

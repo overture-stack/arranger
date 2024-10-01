@@ -22,15 +22,23 @@ type NetworkQueryResult = PromiseFulfilledResult<{
  *
  * @throws Unexpected data error
  */
-const fetchRemoteSchema = async (
+const fetchNodeAggregations = async (
 	config: NetworkConfig,
 ): Promise<GQLTypeQueryResponse | undefined> => {
 	const { graphqlUrl, documentType } = config;
+	/*
+	 * documentType is an entire field name / type name in the case of a root field
+	 * eg. `file:file`, `torontoFile:torontoFile`
+	 * it also prefixes dynamic type names like *Connection and *Aggregations
+	 * eg. `aggregations: fileAggregations`, `hits: fileConnection`
+	 */
 	try {
+		// targeting just the "aggregations" field using type name
+		const typename = `${documentType}Aggregations`;
 		const response = await fetchGql({
 			url: graphqlUrl,
 			gqlQuery: gqlAggregationTypeQuery,
-			variables: { documentName: documentType },
+			variables: { documentTypeName: typename },
 		});
 
 		// axios response "data" field, graphql response "data" field
@@ -54,14 +62,14 @@ const fetchRemoteSchema = async (
  * @param { networkConfigs }
  * @returns GQL object type to be used in functions
  */
-export const fetchRemoteSchemas = async ({
+export const fetchAllNodeAggregations = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkConfig[];
 }): Promise<NetworkFields[]> => {
 	// query remote connection types
 	const networkQueryPromises = networkConfigs.map(async (config) => {
-		const gqlResponse = await fetchRemoteSchema(config);
+		const gqlResponse = await fetchNodeAggregations(config);
 		return { config, gqlResponse };
 	});
 

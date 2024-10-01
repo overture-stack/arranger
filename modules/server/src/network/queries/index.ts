@@ -33,8 +33,8 @@ export type AggregationGQLResponse = {
  * eg. __type('aggregations')
  */
 export const gqlAggregationTypeQuery = `#graphql
-	query getAggregationTypes($documentName: String!) {
-		__type(name: $documentName) {
+	query getAggregationTypes($documentTypeName: String!) {
+		__type(name: $documentTypeName) {
 			name
 			fields {
 				name

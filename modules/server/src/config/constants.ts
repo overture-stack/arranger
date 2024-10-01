@@ -24,3 +24,4 @@ export const PING_MS = stringToNumber(process.env.PING_MS) || 2200;
 export const PING_PATH = process.env.PING_PATH || '/ping';
 export const PORT = stringToNumber(process.env.PORT) || 5050;
 export const ROW_ID_FIELD_NAME = process.env.ROW_ID_FIELD_NAME || 'id';
+export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
