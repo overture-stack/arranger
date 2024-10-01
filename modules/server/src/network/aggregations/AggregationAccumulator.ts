@@ -19,10 +19,9 @@ const resolveAggregations = ({
 	requestedAggregationFields,
 	accumulator,
 }: ResolveAggregationInput) => {
-	const documentName = Object.keys(networkResult)[0];
-
 	requestedAggregationFields.forEach((fieldName) => {
-		const fieldAggregations = networkResult[documentName][fieldName];
+		const fieldAggregations = networkResult[fieldName];
+
 		const aggregationType = fieldAggregations.__typename;
 
 		const accumulatedFieldAggregations = accumulator[fieldName];
