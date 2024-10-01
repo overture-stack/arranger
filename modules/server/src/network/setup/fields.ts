@@ -70,5 +70,17 @@ export const getAllFieldTypes = (
 		return { supportedAggregations, unsupportedAggregations };
 	});
 
-	return nodeFieldTypes.flatMap((fieldType) => fieldType.supportedAggregations);
+	const allSupportedAggregations = nodeFieldTypes.flatMap(
+		(fieldType) => fieldType.supportedAggregations,
+	);
+	/*
+	 * Returns unique fields
+	 * eg. if NodeA and NodeB both have `analysis__analysis__id`, only include it once
+	 * This during server startup for creating the Apollo server.
+	 * Please do not use expensive stringify and parsing for server queries.
+	 */
+	const uniqueSupportedAggregations = Array.from(
+		new Set(allSupportedAggregations.map((nodeField) => JSON.stringify(nodeField))),
+	).map((nodeFieldString) => JSON.parse(nodeFieldString));
+	return uniqueSupportedAggregations;
 };
