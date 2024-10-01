@@ -3,8 +3,10 @@ import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
-import { failure, isSuccess, Result, success } from '../httpResponses';
+import { failure, isSuccess, Result, Success, success } from '../httpResponses';
+import { Hits } from '../types/hits';
 import { NetworkConfig } from '../types/setup';
+import { AllAggregations } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
@@ -14,9 +16,9 @@ import { CONNECTION_STATUS, NetworkNode } from './networkNode';
  * @param query
  * @returns
  */
-const fetchData = async (
+const fetchData = async <SuccessType>(
 	query: NetworkQuery,
-): Promise<Result<unknown, typeof CONNECTION_STATUS.error>> => {
+): Promise<Result<SuccessType, typeof CONNECTION_STATUS.error>> => {
 	const { url, gqlQuery } = query;
 	console.log(`Fetch data starting for ${url}`);
 	try {
@@ -118,6 +120,8 @@ const createNetworkQuery = (
 	}
 };
 
+type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregations } };
+
 /**
  * Query each remote connection
  *
@@ -135,15 +139,19 @@ export const aggregationPipeline = async (
 
 	const aggregationResultPromises = configs.map(async (config) => {
 		const gqlQuery = createNetworkQuery(config.documentName, requestedAggregationFields);
-		const response = await fetchData({ url: config.graphqlUrl, gqlQuery });
+		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
 
 		const nodeName = config.displayName;
 
 		if (isSuccess(response)) {
-			totalAgg.resolve(response.data);
+			const documentName = config.documentName;
+			const aggregationData = response.data[documentName]?.aggregations || {};
+			const hitsData = response.data[documentName]?.hits || { total: 0 };
+
+			totalAgg.resolve(aggregationData);
 			nodeInfo.push({
 				name: nodeName,
-				count: 1, // TODO total { hit } in query,
+				count: hitsData.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
 			});
