@@ -9,7 +9,7 @@ export const CONNECTION_STATUS = {
 
 export type NetworkNode = {
 	name: string;
-	count: number;
+	hits: number;
 	status: keyof typeof CONNECTION_STATUS;
 	errors: string;
 };

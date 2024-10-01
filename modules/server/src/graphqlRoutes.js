@@ -155,18 +155,18 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 
 	console.log('Starting GraphQL server:');
 
-	/**
-	 * TODO: REMOVE
-	 * TEMP
-	 */
-	const networkPath = '/network';
-	const apolloNetworkServer = new ApolloServer({
-		cache: 'bounded',
-		schema: networkSchema,
-	});
-	await apolloNetworkServer.start();
-	apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
-	//
+	if (ENABLE_NETWORK_AGGREGATION) {
+		/**
+		 * TODO: make available on one route
+		 */
+		const networkPath = '/network';
+		const apolloNetworkServer = new ApolloServer({
+			cache: 'bounded',
+			schema: networkSchema,
+		});
+		await apolloNetworkServer.start();
+		apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	}
 
 	try {
 		console.log(`  - GraphQL playground available at ...${mainPath}`);
@@ -266,9 +266,19 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		const { networkSchema } = await createSchemaFromNetworkConfig({
-			networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
-		});
+		if (ENABLE_NETWORK_AGGREGATION) {
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
+					...config,
+					/**
+					 * part of the gql schema is generated dynamically
+					 * in the case of the "file" field, the field name and type name are the same
+					 * it's more flexible to define it here as an additional property than to confuse functions further down the pipeline
+					 */
+					documentName: config.documentType,
+				})),
+			});
+		}
 
 		return {
 			...commonFields,

@@ -3,8 +3,10 @@ import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
-import { failure, isSuccess, Result, success } from '../httpResponses';
+import { failure, isSuccess, Result, Success, success } from '../httpResponses';
+import { Hits } from '../types/hits';
 import { NetworkConfig } from '../types/setup';
+import { AllAggregations } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
@@ -14,9 +16,9 @@ import { CONNECTION_STATUS, NetworkNode } from './networkNode';
  * @param query
  * @returns
  */
-const fetchData = async (
+const fetchData = async <SuccessType>(
 	query: NetworkQuery,
-): Promise<Result<unknown, typeof CONNECTION_STATUS.error>> => {
+): Promise<Result<SuccessType, typeof CONNECTION_STATUS.error>> => {
 	const { url, gqlQuery } = query;
 	console.log(`Fetch data starting for ${url}`);
 	try {
@@ -78,24 +80,31 @@ type NetworkQuery = {
  * `
  * ```
  */
-const createGqlFieldsString = (requestedFields: RequestedFieldsMap, documentName: string) => {
+const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
 	const gqlFieldsString = JSON.stringify(requestedFields)
 		.replaceAll('"', '')
 		.replaceAll(':', '')
 		.replaceAll('{}', '')
-		.replaceAll(',', ' ');
+		.replaceAll(',', ' ')
+		.replaceAll('\\', ' ');
 
-	// add top level field for query and format with correct brackets
-	const gqlString = `{${documentName} ${gqlFieldsString}}`;
+	return gqlFieldsString;
+};
 
+export const createNodeQueryString = (
+	documentName: string,
+	requestedFields: RequestedFieldsMap,
+) => {
+	const fields = convertFieldsToString(requestedFields);
+	const gqlString = `{${documentName} { hits { total }  aggregations ${fields} }}`;
 	return gqlString;
 };
 
 const createNetworkQuery = (
-	config: NetworkConfig,
+	documentName: string,
 	requestedFields: RequestedFieldsMap,
 ): DocumentNode => {
-	const gqlString = createGqlFieldsString(requestedFields, config.documentName);
+	const gqlString = createNodeQueryString(documentName, requestedFields);
 
 	/*
 	 * convert string to AST object to use as query
@@ -110,6 +119,8 @@ const createNetworkQuery = (
 		console.error('invalid gql', err);
 	}
 };
+
+type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregations } };
 
 /**
  * Query each remote connection
@@ -127,23 +138,27 @@ export const aggregationPipeline = async (
 	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
 	const aggregationResultPromises = configs.map(async (config) => {
-		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
-		const response = await fetchData({ url: config.graphqlUrl, gqlQuery });
+		const gqlQuery = createNetworkQuery(config.documentName, requestedAggregationFields);
+		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
 
 		const nodeName = config.displayName;
 
 		if (isSuccess(response)) {
-			totalAgg.resolve(response.data);
+			const documentName = config.documentName;
+			const aggregationData = response.data[documentName]?.aggregations || {};
+			const hitsData = response.data[documentName]?.hits || { total: 0 };
+
+			totalAgg.resolve(aggregationData);
 			nodeInfo.push({
 				name: nodeName,
-				count: 1, // TODO total { hit } in query,
+				hits: hitsData.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
 			});
 		} else {
 			nodeInfo.push({
 				name: nodeName,
-				count: 0,
+				hits: 0,
 				status: CONNECTION_STATUS.ERROR,
 				errors: response?.message || 'Error',
 			});
