@@ -151,14 +151,14 @@ export const aggregationPipeline = async (
 			totalAgg.resolve(aggregationData);
 			nodeInfo.push({
 				name: nodeName,
-				count: hitsData.total,
+				hits: hitsData.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
 			});
 		} else {
 			nodeInfo.push({
 				name: nodeName,
-				count: 0,
+				hits: 0,
 				status: CONNECTION_STATUS.ERROR,
 				errors: response?.message || 'Error',
 			});

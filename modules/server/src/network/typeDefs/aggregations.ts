@@ -43,7 +43,7 @@ export const createNetworkAggregationTypeDefs = (
 		name: 'RemoteConnection',
 		fields: {
 			name: { type: GraphQLString },
-			count: { type: GraphQLInt },
+			hits: { type: GraphQLInt },
 			status: { type: GraphQLString },
 			errors: { type: GraphQLString },
 		},
