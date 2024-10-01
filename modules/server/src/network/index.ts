@@ -2,7 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { createResolvers } from './resolvers';
 import { getAllFieldTypes } from './setup/fields';
-import { fetchRemoteSchemas } from './setup/query';
+import { fetchAllNodeAggregations } from './setup/query';
 import { createTypeDefs } from './typeDefs';
 import { NetworkConfig } from './types/setup';
 
@@ -18,7 +18,7 @@ export const createSchemaFromNetworkConfig = async ({
 }: {
 	networkConfigs: NetworkConfig[];
 }) => {
-	const networkFields = await fetchRemoteSchemas({
+	const networkFields = await fetchAllNodeAggregations({
 		networkConfigs,
 	});
 

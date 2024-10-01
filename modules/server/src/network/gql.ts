@@ -35,7 +35,7 @@ export const fetchGql = ({
 	variables?: Record<string, string>;
 	options?: { timeout: number };
 }) => {
-	const timeout = options?.timeout || 10000;
+	const timeout = options?.timeout || 60000;
 	const axiosOptions: AxiosRequestConfig = {
 		url,
 		method: 'POST',

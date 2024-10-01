@@ -3,10 +3,8 @@ import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations
 import { AllAggregations } from '../types/types';
 import { RequestedFieldsMap } from '../util';
 
-type NetworkResult = Partial<Record<string, AllAggregations>>;
-
 type ResolveAggregationInput = {
-	networkResult: NetworkResult;
+	networkResult: AllAggregations;
 	requestedAggregationFields: string[];
 	accumulator: AllAggregations;
 };
@@ -187,7 +185,7 @@ export class AggregationAccumulator {
 		}, {});
 	}
 
-	resolve(data: NetworkResult) {
+	resolve(data: AllAggregations) {
 		resolveAggregations({
 			accumulator: this.totalAgg,
 			networkResult: data,
