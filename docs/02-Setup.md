@@ -23,8 +23,6 @@ Arranger is a powerful search and exploration system composed of two main servic
         %% Define nodes
         Elasticsearch(Elasticsearch)
         Arranger-server(Arranger Server)
-        Arranger-components(Arranger Components)
-        Stage(Stage)
         ArrangerConfigs{{Configuration Files}}
         IndexMapping{{Index Mapping}}
         ElasticsearchDocuments{{Elasticsearch Documents}}
@@ -33,11 +31,12 @@ Arranger is a powerful search and exploration system composed of two main servic
         %% Search & Exploration
         subgraph Search and Exploration
             Elasticsearch --- Arranger-server
-            Arranger-server --- Arranger-components
-            Arranger-components --- Stage
+            Arranger-server --> Arranger-UI-Kit
+            subgraph Stage UI
+            Arranger-UI-Kit
+            end
             IndexMapping -.-> Elasticsearch
             ElasticsearchDocuments -.-> Elasticsearch
-            ArrangerConfigs -.-> Arranger-components
             ArrangerConfigs -.-> Arranger-server
         end
 
@@ -107,7 +106,7 @@ ENABLE_LOGS=false
 ES_HOST=http://elasticsearch:9200
 ES_USER=elastic
 ES_PASS=myelasticpassword
-# Stage Variables
+# Stage Variables (Remove these)
 REACT_APP_BASE_URL=http://stage:3000
 REACT_APP_ARRANGER_ADMIN_ROOT=http://arranger-server:5050/graphql
 ```
@@ -129,10 +128,18 @@ Install the required npm packages:
 npm ci
 ```
 
+installs lerna
+
 Launch the Arranger development server:
 
 ```bash
-npm run dev
+npm run bootstrap
+```
+
+goes into the modules and installs and manages the dependencies 
+
+```bash
+npm run server
 ```
 
 Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphQL`.

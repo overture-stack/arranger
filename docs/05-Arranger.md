@@ -28,7 +28,7 @@ graph LR
     IndexMapping{{Index Mapping}}
     ElasticsearchDocuments{{Elasticsearch Documents}}
 
-
+    
     User <--> Stage
     User <--> Arranger-server
     Stage --- Arranger-components
@@ -54,7 +54,18 @@ graph LR
     class User user;
 ```
 
-**Arranger Server:** [Description] 
+**Arranger Server:** 
+
+- Es query cumbersomb, hard to use, specifically from a front end UI friendly
+- Arranger puts a graphQL layer on elasticsearch 
+    - more like a middleware or intermediatry (interpretive layer between the UI and elasticsearch)
+    - talk to arranger please get me this from elasticsearch with a gQL endpoint, 
+    - on top of this provides the SQON syntax, this is the interpretation model on top of elasticsearch 
+        - Sqons go to arranger, arranger uses them to filter,
+            - SQON is language for graphQL filters 
+                - additional filter on the response
+
+                can retrieve more specified data from an elasticsearch response though a graphQL query 
 
 **Arranger Components:** A library of React components for building interactive search UIs. Includes faceted search, data tables, and SQON viewers. Communicates with Arranger Server to fetch and display data.
 
