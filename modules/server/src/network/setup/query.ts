@@ -75,13 +75,9 @@ export const fetchAllNodeAggregations = async ({
 
 	const networkQueries = await Promise.allSettled(networkQueryPromises);
 
-	const r = networkQueries
-		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
-		.map((networkResult) => {
-			const { config, gqlResponse } = networkResult.value;
-			const fields = gqlResponse.__type.fields;
-			return { name: config.displayName, fields };
-		});
-	console.log('r', r);
-	return r;
+	return networkQueries.filter(fulfilledPromiseFilter<NetworkQueryResult>).map((networkResult) => {
+		const { config, gqlResponse } = networkResult.value;
+		const fields = gqlResponse.__type.fields;
+		return { name: config.displayName, fields };
+	});
 };
