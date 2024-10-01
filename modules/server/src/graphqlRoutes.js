@@ -283,7 +283,15 @@ export const createSchemasFromConfigs = async ({
 		 */
 		if (ENABLE_NETWORK_AGGREGATION) {
 			const { networkSchema } = await createSchemaFromNetworkConfig({
-				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION],
+				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
+					...config,
+					/**
+					 * part of the gql schema is generated dynamically
+					 * in the case of the "file" field, the field name and type name are the same
+					 * it's more flexible to define it here as an additional property than to confuse functions further down the pipeline
+					 */
+					documentName: config.documentType,
+				})),
 			});
 		}
 
