@@ -38,6 +38,8 @@ const fetchData = async <SuccessType>(
 		}
 
 		if (axios.isAxiosError(error)) {
+			console.error(error.toJSON());
+
 			if (error.code === 'ECONNREFUSED') {
 				console.error(`Network failure: ${url}`);
 				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
