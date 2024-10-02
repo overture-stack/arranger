@@ -1,10 +1,10 @@
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+import { SUPPORTED_AGGREGATIONS } from '../common';
 import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
 import { AllAggregations } from '../types/types';
 import { RequestedFieldsMap } from '../util';
 
 type ResolveAggregationInput = {
-	networkResult: AllAggregations;
+	aggregationsMap: AllAggregations;
 	requestedAggregationFields: string[];
 	accumulator: AllAggregations;
 };
@@ -15,23 +15,24 @@ type ResolveAggregationInput = {
  * @param
  */
 const resolveAggregations = ({
-	networkResult,
+	aggregationsMap,
 	requestedAggregationFields,
 	accumulator,
 }: ResolveAggregationInput) => {
 	requestedAggregationFields.forEach((fieldName) => {
-		const fieldAggregations = networkResult[fieldName];
+		const aggregation = aggregationsMap[fieldName];
+		const aggregationType = aggregation?.__typename || '';
+		const accumulatedFieldAggregation = accumulator[fieldName];
 
-		const aggregationType = fieldAggregations.__typename;
+		if (aggregation && accumulatedFieldAggregation) {
+			const resolvedAggregation = resolveToNetworkAggregation(aggregationType, [
+				aggregation,
+				accumulatedFieldAggregation,
+			]);
 
-		const accumulatedFieldAggregations = accumulator[fieldName];
-		const resolvedAggregation = resolveToNetworkAggregation(aggregationType, [
-			fieldAggregations,
-			accumulatedFieldAggregations,
-		]);
-
-		// mutation - updates accumulator
-		accumulator[fieldName] = resolvedAggregation;
+			// mutation - update a single aggregations field in the accumulator
+			accumulator[fieldName] = resolvedAggregation;
+		}
 	});
 
 	return accumulator;
@@ -43,14 +44,14 @@ const resolveAggregations = ({
  * @param type
  * @param aggregations
  */
-export const resolveToNetworkAggregation = (
-	type: SupportedAggregation,
-	aggregations: Aggregations[],
-): AllAggregations | undefined => {
+const resolveToNetworkAggregation = (
+	type: string,
+	aggregations: Aggregations[] | NumericAggregations[],
+): Aggregations | NumericAggregations => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
-		return resolveAggregation(aggregations);
+		return resolveAggregation(aggregations as Aggregations[]);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
-		return resolveNumericAggregation(aggregations);
+		return resolveNumericAggregation(aggregations as NumericAggregations);
 	} else {
 		// no types match
 		throw Error('No matching aggregation type');
@@ -90,7 +91,8 @@ const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
 };
 
 /**
- * Resolves multiple aggregations into single
+ * Resolves multiple aggregations into single aggregation
+ * eg. donors_gender aggregation from multiple nodes into a single aggregation
  *
  * @param aggregations
  * @returns
@@ -187,7 +189,7 @@ export class AggregationAccumulator {
 	resolve(data: AllAggregations) {
 		resolveAggregations({
 			accumulator: this.totalAgg,
-			networkResult: data,
+			aggregationsMap: data,
 			requestedAggregationFields: this.requestedFields,
 		});
 	}
