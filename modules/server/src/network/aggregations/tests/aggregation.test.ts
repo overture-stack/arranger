@@ -1,27 +1,42 @@
-import { resolveAggregation } from '..';
-import { aggregation } from './fixture';
+import { AggregationAccumulator } from '../AggregationAccumulator';
+import { aggregation as fixture } from './fixture';
 
-describe('Aggregation', () => {
-	it('should resolve multiple objects of type Aggregation into a single object of type NetworkAggregation', () => {
-		const result = resolveAggregation([aggregation.inputA, aggregation.inputB]);
+describe('Network aggregation resolution', () => {
+	it('should compute requested keys from info map constructor param', () => {
+		const requestedFields = { donors_age: {}, donors_gender: {} };
+		const totalAggs = new AggregationAccumulator(requestedFields);
+		expect(totalAggs.requestedFields.sort()).toEqual(Object.keys(requestedFields).sort());
+	});
 
-		const resultForMaleCount =
-			result.buckets.find((bucket) => bucket.key === 'Male')?.doc_count || 0;
-		const resultForFemaleCount =
-			result.buckets.find((bucket) => bucket.key === 'Female')?.doc_count || 0;
+	describe('resolves multiple aggregations into a single aggregation:', () => {
+		it('should resolve multiple Aggregations type fields', () => {
+			const requestedFields = { donors_gender: {} };
+			const totalAggs = new AggregationAccumulator(requestedFields);
+			const aggregationsToResolve = [
+				{ donors_gender: fixture.inputA },
+				{ donors_gender: fixture.inputC },
+			];
+			aggregationsToResolve.forEach((agg) => totalAggs.resolve(agg));
 
-		const expectedMaleCount =
-			(aggregation.inputA.buckets.find((bucket) => bucket.key === 'Male')?.doc_count || 0) +
-			(aggregation.inputB.buckets.find((bucket) => bucket.key === 'Male')?.doc_count || 0);
+			// expected values
+			const maleCount = 835;
+			const femaleCount = 812;
+			const unknownCount = 2;
+			const bucketCount = 3;
 
-		const expectedFemaleCount =
-			(aggregation.inputA.buckets.find((bucket) => bucket.key === 'Female')?.doc_count || 0) +
-			(aggregation.inputB.buckets.find((bucket) => bucket.key === 'Female')?.doc_count || 0);
+			const result = totalAggs.result();
+			const aggregation = result['donors_gender'];
 
-		expect(result.bucket_count).toEqual(
-			aggregation.inputA.bucket_count + aggregation.inputB.bucket_count,
-		);
-		expect(resultForMaleCount).toEqual(expectedMaleCount);
-		expect(resultForFemaleCount).toEqual(expectedFemaleCount);
+			expect(aggregation.bucket_count).toEqual(bucketCount);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Male')?.doc_count).toEqual(
+				maleCount,
+			);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Female')?.doc_count).toEqual(
+				femaleCount,
+			);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(
+				unknownCount,
+			);
+		});
 	});
 });

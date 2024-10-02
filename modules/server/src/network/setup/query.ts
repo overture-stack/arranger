@@ -52,7 +52,8 @@ const fetchNodeAggregations = async (
 			`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
 		);
 	} catch (error) {
-		console.error(`Failed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.error(`\nFailed to retrieve schema from url: ${config.graphqlUrl}`);
+		console.error(`Check config for ${documentType} network documentType is correct\n`);
 		return;
 	}
 };
@@ -75,9 +76,15 @@ export const fetchAllNodeAggregations = async ({
 
 	const networkQueries = await Promise.allSettled(networkQueryPromises);
 
-	return networkQueries.filter(fulfilledPromiseFilter<NetworkQueryResult>).map((networkResult) => {
-		const { config, gqlResponse } = networkResult.value;
-		const fields = gqlResponse.__type.fields;
-		return { name: config.displayName, fields };
-	});
+	const nodeAggregations = networkQueries
+		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
+		.map((networkResult) => {
+			const { config, gqlResponse } = networkResult.value;
+			const fields = gqlResponse.__type.fields;
+			return { name: config.displayName, fields };
+		});
+
+	console.log('\nSuccessfully fetched node schemas\n');
+
+	return nodeAggregations;
 };

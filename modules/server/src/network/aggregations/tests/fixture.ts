@@ -1,8 +1,8 @@
-import { Aggregations } from '@/network/types';
+import { Aggregations } from '@/network/types/aggregations';
 
-// Aggregation
 const inputA: Aggregations = {
-	bucket_count: 82,
+	__typename: 'Aggregations',
+	bucket_count: 2,
 	buckets: [
 		{
 			key: 'Male',
@@ -16,7 +16,8 @@ const inputA: Aggregations = {
 };
 
 const inputB: Aggregations = {
-	bucket_count: 715,
+	__typename: 'Aggregations',
+	bucket_count: 2,
 	buckets: [
 		{
 			key: 'Male',
@@ -30,7 +31,8 @@ const inputB: Aggregations = {
 };
 
 const inputC: Aggregations = {
-	bucket_count: 1565,
+	__typename: 'Aggregations',
+	bucket_count: 3,
 	buckets: [
 		{
 			key: 'Male',
@@ -42,7 +44,7 @@ const inputC: Aggregations = {
 		},
 		{
 			key: 'Unknown',
-			doc_count: 0,
+			doc_count: 2,
 		},
 	],
 };
