@@ -13,4 +13,12 @@ export type Aggregations = {
 	buckets: Bucket[];
 };
 
-export type NumericAggregations = { __typename?: string };
+type Stats = {
+	max: number;
+	min: number;
+	count: number;
+	avg: number;
+	sum: number;
+};
+
+export type NumericAggregations = { __typename?: string; stats: Stats };
