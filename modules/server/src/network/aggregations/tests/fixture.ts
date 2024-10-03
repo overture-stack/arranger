@@ -52,12 +52,12 @@ const inputC: Aggregations = {
 // NumericAggregations
 const inputD: NumericAggregations = {
 	__typename: 'NumericAggregations',
-	stats: { max: 100, min: 1, count: 5, avg: 30, sum: 420 },
+	stats: { max: 100, min: 12, count: 10, avg: 42, sum: 420 },
 };
 
 const inputE: NumericAggregations = {
 	__typename: 'NumericAggregations',
-	stats: { max: 100, min: 1, count: 5, avg: 30, sum: 420 },
+	stats: { max: 75, min: 1, count: 5, avg: 84, sum: 420 },
 };
 
 export const aggregation = {
