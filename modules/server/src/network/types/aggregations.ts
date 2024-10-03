@@ -8,9 +8,17 @@ export type Bucket = {
 };
 
 export type Aggregations = {
-	__typename?: string;
+	__typename: 'Aggregations';
 	bucket_count: number;
 	buckets: Bucket[];
 };
 
-export type NumericAggregations = { __typename?: string };
+type Stats = {
+	max: number;
+	min: number;
+	count: number;
+	avg: number;
+	sum: number;
+};
+
+export type NumericAggregations = { __typename: 'NumericAggregations'; stats: Stats };
