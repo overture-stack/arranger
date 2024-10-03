@@ -156,7 +156,7 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
 };
 
 const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): NumericAggregations => {
-	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
+	return aggregations.reduce((resolvedAggregation, agg) => {
 		// max
 		if (agg.stats.max > resolvedAggregation.stats.max) {
 			resolvedAggregation.stats.max = agg.stats.max;
@@ -174,7 +174,6 @@ const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): Nume
 
 		return resolvedAggregation;
 	});
-	return resolvedAggregation;
 };
 
 export class AggregationAccumulator {
