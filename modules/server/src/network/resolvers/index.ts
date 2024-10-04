@@ -1,5 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
+import { NetworkFields } from '../setup/fields';
 import { NetworkConfig } from '../types/setup';
+import { NodeConfig } from '../types/types';
 import { resolveInfoToMap } from '../util';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
@@ -20,7 +22,7 @@ export type NetworkSearchRoot = {
  * @param networkFieldTypes
  * @returns
  */
-export const createResolvers = (configs: NetworkConfig[]) => {
+export const createResolvers = (configs: NodeConfig[]) => {
 	return {
 		Query: {
 			network: async (
