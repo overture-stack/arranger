@@ -1,4 +1,4 @@
-# Arranger
+# Overview
 
 [Arranger](https://github.com/overture-stack/arranger) is a versatile, data-agnostic search API and UI component library that leverages [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping.html) to generate interactive and highly configurable search components. It's designed to simplify the process of creating powerful search interfaces for complex datasets.
 
