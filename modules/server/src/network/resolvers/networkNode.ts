@@ -12,4 +12,5 @@ export type NetworkNode = {
 	hits: number;
 	status: keyof typeof CONNECTION_STATUS;
 	errors: string;
+	aggregations: { name: string; type: string }[];
 };
