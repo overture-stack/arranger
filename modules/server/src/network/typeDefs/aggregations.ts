@@ -39,7 +39,7 @@ export const createNetworkAggregationTypeDefs = (
 		fields: allFields,
 	});
 
-	const aggList = new GraphQLObjectType({
+	const aggregationList = new GraphQLObjectType({
 		name: 'aggregations',
 		fields: {
 			name: { type: GraphQLString },
@@ -54,7 +54,7 @@ export const createNetworkAggregationTypeDefs = (
 			hits: { type: GraphQLInt },
 			status: { type: GraphQLString },
 			errors: { type: GraphQLString },
-			aggregations: { type: new GraphQLList(aggList) },
+			aggregations: { type: new GraphQLList(aggregationList) },
 		},
 	});
 

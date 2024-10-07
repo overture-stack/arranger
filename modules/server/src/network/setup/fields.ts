@@ -68,7 +68,7 @@ export const getAllFieldTypes = (
 
 		return { supportedAggregations, unsupportedAggregations };
 	});
-	console.log('n', nodeFieldTypes);
+
 	const allSupportedAggregations = nodeFieldTypes.flatMap(
 		(fieldType) => fieldType.supportedAggregations,
 	);
