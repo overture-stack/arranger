@@ -1,9 +1,9 @@
 import { NetworkAggregationError } from '../errors';
-import { fetchGql } from '../gql';
+import { fetchGql, normalizeGqlField } from '../gql';
 import { gqlAggregationTypeQuery, GQLTypeQueryResponse } from '../queries';
 import { NetworkConfig } from '../types/setup';
+import { NodeConfig } from '../types/types';
 import { fulfilledPromiseFilter } from '../util';
-import { NetworkFields } from './fields';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
 	config: NetworkConfig;
@@ -67,7 +67,7 @@ export const fetchAllNodeAggregations = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkConfig[];
-}): Promise<NetworkFields[]> => {
+}): Promise<NodeConfig[]> => {
 	// query remote connection types
 	const networkQueryPromises = networkConfigs.map(async (config) => {
 		const gqlResponse = await fetchNodeAggregations(config);
@@ -76,15 +76,16 @@ export const fetchAllNodeAggregations = async ({
 
 	const networkQueries = await Promise.allSettled(networkQueryPromises);
 
-	const nodeAggregations = networkQueries
+	const nodeConfigs = networkQueries
 		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
 		.map((networkResult) => {
 			const { config, gqlResponse } = networkResult.value;
 			const fields = gqlResponse.__type.fields;
-			return { name: config.displayName, fields };
+			const aggregations = fields.map(normalizeGqlField);
+			return { ...config, aggregations };
 		});
 
 	console.log('\nSuccessfully fetched node schemas\n');
 
-	return nodeAggregations;
+	return nodeConfigs;
 };

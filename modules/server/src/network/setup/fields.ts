@@ -2,6 +2,7 @@ import { SupportedAggregation } from '../common';
 import { GQLFieldType } from '../queries';
 import {
 	NetworkFieldType,
+	NodeConfig,
 	SupportedAggregations,
 	SupportedNetworkFieldType,
 	UnsupportedAggregations,
@@ -23,7 +24,7 @@ const isSupportedType = (
  * @returns { supportedAggregations: [], unsupportedAggregations: [] }
  */
 export const getFieldTypes = (
-	fields: GQLFieldType[],
+	fields: NodeConfig['aggregations'],
 	supportedAggregationsList: SupportedAggregation[],
 ) => {
 	const fieldTypes = fields.reduce(
@@ -34,17 +35,15 @@ export const getFieldTypes = (
 			},
 			field,
 		) => {
-			const fieldType = field.type.name;
-			const fieldObject = { name: field.name, type: fieldType };
-			if (isSupportedType(fieldObject, supportedAggregationsList)) {
+			if (isSupportedType(field, supportedAggregationsList)) {
 				return {
 					...aggregations,
-					supportedAggregations: aggregations.supportedAggregations.concat(fieldObject),
+					supportedAggregations: aggregations.supportedAggregations.concat(field),
 				};
 			} else {
 				return {
 					...aggregations,
-					unsupportedAggregations: aggregations.unsupportedAggregations.concat(fieldObject),
+					unsupportedAggregations: aggregations.unsupportedAggregations.concat(field),
 				};
 			}
 		},
@@ -58,12 +57,12 @@ export const getFieldTypes = (
 };
 
 export const getAllFieldTypes = (
-	networkFields: NetworkFields[],
+	nodeConfigs: NodeConfig[],
 	supportedTypes: SupportedAggregation[],
 ) => {
-	const nodeFieldTypes = networkFields.map((networkField) => {
+	const nodeFieldTypes = nodeConfigs.map((config) => {
 		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(
-			networkField.fields,
+			config.aggregations,
 			supportedTypes,
 		);
 

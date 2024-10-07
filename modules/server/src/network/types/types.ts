@@ -2,6 +2,7 @@ import { ObjectValues } from '@/utils/types';
 import { SupportedAggregation } from '../common';
 import { CONNECTION_STATUS } from '../resolvers/networkNode';
 import { Aggregations, Bucket, NumericAggregations } from './aggregations';
+import { NetworkConfig } from './setup';
 
 // environment config
 export type NetworkAggregationConfigInput = {
@@ -33,3 +34,5 @@ export type NetworkAggregation = {
 	bucket_count: number;
 	buckets: Bucket[];
 };
+
+export type NodeConfig = NetworkConfig & { aggregations: { name: string; type: string }[] };

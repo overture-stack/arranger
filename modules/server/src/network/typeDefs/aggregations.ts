@@ -39,6 +39,14 @@ export const createNetworkAggregationTypeDefs = (
 		fields: allFields,
 	});
 
+	const aggregationList = new GraphQLObjectType({
+		name: 'aggregations',
+		fields: {
+			name: { type: GraphQLString },
+			type: { type: GraphQLString },
+		},
+	});
+
 	const remoteConnectionType = new GraphQLObjectType({
 		name: 'RemoteConnection',
 		fields: {
@@ -46,6 +54,7 @@ export const createNetworkAggregationTypeDefs = (
 			hits: { type: GraphQLInt },
 			status: { type: GraphQLString },
 			errors: { type: GraphQLString },
+			aggregations: { type: new GraphQLList(aggregationList) },
 		},
 	});
 
