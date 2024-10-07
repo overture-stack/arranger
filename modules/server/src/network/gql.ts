@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { ASTNode, print } from 'graphql';
+import { GQLFieldType } from './queries';
 
 /**
  * Creates a graphql query string with variables for use in a POST request
@@ -45,4 +46,9 @@ export const fetchGql = ({
 	};
 
 	return axios(axiosOptions);
+};
+
+export const normalizeGqlField = (gqlField: GQLFieldType): { name: string; type: string } => {
+	const fieldType = gqlField.type.name;
+	return { name: gqlField.name, type: fieldType };
 };

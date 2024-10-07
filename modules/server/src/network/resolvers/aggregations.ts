@@ -6,7 +6,7 @@ import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, Success, success } from '../httpResponses';
 import { Hits } from '../types/hits';
 import { NetworkConfig } from '../types/setup';
-import { AllAggregations } from '../types/types';
+import { AllAggregations, NodeConfig } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
@@ -58,7 +58,6 @@ type NetworkQuery = {
 
 /**
  * Converts info field object into string
- *
  * @param requestedFields
  *
  * @example
@@ -102,11 +101,24 @@ export const createNodeQueryString = (
 	return gqlString;
 };
 
-const createNetworkQuery = (
-	documentName: string,
+export const createNetworkQuery = (
+	config: NodeConfig,
 	requestedFields: RequestedFieldsMap,
 ): DocumentNode => {
-	const gqlString = createNodeQueryString(documentName, requestedFields);
+	const availableFields = config.aggregations;
+	const documentName = config.documentName;
+
+	// ensure requested field is available to query on node
+	const fieldsToRequest = Object.keys(requestedFields).reduce((acc, requestedFieldKey) => {
+		const field = requestedFields[requestedFieldKey];
+		if (availableFields.some((field) => field.name === requestedFieldKey)) {
+			return { ...acc, [requestedFieldKey]: field };
+		} else {
+			return acc;
+		}
+	}, {});
+
+	const gqlString = createNodeQueryString(documentName, fieldsToRequest);
 
 	/*
 	 * convert string to AST object to use as query
@@ -132,15 +144,15 @@ type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregation
  * @returns
  */
 export const aggregationPipeline = async (
-	configs: NetworkConfig[],
+	configs: NodeConfig[],
 	requestedAggregationFields: RequestedFieldsMap,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
-	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
+	const totalAgg = new AggregationAccumulator();
 
 	const aggregationResultPromises = configs.map(async (config) => {
-		const gqlQuery = createNetworkQuery(config.documentName, requestedAggregationFields);
+		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
 		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
 
 		const nodeName = config.displayName;
@@ -156,6 +168,7 @@ export const aggregationPipeline = async (
 				hits: hitsData.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
+				aggregations: config.aggregations,
 			});
 		} else {
 			nodeInfo.push({
@@ -163,6 +176,7 @@ export const aggregationPipeline = async (
 				hits: 0,
 				status: CONNECTION_STATUS.ERROR,
 				errors: response?.message || 'Error',
+				aggregations: config.aggregations,
 			});
 		}
 	});
