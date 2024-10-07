@@ -131,6 +131,7 @@ export const createNetworkQuery = (
 		return gqlQuery;
 	} catch (err) {
 		console.error('invalid gql', err);
+		throw Error('Query creation failed');
 	}
 };
 
@@ -152,31 +153,36 @@ export const aggregationPipeline = async (
 	const totalAgg = new AggregationAccumulator();
 
 	const aggregationResultPromises = configs.map(async (config) => {
-		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
-		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
-
 		const nodeName = config.displayName;
 		const nodeAvailableAggregations = config.aggregations;
 
-		if (isSuccess(response)) {
-			const documentName = config.documentName;
-			const aggregationData = response.data[documentName]?.aggregations || {};
-			const hitsData = response.data[documentName]?.hits || { total: 0 };
+		try {
+			const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
+			const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
 
-			totalAgg.resolve(aggregationData);
-			nodeInfo.push({
-				name: nodeName,
-				hits: hitsData.total,
-				status: CONNECTION_STATUS.OK,
-				errors: '',
-				aggregations: nodeAvailableAggregations,
-			});
-		} else {
+			if (isSuccess(response)) {
+				const documentName = config.documentName;
+				const aggregationData = response.data[documentName]?.aggregations || {};
+				const hitsData = response.data[documentName]?.hits || { total: 0 };
+
+				totalAgg.resolve(aggregationData);
+				nodeInfo.push({
+					name: nodeName,
+					hits: hitsData.total,
+					status: CONNECTION_STATUS.OK,
+					errors: '',
+					aggregations: nodeAvailableAggregations,
+				});
+			} else {
+				throw Error(`Request failed for node: ${nodeName}`);
+			}
+		} catch (error) {
+			const message = getErrorMessage(error);
 			nodeInfo.push({
 				name: nodeName,
 				hits: 0,
 				status: CONNECTION_STATUS.ERROR,
-				errors: response?.message || 'Error',
+				errors: message,
 				aggregations: nodeAvailableAggregations,
 			});
 		}
