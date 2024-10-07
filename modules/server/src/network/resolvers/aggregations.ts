@@ -156,6 +156,7 @@ export const aggregationPipeline = async (
 		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
 
 		const nodeName = config.displayName;
+		const nodeAvailableAggregations = config.aggregations;
 
 		if (isSuccess(response)) {
 			const documentName = config.documentName;
@@ -168,7 +169,7 @@ export const aggregationPipeline = async (
 				hits: hitsData.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
-				aggregations: config.aggregations,
+				aggregations: nodeAvailableAggregations,
 			});
 		} else {
 			nodeInfo.push({
@@ -176,7 +177,7 @@ export const aggregationPipeline = async (
 				hits: 0,
 				status: CONNECTION_STATUS.ERROR,
 				errors: response?.message || 'Error',
-				aggregations: config.aggregations,
+				aggregations: nodeAvailableAggregations,
 			});
 		}
 	});
