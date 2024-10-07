@@ -18,15 +18,15 @@ export const createSchemaFromNetworkConfig = async ({
 }: {
 	networkConfigs: NetworkConfig[];
 }) => {
-	const networkFields = await fetchAllNodeAggregations({
+	const nodeConfig = await fetchAllNodeAggregations({
 		networkConfigs,
 	});
 
-	const networkFieldTypes = getAllFieldTypes(networkFields, SUPPORTED_AGGREGATIONS_LIST);
+	const networkFieldTypes = getAllFieldTypes(nodeConfig, SUPPORTED_AGGREGATIONS_LIST);
 
 	const typeDefs = createTypeDefs(networkFieldTypes);
 
-	const resolvers = createResolvers(networkConfigs);
+	const resolvers = createResolvers(nodeConfig);
 
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 
