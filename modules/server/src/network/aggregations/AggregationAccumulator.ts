@@ -158,13 +158,11 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
 const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): NumericAggregations => {
 	return aggregations.reduce((resolvedAggregation, agg) => {
 		// max
-		if (agg.stats.max > resolvedAggregation.stats.max) {
-			resolvedAggregation.stats.max = agg.stats.max;
-		}
+		resolvedAggregation.stats.max = Math.max(agg.stats.max, resolvedAggregation.stats.max);
+
 		// min
-		if (agg.stats.min < resolvedAggregation.stats.min) {
-			resolvedAggregation.stats.min = agg.stats.min;
-		}
+		resolvedAggregation.stats.min = Math.min(agg.stats.min, resolvedAggregation.stats.min);
+
 		// count
 		resolvedAggregation.stats.count += agg.stats.count;
 		// sum
