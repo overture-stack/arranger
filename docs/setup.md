@@ -31,7 +31,7 @@ We'll use our Conductor service, a flexible Docker Compose setup, to spin up Mae
     | Windows          | `make.bat arrangerDev` |
 
     <details>
-    <summary>Click here for a detailed breakdown</summary>
+    <summary>**Click here for a detailed breakdown**</summary>
 
     This command will set up all complementary services for Arranger development as follows:
 
