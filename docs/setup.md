@@ -1,148 +1,131 @@
 # Setup
 
-
-
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
 
 - Node.js (v18 or higher)
 - npm (v8.3.0 or higher)
-- Docker (v4.32.0 or higher)
-- Git
+- [Docker](https://www.docker.com/products/docker-desktop/) (v4.32.0 or higher)
 
-## Installation
+## Developer Setup
 
-Arranger is a powerful search and exploration system composed of two main services: `arranger-server` and `arranger-components`. This guide will walk you through setting up a complete development environment for Arranger and its complementary services.
+This guide will walk you through setting up a complete development environment, including Arranger and its complementary services.
 
-<details>
-  <summary><b>Diagram of the Arranger's development environment</b></summary>
+### Setting up supporting services
 
-    ```mermaid
-    graph LR
-        %% Define nodes
-        Elasticsearch(Elasticsearch)
-        Arranger-server(Arranger Server)
-        ArrangerConfigs{{Configuration Files}}
-        IndexMapping{{Index Mapping}}
-        ElasticsearchDocuments{{Elasticsearch Documents}}
+We'll use our Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
 
+1. Clone the Conductor repository and navigate to its directory:
 
-        %% Search & Exploration
-        subgraph Search and Exploration
-            Elasticsearch --- Arranger-server
-            Arranger-server --> Arranger-UI-Kit
-            subgraph Stage UI
-            Arranger-UI-Kit
-            end
-            IndexMapping -.-> Elasticsearch
-            ElasticsearchDocuments -.-> Elasticsearch
-            ArrangerConfigs -.-> Arranger-server
-        end
-
-
-        %% Styling
-        classDef default fill:#F2F5F8,stroke:#04518c,color:#282A35;
-        classDef service fill:#0669b64e,stroke:#03497e,color:#282A35;
-        classDef thirdParty fill:#ebeced,stroke:#a1a1a1,color:#282A35;
-        classDef local fill:#E2B7D0,stroke:#9E005D,color:#282A35;
-        classDef configs fill:#E4E775,stroke:#7D7D7D,color:#282A35; 
-
-        class Arranger-components,Arranger-server local;
-        class Stage service;
-        class Elasticsearch thirdParty;
-        class ElasticsearchDocuments,ArrangerConfigs,IndexMapping,OvertureAPIKeyProvider configs;
-
+    ```bash
+    git clone https://github.com/overture-stack/conductor.git
+    cd conductor
     ```
 
-    **Overture services (light blue & pink), third-party services (light gray), development service (pink), and configuration files (yellow).**
-</details>
+2. Run the appropriate start command for your operating system:
 
-### 1. Set up complementary services
+    | Operating System | Command |
+    |------------------|---------|
+    | Unix/macOS       | `make arrangerDev` |
+    | Windows          | `make.bat arrangerDev` |
 
-We'll use our Conductor service, a flexible Docker Compose setup, to spin up Arrangers complementary services.
+    <details>
+    <summary>Click here for a detailed breakdown</summary>
 
-```bash
-git clone https://github.com/overture-stack/conductor.git
-cd conductor
-```
+    This command will set up all complementary services for Arranger development as follows:
 
-Next, run the appropriate start command for your operating system:
+    ![arrangerDev](./assets/arrangerDev.svg 'Arranger Dev Environment')
 
-| Operating System | Command |
-|------------------|---------|
-| Unix/macOS       | `make arrangerDev` |
-| Windows          | `make.bat arrangerDev` |
+    | Service | Port | Description | Purpose in Arranger Development |
+    |---------|------|-------------|------------------------------|
+    | Conductor | `9204` | Orchestrates deployments and environment setups | Manages the overall development environment |
+    | Elasticsearch | `9200` | Distributed search and analytics engine | Provides fast and scalable search capabilities over indexed data |
+    | Stage | `3000` | Web Portal Scaffolding | Houses Arranger's search UI components |
 
-This command will set up all complimentary services for Arranger development.
+    - Ensure all ports are free on your system before starting the environment.
+    - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-### 2. Clone and set up Arranger
+    For more information, see our [Conductor documentation](./docs/other-software/Conductor).
 
-Now, let's set up Arranger itself:
+    </details>
 
-```bash
-git clone https://github.com/overture-stack/arranger.git
-cd arranger
-```
+### Running the Arranger-Server 
 
-### 3. Configure environment variables
+1. Clone Arranger and navigate to its directory:
 
-Rename the `.env.arrangerDev` file to `.env`:
+    ```bash
+    git clone https://github.com/overture-stack/arranger.git
+    cd arranger
+    ```
 
-```bash
-mv .env.arrangerDev .env
-```
+2. Rename the `.env.arrangerDev` file to `.env`:
 
-This `.env` file is preconfigured for the Stage dev environment quickstart. Here's a summary of the key environment variables:
+    ```bash
+    mv .env.arrangerDev .env
+    ```
 
-```env
-# ==============================
-# Arranger Environment Variables
-# ==============================
+    :::info
 
-# Arranger Variables
-ENABLE_LOGS=false
-# Elasticsearch Variables
-ES_HOST=http://elasticsearch:9200
-ES_USER=elastic
-ES_PASS=myelasticpassword
-# Stage Variables (Remove these)
-REACT_APP_BASE_URL=http://stage:3000
-REACT_APP_ARRANGER_ADMIN_ROOT=http://arranger-server:5050/graphql
-```
+    This `.env` file is preconfigured for the Arranger dev environment quickstart:
 
-<details>
-  <summary><b>Detailed explanation of Arrangers environment variables</b></summary>
-- **Arranger Variables**
-  - `ES_HOST`: The URL of your Elasticsearch instance
-  - `ES_USER` and `ES_PASS`: The credentials for accessing Elasticsearch
-  - `REACT_APP_BASE_URL`: The base URL for your front-end application, in this case Stage, which we will set up next
-  - `REACT_APP_ARRANGER_ADMIN_ROOT`: The URL for the Arranger GraphQL endpoint
-</details>
+        ```
+        # ==============================
+        # Arranger Environment Variables
+        # ==============================
 
-### 4. Start the development server
+        # Arranger Variables
+        ENABLE_LOGS=false
+        # Elasticsearch Variables
+        ES_HOST=http://elasticsearch:9200
+        ES_USER=elastic
+        ES_PASS=myelasticpassword
+        # Stage Variables
+        REACT_APP_BASE_URL=http://stage:3000
+        REACT_APP_ARRANGER_ADMIN_ROOT=http://arranger-server:5050/graphql
+        ```
 
-Install the required npm packages:
+        <details>
+          <summary>**Click here for a detailed explanation of Arranger's environment variables**</summary>
 
-```bash
-npm ci
-```
+          **Arranger Variables**
+          - `ENABLE_LOGS`: Determines whether logging is enabled
+          - **Elasticsearch Variables**
+          - `ES_HOST`: The URL of your Elasticsearch instance
+          - `ES_USER` and `ES_PASS`: The credentials for accessing Elasticsearch
 
-installs lerna
+          **Stage Variables**
 
-Launch the Arranger development server:
+          - `REACT_APP_BASE_URL`: The base URL for your front-end application (Stage)
+          - `REACT_APP_ARRANGER_ADMIN_ROOT`: The URL for the Arranger GraphQL endpoint
+        </details>
 
-```bash
-npm run bootstrap
-```
+    :::
 
-goes into the modules and installs and manages the dependencies 
+3. Install the required npm packages:
 
-```bash
-npm run server
-```
+  ```bash
+  npm ci
+  ```
 
-Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphQL`.
+4. Bootstrap the Arranger repository:
+
+  ```bash
+  npm run bootstrap
+  ```
+
+5. Navigate to the Arranger-server directory and run the server:
+
+  ```bash
+  cd modules/server
+  npm run start
+  ```
+
+Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphql`.
+
+### Running the Arranger Components
+
+[This section needs to be updated]
 
 ## Troubleshooting
 
@@ -153,4 +136,4 @@ If you encounter any issues during setup:
 3. Verify that your `.env` file contains the correct configuration.
 4. If you're having network issues, ensure that the ports specified in the configuration are not being used by other services.
 
-For further assistance, feel free to [open an issue through GitHub here](https://github.com/overture-stack/arranger/issues/new?assignees=&labels=&projects=&template=Feature_Requests.md).
+For further assistance, feel free to [open an issue on GitHub](https://github.com/overture-stack/arranger/issues/new?assignees=&labels=&projects=&template=Feature_Requests.md).
