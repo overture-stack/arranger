@@ -156,7 +156,7 @@ export const aggregationPipeline = async (
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
-	const totalAgg = new AggregationAccumulator();
+	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
 	const aggregationResultPromises = configs.map(async (config) => {
 		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
@@ -166,13 +166,15 @@ export const aggregationPipeline = async (
 
 		if (isSuccess(response)) {
 			const documentName = config.documentName;
-			const aggregationData = response.data[documentName]?.aggregations || {};
-			const hitsData = response.data[documentName]?.hits || { total: 0 };
+			const responseData = response.data[documentName];
+			const aggregations = responseData?.aggregations || {};
+			const hits = responseData?.hits || { total: 0 };
 
-			totalAgg.resolve(aggregationData);
+			totalAgg.resolve({ aggregations, hits });
+
 			nodeInfo.push({
 				name: nodeName,
-				hits: hitsData.total,
+				hits: hits.total,
 				status: CONNECTION_STATUS.OK,
 				errors: '',
 				aggregations: config.aggregations,
