@@ -101,6 +101,13 @@ export const createNodeQueryString = (
 	return gqlString;
 };
 
+/**
+ * Creates a GQL query for requested fields that are also available on a node
+ *
+ * @param config
+ * @param requestedFields
+ * @returns
+ */
 export const createNetworkQuery = (
 	config: NodeConfig,
 	requestedFields: RequestedFieldsMap,
