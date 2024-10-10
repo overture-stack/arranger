@@ -1,32 +1,61 @@
-import { SUPPORTED_AGGREGATIONS } from '../common';
+import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
+import { Hits } from '../types/hits';
 import { AllAggregations } from '../types/types';
+import { RequestedFieldsMap } from '../util';
 
 type ResolveAggregationInput = {
-	aggregationsMap: AllAggregations;
+	data: { aggregations: AllAggregations; hits: Hits };
 	accumulator: AllAggregations;
+	requestedFields: string[];
 };
 
 type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
+
+type X = Aggregations | NumericAggregations;
+
+const emptyAggregation = {};
+const emptyNumericAggregation = {};
+
+const getAggregation = (
+	aggregations,
+	requestedField,
+	hits,
+): { aggregation: X; type: SupportedAggregation } => {
+	const aggregation = aggregations[requestedField];
+
+	// if requested field is available on node, else return empty type
+	if (aggregation) {
+		return { aggregation, type: aggregation.__typename };
+	} else {
+		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField);
+		const notAvailableAggregation = {
+			bucket_count: 1,
+			buckets: [{ key: '___aggregation_not_available___', doc_count: hits.total }],
+		};
+		return { aggregation: notAvailableAggregation, type };
+	}
+};
 
 /**
  * Resolves returned aggregations from network queries into single accumulated aggregation
  *
  * @param
  */
-const resolveAggregations = ({ aggregationsMap, accumulator }: ResolveAggregationInput) => {
-	Object.keys(aggregationsMap).forEach((fieldName) => {
-		const aggregation = aggregationsMap[fieldName];
-		const aggregationType = aggregation?.__typename || '';
+const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggregationInput) => {
+	requestedFields.forEach((requestedField) => {
+		const { aggregations, hits } = data;
+		const { aggregation, type } = getAggregation(aggregations, requestedField, hits);
 
-		const accumulatedFieldAggregation = accumulator[fieldName];
+		const existingAggregation = accumulator[requestedField];
 
 		// mutation - update a single aggregations field in the accumulator
-		// if first aggregation, nothing to resolve yet
-		accumulator[fieldName] = !accumulatedFieldAggregation
+		// if first aggregation, nothing to resolve with yet
+		accumulator[requestedField] = !existingAggregation
 			? aggregation
-			: resolveToNetworkAggregation(aggregationType, [aggregation, accumulatedFieldAggregation]);
+			: resolveToNetworkAggregation(type, [aggregation, existingAggregation]);
 	});
 };
 
@@ -176,11 +205,18 @@ const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): Nume
 
 export class AggregationAccumulator {
 	totalAgg: AllAggregations = {};
+	requestedFields: string[];
 
-	resolve(data: AllAggregations) {
+	constructor(requestedFieldsMap: RequestedFieldsMap) {
+		const requestedFields = Object.keys(requestedFieldsMap);
+		this.requestedFields = requestedFields;
+	}
+
+	resolve(data: { aggregations: AllAggregations; hits: Hits }) {
 		resolveAggregations({
 			accumulator: this.totalAgg,
-			aggregationsMap: structuredClone(data),
+			data: structuredClone(data),
+			requestedFields: this.requestedFields,
 		});
 	}
 
