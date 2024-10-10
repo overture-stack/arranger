@@ -1,3 +1,4 @@
+import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '@/network';
 import { AggregationAccumulator } from '../AggregationAccumulator';
 import { aggregation as fixture } from './fixture';
 
@@ -12,12 +13,20 @@ const expectedStats = { max: 100, min: 1, count: 15, avg: 56, sum: 840 };
 describe('Network aggregation resolution', () => {
 	describe('resolves multiple aggregations into a single aggregation:', () => {
 		it('should resolve multiple Aggregations type fields', () => {
-			const totalAggs = new AggregationAccumulator();
+			jest.mock('../../index', () => ({
+				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([
+					['donors_gender', 'Aggregations'],
+				]),
+			}));
+
+			const totalAggs = new AggregationAccumulator({ donors_gender: {} });
 			const aggregationsToResolve = [
-				{ donors_gender: fixture.inputA },
-				{ donors_gender: fixture.inputC },
+				{ aggregations: { donors_gender: fixture.inputA }, hits: { total: 82 } },
+				{ aggregations: { donors_gender: fixture.inputC }, hits: { total: 1567 } },
 			];
-			aggregationsToResolve.forEach((agg) => totalAggs.resolve(agg));
+			aggregationsToResolve.forEach(({ aggregations, hits }) =>
+				totalAggs.resolve({ aggregations, hits }),
+			);
 
 			const result = totalAggs.result();
 			const aggregation = result['donors_gender'];
@@ -33,27 +42,50 @@ describe('Network aggregation resolution', () => {
 				unknownCount,
 			);
 		});
+
 		it('should resolve multiple NumericAggregations type fields', () => {
-			const totalAggs = new AggregationAccumulator();
+			jest.mock('../../index', () => ({
+				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([
+					['donors_weight', 'NumericAggregations'],
+				]),
+			}));
+
+			const totalAggs = new AggregationAccumulator({ donors_weight: {} });
 			const aggregationsToResolve = [
-				{ donors_weight: fixture.inputD },
-				{ donors_weight: fixture.inputE },
+				{ aggregations: { donors_weight: fixture.inputD }, hits: { total: 999 } },
+				{ aggregations: { donors_weight: fixture.inputE }, hits: { total: 999 } },
 			];
-			aggregationsToResolve.forEach((agg) => totalAggs.resolve(agg));
+
+			aggregationsToResolve.forEach(({ aggregations, hits }) =>
+				totalAggs.resolve({ aggregations, hits }),
+			);
 
 			const result = totalAggs.result();
 			const aggregation = result['donors_weight'];
 			expect(aggregation.stats).toEqual(expectedStats);
 		});
+
 		it('should resolve a combination of Aggregations and NumericAggregations type fields', () => {
+			jest.mock('../../index', () => ({
+				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([
+					['donors_gender', 'Aggregations'],
+					['donors_weight', 'NumericAggregations'],
+				]),
+			}));
 			const aggregationsToResolve = [
-				{ donors_gender: fixture.inputA, donors_weight: fixture.inputE },
-				{ donors_gender: fixture.inputC, donors_weight: fixture.inputD },
+				{
+					aggregations: { donors_gender: fixture.inputA, donors_weight: fixture.inputE },
+					hits: { total: 999 },
+				},
+				{
+					aggregations: { donors_gender: fixture.inputC, donors_weight: fixture.inputD },
+					hits: { total: 999 },
+				},
 			];
 
-			const totalAggs = new AggregationAccumulator();
-			aggregationsToResolve.forEach((agg) => {
-				totalAggs.resolve(agg);
+			const totalAggs = new AggregationAccumulator({ donors_gender: {}, donors_weight: {} });
+			aggregationsToResolve.forEach(({ aggregations, hits }) => {
+				totalAggs.resolve({ aggregations, hits });
 			});
 
 			const result = totalAggs.result();
