@@ -1,6 +1,7 @@
 import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
+import { isEmpty } from 'lodash';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, Success, success } from '../httpResponses';
@@ -97,7 +98,8 @@ export const createNodeQueryString = (
 	requestedFields: RequestedFieldsMap,
 ) => {
 	const fields = convertFieldsToString(requestedFields);
-	const gqlString = `{${documentName} { hits { total }  aggregations ${fields} }}`;
+	const aggregationsString = !isEmpty(fields) ? `aggregations ${fields}` : '';
+	const gqlString = `{${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
 };
 
