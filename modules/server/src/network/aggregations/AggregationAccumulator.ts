@@ -37,10 +37,8 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 		const { aggregations, hits } = data;
 
 		const isFieldAvailable = !!aggregations[requestedField];
-		//
 		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField);
 		const existingAggregation = accumulator[requestedField];
-		console.log('req', requestedField, type);
 
 		if (isFieldAvailable) {
 			accumulator[requestedField] = addToAccumulator({
@@ -49,7 +47,8 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 				type,
 			});
 		} else {
-			///
+			// only need to add empty agg for Aggregations type to account for bucket counts
+			// histogram => buckets is not supported for NumericAggregations
 			if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 				accumulator[requestedField] = addToAccumulator({
 					existingAggregation,
