@@ -27,7 +27,7 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		Query: {
 			network: async (
 				parent: NetworkSearchRoot,
-				args: {},
+				args: Record<string, unknown>,
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
@@ -36,6 +36,7 @@ export const createResolvers = (configs: NodeConfig[]) => {
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					configs,
 					requestedFieldsMap,
+					args,
 				);
 				const response = createResponse({ aggregationResults, nodeInfo });
 				return response;
