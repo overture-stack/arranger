@@ -74,10 +74,6 @@ export const createNetworkAggregationTypeDefs = (
 			remoteConnections: { type: remoteConnectionsType },
 			aggregations: {
 				type: aggregationsType,
-				args: {
-					filters: { type: GraphQLJSON },
-					aggregations_filter_themselves: { type: GraphQLBoolean },
-				},
 			},
 		},
 	});
@@ -86,7 +82,13 @@ export const createNetworkAggregationTypeDefs = (
 	const rootType = new GraphQLObjectType({
 		name: 'Query',
 		fields: {
-			network: { type: networkType },
+			network: {
+				type: networkType,
+				args: {
+					filters: { type: GraphQLJSON },
+					aggregations_filter_themselves: { type: GraphQLBoolean },
+				},
+			},
 		},
 	});
 
