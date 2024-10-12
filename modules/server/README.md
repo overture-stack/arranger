@@ -18,3 +18,9 @@ Build (required before publish):
 ```
 npm run prepare
 ```
+
+## Federated Search
+
+### Config
+
+[Placeholder] 
