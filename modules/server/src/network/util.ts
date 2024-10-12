@@ -24,6 +24,15 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
  * Turns GraphQLResolveInfo into a map of the requested fields
  *
  * @param info GQL request info object
+ * @example
+ * ```
+ * {
+ *   analysis__analysis_state: {
+ *   bucket_count: {},
+ *   buckets: { key: {}, doc_count: {} },
+ *    __typename: {}
+ * }
+ * ```
  */
 export type RequestedFieldsMap = Record<string, {}>;
 export const resolveInfoToMap = (info: GraphQLResolveInfo, key: string): RequestedFieldsMap => {
