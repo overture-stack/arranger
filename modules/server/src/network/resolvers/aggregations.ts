@@ -22,8 +22,7 @@ const fetchData = async <SuccessType>(
 	const { url, gqlQuery, args } = query;
 
 	console.log(`Fetch data starting for ${url}`);
-	//console.log(`with query: ${JSON.stringify(query)}`);
-	//console.log(`with arg: ${JSON.stringify(args)}`);
+
 	try {
 		const response = await fetchGql({
 			url,
