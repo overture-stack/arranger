@@ -111,7 +111,7 @@ export const createNodeQueryString = (
 	const aggregationsString = !isEmpty(fields)
 		? `aggregations(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing) ${fields}`
 		: '';
-	const gqlString = `query nodeQuery($filters: JSON, $aggregations_filter_themselves: Boolean) {${documentName} { hits { total }  ${aggregationsString} }}`;
+	const gqlString = `query nodeQuery($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean) {${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
 };
 
