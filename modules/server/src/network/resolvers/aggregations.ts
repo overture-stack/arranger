@@ -2,6 +2,7 @@ import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
+import { NetworkAggregationArgs } from '.';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, Success, success } from '../httpResponses';
@@ -9,6 +10,12 @@ import { Hits } from '../types/hits';
 import { AllAggregations, NodeConfig } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
+
+type NetworkQuery = {
+	url: string;
+	gqlQuery: DocumentNode;
+	args: Record<string, unknown>;
+};
 
 /**
  * Query remote connections and handle network responses
@@ -52,12 +59,6 @@ const fetchData = async <SuccessType>(
 	} finally {
 		console.log(`Fetch data completing for ${query.url}`);
 	}
-};
-
-type NetworkQuery = {
-	url: string;
-	gqlQuery: DocumentNode;
-	args: Record<string, unknown>;
 };
 
 /**
@@ -168,7 +169,7 @@ type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregation
 export const aggregationPipeline = async (
 	configs: NodeConfig[],
 	requestedAggregationFields: RequestedFieldsMap,
-	args: Record<string, unknown>,
+	args: NetworkAggregationArgs,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
