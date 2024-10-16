@@ -1,8 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { NetworkFields } from '../setup/fields';
-import { NetworkConfig } from '../types/setup';
 import { NodeConfig } from '../types/types';
 import { resolveInfoToMap } from '../util';
+import { isSQONFilter } from '../utils/sqon';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
 import { createResponse } from './response';
@@ -10,6 +9,12 @@ import { createResponse } from './response';
 export type NetworkSearchRoot = {
 	nodes: NetworkNode[];
 	aggregations: Record<string, unknown>;
+};
+
+export type NetworkAggregationArgs = {
+	filters?: object;
+	aggregations_filter_themselves?: boolean;
+	include_missing?: boolean;
 };
 
 /**
@@ -27,19 +32,25 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		Query: {
 			network: async (
 				parent: NetworkSearchRoot,
-				args: Record<string, unknown>,
+				// type should match gql typedefs
+				args: NetworkAggregationArgs,
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
 				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
+
+				try {
+					isSQONFilter(args.filters);
+				} catch (err) {
+					throw `SQON filters are not valid. ${JSON.stringify(err)}`;
+				}
 
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					configs,
 					requestedFieldsMap,
 					args,
 				);
-				const response = createResponse({ aggregationResults, nodeInfo });
-				return response;
+				return createResponse({ aggregationResults, nodeInfo });
 			},
 		},
 	};
