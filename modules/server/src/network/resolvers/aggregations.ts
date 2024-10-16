@@ -2,14 +2,20 @@ import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
+import { NetworkAggregationArgs } from '.';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, Success, success } from '../httpResponses';
 import { Hits } from '../types/hits';
-import { NetworkConfig } from '../types/setup';
 import { AllAggregations, NodeConfig } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
+
+type NetworkQuery = {
+	url: string;
+	gqlQuery: DocumentNode;
+	args: Record<string, unknown>;
+};
 
 /**
  * Query remote connections and handle network responses
@@ -20,12 +26,15 @@ import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 const fetchData = async <SuccessType>(
 	query: NetworkQuery,
 ): Promise<Result<SuccessType, typeof CONNECTION_STATUS.error>> => {
-	const { url, gqlQuery } = query;
+	const { url, gqlQuery, args } = query;
+
 	console.log(`Fetch data starting for ${url}`);
+
 	try {
 		const response = await fetchGql({
 			url,
 			gqlQuery: ASTtoString(gqlQuery),
+			variables: args,
 		});
 
 		// axios response "data" field, graphql response "data" field
@@ -50,11 +59,6 @@ const fetchData = async <SuccessType>(
 	} finally {
 		console.log(`Fetch data completing for ${query.url}`);
 	}
-};
-
-type NetworkQuery = {
-	url: string;
-	gqlQuery: DocumentNode;
 };
 
 /**
@@ -93,18 +97,28 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
 	return gqlFieldsString;
 };
 
+/**
+ * Query string creation
+ *
+ * @param documentName
+ * @param requestedFields
+ * @returns
+ */
 export const createNodeQueryString = (
 	documentName: string,
 	requestedFields: RequestedFieldsMap,
 ) => {
 	const fields = convertFieldsToString(requestedFields);
-	const aggregationsString = !isEmpty(fields) ? `aggregations ${fields}` : '';
-	const gqlString = `{${documentName} { hits { total }  ${aggregationsString} }}`;
+	const aggregationsString = !isEmpty(fields)
+		? `aggregations(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing) ${fields}`
+		: '';
+	const gqlString = `query nodeQuery($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean) {${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
 };
 
 /**
- * Creates a GQL query for requested fields that are also available on a node
+ * Creates a GQL query for fields with query arguments.
+ * Only adds requested fields that are available on a node.
  *
  * @param config
  * @param requestedFields
@@ -130,7 +144,7 @@ export const createNetworkQuery = (
 	const gqlString = createNodeQueryString(documentName, fieldsToRequest);
 
 	/*
-	 * convert string to AST object to use as query
+	 * convert string to AST object
 	 * not needed if gqlString is formatted correctly but this acts as a validity check
 	 */
 	try {
@@ -155,6 +169,7 @@ type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregation
 export const aggregationPipeline = async (
 	configs: NodeConfig[],
 	requestedAggregationFields: RequestedFieldsMap,
+	args: NetworkAggregationArgs,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
@@ -162,7 +177,7 @@ export const aggregationPipeline = async (
 
 	const aggregationResultPromises = configs.map(async (config) => {
 		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
-		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery });
+		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery, args });
 
 		const nodeName = config.displayName;
 

@@ -33,7 +33,7 @@ export const fetchGql = ({
 }: {
 	url: string;
 	gqlQuery: string;
-	variables?: Record<string, string>;
+	variables?: Record<string, unknown>;
 	options?: { timeout: number };
 }) => {
 	const timeout = options?.timeout || 60000;
