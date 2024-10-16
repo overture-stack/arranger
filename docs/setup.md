@@ -104,22 +104,27 @@ We'll use our Conductor service, a flexible Docker Compose setup, to spin up Mae
 
 3. Install the required npm packages:
 
-  ```bash
-  npm ci
-  ```
+    ```bash
+    npm ci
+    ```
+
+    :::warning
+    Python version 3.10.15 or lower is required. Python 3.12 is not supported.
+    :::
+
 
 4. Bootstrap the Arranger repository:
 
-  ```bash
-  npm run bootstrap
-  ```
+    ```bash
+    npm run bootstrap
+    ```
 
 5. Navigate to the Arranger-server directory and run the server:
 
-  ```bash
-  cd modules/server
-  npm run start
-  ```
+    ```bash
+    cd modules/server
+    npm run start
+    ```
 
 Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphql`.
 
