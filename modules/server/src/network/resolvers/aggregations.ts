@@ -2,10 +2,9 @@ import { gql } from 'apollo-server-core';
 import axios from 'axios';
 import { DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
-import { NetworkAggregationArgs } from '.';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
-import { failure, isSuccess, Result, Success, success } from '../httpResponses';
+import { failure, isSuccess, Result, success } from '../result';
 import { Hits } from '../types/hits';
 import { AllAggregations, NodeConfig } from '../types/types';
 import { ASTtoString, RequestedFieldsMap } from '../util';
@@ -14,7 +13,13 @@ import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 type NetworkQuery = {
 	url: string;
 	gqlQuery: DocumentNode;
-	args: Record<string, unknown>;
+	queryVariables: QueryVariables;
+};
+
+type QueryVariables = {
+	filters?: object;
+	aggregations_filter_themselves?: boolean;
+	include_missing?: boolean;
 };
 
 /**
@@ -26,7 +31,7 @@ type NetworkQuery = {
 const fetchData = async <SuccessType>(
 	query: NetworkQuery,
 ): Promise<Result<SuccessType, typeof CONNECTION_STATUS.error>> => {
-	const { url, gqlQuery, args } = query;
+	const { url, gqlQuery, queryVariables } = query;
 
 	console.log(`Fetch data starting for ${url}`);
 
@@ -34,7 +39,7 @@ const fetchData = async <SuccessType>(
 		const response = await fetchGql({
 			url,
 			gqlQuery: ASTtoString(gqlQuery),
-			variables: args,
+			variables: queryVariables,
 		});
 
 		// axios response "data" field, graphql response "data" field
@@ -169,7 +174,7 @@ type SuccessResponse = { [k: string]: { hits: Hits; aggregations: AllAggregation
 export const aggregationPipeline = async (
 	configs: NodeConfig[],
 	requestedAggregationFields: RequestedFieldsMap,
-	args: NetworkAggregationArgs,
+	queryVariables: QueryVariables,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 
@@ -177,7 +182,11 @@ export const aggregationPipeline = async (
 
 	const aggregationResultPromises = configs.map(async (config) => {
 		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
-		const response = await fetchData<SuccessResponse>({ url: config.graphqlUrl, gqlQuery, args });
+		const response = await fetchData<SuccessResponse>({
+			url: config.graphqlUrl,
+			gqlQuery,
+			queryVariables,
+		});
 
 		const nodeName = config.displayName;
 

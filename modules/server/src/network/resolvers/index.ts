@@ -1,7 +1,8 @@
 import { type GraphQLResolveInfo } from 'graphql';
+import { isSuccess } from '../result';
 import { NodeConfig } from '../types/types';
 import { resolveInfoToMap } from '../util';
-import { isSQONFilter } from '../utils/sqon';
+import { convertToSqon } from '../utils/sqon';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
 import { createResponse } from './response';
@@ -39,16 +40,18 @@ export const createResolvers = (configs: NodeConfig[]) => {
 			) => {
 				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
 
-				try {
-					isSQONFilter(args.filters);
-				} catch (err) {
-					throw `SQON filters are not valid. ${JSON.stringify(err)}`;
+				if ('filters' in args) {
+					const result = convertToSqon(args.filters);
+					if (!isSuccess(result)) {
+						throw new Error(`${result.status} : ${result.message}`);
+					}
 				}
+				const queryVariables = { ...args };
 
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					configs,
 					requestedFieldsMap,
-					args,
+					queryVariables,
 				);
 				return createResponse({ aggregationResults, nodeInfo });
 			},

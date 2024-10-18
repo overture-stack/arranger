@@ -87,6 +87,7 @@ export const createNetworkAggregationTypeDefs = (
 				args: {
 					filters: { type: GraphQLJSON },
 					aggregations_filter_themselves: { type: GraphQLBoolean },
+					include_missing: { type: GraphQLBoolean },
 				},
 			},
 		},
