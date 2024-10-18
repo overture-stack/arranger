@@ -119,11 +119,10 @@ We'll use our Conductor service, a flexible Docker Compose setup, to spin up Mae
     npm run bootstrap
     ```
 
-5. Navigate to the Arranger-server directory and run the server:
+5. Run the Arranger server:
 
     ```bash
-    cd modules/server
-    npm run start
+    npm run server
     ```
 
 Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphql`.
