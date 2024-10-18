@@ -40,6 +40,12 @@ export const createResolvers = (configs: NodeConfig[]) => {
 			) => {
 				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
 
+				/*
+				 * checks validity of SQON
+				 * for now we will pass through the non SQON object to the pipeline
+				 * TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
+				 * ie. {"content": [{...}], "op": "and"}
+				 */
 				if ('filters' in args) {
 					const result = convertToSqon(args.filters);
 					if (!isSuccess(result)) {
