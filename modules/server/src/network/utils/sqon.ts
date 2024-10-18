@@ -14,7 +14,7 @@ export const convertToSqon = (filter: unknown): Result<SQON, 'INVALID_SQON', voi
 		const output = SQONBuilder.from(filter);
 		return success(output);
 	} catch (error: unknown) {
-		const message = `${error}`; // Will convert the error to a string, works fine with the expected ZodError without reuiring importing Zod to arranger
+		const message = `${error}`; // Will convert the error to a string, works fine with the expected ZodError without requiring importing Zod to Arranger
 		return failure('INVALID_SQON', message);
 	}
 };
