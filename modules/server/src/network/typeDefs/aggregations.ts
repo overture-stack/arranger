@@ -1,4 +1,12 @@
-import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import {
+	GraphQLBoolean,
+	GraphQLInt,
+	GraphQLList,
+	GraphQLObjectType,
+	GraphQLSchema,
+	GraphQLString,
+} from 'graphql';
+import GraphQLJSON from 'graphql-type-json';
 import { SupportedNetworkFieldType } from '../types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
@@ -64,7 +72,9 @@ export const createNetworkAggregationTypeDefs = (
 		name: 'Network',
 		fields: {
 			remoteConnections: { type: remoteConnectionsType },
-			aggregations: { type: aggregationsType },
+			aggregations: {
+				type: aggregationsType,
+			},
 		},
 	});
 
@@ -72,7 +82,14 @@ export const createNetworkAggregationTypeDefs = (
 	const rootType = new GraphQLObjectType({
 		name: 'Query',
 		fields: {
-			network: { type: networkType },
+			network: {
+				type: networkType,
+				args: {
+					filters: { type: GraphQLJSON },
+					aggregations_filter_themselves: { type: GraphQLBoolean },
+					include_missing: { type: GraphQLBoolean },
+				},
+			},
 		},
 	});
 
