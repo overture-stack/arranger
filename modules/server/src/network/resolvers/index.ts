@@ -1,8 +1,8 @@
 import { type GraphQLResolveInfo } from 'graphql';
-import { NetworkFields } from '../setup/fields';
-import { NetworkConfig } from '../types/setup';
+import { isSuccess } from '../result';
 import { NodeConfig } from '../types/types';
 import { resolveInfoToMap } from '../util';
+import { convertToSqon } from '../utils/sqon';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
 import { createResponse } from './response';
@@ -10,6 +10,12 @@ import { createResponse } from './response';
 export type NetworkSearchRoot = {
 	nodes: NetworkNode[];
 	aggregations: Record<string, unknown>;
+};
+
+export type NetworkAggregationArgs = {
+	filters?: object;
+	aggregations_filter_themselves?: boolean;
+	include_missing?: boolean;
 };
 
 /**
@@ -27,18 +33,33 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		Query: {
 			network: async (
 				parent: NetworkSearchRoot,
-				args: {},
+				// type should match gql typedefs
+				args: NetworkAggregationArgs,
 				context: unknown,
 				info: GraphQLResolveInfo,
 			) => {
 				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
 
+				/*
+				 * checks validity of SQON
+				 * for now we will pass through the non SQON object to the pipeline
+				 * TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
+				 * ie. {"content": [{...}], "op": "and"}
+				 */
+				if ('filters' in args) {
+					const result = convertToSqon(args.filters);
+					if (!isSuccess(result)) {
+						throw new Error(`${result.status} : ${result.message}`);
+					}
+				}
+				const queryVariables = { ...args };
+
 				const { aggregationResults, nodeInfo } = await aggregationPipeline(
 					configs,
 					requestedFieldsMap,
+					queryVariables,
 				);
-				const response = createResponse({ aggregationResults, nodeInfo });
-				return response;
+				return createResponse({ aggregationResults, nodeInfo });
 			},
 		},
 	};
