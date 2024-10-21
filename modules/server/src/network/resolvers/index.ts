@@ -12,6 +12,9 @@ export type NetworkSearchRoot = {
 	aggregations: Record<string, unknown>;
 };
 
+/*
+ * Type should match the "Network" GQL type definition arg types
+ */
 export type NetworkAggregationArgs = {
 	filters?: object;
 	aggregations_filter_themselves?: boolean;
@@ -33,7 +36,7 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		Query: {
 			network: async (
 				parent: NetworkSearchRoot,
-				// type should match gql typedefs
+				// as mentioned above, type should match gql typedefs
 				args: NetworkAggregationArgs,
 				context: unknown,
 				info: GraphQLResolveInfo,
