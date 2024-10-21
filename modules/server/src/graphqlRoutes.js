@@ -4,10 +4,11 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
+import { createSchemaFromNetworkConfig, mergeSchemas } from './network';
 import makeSchema from './schema';
 
 const getESMapping = async (esClient, index) => {
@@ -148,12 +149,31 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+const createEndpoint = async ({
+	esClient,
+	graphqlOptions = {},
+	mockSchema,
+	schema,
+	networkSchema,
+}) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
 	console.log('Starting GraphQL server:');
+
+	if (ENABLE_NETWORK_AGGREGATION) {
+		/**
+		 * TODO: make available on one route
+		 */
+		const networkPath = '/network';
+		const apolloNetworkServer = new ApolloServer({
+			cache: 'bounded',
+			schema: networkSchema,
+		});
+		await apolloNetworkServer.start();
+		apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	}
 
 	try {
 		await router.get(
@@ -249,6 +269,8 @@ export const createSchemasFromConfigs = async ({
 			configsFromFiles,
 		);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
 			getServerSideFilter,
@@ -256,11 +278,28 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
+		/**
+		 * Federated Network Search
+		 */
+		if (ENABLE_NETWORK_AGGREGATION) {
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
+					...config,
+					/**
+					 * part of the gql schema is generated dynamically
+					 * in the case of the "file" field, the field name and type name are the same
+					 * it's more flexible to define it here as an additional property than to confuse functions further down the pipeline
+					 */
+					documentName: config.documentType,
+				})),
+			});
+		}
+
 		return {
-			fieldsFromMapping,
+			...commonFields,
 			mockSchema,
 			schema,
-			typesWithMappings,
+			networkSchema,
 		};
 	} catch (error) {
 		const message = error?.message || error;
@@ -279,7 +318,7 @@ export default async ({
 	graphqlOptions = {},
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } =
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings, networkSchema } =
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
@@ -293,6 +332,7 @@ export default async ({
 			graphqlOptions,
 			mockSchema,
 			schema,
+			networkSchema,
 		});
 
 		await initializeSets({ esClient });
