@@ -4,7 +4,7 @@
 
 Before you begin, ensure you have the following installed on your system:
 
-- Node.js (v18 or higher)
+- Node.js (v18)
 - npm (v8.3.0 or higher)
 - [Docker](https://www.docker.com/products/docker-desktop/) (v4.32.0 or higher)
 
@@ -81,8 +81,7 @@ We'll use our Conductor service, a flexible Docker Compose setup, to spin up Mae
         ES_USER=elastic
         ES_PASS=myelasticpassword
         # Stage Variables
-        REACT_APP_BASE_URL=http://stage:3000
-        REACT_APP_ARRANGER_ADMIN_ROOT=http://arranger-server:5050/graphql
+        REACT_APP_BASE_URL=http://localhost:3000
         ```
 
         <details>
