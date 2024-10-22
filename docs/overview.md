@@ -31,7 +31,7 @@ As part of the larger Overture.bio software suite, Arranger typically integrates
 - **Elasticsearch:** The underlying search and analytics engine that Arranger interfaces with to provide powerful search capabilities.
 - **Stage:** The React-based web portal scaffolding that provides the overall structure and layout, within which Arranger components are rendered to create a cohesive and interactive data exploration interface.
 
-![Arranger Components](./assets/arrangercomponent.png 'Arranger Components')
+![Arranger Components](./assets/arrangercomponent.webp 'Arranger Components')
 
 The Arranger Components image above highlights three key features:
 
