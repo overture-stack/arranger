@@ -105,11 +105,13 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
 };
 
 /**
- * Query string creation
+ * Creates individual GQL query string for a node.
+ * Includes aggregation GQL arguments (actual data is provided alongside query, not here)
+ * Requested fields are converted to GQL style strings
  *
  * @param documentName
  * @param requestedFields
- * @returns
+ * @returns constructed query string
  */
 export const createNodeQueryString = (
 	documentName: string,
