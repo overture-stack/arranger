@@ -1,5 +1,5 @@
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
-import { SUPPORTED_AGGREGATIONS } from '../common';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
 import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
 import { Hits } from '../types/hits';
 import { AllAggregations } from '../types/types';
@@ -13,18 +13,28 @@ type ResolveAggregationInput = {
 
 type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
+type GenericTuple<T> = [T, T];
 
-const emptyAggregation = (hits: number) => ({
+const emptyAggregation = (hits: number): Aggregations => ({
+	__typename: 'Aggregations',
 	bucket_count: 1,
 	buckets: [{ key: '___aggregation_not_available___', doc_count: hits }],
 });
 
 // mutation - update a single aggregations field in the accumulator
-const addToAccumulator = ({ existingAggregation, aggregation, type }) => {
+const addToAccumulator = <T extends Aggregations | NumericAggregations>({
+	existingAggregation,
+	aggregation,
+	type,
+}: {
+	existingAggregation: T | undefined;
+	aggregation: T;
+	type: SupportedAggregation;
+}) => {
 	// if first aggregation, nothing to resolve with yet
 	return !existingAggregation
 		? aggregation
-		: resolveToNetworkAggregation(type, [aggregation, existingAggregation]);
+		: resolveToNetworkAggregation<T>(type, [aggregation, existingAggregation]);
 };
 
 /**
@@ -37,13 +47,19 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 		const { aggregations, hits } = data;
 
 		const isFieldAvailable = !!aggregations[requestedField];
-		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField);
+
+		/*
+		 * requested field will always be in ALL_NETWORK_AGGREGATION_TYPES_MAP
+		 * GQL schema validation will throw an error earlier if a requested field isn't in the schema
+		 */
+		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField) as SupportedAggregation;
 		const existingAggregation = accumulator[requestedField];
 
 		if (isFieldAvailable) {
 			accumulator[requestedField] = addToAccumulator({
 				existingAggregation,
-				aggregation: aggregations[requestedField],
+				// similarly due to GQL schema validation this will not be undefined
+				aggregation: aggregations[requestedField]!,
 				type,
 			});
 		} else {
@@ -66,9 +82,9 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
  * @param type
  * @param aggregations
  */
-const resolveToNetworkAggregation = (
+const resolveToNetworkAggregation = <T>(
 	type: string,
-	aggregations: AggregationsTuple | NumericAggregationsTuple,
+	aggregations: GenericTuple<T>,
 ): Aggregations | NumericAggregations => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations as AggregationsTuple);
@@ -179,7 +195,11 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
 	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
 		const computedBuckets = resolvedAggregation.buckets;
 		agg.buckets.forEach((bucket) => updateComputedBuckets(bucket, computedBuckets));
-		return { bucket_count: computedBuckets.length, buckets: computedBuckets };
+		return {
+			bucket_count: computedBuckets.length,
+			buckets: computedBuckets,
+			__typename: resolvedAggregation.__typename,
+		};
 	});
 
 	return resolvedAggregation;

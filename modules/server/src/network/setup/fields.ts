@@ -59,7 +59,7 @@ export const getFieldTypes = (
 export const getAllFieldTypes = (
 	nodeConfigs: NodeConfig[],
 	supportedTypes: SupportedAggregation[],
-) => {
+): SupportedNetworkFieldType[] => {
 	const nodeFieldTypes = nodeConfigs.map((config) => {
 		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(
 			config.aggregations,
@@ -75,7 +75,7 @@ export const getAllFieldTypes = (
 	/*
 	 * Returns unique fields
 	 * eg. if NodeA and NodeB both have `analysis__analysis__id`, only include it once
-	 * This during server startup for creating the Apollo server.
+	 * This is during server startup for creating the Apollo server.
 	 * Please do not use expensive stringify and parsing for server queries.
 	 */
 	const uniqueSupportedAggregations = Array.from(
