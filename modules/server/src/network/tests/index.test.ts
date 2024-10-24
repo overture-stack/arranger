@@ -2,7 +2,7 @@
 // graphql types have readonly modifiers all the way down
 
 import { buildSchema } from 'graphql';
-import { createNetworkAggregationTypeDefs } from '../schema';
+import { createNetworkAggregationTypeDefs } from '../typeDefs/aggregations';
 import {
 	typeDefsA,
 	typeDefsB,
