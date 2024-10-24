@@ -1,4 +1,4 @@
-import { getFieldTypes } from '..';
+import { getFieldTypes } from '../setup/fields';
 
 describe('helpers', () => {
 	test('getField returns both supported and unsupported types', () => {
