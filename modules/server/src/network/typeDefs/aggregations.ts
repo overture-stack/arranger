@@ -7,7 +7,7 @@ import {
 	GraphQLString,
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
-import { SupportedNetworkFieldType } from '../types';
+import { SupportedNetworkFieldType } from '../types/types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**

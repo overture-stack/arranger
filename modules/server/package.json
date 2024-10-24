@@ -20,7 +20,7 @@
 		"test": "jest",
 		"test:watch": "jest --watch",
 		"watch": "npm run cleanDist && npm run build -- --watch",
-		"typeCheck": "tsc --noEmit -w"
+		"typeCheck": "tsc -w --noEmit"
 	},
 	"repository": {
 		"type": "git",
