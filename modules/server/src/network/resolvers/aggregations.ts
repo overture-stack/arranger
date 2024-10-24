@@ -30,7 +30,7 @@ type QueryVariables = {
  */
 const fetchData = async <SuccessType>(
 	query: NetworkQuery,
-): Promise<Result<SuccessType, typeof CONNECTION_STATUS.error>> => {
+): Promise<Result<SuccessType, typeof CONNECTION_STATUS.ERROR>> => {
 	const { url, gqlQuery, queryVariables } = query;
 
 	console.log(`Fetch data starting for ${url}`);
@@ -45,10 +45,12 @@ const fetchData = async <SuccessType>(
 		// axios response "data" field, graphql response "data" field
 		const responseData = response.data?.data;
 		if (response.status === 200 && response.statusText === 'OK') {
+			console.log(`Fetch data completing for ${query.url}`);
 			return success(responseData);
 		}
 	} catch (error) {
 		if (axios.isCancel(error)) {
+			console.log(`Fetch data cancelled for ${query.url}`);
 			return failure(CONNECTION_STATUS.ERROR, `Request cancelled: ${url}`);
 		}
 
@@ -61,9 +63,9 @@ const fetchData = async <SuccessType>(
 			}
 		}
 		return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
-	} finally {
-		console.log(`Fetch data completing for ${query.url}`);
 	}
+	// TS would like a return value outside of try/catch handling
+	return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
 };
 
 /**
@@ -132,7 +134,7 @@ export const createNodeQueryString = (
 export const createNetworkQuery = (
 	config: NodeConfig,
 	requestedFields: RequestedFieldsMap,
-): DocumentNode => {
+): DocumentNode | undefined => {
 	const availableFields = config.aggregations;
 	const documentName = config.documentName;
 
@@ -159,6 +161,7 @@ export const createNetworkQuery = (
 		return gqlQuery;
 	} catch (err) {
 		console.error('invalid gql', err);
+		return undefined;
 	}
 };
 
@@ -182,11 +185,13 @@ export const aggregationPipeline = async (
 
 	const aggregationResultPromises = configs.map(async (config) => {
 		const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
-		const response = await fetchData<SuccessResponse>({
-			url: config.graphqlUrl,
-			gqlQuery,
-			queryVariables,
-		});
+		const response = gqlQuery
+			? await fetchData<SuccessResponse>({
+					url: config.graphqlUrl,
+					gqlQuery,
+					queryVariables,
+			  })
+			: failure(CONNECTION_STATUS.ERROR, 'Invalid GQL query');
 
 		const nodeName = config.displayName;
 
