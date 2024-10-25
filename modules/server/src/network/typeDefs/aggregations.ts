@@ -7,7 +7,7 @@ import {
 	GraphQLString,
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
-import { SupportedNetworkFieldType } from '../types';
+import { SupportedNetworkFieldType } from '../types/types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**
@@ -16,7 +16,7 @@ import { singleToNetworkAggregationMap } from './networkAggregations';
  * @example
  * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
  */
-const convertToGQLObjectType = (networkFieldTypes) => {
+const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) => {
 	return networkFieldTypes.reduce((allFields, currentField) => {
 		const field = {
 			[currentField.name]: { type: singleToNetworkAggregationMap.get(currentField.type) },
