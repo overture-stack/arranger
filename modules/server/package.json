@@ -19,7 +19,8 @@
 		"start:prod": "ts-node index.ts",
 		"test": "jest",
 		"test:watch": "jest --watch",
-		"watch": "npm run cleanDist && npm run build -- --watch"
+		"watch": "npm run cleanDist && npm run build -- --watch",
+		"typeCheck": "tsc -w --noEmit"
 	},
 	"repository": {
 		"type": "git",
