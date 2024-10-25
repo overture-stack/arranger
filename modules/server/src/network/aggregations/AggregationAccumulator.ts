@@ -13,7 +13,6 @@ type ResolveAggregationInput = {
 
 type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
-type GenericTuple<T> = [T, T];
 
 const emptyAggregation = (hits: number): Aggregations => ({
 	__typename: 'Aggregations',
@@ -39,6 +38,7 @@ const addToAccumulator = <T extends Aggregations | NumericAggregations>({
 
 /**
  * Resolves returned aggregations from network queries into single accumulated aggregation
+ * ALL_NETWORK_AGGREGATION_TYPES_MAP should be initialised before using this function
  *
  * @param
  */
@@ -46,20 +46,25 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 	requestedFields.forEach((requestedField) => {
 		const { aggregations, hits } = data;
 
-		const isFieldAvailable = !!aggregations[requestedField];
-
 		/*
 		 * requested field will always be in ALL_NETWORK_AGGREGATION_TYPES_MAP
 		 * GQL schema validation will throw an error earlier if a requested field isn't in the schema
 		 */
-		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField) as SupportedAggregation;
+		const type = ALL_NETWORK_AGGREGATION_TYPES_MAP.get(requestedField);
+		if (type === undefined) {
+			console.log(
+				'Could not find aggregation type.\nPlease ensure ALL_NETWORK_AGGREGATION_TYPES_MAP is initialised.',
+			);
+			return;
+		}
+
+		const aggregation = aggregations[requestedField];
 		const existingAggregation = accumulator[requestedField];
 
-		if (isFieldAvailable) {
+		if (aggregation !== undefined) {
 			accumulator[requestedField] = addToAccumulator({
 				existingAggregation,
-				// similarly due to GQL schema validation this will not be undefined
-				aggregation: aggregations[requestedField]!,
+				aggregation,
 				type,
 			});
 		} else {
@@ -84,7 +89,7 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
  */
 const resolveToNetworkAggregation = <T>(
 	type: string,
-	aggregations: GenericTuple<T>,
+	aggregations: [T, T],
 ): Aggregations | NumericAggregations => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations as AggregationsTuple);

@@ -3,7 +3,7 @@ import { getFieldTypes } from '../setup/fields';
 
 describe('helpers', () => {
 	test('getField returns both supported and unsupported types', () => {
-		const supportedAggregations = ['Aggregations'] as SupportedAggregation[];
+		const supportedAggregations: SupportedAggregation[] = ['Aggregations'];
 		const fields = [
 			{
 				name: 'analysis__analysis_id',
