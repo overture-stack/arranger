@@ -1,3 +1,12 @@
+/*
+ * TODO: needs work to resolve ALL_NETWORK_AGGREGATION_TYPES_MAP correctly mocked
+ * only works at this top level, once. Jest will hoist
+ * jest.doMock requires extra configuration with "require" instead of "import"
+ * doesn't mock correctly right now between tests
+ */
+
+// @ts-nocheck
+
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '@/network';
 import { AggregationAccumulator } from '../AggregationAccumulator';
 import { aggregation as fixture } from './fixture';
@@ -13,12 +22,6 @@ jest.mock('../../index', () => ({
 	ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([['donors_gender', 'Aggregations']]),
 }));
 
-/*
- * TODO: needs work to resolve ALL_NETWORK_AGGREGATION_TYPES_MAP correctly mocked
- * only works at this top level, once. Jest will hoist
- * jest.doMock requires extra configuration with "require" instead of "import"
- * doesn't mock correctly right now between tests
- */
 xdescribe('Network aggregation resolution', () => {
 	describe('resolves multiple aggregations into a single aggregation:', () => {
 		beforeEach(() => {

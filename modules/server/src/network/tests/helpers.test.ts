@@ -1,26 +1,21 @@
-import { getFieldTypes } from '..';
+import { SupportedAggregation } from '../common';
+import { getFieldTypes } from '../setup/fields';
 
 describe('helpers', () => {
 	test('getField returns both supported and unsupported types', () => {
-		const supportedAggregations = ['Aggregations'];
+		const supportedAggregations: SupportedAggregation[] = ['Aggregations'];
 		const fields = [
 			{
 				name: 'analysis__analysis_id',
-				type: {
-					name: 'Aggregations',
-				},
+				type: 'Aggregations',
 			},
 			{
 				name: 'analysis__analysis_state',
-				type: {
-					name: 'Aggregations',
-				},
+				type: 'Aggregations',
 			},
 			{
 				name: 'clinical__donor__number_of_children',
-				type: {
-					name: 'HumanAggregate',
-				},
+				type: 'HumanAggregate',
 			},
 		];
 
