@@ -2,6 +2,12 @@
 
 Arranger is a versatile, data-agnostic GraphQL search API and UI component library that leverages Elasticsearch to generate interactive and highly configurable search components. It's designed to simplify the process of creating powerful search interfaces for complex datasets.
 
+    :::info Arranger uses Elasticsearch 7 
+
+    Our search platform is built on and compatible with version 7.x of Elasticsearch. Applications and queries need to follow Elasticsearch 7 syntax and conventions.
+
+    :::
+
 ## Key Features
 
 - **Configurable Search UI:** Provides a suite of customizable search interface components based on Elasticsearch index mappings, easily tailored to fit specific data structures and user needs without extensive manual coding.

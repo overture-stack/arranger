@@ -43,6 +43,12 @@ We'll use our Conductor service, a flexible Docker Compose setup, to spin up Mae
     | Elasticsearch | `9200` | Distributed search and analytics engine | Provides fast and scalable search capabilities over indexed data |
     | Stage | `3000` | Web Portal Scaffolding | Houses Arranger's search UI components |
 
+    :::note Arranger uses Elasticsearch 7 
+
+    Our search platform is built on and compatible with version 7.x of Elasticsearch. Applications and queries need to follow Elasticsearch 7 syntax and conventions.
+
+    :::
+
     - Ensure all ports are free on your system before starting the environment.
     - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
@@ -128,7 +134,10 @@ Once the server starts, you can access Arranger-Server at `http://localhost:5050
 
 ### Running the Arranger Components
 
-[This section needs to be updated]
+
+:::info Coming Soong
+We are currently working on updating our development environment for Arrangers components. Documentation for running Arranger components, including the developer setup and Storybook integration, will be available here in a our next update.
+:::
 
 ## Troubleshooting
 
