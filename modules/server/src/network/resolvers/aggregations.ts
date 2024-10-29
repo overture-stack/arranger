@@ -131,7 +131,7 @@ export const createNodeQueryString = (
  *
  * @param config
  * @param requestedFields
- * @returns
+ * @returns a GQL document node or undefined if a valid GQL document node cannot be created
  */
 export const createNetworkQuery = (
 	config: NodeConfig,
