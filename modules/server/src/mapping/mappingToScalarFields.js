@@ -5,9 +5,9 @@ export let esToGraphqlTypeMap = {
 	double: 'Float',
 	float: 'Float',
 	half_float: 'Float',
-	integer: 'Int',
+	integer: 'Float',
 	keyword: 'String',
-	long: 'Int',
+	long: 'Float', // hack to compensate for graphql not supporting Long. TODO: add a Long custom type https://github.com/overture-stack/arranger/issues/796
 	object: 'JSON', // https://github.com/overture-stack/arranger/blob/master/modules/schema/src/index.js#L9
 	scaled_float: 'Float',
 	string: 'String',
