@@ -1,7 +1,7 @@
 import { createNodeQueryString } from '../resolvers/aggregations';
 
 describe('gql query creation', () => {
-	test.only('it should create gql query string for hits and aggregations using document name', () => {
+	test('it should create gql query string for hits and aggregations using document name', () => {
 		const result = createNodeQueryString('testFile', {
 			donors: {
 				buckets: {
