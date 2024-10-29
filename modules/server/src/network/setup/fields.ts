@@ -56,6 +56,12 @@ export const getFieldTypes = (
 	return fieldTypes;
 };
 
+/**
+ *
+ * @param nodeConfigs
+ * @param supportedTypes
+ * @returns unique fields
+ */
 export const getAllFieldTypes = (
 	nodeConfigs: NodeConfig[],
 	supportedTypes: SupportedAggregation[],
@@ -72,6 +78,7 @@ export const getAllFieldTypes = (
 	const allSupportedAggregations = nodeFieldTypes.flatMap(
 		(fieldType) => fieldType.supportedAggregations,
 	);
+
 	/*
 	 * Returns unique fields
 	 * eg. if NodeA and NodeB both have `analysis__analysis__id`, only include it once
