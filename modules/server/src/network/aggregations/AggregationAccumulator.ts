@@ -13,7 +13,6 @@ type ResolveAggregationInput = {
 
 type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
-type GenericTuple<T> = [T, T];
 
 const emptyAggregation = (hits: number): Aggregations => ({
 	__typename: 'Aggregations',
