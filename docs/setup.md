@@ -148,4 +148,6 @@ If you encounter any issues during setup:
 3. Verify that your `.env` file contains the correct configuration.
 4. If you're having network issues, ensure that the ports specified in the configuration are not being used by other services.
 
-For further assistance, feel free to [open an issue on GitHub](https://github.com/overture-stack/arranger/issues/new?assignees=&labels=&projects=&template=Feature_Requests.md).
+:::info Need Help?
+If you encounter any issues or have questions about our API, please don't hesitate to reach out through our relevant [**community support channels**](/community/support).
+:::
