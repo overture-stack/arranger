@@ -1,5 +1,5 @@
-import express, { json, urlencoded } from 'express';
 import cors from 'cors';
+import express, { json, urlencoded } from 'express';
 
 import { ENV_CONFIG } from './config';
 import Arranger from './server';
@@ -10,7 +10,10 @@ app.use(cors());
 export default async function (rootPath = '') {
 	global.__basedir = rootPath;
 
-	return Arranger({ enableAdmin: ENV_CONFIG.ENABLE_ADMIN }).then((router) => {
+	return Arranger({
+		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
+		enableAggregationMode: ENV_CONFIG.ENABLE_AGGREGATION_MODE,
+	}).then((router) => {
 		app.use(router);
 
 		app.use(urlencoded({ extended: false, limit: '50mb' }));
