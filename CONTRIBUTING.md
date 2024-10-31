@@ -11,13 +11,13 @@ By participating in this project, you are expected to abide by our [Code of Cond
 **Getting Started:** Our primary platform for community support, feature requests, and general discussions is GitHub Discussions. This allows us to keep all conversations in one place and make them easily searchable for future reference.
 
 
-**Community Support:** Our primary platform for community support, feature requests, and general discussions is [GitHub Discussions](https://github.com/MitchellShiell/bridge/discussions). This allows us to keep all conversations in one place and make them easily searchable for future reference.
+**Community Support:** Our primary platform for community support, feature requests, and general discussions is [GitHub Discussions](https://github.com/overture-stack/docs/discussions). This allows us to keep all conversations in one place and make them easily searchable for future reference.
 
-- **Getting Help:** If you need assistance with Overture, please create a [new discussion in our support category](https://github.com/MitchellShiell/bridge/discussions/categories/support).
+- **Getting Help:** If you need assistance with Overture, please create a [new discussion in our support category](https://github.com/overture-stack/docs/discussions/categories/support).
   - Before creating a new discussion, please search existing discussions to see if your question has already been answered.
 - **Feature Requests & Proposals:** We love hearing your ideas for improving Overture! Before making a feature request, please check our [**current roadmap**](https://github.com/users/MitchellShiell/projects/2/views/4) to see if your idea is already planned.
-  - If your idea isn't on the roadmap, feel free to [**submit a feature request**](https://github.com/MitchellShiell/bridge/discussions/categories/ideas) by creating a new discussion in our Ideas category 
-- **Report a Potential Bug:** We use GitHub Issues primarily for tracking confirmed bugs and ticketing development tasks. If you come across a potential bug or issue, please first post it to our [**GitHub support discussion forum**](https://github.com/MitchellShiell/bridge/discussions/categories/support).
+  - If your idea isn't on the roadmap, feel free to [**submit a feature request**](https://github.com/overture-stack/docs/discussions/categories/ideas) by creating a new discussion in our Ideas category 
+- **Report a Potential Bug:** We use GitHub Issues primarily for tracking confirmed bugs and ticketing development tasks. If you come across a potential bug or issue, please first post it to our [**GitHub support discussion forum**](https://github.com/overture-stack/docs/discussions/categories/support).
   - This allows us to confirm the issue and gather more information if needed. If we determine that further development is required, we will create and tag you into a GitHub Issue from your discussion post.
 
 ## Our Development Process
