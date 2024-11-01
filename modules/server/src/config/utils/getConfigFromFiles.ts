@@ -30,10 +30,10 @@ const readFileAsync = (dirname: string, filename: string, encoding: FileEncoding
 		}),
 	);
 
-const isDataFile = (filename: string) => {
-	const fileNameParts = filename.split('.');
+const isDataFile = (fileName: string) => {
+	const fileNameParts = fileName.split('.');
 
-	return fileNameParts[fileNameParts.length - 1].toLowerCase() === 'json';
+	return fileNameParts[fileNameParts.length - 1]?.toLowerCase() === 'json';
 };
 
 const getConfigFromFiles = (
