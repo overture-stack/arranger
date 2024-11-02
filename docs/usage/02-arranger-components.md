@@ -10,6 +10,8 @@ For more comprehensive information on customizing Arranger, including mock data 
 
 ## Configuration Files Overview
 
+Four main configuration files control Arranger, and its components' behaviours:
+
 1. **base.json**: Defines the core settings for the Elasticsearch index (Important for the Arranger Server).
 2. **extended.json**: Specifies all fields and their display names for the front-end.
 3. **table.json**: Configures the columns displayed in the data table.
