@@ -30,7 +30,7 @@ Arranger integrates with your underlying Elasticsearch cluster to automatically 
 
 - **Arranger Components:** A library of React components for building interactive search UIs, communicating with Arranger Server to fetch and display data.
 
-![Arranger Arch](./assets/arrangerDev.svg 'Arranger Architecture Diagram')
+![Arranger Architecture](./assets/arrangerDev.svg 'Arranger Architecture Diagram')
 
 As part of the larger Overture.bio software suite, Arranger typically integrates with other services:
 
