@@ -15,7 +15,7 @@ By participating in this project, you are expected to abide by our [Code of Cond
 
 - **Getting Help:** If you need assistance with Overture, please create a [new discussion in our support category](https://github.com/overture-stack/docs/discussions/categories/support).
   - Before creating a new discussion, please search existing discussions to see if your question has already been answered.
-- **Feature Requests & Proposals:** We love hearing your ideas for improving Overture! Before making a feature request, please check our [**current roadmap**](https://github.com/users/MitchellShiell/projects/2/views/4) to see if your idea is already planned.
+- **Feature Requests & Proposals:** We love hearing your ideas for improving Overture! Before making a feature request, please check our [**feature roadmap**](https://github.com/orgs/overture-stack/projects/11/views/1) to see if your idea is already planned.
   - If your idea isn't on the roadmap, feel free to [**submit a feature request**](https://github.com/overture-stack/docs/discussions/categories/ideas) by creating a new discussion in our Ideas category 
 - **Report a Potential Bug:** We use GitHub Issues primarily for tracking confirmed bugs and ticketing development tasks. If you come across a potential bug or issue, please first post it to our [**GitHub support discussion forum**](https://github.com/overture-stack/docs/discussions/categories/support).
   - This allows us to confirm the issue and gather more information if needed. If we determine that further development is required, we will create and tag you into a GitHub Issue from your discussion post.
@@ -53,19 +53,18 @@ We welcome and encourage pull requests from the community. To submit a pull requ
 
 2. **Use descriptive titles:** Start with a verb (e.g., "Add", "Fix", "Update", "Refactor"), briefly summarize the main purpose of the PR and include the issue number if applicable (e.g., "Fix user authentication bug (#123)").
 
-3. **Describe how you tested it:** Explain the testing process you followed and mention any new tests you've added.
+3. **Describe how you tested it:** Explain the testing process you followed and mention any new automated tests you've added.
 
 4. **Provide a clear description:** Explain the purpose of your changes and list the main modifications you've made. Mention any potential side effects or areas that might need extra attention.
 
 5. **Link related issues:** Reference any related issues or pull requests. Use GitHub keywords to automatically link issues (e.g., "Closes #123", "Fixes #456").
-
-6. **Keep the PR up-to-date:** Regularly rebase your branch on the latest main branch and resolve any merge conflicts promptly.
+6. **Keep the PR's branch up-to-date:** Regularly rebase your branch on the latest main branch and resolve any merge conflicts promptly.
 
 7. **Respond to feedback:** Be open to suggestions and willing to make changes. Address all comments from reviewers. If you disagree with a suggestion, explain your reasoning politely.
 
 8. **Include documentation updates:** If your changes affect user-facing features, update or create and issue detailing the relevant changes need to the documentation. Where appropriate include inline comments for complex code sections.
 
-10. **Be patient:** Reviewers will likely not be able to respond immediately. Follow up politely if you haven't received feedback after a reasonable time.
+10. **Be patient:** Reviewers will likely be unable to respond immediately. However, feel free to follow up politely if you haven't received feedback after a reasonable time.
 
 ### Using Draft Pull Requests
 
@@ -87,7 +86,7 @@ Guidelines for Draft Pull Requests:
    - Highlight areas where feedback is specifically needed
 3. **Updates**:
    - Regularly update the description or provide comments following commits with progress notes
-   - Use task lists (- [ ]) to track completion of sub-tasks
+- Use task lists (using `- [ ]` in Markdown) to track completion of sub-tasks
 4. **Collaboration**:
    - Encourage early feedback and discussion
    - Use the pull request comments for design discussions
