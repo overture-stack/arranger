@@ -37,7 +37,7 @@ arranger/
 - **docs/**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.
 
 - **modules/**: Core Arranger modules:
-  - **admin-ui/**: Administration interface for generating and managing Arranger configuration files.
+  - **admin-ui/**: (Inactive) Administration interface for generating and managing Arranger configuration files. 
   - **components/**: React components to streamline integration of search portals with an Arranger server.
   - **server/**: The "Arranger" server itself, a GraphQL service that facilitates usage of Lucene-based search engines (e.g. Elasticsearch).
 - **scripts/**: Utility scripts for development, deployment, and system management.
