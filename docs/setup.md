@@ -14,7 +14,7 @@ This guide will walk you through setting up a complete development environment, 
 
 ### Setting up supporting services
 
-We'll use our Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
+We'll use the Overture Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
 
 1. Clone the Conductor repository and navigate to its directory:
 
