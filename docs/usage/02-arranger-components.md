@@ -16,7 +16,7 @@ For more comprehensive information on customizing Arranger, including mock data 
 4. **facets.json**: Defines the aggregations (facets) for data exploration and filtering.
 
 :::info Configuration File Location
-Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/develop/modules/server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory. 
+Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/develop/modules/server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory (unless specified otherwise using the `CONFIG_PATH` environment variable). 
 :::
 ## Base Configuration (base.json)
 
