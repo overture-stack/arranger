@@ -25,7 +25,7 @@ Arranger integrates with your underlying Elasticsearch cluster to automatically 
 - **Arranger Server:** The back-end search API service that:
     - Generates a GraphQL API from Elasticsearch mappings
     - Acts as middleware between the UI and Elasticsearch
-    - Simplifies querying and filtering using SQON (Set Query Object Notation) syntax
+    - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](https://www.overture.bio/documentation/arranger/reference/sqon/))
     - Provides an intermediary layer to avoid direct interaction with complex Elasticsearch queries
 
 - **Arranger Components:** A library of React components for building interactive search UIs, communicating with Arranger Server to fetch and display data.
