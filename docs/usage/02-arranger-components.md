@@ -2,8 +2,6 @@
 
 Arranger offers its own front-end library of reusable components to facilitate querying Elasticsearch indices, leveraging the versatile GraphQL syntax.
 
-Four main configuration files control Arrangers server and components behaviors: `base.json`, `extended.json`, `table.json`, and `facets.json`.
-
 :::tip Portal Customization Guide 
 For more comprehensive information on customizing Arranger, including mock data and step by step instructions, we recommend [**using our local quickstart**](/guides/getting-started#overture-platform-quick-start) and following along with our [**platform guide on customizing the data portal**](/guides/administration-guides/customizing-the-data-portal)
 :::
