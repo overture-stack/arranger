@@ -34,7 +34,7 @@ Arranger integrates with your underlying Elasticsearch cluster to automatically 
 
 As part of the larger Overture.bio software suite, Arranger typically integrates with other services:
 
-- **Elasticsearch:** The underlying search and analytics engine that Arranger interfaces with to provide powerful search capabilities.
+- **Elasticsearch:** The underlying search and analytics engine (created and maintained by [Elastic](https://www.elastic.co/elasticsearch)) that Arranger interfaces with to provide powerful search capabilities.
 - **Stage:** The React-based web portal scaffolding that provides the overall structure and layout, within which Arranger components are rendered to create a cohesive and interactive data exploration interface.
 
 ![Arranger Components](./assets/arrangercomponent.webp 'Arranger Components')
