@@ -136,7 +136,7 @@ Once the server starts, you can access Arranger-Server at `http://localhost:5050
 
 
 :::info Coming Soon
-We are currently working on updating our development environment for Arrangers components. Documentation for running Arranger components, including the developer setup and Storybook integration, will be available here in a our next update.
+We are currently working on updating our development environment for Arranger Components. Documentation for implementing them, including their development setup and Storybook integration, will be available here in the near future.
 :::
 
 ## Troubleshooting
