@@ -114,7 +114,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
     ```
 
     :::warning
-    Python version 3.10.15 or lower is required. Python 3.12 is not supported.
+    Python version 3.10.15 or lower is required. Python 3.12 is not supported yet.
     :::
 
 
