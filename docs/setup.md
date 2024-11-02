@@ -45,7 +45,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 
     :::note Arranger uses Elasticsearch 7 
 
-    Our search platform is built on and compatible with version 7.x of Elasticsearch. Applications and queries need to follow Elasticsearch 7 syntax and conventions.
+    Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
 
     :::
 
