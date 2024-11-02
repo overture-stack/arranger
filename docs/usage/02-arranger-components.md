@@ -1,6 +1,6 @@
 # Arranger Configs
 
-Arranger simplifies GraphQL queries over Elasticsearch indices with its front-end library of reusable search components. 
+Arranger offers its own front-end library of reusable components to facilitate querying Elasticsearch indices, leveraging the versatile GraphQL syntax.
 
 Four main configuration files control Arrangers server and components behaviors: `base.json`, `extended.json`, `table.json`, and `facets.json`.
 
