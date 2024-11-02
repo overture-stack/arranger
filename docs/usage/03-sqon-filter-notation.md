@@ -2,7 +2,7 @@
 
 <!--To understand SQONs better we should explain why they are important and useful in arranger-->
 
-Arranger uses a custom filter notation SQON (Serializable Query Object Notation, pronounced like "Scone") to provide a flexible system for combining filters in a JSON object format.
+Arranger uses a custom filter syntax known as Serializable Query Object Notation (SQON, pronounced like "Scone"), to provide a flexible system for combining filters in a JSON object format.
 
 - A SQON object consists of two types of nested objects, **Value Objects** and **Operation Objects**.
 
