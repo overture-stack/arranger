@@ -1,7 +1,7 @@
 # Index Mappings
 
 :::tip Resources
-For a comprehensive guide on index mappings, including detailed explanations, examples, and configuration instructions, please refer to our [**platform guide on index mappings**](/guides/administration-guides/index-mappings).
+For a comprehensive guide on index mappings, including detailed explanations, examples, and configuration instructions, please refer to our [**guide on index mappings**](/guides/administration-guides/index-mappings).
 
 This guide will provide:
 
