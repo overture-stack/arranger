@@ -71,7 +71,7 @@ The Overture Platform includes the following Overture Components:
 |Software|Description|
 |---|---|
 |[Score](https://github.com/overture-stack/score/)| Transfer data to and from any cloud-based storage system |
-|[Song](https://github.com/overture-stack/song/)| Catalog and manage metadata associated to file data spread across cloud storage systems |
+|[Song](https://github.com/overture-stack/song/)| Catalogue and manage metadata associated to file data spread across cloud storage systems |
 |[Maestro](https://github.com/overture-stack/maestro/)| Organizing your distributed data into a centralized Elasticsearch index |
 |[Arranger](https://github.com/overture-stack/arranger/)| A search API with reusable search UI components |
 |[Stage](https://github.com/overture-stack/stage)| A React-based front-data portal UI |
