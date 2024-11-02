@@ -4,7 +4,7 @@ Arranger is a versatile, data-agnostic GraphQL search API that leverages Elastic
 
     :::info Arranger uses Elasticsearch 7 
 
-    Our search platform is built on and compatible with version 7.x of Elasticsearch. Applications and queries need to follow Elasticsearch 7 syntax and conventions.
+    Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
 
     :::
 
