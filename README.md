@@ -74,7 +74,7 @@ The Overture Platform includes the following Overture Components:
 |[Song](https://github.com/overture-stack/song/)| Catalogue and manage metadata associated to file data spread across cloud storage systems |
 |[Maestro](https://github.com/overture-stack/maestro/)| Organizing your distributed data into a centralized Elasticsearch index |
 |[Arranger](https://github.com/overture-stack/arranger/)| A search API with reusable search UI components |
-|[Stage](https://github.com/overture-stack/stage)| A React-based front-data portal UI |
+|[Stage](https://github.com/overture-stack/stage)| A React-based web portal scaffolding |
 |[Lyric](https://github.com/overture-stack/lyric)| A data-agnostic tabular data submission system |
 |[Lectern](https://github.com/overture-stack/lectern)| A simple web browser UI that integrates Ego and Arranger |
 
