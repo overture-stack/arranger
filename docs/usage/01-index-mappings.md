@@ -22,6 +22,6 @@ Index mappings are crucial for Arranger's functionality. They define how documen
 
 :::info Arranger uses Elasticsearch 7 
 
-Our search platform is built on and compatible with version 7.x of Elasticsearch. Applications and queries need to follow Elasticsearch 7 syntax and conventions.
+Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
 
 :::
