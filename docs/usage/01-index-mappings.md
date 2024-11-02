@@ -16,7 +16,7 @@ Index mappings are crucial for Arranger's functionality. They define how documen
 
 ### Why Index Mappings Matter for Arranger
 
-1. **Elasticsearch Data Structure**: Mappings define the structure of your elasticsearch documents, allowing Arranger to understand and interact with your data correctly.
+1. **Data Model**: Mappings define the structure of your Elasticsearch documents, allowing Arranger to understand and interact with your data correctly.
 
 2. **GraphQL Schema**: Arranger uses the index mapping to generate its GraphQL schema, which is the basis for all queries and mutations.
 
