@@ -28,7 +28,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
     | Operating System | Command |
     |------------------|---------|
     | Unix/macOS       | `make arrangerDev` |
-    | Windows          | `make.bat arrangerDev` |
+    | Windows          | `./make.bat arrangerDev` |
 
     <details>
     <summary>**Click here for a detailed breakdown**</summary>
