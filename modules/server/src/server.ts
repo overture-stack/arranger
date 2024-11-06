@@ -1,4 +1,4 @@
-import { Client } from '@elastic/elasticsearch';
+import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
@@ -24,7 +24,7 @@ export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
 		console.error('no elasticsearch host was provided');
 	}
 
-	const esConfig = {
+	const esConfig: ClientOptions = {
 		node: esHost,
 	};
 
@@ -45,7 +45,7 @@ export const buildEsClientViaEnv = () => {
 	return buildEsClient(ES_HOST, ES_USER, ES_PASS);
 };
 
-export default async ({
+const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
 	enableLogs = ENABLE_LOGS,
@@ -56,7 +56,7 @@ export default async ({
 	getServerSideFilter = getDefaultServerSideFilter,
 	graphqlOptions = {},
 	pingPath = PING_PATH,
-} = {}) => {
+} = {}): Promise<Router> => {
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = Router();
 
@@ -107,3 +107,5 @@ export default async ({
 
 	return router;
 };
+
+export default arrangerServer;
