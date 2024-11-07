@@ -189,7 +189,7 @@ export const extendFields = (
 			isArray = false,
 			primaryKey = false,
 			quickSearchEnabled = false,
-			rangeStep = type === 'float' || type === 'double' ? 0.01 : 1,
+			rangeStep = 0,
 			unit = null,
 		} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
 
