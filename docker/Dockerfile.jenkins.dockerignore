@@ -6,7 +6,6 @@ docks
 integration-tests
 modules/**/*
 !modules/server
-scripts
 Jenkinsfile
 lerna*
 prettier*
