@@ -10,6 +10,8 @@ export const DOWNLOAD_STREAM_BUFFER_SIZE =
 	stringToNumber(process.env.DOWNLOAD_STREAM_BUFFER_SIZE) || 2000;
 export const ENABLE_ADMIN = stringToBool(process.env.ENABLE_ADMIN);
 export const ENABLE_LOGS = stringToBool(process.env.ENABLE_LOGS);
+export const ES_ARRANGER_SET_INDEX = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets';
+export const ES_ARRANGER_SET_TYPE = process.env.ES_ARRANGER_SET_TYPE || 'arranger-sets';
 export const ES_HOST = process.env.ES_HOST || 'http://127.0.0.1:9200';
 export const ES_INDEX = process.env.ES_INDEX || '';
 export const ES_LOG = process.env.ES_LOG?.split?.(',') || 'error';

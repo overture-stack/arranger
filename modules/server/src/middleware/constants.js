@@ -20,12 +20,12 @@ export const SET_ID = 'set_id:';
 
 // sqon op aliases
 export const OP_ALIASES = {
-  '>': GT_OP,
-  '<': LT_OP,
-  '>=': GTE_OP,
-  '<=': LTE_OP,
-  '=': IN_OP,
-  '!=': NOT_IN_OP,
+	'>': GT_OP,
+	'<': LT_OP,
+	'>=': GTE_OP,
+	'<=': LTE_OP,
+	'=': IN_OP,
+	'!=': NOT_IN_OP,
 };
 export const DATE_FORMAT = 'yyyy-MM-dd';
 
@@ -47,8 +47,6 @@ export const ES_TYPE = 'type';
 export const ES_PHRASE_PREFIX = 'phrase_prefix';
 export const ES_DATE_FORMAT = 'yyyy-MM-dd HH:mm:ss.SSSSSS';
 export const ES_MAX_LONG = `-9223372036854775808`;
-export const ES_ARRANGER_SET_INDEX = 'arranger-sets';
-export const ES_ARRANGER_SET_TYPE = 'arranger-sets';
 
 export const BUCKETS = 'buckets';
 export const STATS = 'stats';

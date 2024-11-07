@@ -167,8 +167,8 @@ class RangeAgg extends Component {
 		return (
 			formatLabel?.(value, type) ||
 			formatNumber(
-				unit && displayUnit
-					? Math.round(convert(value).from(unit).to(displayUnit) * 100) / 100
+				unit && displayUnit && unit !== displayUnit
+					? convert(value).from(unit).to(displayUnit)
 					: value,
 			)
 		);
@@ -180,9 +180,8 @@ class RangeAgg extends Component {
 			disabled,
 			displayName = 'Unnamed Field',
 			fieldName,
-			rangeStep,
+			rangeStep: rangeStepFromProps,
 			stats: { max, min } = emptyObj,
-			step,
 			theme: {
 				colors,
 				components: {
@@ -229,10 +228,19 @@ class RangeAgg extends Component {
 			...(type && { 'data-type': type }),
 		};
 
+		const maxFractionRemainder = rangeStepFromProps === 0 && max % 1;
+		const decimalPointsToPad =
+			maxFractionRemainder && `${maxFractionRemainder}`.replace('0.', '').length - 1;
+		const calculatedStep = maxFractionRemainder
+			? parseFloat(`0.${String(1).padStart(decimalPointsToPad, '0')}`)
+			: 1;
+
+		const rangeStep = rangeStepFromProps || calculatedStep;
+
 		const minIsMax = min === max;
 		const unusable = disabled || min + rangeStep === max || minIsMax;
 
-		// TODO: implement unit selection disability per fieldname.
+		// TODO: implement unit selection disabling per fieldname.
 		// const enableUnitSelection = !themeDisableUnitSelection;
 
 		return (
@@ -370,7 +378,7 @@ class RangeAgg extends Component {
 								maxValue={max}
 								onChange={this.setNewValue}
 								onChangeComplete={this.onChangeComplete}
-								step={step}
+								step={rangeStep}
 								value={currentValues}
 							/>
 
