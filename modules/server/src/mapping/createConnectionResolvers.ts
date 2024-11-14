@@ -10,6 +10,7 @@ import resolveHits from './resolveHits';
 type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
+	enableAggregationMode: boolean;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
@@ -19,6 +20,7 @@ type CreateConnectionResolversFn = (args: CreateConnectionResolversArgs) => IRes
 const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
+	enableAggregationMode,
 	getServerSideFilter,
 	Parallel,
 	type,
@@ -40,7 +42,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 				}),
 			};
 		},
-		hits: resolveHits({ type, Parallel, getServerSideFilter }),
+		...(!enableAggregationMode && {hits: resolveHits({ type, Parallel, getServerSideFilter })}),
 		// keeping this available for backwards compatibility, but hoping to remove it
 		// TODO: investigate its current usage and need. remove otherwise
 		// Update 2023-02: ENABLE_ADMIN prevents error comes up on facets.

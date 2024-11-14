@@ -19,6 +19,7 @@ export const setsMapping = {
 
 const makeSchema = ({
 	enableAdmin = false,
+	enableAggregationMode = false,
 	getServerSideFilter,
 	middleware = [],
 	mock = false,
@@ -53,7 +54,10 @@ const makeSchema = ({
 		],
 	];
 
-	const typeDefs = generateTypeDefs({
+
+	
+const typeDefs = generateTypeDefs({
+	enableAggregationMode,
 		rootTypes,
 		scalarTypes,
 		types: typesWithSets,
@@ -61,6 +65,7 @@ const makeSchema = ({
 
 	const resolvers = generateResolvers({
 		enableAdmin,
+		enableAggregationMode,
 		getServerSideFilter,
 		rootTypes,
 		scalarTypes,

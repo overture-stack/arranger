@@ -63,18 +63,18 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
+export let typeDefs = ({ enableAggregationMode,types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
-	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
+	...types.map(([key, type]) => mappingToFields({enableAggregationMode, type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter }) => {
+export let resolvers = ({ enableAdmin, enableAggregationMode, types, rootTypes, scalarTypes, getServerSideFilter }) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -126,6 +126,7 @@ export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerS
 				...createConnectionResolvers({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
+					enableAggregationMode,
 					getServerSideFilter,
 					Parallel,
 					type,

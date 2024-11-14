@@ -59,7 +59,7 @@ export default async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 } = {}) => {
-	console.log('AGG ONLY MODE!', enableAggregationMode);
+
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = Router();
 
@@ -87,6 +87,7 @@ export default async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
+		enableAggregationMode,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,

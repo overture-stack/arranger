@@ -5,7 +5,8 @@ import mappingToScalarFields from './mappingToScalarFields';
 import createConnectionTypeDefs from './createConnectionTypeDefs';
 import mappingToObjectTypes from './mappingToObjectTypes';
 
-const mappingToFields = ({ type, parent }) => {
+const mappingToFields = ({ enableAggregationMode,type, parent }) => {
+	const fieldsToExclude = enableAggregationMode ? ['hits'] : []
 	return [
 		mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
 		Object.entries(type.mapping)
@@ -28,6 +29,7 @@ const mappingToFields = ({ type, parent }) => {
 				type.customFields,
 			],
 			createStateTypeDefs: 'createState' in type ? type.createState : true,
+			fieldsToExclude
 		}),
 	].join();
 };
