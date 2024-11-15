@@ -1,11 +1,11 @@
 import mappingToAggsType from './mappingToAggsType';
 
 const generateHitsTypeString = (name, fieldsToExclude) => {
-  if(fieldsToExclude.includes('hits')) {
-    return '';
-  }
+	if (fieldsToExclude.includes('hits')) {
+		return '';
+	}
 
-  return `
+	return `
   hits(
     score: String
     offset: Int
@@ -17,8 +17,8 @@ const generateHitsTypeString = (name, fieldsToExclude) => {
     last: Int
     searchAfter: JSON
     trackTotalHits: Boolean = true
-  ): ${name}Connection`
-}
+  ): ${name}Connection`;
+};
 
 export default ({ type, fields = '', createStateTypeDefs = true, fieldsToExclude }) => {
 	return `
