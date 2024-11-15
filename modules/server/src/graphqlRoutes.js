@@ -4,7 +4,7 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
@@ -116,7 +116,13 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, enableAggregationMode,getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	enableAggregationMode,
+	getServerSideFilter,
+	graphqlOptions = {},
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],

@@ -59,7 +59,6 @@ export default async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 } = {}) => {
-
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = Router();
 

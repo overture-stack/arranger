@@ -4,7 +4,7 @@ import { applyMiddleware } from 'graphql-middleware';
 
 import { CONSTANTS } from '../middleware';
 
-import { typeDefs as generateTypeDefs, resolvers as generateResolvers } from './Root';
+import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root';
 
 export const setsMapping = {
 	userId: { type: 'keyword' },
@@ -54,10 +54,8 @@ const makeSchema = ({
 		],
 	];
 
-
-	
-const typeDefs = generateTypeDefs({
-	enableAggregationMode,
+	const typeDefs = generateTypeDefs({
+		enableAggregationMode,
 		rootTypes,
 		scalarTypes,
 		types: typesWithSets,
