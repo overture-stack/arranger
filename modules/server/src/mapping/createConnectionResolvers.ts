@@ -42,7 +42,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 				}),
 			};
 		},
-		...(!enableAggregationMode && { hits: resolveHits({ type, Parallel, getServerSideFilter }) }),
+		...(enableAggregationMode || { hits: resolveHits({ type, Parallel, getServerSideFilter }) }),
 		// keeping this available for backwards compatibility, but hoping to remove it
 		// TODO: investigate its current usage and need. remove otherwise
 		// Update 2023-02: ENABLE_ADMIN prevents error comes up on facets.
