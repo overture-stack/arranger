@@ -49,7 +49,7 @@ export const buildEsClientViaEnv = () => {
 export default async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
-	enabledDocumentHits = ENABLE_DOCUMENT_HITS,
+	enableDocumentHits = ENABLE_DOCUMENT_HITS,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
