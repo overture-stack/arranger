@@ -6,7 +6,7 @@ import mappingToObjectTypes from './mappingToObjectTypes';
 import mappingToScalarFields from './mappingToScalarFields';
 
 const mappingToFields = ({ enableDocumentHits, type, parent }) => {
-	const fieldsToExclude = enableDocumentHits ? ['hits'] : [];
+	const fieldsToExclude = enableDocumentHits ? [] : ['hits'];
 	return [
 		mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
 		Object.entries(type.mapping)
