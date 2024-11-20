@@ -63,20 +63,20 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export let typeDefs = ({ enableAggregationMode, types, rootTypes, scalarTypes }) => [
+export let typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
-	...types.map(([key, type]) => mappingToFields({ enableAggregationMode, type, parent: '' })),
+	...types.map(([key, type]) => mappingToFields({ enableDocumentHits, type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
 
 export let resolvers = ({
 	enableAdmin,
-	enableAggregationMode,
+	enableDocumentHits,
 	types,
 	rootTypes,
 	scalarTypes,
@@ -133,7 +133,7 @@ export let resolvers = ({
 				...createConnectionResolvers({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
-					enableAggregationMode,
+					enableDocumentHits,
 					getServerSideFilter,
 					Parallel,
 					type,

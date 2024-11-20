@@ -5,8 +5,8 @@ import mappingToNestedFields from './mappingToNestedFields';
 import mappingToObjectTypes from './mappingToObjectTypes';
 import mappingToScalarFields from './mappingToScalarFields';
 
-const mappingToFields = ({ enableAggregationMode, type, parent }) => {
-	const fieldsToExclude = enableAggregationMode ? ['hits'] : [];
+const mappingToFields = ({ enableDocumentHits, type, parent }) => {
+	const fieldsToExclude = enableDocumentHits ? ['hits'] : [];
 	return [
 		mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
 		Object.entries(type.mapping)

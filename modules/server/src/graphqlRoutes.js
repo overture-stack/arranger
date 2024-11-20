@@ -118,7 +118,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 
 const createSchema = async ({
 	enableAdmin,
-	enableAggregationMode,
+	enableDocumentHits,
 	getServerSideFilter,
 	graphqlOptions = {},
 	types,
@@ -137,7 +137,7 @@ const createSchema = async ({
 			}),
 			schema: makeSchema({
 				enableAdmin,
-				enableAggregationMode,
+				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -244,7 +244,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
-	enableAggregationMode,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -259,7 +259,7 @@ export const createSchemasFromConfigs = async ({
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
-			enableAggregationMode,
+			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			types: typesWithMappings,
@@ -283,7 +283,7 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
-	enableAggregationMode,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -293,7 +293,7 @@ export default async ({
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
-				enableAggregationMode,
+				enableDocumentHits,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

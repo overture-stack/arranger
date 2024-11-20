@@ -12,7 +12,7 @@ export default async function (rootPath = '') {
 
 	return Arranger({
 		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
-		enableAggregationMode: ENV_CONFIG.ENABLE_AGGREGATION_MODE,
+		enableDocumentHits: ENV_CONFIG.ENABLE_DOCUMENT_HITS,
 	}).then((router) => {
 		app.use(router);
 

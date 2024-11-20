@@ -12,7 +12,7 @@ const {
 	CONFIG_FILES_PATH,
 	DEBUG_MODE,
 	ENABLE_ADMIN,
-	ENABLE_AGGREGATION_MODE,
+	ENABLE_DOCUMENT_HITS,
 	ES_HOST,
 	ES_USER,
 	ES_PASS,
@@ -49,7 +49,7 @@ export const buildEsClientViaEnv = () => {
 export default async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
-	enableAggregationMode = ENABLE_AGGREGATION_MODE,
+	enabledDocumentHits = ENABLE_DOCUMENT_HITS,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
@@ -86,7 +86,7 @@ export default async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
-		enableAggregationMode,
+		enableDocumentHits,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
