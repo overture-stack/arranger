@@ -10,6 +10,10 @@ app.use(cors());
 export default async function (rootPath = '') {
 	global.__basedir = rootPath;
 
+	/**
+	 * @param {boolean} enableAdmin
+	 * @param {boolean} enabledDocumentHits - enables including "hits" property in the GQL response
+	 */
 	return Arranger({
 		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
 		enableDocumentHits: ENV_CONFIG.ENABLE_DOCUMENT_HITS,
