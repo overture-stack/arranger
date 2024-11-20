@@ -3,10 +3,10 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
+import { DEBUG_MODE } from '@/config/constants';
 import { createConnectionResolvers, mappingToFields, saveSet } from '@/mapping';
 import { checkESAlias, getESAliases } from '@/mapping/utils/fetchMapping';
 
-import { DEBUG_MODE } from '@/config/constants';
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
 import ConfigsTypeDefs from './configQuery';
 import { typeDefs as SetTypeDefs } from './Sets';
