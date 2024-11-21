@@ -1,16 +1,16 @@
-import { GraphQLJSON } from 'graphql-type-json';
 import { GraphQLDate } from 'graphql-scalars';
+import { GraphQLJSON } from 'graphql-type-json';
 import { startCase } from 'lodash';
 import Parallel from 'paralleljs';
 
-import { createConnectionResolvers, saveSet, mappingToFields } from '@/mapping';
+import { DEBUG_MODE } from '@/config/constants';
+import { createConnectionResolvers, mappingToFields, saveSet } from '@/mapping';
 import { checkESAlias, getESAliases } from '@/mapping/utils/fetchMapping';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations';
+import ConfigsTypeDefs from './configQuery';
 import { typeDefs as SetTypeDefs } from './Sets';
 import { typeDefs as SortTypeDefs } from './Sort';
-import ConfigsTypeDefs from './configQuery';
-import { DEBUG_MODE } from '@/config/constants';
 
 let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	scalar JSON
@@ -63,18 +63,25 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export let typeDefs = ({ types, rootTypes, scalarTypes }) => [
+export let typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
-	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
+	...types.map(([key, type]) => mappingToFields({ enableDocumentHits, type, parent: '' })),
 ];
 
 let resolveObject = () => ({});
 
-export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter }) => {
+export let resolvers = ({
+	enableAdmin,
+	enableDocumentHits,
+	types,
+	rootTypes,
+	scalarTypes,
+	getServerSideFilter,
+}) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -126,6 +133,7 @@ export let resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerS
 				...createConnectionResolvers({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
+					enableDocumentHits,
 					getServerSideFilter,
 					Parallel,
 					type,

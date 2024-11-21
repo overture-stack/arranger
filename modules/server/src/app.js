@@ -1,5 +1,5 @@
-import express, { json, urlencoded } from 'express';
 import cors from 'cors';
+import express, { json, urlencoded } from 'express';
 
 import { ENV_CONFIG } from './config';
 import Arranger from './server';
@@ -10,7 +10,14 @@ app.use(cors());
 export default async function (rootPath = '') {
 	global.__basedir = rootPath;
 
-	return Arranger({ enableAdmin: ENV_CONFIG.ENABLE_ADMIN }).then((router) => {
+	/**
+	 * @param {boolean} enableAdmin
+	 * @param {boolean} enabledDocumentHits - enables including "hits" property in the GQL response
+	 */
+	return Arranger({
+		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
+		enableDocumentHits: ENV_CONFIG.ENABLE_DOCUMENT_HITS,
+	}).then((router) => {
 		app.use(router);
 
 		app.use(urlencoded({ extended: false, limit: '50mb' }));
