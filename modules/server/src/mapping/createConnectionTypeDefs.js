@@ -1,6 +1,26 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-export default ({ type, fields = '', createStateTypeDefs = true }) => {
+const generateHitsTypeString = (name, fieldsToExclude) => {
+	if (fieldsToExclude.includes('hits')) {
+		return '';
+	}
+
+	return `
+  hits(
+    score: String
+    offset: Int
+    sort: [Sort]
+    filters: JSON
+    before: String
+    after: String
+    first: Int
+    last: Int
+    searchAfter: JSON
+    trackTotalHits: Boolean = true
+  ): ${name}Connection`;
+};
+
+export default ({ type, fields = '', createStateTypeDefs = true, fieldsToExclude }) => {
 	return `
     type ${type.name} {
       aggregations(
@@ -13,18 +33,8 @@ export default ({ type, fields = '', createStateTypeDefs = true }) => {
 
       configs: ${createStateTypeDefs ? 'ConfigsWithState' : 'ConfigsWithoutState'}
 
-      hits(
-        score: String
-        offset: Int
-        sort: [Sort]
-        filters: JSON
-        before: String
-        after: String
-        first: Int
-        last: Int
-        searchAfter: JSON
-        trackTotalHits: Boolean = true
-      ): ${type.name}Connection
+      ${generateHitsTypeString(type.name, fieldsToExclude)}
+     
 
       mapping: JSON
     }
