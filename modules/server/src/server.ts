@@ -12,6 +12,7 @@ const {
 	CONFIG_FILES_PATH,
 	DEBUG_MODE,
 	ENABLE_ADMIN,
+	ENABLE_DOCUMENT_HITS,
 	ES_HOST,
 	ES_USER,
 	ES_PASS,
@@ -48,6 +49,7 @@ export const buildEsClientViaEnv = () => {
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
+	enableDocumentHits = ENABLE_DOCUMENT_HITS,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
@@ -84,6 +86,7 @@ const arrangerServer = async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
+		enableDocumentHits,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
