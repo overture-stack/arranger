@@ -3,7 +3,7 @@
 Arranger offers its own front-end library of reusable components to facilitate querying Elasticsearch indices, leveraging the versatile GraphQL syntax.
 
 :::tip Portal Customization Guide 
-For more comprehensive information on customizing Arranger, including mock data and step by step instructions, we recommend [**using our local quickstart**](/guides/getting-started#overture-platform-quick-start) and following along with our [**platform guide on customizing the data portal**](/guides/administration-guides/customizing-the-data-portal)
+For more comprehensive information on customizing Arranger, including mock data and step by step instructions, we recommend [**using our local quickstart**](https://docs.overture.bio/guides/getting-started#overture-platform-quick-start) and following along with our [**platform guide on customizing the data portal**](https://docs.overture.bio/guides/administration-guides/customizing-the-data-portal)
 :::
 
 ## Configuration Files Overview

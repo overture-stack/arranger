@@ -52,7 +52,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
     - Ensure all ports are free on your system before starting the environment.
     - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-    For more information, see our [Conductor documentation linked here](/docs/other-software/Conductor).
+    For more information, see our [Conductor documentation linked here](https://docs.overture.bio/docs/other-software/Conductor).
 
     </details>
 
@@ -149,5 +149,5 @@ If you encounter any issues during setup:
 4. If you're having network issues, ensure that the ports specified in the configuration are not being used by other services.
 
 :::info Need Help?
-If you encounter any issues or have questions about our API, please don't hesitate to reach out through our relevant [**community support channels**](/community/support).
+If you encounter any issues or have questions about our API, please don't hesitate to reach out through our relevant [**community support channels**](https://docs.overture.bio/community/support).
 :::

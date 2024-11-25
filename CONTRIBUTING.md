@@ -4,7 +4,7 @@ We appreciate your interest in contributing to this project. We are the Genome I
 
 ## Code of Conduct
 
-By participating in this project, you are expected to abide by our [Code of Conduct](/community/code-of-conduct). Please take the time to read it carefully before contributing.
+By participating in this project, you are expected to abide by our [Code of Conduct](https://docs.overture.bio/community/code-of-conduct). Please take the time to read it carefully before contributing.
 
 ## Get Involved
 
