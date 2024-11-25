@@ -1,15 +1,14 @@
 import getFields from 'graphql-fields';
 
-import { buildQuery, buildAggregations, flattenAggregations } from '../middleware';
+import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
 
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
-import esSearch from './utils/esSearch';
+import { applyAggregationMasking } from './masking';
 import compileFilter from './utils/compileFilter';
+import esSearch from './utils/esSearch';
 
-let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
-
-export default ({ type, getServerSideFilter }) =>
-	async (
+export default ({ type, getServerSideFilter }) => {
+	return async (
 		obj,
 		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
 		context,
@@ -58,5 +57,22 @@ export default ({ type, getServerSideFilter }) =>
 			includeMissing: include_missing,
 		});
 
-		return Object.entries(aggregations).reduce(toGraphqlField, {});
+		/*
+		 * Apply thresholding
+		 */
+		// TODO: check if buckets are even requested
+		console.log('aggregations', JSON.stringify(aggregations));
+		// TODO: env var this value
+		const thresholdMin = 200;
+
+		const result = applyAggregationMasking({ aggregations, thresholdMin });
+
+		console.log('thres result', result);
+		return result;
 	};
+};
+
+const toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
+export const aggregationsToGraphql = (aggregations) => {
+	return Object.entries(aggregations).reduce(toGraphqlField, {});
+};
