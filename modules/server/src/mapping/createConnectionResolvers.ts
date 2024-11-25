@@ -57,6 +57,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 				const parsedResolveInfo = parseResolveInfo(info);
 				console.log('parsed', JSON.stringify(parsedResolveInfo));
 
+				// TODO:
 				// IF query is querying aggregations
 				// calculate hits based on data masked values
 				// otherwise return 0
