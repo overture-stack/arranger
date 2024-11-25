@@ -1,15 +1,18 @@
 import mappingToAggsType from './mappingToAggsType';
 
 export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) => {
+	const dataMaskingType = !showRecords ? 'type DataMasking { thresholdValue: Int }' : '';
+
 	return `
     type ${type.name} {
       aggregations(
         filters: JSON
-
         include_missing: Boolean
         # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
         aggregations_filter_themselves: Boolean
       ): ${type.name}Aggregations
+
+      ${!showRecords ? 'dataMasking: DataMasking' : ''}
 
       configs: ${createStateTypeDefs ? 'ConfigsWithState' : 'ConfigsWithoutState'}
 
@@ -24,7 +27,7 @@ export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) 
         last: Int
         searchAfter: JSON
         trackTotalHits: Boolean = true
-      ): ${name}Connection
+      ): ${type.name}Connection
      
       mapping: JSON
     }
@@ -32,6 +35,8 @@ export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) 
     type ${type.name}Aggregations {
       ${mappingToAggsType(type.mapping)}
     }
+
+    ${dataMaskingType}
 
     type ${type.name}Connection {
       total: Int!
