@@ -13,35 +13,6 @@ Arranger is a versatile, data-agnostic GraphQL search API that leverages Elastic
 > 
 > 
 
-
-## Repository Structure
-
-The repository is organized with the following directory structure:
-
-```
-arranger/
-├── docker/
-│   ├── elasticsearch/
-│   ├── server/
-│   ├── test/
-│   └── ui/
-├── modules/
-│   ├── admin-ui/
-│   ├── components/
-│   └── server/
-└── scripts/
-```
-
-- **docker/**: Contains miscellaneous configuration files used for building Docker images of Arranger Server, and to support running a local developer environment.
-
-- **docs/**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.
-
-- **modules/**: Core Arranger modules:
-  - **admin-ui/**: (Inactive) Administration interface for generating and managing Arranger configuration files. 
-  - **components/**: React components to streamline integration of search portals with an Arranger server.
-  - **server/**: The "Arranger" server itself, a GraphQL service that facilitates usage of Lucene-based search engines (e.g. Elasticsearch).
-- **scripts/**: Utility scripts for development, deployment, and system management.
-
 ## Documentation
 
 Technical resources for those working with or contributing to the project are available from our official documentation site, the following content can also be read and updated within the `/docs` folder of this repository.
