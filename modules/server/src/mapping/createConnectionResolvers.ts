@@ -4,6 +4,7 @@ import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 
 import { parseResolveInfo } from 'graphql-parse-resolve-info';
+import { calculateHitsFromAggregations } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
 
@@ -42,10 +43,11 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 		};
 	};
 
+	// TODO: memoise instead of context
+	// just same request really - maybe  JSON.stringify
 	const aggregationsQuery = resolveAggregations({ type, getServerSideFilter });
-	const aggregationsResolver = (obj, args, context, info) => {
-		const aggs = aggregationsQuery(obj, args, context, info);
-		console.log('queried', JSON.stringify(aggs));
+	const aggregationsResolver = async (obj, args, context, info) => {
+		const aggs = await aggregationsQuery(obj, args, context, info);
 		return aggregationsToGraphql(aggs);
 	};
 
@@ -53,16 +55,26 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 	const hitsResolver = enableDocumentHits
 		? defaultHitsResolver
 		: async (obj, args, context, info) => {
-				console.log('alt hits');
-				const parsedResolveInfo = parseResolveInfo(info);
-				console.log('parsed', JSON.stringify(parsedResolveInfo));
+				/*
+				 * Checks for aggregations field in full query and retrieves args
+				 * Popular parsing `info` libs do not include these operations properties
+				 */
+				const typeNameConnectionProperty = info.operation.selectionSet.selections[0];
+				const isAggregationsQueried = typeNameConnectionProperty.selectionSet.selections.some(
+					(selection) => selection.name.value === 'aggregations',
+				);
 
-				// TODO:
-				// IF query is querying aggregations
-				// calculate hits based on data masked values
-				// otherwise return 0
-
-				return { total: 0 };
+				/*
+				 * Calculate "hits" based on aggregations otherwise return 0
+				 */
+				if (isAggregationsQueried) {
+					// other args are ok to pass through as they share context and parent field
+					const aggregations = await aggregationsQuery(obj, ...info.variableValues, context, info);
+					const total = calculateHitsFromAggregations({ aggregations });
+					return { total };
+				} else {
+					return { total: 0 };
+				}
 		  };
 
 	return {
