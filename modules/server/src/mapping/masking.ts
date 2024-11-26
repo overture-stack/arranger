@@ -38,3 +38,10 @@ export const applyAggregationMasking = ({
 	console.log(JSON.stringify(x));
 	return x;
 };
+
+export const calculateHitsFromAggregations = ({ aggregations }) => {
+	console.log('calc hits', aggregations);
+	// iterate over aggregations and buckets
+	// calc buckets based on value for properties over threshold and +1 for values under threshold
+	// nb: if aggregation has all buckets over threshold, that will be accurate total hits value
+};
