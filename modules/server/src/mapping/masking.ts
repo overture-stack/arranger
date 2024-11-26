@@ -44,4 +44,5 @@ export const calculateHitsFromAggregations = ({ aggregations }) => {
 	// iterate over aggregations and buckets
 	// calc buckets based on value for properties over threshold and +1 for values under threshold
 	// nb: if aggregation has all buckets over threshold, that will be accurate total hits value
+	return -999;
 };

@@ -69,7 +69,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 				 */
 				if (isAggregationsQueried) {
 					// other args are ok to pass through as they share context and parent field
-					const aggregations = await aggregationsQuery(obj, ...info.variableValues, context, info);
+					const aggregations = await aggregationsQuery(obj, info.variableValues, context, info);
 					const total = calculateHitsFromAggregations({ aggregations });
 					return { total };
 				} else {
