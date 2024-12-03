@@ -1,6 +1,37 @@
+type Bucket = {
+	doc_count: number;
+	key: string;
+	belowThreshold: boolean;
+};
+
+type Aggregation = {
+	bucket_count: number;
+	buckets: Bucket[];
+};
+
+/**
+ * This returns a total count that is less than or equal to the actual total hits in the query.
+ * It is calculated by adding +1 for values under threshold and bucket.doc_count
+ * for values greater than or equal to
+ *
+ * @param aggregation an aggregation with the most buckets which has data masking applied
+ * @returns hits total value
+ */
+const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregation }) => {
+	return aggregation.buckets.reduce(
+		(totalAcc, bucket) => (bucket.belowThreshold ? totalAcc + 1 : totalAcc + bucket.doc_count),
+		0,
+	);
+};
+
 /**
  *
- * @param param0
+ * 1) Iterate through aggs applying data masking to buckets if applicable
+ * 2) Find the agg with the most bucket count and data masking applied to be used in calculating hits.total
+ *
+ * @param aggregations - aggregations from query
+ * @param thresholdMin - threshold value
+ * @returns aggregations with data masking applied and hits total
  */
 export const applyAggregationMasking = ({
 	aggregations,
@@ -18,31 +49,47 @@ export const applyAggregationMasking = ({
 	>;
 	thresholdMin: number;
 }) => {
-	const x = Object.entries(aggregations).reduce((acc, [aggName, aggValue]) => {
-		const buckets = aggValue.buckets;
-		const isApplyingThreshold = buckets.some((bucket) => bucket.doc_count < thresholdMin);
-		if (isApplyingThreshold) {
-			const modifiedAggValue = {
-				...aggValue,
-				buckets: buckets.map((bucket) => ({
-					...bucket,
-					doc_count: thresholdMin - 1,
-					belowThreshold: true,
-				})),
+	const THRESHOLD_REPLACEMENT_VALUE = thresholdMin - 1;
+
+	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce(
+		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
+
+			// mask buckets if under threshold
+			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
+				bucket.doc_count < thresholdMin
+					? { ...bucket, doc_count: THRESHOLD_REPLACEMENT_VALUE, belowThreshold: true }
+					: bucket,
+			);
+
+			// update total hits agg if needed
+			const bucketIsMasked = dataMaskedBuckets.some((bucket) =>
+				Object.hasOwn(bucket, 'belowThreshold'),
+			);
+			const hitsAgg =
+				totalHitsAgg.bucketCount < aggregation.bucket_count && bucketIsMasked
+					? { key: type, bucketCount: aggregation.bucket_count }
+					: totalHitsAgg;
+
+			return {
+				aggsTotal: {
+					...aggsTotal,
+					[type]: {
+						...aggregation,
+						buckets: dataMaskedBuckets,
+					},
+				},
+				totalHitsAgg: hitsAgg,
 			};
-			return { ...acc, [aggName]: modifiedAggValue };
-		}
-		return { ...acc, [aggName]: aggValue };
-	}, {});
+		},
+		{
+			aggsTotal: {},
+			totalHitsAgg: { key: '', bucketCount: 0 },
+		},
+	);
 
-	console.log(JSON.stringify(x));
-	return x;
-};
+	const hitsTotal = calculateHitsFromAggregation({
+		aggregation: dataMaskedAggregations[totalHitsAgg.key],
+	});
 
-export const calculateHitsFromAggregations = ({ aggregations }) => {
-	console.log('calc hits', aggregations);
-	// iterate over aggregations and buckets
-	// calc buckets based on value for properties over threshold and +1 for values under threshold
-	// nb: if aggregation has all buckets over threshold, that will be accurate total hits value
-	return -999;
+	return { hitsTotal, dataMaskedAggregations };
 };
