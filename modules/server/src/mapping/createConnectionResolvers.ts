@@ -3,8 +3,7 @@ import { IResolvers } from '@graphql-tools/utils';
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 
-import { parseResolveInfo } from 'graphql-parse-resolve-info';
-import { calculateHitsFromAggregations } from './masking';
+import { applyAggregationMasking } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
 
@@ -43,39 +42,17 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 		};
 	};
 
-	// TODO: memoise instead of context
-	// just same request really - maybe  JSON.stringify
 	const aggregationsQuery = resolveAggregations({ type, getServerSideFilter });
 	const aggregationsResolver = async (obj, args, context, info) => {
 		const aggs = await aggregationsQuery(obj, args, context, info);
 		return aggregationsToGraphql(aggs);
 	};
 
+	// hits resolver doesnt have access to aggregations field
 	const defaultHitsResolver = resolveHits({ type, Parallel, getServerSideFilter });
 	const hitsResolver = enableDocumentHits
 		? defaultHitsResolver
-		: async (obj, args, context, info) => {
-				/*
-				 * Checks for aggregations field in full query and retrieves args
-				 * Popular parsing `info` libs do not include these operations properties
-				 */
-				const typeNameConnectionProperty = info.operation.selectionSet.selections[0];
-				const isAggregationsQueried = typeNameConnectionProperty.selectionSet.selections.some(
-					(selection) => selection.name.value === 'aggregations',
-				);
-
-				/*
-				 * Calculate "hits" based on aggregations otherwise return 0
-				 */
-				if (isAggregationsQueried) {
-					// other args are ok to pass through as they share context and parent field
-					const aggregations = await aggregationsQuery(obj, info.variableValues, context, info);
-					const total = calculateHitsFromAggregations({ aggregations });
-					return { total };
-				} else {
-					return { total: 0 };
-				}
-		  };
+		: resolveHitsFromAggs(aggregationsQuery);
 
 	return {
 		[type.name]: {
@@ -93,6 +70,36 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 			}),
 		},
 	};
+};
+
+/**
+ * Resolve hits from aggregations
+ * If "aggregations" field is not in query, return 0
+ *
+ * @param aggregationsQuery - resolver ES query code for aggregations
+ * @returns Returns a total count that is less than or equal to the actual total hits in the query.
+ */
+const resolveHitsFromAggs = (aggregationsQuery) => async (obj, args, context, info) => {
+	/*
+	 * Get "aggregations" field from full query if found
+	 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
+	 */
+	const fileNameConnectionProperty = info.operation.selectionSet.selections[0];
+	const aggregationsSelectionSet = fileNameConnectionProperty.selectionSet.selections.find(
+		(selection) => selection.name.value === 'aggregations',
+	);
+
+	if (aggregationsSelectionSet) {
+		const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
+		const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
+		const { hitsTotal: total } = applyAggregationMasking({
+			aggregations,
+			thresholdMin: 200,
+		});
+		return { total };
+	} else {
+		return { total: 0 };
+	}
 };
 
 export default createConnectionResolvers;
