@@ -12,6 +12,7 @@ type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	enableDocumentHits: boolean;
+	dataMaskThreshold: number;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
@@ -22,6 +23,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
 	enableDocumentHits,
+	dataMaskThreshold,
 	getServerSideFilter,
 	Parallel,
 	type,
@@ -48,11 +50,10 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 		return aggregationsToGraphql(aggs);
 	};
 
-	// hits resolver doesnt have access to aggregations field
 	const defaultHitsResolver = resolveHits({ type, Parallel, getServerSideFilter });
 	const hitsResolver = enableDocumentHits
 		? defaultHitsResolver
-		: resolveHitsFromAggs(aggregationsQuery);
+		: resolveHitsFromAggs(aggregationsQuery, dataMaskThreshold);
 
 	return {
 		[type.name]: {
@@ -79,27 +80,28 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
  * @param aggregationsQuery - resolver ES query code for aggregations
  * @returns Returns a total count that is less than or equal to the actual total hits in the query.
  */
-const resolveHitsFromAggs = (aggregationsQuery) => async (obj, args, context, info) => {
-	/*
-	 * Get "aggregations" field from full query if found
-	 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
-	 */
-	const fileNameConnectionProperty = info.operation.selectionSet.selections[0];
-	const aggregationsSelectionSet = fileNameConnectionProperty.selectionSet.selections.find(
-		(selection) => selection.name.value === 'aggregations',
-	);
+const resolveHitsFromAggs =
+	(aggregationsQuery, dataMaskThreshold) => async (obj, args, context, info) => {
+		/*
+		 * Get "aggregations" field from full query if found
+		 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
+		 */
+		const fileNameConnectionProperty = info.operation.selectionSet.selections[0];
+		const aggregationsSelectionSet = fileNameConnectionProperty.selectionSet.selections.find(
+			(selection) => selection.name.value === 'aggregations',
+		);
 
-	if (aggregationsSelectionSet) {
-		const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
-		const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
-		const { hitsTotal: total } = applyAggregationMasking({
-			aggregations,
-			thresholdMin: 200,
-		});
-		return { total };
-	} else {
-		return { total: 0 };
-	}
-};
+		if (aggregationsSelectionSet) {
+			const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
+			const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
+			const { hitsTotal: total } = applyAggregationMasking({
+				aggregations,
+				thresholdMin: dataMaskThreshold,
+			});
+			return { total };
+		} else {
+			return { total: 0 };
+		}
+	};
 
 export default createConnectionResolvers;

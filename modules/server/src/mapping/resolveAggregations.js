@@ -3,7 +3,6 @@ import getFields from 'graphql-fields';
 import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
 
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
-import { applyAggregationMasking } from './masking';
 import compileFilter from './utils/compileFilter';
 import esSearch from './utils/esSearch';
 
