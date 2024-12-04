@@ -53,18 +53,15 @@ export const applyAggregationMasking = ({
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce(
 		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
-
 			// mask buckets if under threshold
 			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
 				bucket.doc_count < thresholdMin
 					? { ...bucket, doc_count: THRESHOLD_REPLACEMENT_VALUE, belowThreshold: true }
-					: bucket,
+					: { ...bucket, belowThreshold: false },
 			);
 
-			// update total hits agg if needed
-			const bucketIsMasked = dataMaskedBuckets.some((bucket) =>
-				Object.hasOwn(bucket, 'belowThreshold'),
-			);
+			// update total hits selected agg if needed
+			const bucketIsMasked = dataMaskedBuckets.some((bucket) => bucket.belowThreshold);
 			const hitsAgg =
 				totalHitsAgg.bucketCount < aggregation.bucket_count && bucketIsMasked
 					? { key: type, bucketCount: aggregation.bucket_count }
