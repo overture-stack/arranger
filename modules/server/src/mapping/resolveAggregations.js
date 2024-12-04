@@ -57,18 +57,7 @@ export default ({ type, getServerSideFilter }) => {
 			includeMissing: include_missing,
 		});
 
-		/*
-		 * Apply thresholding
-		 */
-		// TODO: check if buckets are even requested
-		console.log('aggregations', JSON.stringify(aggregations));
-		// TODO: env var this value
-		const thresholdMin = 200;
-
-		const result = applyAggregationMasking({ aggregations, thresholdMin });
-
-		console.log('thres result', result);
-		return result;
+		return aggregations;
 	};
 };
 
