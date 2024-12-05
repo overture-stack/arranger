@@ -1,4 +1,5 @@
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
+import { get } from 'lodash';
 import { applyAggregationMasking } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
@@ -16,8 +17,8 @@ const resolveHitsFromAggs =
 		 * Get "aggregations" field from full query if found
 		 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
 		 */
-		const fileNameConnectionProperty = info.operation.selectionSet.selections[0];
-		const aggregationsSelectionSet = fileNameConnectionProperty.selectionSet.selections.find(
+		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
+		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
 			(selection) => selection.name.value === 'aggregations',
 		);
 
