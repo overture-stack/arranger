@@ -4,7 +4,7 @@ export const ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = stringToBool(
 	process.env.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
 );
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
-export const DATA_MASK_THRESHOLD = process.env.CONFIG_PATH || Number.MAX_SAFE_INTEGER;
+export const DATA_MASK_THRESHOLD = process.env.DATA_MASK_THRESHOLD || Number.MAX_SAFE_INTEGER;
 export const DEBUG_MODE = stringToBool(process.env.DEBUG);
 export const DOCUMENT_TYPE = process.env.DOCUMENT_TYPE || '';
 export const DOWNLOAD_STREAM_BUFFER_SIZE =
