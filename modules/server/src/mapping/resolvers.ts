@@ -22,6 +22,10 @@ const resolveHitsFromAggs =
 			(selection) => selection.name.value === 'aggregations',
 		);
 
+		/*
+		 * This function is used for "aggregation only mode" of Arranger where "hits" is based on "aggregations"
+		 * A user might request only the "hits" field in a GQL query, in which case return 0
+		 */
 		if (aggregationsSelectionSet) {
 			const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
 			const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
