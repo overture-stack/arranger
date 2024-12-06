@@ -49,6 +49,7 @@ export const applyAggregationMasking = ({
 	>;
 	thresholdMin: number;
 }) => {
+	// set data masked properties to one less than the configured threshold value (under threshold)
 	const THRESHOLD_REPLACEMENT_VALUE = thresholdMin - 1;
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce(
