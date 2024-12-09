@@ -1,8 +1,11 @@
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
+import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
+import { Context } from 'vm';
 import { applyAggregationMasking } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
+import { Aggregation, Hits, Root } from './types';
 
 /**
  * Resolve hits from aggregations
@@ -12,7 +15,20 @@ import resolveHits from './resolveHits';
  * @returns Returns a total count that is less than or equal to the actual total hits in the query.
  */
 const resolveHitsFromAggs =
-	(aggregationsQuery, dataMaskThreshold) => async (obj, args, context, info) => {
+	(
+		aggregationsQuery: (
+			obj: Root,
+			args: {
+				filters?: object;
+				include_missing?: boolean;
+				aggregations_filter_themselves?: boolean;
+			},
+			context: Context,
+			info: GraphQLResolveInfo,
+		) => Record<string, Aggregation>,
+		dataMaskThreshold: number,
+	) =>
+	async (obj: Root, args: Hits, context: Context, info: GraphQLResolveInfo) => {
 		/*
 		 * Get "aggregations" field from full query if found
 		 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
@@ -46,9 +62,16 @@ export const createResolvers = ({
 	getServerSideFilter,
 	dataMaskThreshold,
 	enableDocumentHits,
+}: {
+	createStateResolvers: boolean;
+	type;
+	Parallel;
+	getServerSideFilter;
+	dataMaskThreshold: number;
+	enableDocumentHits: boolean;
 }) => {
 	// configs
-	const configs = async (parentObj, { fieldNames }: { fieldNames: string[] }) => {
+	const configs = async (parentObj: Root, { fieldNames }: { fieldNames: string[] }) => {
 		return {
 			downloads: type.config?.[ConfigProperties.DOWNLOADS],
 			extended: fieldNames
@@ -67,7 +90,16 @@ export const createResolvers = ({
 	// aggregations
 	const aggregationsQuery = resolveAggregations({ type, getServerSideFilter });
 
-	const aggregations = async (obj, args, context, info) => {
+	const aggregations = async (
+		obj: Root,
+		args: {
+			filters?: object;
+			include_missing?: boolean;
+			aggregations_filter_themselves?: boolean;
+		},
+		context: Context,
+		info: GraphQLResolveInfo,
+	) => {
 		const aggs = await aggregationsQuery(obj, args, context, info);
 		return aggregationsToGraphql(aggs);
 	};

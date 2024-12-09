@@ -1,13 +1,4 @@
-type Bucket = {
-	doc_count: number;
-	key: string;
-	belowThreshold: boolean;
-};
-
-type Aggregation = {
-	bucket_count: number;
-	buckets: Bucket[];
-};
+import { Aggregation } from './types';
 
 /**
  * This returns a total count that is less than or equal to the actual total hits in the query.
@@ -17,7 +8,15 @@ type Aggregation = {
  * @param aggregation an aggregation with the most buckets which has data masking applied
  * @returns hits total value
  */
-const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregation }) => {
+const calculateHitsFromAggregation = ({
+	aggregation,
+}: {
+	aggregation: Aggregation | undefined;
+}) => {
+	if (!aggregation) {
+		console.error('No aggregation found for calculating hits.');
+		return 0;
+	}
 	return aggregation.buckets.reduce(
 		(totalAcc, bucket) => (bucket.belowThreshold ? totalAcc + 1 : totalAcc + bucket.doc_count),
 		0,
@@ -52,7 +51,10 @@ export const applyAggregationMasking = ({
 	// set data masked properties to one less than the configured threshold value (under threshold)
 	const THRESHOLD_REPLACEMENT_VALUE = thresholdMin - 1;
 
-	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce(
+	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{
+		aggsTotal: Record<string, Aggregation>;
+		totalHitsAgg: { key: string; bucketCount: number };
+	}>(
 		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
 			// mask buckets if under threshold
 			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
