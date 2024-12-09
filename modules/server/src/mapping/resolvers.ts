@@ -2,6 +2,7 @@ import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
 import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
 import { Context } from 'vm';
+import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
@@ -35,7 +36,7 @@ const resolveHitsFromAggs =
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
-			(selection) => selection.name.value === 'aggregations',
+			(selection) => selection.kind === 'Field' && selection.name.value === 'aggregations',
 		);
 
 		/*
@@ -44,6 +45,9 @@ const resolveHitsFromAggs =
 		 */
 		if (aggregationsSelectionSet) {
 			const modifiedInfo = { ...info, fieldNodes: [aggregationsSelectionSet] };
+			// @ts-ignore
+			// modifying the query info field inline so it can query aggregations correctly
+			// not idiomatic so doesn't line up with typings from graphql
 			const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
 			const { hitsTotal: total } = applyAggregationMasking({
 				aggregations,
@@ -62,14 +66,7 @@ export const createResolvers = ({
 	getServerSideFilter,
 	dataMaskThreshold,
 	enableDocumentHits,
-}: {
-	createStateResolvers: boolean;
-	type;
-	Parallel;
-	getServerSideFilter;
-	dataMaskThreshold: number;
-	enableDocumentHits: boolean;
-}) => {
+}: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
 	// configs
 	const configs = async (parentObj: Root, { fieldNames }: { fieldNames: string[] }) => {
 		return {
@@ -93,9 +90,9 @@ export const createResolvers = ({
 	const aggregations = async (
 		obj: Root,
 		args: {
-			filters?: object;
-			include_missing?: boolean;
-			aggregations_filter_themselves?: boolean;
+			filters: object;
+			include_missing: boolean;
+			aggregations_filter_themselves: boolean;
 		},
 		context: Context,
 		info: GraphQLResolveInfo,
@@ -108,7 +105,10 @@ export const createResolvers = ({
 	const defaultHitsResolver = resolveHits({ type, Parallel, getServerSideFilter });
 	const hits = enableDocumentHits
 		? defaultHitsResolver
-		: resolveHitsFromAggs(aggregationsQuery, dataMaskThreshold);
+		: // @ts-ignore
+		  // typing resolveAggregations requires typing a lot of code down the chain
+		  // TODO: improve typing
+		  resolveHitsFromAggs(aggregationsQuery, dataMaskThreshold);
 
 	return { hits, aggregations, configs };
 };

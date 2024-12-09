@@ -9,7 +9,7 @@ import esSearch from './utils/esSearch';
 export default ({ type, getServerSideFilter }) => {
 	return async (
 		obj,
-		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
+		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,
 		info,
 	) => {

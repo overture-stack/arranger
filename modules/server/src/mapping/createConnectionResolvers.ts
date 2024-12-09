@@ -5,7 +5,7 @@ import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 import { createResolvers } from './resolvers';
 
 // TODO: tighten these types
-type CreateConnectionResolversArgs = {
+export type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	enableDocumentHits: boolean;
