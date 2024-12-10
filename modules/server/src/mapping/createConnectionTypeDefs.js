@@ -1,41 +1,34 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-const generateHitsTypeString = (name, fieldsToExclude) => {
-	if (fieldsToExclude.includes('hits')) {
-		return '';
-	}
+export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) => {
+	const dataMaskingType = !showRecords ? 'type DataMasking { thresholdValue: Int }' : '';
 
-	return `
-  hits(
-    score: String
-    offset: Int
-    sort: [Sort]
-    filters: JSON
-    before: String
-    after: String
-    first: Int
-    last: Int
-    searchAfter: JSON
-    trackTotalHits: Boolean = true
-  ): ${name}Connection`;
-};
-
-export default ({ type, fields = '', createStateTypeDefs = true, fieldsToExclude }) => {
 	return `
     type ${type.name} {
       aggregations(
         filters: JSON
-
         include_missing: Boolean
         # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
         aggregations_filter_themselves: Boolean
       ): ${type.name}Aggregations
 
+      ${!showRecords ? 'dataMasking: DataMasking' : ''}
+
       configs: ${createStateTypeDefs ? 'ConfigsWithState' : 'ConfigsWithoutState'}
 
-      ${generateHitsTypeString(type.name, fieldsToExclude)}
+      hits(
+        score: String
+        offset: Int
+        sort: [Sort]
+        filters: JSON
+        before: String
+        after: String
+        first: Int
+        last: Int
+        searchAfter: JSON
+        trackTotalHits: Boolean = true
+      ): ${type.name}Connection
      
-
       mapping: JSON
     }
 
@@ -43,9 +36,11 @@ export default ({ type, fields = '', createStateTypeDefs = true, fieldsToExclude
       ${mappingToAggsType(type.mapping)}
     }
 
+    ${dataMaskingType}
+
     type ${type.name}Connection {
       total: Int!
-      edges: [${type.name}Edge]
+     ${showRecords ? `edges: [${type.name}Edge]` : ''}
     }
 
     type ${type.name}Edge {

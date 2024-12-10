@@ -1,4 +1,9 @@
-export let typeDefs = `
+/**
+ *
+ * @param  enableDocumentHits if false, agg only mode is enabled, add to GQL schema definition
+ * @returns typedef string
+ */
+export const typeDefs = ({ enableDocumentHits }: { enableDocumentHits: boolean }) => `
   type Stats {
     max: Float
     min: Float

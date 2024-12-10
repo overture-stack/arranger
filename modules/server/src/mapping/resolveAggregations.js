@@ -6,10 +6,13 @@ import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
 
-let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
-
-export default ({ type, getServerSideFilter }) =>
-	async (obj, { offset = 0, filters, aggregations_filter_themselves, include_missing = true }, context, info) => {
+export default ({ type, getServerSideFilter }) => {
+	return async (
+		obj,
+		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
+		context,
+		info,
+	) => {
 		const nestedFieldNames = type.nested_fieldNames;
 
 		const { esClient } = context;
@@ -54,5 +57,11 @@ export default ({ type, getServerSideFilter }) =>
 			includeMissing: include_missing,
 		});
 
-		return Object.entries(aggregations).reduce(toGraphqlField, {});
+		return aggregations;
 	};
+};
+
+const toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
+export const aggregationsToGraphql = (aggregations) => {
+	return Object.entries(aggregations).reduce(toGraphqlField, {});
+};

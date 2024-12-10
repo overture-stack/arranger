@@ -67,7 +67,7 @@ const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
 export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
-	AggregationsTypeDefs,
+	AggregationsTypeDefs({ enableDocumentHits }),
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
@@ -76,7 +76,15 @@ export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) 
 
 const resolveObject = () => ({});
 
-export let resolvers = ({ enableAdmin, enableDocumentHits, types, rootTypes, scalarTypes, getServerSideFilter }) => {
+export let resolvers = ({
+	enableAdmin,
+	enableDocumentHits,
+	dataMaskThreshold,
+	types,
+	rootTypes,
+	scalarTypes,
+	getServerSideFilter,
+}) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -129,6 +137,7 @@ export let resolvers = ({ enableAdmin, enableDocumentHits, types, rootTypes, sca
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
 					enableDocumentHits,
+					dataMaskThreshold,
 					getServerSideFilter,
 					Parallel,
 					type,
