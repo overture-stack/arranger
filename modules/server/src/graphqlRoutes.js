@@ -3,7 +3,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
-import getConfigObject, { initializeSets } from './config';
+import getConfigObject, { ENV_CONFIG, initializeSets } from './config';
 import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
@@ -169,7 +169,7 @@ const createEndpoint = async ({
 
 	console.log('Starting GraphQL server:');
 
-	if (ENABLE_NETWORK_AGGREGATION) {
+	if (ENV_CONFIG.ENABLE_NETWORK_AGGREGATION) {
 		/**
 		 * TODO: make available on one route
 		 */
@@ -261,10 +261,11 @@ const createEndpoint = async ({
 	return router;
 };
 
-export const createSchemasFromConfigs = async ({
+const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -290,7 +291,7 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		if (ENABLE_NETWORK_AGGREGATION) {
+		if (enableNetworkAggregation) {
 			const { networkSchema } = await createSchemaFromNetworkConfig({
 				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
 					...config,
@@ -321,8 +322,10 @@ export const createSchemasFromConfigs = async ({
 
 export default async ({
 	configsSource = '',
+	dataMaskThreshold,
 	enableAdmin,
 	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -333,6 +336,7 @@ export default async ({
 				configsSource,
 				enableAdmin,
 				enableDocumentHits,
+				enableNetworkAggregation,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,
