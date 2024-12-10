@@ -4,10 +4,11 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
+import { createSchemaFromNetworkConfig, mergeSchemas } from './network';
 import makeSchema from './schema';
 
 const getESMapping = async (esClient, index) => {
@@ -116,7 +117,13 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	enableDocumentHits,
+	getServerSideFilter,
+	graphqlOptions = {},
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -131,6 +138,7 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 			}),
 			schema: makeSchema({
 				enableAdmin,
+				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -148,12 +156,31 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+const createEndpoint = async ({
+	esClient,
+	graphqlOptions = {},
+	mockSchema,
+	schema,
+	networkSchema,
+}) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
 
 	console.log('Starting GraphQL server:');
+
+	if (ENABLE_NETWORK_AGGREGATION) {
+		/**
+		 * TODO: make available on one route
+		 */
+		const networkPath = '/network';
+		const apolloNetworkServer = new ApolloServer({
+			cache: 'bounded',
+			schema: networkSchema,
+		});
+		await apolloNetworkServer.start();
+		apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
+	}
 
 	try {
 		await router.get(
@@ -237,6 +264,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -249,18 +277,38 @@ export const createSchemasFromConfigs = async ({
 			configsFromFiles,
 		);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
+			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			types: typesWithMappings,
 		});
 
+		/**
+		 * Federated Network Search
+		 */
+		if (ENABLE_NETWORK_AGGREGATION) {
+			const { networkSchema } = await createSchemaFromNetworkConfig({
+				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
+					...config,
+					/**
+					 * part of the gql schema is generated dynamically
+					 * in the case of the "file" field, the field name and type name are the same
+					 * it's more flexible to define it here as an additional property than to confuse functions further down the pipeline
+					 */
+					documentName: config.documentType,
+				})),
+			});
+		}
+
 		return {
-			fieldsFromMapping,
+			...commonFields,
 			mockSchema,
 			schema,
-			typesWithMappings,
+			networkSchema,
 		};
 	} catch (error) {
 		const message = error?.message || error;
@@ -274,15 +322,17 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } =
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings, networkSchema } =
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
+				enableDocumentHits,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,
@@ -293,6 +343,7 @@ export default async ({
 			graphqlOptions,
 			mockSchema,
 			schema,
+			networkSchema,
 		});
 
 		await initializeSets({ esClient });
