@@ -4,7 +4,7 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
+import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
@@ -117,7 +117,13 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	enableDocumentHits,
+	getServerSideFilter,
+	graphqlOptions = {},
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -132,6 +138,7 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 			}),
 			schema: makeSchema({
 				enableAdmin,
+				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -257,6 +264,7 @@ const createEndpoint = async ({
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -273,6 +281,7 @@ export const createSchemasFromConfigs = async ({
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
+			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			types: typesWithMappings,
@@ -313,6 +322,7 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -322,6 +332,7 @@ export default async ({
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
+				enableDocumentHits,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

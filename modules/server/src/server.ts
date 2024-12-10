@@ -12,11 +12,13 @@ const {
 	CONFIG_FILES_PATH,
 	DEBUG_MODE,
 	ENABLE_ADMIN,
+	ENABLE_DOCUMENT_HITS,
 	ES_HOST,
 	ES_USER,
 	ES_PASS,
 	ES_LOG, //TODO: ES doesn't include a logger anymore
 	PING_PATH,
+	DATA_MASK_THRESHOLD,
 } = ENV_CONFIG;
 
 export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
@@ -48,6 +50,8 @@ export const buildEsClientViaEnv = () => {
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
+	enableDocumentHits = ENABLE_DOCUMENT_HITS,
+	dataMaskThreshold = DATA_MASK_THRESHOLD,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
@@ -84,6 +88,8 @@ const arrangerServer = async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
+		enableDocumentHits,
+		dataMaskThreshold,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
