@@ -12,13 +12,18 @@ export const typeDefs = ({ enableDocumentHits }: { enableDocumentHits: boolean }
     sum: Float
   }
 
+  enum Relation {
+    eq
+    gte
+  }
+
   type Bucket {
     doc_count: Int
     key: String
     key_as_string: String
     top_hits(_source:[String], size:Int): JSON
     filter_by_term(filter: JSON): JSON 
-    ${!enableDocumentHits ? 'belowThreshold: Boolean' : ''}
+    ${!enableDocumentHits ? 'relation: Relation' : ''}
   }
 
   type NumericAggregations {

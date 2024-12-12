@@ -1,9 +1,10 @@
 import { Client } from '@elastic/elasticsearch';
+import { Relation } from './masking';
 
 export type Bucket = {
 	doc_count: number;
 	key: string;
-	belowThreshold: boolean;
+	relation: Relation;
 };
 
 export type Aggregation = {

@@ -1,9 +1,15 @@
 import { ENV_CONFIG } from '@/config';
 import { Aggregation } from './types';
 
+const Relation = {
+	eq: 'eq',
+	gte: 'gte',
+} as const;
+export type Relation = keyof typeof Relation;
+
 /**
  * This returns a total count that is less than or equal to the actual total hits in the query.
- * It is calculated by adding +1 for values under threshold and bucket.doc_count
+ * It is calculated by adding +1 for values under threshold or adding bucket.doc_count amount
  * for values greater than or equal to
  *
  * @param aggregation an aggregation with the most buckets which has data masking applied
@@ -19,7 +25,8 @@ const calculateHitsFromAggregation = ({
 		return 0;
 	}
 	return aggregation.buckets.reduce(
-		(totalAcc, bucket) => (bucket.belowThreshold ? totalAcc + 1 : totalAcc + bucket.doc_count),
+		(totalAcc, bucket) =>
+			bucket.relation === Relation.gte ? totalAcc + 1 : totalAcc + bucket.doc_count,
 		0,
 	);
 };
@@ -30,7 +37,6 @@ const calculateHitsFromAggregation = ({
  * 2) Find the agg with the most bucket count and data masking applied to be used in calculating hits.total
  *
  * @param aggregations - aggregations from query
- * @param thresholdMin - threshold value
  * @returns aggregations with data masking applied and hits total
  */
 export const applyAggregationMasking = ({
@@ -49,8 +55,8 @@ export const applyAggregationMasking = ({
 }) => {
 	//const thresholdMin = ENV_CONFIG.DATA_MASK_THRESHOLD
 	const thresholdMin = 200;
-	// set data masked properties to one less than the configured threshold value (under threshold)
-	const THRESHOLD_REPLACEMENT_VALUE = thresholdMin - 1;
+
+	const THRESHOLD_REPLACEMENT_VALUE = 1;
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{
 		aggsTotal: Record<string, Aggregation>;
@@ -60,12 +66,12 @@ export const applyAggregationMasking = ({
 			// mask buckets if under threshold
 			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
 				bucket.doc_count < thresholdMin
-					? { ...bucket, doc_count: THRESHOLD_REPLACEMENT_VALUE, belowThreshold: true }
-					: { ...bucket, belowThreshold: false },
+					? { ...bucket, doc_count: THRESHOLD_REPLACEMENT_VALUE, relation: Relation.gte }
+					: { ...bucket, relation: Relation.eq },
 			);
 
 			// update total hits selected agg if needed
-			const bucketIsMasked = dataMaskedBuckets.some((bucket) => bucket.belowThreshold);
+			const bucketIsMasked = dataMaskedBuckets.some((bucket) => bucket.relation === Relation.gte);
 			const hitsAgg =
 				totalHitsAgg.bucketCount < aggregation.bucket_count && bucketIsMasked
 					? { key: type, bucketCount: aggregation.bucket_count }
