@@ -26,10 +26,12 @@ export const createSchemaFromNetworkConfig = async ({
 
 	const networkFieldTypes = getAllFieldTypes(nodeConfig, SUPPORTED_AGGREGATIONS_LIST);
 
-	// make schema type available for resolvers at query time
-	// { name: "donor_age", type: "NumericAggregations" }
-	// donor_age => NumericAggregations
-	// runs on schema setup once at bootstrap
+	/*
+	 * make schema type available for resolvers at query time
+	 * { name: "donor_age", type: "NumericAggregations" }
+	 * donor_age => NumericAggregations
+	 * runs on schema setup once at bootstrap
+	 */
 	networkFieldTypes.forEach((field) =>
 		ALL_NETWORK_AGGREGATION_TYPES_MAP.set(field.name, field.type),
 	);
