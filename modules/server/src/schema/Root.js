@@ -77,7 +77,6 @@ let resolveObject = () => ({});
 export let resolvers = ({
 	enableAdmin,
 	enableDocumentHits,
-	dataMaskThreshold,
 	types,
 	rootTypes,
 	scalarTypes,
@@ -135,7 +134,6 @@ export let resolvers = ({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
 					enableDocumentHits,
-					dataMaskThreshold,
 					getServerSideFilter,
 					Parallel,
 					type,

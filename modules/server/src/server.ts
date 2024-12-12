@@ -10,7 +10,6 @@ import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
 
 const {
 	CONFIG_FILES_PATH,
-	DATA_MASK_THRESHOLD,
 	DEBUG_MODE,
 	ENABLE_ADMIN,
 	ENABLE_DOCUMENT_HITS,
@@ -49,7 +48,6 @@ export const buildEsClientViaEnv = () => {
 
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
-	dataMaskThreshold = DATA_MASK_THRESHOLD,
 	enableAdmin = ENABLE_ADMIN,
 	enableDocumentHits = ENABLE_DOCUMENT_HITS,
 	enableNetworkAggregation = ENABLE_NETWORK_AGGREGATION,
@@ -91,7 +89,6 @@ const arrangerServer = async ({
 		enableAdmin,
 		enableDocumentHits,
 		enableNetworkAggregation,
-		dataMaskThreshold,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,

@@ -303,7 +303,6 @@ const createSchemasFromConfigs = async ({
 
 export default async ({
 	configsSource = '',
-	dataMaskThreshold,
 	enableAdmin,
 	enableDocumentHits,
 	enableNetworkAggregation,

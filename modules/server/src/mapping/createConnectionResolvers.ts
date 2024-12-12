@@ -9,7 +9,6 @@ export type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	enableDocumentHits: boolean;
-	dataMaskThreshold: number;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
@@ -20,7 +19,6 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
 	enableDocumentHits,
-	dataMaskThreshold,
 	getServerSideFilter,
 	Parallel,
 	type,
@@ -30,7 +28,6 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 		type,
 		Parallel,
 		getServerSideFilter,
-		dataMaskThreshold,
 		enableDocumentHits,
 	});
 

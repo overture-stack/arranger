@@ -1,3 +1,4 @@
+import { ENV_CONFIG } from '@/config';
 import { Aggregation } from './types';
 
 /**
@@ -34,7 +35,6 @@ const calculateHitsFromAggregation = ({
  */
 export const applyAggregationMasking = ({
 	aggregations,
-	thresholdMin,
 }: {
 	aggregations: Record<
 		string,
@@ -46,8 +46,9 @@ export const applyAggregationMasking = ({
 			}>;
 		}
 	>;
-	thresholdMin: number;
 }) => {
+	//const thresholdMin = ENV_CONFIG.DATA_MASK_THRESHOLD
+	const thresholdMin = 200;
 	// set data masked properties to one less than the configured threshold value (under threshold)
 	const THRESHOLD_REPLACEMENT_VALUE = thresholdMin - 1;
 
