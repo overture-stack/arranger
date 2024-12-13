@@ -11,5 +11,5 @@ export const createResponse = ({
 	aggregationResults: AllAggregations;
 	nodeInfo: NetworkNode[];
 }) => {
-	return { remoteConnections: nodeInfo, aggregations: aggregationResults };
+	return { nodes: nodeInfo, aggregations: aggregationResults };
 };

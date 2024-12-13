@@ -1,7 +1,7 @@
 import { ENV_CONFIG } from '@/config';
 import { Aggregation } from './types';
 
-const Relation = {
+export const Relation = {
 	eq: 'eq',
 	gte: 'gte',
 } as const;
@@ -49,6 +49,7 @@ export const applyAggregationMasking = ({
 			buckets: Array<{
 				doc_count: number;
 				key: string;
+				relation: Relation;
 			}>;
 		}
 	>;
@@ -72,6 +73,7 @@ export const applyAggregationMasking = ({
 
 			// update total hits selected agg if needed
 			const bucketIsMasked = dataMaskedBuckets.some((bucket) => bucket.relation === Relation.gte);
+			// take aggregation with the most buckets that has masked data
 			const hitsAgg =
 				totalHitsAgg.bucketCount < aggregation.bucket_count && bucketIsMasked
 					? { key: type, bucketCount: aggregation.bucket_count }

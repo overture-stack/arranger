@@ -125,8 +125,8 @@ export const createNodeQueryString = (
 	requestedFields: RequestedFieldsMap,
 ) => {
 	const fields = convertFieldsToString(requestedFields);
-	const aggregationsString = !isEmpty(fields)
-		? `aggregations(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing) ${fields}`
+	const aggregationsString = !isEmpty(fields) ? `aggregations  ${fields}` : '';
+	const gqlString = `query nodeQuery {${documentName} { hits { total }  ${aggregationsString} }}`;
 		: '';
 	const gqlString = `query nodeQuery($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean) {${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
