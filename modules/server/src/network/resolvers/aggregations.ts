@@ -61,6 +61,13 @@ const fetchData = async <SuccessType>(
 				console.error(`Network failure: ${url}`);
 				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
 			}
+
+			if (error.response) {
+				const response = error.response;
+				const errors = response.data.errors.map((gqlError) => gqlError.message).join('\n');
+				console.error(errors);
+				return failure(CONNECTION_STATUS.ERROR, 'errors');
+			}
 		}
 		return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
 	}
