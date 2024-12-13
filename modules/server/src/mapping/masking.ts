@@ -54,9 +54,7 @@ export const applyAggregationMasking = ({
 		}
 	>;
 }) => {
-	//const thresholdMin = ENV_CONFIG.DATA_MASK_THRESHOLD
-	const thresholdMin = 200;
-
+	const thresholdMin = ENV_CONFIG.DATA_MASK_MIN_THRESHOLD;
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{

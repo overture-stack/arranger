@@ -18,7 +18,7 @@ type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
 const emptyAggregation = (hits: number): Aggregations => ({
 	__typename: 'Aggregations',
 	bucket_count: 1,
-	buckets: [{ key: '___aggregation_not_available___', doc_count: hits }],
+	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: "eq" }],
 });
 
 // mutation - update a single aggregations field in the accumulator
