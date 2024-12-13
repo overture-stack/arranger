@@ -55,6 +55,9 @@ export const applyAggregationMasking = ({
 	>;
 }) => {
 	const thresholdMin = ENV_CONFIG.DATA_MASK_MIN_THRESHOLD;
+	if (thresholdMin < 1) {
+		throw Error('DATA_MASK_MIN_THRESHOLD environment variable has to be a positive integer.');
+	}
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{
