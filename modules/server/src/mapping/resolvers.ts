@@ -34,7 +34,8 @@ const resolveHitsFromAggs =
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
-			(selection) => selection.kind === 'Field' && selection.name.value === 'aggregations',
+			(selection: { kind: string; name: { value: string } }) =>
+				selection.kind === 'Field' && selection.name.value === 'aggregations',
 		);
 
 		/*
