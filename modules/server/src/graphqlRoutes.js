@@ -270,12 +270,13 @@ const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
+		const schemasToMerge = [schema];
+
 		/*
 		 * Federated Network Search
 		 */
-		const { networkSchema = {} } =
-			enableNetworkAggregation &&
-			(await createSchemaFromNetworkConfig({
+		if (enableNetworkAggregation) {
+			const networkSchema = await createSchemaFromNetworkConfig({
 				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
 					...config,
 					/*
@@ -284,9 +285,12 @@ const createSchemasFromConfigs = async ({
 					 */
 					documentName: config.documentType,
 				})),
-			}));
+			});
+			schemasToMerge.push(networkSchema);
+		}
 
-		const fullSchema = mergeSchemas({ schemas: [schema, networkSchema] });
+		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
+
 		return {
 			...commonFields,
 			mockSchema,
