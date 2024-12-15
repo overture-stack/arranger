@@ -1,12 +1,22 @@
-import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
-import { Context } from '@/gqlServer';
 import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
+
+import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
+import { Context, Resolver } from '@/gqlServer';
 import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
-import resolveAggregations, { Aggregation, aggregationsToGraphql } from './resolveAggregations';
+import resolveAggregations, {
+	Aggregations,
+	aggregationsToGraphql,
+	GQLAggregationQueryFilters,
+} from './resolveAggregations';
 import resolveHits from './resolveHits';
-import { Hits, Root } from './types';
+import { HitsQuery } from './types';
+
+type Root = Record<string, any>;
+
+type HitsResolver = Resolver<Root, HitsQuery, Promise<{ total: number }>>;
+type AggregationsResolver = Resolver<Root, GQLAggregationQueryFilters, Promise<Aggregations>>;
 
 /**
  * Resolve hits from aggregations
@@ -15,20 +25,10 @@ import { Hits, Root } from './types';
  * @param aggregationsQuery - resolver ES query code for aggregations
  * @returns Returns a total count that is less than or equal to the actual total hits in the query.
  */
-const resolveHitsFromAggs =
-	(
-		aggregationsQuery: (
-			obj: Root,
-			args: {
-				filters?: object;
-				include_missing?: boolean;
-				aggregations_filter_themselves?: boolean;
-			},
-			context: Context,
-			info: GraphQLResolveInfo,
-		) => Record<string, Aggregation>,
-	) =>
-	async (obj: Root, args: Hits, context: Context, info: GraphQLResolveInfo) => {
+const resolveHitsFromAggs: (aggregationsQuery: AggregationsResolver) => HitsResolver = (
+	aggregationsQuery,
+) => {
+	const resolver: HitsResolver = async (obj, args, context, info) => {
 		/*
 		 * Get "aggregations" field from full query if found
 		 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
@@ -57,6 +57,8 @@ const resolveHitsFromAggs =
 			return { total: 0 };
 		}
 	};
+	return resolver;
+};
 
 export const createResolvers = ({
 	createStateResolvers,
@@ -66,7 +68,11 @@ export const createResolvers = ({
 	enableDocumentHits,
 }: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
 	// configs
-	const configs = async (parentObj: Root, { fieldNames }: { fieldNames: string[] }) => {
+	// TODO: tighten return value type
+	const configs: Resolver<Root, { fieldNames: string[] }, any> = async (
+		parentObj,
+		{ fieldNames },
+	) => {
 		return {
 			downloads: type.config?.[ConfigProperties.DOWNLOADS],
 			extended: fieldNames
@@ -86,16 +92,7 @@ export const createResolvers = ({
 	// @ts-expect-error - tighten types higher up, "type"
 	const aggregationsQuery = resolveAggregations({ type, getServerSideFilter });
 
-	const aggregations = async (
-		obj: Root,
-		args: {
-			filters: object;
-			include_missing: boolean;
-			aggregations_filter_themselves: boolean;
-		},
-		context: Context,
-		info: GraphQLResolveInfo,
-	) => {
+	const aggregations: AggregationsResolver = async (obj, args, context, info) => {
 		const aggregations = await aggregationsQuery(obj, args, context, info);
 		if (enableDocumentHits) {
 			return aggregationsToGraphql(aggregations);

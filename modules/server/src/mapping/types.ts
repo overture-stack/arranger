@@ -1,19 +1,3 @@
-import { Client } from '@elastic/elasticsearch';
-import { Relation } from './masking';
-
-export type Bucket = {
-	doc_count: number;
-	key: string;
-	relation: Relation;
-};
-
-export type Aggregation = {
-	bucket_count: number;
-	buckets: Bucket[];
-};
-
-export type Root = Record<string, unknown>;
-
 enum Missing {
 	first,
 	last,
@@ -38,7 +22,7 @@ export type Sort = {
 	missing: Missing;
 };
 
-export type Hits = {
+export type HitsQuery = {
 	score: string;
 	offset: number;
 	sort: [Sort];

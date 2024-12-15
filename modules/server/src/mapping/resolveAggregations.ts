@@ -11,7 +11,7 @@ import esSearch from './utils/esSearch';
 /*
  * GQL query types
  */
-type GQLAggregationQueryFilters = {
+export type GQLAggregationQueryFilters = {
 	filters: any;
 	aggregations_filter_themselves: boolean;
 	include_missing: boolean;
@@ -31,7 +31,7 @@ export type Aggregation = {
 	buckets: Bucket[];
 };
 
-type Aggregations = Record<string, Aggregation>;
+export type Aggregations = Record<string, Aggregation>;
 
 const resolveAggregations = ({
 	type,

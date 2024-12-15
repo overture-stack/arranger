@@ -12,8 +12,8 @@ export type Relation = keyof typeof Relation;
  * It is calculated by adding +1 for values under threshold or adding bucket.doc_count amount
  * for values greater than or equal to
  *
- * @param aggregation an aggregation with the most buckets which has data masking applied
- * @returns hits total value
+ * @param aggregation An aggregation with the most buckets which has data masking applied
+ * @returns Hits total value
  */
 const calculateHitsFromAggregation = ({
 	aggregation,
