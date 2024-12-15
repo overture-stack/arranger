@@ -83,6 +83,7 @@ export const createResolvers = ({
 	};
 
 	// aggregations
+	// @ts-expect-error - tighten types higher up, "type"
 	const aggregationsQuery = resolveAggregations({ type, getServerSideFilter });
 
 	const aggregations = async (
