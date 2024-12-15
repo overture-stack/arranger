@@ -2,12 +2,13 @@ import { gql } from 'apollo-server-core';
 import axios, { AxiosError } from 'axios';
 import { DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
+
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, success } from '../result';
 import { Hits } from '../types/hits';
 import { AllAggregations, NodeConfig } from '../types/types';
-import { ASTtoString, RequestedFieldsMap } from '../util';
+import { ASTtoString, RequestedFieldsMap } from '../utils/gql';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
 type NetworkQuery = {

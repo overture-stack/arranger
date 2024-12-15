@@ -1,5 +1,5 @@
 import { ENV_CONFIG } from '@/config';
-import { Aggregation } from './types';
+import { Aggregation } from './resolveAggregations';
 
 export const Relation = {
 	eq: 'eq',

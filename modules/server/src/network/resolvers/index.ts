@@ -1,7 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { isSuccess } from '../result';
 import { NodeConfig } from '../types/types';
-import { resolveInfoToMap } from '../util';
+import { resolveInfoToMap } from '../utils/gql';
 import { convertToSqon } from '../utils/sqon';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
