@@ -1,11 +1,12 @@
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
+import { Context } from '@/gqlServer';
 import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
 import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
-import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
+import resolveAggregations, { Aggregation, aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
-import { Aggregation, Context, Hits, Root } from './types';
+import { Hits, Root } from './types';
 
 /**
  * Resolve hits from aggregations

@@ -9,7 +9,7 @@ export type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	enableDocumentHits: boolean;
-	getServerSideFilter?: GetServerSideFilterFn;
+	getServerSideFilter: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
 };

@@ -1,13 +1,46 @@
+import { Resolver } from '@/gqlServer';
+import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 import getFields from 'graphql-fields';
 
 import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
-
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
+import { Relation } from './masking';
 import compileFilter from './utils/compileFilter';
 import esSearch from './utils/esSearch';
 
-export default ({ type, getServerSideFilter }) => {
-	return async (
+/*
+ * GQL query types
+ */
+type GQLAggregationQueryFilters = {
+	filters: any;
+	aggregations_filter_themselves: boolean;
+	include_missing: boolean;
+};
+
+/*
+ * Types
+ */
+export type Bucket = {
+	doc_count: number;
+	key: string;
+	relation: Relation;
+};
+
+export type Aggregation = {
+	bucket_count: number;
+	buckets: Bucket[];
+};
+
+type Aggregations = Record<string, Aggregation>;
+
+const resolveAggregations = ({
+	type,
+	getServerSideFilter,
+}: {
+	type: { index: string; nested_fieldNames: string[] };
+	getServerSideFilter: GetServerSideFilterFn;
+}) => {
+	const resolver: Resolver<unknown, GQLAggregationQueryFilters, Promise<Aggregations>> = async (
 		obj,
 		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,
@@ -26,7 +59,7 @@ export default ({ type, getServerSideFilter }) => {
 			nestedFieldNames,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
-				serverSideFilter: getServerSideFilter(context),
+				serverSideFilter: getServerSideFilter(),
 			}),
 		});
 
@@ -48,9 +81,11 @@ export default ({ type, getServerSideFilter }) => {
 		const response = await esSearch(esClient)({
 			index: type.index,
 			size: 0,
+			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			_source: false,
 			body,
 		});
+
 		const aggregations = flattenAggregations({
 			aggregations: response.aggregations,
 			includeMissing: include_missing,
@@ -58,9 +93,15 @@ export default ({ type, getServerSideFilter }) => {
 
 		return aggregations;
 	};
+	return resolver;
 };
 
-const toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
-export const aggregationsToGraphql = (aggregations) => {
-	return Object.entries(aggregations).reduce(toGraphqlField, {});
+export default resolveAggregations;
+
+const toGraphqlField = (acc: Aggregations, [a, b]: [string, Aggregation]) => ({
+	...acc,
+	[a.replace(/\./g, '__')]: b,
+});
+export const aggregationsToGraphql = (aggregations: Aggregations) => {
+	return Object.entries(aggregations).reduce<Aggregations>(toGraphqlField, {});
 };

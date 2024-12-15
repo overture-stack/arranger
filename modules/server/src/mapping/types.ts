@@ -50,7 +50,3 @@ export type Hits = {
 	searchAfter: JSON;
 	trackTotalHits: boolean;
 };
-
-export type Context = {
-	es: Client;
-};
