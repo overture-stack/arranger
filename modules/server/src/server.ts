@@ -3,7 +3,7 @@ import { Router } from 'express';
 import morgan from 'morgan';
 
 import { ENV_CONFIG } from './config';
-import { ENABLE_LOGS } from './config/constants';
+import { ENABLE_LOGS, ENABLE_NETWORK_AGGREGATION } from './config/constants';
 import downloadRoutes from './download';
 import getGraphQLRoutes from './graphqlRoutes';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
@@ -18,7 +18,6 @@ const {
 	ES_PASS,
 	ES_LOG, //TODO: ES doesn't include a logger anymore
 	PING_PATH,
-	DATA_MASK_THRESHOLD,
 } = ENV_CONFIG;
 
 export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
@@ -51,7 +50,7 @@ const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
 	enableDocumentHits = ENABLE_DOCUMENT_HITS,
-	dataMaskThreshold = DATA_MASK_THRESHOLD,
+	enableNetworkAggregation = ENABLE_NETWORK_AGGREGATION,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
@@ -89,7 +88,7 @@ const arrangerServer = async ({
 		configsSource,
 		enableAdmin,
 		enableDocumentHits,
-		dataMaskThreshold,
+		enableNetworkAggregation,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,

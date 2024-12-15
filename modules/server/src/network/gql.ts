@@ -23,7 +23,7 @@ export const fetchGql = ({
 	const axiosOptions: AxiosRequestConfig = {
 		url,
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
+		headers: { 'Content-Type': 'application/json', 'X-REQUEST-TYPE': 'GraphQL' },
 		data: { query: gqlQuery, variables },
 		signal: AbortSignal.timeout(timeout),
 	};

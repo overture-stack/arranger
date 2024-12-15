@@ -3,7 +3,7 @@ import { fetchGql, normalizeGqlField } from '../gql';
 import { gqlAggregationTypeQuery, GQLTypeQueryResponse } from '../queries';
 import { NetworkConfig } from '../types/setup';
 import { NodeConfig } from '../types/types';
-import { fulfilledPromiseFilter } from '../util';
+import { fulfilledPromiseFilter } from '../utils/promise';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
 	config: NetworkConfig;

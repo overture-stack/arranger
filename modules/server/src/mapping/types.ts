@@ -1,18 +1,3 @@
-import { Client } from '@elastic/elasticsearch';
-
-export type Bucket = {
-	doc_count: number;
-	key: string;
-	belowThreshold: boolean;
-};
-
-export type Aggregation = {
-	bucket_count: number;
-	buckets: Bucket[];
-};
-
-export type Root = Record<string, unknown>;
-
 enum Missing {
 	first,
 	last,
@@ -37,7 +22,7 @@ export type Sort = {
 	missing: Missing;
 };
 
-export type Hits = {
+export type HitsQuery = {
 	score: string;
 	offset: number;
 	sort: [Sort];
@@ -48,8 +33,4 @@ export type Hits = {
 	last: number;
 	searchAfter: JSON;
 	trackTotalHits: boolean;
-};
-
-export type Context = {
-	es: Client;
 };

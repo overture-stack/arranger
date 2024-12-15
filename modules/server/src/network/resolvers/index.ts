@@ -1,7 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { isSuccess } from '../result';
 import { NodeConfig } from '../types/types';
-import { resolveInfoToMap } from '../util';
+import { resolveInfoToMap } from '../utils/gql';
 import { convertToSqon } from '../utils/sqon';
 import { aggregationPipeline } from './aggregations';
 import { NetworkNode } from './networkNode';
@@ -33,7 +33,7 @@ export type NetworkAggregationArgs = {
  */
 export const createResolvers = (configs: NodeConfig[]) => {
 	return {
-		Query: {
+		Root: {
 			network: async (
 				parent: NetworkSearchRoot,
 				// as mentioned above, type should match gql typedefs

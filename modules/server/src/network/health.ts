@@ -6,15 +6,14 @@ import { ConnectionStatus } from './types/types';
 /**
  * Check the status of remote connections
  *
+ * Recommended way to health check gql server is to run the `__typename` query that every server has.
+ * Very small query with no additional params, therefore using GET (vs GQL POST) is not a concern.
+ * Adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection.
+ *
  * @param url - Remote connection url
  * @returns A connection status
  */
 export const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => {
-	/*
-	 * recommended way to health check gql server is to run the `__typename` query that every server has.
-	 * very small query with no additional params, so using GET is not a concern for the GQL server.
-	 * adds recommended pre flight header to make sure Apollo doesn't block request by CSRF protection.
-	 */
 	const healthCheckQuery = '?query=%7B__typename%7D';
 	const fullUrl = urljoin(url, healthCheckQuery);
 

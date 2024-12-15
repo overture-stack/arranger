@@ -10,6 +10,9 @@ const bucket = new GraphQLObjectType({
 		key: {
 			type: GraphQLString,
 		},
+		relation: {
+			type: GraphQLString
+		}
 	},
 });
 

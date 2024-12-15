@@ -1,13 +1,14 @@
 import { gql } from 'apollo-server-core';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
+
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { fetchGql } from '../gql';
 import { failure, isSuccess, Result, success } from '../result';
 import { Hits } from '../types/hits';
 import { AllAggregations, NodeConfig } from '../types/types';
-import { ASTtoString, RequestedFieldsMap } from '../util';
+import { ASTtoString, RequestedFieldsMap } from '../utils/gql';
 import { CONNECTION_STATUS, NetworkNode } from './networkNode';
 
 type NetworkQuery = {
@@ -28,6 +29,10 @@ type QueryVariables = {
  * @param query
  * @returns
  */
+
+// narrows type
+const isAxiosError = (error: unknown): error is AxiosError => axios.isAxiosError(error);
+
 const fetchData = async <SuccessType>(
 	query: NetworkQuery,
 ): Promise<Result<SuccessType, typeof CONNECTION_STATUS.ERROR>> => {
@@ -55,11 +60,19 @@ const fetchData = async <SuccessType>(
 		}
 
 		if (axios.isAxiosError(error)) {
-			console.error(error.toJSON());
+			const errorResponse = error as AxiosError<{ errors: { message: string }[] }>;
 
-			if (error.code === 'ECONNREFUSED') {
+			if (errorResponse.code === 'ECONNREFUSED') {
 				console.error(`Network failure: ${url}`);
 				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
+			}
+
+			if (error.response) {
+				const errors =
+					errorResponse.response &&
+					errorResponse.response.data.errors.map((gqlError) => gqlError.message).join('\n');
+				console.error(errors);
+				return failure(CONNECTION_STATUS.ERROR, 'errors');
 			}
 		}
 		return failure(CONNECTION_STATUS.ERROR, `Unknown error`);
@@ -118,10 +131,8 @@ export const createNodeQueryString = (
 	requestedFields: RequestedFieldsMap,
 ) => {
 	const fields = convertFieldsToString(requestedFields);
-	const aggregationsString = !isEmpty(fields)
-		? `aggregations(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing) ${fields}`
-		: '';
-	const gqlString = `query nodeQuery($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean) {${documentName} { hits { total }  ${aggregationsString} }}`;
+	const aggregationsString = !isEmpty(fields) ? `aggregations  ${fields}` : '';
+	const gqlString = `query nodeQuery {${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
 };
 
