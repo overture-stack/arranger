@@ -7,48 +7,45 @@ import {
 	GraphQLString,
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
-import { SupportedNetworkFieldType } from '../types/types';
-import { singleToNetworkAggregationMap } from './networkAggregations';
+import { SupportedNetworkFieldType } from '../setup/fields';
 
 /**
- * Converts field/types to GQLObjectType definition shape
+ * Creates nested GQL structured object from field type
+ * { name: 'donor_gender', type: 'Aggregation'}
+ * =>
+ * { name: 'donor_gender', type: { name: 'Aggregation' }}
  *
- * @example
- * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
+ * @param fieldTypes - An array of fields with types
+ * @returns Structured GQL fields object
  */
-const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) => {
-	return networkFieldTypes.reduce((allFields, currentField) => {
+const convertToGQLObjectType = (fieldTypes: SupportedNetworkFieldType[]) => {
+	return fieldTypes.reduce((allFields, currentField) => {
 		const field = {
-			[currentField.name]: { type: singleToNetworkAggregationMap.get(currentField.type) },
+			[currentField.name]: { type: currentField.type },
 		};
 		return { ...allFields, ...field };
 	}, {});
 };
 
 /**
- * Returns available aggregations by filtering duplicates, and mapping from
- * singular remote aggregation type to network aggregation types
+ * Typedefs for network search.
+ * Typenames need to be unique globally or gql will merge / throw errors.
  *
- * eg. NumericAggregations to NetworkNumericAggregations
- *
- * There is no distinction on which types come from which remote connections
- * This is the resolvers responsibility
- *
- * @param configs
- * @returns
+ * TODO: Use a single convention of creating typedefs consistently
+ * Some redundancy here by creating typedefs in object centric way.
+ * There are typesdefs already declared as gql tagged template strings elsewhere.
+ * Objects are easier to compose and are typesafe.
  */
-export const createNetworkAggregationTypeDefs = (
-	networkFieldTypes: SupportedNetworkFieldType[],
-) => {
-	const allFields = convertToGQLObjectType(networkFieldTypes);
+export const createNetworkAggregationTypeDefs = (fieldTypes: SupportedNetworkFieldType[]) => {
+	const fields = convertToGQLObjectType(fieldTypes);
 
-	const aggregationsType = new GraphQLObjectType({
-		name: 'NodeAggregations',
-		fields: allFields,
+	const aggregations = new GraphQLObjectType({
+		name: 'NetworkAggregations',
+		fields,
 	});
 
-	const remoteConnectionType = new GraphQLObjectType({
-		name: 'NetworkNode',
+	const node = new GraphQLObjectType({
+		name: 'Node',
 		fields: {
 			name: { type: GraphQLString },
 			hits: { type: GraphQLInt },
@@ -57,19 +54,16 @@ export const createNetworkAggregationTypeDefs = (
 		},
 	});
 
-	const connectionNodeType = new GraphQLList(remoteConnectionType);
-
 	const networkType = new GraphQLObjectType({
 		name: 'Network',
 		fields: {
-			nodes: { type: connectionNodeType },
+			nodes: { type: new GraphQLList(node) },
 			aggregations: {
-				type: aggregationsType,
+				type: aggregations,
 			},
 		},
 	});
 
-	// correct object structure to merge with other types
 	const rootType = new GraphQLObjectType({
 		name: 'Root',
 		fields: {
