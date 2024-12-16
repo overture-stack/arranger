@@ -31,6 +31,34 @@ export type Aggregation = {
 	buckets: Bucket[];
 };
 
+/**
+ * This could be singular or multiple
+ * Project defines "Aggregations" as
+ *
+ * ```
+ * const Aggregations = {
+ *	  donor_age: {
+ *		  bucket_count: 0,
+ *		  buckets: []
+ *	  }
+ * }
+ * ```
+ * Our typing also works as a collection, which makes it hard to discern between singular and multiple.
+ * Example of valid typed collection of "Aggregations"
+ *
+ * ```
+ * const Aggregations = {
+ *    donor_age: {
+ *      bucket_count: 0,
+ *		  buckets: [],
+ *	  },
+ *		donor_gender: {
+ *		  bucket_count: 0,
+ *		  buckets: [],
+ *	  }
+ * }
+ * ```
+ */
 export type Aggregations = Record<string, Aggregation>;
 
 const resolveAggregations = ({
