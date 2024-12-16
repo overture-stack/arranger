@@ -43,35 +43,26 @@ export const createNetworkAggregationTypeDefs = (
 	const allFields = convertToGQLObjectType(networkFieldTypes);
 
 	const aggregationsType = new GraphQLObjectType({
-		name: 'Aggregations',
+		name: 'NodeAggregations',
 		fields: allFields,
 	});
 
-	const aggregationList = new GraphQLObjectType({
-		name: 'aggregations',
-		fields: {
-			name: { type: GraphQLString },
-			type: { type: GraphQLString },
-		},
-	});
-
 	const remoteConnectionType = new GraphQLObjectType({
-		name: 'RemoteConnection',
+		name: 'NetworkNode',
 		fields: {
 			name: { type: GraphQLString },
 			hits: { type: GraphQLInt },
 			status: { type: GraphQLString },
 			errors: { type: GraphQLString },
-			aggregations: { type: new GraphQLList(aggregationList) },
 		},
 	});
 
-	const remoteConnectionsType = new GraphQLList(remoteConnectionType);
+	const connectionNodeType = new GraphQLList(remoteConnectionType);
 
 	const networkType = new GraphQLObjectType({
 		name: 'Network',
 		fields: {
-			remoteConnections: { type: remoteConnectionsType },
+			nodes: { type: connectionNodeType },
 			aggregations: {
 				type: aggregationsType,
 			},
@@ -80,7 +71,7 @@ export const createNetworkAggregationTypeDefs = (
 
 	// correct object structure to merge with other types
 	const rootType = new GraphQLObjectType({
-		name: 'Query',
+		name: 'Root',
 		fields: {
 			network: {
 				type: networkType,

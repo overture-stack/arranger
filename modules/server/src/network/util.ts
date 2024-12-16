@@ -28,8 +28,11 @@ export const fulfilledPromiseFilter = <Result>(result: unknown): result is Resul
  * ```
  * {
  *   analysis__analysis_state: {
- *   bucket_count: {},
- *   buckets: { key: {}, doc_count: {} },
+ *   	bucket_count: {},
+ *   	buckets: {
+ * 			key: {},
+ * 			doc_count: {}
+ * 		},
  *    __typename: {}
  * }
  * ```
