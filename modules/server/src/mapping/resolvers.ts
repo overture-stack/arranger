@@ -1,8 +1,7 @@
-import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
 
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
-import { Context, Resolver } from '@/gqlServer';
+import { Resolver } from '@/gqlServer';
 import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
 import resolveAggregations, {
@@ -19,8 +18,8 @@ type HitsResolver = Resolver<Root, HitsQuery, Promise<{ total: number }>>;
 type AggregationsResolver = Resolver<Root, GQLAggregationQueryFilters, Promise<Aggregations>>;
 
 /**
- * Resolve hits from aggregations
- * If "aggregations" field is not in query, return 0
+ * Calculate hits from aggregation data, not using "hits" ES response field
+ * If "aggregations" field is not in query, return 0 for hits
  *
  * @param aggregationsQuery - resolver ES query code for aggregations
  * @returns Returns a total count that is less than or equal to the actual total hits in the query.
@@ -70,7 +69,7 @@ export const createResolvers = ({
 	// configs
 	// TODO: tighten return value type
 	const configs: Resolver<Root, { fieldNames: string[] }, any> = async (
-		parentObj,
+		_unusedParentObj,
 		{ fieldNames },
 	) => {
 		return {
@@ -106,12 +105,7 @@ export const createResolvers = ({
 
 	// hits
 	const defaultHitsResolver = resolveHits({ type, Parallel, getServerSideFilter });
-	const hits = enableDocumentHits
-		? defaultHitsResolver
-		: // @ts-ignore
-		  // typing resolveAggregations requires typing a lot of code down the chain
-		  // TODO: improve typing
-		  resolveHitsFromAggs(aggregationsQuery);
+	const hits = enableDocumentHits ? defaultHitsResolver : resolveHitsFromAggs(aggregationsQuery);
 
 	return { hits, aggregations, configs };
 };

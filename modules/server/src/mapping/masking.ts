@@ -12,7 +12,7 @@ export type Relation = keyof typeof Relation;
  * It is calculated by adding +1 for values under threshold or adding bucket.doc_count amount
  * for values greater than or equal to
  *
- * @param aggregation An aggregation with the most buckets which has data masking applied
+ * @param aggregation - An aggregation with the most buckets which has data masking applied
  * @returns Hits total value
  */
 const calculateHitsFromAggregation = ({
@@ -36,8 +36,8 @@ const calculateHitsFromAggregation = ({
  * 1) Iterate through aggs applying data masking to buckets if applicable
  * 2) Find the agg with the most bucket count and data masking applied to be used in calculating hits.total
  *
- * @param aggregations - aggregations from query
- * @returns aggregations with data masking applied and hits total
+ * @param aggregations - Aggregations from query.
+ * @returns Aggregations with data masking applied and hits total.
  */
 export const applyAggregationMasking = ({
 	aggregations,
