@@ -1,7 +1,8 @@
 import { Relation } from '@/mapping/masking';
+import { Aggregations } from '@/mapping/resolveAggregations';
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
 import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
-import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
+import { NumericAggregations } from '../types/aggregations';
 import { Hits } from '../types/hits';
 import { AllAggregations } from '../types/types';
 import { RequestedFieldsMap } from '../utils/gql';
@@ -16,7 +17,6 @@ type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
-	__typename: 'Aggregations',
 	bucket_count: 1,
 	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: 'eq' }],
 });
@@ -214,7 +214,6 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
 		return {
 			bucket_count: computedBuckets.length,
 			buckets: computedBuckets,
-			__typename: resolvedAggregation.__typename,
 		};
 	});
 

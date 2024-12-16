@@ -1,5 +1,5 @@
 import { ENV_CONFIG } from '@/config';
-import { Aggregation } from './resolveAggregations';
+import { Aggregation, Aggregations } from './resolveAggregations';
 
 export const Relation = {
 	eq: 'eq',
@@ -39,21 +39,7 @@ const calculateHitsFromAggregation = ({
  * @param aggregations - Aggregations from query.
  * @returns Aggregations with data masking applied and hits total.
  */
-export const applyAggregationMasking = ({
-	aggregations,
-}: {
-	aggregations: Record<
-		string,
-		{
-			bucket_count: number;
-			buckets: Array<{
-				doc_count: number;
-				key: string;
-				relation: Relation;
-			}>;
-		}
-	>;
-}) => {
+export const applyAggregationMasking = ({ aggregations }: { aggregations: Aggregations }) => {
 	const thresholdMin = ENV_CONFIG.DATA_MASK_MIN_THRESHOLD;
 	if (thresholdMin < 1) {
 		throw Error('DATA_MASK_MIN_THRESHOLD environment variable has to be a positive integer.');

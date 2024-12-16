@@ -1,7 +1,7 @@
 import { ObjectValues } from '@/utils/types';
 import { SupportedAggregation } from '../common';
 import { CONNECTION_STATUS } from '../resolvers/networkNode';
-import { Aggregations, Bucket, NumericAggregations } from './aggregations';
+import { NumericAggregations } from './aggregations';
 import { NetworkConfig } from './setup';
 
 // environment config
