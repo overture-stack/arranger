@@ -1,7 +1,7 @@
 import { Relation } from '@/mapping/masking';
-import { Aggregations } from '@/mapping/resolveAggregations';
+import { Aggregations, Bucket } from '@/mapping/resolveAggregations';
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../setup/constants';
 import { NumericAggregations } from '../types/aggregations';
 import { Hits } from '../types/hits';
 import { AllAggregations } from '../types/types';

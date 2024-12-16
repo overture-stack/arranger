@@ -1,5 +1,5 @@
 import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../setup/constants';
 
 const bucket = new GraphQLObjectType({
 	name: 'bucket',
@@ -11,8 +11,8 @@ const bucket = new GraphQLObjectType({
 			type: GraphQLString,
 		},
 		relation: {
-			type: GraphQLString
-		}
+			type: GraphQLString,
+		},
 	},
 });
 

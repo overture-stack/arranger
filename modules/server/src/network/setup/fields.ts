@@ -5,16 +5,9 @@ import {
 	SupportedNetworkFieldType,
 	UnsupportedAggregations,
 } from '../types/types';
-import { SUPPORTED_AGGREGATIONS } from './constants';
+import { SUPPORTED_AGGREGATIONS_LIST } from './constants';
 
 export type NetworkFields = { name: string; fields: GQLFieldType[] };
-
-// const isSupportedType = (
-// 	fieldObject: NetworkFieldType<string>,
-// 	supportedList: string[],
-// ): fieldObject is SupportedNetworkFieldType => {
-// 	return supportedList.includes(fieldObject.type);
-// };
 
 /**
  * Parse network fields into supported and unsupported
@@ -31,7 +24,7 @@ export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
 			},
 			field,
 		) => {
-			const isAggregationTypeSupported = SUPPORTED_AGGREGATIONS.includes(field.type);
+			const isAggregationTypeSupported = SUPPORTED_AGGREGATIONS_LIST.includes(field.type);
 			if (isAggregationTypeSupported) {
 				return {
 					...aggregations,

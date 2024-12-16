@@ -1,12 +1,13 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS_LIST } from './common';
 import { createResolvers } from './resolvers';
+import { SUPPORTED_AGGREGATIONS } from './setup/constants';
 import { getAllFieldTypes } from './setup/fields';
 import { fetchAllNodeAggregations } from './setup/query';
 import { createTypeDefs } from './typeDefs';
 import { NetworkConfig } from './types/setup';
 
-export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, SupportedAggregation> = new Map();
+export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
+	new Map();
 
 /**
  * GQL Federated Search schema setup
@@ -24,7 +25,7 @@ export const createSchemaFromNetworkConfig = async ({
 		networkConfigs,
 	});
 
-	const networkFieldTypes = getAllFieldTypes(nodeConfig, SUPPORTED_AGGREGATIONS_LIST);
+	const networkFieldTypes = getAllFieldTypes(nodeConfig);
 
 	/*
 	 * make schema type available for resolvers at query time
