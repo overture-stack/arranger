@@ -1,21 +1,20 @@
-import { SupportedAggregation } from '../common';
 import { GQLFieldType } from '../queries';
 import {
-	NetworkFieldType,
 	NodeConfig,
 	SupportedAggregations,
 	SupportedNetworkFieldType,
 	UnsupportedAggregations,
 } from '../types/types';
+import { SUPPORTED_AGGREGATIONS } from './constants';
 
 export type NetworkFields = { name: string; fields: GQLFieldType[] };
 
-const isSupportedType = (
-	fieldObject: NetworkFieldType<string>,
-	supportedList: string[],
-): fieldObject is SupportedNetworkFieldType => {
-	return supportedList.includes(fieldObject.type);
-};
+// const isSupportedType = (
+// 	fieldObject: NetworkFieldType<string>,
+// 	supportedList: string[],
+// ): fieldObject is SupportedNetworkFieldType => {
+// 	return supportedList.includes(fieldObject.type);
+// };
 
 /**
  * Parse network fields into supported and unsupported
@@ -23,10 +22,7 @@ const isSupportedType = (
  * @param fields
  * @returns { supportedAggregations: [], unsupportedAggregations: [] }
  */
-export const getFieldTypes = (
-	fields: NodeConfig['aggregations'],
-	supportedAggregationsList: SupportedAggregation[],
-) => {
+export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
 	const fieldTypes = fields.reduce(
 		(
 			aggregations: {
@@ -35,7 +31,8 @@ export const getFieldTypes = (
 			},
 			field,
 		) => {
-			if (isSupportedType(field, supportedAggregationsList)) {
+			const isAggregationTypeSupported = SUPPORTED_AGGREGATIONS.includes(field.type);
+			if (isAggregationTypeSupported) {
 				return {
 					...aggregations,
 					supportedAggregations: aggregations.supportedAggregations.concat(field),
@@ -62,15 +59,9 @@ export const getFieldTypes = (
  * @param supportedTypes
  * @returns unique fields
  */
-export const getAllFieldTypes = (
-	nodeConfigs: NodeConfig[],
-	supportedTypes: SupportedAggregation[],
-): SupportedNetworkFieldType[] => {
+export const getAllFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetworkFieldType[] => {
 	const nodeFieldTypes = nodeConfigs.map((config) => {
-		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(
-			config.aggregations,
-			supportedTypes,
-		);
+		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(config.aggregations);
 
 		return { supportedAggregations, unsupportedAggregations };
 	});
