@@ -1,19 +1,26 @@
-import { GQLFieldType } from '../queries';
-import {
-	NodeConfig,
-	SupportedAggregations,
-	SupportedNetworkFieldType,
-	UnsupportedAggregations,
-} from '../types/types';
-import { SUPPORTED_AGGREGATIONS_LIST } from './constants';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS_LIST } from './constants';
+import { NodeConfig } from './query';
 
-export type NetworkFields = { name: string; fields: GQLFieldType[] };
+type NetworkFieldType<T> = {
+	name: string;
+	type: T;
+};
+type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
+type SupportedAggregations = SupportedNetworkFieldType[];
+type UnsupportedAggregations = NetworkFieldType<string>[];
+
+const isSupportedType = (
+	fieldObject: NetworkFieldType<string>,
+	supportedList: string[],
+): fieldObject is SupportedNetworkFieldType => {
+	return supportedList.includes(fieldObject.type);
+};
 
 /**
  * Parse network fields into supported and unsupported
  *
  * @param fields
- * @returns { supportedAggregations: [], unsupportedAggregations: [] }
+ * @returns An object containing supported types and unsupported types
  */
 export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
 	const fieldTypes = fields.reduce(
@@ -24,8 +31,7 @@ export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
 			},
 			field,
 		) => {
-			const isAggregationTypeSupported = SUPPORTED_AGGREGATIONS_LIST.includes(field.type);
-			if (isAggregationTypeSupported) {
+			if (isSupportedType(field, SUPPORTED_AGGREGATIONS_LIST)) {
 				return {
 					...aggregations,
 					supportedAggregations: aggregations.supportedAggregations.concat(field),
@@ -47,18 +53,22 @@ export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
 };
 
 /**
+ * Takes in all node aggregation field types and returns a single array.
+ * - dedupes
+ * - ensures types are supported
  *
- * @param nodeConfigs
- * @param supportedTypes
- * @returns unique fields
+ * @param nodeConfigs -
+ * @returns Unique and supported aggregation field types.
  */
-export const getAllFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetworkFieldType[] => {
+export const normalizeFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetworkFieldType[] => {
+	// split into supported and unsupported types
 	const nodeFieldTypes = nodeConfigs.map((config) => {
 		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(config.aggregations);
 
 		return { supportedAggregations, unsupportedAggregations };
 	});
 
+	// flatten to single object
 	const allSupportedAggregations = nodeFieldTypes.flatMap(
 		(fieldType) => fieldType.supportedAggregations,
 	);
@@ -72,5 +82,6 @@ export const getAllFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetworkFie
 	const uniqueSupportedAggregations = Array.from(
 		new Set(allSupportedAggregations.map((nodeField) => JSON.stringify(nodeField))),
 	).map((nodeFieldString) => JSON.parse(nodeFieldString));
+
 	return uniqueSupportedAggregations;
 };

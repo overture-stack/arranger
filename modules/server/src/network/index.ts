@@ -1,43 +1,66 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
+
 import { createResolvers } from './resolvers';
-import { SUPPORTED_AGGREGATIONS } from './setup/constants';
-import { getAllFieldTypes } from './setup/fields';
+import { SUPPORTED_AGGREGATION } from './setup/constants';
+import { normalizeFieldTypes } from './setup/fields';
 import { fetchAllNodeAggregations } from './setup/query';
 import { createTypeDefs } from './typeDefs';
-import { NetworkConfig } from './types/setup';
 
-export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
+// TODO: full type and check for null?
+export type NetworkConfig = {
+	graphqlUrl: string;
+	documentType: string;
+	documentName: string;
+	displayName: string;
+};
+
+/**
+ * Map of all available fields with associated aggregation type
+ */
+export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATION> =
 	new Map();
 
 /**
  * GQL Federated Search schema setup
- * Connects to remote network connections, looks up field types, add field/type pairs to configs
+ * 1) Connects to remote Arranger instances as defined in Arranger config
+ * 2) Looks up available field types
+ * 3) Adds field/type pairs to config map
+ *
+ * Important: This functionality assumes Arranger instances are running identical versions
  *
  * @param { networkConfigs }
- * @returns graphql schema for the network - types and resolvers combined
+ * @returns Graphql schema for the network - types and resolvers combined
  */
 export const createSchemaFromNetworkConfig = async ({
 	networkConfigs,
 }: {
 	networkConfigs: NetworkConfig[];
 }) => {
+	/*
+	 * Returns configs with remote node field/types retrieved
+	 */
 	const nodeConfig = await fetchAllNodeAggregations({
 		networkConfigs,
 	});
 
-	const networkFieldTypes = getAllFieldTypes(nodeConfig);
+	/*
+	 * An array of unique supported aggregation types
+	 */
+	const aggregationTypes = normalizeFieldTypes(nodeConfig);
 
 	/*
-	 * make schema type available for resolvers at query time
+	 * Runs on schema setup, once at bootstrap.
+	 * Make schema type available for resolvers at query time
 	 * { name: "donor_age", type: "NumericAggregations" }
-	 * donor_age => NumericAggregations
-	 * runs on schema setup once at bootstrap
 	 */
-	networkFieldTypes.forEach((field) =>
+	aggregationTypes.forEach((field) =>
 		ALL_NETWORK_AGGREGATION_TYPES_MAP.set(field.name, field.type),
 	);
 
-	const typeDefs = createTypeDefs(networkFieldTypes);
+	/*
+	 * GQL typedef, resolver and schema creation
+	 */
+	const typeDefs = createTypeDefs(aggregationTypes);
 
 	const resolvers = createResolvers(nodeConfig);
 

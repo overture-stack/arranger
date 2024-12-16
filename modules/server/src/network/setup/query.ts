@@ -1,26 +1,72 @@
+import { NetworkConfig } from '..';
 import { NetworkAggregationError } from '../errors';
-import { fetchGql, normalizeGqlField } from '../gql';
-import { gqlAggregationTypeQuery, GQLTypeQueryResponse } from '../queries';
-import { NetworkConfig } from '../types/setup';
-import { NodeConfig } from '../types/types';
+import { fetchGql } from '../gql';
 import { fulfilledPromiseFilter } from '../utils/promise';
+
+export type NodeConfig = NetworkConfig & { aggregations: { name: string; type: string }[] };
 
 type NetworkQueryResult = PromiseFulfilledResult<{
 	config: NetworkConfig;
 	gqlResponse: GQLTypeQueryResponse;
 }>;
 
+type GQLFieldType = {
+	name: string;
+	type: {
+		name: string;
+	};
+};
+
+type GQLTypeQueryResponse = {
+	__type: {
+		name: string;
+		fields: GQLFieldType[];
+	};
+};
+
 /**
- * GQL query remote connection with __type query to retrieve list of types
+ * Query to get field types
+ * eg. __type('aggregations')
+ */
+const gqlAggregationTypeQuery = `#graphql
+	query getAggregationTypes($documentTypeName: String!) {
+		__type(name: $documentTypeName) {
+			name
+			fields {
+				name
+				type {
+					name
+				}
+			}
+		}
+	}
+`;
+
+/**
+ * Unnests graphql field
+ * { name: 'donor_gender', type: { name: 'Aggregation' }}
+ *  =>
+ * { name: 'donor_gender', type: 'Aggregation'}
  *
- * @param config - network config from env
- * @returns a promise containing network config and the gql query result
+ * @param gqlField - Nested field object
+ * @returns An unnested object containing field name and type
+ */
+const normalizeGqlField = (gqlField: GQLFieldType): { name: string; type: string } => {
+	const fieldType = gqlField.type.name;
+	return { name: gqlField.name, type: fieldType };
+};
+
+/**
+ * GQL query remote connection with __type query to retrieve list of types.
  *
- * @throws Fetch failed error
+ * @param config - Network config from env.
+ * @returns A promise containing network config and the gql query result.
  *
- * @throws JSON parse error
+ * @throws Fetch failed error.
  *
- * @throws Unexpected data error
+ * @throws JSON parse error.
+ *
+ * @throws Unexpected data error.
  */
 const fetchNodeAggregations = async (
 	config: NetworkConfig,
@@ -33,7 +79,7 @@ const fetchNodeAggregations = async (
 	 * eg. `aggregations: fileAggregations`, `hits: fileConnection`
 	 */
 	try {
-		// targeting just the "aggregations" field using type name
+		// selecting just the "aggregations" field using it's configured type name
 		const typename = `${documentType}Aggregations`;
 		const response = await fetchGql({
 			url: graphqlUrl,
@@ -59,8 +105,9 @@ const fetchNodeAggregations = async (
 };
 
 /**
- * Fetch fields and types from remote connections
- * @param { networkConfigs }
+ * Fetch fields and types from nodes
+ *
+ * @param { networkConfigs } - Node config
  * @returns GQL object type to be used in functions
  */
 export const fetchAllNodeAggregations = async ({
@@ -68,15 +115,15 @@ export const fetchAllNodeAggregations = async ({
 }: {
 	networkConfigs: NetworkConfig[];
 }): Promise<NodeConfig[]> => {
-	// query remote connection types
-	const networkQueryPromises = networkConfigs.map(async (config) => {
+	// query nodes for schema data
+	const queryRequestPromises = networkConfigs.map(async (config) => {
 		const gqlResponse = await fetchNodeAggregations(config);
 		return { config, gqlResponse };
 	});
 
-	const networkQueries = await Promise.allSettled(networkQueryPromises);
+	const queryResults = await Promise.allSettled(queryRequestPromises);
 
-	const nodeConfigs = networkQueries
+	const nodeConfigs = queryResults
 		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
 		.map((networkResult) => {
 			const { config, gqlResponse } = networkResult.value;
@@ -85,7 +132,7 @@ export const fetchAllNodeAggregations = async ({
 			return { ...config, aggregations };
 		});
 
-	console.log('\nSuccessfully fetched node schemas\n');
+	console.log('\nSuccessfully fetched node schemas.\n');
 
 	return nodeConfigs;
 };

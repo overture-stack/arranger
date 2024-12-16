@@ -1,5 +1,5 @@
 import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLString } from 'graphql';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../setup/constants';
+import { SupportedAggregation, SUPPORTED_AGGREGATION } from '../setup/constants';
 
 const bucket = new GraphQLObjectType({
 	name: 'bucket',
@@ -43,8 +43,8 @@ const numericNetworkAggregations = new GraphQLObjectType({
  * return network aggregation gql type
  */
 export const singleToNetworkAggregationMap = new Map<SupportedAggregation, GraphQLObjectType>();
-singleToNetworkAggregationMap.set(SUPPORTED_AGGREGATIONS.Aggregations, networkAggregations);
+singleToNetworkAggregationMap.set(SUPPORTED_AGGREGATION.Aggregations, networkAggregations);
 singleToNetworkAggregationMap.set(
-	SUPPORTED_AGGREGATIONS.NumericAggregations,
+	SUPPORTED_AGGREGATION.NumericAggregations,
 	numericNetworkAggregations,
 );
