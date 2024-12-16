@@ -1,6 +1,7 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
+import { mergeSchemas } from '@graphql-tools/schema';
 
 import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
 import { ConfigProperties } from './config/types.js';
@@ -115,13 +116,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({
-	enableAdmin,
-	enableDocumentHits,
-	getServerSideFilter,
-	graphqlOptions = {},
-	types,
-}) => {
+const createSchema = async ({ enableAdmin, enableDocumentHits, getServerSideFilter, graphqlOptions = {}, types }) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -161,19 +156,6 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 	const router = Router();
 
 	console.log('Starting GraphQL server:');
-
-	if (ENABLE_NETWORK_AGGREGATION) {
-		/**
-		 * TODO: make available on one route
-		 */
-		const networkPath = '/network';
-		const apolloNetworkServer = new ApolloServer({
-			cache: 'bounded',
-			schema: networkSchema,
-		});
-		await apolloNetworkServer.start();
-		apolloNetworkServer.applyMiddleware({ app: router, path: networkPath });
-	}
 
 	try {
 		console.log(`  - GraphQL playground available at ...${mainPath}`);
@@ -247,10 +229,11 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 	return router;
 };
 
-export const createSchemasFromConfigs = async ({
+const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -272,28 +255,30 @@ export const createSchemasFromConfigs = async ({
 			types: typesWithMappings,
 		});
 
-		/**
+		const schemasToMerge = [schema];
+
+		/*
 		 * Federated Network Search
 		 */
-		if (ENABLE_NETWORK_AGGREGATION) {
-			const { networkSchema } = await createSchemaFromNetworkConfig({
+		if (enableNetworkAggregation) {
+			const networkSchema = await createSchemaFromNetworkConfig({
 				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
 					...config,
-					/**
+					/*
 					 * part of the gql schema is generated dynamically
-					 * in the case of the "file" field, the field name and type name are the same
-					 * it's more flexible to define it here as an additional property than to confuse functions further down the pipeline
+					 * in the case of the "file" field, the field name and gql type name are the same
 					 */
 					documentName: config.documentType,
 				})),
 			});
+			schemasToMerge.push(networkSchema);
 		}
 
+		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
 		return {
 			...commonFields,
 			mockSchema,
-			schema,
-			networkSchema,
+			schema: fullSchema,
 		};
 	} catch (error) {
 		const message = error?.message || error;
@@ -308,6 +293,7 @@ export default async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -319,6 +305,7 @@ export default async ({
 				configsSource,
 				enableAdmin,
 				enableDocumentHits,
+				enableNetworkAggregation,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,
@@ -330,7 +317,6 @@ export default async ({
 			graphqlOptions,
 			mockSchema,
 			schema,
-			networkSchema,
 		});
 
 		await initializeSets({ esClient, setsIndex });

@@ -2,7 +2,8 @@ import { stringToBool, stringToNumber } from '#utils/stringFns.js';
 
 export const ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = stringToBool(process.env.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS);
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
-export const DATA_MASK_THRESHOLD = process.env.DATA_MASK_THRESHOLD || Number.MAX_SAFE_INTEGER;
+export const DATA_MASK_MIN_THRESHOLD =
+	process.env.DATA_MASK_MIN_THRESHOLD || Number.MAX_SAFE_INTEGER;
 export const DEBUG_MODE = stringToBool(process.env.DEBUG);
 export const DOCUMENT_TYPE = process.env.DOCUMENT_TYPE || '';
 export const DOWNLOAD_STREAM_BUFFER_SIZE = stringToNumber(process.env.DOWNLOAD_STREAM_BUFFER_SIZE) || 2000;

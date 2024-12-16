@@ -1,12 +1,11 @@
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
 import { GraphQLResolveInfo } from 'graphql';
 import { get } from 'lodash';
-import { Context } from 'vm';
 import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
 import resolveAggregations, { aggregationsToGraphql } from './resolveAggregations';
 import resolveHits from './resolveHits';
-import { Aggregation, Hits, Root } from './types';
+import { Aggregation, Context, Hits, Root } from './types';
 
 /**
  * Resolve hits from aggregations
@@ -27,7 +26,6 @@ const resolveHitsFromAggs =
 			context: Context,
 			info: GraphQLResolveInfo,
 		) => Record<string, Aggregation>,
-		dataMaskThreshold: number,
 	) =>
 	async (obj: Root, args: Hits, context: Context, info: GraphQLResolveInfo) => {
 		/*
@@ -36,7 +34,8 @@ const resolveHitsFromAggs =
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
-			(selection) => selection.kind === 'Field' && selection.name.value === 'aggregations',
+			(selection: { kind: string; name: { value: string } }) =>
+				selection.kind === 'Field' && selection.name.value === 'aggregations',
 		);
 
 		/*
@@ -49,9 +48,8 @@ const resolveHitsFromAggs =
 			// modifying the query info field inline so it can query aggregations correctly
 			// not idiomatic so doesn't line up with typings from graphql
 			const aggregations = await aggregationsQuery(obj, info.variableValues, context, modifiedInfo);
-			const { hitsTotal: total } = applyAggregationMasking({
+			const { hitsTotal: total, dataMaskedAggregations } = applyAggregationMasking({
 				aggregations,
-				thresholdMin: dataMaskThreshold,
 			});
 			return { total };
 		} else {
@@ -64,7 +62,6 @@ export const createResolvers = ({
 	type,
 	Parallel,
 	getServerSideFilter,
-	dataMaskThreshold,
 	enableDocumentHits,
 }: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
 	// configs
@@ -97,8 +94,15 @@ export const createResolvers = ({
 		context: Context,
 		info: GraphQLResolveInfo,
 	) => {
-		const aggs = await aggregationsQuery(obj, args, context, info);
-		return aggregationsToGraphql(aggs);
+		const aggregations = await aggregationsQuery(obj, args, context, info);
+		if (enableDocumentHits) {
+			return aggregationsToGraphql(aggregations);
+		} else {
+			const { dataMaskedAggregations } = applyAggregationMasking({
+				aggregations,
+			});
+			return aggregationsToGraphql(dataMaskedAggregations);
+		}
 	};
 
 	// hits
@@ -108,7 +112,7 @@ export const createResolvers = ({
 		: // @ts-ignore
 		  // typing resolveAggregations requires typing a lot of code down the chain
 		  // TODO: improve typing
-		  resolveHitsFromAggs(aggregationsQuery, dataMaskThreshold);
+		  resolveHitsFromAggs(aggregationsQuery);
 
 	return { hits, aggregations, configs };
 };

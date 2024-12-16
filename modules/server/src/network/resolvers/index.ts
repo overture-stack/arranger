@@ -33,7 +33,7 @@ export type NetworkAggregationArgs = {
  */
 export const createResolvers = (configs: NodeConfig[]) => {
 	return {
-		Query: {
+		Root: {
 			network: async (
 				parent: NetworkSearchRoot,
 				// as mentioned above, type should match gql typedefs

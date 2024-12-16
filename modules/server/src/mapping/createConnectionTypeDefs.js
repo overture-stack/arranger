@@ -12,8 +12,6 @@ export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) 
         aggregations_filter_themselves: Boolean
       ): ${type.name}Aggregations
 
-      ${!showRecords ? 'dataMasking: DataMasking' : ''}
-
       configs: ${createStateTypeDefs ? 'ConfigsWithState' : 'ConfigsWithoutState'}
 
       hits(
