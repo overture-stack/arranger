@@ -1,7 +1,5 @@
 import axios from 'axios';
 import urljoin from 'url-join';
-import { CONNECTION_STATUS } from './resolvers/networkNode';
-import { ConnectionStatus } from './types/types';
 
 /**
  * Check the status of remote connections
@@ -13,7 +11,7 @@ import { ConnectionStatus } from './types/types';
  * @param url - Remote connection url
  * @returns A connection status
  */
-export const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => {
+export const gqlHealthCheck = async (url: string): Promise<'OK' | 'ERROR'> => {
 	const healthCheckQuery = '?query=%7B__typename%7D';
 	const fullUrl = urljoin(url, healthCheckQuery);
 
@@ -24,12 +22,12 @@ export const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => 
 
 		// only need to check the server returns successfully (just a health check)
 		if (pong.data.data?.__typename) {
-			return CONNECTION_STATUS.OK;
+			return 'OK';
 		} else {
 			throw Error('no data object returned from GQL server __typname query');
 		}
 	} catch (error) {
 		console.error(error);
-		return CONNECTION_STATUS.ERROR;
+		return 'ERROR';
 	}
 };
