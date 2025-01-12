@@ -5,7 +5,7 @@ import {
 	SortingState,
 	useReactTable,
 } from '@tanstack/react-table';
-import { merge } from 'lodash';
+import { get, merge } from 'lodash';
 import { ReactNode, useEffect, useState } from 'react';
 
 import { SELECTION_COLUMN_ID, UseTableDataProps } from '@/Table/types';
@@ -95,13 +95,10 @@ export const useTableData = ({
 		enableColumnResizing: allowColumnResizing,
 		enableSorting: allowRowSorting,
 		getCoreRowModel: getCoreRowModel(),
-		getRowId: (row, index, parent) =>
-			// TODO: figure out how to avoid needing type cohercion for "row"
-			`${
-				parent
-					? [parent.id, (row as Record<string, any>)[rowIdFieldName]].join('.')
-					: (row as Record<string, any>)[rowIdFieldName]
-			}`,
+		getRowId: (row, index, parent) => {
+			const rowId = get(row, rowIdFieldName);
+			return `${parent ? [parent.id, rowId].join('.') : rowId}`;
+		},
 		manualSorting: true,
 		onRowSelectionChange: setSelectedRowsDict,
 		onSortingChange,

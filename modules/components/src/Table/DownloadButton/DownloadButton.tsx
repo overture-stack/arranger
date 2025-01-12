@@ -17,7 +17,7 @@ import stringCleaner from '@/utils/stringCleaner';
 
 import { useExporters } from './helpers';
 import SingleDownloadButton from './SingleDownload';
-import { ProcessedExporterDetailsInterface, DownloadButtonProps } from './types';
+import { DownloadButtonProps, ProcessedExporterDetailsInterface } from './types';
 
 /**
  * This component allows library integrators to pass custom exporters (functionality to be run on the data, e.g. get JSON)

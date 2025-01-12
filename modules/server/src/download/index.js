@@ -1,11 +1,11 @@
-import zlib from 'zlib';
+import zlib from 'node:zlib';
 
 import { Router, urlencoded } from 'express';
 import { defaults } from 'lodash';
 import { pack as tarPack } from 'tar-stream';
 
-import getAllData from '../utils/getAllData';
-import dataToExportFormat from '../utils/dataToExportFormat';
+import dataToExportFormat from '@/utils/dataToExportFormat';
+import getAllData from '@/utils/getAllData';
 
 const convertDataToExportFormat =
 	({ ctx, fileType }) =>
@@ -58,14 +58,6 @@ const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
 		}),
 	).then(() => pack.finalize());
 
-	/** NOTE from zlib's maintainers:
-	 * (This library) is only intended for small (< 128 KB) data
-	 * that you already have buffered. It is not meant for input/output streams.
-	 * -- Found at: https://www.npmjs.com/package/zlib
-	 *
-	 * TODO: may have to find one that manages larger buffer sizes.
-	 * Must do testing for this
-	 */
 	return pack.pipe(zlib.createGzip());
 };
 
@@ -96,7 +88,7 @@ export const dataStream = async ({ ctx, params }) => {
 	throw new Error('files array was missing or empty');
 };
 
-export default function ({ enableAdmin }) {
+const download = ({ enableAdmin }) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
@@ -135,4 +127,6 @@ export default function ({ enableAdmin }) {
 	}
 
 	return router;
-}
+};
+
+export default download;
