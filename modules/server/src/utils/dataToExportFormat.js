@@ -9,7 +9,9 @@ const { DEBUG_MODE } = ENV_CONFIG;
 
 const STANDARD_DATE = 'yyyy-MM-dd';
 
-const dateHandler = (value, { dateFormat = STANDARD_DATE }) => {
+const dateHandler = (value, { dateFormat: formatInput }) => {
+	const dateFormat = formatInput ?? STANDARD_DATE; // the input could come as null, which prevents destructuring default values.
+
 	switch (true) {
 		case isNil(value):
 			return '';
