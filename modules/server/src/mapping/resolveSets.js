@@ -1,10 +1,11 @@
 import { get, isEmpty, uniq } from 'lodash';
 import { v4 as uuid } from 'uuid';
 
-import { CONSTANTS, buildQuery } from '../middleware';
+import { ENV_CONFIG } from '@/config';
+import { buildQuery } from '@/middleware';
 
-import esSearch from './utils/esSearch';
 import compileFilter from './utils/compileFilter';
+import esSearch from './utils/esSearch';
 
 const retrieveSetIds = async ({
 	esClient,
@@ -85,7 +86,7 @@ export const saveSet =
 		};
 
 		await esClient.index({
-			index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+			index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
 			id: body.setId,
 			refresh: refresh.toLowerCase(),
 			body,

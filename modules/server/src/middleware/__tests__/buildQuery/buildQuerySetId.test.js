@@ -1,5 +1,5 @@
-import buildQuery from '../../buildQuery';
-import { ES_ARRANGER_SET_INDEX, ES_ARRANGER_SET_TYPE } from '../../constants';
+import { ENV_CONFIG } from '@/config/';
+import buildQuery from '@/middleware/buildQuery';
 
 test('1.buildQuery sets', () => {
 	const nestedFieldNames = ['files', 'files.foo'];
@@ -16,8 +16,8 @@ test('1.buildQuery sets', () => {
 			output: {
 				terms: {
 					case_id: {
-						index: ES_ARRANGER_SET_INDEX,
-						type: ES_ARRANGER_SET_TYPE,
+						index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
+						type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
 						id: 'aaa',
 						path: 'ids',
 					},
@@ -36,8 +36,8 @@ test('1.buildQuery sets', () => {
 			output: {
 				terms: {
 					'ssms.ssm_id': {
-						index: ES_ARRANGER_SET_INDEX,
-						type: ES_ARRANGER_SET_TYPE,
+						index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
+						type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
 						id: 'aaa',
 						path: 'ids',
 					},
@@ -62,8 +62,8 @@ test('1.buildQuery sets', () => {
 								{
 									terms: {
 										'files.file_id': {
-											index: ES_ARRANGER_SET_INDEX,
-											type: ES_ARRANGER_SET_TYPE,
+											index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
+											type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
 											id: 'aaa',
 											path: 'ids',
 										},

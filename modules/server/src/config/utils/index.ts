@@ -2,18 +2,17 @@ import { Client } from '@elastic/elasticsearch';
 
 import { ENV_CONFIG } from '@/config/';
 import { ConfigObject, ConfigProperties } from '@/config/types';
-import { CONSTANTS } from '@/middleware';
 import { setsMapping } from '@/schema';
 
 export const initializeSets = async ({ esClient }: { esClient: Client }): Promise<void> => {
 	ENV_CONFIG.DEBUG_MODE &&
-		console.log(`Attempting to create Sets index "${CONSTANTS.ES_ARRANGER_SET_INDEX}"...`);
+		console.log(`Attempting to create Sets index "${ENV_CONFIG.ES_ARRANGER_SET_INDEX}"...`);
 
 	if (
-		(await esClient.indices.exists({ index: CONSTANTS.ES_ARRANGER_SET_INDEX }))?.statusCode === 404
+		(await esClient.indices.exists({ index: ENV_CONFIG.ES_ARRANGER_SET_INDEX }))?.statusCode === 404
 	) {
 		const setsIndex = await esClient.indices.create({
-			index: CONSTANTS.ES_ARRANGER_SET_INDEX,
+			index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
 			body: {
 				mappings: {
 					properties: setsMapping,
@@ -26,7 +25,7 @@ export const initializeSets = async ({ esClient }: { esClient: Client }): Promis
 			return;
 		}
 
-		throw new Error(`Problem creating ${CONSTANTS.ES_ARRANGER_SET_INDEX} index`);
+		throw new Error(`Problem creating ${ENV_CONFIG.ES_ARRANGER_SET_INDEX} index`);
 	} else {
 		ENV_CONFIG.DEBUG_MODE && console.log(`  This index already exists. Moving on!\n`);
 	}

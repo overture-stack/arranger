@@ -59,8 +59,7 @@
 		"through2": "^4.0.2",
 		"tslib": "^2.5.0",
 		"url-join": "^4.0.1",
-		"uuid": "^9.0.0",
-		"zlib": "^1.0.5"
+		"uuid": "^9.0.0"
 	},
 	"devDependencies": {
 		"@types/convert-units": "^2.3.5",
@@ -97,10 +96,5 @@
 			]
 		},
 		"verbose": true
-	},
-	"husky": {
-		"hooks": {
-			"pre-commit": "pretty-quick --staged"
-		}
 	}
 }

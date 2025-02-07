@@ -82,6 +82,7 @@ export type CustomExporterInput = CustomExporterDetailsInterface | CustomExporte
 
 export interface ExporterCustomisationProps {
 	downloadUrl: string;
+	exportSelectedRowsField: string;
 	maxRows: number;
 	label: ReactNode;
 }
