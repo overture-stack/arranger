@@ -1,4 +1,9 @@
-export let typeDefs = `
+/**
+ *
+ * @param  enableDocumentHits if false, agg only mode is enabled, add to GQL schema definition
+ * @returns typedef string
+ */
+export const typeDefs = ({ enableDocumentHits }: { enableDocumentHits: boolean }) => `
   type Stats {
     max: Float
     min: Float
@@ -7,12 +12,18 @@ export let typeDefs = `
     sum: Float
   }
 
+  enum Relation {
+    eq
+    gte
+  }
+
   type Bucket {
     doc_count: Int
     key: String
     key_as_string: String
     top_hits(_source:[String], size:Int): JSON
     filter_by_term(filter: JSON): JSON 
+    relation: Relation
   }
 
   type NumericAggregations {
