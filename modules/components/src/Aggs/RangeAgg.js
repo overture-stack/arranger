@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import convert from 'convert-units';
-import { isEqual, isNil } from 'lodash';
+import { debounce, isEqual, isNil } from 'lodash';
 import { Component } from 'react';
 import InputRange from 'react-input-range'; // TODO: abandoned. use rc-slider instead
 import 'react-input-range/lib/css/index.css';
@@ -65,6 +65,19 @@ const getLabelId = (displayName) => {
 	return `${displayName.split('(')[0].trim().toLowerCase().replace(/\s/g, '-')}__range-label`;
 };
 
+const calculateRangeStep = (min, max) => {
+	const fractionRemainderFromMax = Number(formatNumber(max)) % 1;
+	const fractionRemainderFromMin = Number(formatNumber(min)) % 1;
+	const decimalPointsFromMax = fractionRemainderFromMax
+		? `${fractionRemainderFromMax}`.replace('0.', '').length - 1
+		: 0;
+	const decimalPointsFromMin = fractionRemainderFromMin
+		? `${fractionRemainderFromMin}`.replace('0.', '').length - 1
+		: 0;
+
+	return Math.max(decimalPointsFromMax, decimalPointsFromMin);
+};
+
 class RangeAgg extends Component {
 	constructor(props) {
 		super(props);
@@ -109,7 +122,7 @@ class RangeAgg extends Component {
 		isEqual(this.state.currentValues, newState.currentValues) || this.setState(newState);
 	}
 
-	onChangeComplete = () => {
+	onChangeComplete = debounce(() => {
 		const {
 			displayName,
 			fieldName,
@@ -144,7 +157,7 @@ class RangeAgg extends Component {
 			min: currentValues.min,
 			value: currentValues,
 		});
-	};
+	}, 300);
 
 	setNewUnit = (event) => this.setState({ displayUnit: event.target.value });
 
@@ -153,11 +166,12 @@ class RangeAgg extends Component {
 			stats: { max, min },
 		} = this.props;
 
-		if (newMax <= max && newMin >= min) {
-			this.setState({ currentValues: { max: newMax, min: newMin } });
-		} else {
-			console.error('the selected value is out of range');
-		}
+		this.setState({
+			currentValues: {
+				max: newMax <= max ? newMax : max,
+				min: newMin >= min ? newMin : min,
+			},
+		});
 	};
 
 	formatRangeLabel = (value, type) => {
@@ -228,12 +242,8 @@ class RangeAgg extends Component {
 			...(type && { 'data-type': type }),
 		};
 
-		const maxFractionRemainder = rangeStepFromProps === 0 && max % 1;
-		const decimalPointsToPad =
-			maxFractionRemainder && `${maxFractionRemainder}`.replace('0.', '').length - 1;
-		const calculatedStep = maxFractionRemainder
-			? parseFloat(`0.${String(1).padStart(decimalPointsToPad, '0')}`)
-			: 1;
+		const decimals = calculateRangeStep(min, max);
+		const calculatedStep = decimals ? parseFloat(`0.${String(1).padStart(decimals, '0')}`) : 1;
 
 		const rangeStep = rangeStepFromProps || calculatedStep;
 
