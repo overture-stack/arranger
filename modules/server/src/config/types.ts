@@ -1,10 +1,12 @@
 // TODO: will gradually tighten these as we migrate to TS
 
 import { ES_TYPES } from '@/mapping/esToAggTypeMap';
+import { DOCUMENT_TYPE } from './constants';
 
 export const ConfigOptionalProperties = {
 	DOWNLOADS: 'downloads',
 	MATCHBOX: 'matchbox',
+	NETWORK_AGGREGATION: 'network',
 } as const;
 
 export const ConfigRequiredProperties = {
@@ -51,6 +53,12 @@ export const TableProperties = {
 	DEFAULT_SORTING: 'defaultSorting',
 	MAX_RESULTS_WINDOW: 'maxResultsWindow',
 	ROW_ID_FIELD_NAME: 'rowIdFieldName',
+} as const;
+
+export const NetworkAggregationProperties = {
+	GRAPHQL_URL: 'graphqlUrl',
+	DOCUMENT_TYPE: 'documentType',
+	DISPLAY_NAME: 'displayName',
 } as const;
 
 //////////////////////////////////
@@ -143,6 +151,12 @@ export interface TableConfigsInterface {
 	[ConfigProperties.ROW_ID_FIELD_NAME]?: string;
 }
 
+export interface NetworkAggregationInterface {
+	[NetworkAggregationProperties.GRAPHQL_URL]: string;
+	[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
+	[NetworkAggregationProperties.DISPLAY_NAME]: string;
+}
+
 export interface ConfigObject {
 	[ConfigProperties.DOCUMENT_TYPE]: string;
 	[ConfigProperties.DOWNLOADS]?: DownloadsConfigsInterface;
@@ -151,6 +165,7 @@ export interface ConfigObject {
 	[ConfigProperties.INDEX]: string;
 	[ConfigProperties.MATCHBOX]: any[];
 	[ConfigProperties.TABLE]: TableConfigsInterface;
+	[ConfigProperties.NETWORK_AGGREGATION]: NetworkAggregationInterface[];
 }
 
 export interface FieldFromMapping {

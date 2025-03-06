@@ -1,6 +1,7 @@
 lerna-debug.log
 .groovylintrc.json
 .vscode/*.log
+.vscode/launch.json
 
 **/dist
 **/node_modules
