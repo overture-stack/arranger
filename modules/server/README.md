@@ -1,8 +1,7 @@
 # Arranger Server
 
 ```
-npm i -g @overture-stack/arranger-server
-arranger-server
+npm i @overture-stack/arranger-server
 ```
 
 #### Develop
