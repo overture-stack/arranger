@@ -1,4 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
+import { GraphQLResolveInfo } from 'graphql';
 import { Relation } from './masking';
 
 export type Bucket = {
@@ -53,4 +54,11 @@ export type Hits = {
 
 export type Context = {
 	es: Client;
+};
+
+export type GQLRequest<args = unknown> = {
+	obj: Root;
+	args: args;
+	context: Context;
+	info: GraphQLResolveInfo;
 };

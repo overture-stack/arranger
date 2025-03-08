@@ -1,4 +1,4 @@
-import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
+import SQONBuilder from '@overture-stack/sqon-builder';
 import { failure, Result, success } from '../result';
 
 /**
@@ -9,8 +9,9 @@ import { failure, Result, success } from '../result';
  * @param filter
  * @returns
  */
-export const convertToSqon = (filter: unknown): Result<SQON, 'INVALID_SQON', void> => {
+export const convertToSqon = (filter: unknown): Result<SQONBuilder, 'INVALID_SQON', void> => {
 	try {
+		// @ts-expect-error testing for valid SQON
 		const output = SQONBuilder.from(filter);
 		return success(output);
 	} catch (error: unknown) {

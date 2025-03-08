@@ -34,8 +34,7 @@ const resolveHitsFromAggs =
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
-			(selection: { kind: string; name: { value: string } }) =>
-				selection.kind === 'Field' && selection.name.value === 'aggregations',
+			(selection) => selection.kind === 'Field' && selection.name.value === 'aggregations',
 		);
 
 		/*
@@ -107,12 +106,8 @@ export const createResolvers = ({
 
 	// hits
 	const defaultHitsResolver = resolveHits({ type, Parallel, getServerSideFilter });
-	const hits = enableDocumentHits
-		? defaultHitsResolver
-		: // @ts-ignore
-		  // typing resolveAggregations requires typing a lot of code down the chain
-		  // TODO: improve typing
-		  resolveHitsFromAggs(aggregationsQuery);
+	// @ts-ignore aggregationsQuery comes from untyped js file
+	const hits = enableDocumentHits ? defaultHitsResolver : resolveHitsFromAggs(aggregationsQuery);
 
 	return { hits, aggregations, configs };
 };
