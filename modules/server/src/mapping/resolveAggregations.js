@@ -1,20 +1,15 @@
 import getFields from 'graphql-fields';
 
-import { buildQuery, buildAggregations, flattenAggregations } from '../middleware';
+import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/index.js';
 
-import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
-import esSearch from './utils/esSearch';
-import compileFilter from './utils/compileFilter';
+import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
+import compileFilter from './utils/compileFilter.js';
+import esSearch from './utils/esSearch.js';
 
 let toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
 
 export default ({ type, getServerSideFilter }) =>
-	async (
-		obj,
-		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
-		context,
-		info,
-	) => {
+	async (obj, { offset = 0, filters, aggregations_filter_themselves, include_missing = true }, context, info) => {
 		const nestedFieldNames = type.nested_fieldNames;
 
 		const { esClient } = context;
@@ -25,6 +20,7 @@ export default ({ type, getServerSideFilter }) =>
 		const resolvedFilter = await resolveSetsInSqon({ sqon: filters, esClient });
 
 		const query = buildQuery({
+			caller: 'resolveAggregations',
 			nestedFieldNames,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,

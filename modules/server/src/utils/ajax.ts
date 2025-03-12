@@ -1,15 +1,15 @@
-import axios, { AxiosRequestHeaders, AxiosResponse } from 'axios';
+import axios, { type AxiosRequestHeaders, type AxiosResponse } from 'axios';
 import urlJoin from 'url-join';
 
-export default (host = '', debugAll = false) => ({
-	get: ({ endpoint = '', then = (response: AxiosResponse) => response }) => {
+export default (host = '', { debugAll = false, endpoint: globalEndpoint = '' }) => ({
+	get: ({ endpoint = globalEndpoint, then = (response: AxiosResponse) => response }) => {
 		return axios(urlJoin(host, endpoint)).then(then);
 	},
 
 	post: ({
 		body,
 		debug,
-		endpoint = '',
+		endpoint = globalEndpoint,
 		headers = {},
 	}: {
 		body: any;

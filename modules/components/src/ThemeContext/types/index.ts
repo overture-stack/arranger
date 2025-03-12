@@ -1,9 +1,9 @@
-import { RecursivePartial } from '@/utils/types';
+import type { Prettify, RecursivePartial } from '#utils/types.js';
 
-import { Components } from './components';
-import { Shape } from './shape';
-import { Spacing } from './spacing';
-import { Colors, Palette } from './palette';
+import type { Components } from './components.js';
+import type { Colors, Palette } from './palette.js';
+import type { Shape } from './shape.js';
+import type { Spacing } from './spacing.js';
 
 export interface BaseThemeInterface {
 	colors: Colors;
@@ -18,23 +18,21 @@ export interface BaseThemeInterface {
 
 export type ThemeOptions = RecursivePartial<BaseThemeInterface>;
 
-export type ThemeProcessorFn = {
+export interface ThemeProcessorFn {
 	<Theme = BaseThemeInterface>(inputTheme: RecursivePartial<Theme>): RecursivePartial<Theme>;
 	callerName?: string;
-};
+}
 
-export type CustomThemeType<Theme = BaseThemeInterface> =
-	| RecursivePartial<Theme>
-	| ThemeProcessorFn;
+export type CustomThemeType<Theme = BaseThemeInterface> = RecursivePartial<Theme> | ThemeProcessorFn;
 
 export type ThemeAggregatorFn = <Theme extends object = BaseThemeInterface>(
 	partial: CustomThemeType<Theme> | CustomThemeType<Theme>[],
 ) => ThemeOptions;
 
-export type ThemeMergerFn = {
+export interface ThemeMergerFn {
 	<Theme = CustomThemeType>(targetTheme: ThemeOptions, partialTheme: Theme | Theme[]): ThemeOptions;
 	callerName?: string;
-};
+}
 
 export interface ThemeContextInterface<Theme = ThemeOptions> {
 	aggregateTheme: ThemeAggregatorFn;
@@ -57,4 +55,4 @@ export interface WithThemeProps<Theme = ThemeOptions> {
 	theme?: RecursivePartial<Theme>;
 }
 
-export * as ThemeCommon from './common';
+export type * as ThemeCommon from './common.js';

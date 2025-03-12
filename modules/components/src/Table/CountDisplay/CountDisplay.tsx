@@ -2,13 +2,13 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 import pluralize from 'pluralize';
 
-import Spinner from '@/Loader';
-import { useTableContext } from '@/Table/helpers';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import Spinner from '#Loader/index.js';
+import { useTableContext } from '#Table/helpers/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { isPlural } from './helpers';
-import { CountDisplayProps } from './types';
+import { isPlural } from './helpers.js';
+import type { CountDisplayProps } from './types.js';
 
 const CountDisplay = ({
 	className: customClassName,
@@ -20,10 +20,9 @@ const CountDisplay = ({
 		Loader: customSpinnerProps = emptyObj,
 	} = emptyObj,
 }: CountDisplayProps) => {
-	const { currentPage, documentType, isLoading, pageSize, missingProvider, total } =
-		useTableContext({
-			callerName: 'Table - CountDisplay',
-		});
+	const { currentPage, documentType, isLoading, pageSize, missingProvider, total } = useTableContext({
+		callerName: 'Table - CountDisplay',
+	});
 	const {
 		colors,
 		components: {
@@ -66,9 +65,7 @@ const CountDisplay = ({
 			]}
 		>
 			{missingProvider ? (
-				<span className="noProvider">
-					The counter is missing its {missingProvider || 'context'} provider.
-				</span>
+				<span className="noProvider">The counter is missing its {missingProvider || 'context'} provider.</span>
 			) : isLoading ? (
 				<span className="loading">{`Loading ${oneOrManyDocuments}...`}</span>
 			) : (

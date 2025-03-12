@@ -1,8 +1,8 @@
-import { FC, HTMLProps } from 'react';
-import { SerializedStyles } from '@emotion/react';
+import type { SerializedStyles } from '@emotion/react';
+import type { FC, HTMLProps } from 'react';
 
-import { ThemedButtonProps } from '@/Button/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ThemedButtonProps } from '#Button/types.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export interface Option {
 	disabled?: boolean;

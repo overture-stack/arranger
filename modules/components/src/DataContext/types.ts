@@ -1,21 +1,14 @@
-import { Dispatch, SetStateAction } from 'react';
-import { Method } from 'axios';
-import SQON from '@overture-stack/sqon-builder';
+import type { SQON } from '@overture-stack/sqon-builder';
+import type { AxiosResponse, Method } from 'axios';
+import type { Dispatch, SetStateAction } from 'react';
 
 // TODO: This legacyProps import will fail when <Arranger /> is deprecated
 // Should be safe to remove afterwards, if the migration path worked out
-import { legacyProps } from '@/Arranger/Arranger';
-import { CustomThemeType, ThemeOptions } from '@/ThemeContext/types';
+import type { legacyProps } from '#Arranger/Arranger.js';
+import type { UnorderedListStyles } from '#Table/types.js';
+import type { CustomThemeType, ThemeOptions } from '#ThemeContext/types/index.js';
 
-export type DisplayType =
-	| 'all'
-	| 'bits'
-	| 'boolean'
-	| 'bytes'
-	| 'date'
-	| 'list'
-	| 'nested'
-	| 'number';
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'nested' | 'number';
 
 export type ColumnCustomiserFn = <Output>(input: ExtendedMappingInterface) => Output;
 
@@ -30,6 +23,7 @@ export interface ColumnMappingInterface {
 	id: string;
 	isArray?: boolean;
 	jsonPath?: string | null;
+	listStyle?: UnorderedListStyles;
 	query?: string | null;
 	show: boolean;
 	sortable: boolean;
@@ -39,13 +33,6 @@ export interface ColumnMappingInterface {
 export interface ColumnSortingInterface {
 	desc: boolean;
 	fieldName: string;
-}
-
-export interface TableConfigsInterface {
-	columns: ColumnMappingInterface[];
-	defaultSorting: ColumnSortingInterface[];
-	maxResultsWindow: number;
-	rowIdFieldName: string;
 }
 
 export interface ExtendedMappingInterface {
@@ -61,22 +48,39 @@ export interface ExtendedMappingInterface {
 	unit: string | null;
 }
 
+export interface FacetsConfigsInterface {
+	displayName: string;
+	displayType: string;
+	fieldName: string;
+	isActive: boolean;
+	show: boolean;
+}
+
+export interface TableConfigsInterface {
+	columns: ColumnMappingInterface[];
+	defaultSorting: ColumnSortingInterface[];
+	maxResultsWindow: number;
+	rowIdFieldName: string;
+}
+
 export interface ConfigsInterface {
 	extendedMapping: ExtendedMappingInterface[];
+	facetsConfigs: FacetsConfigsInterface;
 	tableConfigs: TableConfigsInterface & {
 		columns: (string | ColumnMappingInterface)[];
-		maxResultsWindow: number;
 	};
 }
 
 export type APIFetcherFn = (options: {
-	body: any;
+	body: unknown;
 	endpoint?: string;
 	endpointTag?: string;
 	headers?: Record<string, string>;
 	method?: Method;
 	url?: string;
-}) => Promise<any>;
+}) => Promise<AxiosResponse<unknown>>;
+
+export type SQONType = SQON | null;
 
 export type FetchDataFn = (options?: {
 	config?: Record<string, any>;
@@ -87,7 +91,7 @@ export type FetchDataFn = (options?: {
 	sort?: any;
 	sqon?: SQONType;
 	queryName?: string;
-}) => Promise<{ total?: number; data?: any } | void>;
+}) => Promise<{ total?: number; data?: any } | undefined>;
 
 export interface DataProviderProps<Theme = ThemeOptions> {
 	apiUrl: string;
@@ -98,8 +102,6 @@ export interface DataProviderProps<Theme = ThemeOptions> {
 	legacyProps?: typeof legacyProps; // TODO: deprecate along with <Arranger/>
 	theme?: CustomThemeType<Theme>;
 }
-
-export type SQONType = SQON | null;
 
 export interface DataContextInterface {
 	apiFetcher: APIFetcherFn;

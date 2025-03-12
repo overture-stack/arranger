@@ -1,4 +1,4 @@
-import mappingToAggsType from './mappingToAggsType';
+import mappingToAggsType from './mappingToAggsType.js';
 
 // TODO: unused function? do we still need it? can it be used for new implementation?
 export default (mapping) =>

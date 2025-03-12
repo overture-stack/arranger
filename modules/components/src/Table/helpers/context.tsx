@@ -1,30 +1,22 @@
-import { RowSelectionState } from '@tanstack/react-table';
-import {
-	ComponentType,
-	createContext,
-	ReactElement,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-} from 'react';
+import type { RowSelectionState } from '@tanstack/react-table';
+import { type ComponentType, createContext, type ReactElement, useContext, useEffect, useMemo, useState } from 'react';
 
-import { useDataContext } from '@/DataContext';
-import { ColumnSortingInterface } from '@/DataContext/types';
-import { useThemeContext } from '@/ThemeContext';
-import { DEBUG } from '@/utils/config';
-import getComponentDisplayName from '@/utils/getComponentDisplayName';
-import missingProviderHandler from '@/utils/missingProvider';
-import { emptyObj } from '@/utils/noops';
+import { useDataContext } from '#DataContext/index.js';
+import type { ColumnSortingInterface } from '#DataContext/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { DEBUG } from '#utils/config.js';
+import getComponentDisplayName from '#utils/getComponentDisplayName.js';
+import missingProviderHandler from '#utils/missingProvider.js';
+import { emptyObj } from '#utils/noops.js';
 
-import {
+import type {
 	ColumnsDictionary,
 	TableContextInterface,
 	TableContextProviderProps,
 	UseTableContextProps,
-} from '../types';
+} from '../types.js';
 
-import { aggregateCustomColumns, columnsArrayToDictionary, getColumnsByAttribute } from './columns';
+import { aggregateCustomColumns, columnsArrayToDictionary, getColumnsByAttribute } from './columns.js';
 
 export const TableContext = createContext<TableContextInterface>({
 	missingProvider: 'TableContext',
@@ -70,17 +62,17 @@ export const TableContextProvider = ({
 	const [pageSize, setPageSize] = useState(20);
 
 	// Arranger data context values
-	const { documentType, fetchData, isLoadingConfigs, missingProvider, sqon, tableConfigs } =
-		useDataContext({ callerName: 'TableContextProvider' });
+	const { documentType, fetchData, isLoadingConfigs, missingProvider, sqon, tableConfigs } = useDataContext({
+		callerName: 'TableContextProvider',
+	});
 
-	const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } =
-		useThemeContext({ callerName: 'TableContextProvider' });
+	const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } = useThemeContext({
+		callerName: 'TableContextProvider',
+	});
 
 	const defaultSorting = useMemo(
 		() =>
-			(Array.isArray(themeDefaultSorting) &&
-				themeDefaultSorting.length > 0 &&
-				themeDefaultSorting) ||
+			(Array.isArray(themeDefaultSorting) && themeDefaultSorting.length > 0 && themeDefaultSorting) ||
 			tableConfigs?.defaultSorting ||
 			[],
 		[tableConfigs?.defaultSorting, themeDefaultSorting],
@@ -90,8 +82,7 @@ export const TableContextProvider = ({
 		const defaultMaxResultsWindow = tableConfigs?.maxResultsWindow;
 
 		defaultMaxResultsWindow &&
-			(defaultMaxResultsWindow === maxResultsWindow ||
-				setMaxResultsWindow(defaultMaxResultsWindow));
+			(defaultMaxResultsWindow === maxResultsWindow || setMaxResultsWindow(defaultMaxResultsWindow));
 	}, [maxResultsWindow, tableConfigs]);
 
 	// pagination effects
@@ -222,11 +213,7 @@ export const TableContextProvider = ({
 		hasShowableColumns,
 		hasVisibleColumns,
 		isFreshTable,
-		isLoading:
-			isLoadingConfigs ||
-			isFreshTable ||
-			isLoadingTableData ||
-			(hasVisibleColumns && isStaleTableData),
+		isLoading: isLoadingConfigs || isFreshTable || isLoadingTableData || (hasVisibleColumns && isStaleTableData),
 		maxPages,
 		maxResultsWindow,
 		missingProvider:
@@ -275,7 +262,7 @@ export const useTableContext = ({
  * @param {ComponentType} Component the component you want to provide Arranger table data to.
  * @returns {DataContextInterface} data object
  */
-export const withTableContext = <Props extends object>(Component: ComponentType<Props>) => {
+export const withTableContext = <Props extends JSX.IntrinsicAttributes>(Component: ComponentType) => {
 	const callerName = getComponentDisplayName(Component);
 	const ComponentWithData = (props: Props) => {
 		const dataProps = {

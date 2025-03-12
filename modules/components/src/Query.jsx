@@ -1,8 +1,8 @@
+import { isEqual, debounce } from 'lodash-es';
 import { Component } from 'react';
-import { isEqual, debounce } from 'lodash';
-import { defaultProps } from 'recompose'; // Get rid of this garbage
+import { defaultProps } from 'recompose'; // Get rid of this cruft
 
-import defaultApiFetcher from './utils/api';
+import defaultApiFetcher from './utils/api.js';
 
 class Query extends Component {
 	state = { data: null, error: null, loading: this.props.shouldFetch };
@@ -48,11 +48,7 @@ class Query extends Component {
 	render() {
 		const { loading, error, data } = this.state;
 		const { render, renderError } = this.props;
-		return error && renderError ? (
-			<pre>{JSON.stringify(error, null, 2)}</pre>
-		) : (
-			render({ data, loading, error })
-		);
+		return error && renderError ? <pre>{JSON.stringify(error, null, 2)}</pre> : render({ data, loading, error });
 	}
 }
 const EnhancedQuery = defaultProps({ shouldFetch: true })(Query);

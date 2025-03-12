@@ -1,1 +1,1 @@
-export { default } from './Toolbar';
+export { default } from './Toolbar.js';

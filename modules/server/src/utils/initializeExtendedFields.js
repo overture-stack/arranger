@@ -1,4 +1,4 @@
-import { flattenDeep } from 'lodash';
+import { flattenDeep } from 'lodash-es';
 
 import replaceBy from './replaceBy';
 

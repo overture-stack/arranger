@@ -1,9 +1,9 @@
-import { ConfigObject, ConfigRequiredProperties } from './types';
-import { makeConfigsFromEnv } from './utils';
-import getConfigFromFiles from './utils/getConfigFromFiles';
+import { type ConfigObject, ConfigRequiredProperties } from './types.js';
+import getConfigFromFiles from './utils/getConfigFromFiles.js';
+import { makeConfigsFromEnv } from './utils/index.js';
 
-export * as ENV_CONFIG from './constants';
-export { initializeSets } from './utils';
+export * as ENV_CONFIG from './constants.js';
+export { initializeSets } from './utils/index.js';
 
 const validateProperties = (configs: Partial<ConfigObject>) => {
 	// Verify all the required values are present
@@ -33,6 +33,7 @@ const getAndValidateConfigs = async (configsSource = '') => {
 		return validateProperties(configs);
 	} catch (error) {
 		console.log('  - Defaulting to config values from the environment...');
+		// TODO: add DEBUG error for files not loading correctly
 
 		return (
 			validateProperties(configsFromEnv) ||

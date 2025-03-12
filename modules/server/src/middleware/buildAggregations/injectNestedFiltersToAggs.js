@@ -1,8 +1,8 @@
-import { cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash-es';
 
-import { opSwitch } from '../buildQuery';
-import normalizeFilters from '../buildQuery/normalizeFilters';
-import { AGGS_WRAPPER_FILTERED } from '../constants';
+import { opSwitch } from '#middleware/buildQuery/index.js';
+import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
+import { AGGS_WRAPPER_FILTERED } from '#middleware/constants.js';
 
 /*
  * due to this problem: https://github.com/kids-first/kf-portal-ui/issues/488
@@ -32,8 +32,7 @@ const injectNestedFiltersToAggs = ({ aggs, nestedSqonFilters, aggregationsFilter
 								should: nestedSqonFilters[aggContent.nested.path]
 									.filter(
 										(sqonFilter) =>
-											aggregationsFilterThemselves ||
-											aggName.split(':')[0] !== sqonFilter.content.fieldName,
+											aggregationsFilterThemselves || aggName.split(':')[0] !== sqonFilter.content.fieldName,
 									)
 									.map((sqonFilter) =>
 										opSwitch({

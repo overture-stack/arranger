@@ -1,7 +1,0 @@
-.currentlyDisplayed > span:not(:first-child) {
-  margin-left: 3px;
-}
-
-.group {
-  display: flex;
-}
