@@ -80,6 +80,21 @@ jobs:
           else
             echo "Image tags do not exist, proceeding..."
           fi
+      - name: Check Trivy ignore exceptions
+        # Check if the Trivy ignorefile has exceptions and the exceptions
+        #   date is defined and less than 90 days.
+        #
+        # The ignorefile has the following format:
+        #   CVE-YYYY-XXXXX exp:YYYY-MM-DD
+        #
+        # Error out if the format is not respected.
+        #   Given a CVE-YYYY-XXXXX defined in the ignorefile,
+        #     if no exception date is defined, we will error out.
+        #     if the exception date is more than 90 days, we will error out too.
+        #
+        # Successfully parsed lines will be ignored,
+        #   if the exception date exist and is less than 90 days, the step will exit with 0.
+        uses: PilotDataPlatform/shared-ci-tools/.github/actions/trivyignore-checking@main
       - name: Build image and push to GitHub Container Registry
         uses: docker/build-push-action@v4
         with:
