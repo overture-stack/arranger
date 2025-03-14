@@ -65,7 +65,7 @@ let RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
 export let typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
-	AggregationsTypeDefs({ enableDocumentHits }),
+	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
