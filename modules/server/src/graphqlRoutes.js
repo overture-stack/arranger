@@ -5,7 +5,7 @@ import expressPlayground from 'graphql-playground-middleware-express';
 
 import { mergeSchemas } from '@graphql-tools/schema';
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
+import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
@@ -243,7 +243,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 	return router;
 };
 
-const createSchemasFromConfigs = async ({
+export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
@@ -272,7 +272,7 @@ const createSchemasFromConfigs = async ({
 
 		const schemasToMerge = [schema];
 
-		/*
+		/**
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {
