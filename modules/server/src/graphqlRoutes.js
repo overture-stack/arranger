@@ -4,7 +4,7 @@ import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
 
 import { mergeSchemas } from '@graphql-tools/schema';
-import getConfigObject, { ENV_CONFIG, initializeSets } from './config';
+import getConfigObject, { initializeSets } from './config';
 import { DEBUG_MODE, ENABLE_NETWORK_AGGREGATION, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
