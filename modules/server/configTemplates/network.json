@@ -1,11 +1,5 @@
 {
 	"network": {
-		"servers": [
-			{
-				"displayName": "Toronto",
-				"graphqlUrl": "http://.../graphql",
-				"documentType": "file"
-			}
-		]
+		"servers": []
 	}
 }
