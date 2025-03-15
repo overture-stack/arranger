@@ -8,7 +8,7 @@ export const Relation = {
 export type Relation = keyof typeof Relation;
 
 /**
- * This returns a total count that is less than or equal to the actual total hits in the query.
+ * Returns a total count that is less than or equal to the actual total hits in the query
  * It is calculated by adding +1 for values under threshold or adding bucket.doc_count amount
  * for values greater than or equal to
  *

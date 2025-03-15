@@ -1,8 +1,17 @@
 import mappingToAggsType from './mappingToAggsType';
 
-export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) => {
-	const dataMaskingType = !showRecords ? 'type DataMasking { thresholdValue: Int }' : '';
+const createConnectionType = (enableDocumentHits) => {
+	return `type ${type.name}Connection {
+    total: Int!
+   ${enableDocumentHits ? `edges: [${type.name}Edge]` : ''}
+  }`;
+};
 
+const createDataMaskingType = (enableDocumentHits) => {
+	return !enableDocumentHits ? `type DataMasking { thresholdValue: Int }` : '';
+};
+
+export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentHits }) => {
 	return `
     type ${type.name} {
       aggregations(
@@ -34,12 +43,10 @@ export default ({ type, fields = '', createStateTypeDefs = true, showRecords }) 
       ${mappingToAggsType(type.mapping)}
     }
 
-    ${dataMaskingType}
+    ${createDataMaskingType(enableDocumentHits)}
 
-    type ${type.name}Connection {
-      total: Int!
-     ${showRecords ? `edges: [${type.name}Edge]` : ''}
-    }
+    ${createConnectionType(enableDocumentHits)}
+  
 
     type ${type.name}Edge {
       searchAfter: JSON

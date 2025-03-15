@@ -5,7 +5,7 @@ export const ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = stringToBool(
 );
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
 export const DATA_MASK_MIN_THRESHOLD =
-	process.env.DATA_MASK_MIN_THRESHOLD || Number.MAX_SAFE_INTEGER;
+	stringToNumber(process.env.DATA_MASK_MIN_THRESHOLD) || Number.MAX_SAFE_INTEGER;
 export const DEBUG_MODE = stringToBool(process.env.DEBUG);
 export const DOCUMENT_TYPE = process.env.DOCUMENT_TYPE || '';
 export const DOWNLOAD_STREAM_BUFFER_SIZE =
@@ -13,6 +13,7 @@ export const DOWNLOAD_STREAM_BUFFER_SIZE =
 export const ENABLE_ADMIN = stringToBool(process.env.ENABLE_ADMIN);
 export const ENABLE_DOCUMENT_HITS = stringToBool(process.env.ENABLE_DOCUMENT_HITS);
 export const ENABLE_LOGS = stringToBool(process.env.ENABLE_LOGS);
+export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
 export const ES_ARRANGER_SET_INDEX = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets';
 export const ES_ARRANGER_SET_TYPE = process.env.ES_ARRANGER_SET_TYPE || 'arranger-sets';
 export const ES_HOST = process.env.ES_HOST || 'http://127.0.0.1:9200';
@@ -27,4 +28,3 @@ export const PING_MS = stringToNumber(process.env.PING_MS) || 2200;
 export const PING_PATH = process.env.PING_PATH || '/ping';
 export const PORT = stringToNumber(process.env.PORT) || 5050;
 export const ROW_ID_FIELD_NAME = process.env.ROW_ID_FIELD_NAME || 'id';
-export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
