@@ -1,4 +1,3 @@
-import { Client } from '@elastic/elasticsearch';
 import { Relation } from './masking';
 
 export type Bucket = {
@@ -38,7 +37,7 @@ export type Sort = {
 	missing: Missing;
 };
 
-export type Hits = {
+export type HitsQuery = {
 	score: string;
 	offset: number;
 	sort: [Sort];
@@ -51,6 +50,8 @@ export type Hits = {
 	trackTotalHits: boolean;
 };
 
-export type Context = {
-	es: Client;
+export type AggregationQuery = {
+	filters: any;
+	aggregations_filter_themselves: boolean;
+	include_missing: boolean;
 };

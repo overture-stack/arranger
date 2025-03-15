@@ -8,7 +8,7 @@ import { ConfigProperties } from './config/types.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import makeSchema from './schema/index.js';
-import { createSchemaFromNetworkConfig, mergeSchemas } from './network/index.js';
+import { createSchemaFromNetworkConfig } from './network/index.js';
 
 const getESMapping = async (esClient, index) => {
 	if (esClient && index) {
@@ -229,7 +229,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 	return router;
 };
 
-const createSchemasFromConfigs = async ({
+export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
@@ -257,7 +257,7 @@ const createSchemasFromConfigs = async ({
 
 		const schemasToMerge = [schema];
 
-		/*
+		/**
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {

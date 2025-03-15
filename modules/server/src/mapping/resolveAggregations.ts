@@ -2,12 +2,48 @@ import getFields from 'graphql-fields';
 
 import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/index.js';
 
+import esSearch from './utils/esSearch';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
-import esSearch from './utils/esSearch.js';
+import { type AggregationQuery, type Root } from './types.js';
+import { Relation } from './masking.js';
+import { type GetServerSideFilterFn } from '#utils/getDefaultServerSideFilter.js';
+import { type Resolver } from '#gqlServer.js';
 
-export default ({ type, getServerSideFilter }) => {
-	return async (
+const toGraphqlField = (acc: Aggregations, [a, b]: [string, Aggregation]) => ({
+	...acc,
+	[a.replace(/\./g, '__')]: b,
+});
+export const aggregationsToGraphql = (aggregations: Aggregations) => {
+	return Object.entries(aggregations).reduce<Aggregations>(toGraphqlField, {});
+};
+
+/*
+ * Types
+ */
+export type Bucket = {
+	doc_count: number;
+	key: string;
+	relation: Relation;
+};
+
+export type Aggregation = {
+	bucket_count: number;
+	buckets: Bucket[];
+};
+
+export type Aggregations = Record<string, Aggregation>;
+
+export type AggregationsResolver = Resolver<Root, AggregationQuery, Promise<Aggregations>>;
+
+const getAggregationsResolver = ({
+	type,
+	getServerSideFilter,
+}: {
+	type: Record<string, any>;
+	getServerSideFilter: GetServerSideFilterFn | undefined;
+}) => {
+	const resolver: Resolver<unknown, AggregationQuery, Promise<Aggregations>> = async (
 		obj,
 		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
 		context,
@@ -27,7 +63,7 @@ export default ({ type, getServerSideFilter }) => {
 			nestedFieldNames,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
-				serverSideFilter: getServerSideFilter(context),
+				serverSideFilter: getServerSideFilter && getServerSideFilter(),
 			}),
 		});
 
@@ -49,6 +85,7 @@ export default ({ type, getServerSideFilter }) => {
 		const response = await esSearch(esClient)({
 			index: type.index,
 			size: 0,
+			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			_source: false,
 			body,
 		});
@@ -59,9 +96,8 @@ export default ({ type, getServerSideFilter }) => {
 
 		return aggregations;
 	};
+
+	return resolver;
 };
 
-const toGraphqlField = (acc, [a, b]) => ({ ...acc, [a.replace(/\./g, '__')]: b });
-export const aggregationsToGraphql = (aggregations) => {
-	return Object.entries(aggregations).reduce(toGraphqlField, {});
-};
+export default getAggregationsResolver;

@@ -12,11 +12,9 @@ export default async function (rootPath = '') {
 
 	/**
 	 * @param {boolean} enableAdmin
-	 * @param {boolean} enableDocumentHits - enables including "hits" property in the GQL response
 	 */
 	return arranger({
 		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
-		enableDocumentHits: ENV_CONFIG.ENABLE_DOCUMENT_HITS,
 	}).then((router) => {
 		app.use(router);
 

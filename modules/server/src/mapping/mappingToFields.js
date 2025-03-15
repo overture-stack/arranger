@@ -6,7 +6,6 @@ import mappingToObjectTypes from './mappingToObjectTypes.js';
 import mappingToScalarFields from './mappingToScalarFields.js';
 
 const mappingToFields = ({ enableDocumentHits, type, parent }) => {
-	const showRecords = enableDocumentHits;
 	return [
 		mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
 		Object.entries(type.mapping)
@@ -29,7 +28,7 @@ const mappingToFields = ({ enableDocumentHits, type, parent }) => {
 				type.customFields,
 			],
 			createStateTypeDefs: 'createState' in type ? type.createState : true,
-			showRecords,
+			enableDocumentHits,
 		}),
 	].join();
 };

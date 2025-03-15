@@ -67,7 +67,7 @@ const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 
 export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
-	AggregationsTypeDefs({ enableDocumentHits }),
+	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
