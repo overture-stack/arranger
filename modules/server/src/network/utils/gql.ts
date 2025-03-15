@@ -9,18 +9,6 @@ export const ASTtoString = (ast: DocumentNode) => {
 };
 
 /**
- * Type guard to filter fulfilled Promises
- */
-export const fulfilledPromiseFilter = <Result>(result: unknown): result is Result => {
-	return (
-		typeof result === 'object' &&
-		result !== null &&
-		'status' in result &&
-		result.status === 'fulfilled'
-	);
-};
-
-/**
  * Turns GraphQLResolveInfo into a map of the requested fields
  *
  * @param info GQL request info object
