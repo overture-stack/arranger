@@ -11,10 +11,13 @@ import { SupportedNetworkFieldType } from '../types/types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
 /**
- * Converts field/types to GQLObjectType definition shape
+ * Creates nested GQL structured object from field type
+ * { name: 'donor_gender', type: 'Aggregation'}
+ * =>
+ * { 'donor_gender', type: { name: 'Aggregation' }}
  *
- * @example
- * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
+ * @param fieldTypes - An array of fields with types
+ * @returns Structured GQL fields object
  */
 const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) => {
 	return networkFieldTypes.reduce((allFields, currentField) => {
@@ -26,16 +29,13 @@ const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) 
 };
 
 /**
- * Returns available aggregations by filtering duplicates, and mapping from
- * singular remote aggregation type to network aggregation types
+ * Typedefs for network search.
+ * Typenames need to be unique globally or gql will merge / throw errors.
  *
- * eg. NumericAggregations to NetworkNumericAggregations
- *
- * There is no distinction on which types come from which remote connections
- * This is the resolvers responsibility
- *
- * @param configs
- * @returns
+ * TODO: Use a single convention of creating typedefs consistently
+ * Some redundancy here by creating typedefs in object centric way.
+ * There are typesdefs already declared as gql tagged template strings elsewhere.
+ * Objects are easier to compose and are typesafe.
  */
 export const createNetworkAggregationTypeDefs = (
 	networkFieldTypes: SupportedNetworkFieldType[],

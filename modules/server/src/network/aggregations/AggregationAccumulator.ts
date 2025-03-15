@@ -1,10 +1,10 @@
 import { Relation } from '@/mapping/masking';
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../common';
+import { SUPPORTED_AGGREGATIONS } from '../setup/constants';
 import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
 import { Hits } from '../types/hits';
 import { AllAggregations } from '../types/types';
-import { RequestedFieldsMap } from '../util';
+import { RequestedFieldsMap } from '../utils/gql';
 
 type ResolveAggregationInput = {
 	data: { aggregations: AllAggregations; hits: Hits };
@@ -16,9 +16,8 @@ type AggregationsTuple = [Aggregations, Aggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
-	__typename: 'Aggregations',
 	bucket_count: 1,
-	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: "eq" }],
+	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: 'eq' }],
 });
 
 // mutation - update a single aggregations field in the accumulator

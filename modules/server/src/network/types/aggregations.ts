@@ -11,7 +11,6 @@ export type Bucket = {
 };
 
 export type Aggregations = {
-	__typename: 'Aggregations';
 	bucket_count: number;
 	buckets: Bucket[];
 };
