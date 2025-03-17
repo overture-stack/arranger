@@ -7,6 +7,7 @@ import {
 	GraphQLString,
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
+
 import { SupportedNetworkFieldType } from '../types/types';
 import { singleToNetworkAggregationMap } from './networkAggregations';
 
@@ -29,13 +30,16 @@ const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) 
 };
 
 /**
- * Typedefs for network search.
- * Typenames need to be unique globally or gql will merge / throw errors.
+ * Returns available aggregations by filtering duplicates, and mapping from
+ * singular remote aggregation type to network aggregation types
  *
- * TODO: Use a single convention of creating typedefs consistently
- * Some redundancy here by creating typedefs in object centric way.
- * There are typesdefs already declared as gql tagged template strings elsewhere.
- * Objects are easier to compose and are typesafe.
+ * eg. NumericAggregations to NetworkNumericAggregations
+ *
+ * There is no distinction on which types come from which remote connections
+ * This is the resolvers responsibility
+ *
+ * @param configs
+ * @returns
  */
 export const createNetworkAggregationTypeDefs = (
 	networkFieldTypes: SupportedNetworkFieldType[],

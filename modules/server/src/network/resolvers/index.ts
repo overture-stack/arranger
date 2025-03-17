@@ -1,4 +1,5 @@
 import { Resolver } from '@/gqlServer';
+import { AggregationsQueryVariables } from '@/mapping/resolveAggregations';
 import { isSuccess } from '../result';
 import { NodeConfig } from '../setup/query';
 import { resolveInfoToMap } from '../utils/gql';
@@ -11,15 +12,8 @@ type NetworkSearchRoot = {
 	aggregations: Record<string, unknown>;
 };
 
-/*
- * Type should match the "Network" GQL type definition arg types
- */
-// TODO: shared?
-type NetworkAggregationArgs = {
-	filters?: object;
-	aggregations_filter_themselves?: boolean;
-	include_missing?: boolean;
-};
+// top level query to pass variables down
+export type NetworkQueryVariables = AggregationsQueryVariables;
 
 /**
  * Resolvers for network search.
@@ -29,7 +23,7 @@ type NetworkAggregationArgs = {
  * @returns
  */
 export const createResolvers = (configs: NodeConfig[]) => {
-	const network: Resolver<NetworkSearchRoot, NetworkAggregationArgs, any> = async (
+	const network: Resolver<NetworkSearchRoot, NetworkQueryVariables, any> = async (
 		_unusedParentObj,
 		args,
 		_unusedContext,

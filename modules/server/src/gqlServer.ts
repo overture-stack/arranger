@@ -5,6 +5,8 @@ export type Context = {
 	esClient: Client;
 };
 
+export type Root = Record<string, any>;
+
 export type ResolverOutput<T> = T | Promise<T>;
 
 /**
@@ -16,9 +18,9 @@ export type ResolverOutput<T> = T | Promise<T>;
  * @param info - GraphQL info object.
  * @return Returns resolved value;
  */
-export type Resolver<Root = {}, QueryArgs = Object, ReturnValue = undefined> = (
+export type Resolver<Root = Record<string, any>, QueryArgs = Object, ReturnValue = undefined> = (
 	root: Root,
 	args: QueryArgs,
 	context: Context,
 	info: GraphQLResolveInfo,
-) => ResolverOutput<ReturnValue> | ResolverOutput<ReturnValue>;
+) => ResolverOutput<ReturnValue>;

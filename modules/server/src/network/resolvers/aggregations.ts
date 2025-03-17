@@ -1,4 +1,4 @@
-import { Aggregations } from '@/mapping/resolveAggregations';
+import { AggregationsQueryVariables, AllAggregationsMap } from '@/mapping/resolveAggregations';
 import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
 import { failure, isSuccess } from '../result';
 import { NodeConfig } from '../setup/query';
@@ -12,14 +12,6 @@ export const CONNECTION_STATUS = {
 	ERROR: 'ERROR',
 } as const;
 
-type QueryVariables = {
-	filters?: object;
-	aggregations_filter_themselves?: boolean;
-	include_missing?: boolean;
-};
-
-type SuccessResponse = Record<string, { hits: Hits; aggregations: Aggregations }>;
-
 export type NetworkNode = {
 	name: string;
 	hits: number;
@@ -27,6 +19,8 @@ export type NetworkNode = {
 	errors: string;
 	aggregations: { name: string; type: string }[];
 };
+
+type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregationsMap }>;
 
 /**
  * Query each remote connection
@@ -38,7 +32,7 @@ export type NetworkNode = {
 export const aggregationPipeline = async (
 	configs: NodeConfig[],
 	requestedAggregationFields: RequestedFieldsMap,
-	queryVariables: QueryVariables,
+	queryVariables: AggregationsQueryVariables,
 ) => {
 	const nodeInfo: NetworkNode[] = [];
 

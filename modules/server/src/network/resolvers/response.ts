@@ -1,4 +1,4 @@
-import { Aggregations } from '@/mapping/resolveAggregations';
+import { AllAggregationsMap } from '@/mapping/resolveAggregations';
 import { NetworkNode } from './aggregations';
 
 /**
@@ -8,7 +8,7 @@ export const createResponse = ({
 	aggregationResults,
 	nodeInfo,
 }: {
-	aggregationResults: Aggregations;
+	aggregationResults: AllAggregationsMap;
 	nodeInfo: NetworkNode[];
 }) => {
 	return { nodes: nodeInfo, aggregations: aggregationResults };

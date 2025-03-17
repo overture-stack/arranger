@@ -1,9 +1,6 @@
 import { SupportedAggregation } from '../common';
-import { GQLFieldType } from '../queries';
-
 import { SUPPORTED_AGGREGATIONS_LIST } from './constants';
-
-export type NetworkFields = { name: string; fields: GQLFieldType[] };
+import { NodeConfig } from './query';
 
 type NetworkFieldType<T> = {
 	name: string;

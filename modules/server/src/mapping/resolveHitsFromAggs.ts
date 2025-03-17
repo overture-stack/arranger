@@ -1,8 +1,45 @@
-import { Resolver } from '@/gqlServer';
 import { get } from 'lodash';
+
+import { Resolver, Root } from '@/gqlServer';
 import { applyAggregationMasking } from './masking';
 import { AggregationsResolver } from './resolveAggregations';
-import { HitsQuery, Root } from './types';
+
+export enum Missing {
+	first,
+	last,
+}
+
+export enum Mode {
+	avg,
+	max,
+	min,
+	sum,
+}
+
+export enum Order {
+	asc,
+	desc,
+}
+
+type Sort = {
+	fieldName: string;
+	order: Order;
+	mode: Mode;
+	missing: Missing;
+};
+
+type HitsQuery = {
+	score: string;
+	offset: number;
+	sort: [Sort];
+	filters: JSON;
+	before: string;
+	after: string;
+	first: number;
+	last: number;
+	searchAfter: JSON;
+	trackTotalHits: boolean;
+};
 
 type HitsResolver = Resolver<Root, HitsQuery, Promise<{ total: number }>>;
 

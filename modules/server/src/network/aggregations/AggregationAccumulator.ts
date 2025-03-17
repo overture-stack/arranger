@@ -1,18 +1,23 @@
 import { Relation } from '@/mapping/masking';
+import {
+	Aggregations,
+	AllAggregations,
+	AllAggregationsMap,
+	Bucket,
+	NumericAggregations,
+} from '@/mapping/resolveAggregations';
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
-import { SUPPORTED_AGGREGATIONS } from '../setup/constants';
-import { Aggregations, Bucket, NumericAggregations } from '../types/aggregations';
+import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../setup/constants';
 import { Hits } from '../types/hits';
-import { AllAggregations } from '../types/types';
 import { RequestedFieldsMap } from '../utils/gql';
 
 type ResolveAggregationInput = {
-	data: { aggregations: AllAggregations; hits: Hits };
-	accumulator: AllAggregations;
+	data: { aggregations: AllAggregationsMap; hits: Hits };
+	accumulator: AllAggregationsMap;
 	requestedFields: string[];
 };
 
-type AggregationsTuple = [Aggregations, Aggregations];
+type AggregationsTuple = [AllAggregations, AllAggregations];
 type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
@@ -21,7 +26,7 @@ const emptyAggregation = (hits: number): Aggregations => ({
 });
 
 // mutation - update a single aggregations field in the accumulator
-const addToAccumulator = <T extends Aggregations | NumericAggregations>({
+const addToAccumulator = <T extends AllAggregations>({
 	existingAggregation,
 	aggregation,
 	type,
@@ -94,6 +99,7 @@ const resolveToNetworkAggregation = <T>(
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations as AggregationsTuple);
 	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
+		// TODO: REMOVE and other code
 		return resolveNumericAggregation(aggregations as NumericAggregationsTuple);
 	} else {
 		// no types match
@@ -240,7 +246,7 @@ const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): Nume
 };
 
 export class AggregationAccumulator {
-	totalAgg: AllAggregations = {};
+	totalAgg: AllAggregationsMap = {};
 	requestedFields: string[];
 
 	constructor(requestedFieldsMap: RequestedFieldsMap) {
@@ -248,7 +254,7 @@ export class AggregationAccumulator {
 		this.requestedFields = requestedFields;
 	}
 
-	resolve(data: { aggregations: AllAggregations; hits: Hits }) {
+	resolve(data: { aggregations: AllAggregationsMap; hits: Hits }) {
 		resolveAggregations({
 			accumulator: this.totalAgg,
 			data: structuredClone(data),

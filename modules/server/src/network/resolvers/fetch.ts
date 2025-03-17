@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { DocumentNode } from 'graphql';
 
+import { NetworkQueryVariables } from '.';
 import { fetchGql } from '../gql';
 import { failure, Result, success } from '../result';
 import { ASTtoString } from '../utils/gql';
@@ -9,11 +10,7 @@ import { CONNECTION_STATUS } from './aggregations';
 type NetworkQuery = {
 	url: string;
 	gqlQuery: DocumentNode;
-	queryVariables: {
-		filters?: object;
-		aggregations_filter_themselves?: boolean;
-		include_missing?: boolean;
-	};
+	queryVariables: NetworkQueryVariables;
 };
 
 /**
