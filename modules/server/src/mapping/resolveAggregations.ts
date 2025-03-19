@@ -68,7 +68,11 @@ const getAggregationsResolver = ({
 	type: Record<string, any>;
 	getServerSideFilter: GetServerSideFilterFn | undefined;
 }) => {
-	const resolver: Resolver<unknown, AggregationsQueryVariables, Promise<Aggregations>> = async (
+	const resolver: Resolver<
+		unknown,
+		AggregationsQueryVariables,
+		Promise<AllAggregationsMap>
+	> = async (
 		obj,
 		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,

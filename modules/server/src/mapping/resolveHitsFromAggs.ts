@@ -60,8 +60,7 @@ export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolv
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
-			(selection: { kind: string; name: { value: string } }) =>
-				selection.kind === 'Field' && selection.name.value === 'aggregations',
+			(selection) => selection.kind === 'Field' && selection.name.value === 'aggregations',
 		);
 
 		if (aggregationsSelectionSet) {
