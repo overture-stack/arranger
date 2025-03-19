@@ -14,8 +14,8 @@ import { SupportedNetworkFieldType } from '../setup/fields';
 const relation = new GraphQLEnumType({
 	name: 'Relation',
 	values: {
-		eq: { value: 0 },
-		gte: { value: 1 },
+		eq: { value: 'eq' },
+		gte: { value: 'gte' },
 	},
 });
 
