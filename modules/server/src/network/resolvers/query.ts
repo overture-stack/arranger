@@ -54,7 +54,7 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
  * @param requestedFields - Query fields object
  * @returns Fully constructed query string
  */
-const createFileGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
+export const createFileGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
 	const fields = convertFieldsToString(requestedFields);
 	const queryArgsTypes = `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`;
 	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
