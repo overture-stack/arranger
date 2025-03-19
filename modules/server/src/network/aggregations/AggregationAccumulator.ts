@@ -18,7 +18,6 @@ type ResolveAggregationInput = {
 };
 
 type AggregationsTuple = [AllAggregations, AllAggregations];
-type NumericAggregationsTuple = [NumericAggregations, NumericAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
 	bucket_count: 1,
@@ -38,7 +37,7 @@ const addToAccumulator = <T extends AllAggregations>({
 	// if first aggregation, nothing to resolve with yet
 	return !existingAggregation
 		? aggregation
-		: resolveToNetworkAggregation<T>(type, [aggregation, existingAggregation]);
+		: resolveAggregationByType<T>(type, [aggregation, existingAggregation]);
 };
 
 /**
@@ -92,15 +91,12 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
  * @param type
  * @param aggregations
  */
-const resolveToNetworkAggregation = <T>(
+const resolveAggregationByType = <T>(
 	type: string,
 	aggregations: [T, T],
 ): Aggregations | NumericAggregations => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations as AggregationsTuple);
-	} else if (type === SUPPORTED_AGGREGATIONS.NumericAggregations) {
-		// TODO: REMOVE and other code
-		return resolveNumericAggregation(aggregations as NumericAggregationsTuple);
 	} else {
 		// no types match
 		throw Error('No matching aggregation type');
@@ -219,30 +215,10 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
 		return {
 			bucket_count: computedBuckets.length,
 			buckets: computedBuckets,
-			__typename: resolvedAggregation.__typename,
 		};
 	});
 
 	return resolvedAggregation;
-};
-
-const resolveNumericAggregation = (aggregations: NumericAggregationsTuple): NumericAggregations => {
-	return aggregations.reduce((resolvedAggregation, agg) => {
-		// max
-		resolvedAggregation.stats.max = Math.max(agg.stats.max, resolvedAggregation.stats.max);
-
-		// min
-		resolvedAggregation.stats.min = Math.min(agg.stats.min, resolvedAggregation.stats.min);
-
-		// count
-		resolvedAggregation.stats.count += agg.stats.count;
-		// sum
-		resolvedAggregation.stats.sum += agg.stats.sum;
-		// avg
-		resolvedAggregation.stats.avg = resolvedAggregation.stats.sum / resolvedAggregation.stats.count;
-
-		return resolvedAggregation;
-	});
 };
 
 export class AggregationAccumulator {

@@ -38,7 +38,7 @@ export const aggregationPipeline = async (
 
 	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
-	Promise.allSettled(
+	await Promise.allSettled(
 		configs.map(async (config) => {
 			// create node query
 			const gqlQuery = createNetworkQuery(config, requestedAggregationFields);

@@ -1,5 +1,6 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createResolvers } from './resolvers';
+import { SUPPORTED_AGGREGATIONS } from './setup/constants';
 import { normalizeFieldTypes } from './setup/fields';
 import { fetchAllNodeAggregations } from './setup/query';
 import { createTypeDefs } from './typeDefs';
@@ -8,7 +9,7 @@ import { NetworkConfig } from './types/setup';
 /**
  * Map of all available fields with associated aggregation type
  */
-export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATION> =
+export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
 	new Map();
 
 /**
@@ -56,5 +57,5 @@ export const createSchemaFromNetworkConfig = async ({
 	const resolvers = createResolvers(nodeConfig);
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 
-	return { networkSchema };
+	return networkSchema;
 };

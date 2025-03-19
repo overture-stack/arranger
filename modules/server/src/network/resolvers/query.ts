@@ -56,9 +56,10 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
  */
 const createFileGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
 	const fields = convertFieldsToString(requestedFields);
-	const queryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
-	const aggregationsString = !isEmpty(fields) ? `aggregations${queryArgs} ${fields}` : '';
-	const gqlString = `query nodeQuery${queryArgs} {${documentName} { hits { total }  ${aggregationsString} }}`;
+	const queryArgsTypes = `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`;
+	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
+	const aggregationsString = !isEmpty(fields) ? `aggregations${fieldQueryArgs} ${fields}` : '';
+	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits { total }  ${aggregationsString} }}`;
 	return gqlString;
 };
 

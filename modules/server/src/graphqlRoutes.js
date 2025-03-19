@@ -276,15 +276,21 @@ export const createSchemasFromConfigs = async ({
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {
+			const networkConfig = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
+			if (!networkConfig || networkConfig?.servers.length === 0) {
+				throw Error('Network config not found. Please check file is valid.');
+			}
+
+			const remoteServerConfigs = networkConfig.servers.map((config) => ({
+				...config,
+				/*
+				 * part of the gql schema is generated dynamically
+				 * in the case of the "file" field, the field name and gql type name are the same
+				 */
+				documentName: config.documentType,
+			})),
 			const networkSchema = await createSchemaFromNetworkConfig({
-				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
-					...config,
-					/*
-					 * part of the gql schema is generated dynamically
-					 * in the case of the "file" field, the field name and gql type name are the same
-					 */
-					documentName: config.documentType,
-				})),
+				networkConfigs: remoteServerConfigs
 			});
 			schemasToMerge.push(networkSchema);
 		}
