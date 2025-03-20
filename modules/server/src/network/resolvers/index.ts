@@ -1,11 +1,11 @@
-import { Resolver } from '@/gqlServer';
-import { AggregationsQueryVariables } from '@/mapping/resolveAggregations';
-import { isSuccess } from '../result';
-import { NodeConfig } from '../setup/query';
-import { resolveInfoToMap } from '../utils/gql';
-import { convertToSqon } from '../utils/sqon';
-import { aggregationPipeline, NetworkNode } from './aggregations';
-import { createResponse } from './response';
+import { type Resolver } from '@/gqlServer';
+import { type AggregationsQueryVariables } from '@/mapping/resolveAggregations';
+import { aggregationPipeline, type NetworkNode } from '@/network/resolvers/aggregations';
+import { createResponse } from '@/network/resolvers/response';
+import { isSuccess } from '@/network/result';
+import { type NodeConfig } from '@/network/setup/query';
+import { resolveInfoToMap } from '@/network/utils/gql';
+import { convertToSqon } from '@/network/utils/sqon';
 
 type NetworkSearchRoot = {
 	nodes: NetworkNode[];

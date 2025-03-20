@@ -1,11 +1,14 @@
-import { AggregationsQueryVariables, AllAggregationsMap } from '@/mapping/resolveAggregations';
-import { AggregationAccumulator } from '../aggregations/AggregationAccumulator';
-import { failure, isSuccess } from '../result';
-import { NodeConfig } from '../setup/query';
-import { Hits } from '../types/hits';
-import { RequestedFieldsMap } from '../utils/gql';
-import { fetchData } from './fetch';
-import { createNetworkQuery } from './query';
+import {
+	type AggregationsQueryVariables,
+	type AllAggregationsMap,
+} from '@/mapping/resolveAggregations';
+import { AggregationAccumulator } from '@/network/aggregations/AggregationAccumulator';
+import { fetchData } from '@/network/resolvers/fetch';
+import { createNetworkQuery } from '@/network/resolvers/query';
+import { failure, isSuccess } from '@/network/result';
+import { type NodeConfig } from '@/network/setup/query';
+import { type Hits } from '@/network/types/hits';
+import { RequestedFieldsMap } from '@/network/utils/gql';
 
 export const CONNECTION_STATUS = {
 	OK: 'OK',

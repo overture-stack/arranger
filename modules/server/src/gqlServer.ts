@@ -18,7 +18,8 @@ export type ResolverOutput<T> = T | Promise<T>;
  * @param info - GraphQL info object.
  * @return Returns resolved value;
  */
-export type Resolver<Root = Record<string, any>, QueryArgs = Object, ReturnValue = undefined> = (
+type DefaultRoot = Root;
+export type Resolver<Root = DefaultRoot, QueryArgs = Object, ReturnValue = undefined> = (
 	root: Root,
 	args: QueryArgs,
 	context: Context,

@@ -1,5 +1,5 @@
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS_LIST } from './constants';
-import { NodeConfig } from './query';
+import { SUPPORTED_AGGREGATIONS_LIST, type SupportedAggregation } from '@/network/setup/constants';
+import { type NodeConfig } from '@/network/setup/query';
 
 type NetworkFieldType<T> = {
 	name: string;

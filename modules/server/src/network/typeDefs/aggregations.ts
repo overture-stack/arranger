@@ -9,7 +9,7 @@ import {
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
 
-import { SupportedNetworkFieldType } from '../setup/fields';
+import { type SupportedNetworkFieldType } from '@/network/setup/fields';
 
 const relation = new GraphQLEnumType({
 	name: 'Relation',

@@ -2,8 +2,8 @@
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
-
 import { mergeSchemas } from '@graphql-tools/schema';
+
 import getConfigObject, { initializeSets } from './config';
 import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
@@ -276,12 +276,12 @@ export const createSchemasFromConfigs = async ({
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {
-			const networkConfig = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
-			if (!networkConfig || networkConfig?.servers.length === 0) {
+			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
+			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
 				throw Error('Network config not found. Please check file is valid.');
 			}
 
-			const remoteServerConfigs = networkConfig.servers.map((config) => ({
+			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
 				...config,
 				/*
 				 * part of the gql schema is generated dynamically

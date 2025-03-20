@@ -1,5 +1,6 @@
 import axios from 'axios';
 import urljoin from 'url-join';
+
 import { CONNECTION_STATUS } from './resolvers/networkNode';
 
 /**

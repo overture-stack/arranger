@@ -1,5 +1,5 @@
-import { AllAggregationsMap } from '@/mapping/resolveAggregations';
-import { NetworkNode } from './aggregations';
+import { type AllAggregationsMap } from '@/mapping/resolveAggregations';
+import { type NetworkNode } from './aggregations';
 
 /**
  * Format response object to match GQL type defs

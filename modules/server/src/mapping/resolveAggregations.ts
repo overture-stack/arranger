@@ -1,6 +1,6 @@
 import getFields from 'graphql-fields';
 
-import { Resolver, Root } from '@/gqlServer';
+import { type Resolver, type Root } from '@/gqlServer';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
 import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';

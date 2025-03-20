@@ -1,7 +1,7 @@
-import { NetworkAggregationError } from '../errors';
-import { fetchGql } from '../gql';
-import { NetworkConfig } from '../types/setup';
-import { fulfilledPromiseFilter } from '../utils/promise';
+import { NetworkAggregationError } from '@/network/errors';
+import { fetchGql } from '@/network/gql';
+import { type NetworkConfig } from '@/network/types/setup';
+import { fulfilledPromiseFilter } from '@/network/utils/promise';
 
 export type NodeConfig = NetworkConfig & { aggregations: { name: string; type: string }[] };
 

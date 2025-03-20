@@ -9,7 +9,7 @@ import { NetworkConfig } from './types/setup';
 /**
  * Map of all available fields with associated aggregation type
  */
-export let ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
+export const ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
 	new Map();
 
 /**

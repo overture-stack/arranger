@@ -1,15 +1,14 @@
 import { Relation } from '@/mapping/masking';
 import {
-	Aggregations,
-	AllAggregations,
-	AllAggregationsMap,
-	Bucket,
-	NumericAggregations,
+	type Aggregations,
+	type AllAggregations,
+	type AllAggregationsMap,
+	type Bucket,
 } from '@/mapping/resolveAggregations';
-import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '..';
-import { SupportedAggregation, SUPPORTED_AGGREGATIONS } from '../setup/constants';
-import { Hits } from '../types/hits';
-import { RequestedFieldsMap } from '../utils/gql';
+import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '@/network';
+import { SUPPORTED_AGGREGATIONS, type SupportedAggregation } from '@/network/setup/constants';
+import { type Hits } from '@/network/types/hits';
+import { RequestedFieldsMap } from '@/network/utils/gql';
 
 type ResolveAggregationInput = {
 	data: { aggregations: AllAggregationsMap; hits: Hits };
@@ -91,10 +90,7 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
  * @param type
  * @param aggregations
  */
-const resolveAggregationByType = <T>(
-	type: string,
-	aggregations: [T, T],
-): Aggregations | NumericAggregations => {
+const resolveAggregationByType = <T>(type: string, aggregations: [T, T]): Aggregations => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 		return resolveAggregation(aggregations as AggregationsTuple);
 	} else {
