@@ -1,5 +1,6 @@
 import {
 	GraphQLBoolean,
+	GraphQLEnumType,
 	GraphQLInt,
 	GraphQLList,
 	GraphQLObjectType,
@@ -7,32 +8,71 @@ import {
 	GraphQLString,
 } from 'graphql';
 import GraphQLJSON from 'graphql-type-json';
-import { SupportedNetworkFieldType } from '../types/types';
-import { singleToNetworkAggregationMap } from './networkAggregations';
+
+import { type SupportedNetworkFieldType } from '@/network/setup/fields';
+
+const relation = new GraphQLEnumType({
+	name: 'Relation',
+	values: {
+		eq: { value: 'eq' },
+		gte: { value: 'gte' },
+	},
+});
+
+const bucket = new GraphQLObjectType({
+	name: 'Bucket',
+	fields: {
+		doc_count: {
+			type: GraphQLInt,
+		},
+		key: {
+			type: GraphQLString,
+		},
+		relation: {
+			type: relation,
+		},
+	},
+});
+
+// GraphQL object style version of GQL type already defined, need object for this setup
+const aggregationsTypeDef = new GraphQLObjectType({
+	name: 'Aggregations',
+	fields: {
+		bucket_count: {
+			type: GraphQLInt,
+		},
+		buckets: {
+			type: new GraphQLList(bucket),
+		},
+	},
+});
+
+const typeDefMap = {
+	Aggregations: aggregationsTypeDef,
+};
 
 /**
- * Converts field/types to GQLObjectType definition shape
+ * Creates nested GQL structured object from field type
+ * { name: 'donor_gender', type: 'Aggregation'}
+ * =>
+ * { 'donor_gender', type: 'Aggregation' }
  *
- * @example
- * { name: "donor_age", type: "NumericAggregations" } => { donor_age: { type: "NetworkNumericAggregations" } }
+ * @param fieldTypes - An array of fields with types
+ * @returns Structured GQL fields object
  */
 const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) => {
 	return networkFieldTypes.reduce((allFields, currentField) => {
 		const field = {
-			[currentField.name]: { type: singleToNetworkAggregationMap.get(currentField.type) },
+			[currentField.name]: {
+				type: typeDefMap[currentField.type],
+			},
 		};
 		return { ...allFields, ...field };
 	}, {});
 };
 
 /**
- * Returns available aggregations by filtering duplicates, and mapping from
- * singular remote aggregation type to network aggregation types
- *
- * eg. NumericAggregations to NetworkNumericAggregations
- *
- * There is no distinction on which types come from which remote connections
- * This is the resolvers responsibility
+ * Returns aggregations typedef
  *
  * @param configs
  * @returns

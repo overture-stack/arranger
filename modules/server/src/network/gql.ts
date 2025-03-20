@@ -1,5 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
-import { GQLFieldType } from './queries';
+import axios, { type AxiosRequestConfig } from 'axios';
 
 /**
  * GQL fetch request with request options configured for graphql
@@ -29,9 +28,4 @@ export const fetchGql = ({
 	};
 
 	return axios(axiosOptions);
-};
-
-export const normalizeGqlField = (gqlField: GQLFieldType): { name: string; type: string } => {
-	const fieldType = gqlField.type.name;
-	return { name: gqlField.name, type: fieldType };
 };

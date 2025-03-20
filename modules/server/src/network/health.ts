@@ -1,7 +1,7 @@
 import axios from 'axios';
 import urljoin from 'url-join';
+
 import { CONNECTION_STATUS } from './resolvers/networkNode';
-import { ConnectionStatus } from './types/types';
 
 /**
  * Check the status of remote connections
@@ -9,7 +9,7 @@ import { ConnectionStatus } from './types/types';
  * @param url - Remote connection url
  * @returns A connection status
  */
-export const gqlHealthCheck = async (url: string): Promise<ConnectionStatus> => {
+export const gqlHealthCheck = async (url: string): Promise<keyof typeof CONNECTION_STATUS> => {
 	/*
 	 * recommended way to health check gql server is to run the `__typename` query that every server has.
 	 * very small query with no additional params, so using GET is not a concern for the GQL server.

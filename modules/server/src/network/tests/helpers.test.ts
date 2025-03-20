@@ -1,4 +1,4 @@
-import { SupportedAggregation } from '../common';
+import { SupportedAggregation } from '../setup/constants';
 import { getFieldTypes } from '../setup/fields';
 
 describe('helpers', () => {
@@ -19,7 +19,7 @@ describe('helpers', () => {
 			},
 		];
 
-		const result = getFieldTypes(fields, supportedAggregations);
+		const result = getFieldTypes(fields);
 		const expectedResult = {
 			supportedAggregations: [
 				{ name: 'analysis__analysis_id', type: 'Aggregations' },

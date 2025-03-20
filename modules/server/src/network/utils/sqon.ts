@@ -1,5 +1,5 @@
+import { failure, Result, success } from '@/network/result';
 import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
-import { failure, Result, success } from '../result';
 
 /**
  * Attempts to convert a variable to a SQON. A Result is returned, where if successful

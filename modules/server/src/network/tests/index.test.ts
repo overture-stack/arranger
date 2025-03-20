@@ -8,9 +8,8 @@
  * Disabled using the "xdescribe" method
  */
 
-import { mergeTypeDefs, mergeTypeDefs } from '@graphql-tools/merge';
-import { makeExecutableSchema, mergeSchemas } from '@graphql-tools/schema';
-import { buildSchema, printType } from 'graphql';
+import { mergeTypeDefs } from '@graphql-tools/merge';
+import { buildSchema } from 'graphql';
 import { createNetworkAggregationTypeDefs } from '../typeDefs/aggregations';
 import {
 	typeDefsA,

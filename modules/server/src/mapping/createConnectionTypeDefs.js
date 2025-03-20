@@ -1,13 +1,13 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-const createConnectionType = (enableDocumentHits) => {
+const createConnectionType = ({ type, enableDocumentHits }) => {
 	return `type ${type.name}Connection {
     total: Int!
    ${enableDocumentHits ? `edges: [${type.name}Edge]` : ''}
   }`;
 };
 
-const createDataMaskingType = (enableDocumentHits) => {
+const createDataMaskingType = ({ enableDocumentHits }) => {
 	return !enableDocumentHits ? `type DataMasking { thresholdValue: Int }` : '';
 };
 
@@ -43,9 +43,9 @@ export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentH
       ${mappingToAggsType(type.mapping)}
     }
 
-    ${createDataMaskingType(enableDocumentHits)}
+    ${createDataMaskingType({ enableDocumentHits })}
 
-    ${createConnectionType(enableDocumentHits)}
+    ${createConnectionType({ type, enableDocumentHits })}
   
 
     type ${type.name}Edge {

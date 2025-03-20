@@ -1,4 +1,5 @@
 import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
+import { Resolver, Root } from '@/gqlServer';
 import { CreateConnectionResolversArgs } from './createConnectionResolvers';
 import { applyAggregationMasking } from './masking';
 import getAggregationsResolver, {
@@ -7,7 +8,6 @@ import getAggregationsResolver, {
 } from './resolveAggregations';
 import resolveHits from './resolveHits';
 import { getHitsFromAggsResolver } from './resolveHitsFromAggs';
-import { Root } from './types';
 
 export const createResolvers = ({
 	createStateResolvers,
@@ -16,8 +16,11 @@ export const createResolvers = ({
 	getServerSideFilter,
 	enableDocumentHits,
 }: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
-	// configs
-	const configs = async (_unusedParentObj: Root, { fieldNames }: { fieldNames: string[] }) => {
+	const configs: Resolver<
+		Root,
+		{ fieldNames: string[] },
+		Promise<{ facets?: any; matchbox?: any; table?: any; downloads: any; extended: any }>
+	> = async (_unusedParentObj, { fieldNames }) => {
 		return {
 			downloads: type.config?.[ConfigProperties.DOWNLOADS],
 			extended: fieldNames

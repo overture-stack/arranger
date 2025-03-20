@@ -1,10 +1,11 @@
 import { ENV_CONFIG } from '@/config';
-import { Aggregation } from './types';
+import { type Aggregations, type AllAggregationsMap } from './resolveAggregations';
 
 export const Relation = {
 	eq: 'eq',
 	gte: 'gte',
 } as const;
+
 export type Relation = keyof typeof Relation;
 
 /**
@@ -18,7 +19,7 @@ export type Relation = keyof typeof Relation;
 const calculateHitsFromAggregation = ({
 	aggregation,
 }: {
-	aggregation: Aggregation | undefined;
+	aggregation: Aggregations | undefined;
 }) => {
 	if (!aggregation) {
 		console.error('No aggregation found for calculating hits.');
@@ -39,21 +40,7 @@ const calculateHitsFromAggregation = ({
  * @param aggregations - aggregations from query
  * @returns aggregations with data masking applied and hits total
  */
-export const applyAggregationMasking = ({
-	aggregations,
-}: {
-	aggregations: Record<
-		string,
-		{
-			bucket_count: number;
-			buckets: Array<{
-				doc_count: number;
-				key: string;
-				relation: Relation;
-			}>;
-		}
-	>;
-}) => {
+export const applyAggregationMasking = ({ aggregations }: { aggregations: AllAggregationsMap }) => {
 	const thresholdMin = ENV_CONFIG.DATA_MASK_MIN_THRESHOLD;
 	if (thresholdMin < 1) {
 		throw Error('DATA_MASK_MIN_THRESHOLD environment variable has to be a positive integer.');
@@ -61,7 +48,7 @@ export const applyAggregationMasking = ({
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
 
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{
-		aggsTotal: Record<string, Aggregation>;
+		aggsTotal: AllAggregationsMap;
 		totalHitsAgg: { key: string; bucketCount: number };
 	}>(
 		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
