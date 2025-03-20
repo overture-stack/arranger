@@ -1,8 +1,7 @@
 import { Relation } from '@/mapping/masking';
-import { Aggregations, NumericAggregations } from '@/network/types/aggregations';
+import { Aggregations } from '@/mapping/resolveAggregations';
 
 const inputA: Aggregations = {
-	__typename: 'Aggregations',
 	bucket_count: 2,
 	buckets: [
 		{
@@ -19,7 +18,6 @@ const inputA: Aggregations = {
 };
 
 const inputB: Aggregations = {
-	__typename: 'Aggregations',
 	bucket_count: 2,
 	buckets: [
 		{
@@ -36,7 +34,6 @@ const inputB: Aggregations = {
 };
 
 const inputC: Aggregations = {
-	__typename: 'Aggregations',
 	bucket_count: 3,
 	buckets: [
 		{
@@ -57,21 +54,8 @@ const inputC: Aggregations = {
 	],
 };
 
-// NumericAggregations
-const inputD: NumericAggregations = {
-	__typename: 'NumericAggregations',
-	stats: { max: 100, min: 12, count: 10, avg: 42, sum: 420 },
-};
-
-const inputE: NumericAggregations = {
-	__typename: 'NumericAggregations',
-	stats: { max: 75, min: 1, count: 5, avg: 84, sum: 420 },
-};
-
 export const aggregation = {
 	inputA,
 	inputB,
 	inputC,
-	inputD,
-	inputE,
 };

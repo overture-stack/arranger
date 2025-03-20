@@ -1,69 +1,66 @@
-import { type GraphQLResolveInfo } from 'graphql';
-import { isSuccess } from '../result';
-import { NodeConfig } from '../types/types';
-import { resolveInfoToMap } from '../util';
-import { convertToSqon } from '../utils/sqon';
-import { aggregationPipeline } from './aggregations';
-import { NetworkNode } from './networkNode';
-import { createResponse } from './response';
+import { type Resolver } from '@/gqlServer';
+import { type AggregationsQueryVariables } from '@/mapping/resolveAggregations';
+import { aggregationPipeline, type NetworkNode } from '@/network/resolvers/aggregations';
+import { createResponse } from '@/network/resolvers/response';
+import { isSuccess } from '@/network/result';
+import { type NodeConfig } from '@/network/setup/query';
+import { resolveInfoToMap } from '@/network/utils/gql';
+import { convertToSqon } from '@/network/utils/sqon';
 
-export type NetworkSearchRoot = {
+type NetworkSearchRoot = {
 	nodes: NetworkNode[];
 	aggregations: Record<string, unknown>;
 };
 
-/*
- * Type should match the "Network" GQL type definition arg types
- */
-export type NetworkAggregationArgs = {
-	filters?: object;
-	aggregations_filter_themselves?: boolean;
-	include_missing?: boolean;
-};
+// top level query to pass variables down
+export type NetworkQueryVariables = AggregationsQueryVariables;
 
 /**
- * Create GQL resolvers.
- *
- * It's important to have both remote connection data and aggregations under a single field
- * as remote connection data is dependant on aggregations query
+ * Resolvers for network search.
  *
  * @param networkConfigsWithSchemas
  * @param networkFieldTypes
  * @returns
  */
 export const createResolvers = (configs: NodeConfig[]) => {
+	const network: Resolver<NetworkSearchRoot, NetworkQueryVariables, any> = async (
+		_unusedParentObj,
+		args,
+		_unusedContext,
+		info,
+	) => {
+		const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
+
+		/*
+		 * Checks validity of SQON
+		 * For now we will pass through the non SQON object to the pipeline
+		 *
+		 * TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
+		 * {"content": [{...}], "op": "and"}
+		 */
+		if ('filters' in args) {
+			const result = convertToSqon(args.filters);
+			if (!isSuccess(result)) {
+				throw new Error(`${result.status} : ${result.message}`);
+			}
+		}
+		const queryVariables = { ...args };
+
+		/*
+		 * Aggregation pipeline entrypoint
+		 */
+		const { aggregationResults, nodeInfo } = await aggregationPipeline(
+			configs,
+			requestedFieldsMap,
+			queryVariables,
+		);
+
+		return createResponse({ aggregationResults, nodeInfo });
+	};
+
 	return {
 		Root: {
-			network: async (
-				parent: NetworkSearchRoot,
-				// as mentioned above, type should match gql typedefs
-				args: NetworkAggregationArgs,
-				context: unknown,
-				info: GraphQLResolveInfo,
-			) => {
-				const requestedFieldsMap = resolveInfoToMap(info, 'aggregations');
-
-				/*
-				 * checks validity of SQON
-				 * for now we will pass through the non SQON object to the pipeline
-				 * TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
-				 * ie. {"content": [{...}], "op": "and"}
-				 */
-				if ('filters' in args) {
-					const result = convertToSqon(args.filters);
-					if (!isSuccess(result)) {
-						throw new Error(`${result.status} : ${result.message}`);
-					}
-				}
-				const queryVariables = { ...args };
-
-				const { aggregationResults, nodeInfo } = await aggregationPipeline(
-					configs,
-					requestedFieldsMap,
-					queryVariables,
-				);
-				return createResponse({ aggregationResults, nodeInfo });
-			},
+			network,
 		},
 	};
 };

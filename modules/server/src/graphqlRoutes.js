@@ -2,8 +2,8 @@
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
-
 import { mergeSchemas } from '@graphql-tools/schema';
+
 import getConfigObject, { initializeSets } from './config';
 import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
@@ -276,15 +276,21 @@ export const createSchemasFromConfigs = async ({
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {
+			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
+			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
+				throw Error('Network config not found. Please check file is valid.');
+			}
+
+			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
+				...config,
+				/*
+				 * part of the gql schema is generated dynamically
+				 * in the case of the "file" field, the field name and gql type name are the same
+				 */
+				documentName: config.documentType,
+			})),
 			const networkSchema = await createSchemaFromNetworkConfig({
-				networkConfigs: configsFromFiles[ConfigProperties.NETWORK_AGGREGATION].map((config) => ({
-					...config,
-					/*
-					 * part of the gql schema is generated dynamically
-					 * in the case of the "file" field, the field name and gql type name are the same
-					 */
-					documentName: config.documentType,
-				})),
+				networkConfigs: remoteServerConfigs
 			});
 			schemasToMerge.push(networkSchema);
 		}

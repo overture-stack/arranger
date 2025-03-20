@@ -1,40 +1,65 @@
 import getFields from 'graphql-fields';
 
-import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
-
-import { Resolver } from '@/gqlServer';
+import { type Resolver, type Root } from '@/gqlServer';
 import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
+import { buildAggregations, buildQuery, flattenAggregations } from '../middleware';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution';
 import { Relation } from './masking';
-import { AggregationQuery, Root } from './types';
 import compileFilter from './utils/compileFilter';
 import esSearch from './utils/esSearch';
 
-const toGraphqlField = (acc: Aggregations, [a, b]: [string, Aggregation]) => ({
-	...acc,
-	[a.replace(/\./g, '__')]: b,
-});
-export const aggregationsToGraphql = (aggregations: Aggregations) => {
-	return Object.entries(aggregations).reduce<Aggregations>(toGraphqlField, {});
-};
-
-/*
- * Types
- */
 export type Bucket = {
 	doc_count: number;
 	key: string;
 	relation: Relation;
 };
 
-export type Aggregation = {
+export type CommonAggregationProperties = {
 	bucket_count: number;
 	buckets: Bucket[];
 };
 
-export type Aggregations = Record<string, Aggregation>;
+// the GQL Aggregations type
+export type Aggregations = CommonAggregationProperties;
 
-export type AggregationsResolver = Resolver<Root, AggregationQuery, Promise<Aggregations>>;
+type Stats = {
+	max: number;
+	min: number;
+	count: number;
+	avg: number;
+	sum: number;
+};
+
+// the GQL NumericAggregations type
+export type NumericAggregations = { stats: Stats } & CommonAggregationProperties;
+
+// "Aggregations" plural is already a name for a field type that has aggregations
+export type AllAggregations = Aggregations | NumericAggregations;
+export type AllAggregationsMap = Record<string, Aggregations | NumericAggregations>;
+
+export type AggregationsResolver = Resolver<
+	Root,
+	AggregationsQueryVariables,
+	Promise<AllAggregationsMap>
+>;
+
+export type AggregationsQueryVariables = {
+	filters: any;
+	aggregations_filter_themselves: boolean;
+	include_missing: boolean;
+};
+
+const toGraphqlField = (
+	acc: AllAggregationsMap,
+	[a, b]: [string, CommonAggregationProperties],
+) => ({
+	...acc,
+	[a.replace(/\./g, '__')]: b,
+});
+
+export const aggregationsToGraphql = (aggregations: AllAggregationsMap) => {
+	return Object.entries(aggregations).reduce<AllAggregationsMap>(toGraphqlField, {});
+};
 
 const getAggregationsResolver = ({
 	type,
@@ -43,7 +68,11 @@ const getAggregationsResolver = ({
 	type: Record<string, any>;
 	getServerSideFilter: GetServerSideFilterFn | undefined;
 }) => {
-	const resolver: Resolver<unknown, AggregationQuery, Promise<Aggregations>> = async (
+	const resolver: Resolver<
+		unknown,
+		AggregationsQueryVariables,
+		Promise<AllAggregationsMap>
+	> = async (
 		obj,
 		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,
