@@ -25,7 +25,7 @@ export default (host = '', { debugAll = false, endpoint: globalEndpoint = '' }) 
 			},
 			method: 'POST',
 		}).then((response) => {
-			(debugAll || debug) && console.log('\n\n\n\nresponse:\n\n', response);
+			(debugAll || debug) && console.log('\n\n\n\nresponse:\n\n', response, '\n', response?.data, '\n\n');
 
 			return response;
 		}),
