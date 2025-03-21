@@ -2,12 +2,14 @@
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
 import expressPlayground from 'graphql-playground-middleware-express';
+import { mergeSchemas } from '@graphql-tools/schema';
 
 import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
+import { DEBUG_MODE, ES_PASS, ES_USER } from './config/constants';
 import { ConfigProperties } from './config/types';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
+import { createSchemaFromNetworkConfig } from './network';
 import makeSchema from './schema';
 
 const getESMapping = async (esClient, index) => {
@@ -116,7 +118,13 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	enableDocumentHits,
+	getServerSideFilter,
+	graphqlOptions = {},
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -131,6 +139,7 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 			}),
 			schema: makeSchema({
 				enableAdmin,
+				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -237,6 +246,8 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -249,18 +260,46 @@ export const createSchemasFromConfigs = async ({
 			configsFromFiles,
 		);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
+			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			types: typesWithMappings,
 		});
 
+		const schemasToMerge = [schema];
+
+		/**
+		 * Federated Network Search
+		 */
+		if (enableNetworkAggregation) {
+			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
+			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
+				throw Error('Network config not found. Please check file is valid.');
+			}
+
+			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
+				...config,
+				/*
+				 * part of the gql schema is generated dynamically
+				 * in the case of the "file" field, the field name and gql type name are the same
+				 */
+				documentName: config.documentType,
+			})),
+			const networkSchema = await createSchemaFromNetworkConfig({
+				networkConfigs: remoteServerConfigs
+			});
+			schemasToMerge.push(networkSchema);
+		}
+
+		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
 		return {
-			fieldsFromMapping,
+			...commonFields,
 			mockSchema,
-			schema,
-			typesWithMappings,
+			schema: fullSchema,
 		};
 	} catch (error) {
 		const message = error?.message || error;
@@ -274,6 +313,8 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
+	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -283,6 +324,8 @@ export default async ({
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
+				enableDocumentHits,
+				enableNetworkAggregation,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

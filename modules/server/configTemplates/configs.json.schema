@@ -73,4 +73,13 @@
 		"maxResultsWindow": 10000,
 		"rowIdFieldName": "analysis.analysis_id"
 	}
+	"network": {
+		"servers": [
+			{
+				"displayName": "Toronto",
+				"graphqlUrl": "http://<URL>/graphql",
+				"documentType": "file"
+			}
+		]
+	}
 }

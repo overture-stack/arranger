@@ -1,11 +1,11 @@
 import { capitalize } from 'lodash';
 
-import mappingToNestedFields from './mappingToNestedFields';
-import mappingToScalarFields from './mappingToScalarFields';
 import createConnectionTypeDefs from './createConnectionTypeDefs';
+import mappingToNestedFields from './mappingToNestedFields';
 import mappingToObjectTypes from './mappingToObjectTypes';
+import mappingToScalarFields from './mappingToScalarFields';
 
-const mappingToFields = ({ type, parent }) => {
+const mappingToFields = ({ enableDocumentHits, type, parent }) => {
 	return [
 		mappingToObjectTypes(type.name, type.mapping, parent, type.extendedFields),
 		Object.entries(type.mapping)
@@ -28,6 +28,7 @@ const mappingToFields = ({ type, parent }) => {
 				type.customFields,
 			],
 			createStateTypeDefs: 'createState' in type ? type.createState : true,
+			enableDocumentHits,
 		}),
 	].join();
 };
