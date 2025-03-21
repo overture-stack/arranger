@@ -1,22 +1,19 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
 import { useMemo } from 'react';
 
-import MaxRowsSelector from '@/Table/MaxRowsSelector';
-import PageSelector from '@/Table/PageSelector';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import MaxRowsSelector from '#Table/MaxRowsSelector/index.js';
+import PageSelector from '#Table/PageSelector/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { PaginationProps } from './types';
+import type { PaginationProps } from './types.js';
 
 const Pagination = ({
 	className: customClassName,
 	css: customCSS,
-	theme: {
-		MaxRowSelector: customMaxRowSelectorProps,
-		PageSelector: customPageSelectorProps,
-	} = emptyObj,
+	theme: { MaxRowSelector: customMaxRowSelectorProps, PageSelector: customPageSelectorProps } = emptyObj,
 }: PaginationProps) => {
 	const {
 		components: {

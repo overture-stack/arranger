@@ -1,14 +1,20 @@
 {
+	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
 		/* Language and Environment */
 		"jsx": "react-jsx" /* Specify what JSX code is generated. */,
 
 		/* Modules */
-		"module": "commonjs" /* Specify what module code is generated. */,
+		"target": "esnext",
+		"module": "nodenext" /* Specify what module code is generated. */,
+		"moduleResolution": "nodenext" /* Specify how TypeScript looks up a file from a given module specifier. */,
 
 		/* JavaScript Support */
 		"allowJs": true /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */,
-		"esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+		"esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
+
+		/* Type Checking */
+		"erasableSyntaxOnly": true
 	},
-	"exclude": ["__mocks__"]
+	"exclude": ["**/__mocks__/*"]
 }

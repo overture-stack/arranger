@@ -2,9 +2,7 @@ import { addMocksToSchema } from '@graphql-tools/mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { applyMiddleware } from 'graphql-middleware';
 
-import { ENV_CONFIG } from '@/config';
-
-import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root';
+import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root.js';
 
 export const setsMapping = {
 	userId: { type: 'keyword' },
@@ -24,6 +22,7 @@ const makeSchema = ({
 	mock = false,
 	rootTypes = [],
 	scalarTypes = [],
+	setsIndex,
 	types = [],
 } = {}) => {
 	const typesWithSets = [
@@ -31,7 +30,7 @@ const makeSchema = ({
 		[
 			'sets',
 			{
-				index: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
+				index: setsIndex,
 				name: 'sets',
 				createState: false,
 				nestedFieldNames: [],
@@ -64,6 +63,7 @@ const makeSchema = ({
 		getServerSideFilter,
 		rootTypes,
 		scalarTypes,
+		setsIndex,
 		types: typesWithSets,
 	});
 

@@ -1,4 +1,0 @@
-Architecture
-============================
-
-**Coming Soon**

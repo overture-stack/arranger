@@ -2,14 +2,14 @@ import { css } from '@emotion/react';
 import cx from 'classnames';
 import { filesize } from 'filesize';
 import { JSONPath } from 'jsonpath-plus';
-import { get, isNil } from 'lodash';
-import { ReactNode } from 'react';
+import { get, isNil } from 'lodash-es';
+import type { ReactNode } from 'react';
 
-import { ColumnListStyles } from '@/Table/types';
-import dateFormatter from '@/utils/dates';
-import { emptyObj } from '@/utils/noops';
+import { ColumnListStyles } from '#Table/types.js';
+import dateFormatter from '#utils/dates.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { getSingleValue } from './';
+import { getSingleValue } from './index.js';
 
 export const getCellValue = (
 	row = emptyObj as unknown,
@@ -58,27 +58,40 @@ const Number = (props = emptyObj) => (
 	</span>
 );
 
-const FileSize = ({ options = emptyObj, value = 0 }) => (
-	<span>{`${filesize(value, options)}`}</span>
-);
+const FileSize = ({ options = emptyObj, value = 0 }) => <span>{`${filesize(value, options)}`}</span>;
 
 export const defaultCellTypes = {
-	bits: ({ value = 0, ...props } = {}) => <FileSize {...props} value={value / 8} />,
+	bits: ({ value = 0, ...props } = {}) => (
+		<FileSize
+			{...props}
+			value={value / 8}
+		/>
+	),
 	boolean: ({ value = undefined } = {}) => (isNil(value) ? '' : `${value}`),
 	bytes: (props = emptyObj) => <FileSize {...props} />,
 	date: ({ value, ...props } = emptyObj) => dateFormatter(value, props),
 	link: Link,
 	list: ({ column, id, theme, value: valuesArr } = emptyObj) => {
-		const arrHasValues = Array.isArray(valuesArr) && valuesArr?.filter((v) => v).length > 0; // table shouldn't display Nulls
+		// TODO: option to remove duplicates in array
+		// TODO: study how lists behave for nested rows
 
 		if (Array.isArray(valuesArr)) {
-			if (column.isArray && arrHasValues) {
-				const format = theme.listStyle || column.displayFormat;
+			const arrHasValues =
+				valuesArr?.filter(
+					(value) =>
+						(['bits', 'boolean', 'bytes', 'date', 'number'].includes(column?.displayType) &&
+							(value || value === '0')) ||
+						value,
+				).length > 0; // table shouldn't display Nulls
 
-				return Object.values(ColumnListStyles).includes(format) ? (
-					<ul className={cx('list-values', format)}>
+			if (column.isArray && arrHasValues) {
+				return Object.values(ColumnListStyles).includes(theme.listStyle) ? (
+					<ul className={cx('list-values', theme.listStyle)}>
 						{valuesArr.map((value: ReactNode, index) => (
-							<li key={`${id}-${index}`} data-value={value}>
+							<li
+								key={`${id}-${index}`}
+								data-value={value}
+							>
 								{value}
 							</li>
 						))}

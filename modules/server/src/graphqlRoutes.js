@@ -1,14 +1,12 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
-import expressPlayground from 'graphql-playground-middleware-express';
 
-import getConfigObject, { initializeSets } from './config';
-import { DEBUG_MODE, ES_USER, ES_PASS } from './config/constants';
-import { ConfigProperties } from './config/types';
-import { addMappingsToTypes, extendFields, fetchMapping } from './mapping';
-import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping';
-import makeSchema from './schema';
+import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
+import { ConfigProperties } from './config/types.js';
+import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
+import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
+import makeSchema from './schema/index.js';
 
 const getESMapping = async (esClient, index) => {
 	if (esClient && index) {
@@ -19,8 +17,7 @@ const getESMapping = async (esClient, index) => {
 
 		if (Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			DEBUG_MODE &&
-				console.log('  Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			ENV_CONFIG.DEBUG_MODE && console.log('  Detected reserved field "id" in mapping, dropping it from GraphQL...');
 			delete mapping.id;
 		}
 
@@ -45,9 +42,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the ES mappings.\n' +
-							'  Defaulting to "extended" config from files.\n',
+						'  Defaulting to "extended" config from files.\n',
 					);
-					DEBUG_MODE && console.log(err);
+					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
 					return configs?.[ConfigProperties.EXTENDED] || [];
 				}
@@ -60,9 +57,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-							'  Defaulting to "table" config from files.\n',
+						'  Defaulting to "table" config from files.\n',
 					);
-					DEBUG_MODE && console.log(err);
+					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
 					return configs?.[ConfigProperties.TABLE] || [];
 				}
@@ -75,9 +72,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-							'  Defaulting to "table" config from files.\n',
+						'  Defaulting to "table" config from files.\n',
 					);
-					DEBUG_MODE && console.log(err);
+					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
 					return configs?.[ConfigProperties.TABLE] || [];
 				}
@@ -105,10 +102,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 			};
 		} catch (error) {
 			console.error(error?.message || error);
-			throw `  Something went wrong while creating the GraphQL mapping${
-				ES_USER && ES_PASS
-					? ', this needs research by an Arranger maintainer!'
-					: '.\n  Likely cause: ES Auth parameters may be missing.'
+			throw `  Something went wrong while creating the GraphQL mapping${ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
+				? ', this needs research by an Arranger maintainer!'
+				: '.\n  Likely cause: ES Auth parameters may be missing.'
 			}`;
 		}
 	}
@@ -116,10 +112,17 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	getServerSideFilter,
+	graphqlOptions = {},
+	setsIndex,
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
+		setsIndex,
 		types,
 	};
 
@@ -140,13 +143,13 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-	(req, res) => {
-		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+		(req, res) => {
+			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-		return res.json({
-			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-		});
-	};
+			return res.json({
+				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+			});
+		};
 
 const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
 	const mainPath = '/graphql';
@@ -156,13 +159,6 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 	console.log('Starting GraphQL server:');
 
 	try {
-		await router.get(
-			mainPath,
-			expressPlayground({
-				endpoint: 'graphql',
-			}),
-		);
-
 		console.log(`  - GraphQL playground available at ...${mainPath}`);
 
 		// TODO: D.R.Y this thing!
@@ -218,7 +214,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 
 		console.log('  Success!\n');
 	} catch (err) {
-		DEBUG_MODE && console.error(err);
+		ENV_CONFIG.DEBUG_MODE && console.error(err);
 		// TODO: Throw better?
 		throw err;
 	}
@@ -240,19 +236,18 @@ export const createSchemasFromConfigs = async ({
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	setsIndex,
 }) => {
 	try {
 		const configsFromFiles = await getConfigObject(configsSource);
 		const mappingFromES = await getESMapping(esClient, configsFromFiles[ConfigProperties.INDEX]);
-		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings(
-			mappingFromES,
-			configsFromFiles,
-		);
+		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings(mappingFromES, configsFromFiles);
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
 			getServerSideFilter,
 			graphqlOptions,
+			setsIndex,
 			types: typesWithMappings,
 		});
 
@@ -277,16 +272,17 @@ export default async ({
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	setsIndex,
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } =
-			await createSchemasFromConfigs({
-				configsSource,
-				enableAdmin,
-				esClient,
-				getServerSideFilter,
-				graphqlOptions,
-			});
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+			configsSource,
+			enableAdmin,
+			esClient,
+			getServerSideFilter,
+			graphqlOptions,
+			setsIndex,
+		});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
@@ -295,7 +291,7 @@ export default async ({
 			schema,
 		});
 
-		await initializeSets({ esClient });
+		await initializeSets({ esClient, setsIndex });
 
 		return [
 			// this middleware makes the esClient and config available in all requests, in a "context" object
@@ -320,8 +316,9 @@ export default async ({
 		return (req, res) =>
 			res.status(500).send({
 				// TODO: revisit this response
-				error: 'The GraphQL server is unavailable due to an internal error',
-				message: message?.trim?.() || 'Please notify the systems admin - ',
+				detail: 'Please notify the systems admin - ',
+				message: message?.trim?.() || 'The GraphQL server is unavailable due to an internal error',
+				type: 'system/unspecified-internal-error',
 			});
 	}
 };

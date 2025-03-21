@@ -9,11 +9,11 @@ export type PrefixKeys<T, Prefix extends string> = {
  * otherwise, it will make class methods optional as well.
  */
 export type RecursivePartial<T = object> = {
-	[P in keyof T]?: T[P] extends Array<infer I>
-		? Array<RecursivePartial<I>>
+	[P in keyof T]?: T[P] extends (infer I)[]
+		? RecursivePartial<I>[]
 		: T[P] extends Record<string, any>
-		? RecursivePartial<T[P]>
-		: T[P];
+			? RecursivePartial<T[P]>
+			: T[P];
 };
 
 export type WithFunctionOptions<T, Input = T> = {
@@ -32,9 +32,7 @@ export type Permutations<T extends string, U extends string = T> = T extends any
 	? T | `${T} ${Permutations<Exclude<U, T>>}`
 	: never;
 
-export type PickOnly<T, K extends keyof T | never = never> = Pick<T, K> & {
-	[P in Exclude<keyof T, K>]?: never;
-};
+export type PickOnly<T, K extends keyof T | never = never> = Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>;
 
 export type Prettify<T> = {
 	[K in keyof T]: T[K];

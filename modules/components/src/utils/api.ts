@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import urlJoin from 'url-join';
 
-import { APIFetcherFn } from '@/DataContext/types';
+import type { APIFetcherFn } from '#DataContext/types.js';
 
-import { ARRANGER_API } from './config';
-import { addDownloadHttpHeaders } from './download';
-import { emptyObj } from './noops';
+import { ARRANGER_API } from './config.js';
+import { addDownloadHttpHeaders } from './download.js';
+import { emptyObj } from './noops.js';
 
 let alwaysSendHeaders = { 'Content-Type': 'application/json' };
 
@@ -17,14 +17,7 @@ const defaultApiFetcher: APIFetcherFn = async (args) => {
 
 	if (cache.has(key)) return cache.get(key);
 
-	const {
-		body,
-		endpoint = '',
-		endpointTag = '',
-		headers = emptyObj,
-		method = 'POST',
-		url = ARRANGER_API,
-	} = args;
+	const { body, endpoint = '', endpointTag = '', headers = emptyObj, method = 'POST', url = ARRANGER_API } = args;
 
 	const response = await axios(urlJoin(url, endpoint, endpointTag), {
 		data: JSON.stringify(body),
@@ -60,7 +53,7 @@ export const fetchExtendedMapping = ({
 			`,
 		},
 	}).then((response) => ({
-		extendedMapping: response.data[documentType].extended,
+		extendedMapping: response.data?.[documentType].extended || response[documentType].extended,
 	}));
 
 export const addHeaders = (headers: Headers) => {

@@ -1,7 +1,6 @@
-import _ from 'lodash';
+import _ from 'lodash-es';
 
-import { ENV_CONFIG } from '@/config/';
-
+import { ENV_CONFIG } from '#config/index.js';
 import {
 	ALL_OP,
 	AND_OP,
@@ -26,7 +25,7 @@ import {
 	REGEX,
 	SET_ID,
 	SOME_NOT_IN_OP,
-} from '../constants';
+} from '#middleware/constants.js';
 import {
 	isNested,
 	mergePath,
@@ -36,9 +35,9 @@ import {
 	wrapMustNot,
 	wrapNested,
 	wrapShould,
-} from '../utils/esFilter';
+} from '#middleware/utils/esFilter.js';
 
-import normalizeFilters from './normalizeFilters';
+import normalizeFilters from './normalizeFilters.js';
 
 const wrapFilter = ({ esFilter, nestedFieldNames, filter, isNot }) => {
 	return filter?.content?.fieldName
@@ -47,10 +46,7 @@ const wrapFilter = ({ esFilter, nestedFieldNames, filter, isNot }) => {
 		.map((p, i, segments) => segments.slice(0, i + 1).join('.'))
 		.filter((p) => nestedFieldNames?.includes?.(p))
 		.reverse()
-		.reduce(
-			(esFilter, path, i) => wrapNested(esFilter, path),
-			isNot ? wrapMustNot(esFilter) : esFilter,
-		);
+		.reduce((esFilter, path, i) => wrapNested(esFilter, path), isNot ? wrapMustNot(esFilter) : esFilter);
 };
 
 function getRegexFilter({ nestedFieldNames, filter }) {
@@ -158,29 +154,24 @@ function getRangeFilter({ nestedFieldNames, filter }) {
 function collapseNestedFilters({ esFilter, bools }) {
 	const filterIsNested = isNested(esFilter);
 	const basePath = [...(filterIsNested ? [ES_NESTED, ES_QUERY] : []), ES_BOOL];
-	const path = [ES_MUST, ES_MUST_NOT]
-		.map((p) => [...basePath, p])
-		.find((path) => _.get(esFilter, path));
+	const path = [ES_MUST, ES_MUST_NOT].map((p) => [...basePath, p]).find((path) => _.get(esFilter, path));
 
 	const found =
-		path &&
-		bools.find((bool) =>
-			filterIsNested ? readPath(bool) === readPath(esFilter) : _.get(bool, path),
-		);
+		path && bools.find((bool) => (filterIsNested ? readPath(bool) === readPath(esFilter) : _.get(bool, path)));
 
 	return [
 		...bools.filter((bool) => bool !== found),
 		found
 			? mergePath(
-					found,
-					path,
-					filterIsNested
-						? collapseNestedFilters({
-								esFilter: _.get(esFilter, path)[0],
-								bools: _.get(found, path, []),
-						  })
-						: [..._.get(found, path), ..._.get(esFilter, path)],
-			  )
+				found,
+				path,
+				filterIsNested
+					? collapseNestedFilters({
+						esFilter: _.get(esFilter, path)[0],
+						bools: _.get(found, path, []),
+					})
+					: [..._.get(found, path), ..._.get(esFilter, path)],
+			)
 			: esFilter,
 	];
 }
@@ -197,9 +188,7 @@ function getGroupFilter({ nestedFieldNames, filter: { content, op, pivot } }) {
 	if (isNested && esFilters.map((f) => f.nested?.path)?.includes?.(pivot)) {
 		const flattned = esFilters.reduce(
 			(bools, esFilter) =>
-				op === AND_OP || op === NOT_OP
-					? collapseNestedFilters({ esFilter, bools })
-					: [...bools, esFilter],
+				op === AND_OP || op === NOT_OP ? collapseNestedFilters({ esFilter, bools }) : [...bools, esFilter],
 			[],
 		);
 		return applyBooleanWrapper(flattned);
@@ -252,10 +241,11 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 		pivot,
 		content: { value },
 	} = filter;
-	// we need a way to handle object fields before the following error is valid
-	// if (pivot && pivot !== '.' && !nestedFieldNames.includes(pivot)) {
-	//   throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
-	// }
+
+	if (pivot && pivot !== '.' && !nestedFieldNames.includes(pivot)) {
+		throw new Error(`Invalid pivot field "${pivot}", not a nested field`);
+	}
+
 	if ([OR_OP, AND_OP, NOT_OP].includes(op)) {
 		return getGroupFilter({ nestedFieldNames, filter });
 	} else if ([IN_OP, NOT_IN_OP, SOME_NOT_IN_OP].includes(op)) {
@@ -294,8 +284,9 @@ export const opSwitch = ({ nestedFieldNames, filter }) => {
 	}
 };
 
-export default function ({ nestedFieldNames = [], filters: rawFilters }) {
+export default function ({ caller = 'unknown', nestedFieldNames = [], filters: rawFilters }) {
 	if (Object.keys(rawFilters || {}).length === 0) return {};
+
 
 	return opSwitch({
 		nestedFieldNames,

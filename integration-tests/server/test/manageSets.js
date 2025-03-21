@@ -1,14 +1,15 @@
-import { expect } from 'chai';
+import assert from 'node:assert';
+import { test } from 'node:test';
+
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-export default ({ api, documentType, gqlPath }) => {
+export default ({ api, documentType }) => {
 	let setId = undefined;
 
-	it('1.creates set successfully', async () => {
+	test('1.creates set successfully', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 						mutation {
@@ -18,20 +19,20 @@ export default ({ api, documentType, gqlPath }) => {
 						}
 					`),
 				},
+				// debug: true,
 			})
 			.catch((err) => {
 				console.log('manageSets error', err);
 			});
 
-		expect(data.errors).to.be.undefined;
+		assert.equal(data.errors, undefined);
 
 		setId = data.data.newSet.setId;
 	});
 
-	it('2.retrieves newly created set successfully', async () => {
+	test('2.retrieves newly created set successfully', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 						{
@@ -39,7 +40,7 @@ export default ({ api, documentType, gqlPath }) => {
 								hits(first: 1000) {
 									edges {
 										node {
-											id
+											setId
 										}
 									}
 								}
@@ -47,12 +48,18 @@ export default ({ api, documentType, gqlPath }) => {
 						}
 					`),
 				},
+				// debug: true,
 			})
 			.catch((err) => {
 				console.log('manageSets error', err);
 			});
 
-		expect(data.errors).to.be.undefined;
-		expect(data.data.sets.hits.edges.map((edge) => edge.node.id)).to.include(setId);
+		assert.equal(data.errors, undefined);
+		const allSetIds = data.data.sets.hits.edges.map(({ node }) => node.setId);
+
+		assert.ok(
+			allSetIds.includes(setId),
+			`Expected [${allSetIds.join(', ')}] to include ${setId}`
+		);
 	});
 };

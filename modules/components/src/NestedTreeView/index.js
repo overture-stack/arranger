@@ -1,1 +1,1 @@
-export { default } from './NestedTreeView';
+export { default } from './NestedTreeView.js';

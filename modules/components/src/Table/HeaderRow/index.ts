@@ -1,1 +1,1 @@
-export { default } from './HeaderRow';
+export { default } from './HeaderRow.js';

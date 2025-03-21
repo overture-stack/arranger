@@ -1,23 +1,17 @@
-import { isEqual } from 'lodash';
-import {
-	ComponentType,
-	createContext,
-	ReactElement,
-	useContext,
-	useEffect,
-	useState,
-	type PropsWithoutRef,
-} from 'react';
+// import type { ReactJSX } from '@emotion/react/dist/declarations/src/jsx-namespace.js';
+import type { jsx } from '@emotion/react';
+import { isEqual } from 'lodash-es';
+import { createContext, useContext, useEffect, useState, type ComponentType, type ReactElement } from 'react';
 
-import { ThemeProvider } from '@/ThemeContext';
-import defaultApiFetcher from '@/utils/api';
-import { ARRANGER_API, DEBUG } from '@/utils/config';
-import getComponentDisplayName from '@/utils/getComponentDisplayName';
-import missingProviderHandler from '@/utils/missingProvider';
-import { emptyObj } from '@/utils/noops';
+import { ThemeProvider } from '#ThemeContext/index.js';
+import defaultApiFetcher from '#utils/api.js';
+import { ARRANGER_API, DEBUG } from '#utils/config.js';
+import getComponentDisplayName from '#utils/getComponentDisplayName.js';
+import missingProviderHandler from '#utils/missingProvider.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { useConfigs, useDataFetcher } from './helpers';
-import { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types';
+import { useConfigs, useDataFetcher } from './helpers.js';
+import type { DataContextInterface, DataProviderProps, SQONType, UseDataContextProps } from './types.js';
 
 export const DataContext = createContext<DataContextInterface>({
 	documentType: '',
@@ -49,11 +43,10 @@ export const DataProvider = ({
 		}
 	}, [legacyProps?.sqon, sqon]);
 
-	const { downloadsConfigs, extendedMapping, facetsConfigs, isLoadingConfigs, tableConfigs } =
-		useConfigs({
-			apiFetcher,
-			documentType,
-		});
+	const { downloadsConfigs, extendedMapping, facetsConfigs, isLoadingConfigs, tableConfigs } = useConfigs({
+		apiFetcher,
+		documentType,
+	});
 
 	const fetchData = useDataFetcher({
 		apiFetcher,
@@ -106,19 +99,19 @@ export const useDataContext = ({
 	};
 };
 
-/** HOC for data access
- * @param {ComponentType} Component the component you want to provide Arranger data to.
- * @returns {DataContextInterface} data object
- */
-export const withData = <Props extends object>(Component: ComponentType<Props>) => {
+/** HOC for data access */
+export const withData = <Props extends Omit<Props, keyof DataContextInterface>>(Component: ComponentType<Props>) => {
+	// UseDataContextProps;
 	const callerName = getComponentDisplayName(Component);
-	const ComponentWithData = (props: Props) => {
+	const ComponentWithData = (props) => {
 		const dataProps = {
 			...props,
 			...useDataContext({ callerName }),
 		};
 
-		return <Component {...dataProps} />;
+		type blah = jsx.JSX.LibraryManagedAttributes<ComponentType<typeof dataProps>, Props>;
+
+		return <Component {...(dataProps as blah)} />;
 	};
 
 	ComponentWithData.displayName = `WithArrangerData(${callerName})`;

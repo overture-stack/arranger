@@ -1,3 +1,3 @@
-export { default as getGraphQLRoutes, createSchemasFromConfigs } from './graphqlRoutes';
-export { default } from './server';
-export { default as App } from './app';
+export { default as App } from './app.js';
+export { createSchemasFromConfigs, default as getGraphQLRoutes } from './graphqlRoutes.js';
+export { default } from './server.js';

@@ -1,11 +1,11 @@
 import { PassThrough } from 'stream';
 
-import { ENV_CONFIG } from '@/config';
-import { ConfigProperties } from '@/config/types';
-import { mapHits } from '@/mapping';
-import { buildQuery, esToSafeJsInt } from '@/middleware';
+import { ENV_CONFIG } from '#config/index.js';
+import { ConfigProperties } from '#config/types.js';
+import { mapHits } from '#mapping/index.js';
+import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 
-import runQuery from './runQuery';
+import runQuery from './runQuery.js';
 
 /**
  * @param maxRows (Optional. Default: null) Limits the maximum number of rows to include in the results.
@@ -26,15 +26,17 @@ export default async ({
 	const { configs, esClient, mockSchema, schema } = ctx;
 
 	const stream = new PassThrough({ objectMode: true });
-	const esSort = sort
-		.map(({ fieldName, order }) => ({ [fieldName]: order }))
-		.concat({ _id: 'asc' });
+	const esSort = sort.map(({ fieldName, order }) => ({ [fieldName]: order })).concat({ _id: 'asc' });
 
 	const nestedFieldNames = configs.extendedFields
 		.filter(({ type }) => type === 'nested')
 		.map(({ fieldName }) => fieldName);
 
-	const query = buildQuery({ nestedFieldNames, filters: sqon });
+	const query = buildQuery({
+		caller: 'getAllData',
+		filters: sqon,
+		nestedFieldNames,
+	});
 
 	runQuery({
 		esClient,
@@ -75,8 +77,8 @@ export default async ({
 							sort: esSort,
 							...(previousHits
 								? {
-										search_after: previousHits[previousHits.length - 1]?.sort?.map(esToSafeJsInt),
-								  }
+									search_after: previousHits[previousHits.length - 1]?.sort?.map(isESValueSafeJSInt),
+								}
 								: {}),
 							...(Object.entries(query).length ? { query } : {}),
 						},

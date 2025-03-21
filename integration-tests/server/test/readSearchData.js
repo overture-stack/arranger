@@ -1,9 +1,11 @@
-import { expect } from 'chai';
+import assert from 'node:assert';
+import { test } from 'node:test';
+
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
 export default ({ api, documentType, gqlPath }) => {
-	it('1.reads hits with sqon properly', async () => {
+	test('1.reads hits with sqon properly', async () => {
 		const { data } = await api
 			.post({
 				endpoint: gqlPath,
@@ -41,9 +43,9 @@ export default ({ api, documentType, gqlPath }) => {
 				console.log('readSearchData error', err);
 			});
 
-		expect(data).to.eql({
+		assert.deepEqual(data, {
 			data: {
-				model: {
+				[documentType]: {
 					hits: {
 						edges: [
 							{ node: { id: 'sagsdhertdfdgsdfgsdfg' } },
@@ -56,8 +58,8 @@ export default ({ api, documentType, gqlPath }) => {
 		});
 	});
 
-	it('2.paginates hits properly', async () => {
-		expect(
+	test('2.paginates hits properly', async () => {
+		assert.deepEqual(
 			await api
 				.post({
 					endpoint: gqlPath,
@@ -82,24 +84,24 @@ export default ({ api, documentType, gqlPath }) => {
 				.catch((err) => {
 					console.log('readSearchData error', err);
 				}),
-		).to.eql({
-			data: {
-				model: {
-					hits: {
-						edges: [
-							{
-								node: {
-									id: 'sagsdhertdfdgsdfgsdfg',
+			{
+				data: {
+					[documentType]: {
+						hits: {
+							edges: [
+								{
+									node: {
+										id: 'sagsdhertdfdgsdfgsdfg',
+									},
 								},
-							},
-						],
-						total: 3,
+							],
+							total: 3,
+						},
 					},
 				},
-			},
-		});
+			});
 
-		expect(
+		assert.deepEqual(
 			await api
 				.post({
 					endpoint: gqlPath,
@@ -124,24 +126,24 @@ export default ({ api, documentType, gqlPath }) => {
 				.catch((err) => {
 					console.log('readSearchData error', err);
 				}),
-		).to.eql({
-			data: {
-				model: {
-					hits: {
-						edges: [
-							{
-								node: {
-									id: '5da62fbad545d210fe1c63a9',
+			{
+				data: {
+					[documentType]: {
+						hits: {
+							edges: [
+								{
+									node: {
+										id: '5da62fbad545d210fe1c63a9',
+									},
 								},
-							},
-						],
-						total: 3,
+							],
+							total: 3,
+						},
 					},
 				},
-			},
-		});
+			});
 
-		expect(
+		assert.deepEqual(
 			await api
 				.post({
 					endpoint: gqlPath,
@@ -166,29 +168,29 @@ export default ({ api, documentType, gqlPath }) => {
 				.catch((err) => {
 					console.log('readSearchData error', err);
 				}),
-		).to.eql({
-			data: {
-				model: {
-					hits: {
-						edges: [
-							{
-								node: {
-									id: 'sagsdhertdfdgsdfgsdfg',
+			{
+				data: {
+					[documentType]: {
+						hits: {
+							edges: [
+								{
+									node: {
+										id: 'sagsdhertdfdgsdfgsdfg',
+									},
 								},
-							},
-							{
-								node: {
-									id: '5da62fbad545d210fe1c63a9',
+								{
+									node: {
+										id: '5da62fbad545d210fe1c63a9',
+									},
 								},
-							},
-						],
-						total: 3,
+							],
+							total: 3,
+						},
 					},
 				},
-			},
-		});
+			});
 
-		expect(
+		assert.deepEqual(
 			await api
 				.post({
 					endpoint: gqlPath,
@@ -213,30 +215,30 @@ export default ({ api, documentType, gqlPath }) => {
 				.catch((err) => {
 					console.log('readSearchData error', err);
 				}),
-		).to.eql({
-			data: {
-				model: {
-					hits: {
-						edges: [
-							{
-								node: {
-									id: '5da62fbad545d210fe1c63a9',
+			{
+				data: {
+					[documentType]: {
+						hits: {
+							edges: [
+								{
+									node: {
+										id: '5da62fbad545d210fe1c63a9',
+									},
 								},
-							},
-							{
-								node: {
-									id: '5dc9b6c3d614630f9809f7d0',
+								{
+									node: {
+										id: '5dc9b6c3d614630f9809f7d0',
+									},
 								},
-							},
-						],
-						total: 3,
+							],
+							total: 3,
+						},
 					},
 				},
-			},
-		});
+			});
 	});
 
-	it('3.excludes access_denied files', async () => {
+	test('3.excludes access_denied files', async () => {
 		const { data } = await api
 			.post({
 				endpoint: gqlPath,
@@ -260,10 +262,13 @@ export default ({ api, documentType, gqlPath }) => {
 				console.log('readSearchData error', err);
 			});
 
-		expect(data?.data?.model?.hits?.edges?.every((edge) => !edge.node.access_denied)).to.eql(true);
+		assert.deepEqual(
+			data?.data?.[documentType]?.hits?.edges?.every((edge) => !edge.node.access_denied),
+			true
+		);
 	});
 
-	it('4.cannot request for access_denied item', async () => {
+	test('4.cannot request for access_denied item', async () => {
 		const { data } = await api
 			.post({
 				endpoint: gqlPath,
@@ -301,6 +306,9 @@ export default ({ api, documentType, gqlPath }) => {
 				console.log('readSearchData error', err);
 			});
 
-		expect(data?.data?.model?.hits?.edges?.length).to.eql(0);
+		assert.deepEqual(
+			data?.data?.[documentType]?.hits?.edges?.length,
+			0
+		);
 	});
 };

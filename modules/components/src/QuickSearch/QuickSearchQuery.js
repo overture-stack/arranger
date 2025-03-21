@@ -1,10 +1,10 @@
-import { capitalize, flatMap, isArray, isEmpty } from 'lodash';
+import { JSONPath } from 'jsonpath-plus';
+import { capitalize, flatMap, isArray, isEmpty } from 'lodash-es';
 import { compose, withProps } from 'recompose';
-import jp from 'jsonpath/jsonpath.min';
 
-import { withQuery } from '@/Query';
-import { DEBUG } from '@/utils/config';
-import splitString from '@/utils/splitString';
+import { withQuery } from '#Query.js';
+import { DEBUG } from '#utils/config.js';
+import splitString from '#utils/splitString.js';
 
 const isValidValue = (value) => value?.trim()?.length > 1;
 
@@ -52,54 +52,51 @@ const enhance = compose(
 				sqon: {
 					content: exact
 						? searchFields?.map(({ fieldName }) => ({
-								content: {
-									fieldName,
-									value: searchTextParts,
-								},
-								op: 'in',
-						  }))
+							content: {
+								fieldName,
+								value: searchTextParts,
+							},
+							op: 'in',
+						}))
 						: searchTextParts.map((part) => ({
-								content: {
-									fieldNames: searchFields?.map((field) => field.fieldName || field),
-									value: `*${part}*`,
-								},
-								op: 'filter',
-						  })),
+							content: {
+								fieldNames: searchFields?.map((field) => field.fieldName || field),
+								value: `*${part}*`,
+							},
+							op: 'filter',
+						})),
 					op: 'or',
 				},
 			};
 		},
 	),
-	withQuery(
-		({ displayField, documentType, queryCallback, searchFields, searchText, size = 5, sqon }) => {
-			return {
-				callback: queryCallback,
-				debounceTime: 300,
-				endpointTag: 'Arranger-QuickSearch',
-				query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
+	withQuery(({ displayField, documentType, queryCallback, searchFields, searchText, size = 5, sqon }) => {
+		return {
+			callback: queryCallback,
+			debounceTime: 300,
+			endpointTag: 'Arranger-QuickSearch',
+			query: `query ${capitalize(documentType)}QuickSearchResults($sqon: JSON, $size: Int) {
 				${documentType} {
 					hits(filters: $sqon, first: $size) {
 					total
 					edges {
 						node {
 						${!isEmpty(displayField?.query) ? `primaryKey: ${displayField?.query}` : ''}
-						${
-							searchFields
-								?.filter?.((field) => field.gqlField && field.query)
-								.map?.((field) => `${field.gqlField}: ${field.query}`)
-								.join?.('\n') || ''
-						}
+						${searchFields
+					?.filter?.((field) => field.gqlField && field.query)
+					.map?.((field) => `${field.gqlField}: ${field.query}`)
+					.join?.('\n') || ''
+				}
 						}
 					}
 					}
 				}
 				}
 			`,
-				shouldFetch: isValidValue(searchText) && (searchFields || []).length,
-				variables: { size, sqon },
-			};
-		},
-	),
+			shouldFetch: isValidValue(searchText) && (searchFields || []).length,
+			variables: { size, sqon },
+		};
+	}),
 	withProps(
 		({
 			displayField,
@@ -122,8 +119,15 @@ const enhance = compose(
 								const primaryKey =
 									typeof node.primaryKey === 'string'
 										? node.primaryKey
-										: jp.query(node.primaryKey, displayField.jsonPath)[0];
-								const result = field?.jsonPath && jp.query(node, field.jsonPath);
+										: JSONPath({
+											json: node.primaryKey,
+											path: displayField.jsonPath
+										})[0];
+								const result = field?.jsonPath &&
+									JSONPath({
+										json: node,
+										path: field.jsonPath,
+									});
 
 								return {
 									primaryKey,

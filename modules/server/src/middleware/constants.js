@@ -25,7 +25,10 @@ export const OP_ALIASES = {
 	'>=': GTE_OP,
 	'<=': LTE_OP,
 	'=': IN_OP,
+	'==': IN_OP,
+	'===': IN_OP,
 	'!=': NOT_IN_OP,
+	'!==': NOT_IN_OP,
 };
 export const DATE_FORMAT = 'yyyy-MM-dd';
 

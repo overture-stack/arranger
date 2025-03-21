@@ -1,10 +1,10 @@
-import { FC, ReactElement } from 'react';
+import type { FC, ReactElement } from 'react';
 
-import { ButtonThemeProps, ThemedButtonProps } from '@/Button/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { ToggleButtonThemeProps } from '@/ToggleButton/types';
-import { GenericFn } from '@/utils/noops';
-import { RecursivePartial } from '@/utils/types';
+import type { ButtonThemeProps, ThemedButtonProps } from '#Button/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { ToggleButtonThemeProps } from '#ToggleButton/types.js';
+import type { GenericFn } from '#utils/noops.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export interface SearchResult {
 	// TODO: validate these
@@ -69,7 +69,7 @@ interface FilterInputProps extends ThemeCommon.BoxModelProperties, ThemeCommon.C
 	placeholder: string;
 }
 
-interface FilterQueryField {
+export interface FilterQueryField {
 	entityName?: string;
 	fieldName: string;
 	gqlField: string;

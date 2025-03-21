@@ -1,5 +1,5 @@
-import mappingToColumnsType from './mappingToColumnsType';
-import { toQuery } from './utils/columnsToGraphql';
+import mappingToColumnsType from './mappingToColumnsType.js';
+import { toQuery } from './utils/columnsToGraphql.js';
 
 // TODO: unused function? do we still need it? can it be used for new implementation?
 const mappingToColumnsState = (mapping) => {
@@ -16,7 +16,7 @@ const mappingToColumnsState = (mapping) => {
 				? {
 						query: toQuery(fieldName),
 						jsonPath: `$.${fieldName.replace(/\[\d*\]/g, '[*]')}`,
-				  }
+					}
 				: { accessor: fieldName }),
 		};
 	});

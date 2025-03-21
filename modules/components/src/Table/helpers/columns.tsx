@@ -1,27 +1,26 @@
 import { css } from '@emotion/react';
 import { createColumnHelper } from '@tanstack/react-table';
-import { mergeWith } from 'lodash';
-import { HTMLAttributes, useEffect, useRef } from 'react';
+import { mergeWith } from 'lodash-es';
+import { type HTMLAttributes, useEffect, useRef } from 'react';
 
-import { ColumnMappingInterface } from '@/DataContext/types';
+import type { ColumnMappingInterface } from '#DataContext/types.js';
 import {
-	ColumnsDictionary,
-	ColumnType,
-	ColumnTypesObject,
 	SELECTION_COLUMN_ID,
-	TableCellProps,
-} from '@/Table/types';
-import { emptyObj } from '@/utils/noops';
+	type ColumnsDictionary,
+	type ColumnType,
+	type ColumnTypesObject,
+	type TableCellProps,
+} from '#Table/types.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { defaultCellTypes, getCellValue } from './cells';
+import { defaultCellTypes, getCellValue } from './cells.js';
 
 export const aggregateCustomColumns = (
 	customColumns: ColumnMappingInterface[] = [],
 	serverColumns: ColumnMappingInterface[] = [],
 ) => {
 	const existingColumns = serverColumns.map((serverColumn) => {
-		const customColumn =
-			customColumns.find((column) => column.fieldName === serverColumn.fieldName) || {};
+		const customColumn = customColumns.find((column) => column.fieldName === serverColumn.fieldName) || {};
 
 		return {
 			...serverColumn,
@@ -29,13 +28,9 @@ export const aggregateCustomColumns = (
 		};
 	});
 
-	const existingColumnFields = existingColumns
-		.map((column) => column.fieldName)
-		.filter((field) => !!field);
+	const existingColumnFields = existingColumns.map((column) => column.fieldName).filter((field) => !!field);
 
-	return existingColumns.concat(
-		customColumns.filter((column) => !existingColumnFields.includes(column.fieldName)),
-	);
+	return existingColumns.concat(customColumns.filter((column) => !existingColumnFields.includes(column.fieldName)));
 };
 
 export const columnsArrayToDictionary = (columns: ColumnMappingInterface[] = []) =>
@@ -131,7 +126,7 @@ export const makeTableColumns = ({
 								},
 								theme,
 								value: valueFromRow,
-						  } as TableCellProps)
+							} as TableCellProps)
 						: cellType;
 				}
 
@@ -146,7 +141,7 @@ export const makeTableColumns = ({
 								...visibleColumn,
 								...header,
 								disabled: !hasData,
-						  })
+							})
 						: headerType;
 				}
 
@@ -190,6 +185,6 @@ export const makeTableColumns = ({
 					size: selectionColumnWidth,
 				}),
 				...tableColumns,
-		  ]
+			]
 		: tableColumns;
 };
