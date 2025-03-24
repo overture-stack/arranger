@@ -1,4 +1,4 @@
-import getNestedFields from './getNestedFields';
+import getNestedFields from './getNestedFields.js';
 
 let addMappingsToTypes = ({ graphQLType, mapping }) => {
 	const nested_fieldNames = getNestedFields(mapping);

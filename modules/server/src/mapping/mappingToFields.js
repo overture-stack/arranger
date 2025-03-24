@@ -1,9 +1,9 @@
-import { capitalize } from 'lodash';
+import { capitalize } from 'lodash-es';
 
-import mappingToNestedFields from './mappingToNestedFields';
-import mappingToScalarFields from './mappingToScalarFields';
-import createConnectionTypeDefs from './createConnectionTypeDefs';
-import mappingToObjectTypes from './mappingToObjectTypes';
+import createConnectionTypeDefs from './createConnectionTypeDefs.js';
+import mappingToNestedFields from './mappingToNestedFields.js';
+import mappingToObjectTypes from './mappingToObjectTypes.js';
+import mappingToScalarFields from './mappingToScalarFields.js';
 
 const mappingToFields = ({ type, parent }) => {
 	return [

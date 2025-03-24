@@ -1,38 +1,35 @@
-import { useCallback, useState } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
-import { merge, truncate, xor } from 'lodash';
-import { format } from 'date-fns';
 import cx from 'classnames';
+import { format } from 'date-fns';
+import { merge, truncate, xor } from 'lodash-es';
+import { useCallback, useState } from 'react';
 
-import { TransparentButton } from '@/Button';
-import ButtonProps from '@/Button/types';
-import { useDataContext } from '@/DataContext';
-import { Row } from '@/Flex';
-import { useThemeContext } from '@/ThemeContext';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { emptyObj } from '@/utils/noops';
-import internalTranslateSQONValue from '@/utils/translateSQONValue';
+import { TransparentButton } from '#Button/index.js';
+import type { ButtonProps } from '#Button/types.js';
+import { useDataContext } from '#DataContext/index.js';
+import { Row } from '#Flex/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import { emptyObj } from '#utils/noops.js';
+import internalTranslateSQONValue from '#utils/translateSQONValue.js';
 
-import {
+import type {
 	GroupSQONInterface,
 	GroupValueSQONType,
 	SQONViewerThemeProps,
 	UseDataBubblesProps,
 	ValueSQONInterface,
-} from './types';
+} from './types.js';
 
 export interface BubbleProps extends ButtonProps {
 	onClick?: () => void;
 }
 
 export const Bubble = ({ children, className, theme, ...props }: BubbleProps) => {
-	const {
-		components: {
-			SQONViewer: { SQONBubble: themeSQONBubbleProps = emptyObj } = emptyObj,
-		} = emptyObj,
-	} = useThemeContext({ callerName: 'SQONViewer - Bubble' });
+	const { components: { SQONViewer: { SQONBubble: themeSQONBubbleProps = emptyObj } = emptyObj } = emptyObj } =
+		useThemeContext({ callerName: 'SQONViewer - Bubble' });
 
 	return (
 		<TransparentButton
@@ -115,15 +112,11 @@ export const useDataBubbles = ({
 	} = useThemeContext({ callerName: 'SQONViewer - useDataBubbles' });
 	const [expanded, setExpanded] = useState<GroupValueSQONType>([]);
 
-	const isExpanded = useCallback(
-		(valueSQON: ValueSQONInterface) => expanded.includes(valueSQON),
-		[expanded],
-	);
+	const isExpanded = useCallback((valueSQON: ValueSQONInterface) => expanded.includes(valueSQON), [expanded]);
 
 	const { extendedMapping } = useDataContext({ callerName: 'SQONViewer - useDataBubbles' });
 	const findExtendedMappingForField = useCallback(
-		(wantedFieldName: string) =>
-			extendedMapping.find((mapping) => mapping.fieldName === wantedFieldName),
+		(wantedFieldName: string) => extendedMapping.find((mapping) => mapping.fieldName === wantedFieldName),
 		[extendedMapping],
 	);
 
@@ -152,11 +145,7 @@ export const useDataBubbles = ({
 	);
 
 	const FieldNameCrumb = ({ fieldName, ...fieldProps }: { fieldName: string }) => (
-		<FieldName
-			css={css``}
-			theme={{ fontWeight: 'bold', ...themeSQONFieldNameProps }}
-			{...{ fieldName, ...fieldProps }}
-		>
+		<FieldName css={css``} theme={{ fontWeight: 'bold', ...themeSQONFieldNameProps }} {...{ fieldName, ...fieldProps }}>
 			{findExtendedMappingForField(fieldName)?.displayName || fieldName}
 		</FieldName>
 	);
@@ -198,6 +187,7 @@ export const useDataBubbles = ({
 					value,
 			),
 		);
+
 		const truncatedValue = truncate(displayValue, {
 			length: Number(valueCharacterLimit || themeCharacterLimit),
 		});

@@ -1,7 +1,7 @@
-import { ThemedButtonProps } from '@/Button/types';
-import { InputThemeProps } from '@/Input/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ThemedButtonProps } from '#Button/types.js';
+import type { InputThemeProps } from '#Input/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export interface DropDownThemeProps extends ThemedButtonProps {
 	arrowColor: string;
@@ -19,5 +19,9 @@ export interface DropDownThemeProps extends ThemedButtonProps {
 }
 
 export interface DropDownProps extends ThemeCommon.CustomCSS {
+	theme?: RecursivePartial<DropDownThemeProps>;
+}
+
+export interface DropDownMenuProps extends ThemeCommon.CustomCSS {
 	theme?: RecursivePartial<DropDownThemeProps>;
 }

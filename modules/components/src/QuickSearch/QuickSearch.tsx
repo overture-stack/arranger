@@ -2,21 +2,21 @@ import { css } from '@emotion/react';
 import { useRef, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 
-import { useDataContext } from '@/DataContext';
-import { SQONType } from '@/DataContext/types';
-import { MATCHBOX_CHILD } from '@/MatchBox';
-import { Value as SQONBubble } from '@/SQONViewer';
-import { currentFieldValue, toggleSQON } from '@/SQONViewer/utils';
-import TextFilter from '@/TextFilter';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
-import internalTranslateSQONValue from '@/utils/translateSQONValue';
+import { useDataContext } from '#DataContext/index.js';
+import type { SQONType } from '#DataContext/types.js';
+import { MATCHBOX_CHILD } from '#MatchBox/index.js';
+import { Value as SQONBubble } from '#SQONViewer/index.js';
+import { currentFieldValue, toggleSQON } from '#SQONViewer/utils.js';
+import TextFilter from '#TextFilter/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
+import internalTranslateSQONValue from '#utils/translateSQONValue.js';
 
-import { useSearchFields } from './helpers';
-import DropdownItem from './QuickSearchDropdown';
-import QuickSearchQuery from './QuickSearchQuery';
-import QuickSearchWrapper from './QuickSearchWrapper';
-import { QuickSearchProps, SearchResult } from './types';
+import { useSearchFields } from './helpers.js';
+import DropdownItem from './QuickSearchDropdown.js';
+import QuickSearchQuery from './QuickSearchQuery.js';
+import QuickSearchWrapper from './QuickSearchWrapper.js';
+import type { QuickSearchProps, SearchResult } from './types.js';
 
 const currentValues = ({
 	displayField,
@@ -84,10 +84,7 @@ const QuickSearch = ({
 				headerTitle: themeHeaderTitle,
 				placeholder: themePlaceholder = 'Quick Search',
 
-				DropDownItems: {
-					DropdownItemComponent = DropdownItem,
-					css: themeDropDownItemsCSS = emptyObj,
-				} = emptyObj,
+				DropDownItems: { DropdownItemComponent = DropdownItem, css: themeDropDownItemsCSS = emptyObj } = emptyObj,
 				FilterInput: {
 					Icon = FaSearch,
 					InputComponent = TextFilter,
@@ -128,8 +125,7 @@ const QuickSearch = ({
 	};
 	const headerTitle = customHeaderTitle || themeHeaderTitle || headerTitleFromDisplayField;
 	const inputMargin = customFilterInputMargin || themeFilterInputMargin;
-	const inputPlaceholder =
-		customFilterInputPlaceholder || themeFilterInputPlaceholder || themePlaceholder;
+	const inputPlaceholder = customFilterInputPlaceholder || themeFilterInputPlaceholder || themePlaceholder;
 
 	const showPinnedValues = !(themePinnedValuesDisabled || instanceId === MATCHBOX_CHILD);
 
@@ -159,13 +155,7 @@ const QuickSearch = ({
 				searchText={value}
 				searchLowercase={themeQuickSearchQuerySearchLowercase}
 				searchTextDelimiters={themeQuickSearchQuerySearchTextDelimiters}
-				render={({
-					results: searchResults,
-					loading,
-				}: {
-					results: SearchResult[];
-					loading: boolean;
-				}) => (
+				render={({ results: searchResults, loading }: { results: SearchResult[]; loading: boolean }) => (
 					<>
 						<InputComponent
 							onBlur={toggleDropdown(false)}
@@ -199,13 +189,7 @@ const QuickSearch = ({
 								{searchResults.length ? (
 									searchResults?.map(
 										(
-											{
-												entityName,
-												result,
-												primaryKey,
-												input,
-												index = (lookup?.[entityName] % 5) + 1,
-											},
+											{ entityName, result, primaryKey, input, index = (lookup?.[entityName] % 5) + 1 },
 											resultIndex: number,
 										) => {
 											return (

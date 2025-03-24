@@ -1,4 +1,4 @@
-import Row from './Row';
-import Column from './Column';
+import Column from './Column.js';
+import Row from './Row.js';
 
 export { Row, Column };

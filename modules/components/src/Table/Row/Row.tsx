@@ -2,14 +2,14 @@ import { css } from '@emotion/react';
 import { flexRender } from '@tanstack/react-table';
 import cx from 'classnames';
 
-import MetaMorphicChild from '@/MetaMorphicChild';
-import { getDisplayValue } from '@/Table/helpers';
-import { SELECTION_COLUMN_ID } from '@/Table/types';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import MetaMorphicChild from '#MetaMorphicChild/index.js';
+import { getDisplayValue } from '#Table/helpers/index.js';
+import { SELECTION_COLUMN_ID } from '#Table/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import Cell from './Cell';
-import { RowProps } from './types';
+import Cell from './Cell.js';
+import type { RowProps } from './types.js';
 
 const TableRow = ({
 	css: customCSS,
@@ -49,6 +49,7 @@ const TableRow = ({
 					lineHeight: themeLineHeight,
 					position: themePosition,
 					selectedBackground: themeSelectedBackground = colors?.grey?.[300],
+					selectedFontColor: themeSelectedFontColor,
 					textOverflow: themeTextOverflow,
 					verticalBorderColor: themeVerticalBorderColor = themeBorderColor,
 				} = emptyObj,
@@ -90,12 +91,12 @@ const TableRow = ({
 					}
 
 					&:not(:last-of-type) {
-						border-bottom: ${themeHorizontalBorderColor &&
-						`0.1rem solid ${themeHorizontalBorderColor}`};
+						border-bottom: ${themeHorizontalBorderColor && `0.1rem solid ${themeHorizontalBorderColor}`};
 					}
 
 					&.selected {
 						background-color: ${themeSelectedBackground} !important;
+						color: ${themeSelectedFontColor} !important;
 
 						&:hover: {
 							// TODO: extend styles for this
@@ -104,8 +105,7 @@ const TableRow = ({
 
 					&:hover {
 						background: ${hoverBackground} !important;
-						border-bottom: ${hoverHorizontalBorderColor &&
-						`1px solid ${hoverHorizontalBorderColor}`};
+						border-bottom: ${hoverHorizontalBorderColor && `1px solid ${hoverHorizontalBorderColor}`};
 						border-left: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
 						border-right: ${hoverVerticalBorderColor && `1px solid ${hoverVerticalBorderColor}`};
 						border-top: ${hoverHorizontalBorderColor && `1px solid ${hoverHorizontalBorderColor}`};

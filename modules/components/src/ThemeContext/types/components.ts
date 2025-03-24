@@ -1,16 +1,12 @@
-import { AggregationsThemeProps } from '@/Aggs/types';
-import { ButtonThemeProps } from '@/Button/types';
-import { InputThemeProps } from '@/Input/types';
-import { ArrowIconThemeProps } from '@/Icons/ArrowIcon/types';
-import { QuickSearchThemeProps } from '@/QuickSearch/types';
-import {
-	LoaderContainerThemeProps,
-	LoaderOverlayThemeProps,
-	LoaderThemeProps,
-} from '@/Loader/types';
-import { SQONViewerThemeProps } from '@/SQONViewer/types';
-import { TableThemeProps } from '@/Table/types';
-import { TextHighlightThemeProps } from '@/TextHighlight/types';
+import type { AggregationsThemeProps } from '#aggregations/types.js';
+import type { ButtonThemeProps } from '#Button/types.js';
+import type { ArrowIconThemeProps } from '#Icons/ArrowIcon/types.js';
+import type { InputThemeProps } from '#Input/types.js';
+import type { LoaderContainerThemeProps, LoaderOverlayThemeProps, LoaderThemeProps } from '#Loader/types.js';
+import type { QuickSearchThemeProps } from '#QuickSearch/types.js';
+import type { SQONViewerThemeProps } from '#SQONViewer/types.js';
+import type { TableThemeProps } from '#Table/types.js';
+import type { TextHighlightThemeProps } from '#TextHighlight/types.js';
 
 export interface Components {
 	Aggregations: AggregationsThemeProps;

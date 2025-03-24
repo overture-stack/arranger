@@ -1,9 +1,8 @@
+import { debounce } from 'lodash-es';
 import { Component } from 'react';
-import { debounce } from 'lodash';
 
-import api from '../utils/api';
-
-import { decorateFieldWithColumnsState } from '../QuickSearch/QuickSearchQuery';
+import { decorateFieldWithColumnsState } from '#QuickSearch/QuickSearchQuery.js';
+import api from '#utils/api.js';
 
 let matchBoxFields = `
   state {
@@ -48,25 +47,24 @@ class MatchBoxState extends Component {
 			} = await api({
 				endpoint: `/graphql`,
 				body: {
-					query: `
-            {
-              ${documentType} {
-                extended
-                matchBoxState {
-                  ${matchBoxFields}
-                }
-                columnsState {
-                  state {
-                    columns {
-                      fieldName
-                      query
-                      jsonPath
-                    }
-                  }
-                }
-              }
-            }
-          `,
+					query: `{
+						${documentType} {
+							extended
+								matchBoxState {
+									${matchBoxFields}
+								}
+								columnsState {
+									state {
+										columns {
+											fieldName
+											query
+											jsonPath
+										}
+									}
+								}
+							}
+						}
+					}`,
 				},
 			});
 
@@ -93,16 +91,14 @@ class MatchBoxState extends Component {
 			endpoint: `/graphql`,
 			body: {
 				variables: { state },
-				query: `
-        mutation($state: JSON!) {
-          saveMatchBoxState(
-            state: $state
-            documentType: "${this.props.documentType}"
-          ) {
-            ${matchBoxFields}
-          }
-        }
-      `,
+				query: `mutation($state: JSON!) {
+					saveMatchBoxState(
+						state: $state
+						documentType: "${this.props.documentType}"
+					) {
+						${matchBoxFields}
+					}
+				}`,
 			},
 		});
 

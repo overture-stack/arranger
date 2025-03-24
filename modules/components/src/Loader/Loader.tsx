@@ -3,13 +3,13 @@ import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import cx from 'classnames';
 import color from 'color';
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
 import Spinkit from 'react-spinkit';
 
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { LoaderContainerProps, LoaderOverlayProps, LoaderProps } from './types';
+import type { LoaderContainerProps, LoaderOverlayProps, LoaderProps } from './types.js';
 
 const DefaultSpinner = ({ color, size }: { color?: string; size?: string | number }) => {
 	return (
@@ -31,7 +31,9 @@ const LoaderBackground = styled('div', {
 	border-radius: 8px;
 	position: relative;
 	overflow: ${({ isLoading }) => (isLoading ? 'hidden' : 'visible')};
-	box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.1), 0 1px 5px 0 rgba(0, 0, 0, 0.08);
+	box-shadow:
+		0 1px 6px 0 rgba(0, 0, 0, 0.1),
+		0 1px 5px 0 rgba(0, 0, 0, 0.08);
 	background-color: ${({ theme: { background } }) => background};
 `;
 
@@ -39,13 +41,7 @@ const Loader = ({
 	children,
 	className = '',
 	css: customCSS,
-	theme: {
-		color: customColor,
-		Component: customComponent,
-		inverted,
-		size: customSize,
-		vertical,
-	} = emptyObj,
+	theme: { color: customColor, Component: customComponent, inverted, size: customSize, vertical } = emptyObj,
 }: LoaderProps) => {
 	const {
 		colors,
@@ -101,10 +97,9 @@ const Loader = ({
 };
 
 const LoaderOverlay = ({ theme: customThemeProps }: LoaderOverlayProps) => {
-	const { colors, components: { LoaderOverlay: themeProps = emptyObj } = emptyObj } =
-		useThemeContext({
-			callerName: 'LoaderOverlay',
-		});
+	const { colors, components: { LoaderOverlay: themeProps = emptyObj } = emptyObj } = useThemeContext({
+		callerName: 'LoaderOverlay',
+	});
 
 	const theme = merge({}, themeProps, customThemeProps);
 

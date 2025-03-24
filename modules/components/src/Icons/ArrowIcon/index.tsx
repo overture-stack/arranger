@@ -1,10 +1,10 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import Props from './types';
+import type Props from './types.js';
 
 /** Displays a chevron, commonly used for dropdown functionalities (buttons and trees)
  * The following props (passed by the parent components) will be prioritised over theme customisations
@@ -48,13 +48,7 @@ const ArrowIcon = ({
 				themeCSS,
 				css`
 					flex: 0 auto;
-					transform: ${isTreeJoint
-						? pointUp
-							? undefined
-							: 'rotate(-90deg)'
-						: pointUp
-						? 'scale(-1)'
-						: undefined};
+					transform: ${isTreeJoint ? (pointUp ? undefined : 'rotate(-90deg)') : pointUp ? 'scale(-1)' : undefined};
 					transition: ${transition || themeTransition};
 				`,
 				customCSS,

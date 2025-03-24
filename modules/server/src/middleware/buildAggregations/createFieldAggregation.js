@@ -1,8 +1,8 @@
-import { get } from 'lodash';
-import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '../constants';
-import isEmpty from 'lodash/isEmpty';
-import { opSwitch } from '../buildQuery';
-import normalizeFilters from '../buildQuery/normalizeFilters';
+import { get, isEmpty } from 'lodash-es';
+
+import { opSwitch } from '#middleware/buildQuery/index.js';
+import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '#middleware/constants.js';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
@@ -17,7 +17,7 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
 				...(type === HISTOGRAM
 					? {
 							interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
-					  }
+						}
 					: {}),
 			},
 		},
@@ -25,11 +25,7 @@ const createNumericAggregation = ({ type, field, graphqlField }) => {
 };
 
 const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) => {
-	const maxAggregations = get(
-		graphqlField,
-		['buckets', '__arguments', 0, 'max', 'value'],
-		MAX_AGGREGATION_SIZE,
-	);
+	const maxAggregations = get(graphqlField, ['buckets', '__arguments', 0, 'max', 'value'], MAX_AGGREGATION_SIZE);
 	const termFilter = graphqlField?.buckets?.filter_by_term || null;
 	const topHits = graphqlField?.buckets?.top_hits || null;
 	const source = topHits?.__arguments?.[0]?._source || null;
@@ -72,7 +68,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
 								},
 							},
 						},
-				  }
+					}
 				: {}),
 		};
 	}
@@ -98,7 +94,7 @@ const createTermAggregation = ({ field, isNested, graphqlField, termFilters }) =
 					},
 					aggs: aggs,
 				},
-		  }
+			}
 		: aggs;
 };
 
@@ -121,16 +117,11 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
  * fieldName renamed to field, as that's the property name in ES
  */
 export default ({ fieldName: field, graphqlField = {}, isNested = false, termFilters = [] }) => {
-	const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter(
-		(t) => graphqlField[t],
-	);
+	const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
 	return types.reduce((acc, type) => {
 		if (type === BUCKETS || type === BUCKET_COUNT) {
-			return Object.assign(
-				acc,
-				createTermAggregation({ field, isNested, graphqlField, termFilters }),
-			);
+			return Object.assign(acc, createTermAggregation({ field, isNested, graphqlField, termFilters }));
 		} else if ([STATS, HISTOGRAM].includes(type)) {
 			return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
 		} else if (type === CARDINALITY) {

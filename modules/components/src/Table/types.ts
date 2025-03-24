@@ -1,26 +1,26 @@
-import { Dispatch, ReactNode, SetStateAction } from 'react';
-import { Cell, Column, Header, RowSelectionState } from '@tanstack/react-table';
+import type { Cell, Column, Header, RowSelectionState } from '@tanstack/react-table';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 
-import {
+import type {
 	ColumnMappingInterface,
 	ColumnSortingInterface,
 	DisplayType,
 	FetchDataFn,
 	SQONType,
-} from '@/DataContext/types';
-import { DropDownThemeProps } from '@/DropDown/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { RecursivePartial } from '@/utils/types';
+} from '#DataContext/types.js';
+import type { DropDownThemeProps } from '#DropDown/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { RecursivePartial } from '#utils/types.js';
 
-import { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types';
-import { CountDisplayThemeProps } from './CountDisplay/types';
-import { DownloadButtonThemeProps } from './DownloadButton/types';
-import { MaxRowsSelectorThemeProps } from './MaxRowsSelector/types';
-import { PageSelectorThemeProps } from './PageSelector/types';
-import { PaginationThemeProps } from './Pagination/types';
-import { ToolbarThemeProps } from './Toolbar/types';
-import { HeaderRowThemeProps } from './HeaderRow/type';
-import { CellThemeProps, RowThemeProps } from './Row/types';
+import type { ColumnSelectButtonThemeProps } from './ColumnsSelectButton/types.js';
+import type { CountDisplayThemeProps } from './CountDisplay/types.js';
+import type { DownloadButtonThemeProps } from './DownloadButton/types.js';
+import type { HeaderRowThemeProps } from './HeaderRow/type.js';
+import type { MaxRowsSelectorThemeProps } from './MaxRowsSelector/types.js';
+import type { PageSelectorThemeProps } from './PageSelector/types.js';
+import type { PaginationThemeProps } from './Pagination/types.js';
+import type { CellThemeProps, RowThemeProps } from './Row/types.js';
+import type { ToolbarThemeProps } from './Toolbar/types.js';
 
 export type FieldList = ColumnMappingInterface['fieldName'][];
 
@@ -82,14 +82,14 @@ export type TableCellProps = Cell<any, string> & {
 	value: any;
 };
 
-type TableCellComponent = ReactNode | ((cell: TableCellProps) => ReactNode);
+type TableCellComponent = ((cell: TableCellProps) => ReactNode) | ReactNode;
 
-export type TableHeaderProps = Header<any, string> &
-	ColumnMappingInterface & { disabled?: boolean };
+export type TableHeaderProps = Header<any, string> & ColumnMappingInterface & { disabled?: boolean };
 
-type TableHeaderComponent = ReactNode | ((header: TableHeaderProps) => ReactNode);
+type TableHeaderComponent = ((header: TableHeaderProps) => ReactNode) | ReactNode;
 
-export type ColumnType = 'all' | DisplayType | FieldList[number];
+// since fieldname alone resolves ColumnType as a flat "string", this "& {}" helps disambiguate the literals
+export type ColumnType = DisplayType | (FieldList[number] & {});
 
 export const ColumnListStyles = {
 	NONE: 'none',
@@ -99,7 +99,8 @@ export const ColumnListStyles = {
 	ROMAN: 'roman',
 } as const;
 
-type ColumnListStylesType = typeof ColumnListStyles;
+export type ColumnListStylesType = typeof ColumnListStyles;
+export type UnorderedListStyles = `${ColumnListStylesType[keyof ColumnListStylesType]}`;
 
 export type ColumnTypesObject = Record<
 	ColumnType,
@@ -107,7 +108,7 @@ export type ColumnTypesObject = Record<
 		cellValue: TableCellComponent;
 		headerValue: TableHeaderComponent;
 		initialWidth: number | string;
-		listStyle: `${ColumnListStylesType[keyof ColumnListStylesType]}`;
+		listStyle: UnorderedListStyles;
 		maxWidth: number | string;
 		minWidth: number | string;
 		resizable: boolean;
@@ -161,6 +162,11 @@ export interface UseTableDataProps extends RecursivePartial<TableContextThemePro
 	visibleTableWidth: number;
 }
 
-export * from './ColumnsSelectButton/types';
-export * from './CountDisplay/types';
-export * from './DownloadButton/types';
+export type * from './ColumnsSelectButton/types.js';
+export type * from './CountDisplay/types.js';
+export type * from './DownloadButton/types.js';
+export type * from './HeaderRow/type.js';
+export type * from './MaxRowsSelector/types.js';
+export type * from './PageSelector/types.js';
+export type * from './Pagination/types.js';
+export type * from './Toolbar/types.js';

@@ -1,11 +1,13 @@
 import zlib from 'node:zlib';
 
 import { Router, urlencoded } from 'express';
-import { defaults } from 'lodash';
+import { defaults } from 'lodash-es';
 import { pack as tarPack } from 'tar-stream';
 
-import dataToExportFormat from '@/utils/dataToExportFormat';
-import getAllData from '@/utils/getAllData';
+import dataToExportFormat from '#utils/dataToExportFormat.js';
+import getAllData from '#utils/getAllData.js';
+
+// nfdhjfjhdfjf
 
 const convertDataToExportFormat =
 	({ ctx, fileType }) =>
@@ -76,12 +78,12 @@ export const dataStream = async ({ ctx, params }) => {
 						mock,
 					}),
 					responseFileName: files[0].fileName || fileName,
-			  }
+				}
 			: {
 					contentType: 'application/gzip',
 					output: multipleFiles({ chunkSize, ctx, files, mock }),
 					responseFileName: fileName.replace(/(\.tar(\.gz)?)?$/, '.tar.gz'), // make sure file ends with '.tar.gz'
-			  };
+				};
 	}
 
 	console.warn('no files defined to download');
@@ -89,6 +91,8 @@ export const dataStream = async ({ ctx, params }) => {
 };
 
 const download = ({ enableAdmin }) => {
+	console.log('enableAdmin', enableAdmin);
+
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));

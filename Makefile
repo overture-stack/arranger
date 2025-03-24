@@ -129,7 +129,7 @@ clear-es-documents:
 		-d '{"query":{"match_all":{}}}'
 
 seed-es:
-	@echo $(YELLOW)$(INFO_HEADER) "Initializing file_centric index" $(END)
+	@echo $(YELLOW)$(INFO_HEADER) "Initializing index" $(END)
 	@$(ES_LOAD_SCRIPT) $(ES_USER) $(ES_PASS) $(ES_HOST) $(ES_INDEX) $(ES_DATA_DIR) $(ES_DOCS_DIR)
 
 get-es-indices:

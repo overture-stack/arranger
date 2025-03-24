@@ -1,16 +1,16 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
 import { useMemo } from 'react';
 
-import ColumnSelectButton from '@/Table/ColumnsSelectButton';
-import CountDisplay from '@/Table/CountDisplay';
-import DownloadButton from '@/Table/DownloadButton';
-import { useThemeContext } from '@/ThemeContext';
-import getDisplayName from '@/utils/getComponentDisplayName';
-import { emptyObj } from '@/utils/noops';
+import ColumnSelectButton from '#Table/ColumnsSelectButton/index.js';
+import CountDisplay from '#Table/CountDisplay/index.js';
+import DownloadButton from '#Table/DownloadButton/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import getDisplayName from '#utils/getComponentDisplayName.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { ToolbarProps } from './types';
+import type { ToolbarProps } from './types.js';
 
 const Toolbar = ({
 	css: customCSS,

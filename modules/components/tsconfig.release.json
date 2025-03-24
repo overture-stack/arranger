@@ -1,0 +1,7 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noCheck": true, // TODO: remove this once we're fully TSd
+		"removeComments": true
+	}
+}

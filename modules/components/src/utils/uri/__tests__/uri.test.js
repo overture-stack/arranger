@@ -1,4 +1,4 @@
-import { parseIntParam, parseSQONParam } from '@/utils/uri';
+import { parseIntParam, parseSQONParam } from '#utils/uri/index.js';
 
 describe('parseIntParam', () => {
 	it('1.should handle strings', () => {

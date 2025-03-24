@@ -1,14 +1,21 @@
 {
+	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
-		"allowJs": true
+		"allowJs": true,
+		"erasableSyntaxOnly": true,
+		"strictNullChecks": true,
+		"verbatimModuleSyntax": true
+		// "noErrorTruncation": true
 	},
+	"exclude": ["node_modules", "**/dist/*"],
+	"extend": "@tsconfig/node22/tsconfig.json",
 	"include": [
-		".eslintrc.js",
-		"prettier.config.js",
-		"modules/**/.eslintrc.js",
+		"integration-tests/**/*test.*",
 		"modules/**/*",
-		"**/*.json",
-		"integration-tests/**/*test.js",
-		"integration-tests/**/*test.ts"
+		"prettier.config.js",
+		"**/__mocks__/*.js",
+		"**/jest.config.ts",
+		"**/eslint.config.js",
+		"**/*.json"
 	]
 }

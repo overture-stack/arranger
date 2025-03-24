@@ -1,11 +1,11 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { ColumnListStyles, SELECTION_COLUMN_ID } from '@/Table/types';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { ColumnListStyles, SELECTION_COLUMN_ID } from '#Table/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { CellProps } from './types';
+import type { CellProps } from './types.js';
 
 const Cell = ({
 	accessor = '',
@@ -34,10 +34,7 @@ const Cell = ({
 				textOverflow: themeTableTextOverflow = 'ellipsis',
 
 				// components
-				columnTypes: {
-					list: { listStyle: themeListStyle } = emptyObj,
-					...otherThemeColumnTypes
-				} = emptyObj,
+				columnTypes: { list: { listStyle: themeListStyle } = emptyObj, ...otherThemeColumnTypes } = emptyObj,
 				Cell: {
 					background: themeBackground,
 					borderColor: themeBorderColor = 'transparent',
@@ -64,10 +61,7 @@ const Cell = ({
 
 	const background = customBackground || themeBackground;
 	const horizontalBorderColor =
-		customHorizontalBorderColor ||
-		themeHorizontalBorderColor ||
-		customBorderColor ||
-		themeBorderColor;
+		customHorizontalBorderColor || themeHorizontalBorderColor || customBorderColor || themeBorderColor;
 	const verticalBorderColor =
 		customVerticalBorderColor || themeVerticalBorderColor || customBorderColor || themeBorderColor;
 	const hoverBackground = customHoverBackground || themeHoverBackground;

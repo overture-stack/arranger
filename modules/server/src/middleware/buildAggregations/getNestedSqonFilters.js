@@ -1,12 +1,7 @@
-import { AND_OP, OR_OP, NOT_OP } from '../constants';
-import normalizeFilters from '../buildQuery/normalizeFilters';
+import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
+import { AND_OP, OR_OP, NOT_OP } from '#middleware/constants.js';
 
-const getNestedSqonFilters = ({
-	sqon = null,
-	nestedFieldNames = [],
-	accumulator = {},
-	parentPivot = '.',
-}) => {
+const getNestedSqonFilters = ({ sqon = null, nestedFieldNames = [], accumulator = {}, parentPivot = '.' }) => {
 	const { op } = sqon;
 	if ([AND_OP, OR_OP, NOT_OP].includes(op)) {
 		const { content = [], pivot } = sqon;
@@ -25,9 +20,7 @@ const getNestedSqonFilters = ({
 		const fieldNames = sqonFieldNames || [sqonFieldName];
 		fieldNames.forEach((fieldName) => {
 			const splitFieldName = fieldName?.split('.') || [''];
-			const parentPath =
-				Array.isArray(splitFieldName) &&
-				splitFieldName.slice(0, splitFieldName.length - 1)?.join('.');
+			const parentPath = Array.isArray(splitFieldName) && splitFieldName.slice(0, splitFieldName.length - 1)?.join('.');
 			const isNested = parentPath && nestedFieldNames?.includes(parentPath);
 
 			if (splitFieldName.length > 1 && isNested && parentPivot !== parentPath) {
@@ -45,6 +38,6 @@ export default ({ sqon = null, nestedFieldNames }) => {
 		? getNestedSqonFilters({
 				sqon: normalized,
 				nestedFieldNames,
-		  })
+			})
 		: {};
 };

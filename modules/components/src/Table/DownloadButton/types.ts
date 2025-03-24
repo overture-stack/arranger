@@ -1,16 +1,18 @@
-import { ComponentType, ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { Merge } from 'type-fest';
 
-import { ColumnMappingInterface, SQONType } from '@/DataContext/types';
-import { DropDownThemeProps } from '@/DropDown/types';
-import { ColumnsDictionary } from '@/Table/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { PrefixKeys, RecursivePartial, TypesUnionPropertiesOfInterface } from '@/utils/types';
-import { ThemedButtonProps } from '@/Button/types';
+import type { ThemedButtonProps } from '#Button/types.js';
+import type { ColumnMappingInterface, SQONType } from '#DataContext/types.js';
+import type { DropDownThemeProps } from '#DropDown/types.js';
+import type { ColumnsDictionary } from '#Table/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { PrefixKeys, RecursivePartial, TypesUnionPropertiesOfInterface } from '#utils/types.js';
 
 export interface TableColumnMappingInterface extends ColumnMappingInterface {
 	Header: ReactNode;
 }
+
+// export type blah = 'meep';
 
 export type CustomColumnMappingInterface = TypesUnionPropertiesOfInterface<
 	Partial<TableColumnMappingInterface>,
@@ -47,10 +49,7 @@ export type DownloadFunction = (options: {
 	body?: Record<string, any>;
 }) => () => Promise<void>;
 
-export type ExporterFunction = (
-	exporter: ExporterFunctionProps,
-	downloadFunction?: DownloadFunction,
-) => void;
+export type ExporterFunction = (exporter: ExporterFunctionProps, downloadFunction?: DownloadFunction) => void;
 
 export interface ExporterDetailsInterface {
 	columns?: ExporterColumnMappingInterface;
@@ -66,9 +65,7 @@ export interface ExporterDetailsInterface {
 export type ExporterInput = ExporterDetailsInterface | ExporterDetailsInterface[];
 
 export type ProcessedExporterDetailsInterface = PrefixKeys<ExporterDetailsInterface, 'exporter'>;
-export type ProcessedExporterInput =
-	| ProcessedExporterDetailsInterface
-	| ProcessedExporterDetailsInterface[];
+export type ProcessedExporterInput = ProcessedExporterDetailsInterface | ProcessedExporterDetailsInterface[];
 
 export type CustomExporterDetailsInterface =
 	| Merge<
@@ -84,12 +81,10 @@ export interface ExporterCustomisationProps {
 	downloadUrl: string;
 	exportSelectedRowsField: string;
 	maxRows: number;
-	label: ReactNode;
+	label: ComponentType | string | number;
 }
 
-export interface DownloadBaseButtonThemeProps
-	extends ExporterCustomisationProps,
-		ThemedButtonProps {}
+export interface DownloadBaseButtonThemeProps extends ExporterCustomisationProps, ThemedButtonProps {}
 
 export interface DownloadButtonThemeProps extends DownloadBaseButtonThemeProps, DropDownThemeProps {
 	customExporters: CustomExporterInput;

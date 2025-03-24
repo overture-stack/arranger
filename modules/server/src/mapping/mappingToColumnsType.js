@@ -1,4 +1,4 @@
-import { flattenDeep } from 'lodash';
+import { flattenDeep } from 'lodash-es';
 
 export let esToColumnType = {
 	boolean: 'boolean',
@@ -27,13 +27,11 @@ const mappingToColumnsType = (properties = {}, parent = '', isList = false) => {
 				? {
 						type: isList ? 'list' : esToColumnType[data.type],
 						fieldName: `${appendDot(parent) + fieldName}`,
-				  }
+					}
 				: [
 						mappingToColumnsType(
 							data.properties,
-							`${appendDot(parent)}${
-								data.type === 'nested' ? `${appendDot(fieldName)}hits.edges[0].node` : fieldName
-							}`,
+							`${appendDot(parent)}${data.type === 'nested' ? `${appendDot(fieldName)}hits.edges[0].node` : fieldName}`,
 							data.type === 'nested' || isList,
 						),
 						...(data.type === 'nested'
@@ -42,9 +40,9 @@ const mappingToColumnsType = (properties = {}, parent = '', isList = false) => {
 										type: 'number',
 										fieldName: `${appendDot(parent)}${appendDot(fieldName)}hits.total`,
 									},
-							  ]
+								]
 							: []),
-				  ];
+					];
 		}),
 	);
 };

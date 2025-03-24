@@ -1,23 +1,23 @@
 import { css } from '@emotion/react';
-import SQON from '@overture-stack/sqon-builder';
+import SQONBuilder from '@overture-stack/sqon-builder';
 import cx from 'classnames';
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
 import urlJoin from 'url-join';
 
-import { TransparentButton } from '@/Button';
-import { useDataContext } from '@/DataContext';
-import MultiSelectDropDown from '@/DropDown/MultiSelectDropDown';
-import MetaMorphicChild from '@/MetaMorphicChild';
-import { useTableContext } from '@/Table/helpers';
-import { useThemeContext } from '@/ThemeContext';
-import { ARRANGER_API } from '@/utils/config';
-import download from '@/utils/download';
-import noopFn, { emptyObj } from '@/utils/noops';
-import stringCleaner from '@/utils/stringCleaner';
+import { TransparentButton } from '#Button/index.js';
+import { useDataContext } from '#DataContext/index.js';
+import MultiSelectDropDown from '#DropDown/MultiSelectDropDown.js';
+import MetaMorphicChild from '#MetaMorphicChild/index.js';
+import { useTableContext } from '#Table/helpers/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { ARRANGER_API } from '#utils/config.js';
+import download from '#utils/download.js';
+import noopFn, { emptyObj } from '#utils/noops.js';
+import stringCleaner from '#utils/stringCleaner.js';
 
-import { useExporters } from './helpers';
-import SingleDownloadButton from './SingleDownload';
-import { DownloadButtonProps, ProcessedExporterDetailsInterface } from './types';
+import { useExporters } from './helpers.js';
+import SingleDownloadButton from './SingleDownload.js';
+import type { DownloadButtonProps, ProcessedExporterDetailsInterface } from './types.js';
 
 /**
  * This component allows library integrators to pass custom exporters (functionality to be run on the data, e.g. get JSON)
@@ -57,6 +57,7 @@ const DownloadButton = ({
 	} = emptyObj,
 }: DownloadButtonProps) => {
 	const { apiUrl = ARRANGER_API } = useDataContext();
+
 	const {
 		allColumnsDict,
 		currentColumnsDict,
@@ -71,6 +72,7 @@ const DownloadButton = ({
 	} = useTableContext({
 		callerName: 'Table - ColumnSelectButton',
 	});
+
 	const {
 		components: {
 			Table: {
@@ -99,8 +101,11 @@ const DownloadButton = ({
 
 	const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
 
+	// TODO: SQONBUilder exports are weird with cjs
 	const downloadSqon =
-		!disableRowSelection && hasSelectedRows ? SQON.in(exportSelectedRowsField, selectedRows) : sqon;
+		!disableRowSelection && hasSelectedRows
+			? SQONBuilder.default.in(exportSelectedRowsField, selectedRows).toValue()
+			: sqon;
 
 	const handleExporterClick = (
 		{
@@ -128,9 +133,7 @@ const DownloadButton = ({
 									documentType,
 									exporterColumns,
 									fileName: exporterFileName
-										? `${exporterFileName}${
-												exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'
-										  }`
+										? `${exporterFileName}${exporterFileName.toLowerCase().endsWith('.tsv') ? '' : '.tsv'}`
 										: `${stringCleaner((exporterLabel as string).toLowerCase())}.tsv`,
 									fileType: 'tsv',
 									maxRows: exporterMaxRows,
@@ -144,7 +147,7 @@ const DownloadButton = ({
 						},
 						download,
 					);
-			  };
+				};
 
 	// check if we're given more than one custom exporter
 	return hasMultipleExporters ? (
@@ -155,7 +158,7 @@ const DownloadButton = ({
 			disabled={disableButton}
 			itemSelectionLegend="Select on of the download options"
 			items={exporterDetails as ProcessedExporterDetailsInterface[]}
-			itemToString={(exporter, closeDropDownFn) => {
+			itemToString={(exporter: ProcessedExporterDetailsInterface, closeDropDownFn = noopFn) => {
 				return (
 					<TransparentButton
 						css={css`

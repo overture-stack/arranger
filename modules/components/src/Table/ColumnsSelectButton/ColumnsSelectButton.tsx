@@ -1,16 +1,16 @@
-import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import cx from 'classnames';
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
+import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 
-import { ColumnMappingInterface } from '@/DataContext/types';
-import MultiSelectDropDown from '@/DropDown/MultiSelectDropDown';
-import MetaMorphicChild from '@/MetaMorphicChild';
-import { columnsArrayToDictionary, getColumnsByAttribute, useTableContext } from '@/Table/helpers';
-import { ColumnsDictionary } from '@/Table/types';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import type { ColumnMappingInterface } from '#DataContext/types.js';
+import MultiSelectDropDown from '#DropDown/MultiSelectDropDown.js';
+import MetaMorphicChild from '#MetaMorphicChild/index.js';
+import { columnsArrayToDictionary, getColumnsByAttribute, useTableContext } from '#Table/helpers/index.js';
+import type { ColumnsDictionary } from '#Table/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { ColumnSelectButtonProps } from './types';
+import type { ColumnSelectButtonProps } from './types.js';
 
 const getShowableColumns = (columnsDict = emptyObj as ColumnsDictionary) =>
 	getColumnsByAttribute(Object.values(columnsDict), 'canChangeShow');
@@ -64,7 +64,7 @@ const ColumnsSelectButton = ({
 									? {
 											...column,
 											show,
-									  }
+										}
 									: column,
 							),
 						),

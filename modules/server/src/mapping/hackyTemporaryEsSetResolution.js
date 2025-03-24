@@ -4,11 +4,11 @@
 
 // TODO: evaluate this ^^^^^^
 
-import { flattenDeep, isArray, zipObject } from 'lodash';
+import { flattenDeep, isArray, zipObject } from 'lodash-es';
 
-import { ENV_CONFIG } from '@/config';
+import { ENV_CONFIG } from '#config/index.js';
 
-import esSearch from './utils/esSearch';
+import esSearch from './utils/esSearch.js';
 
 const resolveSetIdsFromEs = (esClient) => (setId) =>
 	esSearch(esClient)({
@@ -24,15 +24,10 @@ const resolveSetIdsFromEs = (esClient) => (setId) =>
 
 const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
 	(isArray(content)
-		? flattenDeep(
-				content.reduce(
-					(acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon, collection)],
-					collection,
-				),
-		  )
+		? flattenDeep(content.reduce((acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon, collection)], collection))
 		: isArray(content?.value)
-		? content?.value.filter((value) => String(value).indexOf('set_id:') === 0)
-		: [...(String(content?.value).indexOf?.('set_id:') === 0 ? [content.value] : [])]
+			? content?.value.filter((value) => String(value).indexOf('set_id:') === 0)
+			: [...(String(content?.value).indexOf?.('set_id:') === 0 ? [content.value] : [])]
 	).map((setId) => setId.replace('set_id:', ''));
 
 const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
@@ -43,11 +38,9 @@ const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
 			? {
 					...op.content,
 					value: isArray(op.content.value)
-						? flattenDeep(
-								op.content.value.map((value) => setIdsToValueMap[value] || op.content.value),
-						  )
+						? flattenDeep(op.content.value.map((value) => setIdsToValueMap[value] || op.content.value))
 						: setIdsToValueMap[op.content.value] || op.content.value,
-			  }
+				}
 			: injectIdsIntoSqon({ sqon: op, setIdsToValueMap }).content,
 	})),
 });
@@ -61,6 +54,6 @@ export const resolveSetsInSqon = ({ sqon, esClient }) => {
 					searchResult,
 				);
 				return injectIdsIntoSqon({ sqon, setIdsToValueMap });
-		  })
+			})
 		: sqon;
 };

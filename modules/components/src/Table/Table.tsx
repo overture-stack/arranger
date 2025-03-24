@@ -1,17 +1,17 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
-import { PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
+import { type PropsWithChildren, useLayoutEffect, useRef, useState } from 'react';
 
-import Spinner, { LoaderContainer } from '@/Loader';
-import MetaMorphicChild from '@/MetaMorphicChild';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import Spinner, { LoaderContainer } from '#Loader/index.js';
+import MetaMorphicChild from '#MetaMorphicChild/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import HeaderRow from './HeaderRow';
-import { useTableData } from './helpers';
-import Row from './Row';
-import { TableProps } from './types';
-import TableWrapper from './Wrapper';
+import HeaderRow from './HeaderRow/index.js';
+import { useTableData } from './helpers/index.js';
+import Row from './Row/index.js';
+import type { TableProps } from './types.js';
+import TableWrapper from './Wrapper.js';
 
 const Table = ({
 	className: customClassName,
@@ -20,12 +20,11 @@ const Table = ({
 }: TableProps) => {
 	const ref = useRef<HTMLElement>(null);
 	const [visibleTableWidth, setVisibleTableWidth] = useState(0);
-	const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } =
-		useTableData({
-			columnTypes,
-			disableRowSelection,
-			visibleTableWidth,
-		});
+	const { hasShowableColumns, hasVisibleColumns, isLoading, missingProvider, tableInstance } = useTableData({
+		columnTypes,
+		disableRowSelection,
+		visibleTableWidth,
+	});
 	const {
 		colors,
 		components: {
@@ -139,9 +138,7 @@ const Table = ({
 			{...themeTableWrapperProps}
 		>
 			{missingProvider ? (
-				<MessageContainer>
-					This table is missing its {missingProvider || 'context'} provider.
-				</MessageContainer>
+				<MessageContainer>This table is missing its {missingProvider || 'context'} provider.</MessageContainer>
 			) : // ) : isLoading ? (
 			// 	hideLoader ? null : (
 			// 		<Spinner
@@ -167,8 +164,7 @@ const Table = ({
 									themeHeaderGroupCSS,
 									css`
 										background: ${themeHeaderGroupBackground};
-										border: ${themeHeaderGroupBorderColor &&
-										`1px solid ${themeHeaderGroupBorderColor}`};
+										border: ${themeHeaderGroupBorderColor && `1px solid ${themeHeaderGroupBorderColor}`};
 										margin: ${themeHeaderGroupMargin};
 										overflow: ${themeHeaderGroupOverflow};
 										position: ${themeHeaderGroupPosition};
@@ -190,8 +186,7 @@ const Table = ({
 									themeTableBodyCSS,
 									css`
 										background: ${themeTableBodyBackground};
-										border: ${themeTableBodyBorderColor &&
-										`1px solid ${themeTableBodyBorderColor}`};
+										border: ${themeTableBodyBorderColor && `1px solid ${themeTableBodyBorderColor}`};
 										margin: ${themeTableBodyMargin};
 										overflow: ${themeTableBodyOverflow};
 										position: ${themeTableBodyPosition};
@@ -199,7 +194,12 @@ const Table = ({
 								]}
 							>
 								{hasVisibleRows ? (
-									rows.map((row) => <Row key={row.id} {...row} />)
+									rows.map((row) => (
+										<Row
+											key={row.id}
+											{...row}
+										/>
+									))
 								) : (
 									// Reuse Row + Cell to display "no data" message
 									<Row />

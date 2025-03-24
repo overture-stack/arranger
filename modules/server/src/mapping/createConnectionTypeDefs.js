@@ -1,4 +1,4 @@
-import mappingToAggsType from './mappingToAggsType';
+import mappingToAggsType from './mappingToAggsType.js';
 
 export default ({ type, fields = '', createStateTypeDefs = true }) => {
 	return `

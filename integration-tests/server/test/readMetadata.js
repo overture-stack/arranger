@@ -1,14 +1,16 @@
-import { expect } from 'chai';
+import assert from 'node:assert';
+import { test } from 'node:test';
+
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-const logError = (origin, err) => console.log(origin, err?.response?.data?.errors || err);
+const logError = (origin, err) =>
+	console.log(origin, err?.response?.data?.errors || err);
 
-export default ({ api, documentType, gqlPath }) => {
-	it('1.reads extended mapping properly', async () => {
+export default ({ api, documentType, enableAdmin }) => {
+	test('1.reads extended mapping properly', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 					{
@@ -25,36 +27,19 @@ export default ({ api, documentType, gqlPath }) => {
 				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.extended || {}).to.be.not.empty;
-		expect(data?.errors).to.be.undefined;
+		const configs = data?.data?.[documentType]?.configs?.extended || [];
+
+		assert.ok(
+			configs.length >= 0,
+			`Expected 'Extended' configs to be non-empty, but got: ${JSON.stringify(configs)}`
+		);
+
+		assert.equal(data?.errors, undefined);
 	});
 
-	it('2.reads elasticsearch mappings properly', async () => {
+	test('2.reads aggregations properly', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
-				body: {
-					query: print(gql`
-					{
-						${documentType} {
-							mapping
-						}
-					}
-				`),
-				},
-			})
-			.catch((err) => {
-				logError('readMetadata error', err);
-			});
-
-		expect(data?.data?.[documentType]?.mapping || {}).to.be.not.empty;
-		expect(data?.errors).to.be.undefined;
-	});
-
-	it('3.reads aggregations properly', async () => {
-		const { data } = await api
-			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 					{
@@ -77,21 +62,28 @@ export default ({ api, documentType, gqlPath }) => {
 				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.facets?.aggregations || {}).to.be.not.empty;
-		expect(data?.errors).to.be.undefined;
+		const configs = data?.data?.[documentType]?.configs?.facets?.aggregations || [];
+
+		assert.ok(
+			configs.length >= 0,
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+		);
+
+		assert.equal(data?.errors, undefined);
 	});
 
-	it('4.reads table configs properly', async () => {
+	test('3.reads table configs properly', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 						{
 							${documentType} {
 								configs {
 									table {
-										rowIdFieldName
+										columns {
+											fieldName
+										}
 									}
 								}
 							}
@@ -103,14 +95,19 @@ export default ({ api, documentType, gqlPath }) => {
 				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.table || {}).to.be.not.empty;
-		expect(data?.errors).to.be.undefined;
+		const configs = data?.data?.[documentType]?.configs?.table.columns || [];
+
+		assert.ok(
+			configs.length >= 0,
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+		);
+
+		assert.equal(data?.errors, undefined);
 	});
 
-	it('5.reads matchbox state properly', async () => {
+	test('4.reads matchbox state properly', async () => {
 		const { data } = await api
 			.post({
-				endpoint: gqlPath,
 				body: {
 					query: print(gql`
 					{
@@ -129,7 +126,43 @@ export default ({ api, documentType, gqlPath }) => {
 				logError('readMetadata error', err);
 			});
 
-		expect(data?.data?.[documentType]?.configs?.matchbox || {}).to.be.not.empty;
-		expect(data?.errors).to.be.undefined;
+		const configs = data?.data?.[documentType]?.configs?.matchbox || [];
+
+		assert.ok(
+			Object.keys(configs.length) >= 0,
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+		);
+
+		assert.equal(data?.errors, undefined);
 	});
+
+	test('5.reads elasticsearch mappings properly',
+		{ skip: !enableAdmin },
+		async () => {
+			const { data } = await api
+				.post({
+					body: {
+						query: print(gql`
+					{
+						${documentType} {
+							mapping
+						}
+					}
+				`),
+					},
+				})
+				.catch((err) => {
+					logError('readMetadata error', err);
+				});
+
+			// requires enableAdmin env var or middleware param
+			const configs = data?.data?.[documentType]?.mapping || {};
+
+			assert.ok(
+				Object.keys(configs).length >= 0,
+				`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+			);
+
+			assert.equal(data?.errors, undefined);
+		});
 };

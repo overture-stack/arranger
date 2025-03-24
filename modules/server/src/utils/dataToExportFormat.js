@@ -1,11 +1,9 @@
 import { format, isValid, parseISO } from 'date-fns';
-import jsonPath from 'jsonpath';
-import { flatten, get, isNil } from 'lodash';
+import { JSONPath } from 'jsonpath-plus';
+import { flatten, find, get, isNil } from 'lodash-es';
 import through2 from 'through2';
 
-import { ENV_CONFIG } from '@/config';
-
-const { DEBUG_MODE } = ENV_CONFIG;
+import { ENV_CONFIG } from '#config/index.js';
 
 const STANDARD_DATE = 'yyyy-MM-dd';
 
@@ -26,19 +24,20 @@ const dateHandler = (value, { dateFormat: formatInput }) => {
 			return format(parseInt(value, 10), dateFormat);
 
 		default: {
-			DEBUG_MODE && console.error('unhandled "date"', value, dateFormat);
+			ENV_CONFIG.DEBUG_MODE &&
+				console.error('unhandled "date" in dataToExportFormat/dateHandler', value, dateFormat);
 			return value;
 		}
 	}
 };
 
-const getAllValue = (data) => {
-	if (typeof data === 'object') {
-		return Object.values(data || {})
-			.map(getAllValue)
+const getAllValues = (item) => {
+	if (typeof item === 'object' && !Array.isArray(item)) {
+		return Object.values(item || {})
+			.map(getAllValues)
 			.reduce((a, b) => a.concat(b), []);
 	} else {
-		return data;
+		return item;
 	}
 };
 
@@ -64,44 +63,68 @@ const getValue = (row, column) => {
 	};
 
 	if (column.jsonPath) {
-		return jsonPath
-			.query(row, column.jsonPath.split('.hits.edges[*].node.').join('[*].'))
-			.map(getAllValue)
+		const pathChunks = column.jsonPath.split('.hits.edges[*].node.');
+		const entryPoint = pathChunks[0]?.replace('$.', '');
+		const nestedRows = JSONPath({
+			json: find(row, entryPoint) || row,
+			path: pathChunks.join('[*].')
+		});
+		const valuesList = nestedRows
+			.map(getAllValues)
 			.reduce((a, b) => a.concat(b), [])
 			.map(valueFromExtended)
 			.join(', ');
+
+		return valuesList;
 	} else if (column.accessor) {
-		return valueFromExtended(get(row, column.accessor));
-	} else {
-		return '';
+		const easyValue = get(row, column.accessor);
+
+		if (easyValue !== undefined) {
+			return valueFromExtended(easyValue);
+		}
+
+		const deepValueObj = find(row, column.accessor);
+		if (deepValueObj?.[column.accessor]) {
+			return valueFromExtended(deepValueObj[column.accessor]);
+		}
 	}
+
+	return '';
 };
 
 const getRows = (args) => {
-	const { row, data = row, paths, pathIndex = 0, columns, entities = [] } = args;
-	if (pathIndex >= paths.length - 1) {
-		return [
-			columns.map((column) => {
-				const entity = entities
-					.slice()
-					.reverse()
-					.find((entity) => column.fieldName.indexOf(entity.fieldName) === 0);
+	const { row, data = row, paths, pathIndex = 0, columns, entities = [], beep } = args;
 
-				if (entity) {
-					return getValue(entity.data, {
-						...column,
-						jsonPath: column.fieldName.replace(`${entity.path.join('.')}.`, ''),
-					});
-				} else {
-					return getValue(row, column);
-				}
-			}),
-		];
+	if (pathIndex >= paths.length - 1) {
+		const rows = columns.map((column) => {
+			const entity = entities
+				.slice()
+				.reverse()
+				.find((entity) => column.fieldName.includes(entity.fieldName));
+
+			if (entity) {
+				const newColumn = {
+					...column,
+					jsonPath: null,
+					accessor: column.fieldName.replace(`${entity.path.join('.')}.`, ''),
+				};
+
+				const value = getValue(entity.data, newColumn);
+
+				return value;
+			} else {
+				return getValue(row, column);
+			}
+		});
+
+		return [rows];
 	} else {
 		const currentPath = paths[pathIndex];
-		return flatten(
-			(get(data, currentPath) || []).map((node) => {
-				return getRows({
+		const rows = get(data, currentPath) || find(data, currentPath)?.[currentPath] || [];
+
+		const rowsToFlatten = rows.map(
+			(node) => {
+				const aRow = getRows({
 					...args,
 					data: node,
 					pathIndex: pathIndex + 1,
@@ -109,26 +132,59 @@ const getRows = (args) => {
 						...entities,
 						{
 							path: paths.slice(0, pathIndex + 1),
-							field: paths.slice(0, pathIndex + 1).join(''),
+							fieldName: paths.slice(0, pathIndex + 1).join(''),
 							// TODO: don't assume hits.edges.node.
 							// .replace(/(\.hits.edges(node)?)/g, ''),
 							data: node,
 						},
 					],
 				});
-			}),
-		);
+
+				return aRow;
+			});
+
+		return flatten(rowsToFlatten);
 	}
 };
 
+const rowToTSV = ({ row, valueWhenEmpty }) => {
+	const rowValues = row
+		.map((value) => {
+			// replaces empty values with a custom entity
+			return value || valueWhenEmpty;
+		})
+		.join('\t');
+
+	return rowValues;
+};
+
+const pushToStream = (line, stream) => {
+	stream.push(`${line}\n`);
+};
+
+const transformData = ({
+	data: { hits },
+	uniqueBy,
+	columns,
+	valueWhenEmpty,
+	dataTransformer,
+	pipe,
+}) =>
+	hits
+		.map((row) =>
+			dataTransformer({ row, uniqueBy, columns, valueWhenEmpty })
+		)
+		.forEach((transformedRow) =>
+			pushToStream(transformedRow, pipe)
+		);
+
 export const columnsToHeader = ({ columns, extendedFieldsDict, fileType = 'tsv' }) => {
 	const columnHeaders = columns.reduce((output, { accessor, displayName, fieldName, Header }) => {
-		const fieldDefaultExtendedDetails = extendedFieldsDict[fieldName || accessor];
+		const fieldDefaultExtendedDetails = extendedFieldsDict?.[fieldName || accessor];
 
 		return {
 			...output,
-			[fieldName || accessor]:
-				displayName || Header || fieldDefaultExtendedDetails?.displayName || fieldName,
+			[fieldName || accessor]: displayName || Header || fieldDefaultExtendedDetails?.displayName || fieldName,
 		};
 	}, {});
 
@@ -146,8 +202,19 @@ export const columnsToHeader = ({ columns, extendedFieldsDict, fileType = 'tsv' 
 	}
 };
 
-const pushToStream = (line, stream) => {
-	stream.push(`${line}\n`);
+const transformDataToTSV = ({ row, uniqueBy = '', columns, valueWhenEmpty }) => {
+	const rows = getRows({
+		columns,
+		valueWhenEmpty,
+		paths: uniqueBy.split('.hits.edges[].node.').filter(Boolean),
+		row,
+	});
+
+	const tsvRows = rows.map((r) =>
+		rowToTSV({ row: r, valueWhenEmpty })
+	);
+
+	return tsvRows;
 };
 
 export const dataToTSV = ({ columns, extendedFieldsDict, isFirst, pipe, ...args }) => {
@@ -163,6 +230,82 @@ export const dataToTSV = ({ columns, extendedFieldsDict, isFirst, pipe, ...args 
 		...args,
 		dataTransformer: transformDataToTSV,
 	});
+
+	// ends the stream
+	pipe.end?.() || pipe.push(null);
+};
+
+
+/*
+example args:
+{ row:                                                                                                                                         [250/1767]
+   { name: 'HCM-dddd-0000-C00',                                                                                                                               
+	 type: '2-D: Conditionally reprogrammed cells',                                                                                                           
+	 growth_rate: 5,                                                                                                                                          
+	 files: [],
+	 clinical_diagnosis: { clinical_tumor_diagnosis: 'Colorectal cancer' },
+	 variants: [ [Object], [Object], [Object] ]
+	},
+  paths: [],
+  columns:
+   [ { fieldName: 'name',
+	   accessor: 'name',
+	   show: true,
+	   type: 'entity',
+	   sortable: true,
+	   canChangeShow: true,
+	   query: null,
+	   jsonPath: null,
+	   Header: 'Name',
+	   extendedType: 'keyword',
+	   extendedDisplayValues: {},
+	   hasCustomType: true,
+	   minWidth: 140 },
+	   { fieldName: 'split_ratio',
+	   accessor: 'split_ratio',
+	   show: true,
+	   type: 'string',
+	   sortable: true,
+	   canChangeShow: true,
+	   query: null,
+	   jsonPath: null,
+	   Header: 'Split Ratio',
+	   extendedType: 'keyword',
+	   extendedDisplayValues: {},
+	   hasCustomType: false } ],
+  valueWhenEmpty: '--' }
+*/
+const rowToJSON = ({
+	row,
+	data = row,
+	paths,
+	pathIndex = 0,
+	columns,
+	valueWhenEmpty,
+	entities = []
+}) => {
+	return (columns || [])
+		.filter((col) => col.show)
+		.reduce((output, col) => {
+			output[[col.accessor]] = row[col.accessor] || valueWhenEmpty;
+			return output;
+		}, {});
+};
+
+const transformDataToJSON = ({ row, uniqueBy, columns, valueWhenEmpty }) => {
+	try {
+		const jsonRow = rowToJSON({
+			columns,
+			valueWhenEmpty,
+			paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
+			row,
+		});
+
+		return JSON.stringify(jsonRow);
+	} catch (err) {
+		ENV_CONFIG.DEBUG_MODE &&
+			console.error('unhandled JSON in dataToExportFormat/transformDataToJSON', err, row);
+	}
 };
 
 /**
@@ -188,113 +331,18 @@ export const dataToJSON = ({ isFirst, pipe, columns, ...args }) => {
 	});
 };
 
-const transformData = ({
-	data: { hits, total },
-	data,
-	index,
-	uniqueBy,
-	columns,
-	valueWhenEmpty,
-	dataTransformer,
-	pipe,
-}) => {
-	hits
-		.map((row) => dataTransformer({ row, uniqueBy, columns, valueWhenEmpty }))
-		.forEach((transformedRow) => {
-			pushToStream(transformedRow, pipe);
-		});
-};
-
-const rowToTSV = ({ row, valueWhenEmpty }) => row.map((r) => r || valueWhenEmpty).join('\t');
-
-const transformDataToTSV = ({ row, uniqueBy, columns, valueWhenEmpty }) => {
-	return getRows({
-		columns,
-		valueWhenEmpty,
-		paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
-		row,
-	}).map((r) => rowToTSV({ row: r, valueWhenEmpty }));
-};
-
-/*
-example args:
-{ row:                                                                                                                                         [250/1767]
-   { name: 'HCM-dddd-0000-C00',                                                                                                                               
-     type: '2-D: Conditionally reprogrammed cells',                                                                                                           
-     growth_rate: 5,                                                                                                                                          
-     files: [],
-     clinical_diagnosis: { clinical_tumor_diagnosis: 'Colorectal cancer' },
-     variants: [ [Object], [Object], [Object] ]
-    },
-  paths: [],
-  columns:
-   [ { fieldName: 'name',
-       accessor: 'name',
-       show: true,
-       type: 'entity',
-       sortable: true,
-       canChangeShow: true,
-       query: null,
-       jsonPath: null,
-       Header: 'Name',
-       extendedType: 'keyword',
-       extendedDisplayValues: {},
-       hasCustomType: true,
-       minWidth: 140 },
-       { fieldName: 'split_ratio',
-       accessor: 'split_ratio',
-       show: true,
-       type: 'string',
-       sortable: true,
-       canChangeShow: true,
-       query: null,
-       jsonPath: null,
-       Header: 'Split Ratio',
-       extendedType: 'keyword',
-       extendedDisplayValues: {},
-       hasCustomType: false } ],
-  valueWhenEmpty: '--' }
-*/
-const rowToJSON = (args) => {
-	const { row, data = row, paths, pathIndex = 0, columns, valueWhenEmpty, entities = [] } = args;
-	return (columns || [])
-		.filter((col) => col.show)
-		.reduce((output, col) => {
-			output[[col.accessor]] = row[col.accessor] || valueWhenEmpty;
-			return output;
-		}, {});
-};
-
-const transformDataToJSON = ({ row, uniqueBy, columns, valueWhenEmpty }) => {
-	return JSON.stringify(
-		rowToJSON({
-			columns,
-			valueWhenEmpty,
-			paths: (uniqueBy || '').split('.hits.edges[].node.').filter(Boolean),
-			row,
-		}),
-	);
-};
-
 const dataToStream = ({ fileType = 'tsv', ...args }) => {
-	// transform and stream data
-	if (fileType === 'tsv') {
-		dataToTSV(args);
-	} else if (fileType === 'json') {
-		dataToJSON(args);
-	} else {
-		throw new Error('Unsupported file type specified for export.');
+	switch (fileType) {
+		case 'json':
+			return dataToJSON(args);
+		case 'tsv':
+			return dataToTSV(args);
+		default:
+			throw new Error('Unsupported file type specified for export.');
 	}
 };
 
-export default ({
-	columns,
-	ctx = {},
-	fileType = 'tsv',
-	index,
-	uniqueBy,
-	valueWhenEmpty = '--',
-}) => {
+export default ({ columns, ctx = {}, fileType = 'tsv', index, uniqueBy, valueWhenEmpty = '--' }) => {
 	let isFirst = true;
 	let chunkCounts = 0;
 
@@ -308,7 +356,8 @@ export default ({
 		) || {};
 
 	return through2.obj(function ({ hits, total }, enc, callback) {
-		DEBUG_MODE && console.time(`esHitsToTsv_${chunkCounts}`);
+		ENV_CONFIG.DEBUG_MODE && console.time(`esHitsToTsv_${chunkCounts}`);
+
 		const outputStream = this;
 		const args = {
 			columns,
@@ -329,7 +378,9 @@ export default ({
 		}
 
 		callback();
-		DEBUG_MODE && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+
+		ENV_CONFIG.DEBUG_MODE && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+
 		chunkCounts++;
 	});
 };

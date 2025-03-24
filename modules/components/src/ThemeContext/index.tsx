@@ -1,21 +1,21 @@
+import { isEqual, omit } from 'lodash-es';
 import {
-	ComponentType,
+	type ComponentType,
 	createContext,
-	ReactElement,
+	type ReactElement,
 	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
 	useState,
 } from 'react';
-import { isEqual, omit } from 'lodash';
 
-import getComponentDisplayName from '@/utils/getComponentDisplayName';
-import missingProviderHandler from '@/utils/missingProvider';
-import noopFn, { emptyObj } from '@/utils/noops';
+import getComponentDisplayName from '#utils/getComponentDisplayName.js';
+import missingProviderHandler from '#utils/missingProvider.js';
+import noopFn, { emptyObj } from '#utils/noops.js';
 
-import arrangerBaseTheme from './baseTheme';
-import {
+import arrangerBaseTheme from './baseTheme/index.js';
+import type {
 	BaseThemeInterface,
 	CustomThemeType,
 	ThemeAggregatorFn,
@@ -25,8 +25,8 @@ import {
 	ThemeProviderProps,
 	UseThemeContextProps,
 	WithThemeProps,
-} from './types';
-import { isProviderNested, mergeThemes } from './utils';
+} from './types/index.js';
+import { isProviderNested, mergeThemes } from './utils.js';
 
 export const ThemeContext = createContext<ThemeContextInterface<ThemeOptions>>({
 	missingProvider: 'ThemeContext',
@@ -41,9 +41,7 @@ export const useThemeContext = (customTheme: UseThemeContextProps = emptyObj): T
 	const { aggregateTheme = noopFn, missingProvider, theme } = useContext(ThemeContext);
 
 	useEffect(() => {
-		aggregateTheme(
-			typeof customTheme === 'function' ? customTheme : omit(customTheme, 'callerName'),
-		);
+		aggregateTheme(typeof customTheme === 'function' ? customTheme : omit(customTheme, 'callerName'));
 	}, [aggregateTheme, customTheme, theme]);
 
 	missingProvider && missingProviderHandler(ThemeContext.displayName, customTheme.callerName);
@@ -97,11 +95,10 @@ export const ThemeProvider = <Theme extends BaseThemeInterface>({
 
 /** HOC for theme access
  * @param {ComponentType} Component the component you want to provide Arranger data to.
- * @returns {Theme} theme object
  */
-export const withTheme = <Props extends object>(Component: ComponentType<Props>) => {
+export const withTheme = <Props extends JSX.IntrinsicAttributes>(Component: ComponentType) => {
 	const callerName = getComponentDisplayName(Component);
-	const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps<ThemeOptions>) => {
+	const ThemedComponent = ({ theme: customTheme, ...props }: WithThemeProps<ThemeOptions> & Props) => {
 		if (typeof customTheme === 'function') {
 			(customTheme as ThemeProcessorFn).callerName = callerName;
 		}
@@ -110,7 +107,7 @@ export const withTheme = <Props extends object>(Component: ComponentType<Props>)
 		const themedProps = {
 			...props,
 			theme,
-		} as Props;
+		};
 
 		return <Component {...themedProps} />;
 	};
@@ -125,5 +122,5 @@ if (process.env.NODE_ENV === 'development') {
 	ThemeProvider.displayName = 'ArrangerThemeProvider';
 }
 
-export * as arrangerTheme from './baseTheme';
-export * as themeUtils from './utils';
+export * as arrangerTheme from './baseTheme/index.js';
+export * as themeUtils from './utils.js';

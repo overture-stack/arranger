@@ -1,5 +1,5 @@
-import { ThemeCommon } from '@/ThemeContext/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export interface InputThemeProps
 	extends ThemeCommon.BoxModelProperties,

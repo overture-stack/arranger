@@ -1,13 +1,13 @@
-import { createRef, ForwardedRef, forwardRef, MouseEventHandler } from 'react';
-import styled from '@emotion/styled';
 import isPropValid from '@emotion/is-prop-valid';
+import styled from '@emotion/styled';
 import Color from 'color';
+import { createRef, type ForwardedRef, forwardRef, type MouseEventHandler } from 'react';
 
-import { useThemeContext } from '@/ThemeContext';
-import { withTooltip } from '@/Tooltip';
-import noopFn, { emptyObj } from '@/utils/noops';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { withTooltip } from '#Tooltip/index.js';
+import noopFn, { emptyObj } from '#utils/noops.js';
 
-import ButtonProps from './types';
+import type { ButtonProps } from './types.js';
 
 const BaseButton = withTooltip(styled('button', {
 	shouldForwardProp: isPropValid,
@@ -44,8 +44,7 @@ const BaseButton = withTooltip(styled('button', {
 	&.disabled,
 	&:disabled {
 		background: ${({ theme: { disabledBackground } }) => disabledBackground};
-		border: ${({ theme: { disabledBorderColor } }) =>
-			disabledBorderColor && `0.08rem solid ${disabledBorderColor}`};
+		border: ${({ theme: { disabledBorderColor } }) => disabledBorderColor && `0.08rem solid ${disabledBorderColor}`};
 		color: ${({ theme: { disabledFontColor } }) => disabledFontColor};
 		cursor: not-allowed;
 	}
@@ -142,8 +141,7 @@ const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 	&:focus,
 	&:hover {
 		color: ${({ theme: { hoverFontColor, fontColor } }) =>
-			hoverFontColor ||
-			(fontColor && fontColor !== 'inherit' && Color(fontColor).lighten(0.3).string())};
+			hoverFontColor || (fontColor && fontColor !== 'inherit' && Color(fontColor).lighten(0.3).string())};
 	}
 `;
 
@@ -154,14 +152,7 @@ export const TransparentButton = ({
 }: {
 	onClick?: MouseEventHandler<HTMLButtonElement>;
 } & ButtonProps) => {
-	return (
-		<TransparentButtonBase
-			onClick={propagationStopper(onClick)}
-			css={themeCSS}
-			theme={theme}
-			{...props}
-		/>
-	);
+	return <TransparentButtonBase onClick={propagationStopper(onClick)} css={themeCSS} theme={theme} {...props} />;
 };
 
 export default Button;

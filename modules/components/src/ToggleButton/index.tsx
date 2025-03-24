@@ -1,12 +1,16 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import Button from '@/Button';
-import { useThemeContext } from '@/ThemeContext';
-import noopFn, { emptyObj } from '@/utils/noops';
+import Button from '#Button/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import noopFn, { emptyObj } from '#utils/noops.js';
 
-import Props from './types';
+import type Props from './types.js';
 
+// TODO: temprorarily quieting down TS errors to help migration
+/**
+ * @param {*} props
+ */
 const ToggleButton = ({
 	className,
 	onChange = noopFn,
@@ -137,9 +141,7 @@ const ToggleButton = ({
 						key={value || `undefined-${index}`}
 						onClick={clickHandler}
 					>
-						{typeof title === 'function'
-							? title({ toggleStatus: cx({ active, disabled }) })
-							: title}
+						{typeof title === 'function' ? title({ toggleStatus: cx({ active, disabled }) }) : title}
 					</Button>
 				);
 			})}

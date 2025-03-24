@@ -1,7 +1,7 @@
-import { ElementType, PropsWithChildren } from 'react';
+import type { ElementType, PropsWithChildren } from 'react';
 
-import { ThemeCommon } from '@/ThemeContext/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export interface LoaderThemeProps extends ThemeCommon.CustomCSS {
 	color: string;
@@ -15,9 +15,7 @@ export interface LoaderProps extends PropsWithChildren, ThemeCommon.CustomCSS {
 	theme?: RecursivePartial<LoaderThemeProps>;
 }
 
-export interface LoaderContainerThemeProps
-	extends ThemeCommon.NonButtonThemeProps,
-		LoaderThemeProps {
+export interface LoaderContainerThemeProps extends ThemeCommon.NonButtonThemeProps, LoaderThemeProps {
 	disabled?: boolean;
 }
 
@@ -27,9 +25,7 @@ export interface LoaderContainerProps extends PropsWithChildren, ThemeCommon.Cus
 	theme?: RecursivePartial<Omit<LoaderContainerThemeProps, 'disabled'>>;
 }
 
-export interface LoaderOverlayThemeProps
-	extends ThemeCommon.NonButtonThemeProps,
-		LoaderThemeProps {}
+export interface LoaderOverlayThemeProps extends ThemeCommon.NonButtonThemeProps, LoaderThemeProps {}
 
 export interface LoaderOverlayProps extends ThemeCommon.CustomCSS {
 	theme?: RecursivePartial<LoaderOverlayThemeProps>;

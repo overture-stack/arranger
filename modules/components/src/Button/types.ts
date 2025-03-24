@@ -1,8 +1,8 @@
-import { MouseEventHandler, PropsWithChildren, TouchEventHandler } from 'react';
+import type { MouseEventHandler, PropsWithChildren, TouchEventHandler } from 'react';
 
-import { ThemeCommon } from '@/ThemeContext/types';
-import { TooltipThemeProperties } from '@/Tooltip/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { TooltipThemeProperties } from '#Tooltip/types.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 export type ButtonCustomProps = ThemeCommon.MouseEventProperties & ThemeCommon.CustomCSS;
 
@@ -27,10 +27,9 @@ export interface MouseEventProps {
 export type ThemedButtonProps = ButtonCustomProps & ButtonThemeProps;
 
 // To be used in components.
-type ButtonProps = PropsWithChildren<
+export type ButtonProps = PropsWithChildren<
 	Partial<MouseEventProps> &
 		Partial<ButtonCustomProps> & {
 			theme?: RecursivePartial<ButtonThemeProps>;
 		}
 >;
-export default ButtonProps;

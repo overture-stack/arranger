@@ -1,1 +1,1 @@
-export { default } from './ColumnsSelectButton';
+export { default } from './ColumnsSelectButton.js';

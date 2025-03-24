@@ -1,4 +1,4 @@
-// TODO1: Add "descriptions" for the fields. Could use the comments in '@/mapping/extendMapping'
+// TODO1: Add "descriptions" for the fields. Could use the comments in '#mapping/extendMapping'
 // TODO2: these "as const" can be removed with TS v5
 
 const FacetsConfigTypeDefs = `
@@ -17,7 +17,7 @@ const FacetsConfigTypeDefs = `
   type FacetsConfig {
     aggregations: [AggregationMapping]
   }
-` as const;
+`;
 
 const TableConfigTypeDefs = `
   type ColumnMapping {
@@ -51,14 +51,14 @@ const TableConfigTypeDefs = `
     maxResultsWindow: Int
     rowIdFieldName: String
   }
-` as const;
+`;
 
 const DownloadsConfigTypeDefs = `
   type DownloadsConfig {
     allowCustomMaxRows: Boolean
     maxRows: Int
   }
-` as const;
+`;
 
 const MatchBoxConfigTypeDefs = `
   type MatchBoxMapping {
@@ -68,7 +68,7 @@ const MatchBoxConfigTypeDefs = `
     keyFieldName: String
     searchFieldNames: [String]
   }
-` as const;
+`;
 
 export default `
   ${DownloadsConfigTypeDefs}
@@ -88,4 +88,4 @@ export default `
     downloads: DownloadsConfig
     extended(fieldNames: [String]): JSON
   }
-` as const;
+`;

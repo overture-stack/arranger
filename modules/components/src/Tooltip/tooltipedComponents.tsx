@@ -1,14 +1,14 @@
-import { ComponentType } from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import styled from '@emotion/styled';
+import type { ComponentType } from 'react';
 
-import StyledTooltip from './StyledTooltip';
+import StyledTooltip from './StyledTooltip.js';
 
 const withTooltip = <Props extends object>(Component: ComponentType<Props>) => {
 	return StyledTooltip.withComponent(Component);
 };
 
-type HTMLElementTagNames = keyof HTMLElementTagNameMap;
+type HTMLElementTagNames = keyof JSX.IntrinsicElements;
 
 const addTooltip = (element: HTMLElementTagNames) =>
 	withTooltip(

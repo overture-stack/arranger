@@ -3,6 +3,6 @@ src/
 stories/
 .storybook/
 
-.babelrc
 .env*
-.eslintrc*
+.gitignore
+*config.js*

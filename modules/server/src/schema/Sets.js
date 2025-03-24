@@ -1,4 +1,4 @@
-export let typeDefs = `
+export const typeDefs = `
   type Set {
     setId: String
     createdAt: Date

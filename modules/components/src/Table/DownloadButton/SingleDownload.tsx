@@ -1,7 +1,7 @@
-import Button from '@/Button';
-import MetaMorphicChild from '@/MetaMorphicChild';
+import Button from '#Button/index.js';
+import MetaMorphicChild from '#MetaMorphicChild/index.js';
 
-import { SingleDownloadButtonProps } from './types';
+import type { SingleDownloadButtonProps } from './types.js';
 
 const SingleDownloadButton = ({
 	className,
@@ -11,12 +11,7 @@ const SingleDownloadButton = ({
 	theme,
 }: SingleDownloadButtonProps) => {
 	return (
-		<Button
-			className={className}
-			disabled={disabled || !clickHandler}
-			onClick={clickHandler}
-			theme={theme}
-		>
+		<Button className={className} disabled={disabled || !clickHandler} onClick={clickHandler} theme={theme}>
 			<MetaMorphicChild>{Label}</MetaMorphicChild>
 		</Button>
 	);

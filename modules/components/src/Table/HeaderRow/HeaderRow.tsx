@@ -2,13 +2,13 @@ import { css } from '@emotion/react';
 import { flexRender } from '@tanstack/react-table';
 import cx from 'classnames';
 
-import { TransparentButton } from '@/Button';
-import { useTableContext } from '@/Table/helpers';
-import { SELECTION_COLUMN_ID } from '@/Table/types';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { TransparentButton } from '#Button/index.js';
+import { useTableContext } from '#Table/helpers/index.js';
+import { SELECTION_COLUMN_ID } from '#Table/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { HeaderRowProps } from './type';
+import type { HeaderRowProps } from './type.js';
 
 const TableHeaderRow = ({
 	css: customCSS,
@@ -135,9 +135,7 @@ const TableHeaderRow = ({
 						onClick={handleSorting}
 						title={displayName}
 					>
-						{headerObj.isPlaceholder
-							? null
-							: flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
+						{headerObj.isPlaceholder ? null : flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
 
 						{headerObj.column.getCanResize() && (
 							<TransparentButton

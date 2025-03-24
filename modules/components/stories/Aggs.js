@@ -1,14 +1,14 @@
-import React from 'react';
-import { storiesOf } from '@storybook/react';
+import { Component } from '@reach/component-component';
 import { action } from '@storybook/addon-actions';
-import Component from 'react-component-component';
+import { storiesOf } from '@storybook/react';
 
-import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '../src/Aggs';
-import { inCurrentSQON, currentFieldValue } from '../src/SQONViewer/utils';
-import State from '../src/State';
+import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '#aggregations/index.js';
+import { inCurrentSQON, currentFieldValue } from '#SQONViewer/utils.js';
+import State from '#State.js';
 
-import { themeDecorator } from './decorators';
 import './Aggs.css';
+import { themeDecorator } from './decorators.js';
+
 
 const bolleanAggs = [
 	{
@@ -208,9 +208,7 @@ storiesOf('Aggs', module)
 							<TermAgg
 								key={agg.field}
 								{...agg}
-								handleValueClick={({ generateNextSQON }) =>
-									update({ sqon: generateNextSQON(sqon) })
-								}
+								handleValueClick={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}
 								isActive={(d) =>
 									inCurrentSQON({
 										value: d.value,
@@ -256,9 +254,7 @@ storiesOf('Aggs', module)
 								min: 1529539200125,
 								max: 1529539259913,
 							}}
-							handleDateChange={({ generateNextSQON = () => {} } = {}) =>
-								setState({ sqon: generateNextSQON(sqon) })
-							}
+							handleDateChange={({ generateNextSQON = () => { } } = {}) => setState({ sqon: generateNextSQON(sqon) })}
 							getActiveValue={({ op, fieldName }) =>
 								currentFieldValue({
 									op,
@@ -343,9 +339,7 @@ storiesOf('Aggs', module)
 							<BooleanAgg
 								key={agg.field}
 								{...agg}
-								handleValueClick={({ generateNextSQON }) =>
-									update({ sqon: generateNextSQON(sqon) })
-								}
+								handleValueClick={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}
 								isActive={(d) =>
 									inCurrentSQON({
 										value: d.value,

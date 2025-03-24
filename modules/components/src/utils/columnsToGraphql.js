@@ -19,22 +19,28 @@ export function toQuery(column) {
 // TODO check for field vs fieldName
 
 /**
- * @param {SQONType} [sqon] typescript validation placeholder
- */
+ * @param {Object} props
+ * @param {Object} [props.config]
+ * @param {string} [props.documentType]
+ * @param {string} [props.queryName]
+ * @param {Object[]} [props.sort]
+ * @param {number} [props.first]
+ * @param {number} [props.offset]
+ * @param {import("#DataContext/types.js").SQONType} [props.sqon] typescript validation placeholder
+ *
+*/
 export default function columnsToGraphql({
 	config = {},
 	documentType = 'unknownField',
-	sqon = null,
+	first = 20,
+	offset = 0,
 	queryName = '',
 	sort = [],
-	offset = 0,
-	first = 20,
+	sqon = null,
 }) {
 	const fields = config?.columns
 		?.filter(
-			(column) =>
-				!(column.accessor && column.accessor === config.rowIdFieldName) &&
-				(column.fetch || column.show),
+			(column) => !(column.accessor && column.accessor === config.rowIdFieldName) && (column.fetch || column.show),
 		)
 		.concat(config.rowIdFieldName ? { accessor: config.rowIdFieldName } : [])
 		.map(toQuery)
@@ -71,12 +77,12 @@ export default function columnsToGraphql({
 			score:
 				sort.length > 0
 					? sort
-							.filter((s) => s?.fieldName?.indexOf?.('hits.total') >= 0)
-							.map((s) => {
-								const match = s?.fieldName?.match?.(/((.*)s)\.hits\.total/);
-								return `${match[1]}.${match[2]}_id`;
-							})
-							.join(',')
+						.filter((s) => s?.fieldName?.indexOf?.('hits.total') >= 0)
+						.map((s) => {
+							const match = s?.fieldName?.match?.(/((.*)s)\.hits\.total/);
+							return `${match[1]}.${match[2]}_id`;
+						})
+						.join(',')
 					: null,
 			offset,
 			first,

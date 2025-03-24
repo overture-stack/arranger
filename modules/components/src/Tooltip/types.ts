@@ -1,4 +1,4 @@
-import { Permutations, RecursivePartial } from '@/utils/types';
+import type { Permutations, RecursivePartial } from '#utils/types.js';
 
 // To be used in components.
 export interface TooltipThemeProperties {

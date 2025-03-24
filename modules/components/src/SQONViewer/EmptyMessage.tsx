@@ -1,8 +1,8 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
 const EmptyMessage = ({ className, message }: { className?: string; message: string }) => {
 	const {

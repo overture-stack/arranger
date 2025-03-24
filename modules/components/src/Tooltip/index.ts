@@ -1,4 +1,3 @@
-export { default as StyledTooltip } from './StyledTooltip';
-
-export { default as withTooltip } from './tooltipedComponents';
-export * from './tooltipedComponents';
+export { default as StyledTooltip } from './StyledTooltip.js';
+export { default as withTooltip } from './tooltipedComponents.js';
+export * from './tooltipedComponents.js';

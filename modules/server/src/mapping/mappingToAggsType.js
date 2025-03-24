@@ -1,6 +1,6 @@
-import { flattenDeep } from 'lodash';
+import { flattenDeep } from 'lodash-es';
 
-import esToAggTypeMap from './esToAggTypeMap';
+import esToAggTypeMap from './esToAggTypeMap.js';
 
 // add two underscores after a value if it's truthy (not an empty string)
 // used to create fields representing es paths

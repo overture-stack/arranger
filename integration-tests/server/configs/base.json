@@ -11,7 +11,12 @@
 		]
 	},
 	"table": {
-		"columns": [],
+		"columns": [
+			{
+				"displayName": "Analysys ID",
+				"fieldName": "analysis__analysis_id"
+			}
+		],
 		"rowIdFieldName": "analysis__analysis_id"
 	},
 	"extended": [],

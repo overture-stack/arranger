@@ -1,16 +1,12 @@
-import { expect, test } from '@jest/globals';
-import {
-	Query,
-	Arranger,
-	Aggregations,
-	SQONViewer,
-	Table,
-} from '@overture-stack/arranger-components';
+import { describe, expect, test } from '@jest/globals';
+import { Query, Aggregations, SQONViewer, Table } from '@overture-stack/arranger-components';
 
-test('1.importing @overture-stack/arranger-components modules', () => {
-	expect(Query).toBeDefined();
-	expect(Arranger).toBeDefined();
-	expect(Aggregations).toBeDefined();
-	expect(SQONViewer).toBeDefined();
-	expect(Table).toBeDefined();
+describe('integration-tests/import', () => {
+	test('1.importing @overture-stack/arranger-components modules', (done) => {
+		expect(Query).toBeDefined();
+		expect(Aggregations).toBeDefined();
+		expect(SQONViewer).toBeDefined();
+		expect(Table).toBeDefined();
+		done();
+	});
 });

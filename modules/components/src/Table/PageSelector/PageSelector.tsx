@@ -1,22 +1,22 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import {
-	ChangeEventHandler,
-	FormEventHandler,
-	MouseEventHandler,
 	useCallback,
 	useEffect,
 	useState,
+	type ChangeEventHandler,
+	type FormEventHandler,
+	type MouseEventHandler,
 } from 'react';
 
-import { TransparentButton } from '@/Button';
-import { useTableContext } from '@/Table/helpers';
-import { useThemeContext } from '@/ThemeContext';
-import { TooltippedForm, TooltippedLI } from '@/Tooltip';
-import { emptyObj } from '@/utils/noops';
-import useDebounce from '@/utils/useDebounce';
+import { TransparentButton } from '#Button/index.js';
+import { useTableContext } from '#Table/helpers/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { TooltippedForm, TooltippedLI } from '#Tooltip/index.js';
+import { emptyObj } from '#utils/noops.js';
+import useDebounce from '#utils/useDebounce.js';
 
-import { PageSelectorProps } from './types';
+import type { PageSelectorProps } from './types.js';
 
 const PageSelector = ({
 	className: customClassName,
@@ -33,10 +33,9 @@ const PageSelector = ({
 	} = emptyObj,
 }: PageSelectorProps) => {
 	const [inputHasError, setInputHasError] = useState(false);
-	const { currentPage, maxPages, maxResultsWindow, setCurrentPage, total, totalPages } =
-		useTableContext({
-			callerName: 'Table - PageSelector',
-		});
+	const { currentPage, maxPages, maxResultsWindow, setCurrentPage, total, totalPages } = useTableContext({
+		callerName: 'Table - PageSelector',
+	});
 
 	const {
 		colors,
@@ -75,10 +74,7 @@ const PageSelector = ({
 	const [currentInput, setCurrentInput] = useState(displayPage?.toString?.());
 	const isInputbeyondRange = lastPage && Number(currentInput) > lastPage; // triggers "too large" tooltip
 
-	const debouncedNewPage = useDebounce(
-		currentInput?.length ? Number(currentInput) : displayPage,
-		1000,
-	);
+	const debouncedNewPage = useDebounce(currentInput?.length ? Number(currentInput) : displayPage, 1000);
 
 	// handles page change requests, and edge cases
 	const attemptToChangePage = useCallback(
@@ -219,9 +215,7 @@ const PageSelector = ({
 								<TooltippedForm
 									onSubmit={handlePageInputSubmit}
 									theme={{
-										tooltipText: isInputbeyondRange
-											? `Page ${lastPage} is the last available`
-											: `Press "Enter" to go`,
+										tooltipText: isInputbeyondRange ? `Page ${lastPage} is the last available` : `Press "Enter" to go`,
 										// either show "enter" instructions on hover, or "too large" regardless of mouse
 										tooltipVisibility: isInputbeyondRange ? 'always' : 'hover',
 									}}
@@ -263,9 +257,7 @@ const PageSelector = ({
 
 					{
 						// do we have more than 1 page?
-						totalPages > 1 && (customShowTotalPages || themeShowTotalPages) && (
-							<span>{`of ${totalPages}`}</span>
-						)
+						totalPages > 1 && (customShowTotalPages || themeShowTotalPages) && <span>{`of ${totalPages}`}</span>
 					}
 				</TooltippedLI>
 

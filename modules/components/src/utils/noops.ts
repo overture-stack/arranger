@@ -1,14 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-export type GenericFn = (..._arg: any) => any;
+import { debugLogs } from './debugging.js';
 
-export const emptyObj = {} as Record<string, any>;
+export type GenericFn = (..._arg: unknown[]) => unknown;
 
-export const emptyArrFn = (..._arg: any): never[] => [];
-export const emptyObjFn = (..._arg: any): Record<string, never> => ({});
-export const emptyStrFn = (..._arg: any): string => '';
+export const emptyArr: unknown[] = [];
+export const emptyObj = {};
 
-const noopFn = (..._arg: any): void => {
-  // do nothing
+export const emptyArrFn = (..._arg: unknown[]): unknown[] => {
+	debugLogs({ caller: 'emptyArrFn', args: _arg });
+	return [];
+};
+export const emptyObjFn = (..._arg: unknown[]): Record<string, unknown> => {
+	debugLogs({ caller: 'emptyObjFn', args: _arg });
+	return {};
+};
+export const emptyStrFn = (..._arg: unknown[]): string => {
+	debugLogs({ caller: 'emptyStrFn', args: _arg });
+	return '';
+};
+
+const noopFn = (..._arg: unknown[]): void => {
+	debugLogs({ caller: 'noopFn', args: _arg });
+	return;
 };
 
 export default noopFn;

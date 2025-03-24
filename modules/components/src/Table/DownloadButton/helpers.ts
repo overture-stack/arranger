@@ -1,86 +1,73 @@
 import { useEffect, useState } from 'react';
 
-import { ColumnMappingInterface } from '@/DataContext/types';
-import download from '@/utils/download';
-import { emptyObj } from '@/utils/noops';
+import type { ColumnMappingInterface } from '#DataContext/types.js';
+import download from '#utils/download.js';
+import { emptyObj } from '#utils/noops.js';
 
-import {
+import type {
 	CustomExporterDetailsInterface,
 	CustomExporterInput,
 	ExporterFileInterface,
 	ExporterFunctionProps,
 	ProcessedExporterDetailsInterface,
 	ProcessedExporterInput,
-} from './types';
+} from './types.js';
 
 const useCustomisers =
 	(extendedColumn?: ColumnMappingInterface) =>
-	([customiserLabel, customiserValue]: [
-		key: string,
-		value: any,
-	]): Partial<ColumnMappingInterface> => {
+	([customiserLabel, customiserValue]: [key: string, value: any]): Partial<ColumnMappingInterface> => {
 		return (
 			customiserValue && {
-				[customiserLabel]:
-					typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
+				[customiserLabel]: typeof customiserValue === 'function' ? customiserValue(extendedColumn) : customiserValue,
 			}
 		);
 	};
 
-export const saveTSV = async ({
-	fileName = '',
-	files = [],
-	options = {},
-	url = '',
-}: ExporterFunctionProps) =>
+export const saveTSV = async ({ fileName = '', files = [], options = {}, url = '' }: ExporterFunctionProps) =>
 	download({
 		url,
 		method: 'POST',
 		...options,
 		params: {
 			fileName,
-			files: files.map(
-				({ allColumnsDict, columns, exporterColumns, ...file }: ExporterFileInterface) => ({
-					...file,
-					columns: exporterColumns // if the component gave you custom columns to show
-						? Object.values(
-								exporterColumns.length > 0 // if they ask for any specific columns
-									? // use them
-									  exporterColumns.map((column) => {
-											switch (typeof column) {
-												// checking if each column is customised
-												case 'object': {
-													const fieldName =
-														typeof column.fieldName === 'function'
-															? column.fieldName?.(column)
-															: column.fieldName;
+			files: files.map(({ allColumnsDict, columns, exporterColumns, ...file }: ExporterFileInterface) => ({
+				...file,
+				columns: exporterColumns // if the component gave you custom columns to show
+					? Object.values(
+							exporterColumns.length > 0 // if they ask for any specific columns
+								? // use them
+									exporterColumns.map((column) => {
+										switch (typeof column) {
+											// checking if each column is customised
+											case 'object': {
+												const fieldName =
+													typeof column.fieldName === 'function' ? column.fieldName?.(column) : column.fieldName;
 
-													const extendedColumn = allColumnsDict[fieldName];
-													const useExtendedCustomisers = useCustomisers(extendedColumn);
+												const extendedColumn = allColumnsDict[fieldName];
+												const useExtendedCustomisers = useCustomisers(extendedColumn);
 
-													return {
-														...extendedColumn,
-														...Object.entries(column).reduce(
-															(customisers, customiser) => ({
-																...customisers,
-																...useExtendedCustomisers(customiser),
-															}),
-															{},
-														),
-													};
-												}
-
-												// or not
-												case 'string':
-												default:
-													return allColumnsDict[column];
+												return {
+													...extendedColumn,
+													...Object.entries(column).reduce(
+														(customisers, customiser) => ({
+															...customisers,
+															...useExtendedCustomisers(customiser),
+														}),
+														{},
+													),
+												};
 											}
-									  })
-									: allColumnsDict, // else, they're asking for all the columns
-						  )
-						: columns?.filter((column) => typeof column === 'object' && column.show), // no custom columns, use admin's
-				}),
-			),
+
+											// or not
+											case 'string':
+											default:
+												return allColumnsDict[column];
+										}
+									})
+								: allColumnsDict, // else, they're asking for all the columns
+						)
+					: columns?.filter((column) => typeof column === 'object' && column.show), // no custom columns, use admin's
+			})),
 			...options.params,
 		},
 	});

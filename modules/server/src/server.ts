@@ -2,11 +2,11 @@ import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
-import { ENV_CONFIG } from './config';
-import { ENABLE_LOGS } from './config/constants';
-import downloadRoutes from './download';
-import getGraphQLRoutes from './graphqlRoutes';
-import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter';
+import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX } from './config/constants.js';
+import { ENV_CONFIG } from './config/index.js';
+import downloadRoutes from './download/index.js';
+import getGraphQLRoutes from './graphqlRoutes.js';
+import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
 const {
 	CONFIG_FILES_PATH,
@@ -56,15 +56,14 @@ const arrangerServer = async ({
 	getServerSideFilter = getDefaultServerSideFilter,
 	graphqlOptions = {},
 	pingPath = PING_PATH,
+	setsIndex = ES_ARRANGER_SET_INDEX,
 } = {}): Promise<Router> => {
 	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
 	const router = Router();
 
 	console.log('------------------------------------');
 	console.log(
-		`\nStarting Arranger server... ${
-			enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'})` : ''
-		}`,
+		`\nStarting Arranger server... ${enableLogs ? `(in ${enableAdmin ? 'ADMIN mode!!' : 'read-only mode.'})` : ''}`,
 	);
 
 	if (enableLogs) {
@@ -87,6 +86,7 @@ const arrangerServer = async ({
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
+		setsIndex,
 	});
 
 	router.use('/', (req, res, next) => {
@@ -101,9 +101,7 @@ const arrangerServer = async ({
 	router.use(`/download`, downloadRoutes({ enableAdmin })); // consumes
 	router.get('/favicon.ico', (req, res) => res.status(204));
 
-	router.get(pingPath, (_req, res) =>
-		res.send({ message: 'Arranger is functioning correctly...' }),
-	);
+	router.get(pingPath, (_req, res) => res.send({ message: 'Arranger is functioning correctly...' }));
 
 	return router;
 };

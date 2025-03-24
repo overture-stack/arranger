@@ -1,10 +1,10 @@
-import createPalette, { colors } from './palette';
-import shape from './shape';
+import createPalette, { colors } from './palette/index.js';
+import shape from './shape.js';
 
 export default {
-  colors,
-  palette: createPalette(),
-  shape,
+	colors,
+	palette: createPalette(),
+	shape,
 };
 
-export * as paletteItems from './palette';
+export * as paletteItems from './palette/index.js';

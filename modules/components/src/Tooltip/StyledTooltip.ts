@@ -1,8 +1,8 @@
+import isPropValid from '@emotion/is-prop-valid';
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
-import isPropValid from '@emotion/is-prop-valid';
 
-import TooltipProps from './types';
+import type TooltipProps from './types.js';
 
 /**
  * @param tooltipVisibilty: Use it to provide conditional display
@@ -10,14 +10,7 @@ import TooltipProps from './types';
 const StyledTooltip = styled('div', {
 	shouldForwardProp: isPropValid,
 })<TooltipProps>`
-	${({
-		theme: {
-			tooltipAlign = 'top',
-			tooltipFontColor = '#333',
-			tooltipText = '',
-			tooltipVisibility = 'hover',
-		},
-	}) => {
+	${({ theme: { tooltipAlign = 'top', tooltipFontColor = '#333', tooltipText = '', tooltipVisibility = 'hover' } }) => {
 		if (tooltipText && typeof tooltipText === 'string') {
 			const isBottom = tooltipAlign.includes('bottom');
 			const isLeft = tooltipAlign.includes('left');
@@ -34,10 +27,10 @@ const StyledTooltip = styled('div', {
 			const arrowBorder = isBottom
 				? 'transparent transparent #d4b943 transparent'
 				: isTop
-				? '#d4b943 transparent transparent transparent'
-				: isLeft
-				? 'transparent transparent transparent #d4b943'
-				: 'transparent #d4b943 transparent transparent'; // isRight
+					? '#d4b943 transparent transparent transparent'
+					: isLeft
+						? 'transparent transparent transparent #d4b943'
+						: 'transparent #d4b943 transparent transparent'; // isRight
 			const arrowX = isBottom || isTop ? '-50%' : isLeft ? '-100%' : '0'; // isRight
 			const arrowY = isTop ? '-0.8rem' : isBottom ? '0.8rem' : 0; // isRight
 
@@ -47,11 +40,11 @@ const StyledTooltip = styled('div', {
 					? isLeft && isLongEnough
 						? 'calc(10px - 95%)'
 						: isRight && isLongEnough
-						? 'calc(-10px - 5%)'
-						: '-50%' // too short or left centred on purpose
+							? 'calc(-10px - 5%)'
+							: '-50%' // too short or left centred on purpose
 					: isLeft
-					? 'calc(-100% - 1.2rem)'
-					: '1.2rem'; // isRight
+						? 'calc(-100% - 1.2rem)'
+						: '1.2rem'; // isRight
 			const boxY = isTop ? 'calc(-15px - 70%)' : isBottom ? 'calc(15px + 70%)' : 0;
 
 			return css`

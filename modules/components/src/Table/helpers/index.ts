@@ -1,19 +1,19 @@
 import {
-	ColumnDef,
 	getCoreRowModel,
-	OnChangeFn,
-	SortingState,
 	useReactTable,
+	type ColumnDef,
+	type OnChangeFn,
+	type SortingState,
 } from '@tanstack/react-table';
-import { get, merge } from 'lodash';
-import { ReactNode, useEffect, useState } from 'react';
+import { get, merge } from 'lodash-es';
+import { type ReactNode, useEffect, useState } from 'react';
 
-import { SELECTION_COLUMN_ID, UseTableDataProps } from '@/Table/types';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { SELECTION_COLUMN_ID, type UseTableDataProps } from '#Table/types.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { makeTableColumns } from './columns';
-import { useTableContext } from './context';
+import { makeTableColumns } from './columns.js';
+import { useTableContext } from './context.js';
 
 export const getSingleValue = (data: Record<string, any> | ReactNode): ReactNode => {
 	if (typeof data === 'object' && data) {
@@ -115,8 +115,7 @@ export const useTableData = ({
 	useEffect(() => {
 		const visibleColumns = Object.values(visibleColumnsDict);
 		const visibleColumnsCount = visibleColumns.length;
-		const actualTableWidth =
-			visibleTableWidth - (allowRowSelection ? defaultSelectionColumnWidth : 0);
+		const actualTableWidth = visibleTableWidth - (allowRowSelection ? defaultSelectionColumnWidth : 0);
 		const columnSize =
 			actualTableWidth <= visibleColumnsCount * defaultColumnWidth
 				? defaultColumnWidth
@@ -166,6 +165,6 @@ export const useTableData = ({
 	return tableDataValues;
 };
 
-export * from './cells';
-export * from './columns';
-export * from './context';
+export * from './cells.js';
+export * from './columns.js';
+export * from './context.js';

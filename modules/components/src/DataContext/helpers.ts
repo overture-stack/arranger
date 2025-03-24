@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import columnsToGraphql from '@/utils/columnsToGraphql';
-import { emptyObj } from '@/utils/noops';
+import columnsToGraphql from '#utils/columnsToGraphql.js';
+import { emptyObj } from '#utils/noops.js';
 
-import {
+import { componentConfigsQuery } from './dataQueries.js';
+import type {
 	APIFetcherFn,
 	ConfigsInterface,
 	ExtendedMappingInterface,
 	FetchDataFn,
 	SQONType,
 	TableConfigsInterface,
-} from './types';
-import { componentConfigsQuery } from './dataQueries';
+} from './types.js';
 
 export const useConfigs = ({
 	apiFetcher,
@@ -24,9 +24,7 @@ export const useConfigs = ({
 	const [isLoading, setIsLoading] = useState(true);
 	const [downloadsConfigs, setDownloadsConfigs] = useState({});
 	const [facetsConfigs, setFacetsConfigs] = useState({});
-	const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(
-		emptyObj as TableConfigsInterface,
-	);
+	const [tableConfigs, setTableConfigs] = useState<TableConfigsInterface>(emptyObj);
 	const [extendedMapping, setExtendedMapping] = useState<ExtendedMappingInterface[]>([]);
 
 	useEffect(() => {
