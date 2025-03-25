@@ -15,8 +15,7 @@
 	},
 	"private": "true",
 	"scripts": {
-		"test": "tsx --test",
-		"testold": "mocha --timeout 240000"
+		"test": "tsx --test"
 	},
 	"type": "module"
 }

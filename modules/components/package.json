@@ -8,7 +8,7 @@
 	},
 	"scripts": {
 		"build": "babel src --copy-files --extensions .tsx,.ts,.js,.jsx --out-dir dist",
-		"build:production": "npm run patchTS && npm run build && npm run declarations -- --project tsconfig.release.json",
+		"build:production": "npm run build && npm run declarations -- --project tsconfig.release.json",
 		"build-storybook": "build-storybook -s ./public",
 		"cleanDist": "rm -rf dist",
 		"dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
@@ -114,5 +114,6 @@
 	"overrides": {
 		"minimist": "^1.2.6"
 	},
-	"type": "module"
+	"type": "module",
+	"version": "0.0.0-dev"
 }

@@ -7,13 +7,13 @@ import resolveAggregations from './resolveAggregations.js';
 import resolveHits from './resolveHits.js';
 
 // TODO: tighten these types
-interface CreateConnectionResolversArgs {
+type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
-}
+};
 type CreateConnectionResolversFn = (args: CreateConnectionResolversArgs) => IResolvers;
 
 const createConnectionResolvers: CreateConnectionResolversFn = ({
