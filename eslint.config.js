@@ -46,6 +46,7 @@ const eslintConfigs = tseslint.config(
 		},
 
 		rules: {
+			'@typescript-eslint/consistent-type-definitions': ['warn', 'type'],
 			'@typescript-eslint/consistent-type-exports': 'warn',
 			'@typescript-eslint/consistent-type-imports': 'warn',
 			'@typescript-eslint/no-empty-interface': [
