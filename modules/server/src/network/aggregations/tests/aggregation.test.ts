@@ -22,12 +22,12 @@ jest.mock('../../index', () => ({
 	ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([['donors_gender', 'Aggregations']]),
 }));
 
-xdescribe('Network aggregation resolution', () => {
+describe.skip('Network aggregation resolution', () => {
 	describe('resolves multiple aggregations into a single aggregation:', () => {
 		beforeEach(() => {
 			jest.resetModules();
 		});
-		it('should resolve multiple Aggregations type fields', () => {
+		it.todo('should resolve multiple Aggregations type fields', () => {
 			console.log(ALL_NETWORK_AGGREGATION_TYPES_MAP);
 			const totalAggs = new AggregationAccumulator({ donors_gender: {} });
 			const aggregationsToResolve = [
@@ -45,7 +45,7 @@ xdescribe('Network aggregation resolution', () => {
 			expect(aggregation.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(unknownCount);
 		});
 
-		it('should resolve multiple NumericAggregations type fields', () => {
+		it.todo('should resolve multiple NumericAggregations type fields', () => {
 			jest.mock('../../index', () => ({
 				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([['donors_weight', 'NumericAggregations']]),
 			}));
@@ -63,7 +63,7 @@ xdescribe('Network aggregation resolution', () => {
 			expect(aggregation.stats).toEqual(expectedStats);
 		});
 
-		it('should resolve a combination of Aggregations and NumericAggregations type fields', () => {
+		it.todo('should resolve a combination of Aggregations and NumericAggregations type fields', () => {
 			jest.mock('../../index', () => ({
 				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([
 					['donors_gender', 'Aggregations'],

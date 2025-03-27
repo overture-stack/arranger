@@ -11,19 +11,11 @@
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { buildSchema } from 'graphql';
 import { createNetworkAggregationTypeDefs } from '../typeDefs/aggregations';
-import {
-	typeDefsA,
-	typeDefsB,
-	typeDefsC,
-	typeDefsD,
-	typeDefsE,
-	typeDefsF,
-	typeDefsG,
-} from './fixtures';
+import { typeDefsA, typeDefsB, typeDefsC, typeDefsD, typeDefsE, typeDefsF, typeDefsG } from './fixtures';
 import { isFieldDefined, isTypeDefined } from './utils';
 
-xdescribe('network aggregation', () => {
-	test('it should have defined GQL Object types', () => {
+describe.skip('network aggregation', () => {
+	test.todo('it should have defined GQL Object types', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
 		console.log('ns', networkSchemas);
 		const s = mergeTypeDefs([buildSchema(typeDefsA), buildSchema(typeDefsB)]);
@@ -37,7 +29,7 @@ xdescribe('network aggregation', () => {
 		expect(isTypeDefined(typeDefs, 'Donor')).toEqual(true);
 	});
 
-	test('it should have defined fields for types', () => {
+	test.todo('it should have defined fields for types', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
 
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
@@ -50,14 +42,13 @@ xdescribe('network aggregation', () => {
 	/**
 	 * Example: multiple remote connections have the same object definition
 	 */
-	test('it should de-dupe ObjectTypeDefinition', () => {
+	test.todo('it should de-dupe ObjectTypeDefinition', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
 
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
 		const numberOfResults = typeDefs.filter(
-			(definition) =>
-				definition.kind === 'ObjectTypeDefinition' && definition.name.value === 'Donor',
+			(definition) => definition.kind === 'ObjectTypeDefinition' && definition.name.value === 'Donor',
 		).length;
 		expect(numberOfResults).toEqual(1);
 	});
@@ -65,19 +56,15 @@ xdescribe('network aggregation', () => {
 	/**
 	 * Example: multiple remote connections have the same field
 	 */
-	test('it should de-dupe FieldDefinition', () => {
+	test.todo('it should de-dupe FieldDefinition', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
 
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
 		const numberOfResults = typeDefs
-			.find(
-				(definition) =>
-					definition.kind === 'ObjectTypeDefinition' && definition.name.value === 'Donor',
-			)
+			.find((definition) => definition.kind === 'ObjectTypeDefinition' && definition.name.value === 'Donor')
 			.fields.filter(
-				(definitions) =>
-					(definitions.kind = 'FieldDefinition' && definitions.name.value === 'gender'),
+				(definitions) => (definitions.kind = 'FieldDefinition' && definitions.name.value === 'gender'),
 			).length;
 
 		expect(numberOfResults).toEqual(1);
@@ -86,7 +73,7 @@ xdescribe('network aggregation', () => {
 	/**
 	 * Example: a remote connection has a typeA but others don't
 	 */
-	test('it should "union" (set operation) typedefs', () => {
+	test.todo('it should "union" (set operation) typedefs', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB)];
 
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
@@ -97,7 +84,7 @@ xdescribe('network aggregation', () => {
 	/**
 	 * Merging more than two schemas
 	 */
-	test('it should merge multiple schemas', () => {
+	test.todo('it should merge multiple schemas', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB), buildSchema(typeDefsC)];
 
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
@@ -116,7 +103,7 @@ xdescribe('network aggregation', () => {
 	/**
 	 * Schemas with no overlapping types
 	 */
-	test('it should merge schemas with no overlapping fields/types', () => {
+	test.todo('it should merge schemas with no overlapping fields/types', () => {
 		const networkSchemas = [buildSchema(typeDefsD), buildSchema(typeDefsE)];
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
@@ -130,7 +117,7 @@ xdescribe('network aggregation', () => {
 	/**
 	 * All types and fields should be present in output schema
 	 */
-	test('it should merge with all types/fields from each schema found in output schema', () => {
+	test.todo('it should merge with all types/fields from each schema found in output schema', () => {
 		const networkSchemas = [buildSchema(typeDefsA), buildSchema(typeDefsB), buildSchema(typeDefsC)];
 		const actualOutput = createNetworkAggregationTypeDefs(networkSchemas);
 		const typeDefs = actualOutput.definitions;
@@ -153,7 +140,7 @@ xdescribe('network aggregation', () => {
 	/***
 	 * Handle type collisions
 	 */
-	test('it should handle type collisions', () => {
+	test.todo('it should handle type collisions', () => {
 		const networkSchemas = [buildSchema(typeDefsF), buildSchema(typeDefsG)];
 		expect(() => createNetworkAggregationTypeDefs(networkSchemas)).toThrow();
 	});
