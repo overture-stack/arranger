@@ -14,7 +14,7 @@
 	},
 	"scripts": {
 		"build": "tsc --build",
-		"build:production": "npm run patchTS && tsc --project tsconfig.release.json",
+		"build:production": "tsc --project tsconfig.release.json",
 		"cleanDist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"start": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
@@ -90,5 +90,6 @@
 		"glob-parent": "^5.1.2",
 		"minimist": "^1.2.6"
 	},
-	"type": "module"
+	"type": "module",
+	"version": "dev"
 }
