@@ -1,11 +1,11 @@
 import axios, { AxiosError } from 'axios';
-import { DocumentNode } from 'graphql';
+import { type DocumentNode } from 'graphql';
 
-import { fetchGql } from '@/network/gql';
-import { type NetworkQueryVariables } from '@/network/resolvers';
-import { CONNECTION_STATUS } from '@/network/resolvers/aggregations';
-import { failure, Result, success } from '@/network/result';
-import { ASTtoString } from '@/network/utils/gql';
+import { fetchGql } from '#network/gql.js';
+import { type NetworkQueryVariables } from '#network/resolvers/index.js';
+import { CONNECTION_STATUS } from '#network/resolvers/aggregations.js';
+import { failure, type Result, success } from '#network/result.js';
+import { ASTtoString } from '#network/utils/gql.js';
 
 type NetworkQuery = {
 	url: string;

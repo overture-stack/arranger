@@ -2,7 +2,7 @@ import getFields from 'graphql-fields';
 
 import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/index.js';
 
-import esSearch from './utils/esSearch';
+import esSearch from './utils/esSearch.js';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
 import { Relation } from './masking.js';
@@ -64,7 +64,7 @@ const getAggregationsResolver = ({
 }) => {
 	const resolver: Resolver<unknown, AggregationsQueryVariables, Promise<AllAggregationsMap>> = async (
 		obj,
-		{ offset = 0, filters, aggregations_filter_themselves, include_missing = true },
+		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,
 		info,
 	) => {

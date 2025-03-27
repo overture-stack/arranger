@@ -1,14 +1,11 @@
-import {
-	type AggregationsQueryVariables,
-	type AllAggregationsMap,
-} from '@/mapping/resolveAggregations';
-import { AggregationAccumulator } from '@/network/aggregations/AggregationAccumulator';
-import { fetchData } from '@/network/resolvers/fetch';
-import { createNetworkQuery } from '@/network/resolvers/query';
-import { failure, isSuccess } from '@/network/result';
-import { type NodeConfig } from '@/network/setup/query';
-import { type Hits } from '@/network/types/hits';
-import { RequestedFieldsMap } from '@/network/utils/gql';
+import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mapping/resolveAggregations.js';
+import { AggregationAccumulator } from '#network/aggregations/AggregationAccumulator.js';
+import { fetchData } from '#network/resolvers/fetch.js';
+import { createNetworkQuery } from '#network/resolvers/query.js';
+import { failure, isSuccess } from '#network/result.js';
+import { type NodeConfig } from '#network/setup/query.js';
+import { type Hits } from '#network/types/hits.js';
+import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
 export const CONNECTION_STATUS = {
 	OK: 'OK',
@@ -52,7 +49,7 @@ export const aggregationPipeline = async (
 						url: config.graphqlUrl,
 						gqlQuery,
 						queryVariables,
-				  })
+					})
 				: failure(CONNECTION_STATUS.ERROR, 'Invalid GQL query');
 
 			const nodeName = config.displayName;

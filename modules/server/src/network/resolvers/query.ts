@@ -1,9 +1,9 @@
 import { gql } from 'apollo-server-core';
-import { DocumentNode } from 'graphql';
+import { type DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash';
 
-import { type NodeConfig } from '@/network/setup/query';
-import { type RequestedFieldsMap } from '@/network/utils/gql';
+import { type NodeConfig } from '#network/setup/query.js';
+import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
 /**
  * Converts info field object into string

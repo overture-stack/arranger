@@ -1,4 +1,4 @@
-import { failure, Result, success } from '@/network/result';
+import { failure, type Result, success } from '#network/result.js';
 import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
 
 /**
@@ -11,6 +11,7 @@ import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
  */
 export const convertToSqon = (filter: unknown): Result<SQON, 'INVALID_SQON', void> => {
 	try {
+		// @ts-expect-error sqon-builder types need update - "@overture-stack/sqon-builder": "^1.1.0"
 		const output = SQONBuilder.from(filter);
 		return success(output);
 	} catch (error: unknown) {

@@ -1,16 +1,16 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { createResolvers } from './resolvers';
-import { SUPPORTED_AGGREGATIONS } from './setup/constants';
-import { normalizeFieldTypes } from './setup/fields';
-import { fetchAllNodeAggregations } from './setup/query';
-import { createTypeDefs } from './typeDefs';
-import { NetworkConfig } from './types/setup';
+
+import { createResolvers } from './resolvers/index.js';
+import { SUPPORTED_AGGREGATIONS } from './setup/constants.js';
+import { normalizeFieldTypes } from './setup/fields.js';
+import { fetchAllNodeAggregations } from './setup/query.js';
+import { createTypeDefs } from './typeDefs/index.js';
+import { type NetworkConfig } from './types/setup.js';
 
 /**
  * Map of all available fields with associated aggregation type
  */
-export const ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> =
-	new Map();
+export const ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORTED_AGGREGATIONS> = new Map();
 
 /**
  * GQL Federated Search schema setup
@@ -23,11 +23,7 @@ export const ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORT
  * @param { networkConfigs }
  * @returns Graphql schema for the network - types and resolvers combined
  */
-export const createSchemaFromNetworkConfig = async ({
-	networkConfigs,
-}: {
-	networkConfigs: NetworkConfig[];
-}) => {
+export const createSchemaFromNetworkConfig = async ({ networkConfigs }: { networkConfigs: NetworkConfig[] }) => {
 	/**
 	 * Fetches meta data from remote Arranger instances
 	 * Adds aggregation fied/type information to networked node configuration
@@ -46,9 +42,7 @@ export const createSchemaFromNetworkConfig = async ({
 	 * Make schema type available for resolvers at query time
 	 * { name: "donor_age", type: "NumericAggregations" }
 	 */
-	aggregationTypes.forEach((field) =>
-		ALL_NETWORK_AGGREGATION_TYPES_MAP.set(field.name, field.type),
-	);
+	aggregationTypes.forEach((field) => ALL_NETWORK_AGGREGATION_TYPES_MAP.set(field.name, field.type));
 
 	/*
 	 * GQL typedef, resolver and schema creation

@@ -1,5 +1,5 @@
-import { SUPPORTED_AGGREGATIONS_LIST, type SupportedAggregation } from '@/network/setup/constants';
-import { type NodeConfig } from '@/network/setup/query';
+import { SUPPORTED_AGGREGATIONS_LIST, type SupportedAggregation } from '#network/setup/constants.js';
+import { type NodeConfig } from '#network/setup/query.js';
 
 type NetworkFieldType<T> = {
 	name: string;
@@ -69,9 +69,7 @@ export const normalizeFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetwork
 	});
 
 	// flatten to single object
-	const allSupportedAggregations = nodeFieldTypes.flatMap(
-		(fieldType) => fieldType.supportedAggregations,
-	);
+	const allSupportedAggregations = nodeFieldTypes.flatMap((fieldType) => fieldType.supportedAggregations);
 
 	/*
 	 * Returns unique fields

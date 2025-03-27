@@ -1,13 +1,10 @@
-import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
-import { Resolver, Root } from '@/gqlServer';
-import { CreateConnectionResolversArgs } from './createConnectionResolvers';
-import { applyAggregationMasking } from './masking';
-import getAggregationsResolver, {
-	AggregationsResolver,
-	aggregationsToGraphql,
-} from './resolveAggregations';
-import resolveHits from './resolveHits';
-import { getHitsFromAggsResolver } from './resolveHitsFromAggs';
+import { ConfigProperties, type ExtendedConfigsInterface } from '#/config/types.js';
+import { type Resolver, type Root } from '#/gqlServer.js';
+import { type CreateConnectionResolversArgs } from './createConnectionResolvers.js';
+import { applyAggregationMasking } from './masking.js';
+import getAggregationsResolver, { type AggregationsResolver, aggregationsToGraphql } from './resolveAggregations.js';
+import resolveHits from './resolveHits.js';
+import { getHitsFromAggsResolver } from './resolveHitsFromAggs.js';
 
 export const createResolvers = ({
 	createStateResolvers,
@@ -26,7 +23,7 @@ export const createResolvers = ({
 			extended: fieldNames
 				? type.extendedFields.filter((extendedField: ExtendedConfigsInterface) =>
 						fieldNames.includes(extendedField.fieldName),
-				  )
+					)
 				: type.extendedFields,
 			...(createStateResolvers && {
 				facets: type.config?.[ConfigProperties.FACETS],

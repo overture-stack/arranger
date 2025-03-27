@@ -1,11 +1,11 @@
-import { type Resolver } from '@/gqlServer';
-import { type AggregationsQueryVariables } from '@/mapping/resolveAggregations';
-import { aggregationPipeline, type NetworkNode } from '@/network/resolvers/aggregations';
-import { createResponse } from '@/network/resolvers/response';
-import { isSuccess } from '@/network/result';
-import { type NodeConfig } from '@/network/setup/query';
-import { resolveInfoToMap } from '@/network/utils/gql';
-import { convertToSqon } from '@/network/utils/sqon';
+import { type Resolver } from '#/gqlServer.js';
+import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
+import { aggregationPipeline, type NetworkNode } from '#network/resolvers/aggregations.js';
+import { createResponse } from '#network/resolvers/response.js';
+import { isSuccess } from '#network/result.js';
+import { type NodeConfig } from '#network/setup/query.js';
+import { resolveInfoToMap } from '#network/utils/gql.js';
+import { convertToSqon } from '#network/utils/sqon.js';
 
 type NetworkSearchRoot = {
 	nodes: NetworkNode[];
@@ -49,11 +49,7 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		/*
 		 * Aggregation pipeline entrypoint
 		 */
-		const { aggregationResults, nodeInfo } = await aggregationPipeline(
-			configs,
-			requestedFieldsMap,
-			queryVariables,
-		);
+		const { aggregationResults, nodeInfo } = await aggregationPipeline(configs, requestedFieldsMap, queryVariables);
 
 		return createResponse({ aggregationResults, nodeInfo });
 	};

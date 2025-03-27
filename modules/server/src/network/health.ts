@@ -1,7 +1,7 @@
 import axios from 'axios';
 import urljoin from 'url-join';
 
-import { CONNECTION_STATUS } from './resolvers/networkNode';
+import { CONNECTION_STATUS } from './resolvers/networkNode.js';
 
 /**
  * Check the status of remote connections

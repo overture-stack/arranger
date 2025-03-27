@@ -1,4 +1,4 @@
-import { DocumentNode, GraphQLResolveInfo, print } from 'graphql';
+import { type DocumentNode, type GraphQLResolveInfo, print } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
 /*

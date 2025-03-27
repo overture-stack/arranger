@@ -1,14 +1,14 @@
-import { Relation } from '@/mapping/masking';
+import { Relation } from '#mapping/masking.js';
 import {
 	type Aggregations,
 	type AllAggregations,
 	type AllAggregationsMap,
 	type Bucket,
-} from '@/mapping/resolveAggregations';
-import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '@/network';
-import { SUPPORTED_AGGREGATIONS, type SupportedAggregation } from '@/network/setup/constants';
-import { type Hits } from '@/network/types/hits';
-import { RequestedFieldsMap } from '@/network/utils/gql';
+} from '#mapping/resolveAggregations.js';
+import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '#network/index.js';
+import { SUPPORTED_AGGREGATIONS, type SupportedAggregation } from '#network/setup/constants.js';
+import { type Hits } from '#network/types/hits.js';
+import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
 type ResolveAggregationInput = {
 	data: { aggregations: AllAggregationsMap; hits: Hits };
@@ -34,9 +34,7 @@ const addToAccumulator = <T extends AllAggregations>({
 	type: SupportedAggregation;
 }) => {
 	// if first aggregation, nothing to resolve with yet
-	return !existingAggregation
-		? aggregation
-		: resolveAggregationByType<T>(type, [aggregation, existingAggregation]);
+	return !existingAggregation ? aggregation : resolveAggregationByType<T>(type, [aggregation, existingAggregation]);
 };
 
 /**

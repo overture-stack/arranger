@@ -90,6 +90,5 @@
 		"glob-parent": "^5.1.2",
 		"minimist": "^1.2.6"
 	},
-			"^.+\\.[jt]sx?$": [
 	"type": "module"
 }

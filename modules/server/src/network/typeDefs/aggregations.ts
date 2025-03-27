@@ -7,9 +7,9 @@ import {
 	GraphQLSchema,
 	GraphQLString,
 } from 'graphql';
-import GraphQLJSON from 'graphql-type-json';
+import { GraphQLJSONObject } from 'graphql-type-json';
 
-import { type SupportedNetworkFieldType } from '@/network/setup/fields';
+import { type SupportedNetworkFieldType } from '#network/setup/fields.js';
 
 const relation = new GraphQLEnumType({
 	name: 'Relation',
@@ -77,9 +77,7 @@ const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) 
  * @param configs
  * @returns
  */
-export const createNetworkAggregationTypeDefs = (
-	networkFieldTypes: SupportedNetworkFieldType[],
-) => {
+export const createNetworkAggregationTypeDefs = (networkFieldTypes: SupportedNetworkFieldType[]) => {
 	const allFields = convertToGQLObjectType(networkFieldTypes);
 
 	const aggregationsType = new GraphQLObjectType({
@@ -116,7 +114,7 @@ export const createNetworkAggregationTypeDefs = (
 			network: {
 				type: networkType,
 				args: {
-					filters: { type: GraphQLJSON },
+					filters: { type: GraphQLJSONObject },
 					aggregations_filter_themselves: { type: GraphQLBoolean },
 					include_missing: { type: GraphQLBoolean },
 				},

@@ -7,7 +7,7 @@
 
 // @ts-nocheck
 
-import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '@/network';
+import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '#network';
 import { AggregationAccumulator } from '../AggregationAccumulator';
 import { aggregation as fixture } from './fixture';
 
@@ -34,30 +34,20 @@ xdescribe('Network aggregation resolution', () => {
 				{ aggregations: { donors_gender: fixture.inputA }, hits: { total: 82 } },
 				{ aggregations: { donors_gender: fixture.inputC }, hits: { total: 1567 } },
 			];
-			aggregationsToResolve.forEach(({ aggregations, hits }) =>
-				totalAggs.resolve({ aggregations, hits }),
-			);
+			aggregationsToResolve.forEach(({ aggregations, hits }) => totalAggs.resolve({ aggregations, hits }));
 
 			const result = totalAggs.result();
 			const aggregation = result['donors_gender'];
 
 			expect(aggregation.bucket_count).toEqual(bucketCount);
-			expect(aggregation.buckets.find((bucket) => bucket.key === 'Male')?.doc_count).toEqual(
-				maleCount,
-			);
-			expect(aggregation.buckets.find((bucket) => bucket.key === 'Female')?.doc_count).toEqual(
-				femaleCount,
-			);
-			expect(aggregation.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(
-				unknownCount,
-			);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Male')?.doc_count).toEqual(maleCount);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Female')?.doc_count).toEqual(femaleCount);
+			expect(aggregation.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(unknownCount);
 		});
 
 		it('should resolve multiple NumericAggregations type fields', () => {
 			jest.mock('../../index', () => ({
-				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([
-					['donors_weight', 'NumericAggregations'],
-				]),
+				ALL_NETWORK_AGGREGATION_TYPES_MAP: new Map<string, string>([['donors_weight', 'NumericAggregations']]),
 			}));
 
 			const totalAggs = new AggregationAccumulator({ donors_weight: {} });
@@ -66,9 +56,7 @@ xdescribe('Network aggregation resolution', () => {
 				{ aggregations: { donors_weight: fixture.inputE }, hits: { total: 999 } },
 			];
 
-			aggregationsToResolve.forEach(({ aggregations, hits }) =>
-				totalAggs.resolve({ aggregations, hits }),
-			);
+			aggregationsToResolve.forEach(({ aggregations, hits }) => totalAggs.resolve({ aggregations, hits }));
 
 			const result = totalAggs.result();
 			const aggregation = result['donors_weight'];
@@ -103,15 +91,9 @@ xdescribe('Network aggregation resolution', () => {
 			const donorsWeightAgg = result['donors_weight'];
 
 			expect(donorsGenderAgg.bucket_count).toEqual(bucketCount);
-			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Male')?.doc_count).toEqual(
-				maleCount,
-			);
-			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Female')?.doc_count).toEqual(
-				femaleCount,
-			);
-			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(
-				unknownCount,
-			);
+			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Male')?.doc_count).toEqual(maleCount);
+			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Female')?.doc_count).toEqual(femaleCount);
+			expect(donorsGenderAgg.buckets.find((bucket) => bucket.key === 'Unknown')?.doc_count).toEqual(unknownCount);
 			expect(donorsWeightAgg.stats).toEqual(expectedStats);
 		});
 	});

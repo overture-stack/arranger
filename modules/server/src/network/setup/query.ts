@@ -1,7 +1,7 @@
-import { NetworkAggregationError } from '@/network/errors';
-import { fetchGql } from '@/network/gql';
-import { type NetworkConfig } from '@/network/types/setup';
-import { fulfilledPromiseFilter } from '@/network/utils/promise';
+import { NetworkAggregationError } from '#network/errors.js';
+import { fetchGql } from '#network/gql.js';
+import { type NetworkConfig } from '#network/types/setup.js';
+import { fulfilledPromiseFilter } from '#network/utils/promise.js';
 
 export type NodeConfig = NetworkConfig & { aggregations: { name: string; type: string }[] };
 
@@ -68,9 +68,7 @@ const normalizeGqlField = (gqlField: GQLFieldType): { name: string; type: string
  *
  * @throws Unexpected data error
  */
-const fetchNodeAggregations = async (
-	config: NetworkConfig,
-): Promise<GQLTypeQueryResponse | undefined> => {
+const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQueryResponse | undefined> => {
 	const { graphqlUrl, documentType } = config;
 	/**
 	 * documentType is an entire field name / type name in the case of a root field
@@ -122,14 +120,12 @@ export const fetchAllNodeAggregations = async ({
 
 	const queryResults = await Promise.allSettled(queryRequestPromises);
 
-	const nodeConfigs = queryResults
-		.filter(fulfilledPromiseFilter<NetworkQueryResult>)
-		.map((networkResult) => {
-			const { config, gqlResponse } = networkResult.value;
-			const fields = gqlResponse.__type.fields;
-			const aggregations = fields.map(normalizeGqlField);
-			return { ...config, aggregations };
-		});
+	const nodeConfigs = queryResults.filter(fulfilledPromiseFilter<NetworkQueryResult>).map((networkResult) => {
+		const { config, gqlResponse } = networkResult.value;
+		const fields = gqlResponse.__type.fields;
+		const aggregations = fields.map(normalizeGqlField);
+		return { ...config, aggregations };
+	});
 
 	console.log('\nSuccessfully fetched node schemas\n');
 

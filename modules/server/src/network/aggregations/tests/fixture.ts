@@ -1,5 +1,5 @@
-import { Relation } from '@/mapping/masking';
-import { Aggregations } from '@/mapping/resolveAggregations';
+import { Relation } from '#mapping/masking.js';
+import { type Aggregations } from '#mapping/resolveAggregations.js';
 
 const inputA: Aggregations = {
 	bucket_count: 2,
