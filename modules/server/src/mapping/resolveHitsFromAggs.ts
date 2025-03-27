@@ -1,4 +1,4 @@
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 
 import { type Resolver, type Root } from '#gqlServer.js';
 import { applyAggregationMasking } from './masking.js';

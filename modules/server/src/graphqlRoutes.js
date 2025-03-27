@@ -273,9 +273,9 @@ export const createSchemasFromConfigs = async ({
 				 * in the case of the "file" field, the field name and gql type name are the same
 				 */
 				documentName: config.documentType,
-			})),
+			}));
 			const networkSchema = await createSchemaFromNetworkConfig({
-				networkConfigs: remoteServerConfigs
+				networkConfigs: remoteServerConfigs,
 			});
 			schemasToMerge.push(networkSchema);
 		}

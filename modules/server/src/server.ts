@@ -2,7 +2,7 @@ import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
-import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX } from './config/constants.js';
+import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from './config/constants.js';
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';

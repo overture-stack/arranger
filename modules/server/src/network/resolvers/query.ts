@@ -1,6 +1,6 @@
 import { gql } from 'apollo-server-core';
 import { type DocumentNode } from 'graphql';
-import { isEmpty } from 'lodash';
+import { isEmpty } from 'lodash-es';
 
 import { type NodeConfig } from '#network/setup/query.js';
 import { type RequestedFieldsMap } from '#network/utils/gql.js';
