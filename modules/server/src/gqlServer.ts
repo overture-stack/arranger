@@ -1,5 +1,5 @@
 import { Client } from '@elastic/elasticsearch';
-import { GraphQLResolveInfo } from 'graphql';
+import { type GraphQLResolveInfo } from 'graphql';
 
 export type Context = {
 	esClient: Client;

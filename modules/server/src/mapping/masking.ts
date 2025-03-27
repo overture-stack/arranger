@@ -1,5 +1,5 @@
-import { ENV_CONFIG } from '@/config';
-import { type Aggregations, type AllAggregationsMap } from './resolveAggregations';
+import { ENV_CONFIG } from '#config/index.js';
+import { type Aggregations, type AllAggregationsMap } from './resolveAggregations.js';
 
 export const Relation = {
 	eq: 'eq',
@@ -16,18 +16,13 @@ export type Relation = keyof typeof Relation;
  * @param aggregation an aggregation with the most buckets which has data masking applied
  * @returns hits total value
  */
-const calculateHitsFromAggregation = ({
-	aggregation,
-}: {
-	aggregation: Aggregations | undefined;
-}) => {
+const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregations | undefined }) => {
 	if (!aggregation) {
 		console.error('No aggregation found for calculating hits.');
 		return 0;
 	}
 	return aggregation.buckets.reduce(
-		(totalAcc, bucket) =>
-			bucket.relation === Relation.gte ? totalAcc + 1 : totalAcc + bucket.doc_count,
+		(totalAcc, bucket) => (bucket.relation === Relation.gte ? totalAcc + 1 : totalAcc + bucket.doc_count),
 		0,
 	);
 };

@@ -1,8 +1,8 @@
 import { get } from 'lodash';
 
-import { Resolver, Root } from '@/gqlServer';
-import { applyAggregationMasking } from './masking';
-import { AggregationsResolver } from './resolveAggregations';
+import { type Resolver, type Root } from '#gqlServer.js';
+import { applyAggregationMasking } from './masking.js';
+import { type AggregationsResolver } from './resolveAggregations.js';
 
 export enum Missing {
 	first,
