@@ -1,4 +1,4 @@
-import { ConfigProperties, type ExtendedConfigsInterface } from '#/config/types.js';
+import { ConfigProperties, type ExtendedConfigsInterface } from '#config/types.js';
 import { type Resolver, type Root } from '#gqlServer.js';
 import { type CreateConnectionResolversArgs } from './createConnectionResolvers.js';
 import { applyAggregationMasking } from './masking.js';
