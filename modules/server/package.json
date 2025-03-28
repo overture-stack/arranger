@@ -91,5 +91,5 @@
 		"minimist": "^1.2.6"
 	},
 	"type": "module",
-	"version": "dev"
+	"version": "0.0.0-dev"
 }
