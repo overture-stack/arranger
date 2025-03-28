@@ -1,4 +1,4 @@
-import { type ObjectValues } from '#/utils/types.js';
+import { type ObjectValues } from '#utils/types.js';
 
 /*
  * Supported single aggregations that can be used by network aggregation
