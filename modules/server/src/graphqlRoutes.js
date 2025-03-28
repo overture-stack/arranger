@@ -116,7 +116,14 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({ enableAdmin, enableDocumentHits, getServerSideFilter, graphqlOptions = {}, types }) => {
+const createSchema = async ({
+	enableAdmin,
+	enableDocumentHits,
+	getServerSideFilter,
+	graphqlOptions = {},
+	setsIndex,
+	types,
+}) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -142,13 +149,13 @@ const createSchema = async ({ enableAdmin, enableDocumentHits, getServerSideFilt
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-	(req, res) => {
-		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+		(req, res) => {
+			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-		return res.json({
-			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-		});
-	};
+			return res.json({
+				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+			});
+		};
 
 const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
 	const mainPath = '/graphql';
@@ -306,7 +313,13 @@ export default async ({
 	setsIndex,
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMapping, networkSchemas } =
+		const {
+			fieldsFromMapping,
+			mockSchema,
+			networkSchemas,
+			schema,
+			typesWithMappings,
+		} =
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,

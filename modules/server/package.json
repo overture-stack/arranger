@@ -20,7 +20,8 @@
 		"start": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
 		"start:prod": "tsx ./index.ts",
 		"test": "tsx --test",
-		"watch": "npm run cleanDist && npm run build -- --watch"
+		"watch": "npm run cleanDist && npm run build -- --watch",
+		"watch:prod": "npm run cleanDist && npm run build:production -- --watch"
 	},
 	"repository": {
 		"type": "git",

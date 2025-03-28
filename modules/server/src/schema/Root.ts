@@ -83,6 +83,7 @@ export let resolvers = ({
 	rootTypes,
 	scalarTypes,
 	getServerSideFilter,
+	setsIndex,
 }) => {
 	return {
 		JSON: GraphQLJSON,
