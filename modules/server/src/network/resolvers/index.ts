@@ -1,4 +1,4 @@
-import { type Resolver } from '#/gqlServer.js';
+import { type Resolver } from '#gqlServer.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import { aggregationPipeline, type NetworkNode } from '#network/resolvers/aggregations.js';
 import { createResponse } from '#network/resolvers/response.js';
