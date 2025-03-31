@@ -15,7 +15,7 @@ import type { ToolbarProps } from './types.js';
 const Toolbar = ({
 	css: customCSS,
 	className: customClassName,
-	theme: { CountDisplay: customCountDisplayProps } = emptyObj,
+	theme: { CountDisplay: customCountDisplayProps, spacing: customSpacing, tools: customTools } = emptyObj,
 }: ToolbarProps) => {
 	const {
 		components: {
@@ -24,10 +24,13 @@ const Toolbar = ({
 					className: themeClassName,
 					css: themeCSS,
 					CountDisplay: themeCountDisplayProps = emptyObj,
+					spacing: themeSpacing = '0.4rem',
+					tools: themeTools = [ColumnSelectButton, DownloadButton],
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'Table - Toolbar' });
+	const tools = customTools ?? themeTools;
 	const className = cx('Toolbar', customClassName, themeClassName);
 	const countDisplayTheme = merge({}, themeCountDisplayProps, customCountDisplayProps);
 
@@ -49,17 +52,12 @@ const Toolbar = ({
 					css={css`
 						flex-shrink: 0;
 						margin: 0.3rem 0 0 0.3rem;
-
-						.Spinner {
-							justify-content: space-between;
-							width: 65%;
-						}
 					`}
 					theme={countDisplayTheme}
 				/>
 
 				<ul
-					className="buttons"
+					className="tools"
 					css={css`
 						display: flex;
 						flex-wrap: wrap;
@@ -69,11 +67,10 @@ const Toolbar = ({
 						padding: 0;
 					`}
 				>
-					{/* TODO: Allow adding buttons here */}
-					{[ColumnSelectButton, DownloadButton].map((Component) => (
+					{tools.map((Component) => (
 						<li
 							css={css`
-								margin-left: 0.3rem;
+								margin-left: ${customSpacing ?? themeSpacing};
 								margin-bottom: 0.3rem;
 							`}
 							key={getDisplayName(Component)}
@@ -84,7 +81,7 @@ const Toolbar = ({
 				</ul>
 			</section>
 		),
-		[className, countDisplayTheme, customCSS, themeCSS],
+		[className, countDisplayTheme, customCSS, themeCSS, tools],
 	);
 };
 
