@@ -2,13 +2,14 @@ import type { LoaderThemeProps } from '#Loader/types.js';
 import type { ThemeCommon } from '#ThemeContext/types/index.js';
 import type { RecursivePartial } from '#utils/types.js';
 
-export interface CountDisplayThemeProps extends ThemeCommon.FontProperties {
+export type CountDisplayThemeProps = {
 	hideLoader: boolean;
 
 	// Child components
 	Loader: LoaderThemeProps;
-}
+	spacing: string;
+} & ThemeCommon.FontProperties;
 
-export interface CountDisplayProps extends ThemeCommon.CustomCSS {
+export type CountDisplayProps = {
 	theme?: RecursivePartial<CountDisplayThemeProps>;
-}
+} & ThemeCommon.CustomCSS;
