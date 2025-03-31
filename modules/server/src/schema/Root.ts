@@ -65,18 +65,26 @@ const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
+export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
-	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
+	...types.map(([key, type]) => mappingToFields({ enableDocumentHits, type, parent: '' })),
 ];
 
 const resolveObject = () => ({});
 
-export const resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, setsIndex, getServerSideFilter }) => {
+export let resolvers = ({
+	enableAdmin,
+	enableDocumentHits,
+	types,
+	rootTypes,
+	scalarTypes,
+	getServerSideFilter,
+	setsIndex,
+}) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -128,6 +136,7 @@ export const resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, setsInde
 				...createConnectionResolvers({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
+					enableDocumentHits,
 					getServerSideFilter,
 					Parallel,
 					type,
