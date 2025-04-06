@@ -21,7 +21,8 @@
 		"start:prod": "tsx ./index.ts",
 		"test": "tsx --test",
 		"watch": "npm run cleanDist && npm run build -- --watch",
-		"watch:prod": "npm run cleanDist && npm run build:production -- --watch"
+		"watch:prod": "npm run cleanDist && npm run build:production -- --watch",
+		"types:watch": "tsc --noEmit -w"
 	},
 	"repository": {
 		"type": "git",
