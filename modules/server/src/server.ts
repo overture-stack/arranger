@@ -1,5 +1,5 @@
 import { Client, type ClientOptions } from '@elastic/elasticsearch';
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import morgan from 'morgan';
 
 import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from './config/constants.js';
@@ -94,7 +94,7 @@ const arrangerServer = async ({
 		setsIndex,
 	});
 
-	router.use('/', (req, res, next) => {
+	router.use('/', (req: Request, _res: Response, next: NextFunction) => {
 		/* Context contents:
 			'graphQLRoutes' provides esClient, schemas, and server configs.
 			'downloadRoutes' consumes esClient, schemas, as well as download and table configs.
@@ -104,9 +104,9 @@ const arrangerServer = async ({
 	});
 	router.use('/', graphQLRoutes);
 	router.use(`/download`, downloadRoutes({ enableAdmin })); // consumes
-	router.get('/favicon.ico', (req, res) => res.status(204));
+	router.get('/favicon.ico', (_req: Request, res: Response) => res.status(204));
 
-	router.get(pingPath, (_req, res) => res.send({ message: 'Arranger is functioning correctly...' }));
+	router.get(pingPath, (_req, res: any) => res.send({ message: 'Arranger is functioning correctly...' }));
 
 	return router;
 };
