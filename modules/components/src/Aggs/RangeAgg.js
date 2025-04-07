@@ -21,8 +21,6 @@ const SUPPORTED_CONVERSIONS = {
 const supportedConversionFromUnit = (unit) =>
 	unit ? SUPPORTED_CONVERSIONS[convert().describe(unit).measure] : [];
 
-const round = (x) => Math.round(x * 100) / 100;
-
 const RangeLabel = ({
 	background = 'none',
 	children,
@@ -119,7 +117,6 @@ class RangeAgg extends Component {
 			stats: { max, min },
 		} = this.props;
 		let { currentValues, displayUnit } = this.state;
-		const [currentMax, currentMin] = [currentValues.max, currentValues.min].map((x) => round(x));
 
 		return handleChange?.({
 			field: {
@@ -133,18 +130,18 @@ class RangeAgg extends Component {
 					{
 						op: 'and',
 						content: [
-							...(currentMin > min
-								? [{ op: '>=', content: { fieldName, value: currentMin } }]
+							...(currentValues.min > min
+								? [{ op: '>=', content: { fieldName, value: currentValues.min } }]
 								: []),
-							...(currentMax < max
-								? [{ op: '<=', content: { fieldName, value: currentMax } }]
+							...(currentValues.max < max
+								? [{ op: '<=', content: { fieldName, value: currentValues.max } }]
 								: []),
 						],
 					},
 					sqon,
 				),
-			max: currentMax,
-			min: currentMin,
+			max: currentValues.max,
+			min: currentValues.min,
 			value: currentValues,
 		});
 	};
@@ -156,8 +153,8 @@ class RangeAgg extends Component {
 			stats: { max, min },
 		} = this.props;
 
-		if (round(newMax) <= round(max) && round(newMin) >= round(min)) {
-			this.setState({ currentValues: { max: round(newMax), min: round(newMin) } });
+		if (newMax <= max && newMin >= min) {
+			this.setState({ currentValues: { max: newMax, min: newMin } });
 		} else {
 			console.error('the selected value is out of range');
 		}
