@@ -1,8 +1,7 @@
 .*
-Dockerfile
 docker-compose.yml
 docker
-docks
+docs
 integration-tests
 modules/**/*
 !modules/server

@@ -7,20 +7,15 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "babel src --copy-files --extensions .tsx,.ts,.js,.jsx --out-dir dist",
-		"build:production": "npm run build && npm run declarations -- --project tsconfig.release.json",
-		"build-storybook": "build-storybook -s ./public",
-		"cleanDist": "rm -rf dist",
-		"dashboard": "STORYBOOK_DASHBOARD=true start-storybook -p 6060 -c .storybook -s ./public",
-		"declarations": "tsc --emitDeclarationOnly",
-		"ifPublish:declarations": "if test \"$PUBLISH_DECLARATIONS\" = \"true\" ; then (npm run -s declarations || true) ; fi",
-		"lint": "eslint ./src --ext=.jsx,.js,.tsx,.ts",
+		"build:babel": "babel src --copy-files --extensions .tsx,.ts,.js,.jsx --out-dir dist",
+		"build:declarations": "tsc --emitDeclarationOnly --project tsconfig.release.json",
+		"build": "concurrently -n babel,tsc -c yellow,blue -P 'npm:build:babel -- {@}' 'npm:build:declarations -- {@}' --",
+		"nuke:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
-		"portal": "STORYBOOK_PORTAL=true start-storybook -p 7070 -c .storybook -s ./public",
-		"storybook": "start-storybook -p 8080 -c .storybook -s ./public",
+		"prepare": "npm run patchTS",
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts",
-		"watch": "npm run cleanDist && (concurrently -n babel,tsc -c yellow,blue \"npm run build -- --watch\" \"npm run declarations -- --watch\")",
-		"watchnew": "npm run cleanDist && (concurrently -n babel,tsc -c yellow,blue \"npm run build -- --watch\")"
+		"test:watch": "npm test -- --watch",
+		"watch": "npm run nuke:dist && npm run build -- --watch"
 	},
 	"repository": {
 		"type": "git",
