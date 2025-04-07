@@ -1,8 +1,9 @@
-configs/
+configTemplates/
 src/
 
-.eslintrc*
+.env*
+*config.js*
+*config.ts*
 
-./index.js
-./index.ts
+index.ts
 tsconfig*
