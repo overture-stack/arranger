@@ -31,7 +31,7 @@
 		"@overture-stack/sqon-builder": "^1.1.0",
 		"@reach/component-component": "^0.17.0",
 		"@tanstack/react-table": "^8.7.9",
-		"axios": "^1.7.9",
+		"axios": "^1.8.2",
 		"classnames": "^2.3.2",
 		"color": "^4.2.3",
 		"convert-units": "^2.3.4",
