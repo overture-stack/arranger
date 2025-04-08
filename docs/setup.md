@@ -111,7 +111,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 3.  Install the required npm packages:
 
     ```bash
-    npm ci
+    npm install
     ```
 
     :::warning
@@ -120,13 +120,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 
     :::
 
-4.  Bootstrap the Arranger repository:
-
-    ```bash
-    npm run bootstrap
-    ```
-
-5.  Run the Arranger server:
+4.  Run the Arranger server:
 
     ```bash
     npm run server
