@@ -83,7 +83,7 @@ export default ({ api, documentType, gqlPath }) => {
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
 					console.log('readSearchData error', err);
-					console.log('jenkins-burn', err?.data?.errors);
+					console.log('jenkins-burn', err?.response?.data?.errors);
 				}),
 			{
 				data: {
