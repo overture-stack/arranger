@@ -83,6 +83,7 @@ export default ({ api, documentType, gqlPath }) => {
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
 					console.log('readSearchData error', err);
+					console.log('jenkins-burn', err?.data?.errors);
 				}),
 			{
 				data: {
@@ -99,7 +100,8 @@ export default ({ api, documentType, gqlPath }) => {
 						},
 					},
 				},
-			});
+			},
+		);
 
 		assert.deepEqual(
 			await api
@@ -141,7 +143,8 @@ export default ({ api, documentType, gqlPath }) => {
 						},
 					},
 				},
-			});
+			},
+		);
 
 		assert.deepEqual(
 			await api
@@ -188,7 +191,8 @@ export default ({ api, documentType, gqlPath }) => {
 						},
 					},
 				},
-			});
+			},
+		);
 
 		assert.deepEqual(
 			await api
@@ -235,7 +239,8 @@ export default ({ api, documentType, gqlPath }) => {
 						},
 					},
 				},
-			});
+			},
+		);
 	});
 
 	test('3.excludes access_denied files', async () => {
@@ -264,7 +269,7 @@ export default ({ api, documentType, gqlPath }) => {
 
 		assert.deepEqual(
 			data?.data?.[documentType]?.hits?.edges?.every((edge) => !edge.node.access_denied),
-			true
+			true,
 		);
 	});
 
@@ -306,9 +311,6 @@ export default ({ api, documentType, gqlPath }) => {
 				console.log('readSearchData error', err);
 			});
 
-		assert.deepEqual(
-			data?.data?.[documentType]?.hits?.edges?.length,
-			0
-		);
+		assert.deepEqual(data?.data?.[documentType]?.hits?.edges?.length, 0);
 	});
 };
