@@ -12,6 +12,7 @@ const mappingToFields = ({ enableDocumentHits, type, parent }) => {
 			.filter(([, metadata]) => metadata.type === 'nested')
 			.map(([fieldName, metadata]) =>
 				mappingToFields({
+					enableDocumentHits,
 					parent: [parent, fieldName].filter(Boolean).join('.'),
 					type: {
 						...type,
