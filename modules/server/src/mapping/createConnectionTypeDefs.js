@@ -1,6 +1,6 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-const createConnectionType = ({ type, enableDocumentHits = true }) => {
+const createConnectionType = ({ type, enableDocumentHits }) => {
 	return `type ${type.name}Connection {
     total: Int!
    ${enableDocumentHits ? `edges: [${type.name}Edge]` : ''}
@@ -12,6 +12,7 @@ const createDataMaskingType = ({ enableDocumentHits }) => {
 };
 
 export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentHits }) => {
+	console.log('createConnectionTypeDefs, enableDocumentHits', enableDocumentHits);
 	return `
     type ${type.name} {
       aggregations(

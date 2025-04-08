@@ -8,7 +8,7 @@ export const DOCUMENT_TYPE = process.env.DOCUMENT_TYPE || '';
 export const DOWNLOAD_STREAM_BUFFER_SIZE = stringToNumber(process.env.DOWNLOAD_STREAM_BUFFER_SIZE) || 2000;
 export const ENABLE_ADMIN = stringToBool(process.env.ENABLE_ADMIN);
 export const ENABLE_DOCUMENT_HITS =
-	process.env.ENABLE_DOCUMENT_HITS === '' ? true : stringToBool(process.env.ENABLE_DOCUMENT_HITS);
+	process.env.ENABLE_DOCUMENT_HITS === '' || stringToBool(process.env.ENABLE_DOCUMENT_HITS);
 export const ENABLE_LOGS = stringToBool(process.env.ENABLE_LOGS);
 export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
 export const ES_ARRANGER_SET_INDEX = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets';

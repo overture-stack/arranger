@@ -14,6 +14,7 @@ export const createResolvers = ({
 	enableDocumentHits,
 	dataMaskMinThreshold,
 }: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
+	console.log('createResolvers, enableDocumentHits', enableDocumentHits);
 	const configs: Resolver<
 		Root,
 		{ fieldNames: string[] },

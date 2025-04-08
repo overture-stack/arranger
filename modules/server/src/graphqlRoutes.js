@@ -134,6 +134,8 @@ const createSchema = async ({
 	return {
 		...(types && {
 			mockSchema: makeSchema({
+				enableAdmin,
+				enableDocumentHits,
 				mock: true,
 				...schemaBase,
 			}),
