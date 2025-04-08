@@ -1,6 +1,6 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-const createConnectionType = ({ type, enableDocumentHits }) => {
+const createConnectionType = ({ type, enableDocumentHits = true }) => {
 	return `type ${type.name}Connection {
     total: Int!
    ${enableDocumentHits ? `edges: [${type.name}Edge]` : ''}
