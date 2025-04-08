@@ -1,6 +1,6 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { ApolloServer } from 'apollo-server-express';
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import { mergeSchemas } from '@graphql-tools/schema';
 
 import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
@@ -9,8 +9,12 @@ import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/e
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import makeSchema from './schema/index.js';
 import { createSchemaFromNetworkConfig } from './network/index.js';
+import type { Client } from '@elastic/elasticsearch';
+import type { SQONFilter } from '#sqon/index.js';
+import { getCaughtErrorMessage } from '#utils/caughtError.js';
+import type { GraphQLSchema } from 'graphql';
 
-const getESMapping = async (esClient, index) => {
+const getESMapping = async (esClient: Client, index: string) => {
 	if (esClient && index) {
 		const { mapping } = await fetchMapping({
 			esClient,
@@ -104,7 +108,6 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				typesWithMappings,
 			};
 		} catch (error) {
-			console.error(error?.message || error);
 			throw `  Something went wrong while creating the GraphQL mapping${
 				ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
 					? ', this needs research by an Arranger maintainer!'
@@ -123,7 +126,7 @@ const createSchema = async ({
 	graphqlOptions = {},
 	setsIndex,
 	types,
-}) => {
+}: Omit<GQLInitParams, 'configsSource' | 'esClient' | 'enableNetworkAggregation'> & { types: any }) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -149,15 +152,25 @@ const createSchema = async ({
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-		(req, res) => {
-			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+	(_req: Request, res: Response) => {
+		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-			return res.json({
-				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-			});
-		};
+		return res.json({
+			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+		});
+	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
+const createEndpoint = async ({
+	esClient,
+	graphqlOptions = {},
+	mockSchema,
+	schema,
+}: {
+	esClient: Client;
+	graphqlOptions: any;
+	mockSchema: GraphQLSchema;
+	schema: GraphQLSchema;
+}) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
@@ -245,7 +258,7 @@ export const createSchemasFromConfigs = async ({
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
-}) => {
+}: GQLInitParams) => {
 	try {
 		const configsFromFiles = await getConfigObject(configsSource);
 		const mappingFromES = await getESMapping(esClient, configsFromFiles[ConfigProperties.INDEX]);
@@ -294,7 +307,7 @@ export const createSchemasFromConfigs = async ({
 			schema: fullSchema,
 		};
 	} catch (error) {
-		const message = error?.message || error;
+		const message = getCaughtErrorMessage(error);
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
 		console.error(message);
 
@@ -302,7 +315,18 @@ export const createSchemasFromConfigs = async ({
 	}
 };
 
-export default async ({
+type GQLInitParams = {
+	configsSource: string;
+	enableAdmin: boolean;
+	enableDocumentHits: boolean;
+	enableNetworkAggregation: boolean;
+	esClient: Client;
+	getServerSideFilter: SQONFilter;
+	graphqlOptions: Record<string, any>;
+	setsIndex: string;
+};
+
+const createGraphQLRoutes = async ({
 	configsSource = '',
 	enableAdmin,
 	enableDocumentHits,
@@ -311,25 +335,18 @@ export default async ({
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
-}) => {
+}: GQLInitParams) => {
 	try {
-		const {
-			fieldsFromMapping,
-			mockSchema,
-			networkSchemas,
-			schema,
-			typesWithMappings,
-		} =
-			await createSchemasFromConfigs({
-				configsSource,
-				enableAdmin,
-				enableDocumentHits,
-				enableNetworkAggregation,
-				esClient,
-				getServerSideFilter,
-				graphqlOptions,
-				setsIndex,
-			});
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+			configsSource,
+			enableAdmin,
+			enableDocumentHits,
+			enableNetworkAggregation,
+			esClient,
+			getServerSideFilter,
+			graphqlOptions,
+			setsIndex,
+		});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
@@ -342,7 +359,7 @@ export default async ({
 
 		return [
 			// this middleware makes the esClient and config available in all requests, in a "context" object
-			(req, res, next) => {
+			(req: Request, res: Response, next: NextFunction) => {
 				req.context = {
 					...req.context,
 					configs: typesWithMappings?.[1],
@@ -355,12 +372,12 @@ export default async ({
 			graphQLEndpoints,
 		];
 	} catch (error) {
-		const message = error?.message || error;
+		const message = getCaughtErrorMessage(error);
 		// if enpoint creation fails, follow to the next server step to respond with an error
 		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
 
-		return (req, res) =>
+		return (_req: Request, res: Response) =>
 			res.status(500).send({
 				// TODO: revisit this response
 				detail: 'Please notify the systems admin - ',
@@ -369,3 +386,5 @@ export default async ({
 			});
 	}
 };
+
+export default createGraphQLRoutes;

@@ -4,8 +4,9 @@ import morgan from 'morgan';
 import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from './config/constants.js';
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
-import getGraphQLRoutes from './graphqlRoutes.js';
+import createGraphQLRoutes from './graphqlRoutes.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
+import { buildEsClient } from '#esClient/index.js';
 
 const {
 	CONFIG_FILES_PATH,
@@ -56,7 +57,7 @@ const arrangerServer = async ({
 		);
 	}
 
-	const graphQLRoutes = await getGraphQLRoutes({
+	const graphQLRoutes = await createGraphQLRoutes({
 		configsSource,
 		enableAdmin,
 		enableDocumentHits,
@@ -77,9 +78,11 @@ const arrangerServer = async ({
 	});
 	router.use('/', graphQLRoutes);
 	router.use(`/download`, downloadRoutes({ enableAdmin })); // consumes
-	router.get('/favicon.ico', (_req: Request, res: Response) => res.status(204));
+	router.get('/favicon.ico', (_req: Request, res: Response) => {
+		return res.status(204);
+	});
 
-	router.get(pingPath, (_req, res: any) => res.send({ message: 'Arranger is functioning correctly...' }));
+	router.get(pingPath, (_req, res: Response) => res.send({ message: 'Arranger is functioning correctly...' }));
 
 	return router;
 };
