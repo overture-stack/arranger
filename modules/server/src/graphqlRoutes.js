@@ -149,13 +149,13 @@ const createSchema = async ({
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-		(req, res) => {
-			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+	(req, res) => {
+		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-			return res.json({
-				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-			});
-		};
+		return res.json({
+			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+		});
+	};
 
 const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
 	const mainPath = '/graphql';
@@ -241,6 +241,7 @@ export const createSchemasFromConfigs = async ({
 	enableAdmin,
 	enableDocumentHits,
 	enableNetworkAggregation,
+	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -307,24 +308,20 @@ export default async ({
 	enableAdmin,
 	enableDocumentHits,
 	enableNetworkAggregation,
+	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
 }) => {
 	try {
-		const {
-			fieldsFromMapping,
-			mockSchema,
-			networkSchemas,
-			schema,
-			typesWithMappings,
-		} =
+		const { fieldsFromMapping, mockSchema, networkSchemas, schema, typesWithMappings } =
 			await createSchemasFromConfigs({
 				configsSource,
 				enableAdmin,
 				enableDocumentHits,
 				enableNetworkAggregation,
+				dataMaskMinThreshold,
 				esClient,
 				getServerSideFilter,
 				graphqlOptions,

@@ -12,6 +12,7 @@ export const createResolvers = ({
 	Parallel,
 	getServerSideFilter,
 	enableDocumentHits,
+	dataMaskMinThreshold,
 }: Omit<CreateConnectionResolversArgs, 'enableAdmin'>) => {
 	const configs: Resolver<
 		Root,
@@ -46,6 +47,7 @@ export const createResolvers = ({
 		} else {
 			const { dataMaskedAggregations } = applyAggregationMasking({
 				aggregations,
+				dataMaskMinThreshold,
 			});
 			return aggregationsToGraphql(dataMaskedAggregations);
 		}

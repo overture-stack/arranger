@@ -76,9 +76,10 @@ export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) 
 
 const resolveObject = () => ({});
 
-export let resolvers = ({
+export const resolvers = ({
 	enableAdmin,
 	enableDocumentHits,
+	dataMaskMinThreshold,
 	types,
 	rootTypes,
 	scalarTypes,
@@ -137,6 +138,7 @@ export let resolvers = ({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
 					enableDocumentHits,
+					dataMaskMinThreshold,
 					getServerSideFilter,
 					Parallel,
 					type,

@@ -1,4 +1,3 @@
-import { ENV_CONFIG } from '#config/index.js';
 import { type Aggregations, type AllAggregationsMap } from './resolveAggregations.js';
 
 export const Relation = {
@@ -35,9 +34,14 @@ const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregatio
  * @param aggregations - aggregations from query
  * @returns aggregations with data masking applied and hits total
  */
-export const applyAggregationMasking = ({ aggregations }: { aggregations: AllAggregationsMap }) => {
-	const thresholdMin = ENV_CONFIG.DATA_MASK_MIN_THRESHOLD;
-	if (thresholdMin < 1) {
+export const applyAggregationMasking = ({
+	aggregations,
+	dataMaskMinThreshold,
+}: {
+	aggregations: AllAggregationsMap;
+	dataMaskMinThreshold: number;
+}) => {
+	if (dataMaskMinThreshold < 1) {
 		throw Error('DATA_MASK_MIN_THRESHOLD environment variable has to be a positive integer.');
 	}
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
@@ -49,7 +53,7 @@ export const applyAggregationMasking = ({ aggregations }: { aggregations: AllAgg
 		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
 			// mask buckets if under threshold
 			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
-				bucket.doc_count < thresholdMin
+				bucket.doc_count < dataMaskMinThreshold
 					? { ...bucket, doc_count: THRESHOLD_REPLACEMENT_VALUE, relation: Relation.gte }
 					: { ...bucket, relation: Relation.eq },
 			);
