@@ -13,13 +13,13 @@ This guide will walk you through setting up a complete development environment, 
 
 ### Setting up supporting services
 
-We'll use the Overture Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
+We'll use the Overture quickstart service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
 
-1.  Clone the Conductor repository and navigate to its directory:
+1.  Clone the quickstart repository and navigate to its directory:
 
     ```bash
-    git clone https://github.com/overture-stack/conductor.git
-    cd conductor
+    git clone -b quickstart https://github.com/overture-stack/prelude.git
+    cd prelude
     ```
 
 2.  Run the appropriate start command for your operating system:
@@ -51,7 +51,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
         - Ensure all ports are free on your system before starting the environment.
         - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-        For more information, see our [Conductor documentation linked here](https://docs.overture.bio/docs/other-software/Conductor).
+        For more information, see our [quickstart documentation linked here](https://docs.overture.bio/docs/other-software/quickstart).
 
     </details>
 
