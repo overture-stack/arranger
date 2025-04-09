@@ -19,7 +19,7 @@ Technical resources for those working with or contributing to the project are av
 ## Development Environment
 
 - [Node.js](https://nodejs.org/) (v22 or higher)
-- [Docker](https://www.docker.com/) (v4.32.0 or higher)
+- [Docker](https://www.docker.com/) (v4.39.0 or higher)
 
 ## Support & Contributions
 
