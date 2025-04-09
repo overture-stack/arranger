@@ -14,58 +14,58 @@ This guide will walk you through setting up a complete development environment, 
 
 ### Setting up supporting services
 
-We'll use the Overture Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
+We'll use the Overture Quickstart service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
 
-1. Clone the Conductor repository and navigate to its directory:
+1. Clone the Quickstart repository and navigate to its directory:
 
-    ```bash
-    git clone https://github.com/overture-stack/conductor.git
-    cd conductor
-    ```
+   ```bash
+   git clone -b quickstart https://github.com/overture-stack/prelude.git
+   cd prelude
+   ```
 
 2. Run the appropriate start command for your operating system:
 
-    | Operating System | Command |
-    |------------------|---------|
-    | Unix/macOS       | `make arrangerDev` |
-    | Windows          | `./make.bat arrangerDev` |
+   | Operating System | Command                  |
+   | ---------------- | ------------------------ |
+   | Unix/macOS       | `make arrangerDev`       |
+   | Windows          | `./make.bat arrangerDev` |
 
-    <details>
-    <summary>**Click here for a detailed breakdown**</summary>
+   <details>
+   <summary>**Click here for a detailed breakdown**</summary>
 
-    This command will set up all complementary services for Arranger development as follows:
+   This command will set up all complementary services for Arranger development as follows:
 
-    ![arrangerDev](./assets/arrangerDev.svg 'Arranger Dev Environment')
+   ![arrangerDev](./assets/arrangerDev.svg "Arranger Dev Environment")
 
-    | Service | Port | Description | Purpose in Arranger Development |
-    |---------|------|-------------|------------------------------|
-    | Conductor | `9204` | Orchestrates deployments and environment setups | Manages the overall development environment |
-    | Elasticsearch | `9200` | Distributed search and analytics engine | Provides fast and scalable search capabilities over indexed data |
-    | Stage | `3000` | Web Portal Scaffolding | Houses Arranger's search UI components |
+   | Service       | Port   | Description                                     | Purpose in Arranger Development                                  |
+   | ------------- | ------ | ----------------------------------------------- | ---------------------------------------------------------------- |
+   | Conductor     | `9204` | Orchestrates deployments and environment setups | Manages the overall development environment                      |
+   | Elasticsearch | `9200` | Distributed search and analytics engine         | Provides fast and scalable search capabilities over indexed data |
+   | Stage         | `3000` | Web Portal Scaffolding                          | Houses Arranger's search UI components                           |
 
-    :::note Arranger uses Elasticsearch 7 
+   :::note Arranger uses Elasticsearch 7
 
-    Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
+   Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
 
-    :::
+   :::
 
-    - Ensure all ports are free on your system before starting the environment.
-    - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
+   - Ensure all ports are free on your system before starting the environment.
+   - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-    For more information, see our [Conductor documentation linked here](https://docs.overture.bio/docs/other-software/Conductor).
+   For more information, see our [Quickstart documentation linked here](https://docs.overture.bio/docs/other-software/Quickstart).
 
-    </details>
+   </details>
 
-### Running the Arranger-Server 
+### Running the Arranger-Server
 
-1. Clone Arranger and navigate to its directory:
+1.  Clone Arranger and navigate to its directory:
 
     ```bash
     git clone https://github.com/overture-stack/arranger.git
     cd arranger
     ```
 
-2. Rename the `.env.arrangerDev` file to `.env`:
+2.  Rename the `.env.arrangerDev` file to `.env`:
 
     ```bash
     mv .env.arrangerDev .env
@@ -107,7 +107,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 
     :::
 
-3. Install the required npm packages:
+3.  Install the required npm packages:
 
     ```bash
     npm ci
@@ -117,14 +117,13 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
     Python version 3.10.15 or lower is required. Python 3.12 is not supported yet.
     :::
 
-
-4. Bootstrap the Arranger repository:
+4.  Bootstrap the Arranger repository:
 
     ```bash
     npm run bootstrap
     ```
 
-5. Run the Arranger server:
+5.  Run the Arranger server:
 
     ```bash
     npm run server
@@ -133,7 +132,6 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 Once the server starts, you can access Arranger-Server at `http://localhost:5050/graphql`.
 
 ### Running the Arranger Components
-
 
 :::info Coming Soon
 We are currently working on updating our development environment for Arranger Components. Documentation for implementing them, including their development setup and Storybook integration, will be available here in the near future.
