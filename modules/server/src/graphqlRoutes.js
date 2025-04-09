@@ -1,12 +1,14 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
+import { mergeSchemas } from '@graphql-tools/schema';
 
 import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
 import { ConfigProperties } from './config/types.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import makeSchema from './schema/index.js';
+import { createSchemaFromNetworkConfig } from './network/index.js';
 
 const getESMapping = async (esClient, index) => {
 	if (esClient && index) {
@@ -17,7 +19,8 @@ const getESMapping = async (esClient, index) => {
 
 		if (Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			ENV_CONFIG.DEBUG_MODE && console.log('  Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			ENV_CONFIG.DEBUG_MODE &&
+				console.log('  Detected reserved field "id" in mapping, dropping it from GraphQL...');
 			delete mapping.id;
 		}
 
@@ -42,7 +45,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the ES mappings.\n' +
-						'  Defaulting to "extended" config from files.\n',
+							'  Defaulting to "extended" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -57,7 +60,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-						'  Defaulting to "table" config from files.\n',
+							'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -72,7 +75,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-						'  Defaulting to "table" config from files.\n',
+							'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -102,9 +105,10 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 			};
 		} catch (error) {
 			console.error(error?.message || error);
-			throw `  Something went wrong while creating the GraphQL mapping${ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
-				? ', this needs research by an Arranger maintainer!'
-				: '.\n  Likely cause: ES Auth parameters may be missing.'
+			throw `  Something went wrong while creating the GraphQL mapping${
+				ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
+					? ', this needs research by an Arranger maintainer!'
+					: '.\n  Likely cause: ES Auth parameters may be missing.'
 			}`;
 		}
 	}
@@ -114,6 +118,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 
 const createSchema = async ({
 	enableAdmin,
+	enableDocumentHits,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
@@ -129,11 +134,14 @@ const createSchema = async ({
 	return {
 		...(types && {
 			mockSchema: makeSchema({
+				enableAdmin,
+				enableDocumentHits,
 				mock: true,
 				...schemaBase,
 			}),
 			schema: makeSchema({
 				enableAdmin,
+				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -143,15 +151,15 @@ const createSchema = async ({
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-		(req, res) => {
-			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+	(req, res) => {
+		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-			return res.json({
-				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-			});
-		};
+		return res.json({
+			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+		});
+	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
+const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
@@ -233,6 +241,9 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
+	enableNetworkAggregation,
+	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -243,19 +254,47 @@ export const createSchemasFromConfigs = async ({
 		const mappingFromES = await getESMapping(esClient, configsFromFiles[ConfigProperties.INDEX]);
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings(mappingFromES, configsFromFiles);
 
+		const commonFields = { fieldsFromMapping, typesWithMappings };
+
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
+			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
 			types: typesWithMappings,
 		});
 
+		const schemasToMerge = [schema];
+
+		/**
+		 * Federated Network Search
+		 */
+		if (enableNetworkAggregation) {
+			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
+			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
+				throw Error('Network config not found. Please check file is valid.');
+			}
+
+			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
+				...config,
+				/*
+				 * part of the gql schema is generated dynamically
+				 * in the case of the "file" field, the field name and gql type name are the same
+				 */
+				documentName: config.documentType,
+			}));
+			const networkSchema = await createSchemaFromNetworkConfig({
+				networkConfigs: remoteServerConfigs,
+			});
+			schemasToMerge.push(networkSchema);
+		}
+
+		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
 		return {
-			fieldsFromMapping,
+			...commonFields,
 			mockSchema,
-			schema,
-			typesWithMappings,
+			schema: fullSchema,
 		};
 	} catch (error) {
 		const message = error?.message || error;
@@ -269,20 +308,27 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
+	enableDocumentHits,
+	enableNetworkAggregation,
+	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
-			configsSource,
-			enableAdmin,
-			esClient,
-			getServerSideFilter,
-			graphqlOptions,
-			setsIndex,
-		});
+		const { fieldsFromMapping, mockSchema, networkSchemas, schema, typesWithMappings } =
+			await createSchemasFromConfigs({
+				configsSource,
+				enableAdmin,
+				enableDocumentHits,
+				enableNetworkAggregation,
+				dataMaskMinThreshold,
+				esClient,
+				getServerSideFilter,
+				graphqlOptions,
+				setsIndex,
+			});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
