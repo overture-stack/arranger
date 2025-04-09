@@ -5,7 +5,7 @@
 Before you begin, ensure you have the following installed on your system:
 
 - Node.js (v22)
-- [Docker](https://www.docker.com/products/docker-desktop/) (v4.32.0 or higher)
+- [Docker](https://www.docker.com/products/docker-desktop/) (v4.39.0 or higher)
 
 ## Developer Setup
 
