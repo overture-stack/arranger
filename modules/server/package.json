@@ -13,15 +13,15 @@
 		"access": "public"
 	},
 	"scripts": {
-		"build": "tsc --build",
-		"build:production": "tsc --project tsconfig.release.json",
-		"cleanDist": "rm -rf dist",
+		"build": "tsc --project tsconfig.release.json",
+		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
+		"nuke:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
-		"start": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
-		"start:prod": "tsx ./index.ts",
+		"prepare": "npm run patchTS",
+		"start": "tsx ./index.ts",
 		"test": "tsx --test",
-		"watch": "npm run cleanDist && npm run build -- --watch",
-		"watch:prod": "npm run cleanDist && npm run build:production -- --watch",
+		"test:watch": "npm test -- --watch",
+		"watch": "npm run nuke:dist && npm run build -- --watch"
 		"types:watch": "tsc --noEmit -w"
 	},
 	"repository": {

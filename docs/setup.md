@@ -5,7 +5,7 @@
 Before you begin, ensure you have the following installed on your system:
 
 - Node.js (v22)
-- [Docker](https://www.docker.com/products/docker-desktop/) (v4.32.0 or higher)
+- [Docker](https://www.docker.com/products/docker-desktop/) (v4.39.0 or higher)
 
 ## Developer Setup
 
@@ -13,13 +13,13 @@ This guide will walk you through setting up a complete development environment, 
 
 ### Setting up supporting services
 
-We'll use the Overture Conductor service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
+We'll use the Overture quickstart service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
 
-1.  Clone the Conductor repository and navigate to its directory:
+1.  Clone the quickstart repository and navigate to its directory:
 
     ```bash
-    git clone https://github.com/overture-stack/conductor.git
-    cd conductor
+    git clone -b quickstart https://github.com/overture-stack/prelude.git
+    cd prelude
     ```
 
 2.  Run the appropriate start command for your operating system:
@@ -51,7 +51,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
         - Ensure all ports are free on your system before starting the environment.
         - You may need to adjust the ports in the `docker-compose.yml` file if you have conflicts with existing services.
 
-        For more information, see our [Conductor documentation linked here](https://docs.overture.bio/docs/other-software/Conductor).
+        For more information, see our [quickstart documentation linked here](https://docs.overture.bio/docs/other-software/quickstart).
 
     </details>
 
@@ -111,7 +111,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 3.  Install the required npm packages:
 
     ```bash
-    npm ci
+    npm install
     ```
 
     :::warning
@@ -120,13 +120,7 @@ We'll use the Overture Conductor service, a flexible Docker Compose setup, to sp
 
     :::
 
-4.  Bootstrap the Arranger repository:
-
-    ```bash
-    npm run bootstrap
-    ```
-
-5.  Run the Arranger server:
+4.  Run the Arranger server:
 
     ```bash
     npm run server

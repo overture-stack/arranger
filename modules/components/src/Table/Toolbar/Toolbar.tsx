@@ -67,13 +67,13 @@ const Toolbar = ({
 						padding: 0;
 					`}
 				>
-					{tools.map((Component) => (
+					{tools.map((Component, index) => (
 						<li
 							css={css`
 								margin-left: ${customSpacing ?? themeSpacing};
 								margin-bottom: 0.3rem;
 							`}
-							key={getDisplayName(Component)}
+							key={`${getDisplayName(Component)}-${index}`}
 						>
 							<Component />
 						</li>
@@ -81,7 +81,7 @@ const Toolbar = ({
 				</ul>
 			</section>
 		),
-		[className, countDisplayTheme, customCSS, themeCSS, tools],
+		[className, countDisplayTheme, customCSS, customSpacing, themeCSS, themeSpacing, tools],
 	);
 };
 

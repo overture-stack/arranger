@@ -3,6 +3,7 @@
 		"@eslint/js": "^9.18.0",
 		"@tsconfig/node22": "^22.0.0",
 		"@types/node": "^22.13.10",
+		"concurrently": "^9.1.2",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.1.1",
 		"eslint-import-resolver-typescript": "^3.7.0",
@@ -23,19 +24,17 @@
 		"url": "https://github.com/overture-stack/arranger.git"
 	},
 	"scripts": {
-		"all": "npm run start --modules",
 		"components:watch": "npm run watch --w modules/components",
-		"watch": "npm run watch --ws",
-		"publish::ci": "npm publish --ws --if-present",
+		"modules:build": "npm run build --w modules",
+		"modules:tag": "npm version --ws --force-publish --yes",
+		"modules:watch": "npm run watch --w modules",
 		"nuke:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
-		"prepare": "npm run build:production --w modules",
-		"reset": "npm run nuke:nodeModules && npm run nuke:Dist --ws --if-present",
+		"publish::ci": "npm publish --ws --if-present",
+		"reset": "npm run nuke:nodeModules && npm run nuke:dist --ws --if-present",
 		"test": "npm run test --ws --if-present",
-		"test:watch": "npm run test:watch --ws --if-present",
+		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch --w modules/components -w integration-tests/import\"",
 		"server": "npm run start --w modules/server",
-		"server:prod": "npm run start:prod --w modules/server",
-		"server:watch": "npm run watch --w modules/server",
-		"tag": "npm version --ws --force-publish --yes"
+		"server:watch": "npm run watch --w modules/server"
 	},
 	"type": "module",
 	"workspaces": [

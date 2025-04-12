@@ -1,8 +1,12 @@
+.storybook/
 __mocks__/
+public/
 src/
 stories/
-.storybook/
 
 .env*
 .gitignore
 *config.js*
+*config.ts*
+
+tsconfig.*
