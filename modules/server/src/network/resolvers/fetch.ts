@@ -53,10 +53,8 @@ export const fetchData = async <SuccessType>(
 				return failure(CONNECTION_STATUS.ERROR, `Network failure: ${url}`);
 			}
 
-			if (error.response) {
-				const errors =
-					errorResponse.response &&
-					errorResponse.response.data.errors.map((gqlError) => gqlError.message).join('\n');
+			if (errorResponse.response) {
+				const errors = errorResponse.response.data.errors.map((gqlError) => gqlError.message).join('\n');
 				console.error(errors);
 				return failure(CONNECTION_STATUS.ERROR, 'errors');
 			}
