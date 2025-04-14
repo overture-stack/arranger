@@ -46,6 +46,7 @@ export const createResolvers = ({
 		if (enableDocumentHits) {
 			return aggregationsToGraphql(aggregations);
 		} else {
+			// TODO: Needs further validation and testing before full release, see implementation for detail
 			const { dataMaskedAggregations } = applyAggregationMasking({
 				aggregations,
 				dataMaskMinThreshold,

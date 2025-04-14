@@ -27,6 +27,12 @@ const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregatio
 };
 
 /**
+ * TODO: Please verify before release.
+ * This functionality covers the bare bones of an implementation of data masking.
+ * There are areas which needs to be tested more thoroughly and validated to cover potential "data workarounds"
+ */
+
+/**
  *
  * 1) Iterate through aggs applying data masking to buckets if applicable
  * 2) Find the agg with the most bucket count and data masking applied to be used in calculating hits.total
