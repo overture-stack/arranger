@@ -48,7 +48,7 @@ export const applyAggregationMasking = ({
 	dataMaskMinThreshold: number;
 }) => {
 	if (dataMaskMinThreshold < 1) {
-		throw Error('DATA_MASK_MIN_THRESHOLD environment variable has to be a positive integer.');
+		throw Error('the value for DATA_MASK_MIN_THRESHOLD must be a positive integer.');
 	}
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
 
