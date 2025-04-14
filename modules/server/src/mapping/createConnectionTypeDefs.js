@@ -35,7 +35,6 @@ export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentH
         searchAfter: JSON
         trackTotalHits: Boolean = true
       ): ${type.name}Connection
-     
       mapping: JSON
     }
 
