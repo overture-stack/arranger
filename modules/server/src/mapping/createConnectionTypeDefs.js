@@ -12,7 +12,6 @@ const createDataMaskingType = ({ enableDocumentHits }) => {
 };
 
 export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentHits }) => {
-	console.log('createConnectionTypeDefs, enableDocumentHits', enableDocumentHits);
 	return `
     type ${type.name} {
       aggregations(
