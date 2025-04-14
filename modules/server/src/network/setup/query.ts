@@ -1,4 +1,3 @@
-import { NetworkAggregationError } from '#network/errors.js';
 import { fetchGql } from '#network/gql.js';
 import { type NetworkConfig } from '#network/types/setup.js';
 import { fulfilledPromiseFilter } from '#network/utils/promise.js';
@@ -92,7 +91,7 @@ const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQuer
 		}
 
 		console.error('Unexpected response data in fetchRemoteSchema');
-		throw new NetworkAggregationError(
+		throw new Error(
 			`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
 		);
 	} catch (error) {
