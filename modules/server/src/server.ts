@@ -94,6 +94,7 @@ const arrangerServer = async ({
 		enableAdmin,
 		enableDocumentHits,
 		enableNetworkAggregation,
+		dataMaskMinThreshold,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
