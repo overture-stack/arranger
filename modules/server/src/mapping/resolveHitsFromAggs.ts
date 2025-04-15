@@ -58,6 +58,10 @@ export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolv
 		/*
 		 * Get "aggregations" field from full query if found
 		 * Popular gql parsing libs parse the "info" property which may not include full query based on schema
+		 *
+		 * aggregationsPath is the top level field of the query object that other fields are queried under
+		 * example: "file" in this query { file { aggregations : {...}, hits: {...}}}
+		 * This is why we use a static path and then a dynamic find, we will also have one array element for the top level
 		 */
 		const aggregationsPath = 'operation.selectionSet.selections[0].selectionSet.selections';
 		const aggregationsSelectionSet = get(info, aggregationsPath, []).find(
