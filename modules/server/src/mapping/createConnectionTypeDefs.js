@@ -1,11 +1,21 @@
 import mappingToAggsType from './mappingToAggsType.js';
 
-export default ({ type, fields = '', createStateTypeDefs = true }) => {
+const createConnectionType = ({ type, enableDocumentHits }) => {
+	return `type ${type.name}Connection {
+    total: Int!
+   ${enableDocumentHits ? `edges: [${type.name}Edge]` : ''}
+  }`;
+};
+
+const createDataMaskingType = ({ enableDocumentHits }) => {
+	return !enableDocumentHits ? `type DataMasking { thresholdValue: Int }` : '';
+};
+
+export default ({ type, fields = '', createStateTypeDefs = true, enableDocumentHits }) => {
 	return `
     type ${type.name} {
       aggregations(
         filters: JSON
-
         include_missing: Boolean
         # Should term aggregations be affected by queries that contain filters on their field. For example if a query is filtering primary_site by Blood should the term aggregation on primary_site return all values or just Blood. Set to False for UIs that allow users to select multiple values of an aggregation.
         aggregations_filter_themselves: Boolean
@@ -25,7 +35,6 @@ export default ({ type, fields = '', createStateTypeDefs = true }) => {
         searchAfter: JSON
         trackTotalHits: Boolean = true
       ): ${type.name}Connection
-
       mapping: JSON
     }
 
@@ -33,10 +42,10 @@ export default ({ type, fields = '', createStateTypeDefs = true }) => {
       ${mappingToAggsType(type.mapping)}
     }
 
-    type ${type.name}Connection {
-      total: Int!
-      edges: [${type.name}Edge]
-    }
+    ${createDataMaskingType({ enableDocumentHits })}
+
+    ${createConnectionType({ type, enableDocumentHits })}
+  
 
     type ${type.name}Edge {
       searchAfter: JSON
