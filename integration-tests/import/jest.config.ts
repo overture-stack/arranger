@@ -4,7 +4,7 @@ const jestConfig: JestConfigWithTsJest = {
 	extensionsToTreatAsEsm: ['.jsx', '.ts', '.tsx'],
 	moduleNameMapper: {
 		'\\.(css|less)$': '<rootDir>/__mocks__/styleMock.cjs',
-		'^lodash$': 'lodash-es',
+		'^lodash-es$': 'lodash', // TODO flip this around when we're on ESM
 	},
 	transform: {
 		'^.+.[jt]sx?$': [

@@ -11,9 +11,9 @@ const babelConfigs = (api) => {
 			[
 				'@babel/preset-env',
 				{
-					modules: false,
+					// modules: false,
 					targets: {
-						esmodules: true,
+						// esmodules: true,
 						node: 'current',
 						// 	browsers: '> 0.25%, not dead',
 					},
@@ -41,6 +41,7 @@ const babelConfigs = (api) => {
 					alias: {
 						'^#public': './public',
 						'^#(.+)': './src/\\1', // keep this as last alias, to allow others first
+						'^lodash-es$': 'lodash', // TODO flip this around when we're on ESM
 					},
 					cwd: 'packagejson',
 					extensions: ['.js', '.jsx', '.d.ts', '.ts', '.tsx'],
@@ -57,9 +58,9 @@ const babelConfigs = (api) => {
 			// '@babel/plugin-proposal-class-properties',
 		],
 		sourceMaps: 'inline',
-		targets: {
-			esmodules: true,
-		}
+		// targets: {
+		// 	esmodules: true,
+		// }
 	};
 };
 

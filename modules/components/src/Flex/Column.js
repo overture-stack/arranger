@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Children, cloneElement } from 'react';
 
 // Custom
-import Row from './Row';
+import Row from './Row.js';
 
 /*----------------------------------------------------------------------------*/
 

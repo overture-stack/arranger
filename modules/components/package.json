@@ -40,6 +40,7 @@
 		"filesize": "^10.0.6",
 		"formik": "^0.11.11",
 		"jsonpath-plus": "^10.3.0",
+		"lodash": "^4.17.21",
 		"lodash-es": "^4.17.21",
 		"pluralize": "^8.0.0",
 		"ramda": "^0.28.0",
@@ -109,6 +110,5 @@
 	"overrides": {
 		"minimist": "^1.2.6"
 	},
-	"type": "module",
 	"version": "0.0.0-dev"
 }

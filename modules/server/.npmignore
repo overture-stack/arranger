@@ -2,8 +2,8 @@ configTemplates/
 src/
 
 .env*
-*config.js*
-*config.ts*
-
-index.ts
 tsconfig*
+
+/*config.js*
+/*config.ts*
+/index.ts

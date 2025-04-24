@@ -6,7 +6,8 @@ stories/
 
 .env*
 .gitignore
-*config.js*
-*config.ts*
-
 tsconfig.*
+
+/*config.js*
+/*config.ts*
+

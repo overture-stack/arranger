@@ -4,7 +4,7 @@ import React from 'react';
 import { elasticMappingToDisplayTreeData } from '#AdvancedFacetView/utils.js';
 import NestedTreeView from '#NestedTreeView/index.js';
 
-import { themeDecorator } from './decorators';
+import { themeDecorator } from './decorators.js';
 
 const dataSource = [
 	{
