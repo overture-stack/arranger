@@ -16,7 +16,6 @@ export default async function (rootPath = '') {
 	return arranger({
 		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
 	}).then((router) => {
-
 		app.use(urlencoded({ extended: false, limit: '50mb' }));
 		app.use(json({ limit: '50mb' }));
 		app.use(router);

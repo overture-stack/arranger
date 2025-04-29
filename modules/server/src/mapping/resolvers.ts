@@ -61,7 +61,7 @@ export const createResolvers = ({
 	 */
 	const hits = enableDocumentHits
 		? resolveHits({ type, Parallel, getServerSideFilter })
-		: getHitsFromAggsResolver(aggregationsResolver);
+		: getHitsFromAggsResolver(aggregationsResolver, dataMaskMinThreshold);
 
 	return { hits, aggregations, configs };
 };

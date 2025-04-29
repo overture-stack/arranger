@@ -37,6 +37,8 @@ const calculateHitsFromAggregation = ({ aggregation }: { aggregation: Aggregatio
  * 1) Iterate through aggs applying data masking to buckets if applicable
  * 2) Find the agg with the most bucket count and data masking applied to be used in calculating hits.total
  *
+ * NB: does not support NumericAggreagtions
+ *
  * @param aggregations - aggregations from query
  * @returns aggregations with data masking applied and hits total
  */
@@ -51,12 +53,25 @@ export const applyAggregationMasking = ({
 		throw Error('the value for DATA_MASK_MIN_THRESHOLD must be a positive integer.');
 	}
 	const THRESHOLD_REPLACEMENT_VALUE = 1;
-
+	console.log(JSON.stringify(aggregations), dataMaskMinThreshold, 'xxxx');
 	const { aggsTotal: dataMaskedAggregations, totalHitsAgg } = Object.entries(aggregations).reduce<{
 		aggsTotal: AllAggregationsMap;
 		totalHitsAgg: { key: string; bucketCount: number };
 	}>(
 		({ aggsTotal, totalHitsAgg }, [type, aggregation]) => {
+			console.log('type', type, 'agg', aggregation);
+			// if aggregation is NumericAggregation skip masking as it's not supported yet
+			if (aggregation.hasOwnProperty('histogram')) {
+				return {
+					aggsTotal: {
+						...aggsTotal,
+						[type]: {
+							...aggregation,
+						},
+					},
+					totalHitsAgg,
+				};
+			}
 			// mask buckets if under threshold
 			const dataMaskedBuckets = aggregation.buckets.map((bucket) =>
 				bucket.doc_count < dataMaskMinThreshold

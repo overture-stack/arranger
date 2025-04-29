@@ -53,7 +53,7 @@ type HitsResolver = Resolver<Root, HitsQuery, Promise<{ total: number }>>;
  * @param aggregationsResolver - resolver ES query code for aggregations
  * @returns Returns a total count that is less than or equal to the actual total hits in the query.
  */
-export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolver) => {
+export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolver, dataMaskMinThreshold: number) => {
 	const resolver: HitsResolver = async (obj, args, context, info) => {
 		/*
 		 * Get "aggregations" field from full query if found
@@ -82,6 +82,7 @@ export const getHitsFromAggsResolver = (aggregationsResolver: AggregationsResolv
 			);
 			const { hitsTotal: total } = applyAggregationMasking({
 				aggregations,
+				dataMaskMinThreshold,
 			});
 			return { total };
 		} else {

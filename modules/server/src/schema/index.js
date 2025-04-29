@@ -25,6 +25,7 @@ const makeSchema = ({
 	scalarTypes = [],
 	setsIndex,
 	types = [],
+	dataMaskMinThreshold,
 } = {}) => {
 	const typesWithSets = [
 		types,
@@ -68,6 +69,7 @@ const makeSchema = ({
 		scalarTypes,
 		setsIndex,
 		types: typesWithSets,
+		dataMaskMinThreshold,
 	});
 
 	const schema = makeExecutableSchema({

@@ -119,6 +119,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 const createSchema = async ({
 	enableAdmin,
 	enableDocumentHits,
+	dataMaskMinThreshold,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
@@ -136,12 +137,14 @@ const createSchema = async ({
 			mockSchema: makeSchema({
 				enableAdmin,
 				enableDocumentHits,
+				dataMaskMinThreshold,
 				mock: true,
 				...schemaBase,
 			}),
 			schema: makeSchema({
 				enableAdmin,
 				enableDocumentHits,
+				dataMaskMinThreshold,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -259,6 +262,7 @@ export const createSchemasFromConfigs = async ({
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
 			enableDocumentHits,
+			dataMaskMinThreshold,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
