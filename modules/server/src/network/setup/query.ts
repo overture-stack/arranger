@@ -121,6 +121,7 @@ export const fetchAllNodeAggregations = async ({
 
 	const nodeConfigs = queryResults.filter(fulfilledPromiseFilter<NetworkQueryResult>).map((networkResult) => {
 		const { config, gqlResponse } = networkResult.value;
+		// TODO handle null _type value example: incorrect document type specified
 		const fields = gqlResponse.__type.fields;
 		const aggregations = fields.map(normalizeGqlField);
 		return { ...config, aggregations };
