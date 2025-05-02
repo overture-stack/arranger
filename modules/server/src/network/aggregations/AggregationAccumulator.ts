@@ -1,4 +1,3 @@
-import { Relation } from '#mapping/masking.js';
 import {
 	type Aggregations,
 	type AllAggregations,
@@ -20,7 +19,7 @@ type AggregationsTuple = [AllAggregations, AllAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
 	bucket_count: 1,
-	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: 'eq' }],
+	buckets: [{ key: '___aggregation_not_available___', doc_count: hits }],
 });
 
 // mutation - update a single aggregations field in the accumulator

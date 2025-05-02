@@ -2,12 +2,7 @@ import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
-import {
-	ENABLE_LOGS,
-	ES_ARRANGER_SET_INDEX,
-	ENABLE_NETWORK_AGGREGATION,
-	DATA_MASK_MIN_THRESHOLD,
-} from './config/constants.js';
+import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from './config/constants.js';
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
@@ -54,9 +49,7 @@ export const buildEsClientViaEnv = () => {
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
 	enableAdmin = ENABLE_ADMIN,
-	enableDocumentHits = ENABLE_DOCUMENT_HITS,
 	enableNetworkAggregation = ENABLE_NETWORK_AGGREGATION,
-	dataMaskMinThreshold = DATA_MASK_MIN_THRESHOLD,
 	enableLogs = ENABLE_LOGS,
 	esClient: customEsClient = undefined,
 	esHost = ES_HOST,
@@ -92,9 +85,7 @@ const arrangerServer = async ({
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
-		enableDocumentHits,
 		enableNetworkAggregation,
-		dataMaskMinThreshold,
 		esClient,
 		getServerSideFilter,
 		graphqlOptions,
