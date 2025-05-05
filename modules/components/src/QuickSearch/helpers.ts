@@ -1,10 +1,10 @@
-import { isEmpty, uniq } from 'lodash';
+import { isEmpty, uniq } from 'lodash-es';
 
-import { useDataContext } from '@/DataContext';
-import { ExtendedMappingInterface } from '@/DataContext/types';
+import { useDataContext } from '#DataContext/index.js';
+import type { ExtendedMappingInterface } from '#DataContext/types.js';
 
-import { SearchFieldNames, UseSearchFieldsProps } from './types';
-import { decorateFieldWithColumnsState } from './QuickSearchQuery';
+import { decorateFieldWithColumnsState } from './QuickSearchQuery.js';
+import type { SearchFieldNames, UseSearchFieldsProps } from './types.js';
 
 /** Gathers the fieldnames relevant to the specific QuickSearch instance */
 export const getQuickSearchFieldsById = ({
@@ -26,11 +26,8 @@ export const getQuickSearchFieldsById = ({
 		return allStrings
 			? fieldNames // assumes the fieldNames array was expected
 			: fieldNames.reduce((acc, fieldName): string[] => {
-					return [
-						...acc,
-						...getQuickSearchFieldsById({ instanceId, fieldNames: fieldName, level: newLevel }),
-					];
-			  }, [] as string[]);
+					return [...acc, ...getQuickSearchFieldsById({ instanceId, fieldNames: fieldName, level: newLevel })];
+				}, [] as string[]);
 	}
 
 	// fieldNames is an disctionary of shape {[instanceId | 'all']: string[] | string}
@@ -86,8 +83,7 @@ export const useSearchFields = ({
 		const displayField = decorateFieldWithColumnsState({
 			tableConfigs,
 			fieldName:
-				displayFieldName ||
-				(Array.isArray(searchableFieldNames) ? searchableFieldNames[0] : searchableFieldNames),
+				displayFieldName || (Array.isArray(searchableFieldNames) ? searchableFieldNames[0] : searchableFieldNames),
 		});
 
 		const fieldName = displayField?.displayName || displayField?.fieldName;
@@ -110,7 +106,7 @@ export const useSearchFields = ({
 								? decorateFieldWithColumnsState({
 										fieldName: field.fieldName,
 										tableConfigs,
-								  })
+									})
 								: null;
 						})
 						.filter(Boolean)
@@ -139,8 +135,7 @@ export const useSearchFields = ({
 
 		const quickSearchEntities = uniq(searchFields);
 
-		const lookup =
-			// entityIndexLookup ||
+		const lookup = // entityIndexLookup ||
 			quickSearchEntities?.reduce(
 				(acc, field, index) => ({
 					...acc,

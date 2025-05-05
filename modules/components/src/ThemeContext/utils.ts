@@ -1,14 +1,11 @@
-import { merge } from 'lodash';
+import { merge } from 'lodash-es';
 
-import { emptyObj } from '@/utils/noops';
+import { emptyObj } from '#utils/noops.js';
 
-import { CustomThemeType, ThemeMergerFn, ThemeOptions, ThemeProcessorFn } from './types';
+import type { CustomThemeType, ThemeMergerFn, ThemeOptions, ThemeProcessorFn } from './types/index.js';
 
 // To support theme composition
-const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(
-	targetTheme: ThemeOptions,
-	customTheme: Theme,
-) => {
+const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(targetTheme: ThemeOptions, customTheme: Theme) => {
 	if (typeof customTheme === 'function') {
 		const mergedTheme = customTheme(targetTheme);
 
@@ -19,11 +16,8 @@ const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(
 		const callerName = (customTheme as unknown as ThemeProcessorFn).callerName;
 
 		if (process.env.NODE_ENV === 'development') {
-			console.error(
-				`Your customTheme function ${callerName ? `at ${callerName} ` : ''}should return an object`,
-			);
+			console.error(`Your customTheme function ${callerName ? `at ${callerName} ` : ''}should return an object`);
 		}
-
 
 		return targetTheme;
 	}
@@ -34,10 +28,7 @@ const mergeTargetAndCustomTheme = <Theme = CustomThemeType>(
 // export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 export const mergeThemes: ThemeMergerFn = (targetTheme, partialTheme) =>
 	Array.isArray(partialTheme)
-		? partialTheme.reduce(
-				(aggregated, partial) => mergeTargetAndCustomTheme(aggregated, partial),
-				targetTheme,
-		  )
+		? partialTheme.reduce((aggregated, partial) => mergeTargetAndCustomTheme(aggregated, partial), targetTheme)
 		: mergeTargetAndCustomTheme(targetTheme, partialTheme);
 
 export const nested =

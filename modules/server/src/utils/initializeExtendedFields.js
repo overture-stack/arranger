@@ -1,6 +1,6 @@
-import { flattenDeep } from 'lodash';
+import { flattenDeep } from 'lodash-es';
 
-import replaceBy from './replaceBy';
+import replaceBy from './replaceBy.js';
 
 //TODO: this file may be unused
 

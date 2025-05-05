@@ -1,11 +1,11 @@
-import React from 'react';
-import { isEqual } from 'lodash';
+import { isEqual } from 'lodash-es';
+import { Component } from 'react';
 
-import defaultApiFetcher from '@/utils/api';
-import esToAggTypeMap from '@/utils/esToAggTypeMap';
-import noopFn, { emptyObj } from '@/utils/noops';
+import defaultApiFetcher from '#utils/api.js';
+import esToAggTypeMap from '#utils/esToAggTypeMap.js';
+import noopFn, { emptyObj } from '#utils/noops.js';
 
-import AdvancedFacetView from './';
+import AdvancedFacetView from './index.js';
 
 const fetchGraphqlQuery = async ({ query, variables = null, apiFetcher = defaultApiFetcher }) =>
 	apiFetcher({
@@ -44,16 +44,13 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 	const getAggregationQuery = () =>
 		allAggsNames
 			.map((aggName) => {
-				const aggType = extended.find(
-					(entry) => serializeToGraphQl(entry.fieldName) === aggName,
-				).type;
+				const aggType = extended.find((entry) => serializeToGraphQl(entry.fieldName) === aggName).type;
 				return `
           ${aggName} {
-            ${
-							esToAggTypeMap[aggType] === 'Aggregations'
-								? `buckets { key key_as_string doc_count }`
-								: `stats { max min avg sum }`
-						}
+            ${esToAggTypeMap[aggType] === 'Aggregations'
+						? `buckets { key key_as_string doc_count }`
+						: `stats { max min avg sum }`
+					}
           }`;
 			})
 			.join('');
@@ -81,12 +78,7 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 	}));
 };
 
-const removeFieldTypesFromMapping = ({
-	mapping,
-	extended,
-	parentField = null,
-	fieldTypesToExclude = [],
-}) => {
+const removeFieldTypesFromMapping = ({ mapping, extended, parentField = null, fieldTypesToExclude = [] }) => {
 	const output = {
 		...Object.entries(mapping).reduce((acc, [key, val]) => {
 			const currentFieldName = `${parentField ? `${parentField}.` : ''}${key}`;
@@ -95,22 +87,22 @@ const removeFieldTypesFromMapping = ({
 			);
 			const toSpread = !isId
 				? {
-						...(val.properties
-							? {
-									[key]: {
-										...val,
-										properties: removeFieldTypesFromMapping({
-											mapping: val.properties,
-											extended,
-											parentField: currentFieldName,
-											fieldTypesToExclude,
-										}),
-									},
-							  }
-							: {
-									[key]: val,
-							  }),
-				  }
+					...(val.properties
+						? {
+							[key]: {
+								...val,
+								properties: removeFieldTypesFromMapping({
+									mapping: val.properties,
+									extended,
+									parentField: currentFieldName,
+									fieldTypesToExclude,
+								}),
+							},
+						}
+						: {
+							[key]: val,
+						}),
+				}
 				: {};
 			return {
 				...acc,
@@ -123,7 +115,7 @@ const removeFieldTypesFromMapping = ({
 
 const defaultFieldTypesToExclude = ['id', 'text'];
 
-export default class LiveAdvancedFacetView extends React.Component {
+export default class LiveAdvancedFacetView extends Component {
 	constructor(props) {
 		super(props);
 		const { sqon, fieldTypesToExclude = defaultFieldTypesToExclude } = props;
@@ -141,8 +133,7 @@ export default class LiveAdvancedFacetView extends React.Component {
 		extended?.filter(
 			(e) =>
 				!this.denyListedAggTypes.includes(e.type) &&
-				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)
-					?.isActive,
+				facets?.aggregations?.find((s) => s.fieldName.split('__').join('.') === e.fieldName)?.isActive,
 		);
 
 	componentDidMount() {
@@ -187,9 +178,7 @@ export default class LiveAdvancedFacetView extends React.Component {
 				facets,
 			}),
 			sqon,
-		}).then(({ aggregations }) =>
-			this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })),
-		);
+		}).then(({ aggregations }) => this.setState({ sqon, aggregations }, () => onSqonChange({ sqon })));
 	};
 
 	render() {
@@ -199,9 +188,7 @@ export default class LiveAdvancedFacetView extends React.Component {
 				{...props}
 				rootTypeName={props.documentType}
 				elasticMapping={this.state.mapping}
-				extendedMapping={this.state.extended.filter(
-					(ex) => !fieldTypesToExclude.some((type) => ex.type === type),
-				)}
+				extendedMapping={this.state.extended.filter((ex) => !fieldTypesToExclude.some((type) => ex.type === type))}
 				aggregations={this.state.aggregations}
 				onSqonFieldChange={this.onSqonFieldChange}
 				sqon={this.state.sqon}

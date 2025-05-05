@@ -1,11 +1,11 @@
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import cx from 'classnames';
-import { createRef, forwardRef, RefObject, useState } from 'react';
+import { createRef, forwardRef, useState } from 'react';
 
-import Button from '@/Button';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import Button from '#Button/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
 const InputWrapper = styled.div`
 	align-items: center;
@@ -97,9 +97,7 @@ const Input = (
 
 	const borderColor = customBorderColor || themeBorderColor;
 	const boxShadow = customBoxShadow || themeBoxShadow;
-	const clearAltText = `${customClearAltText || themeClearAltText}${
-		internalValue ? '' : ' (disabled)'
-	}`;
+	const clearAltText = `${customClearAltText || themeClearAltText}${internalValue ? '' : ' (disabled)'}`;
 	const margin = customMargin || themeMargin;
 	const padding = customPadding || themePadding;
 	const placeholder = customPlaceholder || themePlaceHolder;

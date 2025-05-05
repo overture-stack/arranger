@@ -1,4 +1,7 @@
-import flattenMapping from '../flattenMapping';
+import assert from 'node:assert';
+import { suite, test } from 'node:test';
+
+import flattenMapping from '#mapping/flattenMapping.js';
 
 const testMapping = {
 	level_1_1: {
@@ -69,7 +72,11 @@ const expectedOutput = [
 	{ field: 'level_1_2.level_2_4', type: 'keyword' },
 ];
 
-test('1.flattenMapping', () => {
-	let actualOutput = flattenMapping(testMapping);
-	expect(actualOutput).toEqual(expectedOutput);
+suite('flattenMapping', () => {
+	test('1.flattenMapping flattens the ES mapping object correctly', () => {
+		const actualOutput = flattenMapping(testMapping);
+
+		assert.deepEqual(actualOutput, expectedOutput);
+	});
 });
+

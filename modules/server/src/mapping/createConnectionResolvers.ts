@@ -1,10 +1,10 @@
-import { IResolvers } from '@graphql-tools/utils';
+import { type IResolvers } from '@graphql-tools/utils';
 
-import { ConfigProperties, ExtendedConfigsInterface } from '@/config/types';
-import { GetServerSideFilterFn } from '@/utils/getDefaultServerSideFilter';
+import { ConfigProperties, type ExtendedConfigsInterface } from '#config/types.js';
+import { type GetServerSideFilterFn } from '#utils/getDefaultServerSideFilter.js';
 
-import resolveAggregations from './resolveAggregations';
-import resolveHits from './resolveHits';
+import resolveAggregations from './resolveAggregations.js';
+import resolveHits from './resolveHits.js';
 
 // TODO: tighten these types
 type CreateConnectionResolversArgs = {
@@ -31,7 +31,7 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 				extended: fieldNames
 					? type.extendedFields.filter((extendedField: ExtendedConfigsInterface) =>
 							fieldNames.includes(extendedField.fieldName),
-					  )
+						)
 					: type.extendedFields,
 				...(createStateResolvers && {
 					facets: type.config?.[ConfigProperties.FACETS],

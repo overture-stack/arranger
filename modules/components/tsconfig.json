@@ -1,4 +1,5 @@
 {
+	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
 		/* Visit https://aka.ms/tsconfig.json to read more about this file */
 
@@ -13,7 +14,10 @@
 		/* Language and Environment */
 		"target": "es5" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
 		// "target": "es5"                                   /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-		// "lib": [],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+		"lib": [
+			"dom",
+			"esnext"
+		] /* Specify a set of bundled library declaration files that describe the target runtime environment. */,
 		"jsx": "react-jsx" /* Specify what JSX code is generated. */,
 		// "experimentalDecorators": true,                   /* Enable experimental support for TC39 stage 2 draft decorators. */
 		// "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
@@ -25,20 +29,24 @@
 		// "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
 
 		/* Modules */
-		"module": "CommonJS" /* Specify what module code is generated. */,
-		// "rootDir": "./",                                  /* Specify the root folder within your source files. */
-		"moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
-		// "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
+		"module": "nodenext" /* Specify what module code is generated. */,
+		"moduleResolution": "nodenext" /* Specify how TypeScript looks up a file from a given module specifier. */,
 		"baseUrl": "./" /* Specify the base directory to resolve non-relative module names. */,
 		"paths": {
 			/* Specify a set of entries that re-map imports to additional lookup locations. */
-			"@/public": ["./public"],
-			"@/*": ["./src/*"]
+			"#public": ["./public"],
+			"#*": ["./src/*"]
 		},
 		"plugins": [
-			{ "transform": "typescript-transform-paths" }, // absolute paths for source files
-			{ "transform": "typescript-transform-paths", "afterDeclarations": true } // absolute paths for .d.ts files
+			{
+				"transform": "typescript-transform-paths"
+			}, // absolute paths for source files
+			{
+				"transform": "typescript-transform-paths",
+				"afterDeclarations": true
+			} // absolute paths for .d.ts files
 		],
+		"rootDir": "./src" /* Specify the root folder within your source files. */,
 		// "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
 		// "typeRoots": [],                                  /* Specify multiple folders that act like `./node_modules/@types`. */
 		// "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */
@@ -48,14 +56,14 @@
 
 		/* JavaScript Support */
 		"allowJs": true /* Allow JavaScript files to be a part of your program. Use the `checkJS` option to get errors from these files. */,
-		"checkJs": false /* Enable error reporting in type-checked JavaScript files. */,
+		"checkJs": true /* Enable error reporting in type-checked JavaScript files. */,
 		// "maxNodeModuleJsDepth": 1,                        /* Specify the maximum folder depth used for checking JavaScript files from `node_modules`. Only applicable with `allowJs`. */
 
 		/* Emit */
 		"declaration": true /* Generate .d.ts files from TypeScript and JavaScript files in your project. */,
 		// "declarationMap": true /* Create sourcemaps for d.ts files. */,
-		// "emitDeclarationOnly": true,                      /* Only output d.ts files and not JavaScript files. */
-		"sourceMap": true /* Create source map files for emitted JavaScript files. */,
+		// "emitDeclarationOnly": true /* Only output d.ts files and not JavaScript files. */,
+		// "sourceMap": true /* Create source map files for emitted JavaScript files. */,
 		// "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If `declaration` is true, also designates a file that bundles all .d.ts output. */
 		"outDir": "./dist" /* Specify an output folder for all emitted files. */,
 		// "removeComments": true,                           /* Disable emitting comments. */
@@ -65,7 +73,7 @@
 		// "downlevelIteration": true,                       /* Emit more compliant, but verbose and less performant JavaScript for iteration. */
 		// "sourceRoot": "",                                 /* Specify the root path for debuggers to find the reference source code. */
 		// "mapRoot": "",                                    /* Specify the location where debugger should locate map files instead of generated locations. */
-		// "inlineSourceMap": true,                          /* Include sourcemap files inside the emitted JavaScript. */
+		"inlineSourceMap": true /* Include sourcemap files inside the emitted JavaScript. */,
 		// "inlineSources": true,                            /* Include source code in the sourcemaps inside the emitted JavaScript. */
 		// "emitBOM": true,                                  /* Emit a UTF-8 Byte Order Mark (BOM) in the beginning of output files. */
 		// "newLine": "crlf",                                /* Set the newline character for emitting files. */
@@ -77,6 +85,7 @@
 
 		/* Interop Constraints */
 		// "isolatedModules": true,                          /* Ensure that each file can be safely transpiled without relying on other imports. */
+		// "allowImportingTsExtensions": true /* Allow importing TypeScript files with a `.ts` extension. */,
 		"allowSyntheticDefaultImports": true /* Allow 'import x from y' when a module doesn't have a default export. */,
 		"esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */,
 		// "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
@@ -84,7 +93,7 @@
 
 		/* Type Checking */
 		"strict": true /* Enable all strict type-checking options. */,
-		"noImplicitAny": true /* Enable error reporting for expressions and declarations with an implied `any` type.. */,
+		"noImplicitAny": false /* Enable error reporting for expressions and declarations with an implied `any` type.. */,
 		"strictNullChecks": true /* When type checking, take into account `null` and `undefined`. */,
 		// "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
 		// "strictBindCallApply": true,                      /* Check that the arguments for `bind`, `call`, and `apply` methods match the original function. */
@@ -98,6 +107,7 @@
 		"noImplicitReturns": true /* Enable error reporting for codepaths that do not explicitly return in a function. */,
 		"noFallthroughCasesInSwitch": true /* Enable error reporting for fallthrough cases in switch statements. */,
 		"noUncheckedIndexedAccess": true /* Include 'undefined' in index signature results */,
+		// "noErrorTruncation": true,
 		// "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
 		// "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type */
 		// "allowUnusedLabels": true,                        /* Disable error reporting for unused labels. */
@@ -105,8 +115,10 @@
 
 		/* Completeness */
 		// "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-		"skipLibCheck": true /* Skip type checking all .d.ts files. */
+		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
+		// "verbatimModuleSyntax": true,
+		"erasableSyntaxOnly": true
 	},
-	"exclude": ["types.js"],
-	"include": ["src/**/*", "__tests__/**/*"]
+	"exclude": ["dist/**/*", "**/__mocks__/*", "**/__tests__/*"],
+	"include": ["src/**/*"]
 }

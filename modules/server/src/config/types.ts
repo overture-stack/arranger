@@ -1,6 +1,6 @@
 // TODO: will gradually tighten these as we migrate to TS
 
-import { ES_TYPES } from '@/mapping/esToAggTypeMap';
+import { type ES_TYPES } from '#mapping/esToAggTypeMap.js';
 
 export const ConfigOptionalProperties = {
 	DOWNLOADS: 'downloads',
@@ -97,15 +97,7 @@ export interface DownloadsConfigsInterface {
 	[ConfigProperties.MAX_DOWNLOAD_ROWS]?: number;
 }
 
-export type DisplayType =
-	| 'all'
-	| 'bits'
-	| 'boolean'
-	| 'bytes'
-	| 'date'
-	| 'list'
-	| 'nested'
-	| 'number';
+export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'nested' | 'number';
 
 export interface ExtendedConfigsInterface {
 	[ConfigProperties.DISPLAY_NAME]: string;

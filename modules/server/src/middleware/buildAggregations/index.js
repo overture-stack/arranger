@@ -1,6 +1,7 @@
-import { get, isEqual } from 'lodash';
-import injectNestedFiltersToAggs from './injectNestedFiltersToAggs';
-import getNestedSqonFilters from './getNestedSqonFilters';
+import { get, isEqual } from 'lodash-es';
+
+import { opSwitch } from '#middleware/buildQuery/index.js';
+import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
 import {
 	AGGS_WRAPPER_FILTERED,
 	AGGS_WRAPPER_GLOBAL,
@@ -8,10 +9,11 @@ import {
 	ES_BOOL,
 	ES_NESTED,
 	ES_QUERY,
-} from '../constants';
-import createFieldAggregation from './createFieldAggregation';
-import normalizeFilters from '../buildQuery/normalizeFilters';
-import { opSwitch } from '../buildQuery';
+} from '#middleware/constants.js';
+
+import createFieldAggregation from './createFieldAggregation.js';
+import getNestedSqonFilters from './getNestedSqonFilters.js';
+import injectNestedFiltersToAggs from './injectNestedFiltersToAggs.js';
 
 function createGlobalAggregation({ fieldName, aggregation }) {
 	return {
@@ -30,19 +32,14 @@ function removeFieldFromQuery({ fieldName, query }) {
 	const nestedQuery = get(nested, ES_QUERY);
 	const bool = get(query, ES_BOOL);
 
-	if (
-		['terms', 'range'].some((k) => get(query, [k, fieldName])) ||
-		get(query, ['exists', 'field']) === fieldName
-	) {
+	if (['terms', 'range'].some((k) => get(query, [k, fieldName])) || get(query, ['exists', 'field']) === fieldName) {
 		return null;
 	} else if (nestedQuery) {
 		const cleaned = removeFieldFromQuery({ fieldName, query: nestedQuery });
 		return cleaned && { ...query, [ES_NESTED]: { ...nested, [ES_QUERY]: cleaned } };
 	} else if (bool) {
 		const filtered = Object.entries(bool).reduce((acc, [type, values]) => {
-			const filteredValues = values
-				.map((value) => removeFieldFromQuery({ fieldName, query: value }))
-				.filter(Boolean);
+			const filteredValues = values.map((value) => removeFieldFromQuery({ fieldName, query: value })).filter(Boolean);
 			if (filteredValues.length > 0) {
 				acc[type] = filteredValues;
 			}
@@ -83,13 +80,7 @@ function wrapWithFilters({ fieldName, query, aggregationsFilterThemselves, aggre
 /**
  * graphqlFields: output from `graphql-fields` (https://github.com/robrichard/graphql-fields)
  */
-export default function ({
-	aggregationsFilterThemselves,
-	graphqlFields,
-	nestedFieldNames,
-	query,
-	sqon,
-}) {
+export default function ({ aggregationsFilterThemselves, graphqlFields, nestedFieldNames, query, sqon }) {
 	const normalizedSqon = normalizeFilters(sqon);
 	const aggs = Object.entries(graphqlFields).reduce((aggregations, [fieldKey, graphqlField]) => {
 		const fieldName = fieldKey.replace(/__/g, '.');
@@ -99,9 +90,7 @@ export default function ({
 				? c.content?.fieldName?.startsWith(nestedPaths)
 				: c.content?.fieldName?.startsWith(nestedPaths) && c.content?.fieldName !== fieldName,
 		);
-		const termFilters = contentsFiltered.map((filter) =>
-			opSwitch({ nestedFieldNames: [], filter }),
-		);
+		const termFilters = contentsFiltered.map((filter) => opSwitch({ nestedFieldNames: [], filter }));
 
 		const fieldAggregation = createFieldAggregation({
 			fieldName,

@@ -8,7 +8,7 @@ ARG ES_HOST=http://localhost:9200
 #######################################################
 # Builder
 #######################################################
-FROM node:18-alpine as builder
+FROM node:22-alpine as builder
 
 ARG APP_FOLDER
 ARG APP_GID
@@ -46,4 +46,4 @@ USER $APP_USER
 
 EXPOSE 5050
 
-CMD make _ping_elasticsearch_server -e && npm run server:prod
+CMD make _ping_elasticsearch_server -e && npm run server

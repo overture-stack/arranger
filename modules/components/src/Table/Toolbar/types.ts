@@ -1,11 +1,16 @@
-import { CountDisplayThemeProps } from '@/Table/CountDisplay/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { RecursivePartial } from '@/utils/types';
+import type { ElementType } from 'react';
 
-export interface ToolbarThemeProps extends ThemeCommon.FontProperties, ThemeCommon.CustomCSS {
+import type { CountDisplayThemeProps } from '#Table/CountDisplay/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { RecursivePartial } from '#utils/types.js';
+
+export type ToolbarThemeProps = {
+	spacing: string;
+	tools: ElementType[];
 	CountDisplay: CountDisplayThemeProps;
-}
+} & ThemeCommon.FontProperties &
+	ThemeCommon.CustomCSS;
 
-export interface ToolbarProps extends ThemeCommon.CustomCSS {
+export type ToolbarProps = {
 	theme?: RecursivePartial<ToolbarThemeProps>;
-}
+} & ThemeCommon.CustomCSS;

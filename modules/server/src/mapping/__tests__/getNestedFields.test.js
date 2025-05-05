@@ -1,58 +1,65 @@
-import getNestedFields from '../getNestedFields';
+import assert from 'node:assert';
+import { suite, test } from 'node:test';
 
-test('1.getNestedFields', () => {
-	let actual = getNestedFields({
-		diagnoses: {
-			type: 'nested',
-			properties: {
-				age_at_diagnosis: {
-					type: 'long',
-				},
-				project: {
-					properties: {
-						project_id: {
-							type: 'keyword',
+import getNestedFields from '#mapping/getNestedFields.js';
+
+suite('getNestedFields', () => {
+	test('1.getNestedFields with nested at the root level', () => {
+		const actual = getNestedFields({
+			diagnoses: {
+				type: 'nested',
+				properties: {
+					age_at_diagnosis: {
+						type: 'long',
+					},
+					project: {
+						properties: {
+							project_id: {
+								type: 'keyword',
+							},
 						},
 					},
-				},
-				treatments: {
-					type: 'nested',
-					properties: {
-						days_to_treatment: {
-							type: 'long',
-						},
-					},
-				},
-			},
-		},
-	});
-
-	let expected = ['diagnoses', 'diagnoses.treatments'];
-
-	expect(actual.length).toBe(expected.length);
-	expected.forEach((field, i) => expect(field).toEqual(actual[i]));
-});
-
-test('2.getNestedFields deep nested', () => {
-	let actual = getNestedFields({
-		family: {
-			properties: {
-				family_members: {
-					type: 'nested',
-					properties: {
-						available_data_types: {
-							type: 'keyword',
-						},
-						created_at: {
-							type: 'date',
+					treatments: {
+						type: 'nested',
+						properties: {
+							days_to_treatment: {
+								type: 'long',
+							},
 						},
 					},
 				},
 			},
-		},
-	});
-	let expected = ['family.family_members'];
+		});
 
-	expect(actual.length).toBe(expected.length);
-	expected.forEach((field, i) => expect(field).toEqual(actual[i]));
+		const expected = ['diagnoses', 'diagnoses.treatments'];
+
+		assert.equal(actual.length, expected.length);
+
+		expected.forEach((field, i) => assert.equal(field, actual[i]));
+	});
+
+	test('2.getNestedFields with object deeply nested', () => {
+		const actual = getNestedFields({
+			family: {
+				properties: {
+					family_members: {
+						type: 'nested',
+						properties: {
+							available_data_types: {
+								type: 'keyword',
+							},
+							created_at: {
+								type: 'date',
+							},
+						},
+					},
+				},
+			},
+		});
+
+		const expected = ['family.family_members'];
+
+		assert.equal(actual.length, expected.length);
+		expected.forEach((field, i) => assert.equal(field, actual[i]));
+	});
 });

@@ -1,1 +1,1 @@
-export { default, LoaderContainer } from './Loader';
+export { default, LoaderContainer } from './Loader.js';

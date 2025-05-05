@@ -1,7 +1,7 @@
-import { get } from 'lodash';
+import { get } from 'lodash-es';
 
-import esSearch from './esSearch';
-import mapHits from './mapHits';
+import esSearch from './esSearch.js';
+import mapHits from './mapHits.js';
 
 // TODO: this code may be unused
 

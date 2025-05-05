@@ -1,6 +1,6 @@
-import { ThemedButtonProps } from '@/Button/types';
-import { ThemeCommon } from '@/ThemeContext/types';
-import { GenericFn } from '@/utils/noops';
+import type { ThemedButtonProps } from '#Button/types.js';
+import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { GenericFn } from '#utils/noops.js';
 
 export interface SQONViewerThemeProps {
 	EmptyMessage: {
@@ -43,7 +43,7 @@ export type ScalarFieldKeys = '>=' | '<=' | '>' | '<';
 
 export type CombinationKeys = 'and' | 'or' | 'not';
 
-export type ArrayFieldValue = Array<string | number> | string;
+export type ArrayFieldValue = (string | number)[] | string;
 export type ScalarFieldValue = number;
 
 export interface FilterField {

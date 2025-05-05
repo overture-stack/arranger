@@ -1,42 +1,49 @@
-import normalizeFilters from '../../buildQuery/normalizeFilters';
-import { IN_OP, OR_OP, AND_OP, ALL_OP } from '../../constants';
+import assert from 'node:assert';
+import { suite, test } from 'node:test';
 
-test(`1.normalizeFilters must handle falsy sqon`, () => {
-	const input = null;
-	const output = null;
+import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
+import { IN_OP, OR_OP, AND_OP, ALL_OP } from '#middleware/constants.js';
 
-	expect(normalizeFilters(input)).toEqual(output);
-});
+suite('middleware/normalizeFilter', () => {
 
-test(`2.normalizeFilters must preserve pivots`, () => {
-	const input = {
-		content: [
-			{
-				content: {
-					fieldName: 'nested.some_field',
-					value: ['val1'],
+	test(`1.normalizeFilters must handle falsy sqon`, () => {
+		const input = null;
+		const output = null;
+
+		assert.deepEqual(normalizeFilters(input), output);
+	});
+
+	test(`2.normalizeFilters must preserve pivots`, () => {
+		const input = {
+			content: [
+				{
+					content: {
+						fieldName: 'nested.some_field',
+						value: ['val1'],
+					},
+					op: IN_OP,
+					pivot: 'nested',
 				},
-				op: IN_OP,
-				pivot: 'nested',
-			},
-		],
-		op: AND_OP,
-	};
+			],
+			op: AND_OP,
+		};
 
-	const output = {
-		content: [
-			{
-				content: {
-					fieldName: 'nested.some_field',
-					value: ['val1'],
+		const output = {
+			content: [
+				{
+					content: {
+						fieldName: 'nested.some_field',
+						value: ['val1'],
+					},
+					op: IN_OP,
+					pivot: 'nested',
 				},
-				op: IN_OP,
-				pivot: 'nested',
-			},
-		],
-		op: AND_OP,
-		pivot: null,
-	};
+			],
+			op: AND_OP,
+			pivot: null,
+		};
 
-	expect(normalizeFilters(input)).toEqual(output);
+		assert.deepEqual(normalizeFilters(input), output);
+	});
+
 });

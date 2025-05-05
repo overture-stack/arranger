@@ -1,21 +1,21 @@
 {
 	"name": "integration-tests-server",
-	"version": "3.0.0-beta.36",
-	"private": "true",
-	"scripts": {
-		"test": "mocha --require ts-node/register --timeout 240000"
-	},
 	"dependencies": {
-		"@elastic/elasticsearch": "^7.17.0",
-		"@overture-stack/arranger-server": "^3.0.0-beta.36",
+		"@elastic/elasticsearch": "^7.17.14",
+		"@overture-stack/arranger-server": "*",
+		"axios": "^1.7.9",
 		"graphql": "^16.6.0",
-		"graphql-tag": "^2.12.6"
+		"graphql-tag": "^2.12.6",
+		"lodash-es": "^4.17.21"
 	},
 	"devDependencies": {
-		"chai": "^4.3.7",
-		"lodash": "^4.17.21",
-		"mocha": "^10.2.0",
-		"ts-node": "^10.9.1",
-		"typescript": "^4.9.5"
-	}
+		"@types/lodash-es": "^4.17.12",
+		"prettier": "^3.4.2",
+		"tsx": "^4.19.3"
+	},
+	"private": "true",
+	"scripts": {
+		"test": "tsx --test"
+	},
+	"type": "module"
 }

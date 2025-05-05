@@ -1,10 +1,10 @@
 // import { ReactNode } from 'react';
-import { Interpolation } from '@emotion/react';
+import type { Interpolation } from '@emotion/react';
 // import { EmotionJSX } from '@emotion/react/types/jsx-namespace';
 
-import { PrefixKeys } from '@/utils/types';
+import type { PrefixKeys } from '#utils/types.js';
 
-import { ThemeOptions } from '.';
+import type { ThemeOptions } from './index.js';
 
 // hacky, but Emotion typing is finicky
 // export type ChildrenType = EmotionJSX.Element | ReactNode; // TODO: is this still necessary?

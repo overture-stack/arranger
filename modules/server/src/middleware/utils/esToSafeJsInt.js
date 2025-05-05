@@ -1,3 +1,8 @@
-import { ES_MAX_LONG } from '../constants';
+import { ES_MAX_LONG } from '#middleware/constants.js';
 
-export default (x) => (Number.isInteger(x) && !Number.isSafeInteger(x) ? ES_MAX_LONG : x);
+const isESValueSafeJSInt = (value) =>
+(Number.isInteger(value) && !Number.isSafeInteger(value)
+    ? ES_MAX_LONG
+    : value);
+
+export default isESValueSafeJSInt;

@@ -1,12 +1,12 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
-import { ChangeEventHandler } from 'react';
+import type { ChangeEventHandler } from 'react';
 
-import { useTableContext } from '@/Table/helpers';
-import { useThemeContext } from '@/ThemeContext';
-import { emptyObj } from '@/utils/noops';
+import { useTableContext } from '#Table/helpers/index.js';
+import { useThemeContext } from '#ThemeContext/index.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { MaxRowsSelectorProps } from './types';
+import type { MaxRowsSelectorProps } from './types.js';
 
 const MaxRowsSelector = ({
 	className: customClassName,
