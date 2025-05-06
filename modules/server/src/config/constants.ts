@@ -11,6 +11,7 @@ export const ENABLE_DOCUMENT_HITS =
 	[undefined, ''].includes(process.env.ENABLE_DOCUMENT_HITS) || stringToBool(process.env.ENABLE_DOCUMENT_HITS);
 export const ENABLE_LOGS = stringToBool(process.env.ENABLE_LOGS);
 export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
+export const NETWORK_AGGREGATIONS = stringToArray(process.env.NETWORK_AGGREGATIONS);
 export const ES_ARRANGER_SET_INDEX = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets';
 export const ES_ARRANGER_SET_TYPE = process.env.ES_ARRANGER_SET_TYPE || 'arranger-sets';
 export const ES_HOST = process.env.ES_HOST || 'http://127.0.0.1:9200';

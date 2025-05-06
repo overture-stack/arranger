@@ -51,4 +51,5 @@ export const makeConfigsFromEnv = (): Partial<ConfigObject> => ({
 		[ConfigProperties.MAX_RESULTS_WINDOW]: ENV_CONFIG.MAX_RESULTS_WINDOW,
 		[ConfigProperties.ROW_ID_FIELD_NAME]: ENV_CONFIG.ROW_ID_FIELD_NAME,
 	},
+	[ConfigProperties.NETWORK_AGGREGATION]: ENV_CONFIG.NETWORK_AGGREGATIONS,
 });

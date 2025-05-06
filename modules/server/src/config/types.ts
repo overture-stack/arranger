@@ -143,12 +143,11 @@ export interface TableConfigsInterface {
 }
 
 interface NetworkAggregationInterface {
-	servers: {
-		[NetworkAggregationProperties.GRAPHQL_URL]: string;
-		[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
-		[NetworkAggregationProperties.DISPLAY_NAME]: string;
-	}[];
+	[NetworkAggregationProperties.GRAPHQL_URL]: string;
+	[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
+	[NetworkAggregationProperties.DISPLAY_NAME]: string;
 }
+[];
 
 export interface ConfigObject {
 	[ConfigProperties.DOCUMENT_TYPE]: string;
@@ -158,7 +157,7 @@ export interface ConfigObject {
 	[ConfigProperties.INDEX]: string;
 	[ConfigProperties.MATCHBOX]: any[];
 	[ConfigProperties.TABLE]: TableConfigsInterface;
-	[ConfigProperties.NETWORK_AGGREGATION]: NetworkAggregationInterface;
+	[ConfigProperties.NETWORK_AGGREGATION]: any[];
 }
 
 export interface FieldFromMapping {
