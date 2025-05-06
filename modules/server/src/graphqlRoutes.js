@@ -133,7 +133,6 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 			}),
 			schema: makeSchema({
 				enableAdmin,
-				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -248,7 +247,6 @@ export const createSchemasFromConfigs = async ({
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
-			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
@@ -262,11 +260,11 @@ export const createSchemasFromConfigs = async ({
 		 */
 		if (enableNetworkAggregation) {
 			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
-			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
+			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
 				throw Error('Network config not found. Please check file is valid.');
 			}
 
-			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
+			const remoteServerConfigs = networkConfigsObj.map((config) => ({
 				...config,
 				/*
 				 * part of the gql schema is generated dynamically
