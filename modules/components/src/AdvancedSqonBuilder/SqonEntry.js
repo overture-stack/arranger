@@ -1,11 +1,10 @@
-import React from 'react';
 import Component from '@reach/component-component';
 import { FaRegClone, FaTrashAlt } from 'react-icons/fa';
 
 import defaultApiFetcher from '../utils/api.js';
 
-import BooleanOp from './sqonPieces/BooleanOp';
-import { isBooleanOp, removeSqonPath, setSqonAtPath, isEmptySqon } from './utils';
+import BooleanOp from './sqonPieces/BooleanOp.js';
+import { isBooleanOp, removeSqonPath, setSqonAtPath, isEmptySqon } from './utils.js';
 
 export default (props) => {
 	const {
@@ -24,13 +23,13 @@ export default (props) => {
 		isIndexReferenced = (index) => false,
 		isDeleting = false,
 		dependentIndices = [],
-		onSqonCheckedChange = () => {},
-		onSqonDuplicate = () => {},
-		onSqonRemove = () => {},
-		onSqonChange = (sqon) => {},
-		onActivate = () => {},
-		onDeleteConfirmed = () => {},
-		onDeleteCanceled = () => {},
+		onSqonCheckedChange = () => { },
+		onSqonDuplicate = () => { },
+		onSqonRemove = () => { },
+		onSqonChange = (sqon) => { },
+		onActivate = () => { },
+		onDeleteConfirmed = () => { },
+		onDeleteCanceled = () => { },
 		emptyEntryMessage = null,
 	} = props;
 
@@ -65,8 +64,8 @@ export default (props) => {
 							!isReferenced
 								? {}
 								: {
-										background: referenceColor,
-									}
+									background: referenceColor,
+								}
 						}
 					/>
 					<div className={`selectionContainer`} onClick={onSqonCheckedChange}>
@@ -78,20 +77,20 @@ export default (props) => {
 								{isEmptySqon(syntheticSqon)
 									? emptyEntryMessage
 									: isBooleanOp(syntheticSqon) && (
-											<BooleanOp
-												arrangerIndex={arrangerIndex}
-												index={0}
-												onFieldOpRemove={onFieldOpRemove}
-												onChange={onLogicalOpChanged}
-												sqon={syntheticSqon}
-												FieldOpModifierContainer={FieldOpModifierContainer}
-												apiFetcher={apiFetcher}
-												getActiveExecutableSqon={getActiveExecutableSqon}
-												getColorForReference={getColorForReference}
-												isIndexReferenced={isIndexReferenced}
-												referencesShouldHighlight={isActiveSqon}
-											/>
-										)}
+										<BooleanOp
+											arrangerIndex={arrangerIndex}
+											index={0}
+											onFieldOpRemove={onFieldOpRemove}
+											onChange={onLogicalOpChanged}
+											sqon={syntheticSqon}
+											FieldOpModifierContainer={FieldOpModifierContainer}
+											apiFetcher={apiFetcher}
+											getActiveExecutableSqon={getActiveExecutableSqon}
+											getColorForReference={getColorForReference}
+											isIndexReferenced={isIndexReferenced}
+											referencesShouldHighlight={isActiveSqon}
+										/>
+									)}
 							</div>
 						</div>
 					</div>

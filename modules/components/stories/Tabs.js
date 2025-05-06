@@ -3,9 +3,9 @@ import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import StoryRouter from 'storybook-router';
 
-import Tabs, { TabsTable } from '../src/Tabs';
+import Tabs, { TabsTable } from '../src/Tabs.js';
 
-import { themeDecorator } from './decorators';
+import { themeDecorator } from './decorators.js';
 
 storiesOf('Tabs', module)
 	.addDecorator(themeDecorator)

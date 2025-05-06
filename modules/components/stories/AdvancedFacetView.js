@@ -4,7 +4,7 @@ import React from 'react';
 
 import LiveAdvancedFacetView from '#AdvancedFacetView/LiveAdvancedFacetView.js';
 
-import { themeDecorator } from './decorators';
+import { themeDecorator } from './decorators.js';
 
 const injectMockBuckets = (node) =>
 	Object.keys(node).reduce(
@@ -19,14 +19,14 @@ const attachBucketToNode = (mappingNode) => ({
 	...mappingNode,
 	...(mappingNode.properties
 		? {
-				properties: injectMockBuckets(mappingNode.properties),
-			}
+			properties: injectMockBuckets(mappingNode.properties),
+		}
 		: {
-				bucket: [
-					{ key: 'male', doc_count: 200 },
-					{ key: 'female', doc_count: 300 },
-				],
-			}),
+			bucket: [
+				{ key: 'male', doc_count: 200 },
+				{ key: 'female', doc_count: 300 },
+			],
+		}),
 });
 
 storiesOf('AdvancedFacetView', module)

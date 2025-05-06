@@ -1,20 +1,20 @@
-import React from 'react';
 import Component from '@reach/component-component';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { Tooltip } from 'react-tippy';
 import 'react-tippy/dist/tippy.css';
 
-import ClickAwayListener from '../../utils/ClickAwayListener.js';
-import { DisplayNameMapContext, getOperationAtPath, FIELD_OP_DISPLAY_NAME, RANGE_OPS } from '../utils';
-import FieldOpModifier from '../filterComponents/index';
-import defaultApiFetcher from '../../utils/api.js';
+import defaultApiFetcher from '#utils/api.js';
+import ClickAwayListener from '#utils/ClickAwayListener.js';
 
-import { PillRemoveButton } from './common';
+import FieldOpModifier from '../filterComponents/index.js';
+import { DisplayNameMapContext, getOperationAtPath, FIELD_OP_DISPLAY_NAME, RANGE_OPS } from '../utils.js';
 
-export default (props) => {
+import { PillRemoveButton } from './common.js';
+
+const FieldOp = (props) => {
 	const {
-		onSqonChange = (fullSqon) => {},
-		onContentRemove = () => {},
+		onSqonChange = (fullSqon) => { },
+		onContentRemove = () => { },
 		fullSyntheticSqon,
 		sqonPath = [],
 		opDisplayNameMap = FIELD_OP_DISPLAY_NAME,
@@ -49,9 +49,8 @@ export default (props) => {
 						<span className={`fieldOp pill`}>
 							<span className={'opContainer'}>
 								<span className={`fieldName`}>{fieldDisplayNameMap[field] || field} </span>
-								<span className={`opName`}>{` is ${
-									(Array.isArray(value) && value.length > 1) || RANGE_OPS.includes(op) ? opDisplayNameMap[op] : ''
-								} `}</span>
+								<span className={`opName`}>{` is ${(Array.isArray(value) && value.length > 1) || RANGE_OPS.includes(op) ? opDisplayNameMap[op] : ''
+									} `}</span>
 							</span>
 							<ClickAwayListener className={'selectionContainer'} handler={onClickAway(s)}>
 								<span className={'valueDisplay'} onClick={toggleDropdown(s)}>
@@ -88,3 +87,5 @@ export default (props) => {
 		</Component>
 	);
 };
+
+export default FieldOp;

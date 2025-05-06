@@ -1,16 +1,16 @@
-import React from 'react';
 import Component from '@reach/component-component';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
-import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils';
-import defaultApiFetcher from '../../utils/api.js';
-import ClickAwayListener from '../../utils/ClickAwayListener.js';
+import defaultApiFetcher from '#utils/api.js';
+import ClickAwayListener from '#utils/ClickAwayListener.js';
 
-import { PillRemoveButton } from './common';
-import FieldOp from './FieldOp';
+import { isReference, isBooleanOp, isFieldOp, isEmptySqon } from '../utils.js';
+
+import { PillRemoveButton } from './common.js';
+import FieldOp from './FieldOp.js';
 
 const SqonReference = (props) => {
-	const { refIndex, onRemoveClick = () => {}, highlightColor, isHighlighted } = props;
+	const { refIndex, onRemoveClick = () => { }, highlightColor, isHighlighted } = props;
 	return (
 		<span className={`sqonReference pill`}>
 			<span
@@ -19,8 +19,8 @@ const SqonReference = (props) => {
 					!isHighlighted
 						? {}
 						: {
-								background: highlightColor,
-							}
+							background: highlightColor,
+						}
 				}
 			>
 				#{refIndex + 1}
@@ -31,7 +31,7 @@ const SqonReference = (props) => {
 };
 
 const LogicalOpSelector = (props) => {
-	const { opName, onChange = (newOpName) => {} } = props;
+	const { opName, onChange = (newOpName) => { } } = props;
 	const initialState = { isOpen: false };
 	const selectionOptions = ['and', 'or'];
 	const onClickAway = (s) => () => {
@@ -77,8 +77,8 @@ const BooleanOp = (props) => {
 	const {
 		arrangerIndex,
 		contentPath = [],
-		onFieldOpRemove = (path) => {},
-		onChange = (changedPath, newOp) => {},
+		onFieldOpRemove = (path) => { },
+		onChange = (changedPath, newOp) => { },
 		sqon,
 		fullSyntheticSqon = sqon,
 		FieldOpModifierContainer = undefined,
@@ -138,4 +138,5 @@ const BooleanOp = (props) => {
 		</span>
 	);
 };
+
 export default BooleanOp;

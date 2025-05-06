@@ -101,10 +101,9 @@ const DownloadButton = ({
 
 	const { exporterDetails, hasMultipleExporters } = useExporters(exporters);
 
-	// TODO: SQONBUilder exports are weird with cjs
 	const downloadSqon =
 		!disableRowSelection && hasSelectedRows
-			? SQONBuilder.default.in(exportSelectedRowsField, selectedRows).toValue()
+			? SQONBuilder.in(exportSelectedRowsField, selectedRows).toValue()
 			: sqon;
 
 	const handleExporterClick = (

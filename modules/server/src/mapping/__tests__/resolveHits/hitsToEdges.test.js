@@ -3,7 +3,7 @@ import { suite, test } from 'node:test';
 
 import Parallel from 'paralleljs';
 
-import { hitsToEdges } from '#mapping/resolveHits';
+import { hitsToEdges } from '#mapping/resolveHits.js';
 
 import nestedFieldNames from './mockData/nestedFieldNames.json';
 import expectedEdges from './mockData/wrangledExpectedEdges.json';

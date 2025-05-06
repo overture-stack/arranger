@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 import convert from 'convert-units';
-import { debounce, isEqual, isNil } from 'lodash';
+import { debounce, isEqual, isNil } from 'lodash-es';
 import { Component } from 'react';
 import InputRange from 'react-input-range'; // TODO: abandoned. use rc-slider instead
 import 'react-input-range/lib/css/index.css';

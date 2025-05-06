@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import getNestedFields from '#mapping/getNestedFields';
+import getNestedFields from '#mapping/getNestedFields.js';
 
 suite('getNestedFields', () => {
 	test('1.getNestedFields with nested at the root level', () => {

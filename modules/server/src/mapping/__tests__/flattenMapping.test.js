@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import flattenMapping from '#mapping/flattenMapping';
+import flattenMapping from '#mapping/flattenMapping.js';
 
 const testMapping = {
 	level_1_1: {

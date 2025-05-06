@@ -3,7 +3,7 @@ import React from 'react';
 
 import SQONViewer from '#SQONViewer/index.js';
 
-import { themeDecorator } from './decorators';
+import { themeDecorator } from './decorators.js';
 
 storiesOf('SQONView', module)
 	.addDecorator(themeDecorator)

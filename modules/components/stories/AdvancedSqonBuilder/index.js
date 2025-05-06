@@ -8,10 +8,10 @@ import RangeFilter, { RangeFilterUi } from '#AdvancedSqonBuilder/filterComponent
 import TermFilter, { TermFilterUI } from '#AdvancedSqonBuilder/filterComponents/TermFilter.js';
 import AdvancedSqonBuilder from '#AdvancedSqonBuilder/index.js';
 
-import { themeDecorator } from '../decorators';
+import { themeDecorator } from '../decorators.js';
 
-import { sqons as mockSqons, fieldDisplayMap as mockFieldDisplayMap } from './mocks';
-import ProjectsProvider from './ProjectsProvider';
+import { sqons as mockSqons, fieldDisplayMap as mockFieldDisplayMap } from './mocks.js';
+import ProjectsProvider from './ProjectsProvider.js';
 
 const mockTermBuckets = [
 	{ doc_count: 2, key: 'GF_9V1MT6CM' },
@@ -63,7 +63,7 @@ const DemoSqonActionComponent = ({ sqonIndex, isActive, isSelected, isHoverring 
 		</div>
 	);
 
-const DemoModal = ({ onOk = () => {}, onCancel = () => {} }) => (
+const DemoModal = ({ onOk = () => { }, onCancel = () => { } }) => (
 	<div
 		style={{
 			position: 'absolute',
@@ -99,10 +99,10 @@ storiesOf('AdvancedSqonBuilder', module)
 		};
 		const onActiveSqonSelect =
 			(s) =>
-			({ index, sqonValue }) => {
-				action('active sqon select')({ index, sqonValue });
-				s.setState({ activeSqonIndex: index });
-			};
+				({ index, sqonValue }) => {
+					action('active sqon select')({ index, sqonValue });
+					s.setState({ activeSqonIndex: index });
+				};
 		const setModal = (s) => (ModalComponent) =>
 			s.setState({
 				ModalComponent,
@@ -144,10 +144,10 @@ storiesOf('AdvancedSqonBuilder', module)
 		};
 		const onActiveSqonSelect =
 			(s) =>
-			({ index, sqonValue }) => {
-				action('active sqon select')({ index, sqonValue });
-				s.setState({ activeSqonIndex: index });
-			};
+				({ index, sqonValue }) => {
+					action('active sqon select')({ index, sqonValue });
+					s.setState({ activeSqonIndex: index });
+				};
 		const setModal = (s) => (ModalComponent) =>
 			s.setState({
 				ModalComponent,
