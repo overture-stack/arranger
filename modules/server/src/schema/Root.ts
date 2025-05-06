@@ -65,13 +65,13 @@ const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export const typeDefs = ({ enableDocumentHits, types, rootTypes, scalarTypes }) => [
+export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
 	SortTypeDefs,
 	ConfigsTypeDefs,
-	...types.map(([key, type]) => mappingToFields({ enableDocumentHits, type, parent: '' })),
+	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
 ];
 
 const resolveObject = () => ({});
@@ -128,8 +128,6 @@ export const resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServe
 				...createConnectionResolvers({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
-					enableDocumentHits,
-					dataMaskMinThreshold,
 					getServerSideFilter,
 					Parallel,
 					type,

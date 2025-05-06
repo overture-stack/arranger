@@ -9,8 +9,6 @@ import resolveHits from './resolveHits.js';
 export type CreateConnectionResolversArgs = {
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
-	enableDocumentHits: boolean;
-	dataMaskMinThreshold: number;
 	getServerSideFilter?: GetServerSideFilterFn;
 	Parallel: any;
 	type: Record<string, any>;
@@ -21,8 +19,6 @@ type CreateConnectionResolversFn = (args: CreateConnectionResolversArgs) => IRes
 const createConnectionResolvers: CreateConnectionResolversFn = ({
 	createStateResolvers = true,
 	enableAdmin,
-	enableDocumentHits,
-	dataMaskMinThreshold,
 	getServerSideFilter,
 	Parallel,
 	type,

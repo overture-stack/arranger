@@ -11,14 +11,6 @@ import { GraphQLJSONObject } from 'graphql-type-json';
 
 import { type SupportedNetworkFieldType } from '#network/setup/fields.js';
 
-const relation = new GraphQLEnumType({
-	name: 'Relation',
-	values: {
-		eq: { value: 'eq' },
-		gte: { value: 'gte' },
-	},
-});
-
 const bucket = new GraphQLObjectType({
 	name: 'Bucket',
 	fields: {
@@ -27,9 +19,6 @@ const bucket = new GraphQLObjectType({
 		},
 		key: {
 			type: GraphQLString,
-		},
-		relation: {
-			type: relation,
 		},
 	},
 });

@@ -133,7 +133,6 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 			}),
 			schema: makeSchema({
 				enableAdmin,
-				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -248,7 +247,6 @@ export const createSchemasFromConfigs = async ({
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
-			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
