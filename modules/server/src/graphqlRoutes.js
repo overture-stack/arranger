@@ -261,7 +261,7 @@ export const createSchemasFromConfigs = async ({
 		if (enableNetworkAggregation) {
 			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
 			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
-				throw Error('Network config not found. Please check file is valid.');
+				throw Error('Network config not found. Please check validity.');
 			}
 
 			const remoteServerConfigs = networkConfigsObj.map((config) => ({
