@@ -1,4 +1,4 @@
-import { stringToBool, stringToNumber } from '#utils/stringFns.js';
+import { stringToArray, stringToBool, stringToNumber } from '#utils/stringFns.js';
 
 export const ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS = stringToBool(process.env.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS);
 export const CONFIG_FILES_PATH = process.env.CONFIG_PATH || './configs';
@@ -8,6 +8,7 @@ export const DOWNLOAD_STREAM_BUFFER_SIZE = stringToNumber(process.env.DOWNLOAD_S
 export const ENABLE_ADMIN = stringToBool(process.env.ENABLE_ADMIN);
 export const ENABLE_LOGS = stringToBool(process.env.ENABLE_LOGS);
 export const ENABLE_NETWORK_AGGREGATION = stringToBool(process.env.ENABLE_NETWORK_AGGREGATION);
+export const NETWORK_AGGREGATIONS = stringToArray(process.env.NETWORK_AGGREGATIONS);
 export const ES_ARRANGER_SET_INDEX = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets';
 export const ES_ARRANGER_SET_TYPE = process.env.ES_ARRANGER_SET_TYPE || 'arranger-sets';
 export const ES_HOST = process.env.ES_HOST || 'http://127.0.0.1:9200';

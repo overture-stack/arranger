@@ -260,11 +260,11 @@ export const createSchemasFromConfigs = async ({
 		 */
 		if (enableNetworkAggregation) {
 			const networkConfigsObj = configsFromFiles[ConfigProperties.NETWORK_AGGREGATION];
-			if (!networkConfigsObj || networkConfigsObj?.servers.length === 0) {
-				throw Error('Network config not found. Please check file is valid.');
+			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
+				throw Error('Network config not found. Please check validity.');
 			}
 
-			const remoteServerConfigs = networkConfigsObj.servers.map((config) => ({
+			const remoteServerConfigs = networkConfigsObj.map((config) => ({
 				...config,
 				/*
 				 * part of the gql schema is generated dynamically
