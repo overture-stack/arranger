@@ -1,4 +1,3 @@
-import { Relation } from '#mapping/masking.js';
 import {
 	type Aggregations,
 	type AllAggregations,
@@ -20,7 +19,7 @@ type AggregationsTuple = [AllAggregations, AllAggregations];
 
 const emptyAggregation = (hits: number): Aggregations => ({
 	bucket_count: 1,
-	buckets: [{ key: '___aggregation_not_available___', doc_count: hits, relation: 'eq' }],
+	buckets: [{ key: '___aggregation_not_available___', doc_count: hits }],
 });
 
 // mutation - update a single aggregations field in the accumulator
@@ -113,25 +112,16 @@ const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
 	 *    "key": "Dog"
 	 *   },
 	 */
-	const { key, doc_count, relation } = bucket;
+	const { key, doc_count } = bucket;
 	const existingBucketIndex = computedBuckets.findIndex((bucket) => bucket.key === key);
 
 	if (existingBucketIndex !== -1) {
 		const existingBucket = computedBuckets[existingBucketIndex];
 		if (existingBucket) {
-			/*
-			 * if any of the buckets being processed are "gte" set the bucket relation to "gte"
-			 */
-			const relationStatus =
-				existingBucket.relation === Relation.eq && relation === Relation.gte
-					? Relation.gte
-					: existingBucket.relation;
-
 			// update existing bucket
 			computedBuckets[existingBucketIndex] = {
 				...existingBucket,
 				doc_count: existingBucket.doc_count + doc_count,
-				relation: relationStatus,
 			};
 		}
 	} else {

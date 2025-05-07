@@ -17,7 +17,6 @@ export const setsMapping = {
 
 const makeSchema = ({
 	enableAdmin = false,
-	enableDocumentHits = true,
 	getServerSideFilter,
 	middleware = [],
 	mock = false,
@@ -54,7 +53,6 @@ const makeSchema = ({
 	];
 
 	const typeDefs = generateTypeDefs({
-		enableDocumentHits,
 		rootTypes,
 		scalarTypes,
 		types: typesWithSets,
@@ -62,7 +60,6 @@ const makeSchema = ({
 
 	const resolvers = generateResolvers({
 		enableAdmin,
-		enableDocumentHits,
 		getServerSideFilter,
 		rootTypes,
 		scalarTypes,

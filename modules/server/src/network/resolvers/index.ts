@@ -35,7 +35,7 @@ export const createResolvers = (configs: NodeConfig[]) => {
 		 * Checks validity of SQON
 		 * For now we will pass through the non SQON object to the pipeline
 		 *
-		 * TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
+		 * // TODO: resolve Arranger / SQONBuilder SQON outer wrapper conflict
 		 * {"content": [{...}], "op": "and"}
 		 */
 		if ('filters' in args) {

@@ -116,14 +116,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 	throw Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({
-	enableAdmin,
-	enableDocumentHits,
-	getServerSideFilter,
-	graphqlOptions = {},
-	setsIndex,
-	types,
-}) => {
+const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions = {}, setsIndex, types }) => {
 	const schemaBase = {
 		getServerSideFilter,
 		rootTypes: [],
@@ -135,13 +128,11 @@ const createSchema = async ({
 		...(types && {
 			mockSchema: makeSchema({
 				enableAdmin,
-				enableDocumentHits,
 				mock: true,
 				...schemaBase,
 			}),
 			schema: makeSchema({
 				enableAdmin,
-				enableDocumentHits,
 				middleware: graphqlOptions.middleware || [],
 				...schemaBase,
 			}),
@@ -241,9 +232,7 @@ const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schem
 export const createSchemasFromConfigs = async ({
 	configsSource = '',
 	enableAdmin,
-	enableDocumentHits,
 	enableNetworkAggregation,
-	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -258,7 +247,6 @@ export const createSchemasFromConfigs = async ({
 
 		const { mockSchema, schema } = await createSchema({
 			enableAdmin,
-			enableDocumentHits,
 			getServerSideFilter,
 			graphqlOptions,
 			setsIndex,
@@ -308,27 +296,22 @@ export const createSchemasFromConfigs = async ({
 export default async ({
 	configsSource = '',
 	enableAdmin,
-	enableDocumentHits,
 	enableNetworkAggregation,
-	dataMaskMinThreshold,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
 }) => {
 	try {
-		const { fieldsFromMapping, mockSchema, networkSchemas, schema, typesWithMappings } =
-			await createSchemasFromConfigs({
-				configsSource,
-				enableAdmin,
-				enableDocumentHits,
-				enableNetworkAggregation,
-				dataMaskMinThreshold,
-				esClient,
-				getServerSideFilter,
-				graphqlOptions,
-				setsIndex,
-			});
+		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
+			configsSource,
+			enableAdmin,
+			enableNetworkAggregation,
+			esClient,
+			getServerSideFilter,
+			graphqlOptions,
+			setsIndex,
+		});
 
 		const graphQLEndpoints = await createEndpoint({
 			esClient,
