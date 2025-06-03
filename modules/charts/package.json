@@ -1,0 +1,42 @@
+{
+	"name": "@overture-stack/charts",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"main": ".dist/main.js",
+	"module": "./dist/main.js",
+	"files": [
+		"./dist"
+	],
+	"scripts": {
+		"watch": "vite build --watch",
+		"build": "vite build",
+		"lint": "eslint .",
+		"preview": "vite preview"
+	},
+	"dependencies": {
+		"@nivo/bar": "^0.99.0",
+		"@nivo/core": "^0.99.0",
+		"lodash": "^4.17.21",
+		"zod": "^3.24.4"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.19.0",
+		"@types/lodash": "^4.17.16",
+		"@types/node": "^22.13.1",
+		"@vitejs/plugin-react": "^4.3.4",
+		"eslint": "^9.19.0",
+		"eslint-plugin-react-hooks": "^5.0.0",
+		"eslint-plugin-react-refresh": "^0.4.18",
+		"globals": "^15.14.0",
+		"typescript": "~5.7.2",
+		"typescript-eslint": "^8.22.0",
+		"vite": "^6.1.0"
+	},
+	"peerDependencies": {
+		"@types/react": "^17.0.0 || ^18.0.0",
+		"@types/react-dom": "^17.0.0 || ^18.0.0",
+		"react": "^17.0.0 || ^18.0.0",
+		"react-dom": "^17.0.0 || ^18.0.0"
+	}
+}
