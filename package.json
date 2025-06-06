@@ -41,6 +41,7 @@
 		"integration-tests/import",
 		"integration-tests/server",
 		"modules/components",
+		"modules/charts",
 		"modules/server"
 	]
 }
