@@ -1,110 +1,83 @@
-import { get } from "lodash";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useArrangerData } from "@overture-stack/arranger-components";
+import React, { createContext, ReactElement, useContext } from 'react';
+import { useArrangerData } from '@overture-stack/arranger-components';
 
-import { useChartsQuery } from "../query/ChartQuery";
+import { ArrangerChartTheme } from '#theme/arranger';
+import { useNetworkQuery } from '#hooks/useNetworkQuery';
 
 type ChartContextType = {
-  theme: {};
-  registerChart: () => void;
-  deregisterChart: () => void;
-  getChartData: () => void;
-  update: () => void;
+	theme: {};
+	registerChart: ({ fieldName }: { fieldName: string }) => void;
+	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
+	getChartData: ({ fieldName }: { fieldName: string }) => void; // apiState
 };
 
-const ChartsContext = createContext<ChartContextType | null>(null);
+export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = React.PropsWithChildren<{ theme: {} }>;
+type ChartsProviderProps = React.PropsWithChildren<{
+	theme: ArrangerChartTheme;
+	components?: {
+		Tooltip: ReactElement;
+		Error: ReactElement;
+		Loader: ReactElement;
+	};
+}>;
 
-const resolveGQLResponse = ({ fieldName, documentType, gqlResponse }) => {
-  return get(gqlResponse, ["data", documentType, "aggregations", fieldName]);
-};
+const createChartDataMap = ({ data, extendedMapping }) => {};
 
-export const ChartsProvider: ChartsProviderProps = ({ theme, children }) => {
-  const [fields, setFields] = useState([]);
-  const [data, setData] = useState();
-  const [isLoading, setLoading] = useState(false);
+export const ChartsProvider = ({ theme, components, children }: ChartsProviderProps) => {
+	const { extendedMapping, documentType, apiFetcher, sqon, setSQON } = useArrangerData({
+		callerName: 'ArrangerCharts',
+	});
+	console.log('extend mapping', extendedMapping);
 
-  const { apiFetcher, sqon, setSQON, documentType } = useArrangerData({
-    callerName: "ArrangerCharts",
-  });
+	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
+		documentType,
+		apiFetcher,
+		sqon,
+	});
 
-  const chartsQuery = useChartsQuery({ documentType, fields });
+	const chartDataMap = createChartDataMap({ data, extendedMapping });
 
-  useEffect(() => {
-    if (fields.length === 0) {
-      return setData({});
-    }
-    const updateData = async () => {
-      try {
-        setLoading(true);
-        const data = await apiFetcher({
-          body: {
-            query: chartsQuery.resolve(),
-          },
-        });
-        console.log("fetcher result", data);
-        setData(data);
-      } catch (err) {
-        console.log("err", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+	const chartContext: ChartContextType = {
+		theme,
+		registerChart: async ({ fieldName }) => {
+			addToQuery({ fieldName });
+		},
 
-    updateData();
-  }, [fields, sqon, apiFetcher]);
+		deregisterChart: ({ fieldName }) => {
+			removeFromQuery({ fieldName });
+		},
 
-  const chartContext = {
-    theme,
-    registerChart: async ({ fieldName }) => {
-      // add to "query" really its a , register handlers, validate against api etc
-      console.log("register", fieldName);
-      // chartQuery.add(field);
-      //console.log("cccqqq", chartQuery.resolve());
-      setFields((fields) => fields.concat(fieldName));
-    },
+		update: ({ fieldName, eventData }) => {
+			console.log('update', fieldName, eventData);
+			// new data => sqon => arranger => data => render
+			// update arranger.setSqon
+			setSQON();
+		},
 
-    deregisterChart: ({ fieldName }) => {
-      console.log("deregisteer", fieldName);
-      setFields((fields) => fields.filter(fieldName));
-    },
+		// chartType for slicing data
+		getChartData: ({ fieldName }) => {
+			console.log('get chart', fieldName);
+			// slice, cache?, data transform
+			//return chartDataMap.get(fieldName);
+			// Aggregation => Chart config
+			const resolvedData = !isLoading && resolveGQLResponse({ fieldName, documentType, gqlResponse: data });
 
-    update: ({ fieldName, eventData }) => {
-      console.log("update", fieldName, eventData);
-      // new data => sqon => arranger => data => render
-      // update arranger.setSqon
-      setSQON();
-    },
+			return {
+				isLoading,
+				isError: false,
+				data: resolvedData,
+			};
+		},
+	};
 
-    // chartType for slicing data
-    getChartData: ({ fieldName }) => {
-      // slice, cache?, data transform
-      console.log("getchartdata", fieldName);
-      // Aggregation => Chart config
-      const resolvedData =
-        !isLoading &&
-        resolveGQLResponse({ fieldName, documentType, gqlResponse: data });
-
-      return {
-        isLoading,
-        isError: false,
-        data: resolvedData,
-      };
-    },
-  };
-
-  return (
-    <ChartsContext.Provider value={chartContext}>
-      {children}
-    </ChartsContext.Provider>
-  );
+	return <ChartsContext.Provider value={chartContext}>{children}</ChartsContext.Provider>;
 };
 
 export const useChartsContext = () => {
-  const context = useContext(ChartsContext);
-  if (!context) {
-    throw new Error("context has to be used within <Charts.Provider>");
-  }
-  return context;
+	const context = useContext(ChartsContext);
+	if (!context) {
+		throw new Error('context has to be used within <Charts.Provider>');
+	}
+	return context;
 };

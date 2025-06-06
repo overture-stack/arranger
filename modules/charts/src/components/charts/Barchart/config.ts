@@ -1,17 +1,19 @@
-import { merge } from "lodash";
-
 export const defaultConfig = {
   layout: "horizontal",
   padding: 0.3,
   valueScale: { type: "linear" },
-  colors: { scheme: "paired" },
   borderColor: { from: "color", modifiers: [["darker", 1.6]] },
-  axisTop: null,
-  axisRight: null,
+
   animate: false,
+
   enableGridX: false,
   enableGridY: false,
+
   enableLabel: false,
+
+  // axes
+  axisTop: null,
+  axisRight: null,
   axisBottom: {
     legend: "Axis-Bottom-Legend",
     legendPosition: "middle",
@@ -35,17 +37,13 @@ export const defaultConfig = {
   indexBy: "key",
   keys: ["doc_count"],
 
-  colorBy: "indexValue",
+  colors: (d) => {
+    console.log("c", d);
+    return "";
+  },
+  colorBy: "id",
 
   onClick: (data) => {
     console.log("data", data);
   },
-};
-
-type AllowedOverrides = "layout";
-
-const resolveConfig = (props: AllowedOverrides) => {
-  const result = merge(defaultConfig, props);
-  console.log("r", result);
-  return result;
 };

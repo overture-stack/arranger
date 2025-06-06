@@ -1,28 +1,28 @@
-import { ResponsiveBar } from "@nivo/bar";
-import { Chart } from "../../Chart";
-import { defaultConfig } from "./config";
-import { get } from "lodash";
-import { useChartsContext } from "../../Provider";
+import { ResponsiveBar } from '@nivo/bar';
 
-type ArrangerChart = React.FC<{ data: {}; config: {} }>;
+import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
+import { Chart } from '#components/Chart';
+import { arrangerToNivo } from '#theme/nivo';
 
-const BarchartComp: ArrangerChart = ({ data, config }) => {
-  const barchartData = get(data, "buckets");
-  const { theme } = useChartsContext();
-  // cleaner resolved config, acc for nested values eg. axis label
-  // const resolvedConfig = getResolvedConfig();
-  console.log("barchart", barchartData, config);
-  const c = { ...defaultConfig, ...config, theme };
+import { defaultConfig } from './config';
 
-  return <ResponsiveBar data={barchartData} {...c} />;
+const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
+	const nivoConfig = arrangerToNivo({ theme, source: defaultConfig });
+
+	return (
+		<ResponsiveBar
+			data={data}
+			{...nivoConfig}
+		/>
+	);
 };
 
-export const Barchart = ({ fieldName, config }): React.ReactElement => {
-  return (
-    <Chart
-      fieldName={fieldName}
-      config={config}
-      DisplayComponent={BarchartComp}
-    />
-  );
+export const Barchart = ({ fieldName, theme }: { fieldName: string; theme: ArrangerChartTheme }) => {
+	return (
+		<Chart
+			fieldName={fieldName}
+			theme={theme}
+			DisplayComponent={BarchartComp}
+		/>
+	);
 };
