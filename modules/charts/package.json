@@ -1,7 +1,7 @@
 {
 	"name": "@overture-stack/charts",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.0-dev",
 	"type": "module",
 	"main": ".dist/main.js",
 	"module": "./dist/main.js",
