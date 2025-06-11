@@ -1,5 +1,4 @@
 import { DataContextInterface } from '@overture-stack/arranger-components';
-import { get } from 'lodash';
 import { useEffect, useState } from 'react';
 
 const AggregationsQuery = (fieldName) => `
@@ -14,10 +13,6 @@ const AggregationsQuery = (fieldName) => `
 `;
 
 const NumericAggregationsQuery = (field) => ``;
-
-const resolveGQLResponse = ({ fieldName, documentType, gqlResponse }) => {
-	return get(gqlResponse, ['data', documentType, 'aggregations', fieldName]);
-};
 
 const createQueryResolver =
 	({ documentType }: { documentType: string }) =>

@@ -1,49 +1,50 @@
 export const defaultConfig = {
-  layout: "horizontal",
-  padding: 0.3,
-  valueScale: { type: "linear" },
-  borderColor: { from: "color", modifiers: [["darker", 1.6]] },
+	layout: 'horizontal',
+	padding: 0.3,
+	valueScale: { type: 'linear' },
+	borderColor: { from: 'color', modifiers: [['darker', 1.6]] },
 
-  animate: false,
+	animate: false,
 
-  enableGridX: false,
-  enableGridY: false,
+	enableGridX: false,
+	enableGridY: false,
 
-  enableLabel: false,
+	enableLabel: false,
 
-  // axes
-  axisTop: null,
-  axisRight: null,
-  axisBottom: {
-    legend: "Axis-Bottom-Legend",
-    legendPosition: "middle",
-    tickValues: 4,
-    legendOffset: 34,
-  },
-  axisLeft: {
-    legend: "Axis-Left-Legend",
-    legendPosition: "middle",
-    renderTick: () => null,
-    legendOffset: -12,
-  },
+	// axes
+	axisTop: null,
+	axisRight: null,
+	axisBottom: {
+		legend: 'Axis-Bottom-Legend',
+		legendPosition: 'middle',
+		tickValues: 4,
+		legendOffset: 34,
+	},
+	axisLeft: {
+		legend: 'Axis-Left-Legend',
+		legendPosition: 'middle',
+		renderTick: () => null,
+		legendOffset: -12,
+	},
 
-  margin: {
-    top: 12,
-    right: 24,
-    left: 24,
-    bottom: 56,
-  },
+	margin: {
+		top: 12,
+		right: 24,
+		left: 24,
+		bottom: 56,
+	},
 
-  indexBy: "key",
-  keys: ["doc_count"],
+	indexBy: 'key',
+	keys: ['doc_count'],
 
-  colors: (d) => {
-    console.log("c", d);
-    return "";
-  },
-  colorBy: "id",
+	// TODO: use as an example of Arranger.Chart to 3rdPartyLib.Config
+	colors: (d) => {
+		console.log('c', d);
+		return '';
+	},
+	colorBy: 'id',
 
-  onClick: (data) => {
-    console.log("data", data);
-  },
+	onClick: (data) => {
+		console.log('data', data);
+	},
 };

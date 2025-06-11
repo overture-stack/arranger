@@ -1,26 +1,44 @@
-import { useEffect, useRef } from 'react';
-import { useChartsContext } from './Provider';
+import { ArrangerChartProps, ArrangerChartTheme } from '#/theme/arranger';
+import { ReactNode, useEffect } from 'react';
 import { ChartContainer } from './ChartContainer';
-import { zip, isEmpty, get } from 'lodash';
-import { ArrangerChartProps, ArrangerChartTheme } from '../theme/arranger';
-import { useColors } from '../hooks/useColors';
+import { useChartsContext } from './Provider/Provider';
 
 type ChartProps = {
 	fieldName: string;
 	theme: ArrangerChartTheme;
 	headless?: boolean;
-	children?: React.ReactElement;
+	children?: ({
+		isLoading,
+		isError,
+		data,
+	}: {
+		isLoading: boolean;
+		isError: boolean;
+		// TODO: Map<string, Aggregtions | NumericAggregations>
+		data: Map<string, {}> | undefined;
+	}) => ReactNode;
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
 };
 
-// Container => Comp
 /**
- * anything that needs access to data in here
- * @param param0
- * @returns
+ * Chart component for rendering data visualizations.
+ * Handles data state
+ * Sets up shared functionality eg. consistent colors
+ *
+ * @param fieldName - The data field to visualize
+ * @param theme - Arranger style theme configuration for the chart
+ * @param headless - Headless UI option (uses children prop)
+ * @param children - Child chart components to render within the chart (renders if headless option is true)
+ * @param DisplayComponent - Custom component for rendering chart display
  */
-export const Chart = ({ fieldName, theme, children, headless, DisplayComponent }: ChartProps) => {
-	const { registerChart, deregisterChart, getChartData } = useChartsContext();
+export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }: ChartProps) => {
+	// Add validation, field vs fieldName, theme object, etc
+	// validate
+	if (fieldName === undefined) {
+		throw Error(`Please provide "fieldName" prop.`);
+	}
+
+	const { registerChart, deregisterChart, getChartData, resolveColor } = useChartsContext();
 
 	useEffect(() => {
 		try {
@@ -34,42 +52,36 @@ export const Chart = ({ fieldName, theme, children, headless, DisplayComponent }
 		};
 	}, []);
 
-	const data = getChartData({ fieldName });
+	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
+	console.log('chart data', chartData);
 	// headless
 	if (headless) {
 		if (typeof children === 'function') {
-			return children({ data });
+			return children({ isLoading, isError, data: chartData });
 		}
 		console.error('Arranger Charts Headless component needs a function as children to render.');
 	}
 
-	// TODO: memoize, data changes but not config
-	// using cloneDeep because structuredClone needs window obj, not SSR compatible
-	const resolvedConfig = merge(cloneDeep(defaultConfig), config, {
-		theme,
-	});
-
-	// keep colors hash between renders eg. loading states between queries
-	const barchartData = get(data.data, 'buckets', {});
-	const colors = useColors({
-		keys: barchartData,
-		theme: colourTheme,
-	});
-
 	// child component
-	if (data.isLoading) {
-		return <div> Loading</div>;
-	} else if (data.isError) {
-		return <div> Error</div>;
-	} else if (data.data === undefined) {
-		return <div> no data</div>;
+	if (isLoading) {
+		return <div>Loading</div>;
+	} else if (isError) {
+		return <div>Error</div>;
+	} else if (chartData === undefined) {
+		return <div>no data</div>;
 	} else {
+		//	const resolveColorFn = wrapWithFieldName;
+		// wrap all theme, instead of passing more props around, keep other interfaces well defined
+
 		return (
 			<ChartContainer>
 				<DisplayComponent
-					data={data.data}
-					config={{ ...config, colors: colors.getColors }}
+					// keep data pretty clean because we might manipulate in the charts
+					// data vs config good seperation anyway, can use functions that take data and resolve
+					data={chartData}
+					// add ChartProvider functionality into theme
+					theme={{ ...theme, resolveColor: (args) => resolveColor({ fieldName, ...args }) }}
 				/>
 			</ChartContainer>
 		);
