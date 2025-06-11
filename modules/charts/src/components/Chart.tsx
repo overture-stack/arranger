@@ -14,7 +14,7 @@ type ChartProps = {
 	}: {
 		isLoading: boolean;
 		isError: boolean;
-		// TODO: Map<string, Aggregtions | NumericAggregations>
+		// TODO: Map<string, Aggregations | NumericAggregations>
 		data: Map<string, {}> | undefined;
 	}) => ReactNode;
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
