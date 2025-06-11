@@ -12,6 +12,7 @@ export default defineConfig({
 		],
 	},
 	build: {
+		minify: false, // useful for dev debug
 		outDir: 'dist',
 		emptyOutDir: true,
 		sourcemap: true,
@@ -23,10 +24,12 @@ export default defineConfig({
 		},
 		rollupOptions: {
 			external: ['react', 'react/jsx-runtime', '@overture-stack/arranger-components'],
+			// build will hang in watch mode if not set
+			maxParallelFileOps: 100,
 		},
 	},
 	plugins: [
-		,// dts({
+		// dts({
 		//   rollupTypes: true,
 		//   tsconfigPath: "./tsconfig.app.json",
 		// }),
