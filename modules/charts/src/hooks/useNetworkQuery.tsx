@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { DataContextInterface } from '@overture-stack/arranger-components';
 import { get } from 'lodash';
+import { useEffect, useState } from 'react';
 
 const AggregationsQuery = (fieldName) => `
   ${fieldName}
@@ -44,18 +44,27 @@ export const useNetworkQuery = ({ documentType, apiFetcher, sqon }: UseNetworkQu
 	const [fields, setFields] = useState(new Set());
 	const [apiState, setApiState] = useState({ data: null, loading: false, error: false });
 
+	// TODO: useCallback
 	const queryResolver = createQueryResolver({ documentType });
 
 	const fetchData = async () => {
+		if (fields.size === 0) {
+			console.log('no fields to fetch ie. no charts');
+			return;
+		}
+		console.log('fetching data');
 		try {
 			setApiState((previous) => ({ ...previous, loading: true }));
+			const query = queryResolver({ fields: Array.from(fields) });
+
 			const data = await apiFetcher({
 				body: {
-					query: queryResolver({ fields: Array.from(fields) }),
+					query,
 				},
 			});
 			setApiState((previous) => ({ ...previous, data }));
 		} catch (err) {
+			console.error(err);
 			setApiState((previous) => ({ ...previous, error: true }));
 		} finally {
 			setApiState((previous) => ({ ...previous, loading: false }));
