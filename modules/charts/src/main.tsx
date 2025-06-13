@@ -2,6 +2,6 @@ import { Barchart } from './components/charts/Barchart/Barchart';
 
 import { Headless } from './components/charts/Headless';
 
-import { ChartsProvider } from './components/Provider';
+import { ChartsProvider } from './components/Provider/Provider';
 
-export { ChartsProvider, Barchart, Headless };
+export { Barchart, ChartsProvider, Headless };
