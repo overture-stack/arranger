@@ -77,33 +77,38 @@ export const ChartsProvider = ({
 		isInitialized.current = true;
 	}
 
+	const registerChart = async ({ fieldName }) => {
+		addToQuery({ fieldName });
+	};
+
+	const deregisterChart = ({ fieldName }) => {
+		removeFromQuery({ fieldName });
+	};
+
+	const update = ({ fieldName, eventData }) => {
+		console.log('update', fieldName, eventData);
+		// new data => sqon => arranger => data => render
+		// update arranger.setSqon
+		setSQON();
+	};
+
+	// chartType for slicing data
+	const getChartData = ({ fieldName }) => {
+		const chartData = chartDataMap?.get(fieldName);
+
+		return {
+			isLoading: false,
+			isError: false,
+			data: chartData,
+		};
+	};
+
 	const chartContext: ChartContextType = {
 		theme,
-		registerChart: async ({ fieldName }) => {
-			addToQuery({ fieldName });
-		},
-
-		deregisterChart: ({ fieldName }) => {
-			removeFromQuery({ fieldName });
-		},
-
-		update: ({ fieldName, eventData }) => {
-			console.log('update', fieldName, eventData);
-			// new data => sqon => arranger => data => render
-			// update arranger.setSqon
-			setSQON();
-		},
-
-		// chartType for slicing data
-		getChartData: ({ fieldName }) => {
-			const chartData = chartDataMap?.get(fieldName);
-
-			return {
-				isLoading: false,
-				isError: false,
-				data: chartData,
-			};
-		},
+		registerChart,
+		deregisterChart,
+		update,
+		getChartData,
 		resolveColor,
 	};
 
