@@ -19,8 +19,9 @@ export const createChartColors = ({ colors }: { colors: Array<string> }) => {
 		 * @returns Map of keys to assigned colors
 		 */
 		createColorMap: (data: Map<string, any>) => {
-			if (!data) return;
-			if (colorMap.size !== 0) return;
+			if (!data || colorMap.size !== 0) {
+				return;
+			}
 			for (const [key, value] of data.entries()) {
 				const buckets = value.buckets; // TODO: numeric agg diff property
 				buckets.forEach((bucket) => {
