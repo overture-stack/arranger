@@ -1,5 +1,5 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
-import React, { createContext, ReactElement, useContext, useMemo, useRef } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useContext, useMemo, useRef } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { createChartColors } from './Colors/colors';
@@ -18,7 +18,7 @@ type ChartContextType = {
 
 export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = React.PropsWithChildren<{
+type ChartsProviderProps = PropsWithChildren<{
 	// ChartProviderTheme vs ChartTheme (global chart vs individual chart)
 	// viz vs chart, say "chart" everywhere, differentiate between the atual viz and the components
 	theme: { vizColors: {} };
