@@ -1,8 +1,8 @@
 import { ReactNode, useEffect } from 'react';
-import { ChartContainer } from './ChartContainer';
-import { useChartsContext } from './Provider/Provider';
 
-import { ArrangerChartProps, ArrangerChartTheme } from '#/theme/arranger';
+import { ChartContainer } from '#components/helper/ChartContainer';
+import { useChartsContext } from '#components/Provider/Provider';
+import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
 
 type ChartProps = {
 	fieldName: string;
