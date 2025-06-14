@@ -1,8 +1,8 @@
 import { ReactNode, useEffect } from 'react';
-import { ChartContainer } from './ChartContainer';
-import { useChartsContext } from './Provider/Provider';
 
-import { ArrangerChartProps, ArrangerChartTheme } from '#/theme/arranger';
+import { ChartContainer } from '#components/helper/ChartContainer';
+import { useChartsContext } from '#components/Provider/Provider';
+import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
 
 type ChartProps = {
 	fieldName: string;
@@ -39,7 +39,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		throw Error(`Please provide "fieldName" prop.`);
 	}
 
-	const { registerChart, deregisterChart, getChartData, resolveColor } = useChartsContext();
+	const { registerChart, deregisterChart, getChartData, resolveColor, globalTheme } = useChartsContext();
 
 	useEffect(() => {
 		try {
@@ -55,7 +55,6 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
-	console.log('chart data', chartData);
 	// headless
 	if (headless) {
 		if (typeof children === 'function') {
@@ -64,13 +63,20 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		console.error('Arranger Charts Headless component needs a function as children to render.');
 	}
 
+	//TODO: augment with anything "global" from "ChartsProvider"
+	// theme
+	// setSQON
+
 	// child component
 	if (isLoading) {
-		return <div>Loading</div>;
+		const { Loader } = globalTheme.components;
+		return <Loader />;
 	} else if (isError) {
+		const { ErrorData } = globalTheme.components;
 		return <div>Error</div>;
 	} else if (chartData === undefined) {
-		return <div>no data</div>;
+		const { EmptyData } = globalTheme.components;
+		return <EmptyData />;
 	} else {
 		//	const resolveColorFn = wrapWithFieldName;
 		// wrap all theme, instead of passing more props around, keep other interfaces well defined

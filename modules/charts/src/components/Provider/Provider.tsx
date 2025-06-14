@@ -3,9 +3,13 @@ import { createContext, PropsWithChildren, ReactElement, useContext, useMemo, us
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { createChartColors } from './Colors/colors';
+import { EmptyData } from './EmptyData';
+import { ErrorData } from './ErrorData';
+import { Loader } from './Loader/Loader';
+import { Tooltip } from './Tooltip';
 
 type ChartContextType = {
-	theme: {};
+	globalTheme: GlobalTheme;
 	registerChart: ({ fieldName }: { fieldName: string }) => void;
 	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
 	getChartData: ({ fieldName }: { fieldName: string }) => {
@@ -18,16 +22,19 @@ type ChartContextType = {
 
 export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = PropsWithChildren<{
-	// ChartProviderTheme vs ChartTheme (global chart vs individual chart)
-	// viz vs chart, say "chart" everywhere, differentiate between the atual viz and the components
-	theme: { vizColors: {} };
+/**
+ * global theme for all charts using ChartsProvider
+ */
+type GlobalTheme = {
+	colors?: string[];
 	components?: {
-		Tooltip: ReactElement;
-		Error: ReactElement;
-		Loader: ReactElement;
+		TooltipComp?: ReactElement;
+		Loader?: ReactElement;
+		ErrorData?: ReactElement;
+		EmptyData?: ReactElement;
 	};
-}>;
+};
+type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
 const createChartDataMap = ({ data }) => {
 	if (!data) {
@@ -38,20 +45,22 @@ const createChartDataMap = ({ data }) => {
 };
 
 export const ChartsProvider = ({
-	theme = { vizColors: ['red', 'green', 'blue'] },
-	components,
+	theme = {
+		colors: ['red', 'green', 'blue'],
+		components: { Tooltip, ErrorData, Loader, EmptyData },
+	},
 	children,
 }: ChartsProviderProps) => {
-	console.log('CHARTS PROVIDER');
-	const isInitialized = useRef(false);
-
-	// call once, not a hook
-	const { resolveColor, createColorMap } = useMemo(() => createChartColors({ colors: theme.vizColors }), []);
-
-	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
+
+	const isInitialized = useRef(false);
+
+	// call once, not a hook
+	const { resolveColor, createColorMap } = useMemo(() => createChartColors({ colors: theme.colors }), []);
+
+	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
 
 	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
 		documentType,
@@ -97,14 +106,14 @@ export const ChartsProvider = ({
 		const chartData = chartDataMap?.get(fieldName);
 
 		return {
-			isLoading: false,
-			isError: false,
+			isLoading: apiState.loading,
+			isError: apiState.error,
 			data: chartData,
 		};
 	};
 
 	const chartContext: ChartContextType = {
-		theme,
+		globalTheme: theme,
 		registerChart,
 		deregisterChart,
 		update,
