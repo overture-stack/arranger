@@ -1,4 +1,30 @@
 export const defaultConfig = {
+	theme: {
+		text: {
+			fontFamily: 'Work Sans,sans-serif',
+		},
+		axis: {
+			legend: {
+				text: { fontSize: 10, color: '#525767' },
+			},
+			ticks: {
+				text: {
+					fontSize: 11,
+					color: 'black',
+				},
+				line: {
+					strokeWidth: 0,
+				},
+			},
+			domain: {
+				line: {
+					stroke: '#dcdde1',
+					strokeWidth: 1,
+				},
+			},
+		},
+	},
+
 	layout: 'horizontal',
 	padding: 0.3,
 	valueScale: { type: 'linear' },

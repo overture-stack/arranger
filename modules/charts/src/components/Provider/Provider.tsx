@@ -1,9 +1,8 @@
-};
-import { useArrangerData } from '@overture-stack/arranger-components';
-import { createContext, PropsWithChildren, ReactElement, useContext, useMemo, useRef } from 'react';
+import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
+import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { createChartColors } from './Colors/colors';
+import { merge } from 'lodash';
 import { EmptyData } from './EmptyData';
 import { ErrorData } from './ErrorData';
 import { Loader } from './Loader/Loader';
@@ -45,23 +44,17 @@ const createChartDataMap = ({ data }) => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
-export const ChartsProvider = ({
-	theme = {
-		colors: ['red', 'green', 'blue'],
-		components: { Tooltip, ErrorData, Loader, EmptyData },
-	},
-	children,
-}: ChartsProviderProps) => {
+export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
+	// Ensure there is an ArrangerDataProvider context available
+	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
-	const isInitialized = useRef(false);
+	const { colors } = useArrangerTheme();
 
-	// call once, not a hook
-	const { resolveColor, createColorMap } = useMemo(() => createChartColors({ colors: theme.colors }), []);
-
-	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
+	// default global theme
+	const globalTheme: GlobalTheme = merge({ components: { Tooltip, ErrorData, Loader, EmptyData }, colors }, theme);
 
 	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
 		documentType,
@@ -71,21 +64,6 @@ export const ChartsProvider = ({
 
 	// first time? maybe hook for state, closer to derived state
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
-
-	if (
-		apiState.loading === false &&
-		apiState.error === false &&
-		apiState.data !== undefined &&
-		isInitialized.current === false &&
-		chartDataMap
-	) {
-		/**
-		 * need consistent keys even when query changes and becomes filtered down
-		 * initialize once with all keys
-		 */
-		createColorMap(chartDataMap);
-		isInitialized.current = true;
-	}
 
 	const registerChart = async ({ fieldName }) => {
 		addToQuery({ fieldName });
@@ -114,12 +92,11 @@ export const ChartsProvider = ({
 	};
 
 	const chartContext: ChartContextType = {
-		globalTheme: theme,
+		globalTheme,
 		registerChart,
 		deregisterChart,
 		update,
 		getChartData,
-		resolveColor,
 	};
 
 	return <ChartsContext.Provider value={chartContext}>{children}</ChartsContext.Provider>;

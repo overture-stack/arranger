@@ -3,6 +3,7 @@ import { ReactNode, useEffect } from 'react';
 import { ChartContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
+import { merge } from 'lodash';
 
 type ChartProps = {
 	fieldName: string;
@@ -39,7 +40,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		throw Error(`Please provide "fieldName" prop.`);
 	}
 
-	const { registerChart, deregisterChart, getChartData, resolveColor, globalTheme } = useChartsContext();
+	const { registerChart, deregisterChart, getChartData, globalTheme } = useChartsContext();
 
 	useEffect(() => {
 		try {
@@ -82,6 +83,9 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		//	const resolveColorFn = wrapWithFieldName;
 		// wrap all theme, instead of passing more props around, keep other interfaces well defined
 
+		// resolve globalTheme with consumer provided theme
+		const chartTheme = merge(globalTheme, theme);
+
 		return (
 			<ChartContainer>
 				<DisplayComponent
@@ -89,7 +93,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 					// data vs config good seperation anyway, can use functions that take data and resolve
 					data={chartData}
 					// add ChartProvider functionality into theme
-					theme={{ ...theme, resolveColor: (args) => resolveColor({ fieldName, ...args }) }}
+					theme={chartTheme}
 				/>
 			</ChartContainer>
 		);

@@ -7,4 +7,11 @@ export interface ArrangerChartTheme {
 
 export type ArrangerChartProps = { data: {}; theme: ArrangerChartTheme };
 
-export type ThemeResolver = ({ theme, source }: { theme: ArrangerChartTheme; source: unknown }) => ArrangerChartTheme;
+export type ThemeResolver = ({
+	theme,
+	source,
+}: {
+	theme: ArrangerChartTheme;
+	data: unknown;
+	source: unknown;
+}) => ArrangerChartTheme;

@@ -6,7 +6,7 @@
  * @param options.colors - Array of color values to use
  * @returns Object with methods to manage the color map
  */
-export const createChartColors = ({ colors }: { colors: Array<string> }) => {
+export const createChartColors = ({ colors, keys }: { colors: Array<string> }) => {
 	const colorMap = new Map<string, string>();
 
 	// used for "color wraparound" modulo
@@ -37,9 +37,9 @@ export const createChartColors = ({ colors }: { colors: Array<string> }) => {
 		 *
 		 * @returns Map of keys to assigned colors
 		 */
-		resolveColor: ({ fieldName, bucketKey }) => {
-			console.log('closure', colorMap);
-			return colorMap.get(`${fieldName}.${bucketKey}`);
+		resolveColor: ({ key }) => {
+			//	console.log('closure', colorMap);
+			return colorMap.get(key);
 		},
 	};
 };

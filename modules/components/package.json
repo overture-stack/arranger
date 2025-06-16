@@ -11,7 +11,6 @@
 		"build:declarations": "tsc --emitDeclarationOnly --project tsconfig.release.json",
 		"build": "concurrently -n babel,tsc -c yellow,blue -P 'npm:build:babel -- {@}' 'npm:build:declarations -- {@}' --",
 		"nuke:dist": "rm -rf dist",
-		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts",
 		"test:watch": "npm test -- --watch",
