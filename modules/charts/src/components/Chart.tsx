@@ -79,7 +79,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 			<ChartContainer>
 				<DisplayComponent
 					// keep data pretty clean because we might manipulate in the charts
-					// data vs config good seperation anyway, can use functions that take data and resolve
+					// data vs config good separation anyway, can use functions that take data and resolve
 					data={chartData}
 					// add ChartProvider functionality into theme
 					theme={{ ...theme, resolveColor: (args) => resolveColor({ fieldName, ...args }) }}
