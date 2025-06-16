@@ -17,13 +17,10 @@ export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
 	const resolvedTheme = arrangerToNivo({ theme, source: defaultConfig });
 
 	return (
-		<>
-			<h1>test</h1>
-			<ResponsiveBar
-				data={chartData}
-				{...resolvedTheme}
-			/>
-		</>
+		<ResponsiveBar
+			data={chartData}
+			{...resolvedTheme}
+		/>
 	);
 };
 

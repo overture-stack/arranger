@@ -1,3 +1,4 @@
+};
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { createContext, PropsWithChildren, ReactElement, useContext, useMemo, useRef } from 'react';
 
