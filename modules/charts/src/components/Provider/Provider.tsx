@@ -51,7 +51,8 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		callerName: 'ArrangerCharts',
 	});
 
-	const { colors } = useArrangerTheme();
+	const { colors, ...other } = useArrangerTheme();
+	console.log('other', other);
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
