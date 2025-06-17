@@ -65,7 +65,6 @@ export const defaultNivoConfig = {
 
 	// TODO: use as an example of Arranger.Chart to 3rdPartyLib.Config
 	colors: (d) => {
-		console.log('c', d);
 		return '';
 	},
 	colorBy: 'id',

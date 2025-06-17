@@ -62,8 +62,6 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
-	console.log('chart data', chartData);
-
 	// headless
 	if (headless) {
 		if (typeof children === 'function') {
