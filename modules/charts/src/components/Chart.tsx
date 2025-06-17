@@ -1,9 +1,10 @@
-import { merge } from 'lodash';
-import { ReactNode, useEffect } from 'react';
+import { cloneDeep, merge } from 'lodash';
+import { ReactNode, useEffect, useRef } from 'react';
 
 import { ChartContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
+import { createColorMap } from '#theme/colors';
 
 type ChartProps = {
 	fieldName: string;
@@ -20,6 +21,11 @@ type ChartProps = {
 		data: Map<string, {}> | undefined;
 	}) => ReactNode;
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
+};
+
+// TODO: numeric or agg
+const resolveData = ({ data }) => {
+	return data.buckets;
 };
 
 /**
@@ -57,6 +63,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
 	console.log('chart data', chartData);
+
 	// headless
 	if (headless) {
 		if (typeof children === 'function') {
@@ -65,9 +72,8 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		console.error('Arranger Charts Headless component needs a function as children to render.');
 	}
 
-	//TODO: augment with anything "global" from "ChartsProvider"
-	// theme
-	// setSQON
+	// instance level theme dependent on data provided
+	const x = useRef();
 
 	// child component
 	if (isLoading) {
@@ -80,18 +86,29 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		const { EmptyData } = globalTheme.components;
 		return <EmptyData />;
 	} else {
-		//	const resolveColorFn = wrapWithFieldName;
-		// wrap all theme, instead of passing more props around, keep other interfaces well defined
+		// TODO: numeric or agg
+		const resolvedChartData = resolveData({ data: chartData });
+
+		if (!x.current) {
+			const keys = resolvedChartData.map((bucket) => bucket.key);
+			x.current = createColorMap({ keys, colors: globalTheme.colors });
+		}
+
+		const instanceTheme = {
+			colorMap: x.current,
+		};
 
 		// resolve globalTheme with consumer provided theme
-		const chartTheme = merge(globalTheme, theme);
+		// TODO: Memo
+		const chartTheme = merge(cloneDeep(globalTheme), theme, instanceTheme);
+		console.log('chart theme', chartTheme);
 
 		return (
 			<ChartContainer>
 				<DisplayComponent
 					// keep data pretty clean because we might manipulate in the charts
 					// data vs config good seperation anyway, can use functions that take data and resolve
-					data={chartData}
+					data={resolvedChartData}
 					// add ChartProvider functionality into theme
 					theme={chartTheme}
 				/>
