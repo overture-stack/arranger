@@ -55,7 +55,13 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
-		{ components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData }, colors },
+		{
+			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
+			// grab a swatch of colors from Arranger with the 100 variant
+			colors: Object.keys(colors).reduce((acc, colorKey) => {
+				return acc.concat(colors[colorKey]?.['100']);
+			}, []),
+		},
 		theme,
 	);
 

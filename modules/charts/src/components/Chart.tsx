@@ -72,8 +72,8 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		console.error('Arranger Charts Headless component needs a function as children to render.');
 	}
 
-	// instance level theme dependent on data provided
-	const x = useRef();
+	// theme value depending on data provided, and scoped to a single instance of a Charts
+	const colorMap = useRef();
 
 	// child component
 	if (isLoading) {
@@ -89,19 +89,19 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		// TODO: numeric or agg
 		const resolvedChartData = resolveData({ data: chartData });
 
-		if (!x.current) {
+		if (!colorMap.current) {
 			const keys = resolvedChartData.map((bucket) => bucket.key);
-			x.current = createColorMap({ keys, colors: globalTheme.colors });
+			colorMap.current = createColorMap({ keys, colors: globalTheme.colors });
 		}
 
+		// instance of a Chart theme values, eg. colorMap
 		const instanceTheme = {
-			colorMap: x.current,
+			colorMap: colorMap.current,
 		};
 
-		// resolve globalTheme with consumer provided theme
+		// resolve globalTheme with consumer provided theme and any instance dependant theming
 		// TODO: Memo
 		const chartTheme = merge(cloneDeep(globalTheme), theme, instanceTheme);
-		console.log('chart theme', chartTheme);
 
 		return (
 			<ChartContainer>

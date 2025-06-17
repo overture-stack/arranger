@@ -2,5 +2,3 @@
 - outputs types, needs latest node/tsconfig setup in consumer project
 - package.json "files" set what's installed as dependency, package.json automatically included
 - `npm i <this_project_folder>` from consumer project
-
-nivo packages - should be peer?

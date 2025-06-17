@@ -4,6 +4,9 @@ import { Chart } from '#components/Chart';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
 import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 
+/**
+ * Resolve to a Nivo Bar chart component
+ */
 export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
 	const resolvedTheme = arrangerToNivoBarChart({ data, theme });
 
