@@ -1,9 +1,9 @@
+import { merge } from 'lodash';
 import { ReactNode, useEffect } from 'react';
 
 import { ChartContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
-import { merge } from 'lodash';
 
 type ChartProps = {
 	fieldName: string;
@@ -75,7 +75,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		return <Loader />;
 	} else if (isError) {
 		const { ErrorData } = globalTheme.components;
-		return <div>Error</div>;
+		return <ErrorData />;
 	} else if (chartData === undefined) {
 		const { EmptyData } = globalTheme.components;
 		return <EmptyData />;

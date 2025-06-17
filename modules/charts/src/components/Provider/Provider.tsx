@@ -1,11 +1,11 @@
 import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
+import { merge } from 'lodash';
 import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { merge } from 'lodash';
+import { DnaLoader } from './DnaLoader';
 import { EmptyData } from './EmptyData';
 import { ErrorData } from './ErrorData';
-import { Loader } from './Loader/Loader';
 import { Tooltip } from './Tooltip';
 
 type ChartContextType = {
@@ -54,7 +54,10 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	const { colors } = useArrangerTheme();
 
 	// default global theme
-	const globalTheme: GlobalTheme = merge({ components: { Tooltip, ErrorData, Loader, EmptyData }, colors }, theme);
+	const globalTheme: GlobalTheme = merge(
+		{ components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData }, colors },
+		theme,
+	);
 
 	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
 		documentType,
