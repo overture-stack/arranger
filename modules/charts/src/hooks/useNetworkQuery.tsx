@@ -53,7 +53,6 @@ export const useNetworkQuery = ({ documentType, apiFetcher, sqon }: UseNetworkQu
 		try {
 			setApiState((previous) => ({ ...previous, loading: true }));
 			const query = queryResolver({ fields: Array.from(fields) });
-			console.log('charts fetching data', apiState);
 
 			// gives time for loader comp to show, better visual
 			await delay(1800);

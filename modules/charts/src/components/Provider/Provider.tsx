@@ -51,11 +51,17 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		callerName: 'ArrangerCharts',
 	});
 
-	const { colors } = useArrangerTheme();
+	const { colors, ...other } = useArrangerTheme();
+	console.log('other', other);
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
-		{ components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData }, colors },
+		{
+			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
+			colors: Object.keys(colors).reduce((acc, colorKey) => {
+				return acc.concat(colors[colorKey]?.['100']);
+			}, []),
+		},
 		theme,
 	);
 

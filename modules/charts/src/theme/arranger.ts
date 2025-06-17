@@ -1,17 +1,8 @@
 export interface ArrangerChartTheme {
-	onClick?: (e: any) => void;
-	//TODO: should be global
-	colors?: string[];
-	resolveColor?: ({ fieldName }: { fieldName: string }) => string;
+	onClick?: (e: unknown) => void;
+	colors?: string[] | (({ fieldName }: { fieldName: string }) => string);
 }
 
 export type ArrangerChartProps = { data: {}; theme: ArrangerChartTheme };
 
-export type ThemeResolver = ({
-	theme,
-	source,
-}: {
-	theme: ArrangerChartTheme;
-	data: unknown;
-	source: unknown;
-}) => ArrangerChartTheme;
+export type ThemeResolver = ({ theme, data }: { theme: ArrangerChartTheme; data: unknown }) => unknown;

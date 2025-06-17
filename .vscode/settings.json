@@ -1,5 +1,0 @@
-{
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "json"],
-  "eslint.workingDirectories": [{ "pattern": "./modules/*/" }],
-  "javascript.implicitProjectConfig.checkJs": true
-}

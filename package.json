@@ -40,10 +40,8 @@
 	"workspaces": [
 		"integration-tests/import",
 		"integration-tests/server",
+		"modules/components",
 		"modules/charts",
 		"modules/server"
-	],
-	"dependencies": {
-		"@overture-stack/arranger-components": "file:../platform-ui/node_modules/@overture-stack/arranger-components"
-	}
+	]
 }
