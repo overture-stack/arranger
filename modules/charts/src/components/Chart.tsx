@@ -62,8 +62,6 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
-	console.log('chart data', chartData);
-
 	// headless
 	if (headless) {
 		if (typeof children === 'function') {
@@ -107,7 +105,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 			<ChartContainer>
 				<DisplayComponent
 					// keep data pretty clean because we might manipulate in the charts
-					// data vs config good seperation anyway, can use functions that take data and resolve
+					// data vs config good separation anyway, can use functions that take data and resolve
 					data={resolvedChartData}
 					// add ChartProvider functionality into theme
 					theme={chartTheme}
