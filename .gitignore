@@ -10,4 +10,3 @@ lerna-debug.log
 !**/.env.schema
 
 *.tsbuildinfo
-.vscode/settings.json
