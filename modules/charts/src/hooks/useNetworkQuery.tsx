@@ -14,6 +14,7 @@ const AggregationsQuery = (fieldName) => `
 
 const NumericAggregationsQuery = (field) => ``;
 
+// TODO: improve loose coupling of query + variables
 const createQueryResolver =
 	({ documentType }: { documentType: string }) =>
 	({ fields }: { fields: string[] }) => {
@@ -35,6 +36,8 @@ const createQueryResolver =
 
 type UseNetworkQueryProps = Pick<DataContextInterface, 'documentType' | 'apiFetcher' | 'sqon'>;
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const useNetworkQuery = ({ documentType, apiFetcher, sqon }: UseNetworkQueryProps) => {
 	const [fields, setFields] = useState(new Set());
 	const [apiState, setApiState] = useState({ data: null, loading: false, error: false });
@@ -47,14 +50,16 @@ export const useNetworkQuery = ({ documentType, apiFetcher, sqon }: UseNetworkQu
 			console.log('no fields to fetch ie. no charts');
 			return;
 		}
-		console.log('fetching data');
 		try {
 			setApiState((previous) => ({ ...previous, loading: true }));
 			const query = queryResolver({ fields: Array.from(fields) });
 
+			// gives time for loader comp to show, better visual
+			await delay(1800);
 			const data = await apiFetcher({
 				body: {
 					query,
+					variables: { filters: sqon },
 				},
 			});
 			setApiState((previous) => ({ ...previous, data }));

@@ -1,11 +1,15 @@
-import { useArrangerData } from '@overture-stack/arranger-components';
-import { createContext, PropsWithChildren, ReactElement, useContext, useMemo, useRef } from 'react';
+import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
+import { merge } from 'lodash';
+import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { createChartColors } from './Colors/colors';
+import { DnaLoader } from './DnaLoader';
+import { EmptyData } from './EmptyData';
+import { ErrorData } from './ErrorData';
+import { Tooltip } from './Tooltip';
 
 type ChartContextType = {
-	theme: {};
+	globalTheme: GlobalTheme;
 	registerChart: ({ fieldName }: { fieldName: string }) => void;
 	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
 	getChartData: ({ fieldName }: { fieldName: string }) => {
@@ -18,16 +22,19 @@ type ChartContextType = {
 
 export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = PropsWithChildren<{
-	// ChartProviderTheme vs ChartTheme (global chart vs individual chart)
-	// viz vs chart, say "chart" everywhere, differentiate between the atual viz and the components
-	theme: { vizColors: {} };
+/**
+ * global theme for all charts using ChartsProvider
+ */
+type GlobalTheme = {
+	colors?: string[];
 	components?: {
-		Tooltip: ReactElement;
-		Error: ReactElement;
-		Loader: ReactElement;
+		TooltipComp?: ReactElement;
+		Loader?: ReactElement;
+		ErrorData?: ReactElement;
+		EmptyData?: ReactElement;
 	};
-}>;
+};
+type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
 const createChartDataMap = ({ data }) => {
 	if (!data) {
@@ -37,21 +44,26 @@ const createChartDataMap = ({ data }) => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
-export const ChartsProvider = ({
-	theme = { vizColors: ['red', 'green', 'blue'] },
-	components,
-	children,
-}: ChartsProviderProps) => {
-	console.log('CHARTS PROVIDER');
-	const isInitialized = useRef(false);
-
-	// call once, not a hook
-	const { resolveColor, createColorMap } = useMemo(() => createChartColors({ colors: theme.vizColors }), []);
-
+export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
+	// Ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
+
+	const { colors } = useArrangerTheme();
+
+	// default global theme
+	const globalTheme: GlobalTheme = merge(
+		{
+			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
+			// grab a swatch of colors from Arranger with the 100 variant
+			colors: Object.keys(colors).reduce((acc, colorKey) => {
+				return acc.concat(colors[colorKey]?.['100']);
+			}, []),
+		},
+		theme,
+	);
 
 	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
 		documentType,
@@ -61,21 +73,6 @@ export const ChartsProvider = ({
 
 	// first time? maybe hook for state, closer to derived state
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
-
-	if (
-		apiState.loading === false &&
-		apiState.error === false &&
-		apiState.data !== undefined &&
-		isInitialized.current === false &&
-		chartDataMap
-	) {
-		/**
-		 * need consistent keys even when query changes and becomes filtered down
-		 * initialize once with all keys
-		 */
-		createColorMap(chartDataMap);
-		isInitialized.current = true;
-	}
 
 	const registerChart = async ({ fieldName }) => {
 		addToQuery({ fieldName });
@@ -97,19 +94,18 @@ export const ChartsProvider = ({
 		const chartData = chartDataMap?.get(fieldName);
 
 		return {
-			isLoading: false,
-			isError: false,
+			isLoading: apiState.loading,
+			isError: apiState.error,
 			data: chartData,
 		};
 	};
 
 	const chartContext: ChartContextType = {
-		theme,
+		globalTheme,
 		registerChart,
 		deregisterChart,
 		update,
 		getChartData,
-		resolveColor,
 	};
 
 	return <ChartsContext.Provider value={chartContext}>{children}</ChartsContext.Provider>;

@@ -1,4 +1,30 @@
-export const defaultConfig = {
+export const defaultNivoConfig = {
+	theme: {
+		text: {
+			fontFamily: 'Work Sans,sans-serif',
+		},
+		axis: {
+			legend: {
+				text: { fontSize: 10, color: '#525767' },
+			},
+			ticks: {
+				text: {
+					fontSize: 11,
+					color: 'black',
+				},
+				line: {
+					strokeWidth: 0,
+				},
+			},
+			domain: {
+				line: {
+					stroke: '#dcdde1',
+					strokeWidth: 1,
+				},
+			},
+		},
+	},
+
 	layout: 'horizontal',
 	padding: 0.3,
 	valueScale: { type: 'linear' },
@@ -39,7 +65,6 @@ export const defaultConfig = {
 
 	// TODO: use as an example of Arranger.Chart to 3rdPartyLib.Config
 	colors: (d) => {
-		console.log('c', d);
 		return '';
 	},
 	colorBy: 'id',

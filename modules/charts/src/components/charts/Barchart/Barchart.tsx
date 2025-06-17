@@ -2,23 +2,17 @@ import { ResponsiveBar } from '@nivo/bar';
 
 import { Chart } from '#components/Chart';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
-import { arrangerToNivo } from '#theme/nivo';
+import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 
-import { defaultConfig } from './config';
-
-const resolveData = ({ data }) => {
-	return data.buckets;
-};
-
+/**
+ * Resolve to a Nivo Bar chart component
+ */
 export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
-	const chartData = resolveData({ data });
-
-	// using cloneDeep because structuredClone needs window obj, not SSR compatible
-	const resolvedTheme = arrangerToNivo({ theme, source: defaultConfig });
+	const resolvedTheme = arrangerToNivoBarChart({ data, theme });
 
 	return (
 		<ResponsiveBar
-			data={chartData}
+			data={data}
 			{...resolvedTheme}
 		/>
 	);
