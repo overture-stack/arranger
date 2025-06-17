@@ -1,4 +1,4 @@
-export const defaultConfig = {
+export const defaultNivoConfig = {
 	theme: {
 		text: {
 			fontFamily: 'Work Sans,sans-serif',
