@@ -1,5 +1,5 @@
 import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
-import { merge } from 'lodash';
+import { cloneDeep, merge } from 'lodash';
 import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
@@ -55,13 +55,13 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
-		{
+		cloneDeep({
 			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
 			// grab a swatch of colors from Arranger with the 100 variant
 			colors: Object.keys(colors).reduce((acc, colorKey) => {
 				return acc.concat(colors[colorKey]?.['100']);
 			}, []),
-		},
+		}),
 		theme,
 	);
 
