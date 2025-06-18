@@ -6,9 +6,10 @@ const dotsCount = 5;
 export const DnaLoader = () => (
 	<div
 		css={css`
-			padding-top: 15px;
-			padding-bottom: 15px;
-			width: ${dotsCount * 10}px;
+			display: flex;
+			flex: 1;
+			align-items: center;
+			justify-content: center;
 
 			div:nth-of-type(odd) {
 				position: absolute;
