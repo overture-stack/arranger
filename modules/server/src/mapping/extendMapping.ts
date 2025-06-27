@@ -33,9 +33,11 @@ export const extendColumns = (
 							? {
 									...column,
 									// This field is how React-Table finds the data
-									[ConfigProperties.ACCESSOR]: column[ConfigProperties.ACCESSOR] ?? column[ConfigProperties.FIELD_NAME],
+									[ConfigProperties.ACCESSOR]:
+										column[ConfigProperties.ACCESSOR] ?? column[ConfigProperties.FIELD_NAME],
 									// is this column selectable in the table Columns dropdown
-									[ConfigProperties.CAN_CHANGE_SHOW]: column[ConfigProperties.CAN_CHANGE_SHOW] ?? true,
+									[ConfigProperties.CAN_CHANGE_SHOW]:
+										column[ConfigProperties.CAN_CHANGE_SHOW] ?? true,
 									// to be used as the column's "Header"
 									[ConfigProperties.DISPLAY_NAME]:
 										column[ConfigProperties.DISPLAY_NAME] ??
@@ -43,10 +45,13 @@ export const extendColumns = (
 										'* ' + column[ConfigProperties.FIELD_NAME],
 									// used to format the values in the cell differently from their type set in the mapping
 									[ConfigProperties.DISPLAY_TYPE]:
-										column[ConfigProperties.DISPLAY_TYPE] ?? extendedObj?.[ConfigProperties.DISPLAY_TYPE],
+										column[ConfigProperties.DISPLAY_TYPE] ??
+										extendedObj?.[ConfigProperties.DISPLAY_TYPE],
 									// these likely are human readable values e.g. false means "no", true means "yes", etc.
 									[ConfigProperties.DISPLAY_VALUES]:
-										column[ConfigProperties.DISPLAY_VALUES] ?? extendedObj?.[ConfigProperties.DISPLAY_VALUES] ?? {},
+										column[ConfigProperties.DISPLAY_VALUES] ??
+										extendedObj?.[ConfigProperties.DISPLAY_VALUES] ??
+										{},
 									// should the cell be understood as a list of items, or a mere string
 									[ConfigProperties.IS_ARRAY]: extendedObj?.[ConfigProperties.IS_ARRAY] ?? false,
 									////////// TODO!!!!!!!!!!
@@ -76,7 +81,8 @@ export const extendColumns = (
 									[ConfigProperties.CAN_CHANGE_SHOW]: true,
 									// to be used as the column's "Header"
 									[ConfigProperties.DISPLAY_NAME]:
-										column[ConfigProperties.DISPLAY_NAME] ?? '* ' + column[ConfigProperties.FIELD_NAME],
+										column[ConfigProperties.DISPLAY_NAME] ??
+										'* ' + column[ConfigProperties.FIELD_NAME],
 									// used to format the values in the cell differently from their type set in the mapping
 									[ConfigProperties.DISPLAY_TYPE]: column[ConfigProperties.DISPLAY_TYPE],
 									// these likely are human readable values e.g. false means "no", true means "yes", etc.
@@ -114,7 +120,9 @@ export const extendFacets = (facetsConfig: FacetsConfigsInterface, extendedField
 	const aggs = hasAggsConfig
 		? aggsFromConfig
 				.map((agg) => {
-					const extendedObj = extendedFields?.find((obj) => obj.fieldName === agg.fieldName.replace(/__/g, '.'));
+					const extendedObj = extendedFields?.find(
+						(obj) => obj.fieldName === agg.fieldName.replace(/__/g, '.'),
+					);
 
 					return agg.fieldName
 						? {
