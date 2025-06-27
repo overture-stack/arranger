@@ -14,6 +14,7 @@ export const ConfigRequiredProperties = {
 	FACETS: 'facets',
 	INDEX: 'index',
 	TABLE: 'table',
+	CHARTS: 'charts',
 } as const;
 
 export const DataFieldProperties = {

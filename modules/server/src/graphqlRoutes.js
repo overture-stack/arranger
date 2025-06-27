@@ -83,6 +83,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				}
 			})();
 
+			// Validate and enchance charts config with dynamic properties
+			const extendedChartsConfigs = extendCharts(configs?.[ConfigProperties.CHARTS], extendedFields);
+
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
 					index: configs?.[ConfigProperties.INDEX],
@@ -93,6 +96,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 						...configs,
 						[ConfigProperties.FACETS]: extendedFacetsConfigs,
 						[ConfigProperties.TABLE]: extendedTableConfigs,
+						[ConfigProperties.CHARTS]: extendedChartsConfigs,
 					},
 				},
 				mapping,

@@ -2,7 +2,7 @@ import { PropsWithChildren } from 'react';
 
 /**
  * Use to render response chart correctly in container
- * TODO: revisit - is this needed ?
+ * TODO: revisit - is this needed ? grow charts to surrounding container as a lot of charts need fixed dimensions
  */
 export const ChartContainer = ({ children, height }: PropsWithChildren<{ height?: any }>) => (
 	<div style={{ flex: 1, position: 'relative' }}>
