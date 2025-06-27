@@ -43,6 +43,18 @@ const createChartDataMap = ({ data }) => {
 	// TODO: Dynamic property
 	return new Map(Object.entries(data.data.file.aggregations));
 };
+type Chart = {
+	chartType: string;
+	fieldName: string;
+	displayValues: Record<string, string>;
+	ranges?: any;
+};
+
+type ChartGroup = Record<string, Record<string, Chart>>;
+
+type ChartsConfig = {
+	groups: Record<string, ChartGroup>;
+};
 
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// Ensure there is an ArrangerDataProvider context available
@@ -54,6 +66,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// TODO: minimal for POC, some consistency with other data fetchers might be good
 	const [chartsConfigs, setChartConfigs] = useState<ChartsConfig>();
 	useEffect(() => {
+		const fetchData = async () => {
 			try {
 				const data = await theme.dataFetcher({
 					body: { query: `query ChartsConfig { file { configs { charts } } }` },
