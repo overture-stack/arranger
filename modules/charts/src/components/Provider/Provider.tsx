@@ -1,6 +1,6 @@
-import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
+import { useArrangerData } from '@overture-stack/arranger-components';
 import { cloneDeep, merge } from 'lodash';
-import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useContext, useEffect, useState } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { DnaLoader } from './DnaLoader';
@@ -41,8 +41,10 @@ const createChartDataMap = ({ data }) => {
 		return null;
 	}
 	// TODO: Dynamic property
+	// TODO: Error check this, could very well be empty example if user is not logged in
 	return new Map(Object.entries(data.data.file.aggregations));
 };
+
 type Chart = {
 	chartType: string;
 	fieldName: string;
@@ -71,7 +73,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 				const data = await theme.dataFetcher({
 					body: { query: `query ChartsConfig { file { configs { charts } } }` },
 				});
-				console.log('daaa', data);
+
 				const config = data.data.file.configs.charts;
 
 				setChartConfigs(config);
@@ -90,7 +92,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		sqon,
 	});
 
-	// TODO:
+	// TODO: clean up return pattern
 	if (!chartsConfigs) return null;
 
 	console.log('configs charts', chartsConfigs);
@@ -99,21 +101,10 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	const globalTheme: GlobalTheme = merge(
 		cloneDeep({
 			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
-			// grab a swatch of colors from Arranger with the 100 variant
-			colors: Object.keys(colors).reduce((acc, colorKey) => {
-				return acc.concat(colors[colorKey]?.['100']);
-			}, []),
 		}),
 		theme,
 	);
 
-	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
-		documentType,
-		apiFetcher,
-		sqon,
-	});
-
-	// first time? maybe hook for state, closer to derived state
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
 	const registerChart = async ({ fieldName }) => {
