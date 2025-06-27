@@ -1,6 +1,6 @@
 import { get } from 'lodash-es';
 
-import { HISTOGRAM, STATS, MISSING, CARDINALITY } from './constants.js';
+import { HISTOGRAM, STATS, MISSING, CARDINALITY, RANGE } from './constants.js';
 
 function flattenAggregations({ aggregations, includeMissing = true }) {
 	return Object.entries(aggregations).reduce((prunedAggs, [key, value]) => {
@@ -8,7 +8,7 @@ function flattenAggregations({ aggregations, includeMissing = true }) {
 
 		if (aggregationType === 'missing') {
 			return prunedAggs;
-		} else if ([STATS, HISTOGRAM].includes(aggregationType)) {
+		} else if ([STATS, HISTOGRAM, RANGE].includes(aggregationType)) {
 			return {
 				...prunedAggs,
 				[field]: { ...prunedAggs[field], [aggregationType]: value },

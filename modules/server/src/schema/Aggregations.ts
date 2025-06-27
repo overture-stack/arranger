@@ -15,9 +15,16 @@ export const typeDefs = `
     filter_by_term(filter: JSON): JSON 
   }
 
+  input RangesArg {
+    to: Int
+    from: Int
+    key: String
+  }
+
   type NumericAggregations {
     stats: Stats
     histogram(interval: Float): Aggregations
+    range(ranges: [RangesArg]): Aggregations
   }
 
   type Aggregations {
