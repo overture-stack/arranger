@@ -94,8 +94,6 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// TODO: clean up return pattern
 	if (!chartsConfigs) return null;
 
-	console.log('configs charts', chartsConfigs);
-
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
 		cloneDeep({
