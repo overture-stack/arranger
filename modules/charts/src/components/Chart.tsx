@@ -23,9 +23,11 @@ type ChartProps = {
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
 };
 
-// TODO: numeric or agg
+// TODO: numeric or agg, very hacky property check, no need for this once server config is expanded, then we can check the typename
 const resolveData = ({ data }) => {
-	return data.buckets;
+	console.log('resolve data', data);
+	if (data.buckets) return data.buckets;
+	if (data.range) return data.range.buckets;
 };
 
 /**
@@ -76,7 +78,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 	// child component
 	if (isLoading) {
 		const { Loader } = globalTheme.components;
-		return <Loader />;
+		return <div>Loading...</div>;
 	} else if (isError) {
 		const { ErrorData } = globalTheme.components;
 		return <ErrorData />;
@@ -96,7 +98,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		const instanceTheme = {
 			colorMap: colorMap.current,
 		};
-
+		console.log('color map', colorMap);
 		// resolve globalTheme with consumer provided theme and any instance dependant theming
 		// TODO: Memo
 		const chartTheme = merge(cloneDeep(globalTheme), theme, instanceTheme);
