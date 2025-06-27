@@ -51,7 +51,36 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		callerName: 'ArrangerCharts',
 	});
 
-	const { colors } = useArrangerTheme();
+	// TODO: minimal for POC, some consistency with other data fetchers might be good
+	const [chartsConfigs, setChartConfigs] = useState<ChartsConfig>();
+	useEffect(() => {
+			try {
+				const data = await theme.dataFetcher({
+					body: { query: `query ChartsConfig { file { configs { charts } } }` },
+				});
+				console.log('daaa', data);
+				const config = data.data.file.configs.charts;
+
+				setChartConfigs(config);
+			} catch (error) {
+				console.log('error fetching charts config', error);
+			}
+		};
+
+		fetchData();
+	}, []);
+
+	const { apiState } = useNetworkQuery({
+		query: chartsConfigs?.query,
+		documentType,
+		apiFetcher,
+		sqon,
+	});
+
+	// TODO:
+	if (!chartsConfigs) return null;
+
+	console.log('configs charts', chartsConfigs);
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
@@ -75,11 +104,13 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
 	const registerChart = async ({ fieldName }) => {
-		addToQuery({ fieldName });
+		// TODO: remove, now backend driven no need to dynamically add on child component add
+		//		addToQuery({ fieldName });
 	};
 
 	const deregisterChart = ({ fieldName }) => {
-		removeFromQuery({ fieldName });
+		// TODO: remove, now backend driven no need to dynamically add on child component add
+		//		removeFromQuery({ fieldName });
 	};
 
 	const update = ({ fieldName, eventData }) => {
