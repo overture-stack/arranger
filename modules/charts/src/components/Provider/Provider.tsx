@@ -3,7 +3,6 @@ import { cloneDeep, merge } from 'lodash';
 import { createContext, PropsWithChildren, ReactElement, useContext, useEffect, useState } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { DnaLoader } from './DnaLoader';
 import { EmptyData } from './EmptyData';
 import { ErrorData } from './ErrorData';
 import { Tooltip } from './Tooltip';
@@ -100,7 +99,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// default global theme
 	const globalTheme: GlobalTheme = merge(
 		cloneDeep({
-			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
+			components: { Tooltip, ErrorData, EmptyData },
 		}),
 		theme,
 	);
