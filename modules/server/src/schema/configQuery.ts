@@ -75,7 +75,6 @@ export default `
   ${FacetsConfigTypeDefs}
   ${MatchBoxConfigTypeDefs}
   ${TableConfigTypeDefs}
-  
   type ConfigsWithState {
     charts: JSON
     downloads: DownloadsConfig
