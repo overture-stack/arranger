@@ -2,7 +2,7 @@ import { get, isEmpty } from 'lodash-es';
 
 import { opSwitch } from '#middleware/buildQuery/index.js';
 import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
-import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '#middleware/constants.js';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS, RANGE } from '#middleware/constants.js';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
