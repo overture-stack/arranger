@@ -88,16 +88,16 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
-					index: configs?.[ConfigProperties.INDEX],
-					name: configs?.[ConfigProperties.DOCUMENT_TYPE],
-					extendedFields,
-					customFields: '',
 					config: {
 						...configs,
+						[ConfigProperties.CHARTS]: extendedChartsConfigs,
 						[ConfigProperties.FACETS]: extendedFacetsConfigs,
 						[ConfigProperties.TABLE]: extendedTableConfigs,
-						[ConfigProperties.CHARTS]: extendedChartsConfigs,
 					},
+					customFields: '',
+					extendedFields,
+					index: configs?.[ConfigProperties.INDEX],
+					name: configs?.[ConfigProperties.DOCUMENT_TYPE],
 				},
 				mapping,
 			});
