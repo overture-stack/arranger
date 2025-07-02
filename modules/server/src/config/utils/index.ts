@@ -1,7 +1,7 @@
 import type { Client } from '@elastic/elasticsearch';
 
 import { ENV_CONFIG } from '#config/index.js';
-import { type ConfigObject, ConfigProperties } from '#config/types.js';
+import { chartsProperties, type ConfigObject, configProperties } from '#config/types.js';
 import { setsMapping } from '#schema/index.js';
 
 export const initializeSets = async ({
@@ -35,21 +35,24 @@ export const initializeSets = async ({
 };
 
 export const makeConfigsFromEnv = (): Partial<ConfigObject> => ({
-	[ConfigProperties.DOCUMENT_TYPE]: ENV_CONFIG.DOCUMENT_TYPE,
-	[ConfigProperties.DOWNLOADS]: {
-		[ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: ENV_CONFIG.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
-		[ConfigProperties.MAX_DOWNLOAD_ROWS]: ENV_CONFIG.MAX_DOWNLOAD_ROWS,
+	[configProperties.CHARTS]: {
+		[chartsProperties.QUERY]: '',
 	},
-	[ConfigProperties.EXTENDED]: [],
-	[ConfigProperties.FACETS]: {
-		[ConfigProperties.AGGS]: [],
+	[configProperties.DOCUMENT_TYPE]: ENV_CONFIG.DOCUMENT_TYPE,
+	[configProperties.DOWNLOADS]: {
+		[configProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: ENV_CONFIG.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
+		[configProperties.MAX_DOWNLOAD_ROWS]: ENV_CONFIG.MAX_DOWNLOAD_ROWS,
 	},
-	[ConfigProperties.INDEX]: ENV_CONFIG.ES_INDEX,
-	[ConfigProperties.MATCHBOX]: [],
-	[ConfigProperties.TABLE]: {
-		[ConfigProperties.COLUMNS]: [],
-		[ConfigProperties.MAX_RESULTS_WINDOW]: ENV_CONFIG.MAX_RESULTS_WINDOW,
-		[ConfigProperties.ROW_ID_FIELD_NAME]: ENV_CONFIG.ROW_ID_FIELD_NAME,
+	[configProperties.EXTENDED]: [],
+	[configProperties.FACETS]: {
+		[configProperties.AGGS]: [],
 	},
-	[ConfigProperties.NETWORK_AGGREGATION]: ENV_CONFIG.NETWORK_AGGREGATIONS,
+	[configProperties.INDEX]: ENV_CONFIG.ES_INDEX,
+	[configProperties.MATCHBOX]: [],
+	[configProperties.TABLE]: {
+		[configProperties.COLUMNS]: [],
+		[configProperties.MAX_RESULTS_WINDOW]: ENV_CONFIG.MAX_RESULTS_WINDOW,
+		[configProperties.ROW_ID_FIELD_NAME]: ENV_CONFIG.ROW_ID_FIELD_NAME,
+	},
+	[configProperties.NETWORK_AGGREGATION]: ENV_CONFIG.NETWORK_AGGREGATIONS,
 });

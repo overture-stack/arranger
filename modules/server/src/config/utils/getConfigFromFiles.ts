@@ -4,8 +4,8 @@ import path from 'path';
 
 import { merge } from 'lodash-es';
 
-import { ConfigProperties } from '#config/types.js';
-import type { ConfigObject, SortingConfigsInterface } from '#config/types.js';
+import { configProperties } from '#config/types.js';
+import type { ConfigObject, SortingConfigs } from '#config/types.js';
 
 type FileEncodingType =
 	| BufferEncoding
@@ -46,7 +46,9 @@ const getConfigFromFiles = (dirname: string, configsFromEnv: Partial<ConfigObjec
 		.then((filenames = []) =>
 			// TODO: shouldn't fail all files if one is broken
 			Promise.all(
-				(filenames as string[]).filter(isDataFile).map((filename) => readFileAsync(configsPath, filename, 'utf8')),
+				(filenames as string[])
+					.filter(isDataFile)
+					.map((filename) => readFileAsync(configsPath, filename, 'utf8')),
 			),
 		)
 		.then((files = []) => {
@@ -57,13 +59,13 @@ const getConfigFromFiles = (dirname: string, configsFromEnv: Partial<ConfigObjec
 					try {
 						const fileDataJSON = JSON.parse(fileData);
 
-						if (fileDataJSON?.[ConfigProperties.TABLE]?.[ConfigProperties.DEFAULT_SORTING]) {
+						if (fileDataJSON?.[configProperties.TABLE]?.[configProperties.DEFAULT_SORTING]) {
 							return merge({}, configsAcc, fileDataJSON, {
-								[ConfigProperties.TABLE]: {
-									...fileDataJSON[ConfigProperties.TABLE],
-									[ConfigProperties.DEFAULT_SORTING]: fileDataJSON[ConfigProperties.TABLE][
-										ConfigProperties.DEFAULT_SORTING
-									].map((sorting: SortingConfigsInterface) => ({
+								[configProperties.TABLE]: {
+									...fileDataJSON[configProperties.TABLE],
+									[configProperties.DEFAULT_SORTING]: fileDataJSON[configProperties.TABLE][
+										configProperties.DEFAULT_SORTING
+									].map((sorting: SortingConfigs) => ({
 										...sorting,
 										desc: sorting.desc || false,
 									})),

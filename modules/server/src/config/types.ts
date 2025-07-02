@@ -2,14 +2,18 @@
 
 import { type ES_TYPES } from '#mapping/esToAggTypeMap.js';
 
-export const ConfigOptionalProperties = {
+export const chartsProperties = {
+	QUERY: 'query',
+} as const;
+
+export const configOptionalProperties = {
+	CHARTS: 'charts',
 	DOWNLOADS: 'downloads',
 	MATCHBOX: 'matchbox',
 	NETWORK_AGGREGATION: 'network',
 } as const;
 
-export const ConfigRequiredProperties = {
-	CHARTS: 'charts',
+export const configRequiredProperties = {
 	DOCUMENT_TYPE: 'documentType',
 	EXTENDED: 'extended',
 	FACETS: 'facets',
@@ -17,7 +21,7 @@ export const ConfigRequiredProperties = {
 	TABLE: 'table',
 } as const;
 
-export const DataFieldProperties = {
+export const dataFieldProperties = {
 	ACCESSOR: 'accessor',
 	CAN_CHANGE_SHOW: 'canChangeShow',
 	DISPLAY_FORMAT: 'displayFormat',
@@ -38,16 +42,16 @@ export const DataFieldProperties = {
 	UNIT: 'unit',
 } as const;
 
-export const DownloadProperties = {
+export const downloadProperties = {
 	ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS: 'allowCustomMaxRows',
 	MAX_DOWNLOAD_ROWS: 'maxRows',
 } as const;
 
-export const FacetsProperties = {
+export const facetsProperties = {
 	AGGS: 'aggregations',
 } as const;
 
-export const TableProperties = {
+export const tableProperties = {
 	COLUMNS: 'columns',
 	DESCENDING: 'desc',
 	DEFAULT_SORTING: 'defaultSorting',
@@ -55,7 +59,7 @@ export const TableProperties = {
 	ROW_ID_FIELD_NAME: 'rowIdFieldName',
 } as const;
 
-const NetworkAggregationProperties = {
+const networkAggregationProperties = {
 	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE: 'documentType',
 	DISPLAY_NAME: 'displayName',
@@ -63,105 +67,109 @@ const NetworkAggregationProperties = {
 
 //////////////////////////////////
 
-export const ConfigProperties = {
-	...ConfigRequiredProperties,
-	...ConfigOptionalProperties,
-	...DataFieldProperties,
-	...DownloadProperties,
-	...FacetsProperties,
-	...TableProperties,
+export const configProperties = {
+	...configRequiredProperties,
+	...configOptionalProperties,
+	...dataFieldProperties,
+	...downloadProperties,
+	...facetsProperties,
+	...tableProperties,
 };
 
-export type ConfigProperties = typeof ConfigRequiredProperties | typeof ConfigOptionalProperties;
+export type ConfigProperties = typeof configRequiredProperties | typeof configOptionalProperties;
 
-export interface AggConfigsInterface {
-	[ConfigProperties.DISPLAY_NAME]: string;
-	[ConfigProperties.DISPLAY_TYPE]: string;
-	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ACTIVE]: boolean; // TODO: what is this? active = API vs show = UI? "isActive"
-	[ConfigProperties.SHOW]: boolean;
+export type AggConfigs = {
+	[configProperties.DISPLAY_NAME]: string;
+	[configProperties.DISPLAY_TYPE]: string;
+	[configProperties.FIELD_NAME]: string;
+	[configProperties.IS_ACTIVE]: boolean; // TODO: what is this? active = API vs show = UI? "isActive"
+	[configProperties.SHOW]: boolean;
 	// TODO: implement these
 	// max results
 	// collapsible
-}
+};
 
-export interface ColumnConfigsInterface {
-	[ConfigProperties.ACCESSOR]: string;
-	[ConfigProperties.CAN_CHANGE_SHOW]: boolean;
-	[ConfigProperties.DISPLAY_FORMAT]: string;
-	[ConfigProperties.DISPLAY_NAME]: string;
-	[ConfigProperties.DISPLAY_TYPE]: string;
-	[ConfigProperties.DISPLAY_VALUES]: Record<string, any>; // used for "readable" replacements e.g. true as "yes"
-	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ARRAY]: boolean; // should it be displayed as a list of items, or leave as a single string
-	[ConfigProperties.JSON_PATH]: string;
-	[ConfigProperties.QUERY]: string;
-	[ConfigProperties.SHOW]: boolean;
-	[ConfigProperties.SORTABLE]: boolean;
-}
+export type ChartConfigs = {
+	[chartsProperties.QUERY]: string;
+};
 
-export interface DownloadsConfigsInterface {
-	[ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]?: boolean;
-	[ConfigProperties.MAX_DOWNLOAD_ROWS]?: number;
-}
+export type ColumnConfigs = {
+	[configProperties.ACCESSOR]: string;
+	[configProperties.CAN_CHANGE_SHOW]: boolean;
+	[configProperties.DISPLAY_FORMAT]: string;
+	[configProperties.DISPLAY_NAME]: string;
+	[configProperties.DISPLAY_TYPE]: string;
+	[configProperties.DISPLAY_VALUES]: Record<string, any>; // used for "readable" replacements e.g. true as "yes"
+	[configProperties.FIELD_NAME]: string;
+	[configProperties.IS_ARRAY]: boolean; // should it be displayed as a list of items, or leave as a single string
+	[configProperties.JSON_PATH]: string;
+	[configProperties.QUERY]: string;
+	[configProperties.SHOW]: boolean;
+	[configProperties.SORTABLE]: boolean;
+};
+
+export type DownloadsConfigs = {
+	[configProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]?: boolean;
+	[configProperties.MAX_DOWNLOAD_ROWS]?: number;
+};
 
 export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'nested' | 'number';
 
-export interface ExtendedConfigsInterface {
-	[ConfigProperties.DISPLAY_NAME]: string;
-	[ConfigProperties.DISPLAY_TYPE]: string;
-	[ConfigProperties.DISPLAY_VALUES]: Record<string, any>;
-	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ACTIVE]: boolean; // TODO: what is this?
-	[ConfigProperties.IS_ARRAY]: boolean;
-	[ConfigProperties.PRIMARY_KEY]: boolean;
-	[ConfigProperties.QUICKSEARCH_ENABLED]: boolean;
-	[ConfigProperties.RANGE_STEP]: number;
-	[ConfigProperties.TYPE]: DisplayType;
-	[ConfigProperties.UNIT]: string;
-}
+export type ExtendedConfigs = {
+	[configProperties.DISPLAY_NAME]: string;
+	[configProperties.DISPLAY_TYPE]: string;
+	[configProperties.DISPLAY_VALUES]: Record<string, any>;
+	[configProperties.FIELD_NAME]: string;
+	[configProperties.IS_ACTIVE]: boolean; // TODO: what is this?
+	[configProperties.IS_ARRAY]: boolean;
+	[configProperties.PRIMARY_KEY]: boolean;
+	[configProperties.QUICKSEARCH_ENABLED]: boolean;
+	[configProperties.RANGE_STEP]: number;
+	[configProperties.TYPE]: DisplayType;
+	[configProperties.UNIT]: string;
+};
 
-export interface FacetsConfigsInterface {
-	[ConfigProperties.AGGS]: AggConfigsInterface[];
-}
+export type FacetsConfigs = {
+	[configProperties.AGGS]: AggConfigs[];
+};
 
-export interface MatchBoxConfigsInterface {
-	[ConfigProperties.DISPLAY_NAME]: string;
-	[ConfigProperties.FIELD_NAME]: string;
-}
+export type MatchBoxConfigs = {
+	[configProperties.DISPLAY_NAME]: string;
+	[configProperties.FIELD_NAME]: string;
+};
 
-export interface SortingConfigsInterface {
-	[ConfigProperties.DESCENDING]: boolean;
-	[ConfigProperties.FIELD_NAME]: string;
-	[ConfigProperties.IS_ACTIVE]: boolean;
-}
+export type SortingConfigs = {
+	[configProperties.DESCENDING]: boolean;
+	[configProperties.FIELD_NAME]: string;
+	[configProperties.IS_ACTIVE]: boolean;
+};
 
-export interface TableConfigsInterface {
-	[ConfigProperties.COLUMNS]: ColumnConfigsInterface[];
-	[ConfigProperties.DEFAULT_SORTING]?: SortingConfigsInterface[];
-	[ConfigProperties.MAX_RESULTS_WINDOW]?: number;
-	[ConfigProperties.ROW_ID_FIELD_NAME]?: string;
-}
+export type TableConfigs = {
+	[configProperties.COLUMNS]: ColumnConfigs[];
+	[configProperties.DEFAULT_SORTING]?: SortingConfigs[];
+	[configProperties.MAX_RESULTS_WINDOW]?: number;
+	[configProperties.ROW_ID_FIELD_NAME]?: string;
+};
 
-interface NetworkAggregationInterface {
-	[NetworkAggregationProperties.GRAPHQL_URL]: string;
-	[NetworkAggregationProperties.DOCUMENT_TYPE]: string;
-	[NetworkAggregationProperties.DISPLAY_NAME]: string;
-}
-[];
+export type NetworkAggregation = {
+	[networkAggregationProperties.GRAPHQL_URL]: string;
+	[networkAggregationProperties.DOCUMENT_TYPE]: string;
+	[networkAggregationProperties.DISPLAY_NAME]: string;
+};
 
-export interface ConfigObject {
-	[ConfigProperties.DOCUMENT_TYPE]: string;
-	[ConfigProperties.DOWNLOADS]?: DownloadsConfigsInterface;
-	[ConfigProperties.EXTENDED]: any[];
-	[ConfigProperties.FACETS]: FacetsConfigsInterface;
-	[ConfigProperties.INDEX]: string;
-	[ConfigProperties.MATCHBOX]: any[];
-	[ConfigProperties.TABLE]: TableConfigsInterface;
-	[ConfigProperties.NETWORK_AGGREGATION]: any[];
-}
+export type ConfigObject = {
+	[configProperties.CHARTS]: ChartConfigs;
+	[configProperties.DOCUMENT_TYPE]: string;
+	[configProperties.DOWNLOADS]?: DownloadsConfigs;
+	[configProperties.EXTENDED]: any[];
+	[configProperties.FACETS]: FacetsConfigs;
+	[configProperties.INDEX]: string;
+	[configProperties.MATCHBOX]: any[];
+	[configProperties.TABLE]: TableConfigs;
+	[configProperties.NETWORK_AGGREGATION]: NetworkAggregation[];
+};
 
-export interface FieldFromMapping {
+export type FieldFromMapping = {
 	fieldName: string;
 	type: ES_TYPES;
-}
+};

@@ -1,7 +1,7 @@
 import { PassThrough } from 'stream';
 
 import { ENV_CONFIG } from '#config/index.js';
-import { ConfigProperties } from '#config/types.js';
+import { configProperties } from '#config/types.js';
 import { mapHits } from '#mapping/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 
@@ -54,10 +54,10 @@ export default async ({
 	})
 		.then(({ data }) => {
 			const allowCustomMaxRows =
-				configs.config[ConfigProperties.DOWNLOADS][ConfigProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
+				configs.config[configProperties.DOWNLOADS][configProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
 			const maxHits = allowCustomMaxRows
-				? maxRows || configs.config[ConfigProperties.MAX_DOWNLOAD_ROWS]
-				: configs.config[ConfigProperties.MAX_DOWNLOAD_ROWS];
+				? maxRows || configs.config[configProperties.MAX_DOWNLOAD_ROWS]
+				: configs.config[configProperties.MAX_DOWNLOAD_ROWS];
 
 			const hitsCount = data?.[configs.name]?.hits?.total || 0;
 			const total = maxHits ? Math.min(hitsCount, maxHits) : hitsCount; // i.e. 'maxHits == 0' => hitCounts

@@ -12,7 +12,7 @@ export const stringToNumber = (str?: string) => Number(str || '');
  */
 export const stringToArray = (str?: string) => {
 	try {
-		const parsed = JSON.parse(str || '');
+		const parsed = str && JSON.parse(str);
 		return Array.isArray(parsed) ? parsed : [];
 	} catch (e) {
 		console.error(e);
