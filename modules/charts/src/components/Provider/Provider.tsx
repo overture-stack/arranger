@@ -1,9 +1,8 @@
-import { useArrangerData, useArrangerTheme } from '@overture-stack/arranger-components';
-import { merge } from 'lodash';
-import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
+import { useArrangerData } from '@overture-stack/arranger-components';
+import { cloneDeep, merge } from 'lodash';
+import { createContext, PropsWithChildren, ReactElement, useContext, useEffect, useState } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { DnaLoader } from './DnaLoader';
 import { EmptyData } from './EmptyData';
 import { ErrorData } from './ErrorData';
 import { Tooltip } from './Tooltip';
@@ -41,7 +40,21 @@ const createChartDataMap = ({ data }) => {
 		return null;
 	}
 	// TODO: Dynamic property
+	// TODO: Error check this, could very well be empty example if user is not logged in
 	return new Map(Object.entries(data.data.file.aggregations));
+};
+
+type Chart = {
+	chartType: string;
+	fieldName: string;
+	displayValues: Record<string, string>;
+	ranges?: any;
+};
+
+type ChartGroup = Record<string, Record<string, Chart>>;
+
+type ChartsConfig = {
+	groups: Record<string, ChartGroup>;
 };
 
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
@@ -51,35 +64,53 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		callerName: 'ArrangerCharts',
 	});
 
-	const { colors } = useArrangerTheme();
+	// TODO: minimal for POC, some consistency with other data fetchers might be good
+	const [chartsConfigs, setChartConfigs] = useState<ChartsConfig>();
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+				const data = await theme.dataFetcher({
+					body: { query: `query ChartsConfig { file { configs { charts } } }` },
+				});
 
-	// default global theme
-	const globalTheme: GlobalTheme = merge(
-		{
-			components: { Tooltip, ErrorData, Loader: DnaLoader, EmptyData },
-			// grab a swatch of colors from Arranger with the 100 variant
-			colors: Object.keys(colors).reduce((acc, colorKey) => {
-				return acc.concat(colors[colorKey]?.['100']);
-			}, []),
-		},
-		theme,
-	);
+				const config = data.data.file.configs.charts;
 
-	const { apiState, addToQuery, removeFromQuery } = useNetworkQuery({
+				setChartConfigs(config);
+			} catch (error) {
+				console.log('error fetching charts config', error);
+				// for consumer app to catch error
+				throw error;
+			}
+		};
+
+		fetchData();
+	}, []);
+
+	const { apiState } = useNetworkQuery({
+		query: chartsConfigs?.query,
 		documentType,
 		apiFetcher,
 		sqon,
 	});
 
-	// first time? maybe hook for state, closer to derived state
+	// default global theme
+	const globalTheme: GlobalTheme = merge(
+		cloneDeep({
+			components: { Tooltip, ErrorData, EmptyData },
+		}),
+		theme,
+	);
+
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
 	const registerChart = async ({ fieldName }) => {
-		addToQuery({ fieldName });
+		// TODO: remove, now backend driven no need to dynamically add on child component add
+		//		addToQuery({ fieldName });
 	};
 
 	const deregisterChart = ({ fieldName }) => {
-		removeFromQuery({ fieldName });
+		// TODO: remove, now backend driven no need to dynamically add on child component add
+		//		removeFromQuery({ fieldName });
 	};
 
 	const update = ({ fieldName, eventData }) => {

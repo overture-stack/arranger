@@ -2,23 +2,31 @@ import { get, isEmpty } from 'lodash-es';
 
 import { opSwitch } from '#middleware/buildQuery/index.js';
 import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
-import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '#middleware/constants.js';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS, RANGE } from '#middleware/constants.js';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
 const CARDINALITY_DEFAULT_PRECISION_THRESHOLD = 40000; // max precision for ES6-7
+const RANGES_DEFAULT = [{ from: 0 }];
 
 const createNumericAggregation = ({ type, field, graphqlField }) => {
 	const args = get(graphqlField, [type, '__arguments', 0]) || {};
+	const options =
+		type === HISTOGRAM
+			? {
+					interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
+				}
+			: type === RANGE
+				? {
+						ranges: get(args, 'ranges.value') || RANGES_DEFAULT,
+					}
+				: {};
+
 	return {
 		[`${field}:${type}`]: {
 			[type]: {
 				field,
-				...(type === HISTOGRAM
-					? {
-							interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
-						}
-					: {}),
+				...options,
 			},
 		},
 	};

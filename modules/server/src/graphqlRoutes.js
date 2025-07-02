@@ -6,6 +6,7 @@ import { mergeSchemas } from '@graphql-tools/schema';
 import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
 import { ConfigProperties } from './config/types.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
+import { extendCharts } from './mapping/extendCharts.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import makeSchema from './schema/index.js';
 import { createSchemaFromNetworkConfig } from './network/index.js';
@@ -83,17 +84,21 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				}
 			})();
 
+			// Validate and enchance charts config with dynamic properties
+			const extendedChartsConfigs = extendCharts(configs?.[ConfigProperties.CHARTS], extendedFields);
+
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
-					index: configs?.[ConfigProperties.INDEX],
-					name: configs?.[ConfigProperties.DOCUMENT_TYPE],
-					extendedFields,
-					customFields: '',
 					config: {
 						...configs,
+						[ConfigProperties.CHARTS]: extendedChartsConfigs,
 						[ConfigProperties.FACETS]: extendedFacetsConfigs,
 						[ConfigProperties.TABLE]: extendedTableConfigs,
 					},
+					customFields: '',
+					extendedFields,
+					index: configs?.[ConfigProperties.INDEX],
+					name: configs?.[ConfigProperties.DOCUMENT_TYPE],
 				},
 				mapping,
 			});

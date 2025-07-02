@@ -23,10 +23,12 @@ export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme }) => {
 	const Tooltip = theme.components.Tooltip;
 	const tooltip = ({ data }) => {
 		const { doc_count, key } = data;
+		// TODO: configurable
+		const displayValue = key === '__missing__' ? 'No Data' : key;
 		return (
 			<Tooltip>
 				<div>
-					<div>{`${key}:`}</div>
+					<div>{`${displayValue}`}</div>
 					<div>{`${doc_count}: Donors`}</div>
 				</div>
 			</Tooltip>

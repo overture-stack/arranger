@@ -9,6 +9,7 @@ export const ConfigOptionalProperties = {
 } as const;
 
 export const ConfigRequiredProperties = {
+	CHARTS: 'charts',
 	DOCUMENT_TYPE: 'documentType',
 	EXTENDED: 'extended',
 	FACETS: 'facets',

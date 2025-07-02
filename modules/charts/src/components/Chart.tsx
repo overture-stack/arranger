@@ -23,9 +23,10 @@ type ChartProps = {
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
 };
 
-// TODO: numeric or agg
+// TODO: numeric or agg, very hacky property check, no need for this once server config is expanded, then we can check the typename
 const resolveData = ({ data }) => {
-	return data.buckets;
+	if (data.buckets) return data.buckets;
+	if (data.range) return data.range.buckets;
 };
 
 /**
@@ -76,13 +77,25 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 	// child component
 	if (isLoading) {
 		const { Loader } = globalTheme.components;
-		return <Loader />;
+		return (
+			<ChartContainer>
+				<Loader />
+			</ChartContainer>
+		);
 	} else if (isError) {
 		const { ErrorData } = globalTheme.components;
-		return <ErrorData />;
-	} else if (chartData === undefined) {
+		return (
+			<ChartContainer>
+				<ErrorData />
+			</ChartContainer>
+		);
+	} else if (!chartData) {
 		const { EmptyData } = globalTheme.components;
-		return <EmptyData />;
+		return (
+			<ChartContainer>
+				<EmptyData />
+			</ChartContainer>
+		);
 	} else {
 		// TODO: numeric or agg
 		const resolvedChartData = resolveData({ data: chartData });

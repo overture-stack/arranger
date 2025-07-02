@@ -49,7 +49,8 @@ export const defaultNivoConfig = {
 	axisLeft: {
 		legend: 'Axis-Left-Legend',
 		legendPosition: 'middle',
-		renderTick: () => null,
+
+		renderTick: () => null, // tick labels eg. labels for bars
 		legendOffset: -12,
 	},
 
