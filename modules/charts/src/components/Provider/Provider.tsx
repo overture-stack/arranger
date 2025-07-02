@@ -78,6 +78,8 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 				setChartConfigs(config);
 			} catch (error) {
 				console.log('error fetching charts config', error);
+				// for consumer app to catch error
+				throw error;
 			}
 		};
 
@@ -90,9 +92,6 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		apiFetcher,
 		sqon,
 	});
-
-	// TODO: clean up return pattern
-	if (!chartsConfigs) return null;
 
 	// default global theme
 	const globalTheme: GlobalTheme = merge(

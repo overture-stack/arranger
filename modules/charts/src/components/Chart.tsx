@@ -76,13 +76,26 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 
 	// child component
 	if (isLoading) {
-		return <div>Loading...</div>;
+		const { Loader } = globalTheme.components;
+		return (
+			<ChartContainer>
+				<Loader />
+			</ChartContainer>
+		);
 	} else if (isError) {
 		const { ErrorData } = globalTheme.components;
-		return <ErrorData />;
-	} else if (chartData === undefined) {
+		return (
+			<ChartContainer>
+				<ErrorData />
+			</ChartContainer>
+		);
+	} else if (!chartData) {
 		const { EmptyData } = globalTheme.components;
-		return <EmptyData />;
+		return (
+			<ChartContainer>
+				<EmptyData />
+			</ChartContainer>
+		);
 	} else {
 		// TODO: numeric or agg
 		const resolvedChartData = resolveData({ data: chartData });

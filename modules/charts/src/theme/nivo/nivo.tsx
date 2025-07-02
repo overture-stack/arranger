@@ -28,7 +28,7 @@ export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme }) => {
 		return (
 			<Tooltip>
 				<div>
-					<div>{`${displayValue}:`}</div>
+					<div>{`${displayValue}`}</div>
 					<div>{`${doc_count}: Donors`}</div>
 				</div>
 			</Tooltip>

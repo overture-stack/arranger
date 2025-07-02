@@ -10,6 +10,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: UseNetworkQueryProp
 
 	useEffect(() => {
 		const fetchData = async () => {
+			console.log('fetching data for Arranger charts..');
 			try {
 				setApiState((previous) => ({ ...previous, loading: true }));
 
@@ -31,7 +32,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: UseNetworkQueryProp
 		};
 		if (!query) return;
 		fetchData();
-	}, [sqon, apiFetcher]);
+	}, [sqon, apiFetcher, query]);
 
 	return {
 		apiState,
