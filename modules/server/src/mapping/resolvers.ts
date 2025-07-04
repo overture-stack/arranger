@@ -1,4 +1,4 @@
-import { ConfigProperties, type ExtendedConfigsInterface } from '#config/types.js';
+import { configProperties, type ExtendedConfigs } from '#config/types.js';
 import { type Resolver, type Root } from '#gqlServer.js';
 
 import { type CreateConnectionResolversArgs } from './createConnectionResolvers.js';
@@ -16,17 +16,17 @@ export const createResolvers = ({
 		Promise<{ facets?: any; matchbox?: any; table?: any; downloads: any; extended: any }>
 	> = async (_unusedParentObj, { fieldNames }) => {
 		return {
-			downloads: type.config?.[ConfigProperties.DOWNLOADS],
+			downloads: type.config?.[configProperties.DOWNLOADS],
 			extended: fieldNames
-				? type.extendedFields.filter((extendedField: ExtendedConfigsInterface) =>
+				? type.extendedFields.filter((extendedField: ExtendedConfigs) =>
 						fieldNames.includes(extendedField.fieldName),
 					)
 				: type.extendedFields,
 			...(createStateResolvers && {
-				charts: type.config?.[ConfigProperties.CHARTS],
-				facets: type.config?.[ConfigProperties.FACETS],
-				matchbox: type.config?.[ConfigProperties.MATCHBOX],
-				table: type.config?.[ConfigProperties.TABLE],
+				charts: type.config?.[configProperties.CHARTS],
+				facets: type.config?.[configProperties.FACETS],
+				matchbox: type.config?.[configProperties.MATCHBOX],
+				table: type.config?.[configProperties.TABLE],
 			}),
 		};
 	};

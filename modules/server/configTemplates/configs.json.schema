@@ -2,6 +2,36 @@
 // and shows the allowed/expected properties
 
 {
+	"charts": {
+		"query": "query chartsQeury($filters: JSON) {\n
+			file {\n
+				aggregations(
+					filters: $filters,
+					aggregations_filter_themselves: true
+				) {\n
+					study_id {\n
+						bucket_count\n
+						buckets {\n
+							doc_count\n
+							key\n
+						}\n
+					}\n
+					primary_diagnosis__age_at_diagnosis {\n
+						range(ranges: [\n
+							{ key: \"Less than 18\", to: 18 },\n
+							{ key: \"18 to 65\", from: 18, to: 66 },\n
+							{ key: \"65 and above\", from: 65 }\n
+						]) {\n
+							buckets {\n
+								key\n
+								doc_count\n
+							}\n
+						}\n
+					}\n
+				}\n
+			}\n
+		}",
+	},
 	"documentType": "file",
 	"downloads": {
 		"allowCustomMaxRows": true,
@@ -73,7 +103,7 @@
 		"maxResultsWindow": 10000,
 		"rowIdFieldName": "analysis.analysis_id"
 	}
-	"network": 
+	"network":
 		[
 			{
 				"displayName": "Toronto",

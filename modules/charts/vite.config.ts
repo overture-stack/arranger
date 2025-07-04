@@ -23,7 +23,13 @@ export default defineConfig({
 			formats: ['es'],
 		},
 		rollupOptions: {
-			external: ['react', 'react/jsx-runtime', 'react-dom', '@overture-stack/arranger-components'],
+			external: [
+				'react',
+				'react/jsx-runtime',
+				'react-dom',
+				'@overture-stack/arranger-components',
+				/@emotion\/.*/,
+			],
 			// build will hang in watch mode if not set
 			maxParallelFileOps: 100,
 		},

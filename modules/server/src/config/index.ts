@@ -1,4 +1,4 @@
-import { type ConfigObject, ConfigRequiredProperties } from './types.js';
+import { type ConfigObject, configRequiredProperties } from './types.js';
 import getConfigFromFiles from './utils/getConfigFromFiles.js';
 import { makeConfigsFromEnv } from './utils/index.js';
 
@@ -7,7 +7,7 @@ export { initializeSets } from './utils/index.js';
 
 const validateProperties = (configs: Partial<ConfigObject>) => {
 	// Verify all the required values are present
-	for (const property of Object.values(ConfigRequiredProperties)) {
+	for (const property of Object.values(configRequiredProperties)) {
 		// this condition could be made more exhaustive if needed
 		if (!(Object.keys(configs).includes(property) && configs[property])) {
 			console.log('  Failed...');
