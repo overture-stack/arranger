@@ -125,12 +125,12 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
  * fieldName renamed to field, as that's the property name in ES
  */
 export default ({ fieldName: field, graphqlField = {}, isNested = false, termFilters = [] }) => {
-	const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
+	const types = [BUCKETS, STATS, HISTOGRAM, RANGE, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
 	return types.reduce((acc, type) => {
 		if (type === BUCKETS || type === BUCKET_COUNT) {
 			return Object.assign(acc, createTermAggregation({ field, isNested, graphqlField, termFilters }));
-		} else if ([STATS, HISTOGRAM].includes(type)) {
+		} else if ([STATS, HISTOGRAM, RANGE].includes(type)) {
 			return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
 		} else if (type === CARDINALITY) {
 			return Object.assign(acc, computeCardinalityAggregation({ type, field, graphqlField }));
