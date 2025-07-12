@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface ArrangerChartTheme {
 	onClick?: (e: unknown) => void;
 	colors?: string[] | (({ fieldName }: { fieldName: string }) => string);
@@ -5,4 +7,11 @@ export interface ArrangerChartTheme {
 
 export type ArrangerChartProps = { data: {}; theme: ArrangerChartTheme };
 
-export type ThemeResolver = ({ theme, data }: { theme: ArrangerChartTheme; data: unknown }) => unknown;
+export type ThemeResolver = ({
+	theme,
+	data,
+}: {
+	theme: ArrangerChartTheme;
+	data: unknown;
+	wrapperRef: React.RefObject<HTMLDivElement>;
+}) => unknown;

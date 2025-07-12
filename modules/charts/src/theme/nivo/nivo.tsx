@@ -13,7 +13,7 @@ import { defaultNivoConfig } from './config';
  *
  * @returns A complete Nivo bar chart configuration object resolved with Arranger Charts theme
  */
-export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme }) => {
+export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme, wrapperRef }) => {
 	// setup colors to use color map
 	const colors = (bar) => {
 		return theme.colorMap.get(bar.data.key);
@@ -35,7 +35,21 @@ export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme }) => {
 		);
 	};
 
-	const nivoConfig = merge(cloneDeep(defaultNivoConfig), { ...theme, tooltip, colors });
+	const nivoConfig = merge(cloneDeep(defaultNivoConfig), {
+		...theme,
+		tooltip,
+		colors,
+		onMouseEnter: () => {
+			if (wrapperRef.current) {
+				wrapperRef.current.style.cursor = 'pointer';
+			}
+		},
+		onMouseLeave: () => {
+			if (wrapperRef.current) {
+				wrapperRef.current.style.cursor = 'auto';
+			}
+		},
+	});
 
 	return nivoConfig;
 };
