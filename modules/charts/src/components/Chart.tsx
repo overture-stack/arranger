@@ -23,10 +23,23 @@ type ChartProps = {
 	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
 };
 
-// TODO: numeric or agg, very hacky property check, no need for this once server config is expanded, then we can check the typename
-const resolveData = ({ data }) => {
-	if (data.buckets) return data.buckets;
-	if (data.range) return data.range.buckets;
+// TODO: numeric or agg, very hacky property check,
+//  no need for this once server config is expanded, then we can check the typename
+const resolveData = ({ data, onDataLoad }) => {
+	let chartData = {};
+
+	if (data.buckets) {
+		chartData = data.buckets;
+	} else if (data.range) {
+		chartData = data.range.buckets;
+	}
+
+	// consumer
+	if (onDataLoad) {
+		chartData = onDataLoad(chartData);
+	}
+
+	return chartData;
 };
 
 /**
@@ -98,7 +111,7 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 		);
 	} else {
 		// TODO: numeric or agg
-		const resolvedChartData = resolveData({ data: chartData });
+		const resolvedChartData = resolveData({ data: chartData, onDataLoad: theme.onDataLoad });
 
 		if (!colorMap.current) {
 			const keys = resolvedChartData.map((bucket) => bucket.key);
