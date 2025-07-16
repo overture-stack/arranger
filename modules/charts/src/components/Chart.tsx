@@ -1,4 +1,4 @@
-import { cloneDeep, merge } from 'lodash';
+import { cloneDeep, isEmpty, merge } from 'lodash';
 import { ReactNode, useEffect, useRef } from 'react';
 
 import { ChartContainer } from '#components/helper/ChartContainer';
@@ -102,16 +102,17 @@ export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }
 				<ErrorData />
 			</ChartContainer>
 		);
-	} else if (!chartData) {
-		const { EmptyData } = globalTheme.components;
-		return (
-			<ChartContainer>
-				<EmptyData />
-			</ChartContainer>
-		);
 	} else {
-		// TODO: numeric or agg
 		const resolvedChartData = resolveData({ data: chartData, onDataLoad: theme.onDataLoad });
+
+		if (isEmpty(resolvedChartData)) {
+			const { EmptyData } = globalTheme.components;
+			return (
+				<ChartContainer>
+					<EmptyData />
+				</ChartContainer>
+			);
+		}
 
 		if (!colorMap.current) {
 			const keys = resolvedChartData.map((bucket) => bucket.key);
