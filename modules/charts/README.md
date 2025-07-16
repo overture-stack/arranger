@@ -11,4 +11,10 @@ This functionality is needed to query an Arranger server and to update SQON stat
 
 `npm i <this_project_folder>` from consumer project
 
-`npm run dev` will rebuild on file changes
+`useArrangerData` Arranger data fetching requires a single instance
+
+To install for dev use this command:
+`npm i -D <shared instance of node_modules @overture-stack/arranger-components from consumer project>`
+
+To rebuild on file change run:
+`npm run dev`
