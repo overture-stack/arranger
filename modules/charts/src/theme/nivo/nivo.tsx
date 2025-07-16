@@ -39,15 +39,8 @@ export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme, wrapperRef 
 		...theme,
 		tooltip,
 		colors,
-		onMouseEnter: () => {
-			if (wrapperRef.current) {
-				wrapperRef.current.style.cursor = 'pointer';
-			}
-		},
-		onMouseLeave: () => {
-			if (wrapperRef.current) {
-				wrapperRef.current.style.cursor = 'auto';
-			}
+		onMouseEnter: (_, e) => {
+			e.target.style.cursor = 'pointer';
 		},
 	});
 
