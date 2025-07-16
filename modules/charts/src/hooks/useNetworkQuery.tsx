@@ -6,7 +6,7 @@ type UseNetworkQueryProps = Pick<DataContextInterface, 'documentType' | 'apiFetc
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const useNetworkQuery = ({ query, apiFetcher, sqon }: UseNetworkQueryProps) => {
-	const [apiState, setApiState] = useState({ data: null, loading: false, error: false });
+	const [apiState, setApiState] = useState({ data: null, loading: true, error: false });
 
 	useEffect(() => {
 		const fetchData = async () => {
