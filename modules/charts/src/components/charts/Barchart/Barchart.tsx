@@ -5,6 +5,7 @@ import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
 import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 import { css } from '@emotion/react';
 import { useRef } from 'react';
+import z from 'zod';
 
 /**
  * Resolve to a Nivo Bar chart component
@@ -30,9 +31,19 @@ export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
 export const Barchart = ({ fieldName, theme }: { fieldName: string; theme: ArrangerChartTheme }) => {
 	return (
 		<Chart
+			chartType="barchart"
 			fieldName={fieldName}
 			theme={theme}
 			DisplayComponent={BarchartComp}
 		/>
 	);
 };
+
+export const BarChartPropsSchema = z.object({
+	fieldName: z.string(),
+	theme: z.record(z.string(), z.any()),
+	chart: z.object({
+		showLegends: z.boolean().default(true),
+	}),
+});
+export type BarChartProps = z.infer<typeof BarChartPropsSchema>;
