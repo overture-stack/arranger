@@ -1,7 +1,7 @@
 import { ResponsiveBar } from '@nivo/bar';
 
 import { Chart } from '#components/Chart';
-import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
+import { ArrangerChartProps } from '#theme/arranger';
 import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 import { css } from '@emotion/react';
 import { useRef } from 'react';
@@ -10,7 +10,7 @@ import z from 'zod';
 /**
  * Resolve to a Nivo Bar chart component
  */
-export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
+export const BarChartView = ({ data, config }: ArrangerChartProps) => {
 	// create div ref for toggling css style
 	const wrapperRef = useRef(null);
 	const resolvedTheme = arrangerToNivoBarChart({ data, theme, wrapperRef });
@@ -28,22 +28,39 @@ export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
 	);
 };
 
-export const Barchart = ({ fieldName, theme }: { fieldName: string; theme: ArrangerChartTheme }) => {
+export const Barchart = ({ data, chart }: BarChartProps) => {
+	const fieldName = data.fieldNames[0];
+	const theme = {chart.xAxis.title.isVisible}
 	return (
 		<Chart
-			chartType="barchart"
 			fieldName={fieldName}
 			theme={theme}
-			DisplayComponent={BarchartComp}
+			DisplayComponent={(data) => <BarChartView data={data} config={config}/>}
 		/>
 	);
 };
 
-export const BarChartPropsSchema = z.object({
-	fieldName: z.string(),
-	theme: z.record(z.string(), z.any()),
+const dataActions = z.literal(['onClick']);
+
+const AxisSchema = z.object({
+	title: z.object({
+		isVisible: z.boolean().default(true),
+	}),
+});
+
+type t = z.infer<typeof dataActions>;
+const BarChartPropsSchema = z.object({
+	data: z.object({
+		fieldNames: z.array(z.string()),
+		onAction: z.custom<({ action, data }: { action: t; data: any }) => any>(),
+		buckets: z.object({
+			orderBy: z.custom<(param: string) => string>(),
+		}),
+	}),
 	chart: z.object({
-		showLegends: z.boolean().default(true),
+		onAction: z.custom<({ action, data }: { action: t; data: any }) => any>(),
+		xAxis: AxisSchema,
+		yAxis: AxisSchema,
 	}),
 });
 export type BarChartProps = z.infer<typeof BarChartPropsSchema>;
