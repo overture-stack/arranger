@@ -1,10 +1,11 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
-import { cloneDeep, merge } from 'lodash';
-import { createContext, PropsWithChildren, ReactElement, useContext, useEffect, useState } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
+import { cloneDeep, merge } from 'lodash';
 import { EmptyData } from './EmptyData';
 import { ErrorData } from './ErrorData';
+import { useChartFields } from './hooks/useCharts';
 import { Tooltip } from './Tooltip';
 
 type ChartContextType = {
@@ -44,73 +45,45 @@ const createChartDataMap = ({ data }) => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
-type Chart = {
-	chartType: string;
-	fieldName: string;
-	displayValues: Record<string, string>;
-	ranges?: any;
-};
-
-type ChartGroup = Record<string, Record<string, Chart>>;
-
-type ChartsConfig = {
-	groups: Record<string, ChartGroup>;
-};
-
-export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
-	// Ensure there is an ArrangerDataProvider context available
-	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
-	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
-		callerName: 'ArrangerCharts',
-	});
-
-	// TODO: minimal for POC, some consistency with other data fetchers might be good
-	const [chartsConfigs, setChartConfigs] = useState<ChartsConfig>();
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				const data = await theme.dataFetcher({
-					body: { query: `query ChartsConfig { file { configs { charts } } }` },
-				});
-
-				const config = data.data.file.configs.charts;
-
-				setChartConfigs(config);
-			} catch (error) {
-				console.log('error fetching charts config', error);
-				// for consumer app to catch error
-				throw error;
-			}
-		};
-
-		fetchData();
-	}, []);
-
-	const { apiState } = useNetworkQuery({
-		query: chartsConfigs?.query,
-		documentType,
-		apiFetcher,
-		sqon,
-	});
-
-	// default global theme
-	const globalTheme: GlobalTheme = merge(
+// merged passed theme with defaults
+const createGlobalTheme = ({ theme }) => {
+	return merge(
 		cloneDeep({
 			components: { Tooltip, ErrorData, EmptyData },
 		}),
 		theme,
 	);
+};
+
+export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
+	// TODO: nsure there is an ArrangerDataProvider context available
+	// apiFetcher is consumer function passed into ArrangerDataProvider
+	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
+		callerName: 'ArrangerCharts',
+	});
+
+	// create query instance
+	const { gqlQuery, registerFieldName, deregisterFieldName } = useChartFields({ documentType });
+
+	// api call
+	const { apiState } = useNetworkQuery({
+		query: gqlQuery,
+		apiFetcher,
+		sqon,
+	});
 
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
+	const globalTheme: GlobalTheme = createGlobalTheme({ theme });
+
 	const registerChart = async ({ fieldName }) => {
-		// TODO: remove, now backend driven no need to dynamically add on child component add
-		//		addToQuery({ fieldName });
+		console.log('Registering fieldName', fieldName);
+		registerFieldName(fieldName);
 	};
 
 	const deregisterChart = ({ fieldName }) => {
-		// TODO: remove, now backend driven no need to dynamically add on child component add
-		//		removeFromQuery({ fieldName });
+		console.log('Deregistering fieldName', fieldName);
+		deregisterFieldName(fieldName);
 	};
 
 	const update = ({ fieldName, eventData }) => {
