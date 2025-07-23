@@ -1,9 +1,11 @@
 import z from 'zod';
 
+// handlers for data events eg. onLoad, onError
 const dataActions = z.literal(['onLoad']);
-const chartActions = z.literal(['onClick']);
-
 type DataActions = z.infer<typeof dataActions>;
+
+// handlers for chart events eg. onMouseEnter, onLabelClick
+const chartActions = z.literal(['onClick']);
 type ChartActions = z.infer<typeof chartActions>;
 
 const AxisSchema = z.object({
@@ -12,7 +14,7 @@ const AxisSchema = z.object({
 	}),
 });
 
-const BarChartPropsSchema = z.object({
+const ChartPropsSchema = z.object({
 	data: z.object({
 		fieldNames: z.array(z.string()),
 		onAction: z.custom<({ action, data }: { action: DataActions; data: any }) => any>(),
@@ -27,4 +29,4 @@ const BarChartPropsSchema = z.object({
 	}),
 });
 
-export type BarChartProps = z.infer<typeof BarChartPropsSchema>;
+export type ChartProps = z.infer<typeof ChartPropsSchema>;
