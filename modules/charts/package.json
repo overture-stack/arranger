@@ -27,7 +27,6 @@
 	},
 	"peerDependencies": {
 		"@emotion/react": "^11.0.0",
-		"@overture-stack/arranger-components": "*",
 		"@types/react": "^17.0.0 || ^18.0.0",
 		"@types/react-dom": "^17.0.0 || ^18.0.0",
 		"react": "^17.0.0 || ^18.0.0",
@@ -39,12 +38,10 @@
 		"@nivo/pie": "^0.88.0",
 		"@nivo/sunburst": "^0.88.0",
 		"lodash": "^4.17.21",
-		"react-error-boundary": "^6.0.0",
 		"zod": "^4.0.5"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.28.0",
-		"@overture-stack/arranger-components": "file:../../../platform-ui/node_modules/@overture-stack/arranger-components",
 		"@storybook/addon-docs": "^9.0.5",
 		"@storybook/addon-onboarding": "^9.0.5",
 		"@storybook/react-vite": "^9.0.5",
