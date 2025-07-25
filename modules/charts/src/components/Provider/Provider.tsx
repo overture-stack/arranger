@@ -1,10 +1,8 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
+import { cloneDeep, merge } from 'lodash';
 import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { cloneDeep, merge } from 'lodash';
-import { EmptyData } from './EmptyData';
-import { ErrorData } from './ErrorData';
 import { useChartFields } from './hooks/useCharts';
 import { Tooltip } from './Tooltip';
 

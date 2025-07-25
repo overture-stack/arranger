@@ -15,7 +15,7 @@ import { ChartText } from './ChartText';
  * @param DisplayComponent - Custom component for rendering chart display
  */
 export const Chart = ({ fieldName, theme, DisplayComponent, components, dataHandlers }) => {
-	const { getChartData } = useChartsContext();
+	const { getChartData, globalTheme } = useChartsContext();
 
 	useEffect(() => {
 		useRegisterChart({ fieldName });
@@ -24,19 +24,18 @@ export const Chart = ({ fieldName, theme, DisplayComponent, components, dataHand
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
 	if (isLoading) {
-		return components.Loader || <ChartText text="Loading..." />;
+		return globalTheme.components.Loader || components.Loader || <ChartText text="Loading..." />;
 	}
 
 	if (isError) {
-		return components.ErrorData || <ChartText text="Error" />;
+		return globalTheme.components.Loader || components.ErrorData || <ChartText text="Error" />;
 	}
 
-	if (isEmpty(resolvedChartData)) {
-		return components.EmptyData || <ChartText text="No Data Available" />;
+	if (isEmpty(chartData)) {
+		return globalTheme.components.Loader || components.EmptyData || <ChartText text="No Data Available" />;
 	}
 
 	if (DisplayComponent) {
-		const resolvedChartData = resolveData({ data: chartData, onDataLoad: theme.onDataLoad });
-		return <DisplayComponent data={resolvedChartData} />;
+		return <DisplayComponent data={chartData} />;
 	}
 };

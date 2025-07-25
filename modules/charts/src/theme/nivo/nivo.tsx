@@ -13,10 +13,10 @@ import { defaultNivoConfig } from './config';
  *
  * @returns A complete Nivo bar chart configuration object resolved with Arranger Charts theme
  */
-export const arrangerToNivoBarChart: ThemeResolver = ({ data, theme, wrapperRef }) => {
+export const arrangerToNivoBarChart: ThemeResolver = ({ theme, colorMap }) => {
 	// setup colors to use color map
 	const colors = (bar) => {
-		return theme.colorMap.get(bar.data.key);
+		return colorMap.get(bar.data.key);
 	};
 
 	// use default tooltip

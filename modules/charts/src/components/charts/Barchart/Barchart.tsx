@@ -55,7 +55,11 @@ export const Barchart = ({
 	const isValidated = validateChart();
 
 	if (!isValidated) {
-		return <ChartText text="Invalid chart config" />;
+		return (
+			<ChartContainer>
+				<ChartText text="Invalid chart config" />
+			</ChartContainer>
+		);
 	}
 
 	return (

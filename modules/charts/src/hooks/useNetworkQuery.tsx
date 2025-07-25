@@ -1,7 +1,4 @@
-import { DataContextInterface } from '@overture-stack/arranger-components';
 import { useEffect, useState } from 'react';
-
-type UseNetworkQueryProps = Pick<DataContextInterface, 'apiFetcher' | 'sqon' | 'query'>;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
