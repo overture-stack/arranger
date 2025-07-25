@@ -1,6 +1,8 @@
 import { ResponsiveBar } from '@nivo/bar';
 
 import { Chart } from '#components/Chart';
+import { ChartText } from '#components/ChartText';
+import { ChartContainer } from '#components/helper/ChartContainer';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
 import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 import { css } from '@emotion/react';
@@ -9,10 +11,12 @@ import { useRef } from 'react';
 /**
  * Resolve to a Nivo Bar chart component
  */
-export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
+export const BarChartView = ({ data, theme }: ArrangerChartProps) => {
+	// theme value depending on data provided, and scoped to a single instance of a Charts
+	const colorMap = useRef();
 	// create div ref for toggling css style
 	const wrapperRef = useRef(null);
-	const resolvedTheme = arrangerToNivoBarChart({ data, theme, wrapperRef });
+	const resolvedTheme = arrangerToNivoBarChart({ theme, colorMap });
 
 	return (
 		<div
@@ -27,12 +31,47 @@ export const BarchartComp = ({ data, theme }: ArrangerChartProps) => {
 	);
 };
 
-export const Barchart = ({ fieldName, theme }: { fieldName: string; theme: ArrangerChartTheme }) => {
+const validateChart = () => {
+	console.log('validating chart..');
+	return true;
+};
+
+export const Barchart = ({
+	fieldName,
+	theme,
+	dataHandlers,
+	components,
+}: {
+	fieldName: string;
+	theme: ArrangerChartTheme;
+	dataHandlers?: any;
+	components?: {
+		Loader?: any;
+		ErrorData?: any;
+		EmptyData?: any;
+	};
+}) => {
+	// this should only be called on Barchart render
+	const isValidated = validateChart();
+
+	if (!isValidated) {
+		return <ChartText text="Invalid chart config" />;
+	}
+
 	return (
-		<Chart
-			fieldName={fieldName}
-			theme={theme}
-			DisplayComponent={BarchartComp}
-		/>
+		<ChartContainer>
+			<Chart
+				fieldName={fieldName}
+				dataHandlers={dataHandlers}
+				components={components}
+				DisplayComponent={(data) => (
+					// this will re-render based on the internal chart fetching updates in "Chart" component
+					<BarChartView
+						data={data}
+						theme={theme}
+					/>
+				)}
+			/>
+		</ChartContainer>
 	);
 };
