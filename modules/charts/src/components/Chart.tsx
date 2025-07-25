@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { useChartsContext } from '#components/Provider/Provider';
 import { useRegisterChart } from '#hooks/useRegisterChart';
 import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
+import { ChartText } from './ChartText';
 
 type ChartProps = {
 	fieldName: string;
@@ -59,18 +60,15 @@ export const Chart = ({ fieldName, theme, DisplayComponent }: ChartProps) => {
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
 	if (isLoading) {
-		const { Loader } = globalTheme.components;
-		return <Loader />;
+		return globalTheme.components.Loader || <ChartText text="Loading..." />;
 	}
 
 	if (isError) {
-		const { ErrorData } = globalTheme.components;
-		return <ErrorData />;
+		return globalTheme.components?.ErrorData || <ChartText text="Error" />;
 	}
 
 	if (isEmpty(resolvedChartData)) {
-		const { EmptyData } = globalTheme.components;
-		return <EmptyData />;
+		return globalTheme.components?.EmptyData || <ChartText text="No Data Available" />;
 	}
 
 	if (DisplayComponent) {
