@@ -1,36 +1,32 @@
 {
 	"name": "@overture-stack/arranger-server",
-	"description": "GraphQL Server",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"bin": {
-		"arranger-server": "./index.js"
-	},
-	"imports": {
-		"#*": "./src/*"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "tsc --project tsconfig.release.json",
-		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
-		"nuke:dist": "rm -rf dist",
-		"patchTS": "ts-patch install -s",
-		"prepare": "npm run patchTS",
-		"start": "tsx ./index.ts",
-		"test": "tsx --test",
-		"test:watch": "npm test -- --watch",
-		"watch": "npm run nuke:dist && npm run build -- --watch"
+	"description": "Data Model-agnostic GraphQL-based search API for Elasticsearch",
+	"version": "0.0.0-dev",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/overture-stack/arranger.git"
 	},
-	"bugs": {
-		"url": "https://github.com/overture-stack/arranger/issues"
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"imports": {
+		"#configs": "./configs/*",
+		"#*": "./src/*"
 	},
-	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"scripts": {
+		"build": "tsc --project tsconfig.release.json",
+		"clear:dist": "rm -rf dist",
+		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
+		"patchTS": "ts-patch install -s",
+		"prepare": "npm run patchTS",
+		"start": "tsx ./index.ts",
+		"test": "tsx --test",
+		"test:watch": "npm test -- --watch",
+		"watch": "npm run clear:dist && npm run build -- --watch"
+	},
 	"dependencies": {
 		"@graphql-tools/merge": "^9.0.4",
 		"@elastic/elasticsearch": "^7.17.14",
@@ -91,6 +87,8 @@
 		"glob-parent": "^5.1.2",
 		"minimist": "^1.2.6"
 	},
-	"type": "module",
-	"version": "0.0.0-dev"
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module"
 }

@@ -8,5 +8,6 @@ lerna-debug.log
 **/.DS_Store
 **/*.env*
 !**/.env.schema
+**/package-lock.json
 
 *.tsbuildinfo

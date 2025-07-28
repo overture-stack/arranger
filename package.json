@@ -24,13 +24,13 @@
 		"url": "https://github.com/overture-stack/arranger.git"
 	},
 	"scripts": {
+		"clear:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
 		"components:watch": "npm run watch --w modules/components",
 		"modules:build": "npm run build --w modules",
 		"modules:tag": "npm version --ws --force-publish --yes",
 		"modules:watch": "npm run watch --w modules",
-		"nuke:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
 		"publish::ci": "npm publish --ws --if-present",
-		"reset": "npm run nuke:nodeModules && npm run nuke:dist --ws --if-present",
+		"reset": "npm run clear:nodeModules && npm run clear:dist --ws --if-present",
 		"test": "npm run test --ws --if-present",
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch --w modules/components -w integration-tests/import\"",
 		"server": "npm run start --w modules/server",
