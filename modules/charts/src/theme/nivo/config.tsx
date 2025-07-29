@@ -103,6 +103,9 @@ export const defaultNivoConfig = {
 		bottom: 56,
 	},
 
+	/**
+	 * match arranger schema
+	 */
 	indexBy: 'key',
 	keys: ['doc_count'],
 

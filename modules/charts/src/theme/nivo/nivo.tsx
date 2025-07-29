@@ -1,6 +1,6 @@
 import { cloneDeep, merge } from 'lodash';
 
-import { ThemeResolver } from '#theme/arranger';
+import { Tooltip } from '#components/Provider/Tooltip';
 import { defaultNivoConfig } from './config';
 
 /**
@@ -13,17 +13,18 @@ import { defaultNivoConfig } from './config';
  *
  * @returns A complete Nivo bar chart configuration object resolved with Arranger Charts theme
  */
-export const arrangerToNivoBarChart: ThemeResolver = ({ theme, colorMap }) => {
+export const arrangerToNivoBarChart = ({ theme, colorMap }) => {
 	// setup colors to use color map
 	const colors = (bar) => {
-		return colorMap.get(bar.data.key);
+		const color = colorMap.get(bar.data.key);
+		return color || 'black';
 	};
 
-	// use default tooltip
-	const Tooltip = theme.components.Tooltip;
+	/* ================= *
+	 * Tooltip						*
+	 * ================= */
 	const tooltip = ({ data }) => {
 		const { doc_count, key } = data;
-		// TODO: configurable
 		const displayValue = key === '__missing__' ? 'No Data' : key;
 		return (
 			<Tooltip>
@@ -39,6 +40,7 @@ export const arrangerToNivoBarChart: ThemeResolver = ({ theme, colorMap }) => {
 		...theme,
 		tooltip,
 		colors,
+		animate: false,
 		onMouseEnter: (_, e) => {
 			e.target.style.cursor = 'pointer';
 		},
