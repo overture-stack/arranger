@@ -2,7 +2,7 @@ import { Component } from '@reach/component-component';
 import { action } from '@storybook/addon-actions';
 import { storiesOf } from '@storybook/react';
 
-import { DatesAgg, BooleanAgg, TermAgg, RangeAgg, AggsPanel } from '#aggregations/index.js';
+import { DatesAggs, BooleanAggs, TermAggs, RangeAggs, AggsPanel } from '#aggregations/index.js';
 import { inCurrentSQON, currentFieldValue } from '#SQONViewer/utils.js';
 import State from '#State.js';
 
@@ -154,9 +154,9 @@ let aggs = [
 
 storiesOf('Aggs', module)
 	.addDecorator(themeDecorator)
-	.add('TermAgg', () => (
+	.add('TermAggs', () => (
 		<div className="term-agg-wrapper">
-			<TermAgg
+			<TermAggs
 				fieldName="disease_type"
 				displayName="Disease Type"
 				buckets={[
@@ -173,9 +173,9 @@ storiesOf('Aggs', module)
 			/>
 		</div>
 	))
-	.add('TermAgg with headerTitle', () => (
+	.add('TermAggs with headerTitle', () => (
 		<div className="term-agg-wrapper">
-			<TermAgg
+			<TermAggs
 				fieldName="disease_type"
 				displayName="Disease Type"
 				buckets={[
@@ -192,7 +192,7 @@ storiesOf('Aggs', module)
 			/>
 		</div>
 	))
-	.add('TermAggsWithSQON', () => (
+	.add('TermAggssWithSQON', () => (
 		<State
 			initial={{ sqon: null }}
 			render={({ sqon, update }) => (
@@ -205,7 +205,7 @@ storiesOf('Aggs', module)
 					>
 						{aggs.map((agg) => (
 							// TODO: switch on agg type
-							<TermAgg
+							<TermAggs
 								key={agg.field}
 								{...agg}
 								handleValueClick={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}
@@ -223,9 +223,9 @@ storiesOf('Aggs', module)
 			)}
 		/>
 	))
-	.add('DatesAgg', () => (
+	.add('DatesAggs', () => (
 		<div className="term-agg-wrapper">
-			<DatesAgg
+			<DatesAggs
 				fieldName="disease_type"
 				displayName="Disease Type"
 				stats={{
@@ -237,7 +237,7 @@ storiesOf('Aggs', module)
 			/>
 		</div>
 	))
-	.add('DatesAggWithSQON', () => (
+	.add('DatesAggsWithSQON', () => (
 		<Component initialState={{ sqon: null }}>
 			{({ state: { sqon }, setState }) => (
 				<div>
@@ -247,7 +247,7 @@ storiesOf('Aggs', module)
 							width: 300px;
 						`}
 					>
-						<DatesAgg
+						<DatesAggs
 							fieldName="disease_type"
 							displayName="Disease Type"
 							stats={{
@@ -268,8 +268,8 @@ storiesOf('Aggs', module)
 			)}
 		</Component>
 	))
-	.add('RangeAgg', () => (
-		<RangeAgg
+	.add('RangeAggs', () => (
+		<RangeAggs
 			fieldName="cases__diagnoses__days_to_death"
 			displayName="Diagnoses Days To Death"
 			stats={{
@@ -282,13 +282,13 @@ storiesOf('Aggs', module)
 			handleChange={action(`Range Change`)}
 		/>
 	))
-	.add('RangeAggWithSQON', () => (
+	.add('RangeAggsWithSQON', () => (
 		<State
 			initial={{ sqon: null }}
 			render={({ sqon, update }) => (
 				<div className="range with sqon">
 					<div>SQON: {JSON.stringify(sqon)}</div>
-					<RangeAgg
+					<RangeAggs
 						fieldName="cases__diagnoses__days_to_death"
 						displayName="Diagnoses Days To Death"
 						unit={'d'}
@@ -305,8 +305,8 @@ storiesOf('Aggs', module)
 			)}
 		/>
 	))
-	.add('BooleanAgg', () => (
-		<BooleanAgg
+	.add('BooleanAggs', () => (
+		<BooleanAggs
 			fieldName="cases__diagnoses__days_to_death"
 			displayName="Diagnoses Days To Death"
 			buckets={[
@@ -324,7 +324,7 @@ storiesOf('Aggs', module)
 			handleChange={action(`Range Change`)}
 		/>
 	))
-	.add('BooleanAggWithSqon', () => (
+	.add('BooleanAggsWithSqon', () => (
 		<State
 			initial={{ sqon: null }}
 			render={({ sqon, update }) => (
@@ -336,7 +336,7 @@ storiesOf('Aggs', module)
 						`}
 					>
 						{bolleanAggs.map((agg) => (
-							<BooleanAgg
+							<BooleanAggs
 								key={agg.field}
 								{...agg}
 								handleValueClick={({ generateNextSQON }) => update({ sqon: generateNextSQON(sqon) })}

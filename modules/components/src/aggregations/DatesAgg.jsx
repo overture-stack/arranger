@@ -8,7 +8,7 @@ import { removeSQON, replaceSQON } from '#SQONViewer/utils.js';
 import { withTheme } from '#ThemeContext/index.js';
 import { emptyObj } from '#utils/noops.js';
 
-import AggsWrapper from './AggsWrapper.js';
+import AggsGroup from './AggsGroup/index.js';
 
 const dateFromSqon = (dateString) => new Date(dateString);
 const toSqonDate = (date) => date.valueOf();
@@ -49,25 +49,25 @@ class DatesAgg extends React.Component {
 			const content = [
 				...(startDate
 					? [
-							{
-								op: '>=',
-								content: {
-									fieldName,
-									value: toSqonDate(startOfDay(startDate)),
-								},
+						{
+							op: '>=',
+							content: {
+								fieldName,
+								value: toSqonDate(startOfDay(startDate)),
 							},
-						]
+						},
+					]
 					: []),
 				...(endDate
 					? [
-							{
-								op: '<=',
-								content: {
-									fieldName,
-									value: toSqonDate(endOfDay(endDate)),
-								},
+						{
+							op: '<=',
+							content: {
+								fieldName,
+								value: toSqonDate(endOfDay(endDate)),
 							},
-						]
+						},
+					]
 					: []),
 			];
 			handleDateChange({
@@ -85,7 +85,6 @@ class DatesAgg extends React.Component {
 
 	render() {
 		const {
-			collapsible = true,
 			displayName = 'Date Range',
 			facetView = false,
 			fieldName,
@@ -116,7 +115,15 @@ class DatesAgg extends React.Component {
 		};
 
 		return (
-			<AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
+			<AggsGroup
+				dataFields={dataFields}
+				theme={{
+					displayName,
+					filtering: false,
+					sorting: false,
+					WrapperComponent
+				}}
+			>
 				{hasData ? (
 					<div
 						css={css`
@@ -255,7 +262,7 @@ class DatesAgg extends React.Component {
 						No data available
 					</span>
 				)}
-			</AggsWrapper>
+			</AggsGroup>
 		);
 	}
 }

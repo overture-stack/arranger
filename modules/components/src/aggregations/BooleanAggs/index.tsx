@@ -1,15 +1,13 @@
 import { css } from '@emotion/react';
 import cx from 'classnames';
 
+import { AggsGroup, BucketCount } from '#aggregations/index.js';
 import { replaceSQON, removeSQON } from '#SQONViewer/utils.js';
 import TextHighlight from '#TextHighlight/index.js';
 import { useThemeContext } from '#ThemeContext/index.js';
 import ToggleButton from '#ToggleButton/index.js';
 import formatNumber from '#utils/formatNumber.js';
 import noopFn, { emptyObj } from '#utils/noops.js';
-
-import AggsWrapper from '../AggsWrapper.js';
-import BucketCount from '../BucketCount/index.js';
 
 import { defaultDisplayLabels, defaultValueKeys } from './constants.js';
 import type Props from './types.js';
@@ -18,9 +16,8 @@ const emptyBucket = {
 	doc_count: 0,
 };
 
-const BooleanAgg = ({
+const BooleanAggs = ({
 	buckets = [],
-	collapsible,
 	defaultDisplayKeys = defaultDisplayLabels,
 	displayKeys = Object.keys(defaultDisplayKeys).reduce(
 		(obj, displayKey) => ({
@@ -43,7 +40,7 @@ const BooleanAgg = ({
 		colors,
 		components: {
 			Aggregations: {
-				BooleanAgg: {
+				BooleanAggs: {
 					BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
 					ToggleButton: { className: themeToggleButtonClassName, ...toggleButtonTheme } = emptyObj,
 				} = emptyObj,
@@ -53,7 +50,7 @@ const BooleanAgg = ({
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
-	} = useThemeContext({ callerName: 'BooleanAgg' });
+	} = useThemeContext({ callerName: 'BooleanAggss' });
 
 	const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true) || emptyBucket;
 	const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false) || emptyBucket;
@@ -126,7 +123,10 @@ const BooleanAgg = ({
 			disabled: isTrueBucketDisabled,
 			title: ({ toggleStatus = '' } = emptyObj) => (
 				<>
-					<TextHighlight content={displayKeys.true} highlightText={highlightText} />
+					<TextHighlight
+						content={displayKeys.true}
+						highlightText={highlightText}
+					/>
 					<BucketCount
 						className={cx(toggleStatus, themeBucketCountClassName)}
 						css={css`
@@ -144,7 +144,10 @@ const BooleanAgg = ({
 			disabled: isFalseBucketDisabled,
 			title: ({ toggleStatus = '' } = emptyObj) => (
 				<>
-					<TextHighlight content={displayKeys.false} highlightText={highlightText} />
+					<TextHighlight
+						content={displayKeys.false}
+						highlightText={highlightText}
+					/>
 					<BucketCount
 						className={cx(toggleStatus, themeBucketCountClassName)}
 						css={css`
@@ -165,7 +168,15 @@ const BooleanAgg = ({
 	};
 
 	return (
-		<AggsWrapper dataFields={dataFields} {...{ displayName, WrapperComponent, collapsible }}>
+		<AggsGroup
+			dataFields={dataFields}
+			theme={{
+				displayName,
+				filtering: false,
+				sorting: false,
+				WrapperComponent,
+			}}
+		>
 			{hasData ? (
 				<div
 					css={css`
@@ -197,8 +208,8 @@ const BooleanAgg = ({
 					No data available
 				</span>
 			)}
-		</AggsWrapper>
+		</AggsGroup>
 	);
 };
 
-export default BooleanAgg;
+export default BooleanAggs;

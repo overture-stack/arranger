@@ -1,73 +1,22 @@
 import { currentFieldValue, fieldInCurrentSQON, inCurrentSQON } from '#SQONViewer/utils.js';
 import noopFn from '#utils/noops.js';
 
-import BooleanAgg from './Booleans/index.js';
-import DatesAgg from './DatesAgg.js';
-import RangeAgg from './RangeAgg.js';
-import TermAgg from './TermAgg.js';
+import BooleanAggs from './BooleanAggs/index.js';
+import DatesAggs from './DatesAgg.js';
+import RangeAggs from './RangeAgg.js';
+import TermAggs from './TermAggs/index.js';
 
 // TODO: should these "isActive" functions be renamed to "getWhatever"?
+// what does "active" mean, practically, in this context?
+// TODO: also, what's with all the missmatching methods!? Fix it, Justin!
+// e.g. onValueChange vs HandleDateChange vs handleChange vs handleValueClick
 
-const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
-	<TermAgg
-		{...{ ...rest, ...getTermAggProps() }}
-		handleValueClick={({ fieldName, generateNextSQON, value }) => {
-			let nextSQON = generateNextSQON(sqon);
-			const isActive = fieldInCurrentSQON({
-				currentSQON: nextSQON?.content || [],
-				fieldName,
-			});
-			onValueChange({
-				sqon: nextSQON,
-				value: {
-					fieldName,
-					isActive,
-					value,
-				},
-			});
-		}}
-		isActive={(field) => {
-			return inCurrentSQON({
-				value: field.value,
-				dotFieldName: field.fieldName,
-				currentSQON: sqon,
-			});
-		}}
-	/>
-);
-
-const composedRangeAgg = ({ sqon, onValueChange, fieldName, stats, getRangeAggProps = () => ({}), ...rest }) => (
-	<RangeAgg
-		{...{ ...rest, stats, fieldName, ...getRangeAggProps() }}
-		handleChange={({ generateNextSQON, field: { displayName, displayUnit, fieldName }, value }) => {
-			const nextSQON = generateNextSQON(sqon);
-
-			onValueChange({
-				sqon: nextSQON,
-				value: {
-					fieldName: `${displayName} (${displayUnit})`,
-					isActive: fieldInCurrentSQON({
-						currentSQON: nextSQON?.content,
-						fieldName,
-					}),
-					value,
-				},
-			});
-		}}
-		sqonValues={
-			!!sqon && {
-				min: currentFieldValue({ sqon, dotFieldName: fieldName, op: '>=' }),
-				max: currentFieldValue({ sqon, dotFieldName: fieldName, op: '<=' }),
-			}
-		}
-	/>
-);
-
-const composedBooleanAgg = ({ sqon, onValueChange, getBooleanAggProps = () => ({}), ...rest }) => (
-	<BooleanAgg
-		{...{ ...rest, ...getBooleanAggProps() }}
+const composedBooleanAggs = ({ sqon, onValueChange, getBooleanAggsProps = () => ({}), ...rest }) => (
+	<BooleanAggs
+		{...{ ...rest, ...getBooleanAggsProps() }}
 		handleValueClick={({ fieldName, generateNextSQON, value }) => {
 			const nextSQON = generateNextSQON(sqon);
+
 			onValueChange({
 				sqon: nextSQON,
 				value: {
@@ -83,7 +32,7 @@ const composedBooleanAgg = ({ sqon, onValueChange, getBooleanAggProps = () => ({
 		isActive={(field) =>
 			inCurrentSQON({
 				value: field.value,
-				dotFieldname: field.fieldName,
+				dotFieldName: field.fieldName,
 				currentSQON: sqon,
 			})
 		}
@@ -91,7 +40,7 @@ const composedBooleanAgg = ({ sqon, onValueChange, getBooleanAggProps = () => ({
 );
 
 const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), ...rest }) => (
-	<DatesAgg
+	<DatesAggs
 		{...{ ...rest, ...getDatesAggProps() }}
 		getActiveValue={({ op, fieldName }) =>
 			currentFieldValue({
@@ -117,8 +66,64 @@ const composedDatesAgg = ({ sqon, onValueChange, getDatesAggProps = () => ({}), 
 	/>
 );
 
+const composedRangeAgg = ({ sqon, onValueChange, fieldName, stats, getRangeAggProps = () => ({}), ...rest }) => (
+	<RangeAggs
+		{...{ ...rest, stats, fieldName, ...getRangeAggProps() }}
+		handleChange={({ generateNextSQON, field: { displayName, displayUnit, fieldName }, value }) => {
+			const nextSQON = generateNextSQON(sqon);
+
+			onValueChange({
+				sqon: nextSQON,
+				value: {
+					fieldName: `${displayName} (${displayUnit})`,
+					isActive: fieldInCurrentSQON({
+						currentSQON: nextSQON?.content,
+						fieldName,
+					}),
+					value,
+				},
+			});
+		}}
+		sqonValues={
+			!!sqon && {
+				min: currentFieldValue({ sqon, dotFieldName: fieldName, op: '>=' }),
+				max: currentFieldValue({ sqon, dotFieldName: fieldName, op: '<=' }),
+			}
+		}
+	/>
+);
+
+const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
+	<TermAggs
+		{...{ ...rest, ...getTermAggProps() }}
+		handleValueClick={({ fieldName, generateNextSQON, value }) => {
+			const nextSQON = generateNextSQON(sqon);
+			const isActive = fieldInCurrentSQON({
+				currentSQON: nextSQON?.content || [],
+				fieldName,
+			});
+
+			onValueChange({
+				sqon: nextSQON,
+				value: {
+					fieldName,
+					isActive,
+					value,
+				},
+			});
+		}}
+		isActive={(field) => {
+			return inCurrentSQON({
+				value: field.value,
+				dotFieldName: field.fieldName,
+				currentSQON: sqon,
+			});
+		}}
+	/>
+);
+
 export default {
-	boolean: composedBooleanAgg,
+	boolean: composedBooleanAggs,
 	byte: composedRangeAgg,
 	date: composedDatesAgg,
 	float: composedRangeAgg,

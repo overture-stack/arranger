@@ -2,7 +2,7 @@ import Location from '#Location.js';
 import { inCurrentSQON } from '#SQONViewer/utils.js';
 
 import AggsQuery from './AggsQuery.js';
-import TermAgg from './TermAgg.js';
+import TermAggs from './TermAggs/index.js';
 
 const AggsPanel = ({ index, aggs = [], ...props }) =>
 	aggs.length ? (
@@ -18,7 +18,7 @@ const AggsPanel = ({ index, aggs = [], ...props }) =>
 							<Location
 								key={fieldName}
 								render={(search) => (
-									<TermAgg
+									<TermAggs
 										fieldName={fieldName}
 										buckets={data.buckets}
 										isActive={(field) =>

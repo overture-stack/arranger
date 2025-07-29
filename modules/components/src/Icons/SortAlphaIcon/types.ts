@@ -1,18 +1,16 @@
 import type { ThemeCommon } from '#ThemeContext/types/index.js';
 
-export type ArrowIconThemeProps = ThemeCommon.CustomCSS & {
+export type SortAlphaIconThemeProps = ThemeCommon.CustomCSS & {
 	activeFill: string;
 	disabledFill: string;
 	fill: string;
 	size: string | number;
-	transition: string;
 };
 
 type Props = ThemeCommon.CustomCSS & {
+	descending: boolean;
 	disabled?: boolean;
-	isTreeJoint?: boolean;
-	pointUp?: boolean;
-	theme?: Partial<ArrowIconThemeProps>;
+	theme?: Partial<SortAlphaIconThemeProps>;
 };
 
 export default Props;
