@@ -1,5 +1,4 @@
 import { isEmpty } from 'lodash';
-import { useEffect } from 'react';
 
 import { useChartsContext } from '#components/Provider/Provider';
 import { useRegisterChart } from '#hooks/useRegisterChart';
@@ -14,25 +13,26 @@ import { ChartText } from './ChartText';
  * @param theme - Arranger style theme configuration for the chart
  * @param DisplayComponent - Custom component for rendering chart display
  */
-export const Chart = ({ fieldName, theme, DisplayComponent, components, dataHandlers }) => {
+export const Chart = ({ fieldName, DisplayComponent, components }) => {
 	const { getChartData, globalTheme } = useChartsContext();
 
-	useEffect(() => {
-		useRegisterChart({ fieldName });
-	}, [fieldName]);
+	useRegisterChart({ fieldName });
 
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
 	if (isLoading) {
-		return globalTheme.components.Loader || components.Loader || <ChartText text="Loading..." />;
+		const LoaderComponent = globalTheme?.components?.Loader || components.Loader;
+		return LoaderComponent ? <LoaderComponent /> : <ChartText text="Loading..." />;
 	}
 
 	if (isError) {
-		return globalTheme.components.Loader || components.ErrorData || <ChartText text="Error" />;
+		const ErrorComponent = globalTheme?.components?.ErrorData || components.ErrorData;
+		return ErrorComponent ? <ErrorComponent /> : <ChartText text="Error" />;
 	}
 
 	if (isEmpty(chartData)) {
-		return globalTheme.components.Loader || components.EmptyData || <ChartText text="No Data Available" />;
+		const EmptyComponent = globalTheme?.components?.EmptyData || components.EmptyData;
+		return EmptyComponent ? <EmptyComponent /> : <ChartText text="No Data Available" />;
 	}
 
 	if (DisplayComponent) {
