@@ -2,7 +2,24 @@ import { isEmpty } from 'lodash';
 
 import { useChartsContext } from '#components/Provider/Provider';
 import { useRegisterChart } from '#hooks/useRegisterChart';
+import { createColorMap } from '#theme/colors';
+import { useRef } from 'react';
 import { ChartText } from './ChartText';
+
+/**
+ * persist color map across renders
+ */
+const useColorMap = ({ chartData }) => {
+	const { globalTheme } = useChartsContext();
+
+	const colorMap = useRef();
+	if (!colorMap.current && chartData) {
+		// TODO: NumericAgg
+		const keys = chartData?.buckets.map((bucket) => bucket.key);
+		colorMap.current = createColorMap({ keys, colors: globalTheme.colors });
+	}
+	return { colorMap: colorMap.current };
+};
 
 /**
  * Chart component for rendering data visualizations.
@@ -20,6 +37,8 @@ export const Chart = ({ fieldName, DisplayComponent, components }) => {
 
 	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
 
+	const { colorMap } = useColorMap({ chartData });
+
 	if (isLoading) {
 		const LoaderComponent = globalTheme?.components?.Loader || components.Loader;
 		return LoaderComponent ? <LoaderComponent /> : <ChartText text="Loading..." />;
@@ -36,6 +55,11 @@ export const Chart = ({ fieldName, DisplayComponent, components }) => {
 	}
 
 	if (DisplayComponent) {
-		return <DisplayComponent data={chartData} />;
+		return (
+			<DisplayComponent
+				data={chartData}
+				colorMap={colorMap}
+			/>
+		);
 	}
 };
