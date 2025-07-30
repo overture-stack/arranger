@@ -32,16 +32,28 @@ const resolveChartData = ({ data, transforms }) => {
 	}, data);
 };
 
+type ChartData = {
+	key: string;
+	displayKey: string;
+	docCount: number;
+}[];
 /**
  * data transform to convert gql data objects into chart data objects
  */
-const gqlToChartData = (gqlData) => {
+const ARRANGER_MISSING_DATA_KEY = '__missing__';
+const gqlToChartData = (gqlData): ChartData => {
 	// TODO: take 2nd param of type once we have that data available
-	if (gqlData.buckets) {
-		return gqlData.buckets;
-	} else if (gqlData.range) {
-		return gqlData.range.buckets;
-	}
+	const gqlBuckets = gqlData.buckets ? gqlData.buckets : gqlData.range.buckets;
+	/**
+	 * 1 - add displayKey property
+	 * 2 - rename doc_count to docCount
+	 * 3 - map __missing__ key to "No Data"
+	 */
+	return gqlBuckets.map(({ key, doc_count }) => ({
+		key: key,
+		displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
+		docCount: doc_count,
+	}));
 };
 
 /**

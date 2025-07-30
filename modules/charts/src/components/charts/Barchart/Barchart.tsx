@@ -1,8 +1,7 @@
 import { Chart } from '#components/Chart';
+import { arrangerToNivoBarChart } from '#components/charts/Barchart/nivo/config';
 import { ChartText } from '#components/ChartText';
 import { ChartContainer } from '#components/helper/ChartContainer';
-import { ArrangerChartTheme } from '#theme/arranger';
-import { arrangerToNivoBarChart } from '#theme/nivo/nivo';
 import { css } from '@emotion/react';
 import { ResponsiveBar } from '@nivo/bar';
 
@@ -14,8 +13,8 @@ type BarChartProps = {
 /**
  * Resolve to a Nivo Bar chart component
  */
-export const BarChartView = ({ data, theme, colorMap }: BarChartProps) => {
-	const resolvedTheme = arrangerToNivoBarChart({ theme, colorMap });
+export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) => {
+	const resolvedTheme = arrangerToNivoBarChart({ theme, colorMap, onClick });
 
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
@@ -35,14 +34,14 @@ const validateChart = () => {
 type BarChatData = { doc_count: number; key: string }[];
 export const Barchart = ({
 	fieldName,
-	theme,
 	handlers,
 	components,
+	theme,
 	transformData,
 }: {
+	theme: any;
 	fieldName: string;
-	theme: ArrangerChartTheme;
-	handlers?: any;
+	handlers?: { onClick: (config) => void };
 	transformData?: (data: unknown) => BarChatData;
 	components?: {
 		Loader?: any;
@@ -74,6 +73,7 @@ export const Barchart = ({
 							data={data}
 							theme={theme}
 							colorMap={colorMap}
+							onClick={handlers?.onClick}
 						/>
 					);
 				}}
