@@ -43,7 +43,7 @@ const createChartDataMap = ({ data }) => {
 };
 
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
-	// TODO: nsure there is an ArrangerDataProvider context available
+	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
@@ -63,6 +63,8 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		apiFetcher,
 		sqon,
 	});
+
+	//
 	console.log('api state', apiState);
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 

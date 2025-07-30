@@ -15,15 +15,12 @@ type BarChartProps = {
  * Resolve to a Nivo Bar chart component
  */
 export const BarChartView = ({ data, theme, colorMap }: BarChartProps) => {
-	// pull out buckets from data
-	const chartData = data.buckets;
-
 	const resolvedTheme = arrangerToNivoBarChart({ theme, colorMap });
 
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<ResponsiveBar
-				data={chartData}
+				data={data}
 				{...resolvedTheme}
 			/>
 		</div>
@@ -35,15 +32,18 @@ const validateChart = () => {
 	return true;
 };
 
+type BarChatData = { doc_count: number; key: string }[];
 export const Barchart = ({
 	fieldName,
 	theme,
-	dataHandlers,
+	handlers,
 	components,
+	transformData,
 }: {
 	fieldName: string;
 	theme: ArrangerChartTheme;
-	dataHandlers?: any;
+	handlers?: any;
+	transformData?: (data: unknown) => BarChatData;
 	components?: {
 		Loader?: any;
 		ErrorData?: any;
@@ -65,16 +65,18 @@ export const Barchart = ({
 		<ChartContainer>
 			<Chart
 				fieldName={fieldName}
-				dataHandlers={dataHandlers}
+				transformData={transformData}
 				components={components}
-				DisplayComponent={({ data, colorMap }) => (
+				DisplayComponent={({ data, colorMap }) => {
 					// this will re-render based on the internal chart fetching updates in "Chart" component
-					<BarChartView
-						data={data}
-						theme={theme}
-						colorMap={colorMap}
-					/>
-				)}
+					return (
+						<BarChartView
+							data={data}
+							theme={theme}
+							colorMap={colorMap}
+						/>
+					);
+				}}
 			/>
 		</ChartContainer>
 	);
