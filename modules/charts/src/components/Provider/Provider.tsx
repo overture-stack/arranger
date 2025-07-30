@@ -1,12 +1,9 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
-import { createContext, PropsWithChildren, ReactElement, useContext } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useCallback, useContext, useMemo } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { cloneDeep, merge } from 'lodash';
-import { EmptyData } from './EmptyData';
-import { ErrorData } from './ErrorData';
+import { generateChartsQuery } from '#query/generateCharts';
 import { useChartFields } from './hooks/useCharts';
-import { Tooltip } from './Tooltip';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
@@ -45,25 +42,20 @@ const createChartDataMap = ({ data }) => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
-// merged passed theme with defaults
-const createGlobalTheme = ({ theme }) => {
-	return merge(
-		cloneDeep({
-			components: { Tooltip, ErrorData, EmptyData },
-		}),
-		theme,
-	);
-};
-
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
-	// TODO: nsure there is an ArrangerDataProvider context available
+	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
-	// create query instance
-	const { gqlQuery, registerFieldName, deregisterFieldName } = useChartFields({ documentType });
+	// register chart fields
+	const { registeredFieldNames, registerFieldName, deregisterFieldName } = useChartFields({ documentType });
+
+	// generate query from current fields
+	const gqlQuery = useMemo(() => {
+		return generateChartsQuery({ documentType, fieldNames: registeredFieldNames });
+	}, [documentType, registeredFieldNames]);
 
 	// api call
 	const { apiState } = useNetworkQuery({
@@ -72,26 +64,26 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		sqon,
 	});
 
+	//
+	console.log('api state', apiState);
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
-	const globalTheme: GlobalTheme = createGlobalTheme({ theme });
-
-	const registerChart = async ({ fieldName }) => {
+	const registerChart = useCallback(async ({ fieldName }) => {
 		console.log('Registering fieldName', fieldName);
 		registerFieldName(fieldName);
-	};
+	}, []);
 
-	const deregisterChart = ({ fieldName }) => {
+	const deregisterChart = useCallback(({ fieldName }) => {
 		console.log('Deregistering fieldName', fieldName);
 		deregisterFieldName(fieldName);
-	};
+	}, []);
 
-	const update = ({ fieldName, eventData }) => {
+	const update = useCallback(({ fieldName, eventData }) => {
 		console.log('update', fieldName, eventData);
 		// new data => sqon => arranger => data => render
 		// update arranger.setSqon
 		setSQON();
-	};
+	}, []);
 
 	// chartType for slicing data
 	const getChartData = ({ fieldName }) => {
@@ -105,7 +97,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	};
 
 	const chartContext: ChartContextType = {
-		globalTheme,
+		globalTheme: theme,
 		registerChart,
 		deregisterChart,
 		update,
@@ -118,7 +110,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 export const useChartsContext = () => {
 	const context = useContext(ChartsContext);
 	if (!context) {
-		throw new Error('context has to be used within <Charts.Provider>');
+		throw new Error('ChartsContext has to be used within a <ChartsProvider>');
 	}
 	return context;
 };

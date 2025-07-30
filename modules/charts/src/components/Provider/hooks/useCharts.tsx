@@ -1,8 +1,7 @@
-import { generateChartsQuery } from '#query/generateCharts';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 export const useChartFields = ({ documentType }) => {
-	// TODO: surely can have multiple charts supported with same fieldname?
+	// Although we can have multiple charts with same fieldName, they are referencing the same data
 	const [registeredFieldNames, setRegisteredFieldNames] = useState(new Set());
 
 	const registerFieldName = (fieldName: string) => {
@@ -30,13 +29,8 @@ export const useChartFields = ({ documentType }) => {
 		});
 	};
 
-	// Generate query from current fields
-	const gqlQuery = useMemo(() => {
-		return generateChartsQuery({ documentType, fieldNames: registeredFieldNames });
-	}, [documentType, registeredFieldNames]);
-
 	return {
-		gqlQuery,
+		registeredFieldNames,
 		registerFieldName,
 		deregisterFieldName,
 	};
