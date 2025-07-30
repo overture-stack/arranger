@@ -76,7 +76,7 @@ export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 const resolveObject = () => ({});
 
-export const resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, setsIndex, getServerSideFilter }) => {
+export const resolvers = ({ enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter, setsIndex }) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,

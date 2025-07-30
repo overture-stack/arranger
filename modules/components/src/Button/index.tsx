@@ -1,5 +1,6 @@
 import isPropValid from '@emotion/is-prop-valid';
 import styled from '@emotion/styled';
+import cx from 'classnames';
 import Color from 'color';
 import { createRef, type ForwardedRef, forwardRef, type MouseEventHandler } from 'react';
 
@@ -44,14 +45,15 @@ const BaseButton = withTooltip(styled('button', {
 	&.disabled,
 	&:disabled {
 		background: ${({ theme: { disabledBackground } }) => disabledBackground};
-		border: ${({ theme: { disabledBorderColor } }) => disabledBorderColor && `0.08rem solid ${disabledBorderColor}`};
+		border: ${({ theme: { disabledBorderColor } }) =>
+			disabledBorderColor && `0.08rem solid ${disabledBorderColor}`};
 		color: ${({ theme: { disabledFontColor } }) => disabledFontColor};
-		cursor: not-allowed;
+		cursor: default;
 	}
 `);
 
 const propagationStopper =
-	(clickHandler = noopFn): MouseEventHandler =>
+	(clickHandler: MouseEventHandler | undefined = noopFn): MouseEventHandler =>
 	(event) => {
 		event.stopPropagation();
 		clickHandler?.(event);
@@ -138,6 +140,7 @@ const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 	padding: ${({ theme: { padding = 0 } }) => padding};
 	text-align: left;
 
+	&.active,
 	&:focus,
 	&:hover {
 		color: ${({ theme: { hoverFontColor, fontColor } }) =>
@@ -146,13 +149,23 @@ const TransparentButtonBase = styled(BaseButton)<ButtonProps>`
 `;
 
 export const TransparentButton = ({
+	className,
+	disabled,
 	onClick,
 	theme: { css: themeCSS, ...theme } = emptyObj,
 	...props
-}: {
+}: ButtonProps & {
 	onClick?: MouseEventHandler<HTMLButtonElement>;
-} & ButtonProps) => {
-	return <TransparentButtonBase onClick={propagationStopper(onClick)} css={themeCSS} theme={theme} {...props} />;
+}) => {
+	return (
+		<TransparentButtonBase
+			className={cx(className, disabled && 'disabled')}
+			css={themeCSS}
+			onClick={disabled ? undefined : propagationStopper(onClick)}
+			theme={theme}
+			{...props}
+		/>
+	);
 };
 
 export default Button;

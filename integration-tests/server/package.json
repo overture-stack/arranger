@@ -2,7 +2,7 @@
 	"name": "integration-tests-server",
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
-		"@overture-stack/arranger-server": "*",
+		"@overture-stack/arranger-server": "file:../../modules/server",
 		"axios": "^1.7.9",
 		"graphql": "^16.6.0",
 		"graphql-tag": "^2.12.6",

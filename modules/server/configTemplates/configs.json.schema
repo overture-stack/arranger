@@ -1,12 +1,17 @@
-// this file serves as an example of a basic config
-// and shows the allowed/expected properties
+// this file serves as an example of a basic configurations
+// and it it's meant to show both the expected (marked with *) and allowed/optional properties
 
 {
-	"documentType": "file",
+	// [Global] GraphQL root query property, labels the type of records found by Arranger
+*	"documentType": "file",
+
+	// [Back-end] Settings and limits for dataset downloads
 	"downloads": {
 		"allowCustomMaxRows": true,
 		"maxRows": 10000,
 	},
+
+	// [Global] ES mapping customization, aka Extended mapping
 	"extended": [
 		{
 			"isActive": false,
@@ -23,6 +28,8 @@
 		},
 		...
 	],
+
+	// [Front-end] Facets component customization, aka the "filters".
 	"facets": {
 		"aggregations": [
 			{
@@ -34,7 +41,11 @@
 			...
 		]
 	},
-	"index": "file_centric_1.0", // ES alias or index name
+
+	// [Global] ES index name or alias
+*	"index": "file_centric_1.0",
+
+	// [Front-end] Matchbox component customization, currently being reimplemented
 	"matchbox": [
 		{
 			"isActive": false,
@@ -45,6 +56,8 @@
 		},
 		...
 	],
+
+	// [Front-end] Table component customization
 	"table": {
 		"columns": [
 			{
@@ -72,5 +85,15 @@
 		],
 		"maxResultsWindow": 10000,
 		"rowIdFieldName": "analysis.analysis_id"
-	}
+	},
+
+	// Work in progress: Federated Search Network
+	"network":
+		[
+			{
+				"displayName": "Toronto",
+				"graphqlUrl": "http://<URL>/graphql",
+				"documentType": "file"
+			}
+		]
 }

@@ -15,7 +15,7 @@ export default (host = '', { debugAll = false, endpoint: globalEndpoint = '' }) 
 		body: any;
 		debug?: boolean;
 		endpoint?: string;
-		headers?: AxiosRequestHeaders;
+		headers?: AxiosRequestHeaders | {};
 	}) =>
 		axios(urlJoin(host, endpoint), {
 			data: body ? JSON.stringify(body) : undefined,
@@ -25,7 +25,7 @@ export default (host = '', { debugAll = false, endpoint: globalEndpoint = '' }) 
 			},
 			method: 'POST',
 		}).then((response) => {
-			(debugAll || debug) && console.log('\n\n\n\nresponse:\n\n', response);
+			(debugAll || debug) && console.log('\n\n\n\nresponse:\n\n', response, '\n', response?.data, '\n\n');
 
 			return response;
 		}),

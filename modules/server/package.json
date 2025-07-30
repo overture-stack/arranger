@@ -1,39 +1,38 @@
 {
 	"name": "@overture-stack/arranger-server",
-	"description": "GraphQL Server",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"bin": {
-		"arranger-server": "./index.js"
-	},
-	"imports": {
-		"#*": "./src/*"
-	},
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "tsc --project tsconfig.release.json",
-		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
-		"nuke:dist": "rm -rf dist",
-		"patchTS": "ts-patch install -s",
-		"prepare": "npm run patchTS",
-		"start": "tsx ./index.ts",
-		"test": "tsx --test",
-		"test:watch": "npm test -- --watch",
-		"watch": "npm run nuke:dist && npm run build -- --watch"
+	"description": "Data Model-agnostic GraphQL-based search API for Elasticsearch",
+	"version": "3.0.0-rc.1",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/overture-stack/arranger.git"
 	},
-	"bugs": {
-		"url": "https://github.com/overture-stack/arranger/issues"
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"imports": {
+		"#configs": "./configs/*",
+		"#*": "./src/*"
 	},
-	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"scripts": {
+		"build": "tsc --project tsconfig.release.json",
+		"clear:dist": "rm -rf dist",
+		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./index.ts",
+		"patchTS": "ts-patch install -s",
+		"prepare": "npm run patchTS",
+		"start": "tsx ./index.ts",
+		"test": "tsx --test",
+		"test:watch": "npm test -- --watch",
+		"watch": "npm run clear:dist && npm run build -- --watch"
+	},
 	"dependencies": {
+		"@graphql-tools/merge": "^9.0.4",
 		"@elastic/elasticsearch": "^7.17.14",
 		"@graphql-tools/schema": "^9.0.17",
+		"@graphql-tools/utils": "^10.2.2",
+		"@overture-stack/sqon-builder": "^1.1.0",
 		"apollo-server": "^3.10.3",
 		"apollo-server-core": "^3.10.3",
 		"apollo-server-express": "^3.10.3",
@@ -44,7 +43,7 @@
 		"date-fns": "^2.29.3",
 		"dotenv": "^16.0.3",
 		"express": "^4.18.2",
-		"graphql": "^16.6.0",
+		"graphql": "^16.8.1",
 		"graphql-fields": "^2.0.3",
 		"graphql-middleware": "^6.1.33",
 		"graphql-playground-html": "^1.6.30",
@@ -88,6 +87,8 @@
 		"glob-parent": "^5.1.2",
 		"minimist": "^1.2.6"
 	},
-	"type": "module",
-	"version": "3.0.0-rc.1"
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module"
 }

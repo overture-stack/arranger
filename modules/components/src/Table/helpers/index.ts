@@ -10,12 +10,13 @@ import { type ReactNode, useEffect, useState } from 'react';
 
 import { SELECTION_COLUMN_ID, type UseTableDataProps } from '#Table/types.js';
 import { useThemeContext } from '#ThemeContext/index.js';
+import type { ColumnSortingInterface } from '#types.js';
 import { emptyObj } from '#utils/noops.js';
 
 import { makeTableColumns } from './columns.js';
 import { useTableContext } from './context.js';
 
-export const getSingleValue = (data: Record<string, any> | ReactNode): ReactNode => {
+export const getSingleValue = (data: Record<string, unknown> | ReactNode): ReactNode => {
 	if (typeof data === 'object' && data) {
 		return getSingleValue(Object.values(data)[0]);
 	} else {
@@ -25,9 +26,26 @@ export const getSingleValue = (data: Record<string, any> | ReactNode): ReactNode
 
 const defaultSelectionColumnWidth = 28;
 
+const sanitizeCustomSortingDesc = (sortingArray) => {
+	return (sortingArray || []).map((field) => ({ ...field, desc: field.desc || false }));
+};
+
+type SortingConverter = <T extends 'ReactTable' | 'Arranger'>(
+	sortingArray: T extends 'ReactTable' ? ColumnSortingInterface[] : SortingState,
+	direction: T,
+) => T extends 'ReactTable' ? SortingState : ColumnSortingInterface[];
+
+const convertSorting: SortingConverter = (sortingArray, direction) => {
+	return sanitizeCustomSortingDesc(sortingArray).map((field) => ({
+		desc: field.desc,
+		...(direction === 'ReactTable' ? { id: field.fieldName } : { fieldName: field.id }),
+	})) as any; // because TS goes stupid with array methods
+};
+
 export const useTableData = ({
 	columnTypes: customColumnTypes,
 	defaultColumnWidth: customColumnWidth,
+	defaultSorting: customDefaultSorting,
 	disableColumnResizing: customDisableColumnResizing,
 	disableRowSelection: customDisableRowSelection,
 	disableRowSorting: customDisableRowSorting,
@@ -48,6 +66,7 @@ export const useTableData = ({
 		visibleColumnsDict,
 	} = useTableContext({
 		callerName: 'Table - useTableData',
+		defaultSorting: sanitizeCustomSortingDesc(customDefaultSorting),
 	});
 
 	const {
@@ -68,21 +87,20 @@ export const useTableData = ({
 	const defaultColumnWidth = customColumnWidth || themeColumnWidth;
 	const [tableColumns, setTableColumns] = useState<ColumnDef<unknown, string>[]>([]);
 
+	const initialSortingForReactTable = convertSorting(defaultSorting, 'ReactTable');
 	const [reactTableSorting, setReactTableSorting] = useState<SortingState>([]);
 
 	const onSortingChange: OnChangeFn<SortingState> = (handleSorting) => {
 		if (typeof handleSorting === 'function') {
 			const newReactTableSorting = handleSorting(reactTableSorting);
 
+			const isValidNewReactTableSorting = Array.isArray(newReactTableSorting) && newReactTableSorting.length;
+
 			// update the data context for other Arranger components
-			setSorting(
-				newReactTableSorting.length
-					? newReactTableSorting.map(({ id, desc }) => ({ fieldName: id, desc }))
-					: defaultSorting,
-			);
+			setSorting(isValidNewReactTableSorting ? convertSorting(newReactTableSorting, 'Arranger') : defaultSorting);
 
 			// update react-table's internal state
-			setReactTableSorting(newReactTableSorting);
+			setReactTableSorting(isValidNewReactTableSorting ? newReactTableSorting : initialSortingForReactTable);
 		} else {
 			console.info('react-table is doing something unexpected with the sorting', handleSorting);
 		}
@@ -106,8 +124,7 @@ export const useTableData = ({
 		state: {
 			...(allowRowSelection && { rowSelection: selectedRowsDict }),
 			...(allowRowSorting && {
-				// sorting: sorting.map(({ desc, fieldName }) => ({ desc, id: fieldName })),
-				sorting: reactTableSorting,
+				sorting: reactTableSorting.length ? reactTableSorting : initialSortingForReactTable,
 			}),
 		},
 	});

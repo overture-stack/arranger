@@ -34,6 +34,7 @@ export const TableContextProvider = ({
 	children,
 	columns: customColumns,
 	customFetcher,
+	defaultSorting: customSorting,
 	documentType: customDocumentType,
 	fetchRetryLimit = 5,
 }: TableContextProviderProps): ReactElement<TableContextInterface> => {
@@ -66,16 +67,17 @@ export const TableContextProvider = ({
 		callerName: 'TableContextProvider',
 	});
 
-	const { components: { Table: { defaultSort: themeDefaultSorting } = emptyObj } = emptyObj } = useThemeContext({
+	const { components: { Table: { defaultSorting: themeDefaultSorting } = emptyObj } = emptyObj } = useThemeContext({
 		callerName: 'TableContextProvider',
 	});
 
 	const defaultSorting = useMemo(
 		() =>
+			(Array.isArray(customSorting) && customSorting.length > 0 && customSorting) ||
 			(Array.isArray(themeDefaultSorting) && themeDefaultSorting.length > 0 && themeDefaultSorting) ||
 			tableConfigs?.defaultSorting ||
 			[],
-		[tableConfigs?.defaultSorting, themeDefaultSorting],
+		[customSorting, tableConfigs?.defaultSorting, themeDefaultSorting],
 	);
 
 	useEffect(() => {
@@ -247,6 +249,7 @@ export const TableContextProvider = ({
 export const useTableContext = ({
 	callerName,
 	customFetcher: localFetcher,
+	defaultSorting: localDefaultSorting,
 }: UseTableContextProps = emptyObj): TableContextInterface => {
 	const defaultContext = useContext(TableContext);
 
@@ -254,6 +257,10 @@ export const useTableContext = ({
 
 	return {
 		...defaultContext,
+		defaultSorting:
+			Array.isArray(localDefaultSorting) && localDefaultSorting.length > 0
+				? localDefaultSorting
+				: defaultContext.defaultSorting,
 		fetchData: localFetcher || defaultContext.fetchData,
 	};
 };
