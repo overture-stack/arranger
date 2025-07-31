@@ -7,9 +7,9 @@ import { useChartFields } from './hooks/useCharts';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
-	registerChart: ({ fieldName }: { fieldName: string }) => void;
-	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
-	getChartData: ({ fieldName }: { fieldName: string }) => {
+	registerChart: ({ fieldNames }: { fieldNames: string | string[] }) => void;
+	deregisterChart: ({ fieldNames }: { fieldNames: string | string[] }) => void;
+	getChartData: ({ fieldNames }: { fieldNames: string | string[] }) => {
 		isLoading: boolean;
 		isError: boolean;
 		// TODO: Map<string, Aggregtions | NumericAggregations>
@@ -63,19 +63,19 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		apiFetcher,
 		sqon,
 	});
-
-	//
 	console.log('api state', apiState);
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
-	const registerChart = useCallback(async ({ fieldName }) => {
-		console.log('Registering fieldName', fieldName);
-		registerFieldName(fieldName);
+	//
+
+	const registerChart = useCallback(async ({ fieldNames }) => {
+		console.log('Registering fieldNames', fieldNames);
+		[fieldNames].flat().forEach((fieldName) => registerFieldName(fieldName));
 	}, []);
 
-	const deregisterChart = useCallback(({ fieldName }) => {
-		console.log('Deregistering fieldName', fieldName);
-		deregisterFieldName(fieldName);
+	const deregisterChart = useCallback(({ fieldNames }) => {
+		console.log('Deregistering fieldNames', fieldNames);
+		[fieldNames].flat().forEach((fieldName) => deregisterFieldName(fieldName));
 	}, []);
 
 	const update = useCallback(({ fieldName, eventData }) => {
@@ -86,14 +86,27 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	}, []);
 
 	// chartType for slicing data
-	const getChartData = ({ fieldName }) => {
-		const chartData = chartDataMap?.get(fieldName);
-
-		return {
-			isLoading: apiState.loading,
-			isError: apiState.error,
-			data: chartData,
+	const getChartData = ({ fieldNames }) => {
+		const { loading: isLoading, error: isError } = apiState;
+		const apiStates = {
+			isLoading,
+			isError,
 		};
+
+		if (isLoading || isError) {
+			return { ...apiStates, data: null };
+		} else {
+			const chartData = chartDataMap
+				? [fieldNames].flat().reduce((acc, fieldName) => {
+						return { ...acc, [fieldName]: chartDataMap?.get(fieldName) };
+					}, {})
+				: null;
+			console.log('chartsmap', chartDataMap);
+			return {
+				...apiStates,
+				data: chartData,
+			};
+		}
 	};
 
 	const chartContext: ChartContextType = {

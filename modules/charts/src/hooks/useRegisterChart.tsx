@@ -1,18 +1,18 @@
 import { useChartsContext } from '#components/Provider/Provider';
 import { useEffect } from 'react';
 
-export const useRegisterChart = ({ fieldName }) => {
+export const useRegisterChart = ({ fieldNames }) => {
 	const { registerChart, deregisterChart } = useChartsContext();
 
 	useEffect(() => {
 		try {
-			registerChart({ fieldName });
+			registerChart({ fieldNames });
 		} catch (e) {
-			console.error(`Cannot register chart ${fieldName} with Arranger Charts provider.`);
+			console.error(`Cannot register ${fieldNames} with Arranger Charts provider.`);
 			console.error(e);
 		}
 		return () => {
-			deregisterChart({ fieldName });
+			deregisterChart({ fieldNames });
 		};
-	}, [registerChart, deregisterChart, fieldName]);
+	}, [registerChart, deregisterChart, fieldNames]);
 };

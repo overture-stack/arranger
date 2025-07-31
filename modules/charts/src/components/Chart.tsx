@@ -11,14 +11,18 @@ import { ChartText } from './ChartText';
  */
 const useColorMap = ({ chartData }) => {
 	const { globalTheme } = useChartsContext();
-	const colorMap = useRef();
+	const colorMaps = useRef<Record<string, Map<string, string>>>();
 
-	if (chartData && !colorMap.current) {
-		const keys = chartData.map(({ key }) => key);
-		colorMap.current = createColorMap({ keys, colors: globalTheme.colors });
+	if (chartData && !colorMaps.current) {
+		const mappedColors = Object.entries(chartData).reduce((acc, [key, aggregation]) => {
+			const keys = aggregation.map(({ key }) => key);
+			return { ...acc, [key]: createColorMap({ keys, colors: globalTheme.colors }) };
+		}, {});
+
+		colorMaps.current = mappedColors;
 	}
 
-	return { colorMap: colorMap.current };
+	return { colorMaps: colorMaps.current };
 };
 
 /**
@@ -26,34 +30,46 @@ const useColorMap = ({ chartData }) => {
  * eg. consumer data transform to sort items
  */
 const resolveChartData = ({ data, transforms }) => {
-	if (!data) return null;
+	console.log('resolve data', data);
+	if (isEmpty(data)) return null;
 	return transforms.reduce((data, transform) => {
 		return transform(data);
 	}, data);
 };
 
-type ChartData = {
+type BarChartData = {
 	key: string;
 	displayKey: string;
 	docCount: number;
 }[];
+
+type SunburstChartData = {
+	legend: [];
+	outer: [];
+	inner: [];
+};
+
 /**
  * data transform to convert gql data objects into chart data objects
  */
 const ARRANGER_MISSING_DATA_KEY = '__missing__';
-const gqlToChartData = (gqlData): ChartData => {
-	// TODO: take 2nd param of type once we have that data available
-	const gqlBuckets = gqlData.buckets ? gqlData.buckets : gqlData.range.buckets;
-	/**
-	 * 1 - add displayKey property
-	 * 2 - rename doc_count to docCount
-	 * 3 - map __missing__ key to "No Data"
-	 */
-	return gqlBuckets.map(({ key, doc_count }) => ({
-		key: key,
-		displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
-		docCount: doc_count,
-	}));
+const gqlToChartData = (gqlData) => {
+	return Object.entries(gqlData).reduce((acc, [key, aggregation]) => {
+		// TODO: take 2nd param of type once we have that data available
+		const gqlBuckets = aggregation.buckets ? aggregation.buckets : aggregation.range.buckets;
+		/**
+		 * // TODO: no need for duplicate displayKey after moving to d3, it's for keeping code clean with Nivo config. can't do key || displayKey
+		 * 1 - add displayKey property
+		 * 2 - rename doc_count to docCount
+		 * 3 - map __missing__ key to "No Data"
+		 */
+		const buckets = gqlBuckets.map(({ key, doc_count }) => ({
+			key: key,
+			displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
+			docCount: doc_count,
+		}));
+		return { ...acc, [key]: buckets };
+	}, {});
 };
 
 /**
@@ -65,23 +81,24 @@ const gqlToChartData = (gqlData): ChartData => {
  * @param theme - Arranger style theme configuration for the chart
  * @param DisplayComponent - Custom component for rendering chart display
  */
-export const Chart = ({ fieldName, DisplayComponent, components, transformData }) => {
+export const Chart = ({ fieldNames, DisplayComponent, components, transformData }) => {
 	const { getChartData, globalTheme } = useChartsContext();
 
-	useRegisterChart({ fieldName });
+	useRegisterChart({ fieldNames });
 
 	// gql data
-	const { isLoading, isError, data: gqlData } = getChartData({ fieldName });
-
+	// TODO: register and get support multi, but compose transforms
+	const { isLoading, isError, data: gqlData } = getChartData({ fieldNames });
+	console.log('fieldNames', fieldNames, 'gql data', gqlData);
 	// chart data transform + consumer transforms
 	const chartData = resolveChartData({
 		data: gqlData,
 		transforms: [gqlToChartData, transformData].filter(Boolean),
 	});
-
+	console.log('cdata', chartData);
 	// persistent color map
-	const { colorMap } = useColorMap({ chartData });
-
+	const { colorMaps } = useColorMap({ chartData });
+	console.log('colormap', colorMaps);
 	if (isLoading) {
 		const LoaderComponent = globalTheme?.components?.Loader || components.Loader;
 		return LoaderComponent ? <LoaderComponent /> : <ChartText text="Loading..." />;
@@ -101,7 +118,7 @@ export const Chart = ({ fieldName, DisplayComponent, components, transformData }
 		return (
 			<DisplayComponent
 				data={chartData}
-				colorMap={colorMap}
+				colorMap={colorMaps}
 			/>
 		);
 	}
