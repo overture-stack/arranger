@@ -32,19 +32,19 @@ const useColorMap = ({ chartData, resolver }) => {
  * @param theme - Arranger style theme configuration for the chart
  * @param DisplayComponent - Custom component for rendering chart display
  */
-export const ChartDataContainer = ({ fieldName, Chart, components, transformGQL, colorMapResolver }) => {
+export const ChartDataContainer = ({ fieldNames, Chart, components, transformGQL, colorMapResolver }) => {
 	//TODO: validate fisrt
 	//useValidateChart()
 
-	useRegisterChart({ fieldName });
+	useRegisterChart({ fieldNames });
 
 	// gql data
 	const { getChartData } = useChartsContext();
-	const { isLoading, isError, data: gqlData } = getChartData({ fieldName });
+	const { isLoading, isError, data: gqlData } = getChartData({ fieldNames });
 
 	// gql => chart data
 	const chartData = useChartData({ gqlData, transformGQL });
-
+	console.log('chart data', chartData);
 	// persistent color map
 	const { colorMap } = useColorMap({ chartData, resolver: colorMapResolver });
 

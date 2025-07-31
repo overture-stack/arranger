@@ -8,9 +8,9 @@ import { useChartFields } from './hooks/useCharts';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
-	registerChart: ({ fieldName }: { fieldName: string }) => void;
-	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
-	getChartData: ({ fieldName }: { fieldName: string }) => {
+	registerChart: ({ fieldNames }: { fieldNames: string[] }) => void;
+	deregisterChart: ({ fieldNames }: { fieldNames: string[] }) => void;
+	getChartData: ({ fieldNames }: { fieldNames: string[] }) => {
 		isLoading: boolean;
 		isError: boolean;
 		// TODO: Map<string, Aggregtions | NumericAggregations>
@@ -66,43 +66,54 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		sqon,
 	});
 
-	//
 	console.log('api state', apiState);
 	const chartDataMap = createChartDataMap({ data: apiState?.data });
 
-	const registerChart = useCallback(async ({ fieldName }) => {
-		console.log('Registering fieldName', fieldName);
-		registerFieldName(fieldName);
+	const registerChart = useCallback(async ({ fieldNames }: { fieldNames: string[] }) => {
+		console.log('Registering fieldName', fieldNames);
+		fieldNames.forEach((fieldName) => registerFieldName(fieldName));
 	}, []);
 
-	const deregisterChart = useCallback(({ fieldName }) => {
-		console.log('Deregistering fieldName', fieldName);
-		deregisterFieldName(fieldName);
+	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
+		console.log('Deregistering fieldName', fieldNames);
+		fieldNames.forEach((fieldName) => deregisterFieldName(fieldName));
 	}, []);
 
-	const update = useCallback(({ fieldName, eventData }) => {
-		console.log('update', fieldName, eventData);
-		// new data => sqon => arranger => data => render
-		// update arranger.setSqon
-		setSQON();
-	}, []);
+	// const update = useCallback(({ fieldName, eventData }) => {
+	// 	console.log('update', fieldName, eventData);
+	// 	// new data => sqon => arranger => data => render
+	// 	// update arranger.setSqon
+	// 	setSQON();
+	// }, []);
 
 	// chartType for slicing data
-	const getChartData = ({ fieldName }) => {
-		const chartData = chartDataMap?.get(fieldName);
-
-		return {
-			isLoading: apiState.loading,
-			isError: apiState.error,
-			data: chartData,
+	const getChartData = ({ fieldNames }: { fieldNames: string[] }) => {
+		const { loading: isLoading, error: isError } = apiState;
+		const apiStates = {
+			isLoading,
+			isError,
 		};
+
+		if (isLoading || isError) {
+			return { ...apiStates, data: null };
+		} else {
+			const chartData = chartDataMap
+				? [fieldNames].flat().reduce((acc, fieldName) => {
+						return { ...acc, [fieldName]: chartDataMap?.get(fieldName) };
+					}, {})
+				: null;
+
+			return {
+				...apiStates,
+				data: chartData,
+			};
+		}
 	};
 
 	const chartContext: ChartContextType = {
 		globalTheme: theme,
 		registerChart,
 		deregisterChart,
-		update,
 		getChartData,
 	};
 
