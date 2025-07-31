@@ -1,9 +1,12 @@
-import { Chart } from '#components/Chart';
+import { ChartDataContainer } from '#components/Chart';
 import { arrangerToNivoBarChart } from '#components/charts/Barchart/nivo/config';
-import { ChartText } from '#components/ChartText';
-import { ChartContainer } from '#components/helper/ChartContainer';
+import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
+import { GQLDataMap } from '#components/Provider/Provider';
+import { ARRANGER_MISSING_DATA_KEY } from '#constants';
+import { createColorMap } from '#theme/colors';
 import { css } from '@emotion/react';
 import { ResponsiveBar } from '@nivo/bar';
+import { useMemo } from 'react';
 
 type BarChartProps = {
 	data: any;
@@ -14,8 +17,12 @@ type BarChartProps = {
  * Resolve to a Nivo Bar chart component
  */
 export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) => {
-	const resolvedTheme = arrangerToNivoBarChart({ theme, colorMap, onClick });
+	const resolvedTheme = useMemo(
+		() => arrangerToNivoBarChart({ theme, colorMap, onClick }),
+		[theme, colorMap, onClick],
+	);
 
+	console.log('chart', data, resolvedTheme, colorMap);
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<ResponsiveBar
@@ -26,9 +33,28 @@ export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) 
 	);
 };
 
-const validateChart = () => {
-	console.log('validating chart..');
-	return true;
+const barChartTransform = ({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
+	if (!gqlData) {
+		return null;
+	}
+
+	// TODO: take 2nd param of type once we have that data available
+	const gqlBuckets = gqlData.buckets ? gqlData.buckets : gqlData.range.buckets;
+	/**
+	 * 1 - add displayKey property
+	 * 2 - rename doc_count to docCount
+	 * 3 - map __missing__ key to "No Data"
+	 */
+	return gqlBuckets.map(({ key, doc_count }) => ({
+		key: key,
+		displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
+		docCount: doc_count,
+	}));
+};
+
+const colorMapResolver = ({ chartData }) => {
+	const keys = chartData.map(({ key }) => key); // specfic chart color map code
+	return createColorMap({ keys });
 };
 
 type BarChatData = { doc_count: number; key: string }[];
@@ -37,7 +63,6 @@ export const Barchart = ({
 	handlers,
 	components,
 	theme,
-	transformData,
 }: {
 	theme: any;
 	fieldName: string;
@@ -49,35 +74,22 @@ export const Barchart = ({
 		EmptyData?: any;
 	};
 }) => {
-	// this should only be called on Barchart render
-	const isValidated = validateChart();
-
-	if (!isValidated) {
-		return (
-			<ChartContainer>
-				<ChartText text="Invalid chart config" />
-			</ChartContainer>
-		);
-	}
-
 	return (
-		<ChartContainer>
-			<Chart
-				fieldName={fieldName}
-				transformData={transformData}
-				components={components}
-				DisplayComponent={({ data, colorMap }) => {
-					// this will re-render based on the internal chart fetching updates in "Chart" component
-					return (
-						<BarChartView
-							data={data}
-							theme={theme}
-							colorMap={colorMap}
-							onClick={handlers?.onClick}
-						/>
-					);
-				}}
-			/>
-		</ChartContainer>
+		<ChartDataContainer
+			fieldName={fieldName}
+			transformGQL={barChartTransform}
+			colorMapResolver={colorMapResolver}
+			components={components}
+			Chart={({ data, colorMap }) => (
+				<ChartViewContainer>
+					<BarChartView
+						data={data}
+						colorMap={colorMap}
+						theme={theme}
+						onClick={handlers?.onClick}
+					/>
+				</ChartViewContainer>
+			)}
+		/>
 	);
 };
