@@ -33,24 +33,28 @@ export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) 
 	);
 };
 
-const barChartTransform = ({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
-	if (!gqlData) {
-		return null;
-	}
+const createBarChartTransform =
+	({ fieldName }) =>
+	({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
+		if (!gqlData) {
+			return null;
+		}
 
-	// TODO: take 2nd param of type once we have that data available
-	const gqlBuckets = gqlData.buckets ? gqlData.buckets : gqlData.range.buckets;
-	/**
-	 * 1 - add displayKey property
-	 * 2 - rename doc_count to docCount
-	 * 3 - map __missing__ key to "No Data"
-	 */
-	return gqlBuckets.map(({ key, doc_count }) => ({
-		key: key,
-		displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
-		docCount: doc_count,
-	}));
-};
+		const aggregation = gqlData[fieldName];
+
+		// TODO: take 2nd param of type once we have that data available
+		const gqlBuckets = aggregation.buckets ? aggregation.buckets : aggregation.range.buckets;
+		/**
+		 * 1 - add displayKey property
+		 * 2 - rename doc_count to docCount
+		 * 3 - map __missing__ key to "No Data"
+		 */
+		return gqlBuckets.map(({ key, doc_count }) => ({
+			key: key,
+			displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
+			docCount: doc_count,
+		}));
+	};
 
 const colorMapResolver = ({ chartData }) => {
 	const keys = chartData.map(({ key }) => key); // specfic chart color map code
@@ -74,9 +78,11 @@ export const Barchart = ({
 		EmptyData?: any;
 	};
 }) => {
+	const barChartTransform = createBarChartTransform({ fieldName });
+
 	return (
 		<ChartDataContainer
-			fieldName={fieldName}
+			fieldNames={[fieldName]}
 			transformGQL={barChartTransform}
 			colorMapResolver={colorMapResolver}
 			components={components}
