@@ -3,6 +3,7 @@ import { createContext, PropsWithChildren, ReactElement, useCallback, useContext
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { generateChartsQuery } from '#query/generateCharts';
+import { Aggregations, NumericAggregations } from '#shared';
 import { useChartFields } from './hooks/useCharts';
 
 type ChartContextType = {
@@ -33,7 +34,8 @@ type GlobalTheme = {
 };
 type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
-const createChartDataMap = ({ data }) => {
+export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
+const createChartDataMap = ({ data }): GQLDataMap | null => {
 	if (!data) {
 		return null;
 	}
