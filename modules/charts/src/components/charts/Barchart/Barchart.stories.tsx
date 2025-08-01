@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { action } from 'storybook/actions';
 
 import { chartContainerDecorator } from '../../../../.storybook/decorators';
-import { BarchartComp } from './Barchart';
+import { BarChartView } from './Barchart';
 
 const theme = {
 	onClick: (data) => {
@@ -13,12 +13,12 @@ const theme = {
 };
 
 const meta = {
-	component: BarchartComp,
+	component: BarChartView,
 	decorators: [chartContainerDecorator],
 	args: {
 		theme,
 	},
-} satisfies Meta<typeof BarchartComp>;
+} satisfies Meta<typeof BarChartView>;
 
 export default meta;
 

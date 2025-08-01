@@ -1,4 +1,4 @@
-export const EmptyData = () => {
+export const ChartText = ({ text }: { text: string }) => {
 	return (
 		<div
 			style={{
@@ -10,7 +10,7 @@ export const EmptyData = () => {
 				color: '#525767',
 			}}
 		>
-			No Data Available
+			{text}
 		</div>
 	);
 };

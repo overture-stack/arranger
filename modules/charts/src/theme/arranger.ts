@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface ArrangerChartTheme {
 	onClick?: (e: unknown) => void;
 	onDataLoad?: (data: any) => any;
@@ -7,12 +5,3 @@ export interface ArrangerChartTheme {
 }
 
 export type ArrangerChartProps = { data: {}; theme: ArrangerChartTheme };
-
-export type ThemeResolver = ({
-	theme,
-	data,
-}: {
-	theme: ArrangerChartTheme;
-	data: unknown;
-	wrapperRef: React.RefObject<HTMLDivElement>;
-}) => unknown;

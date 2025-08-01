@@ -116,8 +116,9 @@ export type DownloadsConfigs = {
 export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'nested' | 'number';
 
 export type ExtendedConfigs = {
+	aggsType: 'Aggregations' | 'NumericAggregations';
 	[configProperties.DISPLAY_NAME]: string;
-	[configProperties.DISPLAY_TYPE]: string;
+	[configProperties.DISPLAY_TYPE]: DisplayType | ES_TYPES;
 	[configProperties.DISPLAY_VALUES]: Record<string, any>;
 	[configProperties.FIELD_NAME]: string;
 	[configProperties.IS_ACTIVE]: boolean; // TODO: what is this?
@@ -125,8 +126,8 @@ export type ExtendedConfigs = {
 	[configProperties.PRIMARY_KEY]: boolean;
 	[configProperties.QUICKSEARCH_ENABLED]: boolean;
 	[configProperties.RANGE_STEP]: number;
-	[configProperties.TYPE]: DisplayType;
-	[configProperties.UNIT]: string;
+	[configProperties.TYPE]: ES_TYPES;
+	[configProperties.UNIT]: string | null;
 };
 
 export type FacetsConfigs = {

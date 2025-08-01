@@ -1,5 +1,6 @@
 import path, { resolve } from 'path';
 import { defineConfig } from 'vite';
+import dts from 'vite-plugin-dts';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -35,9 +36,10 @@ export default defineConfig({
 		},
 	},
 	plugins: [
-		// dts({
-		//   rollupTypes: true,
-		//   tsconfigPath: "./tsconfig.app.json",
-		// }),
+		dts({
+			insertTypesEntry: true, // Generates types entry point
+			rollupTypes: true, // Bundles all .d.ts files into one
+			tsconfigPath: './tsconfig.app.json',
+		}),
 	],
 });

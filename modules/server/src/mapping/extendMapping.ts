@@ -155,9 +155,14 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 	};
 };
 
-export const extendFields = (mappingFields: FieldFromMapping[], extendedFromFile: ExtendedConfigs[]) => {
+export const extendFields = (
+	mappingFields: FieldFromMapping[],
+	extendedFromFile: ExtendedConfigs[],
+): ExtendedConfigs[] => {
 	return mappingFields.map(({ fieldName, type, ...rest }) => {
 		const {
+			// TODO: remove this gabbage
+			aggsType = 'Aggregations',
 			displayName = startCase(fieldName.replace(/\./g, ' ')),
 			displayType = type,
 			displayValues = {},
@@ -170,6 +175,7 @@ export const extendFields = (mappingFields: FieldFromMapping[], extendedFromFile
 		} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
 
 		return {
+			aggsType,
 			displayName,
 			displayType,
 			displayValues,
