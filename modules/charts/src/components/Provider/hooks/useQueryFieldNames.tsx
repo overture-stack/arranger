@@ -2,8 +2,9 @@ import { toJSONFieldName } from '#utils/mappings';
 import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
 import { useCallback, useMemo, useState } from 'react';
 
-type QueryField = {
+export type QueryField = {
 	fieldName: string;
+	// TODO: specify Aggs or NumericAggs
 	gqlTypename: string;
 };
 
