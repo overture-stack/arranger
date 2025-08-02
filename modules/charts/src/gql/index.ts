@@ -1,4 +1,5 @@
-export const AggregationsQuery = (fieldName) => `
+export const queryTemplateAggregations = (fieldName) => {
+	return `
   ${fieldName}
   {
     bucket_count
@@ -8,5 +9,18 @@ export const AggregationsQuery = (fieldName) => `
     }
   }
 `;
+};
 
-export const NumericAggregationsQuery = (field) => ``;
+export const queryTemplateNumericAggregations = (field) => {
+	return `
+  ${fieldName}
+  range() {
+  {
+    bucket_count
+    buckets {
+      doc_count
+      key
+    }
+}}
+`;
+};
