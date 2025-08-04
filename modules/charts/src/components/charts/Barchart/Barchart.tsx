@@ -38,10 +38,10 @@ const colorMapResolver = ({ chartData }) => {
 	return createColorMap({ keys });
 };
 
-type NumericAggregationsOptions = {
+export type NumericAggregationsOptions = {
 	ranges?: any;
 };
-type BarChartPropsQuery = {
+export type BarChartPropsQuery = {
 	variables?: NumericAggregationsOptions;
 	transformData?: (data: unknown) => BarChatData;
 };
@@ -55,7 +55,7 @@ export const Barchart = ({
 	theme,
 }: {
 	theme: any;
-	query: BarChartPropsQuery;
+	query?: BarChartPropsQuery;
 	fieldName: string;
 	handlers?: { onClick: (config) => void };
 	components?: {
@@ -65,13 +65,19 @@ export const Barchart = ({
 	};
 }) => {
 	// validate and return chart aggregation config if successful
-	const chartAggregation = useValidateInput({ fieldName, options });
+	const chartAggregation = useValidateInput({ fieldName, query });
+	console.log('ca', chartAggregation);
+	if (!chartAggregation) {
+		console.log('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
+		return false;
+	}
 
 	const barChartTransform = createBarChartTransform(chartAggregation);
 
 	return (
 		<ChartDataContainer
 			fieldNames={[fieldName]}
+			chartConfig={chartAggregation}
 			transformGQL={barChartTransform}
 			colorMapResolver={colorMapResolver}
 			components={components}

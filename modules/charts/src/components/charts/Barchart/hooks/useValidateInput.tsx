@@ -1,43 +1,43 @@
 import { fieldNameWithMapping } from '#components/Provider/hooks/useQueryFieldNames';
-import { ArrangerAggregation } from '#shared';
+import { AggregationsTypename, aggregationsTypenames } from '#shared';
 import { useArrangerData } from '@overture-stack/arranger-components';
+import { BarChartPropsQuery } from '../Barchart';
 
-interface ChartAggregation {
+export interface ChartAggregation {
 	fieldName: string;
-	gqlTypename: ArrangerAggregation;
-	options: any;
+	gqlTypename: AggregationsTypename;
+	query: BarChartPropsQuery;
 }
 
-const validateAggregationsType = ({ mappedFieldName, options }) => {
-	const { gqlTypename } = mappedFieldName;
-	if (gqlTypename === 'Aggregations' && options.range) {
+const validateAggregationsType = ({ mappedFieldName, query }) => {
+	if (query?.variables?.range) {
 		console.log('Aggregations typename does not support options');
 		return false;
 	}
 	// success
-	return { ...mappedFieldName, options };
+	return { ...mappedFieldName, query };
 };
 
-const validateNumericAggregationsType = ({ mappedFieldName, options }) => {
-	const { gqlTypename } = mappedFieldName;
-	if (gqlTypename === 'NumericAggregations' && options.range === undefined) {
-		console.log('NumericAggregations typename requires a provided "range" option');
+const validateNumericAggregationsType = ({ mappedFieldName, query }) => {
+	if (query.variables.ranges === undefined) {
+		console.log('NumericAggregations typename requires a provided "ranges" option');
 		return false;
 	}
 	// success
-	return { ...mappedFieldName, options };
+	return { ...mappedFieldName, query };
 };
 
-export const useValidateInput = ({ fieldName, options }): ChartAggregation => {
+// TODO: return success or failure
+export const useValidateInput = ({ fieldName, query }): ChartAggregation => {
 	const { extendedMapping } = useArrangerData();
 	const mappedFieldName = fieldNameWithMapping({ fieldName, extendedMapping });
 
 	switch (mappedFieldName?.gqlTypename) {
-		case 'Aggreagtions':
-			return validateAggregationsType({ mappedFieldName, options });
-		case 'NumericAggregations':
-			return validateNumericAggregationsType({ mappedFieldName, options });
+		case aggregationsTypenames.Aggregations:
+			return validateAggregationsType({ mappedFieldName, query });
+		case aggregationsTypenames.NumericAggregations:
+			return validateNumericAggregationsType({ mappedFieldName, query });
 		default:
-			return null;
+			return false;
 	}
 };
