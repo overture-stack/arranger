@@ -1,5 +1,6 @@
-import { QueryField } from '#components/Provider/hooks/useQueryFieldNames';
+import { ChartAggregation } from '#components/charts/Barchart/hooks/useValidateInput';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
+import { aggregationsTypenames } from '#shared';
 
 const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 	return `query ChartsQuery($filters: JSON) {
@@ -16,18 +17,27 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 };
 
 // ugly but works, potentially use gql builder but overkill for small query templating
-const generateQuery = ({ documentType, queryFields }: { documentType: string; queryFields: QueryField[] }) => {
-	const fieldQueries = queryFields.reduce((query, { fieldName, gqlTypename }) => {
-		switch (gqlTypename) {
-			case 'Aggregations':
-				return query + queryTemplateAggregations(fieldName);
-			case 'NumericAggregations':
-				return query + queryTemplateNumericAggregations(fieldName);
-			default:
-				console.log('Unsupported gql typename found');
-				return '';
-		}
-	}, '');
+const generateQuery = ({
+	documentType,
+	queryFields,
+}: {
+	documentType: string;
+	queryFields: Map<string, ChartAggregation>;
+}) => {
+	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
+		(fullQuery, { fieldName, gqlTypename, query }) => {
+			switch (gqlTypename) {
+				case aggregationsTypenames.Aggregations:
+					return fullQuery + queryTemplateAggregations({ fieldName });
+				case aggregationsTypenames.NumericAggregations:
+					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables: query.variables });
+				default:
+					console.log('Unsupported GQL typename found');
+					return '';
+			}
+		},
+		'',
+	);
 
 	const query = queryTemplateCharts({ documentType, fieldQueries });
 
@@ -39,9 +49,9 @@ export const generateChartsQuery = ({
 	queryFields,
 }: {
 	documentType: string;
-	queryFields: QueryField[];
+	queryFields: Map<string, ChartAggregation>;
 }): string | null => {
-	if (queryFields.length === 0) {
+	if (queryFields.size === 0) {
 		console.log('No query fields available');
 		return null;
 	}

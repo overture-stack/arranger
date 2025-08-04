@@ -26,3 +26,9 @@ type Stats = {
 
 // the GQL NumericAggregations type
 export type NumericAggregations = CommonAggregationProperties & { stats: Stats };
+
+export const aggregationsTypenames = {
+	Aggregations: 'Aggregations',
+	NumericAggregations: 'NumericAggregations',
+} as const;
+export type AggregationsTypename = (typeof aggregationsTypenames)[keyof typeof aggregationsTypenames];
