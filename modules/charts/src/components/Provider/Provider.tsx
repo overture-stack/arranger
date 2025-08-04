@@ -4,7 +4,7 @@ import { createContext, PropsWithChildren, ReactElement, useCallback, useContext
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { generateChartsQuery } from '#query/generateCharts';
 import { Aggregations, NumericAggregations } from '#shared';
-import { useChartFields } from './hooks/useCharts';
+import { useQueryValues } from './hooks/useQueryFieldNames';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
@@ -35,7 +35,7 @@ type GlobalTheme = {
 type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
 export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
-const createChartDataMap = ({ data }): GQLDataMap | null => {
+const createChartDataMap = (data): GQLDataMap | null => {
 	if (!data) {
 		return null;
 	}
@@ -47,18 +47,26 @@ const createChartDataMap = ({ data }): GQLDataMap | null => {
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
-	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
+	const { documentType, apiFetcher, sqon, setSQON, extendedMapping } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
+	// const { chartDataMap } = useChartsData();
+
 	// register chart fields
-	const { registeredFieldNames, registerFieldName, deregisterFieldName } = useChartFields({ documentType });
+	const { queryFields, registerFieldName, deregisterFieldName } = useQueryValues();
 
-	// generate query from current fields
+	console.log('queryfields', queryFields);
+	// {....variables}
+
+	// // generate query from current fields
 	const gqlQuery = useMemo(() => {
-		return generateChartsQuery({ documentType, fieldNames: registeredFieldNames });
-	}, [documentType, registeredFieldNames]);
+		return generateChartsQuery({ documentType, queryFields });
+	}, [documentType, queryFields]);
 
+	console.log('gql', gqlQuery);
+
+	// TODO: only make query if we need to?
 	// api call
 	const { apiState } = useNetworkQuery({
 		query: gqlQuery,
@@ -66,12 +74,11 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		sqon,
 	});
 
-	console.log('api state', apiState);
-	const chartDataMap = createChartDataMap({ data: apiState?.data });
+	const gqlDataMap = createChartDataMap(apiState.data);
 
-	const registerChart = useCallback(async ({ fieldNames }: { fieldNames: string[] }) => {
-		console.log('Registering fieldName', fieldNames);
-		fieldNames.forEach((fieldName) => registerFieldName(fieldName));
+	const registerChart = useCallback(async (chartConfig) => {
+		console.log('Registering fieldName', chartConfig);
+		registerFieldName(chartConfig);
 	}, []);
 
 	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
@@ -93,13 +100,13 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 			isLoading,
 			isError,
 		};
-
+		console.log('data map', gqlDataMap);
 		if (isLoading || isError) {
 			return { ...apiStates, data: null };
 		} else {
-			const chartData = chartDataMap
+			const chartData = gqlDataMap
 				? [fieldNames].flat().reduce((acc, fieldName) => {
-						return { ...acc, [fieldName]: chartDataMap?.get(fieldName) };
+						return { ...acc, [fieldName]: gqlDataMap?.get(fieldName) };
 					}, {})
 				: null;
 

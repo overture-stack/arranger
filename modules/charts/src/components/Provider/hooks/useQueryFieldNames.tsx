@@ -1,11 +1,25 @@
+import { NumericAggregationsOptions } from '#components/charts/Barchart/Barchart';
+import { ChartAggregation } from '#components/charts/Barchart/hooks/useValidateInput';
 import { toJSONFieldName } from '#utils/mappings';
-import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-export type QueryField = {
+export const fieldNameWithMapping = ({ fieldName, extendedMapping }) => {
+	// GQL field name to Arranger extended mapping JSON field name
+	const jsonFieldName = toJSONFieldName(fieldName);
+	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
+	console.log(mapping);
+	if (mapping?.aggsType) {
+		console.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
+		return { fieldName, gqlTypename: mapping.aggsType };
+	}
+
+	console.log(`Missing mapping for ${fieldName}`);
+	return null;
+};
+
+export type QueryValue = {
 	fieldName: string;
-	// TODO: specify Aggs or NumericAggs
-	gqlTypename: string;
+	variables: NumericAggregationsOptions;
 };
 
 /**
@@ -16,70 +30,51 @@ export type QueryField = {
  * duplicate registrations and provides methods to add/remove fields dynamically.
  *
  * @param config - Configuration object containing the extended mapping
- * @param config.extendedMapping - Arranger extended mapping interface for field type resolution
+ * @param config.
  * @returns Object containing query fields array and registration/deregistration functions
  */
-export const useQueryFieldNames = ({
-	extendedMapping,
-}: {
-	extendedMapping: ExtendedMappingInterface[];
-}): {
-	queryFields: QueryField[];
-	registerFieldName: (fieldName: string) => void;
+export const useQueryValues = (): {
+	queryFields: Map<string, ChartAggregation>;
+	registerFieldName: (config: ChartAggregation) => void;
 	deregisterFieldName: (fieldName: string) => void;
 } => {
-	// Although we can have multiple charts with same fieldName, they are referencing the same data
-	const [registeredFieldNames, setRegisteredFieldNames] = useState(new Set<string>());
+	// Although we can have multiple charts with same fieldName, they are referencing the same data.
+	// Important! - GQL aliasing if currently not supported, Map keys unique constraint is ok for now.
+	const [registeredQueryValues, setRegisteredQueryValues] = useState(new Map<string, {}>());
 
-	const registerFieldName = useCallback((fieldName: string) => {
-		setRegisteredFieldNames((prev) => {
-			if (prev.has(fieldName)) {
-				console.log(`Field already registered: ${fieldName}`);
+	const registerQueryValue = useCallback((config) => {
+		setRegisteredQueryValues((prev) => {
+			if (prev.has(config.fieldName)) {
+				console.log(`Field already registered: ${config.fieldName}`);
 				return prev;
 			} else {
-				const newFields = new Set(prev);
-				newFields.add(fieldName);
-				console.log(`Field registered successfully: ${fieldName}`);
-				console.log(`Current registered fields: ${Array.from(newFields)}`);
-				return newFields;
+				const newValuesMap = new Map(prev);
+				newValuesMap.set(config.fieldName, config);
+				console.log(`Field registered successfully: ${config.fieldName}`);
+				console.log(`Current registered fields: ${Array.from(newValuesMap)}`);
+				return newValuesMap;
 			}
 		});
 	}, []);
 
-	const deregisterFieldName = useCallback((fieldName: string) => {
-		setRegisteredFieldNames((prev) => {
+	const deregisterQueryValue = useCallback((fieldName: string) => {
+		setRegisteredQueryValues((prev) => {
 			if (!prev.has(fieldName)) {
 				console.log(`Field not found for deregistration: ${fieldName}`);
 				return prev;
 			}
 
-			const newFields = new Set(prev);
-			newFields.delete(fieldName);
+			const newValuesMap = new Map(prev);
+			newValuesMap.delete(fieldName);
 			console.log(`Field deregistered successfully: ${fieldName}`);
-			console.log(`Current registered fields: ${Array.from(newFields)}`);
-			return newFields;
+			console.log(`Current registered fields: ${Array.from(newValuesMap)}`);
+			return newValuesMap;
 		});
 	}, []);
 
-	const queryFields = useMemo(() => {
-		return Array.from(registeredFieldNames).flatMap((fieldName) => {
-			// GQL field name to Arranger extended mapping JSON field name
-			const jsonFieldName = toJSONFieldName(fieldName);
-			const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
-
-			if (mapping?.aggsType) {
-				console.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
-				return [{ fieldName, gqlTypename: mapping.aggsType }];
-			}
-
-			console.log(`Missing mapping for ${fieldName}`);
-			return [];
-		});
-	}, [registeredFieldNames, extendedMapping]);
-
 	return {
-		queryFields,
-		registerFieldName,
-		deregisterFieldName,
+		queryFields: registeredQueryValues,
+		registerFieldName: registerQueryValue,
+		deregisterFieldName: deregisterQueryValue,
 	};
 };
