@@ -12,7 +12,7 @@ export const typeDefs = `
     key: String
     key_as_string: String
     top_hits(_source:[String], size:Int): JSON
-    filter_by_term(filter: JSON): JSON 
+    filter_by_term(filter: JSON): JSON
   }
 
   type NumericAggregations {
