@@ -93,7 +93,7 @@ const getValue = (row, column) => {
 };
 
 const getRows = (args) => {
-	const { row, data = row, paths, pathIndex = 0, columns, entities = [], beep } = args;
+	const { row, data = row, paths, pathIndex = 0, columns, entities = [] } = args;
 
 	if (pathIndex >= paths.length - 1) {
 		const rows = columns.map((column) => {
