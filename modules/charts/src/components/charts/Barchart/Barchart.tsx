@@ -43,7 +43,7 @@ export type NumericAggregationsOptions = {
 };
 export type BarChartPropsQuery = {
 	variables?: NumericAggregationsOptions;
-	transformData?: (data: unknown) => BarChatData;
+	transformData?: (data: unknown) => any;
 };
 
 type BarChatData = { doc_count: number; key: string }[];
@@ -66,10 +66,10 @@ export const Barchart = ({
 }) => {
 	// validate and return chart aggregation config if successful
 	const chartAggregation = useValidateInput({ fieldName, query });
-	console.log('ca', chartAggregation);
+
 	if (!chartAggregation) {
 		console.log('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
-		return false;
+		return null;
 	}
 
 	const barChartTransform = createBarChartTransform(chartAggregation);

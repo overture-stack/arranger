@@ -1,10 +1,11 @@
 import { ARRANGER_MISSING_DATA_KEY } from '#constants';
+import { aggregationsTypenames } from '#shared';
 
 const resolveBuckets = ({ aggregations, gqlTypename }) => {
 	switch (gqlTypename) {
-		case 'Aggregations':
+		case aggregationsTypenames.Aggregations:
 			return aggregations.buckets;
-		case 'NumericAggregations':
+		case aggregationsTypenames.NumericAggregations:
 			return aggregations.range.buckets;
 		default:
 			return [];
@@ -12,7 +13,7 @@ const resolveBuckets = ({ aggregations, gqlTypename }) => {
 };
 
 export const createBarChartTransform =
-	({ fieldName, gqlTypename }: ChartAggregation) =>
+	({ fieldName, gqlTypename, query }: ChartAggregation) =>
 	({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
 		if (!gqlData) {
 			return null;
@@ -26,9 +27,11 @@ export const createBarChartTransform =
 		 * 2 - rename doc_count to docCount
 		 * 3 - map __missing__ key to "No Data"
 		 */
-		return gqlBuckets.map(({ key, doc_count }) => ({
+		const buckets = gqlBuckets.map(({ key, doc_count }) => ({
 			key: key,
 			displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
 			docCount: doc_count,
 		}));
+
+		return (query?.transformData && query.transformData(buckets)) || buckets;
 	};
