@@ -4,7 +4,7 @@ import { createContext, PropsWithChildren, ReactElement, useCallback, useContext
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { generateChartsQuery } from '#query/generateCharts';
 import { Aggregations, NumericAggregations } from '#shared';
-import { useQueryValues } from './hooks/useQueryFieldNames';
+import { useQueryValues } from './useQueryFieldNames';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
@@ -13,8 +13,7 @@ type ChartContextType = {
 	getChartData: ({ fieldNames }: { fieldNames: string[] }) => {
 		isLoading: boolean;
 		isError: boolean;
-		// TODO: Map<string, Aggregtions | NumericAggregations>
-		data: Map<string, {}> | undefined;
+		data: Map<string, Aggregations | NumericAggregations> | null;
 	};
 };
 
@@ -35,6 +34,13 @@ type GlobalTheme = {
 type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
 export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
+/**
+ * Transforms raw GraphQL API response into a structured data map.
+ * Extracts aggregation data and creates a Map for efficient field lookups.
+ *
+ * @param data - Raw API response from GraphQL query
+ * @returns Map of field names to aggregation data, or null if no data
+ */
 const createChartDataMap = (data): GQLDataMap | null => {
 	if (!data) {
 		return null;
@@ -44,10 +50,19 @@ const createChartDataMap = (data): GQLDataMap | null => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
+/**
+ * React context provider that manages chart registration, data fetching, and global theming.
+ * Coordinates multiple charts to for single API call and to maintain consistent state.
+ *
+ * @param props - Provider configuration
+ * @param props.theme - Global theme configuration for all charts
+ * @param props.children - Child components that will have access to charts context
+ * @returns JSX provider element that enables chart functionality
+ */
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
-	const { documentType, apiFetcher, sqon, setSQON, extendedMapping } = useArrangerData({
+	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
@@ -59,8 +74,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		return generateChartsQuery({ documentType, queryFields });
 	}, [documentType, queryFields]);
 
-	// TODO: only make query if we need to?
-	// api call
+	//api call
 	const { apiState } = useNetworkQuery({
 		query: gqlQuery,
 		apiFetcher,
@@ -79,12 +93,12 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		fieldNames.forEach((fieldName) => deregisterFieldName(fieldName));
 	}, []);
 
-	// const update = useCallback(({ fieldName, eventData }) => {
-	// 	console.log('update', fieldName, eventData);
-	// 	// new data => sqon => arranger => data => render
-	// 	// update arranger.setSqon
-	// 	setSQON();
-	// }, []);
+	const update = useCallback(({ fieldName, eventData }) => {
+		console.log('update', fieldName, eventData);
+		// new data => sqon => arranger => data => render
+		// update arranger.setSqon
+		setSQON();
+	}, []);
 
 	// chartType for slicing data
 	const getChartData = ({ fieldNames }: { fieldNames: string[] }) => {
@@ -93,7 +107,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 			isLoading,
 			isError,
 		};
-		console.log('data map', gqlDataMap);
+
 		if (isLoading || isError) {
 			return { ...apiStates, data: null };
 		} else {

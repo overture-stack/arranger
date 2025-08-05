@@ -1,42 +1,10 @@
 import { ChartDataContainer } from '#components/Chart';
-import { arrangerToNivoBarChart } from '#components/charts/Barchart/nivo/config';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { createColorMap } from '#theme/colors';
-import { css } from '@emotion/react';
-import { ResponsiveBar } from '@nivo/bar';
-import { useMemo } from 'react';
+import { ReactNode } from 'react';
+import { BarChartView } from './BarChartView';
 import { createBarChartTransform } from './dataTransform';
-import { useValidateInput } from './hooks/useValidateInput';
-
-type BarChartProps = {
-	data: any;
-	theme: any;
-};
-
-/**
- * Resolve to a Nivo Bar chart component
- */
-export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) => {
-	const resolvedTheme = useMemo(
-		() => arrangerToNivoBarChart({ theme, colorMap, onClick }),
-		[theme, colorMap, onClick],
-	);
-
-	console.log('chart', data, resolvedTheme, colorMap);
-	return (
-		<div css={css({ width: '100%', height: '100%' })}>
-			<ResponsiveBar
-				data={data}
-				{...resolvedTheme}
-			/>
-		</div>
-	);
-};
-
-const colorMapResolver = ({ chartData }) => {
-	const keys = chartData.map(({ key }) => key); // specfic chart color map code
-	return createColorMap({ keys });
-};
+import { useValidateInput } from './useValidateInput';
 
 export type NumericAggregationsOptions = {
 	ranges?: any;
@@ -46,10 +14,26 @@ export type BarChartPropsQuery = {
 	transformData?: (data: unknown) => any;
 };
 
-type BarChatData = { doc_count: number; key: string }[];
-export const Barchart = ({
+const colorMapResolver = ({ chartData }) => {
+	const keys = chartData.map(({ key }: { key: string }) => key); // specfic chart color map code
+	return createColorMap({ keys });
+};
+
+/**
+ * High-level bar chart component that handles validation, data pipeline, and rendering.
+ * Automatically validates field types and creates appropriate GraphQL queries.
+ *
+ * @param props - Bar chart configuration
+ * @param props.fieldName - GraphQL field name to visualize
+ * @param props.query - Optional query configuration for aggregations eg. NumericAggregations
+ * @param props.handlers - Event handlers for chart interactions
+ * @param props.components - Custom components for fallback states
+ * @param props.theme - Arranger theme configuration
+ * @returns JSX element with complete bar chart or null if field validation fails
+ */
+export const BarChart = ({
 	fieldName,
-	query,
+	query = {},
 	handlers,
 	components,
 	theme,
@@ -57,11 +41,11 @@ export const Barchart = ({
 	theme: any;
 	query?: BarChartPropsQuery;
 	fieldName: string;
-	handlers?: { onClick: (config) => void };
+	handlers?: { onClick: (config: any) => void };
 	components?: {
-		Loader?: any;
-		ErrorData?: any;
-		EmptyData?: any;
+		Loader?: ReactNode;
+		ErrorData?: ReactNode;
+		EmptyData?: ReactNode;
 	};
 }) => {
 	// validate and return chart aggregation config if successful

@@ -1,3 +1,5 @@
+import { Ranges } from '#shared';
+
 const queryTemplateBuckets = `
 {
     bucket_count
@@ -20,13 +22,6 @@ export const queryTemplateAggregations = ({ fieldName }: { fieldName: string }) 
   ${queryTemplateBuckets}
 `;
 };
-
-// TODO: move - gql typescript type
-type Range =
-	| { key?: string; to: number; from?: number }
-	| { key: string; to?: number; from: number }
-	| { key: string; to?: number; from?: number };
-type Ranges = Range[];
 
 // gql doesn't like stringifed keys
 // supports single level of properties

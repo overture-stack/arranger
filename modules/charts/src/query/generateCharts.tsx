@@ -1,4 +1,4 @@
-import { ChartAggregation } from '#components/charts/Barchart/hooks/useValidateInput';
+import { ChartConfig } from '#components/charts/Barchart/hooks/useValidateInput';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { aggregationsTypenames } from '#shared';
 
@@ -16,13 +16,13 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
     }`;
 };
 
-// ugly but works, potentially use gql builder but overkill for small query templating
+// ugly - works for small query templating, improvement: use gql builder
 const generateQuery = ({
 	documentType,
 	queryFields,
 }: {
 	documentType: string;
-	queryFields: Map<string, ChartAggregation>;
+	queryFields: Map<string, ChartConfig>;
 }) => {
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
 		(fullQuery, { fieldName, gqlTypename, query }) => {
@@ -44,12 +44,18 @@ const generateQuery = ({
 	return query;
 };
 
+/**
+ * Generate single GQL query for all charts under a single ChartsProvider
+ *
+ * @param param0
+ * @returns
+ */
 export const generateChartsQuery = ({
 	documentType,
 	queryFields,
 }: {
 	documentType: string;
-	queryFields: Map<string, ChartAggregation>;
+	queryFields: Map<string, ChartConfig>;
 }): string | null => {
 	if (queryFields.size === 0) {
 		console.log('No query fields available');
