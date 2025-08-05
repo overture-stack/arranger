@@ -1,12 +1,12 @@
 import { ChartDataContainer } from '#components/Chart';
 import { arrangerToNivoBarChart } from '#components/charts/Barchart/nivo/config';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
-import { GQLDataMap } from '#components/Provider/Provider';
-import { ARRANGER_MISSING_DATA_KEY } from '#constants';
 import { createColorMap } from '#theme/colors';
 import { css } from '@emotion/react';
 import { ResponsiveBar } from '@nivo/bar';
 import { useMemo } from 'react';
+import { createBarChartTransform } from './dataTransform';
+import { useValidateInput } from './hooks/useValidateInput';
 
 type BarChartProps = {
 	data: any;
@@ -33,56 +33,51 @@ export const BarChartView = ({ data, theme, colorMap, onClick }: BarChartProps) 
 	);
 };
 
-const createBarChartTransform =
-	({ fieldName }) =>
-	({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
-		if (!gqlData) {
-			return null;
-		}
-
-		const aggregation = gqlData[fieldName];
-
-		// TODO: take 2nd param of type once we have that data available
-		const gqlBuckets = aggregation.buckets ? aggregation.buckets : aggregation.range.buckets;
-		/**
-		 * 1 - add displayKey property
-		 * 2 - rename doc_count to docCount
-		 * 3 - map __missing__ key to "No Data"
-		 */
-		return gqlBuckets.map(({ key, doc_count }) => ({
-			key: key,
-			displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
-			docCount: doc_count,
-		}));
-	};
-
 const colorMapResolver = ({ chartData }) => {
 	const keys = chartData.map(({ key }) => key); // specfic chart color map code
 	return createColorMap({ keys });
 };
 
+export type NumericAggregationsOptions = {
+	ranges?: any;
+};
+export type BarChartPropsQuery = {
+	variables?: NumericAggregationsOptions;
+	transformData?: (data: unknown) => any;
+};
+
 type BarChatData = { doc_count: number; key: string }[];
 export const Barchart = ({
 	fieldName,
+	query,
 	handlers,
 	components,
 	theme,
 }: {
 	theme: any;
+	query?: BarChartPropsQuery;
 	fieldName: string;
 	handlers?: { onClick: (config) => void };
-	transformData?: (data: unknown) => BarChatData;
 	components?: {
 		Loader?: any;
 		ErrorData?: any;
 		EmptyData?: any;
 	};
 }) => {
-	const barChartTransform = createBarChartTransform({ fieldName });
+	// validate and return chart aggregation config if successful
+	const chartAggregation = useValidateInput({ fieldName, query });
+
+	if (!chartAggregation) {
+		console.log('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
+		return null;
+	}
+
+	const barChartTransform = createBarChartTransform(chartAggregation);
 
 	return (
 		<ChartDataContainer
 			fieldNames={[fieldName]}
+			chartConfig={chartAggregation}
 			transformGQL={barChartTransform}
 			colorMapResolver={colorMapResolver}
 			components={components}

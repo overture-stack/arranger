@@ -1,10 +1,9 @@
 import { ChartRenderer } from '#components/ChartRenderer';
 import { GQLDataMap, useChartsContext } from '#components/Provider/Provider';
-import { useRegisterChart } from '#hooks/useRegisterChart';
 import { isEmpty } from 'lodash';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-const useChartData = ({
+const transformData = ({
 	gqlData,
 	transformGQL,
 }: {
@@ -32,19 +31,28 @@ const useColorMap = ({ chartData, resolver }) => {
  * @param theme - Arranger style theme configuration for the chart
  * @param DisplayComponent - Custom component for rendering chart display
  */
-export const ChartDataContainer = ({ fieldNames, Chart, components, transformGQL, colorMapResolver }) => {
-	//TODO: validate fisrt
-	//useValidateChart()
+export const ChartDataContainer = ({ fieldNames, Chart, components, chartConfig, transformGQL, colorMapResolver }) => {
+	const { registerChart, deregisterChart } = useChartsContext();
 
-	useRegisterChart({ fieldNames });
+	useEffect(() => {
+		try {
+			registerChart(chartConfig);
+		} catch (e) {
+			console.error(`Cannot register ${JSON.stringify(chartConfig)} with Arranger Charts provider.`);
+			console.error(e);
+		}
+		return () => {
+			deregisterChart({ fieldNames });
+		};
+	}, [fieldNames]);
 
 	// gql data
 	const { getChartData } = useChartsContext();
 	const { isLoading, isError, data: gqlData } = getChartData({ fieldNames });
 
 	// gql => chart data
-	const chartData = useChartData({ gqlData, transformGQL });
-	console.log('chart data', chartData);
+	const chartData = transformData({ gqlData, transformGQL });
+
 	// persistent color map
 	const { colorMap } = useColorMap({ chartData, resolver: colorMapResolver });
 
