@@ -1,7 +1,7 @@
 {
 	"name": "@overture-stack/arranger-server",
 	"description": "Data Model-agnostic GraphQL-based search API for Elasticsearch",
-	"version": "3.0.0-rc.2",
+	"version": "3.0.0",
 	"homepage": "https://github.com/overture-stack/arranger#readme",
 	"bugs": {
 		"url": "https://github.com/overture-stack/arranger/issues"
