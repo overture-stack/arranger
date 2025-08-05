@@ -38,8 +38,7 @@ export const ChartDataContainer = ({ fieldNames, Chart, components, chartConfig,
 		try {
 			registerChart(chartConfig);
 		} catch (e) {
-			// TODO: change messaging
-			console.error(`Cannot register ${fieldNames} with Arranger Charts provider.`);
+			console.error(`Cannot register ${JSON.stringify(chartConfig)} with Arranger Charts provider.`);
 			console.error(e);
 		}
 		return () => {

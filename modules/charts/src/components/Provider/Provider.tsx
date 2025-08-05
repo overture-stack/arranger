@@ -51,20 +51,13 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 		callerName: 'ArrangerCharts',
 	});
 
-	// const { chartDataMap } = useChartsData();
-
 	// register chart fields
 	const { queryFields, registerFieldName, deregisterFieldName } = useQueryValues();
 
-	console.log('queryfields', queryFields);
-	// {....variables}
-
-	// // generate query from current fields
+	// generate query from current fields
 	const gqlQuery = useMemo(() => {
 		return generateChartsQuery({ documentType, queryFields });
 	}, [documentType, queryFields]);
-
-	console.log('gql', gqlQuery);
 
 	// TODO: only make query if we need to?
 	// api call

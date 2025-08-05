@@ -22,13 +22,13 @@ export const arrangerToNivoBarChart = ({ theme, colorMap, onClick }) => {
 	 * Tooltip						*
 	 * ================= */
 	const tooltip = ({ data }) => {
-		const { doc_count, key } = data;
+		const { docCount, key } = data;
 		const displayValue = key === '__missing__' ? 'No Data' : key;
 		return (
 			<Tooltip>
 				<div>
 					<div>{`${displayValue}`}</div>
-					<div>{`${doc_count}: Donors`}</div>
+					<div>{`${docCount}: Donors`}</div>
 				</div>
 			</Tooltip>
 		);
