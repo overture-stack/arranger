@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const useNetworkQuery = ({ query, apiFetcher, sqon }: UseNetworkQueryProps) => {
+export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; apiFetcher: any; sqon: {} }) => {
 	const [apiState, setApiState] = useState({ data: null, loading: true, error: false });
 
 	useEffect(() => {

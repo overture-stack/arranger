@@ -1,13 +1,16 @@
-import { fieldNameWithMapping } from '#components/Provider/hooks/useQueryFieldNames';
-import { AggregationsTypename, aggregationsTypenames } from '#shared';
 import { useArrangerData } from '@overture-stack/arranger-components';
-import { BarChartPropsQuery } from '../Barchart';
 
-export interface ChartAggregation {
+import { fieldNameWithMapping } from '#arranger/mapping';
+import { AggregationsTypename, aggregationsTypenames } from '#shared';
+import { BarChartPropsQuery } from './Barchart';
+
+export type ValidationInput = {
 	fieldName: string;
-	gqlTypename: AggregationsTypename;
 	query: BarChartPropsQuery;
-}
+};
+export type ChartConfig = ValidationInput & {
+	gqlTypename: AggregationsTypename;
+};
 
 const validateAggregationsType = ({ mappedFieldName, query }) => {
 	if (query?.variables?.range) {
@@ -27,8 +30,15 @@ const validateNumericAggregationsType = ({ mappedFieldName, query }) => {
 	return { ...mappedFieldName, query };
 };
 
-// TODO: return success or failure
-export const useValidateInput = ({ fieldName, query }): ChartAggregation => {
+/**
+ * Custom hook that validates chart input parameters and returns aggregation configuration.
+ * Checks field mapping compatibility and validates query options based on data type.
+ *
+ * @param { fieldName } - GraphQL field name to validate
+ * @param { query } - Query configuration with optional variables
+ * @returns Valid chart aggregation configuration or false if validation fails
+ */
+export const useValidateInput = ({ fieldName, query }: ValidationInput): ChartConfig | null => {
 	const { extendedMapping } = useArrangerData();
 	const mappedFieldName = fieldNameWithMapping({ fieldName, extendedMapping });
 
@@ -38,6 +48,6 @@ export const useValidateInput = ({ fieldName, query }): ChartAggregation => {
 		case aggregationsTypenames.NumericAggregations:
 			return validateNumericAggregationsType({ mappedFieldName, query });
 		default:
-			return false;
+			return null;
 	}
 };

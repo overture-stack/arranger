@@ -24,8 +24,17 @@ type Stats = {
 	sum: number;
 };
 
+type Range =
+	| { key?: string; to: number; from?: number }
+	| { key: string; to?: number; from: number }
+	| { key: string; to?: number; from?: number };
+export type Ranges = Range[];
+
 // the GQL NumericAggregations type
-export type NumericAggregations = CommonAggregationProperties & { stats: Stats };
+export type NumericAggregations = CommonAggregationProperties & { stats: Stats; range: Ranges };
+
+// Arranger aggregations
+export type ArrangerAggregations = Aggregations | NumericAggregations;
 
 export const aggregationsTypenames = {
 	Aggregations: 'Aggregations',

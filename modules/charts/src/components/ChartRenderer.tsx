@@ -1,6 +1,18 @@
 import { ChartText } from './ChartText';
 import { useChartsContext } from './Provider/Provider';
 
+/**
+ * Renders appropriate chart component or fallback state based on data loading status.
+ * Supports global theme overrides and custom component injection.
+ *
+ * @param props - Renderer configuration
+ * @param props.isLoading - Whether data is currently being fetched
+ * @param props.isError - Whether an error occurred during data fetching
+ * @param props.isEmpty - Whether the fetched data is empty
+ * @param props.components - Chart specific fallback components
+ * @param props.Chart - Main chart component to render when data is ready
+ * @returns JSX element with chart or appropriate fallback component
+ */
 export const ChartRenderer = ({ isLoading, isError, isEmpty, components, Chart }) => {
 	const { globalTheme } = useChartsContext();
 

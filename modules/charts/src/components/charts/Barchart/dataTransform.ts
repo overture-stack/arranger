@@ -1,7 +1,22 @@
+import { GQLDataMap } from '#components/Provider/Provider';
 import { ARRANGER_MISSING_DATA_KEY } from '#constants';
-import { aggregationsTypenames } from '#shared';
+import { AggregationsTypename, aggregationsTypenames, ArrangerAggregations } from '#shared';
 
-const resolveBuckets = ({ aggregations, gqlTypename }) => {
+/**
+ * Resolves GraphQL aggregation buckets based on the aggregation type.
+ * Handles different GraphQL response structures for categorical vs numeric data.
+ *
+ * @param { aggregations } - GraphQL aggregation response object
+ * @param { gqlTypename } - Type of GraphQL aggregation (Aggregations | NumericAggregations)
+ * @returns Array of bucket objects with key and doc_count properties
+ */
+const resolveBuckets = ({
+	aggregations,
+	gqlTypename,
+}: {
+	aggregations: ArrangerAggregations;
+	gqlTypename: AggregationsTypename;
+}) => {
 	switch (gqlTypename) {
 		case aggregationsTypenames.Aggregations:
 			return aggregations.buckets;
@@ -12,6 +27,15 @@ const resolveBuckets = ({ aggregations, gqlTypename }) => {
 	}
 };
 
+/**
+ * Creates a data transformation function for converting GraphQL responses to bar chart format.
+ * Returns a configured transformer that handles missing data and applies custom transformations.
+ *
+ * @param { fieldName } - GraphQL field name being queried
+ * @param { gqlTypename } - Type of GraphQL aggregation
+ * @param { query } - Query configuration with optional transform function
+ * @returns Function that transforms GraphQL data to chart format
+ */
 export const createBarChartTransform =
 	({ fieldName, gqlTypename, query }: ChartAggregation) =>
 	({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {

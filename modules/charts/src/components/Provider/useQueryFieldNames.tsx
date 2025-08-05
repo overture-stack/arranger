@@ -1,21 +1,6 @@
-import { NumericAggregationsOptions } from '#components/charts/Barchart/Barchart';
-import { ChartAggregation } from '#components/charts/Barchart/hooks/useValidateInput';
-import { toJSONFieldName } from '#utils/mappings';
+import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
+import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
 import { useCallback, useState } from 'react';
-
-export const fieldNameWithMapping = ({ fieldName, extendedMapping }) => {
-	// GQL field name to Arranger extended mapping JSON field name
-	const jsonFieldName = toJSONFieldName(fieldName);
-	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
-	console.log(mapping);
-	if (mapping?.aggsType) {
-		console.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
-		return { fieldName, gqlTypename: mapping.aggsType };
-	}
-
-	console.log(`Missing mapping for ${fieldName}`);
-	return null;
-};
 
 export type QueryValue = {
 	fieldName: string;
@@ -25,22 +10,19 @@ export type QueryValue = {
 /**
  * Custom hook for managing query field names and their GraphQL type mappings.
  *
- * This hook maintains a registry of field names with mappings to their corresponding
- * GraphQL types using the provided extended mapping configuration. It prevents
- * duplicate registrations and provides methods to add/remove fields dynamically.
+ * This hook maintains a registry of field names with their configurgations.
+ * It prevents duplicate registrations and provides methods to add/remove fields dynamically.
  *
- * @param config - Configuration object containing the extended mapping
- * @param config.
  * @returns Object containing query fields array and registration/deregistration functions
  */
 export const useQueryValues = (): {
-	queryFields: Map<string, ChartAggregation>;
-	registerFieldName: (config: ChartAggregation) => void;
+	queryFields: Map<string, ChartConfig>;
+	registerFieldName: (config: ChartConfig) => void;
 	deregisterFieldName: (fieldName: string) => void;
 } => {
 	// Although we can have multiple charts with same fieldName, they are referencing the same data.
 	// Important! - GQL aliasing if currently not supported, Map keys unique constraint is ok for now.
-	const [registeredQueryValues, setRegisteredQueryValues] = useState(new Map<string, {}>());
+	const [registeredQueryValues, setRegisteredQueryValues] = useState(new Map<string, ChartConfig>());
 
 	const registerQueryValue = useCallback((config) => {
 		setRegisteredQueryValues((prev) => {

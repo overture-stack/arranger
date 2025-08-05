@@ -1,8 +1,16 @@
+import { isEmpty } from 'lodash';
+import { ReactNode, useEffect, useRef } from 'react';
+
 import { ChartRenderer } from '#components/ChartRenderer';
 import { GQLDataMap, useChartsContext } from '#components/Provider/Provider';
-import { isEmpty } from 'lodash';
-import { useEffect, useRef } from 'react';
 
+/**
+ * Transforms GraphQL data using the provided transformation function.
+ *
+ * @param { gqlData } - Raw GraphQL data map from API response
+ * @param { transformGQL } - Function to transform GraphQL data to chart format
+ * @returns Transformed chart data or null if no data provided
+ */
 const transformData = ({
 	gqlData,
 	transformGQL,
@@ -14,6 +22,14 @@ const transformData = ({
 	return transformGQL({ gqlData });
 };
 
+/**
+ * Custom hook that creates and maintains a persistent color map for chart data.
+ * Uses useRef to ensure color consistency across re-renders.
+ *
+ * @param { chartData } - Chart data to generate colors for
+ * @param { resolver } - Function that creates color map from chart data
+ * @returns Object containing the generated color map
+ */
 const useColorMap = ({ chartData, resolver }) => {
 	const colorMap = useRef();
 	if (chartData && !colorMap.current) {
@@ -23,15 +39,33 @@ const useColorMap = ({ chartData, resolver }) => {
 };
 
 /**
- * Chart component for rendering data visualizations.
- * Handles data state
- * Sets up shared functionality eg. consistent colors
+ * Main chart container component that orchestrates the complete chart data pipeline.
+ * Handles registration, data fetching, transformation, and rendering with error boundaries.
  *
- * @param fieldName - The data field to visualize
- * @param theme - Arranger style theme configuration for the chart
- * @param DisplayComponent - Custom component for rendering chart display
+ * @param props - Chart container configuration
+ * @param props.fieldNames - Array of field names to query Arranger for
+ * @param props.Chart - Chart component to render with transformed data
+ * @param props.components - Custom components for loading/error/empty states
+ * @param props.chartConfig - Chart configuration object for registration
+ * @param props.transformGQL - Function to transform GraphQL data to chart format
+ * @param props.colorMapResolver - Function to generate consistent color mapping
+ * @returns JSX element with rendered chart or appropriate fallback component
  */
-export const ChartDataContainer = ({ fieldNames, Chart, components, chartConfig, transformGQL, colorMapResolver }) => {
+export const ChartDataContainer = ({
+	fieldNames,
+	Chart,
+	components,
+	chartConfig,
+	transformGQL,
+	colorMapResolver,
+}: {
+	fieldNames: string[];
+	Chart: ReactNode;
+	components: any;
+	chartConfig: any;
+	transformGQL: any;
+	colorMapResolver: any;
+}) => {
 	const { registerChart, deregisterChart } = useChartsContext();
 
 	useEffect(() => {
