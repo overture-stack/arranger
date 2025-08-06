@@ -14,7 +14,7 @@ export interface Buckets {
 }
 
 // the GQL Aggregations type
-interface Aggregations extends Buckets {
+export interface Aggregations extends Buckets {
 	__typename: typeof aggregationsTypenames.Aggregations;
 }
 

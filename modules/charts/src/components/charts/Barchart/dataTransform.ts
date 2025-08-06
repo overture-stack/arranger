@@ -40,7 +40,7 @@ export const createBarChartTransform =
 
 		const aggregations = gqlData[fieldName];
 
-		const gqlBuckets = resolveBuckets({ aggregations, gqlTypename });
+		const gqlBuckets = resolveBuckets({ aggregations });
 		/**
 		 * 1 - add displayKey property
 		 * 2 - rename doc_count to docCount

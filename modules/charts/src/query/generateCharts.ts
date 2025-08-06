@@ -1,4 +1,4 @@
-import { ChartConfig } from '#components/charts/Barchart/hooks/useValidateInput';
+import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { aggregationsTypenames } from '#shared';
 
