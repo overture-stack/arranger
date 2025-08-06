@@ -58,6 +58,7 @@ export const queryTemplateNumericAggregations = ({
 
 	return `
   ${fieldName} {
+	__typename
   range(ranges: ${ranges})
 		{
 			__typename
