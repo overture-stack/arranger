@@ -16,7 +16,7 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 		case aggregationsTypenames.Aggregations:
 			return aggregations.buckets;
 		case aggregationsTypenames.NumericAggregations:
-			return aggregations.range?.buckets;
+			return aggregations.range?.buckets || [];
 		default:
 			return [];
 	}
