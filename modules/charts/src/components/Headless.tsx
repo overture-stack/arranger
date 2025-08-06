@@ -1,4 +1,10 @@
 /**
+ * !important
+ * this component needs to be updated to use the new flow
+ * it is not a "functional requirement", it's a nice to have debug for the frontend, prioritizing scoped work
+ */
+
+/**
  * Headless version of Chart component
  *
  * @param fieldName - The data field to visualize

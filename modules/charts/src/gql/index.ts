@@ -1,13 +1,12 @@
 import { Ranges } from '#shared';
 
 const queryTemplateBuckets = `
-{
     bucket_count
     buckets {
       doc_count
       key
     }
-  }`;
+  `;
 
 /**
  * Aggregations GQL type
@@ -19,7 +18,10 @@ const queryTemplateBuckets = `
 export const queryTemplateAggregations = ({ fieldName }: { fieldName: string }) => {
 	return `
   ${fieldName}
-  ${queryTemplateBuckets}
+	{
+		__typename
+  	${queryTemplateBuckets}
+	}
 `;
 };
 
@@ -56,8 +58,12 @@ export const queryTemplateNumericAggregations = ({
 
 	return `
   ${fieldName} {
+	__typename
   range(ranges: ${ranges})
-  ${queryTemplateBuckets}
+		{
+			__typename
+			${queryTemplateBuckets}
+		}
   }
 `;
 };
