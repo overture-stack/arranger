@@ -8,13 +8,15 @@ export type Bucket = {
 	key: string;
 };
 
-export type CommonAggregationProperties = {
+export interface Buckets {
 	bucket_count: number;
 	buckets: Bucket[];
-};
+}
 
 // the GQL Aggregations type
-export type Aggregations = CommonAggregationProperties;
+interface Aggregations extends Buckets {
+	__typename: typeof aggregationsTypenames.Aggregations;
+}
 
 type Stats = {
 	max: number;
@@ -24,14 +26,20 @@ type Stats = {
 	sum: number;
 };
 
+// input not response
 type Range =
 	| { key?: string; to: number; from?: number }
 	| { key: string; to?: number; from: number }
 	| { key: string; to?: number; from?: number };
+
 export type Ranges = Range[];
 
 // the GQL NumericAggregations type
-export type NumericAggregations = CommonAggregationProperties & { stats: Stats; range: Ranges };
+export interface NumericAggregations {
+	__typename: typeof aggregationsTypenames.NumericAggregations;
+	stats: Stats;
+	range: Buckets;
+}
 
 // Arranger aggregations
 export type ArrangerAggregations = Aggregations | NumericAggregations;

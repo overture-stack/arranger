@@ -1,6 +1,7 @@
 import { GQLDataMap } from '#components/Provider/Provider';
 import { ARRANGER_MISSING_DATA_KEY } from '#constants';
-import { AggregationsTypename, aggregationsTypenames, ArrangerAggregations } from '#shared';
+import { aggregationsTypenames, ArrangerAggregations } from '#shared';
+import { ChartConfig } from './useValidateInput';
 
 /**
  * Resolves GraphQL aggregation buckets based on the aggregation type.
@@ -10,18 +11,12 @@ import { AggregationsTypename, aggregationsTypenames, ArrangerAggregations } fro
  * @param { gqlTypename } - Type of GraphQL aggregation (Aggregations | NumericAggregations)
  * @returns Array of bucket objects with key and doc_count properties
  */
-const resolveBuckets = ({
-	aggregations,
-	gqlTypename,
-}: {
-	aggregations: ArrangerAggregations;
-	gqlTypename: AggregationsTypename;
-}) => {
-	switch (gqlTypename) {
+const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }) => {
+	switch (aggregations.__typename) {
 		case aggregationsTypenames.Aggregations:
 			return aggregations.buckets;
 		case aggregationsTypenames.NumericAggregations:
-			return aggregations.range.buckets;
+			return aggregations.range?.buckets;
 		default:
 			return [];
 	}
@@ -37,7 +32,7 @@ const resolveBuckets = ({
  * @returns Function that transforms GraphQL data to chart format
  */
 export const createBarChartTransform =
-	({ fieldName, gqlTypename, query }: ChartAggregation) =>
+	({ fieldName, gqlTypename, query }: ChartConfig) =>
 	({ gqlData }: { gqlData: GQLDataMap }): ChartData | null => {
 		if (!gqlData) {
 			return null;
