@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useRef } from 'react';
 
 import { ChartRenderer } from '#components/ChartRenderer';
 import { GQLDataMap, useChartsContext } from '#components/Provider/Provider';
+import { logger } from '#logger';
 
 /**
  * Transforms GraphQL data using the provided transformation function.
@@ -72,8 +73,7 @@ export const ChartDataContainer = ({
 		try {
 			registerChart(chartConfig);
 		} catch (e) {
-			console.error(`Cannot register ${JSON.stringify(chartConfig)} with Arranger Charts provider.`);
-			console.error(e);
+			logger.error(`Cannot register ${JSON.stringify(chartConfig)} with Arranger Charts provider.`);
 		}
 		return () => {
 			deregisterChart({ fieldNames });
