@@ -1,143 +1,107 @@
-import { cloneDeep, isEmpty, merge } from 'lodash';
+import { isEmpty } from 'lodash';
 import { ReactNode, useEffect, useRef } from 'react';
 
-import { ChartContainer } from '#components/helper/ChartContainer';
-import { useChartsContext } from '#components/Provider/Provider';
-import { ArrangerChartProps, ArrangerChartTheme } from '#theme/arranger';
-import { createColorMap } from '#theme/colors';
+import { ChartRenderer } from '#components/ChartRenderer';
+import { GQLDataMap, useChartsContext } from '#components/Provider/Provider';
 
-type ChartProps = {
-	fieldName: string;
-	theme: ArrangerChartTheme;
-	headless?: boolean;
-	children?: ({
-		isLoading,
-		isError,
-		data,
-	}: {
-		isLoading: boolean;
-		isError: boolean;
-		// TODO: Map<string, Aggregations | NumericAggregations>
-		data: Map<string, {}> | undefined;
-	}) => ReactNode;
-	DisplayComponent?: React.ReactElement<ArrangerChartProps>;
-};
-
-// TODO: numeric or agg, very hacky property check,
-//  no need for this once server config is expanded, then we can check the typename
-const resolveData = ({ data, onDataLoad }) => {
-	let chartData = {};
-
-	if (data.buckets) {
-		chartData = data.buckets;
-	} else if (data.range) {
-		chartData = data.range.buckets;
-	}
-
-	// consumer
-	if (onDataLoad) {
-		chartData = onDataLoad(chartData);
-	}
-
-	return chartData;
+/**
+ * Transforms GraphQL data using the provided transformation function.
+ *
+ * @param { gqlData } - Raw GraphQL data map from API response
+ * @param { transformGQL } - Function to transform GraphQL data to chart format
+ * @returns Transformed chart data or null if no data provided
+ */
+const transformData = ({
+	gqlData,
+	transformGQL,
+}: {
+	gqlData: GQLDataMap;
+	transformGQL: (gqlData: GQLDataMap) => any;
+}) => {
+	if (!gqlData) return null;
+	return transformGQL({ gqlData });
 };
 
 /**
- * Chart component for rendering data visualizations.
- * Handles data state
- * Sets up shared functionality eg. consistent colors
+ * Custom hook that creates and maintains a persistent color map for chart data.
+ * Uses useRef to ensure color consistency across re-renders.
  *
- * @param fieldName - The data field to visualize
- * @param theme - Arranger style theme configuration for the chart
- * @param headless - Headless UI option (uses children prop)
- * @param children - Child chart components to render within the chart (renders if headless option is true)
- * @param DisplayComponent - Custom component for rendering chart display
+ * @param { chartData } - Chart data to generate colors for
+ * @param { resolver } - Function that creates color map from chart data
+ * @returns Object containing the generated color map
  */
-export const Chart = ({ fieldName, theme, headless, children, DisplayComponent }: ChartProps) => {
-	// Add validation, field vs fieldName, theme object, etc
-	// validate
-	if (fieldName === undefined) {
-		throw Error(`Please provide "fieldName" prop.`);
+const useColorMap = ({ chartData, resolver }) => {
+	const colorMap = useRef();
+	if (chartData && !colorMap.current) {
+		colorMap.current = resolver({ chartData });
 	}
+	return { colorMap: colorMap.current };
+};
 
-	const { registerChart, deregisterChart, getChartData, globalTheme } = useChartsContext();
+/**
+ * Main chart container component that orchestrates the complete chart data pipeline.
+ * Handles registration, data fetching, transformation, and rendering with error boundaries.
+ *
+ * @param props - Chart container configuration
+ * @param props.fieldNames - Array of field names to query Arranger for
+ * @param props.Chart - Chart component to render with transformed data
+ * @param props.components - Custom components for loading/error/empty states
+ * @param props.chartConfig - Chart configuration object for registration
+ * @param props.transformGQL - Function to transform GraphQL data to chart format
+ * @param props.colorMapResolver - Function to generate consistent color mapping
+ * @returns JSX element with rendered chart or appropriate fallback component
+ */
+export const ChartDataContainer = ({
+	fieldNames,
+	Chart,
+	components,
+	chartConfig,
+	transformGQL,
+	colorMapResolver,
+}: {
+	fieldNames: string[];
+	Chart: ReactNode;
+	components: any;
+	chartConfig: any;
+	transformGQL: any;
+	colorMapResolver: any;
+}) => {
+	const { registerChart, deregisterChart } = useChartsContext();
 
 	useEffect(() => {
 		try {
-			registerChart({ fieldName });
+			registerChart(chartConfig);
 		} catch (e) {
-			console.error(`Cannot register chart ${fieldName} with Arranger Charts provider.`);
+			console.error(`Cannot register ${JSON.stringify(chartConfig)} with Arranger Charts provider.`);
 			console.error(e);
 		}
 		return () => {
-			deregisterChart({ fieldName });
+			deregisterChart({ fieldNames });
 		};
-	}, []);
+	}, [fieldNames]);
 
-	const { isLoading, isError, data: chartData } = getChartData({ fieldName });
+	// gql data
+	const { getChartData } = useChartsContext();
+	const { isLoading, isError, data: gqlData } = getChartData({ fieldNames });
 
-	// headless
-	if (headless) {
-		if (typeof children === 'function') {
-			return children({ isLoading, isError, data: chartData });
-		}
-		console.error('Arranger Charts Headless component needs a function as children to render.');
-	}
+	// gql => chart data
+	const chartData = transformData({ gqlData, transformGQL });
 
-	// theme value depending on data provided, and scoped to a single instance of a Charts
-	const colorMap = useRef();
+	// persistent color map
+	const { colorMap } = useColorMap({ chartData, resolver: colorMapResolver });
 
-	// child component
-	if (isLoading) {
-		const { Loader } = globalTheme.components;
-		return (
-			<ChartContainer>
-				<Loader />
-			</ChartContainer>
-		);
-	} else if (isError) {
-		const { ErrorData } = globalTheme.components;
-		return (
-			<ChartContainer>
-				<ErrorData />
-			</ChartContainer>
-		);
-	} else {
-		const resolvedChartData = resolveData({ data: chartData, onDataLoad: theme.onDataLoad });
-
-		if (isEmpty(resolvedChartData)) {
-			const { EmptyData } = globalTheme.components;
-			return (
-				<ChartContainer>
-					<EmptyData />
-				</ChartContainer>
-			);
-		}
-
-		if (!colorMap.current) {
-			const keys = resolvedChartData.map((bucket) => bucket.key);
-			colorMap.current = createColorMap({ keys, colors: globalTheme.colors });
-		}
-
-		// instance of a Chart theme values, eg. colorMap
-		const instanceTheme = {
-			colorMap: colorMap.current,
-		};
-
-		// resolve globalTheme with consumer provided theme and any instance dependant theming
-		// TODO: Memo
-		const chartTheme = merge(cloneDeep(globalTheme), theme, instanceTheme);
-
-		return (
-			<ChartContainer>
-				<DisplayComponent
-					// keep data pretty clean because we might manipulate in the charts
-					// data vs config good separation anyway, can use functions that take data and resolve
-					data={resolvedChartData}
-					// add ChartProvider functionality into theme
-					theme={chartTheme}
+	return (
+		<ChartRenderer
+			isLoading={isLoading}
+			isError={isError}
+			isEmpty={isEmpty(chartData)}
+			components={components}
+			Chart={() => (
+				<Chart
+					data={chartData}
+					colorMap={colorMap}
 				/>
-			</ChartContainer>
-		);
-	}
+			)}
+		/>
+	);
 };

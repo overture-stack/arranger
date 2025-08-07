@@ -1,21 +1,19 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
-import { cloneDeep, merge } from 'lodash';
-import { createContext, PropsWithChildren, ReactElement, useContext, useEffect, useState } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useCallback, useContext, useMemo } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
-import { EmptyData } from './EmptyData';
-import { ErrorData } from './ErrorData';
-import { Tooltip } from './Tooltip';
+import { generateChartsQuery } from '#query/generateCharts';
+import { Aggregations, NumericAggregations } from '#shared';
+import { useQueryValues } from './useQueryFieldNames';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
-	registerChart: ({ fieldName }: { fieldName: string }) => void;
-	deregisterChart: ({ fieldName }: { fieldName: string }) => void;
-	getChartData: ({ fieldName }: { fieldName: string }) => {
+	registerChart: ({ fieldNames }: { fieldNames: string[] }) => void;
+	deregisterChart: ({ fieldNames }: { fieldNames: string[] }) => void;
+	getChartData: ({ fieldNames }: { fieldNames: string[] }) => {
 		isLoading: boolean;
 		isError: boolean;
-		// TODO: Map<string, Aggregtions | NumericAggregations>
-		data: Map<string, {}> | undefined;
+		data: Map<string, Aggregations | NumericAggregations> | null;
 	};
 };
 
@@ -35,7 +33,15 @@ type GlobalTheme = {
 };
 type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
 
-const createChartDataMap = ({ data }) => {
+export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
+/**
+ * Transforms raw GraphQL API response into a structured data map.
+ * Extracts aggregation data and creates a Map for efficient field lookups.
+ *
+ * @param data - Raw API response from GraphQL query
+ * @returns Map of field names to aggregation data, or null if no data
+ */
+const createChartDataMap = (data): GQLDataMap | null => {
 	if (!data) {
 		return null;
 	}
@@ -44,98 +50,84 @@ const createChartDataMap = ({ data }) => {
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
-type Chart = {
-	chartType: string;
-	fieldName: string;
-	displayValues: Record<string, string>;
-	ranges?: any;
-};
-
-type ChartGroup = Record<string, Record<string, Chart>>;
-
-type ChartsConfig = {
-	groups: Record<string, ChartGroup>;
-};
-
+/**
+ * React context provider that manages chart registration, data fetching, and global theming.
+ * Coordinates multiple charts to for single API call and to maintain consistent state.
+ *
+ * @param props - Provider configuration
+ * @param props.theme - Global theme configuration for all charts
+ * @param props.children - Child components that will have access to charts context
+ * @returns JSX provider element that enables chart functionality
+ */
 export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
-	// Ensure there is an ArrangerDataProvider context available
-	// apiFetcher is consumer function passed into ArrangerDataProvider, currently no default
+	// TODO: ensure there is an ArrangerDataProvider context available
+	// apiFetcher is consumer function passed into ArrangerDataProvider
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
 		callerName: 'ArrangerCharts',
 	});
 
-	// TODO: minimal for POC, some consistency with other data fetchers might be good
-	const [chartsConfigs, setChartConfigs] = useState<ChartsConfig>();
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				const data = await theme.dataFetcher({
-					body: { query: `query ChartsConfig { file { configs { charts } } }` },
-				});
+	// register chart fields
+	const { queryFields, registerFieldName, deregisterFieldName } = useQueryValues();
 
-				const config = data.data.file.configs.charts;
+	// generate query from current fields
+	const gqlQuery = useMemo(() => {
+		return generateChartsQuery({ documentType, queryFields });
+	}, [documentType, queryFields]);
 
-				setChartConfigs(config);
-			} catch (error) {
-				console.log('error fetching charts config', error);
-				// for consumer app to catch error
-				throw error;
-			}
-		};
-
-		fetchData();
-	}, []);
-
+	//api call
 	const { apiState } = useNetworkQuery({
-		query: chartsConfigs?.query,
-		documentType,
+		query: gqlQuery,
 		apiFetcher,
 		sqon,
 	});
 
-	// default global theme
-	const globalTheme: GlobalTheme = merge(
-		cloneDeep({
-			components: { Tooltip, ErrorData, EmptyData },
-		}),
-		theme,
-	);
+	const gqlDataMap = createChartDataMap(apiState.data);
 
-	const chartDataMap = createChartDataMap({ data: apiState?.data });
+	const registerChart = useCallback(async (chartConfig) => {
+		console.log('Registering fieldName', chartConfig);
+		registerFieldName(chartConfig);
+	}, []);
 
-	const registerChart = async ({ fieldName }) => {
-		// TODO: remove, now backend driven no need to dynamically add on child component add
-		//		addToQuery({ fieldName });
-	};
+	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
+		console.log('Deregistering fieldName', fieldNames);
+		fieldNames.forEach((fieldName) => deregisterFieldName(fieldName));
+	}, []);
 
-	const deregisterChart = ({ fieldName }) => {
-		// TODO: remove, now backend driven no need to dynamically add on child component add
-		//		removeFromQuery({ fieldName });
-	};
-
-	const update = ({ fieldName, eventData }) => {
+	const update = useCallback(({ fieldName, eventData }) => {
 		console.log('update', fieldName, eventData);
 		// new data => sqon => arranger => data => render
 		// update arranger.setSqon
 		setSQON();
-	};
+	}, []);
 
 	// chartType for slicing data
-	const getChartData = ({ fieldName }) => {
-		const chartData = chartDataMap?.get(fieldName);
-
-		return {
-			isLoading: apiState.loading,
-			isError: apiState.error,
-			data: chartData,
+	const getChartData = ({ fieldNames }: { fieldNames: string[] }) => {
+		const { loading: isLoading, error: isError } = apiState;
+		const apiStates = {
+			isLoading,
+			isError,
 		};
+
+		if (isLoading || isError) {
+			return { ...apiStates, data: null };
+		} else {
+			const chartData = gqlDataMap
+				? [fieldNames].flat().reduce((acc, fieldName) => {
+						return { ...acc, [fieldName]: gqlDataMap?.get(fieldName) };
+					}, {})
+				: null;
+
+			return {
+				...apiStates,
+				data: chartData,
+			};
+		}
 	};
 
 	const chartContext: ChartContextType = {
-		globalTheme,
+		globalTheme: theme,
 		registerChart,
 		deregisterChart,
-		update,
 		getChartData,
 	};
 
@@ -145,7 +137,7 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 export const useChartsContext = () => {
 	const context = useContext(ChartsContext);
 	if (!context) {
-		throw new Error('context has to be used within <Charts.Provider>');
+		throw new Error('ChartsContext has to be used within a <ChartsProvider>');
 	}
 	return context;
 };
