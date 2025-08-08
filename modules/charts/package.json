@@ -21,6 +21,7 @@
 		"build:storybook": "storybook build",
 		"dev": "vite build --watch",
 		"lint": "eslint .",
+		"buildAndPack": "npm run build && npm pack",
 		"nuke:dist": "rm -rf dist",
 		"storybook": "storybook dev -p 6006",
 		"test": "vitest"
