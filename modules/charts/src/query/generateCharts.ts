@@ -1,5 +1,6 @@
 import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
+import { logger } from '#logger';
 import { aggregationsTypenames } from '#shared';
 
 const queryTemplateCharts = ({ documentType, fieldQueries }) => {
@@ -32,7 +33,7 @@ const generateQuery = ({
 				case aggregationsTypenames.NumericAggregations:
 					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables: query.variables });
 				default:
-					console.log('Unsupported GQL typename found');
+					logger.debug('Unsupported GQL typename found');
 					return '';
 			}
 		},
@@ -58,9 +59,9 @@ export const generateChartsQuery = ({
 	queryFields: Map<string, ChartConfig>;
 }): string | null => {
 	if (queryFields.size === 0) {
-		console.log('No query fields available');
+		logger.debug('No query fields available');
 		return null;
 	}
-	console.log(`Generating query for fields: ${queryFields}`);
+	logger.debug(`Generating query for fields: ${queryFields}`);
 	return generateQuery({ documentType, queryFields });
 };

@@ -1,5 +1,6 @@
 import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
 
+import { logger } from '#logger';
 import { toJSONFieldName } from '#utils/mappings';
 
 /**
@@ -22,10 +23,10 @@ export const fieldNameWithMapping = ({
 	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
 
 	if (mapping?.aggsType) {
-		console.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
+		logger.debug(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
 		return { fieldName, gqlTypename: mapping.aggsType };
 	}
 
-	console.log(`Missing mapping for ${fieldName}`);
+	logger.debug(`Missing mapping for ${fieldName}`);
 	return null;
 };

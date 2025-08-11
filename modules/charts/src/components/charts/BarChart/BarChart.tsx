@@ -1,5 +1,6 @@
 import { ChartDataContainer } from '#components/Chart';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
+import { logger } from '#logger';
 import { createColorMap } from '#theme/colors';
 import { ReactNode } from 'react';
 import { BarChartView } from './BarChartView';
@@ -52,7 +53,7 @@ export const BarChart = ({
 	const chartAggregation = useValidateInput({ fieldName, query });
 
 	if (!chartAggregation) {
-		console.log('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
+		logger.debug('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
 		return null;
 	}
 

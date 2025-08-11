@@ -2,6 +2,7 @@ import { useArrangerData } from '@overture-stack/arranger-components';
 import { createContext, PropsWithChildren, ReactElement, useCallback, useContext, useMemo } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
+import { logger } from '#logger';
 import { generateChartsQuery } from '#query/generateCharts';
 import { Aggregations, NumericAggregations } from '#shared';
 import { useQueryValues } from './useQueryFieldNames';
@@ -31,7 +32,7 @@ type GlobalTheme = {
 		EmptyData?: ReactElement;
 	};
 };
-type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }>;
+type ChartsProviderProps = PropsWithChildren<{ theme: GlobalTheme }> & { debugMode: boolean };
 
 export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
 /**
@@ -59,7 +60,10 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * @param props.children - Child components that will have access to charts context
  * @returns JSX provider element that enables chart functionality
  */
-export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
+export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderProps) => {
+	// set logger
+	logger.setDebugMode(debugMode);
+
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
@@ -84,17 +88,17 @@ export const ChartsProvider = ({ theme, children }: ChartsProviderProps) => {
 	const gqlDataMap = createChartDataMap(apiState.data);
 
 	const registerChart = useCallback(async (chartConfig) => {
-		console.log('Registering fieldName', chartConfig);
+		logger.debug('Registering fieldName', chartConfig);
 		registerFieldName(chartConfig);
 	}, []);
 
 	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
-		console.log('Deregistering fieldName', fieldNames);
+		logger.debug('Deregistering fieldName', fieldNames);
 		fieldNames.forEach((fieldName) => deregisterFieldName(fieldName));
 	}, []);
 
 	const update = useCallback(({ fieldName, eventData }) => {
-		console.log('update', fieldName, eventData);
+		logger.debug('update', fieldName, eventData);
 		// new data => sqon => arranger => data => render
 		// update arranger.setSqon
 		setSQON();

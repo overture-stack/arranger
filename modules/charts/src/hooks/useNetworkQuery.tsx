@@ -1,3 +1,4 @@
+import { logger } from '#logger';
 import { useEffect, useState } from 'react';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,7 +10,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; ap
 		if (!query) return;
 
 		const fetchData = async () => {
-			console.log('fetching data for Arranger charts..');
+			logger.debug('fetching data for Arranger charts..');
 			try {
 				setApiState((previous) => ({ ...previous, loading: true }));
 
@@ -23,7 +24,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; ap
 				});
 				setApiState((previous) => ({ ...previous, data }));
 			} catch (err) {
-				console.error(err);
+				logger.debug(err);
 				setApiState((previous) => ({ ...previous, error: true }));
 			} finally {
 				setApiState((previous) => ({ ...previous, loading: false }));

@@ -18,3 +18,7 @@ To install for dev use this command:
 
 To rebuild on file change run:
 `npm run dev`
+
+## Debug
+
+For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG to show verbose logging

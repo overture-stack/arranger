@@ -1,5 +1,6 @@
 import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
 import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
+import { logger } from '#logger';
 import { useCallback, useState } from 'react';
 
 export type QueryValue = {
@@ -27,13 +28,13 @@ export const useQueryValues = (): {
 	const registerQueryValue = useCallback((config) => {
 		setRegisteredQueryValues((prev) => {
 			if (prev.has(config.fieldName)) {
-				console.log(`Field already registered: ${config.fieldName}`);
+				logger.debug(`Field already registered: ${config.fieldName}`);
 				return prev;
 			} else {
 				const newValuesMap = new Map(prev);
 				newValuesMap.set(config.fieldName, config);
-				console.log(`Field registered successfully: ${config.fieldName}`);
-				console.log(`Current registered fields: ${Array.from(newValuesMap)}`);
+				logger.debug(`Field registered successfully: ${config.fieldName}`);
+				logger.debug(`Current registered fields: ${Array.from(newValuesMap)}`);
 				return newValuesMap;
 			}
 		});
@@ -42,14 +43,14 @@ export const useQueryValues = (): {
 	const deregisterQueryValue = useCallback((fieldName: string) => {
 		setRegisteredQueryValues((prev) => {
 			if (!prev.has(fieldName)) {
-				console.log(`Field not found for deregistration: ${fieldName}`);
+				logger.debug(`Field not found for deregistration: ${fieldName}`);
 				return prev;
 			}
 
 			const newValuesMap = new Map(prev);
 			newValuesMap.delete(fieldName);
-			console.log(`Field deregistered successfully: ${fieldName}`);
-			console.log(`Current registered fields: ${Array.from(newValuesMap)}`);
+			logger.debug(`Field deregistered successfully: ${fieldName}`);
+			logger.debug(`Current registered fields: ${Array.from(newValuesMap)}`);
 			return newValuesMap;
 		});
 	}, []);
