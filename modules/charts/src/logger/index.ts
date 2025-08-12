@@ -2,7 +2,7 @@
  * minimal logger to debug only in dev environment not built library
  */
 const makeLogger = () => {
-	const log = process?.env.ARRANGER_CHARTS_DEBUG ? console.log : () => undefined;
+	const log = true ? console.log : () => undefined;
 	return { log };
 };
 

@@ -25,6 +25,7 @@ const generateQuery = ({
 	documentType: string;
 	queryFields: Map<string, ChartConfig>;
 }) => {
+	console.log('generate query fields', queryFields);
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
 		(fullQuery, { fieldName, gqlTypename, query }) => {
 			switch (gqlTypename) {
@@ -58,6 +59,7 @@ export const generateChartsQuery = ({
 	documentType: string;
 	queryFields: Map<string, ChartConfig>;
 }): string | null => {
+	console.log('query fields', queryFields);
 	if (queryFields.size === 0) {
 		logger.log('No query fields available');
 		return null;

@@ -27,6 +27,8 @@ export const useQueryValues = (): {
 
 	const registerQueryValue = useCallback((config) => {
 		setRegisteredQueryValues((prev) => {
+			// handle array
+			console.log('ccc', config);
 			if (prev.has(config.fieldName)) {
 				logger.log(`Field already registered: ${config.fieldName}`);
 				return prev;
