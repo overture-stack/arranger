@@ -1,12 +1,15 @@
 import { ReactNode } from 'react';
 
 import { ChartDataContainer } from '#components/Chart';
+import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { logger } from '#logger';
 import { createColorMap } from '#theme/colors';
 import { createSunburstTransform } from './dataTransform';
+import { SunburstView } from './SunburstView';
 import { useValidateInput } from './useValidateInput';
 
 const colorMapResolver = ({ chartData }) => {
+	return {};
 	// Extract all unique IDs from hierarchical data for consistent coloring
 	const extractIds = (nodes) => {
 		const ids = [];
@@ -37,13 +40,13 @@ const colorMapResolver = ({ chartData }) => {
  * @returns JSX element with complete sunburst chart or null if field validation fails
  */
 export const SunburstChart = ({
-	fieldNames,
+	fieldName,
 	mapping,
 	handlers,
 	components,
 	theme,
 }: {
-	fieldNames: [string, string]; // [parentField, childField]
+	fieldName: string;
 	mapping: Record<string, string>; // { childValue: 'parentCategory' }
 	theme?: any;
 	handlers?: { onClick: (config: any) => void };
@@ -54,7 +57,7 @@ export const SunburstChart = ({
 	};
 }) => {
 	// validate and return chart aggregation config if successful
-	const chartAggregation = useValidateInput({ fieldNames });
+	const chartAggregation = useValidateInput({ fieldName });
 	console.log('CHART AGG', chartAggregation);
 
 	if (!chartAggregation) {
@@ -66,14 +69,18 @@ export const SunburstChart = ({
 
 	return (
 		<ChartDataContainer
-			fieldNames={fieldNames}
+			fieldNames={[fieldName]}
 			chartConfig={chartAggregation}
-			transformGQL={(x) => x}
-			colorMapResolver={() => {}}
+			transformGQL={sunburstTransform}
+			colorMapResolver={colorMapResolver}
 			components={components}
 			Chart={({ data, colorMap }) => {
-				console.log('sunburst', data, colorMap);
-				return <div>sunburst</div>;
+				console.log('data', data);
+				return (
+					<ChartViewContainer>
+						<SunburstView data={data} />
+					</ChartViewContainer>
+				);
 			}}
 		/>
 	);

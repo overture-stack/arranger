@@ -1,5 +1,4 @@
 import { GQLDataMap } from '#components/Provider/Provider';
-import { ARRANGER_MISSING_DATA_KEY } from '#constants';
 import { aggregationsTypenames, ArrangerAggregations } from '#shared';
 import { ChartConfig } from './useValidateInput';
 
@@ -29,75 +28,103 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 	}
 };
 
-/**
- * Creates internal bidirectional mapping from simple user mapping.
- * Transforms { childValue: 'parentCategory' } into structured parent-child relationships.
- */
-const createInternalMapping = (userMapping: Record<string, string>) => {
-	const parents = new Map<string, { id: string; children: string[] }>();
-	const children = new Map<string, { id: string; parent: string }>();
+export const createCategoryMap = (dynamicData, mapping) => {
+	const categoryMap = new Map();
+	// put in order to line up
+	dynamicData.forEach((code) => {
+		const parentId = mapping[code.key];
 
-	// Build parent-child relationships from user mapping
-	Object.entries(userMapping).forEach(([childValue, parentCategory]) => {
-		// Handle missing data mapping
-		const parentId = parentCategory === ARRANGER_MISSING_DATA_KEY ? 'No Data' : parentCategory;
-		const childId = childValue === ARRANGER_MISSING_DATA_KEY ? 'No Data' : childValue;
-
-		// Add to children mapping
-		children.set(childId, { id: childId, parent: parentId });
-
-		// Add to parents mapping
-		if (!parents.has(parentId)) {
-			parents.set(parentId, { id: parentId, children: [] });
+		// no cancer type mapping, skip
+		if (!parentId) {
+			return;
 		}
-		parents.get(parentId)!.children.push(childId);
-	});
 
-	return { parents, children };
+		if (!categoryMap.has(parentId)) {
+			categoryMap.set(parentId, { total: code.doc_count, codes: [{ ...code, parentId }] });
+		} else {
+			const { total, codes: existingCodes } = categoryMap.get(parentId);
+			const updatedCodes = existingCodes.concat([code]);
+			categoryMap.set(parentId, { total: total + code.doc_count, codes: updatedCodes });
+		}
+	});
+	console.log('cccc', categoryMap);
+	return categoryMap;
 };
 
+type Segment = {
+	id: string;
+	label: string;
+	value: number | string;
+	color: string;
+	parentId?: string;
+	children?: string[];
+};
+
+export const chartColors = [
+	'#a6cee3',
+	'#1f78b4',
+	'#b2df8a',
+	'#33a02c',
+	'#fb9a99',
+	'#e31a1c',
+	'#fdbf6f',
+	'#ff7f00',
+	'#cab2d6',
+	'#6a3d9a',
+	'#ffff99',
+	'#b15928',
+];
+
 /**
- * Groups child data under their mapped parent categories.
- * Handles unmapped data by creating "Other" category.
+ * Format for input into chart
+ *
+ * @param categoryMap
+ * @returns
  */
-const groupChildrenByParent = (
-	childBuckets: any[],
-	internalMapping: ReturnType<typeof createInternalMapping>
-) => {
-	const grouped = new Map<string, { parent: string; children: any[] }>();
-	const unmappedChildren: any[] = [];
+export const createChartInput = (categoryMap) => {
+	return Array.from(categoryMap).reduce<{
+		inner: Segment[];
+		outer: Segment[];
+		legend: { label: string; color: string }[];
+	}>(
+		(acc, category, index) => {
+			// @ts-ignore TS doesn't like tuple
+			const [name, { codes, total }] = category;
 
-	childBuckets.forEach(bucket => {
-		const childMapping = internalMapping.children.get(bucket.key);
-		
-		if (childMapping) {
-			const parentId = childMapping.parent;
-			
-			if (!grouped.has(parentId)) {
-				grouped.set(parentId, { parent: parentId, children: [] });
+			// don't show undefined values
+			if (name === undefined) {
+				return acc;
 			}
-			
-			grouped.get(parentId)!.children.push({
-				...bucket,
-				parentId
+
+			const color = chartColors[index];
+
+			const inner = acc.inner.concat({
+				id: name,
+				label: name,
+				value: total,
+				children: codes.map((code) => code.key),
+				color,
 			});
-		} else {
-			unmappedChildren.push(bucket);
-		}
-	});
 
-	// Add unmapped children to "Other" category
-	if (unmappedChildren.length > 0) {
-		grouped.set('Other', { 
-			parent: 'Other', 
-			children: unmappedChildren.map(bucket => ({
-				...bucket,
-				parentId: 'Other'
-			}))
-		});
-	}
+			const outer = acc.outer.concat(
+				codes.map((code) => ({
+					id: code.key,
+					label: code.key,
+					value: code.doc_count,
+					parentId: code.parentId,
+					color,
+				})),
+			);
+			const legend = acc.legend.concat({ label: name, color });
 
-	return grouped;
+			return { outer, inner, legend };
+		},
+		{
+			legend: [],
+			outer: [],
+			inner: [],
+		},
+	);
 };
 
 /**
@@ -108,77 +135,17 @@ const groupChildrenByParent = (
  * @returns Function that transforms GraphQL data to hierarchical sunburst format
  */
 export const createSunburstTransform =
-	({ fieldNames, mapping, query }: SunburstChartConfig) =>
+	({ fieldName, mapping, query }: SunburstChartConfig) =>
 	({ gqlData }: { gqlData: GQLDataMap }): SunburstNode | null => {
-		if (!gqlData || fieldNames.length < 2) {
+		if (!gqlData) {
 			return null;
 		}
+		const aggregations = gqlData[fieldName];
+		const buckets = resolveBuckets({ aggregations });
 
-		const [parentFieldName, childFieldName] = fieldNames;
-		
-		// Get buckets from both fields
-		const parentAggregations = gqlData[parentFieldName];
-		const childAggregations = gqlData[childFieldName];
-		
-		const parentBuckets = resolveBuckets({ aggregations: parentAggregations });
-		const childBuckets = resolveBuckets({ aggregations: childAggregations });
-
-		// Create internal mapping structure
-		const internalMapping = createInternalMapping(mapping);
-
-		// Group children under their mapped parents
-		const groupedChildren = groupChildrenByParent(childBuckets, internalMapping);
-
-		// Create parent nodes with their children
-		const parentNodes: SunburstNode[] = [];
-
-		// Process parent buckets to get actual values from parent field
-		parentBuckets.forEach(parentBucket => {
-			const parentKey = parentBucket.key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : parentBucket.key;
-			const groupedData = groupedChildren.get(parentKey);
-
-			if (groupedData) {
-				const children: SunburstNode[] = groupedData.children.map(child => ({
-					id: child.key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : child.key,
-					parent: parentKey,
-					value: child.doc_count
-				}));
-
-				parentNodes.push({
-					id: parentKey,
-					value: parentBucket.doc_count, // Use parent field's own doc_count
-					children
-				});
-			}
-		});
-
-		// Add "Other" category if it exists (unmapped children)
-		const otherGroup = groupedChildren.get('Other');
-		if (otherGroup) {
-			const otherChildren: SunburstNode[] = otherGroup.children.map(child => ({
-				id: child.key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : child.key,
-				parent: 'Other',
-				value: child.doc_count
-			}));
-
-			const otherValue = otherChildren.reduce((sum, child) => sum + (child.value || 0), 0);
-			
-			parentNodes.push({
-				id: 'Other',
-				value: otherValue,
-				children: otherChildren
-			});
-		}
-
-		// Create root node
-		const rootValue = parentNodes.reduce((sum, parent) => sum + (parent.value || 0), 0);
-		
-		const rootNode: SunburstNode = {
-			id: 'root',
-			value: rootValue,
-			children: parentNodes
-		};
+		const categoryMap = createCategoryMap(buckets, mapping);
+		const chartData = createChartInput(categoryMap);
 
 		// Apply custom transform if provided
-		return (query?.transformData && query.transformData(rootNode)) || rootNode;
+		return (query?.transformData && query.transformData(chartData)) || chartData;
 	};
