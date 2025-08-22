@@ -53,8 +53,6 @@ const Legend = ({ data }: { data: { label: string; color: string }[] }) => {
  * @returns JSX element with responsive sunburst chart
  */
 export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewProps) => {
-	console.log('data', data, 'colorMap', colorMap);
-
 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
 
 	const padAngle = 2;
@@ -88,7 +86,7 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 								.map((code) => code.id);
 							onClick && onClick({ ...config, allCodes });
 						}}
-						colors={{ datum: 'data.color' }}
+						colors={data.outer.map((node) => colorMap.get(node.id))}
 						data={data.outer}
 						isInteractive={true}
 						margin={margin}
@@ -107,7 +105,6 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 					<div
 						className="inner"
 						css={css({
-							opacity: 0.5,
 							position: 'absolute',
 							height: '60%',
 							width: '60%',
@@ -122,7 +119,7 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 							onClick={(config) => {
 								onClick && onClick(config);
 							}}
-							colors={{ datum: 'data.color' }}
+							colors={data.inner.map((node) => colorMap.get(node.id))}
 							data={data.inner}
 							isInteractive={true}
 							innerRadius={0.75}

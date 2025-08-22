@@ -3,27 +3,26 @@ import { ReactNode } from 'react';
 import { ChartDataContainer } from '#components/Chart';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { logger } from '#logger';
-import { createColorMap } from '#theme/colors';
+import { defaultColors } from '#theme/colors';
+import Color from 'color';
 import { createSunburstTransform } from './dataTransform';
 import { SunburstView } from './SunburstView';
 import { useValidateInput } from './useValidateInput';
 
 const colorMapResolver = ({ chartData }) => {
-	return {};
-	// Extract all unique IDs from hierarchical data for consistent coloring
-	const extractIds = (nodes) => {
-		const ids = [];
-		nodes.forEach((node) => {
-			ids.push(node.id);
-			if (node.children) {
-				ids.push(...extractIds(node.children));
-			}
-		});
-		return ids;
-	};
+	const colorMap = new Map<string, string>();
+	// used for "color wraparound" modulo
+	let colorIndex = 0;
 
-	const keys = extractIds(chartData);
-	return createColorMap({ keys });
+	chartData.inner.forEach(({ id, children }) => {
+		const color = Color(defaultColors[colorIndex++ % defaultColors.length]);
+		colorMap.set(id, color.alpha(0.5).hsl().string());
+		children.forEach((child) => {
+			colorMap.set(child, color.string());
+		});
+	});
+
+	return colorMap;
 };
 
 /**
@@ -47,7 +46,7 @@ export const SunburstChart = ({
 	theme,
 }: {
 	fieldName: string;
-	mapping: Record<string, string>; // { childValue: 'parentCategory' }
+	mapping: Record<string, string>;
 	theme?: any;
 	handlers?: { onClick: (config: any) => void };
 	components?: {
@@ -58,7 +57,6 @@ export const SunburstChart = ({
 }) => {
 	// validate and return chart aggregation config if successful
 	const chartAggregation = useValidateInput({ fieldName });
-	console.log('CHART AGG', chartAggregation);
 
 	if (!chartAggregation) {
 		logger.log('chart agg not supported, not valid fieldNames or unsupported typename', chartAggregation);
@@ -75,10 +73,12 @@ export const SunburstChart = ({
 			colorMapResolver={colorMapResolver}
 			components={components}
 			Chart={({ data, colorMap }) => {
-				console.log('data', data);
 				return (
 					<ChartViewContainer>
-						<SunburstView data={data} />
+						<SunburstView
+							data={data}
+							colorMap={colorMap}
+						/>
 					</ChartViewContainer>
 				);
 			}}

@@ -30,7 +30,7 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 
 export const createCategoryMap = (dynamicData, mapping) => {
 	const categoryMap = new Map();
-	// put in order to line up
+	// order to line up
 	dynamicData.forEach((code) => {
 		const parentId = mapping[code.key];
 
@@ -47,7 +47,6 @@ export const createCategoryMap = (dynamicData, mapping) => {
 			categoryMap.set(parentId, { total: total + code.doc_count, codes: updatedCodes });
 		}
 	});
-	console.log('cccc', categoryMap);
 	return categoryMap;
 };
 
@@ -59,21 +58,6 @@ type Segment = {
 	parentId?: string;
 	children?: string[];
 };
-
-export const chartColors = [
-	'#a6cee3',
-	'#1f78b4',
-	'#b2df8a',
-	'#33a02c',
-	'#fb9a99',
-	'#e31a1c',
-	'#fdbf6f',
-	'#ff7f00',
-	'#cab2d6',
-	'#6a3d9a',
-	'#ffff99',
-	'#b15928',
-];
 
 /**
  * Format for input into chart
