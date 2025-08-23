@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 import { ChartDataContainer } from '#components/Chart';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { logger } from '#logger';
@@ -42,18 +40,12 @@ export const SunburstChart = ({
 	fieldName,
 	mapping,
 	handlers,
-	components,
 	theme,
 }: {
 	fieldName: string;
 	mapping: Record<string, string>;
 	theme?: any;
 	handlers?: { onClick: (config: any) => void };
-	components?: {
-		Loader?: ReactNode;
-		ErrorData?: ReactNode;
-		EmptyData?: ReactNode;
-	};
 }) => {
 	// validate and return chart aggregation config if successful
 	const chartAggregation = useValidateInput({ fieldName });
@@ -71,7 +63,6 @@ export const SunburstChart = ({
 			chartConfig={chartAggregation}
 			transformGQL={sunburstTransform}
 			colorMapResolver={colorMapResolver}
-			components={components}
 			Chart={({ data, colorMap }) => {
 				return (
 					<ChartViewContainer>

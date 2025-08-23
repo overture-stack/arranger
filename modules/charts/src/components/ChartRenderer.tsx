@@ -1,5 +1,5 @@
 import { ChartText } from './ChartText';
-import { useChartsContext } from './Provider/Provider';
+import { useThemeContext } from './theme/Provider';
 
 /**
  * Renders appropriate chart component or fallback state based on data loading status.
@@ -13,21 +13,21 @@ import { useChartsContext } from './Provider/Provider';
  * @param props.Chart - Main chart component to render when data is ready
  * @returns JSX element with chart or appropriate fallback component
  */
-export const ChartRenderer = ({ isLoading, isError, isEmpty, components, Chart }) => {
-	const { globalTheme } = useChartsContext();
+export const ChartRenderer = ({ isLoading, isError, isEmpty, Chart }) => {
+	const { components } = useThemeContext();
 
 	if (isLoading) {
-		const LoaderComponent = globalTheme?.components?.Loader || components.Loader;
+		const LoaderComponent = components?.Loader;
 		return LoaderComponent ? <LoaderComponent /> : <ChartText text="Loading..." />;
 	}
 
 	if (isError) {
-		const ErrorComponent = globalTheme?.components?.ErrorData || components.ErrorData;
+		const ErrorComponent = components?.ErrorData;
 		return ErrorComponent ? <ErrorComponent /> : <ChartText text="Error" />;
 	}
 
 	if (isEmpty) {
-		const EmptyComponent = globalTheme?.components?.EmptyData || components.EmptyData;
+		const EmptyComponent = components?.EmptyData;
 		return EmptyComponent ? <EmptyComponent /> : <ChartText text="No Data Available" />;
 	}
 

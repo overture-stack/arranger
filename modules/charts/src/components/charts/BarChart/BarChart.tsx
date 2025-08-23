@@ -2,7 +2,6 @@ import { ChartDataContainer } from '#components/Chart';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { logger } from '#logger';
 import { createColorMap } from '#theme/colors';
-import { ReactNode } from 'react';
 import { BarChartView } from './BarChartView';
 import { createBarChartTransform } from './dataTransform';
 import { useValidateInput } from './useValidateInput';
@@ -36,18 +35,12 @@ export const BarChart = ({
 	fieldName,
 	query = {},
 	handlers,
-	components,
 	theme,
 }: {
 	theme: any;
 	query?: BarChartPropsQuery;
 	fieldName: string;
 	handlers?: { onClick: (config: any) => void };
-	components?: {
-		Loader?: ReactNode;
-		ErrorData?: ReactNode;
-		EmptyData?: ReactNode;
-	};
 }) => {
 	// validate and return chart aggregation config if successful
 	const chartAggregation = useValidateInput({ fieldName, query });
@@ -65,7 +58,6 @@ export const BarChart = ({
 			chartConfig={chartAggregation}
 			transformGQL={barChartTransform}
 			colorMapResolver={colorMapResolver}
-			components={components}
 			Chart={({ data, colorMap }) => (
 				<ChartViewContainer>
 					<BarChartView
