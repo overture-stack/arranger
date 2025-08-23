@@ -1,11 +1,10 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
-import { createContext, PropsWithChildren, ReactElement, useCallback, useContext, useMemo } from 'react';
+import { createContext, PropsWithChildren, ReactElement, useCallback, useContext } from 'react';
 
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { logger } from '#logger';
-import { generateChartsQuery } from '#query/generateCharts';
 import { Aggregations, NumericAggregations } from '#shared';
-import { useQueryValues } from './useQueryFieldNames';
+import { useDynamicQuery } from './useQueryFieldNames';
 
 type ChartContextType = {
 	globalTheme: GlobalTheme;
@@ -61,7 +60,7 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * @param props.children - Child components that will have access to charts context
  * @returns JSX provider element that enables chart functionality
  */
-export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderProps) => {
+export const ChartsProvider = ({ children, debugMode }: ChartsProviderProps) => {
 	// set logger
 	logger.setDebugMode(debugMode);
 
@@ -71,17 +70,12 @@ export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderPro
 		callerName: 'ArrangerCharts',
 	});
 
-	// register chart fields
-	const { queryFields, registerFieldName, deregisterFieldName } = useQueryValues();
+	// track GQL dynamic query
+	const { query, addQuery, removeQuery } = useDynamicQuery({ documentType });
 
-	// generate query from current fields
-	const gqlQuery = useMemo(() => {
-		return generateChartsQuery({ documentType, queryFields });
-	}, [documentType, queryFields]);
-
-	//api call
+	// API call
 	const { apiState } = useNetworkQuery({
-		query: gqlQuery,
+		query,
 		apiFetcher,
 		sqon,
 	});
@@ -90,7 +84,7 @@ export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderPro
 
 	const registerChart = useCallback(async (chartConfig) => {
 		logger.debug('Registering fieldName', chartConfig);
-		registerFieldName(chartConfig);
+		addQuery(chartConfig);
 	}, []);
 
 	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
@@ -130,7 +124,6 @@ export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderPro
 	};
 
 	const chartContext: ChartContextType = {
-		globalTheme: theme,
 		registerChart,
 		deregisterChart,
 		getChartData,

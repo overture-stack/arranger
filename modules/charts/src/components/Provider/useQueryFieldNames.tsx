@@ -1,49 +1,50 @@
 import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
 import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
 import { logger } from '#logger';
-import { useCallback, useState } from 'react';
+import { generateChartsQuery } from '#query/generateCharts';
+import { useCallback, useMemo, useState } from 'react';
 
-export type QueryValue = {
+export type Query = {
 	fieldName: string;
 	variables: NumericAggregationsOptions;
+	gqlTypename: string;
 };
 
 /**
- * Custom hook for managing query field names and their GraphQL type mappings.
- *
- * This hook maintains a registry of field names with their configurgations.
+ * Hook to manage dynamic query for a collection of charts.
  * It prevents duplicate registrations and provides methods to add/remove fields dynamically.
+ * Important! - GQL aliasing if currently not supported, Map keys unique constraint is ok for now.
  *
- * @returns Object containing query fields array and registration/deregistration functions
+ * @returns gql query string
  */
-export const useQueryValues = (): {
+export const useDynamicQuery = ({
+	documentType,
+}): {
 	queryFields: Map<string, ChartConfig>;
-	registerFieldName: (config: ChartConfig) => void;
-	deregisterFieldName: (fieldName: string) => void;
+	addQuery: (config: ChartConfig) => void;
+	removeQuery: (fieldName: string) => void;
 } => {
 	// Although we can have multiple charts with same fieldName, they are referencing the same data.
-	// Important! - GQL aliasing if currently not supported, Map keys unique constraint is ok for now.
-	const [registeredQueryValues, setRegisteredQueryValues] = useState(new Map<string, ChartConfig>());
+	const [queryFields, setQueryFields] = useState(new Map<string, Query>());
 
-	const registerQueryValue = useCallback((config) => {
-		setRegisteredQueryValues((prev) => {
-			// handle array
-			console.log('ccc', config);
-			if (prev.has(config.fieldName)) {
-				logger.debug(`Field already registered: ${config.fieldName}`);
+	const addQuery = useCallback((query) => {
+		const { fieldName } = query;
+		setQueryFields((prev) => {
+			if (prev.has(fieldName)) {
+				logger.debug(`Field already registered: ${fieldName}`);
 				return prev;
 			} else {
 				const newValuesMap = new Map(prev);
-				newValuesMap.set(config.fieldName, config);
-				logger.debug(`Field registered successfully: ${config.fieldName}`);
+				newValuesMap.set(fieldName, query);
+				logger.debug(`Field registered successfully: ${fieldName}`);
 				logger.debug(`Current registered fields: ${Array.from(newValuesMap)}`);
 				return newValuesMap;
 			}
 		});
 	}, []);
 
-	const deregisterQueryValue = useCallback((fieldName: string) => {
-		setRegisteredQueryValues((prev) => {
+	const removeQuery = useCallback((fieldName: string) => {
+		setQueryFields((prev) => {
 			if (!prev.has(fieldName)) {
 				logger.debug(`Field not found for deregistration: ${fieldName}`);
 				return prev;
@@ -57,9 +58,15 @@ export const useQueryValues = (): {
 		});
 	}, []);
 
+	// generate query from current fields
+	// inlined
+	const gqlQuery = useMemo(() => {
+		return generateChartsQuery({ documentType, queryFields });
+	}, [documentType, queryFields]);
+
 	return {
-		queryFields: registeredQueryValues,
-		registerFieldName: registerQueryValue,
-		deregisterFieldName: deregisterQueryValue,
+		addQuery,
+		removeQuery,
+		gqlQuery,
 	};
 };

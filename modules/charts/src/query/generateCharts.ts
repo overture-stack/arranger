@@ -1,4 +1,4 @@
-import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
+import { Query } from '#components/Provider/useQueryFieldNames';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { logger } from '#logger';
 import { aggregationsTypenames } from '#shared';
@@ -18,21 +18,15 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 };
 
 // ugly - works for small query templating, improvement: use gql builder
-const generateQuery = ({
-	documentType,
-	queryFields,
-}: {
-	documentType: string;
-	queryFields: Map<string, ChartConfig>;
-}) => {
+const generateQuery = ({ documentType, queryFields }: { documentType: string; queryFields: Map<string, Query> }) => {
 	console.log('generate query fields', queryFields);
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
-		(fullQuery, { fieldName, gqlTypename, query }) => {
+		(fullQuery, { fieldName, gqlTypename, variables }) => {
 			switch (gqlTypename) {
 				case aggregationsTypenames.Aggregations:
 					return fullQuery + queryTemplateAggregations({ fieldName });
 				case aggregationsTypenames.NumericAggregations:
-					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables: query.variables });
+					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables });
 				default:
 					logger.debug('Unsupported GQL typename found');
 					return '';
@@ -57,7 +51,7 @@ export const generateChartsQuery = ({
 	queryFields,
 }: {
 	documentType: string;
-	queryFields: Map<string, ChartConfig>;
+	queryFields: Map<string, Query>;
 }): string | null => {
 	console.log('query fields', queryFields);
 	if (queryFields.size === 0) {
