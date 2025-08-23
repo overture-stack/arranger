@@ -1,4 +1,4 @@
-const defaultColors = [
+export const defaultColors = [
 	// https://observablehq.com/@d3/color-schemes?collection=@d3/d3-scale-chromatic
 	'#a6cee3',
 	'#1f78b4',

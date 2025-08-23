@@ -48,6 +48,7 @@ const createChartDataMap = (data): GQLDataMap | null => {
 	}
 	// TODO: Dynamic property
 	// TODO: Error check this, could very well be empty example if user is not logged in
+	console.log('DATA', data);
 	return new Map(Object.entries(data.data.file.aggregations));
 };
 
