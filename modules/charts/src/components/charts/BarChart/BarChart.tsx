@@ -53,7 +53,7 @@ export const BarChart = ({
 	const chartAggregation = useValidateInput({ fieldName, query });
 
 	if (!chartAggregation) {
-		logger.log('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
+		logger.debug('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
 		return null;
 	}
 

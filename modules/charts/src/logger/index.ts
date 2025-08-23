@@ -1,9 +1,22 @@
 /**
- * minimal logger to debug only in dev environment not built library
+ * zero depdency, minimal logger to show extra logging if set
  */
-const makeLogger = () => {
-	const log = true ? console.log : () => undefined;
-	return { log };
-};
+export class Logger {
+	#debugMode = false;
 
-export const logger = makeLogger();
+	setDebugMode(value) {
+		this.#debugMode = value;
+	}
+
+	log(...args) {
+		console.log(...args);
+	}
+
+	debug(...args) {
+		if (this.#debugMode) {
+			console.log(...args);
+		}
+	}
+}
+
+export const logger = new Logger();

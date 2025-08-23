@@ -15,7 +15,7 @@ export type ChartConfig = ValidationInput & {
 
 const validateAggregationsType = ({ mappedFieldName, query }) => {
 	if (query?.variables?.range) {
-		logger.log('Aggregations typename does not support options');
+		logger.debug('Aggregations typename does not support options');
 		return false;
 	}
 	// success
@@ -24,7 +24,7 @@ const validateAggregationsType = ({ mappedFieldName, query }) => {
 
 const validateNumericAggregationsType = ({ mappedFieldName, query }) => {
 	if (query.variables.ranges === undefined) {
-		logger.log('NumericAggregations typename requires a provided "ranges" option');
+		logger.debug('NumericAggregations typename requires a provided "ranges" option');
 		return false;
 	}
 	// success

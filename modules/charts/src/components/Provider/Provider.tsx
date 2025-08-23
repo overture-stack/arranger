@@ -62,6 +62,9 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * @returns JSX provider element that enables chart functionality
  */
 export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderProps) => {
+	// set logger
+	logger.setDebugMode(debugMode);
+
 	// TODO: ensure there is an ArrangerDataProvider context available
 	// apiFetcher is consumer function passed into ArrangerDataProvider
 	const { documentType, apiFetcher, sqon, setSQON } = useArrangerData({
@@ -86,17 +89,17 @@ export const ChartsProvider = ({ theme, children, debugMode }: ChartsProviderPro
 	const gqlDataMap = createChartDataMap(apiState.data);
 
 	const registerChart = useCallback(async (chartConfig) => {
-		logger.log('Registering fieldName', chartConfig);
+		logger.debug('Registering fieldName', chartConfig);
 		registerFieldName(chartConfig);
 	}, []);
 
 	const deregisterChart = useCallback(({ fieldNames }: { fieldNames: string[] }) => {
-		logger.log('Deregistering fieldName', fieldNames);
+		logger.debug('Deregistering fieldName', fieldNames);
 		fieldNames.forEach((fieldName) => deregisterFieldName(fieldName));
 	}, []);
 
 	const update = useCallback(({ fieldName, eventData }) => {
-		logger.log('update', fieldName, eventData);
+		logger.debug('update', fieldName, eventData);
 		// new data => sqon => arranger => data => render
 		// update arranger.setSqon
 		setSQON();

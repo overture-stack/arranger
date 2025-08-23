@@ -34,7 +34,7 @@ const generateQuery = ({
 				case aggregationsTypenames.NumericAggregations:
 					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables: query.variables });
 				default:
-					logger.log('Unsupported GQL typename found');
+					logger.debug('Unsupported GQL typename found');
 					return '';
 			}
 		},
@@ -61,9 +61,9 @@ export const generateChartsQuery = ({
 }): string | null => {
 	console.log('query fields', queryFields);
 	if (queryFields.size === 0) {
-		logger.log('No query fields available');
+		logger.debug('No query fields available');
 		return null;
 	}
-	logger.log(`Generating query for fields: ${queryFields}`);
+	logger.debug(`Generating query for fields: ${queryFields}`);
 	return generateQuery({ documentType, queryFields });
 };

@@ -23,10 +23,10 @@ export const fieldNameWithMapping = ({
 	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
 
 	if (mapping?.aggsType) {
-		logger.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
+		logger.debug(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
 		return { fieldName, gqlTypename: mapping.aggsType };
 	}
 
-	logger.log(`Missing mapping for ${fieldName}`);
+	logger.debug(`Missing mapping for ${fieldName}`);
 	return null;
 };

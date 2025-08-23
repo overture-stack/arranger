@@ -10,7 +10,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; ap
 		if (!query) return;
 
 		const fetchData = async () => {
-			logger.log('fetching data for Arranger charts..');
+			logger.debug('fetching data for Arranger charts..');
 			try {
 				setApiState((previous) => ({ ...previous, loading: true }));
 
@@ -24,7 +24,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; ap
 				});
 				setApiState((previous) => ({ ...previous, data }));
 			} catch (err) {
-				logger.log(err);
+				logger.debug(err);
 				setApiState((previous) => ({ ...previous, error: true }));
 			} finally {
 				setApiState((previous) => ({ ...previous, loading: false }));
