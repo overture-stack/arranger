@@ -22,3 +22,25 @@ To rebuild on file change run:
 ## Debug
 
 For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG to show verbose logging
+
+### ChartsThemeProvider
+
+```
+{/* Defaults */}
+<ChartsThemeProvider>
+  <BarChart>
+</ChartsThemeProvider>
+
+{/* Overrides */}
+ <ChartsThemeProvider
+    colors={['#ff6b6b', '#4ecdc4', '#45b7d1']}
+    components={{
+      Loader: CustomSpinner,
+      ErrorData: CustomError
+    }}
+  >
+    <BarChart...>
+    <MyChart />
+  </ChartsThemeProvider>
+
+```

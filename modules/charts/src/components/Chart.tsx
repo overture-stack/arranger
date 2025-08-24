@@ -55,14 +55,12 @@ const useColorMap = ({ chartData, resolver }) => {
 export const ChartDataContainer = ({
 	fieldNames,
 	Chart,
-	components,
 	chartConfig,
 	transformGQL,
 	colorMapResolver,
 }: {
 	fieldNames: string[];
 	Chart: ReactNode;
-	components: any;
 	chartConfig: any;
 	transformGQL: any;
 	colorMapResolver: any;
@@ -95,7 +93,6 @@ export const ChartDataContainer = ({
 			isLoading={isLoading}
 			isError={isError}
 			isEmpty={isEmpty(chartData)}
-			components={components}
 			Chart={() => (
 				<Chart
 					data={chartData}

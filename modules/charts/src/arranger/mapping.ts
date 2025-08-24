@@ -11,7 +11,7 @@ import { toJSONFieldName } from '#utils/mappings';
  * @param { extendedMapping } - Array of field mapping configurations from Arranger
  * @returns Mapping object with field name and GraphQL typename, or null if not found
  */
-export const fieldNameWithMapping = ({
+export const getGQLTypename = ({
 	fieldName,
 	extendedMapping,
 }: {
@@ -24,7 +24,7 @@ export const fieldNameWithMapping = ({
 
 	if (mapping?.aggsType) {
 		logger.debug(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
-		return { fieldName, gqlTypename: mapping.aggsType };
+		return mapping.aggsType;
 	}
 
 	logger.debug(`Missing mapping for ${fieldName}`);

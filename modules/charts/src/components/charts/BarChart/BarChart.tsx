@@ -1,24 +1,22 @@
-import { ChartDataContainer } from '#components/Chart';
+import { ChartRenderer } from '#components/ChartRenderer';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
+import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
-import { createColorMap } from '#theme/colors';
-import { ReactNode } from 'react';
+import { useArrangerData } from '@overture-stack/arranger-components';
+import { isEmpty } from 'lodash';
+import { useEffect } from 'react';
 import { BarChartView } from './BarChartView';
-import { createBarChartTransform } from './dataTransform';
-import { useValidateInput } from './useValidateInput';
+import { validateQueryProps } from './validate';
 
-export type NumericAggregationsOptions = {
+export interface NumericAggregationsOptions {
 	ranges?: any;
-};
-export type BarChartPropsQuery = {
-	variables?: NumericAggregationsOptions;
-	transformData?: (data: unknown) => any;
-};
+}
 
-const colorMapResolver = ({ chartData }) => {
-	const keys = chartData.map(({ key }: { key: string }) => key); // specfic chart color map code
-	return createColorMap({ keys });
-};
+export interface BarChartProps {
+	fieldName: string;
+	theme: any;
+	handlers?: { onClick: (config: any) => void };
+}
 
 /**
  * High-level bar chart component that handles validation, data pipeline, and rendering.
@@ -32,48 +30,37 @@ const colorMapResolver = ({ chartData }) => {
  * @param props.theme - Arranger theme configuration
  * @returns JSX element with complete bar chart or null if field validation fails
  */
-export const BarChart = ({
-	fieldName,
-	query = {},
-	handlers,
-	components,
-	theme,
-}: {
-	theme: any;
-	query?: BarChartPropsQuery;
-	fieldName: string;
-	handlers?: { onClick: (config: any) => void };
-	components?: {
-		Loader?: ReactNode;
-		ErrorData?: ReactNode;
-		EmptyData?: ReactNode;
-	};
-}) => {
-	// validate and return chart aggregation config if successful
-	const chartAggregation = useValidateInput({ fieldName, query });
+export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
+	//
+	const { extendedMapping } = useArrangerData();
+	const { registerChart, deregisterChart, getChartData } = useChartsContext();
 
-	if (!chartAggregation) {
-		logger.debug('chart agg not supported, not valid fieldnam or unspported typename', chartAggregation);
-		return null;
-	}
+	// gql variables
+	const variables = {};
 
-	const barChartTransform = createBarChartTransform(chartAggregation);
+	useEffect(() => {
+		// validate and register
+		const result = validateQueryProps({ fieldName, variables, extendedMapping });
+
+		if (!result.success) {
+			logger.log(result.message);
+			return null;
+		}
+
+		registerChart(result.data);
+		return () => deregisterChart(result.data.fieldName);
+	}, [fieldName, extendedMapping]);
+
+	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
 	return (
-		<ChartDataContainer
-			fieldNames={[fieldName]}
-			chartConfig={chartAggregation}
-			transformGQL={barChartTransform}
-			colorMapResolver={colorMapResolver}
-			components={components}
-			Chart={({ data, colorMap }) => (
+		<ChartRenderer
+			isLoading={isLoading}
+			isError={isError}
+			isEmpty={isEmpty(gqlData)}
+			Chart={() => (
 				<ChartViewContainer>
-					<BarChartView
-						data={data}
-						colorMap={colorMap}
-						theme={theme}
-						onClick={handlers?.onClick}
-					/>
+					<BarChartView data={gqlData} />
 				</ChartViewContainer>
 			)}
 		/>

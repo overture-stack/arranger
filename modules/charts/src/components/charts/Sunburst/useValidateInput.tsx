@@ -1,6 +1,6 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
 
-import { fieldNameWithMapping } from '#arranger/mapping';
+import { getGQLTypename } from '#arranger/mapping';
 import { AggregationsTypename } from '#shared';
 
 export type ValidationInput = {
@@ -50,5 +50,5 @@ export const useValidateInput = ({ fieldName }: ValidationInput): ChartConfig | 
 	// }
 
 	// valid
-	return fieldNameWithMapping({ fieldName, extendedMapping });
+	return getGQLTypename({ fieldName, extendedMapping });
 };
