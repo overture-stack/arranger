@@ -4,6 +4,7 @@ import { createContext, PropsWithChildren, useCallback, useContext } from 'react
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { logger } from '#logger';
 import { Aggregations, NumericAggregations } from '#shared';
+import { gqlToBuckets } from './dataTransform';
 import { useDynamicQuery } from './useQueryFieldNames';
 
 type ChartContextType = {
@@ -32,10 +33,13 @@ const createChartDataMap = (data): GQLDataMap | null => {
 	if (!data) {
 		return null;
 	}
-	// TODO: Dynamic property
-	// TODO: Error check this, could very well be empty example if user is not logged in
-	console.log('DATA', data);
-	return new Map(Object.entries(data.data.file.aggregations));
+
+	return new Map(
+		Object.entries(data.data.file.aggregations).map(([fieldName, gqlData]) => {
+			const buckets = gqlToBuckets({ fieldName, gqlData });
+			return [fieldName, buckets];
+		}),
+	);
 };
 
 /**
@@ -59,7 +63,7 @@ export const ChartsProvider = ({ children, debugMode }: ChartsProviderProps) => 
 
 	// track GQL dynamic query
 	const { gqlQuery, addQuery, removeQuery } = useDynamicQuery({ documentType });
-	console.log('queyr', gqlQuery);
+
 	// API call
 	const { apiState } = useNetworkQuery({
 		query: gqlQuery,

@@ -3,6 +3,7 @@ import { ChartContainer as ChartViewContainer } from '#components/helper/ChartCo
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
 import { useArrangerData } from '@overture-stack/arranger-components';
+import { isEmpty } from 'lodash';
 import { useEffect } from 'react';
 import { BarChartView } from './BarChartView';
 import { validateQueryProps } from './validate';
@@ -54,9 +55,9 @@ export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
 
 	return (
 		<ChartRenderer
-			isLoading={undefined}
-			isError={undefined}
-			isEmpty={undefined}
+			isLoading={isLoading}
+			isError={isError}
+			isEmpty={isEmpty(gqlData)}
 			Chart={() => (
 				<ChartViewContainer>
 					<BarChartView data={gqlData} />
@@ -64,23 +65,4 @@ export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
 			)}
 		/>
 	);
-
-	// return (
-	// 	<ChartDataContainer
-	// 		fieldNames={[fieldName]}
-	// 		chartConfig={chartAggregation}
-	// 		transformGQL={barChartTransform}
-	// 		colorMapResolver={colorMapResolver}
-	// 		Chart={({ data, colorMap }) => (
-	// 			<ChartViewContainer>
-	// 				<BarChartView
-	// 					data={data}
-	// 					colorMap={colorMap}
-	// 					theme={theme}
-	// 					onClick={handlers?.onClick}
-	// 				/>
-	// 			</ChartViewContainer>
-	// 		)}
-	// 	/>
-	// );
 };
