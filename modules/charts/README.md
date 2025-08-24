@@ -44,3 +44,9 @@ For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG t
   </ChartsThemeProvider>
 
 ```
+
+## Common
+
+- handlers
+    - onClick: callback on clicking a segment of a chart
+        - returns full chart config object including label and value

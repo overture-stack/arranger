@@ -4,14 +4,15 @@ import { useMemo } from 'react';
 
 import { useColorMap } from '#hooks/useColorMap';
 import { createColorMap } from '#theme/colors';
+import { BarChartProps } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
-type BarChartViewProps = {
+interface BarChartViewProps {
 	data: any;
+	handlers: BarChartProps['handlers'];
 	theme: any;
 	colorMap: any;
-	onClick: any;
-};
+}
 
 const colorMapResolver = ({ chartData }) => {
 	const keys = chartData.map(({ key }: { key: string }) => key); // specfic chart color map code
@@ -29,14 +30,18 @@ const colorMapResolver = ({ chartData }) => {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive bar chart
  */
-export const BarChartView = ({ data, theme, onClick }: BarChartViewProps) => {
+export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 	// persistent color map
 	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver });
 
-	//return <pre>{JSON.stringify(data)}</pre>;
+	/**
+	 * TODO: improve "chart view" config/interface
+	 * right now it's a bit of a catch all config function
+	 * handlers currently only support onClick
+	 */
 	const resolvedTheme = useMemo(
-		() => arrangerToNivoBarChart({ theme, colorMap, onClick }),
-		[theme, colorMap, onClick],
+		() => arrangerToNivoBarChart({ theme, colorMap, onClick: handlers?.onClick }),
+		[theme, colorMap, handlers],
 	);
 
 	return (

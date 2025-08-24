@@ -60,7 +60,10 @@ export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
 			isEmpty={isEmpty(gqlData)}
 			Chart={() => (
 				<ChartViewContainer>
-					<BarChartView data={gqlData} />
+					<BarChartView
+						data={gqlData}
+						handlers={handlers}
+					/>
 				</ChartViewContainer>
 			)}
 		/>
