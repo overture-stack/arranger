@@ -1,5 +1,4 @@
 import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
-import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
 import { logger } from '#logger';
 import { generateChartsQuery } from '#query/generateCharts';
 import { useCallback, useMemo, useState } from 'react';
@@ -20,7 +19,6 @@ export type Query = {
 export const useDynamicQuery = ({
 	documentType,
 }): {
-	queryFields: Map<string, ChartConfig>;
 	addQuery: (config: ChartConfig) => void;
 	removeQuery: (fieldName: string) => void;
 } => {
@@ -59,7 +57,6 @@ export const useDynamicQuery = ({
 	}, []);
 
 	// generate query from current fields
-	// inlined
 	const gqlQuery = useMemo(() => {
 		return generateChartsQuery({ documentType, queryFields });
 	}, [documentType, queryFields]);

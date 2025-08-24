@@ -19,7 +19,6 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 
 // ugly - works for small query templating, improvement: use gql builder
 const generateQuery = ({ documentType, queryFields }: { documentType: string; queryFields: Map<string, Query> }) => {
-	console.log('generate query fields', queryFields);
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
 		(fullQuery, { fieldName, gqlTypename, variables }) => {
 			switch (gqlTypename) {
@@ -36,15 +35,14 @@ const generateQuery = ({ documentType, queryFields }: { documentType: string; qu
 	);
 
 	const query = queryTemplateCharts({ documentType, fieldQueries });
+	console.log('generate query fields', query);
 
 	return query;
 };
 
 /**
  * Generate single GQL query for all charts under a single ChartsProvider
- *
- * @param param0
- * @returns
+ * Inlines variables to simplify, instead of passing as reference in query and seperately in query body
  */
 export const generateChartsQuery = ({
 	documentType,
@@ -58,6 +56,6 @@ export const generateChartsQuery = ({
 		logger.debug('No query fields available');
 		return null;
 	}
-	logger.debug(`Generating query for fields: ${queryFields}`);
+	logger.debug(`Generating query for fields: ${JSON.stringify(queryFields)}`);
 	return generateQuery({ documentType, queryFields });
 };
