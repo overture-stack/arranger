@@ -50,3 +50,9 @@ For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG t
 - handlers
     - onClick: callback on clicking a segment of a chart
         - returns full chart config object including label and value
+
+## Bar Chart
+
+- theme
+    - sortByLabel: sort bars by label by suppling a string array eg. ['Male', 'Female', 'Other']
+        - first element of array is first bar from axis start eg. horizontal bar, 'Male' will be first
