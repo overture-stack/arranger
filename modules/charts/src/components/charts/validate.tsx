@@ -1,8 +1,9 @@
+import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
+
+import { AggregationsTypename, aggregationsTypenames } from '#arranger';
 import { getGQLTypename } from '#arranger/mapping';
 import { logger } from '#logger';
-import { failure, Result, success } from '#result';
-import { AggregationsTypename, aggregationsTypenames } from '#shared';
-import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
+import { Result, failure, success } from '#utils/result';
 
 export interface ValidatedProps {
 	fieldName: string;

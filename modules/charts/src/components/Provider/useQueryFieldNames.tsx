@@ -1,4 +1,4 @@
-import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
+import { NumericAggregationsOptions } from '#components/charts/Bar/BarChart';
 import { logger } from '#logger';
 import { generateChartsQuery } from '#query/generateCharts';
 import { useCallback, useMemo, useState } from 'react';

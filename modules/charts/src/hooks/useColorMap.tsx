@@ -8,10 +8,10 @@ import { useRef } from 'react';
  * @param { resolver } - Function that creates color map from chart data
  * @returns Object containing the generated color map
  */
-export const useColorMap = ({ chartData, resolver }) => {
+export const useColorMap = ({ chartData, resolver, colors }) => {
 	const colorMap = useRef();
 	if (chartData && !colorMap.current) {
-		colorMap.current = resolver({ chartData });
+		colorMap.current = resolver({ chartData, colors });
 	}
 	return { colorMap: colorMap.current };
 };

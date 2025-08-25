@@ -1,7 +1,11 @@
 import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
 
 import { logger } from '#logger';
-import { toJSONFieldName } from '#utils/mappings';
+
+// GQL field name to Arranger extended mapping JSON field name
+export const toJSONFieldName = (fieldName: string) => {
+	return fieldName.replaceAll('__', '.');
+};
 
 /**
  * Maps a GraphQL field name to its extended mapping configuration.

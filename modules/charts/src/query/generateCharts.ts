@@ -1,7 +1,7 @@
+import { aggregationsTypenames } from '#arranger';
 import { Query } from '#components/Provider/useQueryFieldNames';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { logger } from '#logger';
-import { aggregationsTypenames } from '#shared';
 
 const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 	return `query ChartsQuery($filters: JSON) {
