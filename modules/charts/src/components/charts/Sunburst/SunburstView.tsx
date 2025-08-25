@@ -1,14 +1,33 @@
+import { useColorMap } from '#hooks/useColorMap';
+import { defaultColors } from '#theme/colors';
 import { css } from '@emotion/react';
 import { ResponsivePie } from '@nivo/pie';
+import Color from 'color';
+import { createCategoryMap, createChartInput } from './dataTransform';
+
+const colorMapResolver = ({ chartData }) => {
+	const colorMap = new Map<string, string>();
+	// used for "color wraparound" modulo
+	let colorIndex = 0;
+	console.log('d', chartData);
+	chartData.inner.forEach(({ id, children }) => {
+		const color = Color(defaultColors[colorIndex++ % defaultColors.length]);
+		colorMap.set(id, color.alpha(0.5).hsl().string());
+		children.forEach((child) => {
+			colorMap.set(child, color.string());
+		});
+	});
+
+	return colorMap;
+};
 
 type SunburstViewProps = {
 	data: any;
 	theme: any;
-	colorMap: any;
-	onClick: any;
+	handlers: any;
 };
 
-const Legend = ({ data }: { data: { label: string; color: string }[] }) => {
+const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
 	return (
 		<div
 			css={css({
@@ -29,7 +48,7 @@ const Legend = ({ data }: { data: { label: string; color: string }[] }) => {
 							css={css({
 								width: '12px',
 								height: '12px',
-								backgroundColor: legend.color,
+								backgroundColor: colorMap.get(legend.label) || 'black',
 								marginRight: '8px',
 							})}
 						/>
@@ -52,13 +71,26 @@ const Legend = ({ data }: { data: { label: string; color: string }[] }) => {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive sunburst chart
  */
-export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewProps) => {
+export const SunburstView = ({ data, theme, handlers, mapping }: SunburstViewProps) => {
+	// create mapping between api data and provided mapping
+	const categoryMap = createCategoryMap(data, mapping);
+	const sunburstData = createChartInput(categoryMap);
+
+	// persistent color map
+	const { colorMap } = useColorMap({ chartData: sunburstData, resolver: colorMapResolver });
+
+	const onClick = handlers?.onClick;
+
 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
 
 	const padAngle = 2;
 
 	const onMouseEnterHandler = (_, e) => {
 		e.target.style.cursor = 'pointer';
+	};
+
+	const borderColor = (segment) => {
+		return Color(colorMap.get(segment.id)).lighten(0.075).string();
 	};
 
 	return (
@@ -80,23 +112,19 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 				<div css={css({ height: '100%', width: '70%', position: 'relative' })}>
 					<ResponsivePie
 						onClick={(config) => {
-							const allCodes = data.outer
-								// @ts-ignore augmented it
+							const allCodes = sunburstData.outer
 								.filter((outerRing) => outerRing.parentId === config.data.parentId)
 								.map((code) => code.id);
 							onClick && onClick({ ...config, allCodes });
 						}}
-						colors={data.outer.map((node) => colorMap.get(node.id))}
-						data={data.outer}
+						colors={sunburstData.outer.map((node) => colorMap.get(node.id))}
+						data={sunburstData.outer}
 						isInteractive={true}
 						margin={margin}
 						innerRadius={0.75}
 						activeOuterRadiusOffset={0}
 						borderWidth={1}
-						borderColor={{
-							from: 'color',
-							modifiers: [['darker', 0.2]],
-						}}
+						borderColor={borderColor}
 						enableArcLinkLabels={false}
 						enableArcLabels={false}
 						padAngle={padAngle}
@@ -119,16 +147,13 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 							onClick={(config) => {
 								onClick && onClick(config);
 							}}
-							colors={data.inner.map((node) => colorMap.get(node.id))}
-							data={data.inner}
+							colors={sunburstData.inner.map((node) => colorMap.get(node.id))}
+							data={sunburstData.inner}
 							isInteractive={true}
 							innerRadius={0.75}
 							activeOuterRadiusOffset={0}
 							borderWidth={1}
-							borderColor={{
-								from: 'color',
-								modifiers: [['darker', 0.2]],
-							}}
+							borderColor={borderColor}
 							enableArcLinkLabels={false}
 							enableArcLabels={false}
 							padAngle={padAngle}
@@ -136,7 +161,10 @@ export const SunburstView = ({ data, theme, colorMap, onClick }: SunburstViewPro
 						/>
 					</div>
 				</div>
-				<Legend data={data.legend} />
+				<Legend
+					data={sunburstData.legend}
+					colorMap={colorMap}
+				/>
 			</div>
 		</div>
 	);

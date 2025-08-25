@@ -6,8 +6,8 @@ import { Ranges } from '#shared';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
+import { validateQueryProps } from '../validate';
 import { BarChartView } from './BarChartView';
-import { validateQueryProps } from './validate';
 
 export interface NumericAggregationsOptions {
 	ranges?: Ranges;

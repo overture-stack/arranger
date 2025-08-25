@@ -1,38 +1,21 @@
-import { ChartDataContainer } from '#components/Chart';
-import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
+import { ChartRenderer } from '#components/ChartRenderer';
+import { ChartContainer } from '#components/helper/ChartContainer';
+import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
-import { defaultColors } from '#theme/colors';
-import Color from 'color';
-import { createSunburstTransform } from './dataTransform';
+import { useArrangerData } from '@overture-stack/arranger-components';
+import { isEmpty } from 'lodash';
+import { useEffect, useMemo } from 'react';
+import { validateQueryProps } from '../validate';
 import { SunburstView } from './SunburstView';
-import { useValidateInput } from './useValidateInput';
-
-const colorMapResolver = ({ chartData }) => {
-	const colorMap = new Map<string, string>();
-	// used for "color wraparound" modulo
-	let colorIndex = 0;
-
-	chartData.inner.forEach(({ id, children }) => {
-		const color = Color(defaultColors[colorIndex++ % defaultColors.length]);
-		colorMap.set(id, color.alpha(0.5).hsl().string());
-		children.forEach((child) => {
-			colorMap.set(child, color.string());
-		});
-	});
-
-	return colorMap;
-};
 
 /**
  * High-level sunburst chart component that handles validation, data pipeline, and rendering.
  * Creates hierarchical visualizations from multiple related fields using user-provided mapping.
  *
  * @param props - Sunburst chart configuration
- * @param props.fieldNames - Tuple of GraphQL Aggregation type field names for hierarchy [parentField, childField]
  * @param props.mapping - Simple mapping object { childValue: 'parentCategory' }
  * @param props.query - Optional query configuration
  * @param props.handlers - Event handlers for chart interactions
- * @param props.components - Custom components for fallback states
  * @param props.theme - Arranger theme configuration
  * @returns JSX element with complete sunburst chart or null if field validation fails
  */
@@ -47,30 +30,41 @@ export const SunburstChart = ({
 	theme?: any;
 	handlers?: { onClick: (config: any) => void };
 }) => {
-	// validate and return chart aggregation config if successful
-	const chartAggregation = useValidateInput({ fieldName });
+	const { extendedMapping } = useArrangerData();
+	const { registerChart, deregisterChart, getChartData } = useChartsContext();
 
-	if (!chartAggregation) {
-		logger.log('chart agg not supported, not valid fieldNames or unsupported typename', chartAggregation);
-		return null;
-	}
+	const validationResult = useMemo(
+		() => validateQueryProps({ fieldName, extendedMapping }),
+		[fieldName, extendedMapping],
+	);
 
-	const sunburstTransform = createSunburstTransform({ ...chartAggregation, mapping });
+	useEffect(() => {
+		if (!validationResult.success) {
+			logger.log(validationResult.message);
+			return null;
+		}
+
+		registerChart(validationResult.data);
+		return () => deregisterChart(validationResult.data.fieldName);
+	}, [fieldName, extendedMapping]);
+
+	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
 	return (
-		<ChartDataContainer
-			fieldNames={[fieldName]}
-			chartConfig={chartAggregation}
-			transformGQL={sunburstTransform}
-			colorMapResolver={colorMapResolver}
-			Chart={({ data, colorMap }) => {
+		<ChartRenderer
+			isLoading={isLoading}
+			isError={isError || !validationResult.success}
+			isEmpty={isEmpty(gqlData)}
+			Chart={() => {
 				return (
-					<ChartViewContainer>
+					<ChartContainer>
 						<SunburstView
-							data={data}
-							colorMap={colorMap}
+							data={gqlData}
+							handlers={handlers}
+							theme={theme}
+							mapping={mapping}
 						/>
-					</ChartViewContainer>
+					</ChartContainer>
 				);
 			}}
 		/>
