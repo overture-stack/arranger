@@ -1,7 +1,3 @@
-import { GQLDataMap } from '#components/Provider/Provider';
-import { aggregationsTypenames, ArrangerAggregations } from '#shared';
-import { ChartConfig } from './useValidateInput';
-
 type SunburstNode = {
 	id: string;
 	parent?: string;
@@ -13,20 +9,20 @@ type SunburstChartConfig = ChartConfig & {
 	mapping: Record<string, string>;
 };
 
-/**
- * Resolves GraphQL aggregation buckets based on the aggregation type.
- * Handles different GraphQL response structures for categorical vs numeric data.
- */
-const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }) => {
-	switch (aggregations.__typename) {
-		case aggregationsTypenames.Aggregations:
-			return aggregations.buckets;
-		case aggregationsTypenames.NumericAggregations:
-			return aggregations.range?.buckets || [];
-		default:
-			return [];
-	}
-};
+// /**
+//  * Resolves GraphQL aggregation buckets based on the aggregation type.
+//  * Handles different GraphQL response structures for categorical vs numeric data.
+//  */
+// const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }) => {
+// 	switch (aggregations.__typename) {
+// 		case aggregationsTypenames.Aggregations:
+// 			return aggregations.buckets;
+// 		case aggregationsTypenames.NumericAggregations:
+// 			return aggregations.range?.buckets || [];
+// 		default:
+// 			return [];
+// 	}
+// };
 
 export const createCategoryMap = (dynamicData, mapping) => {
 	const categoryMap = new Map();
@@ -40,11 +36,11 @@ export const createCategoryMap = (dynamicData, mapping) => {
 		}
 
 		if (!categoryMap.has(parentId)) {
-			categoryMap.set(parentId, { total: code.doc_count, codes: [{ ...code, parentId }] });
+			categoryMap.set(parentId, { total: code.docCount, codes: [{ ...code, parentId }] });
 		} else {
 			const { total, codes: existingCodes } = categoryMap.get(parentId);
 			const updatedCodes = existingCodes.concat([code]);
-			categoryMap.set(parentId, { total: total + code.doc_count, codes: updatedCodes });
+			categoryMap.set(parentId, { total: total + code.docCount, codes: updatedCodes });
 		}
 	});
 	return categoryMap;
@@ -80,26 +76,22 @@ export const createChartInput = (categoryMap) => {
 				return acc;
 			}
 
-			const color = chartColors[index];
-
 			const inner = acc.inner.concat({
 				id: name,
 				label: name,
 				value: total,
 				children: codes.map((code) => code.key),
-				color,
 			});
 
 			const outer = acc.outer.concat(
 				codes.map((code) => ({
 					id: code.key,
 					label: code.key,
-					value: code.doc_count,
+					value: code.docCount,
 					parentId: code.parentId,
-					color,
 				})),
 			);
-			const legend = acc.legend.concat({ label: name, color });
+			const legend = acc.legend.concat({ label: name });
 
 			return { outer, inner, legend };
 		},
@@ -118,18 +110,3 @@ export const createChartInput = (categoryMap) => {
  * @param config - Chart configuration including fieldNames and mapping
  * @returns Function that transforms GraphQL data to hierarchical sunburst format
  */
-export const createSunburstTransform =
-	({ fieldName, mapping, query }: SunburstChartConfig) =>
-	({ gqlData }: { gqlData: GQLDataMap }): SunburstNode | null => {
-		if (!gqlData) {
-			return null;
-		}
-		const aggregations = gqlData[fieldName];
-		const buckets = resolveBuckets({ aggregations });
-
-		const categoryMap = createCategoryMap(buckets, mapping);
-		const chartData = createChartInput(categoryMap);
-
-		// Apply custom transform if provided
-		return (query?.transformData && query.transformData(chartData)) || chartData;
-	};

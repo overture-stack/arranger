@@ -1,28 +1,12 @@
 import { ChartRenderer } from '#components/ChartRenderer';
+import { ChartContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
-import { defaultColors } from '#theme/colors';
 import { useArrangerData } from '@overture-stack/arranger-components';
-import Color from 'color';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
 import { validateQueryProps } from '../validate';
-
-const colorMapResolver = ({ chartData }) => {
-	const colorMap = new Map<string, string>();
-	// used for "color wraparound" modulo
-	let colorIndex = 0;
-
-	chartData.inner.forEach(({ id, children }) => {
-		const color = Color(defaultColors[colorIndex++ % defaultColors.length]);
-		colorMap.set(id, color.alpha(0.5).hsl().string());
-		children.forEach((child) => {
-			colorMap.set(child, color.string());
-		});
-	});
-
-	return colorMap;
-};
+import { SunburstView } from './SunburstView';
 
 /**
  * High-level sunburst chart component that handles validation, data pipeline, and rendering.
@@ -71,7 +55,18 @@ export const SunburstChart = ({
 			isLoading={isLoading}
 			isError={isError || !validationResult.success}
 			isEmpty={isEmpty(gqlData)}
-			Chart={() => <div>chart</div>}
+			Chart={() => {
+				return (
+					<ChartContainer>
+						<SunburstView
+							data={gqlData}
+							handlers={handlers}
+							theme={theme}
+							mapping={mapping}
+						/>
+					</ChartContainer>
+				);
+			}}
 		/>
 	);
 };
