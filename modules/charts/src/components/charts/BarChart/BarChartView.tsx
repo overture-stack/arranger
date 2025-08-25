@@ -31,8 +31,12 @@ const colorMapResolver = ({ chartData }) => {
  * @returns JSX element with responsive bar chart
  */
 export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
+	const sortedData = theme.sortByLabel
+		? theme.sortByLabel.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
+		: data;
+
 	// persistent color map
-	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({ chartData: sortedData, resolver: colorMapResolver });
 
 	/**
 	 * TODO: improve "chart view" config/interface
@@ -43,10 +47,6 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 		() => arrangerToNivoBarChart({ theme, colorMap, onClick: handlers?.onClick }),
 		[theme, colorMap, handlers],
 	);
-
-	const sortedData = theme.sortByLabel
-		? theme.sortByLabel.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
-		: data;
 
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
