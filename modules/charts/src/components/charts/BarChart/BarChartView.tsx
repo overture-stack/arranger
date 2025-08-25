@@ -10,7 +10,7 @@ import { arrangerToNivoBarChart } from './nivo/config';
 interface BarChartViewProps {
 	data: any;
 	handlers: BarChartProps['handlers'];
-	theme: any;
+	theme: BarChartProps['theme'];
 	colorMap: any;
 }
 
@@ -44,10 +44,14 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 		[theme, colorMap, handlers],
 	);
 
+	const sortedData = theme.sortByLabel
+		? theme.sortByLabel.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
+		: data;
+
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<ResponsiveBar
-				data={data}
+				data={sortedData}
 				{...resolvedTheme}
 			/>
 		</div>

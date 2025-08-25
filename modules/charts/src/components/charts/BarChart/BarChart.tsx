@@ -14,7 +14,7 @@ export interface NumericAggregationsOptions {
 
 export interface BarChartProps {
 	fieldName: string;
-	theme: any;
+	theme: { sortByLabel?: string[]; nivo: any };
 	handlers?: { onClick: (config: any) => void };
 }
 
@@ -63,6 +63,7 @@ export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
 					<BarChartView
 						data={gqlData}
 						handlers={handlers}
+						theme={theme}
 					/>
 				</ChartViewContainer>
 			)}
