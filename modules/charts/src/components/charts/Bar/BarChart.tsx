@@ -1,13 +1,14 @@
-import { ChartRenderer } from '#components/ChartRenderer';
-import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
-import { useChartsContext } from '#components/Provider/Provider';
-import { logger } from '#logger';
-import { Ranges } from '#shared';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
+
+import { Ranges } from '#arranger';
+import { ChartContainer } from '#components/ChartContainer';
+import { ChartRenderer } from '#components/ChartRenderer';
+import { useChartsContext } from '#components/Provider/Provider';
+import { logger } from '#logger';
 import { validateQueryProps } from '../validate';
-import { BarChartView } from './BarChartView';
+import { BarChartView } from './View';
 
 export interface NumericAggregationsOptions {
 	ranges?: Ranges;
@@ -26,10 +27,9 @@ export interface BarChartProps {
  *
  * @param props - Bar chart configuration
  * @param props.fieldName - GraphQL field name to visualize
- * @param props.query - Optional query configuration for aggregations eg. NumericAggregations
  * @param props.handlers - Event handlers for chart interactions
  * @param props.components - Custom components for fallback states
- * @param props.theme - Arranger theme configuration
+ * @param props.theme - Chart config mostly for Nivo
  * @returns JSX element with complete bar chart or null if field validation fails
  */
 export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) => {
@@ -66,13 +66,13 @@ export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) 
 			isError={isError || !validationResult.success}
 			isEmpty={isEmpty(gqlData)}
 			Chart={() => (
-				<ChartViewContainer>
+				<ChartContainer>
 					<BarChartView
 						data={gqlData}
 						handlers={handlers}
 						theme={theme}
 					/>
-				</ChartViewContainer>
+				</ChartContainer>
 			)}
 		/>
 	);

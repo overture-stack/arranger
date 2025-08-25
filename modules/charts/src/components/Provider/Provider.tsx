@@ -1,9 +1,9 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { createContext, PropsWithChildren, useCallback, useContext } from 'react';
 
+import { Aggregations, NumericAggregations } from '#arranger';
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { logger } from '#logger';
-import { Aggregations, NumericAggregations } from '#shared';
 import { gqlToBuckets } from './dataTransform';
 import { useDynamicQuery } from './useQueryFieldNames';
 

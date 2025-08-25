@@ -1,7 +1,7 @@
+import { aggregationsTypenames } from '#arranger';
 import { Query } from '#components/Provider/useQueryFieldNames';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { logger } from '#logger';
-import { aggregationsTypenames } from '#shared';
 
 const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 	return `query ChartsQuery($filters: JSON) {
@@ -35,7 +35,6 @@ const generateQuery = ({ documentType, queryFields }: { documentType: string; qu
 	);
 
 	const query = queryTemplateCharts({ documentType, fieldQueries });
-	console.log('generate query fields', query);
 
 	return query;
 };
@@ -51,7 +50,6 @@ export const generateChartsQuery = ({
 	documentType: string;
 	queryFields: Map<string, Query>;
 }): string | null => {
-	console.log('query fields', queryFields);
 	if (queryFields.size === 0) {
 		logger.debug('No query fields available');
 		return null;

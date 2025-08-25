@@ -1,16 +1,17 @@
-import { useColorMap } from '#hooks/useColorMap';
-import { defaultColors } from '#theme/colors';
 import { css } from '@emotion/react';
 import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
 
-const colorMapResolver = ({ chartData }) => {
+import { useThemeContext } from '#components/ChartsThemeProvider';
+import { useColorMap } from '#hooks/useColorMap';
+
+const colorMapResolver = ({ chartData, colors }) => {
 	const colorMap = new Map<string, string>();
 	// used for "color wraparound" modulo
 	let colorIndex = 0;
-	console.log('d', chartData);
+
 	chartData.inner.forEach(({ id, children }) => {
-		const color = Color(defaultColors[colorIndex++ % defaultColors.length]);
+		const color = Color(colors[colorIndex++ % colors.length]);
 		colorMap.set(id, color.alpha(0.5).hsl().string());
 		children.forEach((child) => {
 			colorMap.set(child, color.string());
@@ -72,7 +73,8 @@ const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
  */
 export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
 	// persistent color map
-	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver });
+	const { colors } = useThemeContext();
+	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver, colors });
 
 	const onClick = handlers?.onClick;
 

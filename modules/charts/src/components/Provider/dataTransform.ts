@@ -1,6 +1,7 @@
+import { ArrangerAggregations, aggregationsTypenames } from '#arranger';
 import { GQLDataMap } from '#components/Provider/Provider';
-import { ARRANGER_MISSING_DATA_KEY } from '#constants';
-import { aggregationsTypenames, ArrangerAggregations } from '#shared';
+
+const ARRANGER_MISSING_DATA_KEY = '__missing__';
 
 /**
  * Resolves GraphQL aggregation buckets based on the aggregation type.

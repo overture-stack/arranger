@@ -1,14 +1,15 @@
-import { ChartRenderer } from '#components/ChartRenderer';
-import { ChartContainer } from '#components/helper/ChartContainer';
-import { useChartsContext } from '#components/Provider/Provider';
-import { logger } from '#logger';
 import { css } from '@emotion/react';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
+
+import { ChartContainer } from '#components/ChartContainer';
+import { ChartRenderer } from '#components/ChartRenderer';
+import { useChartsContext } from '#components/Provider/Provider';
+import { logger } from '#logger';
 import { validateQueryProps } from '../validate';
 import { createChartInput } from './dataTransform';
-import { SunburstView } from './SunburstView';
+import { SunburstView } from './View';
 
 /**
  * High-level sunburst chart component that handles validation, data pipeline, and rendering.

@@ -1,5 +1,5 @@
+import { useThemeContext } from './ChartsThemeProvider';
 import { ChartText } from './ChartText';
-import { useThemeContext } from './theme/Provider';
 
 /**
  * Renders appropriate chart component or fallback state based on data loading status.

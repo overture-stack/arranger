@@ -1,4 +1,4 @@
-import { NumericAggregationsOptions } from '#components/charts/BarChart/BarChart';
+import { NumericAggregationsOptions } from '#components/charts/Bar/BarChart';
 
 const queryTemplateBuckets = `
     bucket_count
