@@ -14,7 +14,7 @@ export const useNetworkQuery = ({
 	sqon: {};
 	loadingDelay: number;
 }) => {
-	const [apiState, setApiState] = useState({ data: null, loading: false, error: false });
+	const [apiState, setApiState] = useState({ data: null, loading: true, error: false });
 
 	useEffect(() => {
 		if (!query) return;
