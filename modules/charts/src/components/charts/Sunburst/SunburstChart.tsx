@@ -2,10 +2,12 @@ import { ChartRenderer } from '#components/ChartRenderer';
 import { ChartContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
+import { css } from '@emotion/react';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
 import { validateQueryProps } from '../validate';
+import { createChartInput } from './dataTransform';
 import { SunburstView } from './SunburstView';
 
 /**
@@ -13,8 +15,7 @@ import { SunburstView } from './SunburstView';
  * Creates hierarchical visualizations from multiple related fields using user-provided mapping.
  *
  * @param props - Sunburst chart configuration
- * @param props.mapping - Simple mapping object { childValue: 'parentCategory' }
- * @param props.query - Optional query configuration
+ * @param props.mapping - Simple mapping object { childValue: 'parentCategory' }, {outer ring: inner ring}
  * @param props.handlers - Event handlers for chart interactions
  * @param props.theme - Arranger theme configuration
  * @returns JSX element with complete sunburst chart or null if field validation fails
@@ -50,19 +51,21 @@ export const SunburstChart = ({
 
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
+	// create mapping between api data and provided mapping
+	const sunburstData = createChartInput(gqlData, mapping);
+
 	return (
 		<ChartRenderer
 			isLoading={isLoading}
 			isError={isError || !validationResult.success}
-			isEmpty={isEmpty(gqlData)}
+			isEmpty={isEmpty(sunburstData)}
 			Chart={() => {
 				return (
-					<ChartContainer>
+					<ChartContainer chartStyle={css({ margin: '16px 0' })}>
 						<SunburstView
-							data={gqlData}
+							data={sunburstData}
 							handlers={handlers}
 							theme={theme}
-							mapping={mapping}
 						/>
 					</ChartContainer>
 				);
