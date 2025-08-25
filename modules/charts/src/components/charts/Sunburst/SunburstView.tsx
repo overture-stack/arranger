@@ -3,7 +3,6 @@ import { defaultColors } from '#theme/colors';
 import { css } from '@emotion/react';
 import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
-import { createCategoryMap, createChartInput } from './dataTransform';
 
 const colorMapResolver = ({ chartData }) => {
 	const colorMap = new Map<string, string>();
@@ -71,13 +70,9 @@ const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive sunburst chart
  */
-export const SunburstView = ({ data, theme, handlers, mapping }: SunburstViewProps) => {
-	// create mapping between api data and provided mapping
-	const categoryMap = createCategoryMap(data, mapping);
-	const sunburstData = createChartInput(categoryMap);
-
+export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
 	// persistent color map
-	const { colorMap } = useColorMap({ chartData: sunburstData, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver });
 
 	const onClick = handlers?.onClick;
 
@@ -112,13 +107,13 @@ export const SunburstView = ({ data, theme, handlers, mapping }: SunburstViewPro
 				<div css={css({ height: '100%', width: '70%', position: 'relative' })}>
 					<ResponsivePie
 						onClick={(config) => {
-							const allCodes = sunburstData.outer
+							const allCodes = data.outer
 								.filter((outerRing) => outerRing.parentId === config.data.parentId)
 								.map((code) => code.id);
 							onClick && onClick({ ...config, allCodes });
 						}}
-						colors={sunburstData.outer.map((node) => colorMap.get(node.id))}
-						data={sunburstData.outer}
+						colors={data.outer.map((node) => colorMap.get(node.id))}
+						data={data.outer}
 						isInteractive={true}
 						margin={margin}
 						innerRadius={0.75}
@@ -147,8 +142,8 @@ export const SunburstView = ({ data, theme, handlers, mapping }: SunburstViewPro
 							onClick={(config) => {
 								onClick && onClick(config);
 							}}
-							colors={sunburstData.inner.map((node) => colorMap.get(node.id))}
-							data={sunburstData.inner}
+							colors={data.inner.map((node) => colorMap.get(node.id))}
+							data={data.inner}
 							isInteractive={true}
 							innerRadius={0.75}
 							activeOuterRadiusOffset={0}
@@ -162,7 +157,7 @@ export const SunburstView = ({ data, theme, handlers, mapping }: SunburstViewPro
 					</div>
 				</div>
 				<Legend
-					data={sunburstData.legend}
+					data={data.legend}
 					colorMap={colorMap}
 				/>
 			</div>

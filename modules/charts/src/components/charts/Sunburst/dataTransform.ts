@@ -1,3 +1,5 @@
+import { isEmpty } from 'lodash';
+
 type SunburstNode = {
 	id: string;
 	parent?: string;
@@ -9,25 +11,28 @@ type SunburstChartConfig = ChartConfig & {
 	mapping: Record<string, string>;
 };
 
-// /**
-//  * Resolves GraphQL aggregation buckets based on the aggregation type.
-//  * Handles different GraphQL response structures for categorical vs numeric data.
-//  */
-// const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }) => {
-// 	switch (aggregations.__typename) {
-// 		case aggregationsTypenames.Aggregations:
-// 			return aggregations.buckets;
-// 		case aggregationsTypenames.NumericAggregations:
-// 			return aggregations.range?.buckets || [];
-// 		default:
-// 			return [];
-// 	}
-// };
+type Segment = {
+	id: string;
+	label: string;
+	value: number | string;
+	color: string;
+	parentId?: string;
+	children?: string[];
+};
 
-export const createCategoryMap = (dynamicData, mapping) => {
+/**
+ * Creates a data transformation function for converting GraphQL responses to sunburst format.
+ * Handles hierarchical data creation from multiple fields using user-provided mapping.
+ *
+ **/
+export const createChartInput = (gqlData, mapping) => {
+	if (isEmpty(gqlData)) {
+		return {};
+	}
+
+	// create category Map, simplify later reduce
 	const categoryMap = new Map();
-	// order to line up
-	dynamicData.forEach((code) => {
+	gqlData.forEach((code) => {
 		const parentId = mapping[code.key];
 
 		// no cancer type mapping, skip
@@ -43,32 +48,12 @@ export const createCategoryMap = (dynamicData, mapping) => {
 			categoryMap.set(parentId, { total: total + code.docCount, codes: updatedCodes });
 		}
 	});
-	return categoryMap;
-};
-
-type Segment = {
-	id: string;
-	label: string;
-	value: number | string;
-	color: string;
-	parentId?: string;
-	children?: string[];
-};
-
-/**
- * Format for input into chart
- *
- * @param categoryMap
- * @returns
- */
-export const createChartInput = (categoryMap) => {
-	return Array.from(categoryMap).reduce<{
+	const sunburstData = Array.from(categoryMap).reduce<{
 		inner: Segment[];
 		outer: Segment[];
 		legend: { label: string; color: string }[];
 	}>(
-		(acc, category, index) => {
-			// @ts-ignore TS doesn't like tuple
+		(acc, category) => {
 			const [name, { codes, total }] = category;
 
 			// don't show undefined values
@@ -101,12 +86,11 @@ export const createChartInput = (categoryMap) => {
 			inner: [],
 		},
 	);
-};
 
-/**
- * Creates a data transformation function for converting GraphQL responses to sunburst format.
- * Handles hierarchical data creation from multiple fields using user-provided mapping.
- *
- * @param config - Chart configuration including fieldNames and mapping
- * @returns Function that transforms GraphQL data to hierarchical sunburst format
- */
+	// user supplied mapping may not be complete
+	if (sunburstData.inner.length === 0 || sunburstData.outer.length === 0) {
+		return {};
+	}
+
+	return sunburstData;
+};
