@@ -102,7 +102,7 @@ export const ChartsProvider = ({ children, debugMode }: ChartsProviderProps) => 
 
 	const deregisterChart = useCallback((fieldName) => {
 		logger.debug('Deregistering fieldName', fieldName);
-		removeQuery(fieldName);
+		fieldName !== '' && removeQuery(fieldName);
 	}, []);
 
 	const update = useCallback(({ fieldName, eventData }) => {
