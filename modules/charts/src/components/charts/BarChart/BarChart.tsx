@@ -2,18 +2,20 @@ import { ChartRenderer } from '#components/ChartRenderer';
 import { ChartContainer as ChartViewContainer } from '#components/helper/ChartContainer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
+import { Ranges } from '#shared';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { BarChartView } from './BarChartView';
 import { validateQueryProps } from './validate';
 
 export interface NumericAggregationsOptions {
-	ranges?: any;
+	ranges?: Ranges;
 }
 
 export interface BarChartProps {
 	fieldName: string;
+	ranges?: Ranges;
 	theme: { sortByLabel?: string[]; nivo: any };
 	handlers?: { onClick: (config: any) => void };
 }
@@ -30,25 +32,30 @@ export interface BarChartProps {
  * @param props.theme - Arranger theme configuration
  * @returns JSX element with complete bar chart or null if field validation fails
  */
-export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
+export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) => {
 	//
 	const { extendedMapping } = useArrangerData();
 	const { registerChart, deregisterChart, getChartData } = useChartsContext();
 
-	// gql variables
-	const variables = {};
+	const variables = { ranges };
+
+	//
+	const validationResult = useMemo(
+		() => validateQueryProps({ fieldName, variables, extendedMapping }),
+		[fieldName, variables, extendedMapping],
+	);
 
 	useEffect(() => {
 		// validate and register
 		const result = validateQueryProps({ fieldName, variables, extendedMapping });
 
-		if (!result.success) {
-			logger.log(result.message);
+		if (!validationResult.success) {
+			logger.log(validationResult.message);
 			return null;
 		}
 
 		registerChart(result.data);
-		return () => deregisterChart(result.data.fieldName);
+		return () => deregisterChart(validationResult.data.fieldName);
 	}, [fieldName, extendedMapping]);
 
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
@@ -56,7 +63,7 @@ export const BarChart = ({ fieldName, handlers, theme }: BarChartProps) => {
 	return (
 		<ChartRenderer
 			isLoading={isLoading}
-			isError={isError}
+			isError={isError || !validationResult.success}
 			isEmpty={isEmpty(gqlData)}
 			Chart={() => (
 				<ChartViewContainer>

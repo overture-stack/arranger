@@ -14,7 +14,7 @@ export interface ValidationResult {}
 
 const validateAggregationsType = (queryProps): Result<ValidatedProps> => {
 	if (queryProps?.variables?.range) {
-		const message = 'Aggregations typename does not support options';
+		const message = `Field ${queryProps.fieldName} with typename "Aggregations" does not support "ranges" argument`;
 		logger.log(message);
 		return failure(message);
 	}
@@ -23,7 +23,7 @@ const validateAggregationsType = (queryProps): Result<ValidatedProps> => {
 
 const validateNumericAggregationsType = (queryProps): Result<ValidatedProps> => {
 	if (queryProps.variables.ranges === undefined) {
-		const message = 'NumericAggregations typename requires a provided "ranges" option';
+		const message = `Field ${queryProps.fieldName} with typename NumericAggregations requires a "ranges" argument`;
 		logger.log(message);
 		return failure(message);
 	}
