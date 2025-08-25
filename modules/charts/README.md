@@ -23,6 +23,10 @@ To rebuild on file change run:
 
 For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG to show verbose logging
 
+### ChartsProvider
+
+- loadingDelay: amount of milliseconds to delay loading of network results (helpful for showing loaders)
+
 ### ChartsThemeProvider
 
 ```

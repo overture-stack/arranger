@@ -3,7 +3,17 @@ import { useEffect, useState } from 'react';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; apiFetcher: any; sqon: {} }) => {
+export const useNetworkQuery = ({
+	query,
+	apiFetcher,
+	sqon,
+	loadingDelay,
+}: {
+	query: string;
+	apiFetcher: any;
+	sqon: {};
+	loadingDelay: number;
+}) => {
 	const [apiState, setApiState] = useState({ data: null, loading: false, error: false });
 
 	useEffect(() => {
@@ -15,7 +25,7 @@ export const useNetworkQuery = ({ query, apiFetcher, sqon }: { query: string; ap
 				setApiState((previous) => ({ ...previous, loading: true }));
 
 				// gives time for loader comp to show, better visual
-				await delay(1800);
+				loadingDelay && (await delay(loadingDelay));
 				const data = await apiFetcher({
 					body: {
 						query,

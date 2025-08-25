@@ -19,7 +19,7 @@ type ChartContextType = {
 
 export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = PropsWithChildren<{ debugMode: boolean }>;
+type ChartsProviderProps = PropsWithChildren<{ debugMode: boolean; loadingDelay: number }>;
 
 export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
 /**
@@ -47,11 +47,12 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * Coordinates multiple charts to for single API call and to maintain consistent state.
  *
  * @param props - Provider configuration
- * @param props.theme - Global theme configuration for all charts
  * @param props.children - Child components that will have access to charts context
+ * @param props.debugMode - Verbose logging for debug
+ * @param props.loadingDelay - Delays network result loading by <loadingDelay> milliseconds
  * @returns JSX provider element that enables chart functionality
  */
-export const ChartsProvider = ({ children, debugMode }: ChartsProviderProps) => {
+export const ChartsProvider = ({ children, debugMode, loadingDelay }: ChartsProviderProps) => {
 	// set logger
 	logger.setDebugMode(debugMode);
 
@@ -69,6 +70,7 @@ export const ChartsProvider = ({ children, debugMode }: ChartsProviderProps) => 
 		query: gqlQuery,
 		apiFetcher,
 		sqon,
+		loadingDelay,
 	});
 
 	//
