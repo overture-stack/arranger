@@ -74,7 +74,6 @@ const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
 export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
 	// persistent color map
 	const { colors } = useThemeContext();
-	console.log('sunburstcolors', colors);
 	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver, colors });
 
 	const onClick = handlers?.onClick;

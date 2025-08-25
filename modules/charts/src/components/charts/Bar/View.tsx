@@ -48,7 +48,6 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 
 	// persistent color map
 	const { colors } = useThemeContext();
-	console.log('bar colors', colors);
 	const { colorMap } = useColorMap({ chartData: sortedData, resolver: colorMapResolver, colors });
 
 	/**

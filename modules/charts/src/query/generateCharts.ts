@@ -35,7 +35,6 @@ const generateQuery = ({ documentType, queryFields }: { documentType: string; qu
 	);
 
 	const query = queryTemplateCharts({ documentType, fieldQueries });
-	console.log('generate query fields', query);
 
 	return query;
 };
@@ -51,7 +50,6 @@ export const generateChartsQuery = ({
 	documentType: string;
 	queryFields: Map<string, Query>;
 }): string | null => {
-	console.log('query fields', queryFields);
 	if (queryFields.size === 0) {
 		logger.debug('No query fields available');
 		return null;
