@@ -62,35 +62,18 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 	);
 
 	/**
-	 * - get height of parent (consumer element) using element.offsetHeight
-	 * - rough threshold pixel amount for bars
-	 * - factor in some space for label
+	 * we have to explicitly tell Nivo charts it's dimensions
+	 * it's <Responsive... charts don't work for dynamic data lengths, ie. it'll scrunch up the chart
+	 *
+	 * Get dimensions of parent container from the consumer app.
+	 * We need to compare its size versus the "native chart" size.
+	 * Uses a rough estimate of pixels and factors in some cosmetic space to account for axes, margins etc
 	 *
 	 * TODO: also do width, for vertical barcharts and resize
 	 */
-	const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 	const barRef = useRef();
-
-	useLayoutEffect(() => {
-		if (!barRef.current) return;
-
-		const updateDimensions = (entries: ResizeObserverEntry[]) => {
-			for (const entry of entries) {
-				const { width, height } = entry.contentRect;
-				setDimensions({ width, height });
-			}
-		};
-
-		// initial dimensions
-		const initialWidth = barRef.current.offsetWidth;
-		const initialHeight = barRef.current.offsetHeight;
-		setDimensions({ width: initialWidth, height: initialHeight });
-
-		const resizeObserver = new ResizeObserver(updateDimensions);
-		resizeObserver.observe(barRef.current);
-
-		return () => resizeObserver.disconnect();
-	}, []);
+	const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+	const [initialContainerHeight, setInitialContainerHeight] = useState(0);
 
 	// rough estimates
 	const barHeight = 26;
@@ -98,12 +81,33 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 	const totalBarSize = barHeight * sortedData.length;
 	// default to full height of container for small data sets
 	const totalNativeHeight = totalBarSize + additionalSpace;
-	const calculatedHeight = totalNativeHeight > dimensions.height ? totalNativeHeight : dimensions.height;
+	// Use initial container height as minimum, not current height
+	const calculatedHeight = Math.max(totalNativeHeight, initialContainerHeight);
+
+	useLayoutEffect(() => {
+		if (barRef.current) {
+			// get height of consumer container only once for min chart height
+			if (initialContainerHeight === 0) {
+				const height = barRef.current.offsetHeight;
+				setInitialContainerHeight(height);
+			}
+
+			// update width
+			setDimensions((prev) => {
+				const newWidth = barRef.current.offsetWidth;
+
+				if (prev.width !== newWidth) {
+					return { ...prev, width: newWidth };
+				}
+				return prev;
+			});
+		}
+	});
 
 	return (
 		<div
 			ref={barRef}
-			css={css({ overflow: 'scroll' })}
+			css={css({ flex: 1, overflow: 'scroll' })}
 		>
 			<Bar
 				data={sortedData}

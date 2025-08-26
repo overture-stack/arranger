@@ -3,7 +3,7 @@ import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
 
-import { ChartContainer } from '#components/ChartContainer';
+import { ResponsiveChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
@@ -62,13 +62,13 @@ export const SunburstChart = ({
 			isEmpty={isEmpty(sunburstData)}
 			Chart={() => {
 				return (
-					<ChartContainer chartStyle={css({ margin: '16px 0' })}>
+					<ResponsiveChartContainer chartStyle={css({ margin: '16px 0' })}>
 						<SunburstView
 							data={sunburstData}
 							handlers={handlers}
 							theme={theme}
 						/>
-					</ChartContainer>
+					</ResponsiveChartContainer>
 				);
 			}}
 		/>
