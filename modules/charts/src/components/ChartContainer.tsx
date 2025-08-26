@@ -1,11 +1,15 @@
-import { css } from '@emotion/react';
+import { css, SerializedStyles } from '@emotion/react';
 import { PropsWithChildren } from 'react';
 
 /**
  * Use to render response chart correctly in container
  * TODO: revisit - is this needed ? grow charts to surrounding container as a lot of charts need fixed dimensions
  */
-export const ChartContainer = ({ children, height, chartStyle }: PropsWithChildren<{ height?: any }>) => (
+export const ResponsiveChartContainer = ({
+	children,
+	height,
+	chartStyle,
+}: PropsWithChildren<{ height?: any; chartStyle?: SerializedStyles }>) => (
 	<div css={css({ flex: 1, position: 'relative' }, chartStyle)}>
 		<div
 			style={{

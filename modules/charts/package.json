@@ -41,7 +41,7 @@
 		"@nivo/sunburst": "^0.88.0",
 		"color": "^5.0.0",
 		"lodash": "^4.17.21",
-		"react-error-boundary": "^6.0.0"
+		"react-error-boundary": "^6.0.0",
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.28.0",

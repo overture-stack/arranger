@@ -3,7 +3,6 @@ import { isEmpty } from 'lodash';
 import { useEffect, useMemo } from 'react';
 
 import { Ranges } from '#arranger';
-import { ChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
@@ -66,13 +65,11 @@ export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) 
 			isError={isError || !validationResult.success}
 			isEmpty={isEmpty(gqlData)}
 			Chart={() => (
-				<ChartContainer>
-					<BarChartView
-						data={gqlData}
-						handlers={handlers}
-						theme={theme}
-					/>
-				</ChartContainer>
+				<BarChartView
+					data={gqlData}
+					handlers={handlers}
+					theme={theme}
+				/>
 			)}
 		/>
 	);

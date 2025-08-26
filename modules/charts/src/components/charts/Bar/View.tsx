@@ -1,9 +1,9 @@
-import { css } from '@emotion/react';
-import { ResponsiveBar } from '@nivo/bar';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useThemeContext } from '#components/ChartsThemeProvider';
 import { useColorMap } from '#hooks/useColorMap';
+import { css } from '@emotion/react';
+import { Bar } from '@nivo/bar';
 import { BarChartProps } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
@@ -42,6 +42,7 @@ const colorMapResolver = ({ chartData, colors }) => {
  * @returns JSX element with responsive bar chart
  */
 export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
+	// sort data
 	const sortedData = theme.sortByKey
 		? theme.sortByKey.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
 		: data;
@@ -60,11 +61,55 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 		[theme, colorMap, handlers],
 	);
 
+	/**
+	 * - get height of parent (consumer element) using element.offsetHeight
+	 * - rough threshold pixel amount for bars
+	 * - factor in some space for label
+	 *
+	 * TODO: also do width, for vertical barcharts and resize
+	 */
+	const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+	const barRef = useRef();
+
+	useLayoutEffect(() => {
+		if (!barRef.current) return;
+
+		const updateDimensions = (entries: ResizeObserverEntry[]) => {
+			for (const entry of entries) {
+				const { width, height } = entry.contentRect;
+				setDimensions({ width, height });
+			}
+		};
+
+		// initial dimensions
+		const initialWidth = barRef.current.offsetWidth;
+		const initialHeight = barRef.current.offsetHeight;
+		setDimensions({ width: initialWidth, height: initialHeight });
+
+		const resizeObserver = new ResizeObserver(updateDimensions);
+		resizeObserver.observe(barRef.current);
+
+		return () => resizeObserver.disconnect();
+	}, []);
+
+	// rough estimates
+	const barHeight = 26;
+	const additionalSpace = 20;
+	const totalBarSize = barHeight * sortedData.length;
+	// default to full height of container for small data sets
+	const totalNativeHeight = totalBarSize + additionalSpace;
+	const calculatedHeight = totalNativeHeight > dimensions.height ? totalNativeHeight : dimensions.height;
+
 	return (
-		<div css={css({ width: '100%', height: '100%' })}>
-			<ResponsiveBar
+		<div
+			ref={barRef}
+			css={css({ overflow: 'scroll' })}
+		>
+			<Bar
 				data={sortedData}
 				{...resolvedTheme}
+				height={calculatedHeight}
+				width={dimensions.width}
 			/>
 		</div>
 	);
