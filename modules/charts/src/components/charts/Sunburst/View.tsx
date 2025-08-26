@@ -82,8 +82,9 @@ export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
 
 	const padAngle = 2;
 
-	const onMouseEnterHandler = (_, e) => {
-		e.target.style.cursor = 'pointer';
+	const onMouseEnterHandler = (_, event) => {
+		event.target.style.cursor = 'pointer';
+
 	};
 
 	const borderColor = (segment) => {

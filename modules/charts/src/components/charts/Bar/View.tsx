@@ -42,8 +42,8 @@ const colorMapResolver = ({ chartData, colors }) => {
  * @returns JSX element with responsive bar chart
  */
 export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
-	const sortedData = theme.sortByLabel
-		? theme.sortByLabel.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
+	const sortedData = theme.sortByKey
+		? theme.sortByKey.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
 		: data;
 
 	// persistent color map

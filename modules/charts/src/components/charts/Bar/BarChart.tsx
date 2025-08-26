@@ -17,7 +17,7 @@ export interface NumericAggregationsOptions {
 export interface BarChartProps {
 	fieldName: string;
 	ranges?: Ranges;
-	theme: { sortByLabel?: string[]; nivo: any };
+	theme: { sortByKey?: string[]; nivo: any };
 	handlers?: { onClick: (config: any) => void };
 }
 
