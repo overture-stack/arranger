@@ -58,6 +58,6 @@ For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG t
 ## Bar Chart
 
 - theme
-    - sortByLabel: sort bars by gql keys by suppling a string array eg. ['Male', 'Female', 'Other']
+    - sortByKey: sort bars by gql keys by suppling a string array eg. ['Male', 'Female', 'Other']
         - first element of array is first bar from axis start eg. horizontal bar, 'Male' will be first
         - be sure to include `__missing__` to account for no data
