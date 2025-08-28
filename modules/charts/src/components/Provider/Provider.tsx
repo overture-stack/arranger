@@ -4,7 +4,7 @@ import { createContext, PropsWithChildren, useCallback, useContext } from 'react
 import { Aggregations, NumericAggregations } from '#arranger';
 import { useNetworkQuery } from '#hooks/useNetworkQuery';
 import { logger } from '#logger';
-import { gqlToBuckets } from './dataTransform';
+import { ChartBucket, gqlToBuckets } from './dataTransform';
 import { useDynamicQuery } from './useQueryFieldNames';
 
 type ChartContextType = {
@@ -13,7 +13,7 @@ type ChartContextType = {
 	getChartData: (fieldName: string) => {
 		isLoading: boolean;
 		isError: boolean;
-		data: Map<string, Aggregations | NumericAggregations> | null;
+		data: ChartBucket[] | null;
 	};
 };
 

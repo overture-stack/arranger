@@ -2,7 +2,6 @@ import { css } from '@emotion/react';
 import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
 
-import { useThemeContext } from '#components/ChartsThemeProvider';
 import { useColorMap } from '#hooks/useColorMap';
 
 const colorMapResolver = ({ chartData, colors }) => {
@@ -25,6 +24,7 @@ type SunburstViewProps = {
 	data: any;
 	theme: any;
 	handlers: any;
+	colorMapRef: React.RefObject<Map<string, string>>;
 };
 
 const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
@@ -71,10 +71,9 @@ const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive sunburst chart
  */
-export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
+export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps) => {
 	// persistent color map
-	const { colors } = useThemeContext();
-	const { colorMap } = useColorMap({ chartData: data, resolver: colorMapResolver, colors });
+	const { colorMap } = useColorMap({ colorMapRef, chartData: data, resolver: colorMapResolver });
 
 	const onClick = handlers?.onClick;
 
@@ -84,7 +83,6 @@ export const SunburstView = ({ data, handlers }: SunburstViewProps) => {
 
 	const onMouseEnterHandler = (_, event) => {
 		event.target.style.cursor = 'pointer';
-
 	};
 
 	const borderColor = (segment) => {

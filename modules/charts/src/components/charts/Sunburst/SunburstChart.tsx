@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { ChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
@@ -50,6 +50,8 @@ export const SunburstChart = ({
 		return () => deregisterChart(validationResult.data.fieldName);
 	}, [fieldName, extendedMapping]);
 
+	const colorMapRef = useRef();
+
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
 	// create mapping between api data and provided mapping
@@ -67,6 +69,7 @@ export const SunburstChart = ({
 							data={sunburstData}
 							handlers={handlers}
 							theme={theme}
+							colorMapRef={colorMapRef}
 						/>
 					</ChartContainer>
 				);

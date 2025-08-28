@@ -22,7 +22,12 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 	}
 };
 
-export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: GQLDataMap }): ChartData | null => {
+export interface ChartBucket {
+	key: string;
+	displayKey: string;
+	docCount: number;
+}
+export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: GQLDataMap }): ChartBucket[] | null => {
 	if (!gqlData) {
 		return null;
 	}
