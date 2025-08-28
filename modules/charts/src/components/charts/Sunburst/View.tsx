@@ -2,8 +2,8 @@ import { css } from '@emotion/react';
 import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
 
+import { Tooltip } from '#components/charts/Tooltip';
 import { useColorMap } from '#hooks/useColorMap';
-import { Tooltip } from '../tooltip';
 
 const colorMapResolver = ({ chartData, colors }) => {
 	const colorMap = new Map<string, string>();

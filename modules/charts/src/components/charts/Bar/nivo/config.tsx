@@ -1,4 +1,4 @@
-import { Tooltip } from '#components/charts/tooltip';
+import { Tooltip } from '#components/charts/Tooltip';
 import { merge } from 'lodash';
 
 /**
