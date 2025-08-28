@@ -1,4 +1,4 @@
-import { Ranges } from '#shared';
+import { NumericAggregationsOptions } from '#components/charts/Bar/BarChart';
 
 const queryTemplateBuckets = `
     bucket_count
@@ -48,7 +48,7 @@ export const queryTemplateNumericAggregations = ({
 	variables,
 }: {
 	fieldName: string;
-	variables: { ranges: Ranges };
+	variables: NumericAggregationsOptions;
 }) => {
 	// TODO: investigate move into variables, could use GQL client
 	const ranges = `[${(variables.ranges || []).reduce((acc, range, index, entries) => {

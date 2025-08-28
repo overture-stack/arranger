@@ -18,3 +18,46 @@ To install for dev use this command:
 
 To rebuild on file change run:
 `npm run dev`
+
+## Debug
+
+For dev and debug purposes you can provide an ENV var of ARRANGER_CHARTS_DEBUG to show verbose logging
+
+### ChartsProvider
+
+- loadingDelay: amount of milliseconds to delay loading of network results (helpful for showing loaders)
+
+### ChartsThemeProvider
+
+```
+{/* Defaults */}
+<ChartsThemeProvider>
+  <BarChart>
+</ChartsThemeProvider>
+
+{/* Overrides */}
+ <ChartsThemeProvider
+    colors={['#ff6b6b', '#4ecdc4', '#45b7d1']}
+    components={{
+      Loader: CustomSpinner,
+      ErrorData: CustomError
+    }}
+  >
+    <BarChart...>
+    <MyChart />
+  </ChartsThemeProvider>
+
+```
+
+## Common
+
+- handlers
+    - onClick: callback on clicking a segment of a chart
+        - returns full chart config object including label and value
+
+## Bar Chart
+
+- theme
+    - sortByKey: sort bars by gql keys by suppling a string array eg. ['Male', 'Female', 'Other']
+        - first element of array is first bar from axis start eg. horizontal bar, 'Male' will be first
+        - be sure to include `__missing__` to account for no data

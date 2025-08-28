@@ -1,6 +1,7 @@
-import { ChartConfig } from '#components/charts/BarChart/useValidateInput';
+import { aggregationsTypenames } from '#arranger';
+import { Query } from '#components/Provider/useQueryFieldNames';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
-import { aggregationsTypenames } from '#shared';
+import { logger } from '#logger';
 
 const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 	return `query ChartsQuery($filters: JSON) {
@@ -17,22 +18,16 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 };
 
 // ugly - works for small query templating, improvement: use gql builder
-const generateQuery = ({
-	documentType,
-	queryFields,
-}: {
-	documentType: string;
-	queryFields: Map<string, ChartConfig>;
-}) => {
+const generateQuery = ({ documentType, queryFields }: { documentType: string; queryFields: Map<string, Query> }) => {
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
-		(fullQuery, { fieldName, gqlTypename, query }) => {
+		(fullQuery, { fieldName, gqlTypename, variables }) => {
 			switch (gqlTypename) {
 				case aggregationsTypenames.Aggregations:
 					return fullQuery + queryTemplateAggregations({ fieldName });
 				case aggregationsTypenames.NumericAggregations:
-					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables: query.variables });
+					return fullQuery + queryTemplateNumericAggregations({ fieldName, variables });
 				default:
-					console.log('Unsupported GQL typename found');
+					logger.debug('Unsupported GQL typename found');
 					return '';
 			}
 		},
@@ -46,21 +41,19 @@ const generateQuery = ({
 
 /**
  * Generate single GQL query for all charts under a single ChartsProvider
- *
- * @param param0
- * @returns
+ * Inlines variables to simplify, instead of passing as reference in query and seperately in query body
  */
 export const generateChartsQuery = ({
 	documentType,
 	queryFields,
 }: {
 	documentType: string;
-	queryFields: Map<string, ChartConfig>;
+	queryFields: Map<string, Query>;
 }): string | null => {
 	if (queryFields.size === 0) {
-		console.log('No query fields available');
+		logger.debug('No query fields available');
 		return null;
 	}
-	console.log(`Generating query for fields: ${queryFields}`);
+	logger.debug(`Generating query for fields: ${JSON.stringify(queryFields)}`);
 	return generateQuery({ documentType, queryFields });
 };

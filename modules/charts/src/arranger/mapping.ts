@@ -1,6 +1,11 @@
 import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
 
-import { toJSONFieldName } from '#utils/mappings';
+import { logger } from '#logger';
+
+// GQL field name to Arranger extended mapping JSON field name
+export const toJSONFieldName = (fieldName: string) => {
+	return fieldName.replaceAll('__', '.');
+};
 
 /**
  * Maps a GraphQL field name to its extended mapping configuration.
@@ -10,7 +15,7 @@ import { toJSONFieldName } from '#utils/mappings';
  * @param { extendedMapping } - Array of field mapping configurations from Arranger
  * @returns Mapping object with field name and GraphQL typename, or null if not found
  */
-export const fieldNameWithMapping = ({
+export const getGQLTypename = ({
 	fieldName,
 	extendedMapping,
 }: {
@@ -22,10 +27,10 @@ export const fieldNameWithMapping = ({
 	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
 
 	if (mapping?.aggsType) {
-		console.log(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
-		return { fieldName, gqlTypename: mapping.aggsType };
+		logger.debug(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
+		return mapping.aggsType;
 	}
 
-	console.log(`Missing mapping for ${fieldName}`);
+	logger.debug(`Missing mapping for ${fieldName}`);
 	return null;
 };

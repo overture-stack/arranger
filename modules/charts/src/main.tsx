@@ -1,6 +1,8 @@
-import { BarChart } from '#components/charts/BarChart/BarChart';
+import { BarChart } from '#components/charts/Bar/BarChart';
+import { SunburstChart } from '#components/charts/Sunburst/SunburstChart';
+import { ChartsThemeProvider } from '#components/ChartsThemeProvider';
 import { HeadlessChart } from './components/Headless';
 
-import { ChartsProvider } from './components/Provider/Provider';
+import { ChartsProvider, useChartsContext } from './components/Provider/Provider';
 
-export { BarChart, ChartsProvider, HeadlessChart };
+export { BarChart, ChartsProvider, ChartsThemeProvider, HeadlessChart, SunburstChart, useChartsContext };
