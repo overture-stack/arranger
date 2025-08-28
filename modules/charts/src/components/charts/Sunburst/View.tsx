@@ -3,6 +3,7 @@ import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
 
 import { useColorMap } from '#hooks/useColorMap';
+import { Tooltip } from '../tooltip';
 
 const colorMapResolver = ({ chartData, colors }) => {
 	const colorMap = new Map<string, string>();
@@ -125,6 +126,7 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 						enableArcLabels={false}
 						padAngle={padAngle}
 						onMouseEnter={onMouseEnterHandler}
+						tooltip={Tooltip}
 					/>
 					<div
 						className="inner"
@@ -154,6 +156,7 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 							enableArcLabels={false}
 							padAngle={padAngle}
 							onMouseEnter={onMouseEnterHandler}
+							tooltip={Tooltip}
 						/>
 					</div>
 				</div>

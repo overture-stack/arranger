@@ -47,7 +47,7 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef }: Ba
 	// custom sort order or ascending
 	const sortedData = theme.sortByKey
 		? theme.sortByKey.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
-		: data.sort((a, b) => a.docCount - b.docCount);
+		: data.sort((a, b) => a.value - b.value);
 
 	// persistent color map
 	// ensure to create from full data available before slicing visible data

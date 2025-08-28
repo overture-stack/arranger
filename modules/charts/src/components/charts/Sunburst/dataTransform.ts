@@ -41,11 +41,11 @@ export const createChartInput = (gqlData, mapping) => {
 		}
 
 		if (!categoryMap.has(parentId)) {
-			categoryMap.set(parentId, { total: code.docCount, codes: [{ ...code, parentId }] });
+			categoryMap.set(parentId, { total: code.value, codes: [{ ...code, parentId }] });
 		} else {
 			const { total, codes: existingCodes } = categoryMap.get(parentId);
 			const updatedCodes = existingCodes.concat([code]);
-			categoryMap.set(parentId, { total: total + code.docCount, codes: updatedCodes });
+			categoryMap.set(parentId, { total: total + code.value, codes: updatedCodes });
 		}
 	});
 	const sunburstData = Array.from(categoryMap).reduce<{
@@ -72,7 +72,7 @@ export const createChartInput = (gqlData, mapping) => {
 				codes.map((code) => ({
 					id: code.key,
 					label: code.key,
-					value: code.docCount,
+					value: code.value,
 					parentId: code.parentId,
 				})),
 			);
