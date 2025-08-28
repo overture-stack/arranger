@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 import { PropsWithChildren } from 'react';
 
-export const Tooltip = ({ children }: PropsWithChildren<{}>) => {
+export const TooltipContainer = ({ children }: PropsWithChildren<{}>) => {
 	return (
 		<div
 			css={css({

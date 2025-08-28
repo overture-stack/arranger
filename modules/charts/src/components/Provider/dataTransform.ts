@@ -24,7 +24,7 @@ const resolveBuckets = ({ aggregations }: { aggregations: ArrangerAggregations }
 
 export interface ChartBucket {
 	key: string;
-	displayKey: string;
+	label: string;
 	value: number;
 }
 export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: GQLDataMap }): ChartBucket[] | null => {
@@ -34,13 +34,13 @@ export const gqlToBuckets = ({ gqlData }: { fieldName: string; gqlData: GQLDataM
 
 	const gqlBuckets = resolveBuckets({ aggregations: gqlData });
 	/**
-	 * 1 - add displayKey property
+	 * 1 - override label
 	 * 2 - put "doc_count" in data agnostic "value"
 	 * 3 - map __missing__ key to "No Data"
 	 */
 	const buckets = gqlBuckets.map(({ key, doc_count }) => ({
 		key: key,
-		displayKey: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
+		label: key === ARRANGER_MISSING_DATA_KEY ? 'No Data' : key,
 		value: doc_count,
 	}));
 

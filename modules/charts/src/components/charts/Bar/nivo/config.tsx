@@ -1,4 +1,4 @@
-import { Tooltip } from '#components/Provider/Tooltip';
+import { Tooltip } from '#components/charts/tooltip';
 import { merge } from 'lodash';
 
 /**
@@ -16,22 +16,6 @@ export const arrangerToNivoBarChart = ({ theme, colorMap, onClick }) => {
 	const colors = (bar) => {
 		const color = colorMap.get(bar.data.key);
 		return color || 'black';
-	};
-
-	/* ================= *
-	 * Tooltip						*
-	 * ================= */
-	const tooltip = ({ data }) => {
-		const { docCount, key } = data;
-		const displayValue = key === '__missing__' ? 'No Data' : key;
-		return (
-			<Tooltip>
-				<div>
-					<div>{`${displayValue}`}</div>
-					<div>{`${docCount}: Donors`}</div>
-				</div>
-			</Tooltip>
-		);
 	};
 
 	const axes = {
@@ -134,9 +118,9 @@ export const arrangerToNivoBarChart = ({ theme, colorMap, onClick }) => {
 			/**
 			 * match arranger schema
 			 */
-			indexBy: 'displayKey',
-			keys: ['docCount'],
-			tooltip,
+			indexBy: 'label',
+			keys: ['value'],
+			tooltip: Tooltip,
 			colors,
 			onMouseEnter: (_, e) => {
 				e.target.style.cursor = 'pointer';
