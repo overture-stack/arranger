@@ -2,7 +2,6 @@ import { css } from '@emotion/react';
 import { ResponsiveBar } from '@nivo/bar';
 import { useMemo } from 'react';
 
-import { useThemeContext } from '#components/ChartsThemeProvider';
 import { useColorMap } from '#hooks/useColorMap';
 import { BarChartProps } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
@@ -11,6 +10,8 @@ interface BarChartViewProps {
 	data: any;
 	handlers: BarChartProps['handlers'];
 	theme: BarChartProps['theme'];
+	maxBars: BarChartProps['maxBars'];
+	colorMapRef: React.RefObject<Map<string, string>>;
 }
 
 /**
@@ -39,16 +40,18 @@ const colorMapResolver = ({ chartData, colors }) => {
  * @param props.data - Transformed chart data in Nivo format
  * @param props.handlers -
  * @param props.theme - Arranger theme configuration
+ * @param props.maxBars - Max number of bars to show
  * @returns JSX element with responsive bar chart
  */
-export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
+export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef }: BarChartViewProps) => {
+	// custom sort order or ascending
 	const sortedData = theme.sortByKey
 		? theme.sortByKey.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
-		: data;
+		: data.sort((a, b) => a.docCount - b.docCount);
 
 	// persistent color map
-	const { colors } = useThemeContext();
-	const { colorMap } = useColorMap({ chartData: sortedData, resolver: colorMapResolver, colors });
+	// ensure to create from full data available before slicing visible data
+	const { colorMap } = useColorMap({ colorMapRef, chartData: sortedData, resolver: colorMapResolver });
 
 	/**
 	 * TODO: improve "chart view" config/interface
@@ -60,10 +63,13 @@ export const BarChartView = ({ data, handlers, theme }: BarChartViewProps) => {
 		[theme, colorMap, handlers],
 	);
 
+	// sort by value and limit by maxRows
+	const barData = sortedData.slice(0, maxBars);
+
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<ResponsiveBar
-				data={sortedData}
+				data={barData}
 				{...resolvedTheme}
 			/>
 		</div>

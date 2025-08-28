@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useThemeContext } from '#components/ChartsThemeProvider';
 
 /**
  * Custom hook that creates and maintains a persistent color map for chart data.
@@ -8,10 +8,12 @@ import { useRef } from 'react';
  * @param { resolver } - Function that creates color map from chart data
  * @returns Object containing the generated color map
  */
-export const useColorMap = ({ chartData, resolver, colors }) => {
-	const colorMap = useRef();
-	if (chartData && !colorMap.current) {
-		colorMap.current = resolver({ chartData, colors });
+export const useColorMap = ({ colorMapRef, chartData, resolver }) => {
+	const { colors } = useThemeContext();
+
+	if (chartData && !colorMapRef?.current) {
+		colorMapRef.current = resolver({ chartData, colors });
 	}
-	return { colorMap: colorMap.current };
+
+	return { colorMap: colorMapRef.current };
 };

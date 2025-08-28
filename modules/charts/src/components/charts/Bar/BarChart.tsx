@@ -1,6 +1,6 @@
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Ranges } from '#arranger';
 import { ChartContainer } from '#components/ChartContainer';
@@ -16,6 +16,7 @@ export interface NumericAggregationsOptions {
 
 export interface BarChartProps {
 	fieldName: string;
+	maxBars: number;
 	ranges?: Ranges;
 	theme: { sortByKey?: string[]; nivo: any };
 	handlers?: { onClick: (config: any) => void };
@@ -32,14 +33,19 @@ export interface BarChartProps {
  * @param props.theme - Chart config mostly for Nivo
  * @returns JSX element with complete bar chart or null if field validation fails
  */
-export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) => {
-	//
+export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarChartProps) => {
+	// ensure maxBars is provided
+	if (!maxBars) {
+		throw Error(`"maxBars" prop is required for ${fieldName} chart."`);
+	}
+
+	// get context
 	const { extendedMapping } = useArrangerData();
 	const { registerChart, deregisterChart, getChartData } = useChartsContext();
 
 	const variables = { ranges };
 
-	//
+	// validate
 	const validationResult = useMemo(
 		() => validateQueryProps({ fieldName, variables, extendedMapping }),
 		[fieldName, variables, extendedMapping],
@@ -58,6 +64,9 @@ export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) 
 		return () => deregisterChart(validationResult.data.fieldName);
 	}, [fieldName, extendedMapping]);
 
+	// persist color map across re-mounting
+	const colorMapRef = useRef();
+
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
 	return (
@@ -71,6 +80,8 @@ export const BarChart = ({ fieldName, ranges, handlers, theme }: BarChartProps) 
 						data={gqlData}
 						handlers={handlers}
 						theme={theme}
+						maxBars={maxBars}
+						colorMapRef={colorMapRef}
 					/>
 				</ChartContainer>
 			)}
