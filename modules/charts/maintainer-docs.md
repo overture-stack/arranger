@@ -7,7 +7,7 @@
 Arranger Charts is a reusable React component library designed to provide high-quality data visualizations with a clear separation between data management and visual presentation. The library is built to provide:
 
 - **Reusable Component Library**: Standardized chart components that can be easily integrated across different Overture enabled applications
-- **Flexible View Layer**: Abstracted charting implementation supports future work to switch  between underlying libraries (currently Nivo [https://nivo.rocks/](https://nivo.rocks/), but designed to support D3 or other engines)
+- **Flexible View Layer**: Abstracted charting implementation supports future work to switch between underlying libraries (currently Nivo [https://nivo.rocks/](https://nivo.rocks/), but designed to support D3 or other engines)
 
 The library integrates with the Arranger ecosystem, leveraging GQL for data fetching and providing automatic field validation against Arranger's extended mapping configurations. Charts are managed through a provider-based context system that coordinates multiple visualizations within a single API call.
 
@@ -21,15 +21,18 @@ Applications using the library must be wrapped in the required provider hierarch
 
 ```tsx
 <ArrangerDataProvider>
-  <ChartsProvider debugMode={false} loadingDelay={300}>
-    <ChartsThemeProvider colors={customColors}>
-      <BarChart
-        fieldName="study_id"
-        maxBars={10}
-        handlers={{ onClick: handleClick }}
-      />
-    </ChartsThemeProvider>
-  </ChartsProvider>
+	<ChartsProvider
+		debugMode={false}
+		loadingDelay={300}
+	>
+		<ChartsThemeProvider colors={customColors}>
+			<BarChart
+				fieldName="study_id"
+				maxBars={10}
+				handlers={{ onClick: handleClick }}
+			/>
+		</ChartsThemeProvider>
+	</ChartsProvider>
 </ArrangerDataProvider>
 ```
 
@@ -37,30 +40,30 @@ Applications using the library must be wrapped in the required provider hierarch
 
 ```tsx
 <ChartsThemeProvider
-  colors={chartColors}
-  components={{
-    EmptyData: CustomEmptyComponent,
-    Loader: CustomLoader,
-  }}
+	colors={chartColors}
+	components={{
+		EmptyData: CustomEmptyComponent,
+		Loader: CustomLoader,
+	}}
 >
-  <BarChart
-    fieldName="primary_diagnosis__age_at_diagnosis"
-    maxBars={5}
-    ranges={[
-      { key: '< 18', to: 18 },
-      { key: '18 - 65', from: 18, to: 66 },
-      { key: '> 65', from: 66 },
-    ]}
-    theme={{
-      sortByKey: ['__missing__', '> 65', '18 - 65', '< 18'],
-    }}
-  />
+	<BarChart
+		fieldName="primary_diagnosis__age_at_diagnosis"
+		maxBars={5}
+		ranges={[
+			{ key: '< 18', to: 18 },
+			{ key: '18 - 65', from: 18, to: 66 },
+			{ key: '> 65', from: 66 },
+		]}
+		theme={{
+			sortByKey: ['__missing__', '> 65', '18 - 65', '< 18'],
+		}}
+	/>
 
-  <SunburstChart
-    fieldName="primary_diagnosis__cancer_type_code"
-    mapping={cancerTypeCodeMapping}
-    handlers={{ onClick: handleSunburstClick }}
-  />
+	<SunburstChart
+		fieldName="primary_diagnosis__cancer_type_code"
+		mapping={cancerTypeCodeMapping}
+		handlers={{ onClick: handleSunburstClick }}
+	/>
 </ChartsThemeProvider>
 ```
 
@@ -106,7 +109,7 @@ const validationResult = validateQueryProps({ fieldName, variables, extendedMapp
 registerChart(validationResult.data);
 ```
 
-The registration system prevents duplicate API calls by using a Map where multiple charts can reference the same field data. A chart component could be nested anywhere among unrelated related siblings in a consumer application, this approach using context avoids complicated prop drilling. A potential improvement would be using a single cache based GQL client for all Arranger queries. 
+The registration system prevents duplicate API calls by using a Map where multiple charts can reference the same field data. A chart component could be nested anywhere among unrelated related siblings in a consumer application, this approach using context avoids complicated prop drilling. A potential improvement would be using a single cache based GQL client for all Arranger queries.
 
 ### Dynamic GQL Query Building
 
@@ -114,7 +117,7 @@ The `useDynamicQuery` hook constructs a single GQL query from all registered cha
 
 ```tsx
 const gqlQuery = useMemo(() => {
-  return generateChartsQuery({ documentType, queryFields });
+	return generateChartsQuery({ documentType, queryFields });
 }, [documentType, queryFields]);
 ```
 
@@ -126,10 +129,10 @@ Aligning with the GQL approach of asking for everything you want from a single q
 
 ```tsx
 const { apiState } = useNetworkQuery({
-  query: gqlQuery,
-  apiFetcher,
-  sqon,
-  loadingDelay,
+	query: gqlQuery,
+	apiFetcher,
+	sqon,
+	loadingDelay,
 });
 ```
 
@@ -142,9 +145,9 @@ Raw GQL responses standardization to create data-agnostic chart structures:
 ```tsx
 // Transforms "doc_count" to "value", handles missing data keys
 const buckets = gqlBuckets.map(({ key, doc_count }) => ({
-  key: key,
-  label: key === '__missing__' ? 'No Data' : key,
-  value: doc_count,
+	key: key,
+	label: key === '__missing__' ? 'No Data' : key,
+	value: doc_count,
 }));
 ```
 
@@ -201,11 +204,10 @@ The library uses Nivo through a configuration object:
 ```tsx
 // Nivo configuration
 const resolvedTheme = arrangerToNivoBarChart({
-  theme,
-  colorMap,
-  onClick: handlers?.onClick
+	theme,
+	colorMap,
+	onClick: handlers?.onClick,
 });
-
 ```
 
 ---
@@ -214,15 +216,14 @@ const resolvedTheme = arrangerToNivoBarChart({
 
 ### Color Persistence
 
-Colors are managed through  `useColorMap` hook.
+Colors are managed through `useColorMap` hook.
 
 ```tsx
 const { colorMap } = useColorMap({
-  colorMapRef,
-  chartData,
-  resolver: colorMapResolver
+	colorMapRef,
+	chartData,
+	resolver: colorMapResolver,
 });
-
 ```
 
 The color map ensures that:
@@ -242,7 +243,7 @@ Consumer can provide custom color palettes through the `ChartsThemeProvider`:
 
 ```
 
-If a dataset is larger than the color array, it will loop around starting back at index 0. A potential improvement here is to support a single colour that can scale through lighter or darker based on number of data points. 
+If a dataset is larger than the color array, it will loop around starting back at index 0. A potential improvement here is to support a single colour that can scale through lighter or darker based on number of data points.
 
 D3 scales are a wealth of information on this and a lot of other charting libs (including Nivo) use this under the hood: [https://d3js.org/d3-scale-chromatic](https://d3js.org/d3-scale-chromatic)
 
@@ -265,8 +266,9 @@ The core provider manages global chart state and data fetching:
 **Key Methods:**
 
 - `registerChart(queryProps)`: Adds chart to global query
-- `deregisterChart(fieldName)`: Removes chart from  global query
+- `deregisterChart(fieldName)`: Removes chart from global query
 - `getChartData(fieldName)`: Returns API state for specific field
+    - exposed to consumer
 
 ### ChartsThemeProvider
 
@@ -297,25 +299,29 @@ External dependency that provides GQL integration:
 
 ## Component Breakdown: BarChart
 
+Example of bar chart in use within a consumer app (card and title are not part of library)
+![alt text](<Screenshot 2025-08-28 at 8.41.06 PM.png>)
+
 ### Consumer Interface
 
 The BarChart provides a declarative interface with comprehensive validation:
 
 ```tsx
 <BarChart
-  fieldName="study_id"           // Required: GQL field name
-  maxBars={10}                   // Required: Display limit
-  ranges={[                      // Optional: For numeric fields
+	fieldName="study_id" // Required: GQL field name
+	maxBars={10} // Required: Display limit
+	ranges={[
+		// Optional: For numeric fields
 		{ key: '< 18', to: 18 },
 		{ key: '18 - 65', from: 18, to: 66 },
 		{ key: '> 65', from: 66 },
-  ]}                
-  handlers={{ onClick: fn }}     // Optional: Event handlers
-  theme={{                       // Optional: Visual customizations 
-	  sortByKey: ['__missing__', 'Other', 'Female', 'Male'],
-	 }}   
+	]}
+	handlers={{ onClick: fn }} // Optional: Event handlers
+	theme={{
+		// Optional: Visual customizations
+		sortByKey: ['__missing__', 'Other', 'Female', 'Male'],
+	}}
 />
-
 ```
 
 ### Validation and Registration Flow
@@ -335,17 +341,22 @@ The BarChartView manages:
     - Default: ascending by value (ascending from axis)
     - Custom sort order via `theme.sortByKey`
 - **Color Mapping**: Persistent color using `colorMapRef`
-- **Data Limiting**: Truncates to `maxBars` *after* sorting
+- **Data Limiting**: Truncates to `maxBars` _after_ sorting
 - **Nivo Integration**: Transforms configuration for ResponsiveBar component
 
 ### Event Handling
 
 Click and hover events will provide a bar object that at least contains:
+
 - `label` of data and `value` of data
 
 ---
 
 ## Component Breakdown: SunburstChart
+
+Example of bar chart in use within a consumer app (card and title are not part of library)
+
+![alt text](<Screenshot 2025-08-28 at 8.41.12 PM.png>)
 
 Internally using two absolutely position pie charts due to constraints with styling Nivo sunburst chart.
 
@@ -355,11 +366,10 @@ SunburstChart creates a sunburst chart using a mapping system:
 
 ```tsx
 const mapping = {
-  'specificCode1': 'ParentCategory1',
-  'specificCode2': 'ParentCategory1',
-  'specificCode3': 'ParentCategory2'
+	specificCode1: 'ParentCategory1',
+	specificCode2: 'ParentCategory1',
+	specificCode3: 'ParentCategory2',
 };
-
 ```
 
 This mapping transforms flat categorical data into hierarchical structures suitable for sunburst visualization.
@@ -388,15 +398,15 @@ Colors use the same color map but have an additional alpha contrast between inne
 // Parent gets base color with transparency
 colorMap.set(parentId, color.alpha(0.5).hsl().string());
 // Children get full opacity variants
-children.forEach(child => {
-  colorMap.set(child, color.string());
+children.forEach((child) => {
+	colorMap.set(child, color.string());
 });
-
 ```
 
 ### Event Handling
 
 Click and hover events will provide a bar object that at least contains:
+
 - `label` of data and `value` of data
 
 ---
