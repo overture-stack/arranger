@@ -300,7 +300,7 @@ External dependency that provides GQL integration:
 ## Component Breakdown: BarChart
 
 Example of bar chart in use within a consumer app (card and title are not part of library)
-![alt text](<Screenshot 2025-08-28 at 8.41.06 PM.png>)
+![alt text](bar.png)
 
 ### Consumer Interface
 
@@ -356,7 +356,7 @@ Click and hover events will provide a bar object that at least contains:
 
 Example of bar chart in use within a consumer app (card and title are not part of library)
 
-![alt text](<Screenshot 2025-08-28 at 8.41.12 PM.png>)
+![alt text](sunburst.png)
 
 Internally using two absolutely position pie charts due to constraints with styling Nivo sunburst chart.
 
