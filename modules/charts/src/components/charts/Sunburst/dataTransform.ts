@@ -84,11 +84,14 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 	if (mappedData.inner.length === 0 || mappedData.outer.length === 0) {
 		return {};
 	}
-
 	// slice by maxSegments after data is resolved because the outer rings are the dynamic data
+	const slicedInner = mappedData.inner.slice(0, maxSegments);
+	const outer = slicedInner
+		.flatMap((parent) => parent.children)
+		.map((outerId) => mappedData.outer.find(({ id }) => id === outerId));
 	const sunburstData: SunburstData = {
-		inner: mappedData.inner.slice(0, maxSegments),
-		outer: mappedData.outer.slice(0, maxSegments),
+		inner: slicedInner,
+		outer,
 		legend: mappedData.legend.slice(0, maxSegments),
 	};
 
