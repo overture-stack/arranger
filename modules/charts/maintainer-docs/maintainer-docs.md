@@ -38,7 +38,7 @@ Applications using the library must be wrapped in the required provider hierarch
 
 ### Advanced Usage with Multiple Charts
 
-```tsx
+```jsx
 <ChartsThemeProvider
 	colors={chartColors}
 	components={{
@@ -61,7 +61,8 @@ Applications using the library must be wrapped in the required provider hierarch
 
 	<SunburstChart
 		fieldName="primary_diagnosis__cancer_type_code"
-		mapping={cancerTypeCodeMapping}
+		maxSegments={5}
+		mapping={(key) => lookupMap[key]}
 		handlers={{ onClick: handleSunburstClick }}
 	/>
 </ChartsThemeProvider>
@@ -304,8 +305,6 @@ Example of bar chart in use within a consumer app (card and title are not part o
 
 ### Consumer Interface
 
-The BarChart provides a declarative interface with comprehensive validation:
-
 ```tsx
 <BarChart
 	fieldName="study_id" // Required: GQL field name
@@ -358,37 +357,53 @@ Example of bar chart in use within a consumer app (card and title are not part o
 
 ![alt text](sunburst.png)
 
-Internally using two absolutely position pie charts due to constraints with styling Nivo sunburst chart.
+### Consumer Interface
 
-### Hierarchical Data Mapping
-
-SunburstChart creates a sunburst chart using a mapping system:
-
-```tsx
-const mapping = {
+```jsx
+mappingLookup = {
 	specificCode1: 'ParentCategory1',
 	specificCode2: 'ParentCategory1',
 	specificCode3: 'ParentCategory2',
 };
+
+<SunburstChart
+	fieldName="primary_diagnosis__cancer_type_code" // Required: GQL field name
+	mapper={(key) => mappingLookup[key]} // Required: mapping function
+	maxSegments={10} // Required: Display limit
+	// Optional: Event handlers
+	handlers={{
+		onClick: fn,
+	}}
+/>;
 ```
 
-This mapping transforms flat categorical data into hierarchical structures suitable for sunburst visualization.
+Internally using two absolutely position pie charts due to constraints with styling Nivo sunburst chart.
 
-### Data Transformation Process
+### Validation and Registration Flow
 
-The `createChartInput` function performs complex data restructuring:
+1. **Props Validation**: Ensures `maxSegments` and `mapper` props are provided (throws error if missing)
+2. **Field Validation**: Checks field type against Arranger extended mapping
+3. **Type-Specific Validation**:
+    - `Aggregations`: Rejects if `ranges` provided
+    - `NumericAggregations`: Requires `ranges` parameter
+4. **Registration**: Adds validated configuration to ChartsProvider
 
-1. **Category Grouping**: Groups child codes by parent categories
+### View Rendering
+
+API data is assumed to be specific data with the consumer providing a mapping to the parent broad categories. This means totals need to be computed client side and slicing of data needs to happen after data mapping.
+
+1. **Category Grouping**: Groups child codes by parent categories using `mapper`
 2. **Value Aggregation**: Sums child values for parent totals
-3. **Structure Creation**: Builds rings
-4. **Legend Generation**: Creates color related legend entries
+3. **Data Limiting**: Truncates to `maxSegments`
+4. **Structure Creation**: Builds rings
+5. **Legend Generation**: Creates color related legend entries
 
 ### Visualization Architecture
 
 The sunburst uses overlapping ResponsivePie components:
 
-- **Outer Ring**: Full-size pie showing detailed categories
-- **Inner Ring**: Smaller centered pie showing parent categories
+- **Outer Ring**: Full-size pie showing specific categories
+- **Inner Ring**: Smaller centered pie showing broad parent categories
 
 ### Color Coordination
 
