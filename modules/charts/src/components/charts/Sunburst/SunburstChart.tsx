@@ -15,7 +15,7 @@ import { SunburstView } from './View';
  * Creates hierarchical visualizations from multiple related fields using user-provided mapping.
  *
  * @param props - Sunburst chart configuration
- * @param props.mapper -
+ * @param props.mapper - Mapper function to map outer rings to inner rings, specific to broad
  * @param props.handlers - Event handlers for chart interactions
  * @param props.maxSegments - Max number of segments shown
  * @param props.theme - Arranger theme configuration

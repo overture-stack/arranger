@@ -9,6 +9,7 @@ interface SunburstData {
 export interface SunburstMappingFn {
 	(key: string): string;
 }
+
 export interface ChartInput {
 	data: any;
 	mapper: SunburstMappingFn;
@@ -20,13 +21,12 @@ export interface ChartInput {
  * Handles hierarchical data creation from multiple fields using user-provided mapping.
  *
  **/
-
 export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput): SunburstData | {} => {
 	if (isEmpty(data)) {
 		return {};
 	}
 
-	// create category Map, simplify later reduce
+	// create category Map to simplify later reduce
 	const categoryMap = new Map();
 	data.forEach((code) => {
 		const parentId = mapper(code.key);
@@ -80,14 +80,12 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 		},
 	);
 
-	// user supplied mapping may not be complete
+	// account for user supplied mapping incomplete
 	if (mappedData.inner.length === 0 || mappedData.outer.length === 0) {
 		return {};
 	}
 
-	/**
-	 *
-	 */
+	// slice by maxSegments after data is resolved because the outer rings are the dynamic data
 	const sunburstData: SunburstData = {
 		inner: mappedData.inner.slice(0, maxSegments),
 		outer: mappedData.outer.slice(0, maxSegments),
