@@ -1,4 +1,3 @@
-import { css } from '@emotion/react';
 import { useArrangerData } from '@overture-stack/arranger-components';
 import { isEmpty } from 'lodash';
 import { useEffect, useMemo, useRef } from 'react';
@@ -76,7 +75,7 @@ export const SunburstChart = ({
 				const sunburst = createSunburstSegments({ data: gqlData, mapper, maxSegments });
 
 				return (
-					<ChartContainer chartStyle={css({ margin: '16px 0' })}>
+					<ChartContainer>
 						<SunburstView
 							data={sunburst}
 							handlers={handlers}
