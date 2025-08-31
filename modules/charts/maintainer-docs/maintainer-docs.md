@@ -1,15 +1,13 @@
-# Charts
-
 # Arranger Charts - Maintainer Documentation
 
 ## Overview
 
-Arranger Charts is a reusable React component library designed to provide high-quality data visualizations with a clear separation between data management and visual presentation. The library is built to provide:
+Arranger Charts provides React components for data visualizations with separated data management and visual presentation. The library offers:
 
-- **Reusable Component Library**: Standardized chart components that can be easily integrated across different Overture enabled applications
-- **Flexible View Layer**: Abstracted charting implementation supports future work to switch between underlying libraries (currently Nivo [https://nivo.rocks/](https://nivo.rocks/), but designed to support D3 or other engines)
+- **Reusable Components**: Standardized chart components for Overture applications
+- **Flexible Views**: Abstract charting implementation supports switching between libraries (currently Nivo, designed for D3 or other engines)
 
-The library integrates with the Arranger ecosystem, leveraging GQL for data fetching and providing automatic field validation against Arranger's extended mapping configurations. Charts are managed through a provider-based context system that coordinates multiple visualizations within a single API call.
+Charts integrate with Arranger's GQL ecosystem and validate fields against extended mapping configurations. The provider-based context coordinates multiple visualizations in a single API call.
 
 ---
 
@@ -17,7 +15,7 @@ The library integrates with the Arranger ecosystem, leveraging GQL for data fetc
 
 ### Basic Setup
 
-Applications using the library must be wrapped in the required provider hierarchy:
+Wrap applications in required providers:
 
 ```tsx
 <ArrangerDataProvider>
@@ -36,11 +34,11 @@ Applications using the library must be wrapped in the required provider hierarch
 </ArrangerDataProvider>
 ```
 
-### Advanced Usage with Multiple Charts
+### Multiple Charts
 
 ```jsx
 <ChartsThemeProvider
-	colors={chartColors}
+	colors={['#a6cee3', '#1f78b4', '#b2df8a']}
 	components={{
 		EmptyData: CustomEmptyComponent,
 		Loader: CustomLoader,
@@ -54,15 +52,13 @@ Applications using the library must be wrapped in the required provider hierarch
 			{ key: '18 - 65', from: 18, to: 66 },
 			{ key: '> 65', from: 66 },
 		]}
-		theme={{
-			sortByKey: ['__missing__', '> 65', '18 - 65', '< 18'],
-		}}
+		theme={{ sortByKey: ['__missing__', '> 65', '18 - 65', '< 18'] }}
 	/>
 
 	<SunburstChart
 		fieldName="primary_diagnosis__cancer_type_code"
+		mapper={mapperFn}
 		maxSegments={5}
-		mapping={(key) => lookupMap[key]}
 		handlers={{ onClick: handleSunburstClick }}
 	/>
 </ChartsThemeProvider>
@@ -70,24 +66,23 @@ Applications using the library must be wrapped in the required provider hierarch
 
 ---
 
-## Architecture
+### Architecture
 
-The library follows a standard data flow for each chart that separates concerns:
+Each chart follows this data flow:
 
-1. **Chart Registration**: Components register with `ChartsProvider` on mount, providing field names and configuration
-2. **Implementation Validation:** Required props are checked and errors are thrown for missing critical configuration e.g. `maxBars` not provided
-3. **Field Validation**: Props are validated against Arranger's extended mapping to ensure compatibility
-4. **Query Building**: Dynamic GQL queries are constructed from all registered charts
-5. **API Call**: Single network request fetches data for all charts simultaneously
-6. **Data Transformation**: Raw GQL responses are transformed into data-agnostic chart structures
-7. **Rendering**: `ChartRenderer` selectively displays loading, error, empty, or valid chart states
-8. **View Layer**: Chart-specific view components handle visualization with persistent theming
+1. **Registration**: Components register with `ChartsProvider` on mount
+2. **Validation**: Check required props and field compatibility
+3. **Query Building**: Construct dynamic GQL queries from all registered charts
+4. **API Call**: Single request fetches data for all charts
+5. **Transformation**: Transform GQL responses to chart-ready structures
+6. **Rendering**: `ChartRenderer` displays loading, error, empty, or chart states
+7. **Visualization**: Chart views handle rendering with persistent theming
 
 ### Component Hierarchy
 
 ```
 ChartsProvider (data management)
-├── ChartsThemeProvider (theming)
+└── ChartsThemeProvider (theming)
     ├── BarChart (consumer interface)
     │   ├── ChartRenderer (state routing)
     │   └── BarChartView (visualization)
@@ -98,23 +93,20 @@ ChartsProvider (data management)
 
 ---
 
-## Data Layer
+### Registration System
 
-### Chart Registration System
-
-Each chart registers itself with the `ChartsProvider` using validated configuration:
+Charts register with validated configuration:
 
 ```tsx
-// Registration includes field validation and GQL type resolution
 const validationResult = validateQueryProps({ fieldName, variables, extendedMapping });
 registerChart(validationResult.data);
 ```
 
-The registration system prevents duplicate API calls by using a Map where multiple charts can reference the same field data. A chart component could be nested anywhere among unrelated related siblings in a consumer application, this approach using context avoids complicated prop drilling. A potential improvement would be using a single cache based GQL client for all Arranger queries.
+Charts can nest anywhere without prop drilling.
 
-### Dynamic GQL Query Building
+### Query Building
 
-The `useDynamicQuery` hook constructs a single GQL query from all registered charts:
+`useDynamicQuery` constructs single GQL queries from registered charts:
 
 ```tsx
 const gqlQuery = useMemo(() => {
@@ -122,29 +114,26 @@ const gqlQuery = useMemo(() => {
 }, [documentType, queryFields]);
 ```
 
-Aligning with the GQL approach of asking for everything you want from a single query, this hooks constructs a single query out of the each charts Arranger GQL typename.
+### API Management
 
-### API State Management
-
-`useNetworkQuery` handles the network API requests
+`useNetworkQuery` handles requests:
 
 ```tsx
 const { apiState } = useNetworkQuery({
-	query: gqlQuery,
+	query,
 	apiFetcher,
 	sqon,
 	loadingDelay,
 });
 ```
 
-Uses the Arranger context’s `apiFetcher` to support an authenticated user. Optional `loadingDelay` parameter to avoid “flash of UI” if loading is too fast.
+Uses Arranger's `apiFetcher` for authenticated requests. Optional `loadingDelay` prevents loading flashes.
 
-### Data Transformation Pipeline
+### Data Transformation
 
-Raw GQL responses standardization to create data-agnostic chart structures:
+Standardize GQL responses:
 
 ```tsx
-// Transforms "doc_count" to "value", handles missing data keys
 const buckets = gqlBuckets.map(({ key, doc_count }) => ({
 	key: key,
 	label: key === '__missing__' ? 'No Data' : key,
@@ -152,21 +141,17 @@ const buckets = gqlBuckets.map(({ key, doc_count }) => ({
 }));
 ```
 
-### Validation System
+### Validation
 
-The validation layer ensures GQL type safety and proper configuration:
+Ensures chart type safety:
 
-- **Field Type Validation**: Confirms GQL field types match expected aggregation types
-- **Configuration Compatibility**: Ensures chart configuration matches Arranger field capabilities
-    - eg: Validates that NumericAggregations include required `ranges` parameter
+- **Field Type**: Confirms GQL field types match aggregation types
 
 ---
 
-## View Layer
-
 ### ChartRenderer Pattern
 
-The `ChartRenderer` component implements a state-based rendering strategy:
+State-based rendering:
 
 ```tsx
 if (isLoading) return <LoaderComponent />;
@@ -175,35 +160,23 @@ if (isEmpty) return <EmptyComponent />;
 return <Chart />;
 ```
 
-Single component to handle data layer results. The theming system supports custom components for different chart states:
+Override default components:
 
 ```tsx
 <ChartsThemeProvider
-  components={{
-    Loader: CustomLoadingSpinner,
-    ErrorData: CustomErrorMessage,
-    EmptyData: CustomEmptyState,
-  }}
->
+	components={{
+		Loader: CustomLoadingSpinner,
+		ErrorData: CustomErrorMessage,
+		EmptyData: CustomEmptyState,
+	}}
+/>
 ```
-
-When no overrides are provided, the library falls back to the default `ChartText` component with appropriate messaging.
-
-### Chart-Specific Views
-
-Each chart type has a dedicated view component that handles:
-
-- Chart specific transformations
-- Charting library integration
-- Event handling
-- Theming
 
 ### Nivo Integration
 
-The library uses Nivo through a configuration object:
+Transform configurations:
 
 ```tsx
-// Nivo configuration
 const resolvedTheme = arrangerToNivoBarChart({
 	theme,
 	colorMap,
@@ -213,97 +186,75 @@ const resolvedTheme = arrangerToNivoBarChart({
 
 ---
 
-## Theming System
+### Theming System
 
-### Color Persistence
+## Color Persistence
 
-Colors are managed through `useColorMap` hook.
+`useColorMap` maintains consistent colors:
 
 ```tsx
 const { colorMap } = useColorMap({
 	colorMapRef,
 	chartData,
-	resolver: colorMapResolver,
+	resolver,
 });
 ```
 
-The color map ensures that:
+Ensures:
 
-- Colors remain consistent across re-renders
-- Same data keys always receive the same colors
-- Color assignments persist even when data order changes
+- Consistent colors across re-renders
+- Same data keys receive same colors
+- Color assignments persist when data order changes
 
-A custom color resolver is used to generate a color map from chart data.
+## Custom Colors
 
-### Custom Color Arrays
-
-Consumer can provide custom color palettes through the `ChartsThemeProvider`:
+Provide palettes through `ChartsThemeProvider`:
 
 ```tsx
 <ChartsThemeProvider colors={['#a6cee3', '#1f78b4', '#b2df8a']}>
-
 ```
 
-If a dataset is larger than the color array, it will loop around starting back at index 0. A potential improvement here is to support a single colour that can scale through lighter or darker based on number of data points.
-
-D3 scales are a wealth of information on this and a lot of other charting libs (including Nivo) use this under the hood: [https://d3js.org/d3-scale-chromatic](https://d3js.org/d3-scale-chromatic)
+Colors loop when dataset exceeds array length.
 
 ---
 
-## Context Providers
+### Context Providers
 
 ### ChartsProvider
 
-The core provider manages global chart state and data fetching:
+Manages chart state and data:
 
-**Responsibilities:**
+**Methods:**
 
-- Chart registration and deregistration
-- Dynamic query management
-- API state
-- Data transformation
-- Data provider context ho
-
-**Key Methods:**
-
-- `registerChart(queryProps)`: Adds chart to global query
-- `deregisterChart(fieldName)`: Removes chart from global query
-- `getChartData(fieldName)`: Returns API state for specific field
-    - exposed to consumer
+- `registerChart(queryProps)`: Adds chart to query
+- `deregisterChart(fieldName)`: Removes chart from query
+- `getChartData(fieldName)`: Returns API state for field
 
 ### ChartsThemeProvider
 
-Manages visual consistency and customization across all child charts:
+Manages visual consistency:
 
-**Responsibilities:**
+**Options:**
 
-- Color palette management
-- Custom components
-
-**Configuration Options:**
-
-- `colors`: Array of hex color values for chart elements
-- `components`: Custom React components for loading, error, and empty states
+- `colors`: Hex color array for chart elements
+- `components`: Custom components for loading, error, empty states
 
 ### ArrangerDataProvider
 
-External dependency that provides GQL integration:
+External dependency providing:
 
-**Provides:**
-
-- `documentType`: Root GQL document type for queries
-- `apiFetcher`: Configured API client function
-- `sqon`: Current filter state for queries
+- `documentType`: Root GQL document type
+- `apiFetcher`: API client function
+- `sqon`: Current filter state
 - `extendedMapping`: Field configuration for validation
 
 ---
 
-## Component Breakdown: BarChart
+### BarChart Component
 
-Example of bar chart in use within a consumer app (card and title are not part of library)
-![alt text](bar.png)
+![Bar Chart Example](bar.png)
 
-### Consumer Interface
+## Interface
 
 ```tsx
 <BarChart
@@ -323,114 +274,87 @@ Example of bar chart in use within a consumer app (card and title are not part o
 />
 ```
 
-### Validation and Registration Flow
+## Flow
 
-1. **Props Validation**: Ensures `maxBars` is provided (throws error if missing)
-2. **Field Validation**: Checks field type against Arranger extended mapping
-3. **Type-Specific Validation**:
-    - `Aggregations`: Rejects if `ranges` provided
-    - `NumericAggregations`: Requires `ranges` parameter
-4. **Registration**: Adds validated configuration to ChartsProvider
+1. **Validation**: Throws error if `maxBars` missing
+2. **Field Checking**: Validates against Arranger mapping
+3. **Type Validation**:
+    - `Aggregations`: `ranges` is invalid
+    - `NumericAggregations`: `ranges` is required
+4. **Registration**: Adds to ChartsProvider
 
-### View Rendering
+## View Rendering
 
-The BarChartView manages:
+BarChartView handles:
 
-- **Data Sorting**:
-    - Default: ascending by value (ascending from axis)
-    - Custom sort order via `theme.sortByKey`
-- **Color Mapping**: Persistent color using `colorMapRef`
-- **Data Limiting**: Truncates to `maxBars` _after_ sorting
-- **Nivo Integration**: Transforms configuration for ResponsiveBar component
+- **Sorting**: Default ascending by value, custom via `theme.sortByKey`
+- **Colors**: Persistent mapping via `colorMapRef`
+- **Limiting**: Truncates to `maxBars` after sorting
+- **Integration**: Transforms for Nivo ResponsiveBar
 
-### Event Handling
+## Events
 
-Click and hover events will provide a bar object that at least contains:
-
-- `label` of data and `value` of data
+Click/hover events provide bar object with `label` and `value`.
 
 ---
 
-## Component Breakdown: SunburstChart
+### SunburstChart Component
 
-Example of bar chart in use within a consumer app (card and title are not part of library)
+![Sunburst Chart Example](sunburst.png)
 
-![alt text](sunburst.png)
-
-### Consumer Interface
-
-```jsx
-mappingLookup = {
-	specificCode1: 'ParentCategory1',
-	specificCode2: 'ParentCategory1',
-	specificCode3: 'ParentCategory2',
-};
+## Interface
 
 <SunburstChart
-	fieldName="primary_diagnosis__cancer_type_code" // Required: GQL field name
-	mapper={(key) => mappingLookup[key]} // Required: mapping function
-	maxSegments={10} // Required: Display limit
-	// Optional: Event handlers
-	handlers={{
-		onClick: fn,
-	}}
-/>;
-```
+fieldName="primary_diagnosis\_\_cancer_type_code" // Required
+mapping={mappingFn} // Required: Child to parent mapping
+handlers={{ onClick: fn }} // Optional
+/>
 
-Internally using two absolutely position pie charts due to constraints with styling Nivo sunburst chart.
+Uses two positioned pie charts due to Nivo sunburst styling constraints.
 
-### Validation and Registration Flow
+## Flow
 
-1. **Props Validation**: Ensures `maxSegments` and `mapper` props are provided (throws error if missing)
-2. **Field Validation**: Checks field type against Arranger extended mapping
-3. **Type-Specific Validation**:
-    - `Aggregations`: Rejects if `ranges` provided
-    - `NumericAggregations`: Requires `ranges` parameter
-4. **Registration**: Adds validated configuration to ChartsProvider
+1. **Validation**: Throws error if `mapping` or `maxSegments` are missing
+2. **Field Checking**: Validates against Arranger mapping
+3. **Registration**: Adds to ChartsProvider
 
-### View Rendering
+## View Rendering
 
-API data is assumed to be specific data with the consumer providing a mapping to the parent broad categories. This means totals need to be computed client side and slicing of data needs to happen after data mapping.
+- **Grouping**: Groups child codes by parent categories using `mapping`
+- **Aggregation**: Sums child values for parent totals
+- **Structure**: Builds inner/outer rings
+- **Limiting**: Truncates to `maxSegments`
+- **Legend**: Creates color-related entries
 
-1. **Category Grouping**: Groups child codes by parent categories using `mapper`
-2. **Value Aggregation**: Sums child values for parent totals
-3. **Data Limiting**: Truncates to `maxSegments`
-4. **Structure Creation**: Builds rings
-5. **Legend Generation**: Creates color related legend entries
+## Architecture
 
-### Visualization Architecture
+Overlapping ResponsivePie components:
 
-The sunburst uses overlapping ResponsivePie components:
+- **Outer Ring**: Full-size pie with specific categories
+- **Inner Ring**: Centered pie with parent categories
 
-- **Outer Ring**: Full-size pie showing specific categories
-- **Inner Ring**: Smaller centered pie showing broad parent categories
+## Colors
 
-### Color Coordination
-
-Colors use the same color map but have an additional alpha contrast between inner and outer ring.
+Inner ring uses alpha transparency, outer ring uses full opacity:
 
 ```tsx
-// Parent gets base color with transparency
 colorMap.set(parentId, color.alpha(0.5).hsl().string());
-// Children get full opacity variants
 children.forEach((child) => {
 	colorMap.set(child, color.string());
 });
 ```
 
-### Event Handling
+## Events
 
-Click and hover events will provide a bar object that at least contains:
-
-- `label` of data and `value` of data
+Click and hover events provide object with `label` and `value`.
 
 ---
 
-## Contributing Guidelines
+### Contributing Guidelines
 
-When extending or modifying the library:
+When extending the library:
 
-1. **Maintain Separation**: Keep data layer and view layer concerns separate
-2. **Follow Validation Patterns**: All new chart types should implement comprehensive validation
-3. **Use Color Persistence**: Leverage the `useColorMap` system for consistent theming
-4. **Support Component Overrides**: Ensure new states can be customized via ChartsThemeProvider
+1. **Separate Concerns**: Keep data layer and view layer separate
+2. **Validate**: Reuse and implement validation for new chart types
+3. **Persist Colors**: Use `useColorMap` system for consistent theming
+4. **Support Overrides**: Allow state customization via ChartsThemeProvider
