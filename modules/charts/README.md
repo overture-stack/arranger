@@ -184,7 +184,3 @@ npm i <path to  @overture-stack/arranger-charts>
 ### Debug Mode
 
 Enable verbose logging by setting the `debugMode` prop on `ChartsProvider`.
-
-## License
-
-Licensed under the same terms as the Overture Stack project.
