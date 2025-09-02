@@ -1,6 +1,6 @@
 {
 	"name": "@overture-stack/arranger-charts",
-	"version": "0.0.1-beta.5",
+	"version": "0.0.1-beta.6",
 	"main": ".dist/main.js",
 	"module": "./dist/main.js",
 	"types": "./dist/index.d.ts",
