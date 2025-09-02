@@ -48,14 +48,11 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 
 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
 
-	const padAngle = 2;
+	// spacing between segments (that's how we're using it)
+	const borderWidth = 4;
 
 	const onMouseEnterHandler = (_, event) => {
 		event.target.style.cursor = 'pointer';
-	};
-
-	const borderColor = (segment) => {
-		return Color(colorMap.get(segment.id)).lighten(0.075).string();
 	};
 
 	return (
@@ -88,11 +85,10 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 						margin={margin}
 						innerRadius={0.75}
 						activeOuterRadiusOffset={0}
-						borderWidth={1}
-						borderColor={borderColor}
+						borderWidth={borderWidth}
+						borderColor={'#fff'}
 						enableArcLinkLabels={false}
 						enableArcLabels={false}
-						padAngle={padAngle}
 						onMouseEnter={onMouseEnterHandler}
 						tooltip={Tooltip}
 					/>
@@ -118,11 +114,10 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 							isInteractive={true}
 							innerRadius={0.75}
 							activeOuterRadiusOffset={0}
-							borderWidth={1}
-							borderColor={borderColor}
+							borderWidth={borderWidth}
+							borderColor={'#fff'}
 							enableArcLinkLabels={false}
 							enableArcLabels={false}
-							padAngle={padAngle}
 							onMouseEnter={onMouseEnterHandler}
 							tooltip={Tooltip}
 						/>
