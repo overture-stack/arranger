@@ -14,11 +14,16 @@ export interface NumericAggregationsOptions {
 	ranges?: Ranges;
 }
 
+interface SupportedNivo {
+	axisLeft: { legend: any };
+	axisBottom: { legend: any };
+}
+
 export interface BarChartProps {
 	fieldName: string;
 	maxBars: number;
 	ranges?: Ranges;
-	theme: { sortByKey?: string[]; nivo: any };
+	theme: { sortByKey?: string[] } & SupportedNivo;
 	handlers?: { onClick: (config: any) => void };
 }
 
