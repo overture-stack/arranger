@@ -65,22 +65,23 @@ export const SunburstChart = ({
 
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
+	// create mapping between api data and provided mapping
+	const sunburstData = createSunburstSegments({ data: gqlData, mapper, maxSegments });
+
 	return (
 		<ChartRenderer
 			isLoading={isLoading}
 			isError={isError || !validationResult.success}
-			isEmpty={isEmpty(gqlData)}
+			isEmpty={isEmpty(sunburstData)}
 			Chart={() => {
-				// create mapping between api data and provided mapping
-				const sunburst = createSunburstSegments({ data: gqlData, mapper, maxSegments });
-
 				return (
 					<ChartContainer>
 						<SunburstView
-							data={sunburst}
+							data={sunburstData}
 							handlers={handlers}
 							theme={theme}
 							colorMapRef={colorMapRef}
+							maxSegments={maxSegments}
 						/>
 					</ChartContainer>
 				);

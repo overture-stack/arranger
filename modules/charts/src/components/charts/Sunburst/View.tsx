@@ -40,7 +40,7 @@ type SunburstViewProps = {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive sunburst chart
  */
-export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps) => {
+export const SunburstView = ({ data, handlers, colorMapRef, maxSegments }: SunburstViewProps) => {
 	// persistent color map
 	const { colorMap } = useColorMap({ colorMapRef, chartData: data, resolver: colorMapResolver });
 
@@ -53,6 +53,17 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 
 	const onMouseEnterHandler = (_, event) => {
 		event.target.style.cursor = 'pointer';
+	};
+
+	// slice by maxSegments after data is resolved because the outer rings are the dynamic data
+	const slicedInner = data.inner.slice(0, maxSegments);
+	const outer = slicedInner
+		.flatMap((parent) => parent.children)
+		.map((outerId) => data.outer.find(({ id }) => id === outerId));
+	const slicedData = {
+		inner: slicedInner,
+		outer,
+		legend: data.legend.slice(0, maxSegments),
 	};
 
 	return (
@@ -74,13 +85,13 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 				<div css={css({ height: '100%', width: '70%', position: 'relative' })}>
 					<ResponsivePie
 						onClick={(config) => {
-							const allCodes = data.outer
+							const allCodes = slicedData.outer
 								.filter((outerRing) => outerRing.parentId === config.data.parentId)
 								.map((code) => code.id);
 							onClick && onClick({ ...config, allCodes });
 						}}
-						colors={data.outer.map((node) => colorMap.get(node.id))}
-						data={data.outer}
+						colors={slicedData.outer.map((node) => colorMap.get(node.id))}
+						data={slicedData.outer}
 						isInteractive={true}
 						margin={margin}
 						innerRadius={0.75}
@@ -109,8 +120,8 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 							onClick={(config) => {
 								onClick && onClick(config);
 							}}
-							colors={data.inner.map((node) => colorMap.get(node.id))}
-							data={data.inner}
+							colors={slicedData.inner.map((node) => colorMap.get(node.id))}
+							data={slicedData.inner}
 							isInteractive={true}
 							innerRadius={0.75}
 							activeOuterRadiusOffset={0}
@@ -124,7 +135,7 @@ export const SunburstView = ({ data, handlers, colorMapRef }: SunburstViewProps)
 					</div>
 				</div>
 				<Legend
-					data={data.legend}
+					data={slicedData.legend}
 					colorMap={colorMap}
 				/>
 			</div>
