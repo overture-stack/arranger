@@ -44,14 +44,9 @@ const colorMapResolver = ({ chartData, colors }) => {
  * @returns JSX element with responsive bar chart
  */
 export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef }: BarChartViewProps) => {
-	// custom sort order or ascending
-	const sortedData = theme.sortByKey
-		? theme.sortByKey.map((label) => data.find((bar) => bar.key === label)).filter(Boolean)
-		: data.sort((a, b) => a.value - b.value);
-
 	// persistent color map
 	// ensure to create from full data available before slicing visible data
-	const { colorMap } = useColorMap({ colorMapRef, chartData: sortedData, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({ colorMapRef, chartData: data, resolver: colorMapResolver });
 
 	/**
 	 * TODO: improve "chart view" config/interface
@@ -63,8 +58,18 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef }: Ba
 		[theme, colorMap, handlers],
 	);
 
-	// sort by value and limit by maxRows
-	const barData = sortedData.slice(0, maxBars);
+	// 1) custom sort order or ascending (from axis)
+	// 2) limit by maxRows
+	// 3) reverse order for display
+	const barData = theme.sortByKey
+		? theme.sortByKey
+				.map((label) => data.find((bar) => bar.key === label))
+				.filter(Boolean)
+				.slice(0, maxBars)
+		: data
+				.toSorted((a, b) => b.value - a.value)
+				.slice(0, maxBars)
+				.reverse();
 
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
