@@ -25,7 +25,6 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 	if (isEmpty(data)) {
 		return {};
 	}
-
 	// create category Map to simplify later reduce
 	const categoryMap = new Map();
 	data.forEach((code) => {
@@ -45,7 +44,12 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 		}
 	});
 
-	const mappedData = Array.from(categoryMap).reduce<SunburstData>(
+	// take top <maxSegments> from the highest => lowest order
+	const sortedData = Array.from(categoryMap)
+		.toSorted((a, b) => b[1].total - a[1].total)
+		.slice(0, maxSegments);
+
+	const mappedData = sortedData.reduce<SunburstData>(
 		(acc, category) => {
 			const [name, { codes, total }] = category;
 
