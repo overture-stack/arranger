@@ -25,6 +25,7 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 	if (isEmpty(data)) {
 		return {};
 	}
+
 	// create category Map to simplify later reduce
 	const categoryMap = new Map();
 	data.forEach((code) => {
@@ -44,10 +45,7 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 		}
 	});
 
-	// from the highest => lowest order
-	const sortedData = Array.from(categoryMap).toSorted((a, b) => b[1].total - a[1].total);
-
-	const mappedData = sortedData.reduce<SunburstData>(
+	const mappedData = Array.from(categoryMap).reduce<SunburstData>(
 		(acc, category) => {
 			const [name, { codes, total }] = category;
 
@@ -86,6 +84,16 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 	if (mappedData.inner.length === 0 || mappedData.outer.length === 0) {
 		return {};
 	}
+	// slice by maxSegments after data is resolved because the outer rings are the dynamic data
+	const slicedInner = mappedData.inner.slice(0, maxSegments);
+	const outer = slicedInner
+		.flatMap((parent) => parent.children)
+		.map((outerId) => mappedData.outer.find(({ id }) => id === outerId));
+	const sunburstData: SunburstData = {
+		inner: slicedInner,
+		outer,
+		legend: mappedData.legend.slice(0, maxSegments),
+	};
 
-	return mappedData;
+	return sunburstData;
 };
