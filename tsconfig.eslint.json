@@ -3,6 +3,7 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"erasableSyntaxOnly": true,
+		"forceConsistentCasingInFileNames": true,
 		"strictNullChecks": true,
 		"verbatimModuleSyntax": true
 		// "noErrorTruncation": true

@@ -27,9 +27,6 @@ const componentsConfigs = [
 	// 		'plugin:@emotion/recommended',
 	// 	),
 	// ),
-	{
-		files: ['**/*.jsx', '**/*.tsx'],
-	},
 	importPlugin.flatConfigs.react,
 	reactPlugin.configs.flat.recommended,
 	reactPlugin.configs.flat['jsx-runtime'],
@@ -53,7 +50,9 @@ const componentsConfigs = [
 			// '@emotion/no-vanilla': 'error',
 			// '@emotion/pkg-renaming': 'error',
 			// '@emotion/styled-import': 'error',
+
 			'import/no-unresolved': ['error', { commonjs: true }],
+
 			'react/jsx-filename-extension': [
 				'error',
 				{
@@ -76,12 +75,5 @@ const componentsConfigs = [
 		},
 	},
 ];
-
-componentsConfigs.forEach((config) => {
-	// config?.rules &&
-	// 	Object.entries(config.rules).forEach(([rule, value]) => {
-	// 		(rule.includes('extension') || rule.includes('import')) && console.log('\n\n', rule, value);
-	// 	});
-});
 
 export default [...baseConfig, ...componentsConfigs];
