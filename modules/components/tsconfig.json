@@ -116,7 +116,8 @@
 		/* Completeness */
 		// "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
 		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
-		// "verbatimModuleSyntax": true,
+		// "verbatimModuleSyntax": true, // TODO: enable with ESM
+		"verbatimModuleSyntax": false,
 		"erasableSyntaxOnly": true
 	},
 	"exclude": ["dist/**/*", "**/__mocks__/*", "**/__tests__/*"],
