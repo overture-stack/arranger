@@ -110,7 +110,6 @@ const eslintConfigs = tseslint.config(
 		},
 
 		settings: {
-			// 'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
 			'import/resolver': {
 				node: {
 					extensions: ['.js', '.jsx', '.ts', '.tsx'],
@@ -127,12 +126,5 @@ const eslintConfigs = tseslint.config(
 	},
 	eslintConfigPrettier,
 );
-
-// eslintConfigs.forEach((config) => {
-// 	config?.rules &&
-// 		Object.entries(config.rules).forEach(([rule, value]) => {
-// 			rule.includes('import') && console.log('\n\n', rule, value);
-// 		});
-// });
 
 export default eslintConfigs;

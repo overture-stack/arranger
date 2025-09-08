@@ -76,11 +76,4 @@ const componentsConfigs = [
 	},
 ];
 
-// componentsConfigs.forEach((config) => {
-// config?.rules &&
-// 	Object.entries(config.rules).forEach(([rule, value]) => {
-// 		(rule.includes('extension') || rule.includes('import')) && console.log('\n\n', rule, value);
-// 	});
-// });
-
 export default [...baseConfig, ...componentsConfigs];
