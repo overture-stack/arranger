@@ -19,13 +19,7 @@ const emptyBucket = {
 const BooleanAggs = ({
 	buckets = [],
 	defaultDisplayKeys = defaultDisplayLabels,
-	displayKeys = Object.keys(defaultDisplayKeys).reduce(
-		(obj, displayKey) => ({
-			...obj,
-			[displayKey]: extendedDisplayKeys[displayKey] || defaultDisplayKeys[displayKey],
-		}),
-		{},
-	),
+	displayKeys: customDisplayKeys,
 	displayName,
 	displayValues: extendedDisplayKeys = emptyObj,
 	fieldName,
@@ -50,7 +44,17 @@ const BooleanAggs = ({
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
-	} = useThemeContext({ callerName: 'BooleanAggss' });
+	} = useThemeContext({ callerName: 'BooleanAggs' });
+
+	const displayKeys =
+		customDisplayKeys ??
+		Object.keys(defaultDisplayKeys).reduce(
+			(obj, displayKey) => ({
+				...obj,
+				[displayKey]: extendedDisplayKeys[displayKey] || defaultDisplayKeys[displayKey],
+			}),
+			{},
+		);
 
 	const trueBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.true) || emptyBucket;
 	const falseBucket = buckets.find(({ key_as_string }) => key_as_string === valueKeys.false) || emptyBucket;
