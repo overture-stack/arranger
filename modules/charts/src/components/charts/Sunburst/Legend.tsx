@@ -8,7 +8,7 @@ export const Legend = ({ data, colorMap }: { data: { label: string }[] }) => {
 				flexDirection: 'column',
 				flexWrap: 'wrap',
 				columnGap: '8px',
-				'> div:not(:first-child)': { marginTop: '16px' },
+				'> div:not(:first-of-type)': { marginTop: '16px' },
 			})}
 		>
 			{data.map((legend, index) => {
