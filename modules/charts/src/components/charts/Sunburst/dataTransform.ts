@@ -29,7 +29,6 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 	const categoryMap = new Map();
 	data.forEach((code) => {
 		const parentId = mapper(code.key);
-
 		// no cancer type mapping, skip
 		if (!parentId) {
 			return;
@@ -39,7 +38,7 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 			categoryMap.set(parentId, { total: code.value, codes: [{ ...code, parentId }] });
 		} else {
 			const { total, codes: existingCodes } = categoryMap.get(parentId);
-			const updatedCodes = existingCodes.concat([code]);
+			const updatedCodes = existingCodes.concat([{ ...code, parentId }]);
 			categoryMap.set(parentId, { total: total + code.value, codes: updatedCodes });
 		}
 	});
@@ -62,7 +61,6 @@ export const createSunburstSegments = ({ data, mapper, maxSegments }: ChartInput
 				value: total,
 				children: codes.map((code) => code.key),
 			});
-
 			const outer = acc.outer.concat(
 				codes.map((code) => ({
 					id: code.key,

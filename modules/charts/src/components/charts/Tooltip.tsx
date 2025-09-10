@@ -5,7 +5,8 @@ interface Bar {
 }
 
 interface SunburstSegment {
-	datum: { data: { value: number; label: string } };
+	percentage: number;
+	data: { dataValue: number; label: string };
 }
 
 interface NormalizedTooltipProps {
@@ -14,8 +15,8 @@ interface NormalizedTooltipProps {
 }
 
 const normalizeTooltipProps = (tooltipData: Bar | SunburstSegment): NormalizedTooltipProps => {
-	const data = 'data' in tooltipData ? tooltipData.data : tooltipData.datum.data;
-	return { value: data.value, label: data.label };
+	const data = 'percentage' in tooltipData ? tooltipData.data.dataValue : tooltipData.data.value;
+	return { value: data, label: tooltipData.data.label };
 };
 
 export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
@@ -25,7 +26,7 @@ export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
 		<TooltipContainer>
 			<div>
 				<div>{`${label}`}</div>
-				<div>{`${value}: Donors`}</div>
+				<div>{`${value}: Donor${value > 1 ? 's' : ''}`}</div>
 			</div>
 		</TooltipContainer>
 	);
