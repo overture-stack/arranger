@@ -1,9 +1,9 @@
 import { css } from '@emotion/react';
-import { ResponsivePie } from '@nivo/pie';
 import Color from 'color';
 
-import { Tooltip } from '#components/charts/Tooltip';
 import { useColorMap } from '#hooks/useColorMap';
+import { ResponsiveSunburst } from '@nivo/sunburst';
+import { Tooltip } from '../Tooltip';
 import { Legend } from './Legend';
 
 const colorMapResolver = ({ chartData, colors }) => {
@@ -12,10 +12,13 @@ const colorMapResolver = ({ chartData, colors }) => {
 	let colorIndex = 0;
 
 	chartData.inner.forEach(({ id, children }) => {
-		const color = Color(colors[colorIndex++ % colors.length]);
-		colorMap.set(id, color.alpha(0.5).hsl().string());
+		const colorLookup = colorIndex++ % colors.length;
+		const lighterShade = Color(colors[colorLookup]).alpha(0.5).string();
+
+		colorMap.set(id, lighterShade);
+
 		children.forEach((child) => {
-			colorMap.set(child, color.string());
+			colorMap.set(child, Color(colors[colorLookup]).string());
 		});
 	});
 
@@ -27,6 +30,30 @@ type SunburstViewProps = {
 	theme: any;
 	handlers: any;
 	colorMapRef: React.RefObject<Map<string, string>>;
+};
+
+/**
+ * converts our segmented data to Nivo Sunburst expected
+ */
+const convertToHierarchy = (data) => {
+	return {
+		id: 'root',
+		children: data.inner.map((parent, _index, arr) => ({
+			id: parent.id,
+			label: parent.label,
+			dataValue: parent.value,
+			children: data.outer
+				.filter((child) => child.parentId === parent.id)
+				.map((child) => ({
+					id: child.id,
+					label: child.label,
+					// Nivo has special meaning for the "value" property, leave as duplicated for now
+					dataValue: child.value,
+					value: child.value,
+					parentId: child.parentId,
+				})),
+		})),
+	};
 };
 
 /**
@@ -46,11 +73,6 @@ export const SunburstView = ({ data, handlers, colorMapRef, maxSegments }: Sunbu
 
 	const onClick = handlers?.onClick;
 
-	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
-
-	// spacing between segments (that's how we're using it)
-	const borderWidth = 4;
-
 	const onMouseEnterHandler = (_, event) => {
 		event.target.style.cursor = 'pointer';
 	};
@@ -66,6 +88,8 @@ export const SunburstView = ({ data, handlers, colorMapRef, maxSegments }: Sunbu
 		legend: data.legend.slice(0, maxSegments),
 	};
 
+	const hierarchicalData = convertToHierarchy(slicedData);
+
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<div
@@ -74,65 +98,29 @@ export const SunburstView = ({ data, handlers, colorMapRef, maxSegments }: Sunbu
 					flexDirection: 'row',
 					width: '100%',
 					height: '100%',
-					pointerEvents: 'none',
-
-					// prevent overlapping of elements from obstructing "path:hover"
-					path: {
-						pointerEvents: 'auto',
-					},
 				})}
 			>
 				<div css={css({ height: '100%', width: '70%', position: 'relative' })}>
-					<ResponsivePie
-						onClick={(config) => {
-							const allCodes = slicedData.outer
-								.filter((outerRing) => outerRing.parentId === config.data.parentId)
-								.map((code) => code.id);
-							onClick && onClick({ ...config, allCodes });
-						}}
-						colors={slicedData.outer.map((node) => colorMap.get(node.id))}
-						data={slicedData.outer}
-						isInteractive={true}
-						margin={margin}
-						innerRadius={0.75}
-						activeOuterRadiusOffset={0}
-						borderWidth={borderWidth}
-						borderColor={'#fff'}
-						enableArcLinkLabels={false}
+					<ResponsiveSunburst
+						data={hierarchicalData}
+						cornerRadius={0}
+						borderColor={{ theme: 'background' }}
 						enableArcLabels={false}
+						borderWidth={1}
+						borderColor={'white'}
+						colors={(parent) => colorMap.get(parent.id)}
+						childColor={(_parent, child) => colorMap.get(child.id)}
 						onMouseEnter={onMouseEnterHandler}
 						tooltip={Tooltip}
+						onClick={(config) => {
+							if (config.data.children) {
+								const ids = config.data.children.map((child) => child.id);
+								onClick && onClick({ ...config, ids });
+							} else {
+								onClick && onClick({ ...config, ids: [config.data.label] });
+							}
+						}}
 					/>
-					<div
-						className="inner"
-						css={css({
-							position: 'absolute',
-							height: '60%',
-							width: '60%',
-							// set center to halfway across parent container
-							top: '50%',
-							left: '50%',
-							// change origin to centered by moving it back half it's own width + height
-							transform: 'translate(-50%,-50%)',
-						})}
-					>
-						<ResponsivePie
-							onClick={(config) => {
-								onClick && onClick(config);
-							}}
-							colors={slicedData.inner.map((node) => colorMap.get(node.id))}
-							data={slicedData.inner}
-							isInteractive={true}
-							innerRadius={0.75}
-							activeOuterRadiusOffset={0}
-							borderWidth={borderWidth}
-							borderColor={'#fff'}
-							enableArcLinkLabels={false}
-							enableArcLabels={false}
-							onMouseEnter={onMouseEnterHandler}
-							tooltip={Tooltip}
-						/>
-					</div>
 				</div>
 				<Legend
 					data={slicedData.legend}
