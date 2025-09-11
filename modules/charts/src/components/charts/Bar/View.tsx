@@ -16,17 +16,20 @@ interface BarChartViewProps {
 
 /**
  * Creates a chart color map for consistent colors across charts
- * Uses closure-based state, not a React hook
  **/
-const colorMapResolver = ({ chartData, colors }) => {
-	const colorMap = new Map<string, string>();
+const colorMapResolver = ({ chartData, savedMap, colors }) => {
+	// intialize to session stored color map if exists
+	const colorMap = new Map<string, string>(savedMap);
 
 	// used for "color wraparound" modulo
-	let colorIndex = 0;
+	// initialize to size of current items to avoid same colour hex collisions
+	let colorIndex = colorMap.size;
 
 	chartData.forEach(({ key }) => {
 		const assignedColor = colors[colorIndex++ % colors.length];
-		colorMap.set(key, assignedColor);
+		if (!colorMap.has(key)) {
+			colorMap.set(key, assignedColor);
+		}
 	});
 
 	return colorMap;
@@ -43,10 +46,10 @@ const colorMapResolver = ({ chartData, colors }) => {
  * @param props.maxBars - Max number of bars to show
  * @returns JSX element with responsive bar chart
  */
-export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef }: BarChartViewProps) => {
+export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fieldName }: BarChartViewProps) => {
 	// persistent color map
 	// ensure to create from full data available before slicing visible data
-	const { colorMap } = useColorMap({ colorMapRef, chartData: data, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({ fieldName, colorMapRef, chartData: data, resolver: colorMapResolver });
 
 	/**
 	 * TODO: improve "chart view" config/interface

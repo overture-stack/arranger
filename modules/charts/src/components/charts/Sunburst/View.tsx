@@ -6,19 +6,26 @@ import { ResponsiveSunburst } from '@nivo/sunburst';
 import { Tooltip } from '../Tooltip';
 import { Legend } from './Legend';
 
-const colorMapResolver = ({ chartData, colors }) => {
-	const colorMap = new Map<string, string>();
+const colorMapResolver = ({ chartData, savedMap, colors }) => {
+	const colorMap = new Map<string, string>(savedMap);
 	// used for "color wraparound" modulo
-	let colorIndex = 0;
+	const startingIndex = chartData.inner.reduce((acc, el) => {
+		return savedMap.has(el.id) ? ++acc : acc;
+	}, 0);
+	let colorIndex = startingIndex;
 
 	chartData.inner.forEach(({ id, children }) => {
 		const colorLookup = colorIndex++ % colors.length;
 		const lighterShade = Color(colors[colorLookup]).alpha(0.5).string();
 
-		colorMap.set(id, lighterShade);
+		if (!colorMap.has(id)) {
+			colorMap.set(id, lighterShade);
+		}
 
 		children.forEach((child) => {
-			colorMap.set(child, Color(colors[colorLookup]).string());
+			if (!colorMap.has(child)) {
+				colorMap.set(child, Color(colors[colorLookup]).string());
+			}
 		});
 	});
 
@@ -67,9 +74,9 @@ const convertToHierarchy = (data) => {
  * @param props.onClick - Optional click handler for chart interactions
  * @returns JSX element with responsive sunburst chart
  */
-export const SunburstView = ({ data, handlers, colorMapRef, maxSegments }: SunburstViewProps) => {
+export const SunburstView = ({ fieldName, data, handlers, colorMapRef, maxSegments }: SunburstViewProps) => {
 	// persistent color map
-	const { colorMap } = useColorMap({ colorMapRef, chartData: data, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({ fieldName, colorMapRef, chartData: data, resolver: colorMapResolver });
 
 	const onClick = handlers?.onClick;
 
