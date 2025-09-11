@@ -82,6 +82,7 @@ export const SunburstChart = ({
 							theme={theme}
 							colorMapRef={colorMapRef}
 							maxSegments={maxSegments}
+							fieldName={fieldName}
 						/>
 					</ChartContainer>
 				);
