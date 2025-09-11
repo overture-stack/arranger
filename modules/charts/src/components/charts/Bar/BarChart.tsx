@@ -87,6 +87,7 @@ export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarCha
 						theme={theme}
 						maxBars={maxBars}
 						colorMapRef={colorMapRef}
+						fieldName={fieldName}
 					/>
 				</ChartContainer>
 			)}
