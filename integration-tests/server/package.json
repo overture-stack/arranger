@@ -3,7 +3,7 @@
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
 		"@overture-stack/arranger-server": "file:../../modules/server",
-		"axios": "^1.7.9",
+		"axios": "^1.12.0",
 		"graphql": "^16.6.0",
 		"graphql-tag": "^2.12.6",
 		"lodash-es": "^4.17.21"
