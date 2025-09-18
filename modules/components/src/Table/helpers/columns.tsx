@@ -1,204 +1,193 @@
-import { css } from "@emotion/react";
-import { createColumnHelper } from "@tanstack/react-table";
-import { mergeWith } from "lodash-es";
-import { type HTMLAttributes, useEffect, useRef } from "react";
+import { css } from '@emotion/react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { mergeWith } from 'lodash-es';
+import { type HTMLAttributes, useEffect, useRef } from 'react';
 
-import type { ColumnMappingInterface } from "#DataContext/types.js";
+import type { ColumnMappingInterface } from '#DataContext/types.js';
 import {
-  SELECTION_COLUMN_ID,
-  type ColumnsDictionary,
-  type ColumnType,
-  type ColumnTypesObject,
-  type TableCellProps,
-} from "#Table/types.js";
-import { emptyObj } from "#utils/noops.js";
+	SELECTION_COLUMN_ID,
+	type ColumnsDictionary,
+	type ColumnType,
+	type ColumnTypesObject,
+	type TableCellProps,
+} from '#Table/types.js';
+import { emptyObj } from '#utils/noops.js';
 
-import { defaultCellTypes, getCellValue } from "./cells.js";
+import { defaultCellTypes, getCellValue } from './cells.js';
 
 export const aggregateCustomColumns = (
-  customColumns: ColumnMappingInterface[] = [],
-  serverColumns: ColumnMappingInterface[] = []
+	customColumns: ColumnMappingInterface[] = [],
+	serverColumns: ColumnMappingInterface[] = [],
 ) => {
-  const existingColumns = serverColumns.map((serverColumn) => {
-    const customColumn =
-      customColumns.find(
-        (column) => column.fieldName === serverColumn.fieldName
-      ) || {};
+	const existingColumns = serverColumns.map((serverColumn) => {
+		const customColumn = customColumns.find((column) => column.fieldName === serverColumn.fieldName) || {};
 
-    return {
-      ...serverColumn,
-      ...customColumn,
-    };
-  });
+		return {
+			...serverColumn,
+			...customColumn,
+		};
+	});
 
-  const existingColumnFields = existingColumns
-    .map((column) => column.fieldName)
-    .filter((field) => !!field);
+	const existingColumnFields = existingColumns.map((column) => column.fieldName).filter((field) => !!field);
 
-  return existingColumns.concat(
-    customColumns.filter(
-      (column) => !existingColumnFields.includes(column.fieldName)
-    )
-  );
+	return existingColumns.concat(customColumns.filter((column) => !existingColumnFields.includes(column.fieldName)));
 };
 
-export const columnsArrayToDictionary = (
-  columns: ColumnMappingInterface[] = []
-) =>
-  columns.reduce(
-    (dict, column) => ({
-      ...dict,
-      [column.fieldName]: column,
-    }),
-    {} as ColumnsDictionary
-  );
+export const columnsArrayToDictionary = (columns: ColumnMappingInterface[] = []) =>
+	columns.reduce(
+		(dict, column) => ({
+			...dict,
+			[column.fieldName]: column,
+		}),
+		{} as ColumnsDictionary,
+	);
 
 export const getColumnsByAttribute = (
-  columns: ColumnMappingInterface[] = [],
-  attribute: keyof ColumnMappingInterface
+	columns: ColumnMappingInterface[] = [],
+	attribute: keyof ColumnMappingInterface,
 ) => columns.filter((column) => column[attribute]);
 
 function IndeterminateCheckbox({
-  indeterminate,
-  className = "",
-  ...rest
+	indeterminate,
+	className = '',
+	...rest
 }: { indeterminate?: boolean } & HTMLAttributes<HTMLInputElement>) {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const ref = useRef<HTMLInputElement>(null!);
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+	const ref = useRef<HTMLInputElement>(null!);
 
-  useEffect(() => {
-    if (typeof indeterminate === "boolean") {
-      ref.current.indeterminate = indeterminate;
-    }
-  }, [ref, indeterminate]);
+	useEffect(() => {
+		if (typeof indeterminate === 'boolean') {
+			ref.current.indeterminate = indeterminate;
+		}
+	}, [ref, indeterminate]);
 
-  return (
-    <input
-      aria-label={"Select this row"}
-      css={css`
-        cursor: pointer;
-        margin: 0.2rem 0 0;
-      `}
-      className={className + " cursor-pointer"}
-      ref={ref}
-      type="checkbox"
-      {...rest}
-    />
-  );
+	return (
+		<input
+			aria-label={'Select this row'}
+			css={css`
+				cursor: pointer;
+				margin: 0.2rem 0 0;
+			`}
+			className={className + ' cursor-pointer'}
+			ref={ref}
+			type="checkbox"
+			{...rest}
+		/>
+	);
 }
 
 export const makeTableColumns = ({
-  allowRowSelection,
-  columnTypes: customColumnTypes = emptyObj,
-  total,
-  visibleColumns = [],
+	allowRowSelection,
+	columnTypes: customColumnTypes = emptyObj,
+	total,
+	visibleColumns = [],
 }: {
-  allowRowSelection?: boolean;
-  columnTypes?: Partial<ColumnTypesObject>;
-  total: number;
-  visibleColumns: ColumnMappingInterface[];
+	allowRowSelection?: boolean;
+	columnTypes?: Partial<ColumnTypesObject>;
+	total: number;
+	visibleColumns: ColumnMappingInterface[];
 }) => {
-  const columnHelper = createColumnHelper();
-  const hasData = total > 0;
+	const columnHelper = createColumnHelper();
+	const hasData = total > 0;
 
-  const columnTypes = mergeWith(
-    customColumnTypes,
-    defaultCellTypes,
-    (objValue: any, srcValue: any): Partial<ColumnTypesObject[ColumnType]> => ({
-      ...objValue,
-      cellValue: objValue?.cellValue || srcValue,
-    })
-  );
+	const columnTypes = mergeWith(
+		customColumnTypes,
+		defaultCellTypes,
+		(objValue: any, srcValue: any): Partial<ColumnTypesObject[ColumnType]> => ({
+			...objValue,
+			cellValue: objValue?.cellValue || srcValue,
+		}),
+	);
 
-  const tableColumns = visibleColumns.map((visibleColumn) => {
-    const {
-      cellValue: cellType,
-      headerValue: headerType,
-      size,
-      ...theme
-    } = mergeWith(
-      {},
-      columnTypes.all,
-      columnTypes[visibleColumn.isArray ? "list" : visibleColumn.displayType],
-      columnTypes[visibleColumn.accessor]
-    );
+	const tableColumns = visibleColumns.map((visibleColumn) => {
+		const {
+			cellValue: cellType,
+			headerValue: headerType,
+			size,
+			...theme
+		} = mergeWith(
+			{},
+			columnTypes.all,
+			columnTypes[visibleColumn.isArray ? 'list' : visibleColumn.displayType],
+			columnTypes[visibleColumn.accessor],
+		);
 
-    return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
-      ...visibleColumn,
-      cell: ({ getValue, cell }) => {
-        const valueFromRow = getValue();
+		return columnHelper.accessor((row) => getCellValue(row, visibleColumn), {
+			...visibleColumn,
+			cell: ({ getValue, cell }) => {
+				const valueFromRow = getValue();
 
-        if (cellType) {
-          return typeof cellType === "function"
-            ? cellType({
-                ...cell,
-                column: {
-                  ...visibleColumn,
-                  ...cell.column,
-                },
-                theme,
-                value: valueFromRow,
-              } as TableCellProps)
-            : cellType;
-        }
+				if (cellType) {
+					return typeof cellType === 'function'
+						? cellType({
+								...cell,
+								column: {
+									...visibleColumn,
+									...cell.column,
+								},
+								theme,
+								value: valueFromRow,
+							} as TableCellProps)
+						: cellType;
+				}
 
-        return valueFromRow;
-      },
-      header: ({ header }) => {
-        const label = visibleColumn?.displayName || header.id;
+				return valueFromRow;
+			},
+			header: ({ header }) => {
+				const label = visibleColumn?.displayName || header.id;
 
-        if (headerType) {
-          return typeof headerType === "function"
-            ? headerType({
-                ...visibleColumn,
-                ...header,
-                disabled: !hasData,
-              })
-            : headerType;
-        }
+				if (headerType) {
+					return typeof headerType === 'function'
+						? headerType({
+								...visibleColumn,
+								...header,
+								disabled: !hasData,
+							})
+						: headerType;
+				}
 
-        return label;
-      },
-      id: visibleColumn?.id || visibleColumn?.accessor,
-      size,
-    });
-  });
+				return label;
+			},
+			id: visibleColumn?.id || visibleColumn?.accessor,
+			size,
+		});
+	});
 
-  const selectionColumnWidth = columnTypes[SELECTION_COLUMN_ID]?.size;
+	const selectionColumnWidth = columnTypes[SELECTION_COLUMN_ID]?.size;
 
-  return allowRowSelection
-    ? [
-        columnHelper.display({
-          cell: ({ row }) => (
-            <div className="px-1">
-              <IndeterminateCheckbox
-                {...{
-                  checked: row.getIsSelected(),
-                  indeterminate: row.getIsSomeSelected(),
-                  onChange: row.getToggleSelectedHandler(),
-                  "aria-label": "Select this row",
-                }}
-              />
-            </div>
-          ),
-          enableResizing: false,
-          header: ({ table }) => (
-            <IndeterminateCheckbox
-              {...{
-                checked: table.getIsAllRowsSelected(),
-                disabled: !hasData,
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-                "aria-label": "Select all rows",
-              }}
-            />
-          ),
-          id: SELECTION_COLUMN_ID,
-          maxSize: selectionColumnWidth,
-          minSize: selectionColumnWidth,
-          size: selectionColumnWidth,
-        }),
-        ...tableColumns,
-      ]
-    : tableColumns;
+	return allowRowSelection
+		? [
+				columnHelper.display({
+					cell: ({ row }) => (
+						<div className="px-1">
+							<IndeterminateCheckbox
+								{...{
+									checked: row.getIsSelected(),
+									indeterminate: row.getIsSomeSelected(),
+									onChange: row.getToggleSelectedHandler(),
+									'aria-label': 'Select this row',
+								}}
+							/>
+						</div>
+					),
+					enableResizing: false,
+					header: ({ table }) => (
+						<IndeterminateCheckbox
+							{...{
+								checked: table.getIsAllRowsSelected(),
+								disabled: !hasData,
+								indeterminate: table.getIsSomeRowsSelected(),
+								onChange: table.getToggleAllRowsSelectedHandler(),
+								'aria-label': 'Select all rows',
+							}}
+						/>
+					),
+					id: SELECTION_COLUMN_ID,
+					maxSize: selectionColumnWidth,
+					minSize: selectionColumnWidth,
+					size: selectionColumnWidth,
+				}),
+				...tableColumns,
+			]
+		: tableColumns;
 };
