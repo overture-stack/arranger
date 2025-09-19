@@ -66,7 +66,13 @@ const IncludeExcludeButton = ({
 	/>
 );
 
-const MoreOrLessButton = ({ className = '', css: customCSS = '', howManyMore = 0, isShowingMore = false, ...props }) => (
+const MoreOrLessButton = ({
+	className = '',
+	css: customCSS = '',
+	howManyMore = 0,
+	isShowingMore = false,
+	...props
+}) => (
 	<TransparentButton
 		className={cx('showMore-wrapper', isShowingMore ? 'less' : 'more', className)}
 		css={[
@@ -87,7 +93,7 @@ const decorateBuckets = ({ buckets, searchText }) => {
 		// TODO: displayValues may fit here
 		.map((bucket) => ({
 			...bucket,
-			name: bucket.key_as_string ?? bucket.key
+			name: bucket.key_as_string ?? bucket.key,
 		}))
 		.filter((bucket) => !searchText || translateSQONValue(bucket.name).match(strToReg(searchText)));
 	const [missing, notMissing] = partition(namedFilteredBuckets, {
@@ -95,7 +101,6 @@ const decorateBuckets = ({ buckets, searchText }) => {
 	});
 	return [...orderBy(notMissing, 'doc_count', 'desc'), ...missing];
 };
-
 
 // TODO: Improve exclusion filter ("not in"), allow mix
 // TODO: temporarily quieting down TS errors to help migration
@@ -137,10 +142,7 @@ const TermAggregations = ({
 		filtering: {
 			className: customFilteringIconClassName,
 			disabled: customFilteringDisabled,
-			inputField: {
-				Component: customFilteringInputFieldComponent,
-				...customFilteringInputFieldProps
-			} = emptyObj,
+			inputField: { Component: customFilteringInputFieldComponent, ...customFilteringInputFieldProps } = emptyObj,
 			onClick: customFilteringIconHandler,
 			...customFilteringIconProps
 		} = emptyObj,
@@ -273,7 +275,6 @@ const TermAggregations = ({
 		themeAggregationsSortingIconHandler?.(event, fieldName);
 		themeTermAggregationsSortingIconHandler?.(event, fieldName);
 	};
-
 	return (
 		<AggsGroup
 			componentRef={aggWrapperRef}
@@ -282,12 +283,11 @@ const TermAggregations = ({
 			filters={[
 				isShowingSearch && (
 					<>
-						<FilteringInputField
-							{...filteringInputFieldProps}
-						/>
+						<FilteringInputField {...filteringInputFieldProps} />
 
 						{showingMore && isMoreEnabled && (
 							<MoreOrLessButton
+								isShowingMore={true}
 								onClick={() => {
 									setShowingMore(false);
 									scrollToAgg();
@@ -320,11 +320,10 @@ const TermAggregations = ({
 						themeTermAggregationsCollapsingIconClassName,
 						themeAggregationsCollapsingIconClassName,
 					),
-					disabled: (
+					disabled:
 						customCollapsingDisabled ||
 						themeTermAggregationsCollapsingDisabled ||
-						themeAggregationsCollapsingDisabled
-					),
+						themeAggregationsCollapsingDisabled,
 					onClick: handleCollapsingIconClick,
 					...themeAggregationsCollapsingIconProps,
 					...themeTermAggregationsCollapsingIconProps,
@@ -338,12 +337,11 @@ const TermAggregations = ({
 						themeTermAggregationsFilteringIconClassName,
 						themeAggregationsFilteringIconClassName,
 					),
-					disabled: (
+					disabled:
 						customFilteringDisabled ||
 						themeTermAggregationsFilteringDisabled ||
 						themeAggregationsFilteringDisabled ||
-						!hasData
-					),
+						!hasData,
 					onClick: handleFilteringIconClick,
 					...themeAggregationsFilteringIconProps,
 					...themeTermAggregationsFilteringIconProps,
@@ -356,12 +354,11 @@ const TermAggregations = ({
 						themeTermAggregationsSortingIconClassName,
 						themeAggregationsSortingIconClassName,
 					),
-					disabled: (
+					disabled:
 						customSortingDisabled ||
 						themeTermAggregationsSortingDisabled ||
 						themeAggregationsSortingDisabled ||
-						!hasData
-					),
+						!hasData,
 					onClick: handleSortingIconClick,
 					...themeAggregationsSortingIconProps,
 					...themeTermAggregationsSortingIconProps,
@@ -374,8 +371,8 @@ const TermAggregations = ({
 				<div
 					className="header"
 					css={css`
-							text-align: right;
-						`}
+						text-align: right;
+					`}
 				>
 					{headerTitle}
 				</div>
@@ -384,8 +381,8 @@ const TermAggregations = ({
 			{hasData ? (
 				<div
 					css={css`
-							width: 100%;
-						`}
+						width: 100%;
+					`}
 				>
 					{(isAlphabetized ? alphabetizedBuckets : decoratedBuckets)
 						.slice(0, showingMore ? Infinity : maxTerms)
@@ -420,7 +417,8 @@ const TermAggregations = ({
 										fieldName: dotFieldName,
 										value: bucket,
 										isExclude,
-										generateNextSQON: (sqon) => generateNextSQON({ isExclude, dotFieldName, bucket, sqon }),
+										generateNextSQON: (sqon) =>
+											generateNextSQON({ isExclude, dotFieldName, bucket, sqon }),
 									})
 								}
 							>
@@ -458,7 +456,10 @@ const TermAggregations = ({
 								</span>
 
 								{bucket.doc_count && (
-									<BucketCount className={themeBucketCountClassName} theme={bucketCountTheme}>
+									<BucketCount
+										className={themeBucketCountClassName}
+										theme={bucketCountTheme}
+									>
 										{formatNumber(bucket.doc_count)}
 									</BucketCount>
 								)}
@@ -469,10 +470,10 @@ const TermAggregations = ({
 				<span
 					className="no-data"
 					css={css`
-							color: ${themeNoDataFontColor};
-							display: block;
-							font-size: ${themeNoDataFontSize};
-						`}
+						color: ${themeNoDataFontColor};
+						display: block;
+						font-size: ${themeNoDataFontSize};
+					`}
 				>
 					No data available
 				</span>
