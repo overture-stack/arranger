@@ -36,7 +36,7 @@
 		"apollo-server": "^3.10.3",
 		"apollo-server-core": "^3.10.3",
 		"apollo-server-express": "^3.10.3",
-		"axios": "^1.7.9",
+		"axios": "^1.12.0",
 		"chalk": "^2.3.1",
 		"convert-units": "^2.3.4",
 		"cors": "^2.8.5",
