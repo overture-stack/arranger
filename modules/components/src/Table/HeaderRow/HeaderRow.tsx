@@ -135,10 +135,13 @@ const TableHeaderRow = ({
 						onClick={handleSorting}
 						title={displayName}
 					>
-						{headerObj.isPlaceholder ? null : flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
+						{headerObj.isPlaceholder
+							? null
+							: flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
 
 						{headerObj.column.getCanResize() && (
 							<TransparentButton
+								aria-label="Resize Column"
 								className={`resizer ${headerObj.column.getIsResizing() ? 'isResizing' : ''}`}
 								css={css`
 									background: rgba(0, 0, 0, 0.5);

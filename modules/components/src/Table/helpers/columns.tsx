@@ -63,6 +63,7 @@ function IndeterminateCheckbox({
 
 	return (
 		<input
+			aria-label={'Select this row'}
 			css={css`
 				cursor: pointer;
 				margin: 0.2rem 0 0;
@@ -164,6 +165,7 @@ export const makeTableColumns = ({
 									checked: row.getIsSelected(),
 									indeterminate: row.getIsSomeSelected(),
 									onChange: row.getToggleSelectedHandler(),
+									'aria-label': 'Select this row',
 								}}
 							/>
 						</div>
@@ -176,6 +178,7 @@ export const makeTableColumns = ({
 								disabled: !hasData,
 								indeterminate: table.getIsSomeRowsSelected(),
 								onChange: table.getToggleAllRowsSelectedHandler(),
+								'aria-label': 'Select all rows',
 							}}
 						/>
 					),
