@@ -142,7 +142,10 @@ const TermAggregations = ({
 		filtering: {
 			className: customFilteringIconClassName,
 			disabled: customFilteringDisabled,
-			inputField: { Component: customFilteringInputFieldComponent, ...customFilteringInputFieldProps } = emptyObj,
+			inputField: {
+				Component: customFilteringInputFieldComponent,
+				...customFilteringInputFieldProps
+			} = emptyObj,
 			onClick: customFilteringIconHandler,
 			...customFilteringIconProps
 		} = emptyObj,
