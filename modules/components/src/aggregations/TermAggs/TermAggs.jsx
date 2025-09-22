@@ -275,6 +275,7 @@ const TermAggregations = ({
 		themeAggregationsSortingIconHandler?.(event, fieldName);
 		themeTermAggregationsSortingIconHandler?.(event, fieldName);
 	};
+
 	return (
 		<AggsGroup
 			componentRef={aggWrapperRef}
