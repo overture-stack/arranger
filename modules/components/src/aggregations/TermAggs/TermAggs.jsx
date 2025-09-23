@@ -44,8 +44,12 @@ const IncludeExcludeButton = ({
 	updateIsExclude,
 }) => (
 	<ToggleButton
-		onChange={({ value, isExclude = value === 'exclude' }) => {
+		onChange={({
+			value,
+			isExclude = value === 'exclude',
+		}) => {
 			const activeBuckets = buckets.filter((b) => isActive({ fieldName: dotFieldName, value: b.name }));
+
 			handleIncludeExcludeChange({
 				isExclude,
 				buckets: activeBuckets,
