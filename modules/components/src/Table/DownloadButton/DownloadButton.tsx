@@ -155,7 +155,7 @@ const DownloadButton = ({
 			buttonAriaLabelOpen="Close downloads menu"
 			className={cx('DownloadButton', customClassName, themeClassName)}
 			disabled={disableButton}
-			itemSelectionLegend="Select on of the download options"
+			itemSelectionLegend="Select one of the download options"
 			items={exporterDetails as ProcessedExporterDetailsInterface[]}
 			itemToString={(exporter: ProcessedExporterDetailsInterface, closeDropDownFn = noopFn) => {
 				return (

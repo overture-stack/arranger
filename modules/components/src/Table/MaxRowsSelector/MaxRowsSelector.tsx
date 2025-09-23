@@ -69,6 +69,7 @@ const MaxRowsSelector = ({
 			<span>Show </span>
 
 			<select
+				aria-label="Select the maximum number of rows"
 				css={css`
 					background: ${customBackground || themeBackground};
 					border: 0.1rem solid ${customBorderColor || themeBorderColor};
@@ -86,7 +87,10 @@ const MaxRowsSelector = ({
 				value={pageSize}
 			>
 				{(customPageSizes || themePageSizes).map((pageSize: number) => (
-					<option key={pageSize} value={pageSize}>
+					<option
+						key={pageSize}
+						value={pageSize}
+					>
 						{pageSize}
 					</option>
 				))}
