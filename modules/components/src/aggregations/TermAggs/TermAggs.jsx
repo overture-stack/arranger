@@ -102,6 +102,7 @@ const decorateBuckets = ({ buckets, searchText }) => {
 	return [...orderBy(notMissing, 'doc_count', 'desc'), ...missing];
 };
 
+
 // TODO: Improve exclusion filter ("not in"), allow mix
 // TODO: temporarily quieting down TS errors to help migration
 /**
