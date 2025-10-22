@@ -154,7 +154,7 @@ Arranger receives the GraphQL request and translates the entire query, including
 | `"offset": 0` | `"from": 0` | Pagination offset parameter |
 
 :::tip
-This translation happens automatically ensuring users never interact directly with Elasticsearch.
+This translation happens automatically ensuring users never need to interact directly with Elasticsearch.
 :::
 
 </details>
