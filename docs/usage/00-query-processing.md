@@ -65,7 +65,11 @@ The client sends the SQON to Arranger as part of a GraphQL request:
 
 ```json showLineNumbers
 {
-  "query": "query tableData($sqon: JSON, ...) { file { hits(filters: $sqon, ...) { ... } } }",
+  "query": "query tableData($sqon: JSON, ...) {
+    file { // Arranger's "document type"
+      hits(filters: $sqon, ...) { ... }
+    }
+  }",
   "variables": {
     "sqon": {
       "op": "and",
