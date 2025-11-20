@@ -91,8 +91,6 @@ export const dataStream = async ({ ctx, params }) => {
 };
 
 const download = ({ enableAdmin }) => {
-	console.log('enableAdmin', enableAdmin);
-
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));
