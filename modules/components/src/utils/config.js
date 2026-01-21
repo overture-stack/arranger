@@ -1,7 +1,8 @@
 function getValue(key, defaultValue) {
+	const processEnv = typeof process !== 'undefined' ? process.env : {};
 	return (
-		process.env[`STORYBOOK_${key}`] ||
-		process.env[`REACT_APP_${key}`] ||
+		processEnv[`STORYBOOK_${key}`] ||
+		processEnv[`REACT_APP_${key}`] ||
 		(typeof window !== 'undefined' && localStorage[key]) ||
 		defaultValue
 	);
