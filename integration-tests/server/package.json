@@ -6,7 +6,7 @@
 		"axios": "^1.7.9",
 		"graphql": "^16.6.0",
 		"graphql-tag": "^2.12.6",
-		"lodash-es": "^4.17.21"
+		"lodash-es": "^4.17.23"
 	},
 	"devDependencies": {
 		"@types/lodash-es": "^4.17.12",
