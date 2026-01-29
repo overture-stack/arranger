@@ -1,8 +1,9 @@
-import { Client } from '@elastic/elasticsearch';
 import { type GraphQLResolveInfo } from 'graphql';
 
+import { type SearchClientType } from './searchClient/index.js';
+
 export type Context = {
-	esClient: Client;
+	esClient: SearchClientType;
 };
 
 export type Root = Record<string, any>;
