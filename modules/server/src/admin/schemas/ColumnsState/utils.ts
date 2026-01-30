@@ -20,7 +20,7 @@ export const getColumnSetState =
 	async (args: I_ColumnStateQueryInput): Promise<I_ColumnSetState> => {
 		const { graphqlField, projectId } = args;
 		const metaData = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);
-		return metaData.config['columns-state'];
+		return metaData?.config['columns-state'];
 	};
 
 export const createColumnSetState =
@@ -52,7 +52,7 @@ export const saveColumnState =
 			...state,
 			columns: sortByNewOrder(
 				replaceBy(
-					currentIndexMetadata.config['columns-state'].state.columns,
+					currentIndexMetadata?.config['columns-state']?.state?.columns,
 					state.columns,
 					(oldCol, newCol) => oldCol.field === newCol.field,
 				),
@@ -61,8 +61,8 @@ export const saveColumnState =
 		await updateProjectIndexMetadata(es)({
 			projectId,
 			metaData: {
-				index: currentIndexMetadata.index,
-				name: currentIndexMetadata.name,
+				index: currentIndexMetadata?.index,
+				name: currentIndexMetadata?.name,
 				config: {
 					'columns-state': {
 						timestamp: timestamp(),

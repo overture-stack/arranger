@@ -125,8 +125,8 @@ export const saveExtendedMapping =
 		await updateProjectIndexMetadata(es)({
 			projectId,
 			metaData: {
-				index: currentIndexMetadata.index,
-				name: currentIndexMetadata.name,
+				index: currentIndexMetadata?.index,
+				name: currentIndexMetadata?.name,
 				config: {
 					extended: newExtendedMapping,
 				},

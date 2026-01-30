@@ -75,11 +75,24 @@ export const getProjectMetadata =
 			})),
 		);
 
+export const getProjectIndex =
+	(es: SearchClientType) =>
+	async ({ projectId, graphqlField }: IIndexQueryInput): Promise<IIndexGqlModel> => {
+		try {
+			const output = (await getProjectMetadata(es)(projectId)).find(
+				({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
+			);
+			return output;
+		} catch {
+			throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
+		}
+	};
+
 export const createNewIndex =
 	(es: SearchClientType) =>
 	async (args: INewIndexInput): Promise<IIndexGqlModel> => {
 		const { projectId, graphqlField, esIndex } = args;
-		const arrangerProject: {} = (await getArrangerProjects(es)).find((project) => project.id === projectId);
+		const arrangerProject = (await getArrangerProjects(es)).find((project) => project.id === projectId);
 		if (arrangerProject) {
 			const serializedGqlField = serializeToGqlField(graphqlField);
 
@@ -126,9 +139,7 @@ export const createNewIndex =
 
 // because different metadata entities write to the same ES document, update operations need to be queued up to a single concurrency controlled task queue for each project. This factory creates a task queue manager for this purpose.
 const createProjectQueueManager = () => {
-	const queues: {
-		[projectId: string]: any;
-	} = {};
+	const queues: Record<string, any> = {};
 	return {
 		getQueue: (projectId: string) => {
 			if (!queues[projectId]) {
@@ -142,7 +153,7 @@ const createProjectQueueManager = () => {
 // pretty bad, since we're just taking anything right now in run time, but at least graphQl will ensure `metaData` is typed in runtime
 const projectQueueManager = createProjectQueueManager();
 export const updateProjectIndexMetadata =
-	(es: Client) =>
+	(es: SearchClientType) =>
 	async ({
 		projectId,
 		metaData,
@@ -166,19 +177,6 @@ export const updateProjectIndexMetadata =
 
 			return output;
 		});
-	};
-
-export const getProjectIndex =
-	(es: SearchClientType) =>
-	async ({ projectId, graphqlField }: IIndexQueryInput): Promise<IIndexGqlModel> => {
-		try {
-			const output = (await getProjectMetadata(es)(projectId)).find(
-				({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
-			);
-			return output;
-		} catch {
-			throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
-		}
 	};
 
 export const removeProjectIndex =
