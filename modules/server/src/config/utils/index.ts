@@ -6,16 +6,16 @@ import { setsMapping } from '#schema/index.js';
 
 export const initializeSets = async ({
 	esClient,
-	setsIndex: setsIndexParam,
+	setsIndex: setsIndexName,
 }: {
 	esClient: Client;
 	setsIndex: string;
 }): Promise<void> => {
-	ENV_CONFIG.DEBUG_MODE && console.log(`Attempting to create Sets index "${setsIndexParam}"...`);
+	ENV_CONFIG.DEBUG_MODE && console.log(`Attempting to create Sets index "${setsIndexName}"...`);
 
-	if ((await esClient.indices.exists({ index: setsIndexParam }))?.statusCode === 404) {
+	if ((await esClient.indices.exists({ index: setsIndexName }))?.statusCode === 404) {
 		const setsIndex = await esClient.indices.create({
-			index: setsIndexParam,
+			index: setsIndexName,
 			body: {
 				mappings: {
 					properties: setsMapping,
@@ -28,7 +28,7 @@ export const initializeSets = async ({
 			return;
 		}
 
-		throw new Error(`Problem creating ${setsIndexParam} index`);
+		throw new Error(`Problem creating ${setsIndexName} index`);
 	} else {
 		ENV_CONFIG.DEBUG_MODE && console.log(`  This index already exists. Moving on!\n`);
 	}

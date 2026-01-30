@@ -34,6 +34,7 @@
 		"test": "npm run test --ws --if-present",
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch --w modules/components -w integration-tests/import\"",
 		"server": "npm run start --w modules/server",
+		"server:dev": "npm run dev --w modules/server",
 		"server:watch": "npm run watch --w modules/server"
 	},
 	"type": "module",
