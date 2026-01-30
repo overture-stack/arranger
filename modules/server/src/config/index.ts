@@ -2,7 +2,7 @@ import { type ConfigObject, configRequiredProperties } from './types.js';
 import getConfigFromFiles from './utils/getConfigFromFiles.js';
 import { makeConfigsFromEnv } from './utils/index.js';
 
-export * as ENV_CONFIG from './constants.js';
+export * as ENV_CONFIG from './constants.js'; //TODO: abstract env vars gathering from constants definition
 export { initializeSets } from './utils/index.js';
 
 const validateProperties = (configs: Partial<ConfigObject>) => {

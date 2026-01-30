@@ -81,6 +81,7 @@ const arrangerServer = async ({
 		);
 	}
 
+	// TODO: extract mapping logic from this, so it can be used in other endpoints
 	const graphQLRoutes = await getGraphQLRoutes({
 		configsSource,
 		enableAdmin,
