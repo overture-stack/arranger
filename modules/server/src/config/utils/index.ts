@@ -1,13 +1,13 @@
 import { ENV_CONFIG } from '#config/index.js';
 import { type ConfigObject, configProperties } from '#config/types.js';
 import { setsMapping } from '#schema/index.js';
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 export const initializeSets = async ({
 	esClient,
 	setsIndex: setsIndexParam,
 }: {
-	esClient: SearchClientType;
+	esClient: AllClients;
 	setsIndex: string;
 }): Promise<void> => {
 	ENV_CONFIG.DEBUG_MODE && console.log(`Attempting to create Sets index "${setsIndexParam}"...`);

@@ -1,6 +1,6 @@
 import { UserInputError } from 'apollo-server';
 
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 import { extendMapping } from '../../../mapping/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';
@@ -16,7 +16,7 @@ import {
 } from './types.js';
 
 export const createExtendedMapping =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ esIndex }: EsIndexLocation): Promise<I_GqlExtendedFieldMapping[]> => {
 		let extendedMappings: I_GqlExtendedFieldMapping[] = [];
 		try {
@@ -32,7 +32,7 @@ export const createExtendedMapping =
 	};
 
 export const getExtendedMapping =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({
 		projectId,
 		graphqlField,
@@ -66,7 +66,7 @@ export const getExtendedMapping =
 	};
 
 export const updateFieldExtendedMapping =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({
 		field: mutatedField,
 		graphqlField,
@@ -106,7 +106,7 @@ export const updateFieldExtendedMapping =
 	};
 
 export const saveExtendedMapping =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (args: I_SaveExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping[]> => {
 		const { projectId, graphqlField, input } = args;
 		const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(

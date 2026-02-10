@@ -1,9 +1,9 @@
 import { type GraphQLResolveInfo } from 'graphql';
 
-import { type SearchClientType } from './searchClient/index.js';
+import { type AllClients } from './searchClient/index.js';
 
 export type Context = {
-	esClient: SearchClientType;
+	esClient: AllClients;
 };
 
 export type Root = Record<string, any>;

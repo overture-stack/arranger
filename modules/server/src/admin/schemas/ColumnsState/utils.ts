@@ -1,6 +1,6 @@
 import { sortBy } from 'ramda';
 
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 import { mappingToColumnsState } from '../../../mapping/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';
@@ -16,7 +16,7 @@ import {
 } from './types.js';
 
 export const getColumnSetState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (args: I_ColumnStateQueryInput): Promise<I_ColumnSetState> => {
 		const { graphqlField, projectId } = args;
 		const metaData = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);
@@ -24,7 +24,7 @@ export const getColumnSetState =
 	};
 
 export const createColumnSetState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ esIndex }: EsIndexLocation, graphqlField: string): Promise<I_ColumnSetState> => {
 		const rawEsmapping = await getEsMapping(es)({
 			esIndex,
@@ -43,7 +43,7 @@ export const createColumnSetState =
 	};
 
 export const saveColumnState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ graphqlField, projectId, state }: I_SaveColumnsStateMutationInput): Promise<I_ColumnSetState> => {
 		const currentProjectMetadata = await getProjectStorageMetadata(es)(projectId);
 		const currentIndexMetadata = currentProjectMetadata.find((i) => i.name === graphqlField);

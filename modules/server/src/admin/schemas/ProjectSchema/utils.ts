@@ -1,4 +1,4 @@
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 import { constants } from '../../services/constants.js';
 import { serializeToEsId } from '../../services/index.js';
@@ -14,7 +14,7 @@ export const newArrangerProject = (id: string): IArrangerProject => ({
 	timestamp: new Date().toISOString(),
 });
 
-export const getArrangerProjects = async (es: SearchClientType): Promise<IArrangerProject[]> => {
+export const getArrangerProjects = async (es: AllClients): Promise<IArrangerProject[]> => {
 	const {
 		body: {
 			hits: { hits },
@@ -42,7 +42,7 @@ export const getArrangerProjects = async (es: SearchClientType): Promise<IArrang
 };
 
 export const addArrangerProject =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (id: string): Promise<IArrangerProject[]> => {
 		//id must be lower case
 		const _id = serializeToEsId(id);
@@ -63,7 +63,7 @@ export const addArrangerProject =
 	};
 
 export const removeArrangerProject =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (id: string): Promise<IArrangerProject[]> => {
 		const existingProject = (await getArrangerProjects(es)).find(({ id: _id }) => id === _id);
 		if (existingProject) {

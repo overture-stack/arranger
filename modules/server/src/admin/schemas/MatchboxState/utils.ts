@@ -1,4 +1,4 @@
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '../../../mapping/index.js';
 import { replaceBy, timestamp } from '../../services/index.js';
@@ -27,14 +27,14 @@ export const createMatchboxState = ({
 };
 
 export const getMatchBoxState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ graphqlField, projectId }: I_MatchBoxStateQueryInput): Promise<I_MatchBoxState> => {
 		const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);
 		return currentMetadata?.config['matchbox-state'];
 	};
 
 export const saveMatchBoxState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({
 		graphqlField,
 		projectId,

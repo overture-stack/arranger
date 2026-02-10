@@ -1,7 +1,7 @@
 import { sortBy } from 'ramda';
 
 import { mappingToAggsState } from '../../../mapping/index.js';
-import { type SearchClientType } from '../../../searchClient/index.js';
+import { type AllClients } from '../../../searchClient/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';
 import { timestamp } from '../../services/index.js';
 import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils.js';
@@ -15,7 +15,7 @@ import {
 } from './types.js';
 
 export const createAggsSetState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ esIndex }: EsIndexLocation): Promise<I_AggsSetState> => {
 		const rawEsmapping = await getEsMapping(es)({ esIndex });
 		const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings.properties;
@@ -24,7 +24,7 @@ export const createAggsSetState =
 	};
 
 export const getAggsSetState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (args: I_AggsStateQueryInput): Promise<I_AggsSetState> => {
 		const { projectId, graphqlField } = args;
 		const metaData = (await getProjectStorageMetadata(es)(projectId)).find((entry) => entry.name === graphqlField);
@@ -32,7 +32,7 @@ export const getAggsSetState =
 	};
 
 export const saveAggsSetState =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (args: I_SaveAggsStateMutationInput): Promise<I_AggsSetState> => {
 		const { graphqlField, projectId, state } = args;
 		const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);

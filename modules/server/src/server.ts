@@ -6,12 +6,12 @@ import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from '
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
-import SearchClient from './searchClient/index.js';
+import getSearchClient from './searchClient/index.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
 const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH } = ENV_CONFIG;
 
-export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
+export const buildEsClient = async (esHost = '', esUser = '', esPass = '') => {
 	if (!esHost) {
 		console.error('no elasticsearch host was provided');
 	}
@@ -30,11 +30,11 @@ export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
 		};
 	}
 
-	return SearchClient(esConfig);
+	return await getSearchClient(esConfig);
 };
 
-export const buildEsClientViaEnv = () => {
-	return buildEsClient(ES_HOST, ES_USER, ES_PASS);
+export const buildEsClientViaEnv = async () => {
+	return await buildEsClient(ES_HOST, ES_USER, ES_PASS);
 };
 
 const arrangerServer = async ({
@@ -51,7 +51,7 @@ const arrangerServer = async ({
 	pingPath = PING_PATH,
 	setsIndex = ES_ARRANGER_SET_INDEX,
 } = {}): Promise<Router> => {
-	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
+	const esClient = customEsClient || (await buildEsClient(esHost, esUser, esPass));
 	const router = Router();
 
 	console.log('------------------------------------');

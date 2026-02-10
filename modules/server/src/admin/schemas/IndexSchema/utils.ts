@@ -1,7 +1,7 @@
 import { UserInputError } from 'apollo-server';
 import Qew from 'qew'; // TODO: using 0.9.13 because later versions break the async
 
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
 import { constants } from '../../services/constants.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';
@@ -33,7 +33,7 @@ export const getProjectMetadataEsLocation = (
 });
 
 const mappingExistsOn =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ esIndex }: EsIndexLocation): Promise<boolean> => {
 		try {
 			await getEsMapping(es)({ esIndex });
@@ -44,7 +44,7 @@ const mappingExistsOn =
 	};
 
 export const getProjectStorageMetadata =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (projectId: string): Promise<IProjectIndexMetadata[]> => {
 		try {
 			const {
@@ -61,7 +61,7 @@ export const getProjectStorageMetadata =
 	};
 
 export const getProjectMetadata =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (projectId: string): Promise<IIndexGqlModel[]> =>
 		Promise.all(
 			(await getProjectStorageMetadata(es)(projectId)).map(async (metadata) => ({
@@ -76,7 +76,7 @@ export const getProjectMetadata =
 		);
 
 export const getProjectIndex =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ projectId, graphqlField }: IIndexQueryInput): Promise<IIndexGqlModel> => {
 		try {
 			const output = (await getProjectMetadata(es)(projectId)).find(
@@ -89,7 +89,7 @@ export const getProjectIndex =
 	};
 
 export const createNewIndex =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async (args: INewIndexInput): Promise<IIndexGqlModel> => {
 		const { projectId, graphqlField, esIndex } = args;
 		const arrangerProject = (await getArrangerProjects(es)).find((project) => project.id === projectId);
@@ -153,7 +153,7 @@ const createProjectQueueManager = () => {
 // pretty bad, since we're just taking anything right now in run time, but at least graphQl will ensure `metaData` is typed in runtime
 const projectQueueManager = createProjectQueueManager();
 export const updateProjectIndexMetadata =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({
 		projectId,
 		metaData,
@@ -180,7 +180,7 @@ export const updateProjectIndexMetadata =
 	};
 
 export const removeProjectIndex =
-	(es: SearchClientType) =>
+	(es: AllClients) =>
 	async ({ projectId, graphqlField }: IIndexRemovalMutationInput): Promise<IIndexGqlModel> => {
 		try {
 			const removedIndexMetadata = await getProjectIndex(es)({

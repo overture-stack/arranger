@@ -1,8 +1,8 @@
 import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
-import { type SearchClientType } from '#searchClient/index.js';
+import { type AllClients } from '#searchClient/index.js';
 
-export const getESAliases = async (esClient: SearchClientType) => {
+export const getESAliases = async (esClient: AllClients) => {
 	const { body } = await esClient.cat.aliases({ format: 'json' });
 
 	return body;
@@ -11,7 +11,7 @@ export const getESAliases = async (esClient: SearchClientType) => {
 export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: string) =>
 	aliases?.find((foundIndex = { alias: undefined }) => foundIndex.alias === possibleAlias)?.index;
 
-export const fetchMapping = async ({ esClient, index }: { esClient: SearchClientType; index: string }) => {
+export const fetchMapping = async ({ esClient, index }: { esClient: AllClients; index: string }) => {
 	if (esClient) {
 		console.log(`Fetching ES mapping for "${index}"...`);
 		const aliases = await getESAliases(esClient);
@@ -20,7 +20,7 @@ export const fetchMapping = async ({ esClient, index }: { esClient: SearchClient
 
 		const accessor = alias || index;
 
-		const mapping = await esClient?.indices
+		const mapping = await esClient.indices
 			.getMapping({
 				index: accessor,
 			})

@@ -5,7 +5,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { type GraphQLSchema } from 'graphql';
 import { print } from 'graphql/language/printer';
 
-import { type SearchClientType } from '../searchClient/index.js';
+import { type AllClients } from '../searchClient/index.js';
 
 import {
 	createAggsStateByIndexResolver,
@@ -67,30 +67,30 @@ function buildElasticsearchClient(config: AdminApiConfig) {
 	return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
 }
 
-const initialize = (config: AdminApiConfig): Promise<SearchClientType> =>
-	new Promise(async (resolve, reject) => {
-		console.info('Initializing Elasticsearch Client for host: ' + config.esHost);
-		const esClient = buildElasticsearchClient(config);
-		try {
-			console.info('Checking if index ' + constants.ARRANGER_PROJECT_INDEX + ' exists in Elasticsearch');
-			const exists = await esClient.indices.exists({
+const initialize = async (config: AdminApiConfig): Promise<AllClients | undefined> => {
+	console.info('Initializing Elasticsearch Client for host: ' + config.esHost);
+	const esClient = await buildElasticsearchClient(config);
+	try {
+		console.info('Checking if index ' + constants.ARRANGER_PROJECT_INDEX + ' exists in Elasticsearch');
+		const exists = await esClient.indices.exists({
+			index: constants.ARRANGER_PROJECT_INDEX,
+		});
+		if (!exists) {
+			esClient.indices.create({
 				index: constants.ARRANGER_PROJECT_INDEX,
 			});
-			if (!exists) {
-				esClient.indices.create({
-					index: constants.ARRANGER_PROJECT_INDEX,
-				});
-			}
-			resolve(esClient);
-		} catch (err) {
-			setTimeout(() => {
-				initialize(config).then(() => resolve(esClient));
-			}, 1000);
 		}
-	});
+		return esClient;
+	} catch (err) {
+		setTimeout(async () => {
+			return await initialize(config);
+		}, 1000);
+	}
+};
 
 export default async (config: AdminApiConfig) => {
 	const esClient = await initialize(config);
+	if (!esClient) throw new Error('Could not initialize esClient');
 	return new ApolloServer({
 		schema: await createSchema(),
 		context: (): IQueryContext => ({
