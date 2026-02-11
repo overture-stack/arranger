@@ -16,6 +16,7 @@ export const ES_INDEX = process.env.ES_INDEX || '';
 export const ES_LOG = process.env.ES_LOG?.split?.(',') || 'error';
 export const ES_PASS = process.env.ES_PASS || '';
 export const ES_USER = process.env.ES_USER || '';
+export const SEARCH_CLIENT = process.env.SEARCH_CLIENT || '';
 export const MAX_DOWNLOAD_ROWS = stringToNumber(process.env.MAX_DOWNLOAD_ROWS) || 100;
 export const MAX_LIVE_VERSIONS = process.env.MAX_LIVE_VERSIONS || 3;
 export const MAX_RESULTS_WINDOW = stringToNumber(process.env.MAX_RESULTS_WINDOW) || 10000;

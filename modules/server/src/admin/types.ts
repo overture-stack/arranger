@@ -1,7 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { type MergeInfo } from 'graphql-tools';
 
-import { type AllClients } from '../searchClient/index.js';
+import { type SearchClient } from '../searchClient/index.js';
 
 export type AdminApiConfig = {
 	esHost: string;
@@ -9,7 +9,7 @@ export type AdminApiConfig = {
 	esPass: string;
 };
 export type IQueryContext = {
-	es: AllClients;
+	es: SearchClient;
 };
 
 export type ResolverOutput<T> = T | Promise<T>;

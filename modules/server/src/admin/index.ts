@@ -5,7 +5,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { type GraphQLSchema } from 'graphql';
 import { print } from 'graphql/language/printer';
 
-import { type AllClients } from '../searchClient/index.js';
+import { type SearchClient } from '../searchClient/index.js';
 
 import {
 	createAggsStateByIndexResolver,
@@ -67,7 +67,7 @@ function buildElasticsearchClient(config: AdminApiConfig) {
 	return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
 }
 
-const initialize = async (config: AdminApiConfig): Promise<AllClients | undefined> => {
+const initialize = async (config: AdminApiConfig): Promise<SearchClient | undefined> => {
 	console.info('Initializing Elasticsearch Client for host: ' + config.esHost);
 	const esClient = await buildElasticsearchClient(config);
 	try {

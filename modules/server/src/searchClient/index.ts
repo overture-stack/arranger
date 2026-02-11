@@ -4,28 +4,41 @@ import { Client as OpenSearchClient, type ClientOptions as OSClientOptions } fro
 import { ENV_CONFIG } from '#config/index.js';
 
 export type AllClients = ElasticClient | OpenSearchClient;
-type Clients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
-type ClientTypes = keyof Clients;
-type ClientOptions = { elasticsearch: ESClientOptions; opensearch: OSClientOptions };
+export type SearchClient = ReturnType<typeof createSearchClient>;
+export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
+export type SupportedClientOptions = { elasticsearch: ESClientOptions; opensearch: OSClientOptions };
+export type SupportedClientTypes = keyof SupportedClients;
+export type SupportedClientOptionTypes = SupportedClientOptions[keyof SupportedClientOptions];
 
-async function getSearchClient<Key extends ClientTypes>(options: ClientOptions[Key]) {
-	const { ES_HOST } = ENV_CONFIG;
+const createSearchClient = (
+	clientType: SupportedClientTypes,
+	clientOptions: SupportedClientOptionTypes,
+): AllClients => {
+	if (clientType === 'opensearch') {
+		// TODO: validate
+		const options = clientOptions as SupportedClientOptions[typeof clientType];
+		return new OpenSearchClient(options);
+	} else {
+		// TODO: validate
+		const options = clientOptions as SupportedClientOptions[typeof clientType];
+		return new ElasticClient(options);
+	}
+};
+
+async function getSearchClient(options: SupportedClientOptionTypes) {
+	const { ES_HOST, SEARCH_CLIENT } = ENV_CONFIG;
 	const searchConfig = await (await fetch(ES_HOST)).json();
 	const { distribution } = searchConfig.version;
 	try {
-		if (distribution === 'opensearch') {
-			const clientOptions = options as OSClientOptions;
-			return new OpenSearchClient(clientOptions);
+		if (distribution === 'opensearch' || SEARCH_CLIENT === 'opensearch') {
+			return createSearchClient('opensearch', options);
 		} else {
-			const clientOptions = options as ESClientOptions;
-			return new ElasticClient(clientOptions);
+			return createSearchClient('elasticsearch', options);
 		}
 	} catch (error) {
 		console.error(error);
 		throw new Error(`Error configuring Search Client`);
 	}
 }
-
-export type SearchClientType = ReturnType<typeof getSearchClient>;
 
 export default getSearchClient;

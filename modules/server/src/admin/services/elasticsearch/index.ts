@@ -1,4 +1,4 @@
-import getSearchClient, { type AllClients } from '#searchClient/index.js';
+import getSearchClient, { type SearchClient } from '#searchClient/index.js';
 
 import { type EsMapping } from './types.js';
 
@@ -14,7 +14,7 @@ export const createClient = async (esHost: string, esUser: string, esPass: strin
 };
 
 export const getEsMapping =
-	(es: AllClients) =>
+	(es: SearchClient) =>
 	async ({
 		esIndex,
 	}: {

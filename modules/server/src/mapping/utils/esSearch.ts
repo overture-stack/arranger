@@ -1,7 +1,7 @@
 import { type RequestParams } from '@elastic/elasticsearch';
 
-import { type AllClients } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/index.js';
 
-export default (esClient: AllClients) => async (params: RequestParams.Search) => {
+export default (esClient: SearchClient) => async (params: RequestParams.Search) => {
 	return esClient.search(params)?.body;
 };
