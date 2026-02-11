@@ -1,4 +1,4 @@
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { constants } from '../../services/constants.js';
 import { serializeToEsId } from '../../services/index.js';

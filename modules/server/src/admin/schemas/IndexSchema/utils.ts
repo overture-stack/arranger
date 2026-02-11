@@ -1,7 +1,7 @@
 import { UserInputError } from 'apollo-server';
 import Qew from 'qew'; // TODO: using 0.9.13 because later versions break the async
 
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { constants } from '../../services/constants.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';

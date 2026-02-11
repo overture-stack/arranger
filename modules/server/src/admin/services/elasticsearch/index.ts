@@ -1,4 +1,5 @@
-import getSearchClient, { type SearchClient } from '#searchClient/index.js';
+import getSearchClient from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { type EsMapping } from './types.js';
 

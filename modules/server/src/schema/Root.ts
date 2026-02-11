@@ -6,7 +6,7 @@ import Parallel from 'paralleljs';
 import { ENV_CONFIG } from '#config/index.js';
 import { createConnectionResolvers, saveSet, mappingToFields } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';

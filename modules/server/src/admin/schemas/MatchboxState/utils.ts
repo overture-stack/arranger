@@ -1,4 +1,4 @@
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { mappingToMatchBoxState as extendedFieldsToMatchBoxState } from '../../../mapping/index.js';
 import { replaceBy, timestamp } from '../../services/index.js';

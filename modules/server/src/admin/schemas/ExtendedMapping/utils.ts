@@ -1,6 +1,6 @@
 import { UserInputError } from 'apollo-server';
 
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { extendMapping } from '../../../mapping/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';

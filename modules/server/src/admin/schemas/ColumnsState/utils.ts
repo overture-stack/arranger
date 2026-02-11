@@ -1,6 +1,6 @@
 import { sortBy } from 'ramda';
 
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { mappingToColumnsState } from '../../../mapping/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';

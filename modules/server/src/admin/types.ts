@@ -1,7 +1,7 @@
 import { type GraphQLResolveInfo } from 'graphql';
 import { type MergeInfo } from 'graphql-tools';
 
-import { type SearchClient } from '../searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 export type AdminApiConfig = {
 	esHost: string;

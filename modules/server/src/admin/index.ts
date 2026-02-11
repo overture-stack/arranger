@@ -5,7 +5,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { type GraphQLSchema } from 'graphql';
 import { print } from 'graphql/language/printer';
 
-import { type SearchClient } from '../searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import {
 	createAggsStateByIndexResolver,

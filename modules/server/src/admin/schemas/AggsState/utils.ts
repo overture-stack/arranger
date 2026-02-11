@@ -1,7 +1,8 @@
 import { sortBy } from 'ramda';
 
+import { type SearchClient } from '#searchClient/types.js';
+
 import { mappingToAggsState } from '../../../mapping/index.js';
-import { type SearchClient } from '../../../searchClient/index.js';
 import { getEsMapping } from '../../services/elasticsearch/index.js';
 import { timestamp } from '../../services/index.js';
 import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils.js';

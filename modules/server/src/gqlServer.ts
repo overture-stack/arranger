@@ -1,6 +1,6 @@
 import { type GraphQLResolveInfo } from 'graphql';
 
-import { type SearchClient } from './searchClient/index.js';
+import { type SearchClient } from './searchClient/types.js';
 
 export type Context = {
 	esClient: SearchClient;

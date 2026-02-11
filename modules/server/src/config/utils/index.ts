@@ -1,7 +1,7 @@
 import { ENV_CONFIG } from '#config/index.js';
 import { type ConfigObject, configProperties } from '#config/types.js';
 import { setsMapping } from '#schema/index.js';
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 export const initializeSets = async ({
 	esClient,

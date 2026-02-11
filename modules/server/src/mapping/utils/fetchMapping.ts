@@ -1,6 +1,6 @@
 import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
-import { type SearchClient } from '#searchClient/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 export const getESAliases = async (esClient: SearchClient) => {
 	const { body } = await esClient.cat.aliases({ format: 'json' });

@@ -1,31 +1,26 @@
-import { Client as ElasticClient, type ClientOptions as ESClientOptions } from '@elastic/elasticsearch';
-import { Client as OpenSearchClient, type ClientOptions as OSClientOptions } from '@opensearch-project/opensearch';
+import { Client as ElasticClient } from '@elastic/elasticsearch';
+import { Client as OpenSearchClient } from '@opensearch-project/opensearch';
 
 import { ENV_CONFIG } from '#config/index.js';
 
-export type AllClients = ElasticClient | OpenSearchClient;
-export type SearchClient = ReturnType<typeof createSearchClient>;
-export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
-export type SupportedClientOptions = { elasticsearch: ESClientOptions; opensearch: OSClientOptions };
-export type SupportedClientTypes = keyof SupportedClients;
-export type SupportedClientOptionTypes = SupportedClientOptions[keyof SupportedClientOptions];
+import type { AllClients, SupportedClientTypes, SupportedClientOptionTypes, SupportedClientOptions } from './types.js';
 
-const createSearchClient = (
+export const createSearchClient = (
 	clientType: SupportedClientTypes,
 	clientOptions: SupportedClientOptionTypes,
 ): AllClients => {
 	if (clientType === 'opensearch') {
-		// TODO: validate
+		// TODO: validate / no use of 'as'
 		const options = clientOptions as SupportedClientOptions[typeof clientType];
 		return new OpenSearchClient(options);
 	} else {
-		// TODO: validate
+		// TODO: validate / no use of 'as'
 		const options = clientOptions as SupportedClientOptions[typeof clientType];
 		return new ElasticClient(options);
 	}
 };
 
-async function getSearchClient(options: SupportedClientOptionTypes) {
+export default async function getSearchClient(options: SupportedClientOptionTypes) {
 	const { ES_HOST, SEARCH_CLIENT } = ENV_CONFIG;
 	const searchConfig = await (await fetch(ES_HOST)).json();
 	const { distribution } = searchConfig.version;
@@ -40,5 +35,3 @@ async function getSearchClient(options: SupportedClientOptionTypes) {
 		throw new Error(`Error configuring Search Client`);
 	}
 }
-
-export default getSearchClient;
