@@ -1,22 +1,25 @@
-import { Client as ElasticClient } from '@elastic/elasticsearch';
-import { Client as OpenSearchClient } from '@opensearch-project/opensearch';
-
 import { ENV_CONFIG } from '#config/index.js';
 
-import type { AllClients, SupportedClientTypes, SupportedClientOptionTypes, SupportedClientOptions } from './types.js';
+import { createElasticSearchClient } from './createElasticSearchClient.js';
+import { createOpenSearchClient } from './createOpenSearchClient.js';
+import type {
+	AllSearchClients,
+	SupportedClientTypes,
+	SupportedClientOptionTypes,
+	SupportedClientOptions,
+} from './types.js';
 
+// return SearchClient
 export const createSearchClient = (
 	clientType: SupportedClientTypes,
 	clientOptions: SupportedClientOptionTypes,
-): AllClients => {
+): AllSearchClients => {
 	if (clientType === 'opensearch') {
-		// TODO: validate / no use of 'as'
-		const options = clientOptions as SupportedClientOptions[typeof clientType];
-		return new OpenSearchClient(options);
+		const options = clientOptions as SupportedClientOptions['opensearch'];
+		return createOpenSearchClient(options);
 	} else {
-		// TODO: validate / no use of 'as'
-		const options = clientOptions as SupportedClientOptions[typeof clientType];
-		return new ElasticClient(options);
+		const options = clientOptions as SupportedClientOptions['elasticsearch'];
+		return createElasticSearchClient(options);
 	}
 };
 
