@@ -1,26 +1,59 @@
 import { Client } from '@opensearch-project/opensearch';
 
-import type { SupportedClientOptions, ArrangerOpenSearchClient } from './types.js';
+import type { SupportedClientOptions, ArrangerSearchClient } from './types.js';
 
-export function createOpenSearchClient(options: SupportedClientOptions['opensearch']): ArrangerOpenSearchClient {
+export function createOpenSearchClient(options: SupportedClientOptions['opensearch']): ArrangerSearchClient {
 	const openSearchClient = new Client(options);
 
-	const searchClient: ArrangerOpenSearchClient = {
+	const searchClient: ArrangerSearchClient = {
 		indices: {
-			create: openSearchClient.indices.create,
-			delete: openSearchClient.indices.delete,
-			exists: openSearchClient.indices.exists,
-			getMapping: openSearchClient.indices.getMapping,
+			create: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.create(input, options);
+				return output;
+			},
+			delete: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.delete(input, options);
+				return output;
+			},
+			exists: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.exists(input, options);
+				return output;
+			},
+			getMapping: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.getMapping(input, options);
+				return output;
+			},
 		},
 		cat: {
-			aliases: openSearchClient.cat.aliases,
+			aliases: async (input: any, options?: any) => {
+				const output = await openSearchClient.cat.aliases(input, options);
+				return output;
+			},
 		},
-		bulk: openSearchClient.bulk,
-		index: openSearchClient.index,
-		search: openSearchClient.search,
-		update: openSearchClient.update,
-		create: openSearchClient.create,
-		delete: openSearchClient.delete,
+		bulk: async (input: any, options?: any) => {
+			const output = await openSearchClient.bulk(input, options);
+			return output;
+		},
+		index: async (input: any, options?: any) => {
+			const output = await openSearchClient.index(input, options);
+			return output;
+		},
+		search: async (input: any, options?: any) => {
+			const output = await openSearchClient.search(input, options);
+			return output;
+		},
+		update: async (input: any, options?: any) => {
+			const output = await openSearchClient.update(input, options);
+			return output;
+		},
+		create: async (input: any, options?: any) => {
+			const output = await openSearchClient.create(input, options);
+			return output;
+		},
+		delete: async (input: any, options?: any) => {
+			const output = await openSearchClient.delete(input, options);
+			return output;
+		},
 	};
 
 	return searchClient;

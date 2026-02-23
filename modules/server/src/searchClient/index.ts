@@ -3,17 +3,16 @@ import { ENV_CONFIG } from '#config/index.js';
 import { createElasticSearchClient } from './createElasticSearchClient.js';
 import { createOpenSearchClient } from './createOpenSearchClient.js';
 import type {
-	AllSearchClients,
+	ArrangerSearchClient,
 	SupportedClientTypes,
 	SupportedClientOptionTypes,
 	SupportedClientOptions,
 } from './types.js';
 
-// return SearchClient
 export const createSearchClient = (
 	clientType: SupportedClientTypes,
 	clientOptions: SupportedClientOptionTypes,
-): AllSearchClients => {
+): ArrangerSearchClient => {
 	if (clientType === 'opensearch') {
 		const options = clientOptions as SupportedClientOptions['opensearch'];
 		return createOpenSearchClient(options);
