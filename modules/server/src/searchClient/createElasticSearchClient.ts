@@ -7,51 +7,51 @@ export function createElasticSearchClient(options: SupportedClientOptions['elast
 
 	const searchClient: ArrangerSearchClient = {
 		indices: {
-			create: async (input: any) => {
-				const output = await elasticSearchClient.indices.create(input);
+			create: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.indices.create(input, options);
 				return output;
 			},
-			delete: async (input: any) => {
-				const output = await elasticSearchClient.indices.delete(input);
+			delete: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.indices.delete(input, options);
 				return output;
 			},
-			exists: async (input: any) => {
-				const output = await elasticSearchClient.indices.exists(input);
+			exists: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.indices.exists(input, options);
 				return output;
 			},
-			getMapping: async (input: any) => {
-				const output = await elasticSearchClient.indices.getMapping(input);
+			getMapping: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.indices.getMapping(input, options);
 				return output;
 			},
 		},
 		cat: {
-			aliases: async (input: any) => {
-				const output = await elasticSearchClient.cat.aliases(input);
+			aliases: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.cat.aliases(input, options);
 				return output;
 			},
 		},
-		bulk: async (input: any) => {
-			const output = await elasticSearchClient.bulk(input);
+		bulk: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.bulk(input, options);
 			return output;
 		},
-		index: async (input: any) => {
-			const output = await elasticSearchClient.index(input);
+		index: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.index(input, options);
 			return output;
 		},
-		search: async (input: any) => {
-			const output = await elasticSearchClient.search(input);
+		search: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.search(input, options);
 			return output;
 		},
-		update: async (input: any) => {
-			const output = await elasticSearchClient.update(input);
+		update: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.update(input, options);
 			return output;
 		},
-		create: async (input: any) => {
-			const output = await elasticSearchClient.create(input);
+		create: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.create(input, options);
 			return output;
 		},
-		delete: async (input: any) => {
-			const output = await elasticSearchClient.delete(input);
+		delete: async (input: any, options?: any) => {
+			const output = await elasticSearchClient.delete(input, options);
 			return output;
 		},
 	};

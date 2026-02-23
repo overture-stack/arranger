@@ -4,7 +4,6 @@ import type { Client as OpenSearchClient, ClientOptions as OSClientOptions } fro
 import { type createSearchClient } from './index.js';
 
 export type AllSupportedClients = ElasticClient | OpenSearchClient;
-export type AllSearchClients = ElasticSearchClientInterface | ArrangerSearchClient;
 export type SearchClient = ReturnType<typeof createSearchClient>;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientOptions = { elasticsearch: ESClientOptions; opensearch: OSClientOptions };
@@ -51,17 +50,6 @@ export type ElasticSearchClientInterface = {
 // Approximates <Awaited<ReturnType<ElasticClient[key]>>
 type ElasticResponseHandler<Output> = Promise<ApiResponse<Output, unknown>>;
 
-// Todo: Expected return Type for .search
-interface SearchResponse extends Record<string, any> {
-	body: {
-		hits: {
-			hits: {
-				_source: any;
-			}[];
-		};
-	};
-}
-
 export type ArrangerSearchClient = {
 	indices: {
 		create: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
@@ -79,3 +67,14 @@ export type ArrangerSearchClient = {
 	create: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
 	delete: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
 };
+
+// Todo: Expected return Type for .search
+interface SearchResponse extends Record<string, any> {
+	body: {
+		hits: {
+			hits: {
+				_source: any;
+			}[];
+		};
+	};
+}
