@@ -1,37 +1,62 @@
-import { ENV_CONFIG } from '#config/index.js';
+import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
+import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
+import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWithClient } from './types.js';
 
-import { createElasticSearchClient } from './createElasticSearchClient.js';
-import { createOpenSearchClient } from './createOpenSearchClient.js';
-import type {
-	ArrangerSearchClient,
-	SupportedClientTypes,
-	SupportedClientOptionTypes,
-	SupportedClientOptions,
-} from './types.js';
+export const supportedClientValues: SupportedClientTypes[] = ['opensearch', 'elasticsearch'] as const;
 
-export const createSearchClient = (
-	clientType: SupportedClientTypes,
-	clientOptions: SupportedClientOptionTypes,
-): ArrangerSearchClient => {
+export const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient => {
+	const { clientType } = clientConfig;
 	if (clientType === 'opensearch') {
-		const options = clientOptions as SupportedClientOptions['opensearch'];
+		const options: OSClientOptions = { ...clientConfig, clientType };
 		return createOpenSearchClient(options);
 	} else {
-		const options = clientOptions as SupportedClientOptions['elasticsearch'];
+		// TODO:
+		// const esConfig: ClientOptions = {
+		// 	node: esHost,
+		// };
+		// esConfig['auth'] = {
+		// 	username: esUser,
+		// 	password: esPass,
+		// };
+		const options: ESClientOptions = { ...clientConfig, clientType };
 		return createElasticSearchClient(options);
 	}
 };
 
-export default async function getSearchClient(options: SupportedClientOptionTypes) {
-	const { ES_HOST, SEARCH_CLIENT } = ENV_CONFIG;
-	const searchConfig = await (await fetch(ES_HOST)).json();
-	const { distribution } = searchConfig.version;
+/**
+ * Uses Cluster Info to determine Search Client version information
+ */
+const getClientVersion = async (config: SearchConfig) => {
 	try {
-		if (distribution === 'opensearch' || SEARCH_CLIENT === 'opensearch') {
-			return createSearchClient('opensearch', options);
-		} else {
-			return createSearchClient('elasticsearch', options);
+		const response = await (await fetch(config.host)).json();
+		if (!response?.version) {
+			throw new Error('Could not retrieve version information');
 		}
+
+		const { distribution, number } = response.version;
+		// Distribution is specific to OpenSearch
+		// If number is a valid string, default to 'elasticSearch' as client type
+		const version =
+			typeof distribution === 'string' ? distribution : typeof number === 'string' ? 'elasticsearch' : undefined;
+		if (typeof version === 'string') {
+			return distribution;
+		}
+		return undefined;
+	} catch (error) {
+		console.error(error);
+		throw new Error('Error identifying Search Client version from server response');
+	}
+};
+
+export default async function getSearchClient(config: SearchConfig) {
+	try {
+		const configClientType = config.clientType ?? (await getClientVersion(config));
+		const clientType = supportedClientValues.find((key) => typeof key === 'string' && key === configClientType);
+		if (!clientType) {
+			throw new Error('Error with Search Client configuration clientType value');
+		}
+		const options = { ...config, clientType };
+		return createSearchClient(options);
 	} catch (error) {
 		console.error(error);
 		throw new Error(`Error configuring Search Client`);

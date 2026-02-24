@@ -1,71 +1,44 @@
-import type { Client as ElasticClient, ClientOptions as ESClientOptions, ApiResponse } from '@elastic/elasticsearch';
-import type { Client as OpenSearchClient, ClientOptions as OSClientOptions } from '@opensearch-project/opensearch';
+import type { Client as ElasticClient, ApiResponse } from '@elastic/elasticsearch';
+import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
 
-import { type createSearchClient } from './index.js';
+import type { ESClientOptions } from './createElasticSearchClient.js';
+import type { OSClientOptions } from './createOpenSearchClient.js';
 
 export type AllSupportedClients = ElasticClient | OpenSearchClient;
-export type SearchClient = ReturnType<typeof createSearchClient>;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
-export type SupportedClientOptions = { elasticsearch: ESClientOptions; opensearch: OSClientOptions };
 export type SupportedClientTypes = keyof SupportedClients;
-export type SupportedClientOptionTypes = SupportedClientOptions[keyof SupportedClientOptions];
+export type SupportedClientOptions = ESClientOptions | OSClientOptions;
 
-// TODO: type SearchClientInterface<ClientType>
-export type OpenSearchClientInterface = {
-	indices: {
-		create: OpenSearchClient['indices']['create'];
-		delete: OpenSearchClient['indices']['delete'];
-		exists: OpenSearchClient['indices']['exists'];
-		getMapping: OpenSearchClient['indices']['getMapping'];
-	};
-	cat: {
-		aliases: OpenSearchClient['cat']['aliases'];
-	};
-	bulk: OpenSearchClient['bulk'];
-	index: OpenSearchClient['index'];
-	search: OpenSearchClient['search'];
-	update: OpenSearchClient['update'];
-	create: OpenSearchClient['create'];
-	delete: OpenSearchClient['delete'];
+export type SearchConfig = {
+	host: string;
+	clientType?: SupportedClientTypes | string;
+	password?: string;
+	user?: string;
 };
 
-export type ElasticSearchClientInterface = {
-	indices: {
-		create: ElasticClient['indices']['create'];
-		delete: ElasticClient['indices']['delete'];
-		exists: ElasticClient['indices']['exists'];
-		getMapping: ElasticClient['indices']['getMapping'];
-	};
-	cat: {
-		aliases: ElasticClient['cat']['aliases'];
-	};
-	bulk: ElasticClient['bulk'];
-	index: ElasticClient['index'];
-	search: ElasticClient['search'];
-	update: ElasticClient['update'];
-	create: ElasticClient['create'];
-	delete: ElasticClient['delete'];
+export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
+	clientType: SupportedClientTypes;
 };
 
 // Approximates <Awaited<ReturnType<ElasticClient[key]>>
-type ElasticResponseHandler<Output> = Promise<ApiResponse<Output, unknown>>;
+type SearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<Body, Context>>;
 
-export type ArrangerSearchClient = {
+export type SearchClient = {
 	indices: {
-		create: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-		delete: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-		exists: (input: any, options?: any) => ElasticResponseHandler<boolean>;
-		getMapping: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
+		create: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		delete: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		exists: (input: any, options?: any) => SearchClientResponseHandler<boolean>;
+		getMapping: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	};
 	cat: {
-		aliases: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
+		aliases: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	};
-	bulk: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-	index: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-	search: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-	update: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-	create: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
-	delete: (input: any, options?: any) => ElasticResponseHandler<Record<string, any>>;
+	bulk: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	index: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	search: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	update: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	create: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	delete: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 };
 
 // Todo: Expected return Type for .search

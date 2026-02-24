@@ -1,11 +1,15 @@
-import { Client } from '@elastic/elasticsearch';
+import { Client, type ClientOptions } from '@elastic/elasticsearch';
 
-import type { SupportedClientOptions, ArrangerSearchClient } from './types.js';
+import type { SearchClient } from './types.js';
 
-export function createElasticSearchClient(options: SupportedClientOptions['elasticsearch']) {
+export type ESClientOptions = ClientOptions & {
+	clientType: 'elasticsearch';
+};
+
+export function createElasticSearchClient(options: ESClientOptions) {
 	const elasticSearchClient = new Client(options);
 
-	const searchClient: ArrangerSearchClient = {
+	const searchClient: SearchClient = {
 		indices: {
 			create: async (input: any, options?: any) => {
 				const output = await elasticSearchClient.indices.create(input, options);

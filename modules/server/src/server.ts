@@ -1,4 +1,3 @@
-import { type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
@@ -7,34 +6,29 @@ import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
 import getSearchClient from './searchClient/index.js';
+import { type SearchConfig } from './searchClient/types.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
-const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH } = ENV_CONFIG;
+const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT } = ENV_CONFIG;
 
-export const buildEsClient = async (esHost = '', esUser = '', esPass = '') => {
-	if (!esHost) {
-		console.error('no elasticsearch host was provided');
+export const createSearchConfig = (host = '', user = '', password = '', clientType = '') => {
+	if (!host) {
+		throw new Error('Search Client host was not provided');
 	}
 
-	const esConfig: ClientOptions = {
-		node: esHost,
+	const searchConfig: SearchConfig = {
+		host,
+		user,
+		password,
+		clientType,
 	};
 
-	if (esUser) {
-		if (!esPass) {
-			console.error('ES user was defined, but password was not');
-		}
-		esConfig['auth'] = {
-			username: esUser,
-			password: esPass,
-		};
-	}
-
-	return await getSearchClient(esConfig);
+	return searchConfig;
 };
 
-export const buildEsClientViaEnv = async () => {
-	return await buildEsClient(ES_HOST, ES_USER, ES_PASS);
+export const buildSearchClient = async (host: string, user: string, password: string, clientType: string) => {
+	const config = createSearchConfig(host, user, password, clientType);
+	return await getSearchClient(config);
 };
 
 const arrangerServer = async ({
@@ -50,8 +44,9 @@ const arrangerServer = async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 	setsIndex = ES_ARRANGER_SET_INDEX,
+	searchClient = SEARCH_CLIENT,
 } = {}): Promise<Router> => {
-	const esClient = customEsClient || (await buildEsClient(esHost, esUser, esPass));
+	const esClient = customEsClient || (await buildSearchClient(esHost, esUser, esPass, searchClient));
 	const router = Router();
 
 	console.log('------------------------------------');

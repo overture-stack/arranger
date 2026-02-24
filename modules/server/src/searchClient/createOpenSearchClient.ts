@@ -1,11 +1,15 @@
-import { Client } from '@opensearch-project/opensearch';
+import { Client, type ClientOptions } from '@opensearch-project/opensearch';
 
-import type { SupportedClientOptions, ArrangerSearchClient } from './types.js';
+import type { SearchClient } from './types.js';
 
-export function createOpenSearchClient(options: SupportedClientOptions['opensearch']): ArrangerSearchClient {
+export type OSClientOptions = ClientOptions & {
+	clientType: 'opensearch';
+};
+
+export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 	const openSearchClient = new Client(options);
 
-	const searchClient: ArrangerSearchClient = {
+	const searchClient: SearchClient = {
 		indices: {
 			create: async (input: any, options?: any) => {
 				const output = await openSearchClient.indices.create(input, options);
