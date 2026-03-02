@@ -10,10 +10,12 @@ export type SupportedClientTypes = keyof SupportedClients;
 export type SupportedClientOptions = ESClientOptions | OSClientOptions;
 
 export type SearchConfig = {
-	host: string;
+	node: string;
 	clientType?: SupportedClientTypes | string;
-	password?: string;
-	user?: string;
+	auth?: { 
+		password: string;
+		username: string;
+	}
 };
 
 export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {

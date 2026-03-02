@@ -11,15 +11,14 @@ import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
 const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT } = ENV_CONFIG;
 
-export const createSearchConfig = (host = '', user = '', password = '', clientType = '') => {
+export const createSearchConfig = (host = '', username = '', password = '', clientType = '') => {
 	if (!host) {
-		throw new Error('Search Client host was not provided');
+		throw new Error('Search Client host URL was not provided');
 	}
-
+	const auth =  (username && password) ? { username, password } : undefined;
 	const searchConfig: SearchConfig = {
-		host,
-		user,
-		password,
+		node: host,
+		auth,
 		clientType,
 	};
 
