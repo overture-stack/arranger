@@ -39,6 +39,7 @@ const applyDefaultPivots = (filter) => {
 	const { content, pivot = null } = filter;
 	const { value } = content;
 
+	// TODO: condition here probably collapses on valid falsy values e.g. 0 or ""
 	if (value) {
 		return {
 			...filter,

@@ -18,8 +18,8 @@ export default ({ api }) => {
 		const { statusText } = await api
 			.post({
 				body: {
-					query: `{ __schema { queryType { name } } }`
-				}
+					query: `{ __schema { queryType { name } } }`,
+				},
 			})
 			.catch((err) => {
 				console.log('spinupActive error', err);
@@ -27,4 +27,6 @@ export default ({ api }) => {
 
 		assert.equal(statusText, 'OK');
 	});
+
+	// TODO: add /download and /introspection checks
 };

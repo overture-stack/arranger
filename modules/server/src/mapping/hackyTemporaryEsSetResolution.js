@@ -22,31 +22,49 @@ const resolveSetIdsFromEs = (esClient) => (setId) =>
 		},
 	}).then(({ hits: { hits } }) => flattenDeep(hits.map(({ _source: { ids } }) => ids)));
 
-const getSetIdsFromSqon = ({ content } = {}, collection = []) =>
-	(isArray(content)
-		? flattenDeep(content.reduce((acc, subSqon) => [...acc, ...getSetIdsFromSqon(subSqon, collection)], collection))
-		: isArray(content?.value)
-			? content?.value.filter((value) => String(value).indexOf('set_id:') === 0)
-			: [...(String(content?.value).indexOf?.('set_id:') === 0 ? [content.value] : [])]
-	).map((setId) => setId.replace('set_id:', ''));
+const extractSetIds = (sqon) => {
+	if (!sqon || typeof sqon !== 'object') return [];
 
-const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => ({
-	...sqon,
-	content: sqon.content.map((op) => ({
-		...op,
-		content: !isArray(op.content)
-			? {
-					...op.content,
-					value: isArray(op.content.value)
-						? flattenDeep(op.content.value.map((value) => setIdsToValueMap[value] || op.content.value))
-						: setIdsToValueMap[op.content.value] || op.content.value,
-				}
-			: injectIdsIntoSqon({ sqon: op, setIdsToValueMap }).content,
-	})),
-});
+	if (isArray(sqon.content)) {
+		return flattenDeep(sqon.content.map(extractSetIds));
+	}
+
+	const raw = sqon.content?.value;
+	const values = isArray(raw) ? raw : [raw];
+	return values.filter((v) => String(v).startsWith('set_id:')).map((v) => String(v).replace('set_id:', ''));
+};
+
+const expandSetValue = (value, setIdsToValueMap) => {
+	const replacement = setIdsToValueMap[value];
+	return replacement || value;
+};
+
+const injectIdsIntoSqon = ({ sqon, setIdsToValueMap }) => {
+	if (!sqon || typeof sqon !== 'object') return sqon;
+
+	// group node
+	if (isArray(sqon.content)) {
+		return {
+			...sqon,
+			content: sqon.content.map((child) => injectIdsIntoSqon({ sqon: child, setIdsToValueMap })),
+		};
+	}
+
+	// leaf node
+	const value = sqon.content?.value;
+	return {
+		...sqon,
+		content: {
+			...sqon.content,
+			value: isArray(value)
+				? flattenDeep(value.map((v) => expandSetValue(v, setIdsToValueMap)))
+				: expandSetValue(value, setIdsToValueMap),
+		},
+	};
+};
 
 export const resolveSetsInSqon = ({ sqon, esClient }) => {
-	const setIds = getSetIdsFromSqon(sqon || {});
+	const setIds = extractSetIds(sqon || {});
 	return setIds.length
 		? Promise.all(setIds.map(resolveSetIdsFromEs(esClient))).then((searchResult) => {
 				const setIdsToValueMap = zipObject(

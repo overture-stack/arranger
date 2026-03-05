@@ -4,8 +4,7 @@ import { test } from 'node:test';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 
-const logError = (origin, err) =>
-	console.log(origin, err?.response?.data?.errors || err);
+const logError = (origin, err) => console.log(origin, err?.response?.data?.errors || err);
 
 export default ({ api, documentType, enableAdmin }) => {
 	test('1.reads extended mapping properly', async () => {
@@ -31,7 +30,7 @@ export default ({ api, documentType, enableAdmin }) => {
 
 		assert.ok(
 			configs.length >= 0,
-			`Expected 'Extended' configs to be non-empty, but got: ${JSON.stringify(configs)}`
+			`Expected 'Extended' configs to be non-empty, but got: ${JSON.stringify(configs)}`,
 		);
 
 		assert.equal(data?.errors, undefined);
@@ -66,7 +65,7 @@ export default ({ api, documentType, enableAdmin }) => {
 
 		assert.ok(
 			configs.length >= 0,
-			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`,
 		);
 
 		assert.equal(data?.errors, undefined);
@@ -99,7 +98,7 @@ export default ({ api, documentType, enableAdmin }) => {
 
 		assert.ok(
 			configs.length >= 0,
-			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`,
 		);
 
 		assert.equal(data?.errors, undefined);
@@ -130,39 +129,42 @@ export default ({ api, documentType, enableAdmin }) => {
 
 		assert.ok(
 			Object.keys(configs.length) >= 0,
-			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`,
 		);
 
 		assert.equal(data?.errors, undefined);
 	});
 
-	test('5.reads elasticsearch mappings properly',
-		{ skip: !enableAdmin },
-		async () => {
-			const { data } = await api
-				.post({
-					body: {
-						query: print(gql`
+	test('5.reads elasticsearch mappings properly', { skip: !enableAdmin }, async () => {
+		const { data } = await api
+			.post({
+				body: {
+					query: print(gql`
 					{
 						${documentType} {
 							mapping
 						}
 					}
 				`),
-					},
-				})
-				.catch((err) => {
-					logError('readMetadata error', err);
-				});
+				},
+			})
+			.catch((err) => {
+				logError('readMetadata error', err);
+			});
 
-			// requires enableAdmin env var or middleware param
-			const configs = data?.data?.[documentType]?.mapping || {};
+		// requires enableAdmin env var or middleware param
+		const configs = data?.data?.[documentType]?.mapping || {};
 
-			assert.ok(
-				Object.keys(configs).length >= 0,
-				`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`
-			);
+		assert.ok(
+			Object.keys(configs).length >= 0,
+			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`,
+		);
 
-			assert.equal(data?.errors, undefined);
-		});
+		assert.equal(data?.errors, undefined);
+	});
+
+	// TODO: add introspection checks here
+	// - Validate SQON schema matches an exported TS type
+	// - check that the available documentTypes are listed
+	// - stretch goal: track versioning, backwards compatibility/support
 };
