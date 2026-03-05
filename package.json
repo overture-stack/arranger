@@ -42,6 +42,7 @@
 		"integration-tests/import",
 		"integration-tests/server",
 		"modules/components",
+		"modules/sqon",
 		"modules/server"
 	]
 }

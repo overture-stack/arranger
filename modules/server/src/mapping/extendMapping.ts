@@ -12,7 +12,7 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 
 	hasColumnsConfig || console.log('  - No Columns config present. Defaulting to first 5 extended fields.');
 
-	// TODO: D.R.Y. this thing
+	// TODO: D.R.Y. this thing -> invert by going through the mapping, then reaching into the configs' "extended"
 
 	const columns = (
 		hasColumnsConfig
@@ -23,7 +23,7 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 						return column.fieldName
 							? {
 									...column,
-									// This field is how React-Table finds the data
+									// This property is how React-Table finds the data
 									[configProperties.ACCESSOR]:
 										column[configProperties.ACCESSOR] ?? column[configProperties.FIELD_NAME],
 									// is this column selectable in the table Columns dropdown
@@ -45,11 +45,11 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 										{},
 									// should the cell be understood as a list of items, or a mere string
 									[configProperties.IS_ARRAY]: extendedObj?.[configProperties.IS_ARRAY] ?? false,
-									////////// TODO!!!!!!!!!!
+									////////// TODO!!!!!!!!!! (field) JSON_PATH configs
 									[configProperties.JSON_PATH]:
 										column[configProperties.JSON_PATH] ??
 										`$.${column[configProperties.FIELD_NAME].replace(/\[\d*\]/g, '[*]')}`,
-									////////// TODO!!!!!!!!!!
+									////////// TODO!!!!!!!!!! (field) QUERY configs
 									[configProperties.QUERY]:
 										column[configProperties.QUERY] ?? toQuery(column[configProperties.FIELD_NAME]),
 									// should the column be shown by default
@@ -80,9 +80,9 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 									[configProperties.DISPLAY_VALUES]: column[configProperties.DISPLAY_VALUES] ?? {},
 									// should the cell be understood as a list of items, or a mere string
 									[configProperties.IS_ARRAY]: column[configProperties.IS_ARRAY],
-									////////// TODO!!!!!!!!!!
+									////////// TODO!!!!!!!!!! (field) JSON_PATH configs
 									[configProperties.JSON_PATH]: `$.${column[configProperties.FIELD_NAME].replace(/\[\d*\]/g, '[*]')}`,
-									////////// TODO!!!!!!!!!!
+									////////// TODO!!!!!!!!!! (field) QUERY configs
 									[configProperties.QUERY]: toQuery(column[configProperties.FIELD_NAME]),
 									// should the column be shown by default
 									[configProperties.SHOW]: true,
@@ -92,7 +92,7 @@ export const extendColumns = (tableConfig: TableConfigs, extendedFields: Extende
 					})
 					.filter(Boolean)
 					.slice(0, 10)
-	) as ColumnConfigs[]; // TODO: make this better
+	) as ColumnConfigs[]; // TODO: make this "{} as Type" better
 
 	return {
 		...tableConfig,

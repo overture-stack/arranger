@@ -1,3 +1,5 @@
+// TODO: abstract this file and relevant dependencies to a proper multirepo path, e.g. /apps/searchAPI
+
 import cors from 'cors';
 import express, { json, urlencoded } from 'express';
 
@@ -16,7 +18,6 @@ export default async function (rootPath = '') {
 	return arranger({
 		enableAdmin: ENV_CONFIG.ENABLE_ADMIN,
 	}).then((router) => {
-
 		app.use(urlencoded({ extended: false, limit: '50mb' }));
 		app.use(json({ limit: '50mb' }));
 		app.use(router);

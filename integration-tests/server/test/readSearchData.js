@@ -242,6 +242,7 @@ export default ({ api, documentType, gqlPath }) => {
 		);
 	});
 
+	// TODO: look deeper into this functionality, seems like magic
 	test('3.excludes access_denied files', async () => {
 		const { data } = await api
 			.post({
