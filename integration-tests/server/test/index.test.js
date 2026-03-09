@@ -23,7 +23,7 @@ const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
 const esPwd = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const port = process.env.PORT || 5678;
-const clientType = process.env.SEARCH_CLIENT || 'elasticsearch';
+const clientType = process.env.SEARCH_CLIENT;
 
 const useAuth = !!esPwd && !!esUser;
 
