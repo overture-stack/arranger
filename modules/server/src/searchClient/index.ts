@@ -24,7 +24,7 @@ const getClientVersion = async (config: SearchConfig) => {
 		if (!response?.version) {
 			throw new Error('Could not retrieve version information');
 		}
-		console.log('response', response);
+
 		// Determine which search client is being used
 		// Distribution field is specific to OpenSearch
 		// Else, if number field is a valid string, default to 'elasticSearch' as client type
@@ -43,7 +43,7 @@ const getClientVersion = async (config: SearchConfig) => {
 
 export default async function getSearchClient(config: SearchConfig) {
 	try {
-		const configClientType = !config.clientType ? (await getClientVersion(config)) : config.clientType;
+		const configClientType = !config.clientType ? await getClientVersion(config) : config.clientType;
 		const clientType = supportedClientValues.find((key) => typeof key === 'string' && key === configClientType);
 		if (!clientType) {
 			throw new Error('Error with Search Client configuration clientType value');

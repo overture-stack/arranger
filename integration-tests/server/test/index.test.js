@@ -1,13 +1,10 @@
 import { after, before, suite } from 'node:test';
 
-import { Client } from '@elastic/elasticsearch';
 import Arranger from '@overture-stack/arranger-server';
 import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
 import express from 'express';
 
-// import { print } from 'graphql';
-// import gql from 'graphql-tag';
-// import Arranger, { adminGraphql } from '../../../modules/server/dist';
+import getSearchClient from '../../../modules/server/src/searchClient/index.js';
 
 // test modules
 import data from './assets/model_centric.data.json';
@@ -26,6 +23,7 @@ const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
 const esPwd = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const port = process.env.PORT || 5678;
+const clientType = process.env.SEARCH_CLIENT || 'elasticsearch';
 
 const useAuth = !!esPwd && !!esUser;
 
@@ -36,7 +34,7 @@ const api = ajax(`http://localhost:${port}`, {
 	endpoint: '/graphql',
 });
 
-const esClient = new Client({
+const esClient = await getSearchClient({
 	...(useAuth && {
 		auth: {
 			username: esUser,
@@ -44,6 +42,7 @@ const esClient = new Client({
 		},
 	}),
 	node: esHost,
+	clientType,
 });
 
 const cleanup = () => {
@@ -61,110 +60,70 @@ suite('integration-tests/server', () => {
 	let server;
 	const documentType = 'model';
 
-	before(async () => {
-		console.log('\n(Initializing Elasticsearch and Arranger)');
+	before(
+		async () => {
+			console.log('\n(Initializing Elasticsearch and Arranger)');
 
-		try {
-			await cleanup();
-		} catch (err) {
-			//
-		}
+			try {
+				await cleanup();
+			} catch (err) {
+				//
+			}
 
-		await esClient.indices.create({
-			index: esIndex,
-			body: mappings,
-		});
-
-		for (const datum of data) {
-			await esClient.index({
+			await esClient.indices.create({
 				index: esIndex,
-				id: datum._id,
-				body: datum._source,
-				refresh: 'wait_for',
-			});
-		}
-
-		try {
-			const router = await Arranger({
-				// needed to see the mapping
-				enableAdmin,
-				// This may be useful when troubleshooting tests
-				enableLogs: true,
-				esHost,
-				getServerSideFilter: () => ({
-					op: 'not',
-					content: [
-						{
-							op: 'in',
-							content: {
-								fieldName: 'access_denied',
-								value: ['true'],
-							},
-						},
-					],
-				}),
-				setsIndex,
+				body: mappings,
 			});
 
-			app.use(router);
-
-			// TODO: reenable once Admin is back online
-			// const adminApp = await adminGraphql({ esHost });
-			// adminApp.applyMiddleware({ app, path: adminPath });
-
-			await new Promise((resolve) => {
-				server = app.listen(port, () => {
-					resolve(null);
+			for (const datum of data) {
+				await esClient.index({
+					index: esIndex,
+					id: datum._id,
+					body: datum._source,
+					refresh: 'wait_for',
 				});
-			});
+			}
 
-			// TODO: reenable once Admin is back online
-			// /**
-			//  * uses the admin API to adds some metadata
-			//  */
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!) {
-			//         newProject(id: $projectId) {
-			//           id
-			//           __typename
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//     },
-			//   },
-			// });
+			try {
+				const router = await Arranger({
+					// needed to see the mapping
+					enableAdmin,
+					// This may be useful when troubleshooting tests
+					enableLogs: true,
+					esHost,
+					getServerSideFilter: () => ({
+						op: 'not',
+						content: [
+							{
+								op: 'in',
+								content: {
+									fieldName: 'access_denied',
+									value: ['true'],
+								},
+							},
+						],
+					}),
+					setsIndex,
+				});
 
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
-			//         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
-			//           id
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//       documentType,
-			//       esIndex,
-			//     },
-			//   },
-			// });
+				app.use(router);
 
-			console.log('******* Starting tests *******');
-		} catch (err) {
-			console.error('error:', err);
-			throw err;
-		}
-	}, {
-		timeout: 10000,
-	});
+				await new Promise((resolve) => {
+					server = app.listen(port, () => {
+						resolve(null);
+					});
+				});
+
+				console.log('******* Starting tests *******');
+			} catch (err) {
+				console.error('error:', err);
+				throw err;
+			}
+		},
+		{
+			timeout: 10000,
+		},
+	);
 
 	after(async () => {
 		try {

@@ -12,10 +12,10 @@ export type SupportedClientOptions = ESClientOptions | OSClientOptions;
 export type SearchConfig = {
 	node: string;
 	clientType?: SupportedClientTypes | string;
-	auth?: { 
+	auth?: {
 		password: string;
 		username: string;
-	}
+	};
 };
 
 export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
@@ -44,7 +44,7 @@ export type SearchClient = {
 };
 
 // Todo: Expected return Type for .search
-interface SearchResponse extends Record<string, any> {
+export interface SearchResponse extends Record<string, any> {
 	body: {
 		hits: {
 			hits: {
