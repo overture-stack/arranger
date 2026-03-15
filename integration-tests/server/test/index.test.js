@@ -1,8 +1,8 @@
 import { after, before, suite } from 'node:test';
 
 import { Client } from '@elastic/elasticsearch';
-import Arranger from '@overture-stack/arranger-server';
-import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
+import Arranger from '@overture-stack/arranger-graphql-router';
+import ajax from '@overture-stack/arranger-graphql-router/dist/utils/ajax.js';
 import express from 'express';
 
 // import { print } from 'graphql';
@@ -18,7 +18,7 @@ import readMetadata from './readMetadata.js';
 import readSearchData from './readSearchData.js';
 import checkBaseEndpoints from './spinupActive.js';
 
-const DEBUG = (process.env.DEBUG || '').toLowerCase() === 'true';
+const DEBUG = (process.env.ENABLE_DEBUG || '').toLowerCase() === 'true';
 const enableAdmin = (process.env.ENABLE_ADMIN || '').toLowerCase() === 'true';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'testing-models_1.0';
@@ -61,110 +61,113 @@ suite('integration-tests/server', () => {
 	let server;
 	const documentType = 'model';
 
-	before(async () => {
-		console.log('\n(Initializing Elasticsearch and Arranger)');
+	before(
+		async () => {
+			console.log('\n(Initializing Elasticsearch and Arranger)');
 
-		try {
-			await cleanup();
-		} catch (err) {
-			//
-		}
+			try {
+				await cleanup();
+			} catch (err) {
+				//
+			}
 
-		await esClient.indices.create({
-			index: esIndex,
-			body: mappings,
-		});
-
-		for (const datum of data) {
-			await esClient.index({
+			await esClient.indices.create({
 				index: esIndex,
-				id: datum._id,
-				body: datum._source,
-				refresh: 'wait_for',
-			});
-		}
-
-		try {
-			const router = await Arranger({
-				// needed to see the mapping
-				enableAdmin,
-				// This may be useful when troubleshooting tests
-				enableLogs: true,
-				esHost,
-				getServerSideFilter: () => ({
-					op: 'not',
-					content: [
-						{
-							op: 'in',
-							content: {
-								fieldName: 'access_denied',
-								value: ['true'],
-							},
-						},
-					],
-				}),
-				setsIndex,
+				body: mappings,
 			});
 
-			app.use(router);
-
-			// TODO: reenable once Admin is back online
-			// const adminApp = await adminGraphql({ esHost });
-			// adminApp.applyMiddleware({ app, path: adminPath });
-
-			await new Promise((resolve) => {
-				server = app.listen(port, () => {
-					resolve(null);
+			for (const datum of data) {
+				await esClient.index({
+					index: esIndex,
+					id: datum._id,
+					body: datum._source,
+					refresh: 'wait_for',
 				});
-			});
+			}
 
-			// TODO: reenable once Admin is back online
-			// /**
-			//  * uses the admin API to adds some metadata
-			//  */
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!) {
-			//         newProject(id: $projectId) {
-			//           id
-			//           __typename
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//     },
-			//   },
-			// });
+			try {
+				const router = await Arranger({
+					// needed to see the mapping
+					enableAdmin,
+					// This may be useful when troubleshooting tests
+					enableLogs: true,
+					esHost,
+					getServerSideFilter: () => ({
+						op: 'not',
+						content: [
+							{
+								op: 'in',
+								content: {
+									fieldName: 'access_denied',
+									value: ['true'],
+								},
+							},
+						],
+					}),
+					setsIndex,
+				});
 
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
-			//         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
-			//           id
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//       documentType,
-			//       esIndex,
-			//     },
-			//   },
-			// });
+				app.use(router);
 
-			console.log('******* Starting tests *******');
-		} catch (err) {
-			console.error('error:', err);
-			throw err;
-		}
-	}, {
-		timeout: 10000,
-	});
+				// TODO: reenable once Admin is back online
+				// const adminApp = await adminGraphql({ esHost });
+				// adminApp.applyMiddleware({ app, path: adminPath });
+
+				await new Promise((resolve) => {
+					server = app.listen(port, () => {
+						resolve(null);
+					});
+				});
+
+				// TODO: reenable once Admin is back online
+				// /**
+				//  * uses the admin API to adds some metadata
+				//  */
+				// await api.post({
+				//   endpoint: adminPath,
+				//   body: {
+				//     query: print(gql`
+				//       mutation($projectId: String!) {
+				//         newProject(id: $projectId) {
+				//           id
+				//           __typename
+				//         }
+				//       }
+				//     `),
+				//     variables: {
+				//       projectId,
+				//     },
+				//   },
+				// });
+
+				// await api.post({
+				//   endpoint: adminPath,
+				//   body: {
+				//     query: print(gql`
+				//       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
+				//         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
+				//           id
+				//         }
+				//       }
+				//     `),
+				//     variables: {
+				//       projectId,
+				//       documentType,
+				//       esIndex,
+				//     },
+				//   },
+				// });
+
+				console.log('******* Starting tests *******');
+			} catch (err) {
+				console.error('error:', err);
+				throw err;
+			}
+		},
+		{
+			timeout: 10000,
+		},
+	);
 
 	after(async () => {
 		try {

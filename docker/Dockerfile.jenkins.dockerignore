@@ -4,7 +4,8 @@ docker
 docs
 integration-tests
 modules/**/*
-!modules/server
+apps/**/*
+!apps/search-server
 Jenkinsfile
 lerna*
 prettier*
