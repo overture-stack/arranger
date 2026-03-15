@@ -112,6 +112,7 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
 
     ```bash
     npm install
+    # If a standard install fails in your environment, a fallback script is available: `npm run install:memory-safe`.
     ```
 
     :::warning

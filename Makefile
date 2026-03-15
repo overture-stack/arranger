@@ -26,7 +26,7 @@ ES_DOCS_DIR := $(ES_DATA_DIR)/documents
 ES_HOST := http://localhost:9200
 ES_INDEX := file_centric_1.0
 ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
-ES_PASS := myelasticpassword
+ES_PASS := unsafePassword123
 ES_USER := elastic
 RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
 

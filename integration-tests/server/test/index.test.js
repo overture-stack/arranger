@@ -1,10 +1,13 @@
 import { after, before, suite } from 'node:test';
 
-import Arranger from '@overture-stack/arranger-server';
-import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
+import { Client } from '@elastic/elasticsearch';
+import Arranger from '@overture-stack/arranger-graphql-router';
+import ajax from '@overture-stack/arranger-graphql-router/dist/utils/ajax.js';
 import express from 'express';
 
-import buildSearchClient from '../../../modules/server/src/searchClient/index.js';
+// import { print } from 'graphql';
+// import gql from 'graphql-tag';
+// import Arranger, { adminGraphql } from '../../../modules/server/dist';
 
 // test modules
 import data from './assets/model_centric.data.json';
@@ -15,16 +18,16 @@ import readMetadata from './readMetadata.js';
 import readSearchData from './readSearchData.js';
 import checkBaseEndpoints from './spinupActive.js';
 
-const DEBUG = (process.env.DEBUG || '').toLowerCase() === 'true';
+const DEBUG = (process.env.ENABLE_DEBUG || '').toLowerCase() === 'true';
 const enableAdmin = (process.env.ENABLE_ADMIN || '').toLowerCase() === 'true';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'testing-models_1.0';
 const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
-const esPass = process.env.ES_PASS || 'myelasticpassword';
-const esUser = process.env.ES_USER || 'elastic';
-
+const esPwd = process.env.ES_PASS;
+const esUser = process.env.ES_USER;
 const port = process.env.PORT || 5678;
-const client = process.env.SEARCH_CLIENT_TYPE;
+
+const useAuth = !!esPwd && !!esUser;
 
 const app = express();
 
@@ -33,25 +36,30 @@ const api = ajax(`http://localhost:${port}`, {
 	endpoint: '/graphql',
 });
 
-suite('integration-tests/server', async () => {
+const esClient = new Client({
+	...(useAuth && {
+		auth: {
+			username: esUser,
+			password: esPwd,
+		},
+	}),
+	node: esHost,
+});
+
+const cleanup = () => {
+	return Promise.all([
+		esClient.indices.delete({
+			index: esIndex,
+		}),
+		esClient.indices.delete({
+			index: setsIndex,
+		}),
+	]);
+};
+
+suite('integration-tests/server', () => {
 	let server;
 	const documentType = 'model';
-
-	const esClient = await buildSearchClient({
-		node: esHost,
-		user: esUser,
-		password: esPass,
-		client,
-	});
-
-	const cleanup = async () => {
-		await esClient.indices.delete({
-			index: esIndex,
-		});
-		await esClient.indices.delete({
-			index: setsIndex,
-		});
-	};
 
 	before(
 		async () => {
@@ -60,8 +68,7 @@ suite('integration-tests/server', async () => {
 			try {
 				await cleanup();
 			} catch (err) {
-				console.error('Error running integration-tests cleanup');
-				console.error(err);
+				//
 			}
 
 			await esClient.indices.create({
@@ -85,8 +92,6 @@ suite('integration-tests/server', async () => {
 					// This may be useful when troubleshooting tests
 					enableLogs: true,
 					esHost,
-					esPass,
-					esUser,
 					getServerSideFilter: () => ({
 						op: 'not',
 						content: [
@@ -104,15 +109,58 @@ suite('integration-tests/server', async () => {
 
 				app.use(router);
 
+				// TODO: reenable once Admin is back online
+				// const adminApp = await adminGraphql({ esHost });
+				// adminApp.applyMiddleware({ app, path: adminPath });
+
 				await new Promise((resolve) => {
 					server = app.listen(port, () => {
 						resolve(null);
 					});
 				});
 
+				// TODO: reenable once Admin is back online
+				// /**
+				//  * uses the admin API to adds some metadata
+				//  */
+				// await api.post({
+				//   endpoint: adminPath,
+				//   body: {
+				//     query: print(gql`
+				//       mutation($projectId: String!) {
+				//         newProject(id: $projectId) {
+				//           id
+				//           __typename
+				//         }
+				//       }
+				//     `),
+				//     variables: {
+				//       projectId,
+				//     },
+				//   },
+				// });
+
+				// await api.post({
+				//   endpoint: adminPath,
+				//   body: {
+				//     query: print(gql`
+				//       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
+				//         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
+				//           id
+				//         }
+				//       }
+				//     `),
+				//     variables: {
+				//       projectId,
+				//       documentType,
+				//       esIndex,
+				//     },
+				//   },
+				// });
+
 				console.log('******* Starting tests *******');
 			} catch (err) {
-				console.error('Error at integration-tests `before` hook:', err);
+				console.error('error:', err);
 				throw err;
 			}
 		},
@@ -127,8 +175,7 @@ suite('integration-tests/server', async () => {
 			server?.close();
 			console.log('\n(Cleared Elasticsearch and stopped Arranger Server)');
 		} catch (err) {
-			console.error('Error in integration-tests/server `after` test hook');
-			console.error(err);
+			//
 		}
 	});
 
