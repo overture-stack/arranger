@@ -27,15 +27,20 @@ type SearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<
 
 export type SearchClient = {
 	indices: {
+		close: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 		create: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 		delete: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 		exists: (input: any, options?: any) => SearchClientResponseHandler<boolean>;
 		getMapping: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		putSettings: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		putMapping: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		open: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	};
 	cat: {
 		aliases: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	};
 	bulk: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+	deleteByQuery: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	index: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	search: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	update: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;

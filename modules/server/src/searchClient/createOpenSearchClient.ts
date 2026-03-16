@@ -11,6 +11,10 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 
 	const searchClient: SearchClient = {
 		indices: {
+			close: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.close(input, options);
+				return output;
+			},
 			create: async (input: any, options?: any) => {
 				const output = await openSearchClient.indices.create(input, options);
 				return output;
@@ -27,6 +31,18 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 				const output = await openSearchClient.indices.getMapping(input, options);
 				return output;
 			},
+			putSettings: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.putSettings(input, options);
+				return output;
+			},
+			putMapping: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.putMapping(input, options);
+				return output;
+			},
+			open: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.open(input, options);
+				return output;
+			},
 		},
 		cat: {
 			aliases: async (input: any, options?: any) => {
@@ -35,6 +51,10 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 			},
 		},
 		bulk: async (input: any, options?: any) => {
+			const output = await openSearchClient.bulk(input, options);
+			return output;
+		},
+		deleteByQuery: async (input: any, options?: any) => {
 			const output = await openSearchClient.bulk(input, options);
 			return output;
 		},
