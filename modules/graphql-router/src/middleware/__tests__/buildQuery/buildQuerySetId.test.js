@@ -1,8 +1,12 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import { ENV_CONFIG } from '#config/index.js';
+import { setsProperties } from '@overture-stack/arranger-types/configs';
+
+import fallbackConfigs from '#config/constants.js';
 import buildQuery from '#middleware/buildQuery/index.js';
+
+const { sets } = fallbackConfigs;
 
 const nestedFieldNames = ['files', 'files.foo'];
 
@@ -18,10 +22,10 @@ const tests = [
 		output: {
 			terms: {
 				case_id: {
-					index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
-					type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
 					id: 'aaa',
+					index: sets[setsProperties.INDEX],
 					path: 'ids',
+					type: sets[setsProperties.TYPE],
 				},
 				boost: 0,
 			},
@@ -38,8 +42,8 @@ const tests = [
 		output: {
 			terms: {
 				'ssms.ssm_id': {
-					index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
-					type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
+					index: sets[setsProperties.INDEX],
+					type: sets[setsProperties.TYPE],
 					id: 'aaa',
 					path: 'ids',
 				},
@@ -64,10 +68,10 @@ const tests = [
 							{
 								terms: {
 									'files.file_id': {
-										index: ENV_CONFIG.ES_ARRANGER_SET_INDEX,
-										type: ENV_CONFIG.ES_ARRANGER_SET_TYPE,
 										id: 'aaa',
+										index: sets[setsProperties.INDEX],
 										path: 'ids',
+										type: sets[setsProperties.TYPE],
 									},
 									boost: 0,
 								},
@@ -81,7 +85,6 @@ const tests = [
 ];
 
 suite('middleware/buildQuerySetID', () => {
-
 	test('1.buildQuery sets', () => {
 		tests.forEach(({ input, output }) => {
 			const actualOutput = buildQuery(input);
@@ -89,5 +92,4 @@ suite('middleware/buildQuerySetID', () => {
 			assert.deepEqual(actualOutput, output);
 		});
 	});
-
 });

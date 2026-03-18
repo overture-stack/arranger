@@ -1,6 +1,5 @@
+import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic/constants';
 import { flattenDeep } from 'lodash-es';
-
-import esToAggTypeMap from './esToAggTypeMap.js';
 
 // add two underscores after a value if it's truthy (not an empty string)
 // used to create fields representing es paths
@@ -19,7 +18,7 @@ const mappingToAggsType = (properties, parent = '') =>
 			.map(([fieldName, data]) =>
 				data?.properties
 					? mappingToAggsType(data.properties, appendUnderscores(parent) + fieldName)
-					: `${appendUnderscores(parent) + fieldName}: ${esToAggTypeMap[data.type]}`,
+					: `${appendUnderscores(parent) + fieldName}: ${esToAggTypesMap[data.type]}`,
 			),
 	);
 

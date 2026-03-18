@@ -1,5 +1,5 @@
 import {
-	rootConfigProperties,
+	configRootProperties,
 	downloadProperties,
 	facetsProperties,
 	setsProperties,
@@ -30,42 +30,42 @@ const configsFromEnv = {
 	catalogs: {
 		fromEnv: {
 			// base configs
-			[rootConfigProperties.DOCUMENT_TYPE]: process.env.DOCUMENT_TYPE || '',
-			[rootConfigProperties.INDEX]: process.env.ES_INDEX || '',
+			[configRootProperties.DOCUMENT_TYPE]: process.env.DOCUMENT_TYPE || '',
+			[configRootProperties.INDEX]: process.env.ES_INDEX || '',
 
-			[rootConfigProperties.ES_HOST]: process.env.ES_HOST || '',
-			[rootConfigProperties.ES_PASS]: process.env.ES_PASS || '',
-			[rootConfigProperties.ES_USER]: process.env.ES_USER || '',
+			[configRootProperties.ES_HOST]: process.env.ES_HOST || '',
+			[configRootProperties.ES_PASS]: process.env.ES_PASS || '',
+			[configRootProperties.ES_USER]: process.env.ES_USER || '',
 
-			[rootConfigProperties.DISABLE_GRAPHQL_PLAYGROUND]: stringToBool(process.env.DISABLE_GRAPHQL_PLAYGROUND),
-			[rootConfigProperties.DISABLE_FILTERS]: stringToBool(process.env.DISABLE_FILTERS),
-			[rootConfigProperties.ENABLE_ADMIN]: stringToBool(process.env.ENABLE_ADMIN),
-			[rootConfigProperties.ENABLE_DEBUG]: stringToBool(process.env.ENABLE_DEBUG),
-			[rootConfigProperties.ENABLE_LOGS]: stringToBool(process.env.ENABLE_LOGS),
+			[configRootProperties.DISABLE_GRAPHQL_PLAYGROUND]: stringToBool(process.env.DISABLE_GRAPHQL_PLAYGROUND),
+			[configRootProperties.DISABLE_FILTERS]: stringToBool(process.env.DISABLE_FILTERS),
+			[configRootProperties.ENABLE_ADMIN]: stringToBool(process.env.ENABLE_ADMIN),
+			[configRootProperties.ENABLE_DEBUG]: stringToBool(process.env.ENABLE_DEBUG),
+			[configRootProperties.ENABLE_LOGS]: stringToBool(process.env.ENABLE_LOGS),
 
-			[rootConfigProperties.DOWNLOADS]: {
+			[configRootProperties.DOWNLOADS]: {
 				[downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: stringToBool(
 					process.env.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
 				),
 				[downloadProperties.MAX_DOWNLOAD_ROWS]: stringToNumber(process.env.MAX_DOWNLOAD_ROWS, 100),
 			},
-			[rootConfigProperties.SETS]: {
+			[configRootProperties.SETS]: {
 				[setsProperties.INDEX]: process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets',
 				[setsProperties.TYPE]: process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets',
 			},
 			// components
-			[rootConfigProperties.FACETS]: {
+			[configRootProperties.FACETS]: {
 				[facetsProperties.AGGS]: [],
 			},
-			[rootConfigProperties.MATCHBOX]: [],
-			[rootConfigProperties.TABLE]: {
+			[configRootProperties.MATCHBOX]: [],
+			[configRootProperties.TABLE]: {
 				[tableProperties.COLUMNS]: [],
 				[tableProperties.MAX_RESULTS_WINDOW]: stringToNumber(process.env.MAX_RESULTS_WINDOW, 10000),
 				[tableProperties.ROW_ID_FIELD_NAME]: process.env.ROW_ID_FIELD_NAME || 'id',
 			},
 
 			// TODO: WIP - analyze and refine this config.
-			[rootConfigProperties.NETWORK_AGGREGATION]: stringToArray(process.env.NETWORK_AGGREGATIONS),
+			[configRootProperties.NETWORK_AGGREGATION]: stringToArray(process.env.NETWORK_AGGREGATIONS),
 		},
 	},
 };

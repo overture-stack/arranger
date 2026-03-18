@@ -1,8 +1,8 @@
+import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic/constants';
 import { debounce, isEqual } from 'lodash-es';
 import { Component } from 'react';
 
 import { withData } from '#DataContext/index.js';
-import esToAggTypeMap from '#utils/esToAggTypeMap.js';
 
 import type { AggsStateProps } from './types.js';
 
@@ -117,7 +117,7 @@ class AggsState extends Component<AggsStateProps> {
 		return this.props.render({
 			update: this.update,
 			aggs: temp.map((agg) => {
-				const type = esToAggTypeMap[agg.displayType];
+				const type = esToAggTypesMap[agg.displayType];
 
 				return {
 					...agg,

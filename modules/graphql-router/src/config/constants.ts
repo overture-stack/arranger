@@ -1,4 +1,3 @@
-
 // individual values
 const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
 const ES_ARRANGER_SET_INDEX = 'arranger-sets';
@@ -6,7 +5,7 @@ const ES_HOST = 'http://127.0.0.1:9200';
 const ES_PASS = 'unsafePassword123';
 const ES_USER = 'elastic';
 
-// fallback configs for module start
+// fallback configs for module start and testing
 const fallbackConfigs = {
 	enableAdmin: false,
 	enableDebug: false,
@@ -25,6 +24,6 @@ const fallbackConfigs = {
 	downloads: {
 		chunkSize: DOWNLOAD_STREAM_BUFFER_SIZE,
 	},
-};
+} as const;
 
 export default fallbackConfigs;

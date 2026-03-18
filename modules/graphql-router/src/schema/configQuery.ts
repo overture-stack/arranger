@@ -75,11 +75,11 @@ export default `
   ${FacetsConfigTypeDefs}
   ${MatchBoxConfigTypeDefs}
   ${TableConfigTypeDefs}
-
   type ConfigsWithState {
-    facets: FacetsConfig
+    charts: JSON
     downloads: DownloadsConfig
     extended(fieldNames: [String]): JSON
+    facets: FacetsConfig
     matchbox: [MatchBoxMapping] # we may want to rethink this one later
     table: TableConfig
   }

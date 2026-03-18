@@ -7,7 +7,7 @@ const INDEX = 'index';
 const TYPE = 'type';
 
 // Root level properties
-export const featureFlagProperties = {
+export const configFeatureFlagProperties = {
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
 	ENABLE_ADMIN: 'enableAdmin',
@@ -17,8 +17,9 @@ export const featureFlagProperties = {
 	ENABLE_SETS: 'enableSets', // TODO: not implemented yet
 } as const;
 
-export const optionalConfigProperties = {
-	...featureFlagProperties,
+export const configOptionalProperties = {
+	...configFeatureFlagProperties,
+	CHARTS: 'charts',
 	DOWNLOADS: 'downloads',
 	EXTENDED: 'extended',
 	FACETS: 'facets',
@@ -29,7 +30,7 @@ export const optionalConfigProperties = {
 	TABLE: 'table',
 } as const;
 
-export const requiredConfigProperties = {
+export const configRequiredProperties = {
 	DOCUMENT_TYPE,
 	INDEX,
 	ES_HOST: 'esHost',
@@ -37,9 +38,9 @@ export const requiredConfigProperties = {
 	ES_USER: 'esUser',
 } as const;
 
-export const rootConfigProperties = {
-	...optionalConfigProperties,
-	...requiredConfigProperties,
+export const configRootProperties = {
+	...configOptionalProperties,
+	...configRequiredProperties,
 };
 
 // Components' and nested properties
@@ -93,11 +94,15 @@ export const tableProperties = {
 } as const;
 
 // Federated setup properties
-
 export const networkAggregationProperties = {
 	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE,
 	DISPLAY_NAME: 'displayName',
+} as const;
+
+// Charts Visualization Library
+export const chartsProperties = {
+	QUERY: 'query',
 } as const;
 
 //////////////////////////////////
@@ -110,8 +115,8 @@ export const allConfigProperties = {
 	...dataFieldProperties,
 	...downloadProperties,
 	...facetsProperties,
-	...optionalConfigProperties,
-	...requiredConfigProperties,
+	...configOptionalProperties,
+	...configRequiredProperties,
 	...setsProperties,
 	...tableProperties,
 };

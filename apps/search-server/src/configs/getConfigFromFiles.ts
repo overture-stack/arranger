@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import type { SortingConfigs } from '@overture-stack/arranger-types/configs';
-import { rootConfigProperties, tableProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 import { merge } from 'lodash-es';
 
 import type { ConfigsFromFiles, FileEncodingType } from './types.js';
@@ -58,11 +58,11 @@ const getConfigFromFiles: ConfigsFromFiles = async ({ baseConfig, rootPath, conf
 					try {
 						const fileDataJSON = JSON.parse(fileData);
 
-						if (fileDataJSON?.[rootConfigProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
+						if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
 							return merge({}, configsAcc, fileDataJSON, {
-								[rootConfigProperties.TABLE]: {
-									...fileDataJSON[rootConfigProperties.TABLE],
-									[tableProperties.DEFAULT_SORTING]: fileDataJSON[rootConfigProperties.TABLE][
+								[configRootProperties.TABLE]: {
+									...fileDataJSON[configRootProperties.TABLE],
+									[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
 										tableProperties.DEFAULT_SORTING
 									].map((sorting: SortingConfigs) => ({
 										...sorting,

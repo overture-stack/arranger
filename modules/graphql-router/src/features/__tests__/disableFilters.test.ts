@@ -3,7 +3,7 @@ import { suite, test } from 'node:test';
 
 import type { RequestHandler } from 'express';
 
-import { featuresFromFlags } from '#features/index.js';
+import featuresFromFlags from '#features/index.js';
 
 const runMiddleware = async ({
 	middleware,

@@ -1,10 +1,10 @@
 import { type ConfigsObject } from '@overture-stack/arranger-types/configs';
-import { requiredConfigProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRequiredProperties } from '@overture-stack/arranger-types/configs/constants';
 
 export const validateConfigs = (configs: Partial<ConfigsObject>): Partial<ConfigsObject> => {
 	console.log('  - Validating given configurations');
 	// Verify all the required values are present
-	for (const property of Object.values(requiredConfigProperties)) {
+	for (const property of Object.values(configRequiredProperties)) {
 		// this condition could be made more exhaustive if needed
 		// TODO: tighten the config validations
 		if (!(Object.keys(configs).includes(property) && configs[property])) {

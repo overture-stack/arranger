@@ -54,6 +54,7 @@
 		"apps/search-server",
 		"integration-tests/import",
 		"integration-tests/server",
+		"modules/charts",
 		"modules/components",
 		"modules/graphql-router",
 		"modules/sqon",

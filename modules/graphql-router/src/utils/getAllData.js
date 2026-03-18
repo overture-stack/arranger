@@ -1,6 +1,6 @@
 import { PassThrough } from 'node:stream';
 
-import { rootConfigProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import fallbackConfigs from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
@@ -66,7 +66,7 @@ export default async ({
 			enableDebug && console.log('runQuery completed, processing data...');
 
 			const allowCustomMaxRows =
-				configs.config[rootConfigProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
+				configs.config[configRootProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
 			const maxHits = allowCustomMaxRows
 				? maxRows || configs.config[downloadProperties.MAX_DOWNLOAD_ROWS]
 				: configs.config[downloadProperties.MAX_DOWNLOAD_ROWS];

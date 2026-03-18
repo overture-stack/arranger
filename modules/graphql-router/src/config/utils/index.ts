@@ -1,9 +1,10 @@
 import type { Client } from '@elastic/elasticsearch';
 import { type ConfigsObject } from '@overture-stack/arranger-types/configs';
 import {
+	chartsProperties,
 	downloadProperties,
 	facetsProperties,
-	rootConfigProperties,
+	configRootProperties,
 	tableProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 
@@ -47,20 +48,23 @@ export const initializeSets = async ({
 
 // FIXME: complete these values
 export const makeDefaultConfigs = (): Partial<ConfigsObject> => ({
-	[rootConfigProperties.DOWNLOADS]: {
+	[configRootProperties.CHARTS]: {
+		[chartsProperties.QUERY]: '',
+	},
+	[configRootProperties.DOWNLOADS]: {
 		[downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: fallbackConfigs.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,
 		[downloadProperties.MAX_DOWNLOAD_ROWS]: fallbackConfigs.MAX_DOWNLOAD_ROWS,
 	},
-	[rootConfigProperties.EXTENDED]: [],
-	[rootConfigProperties.FACETS]: {
+	[configRootProperties.EXTENDED]: [],
+	[configRootProperties.FACETS]: {
 		[facetsProperties.AGGS]: [],
 	},
-	[rootConfigProperties.INDEX]: fallbackConfigs.ES_INDEX,
-	[rootConfigProperties.MATCHBOX]: [],
-	[rootConfigProperties.TABLE]: {
+	[configRootProperties.INDEX]: fallbackConfigs.ES_INDEX,
+	[configRootProperties.MATCHBOX]: [],
+	[configRootProperties.TABLE]: {
 		[tableProperties.COLUMNS]: [],
 		[tableProperties.MAX_RESULTS_WINDOW]: fallbackConfigs.MAX_RESULTS_WINDOW,
 		[tableProperties.ROW_ID_FIELD_NAME]: fallbackConfigs.ROW_ID_FIELD_NAME,
 	},
-	[rootConfigProperties.NETWORK_AGGREGATION]: fallbackConfigs.NETWORK_AGGREGATIONS,
+	[configRootProperties.NETWORK_AGGREGATION]: fallbackConfigs.NETWORK_AGGREGATIONS,
 });

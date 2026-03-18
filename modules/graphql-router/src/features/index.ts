@@ -1,5 +1,5 @@
 import type { ConfigsObject } from '@overture-stack/arranger-types/configs';
-import { optionalConfigProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configOptionalProperties } from '@overture-stack/arranger-types/configs/constants';
 import type { RequestHandler } from 'express';
 
 import rejectSqonWhenFiltersDisabled from './disableFilters.js';
@@ -29,7 +29,7 @@ const composeMiddlewares = (middlewares: RequestHandler[]): RequestHandler => {
 };
 
 const featureFactories: FeatureFactory[] = [
-	({ configs }) => (configs[optionalConfigProperties.DISABLE_FILTERS] ? rejectSqonWhenFiltersDisabled() : null),
+	({ configs }) => (configs[configOptionalProperties.DISABLE_FILTERS] ? rejectSqonWhenFiltersDisabled() : null),
 ];
 
 const featuresFromFlags = ({ configs }: { configs: Partial<ConfigsObject> }): RequestHandler => {
