@@ -67,7 +67,7 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 			return output;
 		},
 		deleteByQuery: async (input: any, options?: any) => {
-			const output = await openSearchClient.bulk(input, options);
+			const output = await openSearchClient.deleteByQuery(input, options);
 			return output;
 		},
 		index: async (input: any, options?: any) => {
