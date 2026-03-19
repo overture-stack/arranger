@@ -32,15 +32,19 @@ export function createElasticSearchClient(options: ESClientOptions) {
 				return output;
 			},
 			putSettings: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.close(input, options);
+				const output = await elasticSearchClient.indices.putSettings(input, options);
 				return output;
 			},
 			putMapping: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.close(input, options);
+				const output = await elasticSearchClient.indices.putMapping(input, options);
 				return output;
 			},
 			open: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.close(input, options);
+				const output = await elasticSearchClient.indices.open(input, options);
+				return output;
+			},
+			refresh: async (input: any, options?: any) => {
+				const output = await elasticSearchClient.indices.refresh(input, options);
 				return output;
 			},
 		},
@@ -75,7 +79,7 @@ export function createElasticSearchClient(options: ESClientOptions) {
 			return output;
 		},
 		deleteByQuery: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.indices.close(input, options);
+			const output = await elasticSearchClient.deleteByQuery(input, options);
 			return output;
 		},
 	};

@@ -35,6 +35,7 @@ export type SearchClient = {
 		putSettings: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 		putMapping: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 		open: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
+		refresh: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	};
 	cat: {
 		aliases: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;

@@ -43,6 +43,10 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 				const output = await openSearchClient.indices.open(input, options);
 				return output;
 			},
+			refresh: async (input: any, options?: any) => {
+				const output = await openSearchClient.indices.refresh(input, options);
+				return output;
+			},
 		},
 		cat: {
 			aliases: async (input: any, options?: any) => {
@@ -52,6 +56,14 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 		},
 		bulk: async (input: any, options?: any) => {
 			const output = await openSearchClient.bulk(input, options);
+			return output;
+		},
+		create: async (input: any, options?: any) => {
+			const output = await openSearchClient.create(input, options);
+			return output;
+		},
+		delete: async (input: any, options?: any) => {
+			const output = await openSearchClient.delete(input, options);
 			return output;
 		},
 		deleteByQuery: async (input: any, options?: any) => {
@@ -68,14 +80,6 @@ export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 		},
 		update: async (input: any, options?: any) => {
 			const output = await openSearchClient.update(input, options);
-			return output;
-		},
-		create: async (input: any, options?: any) => {
-			const output = await openSearchClient.create(input, options);
-			return output;
-		},
-		delete: async (input: any, options?: any) => {
-			const output = await openSearchClient.delete(input, options);
 			return output;
 		},
 	};
