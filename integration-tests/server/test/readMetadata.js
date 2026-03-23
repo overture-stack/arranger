@@ -23,7 +23,7 @@ export default ({ api, documentType, enableAdmin }) => {
 				},
 			})
 			.catch((err) => {
-				logError('readMetadata error', err);
+				logError('readMetadata/extended error', err.message || err);
 			});
 
 		const configs = data?.data?.[documentType]?.configs?.extended || [];
@@ -58,7 +58,7 @@ export default ({ api, documentType, enableAdmin }) => {
 				},
 			})
 			.catch((err) => {
-				logError('readMetadata error', err);
+				logError('readMetadata/aggregations error', err.message || err);
 			});
 
 		const configs = data?.data?.[documentType]?.configs?.facets?.aggregations || [];
@@ -91,7 +91,7 @@ export default ({ api, documentType, enableAdmin }) => {
 				},
 			})
 			.catch((err) => {
-				logError('readMetadata error', err);
+				logError('readMetadata/table error', err.message || err);
 			});
 
 		const configs = data?.data?.[documentType]?.configs?.table.columns || [];
@@ -122,7 +122,7 @@ export default ({ api, documentType, enableAdmin }) => {
 				},
 			})
 			.catch((err) => {
-				logError('readMetadata error', err);
+				logError('readMetadata/matchbox error', err.message || err);
 			});
 
 		const configs = data?.data?.[documentType]?.configs?.matchbox || [];
@@ -135,6 +135,11 @@ export default ({ api, documentType, enableAdmin }) => {
 		assert.equal(data?.errors, undefined);
 	});
 
+	// TODO: add introspection checks here
+	// - Validate SQON schema matches an exported TS type
+	// - check that the available documentTypes are listed
+	// - stretch goal: track versioning, backwards compatibility/support
+	// should this even require admin?
 	test('5.reads elasticsearch mappings properly', { skip: !enableAdmin }, async () => {
 		const { data } = await api
 			.post({
@@ -149,22 +154,17 @@ export default ({ api, documentType, enableAdmin }) => {
 				},
 			})
 			.catch((err) => {
-				logError('readMetadata error', err);
+				logError('readMetadata/mappings admin error', err.message || err);
 			});
 
 		// requires enableAdmin env var or middleware param
-		const configs = data?.data?.[documentType]?.mapping || {};
+		const configs = data?.data?.[documentType]?.mapping;
 
 		assert.ok(
-			Object.keys(configs).length >= 0,
+			configs !== null && Object.keys(configs).length >= 0,
 			`Expected Matchbox configs object to be non-empty, but got: ${JSON.stringify(configs)}`,
 		);
 
 		assert.equal(data?.errors, undefined);
 	});
-
-	// TODO: add introspection checks here
-	// - Validate SQON schema matches an exported TS type
-	// - check that the available documentTypes are listed
-	// - stretch goal: track versioning, backwards compatibility/support
 };

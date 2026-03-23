@@ -17,23 +17,24 @@ import { createSchemaFromNetworkConfig } from './network/index.js';
 import makeSchema from './schema/index.js';
 import { addContext } from './utils/context.js';
 
-const getESMapping = async ({ enableDebug, esClient, index }) => {
-	if (esClient && index) {
+const getESMapping = async ({ enableDebug, esClient, esIndex }) => {
+	if (esClient && esIndex) {
 		const { mapping } = await fetchMapping({
 			enableDebug,
 			esClient,
-			index,
+			esIndex,
 		});
 
 		if (Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			enableDebug && console.log('    Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			enableDebug &&
+				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
 			delete mapping.id;
 		}
 		return mapping;
 	}
 
-	throw new Error(`  Could not get ES mappings for ${index}`);
+	throw new Error(`  Could not get ES mappings for ${esIndex}`);
 };
 
 const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }) => {
@@ -52,7 +53,7 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 						'    Something happened while extending the ES mappings.\n' +
 							'    Defaulting to "extended" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
 					return configs?.[configRootProperties.EXTENDED] || [];
 				}
@@ -67,7 +68,7 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 						'    Something happened while extending the column mappings.\n' +
 							'    Defaulting to "table" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
 					return configs?.[configRootProperties.TABLE] || [];
 				}
@@ -82,14 +83,14 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 						'    Something happened while extending the column mappings.\n' +
 							'    Defaulting to "table" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
 					return configs?.[configRootProperties.TABLE] || [];
 				}
 			})();
 
 			// Validate and enchance charts config with dynamic properties
-			const extendedChartsConfigs = extendCharts(configs?.[configProperties.CHARTS], extendedFields);
+			const extendedChartsConfigs = extendCharts(configs?.[configRootProperties.CHARTS], extendedFields);
 
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
@@ -101,7 +102,7 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 					},
 					customFields: '',
 					extendedFields,
-					index: configs?.[configRootProperties.INDEX],
+					index: configs?.[configRootProperties.ES_INDEX],
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 				},
 				mapping: mappingFromES,
@@ -163,7 +164,7 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({
+export const createEndpoint = async ({
 	disablePlayground,
 	enableDebug,
 	esClient,
@@ -235,8 +236,8 @@ const createEndpoint = async ({
 			router.use(mockPath, noSchemaHandler(mockPath));
 		}
 	} catch (err) {
-		enableDebug && console.error(err);
-		// TODO: Throw better?
+		enableDebug && console.debug(`  DEBUG: ${err}`);
+		// FIXME: Throw better!
 		throw err;
 	}
 
@@ -271,12 +272,12 @@ export const createSchemasFromConfigs = async ({
 		const mappingFromES = await getESMapping({
 			enableDebug,
 			esClient,
-			index: configs[configRootProperties.INDEX],
+			esIndex: configs[configRootProperties.ES_INDEX],
 		});
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings({
+			configs,
 			enableDebug,
 			mappingFromES,
-			configs,
 		});
 
 		const commonFields = { fieldsFromMapping, typesWithMappings };
@@ -343,7 +344,7 @@ export default async ({
 	graphqlOptions = {},
 }) => {
 	// TODO: surfacing this variable to be reused later
-	const { [setsProperties.INDEX]: setsIndex } = configs[configOptionalProperties.SETS];
+	const { index: setsIndex } = configs[configOptionalProperties.SETS];
 
 	try {
 		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
@@ -369,7 +370,7 @@ export default async ({
 		await initializeSets({
 			enableDebug,
 			esClient,
-			setsIndex, // TODO use constants
+			setsIndex,
 		});
 
 		return [

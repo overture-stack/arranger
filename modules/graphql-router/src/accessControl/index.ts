@@ -4,7 +4,7 @@ import type { RequestHandler } from 'express';
 
 import rejectSqonWhenFiltersDisabled from './disableFilters.js';
 
-type FeatureFactory = (args: { configs: Partial<ConfigsObject> }) => RequestHandler | null;
+type AccessControlFactory = (args: { configs: Partial<ConfigsObject> }) => RequestHandler | null;
 
 const composeMiddlewares = (middlewares: RequestHandler[]): RequestHandler => {
 	return (req, res, next) => {
@@ -28,16 +28,17 @@ const composeMiddlewares = (middlewares: RequestHandler[]): RequestHandler => {
 	};
 };
 
-const featureFactories: FeatureFactory[] = [
+const accessControlFactories: AccessControlFactory[] = [
 	({ configs }) => (configs[configOptionalProperties.DISABLE_FILTERS] ? rejectSqonWhenFiltersDisabled() : null),
 ];
 
-const featuresFromFlags = ({ configs }: { configs: Partial<ConfigsObject> }): RequestHandler => {
-	const enabledMiddlewares = featureFactories
-		.map((createFeatureMiddleware) => createFeatureMiddleware({ configs }))
+const enforceAccessControl = ({ configs }: { configs: Partial<ConfigsObject> }): RequestHandler => {
+	const enabledMiddlewares = accessControlFactories
+		.map((createAccessControl) => createAccessControl({ configs }))
 		.filter((middleware): middleware is RequestHandler => middleware !== null);
 
 	return composeMiddlewares(enabledMiddlewares);
 };
 
-export default featuresFromFlags;
+export default enforceAccessControl;
+export { default as getDefaultServerSideFilter } from './getDefaultServerSideFilter.js';

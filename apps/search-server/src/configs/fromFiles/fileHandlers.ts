@@ -1,11 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { SortingConfigs } from '@overture-stack/arranger-types/configs';
-import { configRootProperties, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 import { merge } from 'lodash-es';
 
-import type { ConfigsFromFiles, FileEncodingType } from './types.js';
+import normalize from './normalize.js';
+import type { ConfigsFromFilesFn, FileEncodingType } from './types.js';
 
 const readDirectoryAsync = (dirname: string) =>
 	new Promise((resolve, reject) =>
@@ -36,13 +35,19 @@ const isDataFile = (fileName: string) => {
 	return fileNameParts[fileNameParts.length - 1]?.toLowerCase() === 'json';
 };
 
-const getConfigFromFiles: ConfigsFromFiles = async ({ baseConfig, rootPath, configsSource }) => {
+const getConfigFromFiles: ConfigsFromFilesFn = async ({
+	baseConfig,
+	catalogConfigsPath,
+	currentDirectory,
+	enableDebug,
+}) => {
+	console.log(`  - Looking for files in '${catalogConfigsPath}'...`);
+	const configsPath = path.resolve(currentDirectory, catalogConfigsPath);
+
+	enableDebug && console.debug('\n    DEBUG: resolved configs path:', configsPath);
+
 	try {
-		const configsPath = path.resolve(rootPath, configsSource);
-
-		console.log(`  - Looking for files in '${configsSource}'...`);
-
-		return readDirectoryAsync(configsPath)
+		const aggregatedConfigs = await readDirectoryAsync(configsPath)
 			.then((filenames = []) =>
 				// TODO: shouldn't fail all files if one is broken
 				Promise.all(
@@ -52,38 +57,47 @@ const getConfigFromFiles: ConfigsFromFiles = async ({ baseConfig, rootPath, conf
 				),
 			)
 			.then((files = []) => {
-				if (files.length === 0) return baseConfig;
+				if (files.length === 0) {
+					return {};
+				}
 
 				const configObj = (files as [string, string][]).reduce((configsAcc, [fileName, fileData]) => {
 					try {
 						const fileDataJSON = JSON.parse(fileData);
 
-						if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
-							return merge({}, configsAcc, fileDataJSON, {
-								[configRootProperties.TABLE]: {
-									...fileDataJSON[configRootProperties.TABLE],
-									[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
-										tableProperties.DEFAULT_SORTING
-									].map((sorting: SortingConfigs) => ({
-										...sorting,
-										desc: sorting.desc || false,
-									})),
-								},
-							});
-						}
+						const normalizedJSON = normalize(fileDataJSON);
 
-						return merge({}, configsAcc, fileDataJSON);
-					} catch (e) {
+						// if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
+						// 	return merge({}, configsAcc, fileDataJSON, {
+						// 		[configRootProperties.TABLE]: {
+						// 			...fileDataJSON[configRootProperties.TABLE],
+						// 			[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
+						// 				tableProperties.DEFAULT_SORTING
+						// 			].map((sorting: SortingConfigs) => ({
+						// 				...sorting,
+						// 				desc: sorting.desc || false,
+						// 			})),
+						// 		},
+						// 	});
+						// }
+
+						// return merge({}, configsAcc, fileDataJSON);
+
+						return merge({}, configsAcc, normalizedJSON);
+					} catch (err) {
+						enableDebug && console.debug(`\n  DEBUG: ${err}`);
 						throw new Error('Could not parse the provided configuration files');
 					}
 				}, baseConfig);
 
-				return configObj as typeof baseConfig;
+				return configObj;
 			});
+
+		return [configsPath, aggregatedConfigs];
 	} catch (err) {
 		console.warn(`    Something wrong happened when attempting to load config files ${err}`);
 
-		return baseConfig;
+		return [configsPath, baseConfig];
 	}
 };
 

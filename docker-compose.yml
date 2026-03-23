@@ -1,25 +1,27 @@
-version: '3.7'
+networks:
+  arranger:
+    driver: bridge
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.28
     container_name: elasticsearch.local
     environment:
       discovery.type: single-node
       cluster.name: workflow.elasticsearch
       ES_JAVA_OPTS: -Xms512m -Xmx2048m
-      ELASTIC_PASSWORD: '$ES_PASS'
-      xpack.security.enabled: 'true'
+      ELASTIC_PASSWORD: "$ES_PASS"
+      xpack.security.enabled: "true"
     healthcheck:
-      test: 'curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1'
+      test: "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"
       interval: 1m30s
       timeout: 50s
       retries: 5
     logging:
-      driver: 'json-file'
+      driver: "json-file"
       options:
-        max-size: '50m'
-        max-file: '10'
+        max-size: "50m"
+        max-file: "10"
     networks:
       - arranger
     ports:
@@ -27,19 +29,19 @@ services:
       - 9300:9300
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.1
+    image: docker.elastic.co/kibana/kibana:7.17.29
 
     depends_on:
       - elasticsearch
     environment:
-      LOGGING_QUIET: 'true'
-      ELASTICSEARCH_USERNAME: '$ES_USER'
-      ELASTICSEARCH_PASSWORD: '$ES_PASS'
+      LOGGING_QUIET: "true"
+      ELASTICSEARCH_USERNAME: "$ES_USER"
+      ELASTICSEARCH_PASSWORD: "$ES_PASS"
     logging:
-      driver: 'json-file'
+      driver: "json-file"
       options:
-        max-size: '50m'
-        max-file: '10'
+        max-size: "50m"
+        max-file: "10"
     ports:
       - 5601:5601
 
@@ -50,16 +52,16 @@ services:
       target: server
     container_name: arranger-server.local
     environment:
-      ENABLE_LOGS: '${ENABLE_LOGS:-false}'
-      ES_HOST: '${ES_HOST:-http://host.docker.internal:9200}'
-      ES_USER: '${ES_USER:-elastic}'
-      ES_PASS: '${ES_PASS:-badpassword}'
+      ENABLE_LOGS: "${ENABLE_LOGS:-false}"
+      ES_HOST: "${ES_HOST:-http://host.docker.internal:9200}"
+      ES_USER: "${ES_USER:-elastic}"
+      ES_PASS: "${ES_PASS:-badpassword}"
     networks:
       - arranger
     ports:
       - 5050:5050
     volumes:
-      - '${CONFIG_PATH:-./docker/server}:/app/modules/server/configs'
+      - "${CONFIG_PATH:-./docker/server}:/app/modules/server/configs"
 
   ui:
     image: ghcr.io/overture-stack/stage:edge
@@ -69,4 +71,4 @@ services:
     networks:
       - arranger
     ports:
-      - '3000:3000'
+      - "3000:3000"

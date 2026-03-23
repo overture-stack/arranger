@@ -75,24 +75,28 @@ export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
 
 const resolveObject = () => ({});
 
-export const resolvers = ({ debug, enableAdmin, types, rootTypes, scalarTypes, getServerSideFilter, setsIndex }) => {
+export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, scalarTypes, setsIndex, types }) => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
 		Root: {
 			viewer: resolveObject,
-			hasValidConfig: async (obj, { documentType, index }, { esClient }: { esClient: Client }) => {
+			hasValidConfig: async (obj, { documentType, index, esIndex }, { esClient }: { esClient: Client }) => {
 				if (documentType) {
-					if (index) {
+					const documentIndex = esIndex ?? index;
+
+					if (documentIndex) {
 						const [_, type] = types.find(([name]) => name === documentType) || [];
+
+						console.log('type', Object.keys(type));
 
 						// TODO: make this more useful/verbose;
 						if (type) {
 							try {
 								const aliases = await getESAliases(esClient);
-								const foundAlias = checkESAlias(aliases, index);
+								const foundAlias = checkESAlias(aliases, documentIndex);
 
-								const isValidIndex = [foundAlias, index].includes(type.index);
+								const isValidIndex = [foundAlias, documentIndex].includes(type.index);
 
 								return isValidIndex && Object.keys(type.config).length > 0;
 							} catch (err) {
@@ -102,7 +106,7 @@ export const resolvers = ({ debug, enableAdmin, types, rootTypes, scalarTypes, g
 								return new Error(message);
 							}
 						}
-						return new Error(`No index was found by the name/alias "${index}"`);
+						return new Error(`No index was found by the name/alias "${documentIndex}"`);
 					}
 
 					return new Error(`This endpoint requires an ES index or alias`);

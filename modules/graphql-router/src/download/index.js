@@ -110,7 +110,7 @@ const download = ({ enableAdmin, enableDebug }) => {
 				params: JSON.parse(params),
 			});
 
-			ctx.enableDebug && console.log('=== SETTING UP RESPONSE ===');
+			ctx.enableDebug && console.debug('  DEBUG: === SETTING UP RESPONSE ===');
 
 			res.set('Content-Type', contentType);
 			res.set('Content-disposition', `attachment; filename=${responseFileName}`);
@@ -150,7 +150,7 @@ const download = ({ enableAdmin, enableDebug }) => {
 	});
 
 	if (enableAdmin) {
-		// TODO: introspection endpoint!!!
+		// TODO: introspection endpoint!!! relocate
 		router.get('/fields', async (req, res) => {
 			// all the fields, as flattened from the ES mapping
 			const { fieldsFromMapping } = req.context;

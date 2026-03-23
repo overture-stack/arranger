@@ -1,20 +1,33 @@
-// this file serves as an example of a basic configurations
-// and it it's meant to show both the expected (marked with *) and allowed/optional properties
+// this file serves as an example of a basic Arranger configurations
+// and it's meant to show both required (marked with *) and optional properties
+// note: credentials in config json files will be ignored
 
 {
-	// [Global] GraphQL root query property, labels the type of records found by Arranger
+	// Optional catalog identifier. Defaults to folder name if omitted.
+	"catalogId": "file-catalog-1",
+
+	// GraphQL root query property, labels the type of records found by Arranger
 *	"documentType": "file",
 
-	// [Global] Optional catalog identifier. Defaults to folder name if omitted.
-	"instanceID": "file-catalog-1",
+	// Index name or alias in Elasticsearch/OpenSearch
+*	"esIndex": "file_centric_1.0",
 
-	// [Back-end] Settings and limits for dataset downloads
+	///////////// Feature flags /////////////
+
+	"disableDownloads": false,
+	"disableFilters": false,
+	"disablePlayground": false,
+	"disableSets": false,
+
+	///////////// Configuration for Features and Components /////////////
+
+	// Settings and limits for dataset downloads - [Back-end]
 	"downloads": {
 		"allowCustomMaxRows": true,
 		"maxRows": 10000,
 	},
 
-	// [Global] ES mapping customization, aka Extended mapping
+	// ES mapping customization, aka the Extended mapping
 	"extended": [
 		{
 			"isActive": false,
@@ -32,7 +45,7 @@
 		...
 	],
 
-	// [Front-end] Facets component customization, aka the "filters".
+	// Facets component customization, aka the "filters" - [Front-end]
 	"facets": {
 		"aggregations": [
 			{
@@ -45,10 +58,7 @@
 		]
 	},
 
-	// [Global] ES index name or alias
-*	"index": "file_centric_1.0",
-
-	// [Front-end] Matchbox component customization, currently being reimplemented
+	// Matchbox component customization, currently being reimplemented - [Front-end]
 	"matchbox": [
 		{
 			"isActive": false,
@@ -60,7 +70,7 @@
 		...
 	],
 
-	// [Front-end] Table component customization
+	// Table component customization - [Front-end]
 	"table": {
 		"columns": [
 			{
@@ -90,7 +100,9 @@
 		"rowIdFieldName": "analysis.analysis_id"
 	},
 
-	// Work in progress: Federated Search Network
+	///////////// Currently in development /////////////
+
+	// Network Aggregation and Search
 	"network":
 		[
 			{
@@ -100,7 +112,7 @@
 			}
 		],
 
-	// Work in progress: Visualizations library
+	// Charts Visualizations library
 	"charts": {
 		"query": "query chartsQeury($filters: JSON) {\n
 			file {\n

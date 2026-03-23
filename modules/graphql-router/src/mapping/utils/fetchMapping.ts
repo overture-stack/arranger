@@ -19,7 +19,7 @@ const withSlowLog = async <T>(promise: Promise<T>, label: string, thresholdMs = 
 	}
 };
 
-export const getESAliases = async (esClient: Client, requestTimeout: number) => {
+export const getESAliases = async (esClient: Client, requestTimeout?: number) => {
 	const { body } = await withSlowLog(
 		esClient.cat.aliases({ error_trace: false, format: 'json' }, { requestTimeout }),
 		'ES aliases',
@@ -34,21 +34,21 @@ export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: 
 export const fetchMapping = async ({
 	enableDebug,
 	esClient,
-	index,
+	esIndex,
 }: {
 	enableDebug?: boolean;
 	esClient: Client;
-	index: string;
+	esIndex: string;
 }) => {
 	if (esClient) {
-		console.log(`  - Fetching ES mapping for "${index}"`);
+		console.log(`  - Fetching ES mapping for "${esIndex}"`);
 
 		try {
 			const aliases = await getESAliases(esClient, REQUEST_TIMEOUT);
-			const alias = checkESAlias(aliases, index);
+			const alias = checkESAlias(aliases, esIndex);
 			alias && console.log(`    Found it as an alias for index "${alias}"`);
 
-			const accessor = alias || index;
+			const accessor = alias || esIndex;
 
 			const mapping = await withSlowLog(
 				esClient?.indices.getMapping(
@@ -74,7 +74,7 @@ export const fetchMapping = async ({
 
 			return mapping;
 		} catch (err) {
-			enableDebug && console.error('\n', err);
+			enableDebug && console.debug(`\n  DEBUG: ${err}`);
 			throw new Error(`Could not create a mapping`);
 		}
 	}
