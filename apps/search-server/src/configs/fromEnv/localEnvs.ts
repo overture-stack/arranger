@@ -8,6 +8,9 @@ import {
 import { stringToArray, stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
 const configsFromEnv = {
+	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
+		.map((origin) => origin.trim())
+		.filter(Boolean),
 	catalogConfigsPath: process.env.CONFIGS_PATH || './configs',
 	// FIXME: this will need Helm chart changes, to inject secrets into config files
 	catalogs: {

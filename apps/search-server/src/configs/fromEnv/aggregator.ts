@@ -8,6 +8,7 @@ const configsAggregator = (
 	externalConfigs: ExternalConfigs = {},
 ): AllServerConfigs & { catalogConfigsPath: string } => {
 	const {
+		allowedCorsOrigins,
 		catalogConfigsPath,
 		disableDownloads,
 		disableFilters,
@@ -26,6 +27,7 @@ const configsAggregator = (
 	} = externalConfigs;
 
 	const aggregatedEnvConfigs = merge({}, configsFromLocalEnv, {
+		allowedCorsOrigins,
 		catalogConfigsPath,
 		catalogs: {
 			fromEnv: {

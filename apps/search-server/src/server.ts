@@ -15,7 +15,8 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 	console.log('Starting Arranger Server\n');
 	console.log('------------------------------------');
 
-	const { catalogs, enableDebug, enableLogs, health, serverPort } = await loadAllConfigs(externalConfigs);
+	const { allowedCorsOrigins, catalogs, enableDebug, enableLogs, health, serverPort } =
+		await loadAllConfigs(externalConfigs);
 
 	enableLogs &&
 		console.log(`    Extensive console logging enabled${enableDebug ? ' (everything but health checks)' : ''}.`);
@@ -23,11 +24,8 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 
 	console.log('\n  Success!');
 
-
 	const app = express();
-	// TODO: get allowed cors by env
-	// if enableCors
-	app.use(cors());
+	app.use(cors(allowedCorsOrigins?.length ? { origin: allowedCorsOrigins } : undefined));
 	app.use(json({ limit: '50mb' }));
 	app.use(urlencoded({ extended: false, limit: '50mb' }));
 

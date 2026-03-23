@@ -16,6 +16,7 @@ export type HealthConfigs = {
 };
 
 export type BaseServerConfigs = {
+	[serverConfigProperties.ALLOWED_CORS_ORIGINS]?: string[];
 	[serverConfigProperties.SERVER_PORT]: number;
 } & RuntimeFeatureFlagConfigs;
 
