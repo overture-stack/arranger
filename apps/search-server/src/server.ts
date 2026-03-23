@@ -1,25 +1,28 @@
-import arrangerRouter, { addContext } from '@overture-stack/arranger-graphql-router';
+import { addContext } from '@overture-stack/arranger-graphql-router/utils';
 import cors from 'cors';
 import express, { json, urlencoded } from 'express';
 import morgan from 'morgan';
+// TODO: add winston in module and import here
 
-import loadAllConfigs from './configs/index.js';
+import arrangerRoutes from '#arrangerRoutes.js';
+import loadAllConfigs from '#configs/index.js';
+import type { ExternalConfigs } from '#configs/types/index.js';
 
-const arrangerServer = async (rootPath = '') => {
+// TODO: add JSDocs for this param. not sure why anyone could benefit,
+// from this, but it helps for testing, so please don't take it away.
+const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs) => {
 	console.log('------------------------------------');
 	console.log('Starting Arranger Server\n');
 	console.log('------------------------------------');
 
-	const { catalogs, enableDebug, enableLogs, pingPath, port } = await loadAllConfigs({
-		rootPath,
-	});
+	const { catalogs, enableDebug, enableLogs, health, serverPort } = await loadAllConfigs(externalConfigs);
 
 	enableLogs &&
 		console.log(`    Extensive console logging enabled${enableDebug ? ' (everything but health checks)' : ''}.`);
+	// TODO: this would also be a good point to log out whether the server will run as multicatalog or single
 
 	console.log('\n  Success!');
 
-	// TODO: this would be a good point to log out whether the server will run as multicatalog or single
 
 	const app = express();
 	// TODO: get allowed cors by env
@@ -32,12 +35,14 @@ const arrangerServer = async (rootPath = '') => {
 		morgan('dev', {
 			skip: (req, res) => {
 				// log everything on debug mode. errors only otherwise
-				return enableDebug || enableLogs ? req.originalUrl.includes(pingPath) : res.statusCode < 400;
+				return enableDebug || enableLogs
+					? [health.pingPath].some((endpoint) => req.originalUrl.includes(endpoint))
+					: res.statusCode < 400;
 			},
 		}),
 	);
 
-	app.get(pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
+	app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
 	app.use(
 		'/',
 		addContext({
@@ -45,20 +50,10 @@ const arrangerServer = async (rootPath = '') => {
 		}),
 	);
 
-	// TODO: extend this for other catalogs
-	const catalogId = Object.keys(catalogs)[0] as string;
+	app.use('/', await arrangerRoutes({ catalogs, enableDebug, esClient }));
 
-	const router = await arrangerRouter({
-		configs: {
-			enableDebug,
-			...catalogs[catalogId],
-		},
-	});
-
-	app.use(router);
-
-	const server = app.listen(port, () => {
-		const message = `⚡️⚡️⚡️ Listening on port ${port} ⚡️⚡️⚡️`;
+	const server = app.listen(serverPort, () => {
+		const message = `⚡️⚡️⚡️ Listening on port ${serverPort} ⚡️⚡️⚡️`;
 		const line = '-'.repeat(message.length);
 
 		console.info(`\n${line}`);
@@ -66,17 +61,19 @@ const arrangerServer = async (rootPath = '') => {
 		console.info(`${line}\n`);
 
 		if (enableDebug) {
-			console.log(`URL: http://localhost:${port}\n`);
+			console.log(`URL: http://localhost:${serverPort}\n`);
 		}
 	});
 
 	server.on('error', (err: NodeJS.ErrnoException) => {
 		console.log('\n\n------------------------------------');
 		console.log('\nEnding server due to an error:');
-		console.error(err.code === 'EADDRINUSE' ? `Port ${port} is already in use.` : err);
+		console.error(err.code === 'EADDRINUSE' ? `Port ${serverPort} is already in use.` : err);
 
 		process.exit(1);
 	});
+
+	return server;
 };
 
 export default arrangerServer;

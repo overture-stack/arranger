@@ -1,45 +1,69 @@
-// TODO: reorganize these constants into their actual dependency tree
+// TODO: reorganize these constants into their actual dependency tree: server vs catalog, nested properly, etc.
 
 // generic terms
+const CATALOG_ID = 'catalogId';
 const DOCUMENT_TYPE = 'documentType';
-const INSTANCE_ID = 'instanceID';
-const INDEX = 'index';
 const TYPE = 'type';
 
 // Root level properties
-export const featureFlagProperties = {
+
+export const configArrangerFeatureFlagProperties = {
+	DISABLE_DOWNLOADS: 'disableDownloads',
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
-	ENABLE_ADMIN: 'enableAdmin',
-	ENABLE_DEBUG: 'enableDebug',
-	ENABLE_LOGS: 'enableLogs',
+	DISABLE_SETS: 'disableSets', // TODO: not fully implemented yet. needs review
 	ENABLE_NETWORK_AGGREGATION: 'enableNetworkAggregation',
-	ENABLE_SETS: 'enableSets', // TODO: not implemented yet
 } as const;
 
-export const optionalConfigProperties = {
-	...featureFlagProperties,
+export const configRuntimeFeatureFlagProperties = {
+	ENABLE_ADMIN: 'enableAdmin', // FIXME: must be removed, untangle the facets agg vs numericAggs
+	ENABLE_DEBUG: 'enableDebug',
+	ENABLE_LOGS: 'enableLogs',
+} as const;
+
+export const configFeatureFlagProperties = {
+	...configArrangerFeatureFlagProperties,
+	...configRuntimeFeatureFlagProperties,
+};
+
+export const featureFlagDefaults = Object.values(configFeatureFlagProperties).reduce(
+	(acc, flag) => ({
+		...acc,
+		[flag]: false,
+	}),
+	{},
+);
+
+export const configOptionalProperties = {
+	CATALOG_ID,
+	ES_HOST: 'esHost',
 	DOWNLOADS: 'downloads',
 	EXTENDED: 'extended',
+	SETS: 'sets',
+	...configFeatureFlagProperties,
+	//
+	// configs for dependent libraries
+	CHARTS: 'charts',
 	FACETS: 'facets',
-	INSTANCE_ID,
 	MATCHBOX: 'matchbox',
 	NETWORK_AGGREGATION: 'network',
-	SETS: 'sets',
 	TABLE: 'table',
 } as const;
 
-export const requiredConfigProperties = {
+export const configArrangerBaseProperties = {
 	DOCUMENT_TYPE,
-	INDEX,
-	ES_HOST: 'esHost',
+	ES_INDEX: 'esIndex',
+} as const;
+
+export const configRequiredProperties = {
+	...configArrangerBaseProperties,
 	ES_PASS: 'esPass',
 	ES_USER: 'esUser',
 } as const;
 
-export const rootConfigProperties = {
-	...optionalConfigProperties,
-	...requiredConfigProperties,
+export const configRootProperties = {
+	...configOptionalProperties,
+	...configRequiredProperties,
 };
 
 // Components' and nested properties
@@ -65,18 +89,24 @@ export const dataFieldProperties = {
 } as const;
 
 export const downloadProperties = {
-	ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS: 'allowCustomMaxRows',
-	DOWNLOAD_STREAM_BUFFER_SIZE: 'chunkSize',
-	MAX_DOWNLOAD_ROWS: 'maxRows',
+	ALLOW_CUSTOM_MAX_ROWS: 'allowCustomMaxRows',
+	MAX_ROWS: 'maxRows',
+	STREAM_BUFFER_SIZE: 'chunkSize',
+} as const;
+
+export const setsProperties = {
+	INDEX: 'index',
+	TYPE,
 } as const;
 
 export const facetsProperties = {
 	AGGS: 'aggregations',
 } as const;
 
-export const setsProperties = {
-	INDEX,
-	TYPE,
+export const networkAggregationProperties = {
+	GRAPHQL_URL: 'graphqlUrl',
+	DOCUMENT_TYPE,
+	DISPLAY_NAME: 'displayName',
 } as const;
 
 export const sortingProperties = {
@@ -92,12 +122,9 @@ export const tableProperties = {
 	ROW_ID_FIELD_NAME: 'rowIdFieldName',
 } as const;
 
-// Federated setup properties
-
-export const networkAggregationProperties = {
-	GRAPHQL_URL: 'graphqlUrl',
-	DOCUMENT_TYPE,
-	DISPLAY_NAME: 'displayName',
+// Charts Visualization Library
+export const chartsProperties = {
+	QUERY: 'query',
 } as const;
 
 //////////////////////////////////
@@ -110,8 +137,8 @@ export const allConfigProperties = {
 	...dataFieldProperties,
 	...downloadProperties,
 	...facetsProperties,
-	...optionalConfigProperties,
-	...requiredConfigProperties,
+	...configOptionalProperties,
+	...configRequiredProperties,
 	...setsProperties,
 	...tableProperties,
 };

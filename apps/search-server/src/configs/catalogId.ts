@@ -1,31 +1,31 @@
 import crypto from 'crypto';
+import path from 'path';
 
 import type { ConfigsObject as ArrangerConfigs } from '@overture-stack/arranger-types/configs';
-import { rootConfigProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 
 const hashId = (value: string) => crypto.createHash('sha1').update(value).digest('hex').slice(0, 8);
 
 export const resolveCatalogId = ({
-	config,
-	folderName,
+	aggregatedConfigs,
+	configsPath,
 	usedIds,
-	seed,
 }: {
-	config: Partial<ArrangerConfigs>;
-	folderName: string;
+	aggregatedConfigs: Partial<ArrangerConfigs>;
+	configsPath: string;
 	usedIds: Set<string>;
-	seed: string;
 }) => {
-	const requestedId = config[rootConfigProperties.INSTANCE_ID];
+	const folderName = path.basename(configsPath);
+	const requestedId = aggregatedConfigs[configRootProperties.CATALOG_ID];
 	const baseId = requestedId || (!['config', 'configs'].includes(folderName) && folderName);
-	const finalBaseId = baseId || `catalog-${hashId(seed)}`;
+	const finalBaseId = baseId || `catalog-${hashId(configsPath)}`;
 
 	if (!usedIds.has(finalBaseId)) {
 		usedIds.add(finalBaseId);
 		return finalBaseId;
 	}
 
-	const dedupedId = `${finalBaseId}-${hashId(`${finalBaseId}:${seed}`)}`;
+	const dedupedId = `${finalBaseId}-${hashId(`${finalBaseId}:${configsPath}`)}`;
 	usedIds.add(dedupedId);
 	return dedupedId;
 };

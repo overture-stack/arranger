@@ -8,7 +8,7 @@ export default ({ api }) => {
 				endpoint: '/ping',
 			})
 			.catch((err) => {
-				console.log('spinupActive error', err);
+				console.log('spinupActive/ping error', err.message);
 			});
 
 		assert.equal(statusText, 'OK');
@@ -22,7 +22,7 @@ export default ({ api }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('spinupActive error', err);
+				console.log('spinupActive/graphql error', err.message);
 			});
 
 		assert.equal(statusText, 'OK');

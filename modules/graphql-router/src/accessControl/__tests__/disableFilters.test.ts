@@ -3,7 +3,7 @@ import { suite, test } from 'node:test';
 
 import type { RequestHandler } from 'express';
 
-import { featuresFromFlags } from '#features/index.js';
+import accessControl from '#accessControl/index.js';
 
 const runMiddleware = async ({
 	middleware,
@@ -49,9 +49,9 @@ const runMiddleware = async ({
 	};
 };
 
-suite('features/disableFilters', () => {
+suite('accessControl/disableFilters', () => {
 	test('1.blocks requests with SQON filters when disableFilters is enabled', async () => {
-		const middleware = featuresFromFlags({
+		const middleware = accessControl({
 			configs: {
 				disableFilters: true,
 			},
@@ -80,7 +80,7 @@ suite('features/disableFilters', () => {
 	});
 
 	test('2.allows requests when disableFilters is disabled', async () => {
-		const middleware = featuresFromFlags({
+		const middleware = accessControl({
 			configs: {
 				disableFilters: false,
 			},
@@ -106,7 +106,7 @@ suite('features/disableFilters', () => {
 	});
 
 	test('3.blocks nested sqon variables passed through query params', async () => {
-		const middleware = featuresFromFlags({
+		const middleware = accessControl({
 			configs: {
 				disableFilters: true,
 			},

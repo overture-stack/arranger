@@ -1,4 +1,4 @@
-const esToAggTypes = {
+export const esToAggTypesMap = {
 	boolean: 'Aggregations',
 	byte: 'NumericAggregations',
 	date: 'NumericAggregations',
@@ -15,6 +15,3 @@ const esToAggTypes = {
 	text: 'Aggregations',
 	unsigned_long: 'NumericAggregations',
 } as const;
-
-export default esToAggTypes;
-export type ES_TYPES = keyof typeof esToAggTypes;

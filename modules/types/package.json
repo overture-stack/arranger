@@ -26,6 +26,14 @@
 			"types": "./dist/configs/constants.d.ts",
 			"default": "./dist/configs/constants.js"
 		},
+		"./elastic": {
+			"types": "./dist/elastic/index.d.ts",
+			"default": "./dist/elastic/index.js"
+		},
+		"./elastic/constants": {
+			"types": "./dist/elastic/constants.d.ts",
+			"default": "./dist/elastic/constants.js"
+		},
 		"./tools": {
 			"types": "./dist/tools/index.d.ts",
 			"default": "./dist/tools/index.js"

@@ -5,7 +5,7 @@ import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/
 import esSearch from './utils/esSearch.js';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
-import { type GetServerSideFilterFn } from '#utils/getDefaultServerSideFilter.js';
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { type Resolver, type Root } from '#gqlServer.js';
 
 export type Bucket = {

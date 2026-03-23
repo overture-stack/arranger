@@ -5,7 +5,6 @@ export { saveSet } from './resolveSets.js';
 export { default as mappingToFields } from './mappingToFields.js';
 export { default as mappingToAggsType } from './mappingToAggsType.js';
 export { default as mappingToAggsState } from './mappingToAggsState.js';
-export { default as esToAggTypeMap } from './esToAggTypeMap.js';
 export { default as mappingToColumnsState } from './mappingToColumnsState.js';
 export { default as mappingToMatchBoxState } from './mappingToMatchBoxState.js';
 export { default as mappingToNestedTypes } from './mappingToNestedTypes.js';

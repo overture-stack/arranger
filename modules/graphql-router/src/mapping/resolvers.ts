@@ -1,5 +1,5 @@
 import type { ExtendedConfigs } from '@overture-stack/arranger-types/configs';
-import { rootConfigProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import { type Resolver, type Root } from '#gqlServer.js';
 
@@ -18,16 +18,17 @@ export const createResolvers = ({
 		Promise<{ facets?: any; matchbox?: any; table?: any; downloads: any; extended: any }>
 	> = async (_unusedParentObj, { fieldNames }) => {
 		return {
-			downloads: type.config?.[rootConfigProperties.DOWNLOADS],
+			downloads: type.config?.[configRootProperties.DOWNLOADS],
 			extended: fieldNames
 				? type.extendedFields.filter((extendedField: ExtendedConfigs) =>
 						fieldNames.includes(extendedField.fieldName),
 					)
 				: type.extendedFields,
 			...(createStateResolvers && {
-				facets: type.config?.[rootConfigProperties.FACETS],
-				matchbox: type.config?.[rootConfigProperties.MATCHBOX],
-				table: type.config?.[rootConfigProperties.TABLE],
+				charts: type.config?.[configRootProperties.CHARTS],
+				facets: type.config?.[configRootProperties.FACETS],
+				matchbox: type.config?.[configRootProperties.MATCHBOX],
+				table: type.config?.[configRootProperties.TABLE],
 			}),
 		};
 	};

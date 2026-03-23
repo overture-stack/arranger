@@ -1,6 +1,7 @@
+import { setsProperties } from '@overture-stack/arranger-types/configs';
 import _ from 'lodash-es';
 
-import fallbackConfigs from '#config/index.js';
+import fallbackConfigs from '#config/constants.js';
 import {
 	ALL_OP,
 	AND_OP,
@@ -38,6 +39,8 @@ import {
 } from '#middleware/utils/esFilter.js';
 
 import normalizeFilters from './normalizeFilters.js';
+
+const { sets } = fallbackConfigs;
 
 const wrapFilter = ({ esFilter, nestedFieldNames, filter, isNot }) => {
 	return filter?.content?.fieldName
@@ -163,15 +166,15 @@ function collapseNestedFilters({ esFilter, bools }) {
 		...bools.filter((bool) => bool !== found),
 		found
 			? mergePath(
-				found,
-				path,
-				filterIsNested
-					? collapseNestedFilters({
-						esFilter: _.get(esFilter, path)[0],
-						bools: _.get(found, path, []),
-					})
-					: [..._.get(found, path), ..._.get(esFilter, path)],
-			)
+					found,
+					path,
+					filterIsNested
+						? collapseNestedFilters({
+								esFilter: _.get(esFilter, path)[0],
+								bools: _.get(found, path, []),
+							})
+						: [..._.get(found, path), ..._.get(esFilter, path)],
+				)
 			: esFilter,
 	];
 }
@@ -206,8 +209,9 @@ function getSetFilter({ nestedFieldNames, filter, filter: { content, op } }) {
 			terms: {
 				boost: 0,
 				[content.fieldName]: {
-					index: fallbackConfigs.ES_ARRANGER_SET_INDEX,
-					type: fallbackConfigs.ES_ARRANGER_SET_TYPE,
+					// FIXME: use configs from router instead of constants
+					index: sets[setsProperties.INDEX],
+					type: sets[setsProperties.INDEX],
 					id: _.flatMap([content.value])[0].replace('set_id:', ''),
 					path: 'ids',
 				},

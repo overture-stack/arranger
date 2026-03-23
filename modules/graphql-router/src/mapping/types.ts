@@ -1,4 +1,4 @@
-import type { ES_TYPES } from './esToAggTypeMap.js';
+import type { ES_TYPES } from '@overture-stack/arranger-types/elastic';
 
 export type FieldFromMapping = {
 	fieldName: string;

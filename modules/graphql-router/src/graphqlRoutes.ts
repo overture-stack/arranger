@@ -1,8 +1,8 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { mergeSchemas } from '@graphql-tools/schema';
 import {
-	optionalConfigProperties,
-	rootConfigProperties,
+	configOptionalProperties,
+	configRootProperties,
 	setsProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
@@ -10,29 +10,31 @@ import { ApolloServer } from 'apollo-server-express';
 import { Router } from 'express';
 
 import { initializeSets } from './config/index.js';
+import { extendCharts } from './mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import { createSchemaFromNetworkConfig } from './network/index.js';
 import makeSchema from './schema/index.js';
 import { addContext } from './utils/context.js';
 
-const getESMapping = async ({ enableDebug, esClient, index }) => {
-	if (esClient && index) {
+const getESMapping = async ({ enableDebug, esClient, esIndex }) => {
+	if (esClient && esIndex) {
 		const { mapping } = await fetchMapping({
 			enableDebug,
 			esClient,
-			index,
+			esIndex,
 		});
 
 		if (Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			enableDebug && console.log('    Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			enableDebug &&
+				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
 			delete mapping.id;
 		}
 		return mapping;
 	}
 
-	throw new Error(`  Could not get ES mappings for ${index}`);
+	throw new Error(`  Could not get ES mappings for ${esIndex}`);
 };
 
 const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }) => {
@@ -45,59 +47,63 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 			// Combines the mapping from ES with the "extended" custom configs
 			const extendedFields = await (async () => {
 				try {
-					return extendFields(fieldsFromMapping, configs?.[rootConfigProperties.EXTENDED]);
+					return extendFields(fieldsFromMapping, configs?.[configRootProperties.EXTENDED]);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the ES mappings.\n' +
 							'    Defaulting to "extended" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
-					return configs?.[rootConfigProperties.EXTENDED] || [];
+					return configs?.[configRootProperties.EXTENDED] || [];
 				}
 			})();
 
 			// Uses the "extended" fields to enhance the "facets" custom configs
 			const extendedFacetsConfigs = await (async () => {
 				try {
-					return extendFacets(configs?.[rootConfigProperties.FACETS], extendedFields);
+					return extendFacets(configs?.[configRootProperties.FACETS], extendedFields);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the column mappings.\n' +
 							'    Defaulting to "table" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
-					return configs?.[rootConfigProperties.TABLE] || [];
+					return configs?.[configRootProperties.TABLE] || [];
 				}
 			})();
 
 			// Uses the "extended" fields to enhance the "table" custom configs
 			const extendedTableConfigs = await (async () => {
 				try {
-					return extendColumns(configs?.[rootConfigProperties.TABLE], extendedFields);
+					return extendColumns(configs?.[configRootProperties.TABLE], extendedFields);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the column mappings.\n' +
 							'    Defaulting to "table" config from files.\n',
 					);
-					enableDebug && console.log(err);
+					enableDebug && console.debug(`  DEBUG: ${err}`);
 
-					return configs?.[rootConfigProperties.TABLE] || [];
+					return configs?.[configRootProperties.TABLE] || [];
 				}
 			})();
+
+			// Validate and enchance charts config with dynamic properties
+			const extendedChartsConfigs = extendCharts(configs?.[configRootProperties.CHARTS], extendedFields);
 
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
 					config: {
 						...configs,
-						[rootConfigProperties.FACETS]: extendedFacetsConfigs,
-						[rootConfigProperties.TABLE]: extendedTableConfigs,
+						[configRootProperties.CHARTS]: extendedChartsConfigs,
+						[configRootProperties.FACETS]: extendedFacetsConfigs,
+						[configRootProperties.TABLE]: extendedTableConfigs,
 					},
 					customFields: '',
 					extendedFields,
-					index: configs?.[rootConfigProperties.INDEX],
-					name: configs?.[rootConfigProperties.DOCUMENT_TYPE],
+					index: configs?.[configRootProperties.ES_INDEX],
+					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 				},
 				mapping: mappingFromES,
 			});
@@ -158,7 +164,7 @@ const noSchemaHandler =
 		});
 	};
 
-const createEndpoint = async ({
+export const createEndpoint = async ({
 	disablePlayground,
 	enableDebug,
 	esClient,
@@ -230,8 +236,8 @@ const createEndpoint = async ({
 			router.use(mockPath, noSchemaHandler(mockPath));
 		}
 	} catch (err) {
-		enableDebug && console.error(err);
-		// TODO: Throw better?
+		enableDebug && console.debug(`  DEBUG: ${err}`);
+		// FIXME: Throw better!
 		throw err;
 	}
 
@@ -266,12 +272,12 @@ export const createSchemasFromConfigs = async ({
 		const mappingFromES = await getESMapping({
 			enableDebug,
 			esClient,
-			index: configs[rootConfigProperties.INDEX],
+			esIndex: configs[configRootProperties.ES_INDEX],
 		});
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings({
+			configs,
 			enableDebug,
 			mappingFromES,
-			configs,
 		});
 
 		const commonFields = { fieldsFromMapping, typesWithMappings };
@@ -291,7 +297,7 @@ export const createSchemasFromConfigs = async ({
 		 * Federated Network Search
 		 */
 		if (enableNetworkAggregation) {
-			const networkConfigsObj = configs[rootConfigProperties.NETWORK_AGGREGATION];
+			const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
 			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
 				throw new Error('  Network config not found. Please check validity.');
 			}
@@ -338,7 +344,7 @@ export default async ({
 	graphqlOptions = {},
 }) => {
 	// TODO: surfacing this variable to be reused later
-	const { [setsProperties.INDEX]: setsIndex } = configs[optionalConfigProperties.SETS];
+	const { index: setsIndex } = configs[configOptionalProperties.SETS];
 
 	try {
 		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
@@ -353,7 +359,7 @@ export default async ({
 		});
 
 		const graphQLEndpoints = await createEndpoint({
-			disablePlayground: configs[optionalConfigProperties.DISABLE_GRAPHQL_PLAYGROUND],
+			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND],
 			enableDebug,
 			esClient,
 			graphqlOptions,
@@ -364,7 +370,7 @@ export default async ({
 		await initializeSets({
 			enableDebug,
 			esClient,
-			setsIndex, // TODO use constants
+			setsIndex,
 		});
 
 		return [

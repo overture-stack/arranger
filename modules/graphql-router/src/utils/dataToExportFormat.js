@@ -3,7 +3,6 @@ import { JSONPath } from 'jsonpath-plus';
 import { flatten, find, get, isNil } from 'lodash-es';
 import through2 from 'through2';
 
-
 const STANDARD_DATE = 'yyyy-MM-dd';
 
 const dateHandler = (value, { dateFormat: formatInput }) => {
@@ -159,14 +158,7 @@ const pushToStream = (line, stream) => {
 	stream.push(`${line}\n`);
 };
 
-const transformData = ({
-	data: { hits },
-	uniqueBy,
-	columns,
-	valueWhenEmpty,
-	dataTransformer,
-	pipe,
-}) =>
+const transformData = ({ data: { hits }, enableDebug, uniqueBy, columns, valueWhenEmpty, dataTransformer, pipe }) =>
 	hits
 		.map((row) => dataTransformer({ enableDebug, row, uniqueBy, columns, valueWhenEmpty }))
 		.forEach((transformedRow) => pushToStream(transformedRow, pipe));
@@ -262,15 +254,7 @@ example args:
 	   hasCustomType: false } ],
   valueWhenEmpty: '--' }
 */
-const rowToJSON = ({
-	row,
-	data = row,
-	paths,
-	pathIndex = 0,
-	columns,
-	valueWhenEmpty,
-	entities = []
-}) => {
+const rowToJSON = ({ row, data = row, paths, pathIndex = 0, columns, valueWhenEmpty, entities = [] }) => {
 	return (columns || [])
 		.filter((col) => col.show)
 		.reduce((output, col) => {
@@ -290,7 +274,7 @@ const transformDataToJSON = ({ enableDebug, row, uniqueBy, columns, valueWhenEmp
 
 		return JSON.stringify(jsonRow);
 	} catch (err) {
-		enableDebug && console.error('unhandled JSON in dataToExportFormat/transformDataToJSON', err, row);
+		enableDebug && console.debug('  DEBUG: unhandled JSON in dataToExportFormat/transformDataToJSON', err, row);
 	}
 };
 
@@ -341,6 +325,7 @@ export default ({
 	valueWhenEmpty = '--',
 }) => {
 	const { enableDebug } = ctx;
+
 	let isFirst = true;
 	let chunkCounts = 0;
 
@@ -356,7 +341,7 @@ export default ({
 	const transformStream = through2.obj(
 		// TODO: research better thread/process handling to prevent blocking the server
 		function ({ hits, total }, enc, callback) {
-			enableDebug && console.time(`esHitsToTsv_${chunkCounts}`);
+			enableDebug && console.time(`  DEBUG: esHitsToTsv_${chunkCounts}`);
 
 			const outputStream = this;
 			const args = {
@@ -380,7 +365,7 @@ export default ({
 
 			callback();
 
-			enableDebug && console.timeEnd(`esHitsToTsv_${chunkCounts}`);
+			enableDebug && console.timeEnd(`  DEBUG: esHitsToTsv_${chunkCounts}`);
 
 			chunkCounts++;
 		},

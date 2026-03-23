@@ -7,7 +7,10 @@ lerna-debug.log
 **/node_modules
 **/.DS_Store
 **/*.env*
-!**/.env.schema
 **/package-lock.json
 
 *.tsbuildinfo
+
+# include, don't ignore
+!.env.test
+!**/.env.schema

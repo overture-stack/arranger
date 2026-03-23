@@ -1,9 +1,8 @@
 import { type IResolvers } from '@graphql-tools/utils';
+import { type GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 
-import { type GetServerSideFilterFn } from '#utils/getDefaultServerSideFilter.js';
-
-import { createResolvers } from './resolvers.js';
 import resolveHits from './resolveHits.js';
+import { createResolvers } from './resolvers.js';
 
 // TODO: tighten these types
 export type CreateConnectionResolversArgs = {
@@ -23,14 +22,14 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 	Parallel,
 	type,
 }) => {
-	const { aggregations, hits, configs } = createResolvers({
+	const { aggregations, configs } = createResolvers({
 		createStateResolvers,
 		type,
 		Parallel,
 		getServerSideFilter,
 	});
 
-	return {
+	const connectionResolver = {
 		[type.name]: {
 			aggregations,
 			configs,
@@ -46,6 +45,8 @@ const createConnectionResolvers: CreateConnectionResolversFn = ({
 			}),
 		},
 	};
+
+	return connectionResolver;
 };
 
 export default createConnectionResolvers;

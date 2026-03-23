@@ -1,54 +1,60 @@
-import path from 'path';
-
 import { resolveCatalogId } from './catalogId.js';
-import configsFromEnv from './configsFromEnv.js';
-import getConfigFromFiles from './getConfigFromFiles.js';
-import type { AllServerConfigs, CatalogsMap } from './types.js';
+import aggregateConfigsFromEnv from './fromEnv/index.js';
+import getConfigFromFiles from './fromFiles/fileHandlers.js';
+import type { AllServerConfigs, CatalogsMap } from './types/index.js';
 
-// TODO: MultiCatalog logic
+// TODO: needs logic to support multiple catalogs
 // check if there's JSONs in this folder, then and do this following logic as is...
 // otherwise, if it finds folders, then read the jsons
 // therein as configs for one Arranger per folder.
 
 const buildCatalogsFromFolder = async ({
-	configsSource,
-	rootPath,
+	catalogConfigsPath,
+	configsFromEnv: { catalogs, enableDebug },
+	currentDirectory,
 }: {
-	configsSource: string;
-	rootPath: string;
+	catalogConfigsPath: string;
+	configsFromEnv: AllServerConfigs;
+	currentDirectory: string;
 }): Promise<CatalogsMap> => {
-	const configsPath = path.resolve(rootPath, configsSource);
 	const usedIds = new Set<string>();
 
-	const config = await getConfigFromFiles({
-		baseConfig: configsFromEnv.catalogs.fromEnv,
-		configsSource,
-		rootPath,
+	const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
+		// FIXME: TypeScript doesn't believe this won't be undefined.
+		baseConfig: catalogs.fromEnv || {}, // WHY!?
+		catalogConfigsPath,
+		enableDebug,
+		currentDirectory,
 	});
-	const folderName = path.basename(configsPath);
+
 	const catalogId = resolveCatalogId({
-		config,
-		folderName,
+		aggregatedConfigs,
+		configsPath,
 		usedIds,
-		seed: configsPath,
 	});
 
 	return {
-		[catalogId]: config,
+		[catalogId]: aggregatedConfigs,
 	};
 };
 
-const loadAllsConfigs = async ({ rootPath = '' }): Promise<AllServerConfigs> => {
+const loadAllsConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
 	console.log('Gathering configuration data:');
+
+	// TODO: validate external configs to prevent undesired items, warn deprecations, etc.
+	const { catalogConfigsPath, ...configsFromEnv } = aggregateConfigsFromEnv(externalConfigs);
+
 	try {
-		const catalogs = await buildCatalogsFromFolder({
-			configsSource: configsFromEnv.configsSource,
-			rootPath,
+		// TODO: this function should do all the multicatalog config parsing
+		const catalogConfigs = await buildCatalogsFromFolder({
+			catalogConfigsPath,
+			configsFromEnv,
+			currentDirectory,
 		});
 
-		const aggregatedConfigs: AllServerConfigs = {
+		const aggregatedConfigs = {
 			...configsFromEnv,
-			catalogs,
+			catalogs: catalogConfigs,
 		};
 
 		// TODO: some form of config validation and logging for it
@@ -56,7 +62,8 @@ const loadAllsConfigs = async ({ rootPath = '' }): Promise<AllServerConfigs> => 
 		// 	console.log('\n\nDebugging aggregatedConfigs in configs/index:', aggregatedConfigs, '\n');
 
 		return aggregatedConfigs;
-	} catch (error) {
+	} catch (err) {
+		configsFromEnv.enableDebug && err && console.log(`\n  DEBUG: ${err}\n`);
 		console.log('  - Defaulting to config values from the environment...');
 		return configsFromEnv;
 
@@ -69,4 +76,3 @@ const loadAllsConfigs = async ({ rootPath = '' }): Promise<AllServerConfigs> => 
 };
 
 export default loadAllsConfigs;
-export { configsFromEnv };

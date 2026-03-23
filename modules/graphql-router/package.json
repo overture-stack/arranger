@@ -13,6 +13,20 @@
 	},
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"default": "./dist/utils/index.js"
+		},
+		"./download": {
+			"types": "./dist/download/index.d.ts",
+			"default": "./dist/download/index.js"
+		}
+	},
 	"imports": {
 		"#configs": "./configs/*",
 		"#*": "./src/*"

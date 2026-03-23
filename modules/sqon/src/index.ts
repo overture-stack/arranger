@@ -9,5 +9,5 @@ export {
 } from './operators.js';
 export type { SqonAcceptedOp, SqonCanonicalOp, SqonCombinationOp, SqonFieldOp, SqonOpAlias } from './operators.js';
 export { SqonSchema } from './schema.js';
-export type { SqonNode as default } from './schema.js';
+export type { SqonNode } from './schema.js';
 export { SQON_SCHEMA_VERSION } from './version.js';

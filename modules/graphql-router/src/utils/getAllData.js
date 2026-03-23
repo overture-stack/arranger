@@ -1,6 +1,6 @@
 import { PassThrough } from 'node:stream';
 
-import { rootConfigProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
+import { configRootProperties, downloadProperties } from '@overture-stack/arranger-types/configs/constants';
 
 import fallbackConfigs from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
@@ -24,6 +24,8 @@ export default async ({
 	...rest
 }) => {
 	const { configs, enableDebug, esClient, mockSchema, schema } = ctx;
+
+	// TODO: review what "configs" come in here, trim down to what's relevant in this context
 
 	const stream = new PassThrough({ objectMode: true });
 
@@ -63,10 +65,10 @@ export default async ({
 		variables: { sqon },
 	})
 		.then(({ data }) => {
-			enableDebug && console.log('runQuery completed, processing data...');
+			enableDebug && console.debug('  DEBUG: runQuery completed, processing data...');
 
 			const allowCustomMaxRows =
-				configs.config[rootConfigProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
+				configs.config[configRootProperties.DOWNLOADS][downloadProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS];
 			const maxHits = allowCustomMaxRows
 				? maxRows || configs.config[downloadProperties.MAX_DOWNLOAD_ROWS]
 				: configs.config[downloadProperties.MAX_DOWNLOAD_ROWS];
@@ -76,8 +78,8 @@ export default async ({
 			const steps = Array(Math.ceil(total / chunkSize)).fill(null);
 
 			enableDebug &&
-				console.log(
-					`Total hits: ${hitsCount}, Max hits: ${maxHits}, Total to fetch: ${total}, Steps: ${steps.length}`,
+				console.debug(
+					`  DEBUG: Total hits: ${hitsCount}, Max hits: ${maxHits}, Total to fetch: ${total}, Steps: ${steps.length}`,
 				);
 
 			// async reduce because each cycle is dependent on result of the previous
@@ -117,11 +119,11 @@ export default async ({
 					if (err) {
 						console.error(`Write callback error in step ${stepNumber + 1}:`, err);
 					} else {
-						enableDebug && console.log(`Write callback completed for step ${stepNumber + 1}`);
+						enableDebug && console.debug(`  DEBUG: Write callback completed for step ${stepNumber + 1}`);
 					}
 				});
 
-				enableDebug && console.log(`Write returned: ${writeResult} (false = backpressure)`);
+				enableDebug && console.debug(`  DEBUG: Write returned: ${writeResult} (false = backpressure)`);
 
 				return hits;
 			}, Promise.resolve());
@@ -140,7 +142,7 @@ export default async ({
 			stream.destroy(err);
 		});
 
-	enableDebug && console.log('getAllData: Returning stream');
+	enableDebug && console.debug('  DEBUG: getAllData: Returning stream');
 
 	return stream;
 };
