@@ -4,7 +4,7 @@ import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWith
 
 export const supportedClientValues: SupportedClientTypes[] = ['opensearch', 'elasticsearch'] as const;
 
-export const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient => {
+const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient => {
 	const { clientType } = clientConfig;
 	if (clientType === 'opensearch') {
 		const options: OSClientOptions = { ...clientConfig, clientType };
@@ -36,9 +36,21 @@ const getClientVersion = async (config: SearchConfig) => {
 		}
 		return undefined;
 	} catch (error) {
-		console.error(error);
 		throw new Error('Error identifying Search Client version from server response');
 	}
+};
+
+const createSearchConfig = (host = '', username = '', password = '', clientType = '') => {
+	if (!host) {
+		throw new Error('Search Client host URL was not provided');
+	}
+	const auth = username && password ? { username, password } : undefined;
+	const searchConfig: SearchConfig = {
+		node: host,
+		auth,
+		clientType,
+	};
+	return searchConfig;
 };
 
 export default async function getSearchClient(config: SearchConfig) {
@@ -55,3 +67,8 @@ export default async function getSearchClient(config: SearchConfig) {
 		throw new Error(`Error configuring Search Client`);
 	}
 }
+
+export const buildSearchClient = async (host: string, user: string, password: string, clientType?: string) => {
+	const config = createSearchConfig(host, user, password, clientType);
+	return await getSearchClient(config);
+};

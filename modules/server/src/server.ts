@@ -5,30 +5,10 @@ import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from '
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
-import getSearchClient from './searchClient/index.js';
-import { type SearchConfig } from './searchClient/types.js';
+import { buildSearchClient } from './searchClient/index.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
 const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT } = ENV_CONFIG;
-
-export const createSearchConfig = (host = '', username = '', password = '', clientType = '') => {
-	if (!host) {
-		throw new Error('Search Client host URL was not provided');
-	}
-	const auth =  (username && password) ? { username, password } : undefined;
-	const searchConfig: SearchConfig = {
-		node: host,
-		auth,
-		clientType,
-	};
-
-	return searchConfig;
-};
-
-export const buildSearchClient = async (host: string, user: string, password: string, clientType: string) => {
-	const config = createSearchConfig(host, user, password, clientType);
-	return await getSearchClient(config);
-};
 
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
