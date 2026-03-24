@@ -60,8 +60,8 @@ const runMiddlewareChain = async ({
 	};
 };
 
-suite('GraphQLRouter/middlewares', () => {
-	test('applies disableFilters through the router preprocessing stack', async () => {
+suite('router middleware injection', () => {
+	test('1.applies disableFilters through the router preprocessing stack', async () => {
 		const middlewares = createRequestPreprocessingMiddleware({
 			configs: {
 				disableFilters: true,
