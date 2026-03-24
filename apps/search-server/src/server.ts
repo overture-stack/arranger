@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import arrangerRoutes from '#arrangerRoutes.js';
 import loadAllConfigs from '#configs/index.js';
 import type { ExternalConfigs } from '#configs/types/index.js';
+import createIntrospectionRoutes from '#introspection/index.js';
 
 // TODO: add JSDocs for this param. not sure why anyone could benefit,
 // from this, but it helps for testing, so please don't take it away.
@@ -40,7 +41,6 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 		}),
 	);
 
-	app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
 	app.use(
 		'/',
 		addContext({
@@ -48,6 +48,8 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 		}),
 	);
 
+	app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
+	app.use(createIntrospectionRoutes({ catalogs }));
 	app.use('/', await arrangerRoutes({ catalogs, enableDebug, esClient }));
 
 	const server = app.listen(serverPort, () => {

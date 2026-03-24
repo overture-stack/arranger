@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import { isSqonCanonicalOp, isSqonOpAlias, normalizeSqonOp } from '../operators.js';
+import { getSqonFieldOperatorDetails, isSqonCanonicalOp, isSqonOpAlias, normalizeSqonOp } from '#operators/index.js';
 
 suite('sqon/operators', () => {
 	test('isSqonCanonicalOp identifies canonical operations only', () => {
@@ -36,5 +36,22 @@ suite('sqon/operators', () => {
 		assert.equal(normalizeSqonOp('>='), 'gte');
 		assert.equal(normalizeSqonOp('<'), 'lt');
 		assert.equal(normalizeSqonOp('<='), 'lte');
+	});
+
+	test('returns operator details for introspection consumers', () => {
+		const details = getSqonFieldOperatorDetails();
+		const inOp = details.find((detail) => detail.op === 'in');
+		const betweenOp = details.find((detail) => detail.op === 'between');
+
+		assert.deepEqual(inOp, {
+			op: 'in',
+			applicableTo: 'all',
+			valueType: 'string | number | Array<string | number>',
+		});
+		assert.deepEqual(betweenOp, {
+			op: 'between',
+			applicableTo: ['long', 'integer', 'float', 'double', 'date'],
+			valueType: 'Array<number | date>',
+		});
 	});
 });

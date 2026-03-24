@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import { SqonSchema } from '#schema.js';
+import { SqonSchema } from '#schema/index.js';
 
 suite('sqon/schema', () => {
 	test('accepts a leaf-root in filter', () => {
@@ -56,6 +56,20 @@ suite('sqon/schema', () => {
 		assert.equal(inAlias.success, true);
 	});
 
+	test('accepts falsy but valid scalar values', () => {
+		const zeroValue = SqonSchema.safeParse({
+			content: { fieldName: 'donor.age', value: 0 },
+			op: 'gte',
+		});
+		const emptyStringValue = SqonSchema.safeParse({
+			content: { fieldName: 'sample.label', value: '' },
+			op: 'in',
+		});
+
+		assert.equal(zeroValue.success, true);
+		assert.equal(emptyStringValue.success, true);
+	});
+
 	test('accepts all currently supported field operators', () => {
 		const candidates = [
 			{ op: 'in', content: { fieldName: 'a', value: ['x'] } },
@@ -74,6 +88,40 @@ suite('sqon/schema', () => {
 			const output = SqonSchema.safeParse(candidate);
 			assert.equal(output.success, true, `Expected valid SQON for op "${candidate.op}"`);
 		});
+	});
+
+	test('accepts current special Arranger values used downstream', () => {
+		const candidates = [
+			{ op: 'in', content: { fieldName: 'sample.id', value: ['set_id:my-set'] } },
+			{ op: 'in', content: { fieldName: 'sample.id', value: ['__missing__'] } },
+			{ op: 'in', content: { fieldName: 'sample.id', value: ['ABC*'] } },
+		];
+
+		candidates.forEach((candidate) => {
+			const output = SqonSchema.safeParse(candidate);
+			assert.equal(output.success, true, `Expected valid SQON for special value "${candidate.content.value[0]}"`);
+		});
+	});
+
+	test('accepts pivot on both leaf and group nodes', () => {
+		const leaf = SqonSchema.safeParse({
+			op: 'in',
+			pivot: 'nested',
+			content: { fieldName: 'nested.field', value: ['x'] },
+		});
+		const group = SqonSchema.safeParse({
+			op: 'and',
+			pivot: 'nested',
+			content: [
+				{
+					op: 'in',
+					content: { fieldName: 'nested.field', value: ['x'] },
+				},
+			],
+		});
+
+		assert.equal(leaf.success, true);
+		assert.equal(group.success, true);
 	});
 
 	test('allows passthrough extra keys', () => {

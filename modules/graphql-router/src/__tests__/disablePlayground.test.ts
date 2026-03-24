@@ -55,8 +55,8 @@ const startServer = async ({ disablePlayground }: { disablePlayground: boolean }
 	});
 };
 
-suite('GraphQL/disablePlayground', () => {
-	test('serves the landing page when playground is enabled', async (t) => {
+suite('disablePlayground', () => {
+	test('1.serves the landing page when playground is enabled', async (t) => {
 		const server = await startServer({ disablePlayground: false });
 		t.after(server.close);
 
@@ -71,7 +71,7 @@ suite('GraphQL/disablePlayground', () => {
 		assert.match(String(response.data), /apollo server landing page|welcome to apollo server/i);
 	});
 
-	test('does not serve the landing page when playground is disabled', async (t) => {
+	test('2.does not serve the landing page when playground is disabled', async (t) => {
 		const server = await startServer({ disablePlayground: true });
 		t.after(server.close);
 

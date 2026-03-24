@@ -35,12 +35,14 @@ function isSpecialFilter(value) {
 	return [REGEX, SET_ID, MISSING].some((x) => `${value}`.includes(x));
 }
 
+function isLeafContent(content) {
+	return !!content && typeof content === 'object' && !Array.isArray(content) && 'value' in content;
+}
+
 const applyDefaultPivots = (filter) => {
 	const { content, pivot = null } = filter;
-	const { value } = content;
 
-	// TODO: condition here probably collapses on valid falsy values e.g. 0 or ""
-	if (value) {
+	if (isLeafContent(content)) {
 		return {
 			...filter,
 			pivot,
