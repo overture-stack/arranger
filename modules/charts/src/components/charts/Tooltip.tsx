@@ -26,7 +26,13 @@ export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
 		<TooltipContainer>
 			<div>
 				<div>{`${label}`}</div>
-				<div>{`${value}: Donor${value > 1 ? 's' : ''}`}</div>
+				<div>
+					<span>{value}</span>
+					<span className="tooltip-data-source-wrapper">
+						<span className="tooltip-data-source">: Donor</span>
+					</span>
+					<span>{value > 1 ? 's' : ''}</span>
+				</div>
 			</div>
 		</TooltipContainer>
 	);
