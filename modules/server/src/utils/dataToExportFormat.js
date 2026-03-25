@@ -230,11 +230,7 @@ export const dataToTSV = ({ columns, extendedFieldsDict, isFirst, pipe, ...args 
 		...args,
 		dataTransformer: transformDataToTSV,
 	});
-
-	// ends the stream
-	pipe.end?.() || pipe.push(null);
 };
-
 
 /*
 example args:
@@ -355,7 +351,7 @@ export default ({ columns, ctx = {}, fileType = 'tsv', index, uniqueBy, valueWhe
 			{},
 		) || {};
 
-	return through2.obj(function ({ hits, total }, enc, callback) {
+	const transformStream = through2.obj(function ({ hits, total }, enc, callback) {
 		ENV_CONFIG.DEBUG_MODE && console.time(`esHitsToTsv_${chunkCounts}`);
 
 		const outputStream = this;
@@ -383,4 +379,13 @@ export default ({ columns, ctx = {}, fileType = 'tsv', index, uniqueBy, valueWhe
 
 		chunkCounts++;
 	});
+
+	if (ENV_CONFIG.DEBUG_MODE) {
+		transformStream.on('error', (err) => console.error('TRANSFORM ERROR:', err));
+		transformStream.on('close', () => console.log('TRANSFORM CLOSED'));
+		transformStream.on('finish', () => console.log('TRANSFORM FINISHED'));
+		transformStream.on('end', () => console.log('TRANSFORM ENDED'));
+	}
+
+	return transformStream;
 };

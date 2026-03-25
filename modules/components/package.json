@@ -7,6 +7,7 @@
 		"url": "https://github.com/overture-stack/arranger/issues"
 	},
 	"repository": {
+		"directory": "modules/components",
 		"type": "git",
 		"url": "git+https://github.com/overture-stack/arranger.git"
 	},

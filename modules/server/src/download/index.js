@@ -4,10 +4,9 @@ import { Router, urlencoded } from 'express';
 import { defaults } from 'lodash-es';
 import { pack as tarPack } from 'tar-stream';
 
+import { ENV_CONFIG } from '#config/index.js';
 import dataToExportFormat from '#utils/dataToExportFormat.js';
 import getAllData from '#utils/getAllData.js';
-
-// nfdhjfjhdfjf
 
 const convertDataToExportFormat =
 	({ ctx, fileType }) =>
@@ -17,7 +16,11 @@ const convertDataToExportFormat =
 				ctx,
 				...args,
 			})
-		).pipe(dataToExportFormat({ ...args, ctx, fileType }));
+		)
+			.on('error', (err) => {
+				console.error('Stream error:', err);
+			})
+			.pipe(dataToExportFormat({ ...args, ctx, fileType }));
 
 const getFileStream = async ({ chunkSize, ctx, file, fileType, mock }) => {
 	const exportArgs = defaults(file, { chunkSize, fileType, mock });
@@ -34,6 +37,7 @@ const multipleFiles = async ({ chunkSize, ctx, files, mock }) => {
 	Promise.all(
 		files.map((file, i) => {
 			// TODO: this async as the executor of a Promise is smelly
+			// eslint.org/docs/latest/rules/no-async-promise-executor
 			return new Promise(async (resolve, reject) => {
 				// pack needs the size of the stream. We don't know that until we get all the data.
 				// This collects all the data before adding it.
@@ -106,8 +110,34 @@ const download = ({ enableAdmin }) => {
 				params: JSON.parse(params),
 			});
 
+			ENV_CONFIG.DEBUG_MODE && console.log('=== SETTING UP RESPONSE ===');
+
 			res.set('Content-Type', contentType);
 			res.set('Content-disposition', `attachment; filename=${responseFileName}`);
+
+			if (ENV_CONFIG.DEBUG_MODE) {
+				let bytesWritten = 0;
+				let chunksReceived = 0;
+
+				output.on('data', (chunk) => {
+					chunksReceived++;
+					bytesWritten += chunk.length || 0;
+					// console.log(
+					// 	`OUTPUT data chunk ${chunksReceived}, size: ${chunk.length}, total bytes: ${bytesWritten}`,
+					// );
+				});
+
+				output.on('end', () =>
+					console.log(`OUTPUT ENDED after ${chunksReceived} chunks, ${bytesWritten} bytes`),
+				);
+				output.on('close', () => console.log('OUTPUT CLOSED'));
+				output.on('error', (err) => console.error('OUTPUT ERROR:', err));
+
+				res.on('finish', () => console.log('RESPONSE FINISHED'));
+				res.on('close', () => console.log('RESPONSE CLOSED (client may have disconnected)'));
+				res.on('error', (err) => console.error('RESPONSE ERROR:', err));
+			}
+
 			output.pipe(res).on('finish', () => {
 				console.timeEnd('download');
 			});
