@@ -8,7 +8,8 @@ import getGraphQLRoutes from './graphqlRoutes.js';
 import { buildSearchClient } from './searchClient/index.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
-const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT } = ENV_CONFIG;
+const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT_TYPE } =
+	ENV_CONFIG;
 
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
@@ -23,7 +24,7 @@ const arrangerServer = async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 	setsIndex = ES_ARRANGER_SET_INDEX,
-	searchClient = SEARCH_CLIENT,
+	searchClient = SEARCH_CLIENT_TYPE,
 } = {}): Promise<Router> => {
 	const esClient = customEsClient || (await buildSearchClient(esHost, esUser, esPass, searchClient));
 	const router = Router();

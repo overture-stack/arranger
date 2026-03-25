@@ -18,17 +18,18 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 /**
  * Uses Cluster Info to determine Search Client version information
  */
-const getClientVersion = async (config: SearchConfig) => {
+const getClientVersion = async (config: SearchConfig): Promise<SupportedClientTypes | undefined> => {
 	try {
-		const response = await (await fetch(config.node)).json();
-		if (!response?.version) {
+		const response = await fetch(config.node);
+		const responseData = await response.json();
+		if (!responseData?.version) {
 			throw new Error('Could not retrieve version information');
 		}
 
 		// Determine which search client is being used
 		// Distribution field is specific to OpenSearch
 		// Else, if number field is a valid string, default to 'elasticSearch' as client type
-		const { distribution, number } = response.version;
+		const { distribution, number } = responseData.version;
 		const version =
 			typeof distribution === 'string' ? distribution : typeof number === 'string' ? 'elasticsearch' : undefined;
 		if (typeof version === 'string') {
@@ -56,7 +57,7 @@ const createSearchConfig = (host = '', username = '', password = '', clientType 
 export default async function getSearchClient(config: SearchConfig) {
 	try {
 		const configClientType = !config.clientType ? await getClientVersion(config) : config.clientType;
-		const clientType = supportedClientValues.find((key) => typeof key === 'string' && key === configClientType);
+		const clientType = supportedClientValues.find((key) => key === configClientType);
 		if (!clientType) {
 			throw new Error('Error with Search Client configuration clientType value');
 		}

@@ -4,7 +4,6 @@ import type { Client as OpenSearchClient } from '@opensearch-project/opensearch'
 import type { ESClientOptions } from './createElasticSearchClient.js';
 import type { OSClientOptions } from './createOpenSearchClient.js';
 
-export type AllSupportedClients = ElasticClient | OpenSearchClient;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
 export type SupportedClientOptions = ESClientOptions | OSClientOptions;
