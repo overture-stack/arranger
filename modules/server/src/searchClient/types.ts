@@ -10,7 +10,7 @@ export type SupportedClientOptions = ESClientOptions | OSClientOptions;
 
 export type SearchConfig = {
 	node: string;
-	clientType?: SupportedClientTypes | string;
+	clientType?: string;
 	auth?: {
 		password: string;
 		username: string;

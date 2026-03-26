@@ -5,37 +5,42 @@ import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWith
 export const supportedClientValues: SupportedClientTypes[] = ['opensearch', 'elasticsearch'] as const;
 
 /**
- * Determine if provided Search Client Type is valid, or obtain client type if not provided
+ * Determine if provided Search Client Type is valid, or obtain client type if not provided.
+ *
+ * This will return undefined if the provided config.clientType value is not a supported client type,
+ * or if no valid client type can be identified from the search service.
  */
 const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes | undefined> => {
 	try {
 		const { clientType } = config;
-		if (typeof clientType === 'string' && clientType.length > 0) {
-			const isValidClientType = supportedClientValues.find((key) => key === clientType);
-			if (isValidClientType) {
-				return clientType as SupportedClientTypes;
+		if (clientType) {
+			const supportedClientType = supportedClientValues.find((key) => key === clientType);
+			if (supportedClientType) {
+				return supportedClientType;
 			} else {
 				console.error('Invalid client type value provided:', clientType);
 				return undefined;
 			}
 		} else {
 			// Determine which search client is being used based off cluster info
-			// Distribution field indicates OpenSearch is being used
-			// Else, if number field is a valid string, default to 'elasticSearch' as client type
-			const originalString = `${config.auth?.username}:${config.auth?.password}`;
-			const bufferObj = Buffer.from(originalString, 'utf8');
-			const base64String = bufferObj.toString('base64');
+			const authString = `${config.auth?.username}:${config.auth?.password}`;
+			const base64String = Buffer.from(authString, 'utf8').toString('base64');
 			const basicAuth = `Basic ${base64String}`;
 
 			const response = await fetch(config.node, { headers: { Authorization: basicAuth } });
 			const responseData = await response.json();
 
 			if (!responseData?.version) {
-				console.error('Could not retrieve necessary cluster version information');
-				console.error('Version:', responseData?.version);
+				console.error(
+					'Could not retrieve necessary cluster version information',
+					'Version:',
+					responseData?.version,
+				);
 				return undefined;
 			}
 
+			// Distribution field indicates OpenSearch is being used
+			// Else, if number field is a valid string, default to 'elasticSearch' as client type
 			const { distribution, number } = responseData.version;
 			const clusterClientType =
 				typeof distribution === 'string'
@@ -43,24 +48,25 @@ const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes
 					: typeof number === 'string'
 						? 'elasticsearch'
 						: undefined;
-			const isValidClientType =
+			const supportedClientType =
 				clusterClientType && supportedClientValues.find((key) => key === clusterClientType);
-			if (isValidClientType) {
-				return clusterClientType as SupportedClientTypes;
+			if (supportedClientType) {
+				return supportedClientType;
 			} else {
 				console.error('Invalid client type data obtained from cluster:', clusterClientType);
 				return undefined;
 			}
 		}
 	} catch (error) {
-		console.error('Unexpected error while identifying Search Client version');
-		console.error(error);
+		console.error('Unexpected error while identifying Search Client version', error);
 		return undefined;
 	}
 };
 
 /**
- * Parse and validate search client configuration
+ * Parse and validate search client configuration.
+ *
+ * If the config is invalid, this will throw an error with the intention of crashing the application.
  */
 const createSearchConfig = async (
 	node: string,
@@ -70,6 +76,9 @@ const createSearchConfig = async (
 ): Promise<SearchConfigWithClient> => {
 	if (!node) {
 		throw new Error('Search Client host URL was not provided');
+	}
+	if ((username || password) && !(username && password)) {
+		console.warn('Search Client Username and/or Password are missing');
 	}
 	const auth = username && password ? { username, password } : undefined;
 	const clientType = await getClientType({ node, auth, clientType: client });
@@ -112,11 +121,7 @@ export default async function buildSearchClient({
 	password?: string;
 	client?: string;
 }) {
-	try {
-		const config = await createSearchConfig(node, user, password, client);
-		return createSearchClient(config);
-	} catch (error) {
-		console.error(error);
-		throw new Error(`Error configuring Search Client`);
-	}
+	const config = await createSearchConfig(node, user, password, client);
+
+	return createSearchClient(config);
 }
