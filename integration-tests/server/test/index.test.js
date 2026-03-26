@@ -20,12 +20,11 @@ const enableAdmin = (process.env.ENABLE_ADMIN || '').toLowerCase() === 'true';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'testing-models_1.0';
 const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
-const esPwd = process.env.ES_PASS;
-const esUser = process.env.ES_USER;
+const esPass = process.env.ES_PASS || 'myelasticpassword';
+const esUser = process.env.ES_USER || 'elastic';
+
 const port = process.env.PORT || 5678;
 const client = process.env.SEARCH_CLIENT_TYPE;
-
-const useAuth = !!esPwd && !!esUser;
 
 const app = express();
 
@@ -34,27 +33,25 @@ const api = ajax(`http://localhost:${port}`, {
 	endpoint: '/graphql',
 });
 
-const esClient = await buildSearchClient({
-	node: esHost,
-	user: esUser,
-	password: esPwd,
-	client,
-});
-
-const cleanup = () => {
-	return Promise.all([
-		esClient.indices.delete({
-			index: esIndex,
-		}),
-		esClient.indices.delete({
-			index: setsIndex,
-		}),
-	]);
-};
-
-suite('integration-tests/server', () => {
+suite('integration-tests/server', async () => {
 	let server;
 	const documentType = 'model';
+
+	const esClient = await buildSearchClient({
+		node: esHost,
+		user: esUser,
+		password: esPass,
+		client,
+	});
+
+	const cleanup = async () => {
+		await esClient.indices.delete({
+			index: esIndex,
+		});
+		await esClient.indices.delete({
+			index: setsIndex,
+		});
+	};
 
 	before(
 		async () => {
@@ -63,7 +60,8 @@ suite('integration-tests/server', () => {
 			try {
 				await cleanup();
 			} catch (err) {
-				//
+				console.error('Error running integration-tests cleanup');
+				console.error(err);
 			}
 
 			await esClient.indices.create({
@@ -87,6 +85,8 @@ suite('integration-tests/server', () => {
 					// This may be useful when troubleshooting tests
 					enableLogs: true,
 					esHost,
+					esPass,
+					esUser,
 					getServerSideFilter: () => ({
 						op: 'not',
 						content: [
@@ -112,7 +112,7 @@ suite('integration-tests/server', () => {
 
 				console.log('******* Starting tests *******');
 			} catch (err) {
-				console.error('error:', err);
+				console.error('Error at integration-tests `before` hook:', err);
 				throw err;
 			}
 		},
@@ -127,7 +127,8 @@ suite('integration-tests/server', () => {
 			server?.close();
 			console.log('\n(Cleared Elasticsearch and stopped Arranger Server)');
 		} catch (err) {
-			//
+			console.error('Error in integration-tests/server `after` test hook');
+			console.error(err);
 		}
 	});
 

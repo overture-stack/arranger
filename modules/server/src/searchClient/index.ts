@@ -22,28 +22,33 @@ const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes
 			// Determine which search client is being used based off cluster info
 			// Distribution field indicates OpenSearch is being used
 			// Else, if number field is a valid string, default to 'elasticSearch' as client type
-			const response = await fetch(config.node);
+			const originalString = `${config.auth?.username}:${config.auth?.password}`;
+			const bufferObj = Buffer.from(originalString, 'utf8');
+			const base64String = bufferObj.toString('base64');
+			const basicAuth = `Basic ${base64String}`;
+
+			const response = await fetch(config.node, { headers: { Authorization: basicAuth } });
 			const responseData = await response.json();
-			const { distribution, number } = responseData.version;
-			if (!responseData?.version || (!distribution && !number)) {
+
+			if (!responseData?.version) {
 				console.error('Could not retrieve necessary cluster version information');
-				console.error(
-					'Version:',
-					responseData?.version,
-					'Distribution:',
-					distribution,
-					'Version Number:',
-					number,
-				);
+				console.error('Version:', responseData?.version);
 				return undefined;
 			}
 
-			const clusterClientType = typeof distribution === 'string' ? distribution : 'elasticsearch';
-			const isValidClientType = supportedClientValues.find((key) => key === clusterClientType);
+			const { distribution, number } = responseData.version;
+			const clusterClientType =
+				typeof distribution === 'string'
+					? distribution
+					: typeof number === 'string'
+						? 'elasticsearch'
+						: undefined;
+			const isValidClientType =
+				clusterClientType && supportedClientValues.find((key) => key === clusterClientType);
 			if (isValidClientType) {
 				return clusterClientType as SupportedClientTypes;
 			} else {
-				console.error('Invalid client type obtained from cluster:', clusterClientType);
+				console.error('Invalid client type data obtained from cluster:', clusterClientType);
 				return undefined;
 			}
 		}
