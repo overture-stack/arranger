@@ -4,7 +4,7 @@ import Arranger from '@overture-stack/arranger-server';
 import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
 import express from 'express';
 
-import getSearchClient from '../../../modules/server/src/searchClient/index.js';
+import buildSearchClient from '../../../modules/server/src/searchClient/index.js';
 
 // test modules
 import data from './assets/model_centric.data.json';
@@ -23,7 +23,7 @@ const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
 const esPwd = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const port = process.env.PORT || 5678;
-const clientType = process.env.SEARCH_CLIENT_TYPE;
+const client = process.env.SEARCH_CLIENT_TYPE;
 
 const useAuth = !!esPwd && !!esUser;
 
@@ -34,15 +34,11 @@ const api = ajax(`http://localhost:${port}`, {
 	endpoint: '/graphql',
 });
 
-const esClient = await getSearchClient({
-	...(useAuth && {
-		auth: {
-			username: esUser,
-			password: esPwd,
-		},
-	}),
+const esClient = await buildSearchClient({
 	node: esHost,
-	clientType,
+	user: esUser,
+	password: esPwd,
+	client,
 });
 
 const cleanup = () => {

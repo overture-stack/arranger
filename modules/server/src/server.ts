@@ -5,7 +5,7 @@ import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from '
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
-import { buildSearchClient } from './searchClient/index.js';
+import buildSearchClient from './searchClient/index.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
 const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT_TYPE } =
@@ -26,7 +26,9 @@ const arrangerServer = async ({
 	setsIndex = ES_ARRANGER_SET_INDEX,
 	searchClient = SEARCH_CLIENT_TYPE,
 } = {}): Promise<Router> => {
-	const esClient = customEsClient || (await buildSearchClient(esHost, esUser, esPass, searchClient));
+	const esClient =
+		customEsClient ||
+		(await buildSearchClient({ node: esHost, user: esUser, password: esPass, client: searchClient }));
 	const router = Router();
 
 	console.log('------------------------------------');
