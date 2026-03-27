@@ -6,6 +6,7 @@ lerna-debug.log
 **/dist
 **/node_modules
 **/.DS_Store
+**/.turbo
 **/*.env*
 **/package-lock.json
 
