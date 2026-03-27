@@ -88,8 +88,6 @@ export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, 
 					if (documentIndex) {
 						const [_, type] = types.find(([name]) => name === documentType) || [];
 
-						console.log('type', Object.keys(type));
-
 						// TODO: make this more useful/verbose;
 						if (type) {
 							try {
