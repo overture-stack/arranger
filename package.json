@@ -43,6 +43,8 @@
 		"server:dev": "npm run dev --w apps/search-server",
 		"test": "npm run test --ws --if-present",
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch --w modules/components -w integration-tests/import\"",
+		"turbo:build": "npx turbo run build",
+		"turbo:test": "npx turbo run test",
 		"types": "npm run build --w modules/types",
 		"types:watch": "npm run watch --w modules/types"
 	},
