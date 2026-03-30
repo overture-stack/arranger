@@ -11,5 +11,3 @@ lerna-debug.log
 **/package-lock.json
 
 *.tsbuildinfo
-# TODO: Remove after testing
-/modules/server/testConfigs*
