@@ -67,7 +67,6 @@ const buildCatalogsFromFolder = async ({
 			});
 
 			catalogsMap[catalogId] = aggregatedConfigs;
-
 		} catch (err) {
 			console.log(`Error loading catalog from ${dir.name}:`, (err as Error).message);
 		}
