@@ -12,7 +12,7 @@ export default async ({
 	enableDebug: boolean;
 	esClient?: SearchClient;
 }): Promise<Router> => {
-const catalogEntries = Object.entries(catalogs);
+	const catalogEntries = Object.entries(catalogs);
 
 	if (catalogEntries.length === 0) {
 		throw new Error('No catalogs configured');
