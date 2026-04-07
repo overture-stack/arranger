@@ -71,6 +71,20 @@ const buildCatalogsFromFolder = async ({
 			console.log(`Error loading catalog from ${dir.name}:`, (err as Error).message);
 		}
 	}
+
+	if (Object.keys(catalogsMap).length === 0) {
+		console.log('No catalogs loaded from subdirectories. Preserving env defaults.');
+		const catalogId = resolveCatalogId({
+			aggregatedConfigs: catalogs.fromEnv || {},
+			configsPath: resolvedBase,
+			usedIds,
+		});
+
+		return {
+			[catalogId]: catalogs.fromEnv || {},
+		};
+	}
+
 	return catalogsMap;
 };
 
