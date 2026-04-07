@@ -1,4 +1,15 @@
-import { Client, type ClientOptions } from '@elastic/elasticsearch';
+import {
+	Client,
+	type ClientOptions,
+	type TransportRequestOptions,
+	type IndicesClose,
+	type IndicesCreate,
+	type IndicesDelete,
+	type IndicesExists,
+	type IndicesGetMapping,
+	type IndicesPutSettings,
+	type IndicesPutMapping,
+} from '@elastic/elasticsearch';
 
 import type { SearchClient } from './types.js';
 
@@ -11,74 +22,80 @@ export function createElasticSearchClient(options: ESClientOptions) {
 
 	const searchClient: SearchClient = {
 		indices: {
-			close: async (input: any, options?: any) => {
+			close: async (input: IndicesClose, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.close(input, options);
 				return output;
 			},
-			create: async (input: any, options?: any) => {
+			create: async (input: IndicesCreate<Record<string, any>>, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.create(input, options);
 				return output;
 			},
-			delete: async (input: any, options?: any) => {
+			delete: async (input: IndicesDelete, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.delete(input, options);
 				return output;
 			},
-			exists: async (input: any, options?: any) => {
+			exists: async (input: IndicesExists | undefined, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.exists(input, options);
 				return output;
 			},
-			getMapping: async (input: any, options?: any) => {
+			getMapping: async (input: IndicesGetMapping, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.getMapping(input, options);
 				return output;
 			},
-			putSettings: async (input: any, options?: any) => {
+			putSettings: async (
+				input: IndicesPutSettings<Record<string, any>> | undefined,
+				options?: TransportRequestOptions,
+			) => {
 				const output = await elasticSearchClient.indices.putSettings(input, options);
 				return output;
 			},
-			putMapping: async (input: any, options?: any) => {
+			putMapping: async (
+				input: IndicesPutMapping<Record<string, any>> | undefined,
+				options?: TransportRequestOptions,
+			) => {
 				const output = await elasticSearchClient.indices.putMapping(input, options);
 				return output;
 			},
-			open: async (input: any, options?: any) => {
+			open: async (input: any, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.open(input, options);
 				return output;
 			},
-			refresh: async (input: any, options?: any) => {
+			refresh: async (input: any, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.indices.refresh(input, options);
 				return output;
 			},
 		},
 		cat: {
-			aliases: async (input: any, options?: any) => {
+			aliases: async (input: any, options?: TransportRequestOptions) => {
 				const output = await elasticSearchClient.cat.aliases(input, options);
 				return output;
 			},
 		},
-		bulk: async (input: any, options?: any) => {
+		bulk: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.bulk(input, options);
 			return output;
 		},
-		index: async (input: any, options?: any) => {
+		index: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.index(input, options);
 			return output;
 		},
-		search: async (input: any, options?: any) => {
+		search: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.search(input, options);
 			return output;
 		},
-		update: async (input: any, options?: any) => {
+		update: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.update(input, options);
 			return output;
 		},
-		create: async (input: any, options?: any) => {
+		create: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.create(input, options);
 			return output;
 		},
-		delete: async (input: any, options?: any) => {
+		delete: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.delete(input, options);
 			return output;
 		},
-		deleteByQuery: async (input: any, options?: any) => {
+		deleteByQuery: async (input: any, options?: TransportRequestOptions) => {
 			const output = await elasticSearchClient.deleteByQuery(input, options);
 			return output;
 		},
