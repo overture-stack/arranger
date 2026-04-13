@@ -1,7 +1,6 @@
-import { Client, type ClientOptions, type API } from '@opensearch-project/opensearch';
-import { type TransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
+import { Client, type ClientOptions } from '@opensearch-project/opensearch';
 
-import type { OpenSearchClientType, SearchClient } from './types.js';
+import type { SearchClient } from './types.js';
 
 export type OSClientOptions = ClientOptions & {
 	clientType: 'opensearch';
@@ -10,7 +9,7 @@ export type OSClientOptions = ClientOptions & {
 export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 	const openSearchClient = new Client(options);
 
-	const searchClient: OpenSearchClientType = {
+	const searchClient: SearchClient = {
 		indices: {
 			close: async (input, options) => {
 				const output = await openSearchClient.indices.close(input, options);

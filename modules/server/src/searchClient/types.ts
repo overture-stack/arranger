@@ -6,6 +6,7 @@ import type { TransportRequestOptions as OSTransportRequestOptions } from '@open
 
 import type { ESClientOptions } from './createElasticSearchClient.js';
 import type { OSClientOptions } from './createOpenSearchClient.js';
+import type { IndicesPutMapping } from '@elastic/elasticsearch/api/requestParams';
 
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
@@ -24,21 +25,189 @@ export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
 	clientType: SupportedClientTypes;
 };
 
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
 // Approximates <Awaited<ReturnType<ElasticClient[key]>>
 type SearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<Body, Context>>;
+type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 
-// Todo: Expected return Type for .search
-export interface SearchResponse extends Record<string, any> {
-	body: {
-		hits: {
-			hits: {
-				_source: any;
-			}[];
-		};
+// Search Client Method Types
+type ESIndicesCreate = ElasticClient['indices']['create'];
+type ESIndicesClose = ElasticClient['indices']['close'];
+type ESIndicesDelete = ElasticClient['indices']['delete'];
+type ESIndicesExists = ElasticClient['indices']['exists'];
+type ESIndicesGetMapping = ElasticClient['indices']['getMapping'];
+type ESIndicesPutSettings = ElasticClient['indices']['putSettings'];
+type ESIndicesPutMappings = ElasticClient['indices']['putMapping'];
+type ESIndicesOpen = ElasticClient['indices']['open'];
+type ESIndicesRefresh = ElasticClient['indices']['refresh'];
+type ESCatAliases = ElasticClient['cat']['aliases'];
+type ESBulk = ElasticClient['bulk'];
+type ESCreate = ElasticClient['create'];
+type ESDelete = ElasticClient['delete'];
+type ESDeleteByQuery = ElasticClient['deleteByQuery'];
+type ESIndex = ElasticClient['index'];
+type ESSearch = ElasticClient['search'];
+type ESUpdate = ElasticClient['update'];
+
+type OSIndicesCreate = OpenSearchClient['indices']['create'];
+type OSIndicesClose = OpenSearchClient['indices']['close'];
+type OSIndicesDelete = OpenSearchClient['indices']['delete'];
+type OSIndicesExists = OpenSearchClient['indices']['exists'];
+type OSIndicesGetMapping = OpenSearchClient['indices']['getMapping'];
+type OSIndicesPutSettings = OpenSearchClient['indices']['putSettings'];
+type OSIndicesPutMappings = OpenSearchClient['indices']['putMapping'];
+type OSIndicesOpen = OpenSearchClient['indices']['open'];
+type OSIndicesRefresh = OpenSearchClient['indices']['refresh'];
+type OSCatAliases = OpenSearchClient['cat']['aliases'];
+type OSBulk = OpenSearchClient['bulk'];
+type OSCreate = OpenSearchClient['create'];
+type OSDelete = OpenSearchClient['delete'];
+type OSDeleteByQuery = OpenSearchClient['deleteByQuery'];
+type OSIndex = OpenSearchClient['index'];
+type OSSearch = OpenSearchClient['search'];
+type OSUpdate = OpenSearchClient['update'];
+
+// Search Client Parameter Types
+
+type ESIndicesCreateParams = Prettify<Parameters<ESIndicesCreate>[0]>;
+type ESIndicesCloseParams = Prettify<Parameters<ESIndicesClose>[0]>;
+type ESIndicesDeleteParams = Prettify<Parameters<ESIndicesDelete>[0]>;
+type ESIndicesExistsParams = Prettify<Parameters<ESIndicesExists>[0]>;
+type ESIndicesGetMappingParams = Prettify<Parameters<ESIndicesGetMapping>[0]>;
+type ESIndicesPutSettingsParams = Prettify<Parameters<ESIndicesPutSettings>[0]>;
+type ESIndicesPutMappingsParams = Prettify<Parameters<ESIndicesPutMappings>[0]>;
+type ESIndicesOpenParams = Prettify<Parameters<ESIndicesOpen>[0]>;
+type ESIndicesRefreshParams = Prettify<Parameters<ESIndicesRefresh>[0]>;
+type ESCatAliasesParams = Prettify<Parameters<ESCatAliases>[0]>;
+type ESBulkParams = Prettify<Parameters<ESBulk>[0]>;
+type ESCreateParams = Prettify<Parameters<ESCreate>[0]>;
+type ESDeleteParams = Prettify<Parameters<ESDelete>[0]>;
+type ESDeleteByQueryParams = Prettify<Parameters<ESDeleteByQuery>[0]>;
+type ESIndexParams = Prettify<Parameters<ESIndex>[0]>;
+type ESSearchParams = Prettify<Parameters<ESSearch>[0]>;
+type ESUpdateParams = Prettify<Parameters<ESUpdate>[0]>;
+
+type OSIndicesCreateParams = Prettify<Parameters<OSIndicesCreate>[0]>;
+type OSIndicesCloseParams = Prettify<Parameters<OSIndicesClose>[0]>;
+type OSIndicesDeleteParams = Prettify<Parameters<OSIndicesDelete>[0]>;
+type OSIndicesExistsParams = Prettify<Parameters<OSIndicesExists>[0]>;
+type OSIndicesGetMappingParams = Prettify<Parameters<OSIndicesGetMapping>[0]>;
+type OSIndicesPutSettingsParams = Prettify<Parameters<OSIndicesPutSettings>[0]>;
+type OSIndicesPutMappingsParams = Prettify<Parameters<OSIndicesPutMappings>[0]>;
+type OSIndicesOpenParams = Prettify<Parameters<OSIndicesOpen>[0]>;
+type OSIndicesRefreshParams = Prettify<Parameters<OSIndicesRefresh>[0]>;
+type OSCatAliasesParams = Prettify<Parameters<OSCatAliases>[0]>;
+type OSBulkParams = Prettify<Parameters<OSBulk>[0]>;
+type OSCreateParams = Prettify<Parameters<OSCreate>[0]>;
+type OSDeleteParams = Prettify<Parameters<OSDelete>[0]>;
+type OSDeleteByQueryParams = Prettify<Parameters<OSDeleteByQuery>[0]>;
+type OSIndexParams = Prettify<Parameters<OSIndex>[0]>;
+type OSSearchParams = Prettify<Parameters<OSSearch>[0]>;
+type OSUpdateParams = Prettify<Parameters<OSUpdate>[0]>;
+
+// Question: Most param types have 1 or 2 required, 10+ optional
+// What is the best way to define this?
+// also: what to do when all parameters optional?
+type IndicesCreateParams = Prettify<ESIndicesCreateParams & OSIndicesCreateParams>;
+//  index: string;
+type IndicesCloseParams = Prettify<ESIndicesCloseParams & OSIndicesCloseParams>;
+// index: (string | string[]) & Indices;
+type IndicesDeleteParams = Prettify<ESIndicesDeleteParams & OSIndicesDeleteParams>;
+// index: (string | string[]) & Indices;
+type IndicesExistsParams = Prettify<ESIndicesExistsParams & OSIndicesExistsParams>;
+// index: (string | string[]) & Indices;
+type IndicesGetMappingParams = Prettify<ESIndicesGetMappingParams & OSIndicesGetMappingParams>;
+// ?
+type IndicesPutSettingsParams = Prettify<ESIndicesPutSettingsParams & OSIndicesPutSettingsParams>;
+// body: RequestBody & IndexSettings
+type IndicesPutMappingsParams = Prettify<ESIndicesPutMappingsParams & OSIndicesPutMappingsParams>;
+// index: (string | string[] | undefined) & Indices;
+// body: RequestBody & API.Indices_PutMapping_RequestBody;
+type IndicesOpenParams = Prettify<ESIndicesOpenParams & OSIndicesOpenParams>;
+// index: (string | string[]) & Indices;
+type IndicesRefreshParams = Prettify<ESIndicesRefreshParams & OSIndicesRefreshParams>;
+// ?
+type IndicesCatAliasesParams = Prettify<ESCatAliasesParams & OSCatAliasesParams>;
+// ?
+type IndicesBulkParams = Prettify<ESBulkParams & OSBulkParams>;
+// ?
+type CreateParams = Prettify<ESCreateParams & OSCreateParams>;
+// id: string;
+// index: string;
+// body: RequestBody & API.Create_RequestBody;
+type DeleteParams = Prettify<ESDeleteParams & OSDeleteParams>;
+// id: string;
+// index: string;
+type DeleteByQueryParams = Prettify<ESDeleteByQueryParams & OSDeleteByQueryParams>;
+// index: (string | string[]) & Indices;
+type IndexParams = Prettify<ESIndexParams & OSIndexParams>;
+// index: string;
+// body: RequestBody & API.Index_RequestBody;
+type SearchParams = Prettify<ESSearchParams & OSSearchParams>;
+// ?
+type UpdateParams = Prettify<ESUpdateParams & OSUpdateParams>;
+// id: string;
+// index: string;
+
+// type ESIndicesCreateResponse = Prettify<ReturnType<ESIndicesCreate>>;
+// type OSIndicesCreateResponse = ReturnType<OSIndicesCreate>;
+
+export type SearchClient = {
+	indices: {
+		close: (
+			input: IndicesCloseParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		create: (
+			input: IndicesCreateParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		delete: (
+			input: IndicesDeleteParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		exists: (input: IndicesExistsParams, options?: SearchClientOptions) => SearchClientResponseHandler<boolean>;
+		getMapping: (
+			input: IndicesGetMappingParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		putSettings: (
+			input: IndicesPutSettingsParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		putMapping: (
+			input: IndicesPutMappingsParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		open: (
+			input: IndicesOpenParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+		refresh: (
+			input: IndicesRefreshParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
 	};
-}
-
-export type SearchClient = ElasticSearchClientType | OpenSearchClientType;
+	cat: {
+		aliases: (
+			input: IndicesCatAliasesParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
+	};
+	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	create: (input: CreateParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	deleteByQuery: (
+		input: DeleteByQueryParams,
+		options?: SearchClientOptions,
+	) => SearchClientResponseHandler<Record<string, any>>;
+	delete: (input: DeleteParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	index: (input: IndexParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	search: (input: SearchParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	update: (input: UpdateParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+};
 
 export type ElasticSearchClientType = {
 	indices: {
@@ -174,3 +343,122 @@ export type OpenSearchClientType = {
 	) => Promise<API.Search_Response>;
 	update: (input: API.Update_Request, options?: OSTransportRequestOptions) => Promise<API.Update_Response>;
 };
+
+// Todo: Expected return Type for .search
+export interface SearchResponse extends Record<string, any> {
+	body: {
+		hits: {
+			hits: {
+				_source: any;
+			}[];
+		};
+	};
+}
+
+// indices.delete:
+// index: string
+
+// indices.create:
+// index: esIndex,
+// body: file_centric_mapppings,
+
+// index:
+// index: esIndex,
+// id: datum._id,
+// body: datum._source,
+// refresh: 'wait_for',
+
+// indices.exists
+// index: constants.ARRANGER_PROJECT_INDEX
+
+// indices.create
+// index: constants.ARRANGER_PROJECT_INDEX
+// body: {
+// 	mappings: {
+// 		properties: setsMapping,
+// 	},
+// },
+
+// create
+// index,
+// id: esIndex,
+// body: metadataContent,
+// refresh: 'true',
+
+// body
+// IProjectIndexMetadata = {
+// index: esIndex,
+// name: serializedGqlField,
+// timestamp: timestamp(),
+// active: true,
+// config:
+// 	'aggs-state': await createAggsSetState(es)({ esIndex }),
+// 	'columns-state': await createColumnSetState(es)(
+// 		{
+// 			esIndex,
+// 		},
+// 		graphqlField,
+// 	),
+// 	'matchbox-state': createMatchboxState({
+// 		graphqlField,
+// 		extendedFields: extendedMapping,
+// 	}),
+// 	extended: extendedMapping,
+
+// es.update
+// index,
+// id: metaData.index,
+// body: {
+// 	doc: metaData,
+// },
+// refresh: 'true',
+
+// body
+// projectId: string;
+// metaData: I_ProjectIndexMetadataUpdateDoc;
+
+// delete
+// id: string,
+// refresh: 'true'
+
+// .search
+// index: ARRANGER_PROJECT_INDEX,
+// body: {
+// 	query: {
+// 		match_all: {},
+// 	},
+// 	size: 1,
+// 	sort: [{
+// 		date: {
+// 			order: 'desc',
+// 		},},],},}
+// body: { query:
+// 	match: { search: { query: removeTroubleChars(q), operator: 'and',},},};
+// size: requestSize,
+// from: startFrom,
+
+// indices.getMapping
+// index: esIndex,
+
+// cat.aliases
+// format: 'json'
+
+// bulk
+// body: [...deleteRequests, ...addRequests],
+// 	delete: { _index: GENES_INDEX, _id: gene },
+// 	add?: [{ index: {
+//             _index: GENES_INDEX,
+//             _id: gene.symbol,
+//           },},
+//         gene,]
+
+// deleteByQuery
+// index,
+//     body: {
+//       query: {
+//         term: { name },
+// 		terms?: {}
+//       },}
+
+// indices.putSettings({ index, body: settings });
+// indices.putMapping({ index, body: mappings });

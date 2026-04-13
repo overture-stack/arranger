@@ -1,6 +1,6 @@
 import { Client, type ClientOptions } from '@elastic/elasticsearch';
 
-import type { ElasticSearchClientType, SearchClient } from './types.js';
+import type { SearchClient } from './types.js';
 
 export type ESClientOptions = ClientOptions & {
 	clientType: 'elasticsearch';
@@ -9,7 +9,7 @@ export type ESClientOptions = ClientOptions & {
 export function createElasticSearchClient(options: ESClientOptions): SearchClient {
 	const elasticSearchClient = new Client(options);
 
-	const searchClient: ElasticSearchClientType = {
+	const searchClient: SearchClient = {
 		indices: {
 			close: async (input, options) => {
 				const output = await elasticSearchClient.indices.close(input, options);
