@@ -1,10 +1,10 @@
 import getSearchClient from '#searchClient/index.js';
-import { type SearchClient } from '#searchClient/types.js';
+import { type SearchClient, type SearchConfig } from '#searchClient/types.js';
 
 import { type EsMapping } from './types.js';
 
 export const createClient = async (esHost: string, esUser: string, esPass: string) => {
-	const esConf = { node: esHost };
+	const esConf: SearchConfig = { node: esHost };
 	if (esUser && esPass) {
 		esConf['auth'] = {
 			username: esUser,
