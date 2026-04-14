@@ -2,7 +2,7 @@ import { createElasticSearchClient, type ESClientOptions } from './createElastic
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
 import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWithClient } from './types.js';
 
-export const supportedClientValues: SupportedClientTypes[] = ['opensearch', 'elasticsearch'] as const;
+export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
 /**
  * Determine if provided Search Client Type is valid, or obtain client type if not provided.

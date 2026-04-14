@@ -47,14 +47,3 @@ export type SearchClient = {
 	create: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 	delete: (input: any, options?: any) => SearchClientResponseHandler<Record<string, any>>;
 };
-
-// Todo: Expected return Type for .search
-export interface SearchResponse extends Record<string, any> {
-	body: {
-		hits: {
-			hits: {
-				_source: any;
-			}[];
-		};
-	};
-}

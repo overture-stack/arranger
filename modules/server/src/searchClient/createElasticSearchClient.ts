@@ -6,7 +6,7 @@ export type ESClientOptions = ClientOptions & {
 	clientType: 'elasticsearch';
 };
 
-export function createElasticSearchClient(options: ESClientOptions) {
+export function createElasticSearchClient(options: ESClientOptions): SearchClient {
 	const elasticSearchClient = new Client(options);
 
 	const searchClient: SearchClient = {
