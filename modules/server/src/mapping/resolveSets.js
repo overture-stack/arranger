@@ -6,15 +6,7 @@ import { buildQuery } from '#middleware/index.js';
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
 
-const retrieveSetIds = async ({
-	esClient,
-	index,
-	query,
-	path,
-	sort,
-	BULK_SIZE = 1000,
-	trackTotalHits = true
-}) => {
+const retrieveSetIds = async ({ esClient, index, query, path, sort, BULK_SIZE = 1000, trackTotalHits = true }) => {
 	const search = async ({ searchAfter } = {}) => {
 		const body = {
 			...(!isEmpty(query) && { query }),
@@ -30,16 +22,18 @@ const retrieveSetIds = async ({
 			track_total_hits: trackTotalHits,
 			body,
 		});
-		const ids = response.hits.hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || ''));
+
+		const hits = response?.body?.hits;
+		const ids = hits?.hits.map((x) => get(x, `_source.${path.split('__').join('.')}`, x._id || '')) || [];
 
 		const nextSearchAfter = sort
-			.map(({ fieldName }) => response.hits.hits.map((x) => x._source[fieldName] || x[fieldName]))
+			.map(({ fieldName }) => hits?.hits.map((x) => x._source[fieldName] || x[fieldName]))
 			.reduce((acc, vals) => [...acc, ...vals.slice(-1)], []);
 
 		return {
 			ids,
 			searchAfter: nextSearchAfter,
-			total: response.hits.total.value,
+			total: hits?.total.value,
 		};
 	};
 	const handleResult = async ({ searchAfter, total, ids = [] }) => {
@@ -55,52 +49,52 @@ const retrieveSetIds = async ({
 
 export const saveSet =
 	({ getServerSideFilter, setsIndex, types }) =>
-		async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
-			const { nested_fieldNames: nestedFieldNames, index } = types.find(([, x]) => x.name === type)[1];
-			const { esClient } = context;
+	async (obj, { type, userId, sqon, path, sort, refresh = 'WAIT_FOR' }, context) => {
+		const { nested_fieldNames: nestedFieldNames, index } = types.find(([, x]) => x.name === type)[1];
+		const { esClient } = context;
 
-			const query = buildQuery({
-				caller: 'resolveSets',
-				nestedFieldNames,
-				filters: compileFilter({
-					clientSideFilter: sqon,
-					serverSideFilter: getServerSideFilter(context),
-				}),
-			});
+		const query = buildQuery({
+			caller: 'resolveSets',
+			nestedFieldNames,
+			filters: compileFilter({
+				clientSideFilter: sqon,
+				serverSideFilter: getServerSideFilter(context),
+			}),
+		});
 
-			const ids = await retrieveSetIds({
-				esClient,
-				index,
-				query,
-				path,
-				sort:
-					sort && sort.length
-						? sort
-						: [
+		const ids = await retrieveSetIds({
+			esClient,
+			index,
+			query,
+			path,
+			sort:
+				sort && sort.length
+					? sort
+					: [
 							{
 								fieldName: '_id',
 								order: 'asc',
 							},
 						],
-			});
+		});
 
-			const body = {
-				setId: uuid(),
-				createdAt: Date.now(),
-				ids,
-				type,
-				path,
-				sqon,
-				userId,
-				size: ids.length,
-			};
-
-			await esClient.index({
-				index: setsIndex,
-				id: body.setId,
-				refresh: refresh.toLowerCase(),
-				body,
-			});
-
-			return body;
+		const body = {
+			setId: uuid(),
+			createdAt: Date.now(),
+			ids,
+			type,
+			path,
+			sqon,
+			userId,
+			size: ids.length,
 		};
+
+		await esClient.index({
+			index: setsIndex,
+			id: body.setId,
+			refresh: refresh.toLowerCase(),
+			body,
+		});
+
+		return body;
+	};

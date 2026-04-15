@@ -45,7 +45,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the ES mappings.\n' +
-						'  Defaulting to "extended" config from files.\n',
+							'  Defaulting to "extended" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -60,7 +60,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-						'  Defaulting to "table" config from files.\n',
+							'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -75,7 +75,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-						'  Defaulting to "table" config from files.\n',
+							'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -105,9 +105,10 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 			};
 		} catch (error) {
 			console.error(error?.message || error);
-			throw `  Something went wrong while creating the GraphQL mapping${ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
-				? ', this needs research by an Arranger maintainer!'
-				: '.\n  Likely cause: ES Auth parameters may be missing.'
+			throw `  Something went wrong while creating the GraphQL mapping${
+				ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
+					? ', this needs research by an Arranger maintainer!'
+					: '.\n  Likely cause: ES Auth parameters may be missing.'
 			}`;
 		}
 	}
@@ -141,15 +142,15 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-		(req, res) => {
-			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+	(req, res) => {
+		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-			return res.json({
-				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-			});
-		};
+		return res.json({
+			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+		});
+	};
 
-const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema, networkSchema }) => {
+const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
 	const router = Router();
@@ -286,6 +287,7 @@ export const createSchemasFromConfigs = async ({
 	} catch (error) {
 		const message = error?.message || error;
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
+		console.error(error);
 		console.error(message);
 
 		throw '  Something went wrong while creating the GraphQL schemas';
@@ -340,6 +342,7 @@ export default async ({
 		// if endpoint creation fails, let the next server step to respond with an error
 		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
+		console.error(error);
 
 		return (req, res) =>
 			res.status(500).send({

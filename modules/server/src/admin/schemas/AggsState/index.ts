@@ -1,11 +1,12 @@
-import resolvers from './resolvers';
-import typeDefs from './schemaTypeDefs';
 import { makeExecutableSchema } from 'graphql-tools';
 
+import resolvers from './resolvers.js';
+import typeDefs from './schemaTypeDefs.js';
+
 export const createSchema = async () => {
-  const schema = makeExecutableSchema({
-    typeDefs: await typeDefs(),
-    resolvers,
-  });
-  return schema;
+	const schema = makeExecutableSchema({
+		typeDefs: await typeDefs(),
+		resolvers,
+	});
+	return schema;
 };

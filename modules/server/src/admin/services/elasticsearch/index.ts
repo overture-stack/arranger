@@ -1,27 +1,29 @@
-import { Client } from '@elastic/elasticsearch';
-import { EsMapping } from './types';
+import getSearchClient from '#searchClient/index.js';
+import { type SearchClient, type SearchConfig } from '#searchClient/types.js';
 
-export const createClient = (esHost: string, esUser: string, esPass: string) => {
-  const esConf = { node: esHost };
-  if (esUser && esPass) {
-    esConf['auth'] = {
-      username: esUser,
-      password: esPass,
-    };
-  }
-  return new Client(esConf);
+import { type EsMapping } from './types.js';
+
+export const createClient = async (esHost: string, esUser: string, esPass: string) => {
+	const esConf: SearchConfig = { node: esHost };
+	if (esUser && esPass) {
+		esConf['auth'] = {
+			username: esUser,
+			password: esPass,
+		};
+	}
+	return await getSearchClient(esConf);
 };
 
 export const getEsMapping =
-  (es: Client) =>
-  async ({
-    esIndex,
-  }: {
-    esIndex: string;
-    esType?: string; //deprecated
-  }): Promise<EsMapping> => {
-    const response = await es.indices.getMapping({
-      index: esIndex,
-    });
-    return response.body as EsMapping;
-  };
+	(es: SearchClient) =>
+	async ({
+		esIndex,
+	}: {
+		esIndex: string;
+		esType?: string; //deprecated
+	}): Promise<EsMapping> => {
+		const response = await es.indices.getMapping({
+			index: esIndex,
+		});
+		return response.body as EsMapping;
+	};

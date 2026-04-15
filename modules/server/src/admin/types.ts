@@ -1,28 +1,29 @@
-import { GraphQLResolveInfo } from 'graphql';
-import { MergeInfo } from 'graphql-tools';
-import { Client } from '@elastic/elasticsearch';
+import { type GraphQLResolveInfo } from 'graphql';
+import { type MergeInfo } from 'graphql-tools';
 
-export interface AdminApiConfig {
-  esHost: string;
-  esUser: string;
-  esPass: string;
-}
-export interface IQueryContext {
-  es: Client;
-}
+import { type SearchClient } from '#searchClient/types.js';
+
+export type AdminApiConfig = {
+	esHost: string;
+	esUser: string;
+	esPass: string;
+};
+export type IQueryContext = {
+	es: SearchClient;
+};
 
 export type ResolverOutput<T> = T | Promise<T>;
 
-export type MergeResolver<Output, Args = Object> =
-  | ((
-      a: any,
-      args: Args,
-      c: IQueryContext,
-      d: GraphQLResolveInfo & { mergeInfo: MergeInfo },
-    ) => ResolverOutput<Output>)
-  | ResolverOutput<Output>;
+export type MergeResolver<Output, Args = object> =
+	| ((
+			a: any,
+			args: Args,
+			c: IQueryContext,
+			d: GraphQLResolveInfo & { mergeInfo: MergeInfo },
+	  ) => ResolverOutput<Output>)
+	| ResolverOutput<Output>;
 
-export interface I_MergeSchema<TOutput, TInput = any> {
-  fragment: string;
-  resolve: MergeResolver<TOutput, TInput>;
-}
+export type I_MergeSchema<TOutput, TInput = any> = {
+	fragment: string;
+	resolve: MergeResolver<TOutput, TInput>;
+};
