@@ -1,8 +1,9 @@
-import { Client } from '@elastic/elasticsearch';
 import { type GraphQLResolveInfo } from 'graphql';
 
+import { type SearchClient } from './searchClient/types.js';
+
 export type Context = {
-	esClient: Client;
+	esClient: SearchClient;
 };
 
 export type Root = Record<string, any>;
@@ -19,7 +20,7 @@ export type ResolverOutput<T> = T | Promise<T>;
  * @return Returns resolved value;
  */
 type DefaultRoot = Root;
-export type Resolver<Root = DefaultRoot, QueryArgs = Object, ReturnValue = undefined> = (
+export type Resolver<Root = DefaultRoot, QueryArgs = object, ReturnValue = undefined> = (
 	root: Root,
 	args: QueryArgs,
 	context: Context,
