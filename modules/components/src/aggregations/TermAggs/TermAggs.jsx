@@ -44,10 +44,7 @@ const IncludeExcludeButton = ({
 	updateIsExclude,
 }) => (
 	<ToggleButton
-		onChange={({
-			value,
-			isExclude = value === 'exclude',
-		}) => {
+		onChange={({ value, isExclude = value === 'exclude' }) => {
 			const activeBuckets = buckets.filter((b) => isActive({ fieldName: dotFieldName, value: b.name }));
 
 			handleIncludeExcludeChange({
@@ -89,6 +86,22 @@ const MoreOrLessButton = ({
 		{...props}
 	>
 		{isShowingMore ? 'Less' : `${howManyMore} More`}
+	</TransparentButton>
+);
+
+const SelectAllButton = ({ className = '', css: customCSS = '', ...props }) => (
+	<TransparentButton
+		className={cx('selectAll-wrapper', className)}
+		css={[
+			css`
+				margin-left: 0.5rem;
+				text-decoration: underline;
+			`,
+			customCSS,
+		]}
+		{...props}
+	>
+		Select All
 	</TransparentButton>
 );
 
@@ -483,17 +496,36 @@ const TermAggregations = ({
 				</span>
 			)}
 
-			{isMoreEnabled && (
-				<MoreOrLessButton
-					howManyMore={decoratedBuckets.length - maxTerms}
-					isShowingMore={showingMore}
-					onClick={() => {
-						setShowingMore(!showingMore);
-						if (showingMore) scrollToAgg();
-					}}
-					theme={merge({}, themeAggregationsMoreOrLessButtonProps, themeTermAggMoreOrLessButtonProps)}
-				/>
-			)}
+			<div
+				className="button-wrapper"
+				css={css`
+					display: flex;
+					justify-content: space-between;
+				`}
+			>
+				{hasData && (
+					<SelectAllButton
+						onClick={() => {
+							// check if all are selected
+							// if yes, unselect all
+							// if not, select all items
+							console.log('select all');
+						}}
+					/>
+				)}
+
+				{isMoreEnabled && (
+					<MoreOrLessButton
+						howManyMore={decoratedBuckets.length - maxTerms}
+						isShowingMore={showingMore}
+						onClick={() => {
+							setShowingMore(!showingMore);
+							if (showingMore) scrollToAgg();
+						}}
+						theme={merge({}, themeAggregationsMoreOrLessButtonProps, themeTermAggMoreOrLessButtonProps)}
+					/>
+				)}
+			</div>
 		</AggsGroup>
 	);
 };
