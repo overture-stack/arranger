@@ -1,8 +1,8 @@
+import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic/constants';
 import { isEqual } from 'lodash-es';
 import { Component } from 'react';
 
 import defaultApiFetcher from '#utils/api.js';
-import esToAggTypeMap from '#utils/esToAggTypeMap.js';
 import noopFn, { emptyObj } from '#utils/noops.js';
 
 import AdvancedFacetView from './index.js';
@@ -47,10 +47,11 @@ const fetchAggregationData = async ({ sqon, extended, index, apiFetcher }) => {
 				const aggType = extended.find((entry) => serializeToGraphQl(entry.fieldName) === aggName).type;
 				return `
           ${aggName} {
-            ${esToAggTypeMap[aggType] === 'Aggregations'
-						? `buckets { key key_as_string doc_count }`
-						: `stats { max min avg sum }`
-					}
+            ${
+				esToAggTypesMap[aggType] === 'Aggregations'
+					? `buckets { key key_as_string doc_count }`
+					: `stats { max min avg sum }`
+			}
           }`;
 			})
 			.join('');
@@ -87,22 +88,22 @@ const removeFieldTypesFromMapping = ({ mapping, extended, parentField = null, fi
 			);
 			const toSpread = !isId
 				? {
-					...(val.properties
-						? {
-							[key]: {
-								...val,
-								properties: removeFieldTypesFromMapping({
-									mapping: val.properties,
-									extended,
-									parentField: currentFieldName,
-									fieldTypesToExclude,
+						...(val.properties
+							? {
+									[key]: {
+										...val,
+										properties: removeFieldTypesFromMapping({
+											mapping: val.properties,
+											extended,
+											parentField: currentFieldName,
+											fieldTypesToExclude,
+										}),
+									},
+								}
+							: {
+									[key]: val,
 								}),
-							},
-						}
-						: {
-							[key]: val,
-						}),
-				}
+					}
 				: {};
 			return {
 				...acc,
@@ -188,7 +189,9 @@ export default class LiveAdvancedFacetView extends Component {
 				{...props}
 				rootTypeName={props.documentType}
 				elasticMapping={this.state.mapping}
-				extendedMapping={this.state.extended.filter((ex) => !fieldTypesToExclude.some((type) => ex.type === type))}
+				extendedMapping={this.state.extended.filter(
+					(ex) => !fieldTypesToExclude.some((type) => ex.type === type),
+				)}
 				aggregations={this.state.aggregations}
 				onSqonFieldChange={this.onSqonFieldChange}
 				sqon={this.state.sqon}

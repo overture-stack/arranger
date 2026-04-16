@@ -82,10 +82,11 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
         # Arranger Variables
         ENABLE_LOGS=false
 
-        # Elasticsearch Variables
+        # Elasticsearch/Opensearch Variables
         ES_HOST=http://elasticsearch:9200
         ES_USER=elastic
         ES_PASS=myelasticpassword
+        SEARCH_ENGINE=elasticsearch
 
         # Stage Variables
         REACT_APP_BASE_URL=http://localhost:3000
@@ -112,6 +113,7 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
 
     ```bash
     npm install
+    # If a standard install fails in your environment, a fallback script is available: `npm run install:memory-safe`.
     ```
 
     :::warning

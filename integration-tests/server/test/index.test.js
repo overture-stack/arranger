@@ -1,12 +1,13 @@
 import { after, before, suite } from 'node:test';
+import path from 'path';
 
-import Arranger from '@overture-stack/arranger-server';
-import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
-import express from 'express';
+import { stringToNumber } from '@overture-stack/arranger-types/tools';
+import dotenv from 'dotenv';
 
-import buildSearchClient from '../../../modules/server/src/searchClient/index.js';
+import ArrangerServer from '../../../apps/search-server/src/server.js';
+import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
+import { ajax } from '../../../modules/graphql-router/src/utils/index.js';
 
-// test modules
 import data from './assets/model_centric.data.json';
 import mappings from './assets/model_centric.mappings.json';
 import manageSets from './manageSets.js';
@@ -15,53 +16,65 @@ import readMetadata from './readMetadata.js';
 import readSearchData from './readSearchData.js';
 import checkBaseEndpoints from './spinupActive.js';
 
-const DEBUG = (process.env.DEBUG || '').toLowerCase() === 'true';
-const enableAdmin = (process.env.ENABLE_ADMIN || '').toLowerCase() === 'true';
+dotenv.config({ path: path.resolve('../../.env.test') });
+
+const documentType = 'model';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'testing-models_1.0';
-const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
-const esPass = process.env.ES_PASS || 'myelasticpassword';
-const esUser = process.env.ES_USER || 'elastic';
+const esPass = process.env.ES_PASS;
+const esUser = process.env.ES_USER;
+const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing';
+const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing';
+const searchEngine = process.env.SEARCH_ENGINE;
+const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
 
-const port = process.env.PORT || 5678;
-const client = process.env.SEARCH_CLIENT_TYPE;
-
-const app = express();
-
-const api = ajax(`http://localhost:${port}`, {
-	debugAll: DEBUG,
+const consumerMockApi = ajax(`http://localhost:${serverPort}`, {
+	// NOTE: useful to see response details. can be loud
+	debugAll: false,
 	endpoint: '/graphql',
 });
 
-suite('integration-tests/server', async () => {
-	let server;
-	const documentType = 'model';
-
-	const esClient = await buildSearchClient({
-		node: esHost,
-		user: esUser,
+const useESAuth = !!esPass && !!esUser;
+const esClient = await buildSearchClient({
+	client: searchEngine,
+	node: esHost,
+	...(useESAuth && {
+		username: esUser,
 		password: esPass,
-		client,
-	});
+	}),
+});
 
-	const cleanup = async () => {
-		await esClient.indices.delete({
+// TODOL need a new suite specifically for aggressively adversarial tests.
+// the purpose is to try and break the server.
+
+const env = {
+	api: consumerMockApi,
+	documentType,
+};
+
+const cleanup = ({ esIndex, setsIndex }) => {
+	return Promise.all([
+		esClient.indices.delete({
+			// TODO: will need to map through catalogs when multicatalog is implemented
 			index: esIndex,
-		});
-		await esClient.indices.delete({
+		}),
+		esClient.indices.delete({
 			index: setsIndex,
-		});
-	};
+		}),
+	]);
+};
+
+suite('integration-tests/server', () => {
+	let serverApp;
 
 	before(
 		async () => {
-			console.log('\n(Initializing Elasticsearch and Arranger)');
+			console.log('\n(Initializing Elasticsearch and Arranger)\n');
 
 			try {
-				await cleanup();
+				await cleanup({ esIndex, setsIndex });
 			} catch (err) {
-				console.error('Error running integration-tests cleanup');
-				console.error(err);
+				// console.log('err before', err);
 			}
 
 			await esClient.indices.create({
@@ -79,15 +92,19 @@ suite('integration-tests/server', async () => {
 			}
 
 			try {
-				const router = await Arranger({
-					// needed to see the mapping
-					enableAdmin,
-					// This may be useful when troubleshooting tests
-					enableLogs: true,
-					esHost,
-					esPass,
-					esUser,
-					getServerSideFilter: () => ({
+				serverApp = await ArrangerServer({
+					disableDownloads: false,
+					disableFilters: false,
+					disablePlayground: false,
+					disableSets: false,
+					enableAdmin: true, // needed to see the introspection and mapping
+					enableDebug: true,
+					enableLogs: false, // helpful to see test calls, etc.
+					enableNetworkAggregation: undefined,
+					esClient,
+					// FIXME: not fully integrated yet
+					// should merge across catalogs with their own serverside filters
+					filters: () => ({
 						op: 'not',
 						content: [
 							{
@@ -99,21 +116,15 @@ suite('integration-tests/server', async () => {
 							},
 						],
 					}),
+					serverPort,
 					setsIndex,
+					setsType,
 				});
 
-				app.use(router);
-
-				await new Promise((resolve) => {
-					server = app.listen(port, () => {
-						resolve(null);
-					});
-				});
-
-				console.log('******* Starting tests *******');
+				console.log('\n\n******* Starting tests *******');
 			} catch (err) {
-				console.error('Error at integration-tests `before` hook:', err);
-				throw err;
+				console.error('error:', err);
+				throw 'Could not start Arranger Server to run tests';
 			}
 		},
 		{
@@ -123,26 +134,20 @@ suite('integration-tests/server', async () => {
 
 	after(async () => {
 		try {
-			await cleanup();
-			server?.close();
-			console.log('\n(Cleared Elasticsearch and stopped Arranger Server)');
+			await cleanup({ esIndex, setsIndex });
+			serverApp.close();
+			console.log('\n(Cleared Elasticsearch and stopped Arranger Server)\n');
 		} catch (err) {
-			console.error('Error in integration-tests/server `after` test hook');
-			console.error(err);
+			// console.log('err after', err);
 		}
 	});
 
-	const env = {
-		api,
-		documentType,
-	};
-
-	suite('basic endpoints functional', () => {
-		checkBaseEndpoints({ ...env, server });
+	suite('functional endpoints', () => {
+		checkBaseEndpoints({ ...env, serverApp });
 	});
 
 	suite('metadata/configs reading', () => {
-		readMetadata({ ...env, enableAdmin });
+		readMetadata({ ...env, enableAdmin: true });
 	});
 
 	suite('search data reading', () => {
@@ -153,7 +158,7 @@ suite('integration-tests/server', async () => {
 		readAggregation(env);
 	});
 
-	suite('manages sets', () => {
+	suite('sets management', () => {
 		manageSets(env);
 	});
 });
