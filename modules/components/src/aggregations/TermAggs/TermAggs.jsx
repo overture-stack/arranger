@@ -17,7 +17,9 @@ import translateSQONValue from '#utils/translateSQONValue.js';
 import AggsGroup from '../AggsGroup/index.js';
 import BucketCount from '../BucketCount/index.js';
 
-const generateNextSQON = ({ dotFieldName, bucket, isExclude, sqon }) =>
+import SelectAllButton, { checkBucketsAllSelected } from './SelectAllButton.js';
+
+const generateNextSQON = ({ dotFieldName, bucket: { name = '' } = {}, decoratedBuckets = [], isExclude, sqon }) =>
 	toggleSQON(
 		{
 			op: 'and',
@@ -26,7 +28,7 @@ const generateNextSQON = ({ dotFieldName, bucket, isExclude, sqon }) =>
 					op: isExclude ? 'not-in' : 'in',
 					content: {
 						fieldName: dotFieldName,
-						value: [].concat(bucket.name || []),
+						value: name ? [name] : decoratedBuckets.map((b) => b.name),
 					},
 				},
 			],
@@ -86,22 +88,6 @@ const MoreOrLessButton = ({
 		{...props}
 	>
 		{isShowingMore ? 'Less' : `${howManyMore} More`}
-	</TransparentButton>
-);
-
-const SelectAllButton = ({ className = '', css: customCSS = '', ...props }) => (
-	<TransparentButton
-		className={cx('selectAll-wrapper', className)}
-		css={[
-			css`
-				margin-left: 0.5rem;
-				text-decoration: underline;
-			`,
-			customCSS,
-		]}
-		{...props}
-	>
-		Select All
 	</TransparentButton>
 );
 
@@ -173,6 +159,8 @@ const TermAggregations = ({
 	type,
 	valueCharacterLimit,
 	WrapperComponent,
+	deselectAll,
+	selectAll,
 } = emptyObj) => {
 	const [isAlphabetized, setIsAlphabetized] = useState(false);
 	const [isShowingMore, setShowingMore] = useState(false);
@@ -192,6 +180,7 @@ const TermAggregations = ({
 		...(fieldName && { 'data-fieldname': fieldName }),
 		...(type && { 'data-type': type }),
 	};
+	const bucketsAllSelected = checkBucketsAllSelected(isActive, decoratedBuckets, dotFieldName);
 
 	// TODO: (THEME) refactor to separate internal components into their own files
 	// that will allow chunking apart this gigantic destructuring pattern
@@ -254,6 +243,12 @@ const TermAggregations = ({
 						disabled: themeTermAggregationsSortingDisabled,
 						onClick: themeTermAggregationsSortingIconHandler,
 						...themeTermAggregationsSortingIconProps
+					} = emptyObj,
+					selectAll: {
+						className: themeTermAggregationsSelectAllButtonClassName, // TODO
+						disabled: themeTermAggregationsSelectAllDisabled, // TODO
+						onClick: themeTermAggregationsSelectAllButtonHandler, // TODO
+						...themeTermAggregationsSelectAllButtonProps // TODO
 					} = emptyObj,
 				} = emptyObj,
 			} = emptyObj,
@@ -505,16 +500,38 @@ const TermAggregations = ({
 			>
 				{hasData && (
 					<SelectAllButton
+						bucketsAllSelected={bucketsAllSelected}
 						onClick={() => {
-							// check if all are selected
-							// if yes, unselect all
-							// if not, select all items
-							console.log('select all');
+							if (bucketsAllSelected) {
+								// TODO set all to inactive using function passed down
+								// TODO update sqon
+								// deselectAll({
+								// 	fieldName: dotFieldName,
+								// 	values: decorateBuckets,
+								// 	isExclude,
+								// 	generateNextSQON: (sqon) =>
+								// 		generateNextSQON({ isExclude, dotFieldName, bucket, sqon }),
+								// });
+								setShowingMore(false);
+								scrollToAgg();
+								console.log('all selected');
+							} else {
+								selectAll({
+									generateNextSQON: (sqon) =>
+										generateNextSQON({
+											isExclude,
+											dotFieldName,
+											decoratedBuckets,
+											sqon,
+										}),
+								});
+								setShowingMore(true);
+							}
 						}}
 					/>
 				)}
 
-				{isMoreEnabled && (
+				{isMoreEnabled && !bucketsAllSelected && (
 					<MoreOrLessButton
 						howManyMore={decoratedBuckets.length - maxTerms}
 						isShowingMore={showingMore}
