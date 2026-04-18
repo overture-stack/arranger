@@ -1,11 +1,12 @@
 import { after, before, suite } from 'node:test';
 import path from 'path';
 
-import { Client } from '@elastic/elasticsearch';
-import { ajax } from '@overture-stack/arranger-graphql-router/utils';
-import ArrangerServer from '@overture-stack/arranger-search-server';
 import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
+
+import ArrangerServer from '../../../apps/search-server/src/server.js';
+import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
+import { ajax } from '../../../modules/graphql-router/src/utils/index.js';
 
 import data from './assets/model_centric.data.json';
 import mappings from './assets/model_centric.mappings.json';
@@ -24,6 +25,7 @@ const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing';
+const searchEngine = process.env.SEARCH_ENGINE;
 const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
 
 const consumerMockApi = ajax(`http://localhost:${serverPort}`, {
@@ -33,14 +35,13 @@ const consumerMockApi = ajax(`http://localhost:${serverPort}`, {
 });
 
 const useESAuth = !!esPass && !!esUser;
-const esClient = new Client({
-	...(useESAuth && {
-		auth: {
-			password: esPass,
-			username: esUser,
-		},
-	}),
+const esClient = await buildSearchClient({
+	client: searchEngine,
 	node: esHost,
+	...(useESAuth && {
+		username: esUser,
+		password: esPass,
+	}),
 });
 
 // TODOL need a new suite specifically for aggressively adversarial tests.

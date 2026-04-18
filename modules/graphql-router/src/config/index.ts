@@ -1,11 +1,12 @@
-import type { Client } from '@elastic/elasticsearch';
 import { type ConfigsObject } from '@overture-stack/arranger-types/configs';
 import {
 	configArrangerBaseProperties,
 	configRequiredProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 
-export const validateConfigs = (configs: Partial<ConfigsObject>, esClient?: Client): Partial<ConfigsObject> => {
+import { type SearchClient } from '#searchClient/index.js';
+
+export const validateConfigs = (configs: Partial<ConfigsObject>, esClient?: SearchClient): Partial<ConfigsObject> => {
 	console.log('  - Validating catalog configurations provided');
 	const propertiesToDemand = esClient ? configArrangerBaseProperties : configRequiredProperties;
 

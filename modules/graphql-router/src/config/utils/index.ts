@@ -1,6 +1,5 @@
-import type { Client } from '@elastic/elasticsearch';
-
 import { setsMapping } from '#schema/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 export const initializeSets = async ({
 	enableDebug,
@@ -8,7 +7,7 @@ export const initializeSets = async ({
 	setsIndex: setsIndexName,
 }: {
 	enableDebug?: boolean;
-	esClient: Client;
+	esClient: SearchClient;
 	setsIndex: string;
 }): Promise<void> => {
 	console.log(`\n------\nConfiguring Sets index: ${setsIndexName}`);

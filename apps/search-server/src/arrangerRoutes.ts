@@ -1,5 +1,4 @@
-import type { Client } from '@elastic/elasticsearch';
-import arrangerRouter from '@overture-stack/arranger-graphql-router';
+import arrangerRouter, { type SearchClient } from '@overture-stack/arranger-graphql-router';
 import { Router } from 'express';
 
 import type { CatalogsMap } from '#configs/types/index.js';
@@ -11,7 +10,7 @@ export default async ({
 }: {
 	catalogs: CatalogsMap;
 	enableDebug: boolean;
-	esClient?: Client;
+	esClient?: SearchClient;
 }): Promise<Router> => {
 	// TODO: extend this for multicatalog
 	const firstCatalogEntry = Object.entries(catalogs)[0];

@@ -1,43 +1,21 @@
-import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { Router, type RequestHandler } from 'express';
 
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
+import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
 
 import getGraphQLRoutes from './graphqlRoutes.js';
 import { addContext } from './utils/context.js';
-
-export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
-	if (!esHost) {
-		console.error('no elasticsearch host was provided');
-	}
-
-	const esConfig: ClientOptions = {
-		node: esHost,
-	};
-
-	if (esUser) {
-		if (!esPass) {
-			console.error('ES user was defined, but password was not');
-		}
-		esConfig['auth'] = {
-			username: esUser,
-			password: esPass,
-		};
-	}
-
-	return new Client(esConfig);
-};
 
 export const createRequestPreprocessingMiddleware = ({
 	configs,
 	enableDebug,
 }: {
 	configs: Partial<ConfigsObject>;
-	enableDebug: boolean;
+	enableDebug?: boolean;
 }): RequestHandler[] => [
 	addContext({
 		enableDebug,
@@ -58,7 +36,7 @@ const arrangerServer = async ({
 }: {
 	configs: Partial<ConfigsObject>;
 	configsSource?: string; // TODO: to be removed in v3.2
-	esClient?: Client;
+	esClient?: SearchClient;
 	getServerSideFilter?: GetServerSideFilterFn;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
@@ -71,7 +49,7 @@ const arrangerServer = async ({
 			...customConfigs,
 		};
 
-		const { enableAdmin, enableDebug, enableNetworkAggregation, esHost, esPass, esUser, ...configs } =
+		const { enableAdmin, enableDebug, enableNetworkAggregation, esHost, esPass, esUser, searchEngine, ...configs } =
 			validateConfigs(aggregatedConfigs, customEsClient);
 
 		warnDeprecatedConfigsSource({ configsSource, enableDebug: aggregatedConfigs.enableDebug });
@@ -79,7 +57,14 @@ const arrangerServer = async ({
 		enableAdmin && console.log('    Instance will run in ADMIN mode!!');
 		// TODO: research and document what that means
 
-		const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
+		const esClient =
+			customEsClient ||
+			(await buildSearchClient({
+				client: searchEngine,
+				node: esHost,
+				password: esPass,
+				username: esUser,
+			}));
 
 		router.use(createRequestPreprocessingMiddleware({ configs, enableDebug }));
 
@@ -98,7 +83,6 @@ const arrangerServer = async ({
 		router.use(
 			`/download`,
 			downloadRoutes({
-				enableAdmin,
 				enableDebug,
 			}),
 		); // consumes

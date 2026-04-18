@@ -21,6 +21,7 @@ const configsAggregator = (
 		filters,
 		pingMs,
 		pingPath,
+		searchEngine,
 		serverPort,
 		setsIndex,
 		setsType,
@@ -37,6 +38,7 @@ const configsAggregator = (
 				disableSets,
 				enableAdmin,
 				getServerSideFilter: filters,
+				searchEngine,
 				sets: {
 					index: setsIndex,
 					type: setsType,

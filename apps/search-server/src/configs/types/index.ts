@@ -1,9 +1,10 @@
-import type { Client } from '@elastic/elasticsearch';
+import { type SearchClient } from '@overture-stack/arranger-graphql-router';
 import type {
 	AllFeatureFlagConfigs,
 	ConfigsObject as ArrangerConfigs,
 	GetServerSideFilterFn,
 	RuntimeFeatureFlagConfigs,
+	SearchEngineType,
 } from '@overture-stack/arranger-types/configs';
 
 import type { serverConfigProperties } from './constants.js';
@@ -24,8 +25,9 @@ export type ExternalConfigs = Partial<
 	{
 		[serverConfigProperties.CONFIGS_PATH]: string;
 		currentDirectory: string;
-		esClient: Client;
+		esClient: SearchClient;
 		filters: GetServerSideFilterFn;
+		searchEngine: SearchEngineType;
 		setsIndex: string;
 		setsType: string;
 	} & BaseServerConfigs &

@@ -39,6 +39,7 @@ export const configOptionalProperties = {
 	ES_HOST: 'esHost',
 	DOWNLOADS: 'downloads',
 	EXTENDED: 'extended',
+	SEARCH_ENGINE: 'searchEngine',
 	SETS: 'sets',
 	...configFeatureFlagProperties,
 	//

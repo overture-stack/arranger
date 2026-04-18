@@ -1,4 +1,3 @@
-import type { Client } from '@elastic/elasticsearch/api/new';
 import { GraphQLDate } from 'graphql-scalars';
 import { GraphQLJSON } from 'graphql-type-json';
 import { startCase } from 'lodash-es';
@@ -6,6 +5,7 @@ import Parallel from 'paralleljs';
 
 import { createConnectionResolvers, saveSet, mappingToFields } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';
@@ -81,14 +81,12 @@ export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, 
 		Date: GraphQLDate,
 		Root: {
 			viewer: resolveObject,
-			hasValidConfig: async (obj, { documentType, index, esIndex }, { esClient }: { esClient: Client }) => {
+			hasValidConfig: async (obj, { documentType, index, esIndex }, { esClient }: { esClient: SearchClient }) => {
 				if (documentType) {
 					const documentIndex = esIndex ?? index;
 
 					if (documentIndex) {
 						const [_, type] = types.find(([name]) => name === documentType) || [];
-
-						console.log('type', Object.keys(type));
 
 						// TODO: make this more useful/verbose;
 						if (type) {

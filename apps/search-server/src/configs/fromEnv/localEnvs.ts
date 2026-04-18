@@ -26,6 +26,7 @@ const configsFromEnv = {
 
 			// catalog base configs
 			// TODO: to be extended as e.g. process.env[`${catalogId}_ES_HOST`] etc in multicatalog
+			[configRootProperties.SEARCH_ENGINE]: process.env.SEARCH_ENGINE || '',
 			[configRootProperties.ES_HOST]: process.env.ES_HOST || 'http://127.0.0.1:9200',
 			[configRootProperties.ES_INDEX]: process.env.ES_INDEX || '',
 			// ES Credentials (should come from env not files)

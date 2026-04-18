@@ -5,6 +5,7 @@ import type { ThemeCommon } from '#ThemeContext/types/index.js';
 import type { RecursivePartial } from '#utils/types.js';
 
 export interface HeaderRowThemeProps extends TableInnerBoxModelProperties {
+	columnWidth: string;
 	horizontalBorderColor: string;
 	padding: string;
 	textOverflow: string;

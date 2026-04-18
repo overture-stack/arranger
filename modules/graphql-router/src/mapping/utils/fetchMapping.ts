@@ -1,5 +1,7 @@
-import type { ApiResponse, Client } from '@elastic/elasticsearch/api/new';
+import type { ApiResponse } from '@elastic/elasticsearch/api/new';
 import type { CatAliasesAliasesRecord, IndicesGetMappingResponse } from '@elastic/elasticsearch/api/types';
+
+import { type SearchClient } from '#searchClient/types.js';
 
 const REQUEST_TIMEOUT = 10000;
 
@@ -19,7 +21,7 @@ const withSlowLog = async <T>(promise: Promise<T>, label: string, thresholdMs = 
 	}
 };
 
-export const getESAliases = async (esClient: Client, requestTimeout?: number) => {
+export const getESAliases = async (esClient: SearchClient, requestTimeout?: number) => {
 	const { body } = await withSlowLog(
 		esClient.cat.aliases({ error_trace: false, format: 'json' }, { requestTimeout }),
 		'ES aliases',
@@ -37,7 +39,7 @@ export const fetchMapping = async ({
 	esIndex,
 }: {
 	enableDebug?: boolean;
-	esClient: Client;
+	esClient: SearchClient;
 	esIndex: string;
 }) => {
 	if (esClient) {

@@ -1,12 +1,12 @@
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import getFields from 'graphql-fields';
 
+import { type Resolver, type Root } from '#gqlServer.js';
 import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/index.js';
 
-import esSearch from './utils/esSearch.js';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
-import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
-import { type Resolver, type Root } from '#gqlServer.js';
+import esSearch from './utils/esSearch.js';
 
 export type Bucket = {
 	doc_count: number;
@@ -98,16 +98,21 @@ const getAggregationsResolver = ({
 			aggregationsFilterThemselves: aggregations_filter_themselves,
 		});
 
-		const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
+		const body = {
+			...(Object.keys(query || {}).length && { query }),
+			aggs,
+		};
+
 		const response = await esSearch(esClient)({
 			index: type.index,
 			size: 0,
-			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			_source: false,
+			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			body,
 		});
+
 		const aggregations = flattenAggregations({
-			aggregations: response.aggregations,
+			aggregations: response?.body?.aggregations,
 			includeMissing: include_missing,
 		});
 
