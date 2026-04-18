@@ -12,9 +12,17 @@ export default async ({
 	enableDebug: boolean;
 	esClient?: SearchClient;
 }): Promise<Router> => {
-	// TODO: extend this for multicatalog
-	const firstCatalogEntry = Object.entries(catalogs)[0];
-	if (firstCatalogEntry) {
+	const catalogEntries = Object.entries(catalogs);
+	const catalogLength = catalogEntries.length;
+
+	if (catalogLength === 0) {
+		throw new Error('No catalogs configured');
+	}
+
+	const router = Router();
+	const firstCatalogEntry = catalogEntries[0];
+
+	if (catalogLength === 1 && firstCatalogEntry) {
 		const [catalogId, { getServerSideFilter, ...catalogConfigs }] = firstCatalogEntry;
 
 		const catalogRouter = await arrangerRouter({
@@ -26,13 +34,20 @@ export default async ({
 			getServerSideFilter,
 		});
 
-		const router = Router();
-		// TODO: this will be needed for multicatalog
-		// app.use(catalogId, catalogRouter); // for each catalogId
-		router.use(catalogRouter);
-
+		router.use(catalogRouter)
 		return router;
 	}
 
-	throw new Error('No catalogs configured');
+	for (const [catalogId, { getServerSideFilter, ...catalogConfigs }] of catalogEntries) {
+		const catalogRouter = await arrangerRouter({
+			configs: {
+				enableDebug,
+				...catalogConfigs,
+			},
+			esClient,
+			getServerSideFilter,
+		});
+		router.use(`/${catalogId}`, catalogRouter);
+	}
+	return router;
 };

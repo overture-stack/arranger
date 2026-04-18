@@ -1,12 +1,9 @@
+import fs from 'fs';
+import path from 'path';
 import { resolveCatalogId } from './catalogId.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
 import type { AllServerConfigs, CatalogsMap } from './types/index.js';
-
-// TODO: needs logic to support multiple catalogs
-// check if there's JSONs in this folder, then and do this following logic as is...
-// otherwise, if it finds folders, then read the jsons
-// therein as configs for one Arranger per folder.
 
 const buildCatalogsFromFolder = async ({
 	catalogConfigsPath,
@@ -18,24 +15,77 @@ const buildCatalogsFromFolder = async ({
 	currentDirectory: string;
 }): Promise<CatalogsMap> => {
 	const usedIds = new Set<string>();
+	const resolvedBase = path.resolve(currentDirectory, catalogConfigsPath);
+	const entries = await fs.promises.readdir(resolvedBase, { withFileTypes: true });
+	const hasJsonFiles = (entries: fs.Dirent[]) => entries.some((e) => e.isFile() && e.name.endsWith('.json'));
+	const getSubdirectories = (entries: fs.Dirent[]) => entries.filter((e) => e.isDirectory());
 
-	const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
-		// FIXME: TypeScript doesn't believe this won't be undefined.
-		baseConfig: catalogs.fromEnv || {}, // WHY!?
-		catalogConfigsPath,
-		enableDebug,
-		currentDirectory,
-	});
+	if (hasJsonFiles(entries)) {
+		const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
+			// FIXME: TypeScript doesn't believe this won't be undefined.
+			baseConfig: catalogs.fromEnv || {},
+			catalogConfigsPath,
+			enableDebug,
+			currentDirectory,
+		});
 
-	const catalogId = resolveCatalogId({
-		aggregatedConfigs,
-		configsPath,
-		usedIds,
-	});
+		const catalogId = resolveCatalogId({
+			aggregatedConfigs,
+			configsPath,
+			usedIds,
+		});
 
-	return {
-		[catalogId]: aggregatedConfigs,
-	};
+		return {
+			[catalogId]: aggregatedConfigs,
+		};
+	}
+
+	const subdirectories = getSubdirectories(entries);
+	const catalogsMap: CatalogsMap = {};
+
+	if (subdirectories.length === 0) {
+		console.log('No JSON files or subdirectories found. Using env defaults.');
+		return {};
+	}
+
+	for (const dir of subdirectories) {
+		const subPath = path.join(catalogConfigsPath, dir.name);
+
+		try {
+			const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
+				// FIXME: TypeScript doesn't believe this won't be undefined.
+				baseConfig: catalogs.fromEnv || {},
+				catalogConfigsPath: subPath,
+				enableDebug,
+				currentDirectory,
+			});
+
+			const catalogId = resolveCatalogId({
+				aggregatedConfigs,
+				configsPath,
+				usedIds,
+			});
+
+			catalogsMap[catalogId] = aggregatedConfigs;
+		} catch (err) {
+			console.log(`Error loading catalog from ${dir.name}:`, (err as Error).message);
+		}
+	}
+
+	if (Object.keys(catalogsMap).length === 0) {
+		console.log('No catalogs loaded from subdirectories. Preserving env defaults.');
+		const catalogId = resolveCatalogId({
+			aggregatedConfigs: catalogs.fromEnv || {},
+			configsPath: resolvedBase,
+			usedIds,
+		});
+
+		return {
+			[catalogId]: catalogs.fromEnv || {},
+		};
+	}
+
+	return catalogsMap;
 };
 
 const loadAllsConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
