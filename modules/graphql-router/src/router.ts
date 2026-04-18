@@ -45,10 +45,6 @@ export const createRequestPreprocessingMiddleware = ({
 	enforceAccessControl({ configs }),
 ];
 
-// TODO: for multicatalog, serverSideFilters may be also "per catalog"
-// i.e. each catalog may have their own, with no global filters
-// question: should global filters be allowed?
-
 const arrangerServer = async ({
 	configs: customConfigs = {},
 	configsSource = '',
