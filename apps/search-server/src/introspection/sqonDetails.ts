@@ -5,7 +5,9 @@ import {
 	SQON_OP_ALIASES,
 } from '@overture-stack/sqon';
 
-const buildSqonDetails = () => ({
+import type { SqonIntrospectionResponse } from '#introspection/types.js';
+
+const buildSqonDetails = (): SqonIntrospectionResponse => ({
 	$schema: 'https://json-schema.org/draft/2020-12/schema',
 	title: 'Serialized Query Object Notation',
 	description: 'JSON Schema and operator metadata for building valid SQON filters.',

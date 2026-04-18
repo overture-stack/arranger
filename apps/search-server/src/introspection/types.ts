@@ -15,6 +15,25 @@ export type IntrospectionResponse = {
 	sqonSchemaPath: string;
 };
 
+export type SqonOperatorDetail = {
+	applicableTo: 'all' | string[];
+	op: string;
+	valueType: string;
+};
+
+export type SqonIntrospectionResponse = {
+	$schema: string;
+	aliases: Record<string, string>;
+	description: string;
+	operators: {
+		combination: string[];
+		field: SqonOperatorDetail[];
+	};
+	schema: Record<string, unknown>;
+	title: string;
+	version: string;
+};
+
 export type CatalogFieldIntrospection = {
 	displayName: string;
 	type: string;
