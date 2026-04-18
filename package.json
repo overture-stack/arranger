@@ -66,6 +66,7 @@
 	"type": "module",
 	"workspaces": [
 		"apps/search-server",
+		"apps/mcp-server",
 		"integration-tests/import",
 		"integration-tests/server",
 		"modules/charts",
