@@ -21,34 +21,41 @@ export default async ({
 	}
 
 	const router = Router();
-	const firstCatalogEntry = catalogEntries[0];
 
-	if (catalogLength === 1 && firstCatalogEntry) {
-		const [catalogId, { getServerSideFilter, ...catalogConfigs }] = firstCatalogEntry;
+	try {
+		// TODO(multicatalog-status): add catalog-root metadata responses for unavailable catalogs.
+		// With enableDebug, these responses should eventually include richer diagnostics such as stack/context.
+		if (catalogLength === 1 && catalogEntries[0]) {
+			const [catalogId, { getServerSideFilter, ...catalogConfigs }] = catalogEntries[0];
 
-		const catalogRouter = await arrangerRouter({
-			configs: {
-				enableDebug,
-				...catalogConfigs,
-			},
-			esClient,
-			getServerSideFilter,
-		});
+			const catalogRouter = await arrangerRouter({
+				configs: {
+					enableDebug,
+					...catalogConfigs,
+				},
+				esClient,
+				getServerSideFilter,
+			});
 
-		router.use(catalogRouter)
-		return router;
+			router.use(catalogRouter);
+		} else {
+			for (const [catalogId, { getServerSideFilter, ...catalogConfigs }] of catalogEntries) {
+				const catalogRouter = await arrangerRouter({
+					configs: {
+						enableDebug,
+						...catalogConfigs,
+					},
+					esClient,
+					getServerSideFilter,
+				});
+				router.use(`/${catalogId}`, catalogRouter);
+				console.log(`  - Catalog mounted at /${catalogId}`);
+			}
+		}
+	} catch (err) {
+		console.error('\n------\nError creating catalog routers:\n', err instanceof Error ? err.message : err);
+		throw new Error('Failure to generate catalog routing');
 	}
 
-	for (const [catalogId, { getServerSideFilter, ...catalogConfigs }] of catalogEntries) {
-		const catalogRouter = await arrangerRouter({
-			configs: {
-				enableDebug,
-				...catalogConfigs,
-			},
-			esClient,
-			getServerSideFilter,
-		});
-		router.use(`/${catalogId}`, catalogRouter);
-	}
 	return router;
 };

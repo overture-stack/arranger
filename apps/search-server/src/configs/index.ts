@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+
 import { resolveCatalogId } from './catalogId.js';
 import aggregateConfigsFromEnv from './fromEnv/index.js';
 import getConfigFromFiles from './fromFiles/fileHandlers.js';
@@ -34,6 +35,7 @@ const buildCatalogsFromFolder = async ({
 			configsPath,
 			usedIds,
 		});
+		console.log(`    Registered catalog "${catalogId}"`);
 
 		return {
 			[catalogId]: aggregatedConfigs,
@@ -48,13 +50,16 @@ const buildCatalogsFromFolder = async ({
 		return {};
 	}
 
+	console.log(`  - Found ${subdirectories.length} catalog directories in '${catalogConfigsPath}'`);
+
 	for (const dir of subdirectories) {
 		const subPath = path.join(catalogConfigsPath, dir.name);
+		console.log(`  - Loading catalog from '${subPath}'...`);
 
 		try {
 			const [configsPath, aggregatedConfigs] = await getConfigFromFiles({
 				// FIXME: TypeScript doesn't believe this won't be undefined.
-				baseConfig: catalogs.fromEnv || {},
+				baseConfig: catalogs.fromEnv || {}, // FIXME why is this necessary?
 				catalogConfigsPath: subPath,
 				enableDebug,
 				currentDirectory,
@@ -67,6 +72,7 @@ const buildCatalogsFromFolder = async ({
 			});
 
 			catalogsMap[catalogId] = aggregatedConfigs;
+			console.log(`    Registered catalog "${catalogId}"`);
 		} catch (err) {
 			console.log(`Error loading catalog from ${dir.name}:`, (err as Error).message);
 		}
