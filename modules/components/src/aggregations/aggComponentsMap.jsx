@@ -96,10 +96,7 @@ const composedRangeAgg = ({ sqon, onValueChange, fieldName, stats, getRangeAggPr
 const composedTermAgg = ({ sqon, onValueChange, getTermAggProps = () => ({}), ...rest }) => (
 	<TermAggs
 		{...{ ...rest, ...getTermAggProps() }}
-		deselectAll={({ fieldName, generateNextSQON, value }) => {
-			// TODO
-		}}
-		selectAll={({ generateNextSQON }) => {
+		toggleSelectAll={({ generateNextSQON }) => {
 			const nextSQON = generateNextSQON(sqon);
 			onValueChange({
 				sqon: nextSQON,
