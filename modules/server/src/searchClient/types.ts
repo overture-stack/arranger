@@ -6,7 +6,6 @@ import type { TransportRequestOptions as OSTransportRequestOptions } from '@open
 
 import type { ESClientOptions } from './createElasticSearchClient.js';
 import type { OSClientOptions } from './createOpenSearchClient.js';
-import type { IndicesPutMapping } from '@elastic/elasticsearch/api/requestParams';
 
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
@@ -34,6 +33,7 @@ type SearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<
 type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 
 // Search Client Method Types
+// ElasticSearch Methods
 type ESIndicesCreate = ElasticClient['indices']['create'];
 type ESIndicesClose = ElasticClient['indices']['close'];
 type ESIndicesDelete = ElasticClient['indices']['delete'];
@@ -51,7 +51,7 @@ type ESDeleteByQuery = ElasticClient['deleteByQuery'];
 type ESIndex = ElasticClient['index'];
 type ESSearch = ElasticClient['search'];
 type ESUpdate = ElasticClient['update'];
-
+// OpenSearch Methods
 type OSIndicesCreate = OpenSearchClient['indices']['create'];
 type OSIndicesClose = OpenSearchClient['indices']['close'];
 type OSIndicesDelete = OpenSearchClient['indices']['delete'];
@@ -71,7 +71,7 @@ type OSSearch = OpenSearchClient['search'];
 type OSUpdate = OpenSearchClient['update'];
 
 // Search Client Parameter Types
-
+// ElasticSearch Parameter Types
 type ESIndicesCreateParams = Prettify<Parameters<ESIndicesCreate>[0]>;
 type ESIndicesCloseParams = Prettify<Parameters<ESIndicesClose>[0]>;
 type ESIndicesDeleteParams = Prettify<Parameters<ESIndicesDelete>[0]>;
@@ -89,7 +89,7 @@ type ESDeleteByQueryParams = Prettify<Parameters<ESDeleteByQuery>[0]>;
 type ESIndexParams = Prettify<Parameters<ESIndex>[0]>;
 type ESSearchParams = Prettify<Parameters<ESSearch>[0]>;
 type ESUpdateParams = Prettify<Parameters<ESUpdate>[0]>;
-
+// OpenSearch Parameter Types
 type OSIndicesCreateParams = Prettify<Parameters<OSIndicesCreate>[0]>;
 type OSIndicesCloseParams = Prettify<Parameters<OSIndicesClose>[0]>;
 type OSIndicesDeleteParams = Prettify<Parameters<OSIndicesDelete>[0]>;
@@ -112,55 +112,44 @@ type OSUpdateParams = Prettify<Parameters<OSUpdate>[0]>;
 // What is the best way to define this?
 // also: what to do when all parameters optional?
 type IndicesCreateParams = Prettify<ESIndicesCreateParams & OSIndicesCreateParams>;
-//  index: string;
+type RequiredIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
 type IndicesCloseParams = Prettify<ESIndicesCloseParams & OSIndicesCloseParams>;
-// index: (string | string[]) & Indices;
+type RequiredIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
 type IndicesDeleteParams = Prettify<ESIndicesDeleteParams & OSIndicesDeleteParams>;
-// index: (string | string[]) & Indices;
+type RequiredIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
 type IndicesExistsParams = Prettify<ESIndicesExistsParams & OSIndicesExistsParams>;
-// index: (string | string[]) & Indices;
+type RequiredIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
 type IndicesGetMappingParams = Prettify<ESIndicesGetMappingParams & OSIndicesGetMappingParams>;
-// ?
 type IndicesPutSettingsParams = Prettify<ESIndicesPutSettingsParams & OSIndicesPutSettingsParams>;
-// body: RequestBody & IndexSettings
+type RequiredIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
 type IndicesPutMappingsParams = Prettify<ESIndicesPutMappingsParams & OSIndicesPutMappingsParams>;
-// index: (string | string[] | undefined) & Indices;
-// body: RequestBody & API.Indices_PutMapping_RequestBody;
+type RequiredIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
 type IndicesOpenParams = Prettify<ESIndicesOpenParams & OSIndicesOpenParams>;
-// index: (string | string[]) & Indices;
+type RequiredIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
 type IndicesRefreshParams = Prettify<ESIndicesRefreshParams & OSIndicesRefreshParams>;
-// ?
 type IndicesCatAliasesParams = Prettify<ESCatAliasesParams & OSCatAliasesParams>;
-// ?
 type IndicesBulkParams = Prettify<ESBulkParams & OSBulkParams>;
-// ?
 type CreateParams = Prettify<ESCreateParams & OSCreateParams>;
-// id: string;
-// index: string;
-// body: RequestBody & API.Create_RequestBody;
+type RequiredCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
 type DeleteParams = Prettify<ESDeleteParams & OSDeleteParams>;
-// id: string;
-// index: string;
+type RequiredDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
 type DeleteByQueryParams = Prettify<ESDeleteByQueryParams & OSDeleteByQueryParams>;
-// index: (string | string[]) & Indices;
+type RequiredDeleteByQueryParams = Pick<DeleteByQueryParams, 'index'>;
 type IndexParams = Prettify<ESIndexParams & OSIndexParams>;
-// index: string;
-// body: RequestBody & API.Index_RequestBody;
+type RequiredIndexParams = Pick<IndexParams, 'index' | 'body'>;
 type SearchParams = Prettify<ESSearchParams & OSSearchParams>;
-// ?
 type UpdateParams = Prettify<ESUpdateParams & OSUpdateParams>;
-// id: string;
-// index: string;
+type RequiredUpdateParams = Pick<UpdateParams, 'id' | 'index'>;
 
+type IndicesCloseResponse = Prettify<
+	Promise<API.Indices_Close_Response> & SearchClientResponseHandler<Record<string, any>>
+>;
 // type ESIndicesCreateResponse = Prettify<ReturnType<ESIndicesCreate>>;
 // type OSIndicesCreateResponse = ReturnType<OSIndicesCreate>;
 
 export type SearchClient = {
 	indices: {
-		close: (
-			input: IndicesCloseParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		close: (input: IndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
 		create: (
 			input: IndicesCreateParams,
 			options?: SearchClientOptions,
@@ -344,8 +333,7 @@ export type OpenSearchClientType = {
 	update: (input: API.Update_Request, options?: OSTransportRequestOptions) => Promise<API.Update_Response>;
 };
 
-// Todo: Expected return Type for .search
-export interface SearchResponse extends Record<string, any> {
+export type SearchResponse = Record<string, any> & {
 	body: {
 		hits: {
 			hits: {
@@ -353,7 +341,7 @@ export interface SearchResponse extends Record<string, any> {
 			}[];
 		};
 	};
-}
+};
 
 // indices.delete:
 // index: string
