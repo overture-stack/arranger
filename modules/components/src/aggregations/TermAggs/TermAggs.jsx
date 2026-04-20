@@ -179,7 +179,7 @@ const TermAggregations = ({
 		...(fieldName && { 'data-fieldname': fieldName }),
 		...(type && { 'data-type': type }),
 	};
-	const bucketsAllSelected = checkBucketsAllSelected(isActive, decoratedBuckets, dotFieldName);
+	const areBucketsAllSelected = checkBucketsAllSelected(isActive, decoratedBuckets, dotFieldName);
 
 	// TODO: (THEME) refactor to separate internal components into their own files
 	// that will allow chunking apart this gigantic destructuring pattern
@@ -204,6 +204,7 @@ const TermAggregations = ({
 					...themeAggregationsFilteringIconProps
 				} = emptyObj,
 				MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = emptyObj,
+				SelectAllButton: themeAggregationsSelectAllButtonProps = emptyObj,
 				NoDataContainer: {
 					fontColor: themeNoDataFontColor = colors?.grey?.[600],
 					fontSize: themeNoDataFontSize = '0.8em',
@@ -237,18 +238,14 @@ const TermAggregations = ({
 					} = emptyObj,
 					IncludeExcludeButton: ToggleButtonThemeProps = emptyObj,
 					MoreOrLessButton: themeTermAggMoreOrLessButtonProps = emptyObj,
+					SelectAllButton: themeTermAggSelectAllButtonProps = emptyObj,
 					sorting: {
 						className: themeTermAggregationsSortingIconClassName,
 						disabled: themeTermAggregationsSortingDisabled,
 						onClick: themeTermAggregationsSortingIconHandler,
 						...themeTermAggregationsSortingIconProps
 					} = emptyObj,
-					selectAll: {
-						className: themeTermAggregationsSelectAllButtonClassName, // TODO
-						disabled: themeTermAggregationsSelectAllDisabled, // TODO
-						onClick: themeTermAggregationsSelectAllButtonHandler, // TODO
-						...themeTermAggregationsSelectAllButtonProps // TODO
-					} = emptyObj,
+					selectAll: { disabled: themeTermAggregationsSelectAllDisabled } = { disabled: true },
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
@@ -495,13 +492,14 @@ const TermAggregations = ({
 				css={css`
 					display: flex;
 					justify-content: space-between;
+					width: 100%;
 				`}
 			>
-				{hasData && (
+				{hasData && !themeTermAggregationsSelectAllDisabled && (
 					<SelectAllButton
-						bucketsAllSelected={bucketsAllSelected}
+						areBucketsAllSelected={areBucketsAllSelected}
 						onClick={() => {
-							if (bucketsAllSelected) {
+							if (areBucketsAllSelected) {
 								// deselect all buckets
 								toggleSelectAll({
 									generateNextSQON: (sqon) => removeSQON(dotFieldName, sqon),
@@ -519,10 +517,11 @@ const TermAggregations = ({
 								setShowingMore(true);
 							}
 						}}
+						theme={merge({}, themeAggregationsSelectAllButtonProps, themeTermAggSelectAllButtonProps)}
 					/>
 				)}
 
-				{isMoreEnabled && !bucketsAllSelected && (
+				{isMoreEnabled && (themeTermAggregationsSelectAllDisabled || !areBucketsAllSelected) && (
 					<MoreOrLessButton
 						howManyMore={decoratedBuckets.length - maxTerms}
 						isShowingMore={showingMore}
