@@ -111,68 +111,78 @@ type OSUpdateParams = Prettify<Parameters<OSUpdate>[0]>;
 // Question: Most param types have 1 or 2 required, 10+ optional
 // What is the best way to define this?
 // also: what to do when all parameters optional?
+// Parameters
+// All Params
 type IndicesCreateParams = Prettify<ESIndicesCreateParams & OSIndicesCreateParams>;
-type RequiredIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
 type IndicesCloseParams = Prettify<ESIndicesCloseParams & OSIndicesCloseParams>;
-type RequiredIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
 type IndicesDeleteParams = Prettify<ESIndicesDeleteParams & OSIndicesDeleteParams>;
-type RequiredIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
 type IndicesExistsParams = Prettify<ESIndicesExistsParams & OSIndicesExistsParams>;
-type RequiredIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
 type IndicesGetMappingParams = Prettify<ESIndicesGetMappingParams & OSIndicesGetMappingParams>;
 type IndicesPutSettingsParams = Prettify<ESIndicesPutSettingsParams & OSIndicesPutSettingsParams>;
-type RequiredIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
 type IndicesPutMappingsParams = Prettify<ESIndicesPutMappingsParams & OSIndicesPutMappingsParams>;
-type RequiredIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
 type IndicesOpenParams = Prettify<ESIndicesOpenParams & OSIndicesOpenParams>;
-type RequiredIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
 type IndicesRefreshParams = Prettify<ESIndicesRefreshParams & OSIndicesRefreshParams>;
 type IndicesCatAliasesParams = Prettify<ESCatAliasesParams & OSCatAliasesParams>;
 type IndicesBulkParams = Prettify<ESBulkParams & OSBulkParams>;
 type CreateParams = Prettify<ESCreateParams & OSCreateParams>;
-type RequiredCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
 type DeleteParams = Prettify<ESDeleteParams & OSDeleteParams>;
-type RequiredDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
 type DeleteByQueryParams = Prettify<ESDeleteByQueryParams & OSDeleteByQueryParams>;
-type RequiredDeleteByQueryParams = Pick<DeleteByQueryParams, 'index'>;
 type IndexParams = Prettify<ESIndexParams & OSIndexParams>;
-type RequiredIndexParams = Pick<IndexParams, 'index' | 'body'>;
 type SearchParams = Prettify<ESSearchParams & OSSearchParams>;
 type UpdateParams = Prettify<ESUpdateParams & OSUpdateParams>;
-type RequiredUpdateParams = Pick<UpdateParams, 'id' | 'index'>;
+// Required Params
+type RequiredIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
+type RequiredIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
+type RequiredIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
+type RequiredIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
+type RequiredIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
+type RequiredIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
+type RequiredIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
+type RequiredCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
+type RequiredDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
+type RequiredDeleteByQueryParams = Pick<DeleteByQueryParams, 'index' | 'body'>;
+type RequiredIndexParams = Pick<IndexParams, 'index' | 'body'>;
+type RequiredUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
 
-type IndicesCloseResponse = Prettify<
-	Promise<API.Indices_Close_Response> & SearchClientResponseHandler<Record<string, any>>
->;
+// TODO: Responses
+// type IndicesCloseResponse = Prettify<
+// 	Promise<API.Indices_Close_Response> & SearchClientResponseHandler<Record<string, any>>
+// >;
 // type ESIndicesCreateResponse = Prettify<ReturnType<ESIndicesCreate>>;
 // type OSIndicesCreateResponse = ReturnType<OSIndicesCreate>;
 
 export type SearchClient = {
 	indices: {
-		close: (input: IndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
+		close: (
+			input: RequiredIndicesCloseParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<Record<string, any>>;
 		create: (
-			input: IndicesCreateParams,
+			input: RequiredIndicesCreateParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
 		delete: (
-			input: IndicesDeleteParams,
+			input: RequiredIndicesDeleteParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
-		exists: (input: IndicesExistsParams, options?: SearchClientOptions) => SearchClientResponseHandler<boolean>;
+		exists: (
+			input: RequiredIndicesExistsParams,
+			options?: SearchClientOptions,
+		) => SearchClientResponseHandler<boolean>;
 		getMapping: (
 			input: IndicesGetMappingParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
 		putSettings: (
-			input: IndicesPutSettingsParams,
+			input: RequiredIndicesPutSettingsParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
 		putMapping: (
-			input: IndicesPutMappingsParams,
+			input: RequiredIndicesPutMappingsParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
 		open: (
-			input: IndicesOpenParams,
+			input: RequiredIndicesOpenParams,
 			options?: SearchClientOptions,
 		) => SearchClientResponseHandler<Record<string, any>>;
 		refresh: (
@@ -187,15 +197,27 @@ export type SearchClient = {
 		) => SearchClientResponseHandler<Record<string, any>>;
 	};
 	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	create: (input: CreateParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	deleteByQuery: (
-		input: DeleteByQueryParams,
+	create: (
+		input: RequiredCreateParams,
 		options?: SearchClientOptions,
 	) => SearchClientResponseHandler<Record<string, any>>;
-	delete: (input: DeleteParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	index: (input: IndexParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	deleteByQuery: (
+		input: RequiredDeleteByQueryParams,
+		options?: SearchClientOptions,
+	) => SearchClientResponseHandler<Record<string, any>>;
+	delete: (
+		input: RequiredDeleteParams,
+		options?: SearchClientOptions,
+	) => SearchClientResponseHandler<Record<string, any>>;
+	index: (
+		input: RequiredIndexParams,
+		options?: SearchClientOptions,
+	) => SearchClientResponseHandler<Record<string, any>>;
 	search: (input: SearchParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	update: (input: UpdateParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
+	update: (
+		input: RequiredUpdateParams,
+		options?: SearchClientOptions,
+	) => SearchClientResponseHandler<Record<string, any>>;
 };
 
 export type ElasticSearchClientType = {
@@ -342,111 +364,3 @@ export type SearchResponse = Record<string, any> & {
 		};
 	};
 };
-
-// indices.delete:
-// index: string
-
-// indices.create:
-// index: esIndex,
-// body: file_centric_mapppings,
-
-// index:
-// index: esIndex,
-// id: datum._id,
-// body: datum._source,
-// refresh: 'wait_for',
-
-// indices.exists
-// index: constants.ARRANGER_PROJECT_INDEX
-
-// indices.create
-// index: constants.ARRANGER_PROJECT_INDEX
-// body: {
-// 	mappings: {
-// 		properties: setsMapping,
-// 	},
-// },
-
-// create
-// index,
-// id: esIndex,
-// body: metadataContent,
-// refresh: 'true',
-
-// body
-// IProjectIndexMetadata = {
-// index: esIndex,
-// name: serializedGqlField,
-// timestamp: timestamp(),
-// active: true,
-// config:
-// 	'aggs-state': await createAggsSetState(es)({ esIndex }),
-// 	'columns-state': await createColumnSetState(es)(
-// 		{
-// 			esIndex,
-// 		},
-// 		graphqlField,
-// 	),
-// 	'matchbox-state': createMatchboxState({
-// 		graphqlField,
-// 		extendedFields: extendedMapping,
-// 	}),
-// 	extended: extendedMapping,
-
-// es.update
-// index,
-// id: metaData.index,
-// body: {
-// 	doc: metaData,
-// },
-// refresh: 'true',
-
-// body
-// projectId: string;
-// metaData: I_ProjectIndexMetadataUpdateDoc;
-
-// delete
-// id: string,
-// refresh: 'true'
-
-// .search
-// index: ARRANGER_PROJECT_INDEX,
-// body: {
-// 	query: {
-// 		match_all: {},
-// 	},
-// 	size: 1,
-// 	sort: [{
-// 		date: {
-// 			order: 'desc',
-// 		},},],},}
-// body: { query:
-// 	match: { search: { query: removeTroubleChars(q), operator: 'and',},},};
-// size: requestSize,
-// from: startFrom,
-
-// indices.getMapping
-// index: esIndex,
-
-// cat.aliases
-// format: 'json'
-
-// bulk
-// body: [...deleteRequests, ...addRequests],
-// 	delete: { _index: GENES_INDEX, _id: gene },
-// 	add?: [{ index: {
-//             _index: GENES_INDEX,
-//             _id: gene.symbol,
-//           },},
-//         gene,]
-
-// deleteByQuery
-// index,
-//     body: {
-//       query: {
-//         term: { name },
-// 		terms?: {}
-//       },}
-
-// indices.putSettings({ index, body: settings });
-// indices.putMapping({ index, body: mappings });
