@@ -23,7 +23,11 @@ export const createRequestPreprocessingMiddleware = ({
 	enforceAccessControl({ configs }),
 ];
 
-const arrangerServer = async ({
+// TODO: for multicatalog, serverSideFilters may be also "per catalog"
+// i.e. each catalog may have their own, with no global filters
+// question: should global filters be allowed?
+
+const arrangerRouter = async ({
 	configs: customConfigs = {},
 	configsSource = '',
 	esClient: customEsClient = undefined,
@@ -31,13 +35,13 @@ const arrangerServer = async ({
 	graphqlOptions = {},
 }: {
 	configs: Partial<ConfigsObject>;
-	configsSource?: string; // TODO: to be removed in v3.2
+	configsSource?: string; // TODO: remove by v3.2
 	esClient?: SearchClient;
 	getServerSideFilter?: GetServerSideFilterFn;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
+	// TODO: set up a real logger... winston or pino?
 	console.log('\n------\nInitializing an Arranger instance:');
-	const router = Router();
 
 	try {
 		const aggregatedConfigs: Partial<ConfigsObject> = {
@@ -62,6 +66,8 @@ const arrangerServer = async ({
 				username: esUser,
 			}));
 
+		const router = Router();
+
 		router.use(createRequestPreprocessingMiddleware({ configs, enableDebug }));
 
 		// TODO: extract mapping logic from this, so it can be used in other endpoints
@@ -71,7 +77,7 @@ const arrangerServer = async ({
 			enableDebug,
 			enableNetworkAggregation,
 			esClient,
-			getServerSideFilter,
+			getServerSideFilter, // TODO: Extend for multicatalog per-catalog filters
 			graphqlOptions,
 		});
 
@@ -83,14 +89,13 @@ const arrangerServer = async ({
 			}),
 		); // consumes
 		router.get('/favicon.ico', (req, res) => res.status(204));
-	} catch (err) {
-		console.log('\n------');
-		console.error(err);
-		// TODO: create a fallback route to indicate the server needs attention
-		router.get('/');
-	}
 
-	return router;
+		return router;
+	} catch (err) {
+		console.error('\n------\nError initializing Arranger instance:', err);
+		// TODO: create a fallback route to indicate the server needs attention
+		throw new Error('Failed to initialize Arranger server'); // Rethrow for better error propagation
+	}
 };
 
-export default arrangerServer;
+export default arrangerRouter;

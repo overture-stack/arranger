@@ -1,9 +1,7 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
 import 'dotenv/config';
 
 import arrangerServer from './src/server.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-arrangerServer({ currentDirectory: __dirname });
+const currentDirectory = process.env.INIT_CWD || process.env.npm_config_local_prefix || process.cwd();
+
+arrangerServer({ currentDirectory });

@@ -11,7 +11,7 @@ export type IntrospectionResponse = {
 			};
 		}
 	>;
-	mode: 'single' | 'multi';
+	mode: 'single' | 'multiple';
 	sqonSchemaPath: string;
 };
 

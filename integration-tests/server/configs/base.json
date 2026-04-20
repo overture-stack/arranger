@@ -1,7 +1,7 @@
 {
 	"validationTestProperty": "should be ignored with a warning",
-	"documentType": "model",
-	"esIndex": "models",
+	"documentType": "model1",
+	"esIndex": "testing-models_1",
 	"facets": {
 		"aggregations": [
 			{

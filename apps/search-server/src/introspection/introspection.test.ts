@@ -42,7 +42,7 @@ suite('introspection tests', () => {
 			},
 		});
 
-		assert.equal(result.mode, 'multi');
+		assert.equal(result.mode, 'multiple');
 		assert.equal(result.catalogCount, 2);
 		assert.deepEqual(result.catalogs, {
 			chemistry: {

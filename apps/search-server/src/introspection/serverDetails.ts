@@ -30,7 +30,7 @@ const buildServerDetails = ({ catalogs }: { catalogs: CatalogsMap }): Introspect
 				];
 			}),
 		),
-		mode: catalogCount > 1 ? 'multi' : 'single',
+		mode: catalogCount > 1 ? 'multiple' : 'single',
 		sqonSchemaPath: '/introspection/sqon',
 	};
 };
