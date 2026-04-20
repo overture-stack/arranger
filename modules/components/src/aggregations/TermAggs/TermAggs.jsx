@@ -19,7 +19,7 @@ import BucketCount from '../BucketCount/index.js';
 
 import SelectAllButton, { checkBucketsAllSelected } from './SelectAllButton.js';
 
-const generateNextSQON = ({ dotFieldName, bucket: { name = '' } = {}, decoratedBuckets = [], isExclude, sqon }) =>
+const generateNextSQON = ({ dotFieldName, bucket, isExclude, sqon }) =>
 	toggleSQON(
 		{
 			op: 'and',
@@ -28,7 +28,7 @@ const generateNextSQON = ({ dotFieldName, bucket: { name = '' } = {}, decoratedB
 					op: isExclude ? 'not-in' : 'in',
 					content: {
 						fieldName: dotFieldName,
-						value: name ? [name] : decoratedBuckets.map((b) => b.name),
+						value: [].concat(bucket.name || []),
 					},
 				},
 			],
