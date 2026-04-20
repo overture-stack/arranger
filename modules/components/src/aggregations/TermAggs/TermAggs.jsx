@@ -218,6 +218,7 @@ const TermAggregations = ({
 					size: themeAggregationsSortingIconSize,
 					...themeAggregationsSortingIconProps
 				} = emptyObj,
+				selectAll: { disabled: themeAggregationsSelectAllDisabled } = { disabled: true },
 				TermAggregation: {
 					BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
 					collapsing: {
@@ -245,7 +246,6 @@ const TermAggregations = ({
 						onClick: themeTermAggregationsSortingIconHandler,
 						...themeTermAggregationsSortingIconProps
 					} = emptyObj,
-					selectAll: { disabled: themeTermAggregationsSelectAllDisabled } = { disabled: true },
 				} = emptyObj,
 			} = emptyObj,
 		} = emptyObj,
@@ -495,7 +495,7 @@ const TermAggregations = ({
 					width: 100%;
 				`}
 			>
-				{hasData && !themeTermAggregationsSelectAllDisabled && (
+				{hasData && !themeAggregationsSelectAllDisabled && (
 					<SelectAllButton
 						areBucketsAllSelected={areBucketsAllSelected}
 						onClick={() => {
@@ -521,7 +521,7 @@ const TermAggregations = ({
 					/>
 				)}
 
-				{isMoreEnabled && (themeTermAggregationsSelectAllDisabled || !areBucketsAllSelected) && (
+				{isMoreEnabled && (themeAggregationsSelectAllDisabled || !areBucketsAllSelected) && (
 					<MoreOrLessButton
 						howManyMore={decoratedBuckets.length - maxTerms}
 						isShowingMore={showingMore}
