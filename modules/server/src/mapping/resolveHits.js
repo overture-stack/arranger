@@ -1,10 +1,6 @@
 import getFields from 'graphql-fields';
 import { JSONPath } from 'jsonpath-plus';
-import {
-	chunk,
-	isObject,
-	flattenDeep
-} from 'lodash-es';
+import { chunk, isObject, flattenDeep } from 'lodash-es';
 
 // import { ENV_CONFIG } from '#config/index.js';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
@@ -38,13 +34,9 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 						json: node,
 						path: path
 							.split('.')
-							.reduce(
-								(acc, part, index) =>
-									index === 0 ? `$.${part}` : `${acc}..${part}`,
-								'',
-							),
-					})
-				)
+							.reduce((acc, part, index) => (index === 0 ? `$.${part}` : `${acc}..${part}`), ''),
+					}),
+				),
 			);
 			return found;
 		}, {});
@@ -52,36 +44,25 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 	};
 
 	return hits.map((hit) => {
-		const joinParent = (parent, fieldName) => (
-			parent ? `${parent}.${fieldName}` : fieldName
-		);
+		const joinParent = (parent, fieldName) => (parent ? `${parent}.${fieldName}` : fieldName);
 
-		const resolveNested = ({
-			node,
-			nestedFieldNames,
-			parent = ''
-		}) => {
+		const resolveNested = ({ node, nestedFieldNames, parent = '' }) => {
 			if (!isObject(node) || !node) {
 				// Backwards compatibility for Array fields when data has not been migrated
-				return extendedFieldsObj?.[parent]?.isArray && !Array.isArray(node)
-					? [node]
-					: node;
+				return extendedFieldsObj?.[parent]?.isArray && !Array.isArray(node) ? [node] : node;
 			}
 
-			return Object
-				.entries(node)
-				.reduce((acc, entry) => {
-					const fieldName = entry[0];
-					const hits = entry[1];
+			return Object.entries(node).reduce((acc, entry) => {
+				const fieldName = entry[0];
+				const hits = entry[1];
 
-					// TODO: inner hits query if necessary
-					const fullPath = joinParent(parent, fieldName);
-					const areHitsNested = nestedFieldNames?.includes(fullPath);
-					const hitsAreActuallyNested = areHitsNested &&
-						Array.isArray(hits);
+				// TODO: inner hits query if necessary
+				const fullPath = joinParent(parent, fieldName);
+				const areHitsNested = nestedFieldNames?.includes(fullPath);
+				const hitsAreActuallyNested = areHitsNested && Array.isArray(hits);
 
-					acc[fieldName] = hitsAreActuallyNested
-						? {
+				acc[fieldName] = hitsAreActuallyNested
+					? {
 							hits: {
 								edges: hits.map((node) => ({
 									node: Object.assign(
@@ -97,8 +78,8 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 								total: hits.length,
 							},
 						}
-						: isObject(hits) && hits
-							? Object.assign(
+					: isObject(hits) && hits
+						? Object.assign(
 								hits.constructor(),
 								resolveNested({
 									node: hits,
@@ -106,14 +87,14 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 									parent: fullPath,
 								}),
 							)
-							: resolveNested({
+						: resolveNested({
 								node: hits,
 								nestedFieldNames,
 								parent: fullPath,
 							});
 
-					return acc;
-				}, {});
+				return acc;
+			}, {});
 		};
 
 		const source = hit._source;
@@ -126,9 +107,7 @@ const processChunk = ({ copyToSourceFields, extendedFieldsObj, hits, nestedField
 		const copied_to_nodes = resolveCopiedTo({ node: source });
 
 		return {
-			searchAfter: hit.sort
-				? hit.sort.map(isESValueSafeJSInt)
-				: [],
+			searchAfter: hit.sort ? hit.sort.map(isESValueSafeJSInt) : [],
 			node: Object.assign(
 				source, // we're not afraid of mutating source here!
 				{ id: hit._id },
@@ -160,55 +139,53 @@ export const hitsToEdges = ({
 	map-reduce based on # of cores available. Otherwise, only one child-process
 	is spawn for compute
   */
-	const dataSize = hits.hits.length;
-	const chunkSize = dataSize > 1000
-		? dataSize / systemCores + (dataSize % systemCores)
-		: dataSize;
+	const dataSize = hits?.hits?.length || 0;
+	const chunkSize = dataSize > 1000 ? dataSize / systemCores + (dataSize % systemCores) : dataSize;
 
 	const chunks = chunk(hits.hits, chunkSize);
 
-	const chunkPromises = chunks.map(
-		(chunk) => {
-			const params = {
-				copyToSourceFields,
-				extendedFieldsObj,
-				hits: chunk,
-				nestedFieldNames,
-			};
+	const chunkPromises = chunks.map((chunk) => {
+		const params = {
+			copyToSourceFields,
+			extendedFieldsObj,
+			hits: chunk,
+			nestedFieldNames,
+		};
 
-			//Parallel.spawn output has a .then but it's not returning an actual promise
-			return new Promise((resolve, reject) => {
-				if (chunkSize >= dataSize) {
-					try {
-						const results = processChunk(params);
-						return resolve(results);
-					} catch (err) {
-						return reject(err);
-					}
+		//Parallel.spawn output has a .then but it's not returning an actual promise
+		return new Promise((resolve, reject) => {
+			if (chunkSize >= dataSize) {
+				try {
+					const results = processChunk(params);
+					return resolve(results);
+				} catch (err) {
+					return reject(err);
 				}
+			}
 
-				new Parallel(params)
-					.require(flattenDeep, isObject, JSONPath)
-					.spawn(processChunk)
-					.then(resolve, (err) => {
-						reject(err);
-					});
-			});
+			new Parallel(params)
+				.require(flattenDeep, isObject, JSONPath)
+				.spawn(processChunk)
+				.then(resolve, (err) => {
+					reject(err);
+				});
 		});
+	});
 
 	return Promise.all(chunkPromises)
 		.then((chunks) => {
-			return chunks.reduce((acc, chunk) =>
-				acc.concat(chunk), []
-			);
+			return chunks.reduce((acc, chunk) => acc.concat(chunk), []);
 		})
-		.catch((err) =>
-			console.log("err", err)
-		);
+		.catch((err) => console.log('err', err));
 };
 
 export default ({ type, Parallel, getServerSideFilter }) =>
-	async (obj, { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true }, context, info) => {
+	async (
+		obj,
+		{ first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
+		context,
+		info,
+	) => {
 		const fields = getFields(info);
 		const nestedFieldNames = type.nested_fieldNames;
 
@@ -239,7 +216,13 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 				return {
 					[fieldName]: {
-						missing: missing ? (missing === 'first' ? '_first' : '_last') : order === 'asc' ? '_first' : '_last',
+						missing: missing
+							? missing === 'first'
+								? '_first'
+								: '_last'
+							: order === 'asc'
+								? '_first'
+								: '_last',
 						order,
 						...rest,
 						...(nested_path?.length ? { nested: { path: nested_path } } : {}),
@@ -254,7 +237,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const copyToSourceFields = findCopyToSourceFields(type.mapping);
 
-		const { hits } = await esSearch(esClient)({
+		const searchResult = await esSearch(esClient)({
 			index: type.index,
 			size: first,
 			from: offset,
@@ -266,6 +249,8 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 			track_scores: !!score,
 			body,
 		});
+
+		const hits = searchResult?.body?.hits || { hits: [], total: { value: 0 } };
 
 		return {
 			edges: () =>

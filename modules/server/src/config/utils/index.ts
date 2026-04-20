@@ -1,14 +1,13 @@
-import type { Client } from '@elastic/elasticsearch';
-
 import { ENV_CONFIG } from '#config/index.js';
 import { type ConfigObject, configProperties } from '#config/types.js';
 import { setsMapping } from '#schema/index.js';
+import { type SearchClient } from '#searchClient/types.js';
 
 export const initializeSets = async ({
 	esClient,
 	setsIndex: setsIndexName,
 }: {
-	esClient: Client;
+	esClient: SearchClient;
 	setsIndex: string;
 }): Promise<void> => {
 	ENV_CONFIG.DEBUG_MODE && console.log(`Attempting to create Sets index "${setsIndexName}"...`);

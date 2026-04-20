@@ -1,13 +1,10 @@
 import { after, before, suite } from 'node:test';
 
-import { Client } from '@elastic/elasticsearch';
 import Arranger from '@overture-stack/arranger-server';
 import ajax from '@overture-stack/arranger-server/dist/utils/ajax.js';
 import express from 'express';
 
-// import { print } from 'graphql';
-// import gql from 'graphql-tag';
-// import Arranger, { adminGraphql } from '../../../modules/server/dist';
+import buildSearchClient from '../../../modules/server/src/searchClient/index.js';
 
 // test modules
 import data from './assets/model_centric.data.json';
@@ -23,11 +20,11 @@ const enableAdmin = (process.env.ENABLE_ADMIN || '').toLowerCase() === 'true';
 const esHost = process.env.ES_HOST || 'http://127.0.0.1:9200';
 const esIndex = process.env.ES_INDEX || 'testing-models_1.0';
 const setsIndex = process.env.ES_ARRANGER_SET_INDEX || 'arranger-sets-testing';
-const esPwd = process.env.ES_PASS;
-const esUser = process.env.ES_USER;
-const port = process.env.PORT || 5678;
+const esPass = process.env.ES_PASS || 'myelasticpassword';
+const esUser = process.env.ES_USER || 'elastic';
 
-const useAuth = !!esPwd && !!esUser;
+const port = process.env.PORT || 5678;
+const client = process.env.SEARCH_CLIENT_TYPE;
 
 const app = express();
 
@@ -36,135 +33,93 @@ const api = ajax(`http://localhost:${port}`, {
 	endpoint: '/graphql',
 });
 
-const esClient = new Client({
-	...(useAuth && {
-		auth: {
-			username: esUser,
-			password: esPwd,
-		},
-	}),
-	node: esHost,
-});
-
-const cleanup = () => {
-	return Promise.all([
-		esClient.indices.delete({
-			index: esIndex,
-		}),
-		esClient.indices.delete({
-			index: setsIndex,
-		}),
-	]);
-};
-
-suite('integration-tests/server', () => {
+suite('integration-tests/server', async () => {
 	let server;
 	const documentType = 'model';
 
-	before(async () => {
-		console.log('\n(Initializing Elasticsearch and Arranger)');
-
-		try {
-			await cleanup();
-		} catch (err) {
-			//
-		}
-
-		await esClient.indices.create({
-			index: esIndex,
-			body: mappings,
-		});
-
-		for (const datum of data) {
-			await esClient.index({
-				index: esIndex,
-				id: datum._id,
-				body: datum._source,
-				refresh: 'wait_for',
-			});
-		}
-
-		try {
-			const router = await Arranger({
-				// needed to see the mapping
-				enableAdmin,
-				// This may be useful when troubleshooting tests
-				enableLogs: true,
-				esHost,
-				getServerSideFilter: () => ({
-					op: 'not',
-					content: [
-						{
-							op: 'in',
-							content: {
-								fieldName: 'access_denied',
-								value: ['true'],
-							},
-						},
-					],
-				}),
-				setsIndex,
-			});
-
-			app.use(router);
-
-			// TODO: reenable once Admin is back online
-			// const adminApp = await adminGraphql({ esHost });
-			// adminApp.applyMiddleware({ app, path: adminPath });
-
-			await new Promise((resolve) => {
-				server = app.listen(port, () => {
-					resolve(null);
-				});
-			});
-
-			// TODO: reenable once Admin is back online
-			// /**
-			//  * uses the admin API to adds some metadata
-			//  */
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!) {
-			//         newProject(id: $projectId) {
-			//           id
-			//           __typename
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//     },
-			//   },
-			// });
-
-			// await api.post({
-			//   endpoint: adminPath,
-			//   body: {
-			//     query: print(gql`
-			//       mutation($projectId: String!, $documentType: String!, $esIndex: String!) {
-			//         newIndex(projectId: $projectId, documentType: $documentType, esIndex: $esIndex) {
-			//           id
-			//         }
-			//       }
-			//     `),
-			//     variables: {
-			//       projectId,
-			//       documentType,
-			//       esIndex,
-			//     },
-			//   },
-			// });
-
-			console.log('******* Starting tests *******');
-		} catch (err) {
-			console.error('error:', err);
-			throw err;
-		}
-	}, {
-		timeout: 10000,
+	const esClient = await buildSearchClient({
+		node: esHost,
+		user: esUser,
+		password: esPass,
+		client,
 	});
+
+	const cleanup = async () => {
+		await esClient.indices.delete({
+			index: esIndex,
+		});
+		await esClient.indices.delete({
+			index: setsIndex,
+		});
+	};
+
+	before(
+		async () => {
+			console.log('\n(Initializing Elasticsearch and Arranger)');
+
+			try {
+				await cleanup();
+			} catch (err) {
+				console.error('Error running integration-tests cleanup');
+				console.error(err);
+			}
+
+			await esClient.indices.create({
+				index: esIndex,
+				body: mappings,
+			});
+
+			for (const datum of data) {
+				await esClient.index({
+					index: esIndex,
+					id: datum._id,
+					body: datum._source,
+					refresh: 'wait_for',
+				});
+			}
+
+			try {
+				const router = await Arranger({
+					// needed to see the mapping
+					enableAdmin,
+					// This may be useful when troubleshooting tests
+					enableLogs: true,
+					esHost,
+					esPass,
+					esUser,
+					getServerSideFilter: () => ({
+						op: 'not',
+						content: [
+							{
+								op: 'in',
+								content: {
+									fieldName: 'access_denied',
+									value: ['true'],
+								},
+							},
+						],
+					}),
+					setsIndex,
+				});
+
+				app.use(router);
+
+				await new Promise((resolve) => {
+					server = app.listen(port, () => {
+						resolve(null);
+					});
+				});
+
+				console.log('******* Starting tests *******');
+			} catch (err) {
+				console.error('Error at integration-tests `before` hook:', err);
+				throw err;
+			}
+		},
+		{
+			timeout: 10000,
+		},
+	);
 
 	after(async () => {
 		try {
@@ -172,7 +127,8 @@ suite('integration-tests/server', () => {
 			server?.close();
 			console.log('\n(Cleared Elasticsearch and stopped Arranger Server)');
 		} catch (err) {
-			//
+			console.error('Error in integration-tests/server `after` test hook');
+			console.error(err);
 		}
 	});
 
