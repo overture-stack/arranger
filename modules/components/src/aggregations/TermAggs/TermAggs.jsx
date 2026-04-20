@@ -4,7 +4,7 @@ import { isEmpty, merge, orderBy, partition, truncate } from 'lodash-es';
 import { createRef, useState } from 'react';
 
 import { TransparentButton } from '#Button/index.js';
-import { removeSQON, toggleSQON } from '#SQONViewer/utils.js';
+import { makeSQON, removeSQON, replaceFieldSQON, toggleSQON } from '#SQONViewer/utils.js';
 import TextFilter from '#TextFilter/index.js';
 import TextHighlight from '#TextHighlight/index.js';
 import { useThemeContext } from '#ThemeContext/index.js';
@@ -159,8 +159,7 @@ const TermAggregations = ({
 	type,
 	valueCharacterLimit,
 	WrapperComponent,
-	deselectAll,
-	selectAll,
+	toggleSelectAll,
 } = emptyObj) => {
 	const [isAlphabetized, setIsAlphabetized] = useState(false);
 	const [isShowingMore, setShowingMore] = useState(false);
@@ -503,27 +502,19 @@ const TermAggregations = ({
 						bucketsAllSelected={bucketsAllSelected}
 						onClick={() => {
 							if (bucketsAllSelected) {
-								// TODO set all to inactive using function passed down
-								// TODO update sqon
-								// deselectAll({
-								// 	fieldName: dotFieldName,
-								// 	values: decorateBuckets,
-								// 	isExclude,
-								// 	generateNextSQON: (sqon) =>
-								// 		generateNextSQON({ isExclude, dotFieldName, bucket, sqon }),
-								// });
+								// deselect all buckets
+								toggleSelectAll({
+									generateNextSQON: (sqon) => removeSQON(dotFieldName, sqon),
+								});
 								setShowingMore(false);
 								scrollToAgg();
-								console.log('all selected');
 							} else {
-								selectAll({
-									generateNextSQON: (sqon) =>
-										generateNextSQON({
-											isExclude,
-											dotFieldName,
-											decoratedBuckets,
-											sqon,
-										}),
+								// select all buckets
+								const newSQON = makeSQON([
+									{ fieldName: dotFieldName, value: decoratedBuckets.map((d) => d.name) },
+								]);
+								toggleSelectAll({
+									generateNextSQON: (sqon) => replaceFieldSQON(dotFieldName, newSQON, sqon),
 								});
 								setShowingMore(true);
 							}
