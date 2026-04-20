@@ -7,7 +7,7 @@ import { TransparentButton } from '#Button/index.js';
 export const checkBucketsAllSelected = (isActive, buckets, fieldName) =>
 	buckets.every((bucket) => isActive({ fieldName, value: bucket.name }));
 
-const SelectAllButton = ({ className = '', css: customCSS = '', bucketsAllSelected, ...props }) => (
+const SelectAllButton = ({ className = '', css: customCSS = '', areBucketsAllSelected, ...props }) => (
 	<TransparentButton
 		className={cx('selectAll-wrapper', className)}
 		css={[
@@ -19,7 +19,7 @@ const SelectAllButton = ({ className = '', css: customCSS = '', bucketsAllSelect
 		]}
 		{...props}
 	>
-		{bucketsAllSelected ? 'Deselect' : 'Select'} All
+		{areBucketsAllSelected ? 'Deselect' : 'Select'} All
 	</TransparentButton>
 );
 
