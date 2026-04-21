@@ -1,5 +1,5 @@
-import { type SearchClient, type SearchResponse } from '#searchClient/types.js';
+import { type SearchClient, type SearchQueryResponse } from '#searchClient/types.js';
 
-export default (esClient: SearchClient) => async (params: SearchResponse) => {
+export default (esClient: SearchClient) => async (params: SearchQueryResponse) => {
 	return await esClient.search(params);
 };

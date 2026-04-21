@@ -144,80 +144,71 @@ type RequiredDeleteByQueryParams = Pick<DeleteByQueryParams, 'index' | 'body'>;
 type RequiredIndexParams = Pick<IndexParams, 'index' | 'body'>;
 type RequiredUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
 
-// TODO: Responses
-// type IndicesCloseResponse = Prettify<
-// 	Promise<API.Indices_Close_Response> & SearchClientResponseHandler<Record<string, any>>
-// >;
-// type ESIndicesCreateResponse = Prettify<ReturnType<ESIndicesCreate>>;
-// type OSIndicesCreateResponse = ReturnType<OSIndicesCreate>;
+// Responses
+type IndicesCloseResponseBody = Prettify<API.Indices_Close_Response & ApiResponse>;
+type IndicesCreateResponseBody = Prettify<API.Indices_Create_Request & ApiResponse>;
+type IndicesDeleteResponseBody = Prettify<API.Indices_Delete_Request & ApiResponse>;
+type IndicesExistsResponseBody = Prettify<API.Indices_Exists_Request & ApiResponse<boolean>>;
+type IndicesGetMappingResponseBody = Prettify<API.Indices_Exists_Request & ApiResponse>;
+type IndicesPutSettingsResponseBody = Prettify<API.Indices_PutSettings_Request & ApiResponse>;
+type IndicesPutMappingResponseBody = Prettify<API.Indices_PutMapping_Request & ApiResponse>;
+type IndicesOpenResponseBody = Prettify<API.Indices_Open_Request & ApiResponse>;
+type IndicesRefreshResponseBody = Prettify<API.Indices_Refresh_Request & ApiResponse>;
+type CatAliasesResponseBody = Prettify<API.Cat_Aliases_Response & ApiResponse>;
+type BulkResponseBody = Prettify<API.Bulk_Request & ApiResponse>;
+type CreateResponseBody = Prettify<API.Create_Request & ApiResponse>;
+type DeleteByQueryResponseBody = Prettify<API.DeleteByQuery_Request & ApiResponse>;
+type DeleteResponseBody = Prettify<API.Delete_Request & ApiResponse>;
+type IndexResponseBody = Prettify<API.Index_Request & ApiResponse>;
+type SearchResponseBody = Prettify<API.Search_Request & ApiResponse>;
+type UpdateResponseBody = Prettify<API.Update_Request & ApiResponse>;
+
+type IndicesCloseResponse = Promise<IndicesCloseResponseBody>;
+type IndicesCreateResponse = Promise<IndicesCreateResponseBody>;
+type IndicesDeleteResponse = Promise<IndicesDeleteResponseBody>;
+type IndicesExistsResponse = Promise<IndicesExistsResponseBody>;
+type IndicesGetMappingResponse = Promise<IndicesGetMappingResponseBody>;
+type IndicesPutSettingsResponse = Promise<IndicesPutSettingsResponseBody>;
+type IndicesPutMappingResponse = Promise<IndicesPutMappingResponseBody>;
+type IndicesOpenResponse = Promise<IndicesOpenResponseBody>;
+type IndicesRefreshResponse = Promise<IndicesRefreshResponseBody>;
+type CatAliasesResponse = Promise<CatAliasesResponseBody>;
+type BulkResponse = Promise<BulkResponseBody>;
+type CreateResponse = Promise<CreateResponseBody>;
+type DeleteByQueryResponse = Promise<DeleteByQueryResponseBody>;
+type DeleteResponse = Promise<DeleteResponseBody>;
+type IndexResponse = Promise<IndexResponseBody>;
+type SearchResponse = Promise<SearchResponseBody>;
+type UpdateResponse = Promise<UpdateResponseBody>;
 
 export type SearchClient = {
 	indices: {
-		close: (
-			input: RequiredIndicesCloseParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
-		create: (
-			input: RequiredIndicesCreateParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
-		delete: (
-			input: RequiredIndicesDeleteParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
-		exists: (
-			input: RequiredIndicesExistsParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<boolean>;
-		getMapping: (
-			input: IndicesGetMappingParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		close: (input: RequiredIndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
+		create: (input: RequiredIndicesCreateParams, options?: SearchClientOptions) => IndicesCreateResponse;
+		delete: (input: RequiredIndicesDeleteParams, options?: SearchClientOptions) => IndicesDeleteResponse;
+		exists: (input: RequiredIndicesExistsParams, options?: SearchClientOptions) => IndicesExistsResponse;
+		getMapping: (input: IndicesGetMappingParams, options?: SearchClientOptions) => IndicesGetMappingResponse;
 		putSettings: (
 			input: RequiredIndicesPutSettingsParams,
 			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => IndicesPutSettingsResponse;
 		putMapping: (
 			input: RequiredIndicesPutMappingsParams,
 			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
-		open: (
-			input: RequiredIndicesOpenParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
-		refresh: (
-			input: IndicesRefreshParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => IndicesPutMappingResponse;
+		open: (input: RequiredIndicesOpenParams, options?: SearchClientOptions) => IndicesOpenResponse;
+		refresh: (input: IndicesRefreshParams, options?: SearchClientOptions) => IndicesRefreshResponse;
 	};
 	cat: {
-		aliases: (
-			input: IndicesCatAliasesParams,
-			options?: SearchClientOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		aliases: (input: IndicesCatAliasesParams, options?: SearchClientOptions) => CatAliasesResponse;
 	};
-	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	create: (
-		input: RequiredCreateParams,
-		options?: SearchClientOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
-	deleteByQuery: (
-		input: RequiredDeleteByQueryParams,
-		options?: SearchClientOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
-	delete: (
-		input: RequiredDeleteParams,
-		options?: SearchClientOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
-	index: (
-		input: RequiredIndexParams,
-		options?: SearchClientOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
-	search: (input: SearchParams, options?: SearchClientOptions) => SearchClientResponseHandler<Record<string, any>>;
-	update: (
-		input: RequiredUpdateParams,
-		options?: SearchClientOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => BulkResponse;
+	create: (input: RequiredCreateParams, options?: SearchClientOptions) => CreateResponse;
+	deleteByQuery: (input: RequiredDeleteByQueryParams, options?: SearchClientOptions) => DeleteByQueryResponse;
+	delete: (input: RequiredDeleteParams, options?: SearchClientOptions) => DeleteResponse;
+	index: (input: RequiredIndexParams, options?: SearchClientOptions) => IndexResponse;
+	search: (input: SearchParams, options?: SearchClientOptions) => SearchResponse;
+	update: (input: RequiredUpdateParams, options?: SearchClientOptions) => UpdateResponse;
 };
 
 export type ElasticSearchClientType = {
@@ -355,7 +346,7 @@ export type OpenSearchClientType = {
 	update: (input: API.Update_Request, options?: OSTransportRequestOptions) => Promise<API.Update_Response>;
 };
 
-export type SearchResponse = Record<string, any> & {
+export type SearchQueryResponse = Record<string, any> & {
 	body: {
 		hits: {
 			hits: {
