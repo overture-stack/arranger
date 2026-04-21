@@ -28,8 +28,6 @@ type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 
-// Approximates <Awaited<ReturnType<ElasticClient[key]>>
-type SearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<Body, Context>>;
 type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 
 // Search Client Method Types
@@ -131,18 +129,18 @@ type IndexParams = Prettify<ESIndexParams & OSIndexParams>;
 type SearchParams = Prettify<ESSearchParams & OSSearchParams>;
 type UpdateParams = Prettify<ESUpdateParams & OSUpdateParams>;
 // Required Params
-type RequiredIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
-type RequiredIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
-type RequiredIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
-type RequiredIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
-type RequiredIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
-type RequiredIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
-type RequiredIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
-type RequiredCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
-type RequiredDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
-type RequiredDeleteByQueryParams = Pick<DeleteByQueryParams, 'index' | 'body'>;
-type RequiredIndexParams = Pick<IndexParams, 'index' | 'body'>;
-type RequiredUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
+type SharedIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
+type SharedIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
+type SharedIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
+type SharedIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
+type SharedIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
+type SharedIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
+type SharedIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
+type SharedCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
+type SharedDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
+type SharedDeleteByQueryParams = Pick<DeleteByQueryParams, 'index' | 'body'>;
+type SharedIndexParams = Pick<IndexParams, 'index' | 'body'>;
+type SharedUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
 
 // Responses
 type IndicesCloseResponseBody = Prettify<API.Indices_Close_Response & ApiResponse>;
@@ -183,107 +181,107 @@ type UpdateResponse = Promise<UpdateResponseBody>;
 
 export type SearchClient = {
 	indices: {
-		close: (input: RequiredIndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
-		create: (input: RequiredIndicesCreateParams, options?: SearchClientOptions) => IndicesCreateResponse;
-		delete: (input: RequiredIndicesDeleteParams, options?: SearchClientOptions) => IndicesDeleteResponse;
-		exists: (input: RequiredIndicesExistsParams, options?: SearchClientOptions) => IndicesExistsResponse;
+		close: (input: SharedIndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
+		create: (input: SharedIndicesCreateParams, options?: SearchClientOptions) => IndicesCreateResponse;
+		delete: (input: SharedIndicesDeleteParams, options?: SearchClientOptions) => IndicesDeleteResponse;
+		exists: (input: SharedIndicesExistsParams, options?: SearchClientOptions) => IndicesExistsResponse;
 		getMapping: (input: IndicesGetMappingParams, options?: SearchClientOptions) => IndicesGetMappingResponse;
 		putSettings: (
-			input: RequiredIndicesPutSettingsParams,
+			input: SharedIndicesPutSettingsParams,
 			options?: SearchClientOptions,
 		) => IndicesPutSettingsResponse;
-		putMapping: (
-			input: RequiredIndicesPutMappingsParams,
-			options?: SearchClientOptions,
-		) => IndicesPutMappingResponse;
-		open: (input: RequiredIndicesOpenParams, options?: SearchClientOptions) => IndicesOpenResponse;
+		putMapping: (input: SharedIndicesPutMappingsParams, options?: SearchClientOptions) => IndicesPutMappingResponse;
+		open: (input: SharedIndicesOpenParams, options?: SearchClientOptions) => IndicesOpenResponse;
 		refresh: (input: IndicesRefreshParams, options?: SearchClientOptions) => IndicesRefreshResponse;
 	};
 	cat: {
 		aliases: (input: IndicesCatAliasesParams, options?: SearchClientOptions) => CatAliasesResponse;
 	};
 	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => BulkResponse;
-	create: (input: RequiredCreateParams, options?: SearchClientOptions) => CreateResponse;
-	deleteByQuery: (input: RequiredDeleteByQueryParams, options?: SearchClientOptions) => DeleteByQueryResponse;
-	delete: (input: RequiredDeleteParams, options?: SearchClientOptions) => DeleteResponse;
-	index: (input: RequiredIndexParams, options?: SearchClientOptions) => IndexResponse;
+	create: (input: SharedCreateParams, options?: SearchClientOptions) => CreateResponse;
+	deleteByQuery: (input: SharedDeleteByQueryParams, options?: SearchClientOptions) => DeleteByQueryResponse;
+	delete: (input: SharedDeleteParams, options?: SearchClientOptions) => DeleteResponse;
+	index: (input: SharedIndexParams, options?: SearchClientOptions) => IndexResponse;
 	search: (input: SearchParams, options?: SearchClientOptions) => SearchResponse;
-	update: (input: RequiredUpdateParams, options?: SearchClientOptions) => UpdateResponse;
+	update: (input: SharedUpdateParams, options?: SearchClientOptions) => UpdateResponse;
 };
+
+// Approximates <Awaited<ReturnType<ElasticClient[key]>>
+type ElasticSearchClientResponseHandler<Body, Context = unknown> = Promise<ApiResponse<Body, Context>>;
 
 export type ElasticSearchClientType = {
 	indices: {
 		close: (
 			input: RequestParams.IndicesClose,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		create: (
 			input: RequestParams.IndicesCreate<Record<string, any>>,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		delete: (
 			input: RequestParams.IndicesDelete,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		exists: (
 			input: RequestParams.IndicesExists | undefined,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<boolean>;
+		) => ElasticSearchClientResponseHandler<boolean>;
 		getMapping: (
 			input: RequestParams.IndicesGetMapping,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		putSettings: (
 			input: RequestParams.IndicesPutSettings<Record<string, any>> | undefined,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		putMapping: (
 			input: RequestParams.IndicesPutMapping<Record<string, any>> | undefined,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		open: (
 			input: RequestParams.IndicesOpen,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 		refresh: (
 			input: RequestParams.IndicesRefresh,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	};
 	cat: {
 		aliases: (
 			input: RequestParams.CatAliases,
 			options?: ESTransportRequestOptions,
-		) => SearchClientResponseHandler<Record<string, any>>;
+		) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	};
 	bulk: (
 		input: RequestParams.Bulk<Record<string, any>[]> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	create: (
 		input: RequestParams.Create<Record<string, any>> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	delete: (
 		input: RequestParams.Delete,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	deleteByQuery: (
 		input: RequestParams.DeleteByQuery<Record<string, any>> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	index: (
 		input: RequestParams.Index<Record<string, any>> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	search: (
 		input: RequestParams.Search<Record<string, any>> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 	update: (
 		input: RequestParams.Update<Record<string, any>> | undefined,
 		options?: ESTransportRequestOptions,
-	) => SearchClientResponseHandler<Record<string, any>>;
+	) => ElasticSearchClientResponseHandler<Record<string, any>>;
 };
 
 export type OpenSearchClientType = {
