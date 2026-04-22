@@ -1,4 +1,4 @@
-import type { Client as ElasticClient, ApiResponse, RequestParams } from '@elastic/elasticsearch';
+import type { Client as ElasticClient, ApiResponse } from '@elastic/elasticsearch';
 import type { TransportRequestOptions as ESTransportRequestOptions } from '@elastic/elasticsearch/lib/Transport';
 
 import type { Client as OpenSearchClient, API } from '@opensearch-project/opensearch';
@@ -6,6 +6,12 @@ import type { TransportRequestOptions as OSTransportRequestOptions } from '@open
 
 import type { ESClientOptions } from './createElasticSearchClient.js';
 import type { OSClientOptions } from './createOpenSearchClient.js';
+
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
+type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
@@ -24,11 +30,15 @@ export type SearchConfigWithClient = Omit<SearchConfig, 'clientType'> & {
 	clientType: SupportedClientTypes;
 };
 
-type Prettify<T> = {
-	[K in keyof T]: T[K];
-} & {};
-
-type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
+export type SearchQueryResponse = Record<string, any> & {
+	body: {
+		hits: {
+			hits: {
+				_source: any;
+			}[];
+		};
+	};
+};
 
 // Search Client Method Types
 // ElasticSearch Methods
@@ -204,14 +214,4 @@ export type SearchClient = {
 	index: (input: SharedIndexParams, options?: SearchClientOptions) => IndexResponse;
 	search: (input: SearchParams, options?: SearchClientOptions) => SearchResponse;
 	update: (input: SharedUpdateParams, options?: SearchClientOptions) => UpdateResponse;
-};
-
-export type SearchQueryResponse = Record<string, any> & {
-	body: {
-		hits: {
-			hits: {
-				_source: any;
-			}[];
-		};
-	};
 };
