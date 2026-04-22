@@ -50,7 +50,6 @@ type ESIndicesPutMappings = ElasticClient['indices']['putMapping'];
 type ESIndicesOpen = ElasticClient['indices']['open'];
 type ESIndicesRefresh = ElasticClient['indices']['refresh'];
 type ESCatAliases = ElasticClient['cat']['aliases'];
-type ESBulk = ElasticClient['bulk'];
 type ESCreate = ElasticClient['create'];
 type ESDelete = ElasticClient['delete'];
 type ESDeleteByQuery = ElasticClient['deleteByQuery'];
@@ -68,7 +67,6 @@ type OSIndicesPutMappings = OpenSearchClient['indices']['putMapping'];
 type OSIndicesOpen = OpenSearchClient['indices']['open'];
 type OSIndicesRefresh = OpenSearchClient['indices']['refresh'];
 type OSCatAliases = OpenSearchClient['cat']['aliases'];
-type OSBulk = OpenSearchClient['bulk'];
 type OSCreate = OpenSearchClient['create'];
 type OSDelete = OpenSearchClient['delete'];
 type OSDeleteByQuery = OpenSearchClient['deleteByQuery'];
@@ -88,7 +86,6 @@ type ESIndicesPutMappingsParams = Prettify<Parameters<ESIndicesPutMappings>[0]>;
 type ESIndicesOpenParams = Prettify<Parameters<ESIndicesOpen>[0]>;
 type ESIndicesRefreshParams = Prettify<Parameters<ESIndicesRefresh>[0]>;
 type ESCatAliasesParams = Prettify<Parameters<ESCatAliases>[0]>;
-type ESBulkParams = Prettify<Parameters<ESBulk>[0]>;
 type ESCreateParams = Prettify<Parameters<ESCreate>[0]>;
 type ESDeleteParams = Prettify<Parameters<ESDelete>[0]>;
 type ESDeleteByQueryParams = Prettify<Parameters<ESDeleteByQuery>[0]>;
@@ -106,7 +103,6 @@ type OSIndicesPutMappingsParams = Prettify<Parameters<OSIndicesPutMappings>[0]>;
 type OSIndicesOpenParams = Prettify<Parameters<OSIndicesOpen>[0]>;
 type OSIndicesRefreshParams = Prettify<Parameters<OSIndicesRefresh>[0]>;
 type OSCatAliasesParams = Prettify<Parameters<OSCatAliases>[0]>;
-type OSBulkParams = Prettify<Parameters<OSBulk>[0]>;
 type OSCreateParams = Prettify<Parameters<OSCreate>[0]>;
 type OSDeleteParams = Prettify<Parameters<OSDelete>[0]>;
 type OSDeleteByQueryParams = Prettify<Parameters<OSDeleteByQuery>[0]>;
@@ -114,9 +110,6 @@ type OSIndexParams = Prettify<Parameters<OSIndex>[0]>;
 type OSSearchParams = Prettify<Parameters<OSSearch>[0]>;
 type OSUpdateParams = Prettify<Parameters<OSUpdate>[0]>;
 
-// Question: Most param types have 1 or 2 required, 10+ optional
-// What is the best way to define this?
-// also: what to do when all parameters optional?
 // Parameters
 // All Params
 type IndicesCreateParams = Prettify<ESIndicesCreateParams & OSIndicesCreateParams>;
@@ -129,7 +122,6 @@ type IndicesPutMappingsParams = Prettify<ESIndicesPutMappingsParams & OSIndicesP
 type IndicesOpenParams = Prettify<ESIndicesOpenParams & OSIndicesOpenParams>;
 type IndicesRefreshParams = Prettify<ESIndicesRefreshParams & OSIndicesRefreshParams>;
 type IndicesCatAliasesParams = Prettify<ESCatAliasesParams & OSCatAliasesParams>;
-type IndicesBulkParams = Prettify<ESBulkParams & OSBulkParams>;
 type CreateParams = Prettify<ESCreateParams & OSCreateParams>;
 type DeleteParams = Prettify<ESDeleteParams & OSDeleteParams>;
 type DeleteByQueryParams = Prettify<ESDeleteByQueryParams & OSDeleteByQueryParams>;
@@ -144,6 +136,7 @@ type SharedIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
 type SharedIndicesPutSettingsParams = Pick<IndicesPutSettingsParams, 'body'>;
 type SharedIndicesPutMappingsParams = Pick<IndicesPutMappingsParams, 'index' | 'body'>;
 type SharedIndicesOpenParams = Pick<IndicesOpenParams, 'index'>;
+type SharedBulkParams = { body: Record<string, any>[] };
 type SharedCreateParams = Pick<CreateParams, 'id' | 'index' | 'body'>;
 type SharedDeleteParams = Pick<DeleteParams, 'id' | 'index'>;
 type SharedDeleteByQueryParams = Pick<DeleteByQueryParams, 'index' | 'body'>;
@@ -151,6 +144,7 @@ type SharedIndexParams = Pick<IndexParams, 'index' | 'body'>;
 type SharedUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
 
 // Responses
+// Shared Response Body
 export type SharedAcknowledgedResponseBody = {
 	acknowledged: boolean;
 };
@@ -181,7 +175,7 @@ export type SharedShardDataResponseBody = {
 export type SharedCatAliasesResponseBody = object[];
 export type SharedBulkResponseBody = {
 	errors: boolean;
-	items: Record<string, object>[];
+	items: Record<string, { _index: string; status: number }>[];
 	took: number;
 };
 export type SharedWriteResponseBody = {
@@ -201,7 +195,7 @@ export type SharedSearchBody = {
 	timed_out: boolean;
 	took: number;
 };
-
+// Response Types
 type IndicesCloseResponse = Prettify<API.Indices_Close_Response & ApiResponse<SharedIndicesCloseResponseBody>>;
 type IndicesCreateResponse = Prettify<API.Indices_Create_Response & ApiResponse<SharedIndicesCreateResponseBody>>;
 type IndicesDeleteResponse = Prettify<API.Indices_Delete_Response & ApiResponse<SharedAcknowledgedResponseBody>>;
@@ -226,6 +220,7 @@ type IndexResponse = Prettify<API.Index_Response & ApiResponse<SharedWriteRespon
 type SearchResponse = Prettify<API.Search_Response & ApiResponse<SharedSearchBody>>;
 type UpdateResponse = Prettify<API.Update_Response & ApiResponse<SharedWriteResponseBody>>;
 
+// Main SearchClient definition
 export type SearchClient = {
 	indices: {
 		close: (input: SharedIndicesCloseParams, options?: SearchClientOptions) => Promise<IndicesCloseResponse>;
@@ -250,7 +245,7 @@ export type SearchClient = {
 	cat: {
 		aliases: (input: IndicesCatAliasesParams, options?: SearchClientOptions) => Promise<CatAliasesResponse>;
 	};
-	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => Promise<BulkResponse>;
+	bulk: (input: SharedBulkParams, options?: SearchClientOptions) => Promise<BulkResponse>;
 	create: (input: SharedCreateParams, options?: SearchClientOptions) => Promise<CreateResponse>;
 	deleteByQuery: (input: SharedDeleteByQueryParams, options?: SearchClientOptions) => Promise<DeleteByQueryResponse>;
 	delete: (input: SharedDeleteParams, options?: SearchClientOptions) => Promise<DeleteResponse>;
