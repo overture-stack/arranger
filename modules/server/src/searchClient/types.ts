@@ -1,6 +1,5 @@
 import type { Client as ElasticClient, ApiResponse } from '@elastic/elasticsearch';
 import type { TransportRequestOptions as ESTransportRequestOptions } from '@elastic/elasticsearch/lib/Transport';
-
 import type { Client as OpenSearchClient, API } from '@opensearch-project/opensearch';
 import type { TransportRequestOptions as OSTransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
 
@@ -12,7 +11,6 @@ type Prettify<T> = {
 } & {};
 
 type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
-
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
 export type SupportedClientOptions = ESClientOptions | OSClientOptions;
@@ -153,65 +151,110 @@ type SharedIndexParams = Pick<IndexParams, 'index' | 'body'>;
 type SharedUpdateParams = Pick<UpdateParams, 'id' | 'index' | 'body'>;
 
 // Responses
-type IndicesCloseResponseBody = Prettify<API.Indices_Close_Response & ApiResponse>;
-type IndicesCreateResponseBody = Prettify<API.Indices_Create_Request & ApiResponse>;
-type IndicesDeleteResponseBody = Prettify<API.Indices_Delete_Request & ApiResponse>;
-type IndicesExistsResponseBody = Prettify<API.Indices_Exists_Request & ApiResponse<boolean>>;
-type IndicesGetMappingResponseBody = Prettify<API.Indices_Exists_Request & ApiResponse>;
-type IndicesPutSettingsResponseBody = Prettify<API.Indices_PutSettings_Request & ApiResponse>;
-type IndicesPutMappingResponseBody = Prettify<API.Indices_PutMapping_Request & ApiResponse>;
-type IndicesOpenResponseBody = Prettify<API.Indices_Open_Request & ApiResponse>;
-type IndicesRefreshResponseBody = Prettify<API.Indices_Refresh_Request & ApiResponse>;
-type CatAliasesResponseBody = Prettify<API.Cat_Aliases_Response & ApiResponse>;
-type BulkResponseBody = Prettify<API.Bulk_Request & ApiResponse>;
-type CreateResponseBody = Prettify<API.Create_Request & ApiResponse>;
-type DeleteByQueryResponseBody = Prettify<API.DeleteByQuery_Request & ApiResponse>;
-type DeleteResponseBody = Prettify<API.Delete_Request & ApiResponse>;
-type IndexResponseBody = Prettify<API.Index_Request & ApiResponse>;
-type SearchResponseBody = Prettify<API.Search_Request & ApiResponse>;
-type UpdateResponseBody = Prettify<API.Update_Request & ApiResponse>;
+export type SharedAcknowledgedResponseBody = {
+	acknowledged: boolean;
+};
+export type SharedAcknowledgedShardsResponseBody = {
+	acknowledged: boolean;
+	shards_acknowledged: boolean;
+};
+export type SharedIndicesCloseResponseBody = Prettify<
+	SharedAcknowledgedShardsResponseBody & {
+		indices: Record<string, { closed: boolean }>;
+	}
+>;
+export type SharedIndicesCreateResponseBody = Prettify<
+	SharedAcknowledgedShardsResponseBody & {
+		index: string;
+	}
+>;
+export type SharedIndicesGetMappingResponseBody = Record<string, { mappings: any }>;
+export type SharedIndicesOpenResponseBody = Prettify<SharedAcknowledgedShardsResponseBody | { task?: string }>;
+type ShardData = {
+	failed: number;
+	successful: number;
+	total: number;
+};
+export type SharedShardDataResponseBody = {
+	_shards: ShardData;
+};
+export type SharedCatAliasesResponseBody = object[];
+export type SharedBulkResponseBody = {
+	errors: boolean;
+	items: Record<string, object>[];
+	took: number;
+};
+export type SharedWriteResponseBody = {
+	_id: string;
+	_index: string;
+	_primary_term: number;
+	_seq_no: number;
+	_shards: ShardData;
+	_version: number;
+	result: 'created' | 'deleted' | 'noop' | 'not_found' | 'updated';
+};
+export type SharedSearchBody = {
+	_shards: ShardData;
+	hits: {
+		hits: { _id: string; _index: string }[];
+	};
+	timed_out: boolean;
+	took: number;
+};
 
-type IndicesCloseResponse = Promise<IndicesCloseResponseBody>;
-type IndicesCreateResponse = Promise<IndicesCreateResponseBody>;
-type IndicesDeleteResponse = Promise<IndicesDeleteResponseBody>;
-type IndicesExistsResponse = Promise<IndicesExistsResponseBody>;
-type IndicesGetMappingResponse = Promise<IndicesGetMappingResponseBody>;
-type IndicesPutSettingsResponse = Promise<IndicesPutSettingsResponseBody>;
-type IndicesPutMappingResponse = Promise<IndicesPutMappingResponseBody>;
-type IndicesOpenResponse = Promise<IndicesOpenResponseBody>;
-type IndicesRefreshResponse = Promise<IndicesRefreshResponseBody>;
-type CatAliasesResponse = Promise<CatAliasesResponseBody>;
-type BulkResponse = Promise<BulkResponseBody>;
-type CreateResponse = Promise<CreateResponseBody>;
-type DeleteByQueryResponse = Promise<DeleteByQueryResponseBody>;
-type DeleteResponse = Promise<DeleteResponseBody>;
-type IndexResponse = Promise<IndexResponseBody>;
-type SearchResponse = Promise<SearchResponseBody>;
-type UpdateResponse = Promise<UpdateResponseBody>;
+type IndicesCloseResponse = Prettify<API.Indices_Close_Response & ApiResponse<SharedIndicesCloseResponseBody>>;
+type IndicesCreateResponse = Prettify<API.Indices_Create_Response & ApiResponse<SharedIndicesCreateResponseBody>>;
+type IndicesDeleteResponse = Prettify<API.Indices_Delete_Response & ApiResponse<SharedAcknowledgedResponseBody>>;
+type IndicesExistsResponse = Prettify<API.Indices_Exists_Response & ApiResponse<boolean>>;
+type IndicesGetMappingResponse = Prettify<
+	API.Indices_GetMapping_Response & ApiResponse<SharedIndicesGetMappingResponseBody>
+>;
+type IndicesPutSettingsResponse = Prettify<
+	API.Indices_PutSettings_Response & ApiResponse<SharedAcknowledgedResponseBody>
+>;
+type IndicesPutMappingResponse = Prettify<
+	API.Indices_PutMapping_Response & ApiResponse<SharedAcknowledgedResponseBody>
+>;
+type IndicesOpenResponse = Prettify<API.Indices_Open_Response & ApiResponse<SharedIndicesOpenResponseBody>>;
+type IndicesRefreshResponse = Prettify<API.Indices_Refresh_Response & ApiResponse<SharedShardDataResponseBody>>;
+type CatAliasesResponse = Prettify<API.Cat_Aliases_Response & ApiResponse<SharedCatAliasesResponseBody>>;
+type BulkResponse = Prettify<API.Bulk_Response & ApiResponse<SharedBulkResponseBody>>;
+type CreateResponse = Prettify<API.Create_Response & ApiResponse<SharedWriteResponseBody>>;
+type DeleteByQueryResponse = Prettify<API.DeleteByQuery_Response & ApiResponse>;
+type DeleteResponse = Prettify<API.Delete_Response & ApiResponse<SharedWriteResponseBody>>;
+type IndexResponse = Prettify<API.Index_Response & ApiResponse<SharedWriteResponseBody>>;
+type SearchResponse = Prettify<API.Search_Response & ApiResponse<SharedSearchBody>>;
+type UpdateResponse = Prettify<API.Update_Response & ApiResponse<SharedWriteResponseBody>>;
 
 export type SearchClient = {
 	indices: {
-		close: (input: SharedIndicesCloseParams, options?: SearchClientOptions) => IndicesCloseResponse;
-		create: (input: SharedIndicesCreateParams, options?: SearchClientOptions) => IndicesCreateResponse;
-		delete: (input: SharedIndicesDeleteParams, options?: SearchClientOptions) => IndicesDeleteResponse;
-		exists: (input: SharedIndicesExistsParams, options?: SearchClientOptions) => IndicesExistsResponse;
-		getMapping: (input: IndicesGetMappingParams, options?: SearchClientOptions) => IndicesGetMappingResponse;
+		close: (input: SharedIndicesCloseParams, options?: SearchClientOptions) => Promise<IndicesCloseResponse>;
+		create: (input: SharedIndicesCreateParams, options?: SearchClientOptions) => Promise<IndicesCreateResponse>;
+		delete: (input: SharedIndicesDeleteParams, options?: SearchClientOptions) => Promise<IndicesDeleteResponse>;
+		exists: (input: SharedIndicesExistsParams, options?: SearchClientOptions) => Promise<IndicesExistsResponse>;
+		getMapping: (
+			input: IndicesGetMappingParams,
+			options?: SearchClientOptions,
+		) => Promise<IndicesGetMappingResponse>;
 		putSettings: (
 			input: SharedIndicesPutSettingsParams,
 			options?: SearchClientOptions,
-		) => IndicesPutSettingsResponse;
-		putMapping: (input: SharedIndicesPutMappingsParams, options?: SearchClientOptions) => IndicesPutMappingResponse;
-		open: (input: SharedIndicesOpenParams, options?: SearchClientOptions) => IndicesOpenResponse;
-		refresh: (input: IndicesRefreshParams, options?: SearchClientOptions) => IndicesRefreshResponse;
+		) => Promise<IndicesPutSettingsResponse>;
+		putMapping: (
+			input: SharedIndicesPutMappingsParams,
+			options?: SearchClientOptions,
+		) => Promise<IndicesPutMappingResponse>;
+		open: (input: SharedIndicesOpenParams, options?: SearchClientOptions) => Promise<IndicesOpenResponse>;
+		refresh: (input: IndicesRefreshParams, options?: SearchClientOptions) => Promise<IndicesRefreshResponse>;
 	};
 	cat: {
-		aliases: (input: IndicesCatAliasesParams, options?: SearchClientOptions) => CatAliasesResponse;
+		aliases: (input: IndicesCatAliasesParams, options?: SearchClientOptions) => Promise<CatAliasesResponse>;
 	};
-	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => BulkResponse;
-	create: (input: SharedCreateParams, options?: SearchClientOptions) => CreateResponse;
-	deleteByQuery: (input: SharedDeleteByQueryParams, options?: SearchClientOptions) => DeleteByQueryResponse;
-	delete: (input: SharedDeleteParams, options?: SearchClientOptions) => DeleteResponse;
-	index: (input: SharedIndexParams, options?: SearchClientOptions) => IndexResponse;
-	search: (input: SearchParams, options?: SearchClientOptions) => SearchResponse;
-	update: (input: SharedUpdateParams, options?: SearchClientOptions) => UpdateResponse;
+	bulk: (input: IndicesBulkParams, options?: SearchClientOptions) => Promise<BulkResponse>;
+	create: (input: SharedCreateParams, options?: SearchClientOptions) => Promise<CreateResponse>;
+	deleteByQuery: (input: SharedDeleteByQueryParams, options?: SearchClientOptions) => Promise<DeleteByQueryResponse>;
+	delete: (input: SharedDeleteParams, options?: SearchClientOptions) => Promise<DeleteResponse>;
+	index: (input: SharedIndexParams, options?: SearchClientOptions) => Promise<IndexResponse>;
+	search: (input: SearchParams, options?: SearchClientOptions) => Promise<SearchResponse>;
+	update: (input: SharedUpdateParams, options?: SearchClientOptions) => Promise<UpdateResponse>;
 };
