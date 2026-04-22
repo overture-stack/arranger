@@ -19,7 +19,11 @@ type ChartContextType = {
 
 export const ChartsContext = createContext<ChartContextType | null>(null);
 
-type ChartsProviderProps = PropsWithChildren<{ debugMode: boolean; loadingDelay: number }>;
+type ChartsProviderProps = PropsWithChildren<{
+	debugMode: boolean;
+	disableIncludeMissing?: boolean;
+	loadingDelay: number;
+}>;
 
 export type GQLDataMap = Record<string, Aggregations | NumericAggregations>;
 /**
@@ -49,10 +53,11 @@ const createChartDataMap = (data): GQLDataMap | null => {
  * @param props - Provider configuration
  * @param props.children - Child components that will have access to charts context
  * @param props.debugMode - Verbose logging for debug
+ * @param props.disableIncludeMissing - Hide properties with "No Data"
  * @param props.loadingDelay - Delays network result loading by <loadingDelay> milliseconds
  * @returns JSX provider element that enables chart functionality
  */
-export const ChartsProvider = ({ children, debugMode, loadingDelay }: ChartsProviderProps) => {
+export const ChartsProvider = ({ children, debugMode, disableIncludeMissing, loadingDelay }: ChartsProviderProps) => {
 	// set logger
 	logger.setDebugMode(debugMode);
 
@@ -63,7 +68,7 @@ export const ChartsProvider = ({ children, debugMode, loadingDelay }: ChartsProv
 	});
 
 	// track GQL dynamic query
-	const { gqlQuery, addQuery, removeQuery } = useDynamicQuery({ documentType });
+	const { gqlQuery, addQuery, removeQuery } = useDynamicQuery({ disableIncludeMissing, documentType });
 
 	// API call
 	const { apiState } = useNetworkQuery({

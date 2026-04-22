@@ -3,12 +3,12 @@ import { Query } from '#components/Provider/useQueryFieldNames';
 import { queryTemplateAggregations, queryTemplateNumericAggregations } from '#gql';
 import { logger } from '#logger';
 
-const queryTemplateCharts = ({ documentType, fieldQueries }) => {
+const queryTemplateCharts = ({ disableIncludeMissing = false, documentType, fieldQueries }) => {
 	return `query ChartsQuery($filters: JSON) {
       ${documentType} {
         aggregations(
           filters: $filters
-          include_missing: true
+          include_missing: ${!disableIncludeMissing}
           aggregations_filter_themselves: true
         ) {
          ${fieldQueries}
@@ -18,7 +18,15 @@ const queryTemplateCharts = ({ documentType, fieldQueries }) => {
 };
 
 // ugly - works for small query templating, improvement: use gql builder
-const generateQuery = ({ documentType, queryFields }: { documentType: string; queryFields: Map<string, Query> }) => {
+const generateQuery = ({
+	disableIncludeMissing,
+	documentType,
+	queryFields,
+}: {
+	disableIncludeMissing?: boolean;
+	documentType: string;
+	queryFields: Map<string, Query>;
+}) => {
 	const fieldQueries = Array.from(queryFields, ([_, value]) => value).reduce(
 		(fullQuery, { fieldName, gqlTypename, variables }) => {
 			switch (gqlTypename) {
@@ -34,7 +42,7 @@ const generateQuery = ({ documentType, queryFields }: { documentType: string; qu
 		'',
 	);
 
-	const query = queryTemplateCharts({ documentType, fieldQueries });
+	const query = queryTemplateCharts({ disableIncludeMissing, documentType, fieldQueries });
 
 	return query;
 };
@@ -44,9 +52,11 @@ const generateQuery = ({ documentType, queryFields }: { documentType: string; qu
  * Inlines variables to simplify, instead of passing as reference in query and seperately in query body
  */
 export const generateChartsQuery = ({
+	disableIncludeMissing,
 	documentType,
 	queryFields,
 }: {
+	disableIncludeMissing?: boolean;
 	documentType: string;
 	queryFields: Map<string, Query>;
 }): string | null => {
@@ -55,5 +65,5 @@ export const generateChartsQuery = ({
 		return null;
 	}
 	logger.debug(`Generating query for fields: ${JSON.stringify(queryFields)}`);
-	return generateQuery({ documentType, queryFields });
+	return generateQuery({ disableIncludeMissing, documentType, queryFields });
 };
