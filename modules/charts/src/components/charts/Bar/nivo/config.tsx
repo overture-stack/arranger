@@ -32,7 +32,7 @@ export const arrangerToNivoBarChart = ({ theme, colorMap, onClick }) => {
 		axisLeft: {
 			legend: 'Axis-Left-Legend',
 			legendPosition: 'middle',
-			legendOffset: -70,
+			legendOffset: -74,
 
 			// tick
 			tickSize: 11,
