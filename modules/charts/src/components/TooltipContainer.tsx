@@ -15,7 +15,7 @@ export const TooltipContainer = ({ children }: PropsWithChildren<{}>) => {
 				borderRadius: ' 2px',
 				padding: '2px 4px',
 				color: 'white',
-				maxWidth: '100px',
+				maxWidth: '200px',
 				maxHeight: '100px',
 				background: '#4f546d',
 
