@@ -1,20 +1,19 @@
-import { type GraphQLResolveInfo } from 'graphql';
-import { type MergeInfo } from 'graphql-tools';
+import { GraphQLResolveInfo } from 'graphql';
+import { MergeInfo } from 'graphql-tools';
+import { Client } from '@elastic/elasticsearch';
 
-import { type SearchClient } from '#searchClient/types.js';
-
-export type AdminApiConfig = {
+export interface AdminApiConfig {
 	esHost: string;
 	esUser: string;
 	esPass: string;
-};
-export type IQueryContext = {
-	es: SearchClient;
-};
+}
+export interface IQueryContext {
+	es: Client;
+}
 
 export type ResolverOutput<T> = T | Promise<T>;
 
-export type MergeResolver<Output, Args = object> =
+export type MergeResolver<Output, Args = Object> =
 	| ((
 			a: any,
 			args: Args,
@@ -23,7 +22,7 @@ export type MergeResolver<Output, Args = object> =
 	  ) => ResolverOutput<Output>)
 	| ResolverOutput<Output>;
 
-export type I_MergeSchema<TOutput, TInput = any> = {
+export interface I_MergeSchema<TOutput, TInput = any> {
 	fragment: string;
 	resolve: MergeResolver<TOutput, TInput>;
-};
+}

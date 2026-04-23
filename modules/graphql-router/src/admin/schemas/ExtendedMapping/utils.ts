@@ -1,22 +1,20 @@
+import { Client } from '@elastic/elasticsearch';
 import { UserInputError } from 'apollo-server';
 
-import { type SearchClient } from '#searchClient/types.js';
-
-import { extendMapping } from '../../../mapping/index.js';
-import { getEsMapping } from '../../services/elasticsearch/index.js';
-import { replaceBy } from '../../services/index.js';
-import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils.js';
-import { type EsIndexLocation } from '../types.js';
-
+import { extendMapping } from '../../../mapping';
+import { getEsMapping } from '../../services/elasticsearch';
+import { replaceBy } from '../../services';
+import { EsIndexLocation } from '../types';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
 import {
-	type I_ExtendedFieldsMappingsQueryArgs,
-	type I_GqlExtendedFieldMapping,
-	type I_SaveExtendedMappingMutationArgs,
-	type I_UpdateExtendedMappingMutationArgs,
-} from './types.js';
+	I_ExtendedFieldsMappingsQueryArgs,
+	I_GqlExtendedFieldMapping,
+	I_SaveExtendedMappingMutationArgs,
+	I_UpdateExtendedMappingMutationArgs,
+} from './types';
 
 export const createExtendedMapping =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ esIndex }: EsIndexLocation): Promise<I_GqlExtendedFieldMapping[]> => {
 		let extendedMappings: I_GqlExtendedFieldMapping[] = [];
 		try {
@@ -32,7 +30,7 @@ export const createExtendedMapping =
 	};
 
 export const getExtendedMapping =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({
 		projectId,
 		graphqlField,
@@ -66,7 +64,7 @@ export const getExtendedMapping =
 	};
 
 export const updateFieldExtendedMapping =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({
 		field: mutatedField,
 		graphqlField,
@@ -106,7 +104,7 @@ export const updateFieldExtendedMapping =
 	};
 
 export const saveExtendedMapping =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (args: I_SaveExtendedMappingMutationArgs): Promise<I_GqlExtendedFieldMapping[]> => {
 		const { projectId, graphqlField, input } = args;
 		const currentIndexMetadata = (await getProjectStorageMetadata(es)(projectId)).find(
@@ -125,8 +123,8 @@ export const saveExtendedMapping =
 		await updateProjectIndexMetadata(es)({
 			projectId,
 			metaData: {
-				index: currentIndexMetadata?.index,
-				name: currentIndexMetadata?.name,
+				index: currentIndexMetadata.index,
+				name: currentIndexMetadata.name,
 				config: {
 					extended: newExtendedMapping,
 				},

@@ -1,30 +1,22 @@
+import { Client } from '@elastic/elasticsearch';
+import { I_Column, I_ColumnSetState, I_ColumnStateQueryInput, I_SaveColumnsStateMutationInput } from './types';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
+import { EsIndexLocation } from '../types';
+import { mappingToColumnsState } from '../../../mapping';
+import { replaceBy, timestamp } from '../../services';
+import { getEsMapping } from '../../services/elasticsearch';
 import { sortBy } from 'ramda';
 
-import { type SearchClient } from '#searchClient/types.js';
-
-import { mappingToColumnsState } from '../../../mapping/index.js';
-import { getEsMapping } from '../../services/elasticsearch/index.js';
-import { replaceBy, timestamp } from '../../services/index.js';
-import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils.js';
-import { type EsIndexLocation } from '../types.js';
-
-import {
-	type I_Column,
-	type I_ColumnSetState,
-	type I_ColumnStateQueryInput,
-	type I_SaveColumnsStateMutationInput,
-} from './types.js';
-
 export const getColumnSetState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (args: I_ColumnStateQueryInput): Promise<I_ColumnSetState> => {
 		const { graphqlField, projectId } = args;
 		const metaData = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);
-		return metaData?.config['columns-state'];
+		return metaData.config['columns-state'];
 	};
 
 export const createColumnSetState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ esIndex }: EsIndexLocation, graphqlField: string): Promise<I_ColumnSetState> => {
 		const rawEsmapping = await getEsMapping(es)({
 			esIndex,
@@ -43,7 +35,7 @@ export const createColumnSetState =
 	};
 
 export const saveColumnState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ graphqlField, projectId, state }: I_SaveColumnsStateMutationInput): Promise<I_ColumnSetState> => {
 		const currentProjectMetadata = await getProjectStorageMetadata(es)(projectId);
 		const currentIndexMetadata = currentProjectMetadata.find((i) => i.name === graphqlField);
@@ -52,7 +44,7 @@ export const saveColumnState =
 			...state,
 			columns: sortByNewOrder(
 				replaceBy(
-					currentIndexMetadata?.config['columns-state']?.state?.columns,
+					currentIndexMetadata.config['columns-state'].state.columns,
 					state.columns,
 					(oldCol, newCol) => oldCol.field === newCol.field,
 				),
@@ -61,8 +53,8 @@ export const saveColumnState =
 		await updateProjectIndexMetadata(es)({
 			projectId,
 			metaData: {
-				index: currentIndexMetadata?.index,
-				name: currentIndexMetadata?.name,
+				index: currentIndexMetadata.index,
+				name: currentIndexMetadata.name,
 				config: {
 					'columns-state': {
 						timestamp: timestamp(),

@@ -1,22 +1,14 @@
+import { Client } from '@elastic/elasticsearch';
+import { mappingToAggsState } from '../../../mapping';
 import { sortBy } from 'ramda';
-
-import { type SearchClient } from '#searchClient/types.js';
-
-import { mappingToAggsState } from '../../../mapping/index.js';
-import { getEsMapping } from '../../services/elasticsearch/index.js';
-import { timestamp } from '../../services/index.js';
-import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils.js';
-import { type EsIndexLocation } from '../types.js';
-
-import {
-	type I_AggsSetState,
-	type I_AggsState,
-	type I_AggsStateQueryInput,
-	type I_SaveAggsStateMutationInput,
-} from './types.js';
+import { I_AggsSetState, I_AggsState, I_AggsStateQueryInput, I_SaveAggsStateMutationInput } from './types';
+import { timestamp } from '../../services';
+import { getProjectStorageMetadata, updateProjectIndexMetadata } from '../IndexSchema/utils';
+import { EsIndexLocation } from '../types';
+import { getEsMapping } from '../../services/elasticsearch';
 
 export const createAggsSetState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ esIndex }: EsIndexLocation): Promise<I_AggsSetState> => {
 		const rawEsmapping = await getEsMapping(es)({ esIndex });
 		const mapping = rawEsmapping[Object.keys(rawEsmapping)[0]].mappings.properties;
@@ -25,15 +17,15 @@ export const createAggsSetState =
 	};
 
 export const getAggsSetState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (args: I_AggsStateQueryInput): Promise<I_AggsSetState> => {
 		const { projectId, graphqlField } = args;
 		const metaData = (await getProjectStorageMetadata(es)(projectId)).find((entry) => entry.name === graphqlField);
-		return metaData?.config['aggs-state'];
+		return metaData.config['aggs-state'];
 	};
 
 export const saveAggsSetState =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (args: I_SaveAggsStateMutationInput): Promise<I_AggsSetState> => {
 		const { graphqlField, projectId, state } = args;
 		const currentMetadata = (await getProjectStorageMetadata(es)(projectId)).find((i) => i.name === graphqlField);
@@ -42,7 +34,7 @@ export const saveAggsSetState =
 		const newAggsSetState: typeof currentAggsState = {
 			timestamp: timestamp(),
 			state: sortByNewOrder(
-				currentAggsState?.state.map((item) => ({
+				currentAggsState.state.map((item) => ({
 					...(state.find((_item) => _item.field === item.field) || item),
 					type: item.type,
 				})),
@@ -52,8 +44,8 @@ export const saveAggsSetState =
 		await updateProjectIndexMetadata(es)({
 			projectId,
 			metaData: {
-				index: currentMetadata?.index,
-				name: currentMetadata?.name,
+				index: currentMetadata.index,
+				name: currentMetadata.name,
 				config: {
 					'aggs-state': newAggsSetState,
 				},

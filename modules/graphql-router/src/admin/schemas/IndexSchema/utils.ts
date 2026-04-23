@@ -1,26 +1,24 @@
+import { Client } from '@elastic/elasticsearch';
 import { UserInputError } from 'apollo-server';
 import Qew from 'qew'; // TODO: using 0.9.13 because later versions break the async
 
-import { type SearchClient } from '#searchClient/types.js';
-
-import { constants } from '../../services/constants.js';
-import { getEsMapping } from '../../services/elasticsearch/index.js';
-import { serializeToGqlField, timestamp } from '../../services/index.js';
-import { createAggsSetState } from '../AggsState/utils.js';
-import { createColumnSetState } from '../ColumnsState/utils.js';
-import { createExtendedMapping } from '../ExtendedMapping/utils.js';
-import { createMatchboxState } from '../MatchboxState/utils.js';
-import { getArrangerProjects } from '../ProjectSchema/utils.js';
-import { type EsIndexLocation } from '../types.js';
-
+import { getEsMapping } from '../../services/elasticsearch';
+import { constants } from '../../services/constants';
+import { serializeToGqlField, timestamp } from '../../services';
+import { createExtendedMapping } from '../ExtendedMapping/utils';
+import { getArrangerProjects } from '../ProjectSchema/utils';
+import { EsIndexLocation } from '../types';
 import {
-	type I_ProjectIndexMetadataUpdateDoc,
-	type IIndexGqlModel,
-	type IIndexQueryInput,
-	type IIndexRemovalMutationInput,
-	type INewIndexInput,
-	type IProjectIndexMetadata,
-} from './types.js';
+	I_ProjectIndexMetadataUpdateDoc,
+	IIndexGqlModel,
+	IIndexQueryInput,
+	IIndexRemovalMutationInput,
+	INewIndexInput,
+	IProjectIndexMetadata,
+} from './types';
+import { createColumnSetState } from '../ColumnsState/utils';
+import { createAggsSetState } from '../AggsState/utils';
+import { createMatchboxState } from '../MatchboxState/utils';
 
 const { ARRANGER_PROJECT_INDEX } = constants;
 
@@ -33,7 +31,7 @@ export const getProjectMetadataEsLocation = (
 });
 
 const mappingExistsOn =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ esIndex }: EsIndexLocation): Promise<boolean> => {
 		try {
 			await getEsMapping(es)({ esIndex });
@@ -44,7 +42,7 @@ const mappingExistsOn =
 	};
 
 export const getProjectStorageMetadata =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (projectId: string): Promise<IProjectIndexMetadata[]> => {
 		try {
 			const {
@@ -61,7 +59,7 @@ export const getProjectStorageMetadata =
 	};
 
 export const getProjectMetadata =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (projectId: string): Promise<IIndexGqlModel[]> =>
 		Promise.all(
 			(await getProjectStorageMetadata(es)(projectId)).map(async (metadata) => ({
@@ -75,24 +73,11 @@ export const getProjectMetadata =
 			})),
 		);
 
-export const getProjectIndex =
-	(es: SearchClient) =>
-	async ({ projectId, graphqlField }: IIndexQueryInput): Promise<IIndexGqlModel> => {
-		try {
-			const output = (await getProjectMetadata(es)(projectId)).find(
-				({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
-			);
-			return output;
-		} catch {
-			throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
-		}
-	};
-
 export const createNewIndex =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async (args: INewIndexInput): Promise<IIndexGqlModel> => {
 		const { projectId, graphqlField, esIndex } = args;
-		const arrangerProject = (await getArrangerProjects(es)).find((project) => project.id === projectId);
+		const arrangerProject: {} = (await getArrangerProjects(es)).find((project) => project.id === projectId);
 		if (arrangerProject) {
 			const serializedGqlField = serializeToGqlField(graphqlField);
 
@@ -139,7 +124,9 @@ export const createNewIndex =
 
 // because different metadata entities write to the same ES document, update operations need to be queued up to a single concurrency controlled task queue for each project. This factory creates a task queue manager for this purpose.
 const createProjectQueueManager = () => {
-	const queues: Record<string, any> = {};
+	const queues: {
+		[projectId: string]: any;
+	} = {};
 	return {
 		getQueue: (projectId: string) => {
 			if (!queues[projectId]) {
@@ -153,7 +140,7 @@ const createProjectQueueManager = () => {
 // pretty bad, since we're just taking anything right now in run time, but at least graphQl will ensure `metaData` is typed in runtime
 const projectQueueManager = createProjectQueueManager();
 export const updateProjectIndexMetadata =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({
 		projectId,
 		metaData,
@@ -179,8 +166,20 @@ export const updateProjectIndexMetadata =
 		});
 	};
 
+export const getProjectIndex =
+	(es: Client) =>
+	async ({ projectId, graphqlField }: IIndexQueryInput): Promise<IIndexGqlModel> => {
+		try {
+			const output = (await getProjectMetadata(es)(projectId)).find(
+				({ graphqlField: _graphqlField }) => graphqlField === _graphqlField,
+			);
+			return output;
+		} catch {
+			throw new UserInputError(`could not find index ${graphqlField} of project ${projectId}`);
+		}
+	};
 export const removeProjectIndex =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({ projectId, graphqlField }: IIndexRemovalMutationInput): Promise<IIndexGqlModel> => {
 		try {
 			const removedIndexMetadata = await getProjectIndex(es)({

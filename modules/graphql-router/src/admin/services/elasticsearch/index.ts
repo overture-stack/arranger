@@ -1,9 +1,7 @@
-import getSearchClient from '#searchClient/index.js';
-import { type SearchClient } from '#searchClient/types.js';
+import { Client } from '@elastic/elasticsearch';
+import { EsMapping } from './types';
 
-import { type EsMapping } from './types.js';
-
-export const createClient = async (esHost: string, esUser: string, esPass: string) => {
+export const createClient = (esHost: string, esUser: string, esPass: string) => {
 	const esConf = { node: esHost };
 	if (esUser && esPass) {
 		esConf['auth'] = {
@@ -11,11 +9,11 @@ export const createClient = async (esHost: string, esUser: string, esPass: strin
 			password: esPass,
 		};
 	}
-	return await getSearchClient(esConf);
+	return new Client(esConf);
 };
 
 export const getEsMapping =
-	(es: SearchClient) =>
+	(es: Client) =>
 	async ({
 		esIndex,
 	}: {

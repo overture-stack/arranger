@@ -1,13 +1,11 @@
-import { type GraphQLResolveInfo } from 'graphql';
-
-import { type IQueryContext } from '../../types.js';
-import { type Resolver } from '../types.js';
-
-import { type I_AggsSetState, type I_AggsStateQueryInput, type I_SaveAggsStateMutationInput } from './types.js';
-import { getAggsSetState, saveAggsSetState } from './utils.js';
+import { GraphQLResolveInfo } from 'graphql';
+import { IQueryContext } from '../../types';
+import { I_AggsSetState, I_AggsStateQueryInput, I_SaveAggsStateMutationInput } from './types';
+import { getAggsSetState, saveAggsSetState } from './utils';
+import { Resolver } from '../types';
 
 const saveAggsStateMutationResolver: Resolver<I_AggsSetState, I_SaveAggsStateMutationInput> = async (
-	obj: object,
+	obj: {},
 	args,
 	{ es }: IQueryContext,
 	info: GraphQLResolveInfo,
@@ -16,7 +14,7 @@ const saveAggsStateMutationResolver: Resolver<I_AggsSetState, I_SaveAggsStateMut
 };
 
 const aggsStateQueryResolver: Resolver<I_AggsSetState, I_AggsStateQueryInput> = (
-	obj: object,
+	obj: {},
 	args,
 	{ es }: IQueryContext,
 	info: GraphQLResolveInfo,

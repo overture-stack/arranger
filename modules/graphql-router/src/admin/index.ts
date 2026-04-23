@@ -2,10 +2,9 @@
 import { addMocksToSchema } from '@graphql-tools/mock';
 import { mergeSchemas } from '@graphql-tools/schema';
 import { ApolloServer } from 'apollo-server-express';
-import { type GraphQLSchema } from 'graphql';
+import { Client } from '@elastic/elasticsearch';
 import { print } from 'graphql/language/printer';
-
-import { type SearchClient } from '#searchClient/types.js';
+import { GraphQLSchema } from 'graphql';
 
 import {
 	createAggsStateByIndexResolver,
@@ -14,17 +13,17 @@ import {
 	createIndexByProjectResolver,
 	createIndicesByProjectResolver,
 	createMatchBoxStateByIndexResolver,
-} from './resolvers.js';
-import { createSchema as createAggsStateSchema } from './schemas/AggsState/index.js';
-import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState/index.js';
-import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping/index.js';
-import { createSchema as createIndexSchema } from './schemas/IndexSchema/index.js';
-import { createSchema as createMatchboxStateSchema } from './schemas/MatchboxState/index.js';
-import { createSchema as createProjectSchema } from './schemas/ProjectSchema/index.js';
-import mergedTypeDefs from './schemaTypeDefs.js';
-import { constants } from './services/constants.js';
-import { createClient as createElasticsearchClient } from './services/elasticsearch/index.js';
-import { type AdminApiConfig, type IQueryContext } from './types.js';
+} from './resolvers';
+import { createSchema as createProjectSchema } from './schemas/ProjectSchema';
+import { createSchema as createIndexSchema } from './schemas/IndexSchema';
+import { createSchema as createAggsStateSchema } from './schemas/AggsState';
+import { createSchema as createMatchboxStateSchema } from './schemas/MatchboxState';
+import { createSchema as createColumnsStateSchema } from './schemas/ColumnsState';
+import { createSchema as createExtendedMappingSchema } from './schemas/ExtendedMapping';
+import mergedTypeDefs from './schemaTypeDefs';
+import { constants } from './services/constants';
+import { createClient as createElasticsearchClient } from './services/elasticsearch';
+import { AdminApiConfig, IQueryContext } from './types';
 
 const createSchema = async () => {
 	const typeDefs = mergedTypeDefs;
@@ -67,30 +66,30 @@ function buildElasticsearchClient(config: AdminApiConfig) {
 	return createElasticsearchClient(config.esHost, config.esUser, config.esPass);
 }
 
-const initialize = async (config: AdminApiConfig): Promise<SearchClient | undefined> => {
-	console.info('Initializing Elasticsearch Client for host: ' + config.esHost);
-	const esClient = await buildElasticsearchClient(config);
-	try {
-		console.info('Checking if index ' + constants.ARRANGER_PROJECT_INDEX + ' exists in Elasticsearch');
-		const exists = await esClient.indices.exists({
-			index: constants.ARRANGER_PROJECT_INDEX,
-		});
-		if (!exists) {
-			esClient.indices.create({
+const initialize = (config: AdminApiConfig): Promise<Client> =>
+	new Promise(async (resolve, reject) => {
+		console.info('Initializing Elasticsearch Client for host: ' + config.esHost);
+		const esClient = buildElasticsearchClient(config);
+		try {
+			console.info('Checking if index ' + constants.ARRANGER_PROJECT_INDEX + ' exists in Elasticsearch');
+			const exists = await esClient.indices.exists({
 				index: constants.ARRANGER_PROJECT_INDEX,
 			});
+			if (!exists) {
+				esClient.indices.create({
+					index: constants.ARRANGER_PROJECT_INDEX,
+				});
+			}
+			resolve(esClient);
+		} catch (err) {
+			setTimeout(() => {
+				initialize(config).then(() => resolve(esClient));
+			}, 1000);
 		}
-		return esClient;
-	} catch (err) {
-		setTimeout(async () => {
-			return await initialize(config);
-		}, 1000);
-	}
-};
+	});
 
 export default async (config: AdminApiConfig) => {
 	const esClient = await initialize(config);
-	if (!esClient) throw new Error('Could not initialize esClient');
 	return new ApolloServer({
 		schema: await createSchema(),
 		context: (): IQueryContext => ({

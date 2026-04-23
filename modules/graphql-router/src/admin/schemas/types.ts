@@ -1,7 +1,6 @@
-import { type GraphQLResolveInfo } from 'graphql';
-import { type MergeInfo } from 'graphql-tools';
-
-import { type IQueryContext } from '../types.js';
+import { GraphQLResolveInfo } from 'graphql';
+import { IQueryContext } from '../types';
+import { MergeInfo } from 'graphql-tools';
 
 export type ResolverOutput<T> = T | Promise<T>;
 
@@ -9,7 +8,7 @@ export interface EsIndexLocation {
 	esIndex: string;
 }
 
-export type Resolver<Output, Args = object> =
+export type Resolver<Output, Args = Object> =
 	| ((
 			a: any,
 			args: Args,
