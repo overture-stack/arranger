@@ -2,13 +2,10 @@ import type { Client as ElasticClient, ApiResponse } from '@elastic/elasticsearc
 import type { TransportRequestOptions as ESTransportRequestOptions } from '@elastic/elasticsearch/lib/Transport';
 import type { Client as OpenSearchClient, API } from '@opensearch-project/opensearch';
 import type { TransportRequestOptions as OSTransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 import type { ESClientOptions } from './createElasticSearchClient.js';
 import type { OSClientOptions } from './createOpenSearchClient.js';
-
-type Prettify<T> = {
-	[K in keyof T]: T[K];
-} & {};
 
 type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
