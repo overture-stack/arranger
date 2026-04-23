@@ -15,5 +15,3 @@ lerna-debug.log
 # include, don't ignore
 !.env.test
 !**/.env.schema
-
-./modules/graphql-router/src/admin
