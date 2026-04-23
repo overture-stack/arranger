@@ -21,6 +21,12 @@ export const typeDefs = `
     key: String
   }
 
+  input RangesArg {
+    to: Int
+    from: Int
+    key: String
+  }
+
   type NumericAggregations {
     stats: Stats
     histogram(interval: Float): Aggregations
