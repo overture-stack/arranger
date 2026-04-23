@@ -1,7 +1,6 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
-		"baseUrl": "./src",
 		"declaration": true,
 		"declarationMap": false,
 		"module": "nodenext",
@@ -11,7 +10,7 @@
 		"noUncheckedIndexedAccess": true,
 		"outDir": "./dist",
 		"paths": {
-			"#*": ["./*"]
+			"#*": ["./src/*"]
 		},
 		"plugins": [
 			{

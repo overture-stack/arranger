@@ -10,9 +10,8 @@
 		/* Modules */
 		"module": "nodenext",
 		"moduleResolution": "nodenext",
-		"baseUrl": "./src",
 		"paths": {
-			"#*": ["./*"]
+			"#*": ["./src/*"]
 		},
 		"plugins": [
 			{
