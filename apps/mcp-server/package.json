@@ -1,0 +1,7 @@
+{
+	"$schema": "https://json.schemastore.org/package.json",
+	"name": "@overture-stack/arranger-mcp-server",
+	"version": "0.0.0-dev",
+	"private": true,
+	"type": "module"
+}

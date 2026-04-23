@@ -4,7 +4,7 @@ const jestConfig: JestConfigWithTsJest = {
 	extensionsToTreatAsEsm: ['.jsx', '.ts', '.tsx'],
 	moduleNameMapper: {
 		'\\.(css|less)$': '<rootDir>/__mocks__/styleMock.cjs',
-		'^lodash-es$': 'lodash', // TODO flip this around when we're on ESM
+		'^lodash-es$': 'lodash', // TODO: flip this around when we're on ESM
 	},
 	transform: {
 		'^.+.[jt]sx?$': [
@@ -13,7 +13,7 @@ const jestConfig: JestConfigWithTsJest = {
 				diagnostics: {
 					warnOnly: true,
 				},
-				useESM: true,
+				useESM: false,
 			},
 		],
 	},

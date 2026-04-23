@@ -1,0 +1,53 @@
+import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
+
+import { AggregationsTypename, aggregationsTypenames } from '#arranger';
+import { getGQLTypename } from '#arranger/mapping';
+import { logger } from '#logger';
+import { Result, failure, success } from '#utils/result';
+
+export interface ValidatedProps {
+	fieldName: string;
+	gqlTypename: AggregationsTypename;
+	variables?: any;
+}
+
+export interface ValidationResult {}
+
+const validateAggregationsType = (queryProps): Result<ValidatedProps> => {
+	if (queryProps?.variables?.range) {
+		const message = `Field ${queryProps.fieldName} with typename "Aggregations" does not support "ranges" argument`;
+		logger.log(message);
+		return failure(message);
+	}
+	return success(queryProps);
+};
+
+const validateNumericAggregationsType = (queryProps): Result<ValidatedProps> => {
+	if (queryProps.variables.ranges === undefined) {
+		const message = `Field ${queryProps.fieldName} with typename NumericAggregations requires a "ranges" argument`;
+		logger.log(message);
+		return failure(message);
+	}
+	return success(queryProps);
+};
+
+//interface ValidationInput extends Pick<BarChartProps, 'fieldName'> & {extendedM}
+interface A {
+	fieldName: string;
+	variables: any;
+	extendedMapping: ExtendedMappingInterface[];
+}
+export const validateQueryProps = ({ fieldName, variables, extendedMapping }: A): Result<ValidatedProps> => {
+	// add GQL typename to object
+	const gqlTypename = getGQLTypename({ fieldName, extendedMapping });
+	const queryProps = { fieldName, variables, gqlTypename };
+
+	switch (queryProps.gqlTypename) {
+		case aggregationsTypenames.Aggregations:
+			return validateAggregationsType(queryProps);
+		case aggregationsTypenames.NumericAggregations:
+			return validateNumericAggregationsType(queryProps);
+		default:
+			return failure(`Could not validate configuration: ${JSON.stringify(queryProps)}`);
+	}
+};

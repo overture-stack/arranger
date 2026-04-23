@@ -1,0 +1,101 @@
+import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import { Router, type RequestHandler } from 'express';
+
+import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
+import fallbackConfigs, { validateConfigs } from '#config/index.js';
+import downloadRoutes from '#download/index.js';
+import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import { warnDeprecatedConfigsSource } from '#utils/noops.js';
+
+import getGraphQLRoutes from './graphqlRoutes.js';
+import { addContext } from './utils/context.js';
+
+export const createRequestPreprocessingMiddleware = ({
+	configs,
+	enableDebug,
+}: {
+	configs: Partial<ConfigsObject>;
+	enableDebug?: boolean;
+}): RequestHandler[] => [
+	addContext({
+		enableDebug,
+	}),
+	enforceAccessControl({ configs }),
+];
+
+// TODO: for multicatalog, serverSideFilters may be also "per catalog"
+// i.e. each catalog may have their own, with no global filters
+// question: should global filters be allowed?
+
+const arrangerRouter = async ({
+	configs: customConfigs = {},
+	configsSource = '',
+	esClient: customEsClient = undefined,
+	getServerSideFilter = getDefaultServerSideFilter,
+	graphqlOptions = {},
+}: {
+	configs: Partial<ConfigsObject>;
+	configsSource?: string; // TODO: remove by v3.2
+	esClient?: SearchClient;
+	getServerSideFilter?: GetServerSideFilterFn;
+	graphqlOptions?: Record<string, unknown>; // FIXME
+}): Promise<Router> => {
+	// TODO: set up a real logger... winston or pino?
+	console.log('\n------\nInitializing an Arranger instance:');
+
+	try {
+		const aggregatedConfigs: Partial<ConfigsObject> = {
+			...fallbackConfigs,
+			...customConfigs,
+		};
+
+		const { enableAdmin, enableDebug, enableNetworkAggregation, esHost, esPass, esUser, searchEngine, ...configs } =
+			validateConfigs(aggregatedConfigs, customEsClient);
+
+		warnDeprecatedConfigsSource({ configsSource, enableDebug: aggregatedConfigs.enableDebug });
+
+		enableAdmin && console.log('    Instance will run in ADMIN mode!!');
+		// TODO: research and document what that means
+
+		const esClient =
+			customEsClient ||
+			(await buildSearchClient({
+				client: searchEngine,
+				node: esHost,
+				password: esPass,
+				username: esUser,
+			}));
+
+		const router = Router();
+
+		router.use(createRequestPreprocessingMiddleware({ configs, enableDebug }));
+
+		// TODO: extract mapping logic from this, so it can be used in other endpoints
+		const graphQLRoutes = await getGraphQLRoutes({
+			configs,
+			enableAdmin,
+			enableDebug,
+			enableNetworkAggregation,
+			esClient,
+			getServerSideFilter, // TODO: Extend for multicatalog per-catalog filters
+			graphqlOptions,
+		});
+
+		router.use('/', graphQLRoutes);
+		router.use(
+			`/download`,
+			downloadRoutes({
+				enableDebug,
+			}),
+		); // consumes
+		router.get('/favicon.ico', (req, res) => res.status(204));
+
+		return router;
+	} catch (err) {
+		console.error('\n------\nError initializing Arranger instance:', err);
+		// TODO: create a fallback route to indicate the server needs attention
+		throw new Error('Failed to initialize Arranger server'); // Rethrow for better error propagation
+	}
+};
+
+export default arrangerRouter;
