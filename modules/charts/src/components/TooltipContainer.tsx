@@ -18,7 +18,9 @@ export const TooltipContainer = ({ children }: PropsWithChildren<{}>) => {
 				maxWidth: '200px',
 				maxHeight: '100px',
 				background: '#4f546d',
+				wordWrap: 'break-word',
 
+				// tooltip arrow
 				'&:before': {
 					content: '""',
 					display: 'block',
