@@ -116,7 +116,7 @@ type IndexParams = Prettify<ESIndexParams & OSIndexParams>;
 type SearchParams = Prettify<ESSearchParams & OSSearchParams>;
 type UpdateParams = Prettify<ESUpdateParams & OSUpdateParams>;
 // Required Params
-type SharedIndicesCreateParams = Pick<IndicesCreateParams, 'index'>;
+type SharedIndicesCreateParams = Pick<IndicesCreateParams, 'index' | 'body'>;
 type SharedIndicesCloseParams = Pick<IndicesCloseParams, 'index'>;
 type SharedIndicesDeleteParams = Pick<IndicesDeleteParams, 'index'>;
 type SharedIndicesExistsParams = Pick<IndicesExistsParams, 'index'>;
