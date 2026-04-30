@@ -1,16 +1,12 @@
-import type { Client as ElasticClient, ApiResponse } from '@elastic/elasticsearch';
+import type { Client as ElasticClient } from '@elastic/elasticsearch';
 import type { TransportRequestOptions as ESTransportRequestOptions } from '@elastic/elasticsearch/lib/Transport';
-import type { Client as OpenSearchClient, API } from '@opensearch-project/opensearch';
+import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
 import type { TransportRequestOptions as OSTransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
 import type { Prettify } from '@overture-stack/arranger-types/tools';
-
-import type { ESClientOptions } from './createElasticSearchClient.js';
-import type { OSClientOptions } from './createOpenSearchClient.js';
 
 type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
-export type SupportedClientOptions = ESClientOptions | OSClientOptions;
 export type SearchConfig = {
 	node: string;
 	clientType?: string;
@@ -62,11 +58,9 @@ export type SearchClientAcknowledgedShardsResponseBody = {
 	acknowledged: boolean;
 	shards_acknowledged: boolean;
 };
-export type SearchClientIndicesCloseResponseBody = Prettify<
-	SearchClientAcknowledgedShardsResponseBody & {
-		indices: Record<string, { closed: boolean }>;
-	}
->;
+export type SearchClientIndicesCloseResponseBody = SearchClientAcknowledgedShardsResponseBody & {
+	indices: Record<string, { closed: boolean }>;
+};
 export type SearchClientIndicesCreateResponseBody = Prettify<
 	SearchClientAcknowledgedShardsResponseBody & {
 		index: string;
@@ -102,30 +96,66 @@ export type SearchClientSearchBody = {
 	timed_out: boolean;
 	took: number;
 };
+export type SearchClientDeleteByQueryBody = Record<string, any>;
+
+// TODO: this will need revision
+type BaseSearchResponse = Record<string, any>;
+
+type HitsResponse = BaseSearchResponse & {
+	body: {
+		hits: {
+			hits: {
+				_source: any;
+			}[];
+		};
+	};
+};
+
+type AggregationsResponse = BaseSearchResponse & {
+	body: {
+		aggregations: Record<string, any>;
+	};
+};
+
+export type SearchQueryResponse = HitsResponse | AggregationsResponse;
+
+type SearchClientBaseResponseType<ResponseBody> = {
+	body: ResponseBody;
+	statusCode: number | null;
+	headers: Record<string, any> | null;
+	warnings: string[] | null;
+	meta: {
+		context: unknown;
+		name: string | symbol;
+		request: {
+			params: Record<string, any>;
+			options: Record<string, any>;
+			id: any;
+		};
+		connection: Record<string, any>;
+		attempts: number;
+		aborted: boolean;
+	};
+};
+
 // Response Types
-type IndicesCloseResponse = Prettify<API.Indices_Close_Response & ApiResponse<SearchClientIndicesCloseResponseBody>>;
-type IndicesCreateResponse = Prettify<API.Indices_Create_Response & ApiResponse<SearchClientIndicesCreateResponseBody>>;
-type IndicesDeleteResponse = Prettify<API.Indices_Delete_Response & ApiResponse<SearchClientAcknowledgedResponseBody>>;
-type IndicesExistsResponse = Prettify<API.Indices_Exists_Response & ApiResponse<boolean>>;
-type IndicesGetMappingResponse = Prettify<
-	API.Indices_GetMapping_Response & ApiResponse<SearchClientIndicesGetMappingResponseBody>
->;
-type IndicesPutSettingsResponse = Prettify<
-	API.Indices_PutSettings_Response & ApiResponse<SearchClientAcknowledgedResponseBody>
->;
-type IndicesPutMappingResponse = Prettify<
-	API.Indices_PutMapping_Response & ApiResponse<SearchClientAcknowledgedResponseBody>
->;
-type IndicesOpenResponse = Prettify<API.Indices_Open_Response & ApiResponse<SearchClientIndicesOpenResponseBody>>;
-type IndicesRefreshResponse = Prettify<API.Indices_Refresh_Response & ApiResponse<SearchClientShardDataResponseBody>>;
-type CatAliasesResponse = Prettify<API.Cat_Aliases_Response & ApiResponse<SearchClientCatAliasesResponseBody>>;
-type BulkResponse = Prettify<API.Bulk_Response & ApiResponse<SearchClientBulkResponseBody>>;
-type CreateResponse = Prettify<API.Create_Response & ApiResponse<SearchClientWriteResponseBody>>;
-type DeleteByQueryResponse = Prettify<API.DeleteByQuery_Response & ApiResponse>;
-type DeleteResponse = Prettify<API.Delete_Response & ApiResponse<SearchClientWriteResponseBody>>;
-type IndexResponse = Prettify<API.Index_Response & ApiResponse<SearchClientWriteResponseBody>>;
-type SearchResponse = Prettify<API.Search_Response & ApiResponse<SearchClientSearchBody>>;
-type UpdateResponse = Prettify<API.Update_Response & ApiResponse<SearchClientWriteResponseBody>>;
+type IndicesCloseResponse = SearchClientBaseResponseType<SearchClientIndicesCloseResponseBody>;
+type IndicesCreateResponse = SearchClientBaseResponseType<SearchClientIndicesCreateResponseBody>;
+type IndicesDeleteResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+type IndicesExistsResponse = SearchClientBaseResponseType<boolean>;
+type IndicesGetMappingResponse = SearchClientBaseResponseType<SearchClientIndicesGetMappingResponseBody>;
+type IndicesPutSettingsResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+type IndicesPutMappingResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+type IndicesOpenResponse = SearchClientBaseResponseType<SearchClientIndicesOpenResponseBody>;
+type IndicesRefreshResponse = SearchClientBaseResponseType<SearchClientShardDataResponseBody>;
+type CatAliasesResponse = SearchClientBaseResponseType<SearchClientCatAliasesResponseBody>;
+type BulkResponse = SearchClientBaseResponseType<SearchClientBulkResponseBody>;
+type CreateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+type DeleteByQueryResponse = SearchClientBaseResponseType<SearchClientDeleteByQueryBody>;
+type DeleteResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+type IndexResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+type SearchResponse = SearchClientBaseResponseType<SearchClientSearchBody>;
+type UpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
 
 // Main SearchClient definition
 export type SearchClient = {
@@ -178,24 +208,3 @@ export type SearchClient = {
 	search: (input: SearchClientSearchParams, options?: SearchClientOptions) => Promise<SearchResponse>;
 	update: (input: SearchClientUpdateParams, options?: SearchClientOptions) => Promise<UpdateResponse>;
 };
-
-// TODO: this will need revision
-type BaseSearchResponse = Record<string, any>;
-
-type HitsResponse = BaseSearchResponse & {
-	body: {
-		hits: {
-			hits: {
-				_source: any;
-			}[];
-		};
-	};
-};
-
-type AggregationsResponse = BaseSearchResponse & {
-	body: {
-		aggregations: Record<string, any>;
-	};
-};
-
-export type SearchQueryResponse = HitsResponse | AggregationsResponse;
