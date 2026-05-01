@@ -4,7 +4,6 @@ import type { Client as OpenSearchClient } from '@opensearch-project/opensearch'
 import type { TransportRequestOptions as OSTransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
 import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
 export type SearchConfig = {
@@ -98,6 +97,7 @@ export type SearchClientSearchBody = {
 };
 export type SearchClientDeleteByQueryBody = Record<string, any>;
 
+// Response Types
 // TODO: this will need revision
 type BaseSearchResponse = Record<string, any>;
 
@@ -138,7 +138,6 @@ type SearchClientBaseResponseType<ResponseBody> = {
 	};
 };
 
-// Response Types
 type IndicesCloseResponse = SearchClientBaseResponseType<SearchClientIndicesCloseResponseBody>;
 type IndicesCreateResponse = SearchClientBaseResponseType<SearchClientIndicesCreateResponseBody>;
 type IndicesDeleteResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
@@ -156,6 +155,8 @@ type DeleteResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody
 type IndexResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
 type SearchResponse = SearchClientBaseResponseType<SearchClientSearchBody>;
 type UpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+
+type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
 
 // Main SearchClient definition
 export type SearchClient = {
