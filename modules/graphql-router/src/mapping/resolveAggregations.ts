@@ -107,7 +107,6 @@ const getAggregationsResolver = ({
 			index: type.index,
 			size: 0,
 			_source: false,
-			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			body,
 		});
 

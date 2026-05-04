@@ -1,5 +1,4 @@
-import type { ApiResponse } from '@elastic/elasticsearch/api/new';
-import type { CatAliasesAliasesRecord, IndicesGetMappingResponse } from '@elastic/elasticsearch/api/types';
+import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
 import { type SearchClient } from '#searchClient/types.js';
 
@@ -62,7 +61,7 @@ export const fetchMapping = async ({
 					},
 				),
 				`ES mapping for "${accessor}"`,
-			).then((response: ApiResponse<IndicesGetMappingResponse>) => {
+			).then((response) => {
 				const mappings = response?.body?.[accessor];
 
 				if (mappings) {
