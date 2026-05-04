@@ -1,10 +1,13 @@
-import { Client, type ClientOptions } from '@opensearch-project/opensearch';
+import { Client } from '@opensearch-project/opensearch';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-import type { SearchClient } from './types.js';
+import type { SearchClient, SearchConfig } from './types.js';
 
-export type OSClientOptions = ClientOptions & {
-	clientType: 'opensearch';
-};
+export type OSClientOptions = Prettify<
+	SearchConfig & {
+		clientType: 'opensearch';
+	}
+>;
 
 export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 	const openSearchClient = new Client(options);

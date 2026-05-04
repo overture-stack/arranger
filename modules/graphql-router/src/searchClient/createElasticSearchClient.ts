@@ -1,4 +1,5 @@
-import { Client, type ClientOptions } from '@elastic/elasticsearch';
+import { Client } from '@elastic/elasticsearch';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 import type {
 	SearchClient,
@@ -12,11 +13,14 @@ import type {
 	SearchClientShardDataResponseBody,
 	SearchClientIndicesOpenResponseBody,
 	SearchClientSearchBody,
+	SearchConfig,
 } from './types.js';
 
-export type ESClientOptions = ClientOptions & {
-	clientType: 'elasticsearch';
-};
+export type ESClientOptions = Prettify<
+	SearchConfig & {
+		clientType: 'elasticsearch';
+	}
+>;
 
 export function createElasticSearchClient(options: ESClientOptions): SearchClient {
 	const elasticSearchClient = new Client(options);

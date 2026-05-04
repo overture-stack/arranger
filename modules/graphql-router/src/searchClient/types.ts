@@ -1,8 +1,5 @@
 import type { Client as ElasticClient } from '@elastic/elasticsearch';
-import type { TransportRequestOptions as ESTransportRequestOptions } from '@elastic/elasticsearch/lib/Transport';
 import type { Client as OpenSearchClient } from '@opensearch-project/opensearch';
-import type { TransportRequestOptions as OSTransportRequestOptions } from '@opensearch-project/opensearch/lib/Transport.js';
-import type { Prettify } from '@overture-stack/arranger-types/tools';
 
 export type SupportedClients = { elasticsearch: ElasticClient; opensearch: OpenSearchClient };
 export type SupportedClientTypes = keyof SupportedClients;
@@ -156,7 +153,21 @@ export type IndexResponse = SearchClientBaseResponseType<SearchClientWriteRespon
 export type SearchResponse = SearchClientBaseResponseType<SearchClientSearchBody>;
 export type UpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
 
-export type SearchClientOptions = Prettify<ESTransportRequestOptions & OSTransportRequestOptions>;
+export type SearchClientOptions = {
+	ignore?: number[];
+	requestTimeout?: number | string;
+	maxRetries?: number;
+	asStream?: boolean;
+	headers?: Record<string, any>;
+	querystring?: Record<string, any>;
+	compression?: 'gzip';
+	id?: any;
+	context?: unknown;
+	warnings?: string[];
+	opaqueId?: string;
+	maxResponseSize?: number;
+	maxCompressedResponseSize?: number;
+};
 
 // Main SearchClient definition
 export type SearchClient = {
