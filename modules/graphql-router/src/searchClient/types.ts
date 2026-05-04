@@ -154,19 +154,7 @@ export type SearchResponse = SearchClientBaseResponseType<SearchClientSearchBody
 export type UpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
 
 export type SearchClientOptions = {
-	ignore?: number[];
 	requestTimeout?: number | string;
-	maxRetries?: number;
-	asStream?: boolean;
-	headers?: Record<string, any>;
-	querystring?: Record<string, any>;
-	compression?: 'gzip';
-	id?: any;
-	context?: unknown;
-	warnings?: string[];
-	opaqueId?: string;
-	maxResponseSize?: number;
-	maxCompressedResponseSize?: number;
 };
 
 // Main SearchClient definition
