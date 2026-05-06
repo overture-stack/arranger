@@ -12,7 +12,6 @@ export const configArrangerFeatureFlagProperties = {
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
 	DISABLE_SETS: 'disableSets', // TODO: not fully implemented yet. needs review
-	ENABLE_NETWORK_AGGREGATION: 'enableNetworkAggregation',
 } as const;
 
 export const configRuntimeFeatureFlagProperties = {
@@ -47,7 +46,7 @@ export const configOptionalProperties = {
 	CHARTS: 'charts',
 	FACETS: 'facets',
 	MATCHBOX: 'matchbox',
-	NETWORK_AGGREGATION: 'network',
+	NETWORK_AGGREGATION: 'nodes',
 	TABLE: 'table',
 } as const;
 
@@ -104,7 +103,11 @@ export const facetsProperties = {
 	AGGS: 'aggregations',
 } as const;
 
-export const networkAggregationProperties = {
+export const localNodeProperties = {
+	CATALOG_ID: 'catalogId',
+} as const;
+
+export const remoteNodeProperties = {
 	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE,
 	DISPLAY_NAME: 'displayName',

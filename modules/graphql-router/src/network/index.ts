@@ -1,7 +1,7 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
 import { createResolvers } from './resolvers/index.js';
-import { SUPPORTED_AGGREGATIONS } from './setup/constants.js';
+import type { SUPPORTED_AGGREGATIONS } from './setup/constants.js';
 import { normalizeFieldTypes } from './setup/fields.js';
 import { fetchAllNodeAggregations } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
@@ -26,7 +26,7 @@ export const ALL_NETWORK_AGGREGATION_TYPES_MAP: Map<string, keyof typeof SUPPORT
 export const createSchemaFromNetworkConfig = async ({ networkConfigs }: { networkConfigs: NetworkConfig[] }) => {
 	/**
 	 * Fetches meta data from remote Arranger instances
-	 * Adds aggregation fied/type information to networked node configuration
+	 * Adds aggregation field/type information to networked node configuration
 	 */
 	const nodeConfig = await fetchAllNodeAggregations({
 		networkConfigs,

@@ -59,7 +59,7 @@ export const createFileGQLQuery = (documentName: string, requestedFields: Reques
 	const queryArgsTypes = `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`;
 	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
 	const aggregationsString = !isEmpty(fields) ? `aggregations${fieldQueryArgs} ${fields}` : '';
-	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits { total }  ${aggregationsString} }}`;
+	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits { total } ${aggregationsString} }}`;
 	return gqlString;
 };
 
@@ -100,7 +100,7 @@ export const createNetworkQuery = (
 		`;
 		return gqlQuery;
 	} catch (err) {
-		console.error('invalid gql', err);
+		console.error('createNetworkQuery generated invalid GQL', err);
 		return undefined;
 	}
 };

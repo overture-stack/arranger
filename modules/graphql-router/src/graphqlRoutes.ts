@@ -258,7 +258,6 @@ export const createSchemasFromConfigs = async ({
 	configs,
 	enableDebug,
 	enableAdmin,
-	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -296,12 +295,12 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		if (enableNetworkAggregation) {
-			const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
-			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
-				throw new Error('  Network config not found. Please check validity.');
-			}
-
+		const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION_NODES];
+		if (networkConfigsObj.length >= 1) {
+			enableDebug &&
+				console.debug(
+					'    DEBUG: `nodes` config provided for network aggregation. Adding network search to the gql schema...',
+				);
 			const remoteServerConfigs = networkConfigsObj.map((config) => ({
 				...config,
 				/*
