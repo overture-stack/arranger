@@ -13,7 +13,8 @@ import type {
 	dataFieldProperties,
 	downloadProperties,
 	facetsProperties,
-	networkAggregationProperties,
+	localNodeProperties,
+	remoteNodeProperties,
 	setsProperties,
 	tableProperties,
 } from './constants.js';
@@ -107,11 +108,17 @@ export type TableConfigs = {
 	[tableProperties.ROW_ID_FIELD_NAME]?: string;
 };
 
-export type NetworkAggregation = {
-	[networkAggregationProperties.DISPLAY_NAME]: string;
-	[networkAggregationProperties.DOCUMENT_TYPE]: string;
-	[networkAggregationProperties.GRAPHQL_URL]: string;
+export type RemoteNodeConfig = {
+	[remoteNodeProperties.DISPLAY_NAME]: string;
+	[remoteNodeProperties.DOCUMENT_TYPE]: string;
+	[remoteNodeProperties.GRAPHQL_URL]: string;
 };
+export type LocalNodeConfig = {
+	[localNodeProperties.CATALOG_ID]: string;
+};
+
+// TODO: Union with LocalNodeConfig (WIP)
+export type NodeConfig = RemoteNodeConfig;
 
 export type GetServerSideFilterFn = () => SqonNode;
 
@@ -129,7 +136,7 @@ export type ConfigsObject = {
 		getServerSideFilter: GetServerSideFilterFn;
 		[configOptionalProperties.CATALOG_ID]: string;
 		[configOptionalProperties.ES_HOST]: string;
-		[configOptionalProperties.NETWORK_AGGREGATION]: NetworkAggregation[];
+		[configOptionalProperties.NETWORK_AGGREGATION]: RemoteNodeConfig[];
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries
 		[configOptionalProperties.CHARTS]: ChartConfigs;

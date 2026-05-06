@@ -102,10 +102,11 @@
 
 	///////////// Currently in development /////////////
 
-	// Network Aggregation and Search
-	"network":
+	// Network Aggregation Nodes
+	"nodes":
 		[
 			{
+				// Remote Arranger Catalog
 				"displayName": "Toronto",
 				"graphqlUrl": "http://<URL>/graphql",
 				"documentType": "file"

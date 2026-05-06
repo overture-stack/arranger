@@ -48,13 +48,6 @@ const configsFromEnv = {
 	[configFeatureFlagProperties.ENABLE_ADMIN]: stringToBool(process.env.ENABLE_ADMIN),
 	[configFeatureFlagProperties.ENABLE_DEBUG]: stringToBool(process.env.ENABLE_DEBUG),
 	[configFeatureFlagProperties.ENABLE_LOGS]: stringToBool(process.env.ENABLE_LOGS),
-	// -------------------------------------------
-	// NOTE: "Networking aggregations" currently works in a way that may
-	// require the server instantiate separate base Arranger instance
-	// for that purpose, with (or without) "local" search of its own
-	// TODO: abstract that logic into a separate Networking module
-	[configFeatureFlagProperties.ENABLE_NETWORK_AGGREGATION]: stringToBool(process.env.ENABLE_NETWORK_AGGREGATION),
-	[configOptionalProperties.NETWORK_AGGREGATION]: stringToArray(process.env.NETWORK_AGGREGATIONS),
 	health: {
 		pingMs: stringToNumber(process.env.PING_MS) || 2200,
 		pingPath: process.env.PING_PATH || '/ping',
