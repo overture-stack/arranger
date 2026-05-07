@@ -2,17 +2,16 @@ import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mappi
 import { AggregationAccumulator } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
 import { createNetworkQuery } from '#network/resolvers/query.js';
-import { failure, isSuccess } from '#network/result.js';
-import { type NodeConfig } from '#network/setup/query.js';
 import { type Hits } from '#network/types/hits.js';
-import { type RequestedFieldsMap } from '#network/utils/gql.js';
+import type { NetworkRemoteNode } from '#network/types/setup.js';
+import type { RequestedFieldsMap } from '#network/utils/gql.js';
 
 export const CONNECTION_STATUS = {
 	OK: 'OK',
 	ERROR: 'ERROR',
 } as const;
 
-export type NetworkNode = {
+export type NetworkNodeResponseData = {
 	name: string;
 	hits: number;
 	status: keyof typeof CONNECTION_STATUS;
@@ -23,39 +22,45 @@ export type NetworkNode = {
 type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregationsMap }>;
 
 /**
- * Query each remote connection
+ * Query each network node then combine the results into total aggregations.
+ * This will also return the total hits for each node separate from the aggregations.
  *
  * @param queries - Query for each remote connection
  * @param requestedAggregationFields - Fields requested
  * @returns Resolved aggregation and node info
  */
 export const aggregationPipeline = async (
-	configs: NodeConfig[],
+	configs: NetworkRemoteNode[], // TODO: Allow local nodes as well
 	requestedAggregationFields: RequestedFieldsMap,
 	queryVariables: AggregationsQueryVariables,
-) => {
-	const nodeInfo: NetworkNode[] = [];
+): Promise<{
+	aggregationResults: AllAggregationsMap;
+	nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[];
+}> => {
+	const nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[] = [];
 
 	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
 	await Promise.allSettled(
 		configs.map(async (config) => {
 			// create node query
-			const gqlQuery = createNetworkQuery(config, requestedAggregationFields);
+			const gqlQueryResult = createNetworkQuery(config, requestedAggregationFields);
+			if (!gqlQueryResult.success) {
+				return gqlQueryResult;
+			}
 
 			// query node
-			const response = gqlQuery
-				? await fetchData<SuccessResponse>({
-						url: config.graphqlUrl,
-						gqlQuery,
-						queryVariables,
-					})
-				: failure(CONNECTION_STATUS.ERROR, 'Invalid GQL query');
+			const gqlQuery = gqlQueryResult.data;
+			const response = await fetchData<SuccessResponse>({
+				url: config.graphqlUrl,
+				gqlQuery,
+				queryVariables,
+			});
 
 			const nodeName = config.displayName;
 
-			if (isSuccess(response)) {
-				const documentName = config.documentName;
+			if (response.success) {
+				const documentName = config.documentType;
 				const responseData = response.data[documentName];
 				const aggregations = responseData?.aggregations || {};
 				const hits = responseData?.hits || { total: 0 };
@@ -67,15 +72,13 @@ export const aggregationPipeline = async (
 					hits: hits.total,
 					status: CONNECTION_STATUS.OK,
 					errors: '',
-					aggregations: config.aggregations,
 				});
 			} else {
 				nodeInfo.push({
 					name: nodeName,
 					hits: 0,
 					status: CONNECTION_STATUS.ERROR,
-					errors: response?.message || 'Error',
-					aggregations: config.aggregations,
+					errors: response.data ?? 'Error',
 				});
 			}
 		}),

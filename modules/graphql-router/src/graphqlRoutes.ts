@@ -171,7 +171,6 @@ export const createEndpoint = async ({
 	graphqlOptions = {},
 	mockSchema,
 	schema,
-	networkSchema,
 }) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
@@ -295,7 +294,7 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION_NODES];
+		const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
 		if (networkConfigsObj.length >= 1) {
 			enableDebug &&
 				console.debug(
@@ -309,10 +308,12 @@ export const createSchemasFromConfigs = async ({
 				 */
 				documentName: config.documentType,
 			}));
-			const networkSchema = await createSchemaFromNetworkConfig({
+			const networkSchemaResult = await createSchemaFromNetworkConfig({
 				networkConfigs: remoteServerConfigs,
 			});
-			schemasToMerge.push(networkSchema);
+			if (networkSchemaResult.success) {
+				schemasToMerge.push(networkSchemaResult.data);
+			}
 		}
 
 		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
@@ -324,8 +325,9 @@ export const createSchemasFromConfigs = async ({
 			mockSchema,
 			schema: fullSchema,
 		};
-	} catch (error) {
-		const message = error?.message || error;
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : error;
+
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
 		console.error(message);
 
@@ -333,15 +335,7 @@ export const createSchemasFromConfigs = async ({
 	}
 };
 
-export default async ({
-	configs,
-	enableDebug,
-	enableAdmin,
-	enableNetworkAggregation,
-	esClient,
-	getServerSideFilter,
-	graphqlOptions = {},
-}) => {
+export default async ({ configs, enableDebug, enableAdmin, esClient, getServerSideFilter, graphqlOptions = {} }) => {
 	// TODO: surfacing this variable to be reused later
 	const { index: setsIndex } = configs[configOptionalProperties.SETS];
 
@@ -350,7 +344,6 @@ export default async ({
 			configs,
 			enableDebug,
 			enableAdmin,
-			enableNetworkAggregation,
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
@@ -382,7 +375,7 @@ export default async ({
 			graphQLEndpoints,
 		];
 	} catch (error) {
-		const message = error?.message || error;
+		const message = error instanceof Error ? error.message : `${error}`;
 		// if endpoint creation fails, let the next server step to respond with an error
 		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
@@ -391,7 +384,7 @@ export default async ({
 			res.status(500).send({
 				// TODO: revisit this response
 				detail: 'Please notify the systems admin - ',
-				message: message?.trim?.() || 'The GraphQL server is unavailable due to an internal error',
+				message: message.trim() || 'The GraphQL server is unavailable due to an internal error',
 				type: 'system/unspecified-internal-error',
 			});
 	}

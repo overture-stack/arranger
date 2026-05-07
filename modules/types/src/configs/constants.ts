@@ -103,14 +103,16 @@ export const facetsProperties = {
 	AGGS: 'aggregations',
 } as const;
 
+export const baseNodeProperties = {
+	DISPLAY_NAME: 'displayName',
+} as const;
 export const localNodeProperties = {
-	CATALOG_ID: 'catalogId',
+	CATALOG_ID,
 } as const;
 
 export const remoteNodeProperties = {
 	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE,
-	DISPLAY_NAME: 'displayName',
 } as const;
 
 export const sortingProperties = {

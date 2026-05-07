@@ -2,7 +2,8 @@ import { gql } from 'apollo-server-core';
 import { type DocumentNode } from 'graphql';
 import { isEmpty } from 'lodash-es';
 
-import { type NodeConfig } from '#network/setup/query.js';
+import type { NetworkRemoteNode } from '#/network/types/setup.js';
+import { failure, success, type Result } from '#network/result.js';
 import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
 /**
@@ -50,13 +51,15 @@ const convertFieldsToString = (requestedFields: RequestedFieldsMap) => {
  *
  * This hardcodes an aggregation query for network search
  *
- * @param documentName - File type document name configured on node
+ * @param documentName - Document name in the graphql schema on the node
  * @param requestedFields - Query fields object
  * @returns Fully constructed query string
  */
-export const createFileGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
+export const createRemoteNodeGQLQuery = (documentName: string, requestedFields: RequestedFieldsMap) => {
 	const fields = convertFieldsToString(requestedFields);
-	const queryArgsTypes = `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`;
+	const queryArgsTypes = !isEmpty(fields)
+		? `($filters: JSON, $aggregations_filter_themselves: Boolean, $include_missing: Boolean)`
+		: '';
 	const fieldQueryArgs = `(filters: $filters, aggregations_filter_themselves: $aggregations_filter_themselves, include_missing: $include_missing)`;
 	const aggregationsString = !isEmpty(fields) ? `aggregations${fieldQueryArgs} ${fields}` : '';
 	const gqlString = `query nodeQuery${queryArgsTypes} {${documentName} { hits { total } ${aggregationsString} }}`;
@@ -72,23 +75,22 @@ export const createFileGQLQuery = (documentName: string, requestedFields: Reques
  * @returns a GQL document node or undefined if a valid GQL document node cannot be created
  */
 export const createNetworkQuery = (
-	config: NodeConfig,
+	config: NetworkRemoteNode,
 	requestedFields: RequestedFieldsMap,
-): DocumentNode | undefined => {
-	const availableFields = config.aggregations;
-	const documentName = config.documentName;
+): Result<DocumentNode> => {
+	const { aggregations, documentType } = config;
 
 	// ensure requested field is available to query on node
 	const fieldsToRequest = Object.keys(requestedFields).reduce((fields, requestedFieldKey) => {
 		const field = requestedFields[requestedFieldKey];
-		if (availableFields.some((field) => field.name === requestedFieldKey)) {
+		if (aggregations.some((field) => field.name === requestedFieldKey)) {
 			return { ...fields, [requestedFieldKey]: field };
 		} else {
 			return fields;
 		}
 	}, {});
 
-	const gqlString = createFileGQLQuery(documentName, fieldsToRequest);
+	const gqlString = createRemoteNodeGQLQuery(documentType, fieldsToRequest);
 
 	/*
 	 * convert string to AST object
@@ -98,9 +100,10 @@ export const createNetworkQuery = (
 		const gqlQuery = gql`
 			${gqlString}
 		`;
-		return gqlQuery;
-	} catch (err) {
-		console.error('createNetworkQuery generated invalid GQL', err);
-		return undefined;
+		return success(gqlQuery);
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : 'Error thrown parsing gql query.';
+		console.error('createNetworkQuery generated invalid GQL', error);
+		return failure(message);
 	}
 };

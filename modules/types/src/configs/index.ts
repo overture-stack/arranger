@@ -4,6 +4,7 @@ import type { SqonNode } from '@overture-stack/sqon';
 import type { ValuesOf } from '#tools/typeFns.js';
 
 import type {
+	baseNodeProperties,
 	chartsProperties,
 	configArrangerFeatureFlagProperties,
 	configFeatureFlagProperties,
@@ -20,6 +21,7 @@ import type {
 } from './constants.js';
 
 export * from './constants.js';
+export * from './networkAggregationConfigUtils.js';
 
 export type ArrangerFeatureFlagConfigs = Record<ValuesOf<typeof configArrangerFeatureFlagProperties>, boolean>;
 export type RuntimeFeatureFlagConfigs = Record<ValuesOf<typeof configRuntimeFeatureFlagProperties>, boolean>;
@@ -108,17 +110,18 @@ export type TableConfigs = {
 	[tableProperties.ROW_ID_FIELD_NAME]?: string;
 };
 
+export type BaseNodeConfig = {
+	[baseNodeProperties.DISPLAY_NAME]: string;
+};
 export type RemoteNodeConfig = {
-	[remoteNodeProperties.DISPLAY_NAME]: string;
 	[remoteNodeProperties.DOCUMENT_TYPE]: string;
 	[remoteNodeProperties.GRAPHQL_URL]: string;
-};
+} & BaseNodeConfig;
 export type LocalNodeConfig = {
 	[localNodeProperties.CATALOG_ID]: string;
-};
+} & BaseNodeConfig;
 
-// TODO: Union with LocalNodeConfig (WIP)
-export type NodeConfig = RemoteNodeConfig;
+export type NodeConfig = RemoteNodeConfig | LocalNodeConfig;
 
 export type GetServerSideFilterFn = () => SqonNode;
 
@@ -136,7 +139,7 @@ export type ConfigsObject = {
 		getServerSideFilter: GetServerSideFilterFn;
 		[configOptionalProperties.CATALOG_ID]: string;
 		[configOptionalProperties.ES_HOST]: string;
-		[configOptionalProperties.NETWORK_AGGREGATION]: RemoteNodeConfig[];
+		[configOptionalProperties.NETWORK_AGGREGATION]: NodeConfig[];
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries
 		[configOptionalProperties.CHARTS]: ChartConfigs;

@@ -1,10 +1,11 @@
-/*
- * Setup of network types
- */
+import type { LocalNodeConfig, RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 
-export type NetworkConfig = {
-	graphqlUrl: string;
-	documentType: string;
-	documentName: string;
-	displayName: string;
+export type AggregationField = { name: string; type: string };
+
+export type NetworkRemoteNode = RemoteNodeConfig & {
+	aggregations: AggregationField[];
 };
+export type NetworkLocalNode = LocalNodeConfig & {
+	aggregations: AggregationField[];
+};
+export type NetworkNode = NetworkLocalNode | NetworkRemoteNode;
