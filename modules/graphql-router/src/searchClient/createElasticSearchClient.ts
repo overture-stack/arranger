@@ -1,85 +1,133 @@
-import { Client, type ClientOptions } from '@elastic/elasticsearch';
+import { Client } from '@elastic/elasticsearch';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-import type { SearchClient } from './types.js';
+import type {
+	SearchClient,
+	SearchClientAcknowledgedResponseBody,
+	SearchClientBulkResponseBody,
+	SearchClientCatAliasesResponseBody,
+	SearchClientWriteResponseBody,
+	SearchClientIndicesCloseResponseBody,
+	SearchClientIndicesCreateResponseBody,
+	SearchClientIndicesGetMappingResponseBody,
+	SearchClientShardDataResponseBody,
+	SearchClientIndicesOpenResponseBody,
+	SearchClientSearchBody,
+	SearchConfig,
+} from './types.js';
 
-export type ESClientOptions = ClientOptions & {
-	clientType: 'elasticsearch';
-};
+export type ESClientOptions = Prettify<
+	SearchConfig & {
+		clientType: 'elasticsearch';
+	}
+>;
 
 export function createElasticSearchClient(options: ESClientOptions): SearchClient {
 	const elasticSearchClient = new Client(options);
 
 	const searchClient: SearchClient = {
 		indices: {
-			close: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.close(input, options);
+			close: async (input, options) => {
+				const output = await elasticSearchClient.indices.close<SearchClientIndicesCloseResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			create: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.create(input, options);
+			create: async (input, options) => {
+				const output = await elasticSearchClient.indices.create<SearchClientIndicesCreateResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			delete: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.delete(input, options);
+			delete: async (input, options) => {
+				const output = await elasticSearchClient.indices.delete<SearchClientAcknowledgedResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			exists: async (input: any, options?: any) => {
+			exists: async (input, options) => {
 				const output = await elasticSearchClient.indices.exists(input, options);
 				return output;
 			},
-			getMapping: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.getMapping(input, options);
+			getMapping: async (input, options) => {
+				const output = await elasticSearchClient.indices.getMapping<SearchClientIndicesGetMappingResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			putSettings: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.putSettings(input, options);
+			putSettings: async (input, options) => {
+				const output = await elasticSearchClient.indices.putSettings<SearchClientAcknowledgedResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			putMapping: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.putMapping(input, options);
+			putMapping: async (input, options) => {
+				const output = await elasticSearchClient.indices.putMapping<SearchClientAcknowledgedResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			open: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.open(input, options);
+			open: async (input, options) => {
+				const output = await elasticSearchClient.indices.open<SearchClientIndicesOpenResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
-			refresh: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.indices.refresh(input, options);
+			refresh: async (input, options) => {
+				const output = await elasticSearchClient.indices.refresh<SearchClientShardDataResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
 		},
 		cat: {
-			aliases: async (input: any, options?: any) => {
-				const output = await elasticSearchClient.cat.aliases(input, options);
+			aliases: async (input, options) => {
+				const output = await elasticSearchClient.cat.aliases<SearchClientCatAliasesResponseBody>(
+					input,
+					options,
+				);
 				return output;
 			},
 		},
-		bulk: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.bulk(input, options);
+		bulk: async (input, options) => {
+			const output = await elasticSearchClient.bulk<SearchClientBulkResponseBody>(input, options);
 			return output;
 		},
-		index: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.index(input, options);
+		create: async (input, options) => {
+			const output = await elasticSearchClient.create<SearchClientWriteResponseBody>(input, options);
 			return output;
 		},
-		search: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.search(input, options);
+		delete: async (input, options) => {
+			const output = await elasticSearchClient.delete<SearchClientWriteResponseBody>(input, options);
 			return output;
 		},
-		update: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.update(input, options);
-			return output;
-		},
-		create: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.create(input, options);
-			return output;
-		},
-		delete: async (input: any, options?: any) => {
-			const output = await elasticSearchClient.delete(input, options);
-			return output;
-		},
-		deleteByQuery: async (input: any, options?: any) => {
+		deleteByQuery: async (input, options) => {
 			const output = await elasticSearchClient.deleteByQuery(input, options);
+			return output;
+		},
+		index: async (input, options) => {
+			const output = await elasticSearchClient.index<SearchClientWriteResponseBody>(input, options);
+			return output;
+		},
+		search: async (input, options) => {
+			let _source = input._source;
+			if (typeof _source === 'boolean') {
+				_source = _source.toString();
+			}
+			const searchInput = { ...input, _source };
+			const output = await elasticSearchClient.search<SearchClientSearchBody>(searchInput, options);
+			return output;
+		},
+		update: async (input, options) => {
+			const output = await elasticSearchClient.update<SearchClientWriteResponseBody>(input, options);
 			return output;
 		},
 	};
