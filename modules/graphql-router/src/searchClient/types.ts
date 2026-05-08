@@ -89,8 +89,8 @@ export type SearchClientDeleteByQueryBody = Record<string, any>;
 
 // Response Types
 // TODO: this will need revision
-type BaseSearchResponse = Record<string, any>;
-type HitsResponse = BaseSearchResponse & {
+type SearchClientBaseResponse = Record<string, any>;
+type SearchClientHitsResponse = SearchClientBaseResponse & {
 	body: {
 		hits: {
 			hits: {
@@ -99,7 +99,7 @@ type HitsResponse = BaseSearchResponse & {
 		};
 	};
 };
-type AggregationsResponse = BaseSearchResponse & {
+type SearchClientAggregationsResponse = SearchClientBaseResponse & {
 	body: {
 		aggregations: Record<string, any>;
 	};
@@ -114,7 +114,7 @@ export type SearchClientSearchBody = {
 	timed_out: boolean;
 	took: number;
 };
-export type SearchQueryResponse = HitsResponse | AggregationsResponse;
+export type SearchQueryResponse = SearchClientHitsResponse | SearchClientAggregationsResponse;
 
 type SearchClientBaseResponseType<ResponseBody> = {
 	body: ResponseBody;
@@ -135,23 +135,24 @@ type SearchClientBaseResponseType<ResponseBody> = {
 	};
 };
 
-export type IndicesCloseResponse = SearchClientBaseResponseType<SearchClientIndicesCloseResponseBody>;
-export type IndicesCreateResponse = SearchClientBaseResponseType<SearchClientIndicesCreateResponseBody>;
-export type IndicesDeleteResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
-export type IndicesExistsResponse = SearchClientBaseResponseType<boolean>;
-export type IndicesGetMappingResponse = SearchClientBaseResponseType<SearchClientIndicesGetMappingResponseBody>;
-export type IndicesPutSettingsResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
-export type IndicesPutMappingResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
-export type IndicesOpenResponse = SearchClientBaseResponseType<SearchClientIndicesOpenResponseBody>;
-export type IndicesRefreshResponse = SearchClientBaseResponseType<SearchClientShardDataResponseBody>;
-export type CatAliasesResponse = SearchClientBaseResponseType<SearchClientCatAliasesResponseBody>;
-export type BulkResponse = SearchClientBaseResponseType<SearchClientBulkResponseBody>;
-export type CreateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
-export type DeleteByQueryResponse = SearchClientBaseResponseType<SearchClientDeleteByQueryBody>;
-export type DeleteResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
-export type IndexResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
-export type SearchResponse = SearchClientBaseResponseType<SearchClientSearchBody>;
-export type UpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+export type SearchClientIndicesCloseResponse = SearchClientBaseResponseType<SearchClientIndicesCloseResponseBody>;
+export type SearchClientIndicesCreateResponse = SearchClientBaseResponseType<SearchClientIndicesCreateResponseBody>;
+export type SearchClientIndicesDeleteResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+export type SearchClientIndicesExistsResponse = SearchClientBaseResponseType<boolean>;
+export type SearchClientIndicesGetMappingResponse =
+	SearchClientBaseResponseType<SearchClientIndicesGetMappingResponseBody>;
+export type SearchClientIndicesPutSettingsResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+export type SearchClientIndicesPutMappingResponse = SearchClientBaseResponseType<SearchClientAcknowledgedResponseBody>;
+export type SearchClientIndicesOpenResponse = SearchClientBaseResponseType<SearchClientIndicesOpenResponseBody>;
+export type SearchClientIndicesRefreshResponse = SearchClientBaseResponseType<SearchClientShardDataResponseBody>;
+export type SearchClientCatAliasesResponse = SearchClientBaseResponseType<SearchClientCatAliasesResponseBody>;
+export type SearchClientBulkResponse = SearchClientBaseResponseType<SearchClientBulkResponseBody>;
+export type SearchClientCreateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+export type SearchClientDeleteByQueryResponse = SearchClientBaseResponseType<SearchClientDeleteByQueryBody>;
+export type SearchClientDeleteResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+export type SearchClientIndexResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
+export type SearchClientSearchResponse = SearchClientBaseResponseType<SearchClientSearchBody>;
+export type SearchClientUpdateResponse = SearchClientBaseResponseType<SearchClientWriteResponseBody>;
 
 export type SearchClientOptions = {
 	requestTimeout?: number | string;
@@ -160,51 +161,57 @@ export type SearchClientOptions = {
 // Main SearchClient definition
 export type SearchClient = {
 	indices: {
-		close: (input: SearchClientIndicesCloseParams, options?: SearchClientOptions) => Promise<IndicesCloseResponse>;
+		close: (
+			input: SearchClientIndicesCloseParams,
+			options?: SearchClientOptions,
+		) => Promise<SearchClientIndicesCloseResponse>;
 		create: (
 			input: SearchClientIndicesCreateParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesCreateResponse>;
+		) => Promise<SearchClientIndicesCreateResponse>;
 		delete: (
 			input: SearchClientIndicesDeleteParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesDeleteResponse>;
+		) => Promise<SearchClientIndicesDeleteResponse>;
 		exists: (
 			input: SearchClientIndicesExistsParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesExistsResponse>;
+		) => Promise<SearchClientIndicesExistsResponse>;
 		getMapping: (
 			input: SearchClientIndicesGetMappingParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesGetMappingResponse>;
+		) => Promise<SearchClientIndicesGetMappingResponse>;
 		putSettings: (
 			input: SearchClientIndicesPutSettingsParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesPutSettingsResponse>;
+		) => Promise<SearchClientIndicesPutSettingsResponse>;
 		putMapping: (
 			input: SearchClientIndicesPutMappingsParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesPutMappingResponse>;
-		open: (input: SearchClientIndicesOpenParams, options?: SearchClientOptions) => Promise<IndicesOpenResponse>;
+		) => Promise<SearchClientIndicesPutMappingResponse>;
+		open: (
+			input: SearchClientIndicesOpenParams,
+			options?: SearchClientOptions,
+		) => Promise<SearchClientIndicesOpenResponse>;
 		refresh: (
 			input: SearchClientIndicesRefreshParams,
 			options?: SearchClientOptions,
-		) => Promise<IndicesRefreshResponse>;
+		) => Promise<SearchClientIndicesRefreshResponse>;
 	};
 	cat: {
 		aliases: (
 			input: SearchClientIndicesCatAliasesParams,
 			options?: SearchClientOptions,
-		) => Promise<CatAliasesResponse>;
+		) => Promise<SearchClientCatAliasesResponse>;
 	};
-	bulk: (input: SearchClientBulkParams, options?: SearchClientOptions) => Promise<BulkResponse>;
-	create: (input: SearchClientCreateParams, options?: SearchClientOptions) => Promise<CreateResponse>;
+	bulk: (input: SearchClientBulkParams, options?: SearchClientOptions) => Promise<SearchClientBulkResponse>;
+	create: (input: SearchClientCreateParams, options?: SearchClientOptions) => Promise<SearchClientCreateResponse>;
 	deleteByQuery: (
 		input: SearchClientDeleteByQueryParams,
 		options?: SearchClientOptions,
-	) => Promise<DeleteByQueryResponse>;
-	delete: (input: SearchClientDeleteParams, options?: SearchClientOptions) => Promise<DeleteResponse>;
-	index: (input: SearchClientIndexParams, options?: SearchClientOptions) => Promise<IndexResponse>;
-	search: (input: SearchClientSearchParams, options?: SearchClientOptions) => Promise<SearchResponse>;
-	update: (input: SearchClientUpdateParams, options?: SearchClientOptions) => Promise<UpdateResponse>;
+	) => Promise<SearchClientDeleteByQueryResponse>;
+	delete: (input: SearchClientDeleteParams, options?: SearchClientOptions) => Promise<SearchClientDeleteResponse>;
+	index: (input: SearchClientIndexParams, options?: SearchClientOptions) => Promise<SearchClientIndexResponse>;
+	search: (input: SearchClientSearchParams, options?: SearchClientOptions) => Promise<SearchClientSearchResponse>;
+	update: (input: SearchClientUpdateParams, options?: SearchClientOptions) => Promise<SearchClientUpdateResponse>;
 };
