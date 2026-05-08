@@ -1,84 +1,87 @@
-import { Client, type ClientOptions } from '@opensearch-project/opensearch';
+import { Client } from '@opensearch-project/opensearch';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-import type { SearchClient } from './types.js';
+import type { SearchClient, SearchConfig } from './types.js';
 
-export type OSClientOptions = ClientOptions & {
-	clientType: 'opensearch';
-};
+export type OSClientOptions = Prettify<
+	SearchConfig & {
+		clientType: 'opensearch';
+	}
+>;
 
 export function createOpenSearchClient(options: OSClientOptions): SearchClient {
 	const openSearchClient = new Client(options);
 
 	const searchClient: SearchClient = {
 		indices: {
-			close: async (input: any, options?: any) => {
+			close: async (input, options) => {
 				const output = await openSearchClient.indices.close(input, options);
 				return output;
 			},
-			create: async (input: any, options?: any) => {
+			create: async (input, options) => {
 				const output = await openSearchClient.indices.create(input, options);
 				return output;
 			},
-			delete: async (input: any, options?: any) => {
+			delete: async (input, options) => {
 				const output = await openSearchClient.indices.delete(input, options);
 				return output;
 			},
-			exists: async (input: any, options?: any) => {
+			exists: async (input, options) => {
 				const output = await openSearchClient.indices.exists(input, options);
 				return output;
 			},
-			getMapping: async (input: any, options?: any) => {
+			getMapping: async (input, options) => {
 				const output = await openSearchClient.indices.getMapping(input, options);
 				return output;
 			},
-			putSettings: async (input: any, options?: any) => {
+			putSettings: async (input, options) => {
 				const output = await openSearchClient.indices.putSettings(input, options);
 				return output;
 			},
-			putMapping: async (input: any, options?: any) => {
+			putMapping: async (input, options) => {
 				const output = await openSearchClient.indices.putMapping(input, options);
 				return output;
 			},
-			open: async (input: any, options?: any) => {
+			open: async (input, options) => {
 				const output = await openSearchClient.indices.open(input, options);
 				return output;
 			},
-			refresh: async (input: any, options?: any) => {
+			refresh: async (input, options) => {
 				const output = await openSearchClient.indices.refresh(input, options);
 				return output;
 			},
 		},
 		cat: {
-			aliases: async (input: any, options?: any) => {
+			aliases: async (input, options) => {
 				const output = await openSearchClient.cat.aliases(input, options);
 				return output;
 			},
 		},
-		bulk: async (input: any, options?: any) => {
+		bulk: async (input, options) => {
 			const output = await openSearchClient.bulk(input, options);
 			return output;
 		},
-		create: async (input: any, options?: any) => {
+		create: async (input, options) => {
 			const output = await openSearchClient.create(input, options);
 			return output;
 		},
-		delete: async (input: any, options?: any) => {
+		delete: async (input, options) => {
 			const output = await openSearchClient.delete(input, options);
 			return output;
 		},
-		deleteByQuery: async (input: any, options?: any) => {
+		deleteByQuery: async (input, options) => {
 			const output = await openSearchClient.deleteByQuery(input, options);
 			return output;
 		},
-		index: async (input: any, options?: any) => {
+		index: async (input, options) => {
 			const output = await openSearchClient.index(input, options);
 			return output;
 		},
-		search: async (input: any, options?: any) => {
+		search: async (input, options) => {
 			const output = await openSearchClient.search(input, options);
 			return output;
 		},
-		update: async (input: any, options?: any) => {
+		update: async (input, options) => {
 			const output = await openSearchClient.update(input, options);
 			return output;
 		},
