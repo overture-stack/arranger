@@ -204,7 +204,6 @@ const TermAggregations = ({
 					...themeAggregationsFilteringIconProps
 				} = emptyObj,
 				MoreOrLessButton: themeAggregationsMoreOrLessButtonProps = emptyObj,
-				SelectAllButton: themeAggregationsSelectAllButtonProps = emptyObj,
 				NoDataContainer: {
 					fontColor: themeNoDataFontColor = colors?.grey?.[600],
 					fontSize: themeNoDataFontSize = '0.8em',
@@ -218,7 +217,6 @@ const TermAggregations = ({
 					size: themeAggregationsSortingIconSize,
 					...themeAggregationsSortingIconProps
 				} = emptyObj,
-				selectAll: { disabled: themeAggregationsSelectAllDisabled } = { disabled: false },
 				TermAggregation: {
 					BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
 					collapsing: {
@@ -239,7 +237,10 @@ const TermAggregations = ({
 					} = emptyObj,
 					IncludeExcludeButton: ToggleButtonThemeProps = emptyObj,
 					MoreOrLessButton: themeTermAggMoreOrLessButtonProps = emptyObj,
-					SelectAllButton: themeTermAggSelectAllButtonProps = emptyObj,
+					SelectAllButton: {
+						disabled: themeTermAggregationsSelectAllDisabled,
+						...themeTermAggSelectAllButtonProps
+					} = emptyObj,
 					sorting: {
 						className: themeTermAggregationsSortingIconClassName,
 						disabled: themeTermAggregationsSortingDisabled,
@@ -495,7 +496,7 @@ const TermAggregations = ({
 					width: 100%;
 				`}
 			>
-				{hasData && !themeAggregationsSelectAllDisabled && (
+				{hasData && !themeTermAggregationsSelectAllDisabled && (
 					<SelectAllButton
 						areBucketsAllSelected={areBucketsAllSelected}
 						onClick={() => {
@@ -521,7 +522,7 @@ const TermAggregations = ({
 					/>
 				)}
 
-				{isMoreEnabled && (themeAggregationsSelectAllDisabled || !areBucketsAllSelected) && (
+				{isMoreEnabled && (themeTermAggregationsSelectAllDisabled || !areBucketsAllSelected) && (
 					<MoreOrLessButton
 						howManyMore={decoratedBuckets.length - maxTerms}
 						isShowingMore={showingMore}
