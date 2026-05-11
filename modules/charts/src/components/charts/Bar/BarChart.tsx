@@ -9,6 +9,7 @@ import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
 import { validateQueryProps } from '../validate';
 import { BarChartView } from './View';
+import TopChartItemsCount from '../TopChartItemsCount';
 
 export interface NumericAggregationsOptions {
 	ranges?: Ranges;
@@ -25,6 +26,7 @@ export interface BarChartProps {
 	ranges?: Ranges;
 	theme: { sortByKey?: string[] } & SupportedNivo;
 	handlers?: { onClick: (config: any) => void };
+	enableTopBarsCount?: boolean;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface BarChartProps {
  * @param props.theme - Chart config mostly for Nivo
  * @returns JSX element with complete bar chart or null if field validation fails
  */
-export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarChartProps) => {
+export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars, enableTopBarsCount }: BarChartProps) => {
 	// ensure maxBars is provided
 	if (!maxBars) {
 		throw Error(`"maxBars" prop is required for ${fieldName} chart."`);
@@ -74,13 +76,17 @@ export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarCha
 
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
+	// redundant chart emptiness check for typescript
+	const chartIsEmpty = isEmpty(gqlData);
+
 	return (
 		<ChartRenderer
 			isLoading={isLoading}
 			isError={isError || !validationResult.success}
-			isEmpty={isEmpty(gqlData)}
+			isEmpty={chartIsEmpty}
 			Chart={() => (
 				<ChartContainer>
+					{!chartIsEmpty && enableTopBarsCount && <TopChartItemsCount bars={maxBars} total={gqlData?.length || 0} /> }
 					<BarChartView
 						data={gqlData}
 						handlers={handlers}
