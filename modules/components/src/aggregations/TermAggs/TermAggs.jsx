@@ -217,7 +217,7 @@ const TermAggregations = ({
 					size: themeAggregationsSortingIconSize,
 					...themeAggregationsSortingIconProps
 				} = emptyObj,
-				TermAggregation: {
+				TermAggs: {
 					BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
 					collapsing: {
 						className: themeTermAggregationsCollapsingIconClassName,
@@ -518,7 +518,7 @@ const TermAggregations = ({
 								setShowingMore(true);
 							}
 						}}
-						theme={merge({}, themeAggregationsSelectAllButtonProps, themeTermAggSelectAllButtonProps)}
+						theme={merge({}, themeTermAggSelectAllButtonProps, themeTermAggSelectAllButtonProps)}
 					/>
 				)}
 

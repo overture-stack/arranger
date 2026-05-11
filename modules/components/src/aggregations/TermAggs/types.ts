@@ -1,6 +1,9 @@
+import type { AggsGroupCollapsing, AggsGroupFiltering, AggsGroupSorting } from '#aggregations/AggsGroup/types.js';
+import type { BucketCountThemeProps } from '#aggregations/BucketCount/types.js';
 import type { ThemeCommon } from '#ThemeContext/types/index.js';
+import type { ToggleButtonThemeProps } from '#ToggleButton/types.js';
 
-export type TermAggs = {
+type TermAggs = {
 	BucketCount: BucketCountThemeProps;
 	collapsing: AggsGroupCollapsing;
 	filtering: AggsGroupFiltering;
@@ -9,3 +12,5 @@ export type TermAggs = {
 	SelectAllButton: ThemeCommon.CustomCSS & { disabled?: boolean };
 	sorting: AggsGroupSorting;
 };
+
+export default TermAggs;
