@@ -7,7 +7,6 @@ import { ArrowIcon, SearchIcon, SortAlphaIcon } from '#Icons/index.js';
 import { useThemeContext } from '#ThemeContext/index.js';
 import noopFn, { emptyObj } from '#utils/noops.js';
 
-
 // TODO: redesign modifiers (filter, sort) to be off by default?
 // TODO: temporarily quieting down TS errors to help migration
 /**
@@ -105,7 +104,6 @@ const AggsGroup = ({
 		} = emptyObj,
 	} = useThemeContext({ callerName: 'AggsGroup' });
 
-
 	// TODO: abstract all this noise into their own components/hooks/files
 
 	const collapsible = customCollapsing !== false;
@@ -116,18 +114,18 @@ const AggsGroup = ({
 		setIsCollapsed(!isCollapsed);
 	};
 	const CollapsingIcon = customCollapsingIcon || themeCollapsingIcon;
-	const collapsingIconClassName = cx(
-		'collapsing-icon',
-		customCollapsingIconClassName,
-		themeCollapsingIconClassName
-	);
-	const collapsingIconHoverText = customCollapsingIconHoverText || themeCollapsingIconHoverText ||
-		`${displayName}${collapsible
-			? ` (${collapsingDisabled
-				? `${isCollapsed ? 'Expanding' : 'Collapsing'} disabled`
-				: `Click to ${isCollapsed ? 'expand' : 'collapse'} group`
-			})`
-			: ''
+	const collapsingIconClassName = cx('collapsing-icon', customCollapsingIconClassName, themeCollapsingIconClassName);
+	const collapsingIconHoverText =
+		customCollapsingIconHoverText ||
+		themeCollapsingIconHoverText ||
+		`${displayName}${
+			collapsible
+				? ` (${
+						collapsingDisabled
+							? `${isCollapsed ? 'Expanding' : 'Collapsing'} disabled`
+							: `Click to ${isCollapsed ? 'expand' : 'collapse'} group`
+					})`
+				: ''
 		}`;
 	const collapsingIconSize = customCollapsingIconSize || themeCollapsingIconSize;
 	const collapsingIconProps = {
@@ -151,21 +149,19 @@ const AggsGroup = ({
 	};
 
 	const FilteringIcon = customFilteringIcon ?? themeFilteringIcon;
-	const filteringIconClassName = cx(
-		'filtering-icon',
-		customFilteringIconClassName,
-		themeFilteringIconClassName,
-	);
-	const isFiltered = filteringIconClassName
-		.split(' ')
-		.includes('active');
-	const filteringIconHoverText = customFilteringIconHoverText || themeFilteringIconHoverText ||
-		`${displayName}${filterable
-			? ` (${filteringDisabled
-				? 'Filtering disabled'
-				: `Click to ${isFiltered ? 'hide' : 'show'} filters box`
-			})`
-			: ''
+	const filteringIconClassName = cx('filtering-icon', customFilteringIconClassName, themeFilteringIconClassName);
+	const isFiltered = filteringIconClassName.split(' ').includes('active');
+	const filteringIconHoverText =
+		customFilteringIconHoverText ||
+		themeFilteringIconHoverText ||
+		`${displayName}${
+			filterable
+				? ` (${
+						filteringDisabled
+							? 'Filtering disabled'
+							: `Click to ${isFiltered ? 'hide' : 'show'} filters box`
+					})`
+				: ''
 		}`;
 	const filteringIconSize = customFilteringIconSize || themeFilteringIconSize;
 	const filteringIconProps = {
@@ -185,21 +181,19 @@ const AggsGroup = ({
 		themeSortingIconHandler?.(event);
 	};
 	const SortingIcon = customSortingIcon ?? themeSortingIcon;
-	const sortingIconClassName = cx(
-		'sorting-icon',
-		customSortingIconClassName,
-		themeSortingIconClassName,
-	);
-	const isSorted = sortingIconClassName
-		.split(' ')
-		.includes('active');
-	const sortingIconHoverText = customSortingIconHoverText || themeSortingIconHoverText ||
-		`${displayName}${sortable
-			? ` (${sortingDisabled
-				? 'Sorting disabled'
-				: `Click to sort ${isSorted ? 'by score' : 'alphabetically'}`
-			})`
-			: ''
+	const sortingIconClassName = cx('sorting-icon', customSortingIconClassName, themeSortingIconClassName);
+	const isSorted = sortingIconClassName.split(' ').includes('active');
+	const sortingIconHoverText =
+		customSortingIconHoverText ||
+		themeSortingIconHoverText ||
+		`${displayName}${
+			sortable
+				? ` (${
+						sortingDisabled
+							? 'Sorting disabled'
+							: `Click to sort ${isSorted ? 'by score' : 'alphabetically'}`
+					})`
+				: ''
 		}`;
 	const sortingIconSize = customSortingIconSize || themeSortingIconSize;
 	const sortingIconProps = {
@@ -213,11 +207,13 @@ const AggsGroup = ({
 		},
 	};
 
-
 	const hasModifiers = filterable || sortable;
 
 	return WrapperComponent ? (
-		<WrapperComponent {...{ collapsible, displayName, componentRef, headerRef }} {...dataFields}>
+		<WrapperComponent
+			{...{ collapsible, displayName, componentRef, headerRef }}
+			{...dataFields}
+		>
 			{children}
 		</WrapperComponent>
 	) : (
@@ -272,11 +268,7 @@ const AggsGroup = ({
 						onClick={collapsingDisabled ? undefined : collapsingHandler}
 						title={collapsingIconHoverText}
 					>
-						{collapsible && (
-							<CollapsingIcon
-								{...collapsingIconProps}
-							/>
-						)}
+						{collapsible && <CollapsingIcon {...collapsingIconProps} />}
 
 						<span
 							className="title"
@@ -304,9 +296,7 @@ const AggsGroup = ({
 							onClick={sortingDisabled ? undefined : sortingHandler}
 							title={sortingIconHoverText}
 						>
-							<SortingIcon
-								{...sortingIconProps}
-							/>
+							<SortingIcon {...sortingIconProps} />
 						</TransparentButton>
 					)}
 
@@ -323,9 +313,7 @@ const AggsGroup = ({
 							onClick={filteringDisabled ? undefined : filteringHandler}
 							title={filteringIconHoverText}
 						>
-							<FilteringIcon
-								{...filteringIconProps}
-							/>
+							<FilteringIcon {...filteringIconProps} />
 						</TransparentButton>
 					)}
 				</div>
@@ -336,7 +324,10 @@ const AggsGroup = ({
 							filter,
 							index, // safe "key": expected to be consistent throughout the runtime lifetime of the app
 						) => (
-							<div key={index} className="filter">
+							<div
+								key={index}
+								className="filter"
+							>
 								{filter}
 							</div>
 						),
