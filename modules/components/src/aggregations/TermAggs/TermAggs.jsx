@@ -218,7 +218,7 @@ const TermAggregations = ({
 					size: themeAggregationsSortingIconSize,
 					...themeAggregationsSortingIconProps
 				} = emptyObj,
-				selectAll: { disabled: themeAggregationsSelectAllDisabled } = { disabled: true },
+				selectAll: { disabled: themeAggregationsSelectAllDisabled } = { disabled: false },
 				TermAggregation: {
 					BucketCount: { className: themeBucketCountClassName, ...bucketCountTheme } = emptyObj,
 					collapsing: {
