@@ -1,9 +1,12 @@
+import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
+
+import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mapping/resolveAggregations.js';
 import { AggregationAccumulator } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
 import { createNetworkQuery } from '#network/resolvers/query.js';
 import { type Hits } from '#network/types/hits.js';
-import type { NetworkRemoteNode } from '#network/types/setup.js';
+import type { NetworkLocalNode, NetworkRemoteNode } from '#network/types/setup.js';
 import type { RequestedFieldsMap } from '#network/utils/gql.js';
 
 export const CONNECTION_STATUS = {
@@ -24,29 +27,40 @@ type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregation
 /**
  * Query each network node then combine the results into total aggregations.
  * This will also return the total hits for each node separate from the aggregations.
- *
- * @param queries - Query for each remote connection
- * @param requestedAggregationFields - Fields requested
- * @returns Resolved aggregation and node info
  */
-export const aggregationPipeline = async (
-	configs: NetworkRemoteNode[], // TODO: Allow local nodes as well
-	requestedAggregationFields: RequestedFieldsMap,
-	queryVariables: AggregationsQueryVariables,
-): Promise<{
+export const aggregationPipeline = async <Context extends ArrangerBaseContext>(params: {
+	context: Context;
+	graphqlResolveInfo: GraphQLResolveInfo;
+	localNodes: NetworkLocalNode<Context>[];
+	queryVariables: AggregationsQueryVariables;
+	remoteNodes: NetworkRemoteNode[];
+	requestedAggregationFields: RequestedFieldsMap;
+}): Promise<{
 	aggregationResults: AllAggregationsMap;
 	nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[];
 }> => {
+	const { context, graphqlResolveInfo, localNodes, queryVariables, remoteNodes, requestedAggregationFields } = params;
+
 	const nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[] = [];
 
 	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
 
-	await Promise.allSettled(
-		configs.map(async (config) => {
+	/**
+	 * Remote Node Queries
+	 *
+	 * Initiate the queries to remote nodes and collect the promises, they will be awaited at the end before
+	 * collecting the results and returning.
+	 */
+	const remoteNodePromises = remoteNodes.map(async (config) => {
+		try {
 			// create node query
+			// TODO: do not run query if we are only requesting node info stored in our configs, with no hits or aggregations requested
 			const gqlQueryResult = createNetworkQuery(config, requestedAggregationFields);
 			if (!gqlQueryResult.success) {
-				return gqlQueryResult;
+				console.warn(
+					`Cannot make request to remote node ${config.displayName} due to failure creating gql query.`,
+				);
+				return;
 			}
 
 			// query node
@@ -81,8 +95,143 @@ export const aggregationPipeline = async (
 					errors: response.data ?? 'Error',
 				});
 			}
-		}),
-	);
+		} catch (error) {
+			// This is added as an extra protection. We do not expect to get here, all functions should be catching thrown errors
+			// and returning Results, but in case someting gets missed we want to capture the issue.
+
+			// Log the error and update the nodeInfo
+			console.error(
+				`[network/aggregationPipeline] - Error with network query while fetching data from '${config.displayName}' at graphqlUrl: ${config.graphqlUrl} - ${error}`,
+			);
+
+			const message =
+				error instanceof Error ? error.message : 'Unexpected error while fetching data from this node.';
+
+			nodeInfo.push({
+				name: config.displayName,
+				errors: message,
+				hits: 0,
+				status: 'ERROR',
+			});
+		}
+	});
+
+	/*
+	 * Local Node Queries
+	 * Initiate the queries to all local nodes and collect the promises, they will be awaited at the end before
+	 * collecting the results and returning.
+	 */
+	const localNodePromises = localNodes.map(async (config) => {
+		/**
+		 * `localNodeStatusInfo`is the nodeInfo object for this local node. This will be modified
+		 *   by the hits and aggregations queries to track errors that occur (if any) and also provide
+		 *   the total hits for the node.
+		 *
+		 * Here we set defaults that may be overwritten after the hits and aggregation queries.
+		 */
+		const localNodeStatusInfo: Omit<NetworkNodeResponseData, 'aggregations'> = {
+			errors: '',
+			hits: 0,
+			name: config.displayName,
+			status: 'OK',
+		};
+
+		/*
+		 * Query Hits
+		 *
+		 * Use the local node's hits resolver to determine the number of hits on this node,
+		 * and update the localNodeOutputInfo with this value.
+		 *
+		 * TODO: only do this if the nodes[].hits property is requested
+		 */
+		try {
+			// Create the hits query argument object for the hits resolver.
+			// Args are based on the inputs to the function returned in resolveHits.js:
+			// Reference as of May 11, 2026 - { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
+			const hitsQueryArgs = {
+				// Important Values
+				filters: queryVariables.filters,
+			};
+			const hitsResult = await config.resolvers.hits(
+				{},
+				hitsQueryArgs,
+				{ esClient: config.searchClient },
+				graphqlResolveInfo,
+			);
+			localNodeStatusInfo.hits = hitsResult.total();
+		} catch (error: unknown) {
+			// Failed to resolve hits, set error status and keep hits as 0
+			console.error(
+				`[network/aggregationPipeline] - Error resolving hits on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
+			);
+
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: 'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.';
+
+			localNodeStatusInfo.status = 'ERROR';
+			localNodeStatusInfo.errors = localNodeStatusInfo.errors
+				? [localNodeStatusInfo.errors, errorMessage].join(' | ')
+				: errorMessage;
+		}
+
+		/*
+		 * Query Aggregations
+		 *
+		 * Use the local node's aggregation resolver to determine the field aggregations for this node.
+		 *
+		 * TODO: only do this if the aggregations property is requested
+		 */
+		try {
+			// Get the aggregations request info from the original gql query
+			const aggregationsFieldNode = graphqlResolveInfo.fieldNodes[0]?.selectionSet?.selections.find(
+				(selection): selection is FieldNode =>
+					selection.kind === Kind.FIELD && selection.name.value === 'aggregations',
+			);
+			const aggregationsReturnType = (graphqlResolveInfo.returnType as GraphQLObjectType).getFields()[
+				'aggregations'
+			]?.type;
+
+			if (aggregationsFieldNode && aggregationsReturnType) {
+				// this gql request has aggregations that need to be resolved
+				const aggregationsInfo: GraphQLResolveInfo = {
+					...graphqlResolveInfo,
+					fieldName: 'aggregations',
+					fieldNodes: aggregationsFieldNode ? [aggregationsFieldNode] : [],
+					returnType: aggregationsReturnType,
+					path: { prev: graphqlResolveInfo.path, key: 'aggregations', typename: undefined },
+				};
+
+				const aggregations = await config.resolvers.aggregations({}, queryVariables, context, aggregationsInfo);
+				const hits = { total: localNodeStatusInfo.hits };
+
+				totalAgg.resolve({ aggregations, hits });
+			}
+		} catch (error: unknown) {
+			// Failed to resolve aggregations, set error status
+			console.error(
+				`[network/aggregationPipeline] - Error resolving aggregations on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
+			);
+
+			const errorMessage =
+				error instanceof Error ? error.message : 'Unexpected error while resolving aggregations for this node.';
+
+			localNodeStatusInfo.status = 'ERROR';
+			localNodeStatusInfo.errors = localNodeStatusInfo.errors
+				? [localNodeStatusInfo.errors, errorMessage].join(' | ')
+				: errorMessage;
+		}
+
+		// Add this local node status info to the collected array.
+		nodeInfo.push(localNodeStatusInfo);
+	});
+
+	// Await for all query promises to resolve
+	await Promise.allSettled([...remoteNodePromises, ...localNodePromises]);
+
+	// sort nodeInfo array by displayName instead of having all remote before all local nodes
+	nodeInfo.sort((a, b) => (a.name > b.name ? 1 : -1));
 
 	return { aggregationResults: totalAgg.result(), nodeInfo };
 };

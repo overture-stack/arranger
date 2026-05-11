@@ -1,6 +1,7 @@
 import type { NodeConfig } from '@overture-stack/arranger-types/configs';
 
 import { type Resolver } from '#gqlServer.js';
+import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import {
 	aggregationPipeline,
@@ -11,7 +12,7 @@ import { createResponse } from '#network/resolvers/response.js';
 import { resolveInfoToMap } from '#network/utils/gql.js';
 import { convertToSqon } from '#network/utils/sqon.js';
 
-import type { NetworkRemoteNode } from '../types/setup.js';
+import type { NetworkLocalNode, NetworkRemoteNode } from '../types/setup.js';
 
 type NetworkSearchRoot = {
 	nodes: NetworkNodeResponseData[];
@@ -28,11 +29,15 @@ export type NetworkQueryVariables = AggregationsQueryVariables;
  * @param networkFieldTypes
  * @returns
  */
-export const createResolvers = (
-	connectedNodes: NetworkRemoteNode[],
-	failedNodes: { config: NodeConfig; error: string }[],
-) => {
-	const failedNodeInfo: NetworkNodeResponseData[] = failedNodes.map(({ config, error }) => ({
+export const createResolvers = <Context extends ArrangerBaseContext>(params: {
+	remoteNodes: {
+		connected: NetworkRemoteNode[];
+		failed: { config: NodeConfig; error: string }[];
+	};
+	localNodes: NetworkLocalNode<Context>[];
+}) => {
+	const { localNodes, remoteNodes } = params;
+	const failedNodeInfo: NetworkNodeResponseData[] = remoteNodes.failed.map(({ config, error }) => ({
 		name: config.displayName,
 		hits: 0,
 		status: CONNECTION_STATUS.ERROR,
@@ -40,13 +45,15 @@ export const createResolvers = (
 		aggregations: [],
 	}));
 
-	const network: Resolver<NetworkSearchRoot, NetworkQueryVariables, any> = async (
+	const network: Resolver<NetworkSearchRoot, NetworkQueryVariables, any, Context> = async (
 		_unusedParentObj,
 		args,
-		_unusedContext,
+		context,
 		info,
 	) => {
-		const connectedNodeInfo = connectedNodes.reduce<Record<string, NetworkNodeResponseData>>((acc, node) => {
+		const connectedNodeInfo = [...remoteNodes.connected, ...localNodes].reduce<
+			Record<string, NetworkNodeResponseData>
+		>((acc, node) => {
 			acc[node.displayName] = {
 				name: node.displayName,
 				hits: 0,
@@ -76,11 +83,14 @@ export const createResolvers = (
 		/*
 		 * Aggregation pipeline entrypoint
 		 */
-		const { aggregationResults, nodeInfo } = await aggregationPipeline(
-			connectedNodes,
-			requestedFieldsMap,
+		const { aggregationResults, nodeInfo } = await aggregationPipeline<Context>({
+			context,
+			localNodes,
 			queryVariables,
-		);
+			remoteNodes: remoteNodes.connected,
+			requestedAggregationFields: requestedFieldsMap,
+			graphqlResolveInfo: info,
+		});
 
 		// Combine the nodeInfo results onto our connectedNodeInfo
 		nodeInfo.forEach((nodeResult) => {

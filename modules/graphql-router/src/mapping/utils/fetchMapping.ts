@@ -34,25 +34,25 @@ export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: 
 
 export const fetchMapping = async ({
 	enableDebug,
-	esClient,
+	searchClient,
 	esIndex,
 }: {
 	enableDebug?: boolean;
-	esClient: SearchClient;
+	searchClient: SearchClient;
 	esIndex: string;
 }) => {
-	if (esClient) {
+	if (searchClient) {
 		console.log(`  - Fetching ES mapping for "${esIndex}"`);
 
 		try {
-			const aliases = await getESAliases(esClient, REQUEST_TIMEOUT);
-			const alias = checkESAlias(aliases, esIndex);
+			const aliases = await getESAliases(searchClient, REQUEST_TIMEOUT);
+			const alias = checkESAlias(aliases, esIndex); // TODO: confirm types work after merging SearchClient types
 			alias && console.log(`    Found it as an alias for index "${alias}"`);
 
 			const accessor = alias || esIndex;
 
 			const mapping = await withSlowLog(
-				esClient?.indices.getMapping(
+				searchClient?.indices.getMapping(
 					{
 						index: accessor,
 					},

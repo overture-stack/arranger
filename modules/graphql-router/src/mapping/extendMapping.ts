@@ -172,8 +172,12 @@ export const extendFacets = (facetsConfig: FacetsConfigs, extendedFields: Extend
 	};
 };
 
-export const extendFields = (mappingFields: FieldFromMapping[], extendedFromFile: ExtendedConfigs[]) => {
-	return mappingFields.map(({ fieldName, type, ...rest }) => {
+export const extendFields = (
+	mappingFields: FieldFromMapping[],
+	extendedFromFile: ExtendedConfigs[],
+): ExtendedConfigs[] => {
+	// TODO: `type` from ExtendedConfigs and FieldFromMapping do not match, they need to be mapped. Issue with `byte`.
+	return mappingFields.map<ExtendedConfigs>(({ fieldName, type, ...rest }) => {
 		const {
 			displayName = startCase(fieldName.replace(/\./g, ' ')),
 			displayType = type,

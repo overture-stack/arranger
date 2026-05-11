@@ -7,14 +7,14 @@ import downloadRoutes from '#download/index.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
 
-import getGraphQLRoutes from './graphqlRoutes.js';
+import getGraphQLRoutes, { type ArrangerBaseContext } from './graphqlRoutes.js';
 import { addContext } from './utils/context.js';
 
-export const createRequestPreprocessingMiddleware = ({
+export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	configs,
 	enableDebug,
 }: {
-	configs: Partial<ConfigsObject>;
+	configs: Partial<ConfigsObject<Context>>;
 	enableDebug?: boolean;
 }): RequestHandler[] => [
 	addContext({
@@ -27,30 +27,32 @@ export const createRequestPreprocessingMiddleware = ({
 // i.e. each catalog may have their own, with no global filters
 // question: should global filters be allowed?
 
-const arrangerRouter = async ({
+const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	configs: customConfigs = {},
 	configsSource = '',
 	esClient: customEsClient = undefined,
 	getServerSideFilter = getDefaultServerSideFilter,
 	graphqlOptions = {},
 }: {
-	configs: Partial<ConfigsObject>;
+	configs: Partial<ConfigsObject<Context>>;
 	configsSource?: string; // TODO: remove by v3.2
 	esClient?: SearchClient;
-	getServerSideFilter?: GetServerSideFilterFn;
+	getServerSideFilter?: GetServerSideFilterFn<Context>;
 	graphqlOptions?: Record<string, unknown>; // FIXME
 }): Promise<Router> => {
 	// TODO: set up a real logger... winston or pino?
 	console.log('\n------\nInitializing an Arranger instance:');
 
 	try {
-		const aggregatedConfigs: Partial<ConfigsObject> = {
+		const aggregatedConfigs: Partial<ConfigsObject<Context>> = {
 			...fallbackConfigs,
 			...customConfigs,
 		};
 
-		const { enableAdmin, enableDebug, enableNetworkAggregation, esHost, esPass, esUser, searchEngine, ...configs } =
-			validateConfigs(aggregatedConfigs, customEsClient);
+		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
+			aggregatedConfigs,
+			customEsClient,
+		);
 
 		warnDeprecatedConfigsSource({ configsSource, enableDebug: aggregatedConfigs.enableDebug });
 
@@ -75,7 +77,6 @@ const arrangerRouter = async ({
 			configs,
 			enableAdmin,
 			enableDebug,
-			enableNetworkAggregation,
 			esClient,
 			getServerSideFilter, // TODO: Extend for multicatalog per-catalog filters
 			graphqlOptions,
