@@ -102,12 +102,13 @@ const getAggregationsResolver = ({
 		const response = await esSearch(esClient)({
 			index: type.index,
 			size: 0,
-			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			_source: false,
+			// @ts-expect-error - valid search query parameter in ES 7.17, not in types
 			body,
 		});
+
 		const aggregations = flattenAggregations({
-			aggregations: response.aggregations,
+			aggregations: response?.body?.aggregations,
 			includeMissing: include_missing,
 		});
 

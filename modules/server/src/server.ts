@@ -1,4 +1,3 @@
-import { Client, type ClientOptions } from '@elastic/elasticsearch';
 import { Router } from 'express';
 import morgan from 'morgan';
 
@@ -6,44 +5,11 @@ import { ENABLE_LOGS, ES_ARRANGER_SET_INDEX, ENABLE_NETWORK_AGGREGATION } from '
 import { ENV_CONFIG } from './config/index.js';
 import downloadRoutes from './download/index.js';
 import getGraphQLRoutes from './graphqlRoutes.js';
+import buildSearchClient from './searchClient/index.js';
 import getDefaultServerSideFilter from './utils/getDefaultServerSideFilter.js';
 
-const {
-	CONFIG_FILES_PATH,
-	DEBUG_MODE,
-	ENABLE_ADMIN,
-	ES_HOST,
-	ES_USER,
-	ES_PASS,
-	ES_LOG, //TODO: ES doesn't include a logger anymore
-	PING_PATH,
-} = ENV_CONFIG;
-
-export const buildEsClient = (esHost = '', esUser = '', esPass = '') => {
-	if (!esHost) {
-		console.error('no elasticsearch host was provided');
-	}
-
-	const esConfig: ClientOptions = {
-		node: esHost,
-	};
-
-	if (esUser) {
-		if (!esPass) {
-			console.error('ES user was defined, but password was not');
-		}
-		esConfig['auth'] = {
-			username: esUser,
-			password: esPass,
-		};
-	}
-
-	return new Client(esConfig);
-};
-
-export const buildEsClientViaEnv = () => {
-	return buildEsClient(ES_HOST, ES_USER, ES_PASS);
-};
+const { CONFIG_FILES_PATH, DEBUG_MODE, ENABLE_ADMIN, ES_HOST, ES_USER, ES_PASS, PING_PATH, SEARCH_CLIENT_TYPE } =
+	ENV_CONFIG;
 
 const arrangerServer = async ({
 	configsSource = CONFIG_FILES_PATH,
@@ -58,8 +24,11 @@ const arrangerServer = async ({
 	graphqlOptions = {},
 	pingPath = PING_PATH,
 	setsIndex = ES_ARRANGER_SET_INDEX,
+	searchClient = SEARCH_CLIENT_TYPE,
 } = {}): Promise<Router> => {
-	const esClient = customEsClient || buildEsClient(esHost, esUser, esPass);
+	const esClient =
+		customEsClient ||
+		(await buildSearchClient({ node: esHost, user: esUser, password: esPass, client: searchClient }));
 	const router = Router();
 
 	console.log('------------------------------------');
