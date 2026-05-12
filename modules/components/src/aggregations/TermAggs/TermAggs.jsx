@@ -499,6 +499,7 @@ const TermAggregations = ({
 				{hasData && !themeTermAggregationsSelectAllDisabled && (
 					<SelectAllButton
 						areBucketsAllSelected={areBucketsAllSelected}
+						{...themeTermAggSelectAllButtonProps}
 						onClick={() => {
 							if (areBucketsAllSelected) {
 								// deselect all buckets
