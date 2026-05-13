@@ -42,6 +42,17 @@ export const getESAliases = async (esClient: SearchClient, requestTimeout?: numb
 export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: string) =>
 	aliases?.find((foundIndex = { alias: undefined }) => foundIndex.alias === possibleAlias)?.index;
 
+/**
+ * Fetches the search engine field mappings for a given index, resolving aliases if present.
+ *
+ * Resolves the index alias if one exists, then retrieves the index mapping from the search engine.
+ * Throws if the search client is missing, the index cannot be found, or the response cannot be parsed.
+ *
+ * @param enableDebug - When `true`, caught errors are logged to `console.debug` before being rethrown.
+ * @param searchClient - The SearchClient used to perform requests of the search engine.
+ * @param esIndex - The index name or alias to fetch the mapping for.
+ * @returns An object containing the resolved `index` name, full `mappings` response for the index, field-level `mapping` properties, and the `alias` if one was found.
+ */
 export const fetchMapping = async ({
 	enableDebug,
 	searchClient,
