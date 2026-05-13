@@ -102,16 +102,17 @@
 
 	///////////// Currently in development /////////////
 
-	// Network Aggregation Nodes
-	"nodes":
-		[
+	// Network Search Nodes
+	"network": {
+		"remoteNodes": [
 			{
-				// Remote Arranger Catalog
-				"displayName": "Toronto",
-				"graphqlUrl": "http://<URL>/graphql",
-				"documentType": "file"
+				"graphqlUrl": "http://localhost:5051/graphql",
+				"documentType": "file",
+				"displayName": "Local Port 5051"
 			}
 		],
+		"localNode": { "displayName": "Local Port 5050" }
+	},
 
 	// Charts Visualizations library
 	"charts": {
