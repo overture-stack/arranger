@@ -1,23 +1,28 @@
 import { type ConfigsObject } from '@overture-stack/arranger-types/configs';
-import {
-	configArrangerBaseProperties,
-	configRequiredProperties,
-} from '@overture-stack/arranger-types/configs/constants';
+import { configArrangerBaseProperties, configRequiredProperties } from '@overture-stack/arranger-types/configs';
 
 import { type SearchClient } from '#searchClient/index.js';
+import type { ArrangerBaseContext } from '#types.js';
 
-export const validateConfigs = (configs: Partial<ConfigsObject>, esClient?: SearchClient): Partial<ConfigsObject> => {
+export const validateConfigs = <Context extends ArrangerBaseContext>(
+	configs: Partial<ConfigsObject<Context>>,
+	esClient?: SearchClient,
+): Partial<ConfigsObject<Context>> => {
 	console.log('  - Validating catalog configurations provided');
+
+	// Require base properties, and also ES connection properties if the esClient is not available
 	const propertiesToDemand = esClient ? configArrangerBaseProperties : configRequiredProperties;
 
-	// Verify all the required values are present
-	for (const property of Object.values(propertiesToDemand)) {
-		// this condition could be made more exhaustive if needed
-		// TODO: tighten the config validations using Zod
-		if (!(Object.keys(configs).includes(property) && configs[property])) {
-			console.log('  Failed...');
-			throw new Error(`The configs did not include the required "${property}" property.`);
-		}
+	// TODO: tighten the config validations using Zod
+	const missingProperties = Object.values(propertiesToDemand).filter(
+		(property) => !(Object.keys(configs).includes(property) && configs[property]),
+	);
+
+	if (missingProperties.length > 0) {
+		console.log('  Failed...');
+		throw new Error(
+			`The configs were missing required properties: ${missingProperties.map((property) => `"${property}"`).join(', ')}`,
+		);
 	}
 
 	// TODO: This would be where to filter out invalid properties. give warnings
