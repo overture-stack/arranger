@@ -6,10 +6,12 @@ import gql from 'graphql-tag';
 import { orderBy } from 'lodash-es';
 
 export default async ({ api, documentType }) => {
-	const expectedBuckets = [{
-		doc_count: 2,
-		key: 'Stage I',
-	}];
+	const expectedBuckets = [
+		{
+			doc_count: 2,
+			key: 'Stage I',
+		},
+	];
 
 	test('1.reads aggregations properly', async () => {
 		const { data } = await api
@@ -84,10 +86,9 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(orderBy(
-			data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets,
-			'key',
-		), expectedBuckets,
+		assert.deepEqual(
+			orderBy(data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets, 'key'),
+			expectedBuckets,
 		);
 	});
 
@@ -135,10 +136,10 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(orderBy(
-			data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets,
-			'key',
-		), expectedBuckets);
+		assert.deepEqual(
+			orderBy(data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets, 'key'),
+			expectedBuckets,
+		);
 	});
 
 	test('4.should work with postfix filter sqon', async () => {
@@ -185,10 +186,10 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(orderBy(
-			data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets,
-			'key',
-		), expectedBuckets);
+		assert.deepEqual(
+			orderBy(data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets, 'key'),
+			expectedBuckets,
+		);
 	});
 
 	test('5.should work with pre and post-fix filter sqon', async () => {
@@ -235,10 +236,10 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(orderBy(
-			data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets,
-			'key',
-		), expectedBuckets);
+		assert.deepEqual(
+			orderBy(data.data[documentType].aggregations.clinical_diagnosis__clinical_stage_grouping.buckets, 'key'),
+			expectedBuckets,
+		);
 	});
 
 	test('6.should count the correct number of buckets', async () => {
@@ -294,10 +295,7 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(
-			data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count,
-			0,
-		);
+		assert.deepEqual(data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count, 0);
 	});
 
 	test('8.should count buckets with key "MISSING" when include_missing is defaulted to true', async () => {
@@ -323,10 +321,7 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(
-			data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count,
-			1,
-		);
+		assert.deepEqual(data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count, 1);
 	});
 
 	test('9.should not include access_denied documents', async () => {
@@ -355,9 +350,6 @@ export default async ({ api, documentType }) => {
 				console.log('readAggregation error', err);
 			});
 
-		assert.deepEqual(
-			data.data[documentType].aggregations.access_denied.buckets,
-			[{ key_as_string: 'false' }],
-		);
+		assert.deepEqual(data.data[documentType].aggregations.access_denied.buckets, [{ key_as_string: 'false' }]);
 	});
 };

@@ -27,7 +27,7 @@ export default ({ api, documentType }) => {
 
 		assert.equal(data.errors, undefined);
 
-		setId = data.data.newSet.setId;
+		setId = data?.data?.newSet?.setId;
 	});
 
 	test('2.retrieves newly created set successfully', async () => {
@@ -55,11 +55,8 @@ export default ({ api, documentType }) => {
 			});
 
 		assert.equal(data.errors, undefined);
-		const allSetIds = data.data.sets.hits.edges.map(({ node }) => node.setId);
+		const allSetIds = data?.data?.sets?.hits?.edges.map(({ node }) => node.setId) || [];
 
-		assert.ok(
-			allSetIds.includes(setId),
-			`Expected [${allSetIds.join(', ')}] to include ${setId}`
-		);
+		assert.ok(allSetIds.includes(setId), `Expected [${allSetIds.join(', ')}] to include ${setId}`);
 	});
 };
