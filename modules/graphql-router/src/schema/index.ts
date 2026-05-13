@@ -51,15 +51,6 @@ export const createSetsType = (setsIndex: string): SchemaTypesTuple => {
 	];
 };
 
-type CreateCatalogResolversArgs<Context extends ArrangerBaseContext> = {
-	debug?: boolean;
-	enableAdmin?: boolean;
-	getServerSideFilter: GetServerSideFilterFn<Context>;
-	rootTypes?: any[];
-	scalarTypes?: any[];
-	setsIndex: string;
-	types: SchemaTypesTuple;
-};
 export const createCatalogResolvers = <Context extends ArrangerBaseContext>({
 	debug = false,
 	enableAdmin = false,
@@ -68,7 +59,15 @@ export const createCatalogResolvers = <Context extends ArrangerBaseContext>({
 	scalarTypes = [],
 	setsIndex,
 	types, // ['documentName', {configs, mapping, index, etc..}]
-}: CreateCatalogResolversArgs<Context>) => {
+}: {
+	debug?: boolean;
+	enableAdmin?: boolean;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	rootTypes?: any[];
+	scalarTypes?: any[];
+	setsIndex: string;
+	types: SchemaTypesTuple;
+}) => {
 	const typesWithSets = [types, createSetsType(setsIndex)];
 
 	const resolvers = generateResolvers<Context>({
@@ -84,14 +83,6 @@ export const createCatalogResolvers = <Context extends ArrangerBaseContext>({
 	return { typesWithSets, resolvers };
 };
 
-type CreateSchemaForResolversArgs = {
-	middleware?: GraphQLEndpointMiddleware[];
-	mock?: boolean;
-	resolvers: any;
-	rootTypes?: any[];
-	scalarTypes?: any[];
-	typesWithSets: SchemaTypesTuple[];
-};
 export const createSchemaForResolvers = ({
 	middleware = [],
 	mock = false,
@@ -99,69 +90,17 @@ export const createSchemaForResolvers = ({
 	rootTypes = [],
 	scalarTypes = [],
 	typesWithSets,
-}: CreateSchemaForResolversArgs) => {
-	const typeDefs = generateTypeDefs({
-		rootTypes,
-		scalarTypes,
-		types: typesWithSets,
-	});
-
-	const schema = makeExecutableSchema({
-		typeDefs,
-		resolvers,
-		resolverValidationOptions: {
-			// this disables a warning which we are ok with (https://github.com/prisma/prisma/issues/2225)
-			requireResolversForResolveType: 'ignore',
-		},
-	});
-
-	if (mock) {
-		addMocksToSchema({
-			schema,
-			mocks: { JSON: () => JSON.stringify({ key: 'value' }) },
-		});
-	}
-
-	return applyMiddleware(schema, ...middleware);
-};
-type MakeSchemaArgs<Context extends ArrangerBaseContext> = {
-	debug: boolean;
-	enableAdmin?: boolean;
-	getServerSideFilter: GetServerSideFilterFn<Context>;
-	middleware: GraphQLEndpointMiddleware[];
-	mock: boolean;
+}: {
+	middleware?: GraphQLEndpointMiddleware[];
+	mock?: boolean;
+	resolvers: any;
 	rootTypes?: any[];
 	scalarTypes?: any[];
-	setsIndex: string;
-	types: SchemaTypesTuple;
-};
-// TODO: MakeSchemaArgs nees to define the types for rootTypes and scalarTypes
-const makeSchemaOriginal = <Context extends ArrangerBaseContext>({
-	debug,
-	enableAdmin = false,
-	getServerSideFilter,
-	middleware = [],
-	mock = false,
-	rootTypes = [],
-	scalarTypes = [],
-	setsIndex,
-	types, // ['documentName', {configs, mapping, index, etc..}]
-}: MakeSchemaArgs<Context>) => {
-	const typesWithSets = [types, createSetsType(setsIndex)];
-
+	typesWithSets: SchemaTypesTuple[];
+}) => {
 	const typeDefs = generateTypeDefs({
 		rootTypes,
 		scalarTypes,
-		types: typesWithSets,
-	});
-
-	const resolvers = generateResolvers({
-		debug,
-		enableAdmin,
-		getServerSideFilter,
-		rootTypes,
-		scalarTypes,
-		setsIndex,
 		types: typesWithSets,
 	});
 
@@ -183,5 +122,3 @@ const makeSchemaOriginal = <Context extends ArrangerBaseContext>({
 
 	return applyMiddleware(schema, ...middleware);
 };
-
-export default makeSchemaOriginal;

@@ -52,15 +52,15 @@ const gqlAggregationTypeQuery = `#graphql
  * @returns An unnested object containing field name and type
  */
 const normalizeGqlField = (gqlField: GQLFieldType): AggregationField => {
-	const fieldType = gqlField.type.name;
+	const type = gqlField.type.name;
 	const name = gqlField.name;
 
-	return { name: gqlField.name, type: fieldType };
+	return { name, type };
 };
 
 export type FetchAggregationSuccess = { result: 'SUCCESS'; node: NetworkRemoteNode };
-export type FetchAggregationInvalidData = { result: 'INVALID_DATA'; config: NodeConfig; message: string };
-export type FetchAggregationNetworkError = { result: 'NETWORK_ERROR'; config: NodeConfig; message: string };
+export type FetchAggregationInvalidData = { result: 'INVALID_DATA'; config: RemoteNodeConfig; message: string };
+export type FetchAggregationNetworkError = { result: 'NETWORK_ERROR'; config: RemoteNodeConfig; message: string };
 export type FetchAggregationResult =
 	| FetchAggregationSuccess
 	| FetchAggregationInvalidData

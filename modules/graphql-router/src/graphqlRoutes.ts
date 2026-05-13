@@ -1,6 +1,11 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { mergeSchemas } from '@graphql-tools/schema';
-import { isRemoteNode, type ConfigsObject, type GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import type { IResolvers } from '@graphql-tools/utils';
+import {
+	type ConfigsObject,
+	type GetServerSideFilterFn,
+	type LocalNodeConfig,
+} from '@overture-stack/arranger-types/configs';
 import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
@@ -12,7 +17,8 @@ import { initializeSets } from './config/index.js';
 import { extendCharts } from './mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
-import { createSchemaFromNetworkConfig } from './network/index.js';
+import mappingToAggregationFields from './mapping/mappingToAggregationFields.js';
+import { createSchemaFromNetworkConfig, type LocalCatalogSchemaData } from './network/index.js';
 import { createCatalogResolvers, createSchemaForResolvers } from './schema/index.js';
 import type { SchemaTypesTuple } from './schema/types.js';
 import type { SearchClient } from './searchClient/index.js';
@@ -52,8 +58,8 @@ const getIndexMapping = async ({
 			enableDebug &&
 				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
 			delete mapping.id;
-			return mapping;
 		}
+		return mapping;
 	}
 
 	throw new Error(`  Could not get ES mappings for ${esIndex}`);
@@ -73,7 +79,7 @@ const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
 		try {
 			console.log('  - Now creating a GraphQL mapping based on the ES index:');
 
-			const fieldsFromMapping = await flattenMappingToFields(mappingFromIndex);
+			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
 
 			// Combines the mapping from ES with the "extended" custom configs
 			const extendedFields = await (async () => {
@@ -181,7 +187,7 @@ const createSchema = <Context extends ArrangerBaseContext>({
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
 	setsIndex: string;
 	types: SchemaTypesTuple;
-}): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: any } => {
+}): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
 	const { resolvers, typesWithSets } = createCatalogResolvers({
 		debug: enableDebug,
 		enableAdmin,
@@ -364,21 +370,56 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 		 * Federated Network Search
 		 */
 		const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
-		if (networkConfigsObj && networkConfigsObj.length >= 1) {
+
+		if (networkConfigsObj) {
 			enableDebug &&
 				console.debug(
-					'    DEBUG: `nodes` config provided for network aggregation. Adding network search to the gql schema...',
+					'    DEBUG: `network` config provided for network aggregation. Adding network search to the gql schema...',
 				);
-			const remoteServerConfigs = networkConfigsObj.filter(isRemoteNode).map((config) => ({
-				...config,
-				documentName: config.documentType,
-			}));
-			const networkSchemaResult = await createSchemaFromNetworkConfig({
-				networkConfigs: remoteServerConfigs,
-				localCatalogs: { resolvers, searchClient: esClient },
+			const context: Context = { esClient }; // TODO: context should be created dynamically, likely using the gqlOptions.context if provided
+
+			// TODO: This initial setup assumes that the config only references the local catalog,
+			//       needs to be updated for a multi-catalog setup with the localCatalog info provided in the function argumemnts
+			const localCatalogId = 'local';
+			const localNodeConfigs: LocalNodeConfig[] = networkConfigsObj.localNode
+				? [{ catalogId: localCatalogId, ...networkConfigsObj.localNode }]
+				: [];
+
+			// Build local catalogs by extracting aggregations and hits resolvers from the provided resolvers
+			// TODO: Move this extraction to the calling function, its their responsibility to provide only the required resolvers
+			const localCatalogs: LocalCatalogSchemaData<Context>[] = [];
+			const documentResolvers = resolvers[configs.documentType];
+			if (documentResolvers && typeof documentResolvers === 'object') {
+				const aggregationResolver =
+					'aggregations' in documentResolvers &&
+					typeof documentResolvers['aggregations'] === 'function' &&
+					documentResolvers['aggregations'];
+				const hitsResolver =
+					'hits' in documentResolvers &&
+					typeof documentResolvers['hits'] === 'function' &&
+					documentResolvers['hits'];
+				const aggregations = mappingToAggregationFields(mappingFromIndex);
+				if (aggregationResolver && hitsResolver) {
+					localCatalogs.push({
+						catalogId: localCatalogId,
+						configs: { aggregations },
+						resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
+					});
+				}
+			}
+
+			const networkSchemaResult = await createSchemaFromNetworkConfig<Context>({
+				enableDebug,
+				remoteNodeConfigs: networkConfigsObj.remoteNodes,
+				localNodeConfigs,
+				localCatalogs,
 			});
 			if (networkSchemaResult.success) {
 				schemasToMerge.push(networkSchemaResult.data);
+			} else {
+				console.error(
+					`Error creating network schema for catalog ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
+				);
 			}
 		}
 

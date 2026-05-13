@@ -1,14 +1,10 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import {
-	isRemoteNode,
-	type LocalNodeConfig,
-	type NodeConfig,
-	type RemoteNodeConfig,
-} from '@overture-stack/arranger-types/configs';
+import { type LocalNodeConfig, type RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 import type { GraphQLSchema } from 'graphql';
 
+import type { Resolver } from '#gqlServer.js';
 import type { ArrangerBaseContext } from '#graphqlRoutes.js';
-import type { SearchClient } from '#searchClient/index.js';
+import type { AggregationsResolver } from '#mapping/resolveAggregations.js';
 import partitionArray from '#utils/partitionArray.js';
 
 import { createResolvers } from './resolvers/index.js';
@@ -22,13 +18,23 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
-import { type NetworkLocalNode } from './types/setup.js';
+import { type AggregationField, type NetworkLocalNode } from './types/setup.js';
 
 /**
  * Map of all available fields with associated aggregation type
  */
 export const ALL_NETWORK_AGGREGATION_TYPES_MAP = new Map<string, keyof typeof SUPPORTED_AGGREGATIONS>();
 
+export type LocalCatalogSchemaData<Context extends ArrangerBaseContext> = {
+	catalogId: string;
+	configs: {
+		aggregations: AggregationField[];
+	};
+	resolvers: {
+		aggregations: AggregationsResolver<Context>;
+		hits: Resolver<any, any, any, Context>;
+	};
+};
 /**
  * GQL Federated Search schema setup
  * 1) Connects to remote Arranger instances as defined in Arranger config
@@ -41,17 +47,16 @@ export const ALL_NETWORK_AGGREGATION_TYPES_MAP = new Map<string, keyof typeof SU
  * @returns Graphql schema for the network - types and resolvers combined
  */
 export const createSchemaFromNetworkConfig = async <Context extends ArrangerBaseContext>({
-	networkConfigs,
+	enableDebug,
+	remoteNodeConfigs,
+	localNodeConfigs,
 	localCatalogs,
 }: {
-	networkConfigs: NodeConfig[];
-	localCatalogs: { resolvers: any; searchClient: SearchClient };
-}): AsyncResult<GraphQLSchema, { NO_AVAILAVBLE_NODES: void }> => {
-	const [remoteNodeConfigs, localNodeConfigs] = partitionArray<RemoteNodeConfig, LocalNodeConfig>(
-		networkConfigs,
-		isRemoteNode,
-	);
-
+	enableDebug: boolean;
+	remoteNodeConfigs: RemoteNodeConfig[];
+	localNodeConfigs: LocalNodeConfig[];
+	localCatalogs: LocalCatalogSchemaData<Context>[];
+}): AsyncResult<GraphQLSchema, { NO_AGGREGATIONS: null }> => {
 	/* ================== *
 	 * Setup Remote Nodes
 	 * ================== */
@@ -72,57 +77,58 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 		error: `${result.result} - ${result.message}`,
 	}));
 
-	if (connectedRemoteNodes.length === 0) {
-		console.error(
-			'Failed to connect to any nodes. The network search cannot be initialized. Continuing startup without network configuration.',
-		);
-		return result('NO_AVAILAVBLE_NODES', undefined);
-	}
-
 	/* ================== *
 	 * Setup Local Nodes
 	 * ================== */
 
-	const localNodes: NetworkLocalNode<Context>[] = localNodeConfigs.map((localConfig) => {
-		// Find corresponding catalog from params
-		// TODO: NEXT TASK build the catalog from the function ars
-		const catalog = { aggregations: [], resolvers: { aggregations: () => {}, hits: () => {} }, searchClient: {} };
-		// Get Aggregat
-		const { aggregations, resolvers, searchClient } = catalog;
-		return {
+	const availableLocalNodes: NetworkLocalNode<Context>[] = [];
+	const missingLocalNodes: { config: LocalNodeConfig; error: string }[] = [];
+
+	localNodeConfigs.forEach((localConfig) => {
+		/* ================================================ *
+		 *  Find catalog that corresponds with this config
+		 * ================================================ */
+
+		const catalog = localCatalogs.find((catalog) => localConfig.catalogId === catalog.catalogId);
+		if (!catalog) {
+			console.error(
+				`A local network node configuration specified a catalog ID '${localConfig.catalogId}' that cannot be found on this server. This node will not be included in the network search.`,
+			);
+
+			missingLocalNodes.push({
+				config: localConfig,
+				error: 'Required local search catalog is not available.',
+			});
+			return;
+		}
+
+		/* ======================================= *
+		 *  Get Resolvers (hits and aggregations)
+		 * ======================================= */
+		const aggregationResolver = catalog.resolvers['aggregations'];
+		const hitsResolver = catalog.resolvers['hits'];
+
+		availableLocalNodes.push({
 			catalogId: localConfig.catalogId,
 			displayName: localConfig.displayName,
-			resolvers: catalog.resolvers,
-			aggregations,
-			searchClient,
-		};
+			resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
+			aggregations: catalog.configs.aggregations,
+		});
 	});
-	/*
-		// Example localNode config:
-		const localNodes: NetworkLocalNode<Context>[] = [
-			{
-				catalogId: 'file',
-				displayName: 'Local File',
-				aggregations: [{ name: 'gender', type: 'keyword' }],
-				searchClient: localCatalogs.searchClient,
-				resolvers: {
-					aggregations: localCatalogs.resolvers['file'].aggregations,
-					hits: localCatalogs.resolvers['file'].hits,
-				},
-			},
-		];
-	 */
 
 	/* ========================== *
 	 * Create GQL Schema TypeDefs
 	 * ========================== */
 	// An array of unique supported aggregation types
-	const allAvailableAggregationTypes = combineAllFieldTypes(connectedRemoteNodes);
+	const allAvailableAggregationTypes = [
+		...combineAllFieldTypes(connectedRemoteNodes),
+		...availableLocalNodes.flatMap((node) => node.aggregations),
+	];
 	if (allAvailableAggregationTypes.length === 0) {
 		console.error(
 			'There are no aggregation types available on any of the network nodes. The network search cannot be initialized. Continuing startup without network configuration.',
 		);
-		return result('NO_AVAILAVBLE_NODES', undefined);
+		return result('NO_AGGREGATIONS', null);
 	}
 
 	/*
@@ -137,7 +143,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	const typeDefs = createTypeDefs(allAvailableAggregationTypes);
 	const resolvers = createResolvers({
 		remoteNodes: { connected: connectedRemoteNodes, failed: failedRemoteNodes },
-		localNodes,
+		localNodes: { available: availableLocalNodes, missing: missingLocalNodes },
 	});
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });
 

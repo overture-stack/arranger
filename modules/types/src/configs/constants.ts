@@ -46,13 +46,18 @@ export const configOptionalProperties = {
 	CHARTS: 'charts',
 	FACETS: 'facets',
 	MATCHBOX: 'matchbox',
-	NETWORK_AGGREGATION: 'nodes',
+	NETWORK_AGGREGATION: 'network',
 	TABLE: 'table',
 } as const;
 
 export const configArrangerBaseProperties = {
 	DOCUMENT_TYPE,
 	ES_INDEX: 'esIndex',
+} as const;
+
+export const configArrangerNetworkProperties = {
+	REMOTE_NODES: 'remoteNodes',
+	LOCAL_NODE: 'localNode',
 } as const;
 
 export const configRequiredProperties = {

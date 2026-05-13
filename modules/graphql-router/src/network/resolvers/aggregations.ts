@@ -1,4 +1,5 @@
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
+import graphqlFields from 'graphql-fields';
 
 import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mapping/resolveAggregations.js';
@@ -43,7 +44,7 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 
 	const nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[] = [];
 
-	const totalAgg = new AggregationAccumulator(requestedAggregationFields);
+	const aggregationAccumulator = new AggregationAccumulator(requestedAggregationFields);
 
 	/**
 	 * Remote Node Queries
@@ -79,7 +80,7 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 				const aggregations = responseData?.aggregations || {};
 				const hits = responseData?.hits || { total: 0 };
 
-				totalAgg.resolve({ aggregations, hits });
+				aggregationAccumulator.resolve({ aggregations, hits });
 
 				nodeInfo.push({
 					name: nodeName,
@@ -142,38 +143,41 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 		 * Use the local node's hits resolver to determine the number of hits on this node,
 		 * and update the localNodeOutputInfo with this value.
 		 *
-		 * TODO: only do this if the nodes[].hits property is requested
+		 * First, check if nodes.hits were requested and only run if needed.
 		 */
-		try {
-			// Create the hits query argument object for the hits resolver.
-			// Args are based on the inputs to the function returned in resolveHits.js:
-			// Reference as of May 11, 2026 - { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
-			const hitsQueryArgs = {
-				// Important Values
-				filters: queryVariables.filters,
-			};
-			const hitsResult = await config.resolvers.hits(
-				{},
-				hitsQueryArgs,
-				{ esClient: config.searchClient },
-				graphqlResolveInfo,
-			);
-			localNodeStatusInfo.hits = hitsResult.total();
-		} catch (error: unknown) {
-			// Failed to resolve hits, set error status and keep hits as 0
-			console.error(
-				`[network/aggregationPipeline] - Error resolving hits on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
-			);
+		// check if the graphqlResolveInfo includes a request for total hits
+		const requestedFields = graphqlFields(graphqlResolveInfo);
+		const nodesHitsRequested = requestedFields?.nodes?.hits !== undefined;
+		if (nodesHitsRequested) {
+			try {
+				// Create the hits query argument object for the hits resolver.
+				// Args are based on the inputs to the function returned in resolveHits.js:
+				// Reference as of May 11, 2026 - { first = 10, offset = 0, filters, score, sort, searchAfter, trackTotalHits = true },
+				const hitsQueryArgs = {
+					// Important Values
+					filters: queryVariables.filters,
+				};
 
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: 'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.';
+				// Make sure we call this hits resolver within a try/catch since we are assuming its input shape is that of the arranger
+				// hits resolver (and there is no check here to confirm)
+				const hitsResult = await config.resolvers.hits({}, hitsQueryArgs, context, graphqlResolveInfo);
+				localNodeStatusInfo.hits = hitsResult.total();
+			} catch (error: unknown) {
+				// Failed to resolve hits, set error status and keep hits as 0
+				console.error(
+					`[network/aggregationPipeline] - Error resolving hits on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
+				);
 
-			localNodeStatusInfo.status = 'ERROR';
-			localNodeStatusInfo.errors = localNodeStatusInfo.errors
-				? [localNodeStatusInfo.errors, errorMessage].join(' | ')
-				: errorMessage;
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: 'Unexpected error while resolving total hits for this node, the final hits value will be reported as 0.';
+
+				localNodeStatusInfo.status = 'ERROR';
+				localNodeStatusInfo.errors = localNodeStatusInfo.errors
+					? [localNodeStatusInfo.errors, errorMessage].join(' | ')
+					: errorMessage;
+			}
 		}
 
 		/*
@@ -181,20 +185,19 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 		 *
 		 * Use the local node's aggregation resolver to determine the field aggregations for this node.
 		 *
-		 * TODO: only do this if the aggregations property is requested
+		 * First, check if aggregations were requested and only run if needed.
 		 */
-		try {
-			// Get the aggregations request info from the original gql query
-			const aggregationsFieldNode = graphqlResolveInfo.fieldNodes[0]?.selectionSet?.selections.find(
-				(selection): selection is FieldNode =>
-					selection.kind === Kind.FIELD && selection.name.value === 'aggregations',
-			);
-			const aggregationsReturnType = (graphqlResolveInfo.returnType as GraphQLObjectType).getFields()[
-				'aggregations'
-			]?.type;
+		// Get the aggregations request info from the original gql query
+		const aggregationsFieldNode = graphqlResolveInfo.fieldNodes[0]?.selectionSet?.selections.find(
+			(selection): selection is FieldNode =>
+				selection.kind === Kind.FIELD && selection.name.value === 'aggregations',
+		);
+		const aggregationsReturnType = (graphqlResolveInfo.returnType as GraphQLObjectType).getFields()['aggregations']
+			?.type;
 
-			if (aggregationsFieldNode && aggregationsReturnType) {
-				// this gql request has aggregations that need to be resolved
+		// only proceed if the gqlresolve info has an aggregatios node, indicating a request for aggregation data
+		if (aggregationsFieldNode && aggregationsReturnType) {
+			try {
 				const aggregationsInfo: GraphQLResolveInfo = {
 					...graphqlResolveInfo,
 					fieldName: 'aggregations',
@@ -206,21 +209,23 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 				const aggregations = await config.resolvers.aggregations({}, queryVariables, context, aggregationsInfo);
 				const hits = { total: localNodeStatusInfo.hits };
 
-				totalAgg.resolve({ aggregations, hits });
+				aggregationAccumulator.resolve({ aggregations, hits });
+			} catch (error: unknown) {
+				// Failed to resolve aggregations, set error status
+				console.error(
+					`[network/aggregationPipeline] - Error resolving aggregations on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
+				);
+
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: 'Unexpected error while resolving aggregations for this node.';
+
+				localNodeStatusInfo.status = 'ERROR';
+				localNodeStatusInfo.errors = localNodeStatusInfo.errors
+					? [localNodeStatusInfo.errors, errorMessage].join(' | ')
+					: errorMessage;
 			}
-		} catch (error: unknown) {
-			// Failed to resolve aggregations, set error status
-			console.error(
-				`[network/aggregationPipeline] - Error resolving aggregations on local node '${config.displayName}' with catalogId '${config.catalogId}' - ${error}`,
-			);
-
-			const errorMessage =
-				error instanceof Error ? error.message : 'Unexpected error while resolving aggregations for this node.';
-
-			localNodeStatusInfo.status = 'ERROR';
-			localNodeStatusInfo.errors = localNodeStatusInfo.errors
-				? [localNodeStatusInfo.errors, errorMessage].join(' | ')
-				: errorMessage;
 		}
 
 		// Add this local node status info to the collected array.
@@ -233,5 +238,5 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 	// sort nodeInfo array by displayName instead of having all remote before all local nodes
 	nodeInfo.sort((a, b) => (a.name > b.name ? 1 : -1));
 
-	return { aggregationResults: totalAgg.result(), nodeInfo };
+	return { aggregationResults: aggregationAccumulator.result(), nodeInfo };
 };

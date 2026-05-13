@@ -1,3 +1,4 @@
+import type { IResolvers } from '@graphql-tools/utils';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { GraphQLDate } from 'graphql-scalars';
 import { GraphQLJSON } from 'graphql-type-json';
@@ -7,7 +8,6 @@ import Parallel from 'paralleljs';
 import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
-import { type SearchClient } from '#searchClient/types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';
@@ -94,6 +94,7 @@ type CreateResolversArgs<Context extends ArrangerBaseContext> = {
 	setsIndex: string;
 	types: SchemaTypesTuple[];
 };
+
 export const resolvers = <Context extends ArrangerBaseContext>({
 	debug,
 	enableAdmin = false,
@@ -102,7 +103,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 	scalarTypes,
 	setsIndex,
 	types,
-}: CreateResolversArgs<Context>) => {
+}: CreateResolversArgs<Context>): IResolvers<any, Context> => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
@@ -165,7 +166,7 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 					enableAdmin,
 					getServerSideFilter,
 					Parallel,
-					types,
+					type,
 				}),
 			}),
 			{},

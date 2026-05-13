@@ -4,6 +4,7 @@ import type { SqonNode } from '@overture-stack/sqon';
 import type { ValuesOf } from '#tools/typeFns.js';
 
 import type {
+	configArrangerNetworkProperties,
 	baseNodeProperties,
 	chartsProperties,
 	configArrangerFeatureFlagProperties,
@@ -123,6 +124,13 @@ export type LocalNodeConfig = {
 
 export type NodeConfig = RemoteNodeConfig | LocalNodeConfig;
 
+export type NetworkConfig = {
+	[configArrangerNetworkProperties.REMOTE_NODES]: RemoteNodeConfig[];
+
+	// TODO: To support multi-catalog, we need to update this to be `'localNodes': LocalNodeConfig[];`
+	[configArrangerNetworkProperties.LOCAL_NODE]?: BaseNodeConfig;
+};
+
 export type GetServerSideFilterFn<Context extends object> = (context: Context) => SqonNode;
 
 export type SearchEngineType = 'elasticsearch' | 'opensearch';
@@ -139,7 +147,7 @@ export type ConfigsObject<Context extends object> = {
 		getServerSideFilter: GetServerSideFilterFn<Context>;
 		[configOptionalProperties.CATALOG_ID]: string;
 		[configOptionalProperties.ES_HOST]: string;
-		[configOptionalProperties.NETWORK_AGGREGATION]: NodeConfig[];
+		[configOptionalProperties.NETWORK_AGGREGATION]: NetworkConfig;
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries
 		[configOptionalProperties.CHARTS]: ChartConfigs;

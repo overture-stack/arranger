@@ -1,4 +1,4 @@
-import type { NodeConfig } from '@overture-stack/arranger-types/configs';
+import type { LocalNodeConfig, RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 
 import { type Resolver } from '#gqlServer.js';
 import type { ArrangerBaseContext } from '#graphqlRoutes.js';
@@ -32,12 +32,12 @@ export type NetworkQueryVariables = AggregationsQueryVariables;
 export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 	remoteNodes: {
 		connected: NetworkRemoteNode[];
-		failed: { config: NodeConfig; error: string }[];
+		failed: { config: RemoteNodeConfig; error: string }[];
 	};
-	localNodes: NetworkLocalNode<Context>[];
+	localNodes: { available: NetworkLocalNode<Context>[]; missing: { config: LocalNodeConfig; error: string }[] };
 }) => {
 	const { localNodes, remoteNodes } = params;
-	const failedNodeInfo: NetworkNodeResponseData[] = remoteNodes.failed.map(({ config, error }) => ({
+	const failedRemoteNodeInfo: NetworkNodeResponseData[] = remoteNodes.failed.map(({ config, error }) => ({
 		name: config.displayName,
 		hits: 0,
 		status: CONNECTION_STATUS.ERROR,
@@ -45,13 +45,23 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		aggregations: [],
 	}));
 
+	const missingLocalNodeInfo: NetworkNodeResponseData[] = localNodes.missing.map(({ config, error }) => ({
+		name: config.displayName,
+		hits: 0,
+		status: CONNECTION_STATUS.ERROR,
+		errors: error,
+		aggregations: [],
+	}));
+
+	const failedNodeInfo = [...failedRemoteNodeInfo, ...missingLocalNodeInfo];
+
 	const network: Resolver<NetworkSearchRoot, NetworkQueryVariables, any, Context> = async (
 		_unusedParentObj,
 		args,
 		context,
 		info,
 	) => {
-		const connectedNodeInfo = [...remoteNodes.connected, ...localNodes].reduce<
+		const connectedNodeInfo = [...remoteNodes.connected, ...localNodes.available].reduce<
 			Record<string, NetworkNodeResponseData>
 		>((acc, node) => {
 			acc[node.displayName] = {
@@ -85,7 +95,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		 */
 		const { aggregationResults, nodeInfo } = await aggregationPipeline<Context>({
 			context,
-			localNodes,
+			localNodes: localNodes.available,
 			queryVariables,
 			remoteNodes: remoteNodes.connected,
 			requestedAggregationFields: requestedFieldsMap,

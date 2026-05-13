@@ -207,7 +207,7 @@ export const extendFields = (
 	});
 };
 
-export const flattenMappingToFields = async (mapping: Record<string, unknown> = {}): Promise<FieldFromMapping[]> =>
+export const flattenMappingToFields = (mapping: Record<string, unknown> = {}): FieldFromMapping[] =>
 	flattenMapping(mapping).map(({ field: fieldName = '', type = 'keyword', ...rest }) => ({
 		fieldName,
 		type,

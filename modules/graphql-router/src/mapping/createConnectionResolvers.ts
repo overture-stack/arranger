@@ -8,18 +8,12 @@ import type Parallel from 'paralleljs';
 
 import { type Resolver, type Root } from '#gqlServer.js';
 import type { ArrangerBaseContext } from '#graphqlRoutes.js';
+import type { SchemaTypesDefinition } from '#schema/types.js';
 
 import getAggregationsResolver, { aggregationsToGraphql, type AggregationsResolver } from './resolveAggregations.js';
 import resolveHits from './resolveHits.js';
 
 // TODO: tighten these types
-export type CreateConnectionResolversArgs<Context extends ArrangerBaseContext> = {
-	createStateResolvers?: boolean;
-	enableAdmin: boolean;
-	getServerSideFilter?: GetServerSideFilterFn<Context>;
-	Parallel: typeof Parallel;
-	types: Record<string, any>;
-};
 
 /**
  * Create the resolvers to retrieve information for the provided search catalog type configs.
@@ -33,8 +27,14 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	enableAdmin,
 	getServerSideFilter,
 	Parallel,
-	types,
-}: CreateConnectionResolversArgs<Context>): IResolvers => {
+	type,
+}: {
+	createStateResolvers?: boolean;
+	enableAdmin: boolean;
+	getServerSideFilter?: GetServerSideFilterFn<Context>;
+	Parallel: typeof Parallel;
+	type: SchemaTypesDefinition;
+}): IResolvers<any, Context> => {
 	/*
 	 * Create configs resolver
 	 * This will allow querying of the configs that define this Arranger instance.
@@ -47,17 +47,17 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 		Promise<{ facets?: any; matchbox?: any; table?: any; downloads: any; extended: any }>
 	> = async (_unusedParentObj, { fieldNames }) => {
 		return {
-			downloads: types.config?.[configRootProperties.DOWNLOADS],
+			downloads: type.config?.[configRootProperties.DOWNLOADS],
 			extended: fieldNames
-				? types.extendedFields.filter((extendedField: ExtendedConfigs) =>
+				? type.extendedFields.filter((extendedField: ExtendedConfigs) =>
 						fieldNames.includes(extendedField.fieldName),
 					)
-				: types.extendedFields,
+				: type.extendedFields,
 			...(createStateResolvers && {
-				charts: types.config?.[configRootProperties.CHARTS],
-				facets: types.config?.[configRootProperties.FACETS],
-				matchbox: types.config?.[configRootProperties.MATCHBOX],
-				table: types.config?.[configRootProperties.TABLE],
+				charts: type.config?.[configRootProperties.CHARTS],
+				facets: type.config?.[configRootProperties.FACETS],
+				matchbox: type.config?.[configRootProperties.MATCHBOX],
+				table: type.config?.[configRootProperties.TABLE],
 			}),
 		};
 	};
@@ -65,7 +65,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	/**
 	 * Create aggregations resolver
 	 */
-	const aggregationsResolver = getAggregationsResolver({ type: types, getServerSideFilter });
+	const aggregationsResolver = getAggregationsResolver({ type, getServerSideFilter });
 
 	const aggregations: AggregationsResolver<Context> = async (obj, args, context, info) => {
 		const aggregations = await aggregationsResolver(obj, args, context, info);
@@ -75,10 +75,10 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	/**
 	 * Create hits resolver
 	 */
-	const hits = resolveHits({ type: types, Parallel, getServerSideFilter });
+	const hits = resolveHits({ type, Parallel, getServerSideFilter });
 
 	const connectionResolver = {
-		[types.name]: {
+		[type.name]: {
 			aggregations,
 			configs,
 			hits,
@@ -89,7 +89,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 			// `aggregation` vs numericAggregation` cannot be assessed, requires "mapping".
 			...(enableAdmin && {
 				mapping: async () => {
-					return types.mapping;
+					return type.mapping;
 				},
 			}),
 		},
