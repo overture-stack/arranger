@@ -44,7 +44,7 @@
 		"formik": "^0.11.11",
 		"jsonpath-plus": "^10.3.0",
 		"lodash": "^4.17.21",
-		"lodash-es": "^4.17.21",
+		"lodash-es": "^4.17.23",
 		"pluralize": "^8.0.0",
 		"ramda": "^0.28.0",
 		"react-datepicker": "^4.10.0",
