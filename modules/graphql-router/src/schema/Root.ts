@@ -123,7 +123,6 @@ export const resolvers = <Context extends ArrangerBaseContext>({
 						// TODO: make this more useful/verbose;
 						if (type) {
 							try {
-								// TODO: Confirm types are valid after merging SearchClient types
 								const aliases = await getESAliases(esClient);
 								const foundAlias = checkESAlias(aliases, documentIndex);
 

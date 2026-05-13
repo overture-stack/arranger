@@ -46,7 +46,7 @@ export const fetchMapping = async ({
 
 		try {
 			const aliases = await getESAliases(searchClient, REQUEST_TIMEOUT);
-			const alias = checkESAlias(aliases, esIndex); // TODO: confirm types work after merging SearchClient types
+			const alias = checkESAlias(aliases, esIndex);
 			alias && console.log(`    Found it as an alias for index "${alias}"`);
 
 			const accessor = alias || esIndex;
