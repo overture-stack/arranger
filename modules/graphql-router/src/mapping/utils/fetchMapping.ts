@@ -4,6 +4,16 @@ import { type SearchClient } from '#searchClient/types.js';
 
 const REQUEST_TIMEOUT = 10000;
 
+/**
+ * Awaits a promise and logs warnings to the console if it is taking longer than expected.
+ * Two warnings are emitted: one at 1.5x the threshold and one at 3x the threshold.
+ * Timers are always cleared when the promise settles.
+ *
+ * @param promise - The promise to await.
+ * @param label - A human-readable name for the operation, used in warning messages.
+ * @param thresholdMs - Duration in milliseconds before slow-log warnings begin firing. Defaults to one quarter of `REQUEST_TIMEOUT`.
+ * @returns The resolved value of the promise.
+ */
 const withSlowLog = async <T>(promise: Promise<T>, label: string, thresholdMs = REQUEST_TIMEOUT / 4): Promise<T> => {
 	const firstTimeoutId = setTimeout(() => {
 		console.warn(`    Still waiting for ${label}`);
