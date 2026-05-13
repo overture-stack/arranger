@@ -1,7 +1,6 @@
 import type { LocalNodeConfig, RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 
-import type { Resolver } from '#gqlServer.js';
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
+import type { ArrangerBaseContext, Resolver } from '#types.js';
 
 export type AggregationField = { name: string; type: string };
 

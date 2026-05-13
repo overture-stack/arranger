@@ -5,9 +5,9 @@ import { GraphQLJSON } from 'graphql-type-json';
 import { startCase } from 'lodash-es';
 import Parallel from 'paralleljs';
 
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
+import type { ArrangerBaseContext } from '#types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';

@@ -10,13 +10,13 @@ export type FileEncodingType =
 	| undefined;
 
 export type ConfigsFromFilesFn = (args: {
-	baseConfig: Partial<ArrangerConfigs>;
+	baseConfig: Partial<ArrangerConfigs<any>>;
 	catalogConfigsPath: string;
 	currentDirectory: string;
 	enableDebug: boolean;
 }) => Promise<
 	[
 		string, // configsPath
-		Partial<ArrangerConfigs>, // configFromFiles
+		Partial<ArrangerConfigs<any>>, // configFromFiles
 	]
 >;

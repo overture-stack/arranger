@@ -2,9 +2,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { type LocalNodeConfig, type RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 import type { GraphQLSchema } from 'graphql';
 
-import type { Resolver } from '#gqlServer.js';
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
-import type { AggregationsResolver } from '#mapping/resolveAggregations.js';
+import type { ArrangerBaseContext } from '#types.js';
 import partitionArray from '#utils/partitionArray.js';
 
 import { createResolvers } from './resolvers/index.js';
@@ -18,23 +16,14 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
-import { type AggregationField, type NetworkLocalNode } from './types/setup.js';
+import { type NetworkLocalNode } from './types/setup.js';
+import type { LocalCatalogSchemaData } from './types.js';
 
 /**
  * Map of all available fields with associated aggregation type
  */
 export const ALL_NETWORK_AGGREGATION_TYPES_MAP = new Map<string, keyof typeof SUPPORTED_AGGREGATIONS>();
 
-export type LocalCatalogSchemaData<Context extends ArrangerBaseContext> = {
-	catalogId: string;
-	configs: {
-		aggregations: AggregationField[];
-	};
-	resolvers: {
-		aggregations: AggregationsResolver<Context>;
-		hits: Resolver<any, any, any, Context>;
-	};
-};
 /**
  * GQL Federated Search schema setup
  * 1) Connects to remote Arranger instances as defined in Arranger config

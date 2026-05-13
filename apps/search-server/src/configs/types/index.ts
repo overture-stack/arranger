@@ -9,7 +9,7 @@ import type {
 
 import type { serverConfigProperties } from './constants.js';
 
-export type CatalogsMap = Record<string, Partial<ArrangerConfigs>>;
+export type CatalogsMap = Record<string, Partial<ArrangerConfigs<any>>>;
 
 export type HealthConfigs = {
 	[serverConfigProperties.PING_MS]: number;
@@ -26,7 +26,7 @@ export type ExternalConfigs = Partial<
 		[serverConfigProperties.CONFIGS_PATH]: string;
 		currentDirectory: string;
 		esClient: SearchClient;
-		filters: GetServerSideFilterFn;
+		filters: GetServerSideFilterFn<any>;
 		searchEngine: SearchEngineType;
 		setsIndex: string;
 		setsType: string;

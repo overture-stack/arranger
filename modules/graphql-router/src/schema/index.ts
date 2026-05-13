@@ -3,7 +3,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { applyMiddleware } from 'graphql-middleware';
 
-import type { ArrangerBaseContext, GraphQLEndpointMiddleware } from '#graphqlRoutes.js';
+import type { ArrangerBaseContext, GraphQLEndpointMiddleware } from '#types.js';
 
 import { resolvers as generateResolvers, typeDefs as generateTypeDefs } from './Root.js';
 import type { SchemaTypesTuple } from './types.js';

@@ -1,6 +1,6 @@
 import { get } from 'lodash-es';
 
-import { type Resolver, type Root } from '#gqlServer.js';
+import { type Resolver, type Root } from '#types.js';
 
 import { applyAggregationMasking } from './masking.js';
 import { type AggregationsResolver } from './resolveAggregations.js';

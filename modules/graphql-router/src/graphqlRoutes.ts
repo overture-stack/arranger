@@ -11,30 +11,19 @@ import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
 import type { GraphQLSchema } from 'graphql';
-import type { IMiddleware, IMiddlewareGenerator } from 'graphql-middleware';
 
-import { initializeSets } from './config/index.js';
-import { extendCharts } from './mapping/extendCharts.js';
-import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
-import mappingToAggregationFields from './mapping/mappingToAggregationFields.js';
-import { createSchemaFromNetworkConfig, type LocalCatalogSchemaData } from './network/index.js';
-import { createCatalogResolvers, createSchemaForResolvers } from './schema/index.js';
-import type { SchemaTypesTuple } from './schema/types.js';
-import type { SearchClient } from './searchClient/index.js';
-import { addContext } from './utils/context.js';
-
-export type ArrangerBaseContext = {
-	esClient: SearchClient;
-};
-export type GraphQLEndpointMiddleware<TSource = any, TContext = any, TArgs = any> =
-	| IMiddleware<TSource, TContext, TArgs>
-	| IMiddlewareGenerator<TSource, TContext, TArgs>;
-
-export type GraphQLEndpointOptions<Context extends ArrangerBaseContext> = {
-	context?: Context | ((req: Request, res: Response, connection: any) => Context);
-	middleware?: GraphQLEndpointMiddleware[];
-} & Record<string, unknown>;
+import { initializeSets } from '#config/index.js';
+import { extendCharts } from '#mapping/extendCharts.js';
+import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
+import { addMappingsToTypes, extendFields, fetchMapping } from '#mapping/index.js';
+import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
+import { createSchemaFromNetworkConfig } from '#network/index.js';
+import type { LocalCatalogSchemaData } from '#network/types.js';
+import { createCatalogResolvers, createSchemaForResolvers } from '#schema/index.js';
+import type { SchemaTypesTuple } from '#schema/types.js';
+import type { SearchClient } from '#searchClient/index.js';
+import type { ArrangerBaseContext, GraphQLEndpointOptions } from '#types.js';
+import { addContext } from '#utils/context.js';
 
 const getIndexMapping = async ({
 	enableDebug,
@@ -386,8 +375,9 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 				: [];
 
 			// Build local catalogs by extracting aggregations and hits resolvers from the provided resolvers
-			// TODO: Move this extraction to the calling function, its their responsibility to provide only the required resolvers
+			// TODO: Move this extraction to the calling function (search-server), its their responsibility to provide only the required resolvers for each catalog
 			const localCatalogs: LocalCatalogSchemaData<Context>[] = [];
+
 			const documentResolvers = resolvers[configs.documentType];
 			if (documentResolvers && typeof documentResolvers === 'object') {
 				const aggregationResolver =
@@ -399,6 +389,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 					typeof documentResolvers['hits'] === 'function' &&
 					documentResolvers['hits'];
 				const aggregations = mappingToAggregationFields(mappingFromIndex);
+
+				// If the resolvers were where we expected them to be, pass them into the
 				if (aggregationResolver && hitsResolver) {
 					localCatalogs.push({
 						catalogId: localCatalogId,

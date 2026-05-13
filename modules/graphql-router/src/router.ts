@@ -4,11 +4,11 @@ import { Router, type RequestHandler } from 'express';
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
+import getGraphQLRoutes from '#graphqlRoutes.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
+import type { ArrangerBaseContext } from '#types.js';
+import { addContext } from '#utils/context.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
-
-import getGraphQLRoutes, { type ArrangerBaseContext } from './graphqlRoutes.js';
-import { addContext } from './utils/context.js';
 
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	configs,

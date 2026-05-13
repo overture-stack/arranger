@@ -1,10 +1,9 @@
 import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import getFields from 'graphql-fields';
 
-import { type Resolver, type Root } from '#gqlServer.js';
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/index.js';
 import type { SchemaTypesDefinition } from '#schema/types.js';
+import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';

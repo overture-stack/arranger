@@ -1,7 +1,5 @@
 import type { LocalNodeConfig, RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
 
-import { type Resolver } from '#gqlServer.js';
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import {
 	aggregationPipeline,
@@ -11,6 +9,7 @@ import {
 import { createResponse } from '#network/resolvers/response.js';
 import { resolveInfoToMap } from '#network/utils/gql.js';
 import { convertToSqon } from '#network/utils/sqon.js';
+import type { ArrangerBaseContext, Resolver } from '#types.js';
 
 import type { NetworkLocalNode, NetworkRemoteNode } from '../types/setup.js';
 

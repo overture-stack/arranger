@@ -1,7 +1,6 @@
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mapping/resolveAggregations.js';
 import { AggregationAccumulator } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
@@ -9,6 +8,7 @@ import { createNetworkQuery } from '#network/resolvers/query.js';
 import { type Hits } from '#network/types/hits.js';
 import type { NetworkLocalNode, NetworkRemoteNode } from '#network/types/setup.js';
 import type { RequestedFieldsMap } from '#network/utils/gql.js';
+import type { ArrangerBaseContext } from '#types.js';
 
 export const CONNECTION_STATUS = {
 	OK: 'OK',

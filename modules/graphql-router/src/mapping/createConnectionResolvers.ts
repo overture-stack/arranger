@@ -6,9 +6,8 @@ import {
 } from '@overture-stack/arranger-types/configs';
 import type Parallel from 'paralleljs';
 
-import { type Resolver, type Root } from '#gqlServer.js';
-import type { ArrangerBaseContext } from '#graphqlRoutes.js';
 import type { SchemaTypesDefinition } from '#schema/types.js';
+import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
 import getAggregationsResolver, { aggregationsToGraphql, type AggregationsResolver } from './resolveAggregations.js';
 import resolveHits from './resolveHits.js';
@@ -32,7 +31,7 @@ const createConnectionResolvers = <Context extends ArrangerBaseContext>({
 	createStateResolvers?: boolean;
 	enableAdmin: boolean;
 	getServerSideFilter?: GetServerSideFilterFn<Context>;
-	Parallel: typeof Parallel;
+	Parallel: Parallel<any>;
 	type: SchemaTypesDefinition;
 }): IResolvers<any, Context> => {
 	/*
