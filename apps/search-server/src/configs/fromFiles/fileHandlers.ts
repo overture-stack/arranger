@@ -61,34 +61,37 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 					return {};
 				}
 
-				const configObj = (files as [string, string][]).reduce((configsAcc, [fileName, fileData]) => {
-					try {
-						const fileDataJSON = JSON.parse(fileData);
+				const configObj = (files as [string, string][]).reduce(
+					(configsAcc, [fileName, fileData]) => {
+						try {
+							const fileDataJSON = JSON.parse(fileData);
 
-						const normalizedJSON = normalize(fileDataJSON);
+							const normalizedJSON = normalize(fileDataJSON);
 
-						// if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
-						// 	return merge({}, configsAcc, fileDataJSON, {
-						// 		[configRootProperties.TABLE]: {
-						// 			...fileDataJSON[configRootProperties.TABLE],
-						// 			[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
-						// 				tableProperties.DEFAULT_SORTING
-						// 			].map((sorting: SortingConfigs) => ({
-						// 				...sorting,
-						// 				desc: sorting.desc || false,
-						// 			})),
-						// 		},
-						// 	});
-						// }
+							// if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
+							// 	return merge({}, configsAcc, fileDataJSON, {
+							// 		[configRootProperties.TABLE]: {
+							// 			...fileDataJSON[configRootProperties.TABLE],
+							// 			[tableProperties.DEFAULT_SORTING]: fileDataJSON[configRootProperties.TABLE][
+							// 				tableProperties.DEFAULT_SORTING
+							// 			].map((sorting: SortingConfigs) => ({
+							// 				...sorting,
+							// 				desc: sorting.desc || false,
+							// 			})),
+							// 		},
+							// 	});
+							// }
 
-						// return merge({}, configsAcc, fileDataJSON);
+							// return merge({}, configsAcc, fileDataJSON);
 
-						return merge({}, configsAcc, normalizedJSON);
-					} catch (err) {
-						enableDebug && console.debug(`\n  DEBUG: ${err}`);
-						throw new Error('Could not parse the provided configuration files');
-					}
-				}, baseConfig);
+							return merge({}, configsAcc, normalizedJSON);
+						} catch (err) {
+							enableDebug && console.debug(`\n  DEBUG: ${err}`);
+							throw new Error('Could not parse the provided configuration files');
+						}
+					},
+					{ ...baseConfig },
+				);
 
 				return configObj;
 			});
@@ -97,7 +100,7 @@ const getConfigFromFiles: ConfigsFromFilesFn = async ({
 	} catch (err) {
 		console.warn(`    Something wrong happened when attempting to load config files ${err}`);
 
-		return [configsPath, baseConfig];
+		return [configsPath, { ...baseConfig }];
 	}
 };
 

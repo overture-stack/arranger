@@ -1,31 +1,48 @@
 // TODO: for TS, we'll have to update "apollo-server-express" (which relies on graphql updates too)
 import { mergeSchemas } from '@graphql-tools/schema';
+import type { IResolvers } from '@graphql-tools/utils';
 import {
-	configOptionalProperties,
-	configRootProperties,
-	setsProperties,
-} from '@overture-stack/arranger-types/configs/constants';
+	type ConfigsObject,
+	type GetServerSideFilterFn,
+	type LocalNodeConfig,
+} from '@overture-stack/arranger-types/configs';
+import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
-import { Router } from 'express';
+import { Router, type Request, type RequestHandler, type Response } from 'express';
+import type { GraphQLSchema } from 'graphql';
 
-import { initializeSets } from './config/index.js';
-import { extendCharts } from './mapping/extendCharts.js';
-import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
-import { createSchemaFromNetworkConfig } from './network/index.js';
-import makeSchema from './schema/index.js';
-import { addContext } from './utils/context.js';
+import { initializeSets } from '#config/index.js';
+import { extendCharts } from '#mapping/extendCharts.js';
+import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
+import { addMappingsToTypes, extendFields, fetchMapping } from '#mapping/index.js';
+import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
+import { createSchemaFromNetworkConfig } from '#network/index.js';
+import type { LocalCatalogSchemaData } from '#network/types.js';
+import { createCatalogResolvers, createSchemaForResolvers } from '#schema/index.js';
+import type { SchemaTypesTuple } from '#schema/types.js';
+import type { SearchClient } from '#searchClient/index.js';
+import type { ArrangerBaseContext, GraphQLEndpointOptions } from '#types.js';
+import { addContext } from '#utils/context.js';
 
-const getESMapping = async ({ enableDebug, esClient, esIndex }) => {
-	if (esClient && esIndex) {
+const getIndexMapping = async ({
+	enableDebug,
+	searchClient,
+	esIndex,
+}: {
+	enableDebug: boolean;
+	searchClient: SearchClient;
+	esIndex: string;
+}) => {
+	// TODO: Return type definition once SearchClient response types are merged
+	if (searchClient && esIndex) {
 		const { mapping } = await fetchMapping({
 			enableDebug,
-			esClient,
+			searchClient: searchClient,
 			esIndex,
 		});
 
-		if (Object.hasOwn(mapping, 'id')) {
+		if (mapping && Object.hasOwn(mapping, 'id')) {
 			// FIXME: Figure out a solution to map this to something else rather than dropping it
 			enableDebug &&
 				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
@@ -37,17 +54,30 @@ const getESMapping = async ({ enableDebug, esClient, esIndex }) => {
 	throw new Error(`  Could not get ES mappings for ${esIndex}`);
 };
 
-const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }) => {
+// TODO: Fix types once SearchClient response types are merged
+const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
+	enableDebug,
+	mappingFromIndex,
+	configs,
+}: {
+	enableDebug: boolean;
+	mappingFromIndex: any;
+	configs: ConfigsObject<Context>;
+}) => {
 	if (Object.keys(configs).length > 0) {
 		try {
 			console.log('  - Now creating a GraphQL mapping based on the ES index:');
 
-			const fieldsFromMapping = await flattenMappingToFields(mappingFromES);
+			const fieldsFromMapping = flattenMappingToFields(mappingFromIndex);
 
 			// Combines the mapping from ES with the "extended" custom configs
 			const extendedFields = await (async () => {
 				try {
-					return extendFields(fieldsFromMapping, configs?.[configRootProperties.EXTENDED]);
+					const extendedConfigs = configs?.[configRootProperties.EXTENDED];
+					if (!extendedConfigs) {
+						throw new Error('No extended configs were provided.');
+					}
+					return extendFields(fieldsFromMapping, extendedConfigs);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the ES mappings.\n' +
@@ -62,7 +92,11 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 			// Uses the "extended" fields to enhance the "facets" custom configs
 			const extendedFacetsConfigs = await (async () => {
 				try {
-					return extendFacets(configs?.[configRootProperties.FACETS], extendedFields);
+					const facetsConfigs = configs?.[configRootProperties.FACETS];
+					if (!facetsConfigs) {
+						throw new Error('No facets config provided.');
+					}
+					return extendFacets(facetsConfigs, extendedFields);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the column mappings.\n' +
@@ -77,7 +111,11 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 			// Uses the "extended" fields to enhance the "table" custom configs
 			const extendedTableConfigs = await (async () => {
 				try {
-					return extendColumns(configs?.[configRootProperties.TABLE], extendedFields);
+					const tableConfigs = configs?.[configRootProperties.TABLE];
+					if (!tableConfigs) {
+						throw new Error('No table configs provided.');
+					}
+					return extendColumns(tableConfigs, extendedFields);
 				} catch (err) {
 					console.log(
 						'    Something happened while extending the column mappings.\n' +
@@ -105,7 +143,7 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 					index: configs?.[configRootProperties.ES_INDEX],
 					name: configs?.[configRootProperties.DOCUMENT_TYPE],
 				},
-				mapping: mappingFromES,
+				mapping: mappingFromIndex,
 			});
 
 			return {
@@ -113,7 +151,7 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 				typesWithMappings,
 			};
 		} catch (error) {
-			console.error(error?.message || error);
+			console.error(error instanceof Error ? error.message : error);
 			throw '  Something went wrong while creating the GraphQL mapping';
 		}
 	}
@@ -121,42 +159,51 @@ const getTypesWithMappings = async ({ enableDebug, mappingFromES, configs = {} }
 	throw new Error('  No configs available at getTypesWithMappings');
 };
 
-const createSchema = async ({
-	enableDebug,
-	enableAdmin,
+/**
+ * Create GQL schema and mockSchema based on type configuration and runtime flags.
+ */
+const createSchema = <Context extends ArrangerBaseContext>({
+	enableDebug = false,
+	enableAdmin = false,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
 	types,
-}) => {
-	const schemaBase = {
+}: {
+	enableDebug?: boolean;
+	enableAdmin?: boolean;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	setsIndex: string;
+	types: SchemaTypesTuple;
+}): { schema: GraphQLSchema; mockSchema: GraphQLSchema; resolvers: IResolvers<any, Context> } => {
+	const { resolvers, typesWithSets } = createCatalogResolvers({
+		debug: enableDebug,
+		enableAdmin,
 		getServerSideFilter,
-		rootTypes: [],
 		setsIndex,
 		types,
-	};
+	});
 
 	return {
-		...(types && {
-			mockSchema: makeSchema({
-				enableDebug,
-				enableAdmin,
-				mock: true,
-				...schemaBase,
-			}),
-			schema: makeSchema({
-				enableDebug,
-				enableAdmin,
-				middleware: graphqlOptions.middleware || [],
-				...schemaBase,
-			}),
+		mockSchema: createSchemaForResolvers({
+			mock: true,
+			typesWithSets,
+			resolvers,
 		}),
+		schema: createSchemaForResolvers({
+			mock: false,
+			middleware: graphqlOptions.middleware || [],
+			typesWithSets,
+			resolvers,
+		}),
+		resolvers,
 	};
 };
 
 const noSchemaHandler =
-	(endpoint = 'unspecified') =>
-	(req, res) => {
+	(endpoint = 'unspecified'): RequestHandler =>
+	(_req, res) => {
 		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
 		return res.json({
@@ -164,14 +211,20 @@ const noSchemaHandler =
 		});
 	};
 
-export const createEndpoint = async ({
+export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	disablePlayground,
-	enableDebug,
+	enableDebug = false,
 	esClient,
 	graphqlOptions = {},
 	mockSchema,
 	schema,
-	networkSchema,
+}: {
+	disablePlayground: boolean;
+	enableDebug?: boolean;
+	esClient: SearchClient;
+	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	mockSchema: GraphQLSchema;
+	schema: GraphQLSchema;
 }) => {
 	const mainPath = '/graphql';
 	const mockPath = '/mock/graphql';
@@ -185,7 +238,8 @@ export const createEndpoint = async ({
 		// TODO: D.R.Y this thing!
 
 		if (schema) {
-			const buildContext = async (req, res, connection) => {
+			// TODO: It is unclear what the value for connection should be, or where it is sourced from. This type can be tightened (or removed?).
+			const buildContext = async (req: Request, res: Response, connection: any) => {
 				const externalContext =
 					typeof graphqlOptions.context === 'function'
 						? await graphqlOptions.context(req, res, connection)
@@ -197,6 +251,7 @@ export const createEndpoint = async ({
 				};
 			};
 
+			// TODO: context type mismatch
 			const apolloServer = new ApolloServer({
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
@@ -206,6 +261,7 @@ export const createEndpoint = async ({
 
 			await apolloServer.start();
 
+			// TODO: invalid types between router and the app expected by apolloServer. Works as is but types are not valid.
 			apolloServer.applyMiddleware({
 				app: router,
 				path: mainPath,
@@ -254,35 +310,41 @@ export const createEndpoint = async ({
 	return router;
 };
 
-export const createSchemasFromConfigs = async ({
+export type CreateSchemasFromConfigsArgs<Context extends ArrangerBaseContext> = {
+	configs: ConfigsObject<Context>;
+	enableDebug?: boolean;
+	enableAdmin?: boolean;
+	esClient: SearchClient;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	setsIndex: string;
+};
+export const createSchemasFromConfigs = async <Context extends ArrangerBaseContext>({
 	configs,
-	enableDebug,
-	enableAdmin,
-	enableNetworkAggregation,
+	enableDebug = false,
+	enableAdmin = false,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
 	setsIndex,
-}) => {
+}: CreateSchemasFromConfigsArgs<Context>) => {
 	try {
 		if (!configs) {
 			throw new Error('  No configs were provided. Please provide a config object.');
 		}
 
-		const mappingFromES = await getESMapping({
+		const mappingFromIndex = await getIndexMapping({
 			enableDebug,
-			esClient,
+			searchClient: esClient,
 			esIndex: configs[configRootProperties.ES_INDEX],
 		});
-		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings({
+		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
-			mappingFromES,
+			mappingFromIndex,
 		});
 
-		const commonFields = { fieldsFromMapping, typesWithMappings };
-
-		const { mockSchema, schema } = await createSchema({
+		const { mockSchema, schema, resolvers } = await createSchema({
 			enableDebug,
 			enableAdmin,
 			getServerSideFilter,
@@ -296,24 +358,61 @@ export const createSchemasFromConfigs = async ({
 		/**
 		 * Federated Network Search
 		 */
-		if (enableNetworkAggregation) {
-			const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
-			if (!networkConfigsObj || networkConfigsObj?.length === 0) {
-				throw new Error('  Network config not found. Please check validity.');
+		const networkConfigsObj = configs[configRootProperties.NETWORK_AGGREGATION];
+
+		if (networkConfigsObj) {
+			enableDebug &&
+				console.debug(
+					'    DEBUG: `network` config provided for network aggregation. Adding network search to the gql schema...',
+				);
+			const context: Context = { esClient }; // TODO: context should be created dynamically, likely using the gqlOptions.context if provided
+
+			// TODO: This initial setup assumes that the config only references the local catalog,
+			//       needs to be updated for a multi-catalog setup with the localCatalog info provided in the function argumemnts
+			const localCatalogId = 'local';
+			const localNodeConfigs: LocalNodeConfig[] = networkConfigsObj.localNode
+				? [{ catalogId: localCatalogId, ...networkConfigsObj.localNode }]
+				: [];
+
+			// Build local catalogs by extracting aggregations and hits resolvers from the provided resolvers
+			// TODO: Move this extraction to the calling function (search-server), its their responsibility to provide only the required resolvers for each catalog
+			const localCatalogs: LocalCatalogSchemaData<Context>[] = [];
+
+			const documentResolvers = resolvers[configs.documentType];
+			if (documentResolvers && typeof documentResolvers === 'object') {
+				const aggregationResolver =
+					'aggregations' in documentResolvers &&
+					typeof documentResolvers['aggregations'] === 'function' &&
+					documentResolvers['aggregations'];
+				const hitsResolver =
+					'hits' in documentResolvers &&
+					typeof documentResolvers['hits'] === 'function' &&
+					documentResolvers['hits'];
+				const aggregations = mappingToAggregationFields(mappingFromIndex);
+
+				// If the resolvers were where we expected them to be, pass them into the
+				if (aggregationResolver && hitsResolver) {
+					localCatalogs.push({
+						catalogId: localCatalogId,
+						configs: { aggregations },
+						resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
+					});
+				}
 			}
 
-			const remoteServerConfigs = networkConfigsObj.map((config) => ({
-				...config,
-				/*
-				 * part of the gql schema is generated dynamically
-				 * in the case of the "file" field, the field name and gql type name are the same
-				 */
-				documentName: config.documentType,
-			}));
-			const networkSchema = await createSchemaFromNetworkConfig({
-				networkConfigs: remoteServerConfigs,
+			const networkSchemaResult = await createSchemaFromNetworkConfig<Context>({
+				enableDebug,
+				remoteNodeConfigs: networkConfigsObj.remoteNodes,
+				localNodeConfigs,
+				localCatalogs,
 			});
-			schemasToMerge.push(networkSchema);
+			if (networkSchemaResult.success) {
+				schemasToMerge.push(networkSchemaResult.data);
+			} else {
+				console.error(
+					`Error creating network schema for catalog ${configs.catalogId} - ${networkSchemaResult.case}. No network search can be added to the GQL schema.`,
+				);
+			}
 		}
 
 		const fullSchema = mergeSchemas({ schemas: schemasToMerge });
@@ -321,12 +420,14 @@ export const createSchemasFromConfigs = async ({
 		console.log('\n  Success!');
 
 		return {
-			...commonFields,
+			fieldsFromMapping,
+			typesWithMappings,
 			mockSchema,
 			schema: fullSchema,
 		};
-	} catch (error) {
-		const message = error?.message || error;
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : error;
+
 		console.info('\n------\nError thrown while creating the GraphQL schemas.');
 		console.error(message);
 
@@ -334,24 +435,30 @@ export const createSchemasFromConfigs = async ({
 	}
 };
 
-export default async ({
+export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
+	configs: ConfigsObject<Context>;
+	enableDebug?: boolean;
+	enableAdmin?: boolean;
+	esClient: SearchClient;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	graphqlOptions?: GraphQLEndpointOptions<Context>;
+};
+const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
 	enableDebug,
 	enableAdmin,
-	enableNetworkAggregation,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
-}) => {
+}: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
-	const { index: setsIndex } = configs[configOptionalProperties.SETS];
+	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
 
 	try {
 		const { fieldsFromMapping, mockSchema, schema, typesWithMappings } = await createSchemasFromConfigs({
 			configs,
 			enableDebug,
 			enableAdmin,
-			enableNetworkAggregation,
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
@@ -359,7 +466,7 @@ export default async ({
 		});
 
 		const graphQLEndpoints = await createEndpoint({
-			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND],
+			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND] ?? false,
 			enableDebug,
 			esClient,
 			graphqlOptions,
@@ -383,7 +490,7 @@ export default async ({
 			graphQLEndpoints,
 		];
 	} catch (error) {
-		const message = error?.message || error;
+		const message = error instanceof Error ? error.message : `${error}`;
 		// if endpoint creation fails, let the next server step to respond with an error
 		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
@@ -392,8 +499,10 @@ export default async ({
 			res.status(500).send({
 				// TODO: revisit this response
 				detail: 'Please notify the systems admin - ',
-				message: message?.trim?.() || 'The GraphQL server is unavailable due to an internal error',
+				message: message.trim() || 'The GraphQL server is unavailable due to an internal error',
 				type: 'system/unspecified-internal-error',
 			});
 	}
 };
+
+export default arrangerRoutes;

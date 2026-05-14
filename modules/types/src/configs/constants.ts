@@ -12,7 +12,6 @@ export const configArrangerFeatureFlagProperties = {
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
 	DISABLE_SETS: 'disableSets', // TODO: not fully implemented yet. needs review
-	ENABLE_NETWORK_AGGREGATION: 'enableNetworkAggregation',
 } as const;
 
 export const configRuntimeFeatureFlagProperties = {
@@ -54,6 +53,11 @@ export const configOptionalProperties = {
 export const configArrangerBaseProperties = {
 	DOCUMENT_TYPE,
 	ES_INDEX: 'esIndex',
+} as const;
+
+export const configArrangerNetworkProperties = {
+	REMOTE_NODES: 'remoteNodes',
+	LOCAL_NODE: 'localNode',
 } as const;
 
 export const configRequiredProperties = {
@@ -104,10 +108,16 @@ export const facetsProperties = {
 	AGGS: 'aggregations',
 } as const;
 
-export const networkAggregationProperties = {
+export const baseNodeProperties = {
+	DISPLAY_NAME: 'displayName',
+} as const;
+export const localNodeProperties = {
+	CATALOG_ID,
+} as const;
+
+export const remoteNodeProperties = {
 	GRAPHQL_URL: 'graphqlUrl',
 	DOCUMENT_TYPE,
-	DISPLAY_NAME: 'displayName',
 } as const;
 
 export const sortingProperties = {

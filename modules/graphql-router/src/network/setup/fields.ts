@@ -1,55 +1,32 @@
-import { SUPPORTED_AGGREGATIONS_LIST, type SupportedAggregation } from '#network/setup/constants.js';
-import { type NodeConfig } from '#network/setup/query.js';
+import type { NodeConfig } from '@overture-stack/arranger-types/configs';
+import type { Prettify } from '@overture-stack/arranger-types/tools';
 
-type NetworkFieldType<T> = {
-	name: string;
-	type: T;
-};
-export type SupportedNetworkFieldType = NetworkFieldType<SupportedAggregation>;
-type SupportedAggregations = SupportedNetworkFieldType[];
-type UnsupportedAggregations = NetworkFieldType<string>[];
+import { type SUPPORTED_AGGREGATIONS, SUPPORTED_AGGREGATIONS_LIST } from '#network/setup/constants.js';
 
-const isSupportedType = (
-	fieldObject: NetworkFieldType<string>,
-	supportedList: string[],
-): fieldObject is SupportedNetworkFieldType => {
-	return supportedList.includes(fieldObject.type);
+import type { AggregationField, NetworkRemoteNode } from '../types/setup.js';
+import partitionArray from '../../utils/partitionArray.js';
+
+export type SupportedAggregationField = AggregationField & { type: (typeof SUPPORTED_AGGREGATIONS)['Aggregations'] };
+
+const isFieldAggregationSupported = (fieldObject: AggregationField): fieldObject is SupportedAggregationField => {
+	return SUPPORTED_AGGREGATIONS_LIST.includes(fieldObject.type);
 };
 
 /**
- * Parse network fields into supported and unsupported
+ * Parse network fields into supported and unsupported aggregations.
  *
  * @param fields
  * @returns { supportedAggregations: [], unsupportedAggregations: [] }
  */
-export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
-	const fieldTypes = fields.reduce(
-		(
-			aggregations: {
-				supportedAggregations: SupportedAggregations;
-				unsupportedAggregations: UnsupportedAggregations;
-			},
-			field,
-		) => {
-			if (isSupportedType(field, SUPPORTED_AGGREGATIONS_LIST)) {
-				return {
-					...aggregations,
-					supportedAggregations: aggregations.supportedAggregations.concat(field),
-				};
-			} else {
-				return {
-					...aggregations,
-					unsupportedAggregations: aggregations.unsupportedAggregations.concat(field),
-				};
-			}
-		},
-		{
-			supportedAggregations: [],
-			unsupportedAggregations: [],
-		},
-	);
+export const partitionSupportedAggregations = (
+	fields: NetworkRemoteNode['aggregations'],
+): { supportedAggregations: SupportedAggregationField[]; unsupportedAggregations: AggregationField[] } => {
+	const [supportedAggregations, unsupportedAggregations] = partitionArray<
+		SupportedAggregationField,
+		AggregationField
+	>(fields, isFieldAggregationSupported);
 
-	return fieldTypes;
+	return { supportedAggregations, unsupportedAggregations };
 };
 
 /**
@@ -60,22 +37,19 @@ export const getFieldTypes = (fields: NodeConfig['aggregations']) => {
  * @param nodeConfigs -
  * @returns Unique and supported aggregation field types.
  */
-export const normalizeFieldTypes = (nodeConfigs: NodeConfig[]): SupportedNetworkFieldType[] => {
+export const combineAllFieldTypes = (nodeConfigs: NetworkRemoteNode[]): SupportedAggregationField[] => {
 	// split into supported and unsupported types
-	const nodeFieldTypes = nodeConfigs.map((config) => {
-		const { supportedAggregations, unsupportedAggregations } = getFieldTypes(config.aggregations);
-
-		return { supportedAggregations, unsupportedAggregations };
-	});
-
-	// flatten to single object
-	const allSupportedAggregations = nodeFieldTypes.flatMap((fieldType) => fieldType.supportedAggregations);
+	const allSupportedAggregations = nodeConfigs.flatMap(
+		(config) => partitionSupportedAggregations(config.aggregations).supportedAggregations,
+	);
 
 	/*
 	 * Returns unique fields
 	 * eg. if NodeA and NodeB both have `analysis__analysis__id`, only include it once
 	 * This is during server startup for creating the Apollo server.
 	 * Please do not use expensive stringify and parsing for server queries.
+	 *
+	 * TODO: edge case, this is possible to still have duplicates do to difference in ordering of properties between two AggregationFields.
 	 */
 	const uniqueSupportedAggregations = Array.from(
 		new Set(allSupportedAggregations.map((nodeField) => JSON.stringify(nodeField))),

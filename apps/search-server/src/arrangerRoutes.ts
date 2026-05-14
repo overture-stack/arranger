@@ -22,7 +22,7 @@ export default async ({
 	const router = Router();
 
 	try {
-		// TODO(multicatalog-status): add catalog-root metadata responses for unavailable catalogs.
+		// TODO: (multicatalog-status): add catalog-root metadata responses for unavailable catalogs.
 		// With enableDebug, these responses should eventually include richer diagnostics such as stack/context.
 		if (catalogLength === 1 && catalogEntries[0]) {
 			const [catalogId, { getServerSideFilter, ...catalogConfigs }] = catalogEntries[0];
