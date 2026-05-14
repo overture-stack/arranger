@@ -1,8 +1,8 @@
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
-import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWithClient } from './types.js';
+import type { SearchClient, SupportedSearchClients, SearchConfig, SearchConfigWithClient } from './types.js';
 
-export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
+export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedSearchClients[];
 
 /**
  * Determine if provided Search Client Type is valid, or obtain client type if not provided.
@@ -10,9 +10,10 @@ export const supportedClientValues = ['opensearch', 'elasticsearch'] as const sa
  * This will return undefined if the provided config.clientType value is not a supported client type,
  * or if no valid client type can be identified from the search service.
  */
-const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes | undefined> => {
+const getClientType = async (config: SearchConfig): Promise<SupportedSearchClients | undefined> => {
 	try {
 		const { clientType } = config;
+
 		if (clientType) {
 			const supportedClientType = supportedClientValues.find((key) => key === clientType);
 			if (supportedClientType) {
@@ -68,23 +69,31 @@ const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes
  *
  * If the config is invalid, this will throw an error with the intention of crashing the application.
  */
-const createSearchConfig = async (
-	node: string,
-	username?: string,
-	password?: string,
-	client?: string,
-): Promise<SearchConfigWithClient> => {
+const createSearchEngineConfig = async ({
+	client,
+	node,
+	password,
+	username,
+}: {
+	client?: string;
+	node?: string;
+	password?: string;
+	username?: string;
+}): Promise<SearchConfigWithClient> => {
 	if (!node) {
-		throw new Error('Search Client host URL was not provided');
+		throw new Error('No search engine host URL was provided');
 	}
-	if ((username || password) && !(username && password)) {
-		console.warn('Search Client Username and/or Password are missing');
+	if (username && !password) {
+		console.warn('Missing the password for the search engine');
 	}
+
 	const auth = username && password ? { username, password } : undefined;
 	const clientType = await getClientType({ node, auth, clientType: client });
+
 	if (!clientType) {
 		throw new Error(`Error with Search Client configuration clientType value: ${client}`);
 	}
+
 	const searchConfig: SearchConfigWithClient = {
 		node,
 		auth,
@@ -98,30 +107,34 @@ const createSearchConfig = async (
  */
 const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient => {
 	const { clientType } = clientConfig;
-	if (clientType === 'opensearch') {
-		const options: OSClientOptions = { ...clientConfig, clientType };
-		return createOpenSearchClient(options);
-	} else {
-		const options: ESClientOptions = { ...clientConfig, clientType };
-		return createElasticSearchClient(options);
+
+	switch (clientType) {
+		case 'opensearch': {
+			const options: OSClientOptions = { ...clientConfig, clientType };
+			return createOpenSearchClient(options);
+		}
+
+		default: {
+			const options: ESClientOptions = { ...clientConfig, clientType };
+			return createElasticSearchClient(options);
+		}
 	}
 };
 
 /**
  * Main function for creating Search Client
  */
-export default async function buildSearchClient({
-	node,
-	user,
-	password,
-	client,
-}: {
-	node: string;
-	user?: string;
+const buildSearchClient = async (options: {
+	client?: SupportedSearchClients;
+	node?: string;
 	password?: string;
-	client?: string;
-}) {
-	const config = await createSearchConfig(node, user, password, client);
+	username?: string;
+}) => {
+	const config = await createSearchEngineConfig(options);
 
 	return createSearchClient(config);
-}
+};
+
+export default buildSearchClient;
+
+export type { SearchClient, SupportedSearchClients } from './types.js';

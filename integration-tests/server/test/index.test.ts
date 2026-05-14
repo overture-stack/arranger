@@ -5,15 +5,15 @@ import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
 
 import ArrangerServer from '../../../apps/search-server/src/server.js';
-import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
+import { buildSearchClient, type SupportedSearchClients } from '../../../modules/graphql-router/src/index.js';
 import { ajax } from '../../../modules/graphql-router/src/utils/index.js';
-import catalog1Base from '../multiconfigs/catalog1/base.json';
-import catalog2Base from '../multiconfigs/catalog2/base.json';
+import catalog1Base from '../multiconfigs/catalog1/base.json' with { type: 'json' };
+import catalog2Base from '../multiconfigs/catalog2/base.json' with { type: 'json' };
 
-import data_1 from './assets/model_centric_1.data.json';
-import mappings_1 from './assets/model_centric_1.mappings.json';
-import data_2 from './assets/model_centric_2.data.json';
-import mappings_2 from './assets/model_centric_2.mappings.json';
+import data_1 from './assets/model_centric_1.data.json' with { type: 'json' };
+import mappings_1 from './assets/model_centric_1.mappings.json' with { type: 'json' };
+import data_2 from './assets/model_centric_2.data.json' with { type: 'json' };
+import mappings_2 from './assets/model_centric_2.mappings.json' with { type: 'json' };
 import manageSets from './manageSets.js';
 import readAggregation from './readAggregation.js';
 import readMetadata from './readMetadata.js';
@@ -28,13 +28,13 @@ const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing';
-const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
+const searchEngine = (process.env.SEARCH_ENGINE || 'elasticsearch') satisfies SupportedSearchClients;
 const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
 const serverUrl = `http://localhost:${serverPort}`;
 
 const rootApi = ajax(serverUrl, {});
 
-const createCatalogApi = (catalogId) =>
+const createCatalogApi = (catalogId: string) =>
 	ajax(serverUrl, {
 		endpoint: `/${catalogId}/graphql`,
 	});
@@ -62,7 +62,8 @@ const catalogConfigs = [
 
 const useESAuth = !!esPass && !!esUser;
 const esClient = await buildSearchClient({
-	client: searchEngine,
+	// coerced type to verify the function handles unsupported values
+	client: searchEngine as SupportedSearchClients,
 	node: esHost,
 	...(useESAuth && {
 		username: esUser,
@@ -124,7 +125,7 @@ const runTestSuites = (env, { smokeTestConfig } = {}) => {
 	});
 };
 
-suite('integration-tests/server', () => {
+suite('integration-tests/server', { concurrency: false }, () => {
 	before(async () => {
 		try {
 			await cleanup('before all');

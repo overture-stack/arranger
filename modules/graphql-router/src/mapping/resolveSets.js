@@ -6,7 +6,15 @@ import { buildQuery } from '#middleware/index.js';
 import compileFilter from './utils/compileFilter.js';
 import esSearch from './utils/esSearch.js';
 
-const retrieveSetIds = async ({ esClient, index, query, path, sort, BULK_SIZE = 1000, trackTotalHits = true }) => {
+const retrieveSetIds = async ({
+	esClient,
+	index, // searchIndex
+	query,
+	path,
+	sort,
+	BULK_SIZE = 1000,
+	trackTotalHits = true,
+}) => {
 	const search = async ({ searchAfter } = {}) => {
 		const body = {
 			...(!isEmpty(query) && { query }),

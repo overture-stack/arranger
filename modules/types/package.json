@@ -11,36 +11,46 @@
 		"type": "git",
 		"url": "git+https://github.com/overture-stack/arranger.git"
 	},
-	"main": "dist/index.js",
+	"main": "dist/index.cjs",
 	"types": "dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
-			"default": "./dist/index.js"
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
 		},
 		"./configs": {
 			"types": "./dist/configs/index.d.ts",
-			"default": "./dist/configs/index.js"
+			"import": "./dist/configs/index.js",
+			"require": "./dist/configs/index.cjs"
 		},
 		"./configs/constants": {
 			"types": "./dist/configs/constants.d.ts",
-			"default": "./dist/configs/constants.js"
+			"import": "./dist/configs/constants.js",
+			"require": "./dist/configs/constants.cjs"
 		},
 		"./elastic": {
 			"types": "./dist/elastic/index.d.ts",
-			"default": "./dist/elastic/index.js"
+			"import": "./dist/elastic/index.js",
+			"require": "./dist/elastic/index.cjs"
 		},
 		"./elastic/constants": {
 			"types": "./dist/elastic/constants.d.ts",
-			"default": "./dist/elastic/constants.js"
+			"import": "./dist/elastic/constants.js",
+			"require": "./dist/elastic/constants.cjs"
 		},
+		"./package.json": "./package.json",
 		"./tools": {
 			"types": "./dist/tools/index.d.ts",
-			"default": "./dist/tools/index.js"
+			"import": "./dist/tools/index.js",
+			"require": "./dist/tools/index.cjs"
 		}
 	},
+	"files": [
+		"dist"
+	],
 	"scripts": {
-		"build": "tsc --project tsconfig.release.json",
+		"build": "tsup",
 		"clear:dist": "rm -rf dist",
 		"patchTS": "ts-patch install -s",
 		"prepare": "npm run patchTS",
@@ -56,6 +66,7 @@
 		"@types/node": "^22.19.13",
 		"nodemon": "^3.1.9",
 		"tsx": "^4.19.2",
+		"tsup": "^6.7.0",
 		"typescript": "^5.8.2",
 		"typescript-transform-paths": "^3.5.6"
 	},
