@@ -17,7 +17,6 @@ const configsAggregator = (
 		enableAdmin,
 		enableDebug,
 		enableLogs,
-		enableNetworkAggregation,
 		filters,
 		pingMs,
 		pingPath,
@@ -45,7 +44,6 @@ const configsAggregator = (
 		},
 		enableDebug,
 		enableLogs,
-		enableNetworkAggregation,
 		health: {
 			pingMs,
 			pingPath,

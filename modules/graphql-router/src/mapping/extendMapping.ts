@@ -176,10 +176,9 @@ export const extendFields = (
 	mappingFields: FieldFromMapping[],
 	extendedFromFile: ExtendedConfigs[],
 ): ExtendedConfigs[] => {
-	return mappingFields.map(({ fieldName, type, ...rest }) => {
+	// TODO: `type` from ExtendedConfigs and FieldFromMapping do not match, they need to be mapped. Issue with `byte`.
+	return mappingFields.map<ExtendedConfigs>(({ fieldName, type, ...rest }) => {
 		const {
-			// TODO: remove this temporary baggage
-			aggsType = 'Aggregations',
 			displayName = startCase(fieldName.replace(/\./g, ' ')),
 			displayType = type,
 			displayValues = {},
@@ -192,7 +191,6 @@ export const extendFields = (
 		} = extendedFromFile.find((customData) => customData.fieldName === fieldName) || {};
 
 		return {
-			aggsType,
 			displayName,
 			displayType,
 			displayValues,
@@ -209,7 +207,7 @@ export const extendFields = (
 	});
 };
 
-export const flattenMappingToFields = async (mapping: Record<string, unknown> = {}): Promise<FieldFromMapping[]> =>
+export const flattenMappingToFields = (mapping: Record<string, unknown> = {}): FieldFromMapping[] =>
 	flattenMapping(mapping).map(({ field: fieldName = '', type = 'keyword', ...rest }) => ({
 		fieldName,
 		type,

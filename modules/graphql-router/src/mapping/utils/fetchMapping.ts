@@ -4,6 +4,16 @@ import { type SearchClient } from '#searchClient/types.js';
 
 const REQUEST_TIMEOUT = 10000;
 
+/**
+ * Awaits a promise and logs warnings to the console if it is taking longer than expected.
+ * Two warnings are emitted: one at 1.5x the threshold and one at 3x the threshold.
+ * Timers are always cleared when the promise settles.
+ *
+ * @param promise - The promise to await.
+ * @param label - A human-readable name for the operation, used in warning messages.
+ * @param thresholdMs - Duration in milliseconds before slow-log warnings begin firing. Defaults to one quarter of `REQUEST_TIMEOUT`.
+ * @returns The resolved value of the promise.
+ */
 const withSlowLog = async <T>(promise: Promise<T>, label: string, thresholdMs = REQUEST_TIMEOUT / 4): Promise<T> => {
 	const firstTimeoutId = setTimeout(() => {
 		console.warn(`    Still waiting for ${label}`);
@@ -32,27 +42,38 @@ export const getESAliases = async (esClient: SearchClient, requestTimeout?: numb
 export const checkESAlias = (aliases: CatAliasesAliasesRecord[], possibleAlias: string) =>
 	aliases?.find((foundIndex = { alias: undefined }) => foundIndex.alias === possibleAlias)?.index;
 
+/**
+ * Fetches the search engine field mappings for a given index, resolving aliases if present.
+ *
+ * Resolves the index alias if one exists, then retrieves the index mapping from the search engine.
+ * Throws if the search client is missing, the index cannot be found, or the response cannot be parsed.
+ *
+ * @param enableDebug - When `true`, caught errors are logged to `console.debug` before being rethrown.
+ * @param searchClient - The SearchClient used to perform requests of the search engine.
+ * @param esIndex - The index name or alias to fetch the mapping for.
+ * @returns An object containing the resolved `index` name, full `mappings` response for the index, field-level `mapping` properties, and the `alias` if one was found.
+ */
 export const fetchMapping = async ({
 	enableDebug,
-	esClient,
+	searchClient,
 	esIndex,
 }: {
 	enableDebug?: boolean;
-	esClient: SearchClient;
+	searchClient: SearchClient;
 	esIndex: string;
 }) => {
-	if (esClient) {
+	if (searchClient) {
 		console.log(`  - Fetching ES mapping for "${esIndex}"`);
 
 		try {
-			const aliases = await getESAliases(esClient, REQUEST_TIMEOUT);
+			const aliases = await getESAliases(searchClient, REQUEST_TIMEOUT);
 			const alias = checkESAlias(aliases, esIndex);
 			alias && console.log(`    Found it as an alias for index "${alias}"`);
 
 			const accessor = alias || esIndex;
 
 			const mapping = await withSlowLog(
-				esClient?.indices.getMapping(
+				searchClient?.indices.getMapping(
 					{
 						index: accessor,
 					},

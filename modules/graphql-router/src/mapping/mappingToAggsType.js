@@ -1,25 +1,20 @@
-import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic/constants';
-import { flattenDeep } from 'lodash-es';
+import { esToAggTypesMap } from '@overture-stack/arranger-types/elastic';
 
-// add two underscores after a value if it's truthy (not an empty string)
-// used to create fields representing es paths
-// why? because graphql fields cannot contain dots
-// diagnoses.treatments 👎
-// vs
-// diagnoses__treatments 👍
-// type AppendUnderscoresFn = (a: string) => string;
-// const appendUnderscores: AppendUnderscoresFn = (x) => (x ? x + '__' : '');
-const appendUnderscores = (x) => (x ? x + '__' : '');
+import { flattenMappingToFields } from './extendMapping.js';
+import convertNameForGraphql from './utils/convertNameForGraphql.js';
 
-const mappingToAggsType = (properties, parent = '') =>
-	flattenDeep(
-		Object.entries(properties)
-			.filter(([fieldName, data]) => data?.properties || data?.type)
-			.map(([fieldName, data]) =>
-				data?.properties
-					? mappingToAggsType(data.properties, appendUnderscores(parent) + fieldName)
-					: `${appendUnderscores(parent) + fieldName}: ${esToAggTypesMap[data.type]}`,
-			),
-	);
+/**
+ * Retrieve from the search index mappings an array of type strings that can be used in the
+ * GraphQL Schema definition.
+ */
+const mappingToAggsType = (mappings) =>
+	flattenMappingToFields(mappings)
+		.filter((field) => field.type !== 'nested')
+		.map((field) =>
+			field.type !== 'nested'
+				? `${convertNameForGraphql(field.fieldName)}: ${esToAggTypesMap[field.type]}`
+				: undefined,
+		)
+		.filter((field) => field !== undefined);
 
 export default mappingToAggsType;

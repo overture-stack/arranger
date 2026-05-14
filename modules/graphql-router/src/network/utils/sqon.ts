@@ -1,5 +1,6 @@
-import { failure, type Result, success } from '#network/result.js';
-import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
+import SQONBuilder, { type SQON } from '@overture-stack/sqon-builder';
+
+import { result, type Result, success } from '#network/result.js';
 
 /**
  * Attempts to convert a variable to a SQON. A Result is returned, where if successful
@@ -9,13 +10,13 @@ import SQONBuilder, { SQON } from '@overture-stack/sqon-builder';
  * @param filter
  * @returns
  */
-export const convertToSqon = (filter: unknown): Result<SQON, 'INVALID_SQON', void> => {
+export const convertToSqon = (filter: unknown): Result<SQON, { INVALID_SQON: string }> => {
 	try {
 		// @ts-expect-error sqon-builder types need update - "@overture-stack/sqon-builder": "^1.1.0"
 		const output = SQONBuilder.from(filter);
 		return success(output);
 	} catch (error: unknown) {
 		const message = `${error}`; // Will convert the error to a string, works fine with the expected ZodError without requiring importing Zod to Arranger
-		return failure('INVALID_SQON', message);
+		return result('INVALID_SQON', message);
 	}
 };

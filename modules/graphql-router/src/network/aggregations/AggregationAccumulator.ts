@@ -34,17 +34,11 @@ const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
 	 *   },
 	 */
 	const { key, doc_count } = bucket;
-	const existingBucketIndex = computedBuckets.findIndex((bucket) => bucket.key === key);
+	const existingBucket = computedBuckets.find((bucket) => bucket.key === key);
 
-	if (existingBucketIndex !== -1) {
-		const existingBucket = computedBuckets[existingBucketIndex];
-		if (existingBucket) {
-			// update existing bucket
-			computedBuckets[existingBucketIndex] = {
-				...existingBucket,
-				doc_count: existingBucket.doc_count + doc_count,
-			};
-		}
+	if (existingBucket) {
+		// update doc_count
+		existingBucket.doc_count = existingBucket.doc_count + doc_count;
 	} else {
 		computedBuckets.push(bucket);
 	}
@@ -161,7 +155,7 @@ const emptyAggregation = (hits: number): Aggregations => ({
 });
 
 /**
- * Resolves returned aggregations from network queries into single accumulated aggregation
+ * Combines returned aggregations from network queries into single accumulated aggregation.
  * ALL_NETWORK_AGGREGATION_TYPES_MAP should be initialised before using this function
  *
  * @param

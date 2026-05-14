@@ -1,4 +1,4 @@
-export let typeDefs = `
+export const typeDefs = `
   enum Missing {
     first
     last

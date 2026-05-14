@@ -1,12 +1,13 @@
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import getFields from 'graphql-fields';
 
-import { buildQuery, buildAggregations, flattenAggregations } from '#middleware/index.js';
+import { buildAggregations, buildQuery, flattenAggregations } from '#middleware/index.js';
+import type { SchemaTypesDefinition } from '#schema/types.js';
+import type { ArrangerBaseContext, Resolver, Root } from '#types.js';
 
-import esSearch from './utils/esSearch.js';
 import { resolveSetsInSqon } from './hackyTemporaryEsSetResolution.js';
 import compileFilter from './utils/compileFilter.js';
-import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
-import { type Resolver, type Root } from '#gqlServer.js';
+import esSearch from './utils/esSearch.js';
 
 export type Bucket = {
 	doc_count: number;
@@ -36,7 +37,12 @@ export type NumericAggregations = { stats: Stats } & CommonAggregationProperties
 export type AllAggregations = Aggregations | NumericAggregations;
 export type AllAggregationsMap = Record<string, Aggregations | NumericAggregations>;
 
-export type AggregationsResolver = Resolver<Root, AggregationsQueryVariables, Promise<AllAggregationsMap>>;
+export type AggregationsResolver<Context extends ArrangerBaseContext> = Resolver<
+	Root,
+	AggregationsQueryVariables,
+	Promise<AllAggregationsMap>,
+	Context
+>;
 
 export type AggregationsQueryVariables = {
 	filters: any;
@@ -44,27 +50,41 @@ export type AggregationsQueryVariables = {
 	include_missing: boolean;
 };
 
+/**
+ * Replaces all `.` symbols in the keys of an Aggregation Map with `__`.
+ * GraphQL fields cannot use the `.` symbol, they may only be alphanumeric or underscores.
+ *
+ * For example, `donor.age` will become `donor__age`.
+ */
 const toGraphqlField = (acc: AllAggregationsMap, [a, b]: [string, CommonAggregationProperties]) => ({
 	...acc,
 	[a.replace(/\./g, '__')]: b,
 });
 
-export const aggregationsToGraphql = (aggregations: AllAggregationsMap) => {
+/**
+ * Update the AllAggregationsMap to make field names safe for use with GraphQL. All values are unchanged,
+ * while all property strings have `.` values replaced with `__` to make them safe for Graphql.
+ *
+ * For example, `donor.age` will become `donor__age`.
+ *
+ * Elasticsearch uses dot notation for nested fields, but graphql field names may not use the `.` symbol.
+ */
+export const aggregationsToGraphql = (aggregations: AllAggregationsMap): AllAggregationsMap => {
 	return Object.entries(aggregations).reduce<AllAggregationsMap>(toGraphqlField, {});
 };
 
-const getAggregationsResolver = ({
+const getAggregationsResolver = <Context extends ArrangerBaseContext>({
 	type,
 	getServerSideFilter,
 }: {
-	type: Record<string, any>;
-	getServerSideFilter: GetServerSideFilterFn | undefined;
+	type: SchemaTypesDefinition;
+	getServerSideFilter?: GetServerSideFilterFn<Context>;
 }) => {
-	const resolver: Resolver<unknown, AggregationsQueryVariables, Promise<AllAggregationsMap>> = async (
-		obj,
+	const resolver: AggregationsResolver<Context> = async (
+		root,
 		{ filters, aggregations_filter_themselves, include_missing = true },
 		context,
-		info,
+		graphqlResolveInfo,
 	) => {
 		const nestedFieldNames = type.nested_fieldNames;
 
@@ -80,7 +100,7 @@ const getAggregationsResolver = ({
 			nestedFieldNames,
 			filters: compileFilter({
 				clientSideFilter: resolvedFilter,
-				serverSideFilter: getServerSideFilter && getServerSideFilter(),
+				serverSideFilter: getServerSideFilter && getServerSideFilter(context),
 			}),
 		});
 
@@ -89,7 +109,7 @@ const getAggregationsResolver = ({
 		 * serve multiple aggregations of the same type for a given field.
 		 * Library issue: https://github.com/robrichard/graphql-fields/issues/18
 		 */
-		const graphqlFields = getFields(info, {}, { processArguments: true });
+		const graphqlFields = getFields(graphqlResolveInfo, {}, { processArguments: true });
 		const aggs = buildAggregations({
 			query,
 			sqon: resolvedFilter,
@@ -98,7 +118,11 @@ const getAggregationsResolver = ({
 			aggregationsFilterThemselves: aggregations_filter_themselves,
 		});
 
-		const body = Object.keys(query || {}).length ? { query, aggs } : { aggs };
+		const body = {
+			...(Object.keys(query || {}).length && { query }),
+			aggs,
+		};
+
 		const response = await esSearch(esClient)({
 			index: type.index,
 			size: 0,

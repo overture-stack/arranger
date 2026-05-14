@@ -2,6 +2,7 @@ export { default as addMappingsToTypes } from './addMappingsToTypes.js';
 export { default as createConnectionResolvers } from './createConnectionResolvers.js';
 // export { default as resolveSets, saveSet } from './resolveSets.js';
 export { saveSet } from './resolveSets.js';
+export { default as mappingToAggregationField } from './mappingToAggregationFields.js';
 export { default as mappingToFields } from './mappingToFields.js';
 export { default as mappingToAggsType } from './mappingToAggsType.js';
 export { default as mappingToAggsState } from './mappingToAggsState.js';

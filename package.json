@@ -34,7 +34,7 @@
 		"components:watch": "npm run watch --w modules/components",
 		"dev:components": "concurrently -n types,router,server -c magenta,blue,green \"npm run types:watch\" \"npm run components:watch\"",
 		"dev:server": "concurrently --raw -n types,router,server -c magenta,blue,green --hide types,router \"npm run types:watch\" \"npm run graphql-router:watch\" \"npm run server:dev\"",
-		"graphql-router": "npm run build --w modules/graphql-router",
+		"graphql-router:build": "npm run build --w modules/graphql-router",
 		"graphql-router:watch": "npm run watch --w modules/graphql-router",
 		"install:memory-safe": "npm i --ignore-scripts && npm rebuild --foreground-scripts --workspaces --loglevel=warn",
 		"modules:build": "npm run build --w modules",
@@ -50,7 +50,7 @@
 		"test:watch": "concurrently --group \"npm:modules:watch\" --group \"npm:test:watch --w modules/components -w integration-tests/import\"",
 		"turbo:build": "npx turbo run build",
 		"turbo:test": "npx turbo run test",
-		"types": "npm run build --w modules/types",
+		"types:build": "npm run build --w modules/types",
 		"types:watch": "npm run watch --w modules/types"
 	},
 	"overrides": {

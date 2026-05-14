@@ -1,11 +1,12 @@
-import { fetchGql } from '#network/gql.js';
-import { type NetworkConfig } from '#network/types/setup.js';
-import { fulfilledPromiseFilter } from '#network/utils/promise.js';
+import { type NodeConfig, type RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
+import { isAxiosError } from 'axios';
 
-export type NodeConfig = NetworkConfig & { aggregations: { name: string; type: string }[] };
+import { fetchGql } from '#network/gql.js';
+import { type AggregationField, type NetworkRemoteNode } from '#network/types/setup.js';
+import { isFulfilledPromise } from '#network/utils/promise.js';
 
 type NetworkQueryResult = PromiseFulfilledResult<{
-	config: NetworkConfig;
+	config: NetworkRemoteNode;
 	gqlResponse: GQLTypeQueryResponse;
 }>;
 
@@ -50,24 +51,29 @@ const gqlAggregationTypeQuery = `#graphql
  * @param gqlField - Nested field object
  * @returns An unnested object containing field name and type
  */
-const normalizeGqlField = (gqlField: GQLFieldType): { name: string; type: string } => {
-	const fieldType = gqlField.type.name;
-	return { name: gqlField.name, type: fieldType };
+const normalizeGqlField = (gqlField: GQLFieldType): AggregationField => {
+	const type = gqlField.type.name;
+	const name = gqlField.name;
+
+	return { name, type };
 };
+
+export type FetchAggregationSuccess = { result: 'SUCCESS'; node: NetworkRemoteNode };
+export type FetchAggregationInvalidData = { result: 'INVALID_DATA'; config: RemoteNodeConfig; message: string };
+export type FetchAggregationNetworkError = { result: 'NETWORK_ERROR'; config: RemoteNodeConfig; message: string };
+export type FetchAggregationResult =
+	| FetchAggregationSuccess
+	| FetchAggregationInvalidData
+	| FetchAggregationNetworkError;
 
 /**
  * GQL query remote connection with __type query to retrieve list of types
  *
- * @param config - network config from env
- * @returns A promise containing network config and the gql query result
- *
- * @throws Fetch failed error
- *
- * @throws JSON parse error
- *
- * @throws Unexpected data error
+ * @param config - RemoteNodeConfig for network aggregation search
+ * @returns On success, returns the NetworkAggregationNode including its NodeConfig and AggregationFields. This could return
+ *          a failure result due to network error or unexpected response data format.
  */
-const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQueryResponse | undefined> => {
+const fetchNodeAggregations = async (config: RemoteNodeConfig): Promise<FetchAggregationResult> => {
 	const { graphqlUrl, documentType } = config;
 	/**
 	 * documentType is an entire field name / type name in the case of a root field
@@ -84,10 +90,16 @@ const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQuer
 			variables: { documentTypeName: typename },
 		});
 
-		// axios response "data" field containing graphql response "data" field
-		const responseData = response.data?.data;
 		if (response.status === 200 && response.statusText === 'OK') {
-			return responseData;
+			// axios response "data" field containing graphql response "data" field
+			// Note: This is unsafe property access, it will be caught and returned as 'INVALID_DATA' if the sturcutre is invalid.
+			const responseData = response.data.data;
+			const fields = responseData.__type.fields;
+			const aggregations = fields.map(normalizeGqlField);
+			console.info(
+				`Successfully fetched schema for remote node '${config.displayName}' located at ${config.graphqlUrl}`,
+			);
+			return { result: 'SUCCESS', node: { ...config, aggregations } };
 		}
 
 		console.error('Unexpected response data in fetchRemoteSchema');
@@ -95,9 +107,17 @@ const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQuer
 			`Unexpected data in response object. Please verify the endpoint at ${graphqlUrl} is returning a valid GQL Schema.`,
 		);
 	} catch (error) {
-		console.error(`\nFailed to retrieve schema from url: ${config.graphqlUrl}`);
-		console.error(`Check config for ${documentType} network documentType is correct\n`);
-		return;
+		console.error(
+			`\nFailed to retrieve schema for node '${config.displayName}' from graphqlUrl: ${config.graphqlUrl}`,
+		);
+		console.error(
+			`  Check that the graphqlUrl and documentType '${documentType}' for this node are both correct.\n`,
+		);
+		if (isAxiosError(error)) {
+			return { result: 'NETWORK_ERROR', config, message: error.message };
+		}
+		const message = error instanceof Error ? error.message : `Unexpected error fetching node aggregations.`;
+		return { result: 'INVALID_DATA', config, message };
 	}
 };
 
@@ -109,25 +129,31 @@ const fetchNodeAggregations = async (config: NetworkConfig): Promise<GQLTypeQuer
 export const fetchAllNodeAggregations = async ({
 	networkConfigs,
 }: {
-	networkConfigs: NetworkConfig[];
-}): Promise<NodeConfig[]> => {
-	// query remote connection types
-	const queryRequestPromises = networkConfigs.map(async (config) => {
-		const gqlResponse = await fetchNodeAggregations(config);
-		return { config, gqlResponse };
-	});
+	networkConfigs: RemoteNodeConfig[];
+}): Promise<FetchAggregationResult[]> => {
+	// query remote connection aggregations, let resolve in parallel and this will resume once all are settled
+	const queryResults = await Promise.allSettled(networkConfigs.map(fetchNodeAggregations));
 
-	const queryResults = await Promise.allSettled(queryRequestPromises);
+	// We expect all the queryResults to fulfill since `fetchNodeAggregations` catches all errors and does not throw,
+	// the following is extra precaution to capture any unexpected behaviours
+	const fulfilledQueryResults = queryResults.filter(isFulfilledPromise);
+	if (fulfilledQueryResults.length < queryResults.length) {
+		const rejectedQueryResults = queryResults.filter((result) => !isFulfilledPromise(result));
+		// Log this unexpected outcome
+		console.warn(
+			`Unexpected code branch reached while fetching node aggregations, ${queryResults.length - fulfilledQueryResults.length} queries were rejected!`,
+		);
+		// Log specific rejection details
+		rejectedQueryResults.forEach((result) => {
+			console.warn(
+				`A promise for 'fetchNodeAggregations' has failed to resolve with the status '${result.status}' and reason: ${result.reason}`,
+			);
+		});
+	}
 
-	const nodeConfigs = queryResults.filter(fulfilledPromiseFilter<NetworkQueryResult>).map((networkResult) => {
-		const { config, gqlResponse } = networkResult.value;
-		// TODO handle null _type value example: incorrect document type specified
-		const fields = gqlResponse.__type.fields;
-		const aggregations = fields.map(normalizeGqlField);
-		return { ...config, aggregations };
-	});
+	const nodeConfigs = fulfilledQueryResults.map<FetchAggregationResult>((settledPromise) => settledPromise.value);
 
-	console.log('\nSuccessfully fetched node schemas\n');
+	console.log('\nFinished fetching remote node schemas!\n');
 
 	return nodeConfigs;
 };

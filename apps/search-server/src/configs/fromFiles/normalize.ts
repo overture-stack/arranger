@@ -2,7 +2,12 @@ import type { SortingConfigs } from '@overture-stack/arranger-types/configs';
 import { configRootProperties, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 import { merge } from 'lodash-es';
 
-// TODO write JSDOCs to explain the purpose here is provide initial defaults when only given partial configs, e.g. table sorting missing the order desc
+/**
+ * Normalizes raw config file JSON for use by the search server.
+ *
+ * - Ensures every entry in `table.defaultSorting` has `desc` explicitly set,
+ *   defaulting to `false` when the field is absent.
+ */
 const normalize = (fileDataJSON: any) => {
 	if (fileDataJSON?.[configRootProperties.TABLE]?.[tableProperties.DEFAULT_SORTING]) {
 		return merge(fileDataJSON, {

@@ -1,15 +1,7 @@
-import {
-	GraphQLBoolean,
-	GraphQLEnumType,
-	GraphQLInt,
-	GraphQLList,
-	GraphQLObjectType,
-	GraphQLSchema,
-	GraphQLString,
-} from 'graphql';
+import { GraphQLBoolean, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { GraphQLJSONObject } from 'graphql-type-json';
 
-import { type SupportedNetworkFieldType } from '#network/setup/fields.js';
+import { type SupportedAggregationField } from '#network/setup/fields.js';
 
 const bucket = new GraphQLObjectType({
 	name: 'Bucket',
@@ -49,7 +41,7 @@ const typeDefMap = {
  * @param fieldTypes - An array of fields with types
  * @returns Structured GQL fields object
  */
-const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) => {
+const convertToGQLObjectType = (networkFieldTypes: SupportedAggregationField[]) => {
 	return networkFieldTypes.reduce((allFields, currentField) => {
 		const field = {
 			[currentField.name]: {
@@ -66,7 +58,7 @@ const convertToGQLObjectType = (networkFieldTypes: SupportedNetworkFieldType[]) 
  * @param configs
  * @returns
  */
-export const createNetworkAggregationTypeDefs = (networkFieldTypes: SupportedNetworkFieldType[]) => {
+export const createNetworkAggregationTypeDefs = (networkFieldTypes: SupportedAggregationField[]) => {
 	const allFields = convertToGQLObjectType(networkFieldTypes);
 
 	const aggregationsType = new GraphQLObjectType({

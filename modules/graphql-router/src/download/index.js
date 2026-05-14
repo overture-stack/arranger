@@ -93,7 +93,7 @@ export const dataStream = async ({ ctx, params }) => {
 	throw new Error('files array was missing or empty');
 };
 
-const download = ({ enableAdmin, enableDebug }) => {
+const download = ({ enableAdmin = false, enableDebug = false }) => {
 	const router = Router();
 
 	router.use(urlencoded({ extended: true }));

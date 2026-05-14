@@ -9,4 +9,4 @@ export const SUPPORTED_AGGREGATIONS = {
 
 export type SupportedAggregation = ObjectValues<typeof SUPPORTED_AGGREGATIONS>;
 
-export const SUPPORTED_AGGREGATIONS_LIST: SupportedAggregation[] = [SUPPORTED_AGGREGATIONS.Aggregations];
+export const SUPPORTED_AGGREGATIONS_LIST: string[] = [SUPPORTED_AGGREGATIONS.Aggregations];

@@ -1,18 +1,28 @@
-import type { Client } from '@elastic/elasticsearch/api/new';
+import type { IResolvers } from '@graphql-tools/utils';
+import type { GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { GraphQLDate } from 'graphql-scalars';
 import { GraphQLJSON } from 'graphql-type-json';
 import { startCase } from 'lodash-es';
 import Parallel from 'paralleljs';
 
-import { createConnectionResolvers, saveSet, mappingToFields } from '#mapping/index.js';
+import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
 import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
+import type { ArrangerBaseContext } from '#types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';
 import ConfigsTypeDefs from './configQuery.js';
 import { typeDefs as SetTypeDefs } from './Sets.js';
 import { typeDefs as SortTypeDefs } from './Sort.js';
+import type { SchemaTypesTuple } from './types.js';
 
-const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
+// TODO: Narrow the rootTypes and scalarTypes type definitions
+type TypeDefsArgs = {
+	types: SchemaTypesTuple[];
+	rootTypes: any[];
+	scalarTypes: any[];
+};
+
+const RootTypeDefs = ({ types, rootTypes, scalarTypes }: TypeDefsArgs) => `
 	scalar JSON
 	scalar Date
 	enum EsRefresh {
@@ -64,7 +74,7 @@ const RootTypeDefs = ({ types, rootTypes, scalarTypes }) => `
 	}
 `;
 
-export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
+export const typeDefs = ({ types, rootTypes, scalarTypes }: TypeDefsArgs) => [
 	RootTypeDefs({ types, rootTypes, scalarTypes }),
 	AggregationsTypeDefs,
 	SetTypeDefs,
@@ -73,15 +83,37 @@ export const typeDefs = ({ types, rootTypes, scalarTypes }) => [
 	...types.map(([key, type]) => mappingToFields({ type, parent: '' })),
 ];
 
-const resolveObject = () => ({});
+const resolveEmptyObject = () => ({});
 
-export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, scalarTypes, setsIndex, types }) => {
+type CreateResolversArgs<Context extends ArrangerBaseContext> = {
+	debug: boolean;
+	enableAdmin?: boolean;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	rootTypes: any[];
+	scalarTypes: any[];
+	setsIndex: string;
+	types: SchemaTypesTuple[];
+};
+
+export const resolvers = <Context extends ArrangerBaseContext>({
+	debug,
+	enableAdmin = false,
+	getServerSideFilter,
+	rootTypes,
+	scalarTypes,
+	setsIndex,
+	types,
+}: CreateResolversArgs<Context>): IResolvers<any, Context> => {
 	return {
 		JSON: GraphQLJSON,
 		Date: GraphQLDate,
 		Root: {
-			viewer: resolveObject,
-			hasValidConfig: async (obj, { documentType, index, esIndex }, { esClient }: { esClient: Client }) => {
+			viewer: resolveEmptyObject,
+			hasValidConfig: async (
+				root: unknown,
+				{ documentType, index, esIndex }: { documentType: string; index: string; esIndex: string },
+				{ esClient }: Context,
+			) => {
 				if (documentType) {
 					const documentIndex = esIndex ?? index;
 
@@ -100,7 +132,7 @@ export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, 
 							} catch (err) {
 								const message = 'Something went wrong reaching ES';
 
-								debug && console.error(message, err.message || err);
+								debug && console.error(message, err instanceof Error ? err.message : err);
 								return new Error(message);
 							}
 						}
@@ -118,15 +150,17 @@ export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, 
 				return accessor.length > 0
 					? {
 							...acc,
-							[accessor]: resolveObject,
+							[accessor]: resolveEmptyObject,
 						}
 					: acc;
 			}, {}),
 		},
+
+		// Create resolvers for each provided document type (typically: one configured type and `sets`)
 		...types.reduce(
 			(acc, [key, type]) => ({
 				...acc,
-				...createConnectionResolvers({
+				...createConnectionResolvers<Context>({
 					createStateResolvers: 'createState' in type ? type.createState : true,
 					enableAdmin,
 					getServerSideFilter,
@@ -136,6 +170,7 @@ export const resolvers = ({ debug, enableAdmin, getServerSideFilter, rootTypes, 
 			}),
 			{},
 		),
+
 		...rootTypes.reduce(
 			(acc, [key, type]) => ({
 				...acc,
