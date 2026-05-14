@@ -1,0 +1,32 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		"declaration": true,
+		"declarationMap": false,
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"noUncheckedIndexedAccess": true,
+		"outDir": "./dist",
+		"paths": {
+			"#*": ["./src/*"]
+		},
+		"plugins": [
+			{
+				"transform": "typescript-transform-paths"
+			}, // absolute paths for source files
+			{
+				"transform": "typescript-transform-paths",
+				"afterDeclarations": true
+			} // absolute paths for .d.ts files
+		],
+		"rootDir": "./src",
+		"strict": true,
+		"types": ["node"],
+		"verbatimModuleSyntax": true
+	},
+	"exclude": ["dist/**/*"],
+	"extends": "@tsconfig/node22/tsconfig.json",
+	"include": ["src/**/*"]
+}

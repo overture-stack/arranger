@@ -6,8 +6,14 @@ lerna-debug.log
 **/dist
 **/node_modules
 **/.DS_Store
+**/.turbo
 **/*.env*
-!**/.env.schema
 **/package-lock.json
 
 *.tsbuildinfo
+
+# include, don't ignore
+!.env.test
+!**/.env.schema
+
+/configs

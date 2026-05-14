@@ -1,0 +1,23 @@
+export const warnDeprecatedConfigsSource = ({ configsSource = '', enableDebug = false }) => {
+	if (configsSource) {
+		console.warn(
+			'[Arranger] "configsSource" is deprecated. Pass a parsed configs object instead.',
+			enableDebug && 'DEBUG: file parsing has moved to the server as `catalogConfigsPath`.',
+		);
+	}
+};
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export type GenericFn = (..._arg: any) => any;
+
+export const emptyObj = {} as Record<string, any>;
+
+export const emptyArrFn = (..._arg: any): never[] => [];
+export const emptyObjFn = (..._arg: any): Record<string, never> => ({});
+export const emptyStrFn = (..._arg: any): string => '';
+
+const noopFn = (..._arg: any): void => {
+	// do nothing
+};
+
+export default noopFn;

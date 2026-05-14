@@ -1,0 +1,59 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"compilerOptions": {
+		/* Language and Environment */
+		"allowJs": true,
+		"checkJs": false,
+		"target": "esnext",
+		"lib": ["es2023"],
+
+		/* Modules */
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"paths": {
+			"#*": ["./src/*"]
+		},
+		"plugins": [
+			{
+				"transform": "typescript-transform-paths"
+			}, // absolute paths for source files
+			{
+				"transform": "typescript-transform-paths",
+				"afterDeclarations": true
+			} // absolute paths for .d.ts files
+		],
+		"rootDir": "./",
+		"resolveJsonModule": true,
+
+		/* Emit */
+		"declaration": true,
+		"outDir": "./dist",
+		"noEmit": true,
+		"importHelpers": true,
+		"inlineSourceMap": true,
+
+		/* Interop Constraints */
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+
+		/* Type Checking */
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+
+		/* Completeness */
+		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
+		"verbatimModuleSyntax": true,
+		"erasableSyntaxOnly": true
+	},
+	"exclude": ["dist/**/*"],
+	"include": ["src/**/*", "index.ts"]
+}
