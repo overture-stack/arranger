@@ -32,6 +32,10 @@ const configsFromEnv = {
 			[configRootProperties.ES_PASS]: process.env.ES_PASS || '',
 			[configRootProperties.ES_USER]: process.env.ES_USER || '',
 
+			// graphql security limits
+			[configOptionalProperties.GRAPHQL_MAX_ALIASES]: stringToNumber(process.env.GRAPHQL_MAX_ALIASES),
+			[configOptionalProperties.GRAPHQL_MAX_DEPTH]: stringToNumber(process.env.GRAPHQL_MAX_DEPTH),
+
 			// additional functionality
 			[configRootProperties.DOWNLOADS]: {
 				[downloadProperties.ALLOW_CUSTOM_MAX_ROWS]: stringToBool(process.env.ALLOW_CUSTOM_DOWNLOAD_MAX_ROWS),

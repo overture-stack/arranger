@@ -147,6 +147,8 @@ export type ConfigsObject<Context extends object> = {
 		getServerSideFilter: GetServerSideFilterFn<Context>;
 		[configOptionalProperties.CATALOG_ID]: string;
 		[configOptionalProperties.ES_HOST]: string;
+		[configOptionalProperties.GRAPHQL_MAX_ALIASES]: number;
+		[configOptionalProperties.GRAPHQL_MAX_DEPTH]: number;
 		[configOptionalProperties.NETWORK_AGGREGATION]: NetworkConfig;
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries

@@ -94,7 +94,7 @@ const buildCatalogsFromFolder = async ({
 	return catalogsMap;
 };
 
-const loadAllsConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
+const loadAllConfigs = async ({ currentDirectory = '', ...externalConfigs }): Promise<AllServerConfigs> => {
 	console.log('Gathering configuration data:');
 
 	// TODO: validate external configs to prevent undesired items, warn deprecations, etc.
@@ -131,4 +131,4 @@ const loadAllsConfigs = async ({ currentDirectory = '', ...externalConfigs }): P
 	}
 };
 
-export default loadAllsConfigs;
+export default loadAllConfigs;

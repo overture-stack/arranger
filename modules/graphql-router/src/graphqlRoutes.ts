@@ -24,6 +24,7 @@ import type { SchemaTypesTuple } from '#schema/types.js';
 import type { SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions } from '#types.js';
 import { addContext } from '#utils/context.js';
+import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
 
 const getIndexMapping = async ({
 	enableDebug,
@@ -216,6 +217,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableDebug = false,
 	esClient,
 	graphqlOptions = {},
+	maxAliases,
+	maxDepth,
 	mockSchema,
 	schema,
 }: {
@@ -223,6 +226,8 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	enableDebug?: boolean;
 	esClient: SearchClient;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	maxAliases?: number;
+	maxDepth?: number;
 	mockSchema: GraphQLSchema;
 	schema: GraphQLSchema;
 }) => {
@@ -233,6 +238,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	console.log('\n------\nStarting GraphQL server:');
 
 	const apolloFeatureFlags = disablePlayground && { plugins: [ApolloServerPluginLandingPageDisabled()] };
+	const validationRules = [maxAliasesRule(maxAliases), maxDepthRule(maxDepth)];
 
 	try {
 		// TODO: D.R.Y this thing!
@@ -256,6 +262,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
 				schema,
+				validationRules,
 				...apolloFeatureFlags,
 			});
 
@@ -277,6 +284,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			const apolloMockServer = new ApolloServer({
 				cache: 'bounded',
 				schema: mockSchema,
+				validationRules,
 				...apolloFeatureFlags,
 			});
 
@@ -470,6 +478,8 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			enableDebug,
 			esClient,
 			graphqlOptions,
+			maxAliases: configs[configOptionalProperties.GRAPHQL_MAX_ALIASES],
+			maxDepth: configs[configOptionalProperties.GRAPHQL_MAX_DEPTH],
 			mockSchema,
 			schema,
 		});
