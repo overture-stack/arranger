@@ -2,7 +2,12 @@
 
 import { type ES_TYPES } from '#mapping/esToAggTypeMap.js';
 
+export const chartsProperties = {
+	QUERY: 'query',
+} as const;
+
 export const configOptionalProperties = {
+	CHARTS: 'charts',
 	DOWNLOADS: 'downloads',
 	MATCHBOX: 'matchbox',
 	NETWORK_AGGREGATION: 'network',
@@ -84,6 +89,10 @@ export type AggConfigs = {
 	// collapsible
 };
 
+export type ChartConfigs = {
+	[chartsProperties.QUERY]: string;
+};
+
 export type ColumnConfigs = {
 	[configProperties.ACCESSOR]: string;
 	[configProperties.CAN_CHANGE_SHOW]: boolean;
@@ -107,8 +116,9 @@ export type DownloadsConfigs = {
 export type DisplayType = 'all' | 'bits' | 'boolean' | 'bytes' | 'date' | 'list' | 'nested' | 'number';
 
 export type ExtendedConfigs = {
+	aggsType: 'Aggregations' | 'NumericAggregations';
 	[configProperties.DISPLAY_NAME]: string;
-	[configProperties.DISPLAY_TYPE]: string;
+	[configProperties.DISPLAY_TYPE]: DisplayType | ES_TYPES;
 	[configProperties.DISPLAY_VALUES]: Record<string, any>;
 	[configProperties.FIELD_NAME]: string;
 	[configProperties.IS_ACTIVE]: boolean; // TODO: what is this?
@@ -116,8 +126,8 @@ export type ExtendedConfigs = {
 	[configProperties.PRIMARY_KEY]: boolean;
 	[configProperties.QUICKSEARCH_ENABLED]: boolean;
 	[configProperties.RANGE_STEP]: number;
-	[configProperties.TYPE]: DisplayType;
-	[configProperties.UNIT]: string;
+	[configProperties.TYPE]: ES_TYPES;
+	[configProperties.UNIT]: string | null;
 };
 
 export type FacetsConfigs = {
@@ -149,6 +159,7 @@ export type NetworkAggregation = {
 };
 
 export type ConfigObject = {
+	[configProperties.CHARTS]: ChartConfigs;
 	[configProperties.DOCUMENT_TYPE]: string;
 	[configProperties.DOWNLOADS]?: DownloadsConfigs;
 	[configProperties.EXTENDED]: any[];

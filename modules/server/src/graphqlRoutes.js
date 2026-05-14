@@ -5,6 +5,7 @@ import { Router } from 'express';
 
 import getConfigObject, { ENV_CONFIG, initializeSets } from './config/index.js';
 import { configProperties } from './config/types.js';
+import { extendCharts } from './mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from './mapping/extendMapping.js';
 import { addMappingsToTypes, extendFields, fetchMapping } from './mapping/index.js';
 import { createSchemaFromNetworkConfig } from './network/index.js';
@@ -45,7 +46,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the ES mappings.\n' +
-							'  Defaulting to "extended" config from files.\n',
+						'  Defaulting to "extended" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -60,7 +61,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-							'  Defaulting to "table" config from files.\n',
+						'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -75,7 +76,7 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				} catch (err) {
 					console.log(
 						'  Something happened while extending the column mappings.\n' +
-							'  Defaulting to "table" config from files.\n',
+						'  Defaulting to "table" config from files.\n',
 					);
 					ENV_CONFIG.DEBUG_MODE && console.log(err);
 
@@ -83,10 +84,14 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 				}
 			})();
 
+			// Validate and enchance charts config with dynamic properties
+			const extendedChartsConfigs = extendCharts(configs?.[configProperties.CHARTS], extendedFields);
+
 			const typesWithMappings = addMappingsToTypes({
 				graphQLType: {
 					config: {
 						...configs,
+						[configProperties.CHARTS]: extendedChartsConfigs,
 						[configProperties.FACETS]: extendedFacetsConfigs,
 						[configProperties.TABLE]: extendedTableConfigs,
 					},
@@ -105,10 +110,9 @@ const getTypesWithMappings = async (mapping, configs = {}) => {
 			};
 		} catch (error) {
 			console.error(error?.message || error);
-			throw `  Something went wrong while creating the GraphQL mapping${
-				ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
-					? ', this needs research by an Arranger maintainer!'
-					: '.\n  Likely cause: ES Auth parameters may be missing.'
+			throw `  Something went wrong while creating the GraphQL mapping${ENV_CONFIG.ES_USER && ENV_CONFIG.ES_PASS
+				? ', this needs research by an Arranger maintainer!'
+				: '.\n  Likely cause: ES Auth parameters may be missing.'
 			}`;
 		}
 	}
@@ -142,13 +146,13 @@ const createSchema = async ({ enableAdmin, getServerSideFilter, graphqlOptions =
 
 const noSchemaHandler =
 	(endpoint = 'unspecified') =>
-	(req, res) => {
-		console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
+		(req, res) => {
+			console.log(`  - Something went wrong initialising a GraphQL endpoint: ${endpoint}`);
 
-		return res.json({
-			error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
-		});
-	};
+			return res.json({
+				error: 'Schema is undefined. Make sure your server has a valid GraphQL Schema.',
+			});
+		};
 
 const createEndpoint = async ({ esClient, graphqlOptions = {}, mockSchema, schema }) => {
 	const mainPath = '/graphql';
@@ -339,7 +343,7 @@ export default async ({
 		];
 	} catch (error) {
 		const message = error?.message || error;
-		// if endpoint creation fails, let the next server step to respond with an error
+		// if endpoint creation fails, let the next server step respond with an error
 		console.info('\n------\nError thrown while generating the GraphQL endpoints.');
 		console.error(message);
 		console.error(error);

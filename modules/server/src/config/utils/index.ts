@@ -1,5 +1,5 @@
 import { ENV_CONFIG } from '#config/index.js';
-import { type ConfigObject, configProperties } from '#config/types.js';
+import { chartsProperties, type ConfigObject, configProperties } from '#config/types.js';
 import { setsMapping } from '#schema/index.js';
 import { type SearchClient } from '#searchClient/types.js';
 
@@ -34,6 +34,9 @@ export const initializeSets = async ({
 };
 
 export const makeConfigsFromEnv = (): Partial<ConfigObject> => ({
+	[configProperties.CHARTS]: {
+		[chartsProperties.QUERY]: '',
+	},
 	[configProperties.DOCUMENT_TYPE]: ENV_CONFIG.DOCUMENT_TYPE,
 	[configProperties.DOWNLOADS]: {
 		[configProperties.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS]: ENV_CONFIG.ALLOW_CUSTOM_MAX_DOWNLOAD_ROWS,

@@ -2,23 +2,31 @@ import { get, isEmpty } from 'lodash-es';
 
 import { opSwitch } from '#middleware/buildQuery/index.js';
 import normalizeFilters from '#middleware/buildQuery/normalizeFilters.js';
-import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS } from '#middleware/constants.js';
+import { STATS, HISTOGRAM, BUCKETS, BUCKET_COUNT, CARDINALITY, TOPHITS, RANGE } from '#middleware/constants.js';
 
 const MAX_AGGREGATION_SIZE = 300000;
 const HISTOGRAM_INTERVAL_DEFAULT = 1000;
 const CARDINALITY_DEFAULT_PRECISION_THRESHOLD = 40000; // max precision for ES6-7
+const RANGES_DEFAULT = [{ from: 0 }];
 
 const createNumericAggregation = ({ type, field, graphqlField }) => {
 	const args = get(graphqlField, [type, '__arguments', 0]) || {};
+	const options =
+		type === HISTOGRAM
+			? {
+					interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
+				}
+			: type === RANGE
+				? {
+						ranges: get(args, 'ranges.value') || RANGES_DEFAULT,
+					}
+				: {};
+
 	return {
 		[`${field}:${type}`]: {
 			[type]: {
 				field,
-				...(type === HISTOGRAM
-					? {
-							interval: get(args, 'interval.value') || HISTOGRAM_INTERVAL_DEFAULT,
-						}
-					: {}),
+				...options,
 			},
 		},
 	};
@@ -117,12 +125,12 @@ const computeCardinalityAggregation = ({ field, graphqlField }) => ({
  * fieldName renamed to field, as that's the property name in ES
  */
 export default ({ fieldName: field, graphqlField = {}, isNested = false, termFilters = [] }) => {
-	const types = [BUCKETS, STATS, HISTOGRAM, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
+	const types = [BUCKETS, STATS, HISTOGRAM, RANGE, BUCKET_COUNT, CARDINALITY, TOPHITS].filter((t) => graphqlField[t]);
 
 	return types.reduce((acc, type) => {
 		if (type === BUCKETS || type === BUCKET_COUNT) {
 			return Object.assign(acc, createTermAggregation({ field, isNested, graphqlField, termFilters }));
-		} else if ([STATS, HISTOGRAM].includes(type)) {
+		} else if ([STATS, HISTOGRAM, RANGE].includes(type)) {
 			return Object.assign(acc, createNumericAggregation({ type, field, graphqlField }));
 		} else if (type === CARDINALITY) {
 			return Object.assign(acc, computeCardinalityAggregation({ type, field, graphqlField }));

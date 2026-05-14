@@ -23,6 +23,7 @@ export const createResolvers = ({
 					)
 				: type.extendedFields,
 			...(createStateResolvers && {
+				charts: type.config?.[configProperties.CHARTS],
 				facets: type.config?.[configProperties.FACETS],
 				matchbox: type.config?.[configProperties.MATCHBOX],
 				table: type.config?.[configProperties.TABLE],

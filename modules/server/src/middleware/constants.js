@@ -54,6 +54,7 @@ export const ES_MAX_LONG = `-9223372036854775808`;
 export const BUCKETS = 'buckets';
 export const STATS = 'stats';
 export const HISTOGRAM = 'histogram';
+export const RANGE = 'range';
 export const CARDINALITY = 'cardinality';
 export const TOPHITS = 'top_hits';
 export const AGGS_WRAPPER_GLOBAL = 'global';
