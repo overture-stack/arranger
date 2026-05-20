@@ -1,2 +1,2 @@
-@Library(value='jenkins-pipeline-library@master', changelog=false) _
+@Library(value='jenkins-pipeline-library@arranger-old', changelog=false) _
 pipelineOvertureArranger()

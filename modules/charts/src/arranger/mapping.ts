@@ -1,4 +1,4 @@
-import { ExtendedMappingInterface } from '@overture-stack/arranger-components';
+import { DisplayType, ExtendedMappingInterface } from '@overture-stack/arranger-components';
 
 import { logger } from '#logger';
 
@@ -6,6 +6,24 @@ import { logger } from '#logger';
 export const toJSONFieldName = (fieldName: string) => {
 	return fieldName.replaceAll('__', '.');
 };
+
+const esToAggTypeMap: Record<DisplayType | string, string> = {
+	boolean: 'Aggregations',
+	bytes: 'NumericAggregations',
+	date: 'NumericAggregations',
+	double: 'NumericAggregations',
+	float: 'NumericAggregations',
+	half_float: 'NumericAggregations',
+	id: 'Aggregations',
+	integer: 'NumericAggregations',
+	keyword: 'Aggregations',
+	long: 'NumericAggregations',
+	object: 'Aggregations',
+	scaled_float: 'NumericAggregations',
+	string: 'Aggregations',
+	text: 'Aggregations',
+	unsigned_long: 'NumericAggregations',
+} as const;
 
 /**
  * Maps a GraphQL field name to its extended mapping configuration.
@@ -26,11 +44,12 @@ export const getGQLTypename = ({
 	const jsonFieldName = toJSONFieldName(fieldName);
 	const mapping = extendedMapping.find((mapping) => mapping.fieldName === jsonFieldName);
 
-	if (mapping?.aggsType) {
-		logger.debug(`Found mapping for ${fieldName} => ${mapping.aggsType}`);
-		return mapping.aggsType;
+	const aggType = mapping?.type && esToAggTypeMap[mapping?.type];
+	if (aggType) {
+		logger.debug(`Found mapping for ${fieldName} => ${aggType}`);
+		return aggType;
 	}
 
 	logger.debug(`Missing mapping for ${fieldName}`);
-	return null;
+	return 'Aggregations';
 };
