@@ -179,7 +179,6 @@ suite('integration-tests/server', () => {
 					enableAdmin,
 					// enableDebug: true,
 					// enableLogs: true, // helpful to see test calls, etc.
-					enableNetworkAggregation: undefined,
 					esClient,
 					filters: () => ({
 						op: 'not',
@@ -252,7 +251,7 @@ suite('integration-tests/server', () => {
 					enableAdmin,
 					enableDebug: true,
 					// enableLogs: true, // helpful to see test calls, etc.
-					enableNetworkAggregation: undefined,
+
 					esClient,
 					// FIXME: not fully integrated yet
 					// should merge across catalogs with their own serverside filters

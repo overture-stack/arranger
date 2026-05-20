@@ -1,3 +1,4 @@
+import type { CustomRemoteRequestProps } from '@overture-stack/arranger-types/configs';
 import axios, { type AxiosError } from 'axios';
 import { type DocumentNode } from 'graphql';
 
@@ -6,34 +7,39 @@ import { type NetworkQueryVariables } from '#network/resolvers/index.js';
 import { type AsyncResult, failure, success } from '#network/result.js';
 import { ASTtoString } from '#network/utils/gql.js';
 
-type NetworkQuery = {
+export type RemoteNodeQueryParams = {
 	url: string;
 	gqlQuery: DocumentNode;
 	queryVariables: NetworkQueryVariables;
+	customRequestProps?: CustomRemoteRequestProps;
 };
 
 /**
- * Query remote connections and handle network responses
+ * Make a GQL Request of a remote connection, then handle the network response.
+ *
+ * Note: The return data is not validated. This will return the `.data` property of a
+ *       successful graphql response.
  *
  * @param query
  * @returns
  */
-export const fetchData = async <SuccessType>(query: NetworkQuery): AsyncResult<SuccessType> => {
-	const { url, gqlQuery, queryVariables } = query;
+export const fetchData = async (query: RemoteNodeQueryParams): AsyncResult<unknown> => {
+	const { customRequestProps, url, gqlQuery, queryVariables } = query;
 
-	console.log(`Fetch data starting for ${url}..`);
+	console.log(`Fetching data starting for ${url}...`);
 
 	try {
 		const response = await fetchGql({
-			url,
+			customRequestProps,
 			gqlQuery: ASTtoString(gqlQuery),
+			url,
 			variables: queryVariables,
 		});
 
 		// axios response "data" field, graphql response "data" field
 		const responseData = response.data?.data;
 		if (response.status === 200) {
-			console.log(`Fetch data completing for ${query.url}`);
+			console.log(`Fetch data completed for ${url}`);
 			return success(responseData);
 		}
 
@@ -41,7 +47,7 @@ export const fetchData = async <SuccessType>(query: NetworkQuery): AsyncResult<S
 		return failure(`Network request failed with status ${response.status}`);
 	} catch (error) {
 		if (axios.isCancel(error)) {
-			console.log(`Fetch data cancelled for ${query.url}`);
+			console.log(`Fetch data cancelled for ${url}`);
 			return failure(`Request cancelled: ${url}`);
 		}
 

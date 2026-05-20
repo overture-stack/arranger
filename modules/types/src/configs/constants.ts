@@ -56,6 +56,7 @@ export const configArrangerBaseProperties = {
 } as const;
 
 export const configArrangerNetworkProperties = {
+	CUSTOMIZE_REMOTE_REQUEST: 'customizeRemoteRequest',
 	REMOTE_NODES: 'remoteNodes',
 	LOCAL_NODE: 'localNode',
 } as const;

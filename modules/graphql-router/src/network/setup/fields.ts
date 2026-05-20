@@ -1,14 +1,13 @@
-import type { NodeConfig } from '@overture-stack/arranger-types/configs';
-import type { Prettify } from '@overture-stack/arranger-types/tools';
-
 import { type SUPPORTED_AGGREGATIONS, SUPPORTED_AGGREGATIONS_LIST } from '#network/setup/constants.js';
 
-import type { AggregationField, NetworkRemoteNode } from '../types/setup.js';
 import partitionArray from '../../utils/partitionArray.js';
+import type { AggregationField, NetworkRemoteNode } from '../types/setup.js';
 
 export type SupportedAggregationField = AggregationField & { type: (typeof SUPPORTED_AGGREGATIONS)['Aggregations'] };
 
-const isFieldAggregationSupported = (fieldObject: AggregationField): fieldObject is SupportedAggregationField => {
+export const isFieldAggregationSupported = (
+	fieldObject: AggregationField,
+): fieldObject is SupportedAggregationField => {
 	return SUPPORTED_AGGREGATIONS_LIST.includes(fieldObject.type);
 };
 

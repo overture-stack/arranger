@@ -1,3 +1,4 @@
+import type { CustomizeRemoteRequestFn } from '@overture-stack/arranger-types/configs';
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
@@ -31,6 +32,7 @@ type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregation
  */
 export const aggregationPipeline = async <Context extends ArrangerBaseContext>(params: {
 	context: Context;
+	customRemoteRequestFn?: CustomizeRemoteRequestFn<Context>;
 	graphqlResolveInfo: GraphQLResolveInfo;
 	localNodes: NetworkLocalNode<Context>[];
 	queryVariables: AggregationsQueryVariables;
@@ -40,7 +42,15 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 	aggregationResults: AllAggregationsMap;
 	nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[];
 }> => {
-	const { context, graphqlResolveInfo, localNodes, queryVariables, remoteNodes, requestedAggregationFields } = params;
+	const {
+		context,
+		customRemoteRequestFn,
+		graphqlResolveInfo,
+		localNodes,
+		queryVariables,
+		remoteNodes,
+		requestedAggregationFields,
+	} = params;
 
 	const nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[] = [];
 
@@ -66,7 +76,8 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 
 			// query node
 			const gqlQuery = gqlQueryResult.data;
-			const response = await fetchData<SuccessResponse>({
+			const response = await fetchData({
+				customRequestProps: customRemoteRequestFn?.({ context, remoteNode: config }),
 				url: config.graphqlUrl,
 				gqlQuery,
 				queryVariables,
@@ -76,7 +87,8 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 
 			if (response.success) {
 				const documentName = config.documentType;
-				const responseData = response.data[documentName];
+				// TODO: Response content is not validated, we expect the return structure based on the GraphQL query we requested
+				const responseData = (response.data as SuccessResponse)[documentName];
 				const aggregations = responseData?.aggregations || {};
 				const hits = responseData?.hits || { total: 0 };
 
