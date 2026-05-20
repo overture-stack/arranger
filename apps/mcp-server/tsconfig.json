@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "@tsconfig/node22/tsconfig.json",
+	"compilerOptions": {
+		"baseUrl": "./src",
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"noEmit": true,
+		"paths": {
+			"#*": ["./*"]
+		},
+		"strict": true,
+		"types": ["node"],
+		"verbatimModuleSyntax": true
+	},
+	"include": ["src/**/*"]
+}

@@ -3,6 +3,7 @@ import { Component } from 'react';
 
 import aggComponentsMap from '#aggregations/aggComponentsMap.js';
 import TextHighlight from '#TextHighlight/index.js';
+import { emptyObj } from '#utils/noops.js';
 
 const serializeToDomId = (path) => path.split('.').join('__');
 
@@ -73,7 +74,12 @@ export default class FacetView extends Component {
 								const maxTerms = columns * 2;
 								return {
 									maxTerms,
-									constructBucketItemClassName: ({ bucket, showingBuckets, i, showingMore }) =>
+									constructBucketItemClassName: ({
+										bucket,
+										i,
+										showingBuckets,
+										showingMore
+									}) =>
 										`row_${Math.floor(i / columns)} col_${i % columns} ${Math.floor(i / columns) === Math.floor((showingBuckets.length - 1) / columns) ? 'last_row' : ''
 										} ${showingBuckets.length <= columns ? 'only_row' : ''}`,
 								};
@@ -100,7 +106,12 @@ export default class FacetView extends Component {
 						highlightText: searchString,
 						sqon,
 						facetView: true,
-						WrapperComponent: ({ displayName, collapsible, children }) => (
+						WrapperComponent: ({
+							children,
+							theme: {
+								displayName = 'unknown field name',
+							} = emptyObj,
+						}) => (
 							<div id={serializeToDomId(path)} className={`facetContainer`}>
 								<div className={`header`}>
 									<div className={`title`}>

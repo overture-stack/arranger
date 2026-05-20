@@ -1,9 +1,5 @@
 # Data Portal Components
 
-## Roadmap
+## Developer Experience (WIP)
 
-#### Aggregations
-
-#### SQON aka "Current Filters"
-
-#### ResultsTable
+- use `"preserveSymlinks": true` client-side in tsconfig.json, when implementing locally through `npm link`. This prevent duplicate import of deep dependencies (e.g. @types/react).
