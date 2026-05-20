@@ -5,3 +5,10 @@ export const serverConfigProperties = {
 	PING_PATH: 'pingPath',
 	SERVER_PORT: 'serverPort',
 } as const;
+
+/**
+ * Not part of the Arranger config, but used in search-server config files
+ */
+export const serverNetworkConfigExtendedProperties = {
+	PASSTHROUGH_HEADERS: 'passthroughHeaders',
+} as const;
