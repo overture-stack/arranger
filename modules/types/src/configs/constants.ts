@@ -38,6 +38,8 @@ export const configOptionalProperties = {
 	ES_HOST: 'esHost',
 	DOWNLOADS: 'downloads',
 	EXTENDED: 'extended',
+	GRAPHQL_MAX_ALIASES: 'maxAliases',
+	GRAPHQL_MAX_DEPTH: 'maxDepth',
 	SEARCH_ENGINE: 'searchEngine',
 	SETS: 'sets',
 	...configFeatureFlagProperties,

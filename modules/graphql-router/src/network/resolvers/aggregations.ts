@@ -32,7 +32,7 @@ type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregation
  */
 export const aggregationPipeline = async <Context extends ArrangerBaseContext>(params: {
 	context: Context;
-	customRemoteRequestFn?: CustomizeRemoteRequestFn<Context>;
+	customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 	graphqlResolveInfo: GraphQLResolveInfo;
 	localNodes: NetworkLocalNode<Context>[];
 	queryVariables: AggregationsQueryVariables;
@@ -44,7 +44,7 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 }> => {
 	const {
 		context,
-		customRemoteRequestFn,
+		customizeRemoteRequest,
 		graphqlResolveInfo,
 		localNodes,
 		queryVariables,
@@ -77,7 +77,7 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 			// query node
 			const gqlQuery = gqlQueryResult.data;
 			const response = await fetchData({
-				customRequestProps: customRemoteRequestFn?.({ context, remoteNode: config }),
+				customRequestProps: customizeRemoteRequest?.({ context, remoteNode: config }),
 				url: config.graphqlUrl,
 				gqlQuery,
 				queryVariables,

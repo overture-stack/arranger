@@ -1,6 +1,6 @@
 import { type ArrangerBaseContext, type SearchClient } from '@overture-stack/arranger-graphql-router';
 import {
-	configRootProperties,
+	type configRootProperties,
 	type AllFeatureFlagConfigs,
 	type ConfigsObject as ArrangerConfigs,
 	type GetServerSideFilterFn,

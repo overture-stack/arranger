@@ -1,6 +1,6 @@
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
-import type { SearchClient, SupportedClientTypes, SearchConfig, SearchConfigWithClient } from './types.js';
+import type { SearchClient, SearchConfig, SearchConfigWithClient, SupportedClientTypes } from './types.js';
 
 export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
@@ -124,12 +124,7 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 /**
  * Main function for creating Search Client
  */
-const buildSearchClient = async (options: {
-	client?: SupportedClientTypes;
-	node?: string;
-	password?: string;
-	username?: string;
-}) => {
+const buildSearchClient = async (options: { client?: string; node?: string; password?: string; username?: string }) => {
 	const config = await createSearchEngineConfig(options);
 
 	return createSearchClient(config);
@@ -137,4 +132,4 @@ const buildSearchClient = async (options: {
 
 export default buildSearchClient;
 
-export { type SearchClient } from './types.js';
+export type { SearchClient, SupportedClientTypes } from './types.js';

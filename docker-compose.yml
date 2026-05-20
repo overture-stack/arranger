@@ -13,9 +13,7 @@ services:
       ELASTIC_PASSWORD: "$ES_PASS"
       xpack.security.enabled: "true"
     healthcheck:
-      test: "curl --silent --fail
-        localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s ||
-        exit 1"
+      test: "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"
       interval: 1m30s
       timeout: 50s
       retries: 5
@@ -29,36 +27,6 @@ services:
     ports:
       - 9200:9200
       - 9300:9300
-
-  opensearch:
-    image: opensearchproject/opensearch:2.17.1
-    container_name: opensearch.local
-    environment:
-      discovery.type: single-node
-      cluster.name: workflow.opensearch
-      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx2048m
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "$ES_PASS"
-      OPENSEARCH_SECURITY_SSL_HTTP_ENABLED: "false"
-      OPENSEARCH_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: ""
-      OPENSEARCH_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: ""
-      plugins.security.disabled: "true"
-    healthcheck:
-      test: "curl --silent --fail
-        localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s ||
-        exit 1"
-      interval: 1m30s
-      timeout: 50s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-    networks:
-      - arranger
-    ports:
-      - 9201:9200
-      - 9301:9300
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.29

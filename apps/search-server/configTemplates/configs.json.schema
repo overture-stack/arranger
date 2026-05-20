@@ -1,5 +1,5 @@
 // this file serves as an example of a basic Arranger configurations
-// and it's meant to show both required (marked with *) and optional properties
+// and it shows both required (marked with *) and optional properties
 // note: credentials in config json files will be ignored
 
 {

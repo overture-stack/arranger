@@ -19,19 +19,20 @@ INFO_HEADER := "**************** "
 
 DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
-ifneq ("$(wildcard .env.test)","")
-include .env.test
+# Variables
+# load env vars from .env if present
+ifneq ("$(wildcard .env.testing)","")
+include .env.testing
 export
 endif
-
 DOCKER_DIR := $(ROOT_DIR)/docker
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
 ES_DOCS_DIR := $(ES_DATA_DIR)/documents
 ES_HOST := http://localhost:9200
 ES_INDEX := file_centric_1.0
 ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
-ES_PASS ?= unsafePassword123
-ES_USER ?= elastic
+ES_PASS := unsafePassword123
+ES_USER := elastic
 RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
 
 ES_BASIC_AUTH := $(shell printf "$(ES_USER):$(ES_PASS)" | base64)

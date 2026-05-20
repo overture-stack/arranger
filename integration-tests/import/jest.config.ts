@@ -13,7 +13,7 @@ const jestConfig: JestConfigWithTsJest = {
 				diagnostics: {
 					warnOnly: true,
 				},
-				useESM: false,
+				useESM: true,
 			},
 		],
 	},

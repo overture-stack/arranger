@@ -5,6 +5,7 @@
 		"anthonycjw.vscode-styled-components-cre-edition",
 		"ms-vscode.makefile-tools",
 		"yoavbls.pretty-ts-errors",
-		"gruntfuggly.todo-tree"
+		"gruntfuggly.todo-tree",
+		"ms-vscode.vscode-chat-customizations-evaluations"
 	]
 }
