@@ -38,6 +38,8 @@ export interface BarChartProps {
  * @param props.handlers - Event handlers for chart interactions
  * @param props.components - Custom components for fallback states
  * @param props.theme - Chart config mostly for Nivo
+ * @param props.maxBars = Required - determines how many bars to show.
+ *   If maxBars is greater than the amount of available data, TopChartItemsCount will be hidden.
  * @returns JSX element with complete bar chart or null if field validation fails
  */
 export const BarChart = ({
