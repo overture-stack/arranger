@@ -108,8 +108,8 @@ const normalizeTableConfig = (fileDataJSON: any) => {
  *     defaulting to `false` when the field is absent.
  */
 const normalize = (fileDataJSON: any) => {
+	// TODO: this mutational logic is brittle
 	normalizeTableConfig(fileDataJSON);
-
 	normalizeNetworkConfig(fileDataJSON);
 
 	return fileDataJSON;
