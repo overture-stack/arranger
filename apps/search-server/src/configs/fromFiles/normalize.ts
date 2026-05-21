@@ -25,7 +25,6 @@ const getNetworkPassthroughHeaders = (networkConfig: ExternalNetworkConfig): str
 	// If passthroughHeaders value is provided, check that the passthroughHeaders value is an array of strings.
 	// We want to error out if the provided file config is not a usable format.
 	if (
-		passthroughHeaders !== undefined &&
 		!(Array.isArray(passthroughHeaders) && passthroughHeaders.every((value) => typeof value === 'string'))
 	) {
 		throw new Error(
