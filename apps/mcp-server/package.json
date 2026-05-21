@@ -1,7 +1,45 @@
 {
 	"$schema": "https://json.schemastore.org/package.json",
 	"name": "@overture-stack/arranger-mcp-server",
+	"description": "Arranger MCP Server",
 	"version": "0.0.0-dev",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
+	},
+	"main": "src/index.ts",
+	"types": "src/index.ts",
+	"repository": {
+		"directory": "apps/mcp-server",
+		"type": "git",
+		"url": "git+https://github.com/overture-stack/arranger.git"
+	},
 	"private": true,
+	"scripts": {
+		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./src/index.ts",
+		"start": "tsx ./src/index.ts",
+		"test": "tsx --test ./src/**/*.test.ts",
+		"inspect": "npx @modelcontextprotocol/inspector --config ./mcp-inspector.json --server mcp-server"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.29.0",
+		"cors": "^2.8.6",
+		"dotenv": "^16.6.1",
+		"express": "^4.21.2",
+		"pino": "^10.3.1",
+		"pino-pretty": "^13.1.3",
+		"zod": "^3.25.76"
+	},
+	"devDependencies": {
+		"@tsconfig/node22": "^22.0.5",
+		"@types/cors": "^2.8.12",
+		"@types/express": "^4.17.14",
+		"@types/node": "^25.6.2",
+		"tsx": "^4.21.0",
+		"typescript": "^5.8.3"
+	},
+	"imports": {
+		"#*": "./src/*"
+	},
 	"type": "module"
 }

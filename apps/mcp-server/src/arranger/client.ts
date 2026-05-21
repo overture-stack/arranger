@@ -1,4 +1,4 @@
-import type { ArrangerMcpConfig } from '#config.js';
+import type { ArrangerMcpConfig } from '#utils/config.js';
 
 import type {
 	ArrangerCatalogIntrospection,
