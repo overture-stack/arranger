@@ -1,5 +1,9 @@
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { type LocalNodeConfig, type RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
+import {
+	type CustomizeRemoteRequestFn,
+	type LocalNodeConfig,
+	type RemoteNodeConfig,
+} from '@overture-stack/arranger-types/configs';
 import type { GraphQLSchema } from 'graphql';
 
 import type { ArrangerBaseContext } from '#types.js';
@@ -8,7 +12,7 @@ import partitionArray from '#utils/partitionArray.js';
 import { createResolvers } from './resolvers/index.js';
 import { result, success, type AsyncResult } from './result.js';
 import type { SUPPORTED_AGGREGATIONS } from './setup/constants.js';
-import { combineAllFieldTypes } from './setup/fields.js';
+import { combineAllFieldTypes, isFieldAggregationSupported } from './setup/fields.js';
 import {
 	fetchAllNodeAggregations,
 	type FetchAggregationInvalidData,
@@ -16,8 +20,8 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
-import { type NetworkLocalNode } from './types/setup.js';
 import type { LocalCatalogSchemaData } from './types.js';
+import { type NetworkLocalNode } from './types/setup.js';
 
 /**
  * Map of all available fields with associated aggregation type
@@ -36,11 +40,13 @@ export const ALL_NETWORK_AGGREGATION_TYPES_MAP = new Map<string, keyof typeof SU
  * @returns Graphql schema for the network - types and resolvers combined
  */
 export const createSchemaFromNetworkConfig = async <Context extends ArrangerBaseContext>({
+	customizeRemoteRequest,
 	enableDebug,
 	remoteNodeConfigs,
 	localNodeConfigs,
 	localCatalogs,
 }: {
+	customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 	enableDebug: boolean;
 	remoteNodeConfigs: RemoteNodeConfig[];
 	localNodeConfigs: LocalNodeConfig[];
@@ -111,7 +117,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	// An array of unique supported aggregation types
 	const allAvailableAggregationTypes = [
 		...combineAllFieldTypes(connectedRemoteNodes),
-		...availableLocalNodes.flatMap((node) => node.aggregations),
+		...availableLocalNodes.flatMap((node) => node.aggregations).filter(isFieldAggregationSupported),
 	];
 	if (allAvailableAggregationTypes.length === 0) {
 		console.error(
@@ -131,7 +137,11 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 	 */
 	const typeDefs = createTypeDefs(allAvailableAggregationTypes);
 	const resolvers = createResolvers({
-		remoteNodes: { connected: connectedRemoteNodes, failed: failedRemoteNodes },
+		remoteNodes: {
+			connected: connectedRemoteNodes,
+			failed: failedRemoteNodes,
+			customizeRemoteRequest,
+		},
 		localNodes: { available: availableLocalNodes, missing: missingLocalNodes },
 	});
 	const networkSchema = makeExecutableSchema({ typeDefs, resolvers });

@@ -84,7 +84,7 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Severity:** medium
 **Kind:** missing dependency
 **Issue:** The integration test suite already supports multiple search engines via `SEARCH_ENGINE` env var and `buildSearchClient({ client: searchEngine })`, but `@opensearch-project/opensearch` is not listed as a dependency — only `@elastic/elasticsearch`. Running the suite with `SEARCH_ENGINE=opensearch` would fail to resolve the client.
-**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedSearchClients` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers — see roadmap 3.2) and run the suite against both engines.
+**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedClientTypes` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers — see roadmap 3.2) and run the suite against both engines.
 **Standalone:** mostly yes — the test harness is already wired; this is the last missing piece before OS integration tests actually run
 
 ### `release-charts` temporary publish branch

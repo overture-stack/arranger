@@ -124,18 +124,45 @@ export type LocalNodeConfig = {
 
 export type NodeConfig = RemoteNodeConfig | LocalNodeConfig;
 
-export type NetworkConfig = {
-	[configArrangerNetworkProperties.REMOTE_NODES]: RemoteNodeConfig[];
+/**
+ * Properties to add into an arranger network remote node request.
+ */
+export type CustomRemoteRequestProps = Partial<{
+	headers: Record<string, string | string[]>;
+}>;
+
+/**
+ * A CustomizeRemoteRequest function is used to provide additional paramters to the
+ * remote node request that the arranger network resolver will use. This function should
+ * return the CustomRemoteRequestProps that will be added to each outgoing request.
+ *
+ * This function accepts as a parameter the remoteNode config for is the destination for
+ * the request in order to customize the request for that specific node.
+ *
+ * A concrete example for this is to pass authorization headers through to each of the remote
+ * nodes, which is useful when an Arranger node network has a known custom auth layer added
+ * onto each of its nodes.
+ */
+export type CustomizeRemoteRequestFn<Context> = (params: {
+	context: Context;
+	remoteNode: RemoteNodeConfig;
+}) => CustomRemoteRequestProps | undefined;
+export type NetworkConfig<Context> = {
+	[configArrangerNetworkProperties.REMOTE_NODES]?: RemoteNodeConfig[];
+	[configArrangerNetworkProperties.CUSTOMIZE_REMOTE_REQUEST]?: CustomizeRemoteRequestFn<Context>;
 
 	// TODO: To support multi-catalog, we need to update this to be `'localNodes': LocalNodeConfig[];`
 	[configArrangerNetworkProperties.LOCAL_NODE]?: BaseNodeConfig;
 };
 
-export type GetServerSideFilterFn<Context extends object> = (context: Context) => SqonNode;
+export type GetServerSideFilterFn<Context> = (context: Context) => SqonNode;
 
 export type SearchEngineType = 'elasticsearch' | 'opensearch';
 
-export type ConfigsObject<Context extends object> = {
+/**
+ * Full config object
+ */
+export type ConfigsObject<Context> = {
 	// Arranger will fail without these
 	[configRequiredProperties.DOCUMENT_TYPE]: string;
 	[configRequiredProperties.ES_INDEX]: string;
@@ -147,9 +174,7 @@ export type ConfigsObject<Context extends object> = {
 		getServerSideFilter: GetServerSideFilterFn<Context>;
 		[configOptionalProperties.CATALOG_ID]: string;
 		[configOptionalProperties.ES_HOST]: string;
-		[configOptionalProperties.GRAPHQL_MAX_ALIASES]: number;
-		[configOptionalProperties.GRAPHQL_MAX_DEPTH]: number;
-		[configOptionalProperties.NETWORK_AGGREGATION]: NetworkConfig;
+		[configOptionalProperties.NETWORK_AGGREGATION]?: NetworkConfig<Context>;
 		[configOptionalProperties.SEARCH_ENGINE]: SearchEngineType;
 		// dependent libraries
 		[configOptionalProperties.CHARTS]: ChartConfigs;

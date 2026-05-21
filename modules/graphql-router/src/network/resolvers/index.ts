@@ -1,4 +1,8 @@
-import type { LocalNodeConfig, RemoteNodeConfig } from '@overture-stack/arranger-types/configs';
+import type {
+	CustomizeRemoteRequestFn,
+	LocalNodeConfig,
+	RemoteNodeConfig,
+} from '@overture-stack/arranger-types/configs';
 
 import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
 import {
@@ -30,6 +34,7 @@ export type NetworkQueryVariables = AggregationsQueryVariables;
  */
 export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 	remoteNodes: {
+		customizeRemoteRequest?: CustomizeRemoteRequestFn<Context>;
 		connected: NetworkRemoteNode[];
 		failed: { config: RemoteNodeConfig; error: string }[];
 	};
@@ -93,6 +98,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		 * Aggregation pipeline entrypoint
 		 */
 		const { aggregationResults, nodeInfo } = await aggregationPipeline<Context>({
+			customRemoteRequestFn: remoteNodes.customizeRemoteRequest,
 			context,
 			localNodes: localNodes.available,
 			queryVariables,

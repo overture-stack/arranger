@@ -1,3 +1,4 @@
+import type { CustomRemoteRequestProps } from '@overture-stack/arranger-types/configs';
 import axios, { type AxiosRequestConfig } from 'axios';
 
 /**
@@ -8,11 +9,13 @@ import axios, { type AxiosRequestConfig } from 'axios';
  * @throws AxiosError
  */
 export const fetchGql = ({
-	url,
+	customRequestProps,
 	gqlQuery,
-	variables,
 	options,
+	url,
+	variables,
 }: {
+	customRequestProps?: CustomRemoteRequestProps;
 	url: string;
 	gqlQuery: string;
 	variables?: Record<string, unknown>;
@@ -22,7 +25,11 @@ export const fetchGql = ({
 	const axiosOptions: AxiosRequestConfig = {
 		url,
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json', 'X-REQUEST-TYPE': 'GraphQL' },
+		headers: {
+			'Content-Type': 'application/json',
+			'X-REQUEST-TYPE': 'GraphQL',
+			...(customRequestProps?.headers || {}),
+		},
 		data: { query: gqlQuery, variables },
 		signal: AbortSignal.timeout(timeout),
 	};

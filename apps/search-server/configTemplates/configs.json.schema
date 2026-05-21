@@ -104,6 +104,7 @@
 
 	// Network Search Nodes
 	"network": {
+		"passthroughHeaders": ["Authorization"],
 		"remoteNodes": [
 			{
 				"graphqlUrl": "http://localhost:5051/graphql",
