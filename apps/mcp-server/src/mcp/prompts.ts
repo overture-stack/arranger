@@ -162,10 +162,5 @@ Wait for the researcher to select one, then proceed as Answerable. Format:
 
 **Improper**
 Respond conversationally. Do not load catalogue metadata, construct a SQON, \
-or trigger a confirmation step.
-
-### Unscoped aggregations
-
-If the goal is to see the distribution of a field with no filter applied, \
-execute directly — no confirmation step is required.`;
+or trigger a confirmation step.`;
 }
