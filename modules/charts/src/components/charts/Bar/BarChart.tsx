@@ -26,7 +26,7 @@ export interface BarChartProps {
 	ranges?: Ranges;
 	theme: { sortByKey?: string[] } & SupportedNivo;
 	handlers?: { onClick: (config: any) => void };
-	enableTopBarsCount?: boolean;
+	disableTopBarsCount?: boolean;
 }
 
 /**
@@ -48,7 +48,7 @@ export const BarChart = ({
 	handlers,
 	theme,
 	maxBars,
-	enableTopBarsCount = false,
+	disableTopBarsCount = false,
 }: BarChartProps) => {
 	// ensure maxBars is provided
 	if (!maxBars) {
@@ -94,7 +94,7 @@ export const BarChart = ({
 
 	const totalItems = gqlData?.length || 0;
 	// show TopChartItemsCount when there's more data than what is being displayed.
-	const showTopChartItemsCount = enableTopBarsCount && totalItems > maxBars;
+	const showTopChartItemsCount = !disableTopBarsCount && totalItems > maxBars;
 
 	return (
 		<ChartRenderer
