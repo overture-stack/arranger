@@ -63,20 +63,12 @@ export const registerPrompts = (server: McpServer, { client }: McpServerDeps): v
 // Prompt template
 // ---------------------------------------------------------------------------
 
-// `documentType` stands in for "what each catalogue covers" until introspection exposes a description.
 function formatCatalogSummary(introspection: ArrangerServerIntrospection): string {
 	return Object.entries(introspection.catalogs)
 		.map(([id, catalog]) => `- ${id} (document type: ${catalog.documentType})`)
 		.join('\n');
 }
 
-// Builds the static workflow instructions. The SQON grammar is intentionally not
-// inlined here — it is delivered as a separate `resource` content block in the
-// prompt's messages array so its tokens are only carried once and the client can
-// treat it as a first-class resource. The catalogue summary and bare ID list are
-// both materialised: the summary is for identification in Step 1, the bare ID
-// list is interpolated verbatim into the "no catalogue match" response template
-// so the LLM cannot drift on which catalogues exist.
 function buildSystemPrompt(introspection: ArrangerServerIntrospection): string {
 	const catalogSummary = formatCatalogSummary(introspection);
 	const catalogIdList = Object.keys(introspection.catalogs).join(', ');
