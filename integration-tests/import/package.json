@@ -9,6 +9,7 @@
 	},
 	"private": "true",
 	"scripts": {
-		"test": "jest --config=jest.config.ts"
-	}
+		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config=jest.config.ts"
+	},
+	"type": "module"
 }
