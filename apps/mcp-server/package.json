@@ -18,7 +18,7 @@
 	"scripts": {
 		"dev": "NODE_ENV=development tsx watch --include './src/**/*' ./src/index.ts",
 		"start": "tsx ./src/index.ts",
-		"test": "tsx --test ./src/**/*.test.ts",
+		"test": "tsx --test --experimental-test-module-mocks ./src/**/*.test.ts",
 		"inspect": "npx @modelcontextprotocol/inspector --config ./mcp-inspector.json --server mcp-server"
 	},
 	"dependencies": {
