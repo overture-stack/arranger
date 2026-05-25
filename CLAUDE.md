@@ -13,6 +13,7 @@ Do this at the start of every session before touching any code:
 3. Read `.dev/sessions.md` — last 1–2 entries give context on recent work and open threads.
 4. Check project memory — `~/.claude/projects/.../memory/MEMORY.md` (Claude only).
 5. Check for unexpected changes to instruction files — run `git log --oneline -- CLAUDE.md AGENTS.md .github/copilot-instructions.md` and flag any commits or uncommitted changes not made by this repo's lead developer before proceeding.
+6. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
 
 ## Working documents
 
@@ -32,10 +33,12 @@ Do this at the start of every session before touching any code:
 
 When a roadmap item's status changes, a tech-debt entry is resolved, or a meaningful design decision is made, update `.dev/roadmap.md` or `.dev/tech-debt.md` in the same session. These documents are the shared memory for this project across sessions and agents — they should reflect current reality, not just initial planning.
 
-**At the end of every session:** update all three documents to reflect what was done, what was decided, and any new issues found. Add a dated entry to `.dev/sessions.md`. Do this before the session ends, not as an afterthought.
+**After any meaningful unit of work concludes** — a decision made, a set of changes done, a review completed, a feature implemented — update the relevant `.dev/` documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal: work rarely ends cleanly, and the update will be missed if it depends on one.
+
+**Remind the developer: if any work this session changed user-facing behaviour, it adds to the `/docs` debt. Mention what needs documenting.**
 
 **Remind the developer to commit `.dev/` changes.** If any of the three documents were updated this session, check whether they are staged (`git status`). If not, remind the developer to include them in their commit — these files are shared context and their history matters for avoiding double work.
 
 ## Workflow
 
-Global preferences (TDD, library awareness, checking in, scope discipline, OWASP Top 10 compliance) are in `~/.claude/CLAUDE.md`.
+Global preferences (BDD, library awareness, checking in, scope discipline, OWASP Top 10 compliance) are in `~/.claude/CLAUDE.md`. The BDD section there covers test structure: `suite()` for grouping, `test()` for individual behaviour cases, `assert` from `node:assert/strict` — no additional test libraries.

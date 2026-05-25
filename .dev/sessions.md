@@ -6,6 +6,63 @@ Newest first.
 
 ---
 
+## 2026-05-21
+
+**Done:**
+- Added PR #1066 review feedback: type rename regression (`SupportedSearchClients` → `SupportedClientTypes` buried in wrong PR), dead validation code in `getNetworkPassthroughHeaders`, mutation-based normalize design, missing tests, `network.json` template bug (`[""]` vs `[]`), security note on all-or-nothing header passthrough, unrelated `integration-tests/import` change
+- Added tech-debt: `SupportedSearchClients` rename regression risk (PR #1066), `esToAggTypeMap` duplication (once release-charts merges)
+- Added tech-debt: inconsistent unit test file placement (`__tests__/` vs co-located) — global preference saved to memory and `~/.claude/CLAUDE.md`
+- Added tech-debt: `/docs` out of date — marked urgent, reminder added to session start and end in both agent files
+- Updated AGENTS.md and copilot-instructions.md: replaced OWASP category labels with 10 concrete code-level security triggers; removed external URL from agent files
+- Updated DEVELOPMENT.md (user edit — admin-ui and integration-tests/admin removed from structure listing)
+- Fixed sessions.md gap (root cause: reactive end-of-session trigger); backfilled missing entries for 2026-05-19 and 2026-05-20
+- Updated session-end instruction in CLAUDE.md and AGENTS.md and copilot-instructions.md: changed from reactive ("at end of session") to proactive ("after any meaningful unit of work concludes")
+- Added BDD migration guidance to all instruction files (`~/.claude/CLAUDE.md`, project `CLAUDE.md`, `AGENTS.md`, `copilot-instructions.md`) and memory: `suite()`/`test()` from `node:test`, `assert` from `node:assert/strict`, no additional libraries; migration is gradual — new tests BDD from start, existing tests nudged in scope
+
+**Decisions:**
+- Agent instruction files should use actionable inline triggers, not links to external docs — links incur unnecessary fetch cost for agents
+- Test files must be co-located with source (`validation.test.ts` next to `validation.ts`), not in `__tests__/` folders — applies globally across all projects
+- `/docs` updates are part of the definition of done for every feature — not a separate follow-up
+- BDD pattern adopted using `node:test` primitives only (`suite`, `test`, `assert`) — no test library additions; `suite()` for grouping, `test()` for behaviour cases, matching the pattern already in use in `integration-tests/server/`
+
+**Open threads:**
+- Release gate script names (`release:test:packages` etc.) — proposed but not yet confirmed; roadmap items not yet added
+
+---
+
+## 2026-05-20
+
+**Done:**
+- Fixed duplicate `## search-server / graphql-router boundary` header in tech-debt.md
+- Added roadmap item: config validation with structured errors and tests (Zod, standalone, not blocked on config separation)
+- Added roadmap item: Admin UI replacement (low priority, coordinate with config separation)
+- Added roadmap item: multicatalog catalog lifecycle and metadata (from `MULTICATALOG_ROADMAP.md` in search-server)
+- Added multi-catalog filter composition bullet to Auth section in roadmap
+- Created `DEVELOPMENT.md` at repo root — internal developer guide covering setup, repo structure, tests, `.dev/` working documents, and AI tooling
+
+**Decisions:**
+- `DEVELOPMENT.md` is the human-facing internal dev doc; `CONTRIBUTING.md` stays as the external/community-contributor doc
+- Release gate script names should be declarative (describing scope, not speed): `release:test:packages`, `release:test:server`, `release:artifacts:verify` — pending confirmation before adding to roadmap
+
+**Open threads:**
+- Release gate script names (`release:test:packages` etc.) — proposed but not yet confirmed by Andy; roadmap items not yet added
+
+---
+
+## 2026-05-19
+
+**Done:**
+- Added 5 roadmap items: pin `turbo` as root devDependency, standardise publishable package contents (`files` allowlists), release gate scripts, multicatalog catalog lifecycle (later moved to 2026-05-20 session)
+- Added docs reminder to tech-debt and session checklists (later formalised on 2026-05-21)
+- Identified `aggsType` gap in charts pipeline: `ExtendedMappingInterface` lacks `aggsType`; `extendCharts.ts` is a stub; proposed 3-file fix (later found resolved in release-charts)
+
+**Decisions:**
+- `aggsType` should be computed server-side in `extendFields` (not client-side) — later superseded by release-charts fix
+
+**Open threads:** `aggsType` gap analysis superseded — see 2026-05-20
+
+---
+
 ## 2026-05-18
 
 **Done:**

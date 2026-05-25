@@ -5,6 +5,34 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 
 ---
 
+## monorepo — cross-cutting
+
+### Inconsistent unit test file placement
+**File:** throughout the monorepo
+**Severity:** low (consistency / maintainability)
+**Kind:** convention drift
+**Issue:** Unit test files follow two competing patterns across the monorepo:
+- **(A)** `__tests__/validation.test.ts` in a sibling `__tests__` folder — risks accidentally centralising all tests for a module at a parent or root level as the codebase grows
+- **(B)** `validation.test.ts` co-located in the same folder as the file under test — tighter, follows a barrel/module pattern where each unit's test travels with it
+
+The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, harder to enforce coverage, and easier for tests to drift away from the code they cover.
+**Fix:** Audit the monorepo and move all `__tests__/` test files to be co-located with their source file, following pattern (B). Update any Jest/node:test config glob patterns that rely on `__tests__/` directory discovery.
+**Standalone:** yes — mechanical file moves plus config glob updates, no logic changes
+
+---
+
+## docs [URGENT — reminder every session]
+
+### `/docs` out of date with recent functionality changes
+**File:** `/docs` directory
+**Severity:** high (ongoing — accumulates with every feature added)
+**Kind:** documentation debt
+**Issue:** The `/docs` directory has not been kept up to date with recent functionality changes and additions (multicatalog, network search, MCP server, config schema additions, query validation limits, etc.). This is urgent because documentation is a public-facing surface — Arranger integrators rely on it, and stale docs cause support burden and missed adoption.
+**Fix:** Audit `/docs` against the current codebase and recent git history. Update each affected page. Treat documentation updates as part of the definition of done for every feature going forward — not a separate follow-up task.
+**Standalone:** yes — can be worked on at any time, incrementally, without blocking other work
+
+---
+
 ## graphql-router
 
 ### `GraphQLEndpointOptions` escape hatch
@@ -114,6 +142,22 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 ---
 
 ## modules/charts
+
+### `SupportedSearchClients` rename regression risk — PR #1066
+**File:** `modules/graphql-router` — exported type `SupportedSearchClients`
+**Severity:** high (will break consumers on merge)
+**Kind:** naming regression
+**Issue:** PR #1066 renames `SupportedSearchClients` to an incorrect name. This type is exported from `@overture-stack/arranger-graphql-router` and used by consumers including `integration-tests/server`. Merging the PR as-is will break any code referencing `SupportedSearchClients` by name.
+**Fix:** Correct the name in PR #1066 before merging — the exported type must remain `SupportedSearchClients`.
+**Standalone:** yes — name fix only, no logic changes
+
+### `esToAggTypeMap` duplicated from `modules/types` (once release-charts merges)
+**File:** `modules/charts/src/arranger/mapping.ts` (via commit #1064 on `release-charts`)
+**Severity:** low
+**Kind:** duplication
+**Issue:** PR #1064 on `release-charts` fixed the `aggsType` gap by computing the GQL aggregation type locally in the charts module from `mapping.type`. The fix works, but it introduces a local `esToAggTypeMap` that duplicates `esToAggTypesMap` already defined and exported from `modules/types/src/elastic/constants.ts`. If `esToAggTypesMap` ever changes (new ES types, corrected mappings), the charts copy will silently diverge.
+**Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
+**Standalone:** yes — mechanical import substitution, no logic changes
 
 ### TypeScript / declaration diagnostics on successful build
 **File:** `modules/charts` — build output

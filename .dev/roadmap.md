@@ -107,6 +107,19 @@ Once the core module boundary is defined, configs should be reorganised into at 
 
 *Blocked on core module extraction. See also tech-debt entry on constants reorganisation. Custom columns and custom facet groups (in the Features section) depend on this work.*
 
+### Config validation with structured errors and tests
+*Priority: medium — usability and reliability improvement, doable without waiting for config separation.*
+
+Config loading in both the server (`apps/search-server`) and within Arranger's internal handling currently has no runtime validation. Invalid or missing values fail silently or produce confusing runtime errors far from the source of the problem. The fix is schema validation at the config boundary — reject bad configs early with a clear, actionable message identifying exactly what is wrong and where.
+
+Scope:
+- **Server config** (`apps/search-server`): env vars and server-level settings — validate that required values are present and correctly typed on startup. Fail fast with a human-readable error rather than surfacing a cryptic crash later.
+- **Catalog config** (the per-catalog JSON loaded by Arranger): validate against the expected schema before the catalog is registered. Where a value is missing but has a safe default, warn rather than error.
+- **Validation library:** Zod is the leading candidate — it produces typed output and legible error messages. The config separation roadmap entry already assumes Zod; this item just brings validation forward to the current config shape.
+- **Tests:** validation logic should be tested directly — both the happy path and representative error cases (missing required field, wrong type, unknown key).
+
+*This work is independent of the config separation effort and is not blocked on it — it validates configs in their current shape. When config separation lands, the validation schemas will need updating to reflect the new layer boundaries, but that is an incremental change, not a rewrite.*
+
 ### Redesign the document model (hits / edges / nodes)
 *Priority: medium — design-first, breaking API change.*
 

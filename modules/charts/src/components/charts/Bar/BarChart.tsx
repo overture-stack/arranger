@@ -7,6 +7,7 @@ import { ChartContainer } from '#components/ChartContainer';
 import { ChartRenderer } from '#components/ChartRenderer';
 import { useChartsContext } from '#components/Provider/Provider';
 import { logger } from '#logger';
+import TopChartItemsCount from '../TopChartItemsCount.tsx';
 import { validateQueryProps } from '../validate';
 import { BarChartView } from './View';
 
@@ -25,6 +26,7 @@ export interface BarChartProps {
 	ranges?: Ranges;
 	theme: { sortByKey?: string[] } & SupportedNivo;
 	handlers?: { onClick: (config: any) => void };
+	disableTopBarsCount?: boolean;
 }
 
 /**
@@ -36,9 +38,18 @@ export interface BarChartProps {
  * @param props.handlers - Event handlers for chart interactions
  * @param props.components - Custom components for fallback states
  * @param props.theme - Chart config mostly for Nivo
+ * @param props.maxBars = Required - determines how many bars to show.
+ *   If maxBars is greater than the amount of available data, TopChartItemsCount will be hidden.
  * @returns JSX element with complete bar chart or null if field validation fails
  */
-export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarChartProps) => {
+export const BarChart = ({
+	disableTopBarsCount = false,
+	fieldName,
+	handlers,
+	maxBars,
+	ranges,
+	theme,
+}: BarChartProps) => {
 	// ensure maxBars is provided
 	if (!maxBars) {
 		throw Error(`"maxBars" prop is required for ${fieldName} chart."`);
@@ -58,7 +69,11 @@ export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarCha
 
 	useEffect(() => {
 		// validate and register
-		const result = validateQueryProps({ fieldName, variables, extendedMapping });
+		const result = validateQueryProps({
+			extendedMapping,
+			fieldName,
+			variables,
+		});
 
 		if (!validationResult.success) {
 			logger.log(validationResult.message);
@@ -74,13 +89,26 @@ export const BarChart = ({ fieldName, ranges, handlers, theme, maxBars }: BarCha
 
 	const { isLoading, isError, data: gqlData } = getChartData(fieldName);
 
+	// redundant chart emptiness check for typescript
+	const chartIsEmpty = isEmpty(gqlData);
+
+	const totalItems = gqlData?.length || 0;
+	// show TopChartItemsCount when there's more data than what is being displayed.
+	const showTopChartItemsCount = !disableTopBarsCount && totalItems > maxBars;
+
 	return (
 		<ChartRenderer
 			isLoading={isLoading}
 			isError={isError || !validationResult.success}
-			isEmpty={isEmpty(gqlData)}
+			isEmpty={chartIsEmpty}
 			Chart={() => (
 				<ChartContainer>
+					{showTopChartItemsCount && (
+						<TopChartItemsCount
+							items={maxBars}
+							total={totalItems}
+						/>
+					)}
 					<BarChartView
 						data={gqlData}
 						handlers={handlers}
