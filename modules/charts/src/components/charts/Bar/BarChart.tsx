@@ -70,9 +70,9 @@ export const BarChart = ({
 	useEffect(() => {
 		// validate and register
 		const result = validateQueryProps({
+			extendedMapping,
 			fieldName,
 			variables,
-			extendedMapping,
 		});
 
 		if (!validationResult.success) {
