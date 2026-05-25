@@ -33,7 +33,3 @@ export type Permutations<T extends string, U extends string = T> = T extends any
 	: never;
 
 export type PickOnly<T, K extends keyof T | never = never> = Pick<T, K> & Partial<Record<Exclude<keyof T, K>, never>>;
-
-export type Prettify<T> = {
-	[K in keyof T]: T[K];
-};

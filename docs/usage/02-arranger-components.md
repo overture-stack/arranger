@@ -10,18 +10,23 @@ Arranger offers its own front-end library of reusable components to facilitate q
 
 ## Configuration Files Overview
 
-Four main configuration files control Arranger, and its components' behaviours:
+As part of our latest work, in order to ensure Arranger v3.0 remains somewhat backawards-compatible and to facilitate the migration process from v2, we've established a temporary way to control the Server and Components' behaviour through files that centralize the way your indexed data is found and displayed.
+This design will change in future versions (with corresponding documentation), to establish a better separation of concerns between front and back-end.
+
+These customizations can be divided into four files as follows:
 
 1. **base.json**: Defines the core settings for the Elasticsearch index (Important for the Arranger Server).
 2. **extended.json**: Specifies all fields and their display names.
 3. **table.json**: Configures the columns displayed in the data table.
 4. **facets.json**: Defines the aggregations (facets) for data exploration and filtering.
 
+(For further reference on these and other available options, please review the [configuration schema](https://github.com/overture-stack/arranger/blob/main/modules/server/configTemplates/configs.json.schema))
+
 <br/>
 
     :::info Configuration File Location
 
-    Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/develop/modules/server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory (unless specified otherwise using the `CONFIG_PATH` environment variable).
+    Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/main/modules/server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory (unless specified otherwise using the `CONFIG_PATH` environment variable).
 
     :::
 

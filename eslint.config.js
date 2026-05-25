@@ -12,7 +12,7 @@ import tseslint, { configs as tseslintConfigs } from 'typescript-eslint';
 const eslintConfigs = tseslint.config(
 	{
 		// replacement for `.eslintignore`
-		files: ['**/*.js', '**/*.ts'],
+		files: ['**/*.{js,jsx,ts,tsx}'],
 		ignores: ['**/node_modules', '**/dist/*'],
 	},
 	jseslint.configs.recommended,
@@ -57,6 +57,7 @@ const eslintConfigs = tseslint.config(
 			],
 			'@typescript-eslint/no-explicit-any': 'warn',
 			'@typescript-eslint/no-unused-vars': 'warn',
+			'@typescript-eslint/no-use-before-define': 'error',
 			'@typescript-eslint/no-var-requires': 'warn',
 			'@typescript-eslint/no-unused-expressions': [
 				'warn',
@@ -101,13 +102,15 @@ const eslintConfigs = tseslint.config(
 				},
 			],
 
+			'no-use-before-define': 'off', // @typescript-eslint's rule above
+
 			'prefer-const': ['warn'],
 
 			// 'sort-exports/sort-exports': ['warn', { sortDir: 'asc', sortExportKindFirst: 'none' }],
 		},
 
 		settings: {
-			'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
+			// 'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
 			'import/resolver': {
 				node: {
 					extensions: ['.js', '.jsx', '.ts', '.tsx'],

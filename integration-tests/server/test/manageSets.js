@@ -19,15 +19,14 @@ export default ({ api, documentType }) => {
 						}
 					`),
 				},
-				// debug: true,
 			})
 			.catch((err) => {
-				console.log('manageSets error', err);
+				console.log('manageSets/create error', err.message || err);
 			});
 
 		assert.equal(data.errors, undefined);
 
-		setId = data.data.newSet.setId;
+		setId = data?.data?.newSet?.setId;
 	});
 
 	test('2.retrieves newly created set successfully', async () => {
@@ -48,18 +47,14 @@ export default ({ api, documentType }) => {
 						}
 					`),
 				},
-				// debug: true,
 			})
 			.catch((err) => {
-				console.log('manageSets error', err);
+				console.log('manageSets/retrieve error', err.message || err);
 			});
 
 		assert.equal(data.errors, undefined);
-		const allSetIds = data.data.sets.hits.edges.map(({ node }) => node.setId);
+		const allSetIds = data?.data?.sets?.hits?.edges.map(({ node }) => node.setId) || [];
 
-		assert.ok(
-			allSetIds.includes(setId),
-			`Expected [${allSetIds.join(', ')}] to include ${setId}`
-		);
+		assert.ok(allSetIds.includes(setId), `Expected [${allSetIds.join(', ')}] to include ${setId}`);
 	});
 };

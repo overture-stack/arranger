@@ -3,6 +3,7 @@
  * @type {import("prettier").Config}
  */
 const config = {
+	objectWrap: 'preserve',
 	printWidth: 120,
 	semi: true,
 	singleAttributePerLine: true,

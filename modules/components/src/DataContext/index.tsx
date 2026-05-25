@@ -109,9 +109,9 @@ export const withData = <Props extends Omit<Props, keyof DataContextInterface>>(
 			...useDataContext({ callerName }),
 		};
 
-		type blah = jsx.JSX.LibraryManagedAttributes<ComponentType<typeof dataProps>, Props>;
+		type DataProps = jsx.JSX.LibraryManagedAttributes<ComponentType<typeof dataProps>, Props>;
 
-		return <Component {...(dataProps as blah)} />;
+		return <Component {...(dataProps as DataProps)} />;
 	};
 
 	ComponentWithData.displayName = `WithArrangerData(${callerName})`;

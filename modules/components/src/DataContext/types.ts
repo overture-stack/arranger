@@ -72,7 +72,7 @@ export interface ConfigsInterface {
 }
 
 export type APIFetcherFn = (options: {
-	body: unknown;
+	body: Record<string, unknown> | string | null;
 	endpoint?: string;
 	endpointTag?: string;
 	headers?: Record<string, string>;

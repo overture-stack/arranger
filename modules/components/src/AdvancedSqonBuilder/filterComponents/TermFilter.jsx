@@ -1,7 +1,7 @@
 import { Component } from '@reach/component-component';
 import { sortBy, get } from 'lodash-es';
 
-import TermAgg from '#aggregations/TermAgg.js';
+import { TermAggs } from '#aggregations/index.js';
 import Query from '#Query.js';
 import { inCurrentSQON } from '#SQONViewer/utils.js';
 import TextFilter from '#TextFilter/index.js';
@@ -101,7 +101,7 @@ export const TermFilterUI = (props) => {
 		(s) =>
 			({ generateNextSQON }) => {
 				setTimeout(() => {
-					// state change in the same tick somehow results in this component dismounting (probably  something to do with TermAgg's click event, needs investigation)
+					// state change in the same tick somehow results in this component dismounting (probably  something to do with TermAggs' click event, needs investigation)
 					const deltaSqon = generateNextSQON();
 					const deltaFiterObjContentValue = deltaSqon.content[0].content.value;
 					// we're only interested in the new field operation's content value
@@ -150,8 +150,8 @@ export const TermFilterUI = (props) => {
 							Clear
 						</span>
 					</div>
-					<div className="contentSection termAggContainer">
-						<TermAgg
+					<div className="contentSection termAggsContainer">
+						<TermAggs
 							WrapperComponent={AggsWrapper}
 							field={initialFieldSqon.content.field}
 							displayName="Disease Type"

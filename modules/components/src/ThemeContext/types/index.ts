@@ -1,4 +1,4 @@
-import type { Prettify, RecursivePartial } from '#utils/types.js';
+import type { RecursivePartial } from '#utils/types.js';
 
 import type { Components } from './components.js';
 import type { Colors, Palette } from './palette.js';

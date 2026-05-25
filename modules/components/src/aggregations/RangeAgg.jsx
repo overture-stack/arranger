@@ -11,7 +11,7 @@ import { withTheme } from '#ThemeContext/index.js';
 import formatNumber from '#utils/formatNumber.js';
 import { emptyObj } from '#utils/noops.js';
 
-import AggsWrapper from './AggsWrapper.js';
+import AggsGroup from './AggsGroup/index.js';
 
 const SUPPORTED_CONVERSIONS = {
 	time: ['d', 'year'],
@@ -180,7 +180,6 @@ class RangeAgg extends Component {
 
 	render() {
 		const {
-			collapsible = true,
 			disabled,
 			displayName = 'Unnamed Field',
 			fieldName,
@@ -245,11 +244,15 @@ class RangeAgg extends Component {
 		// const enableUnitSelection = !themeDisableUnitSelection;
 
 		return (
-			<AggsWrapper
+			<AggsGroup
 				dataFields={dataFields}
-				displayName={`${displayName}${displayUnit ? ` (${convert().describe(displayUnit).plural})` : ``}`}
-				{...{ WrapperComponent, collapsible }}
-				theme={themeRangeAggProps}
+				theme={{
+					displayName: `${displayName}${displayUnit ? ` (${convert().describe(displayUnit).plural})` : ``}`,
+					filtering: false,
+					sorting: false,
+					WrapperComponent,
+					...themeRangeAggProps
+				}}
 			>
 				{hasData ? (
 					<div
@@ -399,7 +402,7 @@ class RangeAgg extends Component {
 						No data available
 					</span>
 				)}
-			</AggsWrapper>
+			</AggsGroup>
 		);
 	}
 }

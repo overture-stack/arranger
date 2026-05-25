@@ -63,6 +63,7 @@ export interface TableContextProviderProps {
 	children?: React.ReactNode;
 	columns?: ColumnMappingInterface[];
 	customFetcher?: FetchDataFn;
+	defaultSorting?: ColumnSortingInterface[];
 	documentType?: string;
 	fetchRetryLimit?: number;
 }
@@ -70,6 +71,7 @@ export interface TableContextProviderProps {
 export interface UseTableContextProps {
 	callerName?: string;
 	customFetcher?: FetchDataFn;
+	defaultSorting?: ColumnSortingInterface[];
 }
 
 type TableBoxModelProperties = Omit<ThemeCommon.NonButtonThemeProps, 'flex'>;
@@ -121,6 +123,7 @@ export type ColumnTypesObject = Record<
 interface TableContextThemeProps {
 	columnTypes: ColumnTypesObject;
 	defaultColumnWidth: number;
+	defaultSorting: ColumnSortingInterface[];
 	disableColumnResizing: boolean;
 	disableRowSelection: boolean;
 	disableRowSorting: boolean;
@@ -130,7 +133,6 @@ export interface TableThemeProps
 	extends TableContextThemeProps,
 		ThemeCommon.FontProperties,
 		Omit<TableBoxModelProperties, 'borderRadius'> {
-	defaultSort: ColumnSortingInterface[];
 	hideLoader: boolean;
 	noColumnsMessage?: ReactNode;
 	noDataMessage?: ReactNode;

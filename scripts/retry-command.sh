@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 n=0
-max_iter=15
+max_iter=5
 until [ $n -ge ${max_iter} ]
 do
-   #$@ && break  # substitute your command here
-   eval $1 && break
-   n=$[$n+1]
-   echo "Retrying ($n/${max_iter}): sleeping for 15 ..."
-   sleep 15
+   eval $1 && exit 0
+   n=$((n+1))
+   echo "Retrying ($n/${max_iter}): sleeping for 10 seconds..."
+   sleep 10
 done
+
+echo "Command failed after ${max_iter} attempts"
+exit 1
