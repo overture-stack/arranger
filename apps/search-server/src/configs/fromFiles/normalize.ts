@@ -1,5 +1,6 @@
 import type { ArrangerBaseContext } from '@overture-stack/arranger-graphql-router';
 import {
+	configArrangerNetworkProperties,
 	type CustomizeRemoteRequestFn,
 	type CustomRemoteRequestProps,
 	type NetworkConfig,
@@ -8,7 +9,10 @@ import {
 import { configRootProperties, tableProperties } from '@overture-stack/arranger-types/configs/constants';
 import { merge } from 'lodash-es';
 
-import { serverNetworkConfigExtendedProperties } from '#configs/types/constants.js';
+import {
+	serverNetworkConfigExtendedProperties,
+	serverNetworkRemoteRequestCustomizationConfigProperties,
+} from '#configs/types/constants.js';
 import type { ExternalNetworkConfig } from '#configs/types/index.js';
 
 /**
@@ -19,40 +23,42 @@ const getNetworkConfig = (fileDataJSON: any): ExternalNetworkConfig | undefined 
 	return fileDataJSON[configRootProperties.NETWORK_AGGREGATION] as NetworkConfig<ArrangerBaseContext>;
 };
 
-const getNetworkPassthroughHeaders = (networkConfig: ExternalNetworkConfig): string[] => {
-	const passthroughHeaders = networkConfig[serverNetworkConfigExtendedProperties.PASSTHROUGH_HEADERS] ?? [];
-
-	// If passthroughHeaders value is provided, check that the passthroughHeaders value is an array of strings.
-	// We want to error out if the provided file config is not a usable format.
-	if (
-		!(Array.isArray(passthroughHeaders) && passthroughHeaders.every((value) => typeof value === 'string'))
-	) {
-		throw new Error(
-			`Provided Network Config value for 'passthroughHeaders' is not a valid array of strings. This will cause issues during network resolution. Please correct the network config.`,
-		);
-	}
-
-	return passthroughHeaders;
-};
-
 /**
  * Convert External File Network Config into the Arranger NetworkConfig format expected.
  *
- * Side Effects: will modify the fileDataJSON object provided
+ * Side Effects: will modify the configFilesJson object provided
  *
- * - Create customRemoteRequestFn based on the optional `passthroughHeaders` value
+ *
+ * - Create customRemoteRequestFn based on the optional `passthroughHeaders` value and add to configFilesJson
  */
-const normalizeNetworkConfig = (fileDataJSON: any) => {
+const normalizeNetworkConfig = (configFilesJson: any) => {
 	// Create network search CustomRemoteRequestFn from config properties
 	// - network.passthroughHeaders will take incoming request headers and add them to the outgoing remote node requests
-	const networkConfig = getNetworkConfig(fileDataJSON);
+	const networkConfig = getNetworkConfig(configFilesJson);
 	if (networkConfig) {
-		const passthroughHeaders = getNetworkPassthroughHeaders(networkConfig);
-		if (passthroughHeaders.length) {
-			// Only need to create and add this function if any passthrough headers were provided.
+		const remoteNodeExtendedConfigs = networkConfig[configArrangerNetworkProperties.REMOTE_NODES];
 
+		// only need to provide custom request fn if we have any remote nodes configured
+		if (remoteNodeExtendedConfigs && remoteNodeExtendedConfigs.length) {
+			const allRequestsPassthroughHeaders =
+				networkConfig[serverNetworkConfigExtendedProperties.REMOTE_REQUESTS]?.[
+					serverNetworkRemoteRequestCustomizationConfigProperties.HEADERS
+				] ?? [];
+
+			// Create the custom request function
 			const customRemoteRequestFn: CustomizeRemoteRequestFn<ArrangerBaseContext> = (params) => {
 				const headers: CustomRemoteRequestProps['headers'] = {};
+
+				// No remote node ID, so let's find the exact match in teh config (matching name and graphqlUrl).
+				// If there are multiple matches, we can't differentiate, we will use the first match from the configs
+				const matchingConfig = remoteNodeExtendedConfigs.find(
+					(node) =>
+						node.graphqlUrl === params.remoteNode.graphqlUrl &&
+						node.displayName === params.remoteNode.displayName,
+				);
+
+				// use the request.headers value from matching config if present, otherwise use the allRequestsPassthroughHeaders
+				const passthroughHeaders = matchingConfig?.requests?.headers ?? allRequestsPassthroughHeaders;
 
 				passthroughHeaders.forEach((headerName) => {
 					const headerValue = params.context?.request?.headers?.get(headerName);
@@ -65,6 +71,7 @@ const normalizeNetworkConfig = (fileDataJSON: any) => {
 					headers,
 				};
 			};
+			// Add the custom request function to the network config
 			networkConfig.customizeRemoteRequest = customRemoteRequestFn;
 		}
 	}

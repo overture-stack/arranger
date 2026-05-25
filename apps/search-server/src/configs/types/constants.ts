@@ -9,6 +9,11 @@ export const serverConfigProperties = {
 /**
  * Not part of the Arranger config, but used in search-server config files
  */
+
+export const serverNetworkRemoteRequestCustomizationConfigProperties = {
+	HEADERS: 'headers',
+} as const;
+
 export const serverNetworkConfigExtendedProperties = {
-	PASSTHROUGH_HEADERS: 'passthroughHeaders',
+	REMOTE_REQUESTS: 'remoteRequests',
 } as const;

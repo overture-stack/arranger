@@ -98,7 +98,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		 * Aggregation pipeline entrypoint
 		 */
 		const { aggregationResults, nodeInfo } = await aggregationPipeline<Context>({
-			customRemoteRequestFn: remoteNodes.customizeRemoteRequest,
+			customizeRemoteRequest: remoteNodes.customizeRemoteRequest,
 			context,
 			localNodes: localNodes.available,
 			queryVariables,
