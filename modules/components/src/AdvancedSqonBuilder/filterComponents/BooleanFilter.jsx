@@ -2,7 +2,7 @@ import { Component } from '@reach/component-component';
 import { get } from 'lodash-es';
 import PropTypes from 'prop-types';
 
-import BooleanAgg from '#aggregations/Booleans/index.js';
+import { BooleanAggs } from '#aggregations/index.js';
 import Query from '#Query.js';
 import defaultApiFetcher from '#utils/api.js';
 
@@ -76,7 +76,7 @@ export const BooleanFilterUI = (props) => {
 							<span>{`${fieldDisplayName}?`}</span>
 						</div>
 						<div key="body" className="contentSection bodyContainer">
-							<BooleanAgg
+							<BooleanAggs
 								WrapperComponent={AggsWrapper}
 								fieldName={initialFieldSqon.content.fieldName}
 								displayName={fieldDisplayName}

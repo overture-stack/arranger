@@ -140,6 +140,7 @@ const PageSelector = ({
 				`,
 				customCSS,
 			]}
+			role="navigation"
 		>
 			<ul
 				css={css`
@@ -161,7 +162,6 @@ const PageSelector = ({
 						}
 					}
 				`}
-				role="navigation"
 				aria-label="Pagination"
 			>
 				<TooltippedLI className="before">
@@ -215,7 +215,9 @@ const PageSelector = ({
 								<TooltippedForm
 									onSubmit={handlePageInputSubmit}
 									theme={{
-										tooltipText: isInputbeyondRange ? `Page ${lastPage} is the last available` : `Press "Enter" to go`,
+										tooltipText: isInputbeyondRange
+											? `Page ${lastPage} is the last available`
+											: `Press "Enter" to go`,
 										// either show "enter" instructions on hover, or "too large" regardless of mouse
 										tooltipVisibility: isInputbeyondRange ? 'always' : 'hover',
 									}}
@@ -257,7 +259,9 @@ const PageSelector = ({
 
 					{
 						// do we have more than 1 page?
-						totalPages > 1 && (customShowTotalPages || themeShowTotalPages) && <span>{`of ${totalPages}`}</span>
+						totalPages > 1 && (customShowTotalPages || themeShowTotalPages) && (
+							<span>{`of ${totalPages}`}</span>
+						)
 					}
 				</TooltippedLI>
 

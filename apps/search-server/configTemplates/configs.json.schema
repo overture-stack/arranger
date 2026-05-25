@@ -1,0 +1,148 @@
+// this file serves as an example of a basic Arranger configurations
+// and it shows both required (marked with *) and optional properties
+// note: credentials in config json files will be ignored
+
+{
+	// Optional catalog identifier. Defaults to folder name if omitted.
+	"catalogId": "file-catalog-1",
+
+	// GraphQL root query property, labels the type of records found by Arranger
+*	"documentType": "file",
+
+	// Index name or alias in Elasticsearch/OpenSearch
+*	"esIndex": "file_centric_1.0",
+
+	///////////// Feature flags /////////////
+
+	"disableDownloads": false,
+	"disableFilters": false,
+	"disablePlayground": false,
+	"disableSets": false,
+
+	///////////// Configuration for Features and Components /////////////
+
+	// Settings and limits for dataset downloads - [Back-end]
+	"downloads": {
+		"allowCustomMaxRows": true,
+		"maxRows": 10000,
+	},
+
+	// ES mapping customization, aka the Extended mapping
+	"extended": [
+		{
+			"isActive": false,
+			"displayName": "Analysis",
+			"displayType": "object", // custom "default" for aggs and columns
+			"displayValues": {},
+			"fieldName": "analysis",
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"rangeStep": 1,
+			"unit": null,
+			"type": "object" // from the ES mapping
+		},
+		...
+	],
+
+	// Facets component customization, aka the "filters" - [Front-end]
+	"facets": {
+		"aggregations": [
+			{
+				"isActive": true,
+				"displayType": "keyword", // defaults to the field from extended
+				"fieldName": "analysis__analysis_id",
+				"show": true
+			},
+			...
+		]
+	},
+
+	// Matchbox component customization, currently being reimplemented - [Front-end]
+	"matchbox": [
+		{
+			"isActive": false,
+			"displayName": "file",
+			"fieldName": "",
+			"keyFieldName": null,
+			"searchFields": []
+		},
+		...
+	],
+
+	// Table component customization - [Front-end]
+	"table": {
+		"columns": [
+			{
+				"accessor": "analysis.analysis_id",
+				"canChangeShow": true,
+				"displayFormat": "", // used for formattable fields e.g. 'YY-MM-DD'
+				"displayName": "Analysis ID",
+				"displayType": "id", // useful to use a different Cell type. defaults to the field from extended
+				"displayValues": "", // used for "readable" replacements e.g. true as "yes"
+				"fieldName": "analysis.analysis_id",
+				"isArray": false, // should it be displayed as a list of items, or leave as a single string
+				"jsonPath": null,
+				"query": null,
+				"show": true,
+				"sortable": true
+			},
+			...
+		],
+		"defaultSorting": [
+			{
+				"desc": false,
+				"fieldName": "analysis.analysis_id"
+			},
+			...
+		],
+		"maxResultsWindow": 10000,
+		"rowIdFieldName": "analysis.analysis_id"
+	},
+
+	///////////// Currently in development /////////////
+
+	// Network Search Nodes
+	"network": {
+		"remoteNodes": [
+			{
+				"graphqlUrl": "http://localhost:5051/graphql",
+				"documentType": "file",
+				"displayName": "Local Port 5051"
+			}
+		],
+		"localNode": { "displayName": "Local Port 5050" }
+	},
+
+	// Charts Visualizations library
+	"charts": {
+		"query": "query chartsQeury($filters: JSON) {\n
+			file {\n
+				aggregations(
+					filters: $filters,
+					aggregations_filter_themselves: true
+				) {\n
+					study_id {\n
+						bucket_count\n
+						buckets {\n
+							doc_count\n
+							key\n
+						}\n
+					}\n
+					primary_diagnosis__age_at_diagnosis {\n
+						range(ranges: [\n
+							{ key: \"Less than 18\", to: 18 },\n
+							{ key: \"18 to 65\", from: 18, to: 66 },\n
+							{ key: \"65 and above\", from: 65 }\n
+						]) {\n
+							buckets {\n
+								key\n
+								doc_count\n
+							}\n
+						}\n
+					}\n
+				}\n
+			}\n
+		}",
+	},
+}

@@ -1,6 +1,6 @@
 {
 	"name": "@overture-stack/arranger-charts",
-	"version": "0.0.1-beta.16",
+	"version": "0.0.1-beta.17",
 	"main": ".dist/main.js",
 	"module": "./dist/main.js",
 	"types": "./dist/index.d.ts",
@@ -10,30 +10,12 @@
 			"import": "./dist/main.js"
 		}
 	},
+	"imports": {
+		"#*": "./src/*"
+	},
 	"files": [
 		"./dist"
 	],
-	"publishConfig": {
-		"access": "public"
-	},
-	"scripts": {
-		"build": "vite build",
-		"build:storybook": "storybook build",
-		"dev": "vite build --watch",
-		"lint": "eslint .",
-		"buildAndPack": "npm run build && npm pack",
-		"nuke:dist": "rm -rf dist",
-		"storybook": "storybook dev -p 6006",
-		"test": "vitest"
-	},
-	"peerDependencies": {
-		"@emotion/react": "^11.0.0",
-		"@overture-stack/arranger-components": "*",
-		"@types/react": "^17.0.0 || ^18.0.0",
-		"@types/react-dom": "^17.0.0 || ^18.0.0",
-		"react": "^17.0.0 || ^18.0.0",
-		"react-dom": "^17.0.0 || ^18.0.0"
-	},
 	"dependencies": {
 		"@nivo/bar": "^0.88.0",
 		"@nivo/core": "^0.88.0",
@@ -68,6 +50,26 @@
 		"vite": "^7.0.4",
 		"vite-plugin-dts": "^4.5.4",
 		"vitest": "^3.2.2"
+	},
+	"peerDependencies": {
+		"@emotion/react": "^11.0.0",
+		"@overture-stack/arranger-components": "*",
+		"@types/react": "^17.0.0 || ^18.0.0",
+		"@types/react-dom": "^17.0.0 || ^18.0.0",
+		"react": "^17.0.0 || ^18.0.0",
+		"react-dom": "^17.0.0 || ^18.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"scripts": {
+		"build": "vite build",
+		"build:storybook": "storybook build",
+		"clear:dist": "rm -rf dist",
+		"dev": "vite build --watch",
+		"lint": "eslint .",
+		"buildAndPack": "npm run build && npm pack",
+		"storybook": "storybook dev -p 6006"
 	},
 	"type": "module"
 }

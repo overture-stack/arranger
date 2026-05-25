@@ -1,5 +1,9 @@
 {
-	"eslint.validate": ["javascript", "javascriptreact", "typescript", "json"],
-	"eslint.workingDirectories": [{ "pattern": "./modules/*/" }],
+	"eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "json"],
+	"eslint.workingDirectories": [
+		{ "mode": "auto", "pattern": "./apps/*/" },
+		{ "mode": "auto", "pattern": "./modules/*/" },
+		{ "mode": "auto", "pattern": "./integration-tests/*/" }
+	],
 	"javascript.implicitProjectConfig.checkJs": true
 }

@@ -1,0 +1,44 @@
+{
+	"name": "@overture-stack/sqon",
+	"description": "Shared SQON schema and types for Overture services",
+	"version": "0.0.0-dev",
+	"homepage": "https://github.com/overture-stack/arranger#readme",
+	"bugs": {
+		"url": "https://github.com/overture-stack/arranger/issues"
+	},
+	"repository": {
+		"directory": "modules/sqon",
+		"type": "git",
+		"url": "git+https://github.com/overture-stack/arranger.git"
+	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc --project tsconfig.release.json",
+		"clear:dist": "rm -rf dist",
+		"patchTS": "ts-patch install -s",
+		"prepare": "npm run patchTS",
+		"test": "tsx --test",
+		"test:watch": "npm test -- --watch",
+		"watch": "nodemon -w src -e ts --exec \"npm run clear:dist && npm run build\""
+	},
+	"dependencies": {
+		"zod": "^3.24.2",
+		"zod-to-json-schema": "^3.24.1"
+	},
+	"devDependencies": {
+		"@tsconfig/node22": "^22.0.0",
+		"@types/node": "^22.19.13",
+		"nodemon": "^3.1.9",
+		"tsx": "^4.19.2",
+		"typescript": "^5.8.2",
+		"typescript-transform-paths": "^3.5.6"
+	},
+	"imports": {
+		"#*": "./src/*"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module"
+}

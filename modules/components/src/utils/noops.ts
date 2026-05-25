@@ -18,9 +18,9 @@ export const emptyStrFn = (..._arg: unknown[]): string => {
 	return '';
 };
 
-const noopFn = (..._arg: unknown[]): void => {
+const noopFn = <T = void>(..._arg: unknown[]): T => {
 	debugLogs({ caller: 'noopFn', args: _arg });
-	return;
+	return undefined as T;
 };
 
 export default noopFn;

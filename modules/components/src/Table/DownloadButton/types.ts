@@ -12,8 +12,6 @@ export interface TableColumnMappingInterface extends ColumnMappingInterface {
 	Header: ReactNode;
 }
 
-// export type blah = 'meep';
-
 export type CustomColumnMappingInterface = TypesUnionPropertiesOfInterface<
 	Partial<TableColumnMappingInterface>,
 	(TableColumnMappingInterface: any) => any

@@ -1,47 +1,25 @@
 import type { SerializedStyles } from '@emotion/react';
-import type { ReactNode } from 'react';
 
 import type { ThemedButtonProps } from '#Button/types.js';
 import type { APIFetcherFn, SQONType } from '#DataContext/types.js';
 import type { ThemeCommon } from '#ThemeContext/types/index.js';
 import type { ToggleButtonThemeProps } from '#ToggleButton/types.js';
-import type { GenericFn } from '#utils/noops.js';
 
+import type AggsGroup from './AggsGroup/types.js';
+import type BooleanAggs from './BooleanAggs/types.js';
 import type { BucketCountThemeProps } from './BucketCount/types.js';
+import type TermAggs from './TermAggs/types.js';
 
-interface AggsGroup extends ThemeCommon.CustomCSS {
-	collapsedBackground: string;
-	collapsible: boolean;
-	groupDividerColor: string;
-	headerBackground: string;
-	headerDividerColor: string;
-	headerFontColor: string;
-	headerSticky: boolean;
-}
-
-export interface AggsStateProps extends JSX.IntrinsicAttributes {
+export type AggsStateProps = JSX.IntrinsicAttributes & {
 	apiFetcher?: APIFetcherFn;
 	documentType?: string;
 	render: (props: RenderProps) => React.ReactNode; // placeholder to hooks
 	rowIdFieldName?: string;
 	sqon?: SQONType;
 	url?: string;
-}
+};
 
-interface BooleanAgg {
-	BucketCount: BucketCountThemeProps;
-	ToggleButton: ToggleButtonThemeProps;
-}
-
-interface IconButton extends ThemeCommon.CustomCSS {
-	fill: string;
-	Icon: ReactNode;
-	onClick: GenericFn;
-	size: number | string;
-	transition: string;
-}
-
-interface RangeAgg extends ThemeCommon.CustomCSS {
+type RangeAggs = ThemeCommon.CustomCSS & {
 	InputRange: ThemeCommon.CustomCSS;
 	NoDataContainer: ThemeCommon.FontProperties;
 	RangeLabel: ThemeCommon.BoxModelProperties & ThemeCommon.FontProperties & ThemeCommon.CustomCSS;
@@ -59,28 +37,16 @@ interface RangeAgg extends ThemeCommon.CustomCSS {
 		outBackground: string;
 	} & ThemeCommon.CustomCSS;
 	RangeWrapper: ThemeCommon.CustomCSS;
-}
+};
 
-interface TermAgg {
-	ActionIcon: IconButton;
-	BucketCount: BucketCountThemeProps;
-	collapsible: boolean;
-	FilterInput: ThemeCommon.CustomCSS;
-	IncludeExcludeButton: ToggleButtonThemeProps;
-	MoreOrLessButton: ThemeCommon.CustomCSS;
-	TreeJointIcon: IconButton;
-}
-
-export interface AggregationsThemeProps {
-	ActionIcon: IconButton;
+export type AggregationsThemeProps = {
 	AggsGroup: AggsGroup;
-	BooleanAgg: BooleanAgg;
+	BooleanAggs: BooleanAggs;
 	BucketCount: BucketCountThemeProps;
 	FilterInput: ThemeCommon.CustomCSS;
 	InputRange: SerializedStyles;
 	MoreOrLessButton: ThemedButtonProps;
-	RangeAgg: RangeAgg;
-	TermAgg: TermAgg;
+	RangeAggs: RangeAggs;
+	TermAggs: TermAggs;
 	ToggleButton: ToggleButtonThemeProps;
-	TreeJointIcon: IconButton;
-}
+};

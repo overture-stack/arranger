@@ -15,6 +15,7 @@ const TableHeaderRow = ({
 	hasVisibleRows,
 	headers,
 	theme: {
+		columnWidth: customColumnWidth,
 		horizontalBorderColor: customHorizontalBorderColor,
 		padding: customPadding,
 		sortingHighlightColor: customSortingHighlightColor,
@@ -33,6 +34,7 @@ const TableHeaderRow = ({
 					background: themeBackground,
 					borderColor: themeBorderColor,
 					className: themeClassName,
+					columnWidth: themeColumnWidth,
 					css: themeCSS,
 					disabledBackground: themeDisabledBackground = colors?.grey?.[100],
 					disabledFontColor: themeDisabledFontColor = colors?.grey?.[500],
@@ -59,6 +61,7 @@ const TableHeaderRow = ({
 
 	const borderColor_horizontal = customHorizontalBorderColor || themeBorderColor_horizontal;
 	const borderColor_vertical = customVerticalBorderColor || themeBorderColor_vertical;
+	const columnWidth = customColumnWidth || themeColumnWidth;
 	const headerHighlightColor = customSortingHighlightColor || themeSortingHighlightColor;
 	const headerPadding = customPadding || themePadding;
 	const textOverflow = customTableTextOverflow || themeTextOverflow;
@@ -111,7 +114,7 @@ const TableHeaderRow = ({
 							text-transform: ${themeTextTransform};
 							white-space: ${themeWhiteSpace};
 							/* left: header.getStart(), */
-							width: ${headerObj.getSize()}px;
+							width: ${columnWidth || headerObj.getSize()}px;
 
 							&:not(:last-of-type) {
 								border-right: ${borderColor_vertical && `1px solid ${borderColor_vertical}`};
@@ -135,10 +138,13 @@ const TableHeaderRow = ({
 						onClick={handleSorting}
 						title={displayName}
 					>
-						{headerObj.isPlaceholder ? null : flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
+						{headerObj.isPlaceholder
+							? null
+							: flexRender(headerObj.column.columnDef.header, headerObj.getContext())}
 
 						{headerObj.column.getCanResize() && (
 							<TransparentButton
+								aria-label="Resize Column"
 								className={`resizer ${headerObj.column.getIsResizing() ? 'isResizing' : ''}`}
 								css={css`
 									background: rgba(0, 0, 0, 0.5);
