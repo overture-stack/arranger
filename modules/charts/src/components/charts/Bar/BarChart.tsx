@@ -43,12 +43,12 @@ export interface BarChartProps {
  * @returns JSX element with complete bar chart or null if field validation fails
  */
 export const BarChart = ({
-	fieldName,
-	ranges,
-	handlers,
-	theme,
-	maxBars,
 	disableTopBarsCount = false,
+	fieldName,
+	handlers,
+	maxBars,
+	ranges,
+	theme,
 }: BarChartProps) => {
 	// ensure maxBars is provided
 	if (!maxBars) {
