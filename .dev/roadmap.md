@@ -17,7 +17,7 @@ The scope is wider than just swapping a client library. It includes the `SearchC
 
 The `SearchClient` abstraction already exists as the right boundary — the migration should align the types and default configuration to OpenSearch while preserving compatibility for ES users.
 
-**What's already done:** The integration test suite (`integration-tests/server`) already supports both engines via a `SEARCH_ENGINE` env var (defaults to `'elasticsearch'`). `buildSearchClient` accepts a `client` type parameter mapped to `SupportedSearchClients`. The architecture is ready; the missing pieces are the OpenSearch client dependency and a running OpenSearch instance in CI.
+**What's already done:** The integration test suite (`integration-tests/server`) already supports both engines via a `SEARCH_ENGINE` env var (defaults to `'elasticsearch'`). `buildSearchClient` accepts a `client` type parameter mapped to `SupportedClientTypes`. The architecture is ready; the missing pieces are the OpenSearch client dependency and a running OpenSearch instance in CI.
 
 **CI pod spec:** The current pod runs `elasticsearch:7.17.27` for integration tests. The intent is to keep ES in the pod (to verify ES compatibility) and add an OpenSearch container alongside it, then run the integration suite twice — once per engine. See "Testcontainers for integration tests" below for an alternative approach that avoids hardcoding engine versions in the pod spec.
 

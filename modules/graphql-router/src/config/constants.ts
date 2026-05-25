@@ -1,13 +1,9 @@
-import {
-	configArrangerNetworkProperties,
-	featureFlagDefaults,
-	setsProperties,
-} from '@overture-stack/arranger-types/configs';
+import { featureFlagDefaults, setsProperties } from '@overture-stack/arranger-types/configs';
 import {
 	chartsProperties,
+	configRootProperties,
 	downloadProperties,
 	facetsProperties,
-	configRootProperties,
 	tableProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 
@@ -39,7 +35,6 @@ const fallbackCatalogConfigs = {
 		[facetsProperties.AGGS]: [],
 	},
 	[configRootProperties.MATCHBOX]: [],
-	[configRootProperties.NETWORK_AGGREGATION]: { [configArrangerNetworkProperties.REMOTE_NODES]: [] },
 	[configRootProperties.TABLE]: {
 		[tableProperties.COLUMNS]: [],
 		[tableProperties.MAX_RESULTS_WINDOW]: MAX_RESULTS_WINDOW,

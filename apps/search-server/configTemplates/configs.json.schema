@@ -24,7 +24,7 @@
 	// Settings and limits for dataset downloads - [Back-end]
 	"downloads": {
 		"allowCustomMaxRows": true,
-		"maxRows": 10000,
+		"maxRows": 10000
 	},
 
 	// ES mapping customization, aka the Extended mapping
@@ -41,8 +41,8 @@
 			"rangeStep": 1,
 			"unit": null,
 			"type": "object" // from the ES mapping
-		},
-		...
+		}
+		// ...
 	],
 
 	// Facets component customization, aka the "filters" - [Front-end]
@@ -53,8 +53,8 @@
 				"displayType": "keyword", // defaults to the field from extended
 				"fieldName": "analysis__analysis_id",
 				"show": true
-			},
-			...
+			}
+			// ...
 		]
 	},
 
@@ -66,8 +66,8 @@
 			"fieldName": "",
 			"keyFieldName": null,
 			"searchFields": []
-		},
-		...
+		}
+		// ...
 	],
 
 	// Table component customization - [Front-end]
@@ -86,8 +86,8 @@
 				"query": null,
 				"show": true,
 				"sortable": true
-			},
-			...
+			}
+			// ...
 		],
 		"defaultSorting": [
 			{
@@ -102,15 +102,33 @@
 
 	///////////// Currently in development /////////////
 
-	// Network Search Nodes
+	// Network Search Configuration
 	"network": {
+		// Customize all requests to remote nodes
+		"remoteRequests": {
+
+			// Include headers from query request in requests to all remote nodes.
+			"headers": ["Authorization"]
+		},
+
+		// List of remote notes to include in network aggregation search
 		"remoteNodes": [
 			{
 				"graphqlUrl": "http://localhost:5051/graphql",
 				"documentType": "file",
-				"displayName": "Local Port 5051"
+				"displayName": "Local Port 5051",
+
+				// Customize requests to this specific remote node
+				"requests": {
+
+					// Include headers from query request in requests to this remote node.
+					// Overwrites network.remoteRequests.headers value for this node only.
+					"headers": ["Authorization"]
+				}
 			}
 		],
+
+		// Optionally, include the local catalog in the network aggregation search
 		"localNode": { "displayName": "Local Port 5050" }
 	},
 
@@ -144,5 +162,5 @@
 				}\n
 			}\n
 		}",
-	},
+	}
 }

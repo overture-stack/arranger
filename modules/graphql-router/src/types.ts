@@ -25,8 +25,10 @@ export type Resolver<
 	Context extends ArrangerBaseContext = ArrangerBaseContext,
 > = (root: Root, args: QueryArgs, context: Context, info: GraphQLResolveInfo) => ResolverOutput<ReturnValue>;
 
+export type RequestContextProps = { headers: Headers };
 export type ArrangerBaseContext = {
 	esClient: SearchClient;
+	request: RequestContextProps;
 };
 export type GraphQLEndpointMiddleware<TSource = any, TContext = any, TArgs = any> =
 	| IMiddleware<TSource, TContext, TArgs>

@@ -5,7 +5,7 @@ import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
 
 import ArrangerServer from '../../../apps/search-server/src/server.js';
-import { buildSearchClient, type SupportedSearchClients } from '../../../modules/graphql-router/src/index.js';
+import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
 import { ajax } from '../../../modules/graphql-router/src/utils/index.js';
 import catalog1Base from '../multiconfigs/catalog1/base.json' with { type: 'json' };
 import catalog2Base from '../multiconfigs/catalog2/base.json' with { type: 'json' };
@@ -28,7 +28,7 @@ const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-testing';
-const searchEngine = (process.env.SEARCH_ENGINE || 'elasticsearch') satisfies SupportedSearchClients;
+const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
 const serverPort = stringToNumber(process.env.SERVER_PORT, 5678);
 const serverUrl = `http://localhost:${serverPort}`;
 
@@ -63,7 +63,7 @@ const catalogConfigs = [
 const useESAuth = !!esPass && !!esUser;
 const esClient = await buildSearchClient({
 	// coerced type to verify the function handles unsupported values
-	client: searchEngine as SupportedSearchClients,
+	client: searchEngine,
 	node: esHost,
 	...(useESAuth && {
 		username: esUser,
