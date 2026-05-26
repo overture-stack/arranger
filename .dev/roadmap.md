@@ -39,7 +39,7 @@ The search and aggregation logic currently living inside `graphql-router` is cou
 
 The practical benefit: integrators who want Arranger's search capabilities in a REST API, gRPC service, or any other context could use `arranger-core` directly without pulling in GraphQL dependencies.
 
-*Design work needed: define the interface between core and transport. The config system (currently server-level vs catalog-level) will also need to be revisited once the transport coupling is removed — see `tech-debt.md` entry on constants reorganization.*
+*Design work needed: define the interface between core and transport. The config system (currently server-level vs catalog-level) will also need to be revisited once the transport coupling is removed — see [tech-debt: config constants reorganisation](tech-debt.md#config-constants-need-reorganisation--blocked-on-architecture-work).*
 
 ### Auth and field/record-level access control
 *Priority: medium — blocked on both the Overture ABAC design and the Arranger core module boundary.*
@@ -68,17 +68,78 @@ Once `arranger-core` exists, `graphql-router` becomes one of potentially several
 
 This is a directional goal, not an actionable item yet.
 
-### `sqon-builder` monorepo integration
-*Priority: medium — separate repo, should live in the monorepo.*
+### `sqon-builder` absorption into `modules/sqon`
+*Priority: medium — separate repo, should be absorbed into this monorepo.*
 
-The `sqon-builder` package currently lives in a separate repository (`overture/sqon-builder`). It should be integrated into this monorepo, likely alongside or replacing `modules/sqon`. The integration scope includes:
+The direction is **not** a lateral merge: `modules/sqon` is the host. It grows to subsume `sqon-builder`'s capabilities — primarily the builder/chainable API and the SQON manipulation utilities — so that `modules/sqon` becomes the single package for everything SQON: validation, operator metadata, JSON Schema, and programmatic construction. `sqon-builder` is then deprecated and its consumers redirected.
 
-- Decide whether `sqon-builder` replaces `modules/sqon` or merges into it
-- Move source and git history into the monorepo (e.g. via `git subtree` or `git filter-repo`)
-- Wire into the existing Turbo/npm workspaces build graph
-- Update downstream consumers (`graphql-router`, any external packages) to reference the new location
+#### What sqon-builder brings that is worth keeping
 
-*Scope and migration strategy need to be defined before starting.*
+**Builder/chainable API** — `SQONBuilder.in('x', ['a']).and(SQONBuilder.gt('y', 5))`. Genuinely useful for programmatic SQON construction in UI code and the MCP server. Used in `graphql-router`'s `convertToSqon` path and presumably in `modules/components`.
+
+**`reduceSQON`** — a non-trivial deduplication and simplification algorithm. Merges duplicate filters under the same combination (e.g. two `gt` on `and` collapses to the greater value), unwraps single-item wrappers, removes empty combinations. No equivalent in `modules/sqon`.
+
+**Filter manipulation methods** — `removeFilter`, `removeExactFilter`, `setFilter`. These are stateful builder operations that the UI depends on for interactive SQON editing (adding/removing facet selections).
+
+**`checkMatchingFilter` / `checkMatchingArrays`** — semantic filter comparison, order-independent. Worth keeping as a utility export.
+
+**`from()` static parser** — parses a raw object into a builder. The MCP-layer `convertToSqon` already uses this.
+
+**`emptySQON()`** — trivial but a useful starting point for builder chains.
+
+#### What needs to be fixed or extended during absorption
+
+**Operator coverage gap** — the single largest issue. `sqon-builder` only implements `in`, `gt`, `lt`. It cannot build `not-in`, `some-not-in`, `all`, `gte`, `lte`, `between`, or `filter` queries. The absorbed builder must cover all operators `modules/sqon` already defines. Any SQON a consumer can *validate* they must also be able to *build*.
+
+**`reduceSQON` operator coverage gap** — the reduction logic only handles specific cases for `GT`, `LT`, and `IN`. When the builder gains the full operator set, the reduction rules for `gte`, `lte`, `between`, and `not-in` need to be defined and implemented. Some cases are clear (two `gte` on `and` → keep the greater); others need deliberate design (what does it mean to reduce two `between` ranges on `and`?).
+
+**Own Zod schema** — `sqon-builder` defines its own `ArrayFilterValue`, `ScalarFilterValue`, `SQON`, etc. which diverge from and are a strict subset of `modules/sqon`'s schema. The absorbed builder must use `modules/sqon`'s types exclusively. The builder-internal types go away.
+
+**`@ts-expect-error` in graphql-router** — `network/utils/sqon.ts` has `@ts-expect-error sqon-builder types need update` when calling `SQONBuilder.from()`. This is a type misalignment symptom that disappears once the builder's types are grounded in `modules/sqon`'s schema.
+
+**Boolean value support** — add `zod.boolean()` to `SqonScalarValueSchema` in the unified schema (see [tech-debt: boolean values](tech-debt.md#sqon-value-schema-does-not-accept-boolean-values)). The builder inherits the fix automatically.
+
+#### What to leave behind
+
+**The `& SQON` type pattern — a known design mistake.** `sqon-builder` types the builder as `SQONBuilder & SQON`, meaning the builder object *is simultaneously the data*. This is wrong. `SqonNode` (the canonical SQON type, defined in `modules/sqon`) represents a JSON-serializable query structure — it has no methods and should never have them. The builder is a separate construction tool that produces `SqonNode` values; it is not itself a `SqonNode`.
+
+The correct design is a clean wrapper: `SqonBuilder` holds a `SqonNode` internally, exposes builder methods, and has explicit extraction: `toValue(): SqonNode` and `toString(): string`. The data type and the construction API are two distinct things.
+
+The consequences of the `& SQON` anti-pattern:
+- `cloneDeepValues` exists only to strip builder methods before serialization — it is a workaround for the blur, not a useful utility in its own right.
+- The `StripFunctions<T>` generic is a type-level admission that the type is wrong.
+- Consumers can accidentally pass a builder where a plain `SqonNode` is expected.
+- The `@ts-expect-error` in `graphql-router`'s `sqon.ts` is a direct downstream symptom.
+
+This must be explicit in the implementation, the TypeScript types, and the JSDoc. `SqonNode` is the data type. `SqonBuilder` is a factory. They must not be conflated.
+
+**`createFilter` in its current form** — only handles `in`/`gt`/`lt` and is tightly coupled to the old type constants. Rewrite against the full operator set with the new types.
+
+**`cloneDeepValues`** — only exists because of the `& SQON` pattern. Goes away with the wrapper redesign.
+
+**sqon-builder's constants** (`FilterKeys`, `ArrayFilterKeys`, `ScalarFilterKeys`, `CombinationKeys`) — `modules/sqon` already has `sqonFieldOperatorProperties`, `sqonCombinationProperties`, and `sqonAliasProperties`. One set of constants.
+
+#### Migration path
+
+1. Add the builder API and manipulation utilities to `modules/sqon`, implemented against the full operator set and the existing Zod schema. Export as `SqonBuilder` (or similar) alongside the existing exports.
+2. Add a `from()` static method to `SqonBuilder` that calls `SqonSchema.parse()` internally — replacing the sqon-builder's `SQON.parse()` call.
+3. Update `graphql-router`'s `convertToSqon` to import from `@overture-stack/arranger-sqon` instead of `@overture-stack/sqon-builder`. The `@ts-expect-error` goes away.
+4. Update `modules/components` and any other consumer of `sqon-builder`.
+5. Deprecate `sqon-builder`. Publish a final version pointing consumers at `@overture-stack/arranger-sqon`.
+6. Remove `sqon-builder` as a dependency.
+
+*Note: `sqon-builder` git history can be preserved via `git subtree add` or `git filter-repo` if desired, but this is optional — the source is small enough to port directly. The `sqon-builder` monorepo integration work described previously is superseded by this.*
+
+### Consolidate field-type-to-operator rules into `modules/sqon`
+*Priority: medium — cleanup work, doable independently.*
+
+The logic for mapping ES field types to valid SQON operators currently exists in two separate places: a nuanced `getValidOperators()` in `apps/search-server/src/introspection/catalogDetails.ts`, and a simpler `getSqonFieldOperatorDetails()` in `modules/sqon`. These encode the same domain knowledge independently and will drift as operators or types are added.
+
+The goal is to make `modules/sqon` the single source of truth. `getSqonFieldOperatorDetails()` should be extended to carry the field-type classification detail currently encoded only in `catalogDetails.ts` (the ENUM_LIKE_TYPES / RANGE_TYPES distinction, boolean handling, etc.). `catalogDetails.ts` then becomes a thin projection over that data rather than a parallel implementation.
+
+Done when: `catalogDetails.ts` no longer contains its own operator-applicability logic; `modules/sqon` exports all the rules needed for any consumer to determine valid operators for a given ES field type.
+
+*Aligns with `sqon-builder` monorepo integration — if/when `sqon-builder` merges into `modules/sqon`, this work should be done first or alongside to avoid tripling the implementations.*
 
 ### Network aggregation as a separate concern
 *Priority: medium — currently coupled to graphql-router, should be its own bounded layer.*
@@ -105,7 +166,7 @@ The current config model conflates several distinct concerns: server-level confi
 
 Once the core module boundary is defined, configs should be reorganised into at least three layers — server, transport, and core — and UI config should be clearly separated so front-end consumers don't need to reason about server-level settings. Each config property should be documented (purpose, type, default, which layer it belongs to) and validated at the boundary using Zod or a similar schema library.
 
-*Blocked on core module extraction. See also tech-debt entry on constants reorganisation. Custom columns and custom facet groups (in the Features section) depend on this work.*
+*Blocked on core module extraction. See also [tech-debt: config constants reorganisation](tech-debt.md#config-constants-need-reorganisation--blocked-on-architecture-work). Custom columns and custom facet groups (in the Features section) depend on this work.*
 
 ### Config validation with structured errors and tests
 *Priority: medium — usability and reliability improvement, doable without waiting for config separation.*

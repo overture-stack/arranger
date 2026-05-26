@@ -33,6 +33,34 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 
 ---
 
+## modules/sqon
+
+### No combined field-type-to-operator-validity endpoint
+**File:** `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`; `modules/graphql-router` — `extended` config query
+**Severity:** medium (blocks clean validation in MCP / evaluation harness)
+**Kind:** missing feature / integration gap
+**Issue:** The operator applicability rules exist (`getSqonFieldOperatorDetails()` in `modules/sqon`) and the field type information is available (via the `extended` GraphQL query, which returns ES types from `flattenMappingToFields()`). But these two sources are not connected in any Arranger-native API. A caller who wants to validate whether a given operator is legal for a given field must join both sources themselves. This is a gap surfaced by the LLM evaluation harness (Field & Operator Validity metric) and equally relevant to the MCP server, which should reject invalid operator/field-type combinations before forwarding to Elasticsearch.
+**Fix:** Add a query or utility — either a new GraphQL field on the config endpoint or a standalone function in `modules/sqon` — that, given an Arranger index, returns each field name with its ES type and the set of valid SQON operators for that type. `getSqonFieldOperatorDetails()` already encodes the rules; it just needs to be composed with the field list.
+**Standalone:** yes — additive, no changes to existing query behaviour
+
+### `getValidOperators` in catalogDetails.ts and `getSqonFieldOperatorDetails` in modules/sqon are divergent implementations of the same rules
+**File:** `apps/search-server/src/introspection/catalogDetails.ts` — `getValidOperators()`; `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`
+**Severity:** low (currently consistent in practice, but will drift)
+**Kind:** duplication / maintenance risk
+**Issue:** Two separate implementations encode which SQON operators are valid for which field types. `catalogDetails.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently — any future operator addition requires updating both.
+**Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `catalogDetails.ts` currently encodes locally. `catalogDetails.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
+**Standalone:** yes — internal refactor, no change to API output
+
+### SQON value schema does not accept boolean values
+**File:** `modules/sqon/src/schema/constants.ts` — `SqonScalarValueSchema`
+**Severity:** low-medium
+**Kind:** schema gap
+**Issue:** `SqonScalarValueSchema` is `string | number`, so `SqonScalarOrArrayValueSchema` (used by `InLikeFilterSchema` and others) rejects boolean values. Any Elasticsearch index with a `boolean` field can only be queried via SQON by passing `"true"`/`"false"` as strings — the schema will reject `true`/`false` literals. This is non-obvious and will trip up LLMs generating SQON for boolean fields (and human callers). Surfaced when reviewing the LLM evaluation fixture set.
+**Fix:** Add `zod.boolean()` to `SqonScalarValueSchema`. Verify that Arranger's ES query builder handles boolean values in a `terms` clause correctly (Elasticsearch accepts native booleans in `terms`). Update SQON documentation to clarify accepted value types.
+**Standalone:** yes — schema-only change; runtime behaviour in ES is already permissive for booleans in `terms` queries
+
+---
+
 ## graphql-router
 
 ### `GraphQLEndpointOptions` escape hatch
@@ -48,7 +76,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Severity:** medium
 **Kind:** design-smell
 **Issue:** Apollo Server 3 is end-of-life. Several type errors in this file trace back to AS3 type definitions: `con` not on `ExpressContext` (line ~259), `IRouter` vs `Application` mismatch in `applyMiddleware` calls (lines ~269, ~289), and the `context` API shape. The file itself has a TODO at line 1 noting the upgrade is pending.
-**Fix:** The direction is to replace Apollo entirely, not upgrade to v4 — see the "GraphQL server migration" entry in the roadmap. graphql-yoga is the leading candidate. Upgrading to AS4 would be investing in a library the project intends to leave.
+**Fix:** The direction is to replace Apollo entirely, not upgrade to v4 — see [GraphQL server migration](roadmap.md#graphql-server-migration-away-from-apollo) in the roadmap. graphql-yoga is the leading candidate. Upgrading to AS4 would be investing in a library the project intends to leave.
 **Standalone:** no — part of the broader GraphQL server migration in the roadmap
 
 ### Duplicated server instantiation (main + mock)
@@ -64,7 +92,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Severity:** low
 **Kind:** design-smell
 **Issue:** The context builder receives a `connection` argument (`{ req, res, connection }`) whose type and origin are explicitly noted as unclear in a TODO comment. This is an Apollo Server artifact — `connection` exists in Apollo's context API for WebSocket subscriptions. Arranger doesn't use subscriptions, so the parameter is vestigial and the type is unresolvable against Apollo 3's definitions.
-**Fix:** This will resolve naturally when Apollo is replaced (see roadmap). No need to fix in isolation.
+**Fix:** This will resolve naturally when Apollo is replaced (see [roadmap](roadmap.md#graphql-server-migration-away-from-apollo)). No need to fix in isolation.
 **Standalone:** no — tied to the Apollo migration in the roadmap
 
 ### Error responses surfacing stack traces
@@ -112,7 +140,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Severity:** medium
 **Kind:** missing dependency
 **Issue:** The integration test suite already supports multiple search engines via `SEARCH_ENGINE` env var and `buildSearchClient({ client: searchEngine })`, but `@opensearch-project/opensearch` is not listed as a dependency — only `@elastic/elasticsearch`. Running the suite with `SEARCH_ENGINE=opensearch` would fail to resolve the client.
-**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedClientTypes` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers — see roadmap 3.2) and run the suite against both engines.
+**Fix:** Add `@opensearch-project/opensearch` to dependencies. Confirm that `buildSearchClient` in `graphql-router` supports it (the `SupportedSearchClients` type implies it does). Add an OpenSearch container to the CI pod spec (or adopt testcontainers — see [roadmap §3.2](roadmap.md#32-testcontainers-for-integration-test-infrastructure)) and run the suite against both engines.
 **Standalone:** mostly yes — the test harness is already wired; this is the last missing piece before OS integration tests actually run
 
 ### `release-charts` temporary publish branch
@@ -185,7 +213,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Kind:** packaging bug
 **Issue:** Publishable packages reference internal sibling packages via `file:` paths (e.g. `"@overture-stack/arranger-types": "file:../types"`). These work in the monorepo but break for external npm consumers, who receive a `file:` reference that resolves to nothing in their environment.
 **Fix:** Before each npm publish, replace `file:` references with the actual published registry versions. This can be done at publish time as part of the release script, or managed via a tool like Changesets (which handles this automatically as part of Phase 3.1). In the interim, the release process must verify no `file:` references remain in the published tarball's `package.json`.
-**Standalone:** needs-context — the clean long-term fix is Changesets (roadmap Phase 3.1); the interim fix is a release validation step (see roadmap)
+**Standalone:** needs-context — the clean long-term fix is [Changesets (roadmap §3.1)](roadmap.md#31-adopt-changesets-for-versioning-and-changelog-automation); the interim fix is a release validation step
 
 ---
 

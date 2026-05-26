@@ -6,6 +6,29 @@ Newest first.
 
 ---
 
+## 2026-05-26
+
+**Done:**
+- Reviewed LLM model evaluation document (text-to-SQON benchmarking framework) as Arranger maintainers; provided technical commentary on fixtures, harness, scoring metrics, and model candidate list
+- Identified that SQON fixture-001 uses `"value": [true]` which fails `SqonSchema.safeParse()` — `SqonScalarValueSchema` is `string | number` with no boolean; `"value": ["true"]` is the correct form
+- Added two tech-debt entries: boolean values not accepted in SQON schema; `getValidOperators` and `getSqonFieldOperatorDetails` are divergent implementations of the same rules
+- Added roadmap item: consolidate field-type-to-operator rules into `modules/sqon`
+- Fleshed out `sqon-builder` absorption into `modules/sqon` as a detailed roadmap item: what to keep (builder API, `reduceSQON`, filter manipulation, `from()`), what to fix (operator coverage gap — only `in`/`gt`/`lt` today), what to leave behind (the `& SQON` anti-pattern), and migration path
+- Added anchor links to all cross-references between `tech-debt.md` and `roadmap.md`
+
+**Decisions:**
+- `sqon-builder` is absorbed into `modules/sqon`, not the other way around — `modules/sqon` is the host; it grows to subsume `sqon-builder`'s builder API
+- The `& SQON` type pattern in `sqon-builder` is a design mistake — explicitly named and documented as such; the correct design is a clean wrapper with explicit `toValue(): SqonNode` extraction
+- Boolean values should be supported in SQON (not just string `"true"`); fix is additive — add `zod.boolean()` to `SqonScalarValueSchema`; confirmed this is an oversight, not deliberate
+- The `/introspection/fields` endpoint is the canonical LLM context source — the evaluation document should reference it specifically rather than "GraphQL introspection"
+- JSDoc/TSDoc should be added to functions and types as code is written or touched — not deferred to a documentation pass; inline docs are the safety net when `/docs` lags
+
+**Open threads:**
+- Boolean support in SQON schema: fix is clear but not yet implemented (two schema files, one in `sqon-builder`, one in `modules/sqon`)
+- `reduceSQON` extension for full operator set needs deliberate design (e.g. what does reducing two `between` ranges under `and` mean?)
+
+---
+
 ## 2026-05-21
 
 **Done:**
