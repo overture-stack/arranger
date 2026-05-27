@@ -43,12 +43,12 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Add a query or utility — either a new GraphQL field on the config endpoint or a standalone function in `modules/sqon` — that, given an Arranger index, returns each field name with its ES type and the set of valid SQON operators for that type. `getSqonFieldOperatorDetails()` already encodes the rules; it just needs to be composed with the field list.
 **Standalone:** yes — additive, no changes to existing query behaviour
 
-### `getValidOperators` in catalogDetails.ts and `getSqonFieldOperatorDetails` in modules/sqon are divergent implementations of the same rules
-**File:** `apps/search-server/src/introspection/catalogDetails.ts` — `getValidOperators()`; `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`
+### `getValidFieldOperators` in graphql-router and `getSqonFieldOperatorDetails` in modules/sqon are divergent implementations of the same rules
+**File:** `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts` — `getValidFieldOperators()`; `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`
 **Severity:** low (currently consistent in practice, but will drift)
 **Kind:** duplication / maintenance risk
-**Issue:** Two separate implementations encode which SQON operators are valid for which field types. `catalogDetails.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently — any future operator addition requires updating both.
-**Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `catalogDetails.ts` currently encodes locally. `catalogDetails.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
+**Issue:** Two separate implementations encode which SQON operators are valid for which field types. `buildCatalogueIntrospection.ts` has a more nuanced classification (ENUM_LIKE_TYPES, RANGE_TYPES, fallback) while `modules/sqon` returns a flat list with `applicableTo: 'all'` for non-range operators. They're consistent today but maintained independently — any future operator addition requires updating both.
+**Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes — internal refactor, no change to API output
 
 ### SQON value schema does not accept boolean values

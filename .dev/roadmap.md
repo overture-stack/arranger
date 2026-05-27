@@ -141,11 +141,11 @@ _Note: `sqon-builder` git history can be preserved via `git subtree add` or `git
 
 _Priority: medium — cleanup work, doable independently._
 
-The logic for mapping ES field types to valid SQON operators currently exists in two separate places: a nuanced `getValidOperators()` in `apps/search-server/src/introspection/catalogDetails.ts`, and a simpler `getSqonFieldOperatorDetails()` in `modules/sqon`. These encode the same domain knowledge independently and will drift as operators or types are added.
+The logic for mapping ES field types to valid SQON operators currently exists in two separate places: `getValidFieldOperators()` in `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts`, and `getSqonFieldOperatorDetails()` in `modules/sqon`. These encode the same domain knowledge independently and will drift as operators or types are added.
 
-The goal is to make `modules/sqon` the single source of truth. `getSqonFieldOperatorDetails()` should be extended to carry the field-type classification detail currently encoded only in `catalogDetails.ts` (the ENUM_LIKE_TYPES / RANGE_TYPES distinction, boolean handling, etc.). `catalogDetails.ts` then becomes a thin projection over that data rather than a parallel implementation.
+The goal is to make `modules/sqon` the single source of truth. `getSqonFieldOperatorDetails()` should be extended to carry the field-type classification detail currently encoded only in `buildCatalogueIntrospection.ts` (the ENUM_LIKE_TYPES / RANGE_TYPES distinction, boolean handling, etc.). `buildCatalogueIntrospection.ts` then becomes a thin projection over that data rather than a parallel implementation.
 
-Done when: `catalogDetails.ts` no longer contains its own operator-applicability logic; `modules/sqon` exports all the rules needed for any consumer to determine valid operators for a given ES field type.
+Done when: `buildCatalogueIntrospection.ts` no longer contains its own operator-applicability logic; `modules/sqon` exports all the rules needed for any consumer to determine valid operators for a given ES field type.
 
 _Aligns with `sqon-builder` monorepo integration — if/when `sqon-builder` merges into `modules/sqon`, this work should be done first or alongside to avoid tripling the implementations._
 
