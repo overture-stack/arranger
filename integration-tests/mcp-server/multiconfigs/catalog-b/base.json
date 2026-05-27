@@ -1,0 +1,27 @@
+{
+	"catalogId": "catalog-b",
+	"documentType": "modelB",
+	"esIndex": "testing-mcp-models_b",
+	"extended": [
+		{
+			"displayName": "Sample ID",
+			"displayType": "keyword",
+			"fieldName": "sample_id",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": true,
+			"quickSearchEnabled": false,
+			"type": "keyword"
+		},
+		{
+			"displayName": "Created At",
+			"displayType": "date",
+			"fieldName": "createdAt",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "date"
+		}
+	]
+}

@@ -74,6 +74,7 @@
 		"apps/search-server",
 		"apps/mcp-server",
 		"integration-tests/import",
+		"integration-tests/mcp-server",
 		"integration-tests/server",
 		"modules/charts",
 		"modules/components",
