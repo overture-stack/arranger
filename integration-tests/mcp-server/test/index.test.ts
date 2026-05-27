@@ -79,9 +79,8 @@ const cleanupIndices = async () => {
 	await Promise.all(deletePromises);
 };
 
-// Test runtime context — populated by the `before` hook below, read lazily by tests via `getClient()`.
-// This indirection is necessary because suite/test factory calls below execute at suite-registration
-// time, which happens *before* the `before` hook runs.
+// Test runtime context — populated by the `before` hook below, consumed by tests via `getClient()`.
+// Defined here to avoid issues with test isolation and variable scope across the `before` hook and individual tests.
 const context: { mcpClient?: Client } = {};
 const getClient = () => {
 	if (!context.mcpClient) {
@@ -94,6 +93,12 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 	let arrangerApp: Awaited<ReturnType<typeof ArrangerServer>> | undefined;
 	let mcpServer: StartedMcpServer | undefined;
 
+	// Does the following before tests run:
+	// - 1. Cleans up any existing test indices
+	// - 2. Initializes test indices with mappings for the test suite
+	// - 3. Starts an Arranger server in multicatalog mode
+	// - 4. Starts the MCP server
+	// - 5. Connects an MCP client to the MCP server and stores it in `context` for tests to use
 	before(async () => {
 		try {
 			await cleanupIndices();
