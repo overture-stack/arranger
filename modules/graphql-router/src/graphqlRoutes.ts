@@ -2,6 +2,7 @@
 import { mergeSchemas } from '@graphql-tools/schema';
 import type { IResolvers } from '@graphql-tools/utils';
 import {
+	configArrangerNetworkProperties,
 	type ConfigsObject,
 	type GetServerSideFilterFn,
 	type LocalNodeConfig,
@@ -15,45 +16,16 @@ import type { GraphQLSchema } from 'graphql';
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields, fetchMapping } from '#mapping/index.js';
+import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogSchemaData } from '#network/types.js';
 import { createCatalogResolvers, createSchemaForResolvers } from '#schema/index.js';
 import type { SchemaTypesTuple } from '#schema/types.js';
 import type { SearchClient } from '#searchClient/index.js';
-import type { ArrangerBaseContext, GraphQLEndpointOptions } from '#types.js';
+import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
-
-const getIndexMapping = async ({
-	enableDebug,
-	searchClient,
-	esIndex,
-}: {
-	enableDebug: boolean;
-	searchClient: SearchClient;
-	esIndex: string;
-}) => {
-	// TODO: Return type definition once SearchClient response types are merged
-	if (searchClient && esIndex) {
-		const { mapping } = await fetchMapping({
-			enableDebug,
-			searchClient: searchClient,
-			esIndex,
-		});
-
-		if (mapping && Object.hasOwn(mapping, 'id')) {
-			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			enableDebug &&
-				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
-			delete mapping.id;
-		}
-		return mapping;
-	}
-
-	throw new Error(`  Could not get ES mappings for ${esIndex}`);
-};
 
 // TODO: Fix types once SearchClient response types are merged
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
@@ -246,6 +218,17 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		if (schema) {
 			// TODO: It is unclear what the value for connection should be, or where it is sourced from. This type can be tightened (or removed?).
 			const buildContext = async (req: Request, res: Response, connection: any) => {
+				// Add request information to context as needed for ArrangeBaseContext.request
+				const headers = new Headers();
+				for (const [key, value] of Object.entries(req.headers)) {
+					if (value !== undefined) {
+						const valueAsString = Array.isArray(value) ? value.join(', ') : value;
+						headers.set(key, valueAsString);
+					}
+				}
+				const request: RequestContextProps = { headers };
+
+				// Add to context based on external parameters
 				const externalContext =
 					typeof graphqlOptions.context === 'function'
 						? await graphqlOptions.context(req, res, connection)
@@ -253,6 +236,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 
 				return {
 					esClient,
+					request,
 					...(externalContext || {}),
 				};
 			};
@@ -318,15 +302,6 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	return router;
 };
 
-export type CreateSchemasFromConfigsArgs<Context extends ArrangerBaseContext> = {
-	configs: ConfigsObject<Context>;
-	enableDebug?: boolean;
-	enableAdmin?: boolean;
-	esClient: SearchClient;
-	getServerSideFilter: GetServerSideFilterFn<Context>;
-	graphqlOptions?: GraphQLEndpointOptions<Context>;
-	setsIndex: string;
-};
 export const createSchemasFromConfigs = async <Context extends ArrangerBaseContext>({
 	configs,
 	enableDebug = false,
@@ -334,18 +309,23 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	mappingFromIndex,
 	setsIndex,
-}: CreateSchemasFromConfigsArgs<Context>) => {
+}: {
+	configs: ConfigsObject<Context>;
+	enableDebug?: boolean;
+	enableAdmin?: boolean;
+	esClient: SearchClient;
+	getServerSideFilter: GetServerSideFilterFn<Context>;
+	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	mappingFromIndex: Record<string, unknown>;
+	setsIndex: string;
+}) => {
 	try {
 		if (!configs) {
 			throw new Error('  No configs were provided. Please provide a config object.');
 		}
 
-		const mappingFromIndex = await getIndexMapping({
-			enableDebug,
-			searchClient: esClient,
-			esIndex: configs[configRootProperties.ES_INDEX],
-		});
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
@@ -373,13 +353,13 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 				console.debug(
 					'    DEBUG: `network` config provided for network aggregation. Adding network search to the gql schema...',
 				);
-			const context: Context = { esClient }; // TODO: context should be created dynamically, likely using the gqlOptions.context if provided
 
 			// TODO: This initial setup assumes that the config only references the local catalog,
 			//       needs to be updated for a multi-catalog setup with the localCatalog info provided in the function argumemnts
 			const localCatalogId = 'local';
-			const localNodeConfigs: LocalNodeConfig[] = networkConfigsObj.localNode
-				? [{ catalogId: localCatalogId, ...networkConfigsObj.localNode }]
+			const configLocalNodeProps = networkConfigsObj[configArrangerNetworkProperties.LOCAL_NODE];
+			const localNodeConfigs: LocalNodeConfig[] = configLocalNodeProps
+				? [{ catalogId: localCatalogId, ...configLocalNodeProps }]
 				: [];
 
 			// Build local catalogs by extracting aggregations and hits resolvers from the provided resolvers
@@ -409,8 +389,9 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			}
 
 			const networkSchemaResult = await createSchemaFromNetworkConfig<Context>({
+				customizeRemoteRequest: configs?.network?.customizeRemoteRequest,
 				enableDebug,
-				remoteNodeConfigs: networkConfigsObj.remoteNodes,
+				remoteNodeConfigs: networkConfigsObj[configArrangerNetworkProperties.REMOTE_NODES] ?? [],
 				localNodeConfigs,
 				localCatalogs,
 			});
@@ -450,6 +431,7 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	mappingFromIndex: Record<string, unknown>;
 };
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
@@ -458,6 +440,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	mappingFromIndex,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
@@ -470,6 +453,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
+			mappingFromIndex,
 			setsIndex,
 		});
 

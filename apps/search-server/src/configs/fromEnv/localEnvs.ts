@@ -5,7 +5,7 @@ import {
 	downloadProperties,
 	setsProperties,
 } from '@overture-stack/arranger-types/configs/constants';
-import { stringToArray, stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
+import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
 const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')

@@ -17,6 +17,7 @@ export type Query = {
  * @returns gql query string
  */
 export const useDynamicQuery = ({
+	disableIncludeMissing,
 	documentType,
 }): {
 	addQuery: (config: ChartConfig) => void;
@@ -58,8 +59,8 @@ export const useDynamicQuery = ({
 
 	// generate query from current fields
 	const gqlQuery = useMemo(() => {
-		return generateChartsQuery({ documentType, queryFields });
-	}, [documentType, queryFields]);
+		return generateChartsQuery({ disableIncludeMissing, documentType, queryFields });
+	}, [disableIncludeMissing, documentType, queryFields]);
 
 	return {
 		addQuery,

@@ -1,10 +1,14 @@
 import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
+import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 import { Router, type RequestHandler } from 'express';
 
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
 import downloadRoutes from '#download/index.js';
 import getGraphQLRoutes from '#graphqlRoutes.js';
+import { getIndexMapping } from '#searchClient/index.js';
+import { buildCatalogueIntrospectionBody } from '#introspection/buildCatalogueIntrospection.js';
+import resolveCatalogueFields from '#mapping/resolveCatalogueFields.js';
 import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addContext } from '#utils/context.js';
@@ -68,11 +72,29 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 				username: esUser,
 			}));
 
+		const mappingFromIndex = await getIndexMapping({
+			enableDebug,
+			searchClient: esClient,
+			esIndex: configs[configRootProperties.ES_INDEX],
+		});
+
+		const resolvedFields = resolveCatalogueFields(
+			mappingFromIndex,
+			configs[configOptionalProperties.EXTENDED] ?? [],
+		);
+
 		const router = Router();
 
 		router.use(createRequestPreprocessingMiddleware({ configs, enableDebug }));
 
-		// TODO: extract mapping logic from this, so it can be used in other endpoints
+		const introspectionBody = buildCatalogueIntrospectionBody({
+			catalogId: configs[configOptionalProperties.CATALOG_ID] ?? '',
+			documentType: configs[configRootProperties.DOCUMENT_TYPE] ?? '',
+			resolvedFields,
+		});
+
+		router.get('/introspection', (_req, res) => res.json(introspectionBody));
+
 		const graphQLRoutes = await getGraphQLRoutes({
 			configs,
 			enableAdmin,
@@ -80,6 +102,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 			esClient,
 			getServerSideFilter, // TODO: Extend for multicatalog per-catalog filters
 			graphqlOptions,
+			mappingFromIndex,
 		});
 
 		router.use('/', graphQLRoutes);

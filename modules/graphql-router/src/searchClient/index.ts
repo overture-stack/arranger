@@ -1,8 +1,8 @@
 import { createElasticSearchClient, type ESClientOptions } from './createElasticSearchClient.js';
 import { createOpenSearchClient, type OSClientOptions } from './createOpenSearchClient.js';
-import type { SearchClient, SupportedSearchClients, SearchConfig, SearchConfigWithClient } from './types.js';
+import type { SearchClient, SearchConfig, SearchConfigWithClient, SupportedClientTypes } from './types.js';
 
-export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedSearchClients[];
+export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
 /**
  * Determine if provided Search Client Type is valid, or obtain client type if not provided.
@@ -10,7 +10,7 @@ export const supportedClientValues = ['opensearch', 'elasticsearch'] as const sa
  * This will return undefined if the provided config.clientType value is not a supported client type,
  * or if no valid client type can be identified from the search service.
  */
-const getClientType = async (config: SearchConfig): Promise<SupportedSearchClients | undefined> => {
+const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes | undefined> => {
 	try {
 		const { clientType } = config;
 
@@ -124,12 +124,7 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 /**
  * Main function for creating Search Client
  */
-const buildSearchClient = async (options: {
-	client?: SupportedSearchClients;
-	node?: string;
-	password?: string;
-	username?: string;
-}) => {
+const buildSearchClient = async (options: { client?: string; node?: string; password?: string; username?: string }) => {
 	const config = await createSearchEngineConfig(options);
 
 	return createSearchClient(config);
@@ -137,4 +132,5 @@ const buildSearchClient = async (options: {
 
 export default buildSearchClient;
 
-export type { SearchClient, SupportedSearchClients } from './types.js';
+export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
+export type { SearchClient, SupportedClientTypes } from './types.js';

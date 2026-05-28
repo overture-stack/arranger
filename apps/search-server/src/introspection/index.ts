@@ -1,31 +1,19 @@
-import { Router } from 'express';
-import type { Response } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 
 import type { CatalogsMap } from '#configs/types/index.js';
-import buildCatalogDetails from '#introspection/catalogDetails.js';
 import buildServerDetails from '#introspection/serverDetails.js';
 import buildSqonDetails from '#introspection/sqonDetails.js';
 
-const createIntrospectionRoutes = ({ catalogs }: { catalogs: CatalogsMap }) => {
+const createIntrospectionRoutes = ({
+	catalogs,
+	catalogueRouters,
+}: {
+	catalogs: CatalogsMap;
+	catalogueRouters: Record<string, ExpressRouter>;
+}) => {
 	const router = Router();
-	const generatedAt = new Date().toISOString();
 	const catalogIds = Object.keys(catalogs);
 	const onlyCatalogId = catalogIds.length === 1 ? catalogIds[0] : undefined;
-	const sendCatalogDetails = ({ catalogId, res }: { catalogId: string; res: Response }) => {
-		const details = buildCatalogDetails({
-			catalogId,
-			catalogs,
-			generatedAt,
-		});
-
-		if (!details) {
-			return res.status(404).json({
-				error: `Catalog "${catalogId}" was not found.`,
-			});
-		}
-
-		return res.json(details);
-	};
 
 	router.get('/introspection', (_req, res) => {
 		res.json(buildServerDetails({ catalogs }));
@@ -35,22 +23,23 @@ const createIntrospectionRoutes = ({ catalogs }: { catalogs: CatalogsMap }) => {
 		res.json(buildSqonDetails());
 	});
 
-	router.get('/introspection/fields', (_req, res, next) => {
-		if (!onlyCatalogId) {
-			return next();
-		}
-
-		return sendCatalogDetails({
-			catalogId: onlyCatalogId,
-			res,
-		});
+	// In single-catalogue mode, /introspection/fields is an alias for the catalogue endpoint.
+	router.get('/introspection/fields', (req, res, next) => {
+		if (!onlyCatalogId) return next();
+		const catalogueRouter = catalogueRouters[onlyCatalogId];
+		if (!catalogueRouter) return next();
+		req.url = '/introspection';
+		return catalogueRouter(req, res, next);
 	});
 
-	router.get('/introspection/:catalogId', (req, res) => {
-		return sendCatalogDetails({
-			catalogId: req.params.catalogId,
-			res,
-		});
+	// Dispatch to the catalogue's own router, which owns the live field data.
+	router.get('/introspection/:catalogId', (req, res, next) => {
+		const catalogueRouter = catalogueRouters[req.params.catalogId];
+		if (!catalogueRouter) {
+			return res.status(404).json({ error: `Catalog "${req.params.catalogId}" was not found.` });
+		}
+		req.url = '/introspection';
+		return catalogueRouter(req, res, next);
 	});
 
 	return router;

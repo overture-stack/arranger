@@ -12,6 +12,7 @@ Do this before touching any code:
 1. Read `.dev/roadmap.md` — check the current focus (set by the developer at session start), then note any `[in progress]` items.
 2. Read `.dev/tech-debt.md` — note any `standalone: yes` entries relevant to today's work.
 3. Read `.dev/sessions.md` — last 1–2 entries give context on recent work and open threads.
+4. **Remind the developer: `/docs` is out of date (see tech-debt). Flag any work this session that adds to that gap.**
 
 ## Working documents
 
@@ -56,13 +57,26 @@ Never `cd` into a module and run `npm test` directly.
 
 When a roadmap item's status changes, a tech-debt entry is resolved, or a meaningful design decision is made, update `.dev/roadmap.md` or `.dev/tech-debt.md` in the same session. These documents are the shared memory for this project across sessions and agents — they should reflect current reality, not just initial planning.
 
-**At the end of every session:** update both documents to reflect what was done, what was decided, and any new issues found. Add a dated entry to `.dev/sessions.md`. Do this before the session ends, not as an afterthought.
+**After any meaningful unit of work concludes** — a decision made, a set of changes done, a review completed, a feature implemented — update the relevant `.dev/` documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal: work rarely ends cleanly, and the update will be missed if it depends on one.
+
+**Remind the developer: if any work this session changed user-facing behaviour, it adds to the `/docs` debt. Mention what needs documenting.**
 
 **Remind the developer to commit `.dev/` changes.** If any of the three documents were updated this session, check whether they are staged (`git status`). If not, remind the developer to include them in their commit — these files are shared context and their history matters for avoiding double work.
 
-## Security: OWASP Top 10
+## Security triggers
 
-All work should observe the current OWASP Top 10 for web applications. The list updates periodically — verify the current edition at https://owasp.org/www-project-top-ten/ rather than assuming a specific year. As of May 2026 the current edition is OWASP Top 10:2025 (Broken Access Control, Security Misconfiguration, Supply Chain Failures, Cryptographic Failures, Injection, Insecure Design, Authentication Failures, Data Integrity Failures, Logging Failures, Mishandling of Exceptional Conditions). Apply during implementation, flag in adjacent code, surface in design decisions touching auth, access control, input handling, or dependencies.
+Check these as you write or review code. Flag violations rather than silently skipping them.
+
+- **No stack traces or internal details in API responses.** GraphQL error messages sent to clients must not include stack traces, ES index names, file paths, or library versions. Log them server-side only.
+- **GraphQL introspection and field suggestions off in production.** When `disablePlayground` is true or the environment is not local dev, introspection and field suggestions should be explicitly disabled.
+- **Query depth and alias limits must be configured.** `GRAPHQL_MAX_DEPTH` and `GRAPHQL_MAX_ALIASES` must be set — omitting them allows DoS via deeply nested or aliased queries.
+- **Validate user-provided field names before forwarding to ES.** SQON field names and any user input forwarded into ES query bodies must be validated against the known index mapping. Unvalidated field names are an injection vector.
+- **No credentials or tokens in logs.** `ES_PASS`, `Authorization` header values, and bearer tokens must not appear in log output at any level, including debug.
+- **HTTP remote nodes with forwarded auth headers leak credentials.** If `passthroughHeaders` includes an auth header and a remote `graphqlUrl` uses `http://` on a non-localhost host, flag it.
+- **CORS wildcard is a misconfiguration outside local dev.** `allowedCorsOrigins: ['*']` must not appear in any config intended for a deployed environment.
+- **`enableDebug` and `enableAdmin` must default to `false`.** Flag any code path that enables these without an explicit opt-in. Their defaults in `featureFlagDefaults` should be `false`.
+- **Aggregate counts from sensitive catalogs may need suppression.** Before returning aggregation results from a catalog that may contain sensitive or re-identifiable data, check whether count suppression is configured (see roadmap).
+- **`passthroughHeaders` entries must be non-empty strings.** An empty string passes current type validation but attempts to forward a header with no name — validate all entries are non-empty before use.
 
 ## Language and typos
 
@@ -70,11 +84,32 @@ Flag typos and language issues when spotted — in code, comments, and docs. Don
 
 ## Workflow
 
-- Plan before implementing. For logic with clear inputs/outputs, write tests before implementation (TDD).
+- Plan before implementing. For logic with clear inputs/outputs, define behaviour as tests before implementation (BDD).
 - Stick to scope. Document adjacent issues in `.dev/tech-debt.md` rather than fixing them silently.
 - No commits — the human handles all git work.
 - When a well-established library would do better than a hand-rolled solution, surface it as an option.
 - Check in before non-trivial direction changes.
+
+## Writing tests: BDD style
+
+Tests are being migrated toward a BDD naming pattern using `node:test` and `assert` — no additional libraries. Apply this for new tests; nudge existing tests toward it when touching them in scope.
+
+- `suite()` groups related tests: `suite('getNetworkPassthroughHeaders', ...)`
+- `test()` states expected behaviour: `test('returns an empty array when no headers are configured', ...)`
+- Structure bodies as setup → action → assertion (Given / When / Then)
+
+```ts
+import { suite, test } from 'node:test';
+import assert from 'node:assert/strict';
+
+suite('getNetworkPassthroughHeaders', () => {
+  test('returns an empty array when no headers are configured', () => {
+    assert.deepEqual(getNetworkPassthroughHeaders({ passthroughHeaders: [] }), []);
+  });
+});
+```
+
+Large-scale rewrites of existing tests belong in tech-debt, not done out of scope.
 
 ## Instruction file governance
 

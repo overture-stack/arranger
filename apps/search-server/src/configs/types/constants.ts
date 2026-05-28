@@ -5,3 +5,15 @@ export const serverConfigProperties = {
 	PING_PATH: 'pingPath',
 	SERVER_PORT: 'serverPort',
 } as const;
+
+/**
+ * Not part of the Arranger config, but used in search-server config files
+ */
+
+export const serverNetworkRemoteRequestCustomizationConfigProperties = {
+	HEADERS: 'headers',
+} as const;
+
+export const serverNetworkConfigExtendedProperties = {
+	REMOTE_REQUESTS: 'remoteRequests',
+} as const;

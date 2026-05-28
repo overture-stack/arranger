@@ -166,6 +166,12 @@ start-es:
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
 
+start-os:
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: OpenSearch" $(END)
+	@COMPOSE_PROJECT_NAME=arranger_os $(DC_UP_CMD) opensearch
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
+	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
+
 start-server:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Arranger Server" $(END)
 	@COMPOSE_PROJECT_NAME=arranger_server $(DC_UP_CMD) arranger-server
