@@ -62,8 +62,9 @@ export default ({ getClient, configuredCatalogues, expectedFieldsByCatalog }: To
 			assert.deepEqual(fieldNames, expected);
 
 			// Tool also declares an outputSchema -> structured content should match the text content.
-			const structured = (result as { structuredContent?: { catalogId: string; fields: Record<string, unknown> } })
-				.structuredContent;
+			const structured = (
+				result as { structuredContent?: { catalogId: string; fields: Record<string, unknown> } }
+			).structuredContent;
 			assert.ok(structured, "expected 'get-catalog-fields' to return structuredContent");
 			assert.equal(structured?.catalogId, catalogId);
 			assert.deepEqual(Object.keys(structured?.fields ?? {}).sort(), expected);

@@ -50,7 +50,9 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expect
 
 	test('3.lists catalog field resources via the resource template', async () => {
 		const { resourceTemplates } = await getClient().listResourceTemplates();
-		const template = resourceTemplates.find((t) => t.uriTemplate === 'arranger://introspection/catalog/{catalogId}');
+		const template = resourceTemplates.find(
+			(t) => t.uriTemplate === 'arranger://introspection/catalog/{catalogId}',
+		);
 		assert.ok(template, 'expected catalog-fields resource template to be registered');
 	});
 
@@ -71,8 +73,6 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expect
 				const field = data.fields[fieldName];
 				assert.equal(typeof field.displayName, 'string');
 				assert.equal(typeof field.type, 'string');
-				assert.ok(Array.isArray(field.validOperators));
-				assert.ok(field.validOperators.length > 0);
 			}
 		}
 	});

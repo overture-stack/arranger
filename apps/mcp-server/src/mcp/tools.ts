@@ -7,7 +7,6 @@ const fieldShape = z.object({
 	displayName: z.string(),
 	type: z.string(),
 	unit: z.string().nullable().optional(),
-	validOperators: z.array(z.string()),
 });
 
 export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {

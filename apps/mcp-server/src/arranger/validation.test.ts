@@ -54,6 +54,7 @@ const mockCatalogIntrospection = (catalogId: string): ArrangerCatalogIntrospecti
 	documentType: 'doc',
 	generatedAt: '2026-01-01T00:00:00Z',
 	meta: { authFiltered: false },
+	operators: {},
 	fields: {},
 });
 

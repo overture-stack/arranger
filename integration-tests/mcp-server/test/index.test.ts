@@ -7,7 +7,7 @@ import { stringToNumber } from '@overture-stack/arranger-types/tools';
 import dotenv from 'dotenv';
 
 import ArrangerServer from '../../../apps/search-server/src/server.js';
-import { buildSearchClient, type SupportedSearchClients } from '../../../modules/graphql-router/src/index.js';
+import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
 import catalogABase from '../multiconfigs/catalog-a/base.json' with { type: 'json' };
 import catalogBBase from '../multiconfigs/catalog-b/base.json' with { type: 'json' };
 
@@ -25,8 +25,8 @@ const esPass = process.env.ES_PASS;
 const esUser = process.env.ES_USER;
 const setsIndex = process.env.ES_ARRANGER_SETS_INDEX || 'arranger-sets-mcp-testing';
 const setsType = process.env.ES_ARRANGER_SETS_TYPE || 'arranger-sets-mcp-testing';
-const searchEngine = (process.env.SEARCH_ENGINE || 'elasticsearch') satisfies SupportedSearchClients;
-const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5780);
+const searchEngine = process.env.SEARCH_ENGINE || 'elasticsearch';
+const arrangerPort = stringToNumber(process.env.SERVER_PORT, 5678);
 const mcpPort = stringToNumber(process.env.MCP_TEST_PORT, 3199);
 
 const arrangerBaseUrl = `http://127.0.0.1:${arrangerPort}`;
@@ -54,7 +54,7 @@ const expectedFieldsByCatalog = Object.fromEntries(catalogConfigs.map((c) => [c.
 
 const useESAuth = !!esPass && !!esUser;
 const esClient = await buildSearchClient({
-	client: searchEngine as SupportedSearchClients,
+	client: searchEngine,
 	node: esHost,
 	...(useESAuth && {
 		username: esUser,
