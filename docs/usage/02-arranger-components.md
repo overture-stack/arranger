@@ -10,7 +10,7 @@ Arranger offers its own front-end library of reusable components to facilitate q
 
 ## Configuration Files Overview
 
-As part of our latest work, in order to ensure Arranger v3.0 remains somewhat backawards-compatible and to facilitate the migration process from v2, we've established a temporary way to control the Server and Components' behaviour through files that centralize the way your indexed data is found and displayed.
+As part of our latest work, in order to ensure Arranger v3.0 remains somewhat backwards-compatible and to facilitate the migration process from v2, we've established a temporary way to control the Server and Components' behaviour through files that centralize the way your indexed data is found and displayed.
 This design will change in future versions (with corresponding documentation), to establish a better separation of concerns between front and back-end.
 
 These customizations can be divided into four files as follows:

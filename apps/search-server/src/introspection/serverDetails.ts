@@ -20,6 +20,7 @@ const buildServerDetails = ({ catalogs }: { catalogs: CatalogsMap }): Introspect
 				return [
 					catalogId,
 					{
+						...(typedConfigs.description ? { description: typedConfigs.description } : {}),
 						documentType: typedConfigs.documentType || '',
 						paths: {
 							...(catalogCount === 1 ? { fields: '/introspection/fields' } : {}),

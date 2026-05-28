@@ -40,7 +40,8 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 		'get-catalog-fields',
 		{
 			title: 'Get Catalog Fields',
-			description: 'Returns the field map for one catalog (displayName, type, unit, validOperators).',
+			description:
+				'Return field introspection for one catalogue. `operators` maps each field type to its valid SQON operators. `fields` lists each field with its `type`, `displayName`, optional `unit`, and optional `description`.',
 			inputSchema: {
 				catalogId: z.string().min(1).describe('Catalog identifier from the Arranger /introspection payload.'),
 			},

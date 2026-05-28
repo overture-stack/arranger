@@ -89,6 +89,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 
 		const introspectionBody = buildCatalogueIntrospectionBody({
 			catalogId: configs[configOptionalProperties.CATALOG_ID] ?? '',
+			description: configs[configOptionalProperties.DESCRIPTION],
 			documentType: configs[configRootProperties.DOCUMENT_TYPE] ?? '',
 			resolvedFields,
 		});

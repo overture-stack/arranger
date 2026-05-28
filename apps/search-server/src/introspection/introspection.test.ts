@@ -72,4 +72,33 @@ suite('introspection tests', () => {
 		assert.ok(result.schema.$defs.SQON);
 		assert.ok(result.schema.$defs.Group);
 	});
+
+	test('includes description in root introspection when configured', () => {
+		const result = buildBaseIntrospection({
+			catalogs: {
+				models: {
+					documentType: 'model',
+					description: 'Clinical trial participant models.',
+				},
+			},
+		});
+
+		const entry = result.catalogs['models'];
+		assert.ok(entry !== undefined);
+		assert.equal(entry.description, 'Clinical trial participant models.');
+	});
+
+	test('omits description key from root introspection when not configured', () => {
+		const result = buildBaseIntrospection({
+			catalogs: {
+				models: {
+					documentType: 'model',
+				},
+			},
+		});
+
+		const entry = result.catalogs['models'];
+		assert.ok(entry !== undefined);
+		assert.ok(!('description' in entry));
+	});
 });

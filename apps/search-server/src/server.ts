@@ -63,8 +63,8 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 
 		const { router: arrangerRouter, catalogueRouters } = await arrangerRoutes({ catalogs, enableDebug, esClient });
 
-		app.use('/', arrangerRouter);
 		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters }));
+		app.use('/', arrangerRouter);
 
 		const server = app.listen(serverPort, () => {
 			const message = `⚡️⚡️⚡️ Listening on port ${serverPort} ⚡️⚡️⚡️`;

@@ -12,7 +12,18 @@ Newest first.
 
 - Fixed `/introspection/fields` correctness bug: each `arrangerRouter` instance now fetches the ES mapping once at startup, resolves live fields via `resolveCatalogueFields` (pure transform), and serves them from a local `GET /introspection` endpoint; `search-server` dispatches `/introspection/:catalogId` via URL rewriting; `catalogDetails.ts` deleted; logic lives in `graphql-router/src/introspection/buildCatalogueIntrospection.ts`
 - Moved `fetchMapping`, `getESAliases`, `checkESAlias`, and `getIndexMapping` from `mapping/utils/` and `graphqlRoutes.ts` into `searchClient/fetchMapping.ts` — all ES I/O now in one layer
-- Updated unit tests to match new shape
+- Added `description` as an optional catalogue config property (`configOptionalProperties.DESCRIPTION` in `modules/types`) — surfaces in both the root `/introspection` response and the per-catalogue `/introspection/:catalogId` response via conditional spread (key absent when not configured, not `undefined`)
+- Restructured `CatalogIntrospectionResponse`: removed `validOperators` from individual fields; added top-level `operators: Record<string, string[]>` keyed by field type; `buildFieldOperators()` in `buildCatalogueIntrospection.ts`
+- Updated unit tests to match new shape; added coverage for `description` present/absent and `operators` deduplication
+
+**Decisions:**
+- `operators` (not `typeOperators`) — cleaner, consistent with existing "operators" vocabulary in SQON introspection
+- `buildFieldOperators` (not `buildTypeOperators`) — "field operators" is the established naming family in `modules/sqon` (`SqonFieldOp`, `SqonFieldOperatorDetail`, `getSqonFieldOperatorDetails`)
+- `description` on per-catalogue response too (not just root listing) — complete data at the endpoint; LLM context optimization is the MCP layer's responsibility
+- `getValidOperators` → `modules/sqon` consolidation is out of scope: requires redesigning `applicableTo` data in `getSqonFieldOperatorDetails` (range types incorrectly include `filter`, `some-not-in`, `all` at present); separate roadmap item
+
+**Open threads:**
+- `getValidFieldOperators` → `modules/sqon` consolidation: follow-up when sqon consolidation roadmap item is picked up
 
 ---
 
