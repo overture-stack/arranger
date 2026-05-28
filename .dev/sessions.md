@@ -15,15 +15,29 @@ Newest first.
 - Added `description` as an optional catalogue config property (`configOptionalProperties.DESCRIPTION` in `modules/types`) — surfaces in both the root `/introspection` response and the per-catalogue `/introspection/:catalogId` response via conditional spread (key absent when not configured, not `undefined`)
 - Restructured `CatalogIntrospectionResponse`: removed `validOperators` from individual fields; added top-level `operators: Record<string, string[]>` keyed by field type; `buildFieldOperators()` in `buildCatalogueIntrospection.ts`
 - Updated unit tests to match new shape; added coverage for `description` present/absent and `operators` deduplication
+- Added `mcp-server` Docker target to both `docker/Dockerfile.local` and `docker/Dockerfile.jenkins`, mirroring the existing `server` target structure
+    - Both targets `COPY --from=scaffolding` the shared `node_modules` and `apps/mcp-server` source; no internal modules are copied because the MCP server is standalone (talks to Arranger over HTTP, not ES directly)
+    - CMD runs `node_modules/.bin/tsx ./apps/mcp-server/src/index.ts` (no shell-level pre-check; `validateArrangerConnection` runs in-app at startup)
+    - EXPOSE 3100 matches the `MCP_PORT` default
+- Updated `docker/Dockerfile.jenkins` scaffolding stage to include `--workspace apps/mcp-server` in the `npm ci --omit=dev` install, so the jenkins production image installs the MCP server's runtime deps
+- Moved `tsx` from `devDependencies` to `dependencies` in `apps/mcp-server/package.json` (load-bearing for the jenkins build, which runs `npm ci --omit=dev`; mirrors what `apps/search-server` already does)
+- Updated both `.dockerignore` files (`Dockerfile.local.dockerignore`, `Dockerfile.jenkins.dockerignore`) to add `!apps/mcp-server`, allowing the folder through the build context
 
 **Decisions:**
+
 - `operators` (not `typeOperators`) — cleaner, consistent with existing "operators" vocabulary in SQON introspection
 - `buildFieldOperators` (not `buildTypeOperators`) — "field operators" is the established naming family in `modules/sqon` (`SqonFieldOp`, `SqonFieldOperatorDetail`, `getSqonFieldOperatorDetails`)
 - `description` on per-catalogue response too (not just root listing) — complete data at the endpoint; LLM context optimization is the MCP layer's responsibility
 - `getValidOperators` → `modules/sqon` consolidation is out of scope: requires redesigning `applicableTo` data in `getSqonFieldOperatorDetails` (range types incorrectly include `filter`, `some-not-in`, `all` at present); separate roadmap item
+- MCP server target does NOT use a shell wrapper or pre-flight script. The app's own `validateArrangerConnection` handles the Arranger readiness check at startup — duplicating that at the shell level would be redundant.
+- Kept tsx-from-source at runtime (not a tsc pre-build) to match `apps/search-server`'s pattern. Revisiting that for both apps together is a future concern.
+- Did not modify `docker-compose.yml` — that's a separate "is the MCP server part of the dev stack?" decision.
 
 **Open threads:**
+
 - `getValidFieldOperators` → `modules/sqon` consolidation: follow-up when sqon consolidation roadmap item is picked up
+- `package-lock.json` will need an `npm install` to reflect tsx moving sections in `apps/mcp-server/package.json`.
+- `docker-compose.yml` does not include the MCP server. If the local Compose dev stack should boot MCP alongside server/ES/UI, that needs a follow-up (port 3100, depends_on server, ARRANGER_BASE_URL pointed at the `server` service).
 
 ---
 
