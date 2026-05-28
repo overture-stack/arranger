@@ -16,7 +16,7 @@ import type { GraphQLSchema } from 'graphql';
 import { initializeSets } from '#config/index.js';
 import { extendCharts } from '#mapping/extendCharts.js';
 import { extendColumns, extendFacets, flattenMappingToFields } from '#mapping/extendMapping.js';
-import { addMappingsToTypes, extendFields, fetchMapping } from '#mapping/index.js';
+import { addMappingsToTypes, extendFields } from '#mapping/index.js';
 import mappingToAggregationFields from '#mapping/mappingToAggregationFields.js';
 import { createSchemaFromNetworkConfig } from '#network/index.js';
 import type { LocalCatalogSchemaData } from '#network/types.js';
@@ -26,35 +26,6 @@ import type { SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext, GraphQLEndpointOptions, RequestContextProps } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { maxAliasesRule, maxDepthRule } from '#utils/queryValidation.js';
-
-const getIndexMapping = async ({
-	enableDebug,
-	searchClient,
-	esIndex,
-}: {
-	enableDebug: boolean;
-	searchClient: SearchClient;
-	esIndex: string;
-}) => {
-	// TODO: Return type definition once SearchClient response types are merged
-	if (searchClient && esIndex) {
-		const { mapping } = await fetchMapping({
-			enableDebug,
-			searchClient: searchClient,
-			esIndex,
-		});
-
-		if (mapping && Object.hasOwn(mapping, 'id')) {
-			// FIXME: Figure out a solution to map this to something else rather than dropping it
-			enableDebug &&
-				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
-			delete mapping.id;
-		}
-		return mapping;
-	}
-
-	throw new Error(`  Could not get ES mappings for ${esIndex}`);
-};
 
 // TODO: Fix types once SearchClient response types are merged
 const getTypesWithMappings = async <Context extends ArrangerBaseContext>({
@@ -338,6 +309,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	mappingFromIndex,
 	setsIndex,
 }: {
 	configs: ConfigsObject<Context>;
@@ -346,6 +318,7 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	mappingFromIndex: Record<string, unknown>;
 	setsIndex: string;
 }) => {
 	try {
@@ -353,11 +326,6 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 			throw new Error('  No configs were provided. Please provide a config object.');
 		}
 
-		const mappingFromIndex = await getIndexMapping({
-			enableDebug,
-			searchClient: esClient,
-			esIndex: configs[configRootProperties.ES_INDEX],
-		});
 		const { fieldsFromMapping, typesWithMappings } = await getTypesWithMappings<Context>({
 			configs,
 			enableDebug,
@@ -463,6 +431,7 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
+	mappingFromIndex: Record<string, unknown>;
 };
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
@@ -471,6 +440,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
+	mappingFromIndex,
 }: ArrangerRoutesArgs<Context>): Promise<RequestHandler | RequestHandler[]> => {
 	// TODO: surfacing this variable to be reused later
 	const setsIndex = configs[configOptionalProperties.SETS]?.index || 'arranger-sets';
@@ -483,6 +453,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			esClient,
 			getServerSideFilter,
 			graphqlOptions,
+			mappingFromIndex,
 			setsIndex,
 		});
 

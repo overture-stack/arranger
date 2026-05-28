@@ -6,7 +6,7 @@ import { startCase } from 'lodash-es';
 import Parallel from 'paralleljs';
 
 import { createConnectionResolvers, mappingToFields, saveSet } from '#mapping/index.js';
-import { checkESAlias, getESAliases } from '#mapping/utils/fetchMapping.js';
+import { checkESAlias, getESAliases } from '#searchClient/fetchMapping.js';
 import type { ArrangerBaseContext } from '#types.js';
 
 import { typeDefs as AggregationsTypeDefs } from './Aggregations.js';

@@ -148,7 +148,21 @@ The federated "network search" feature — querying multiple Arranger nodes and 
 
 *Needs design work before implementation. Not yet scoped.*
 
-### Multicatalog catalog lifecycle and metadata
+### search-server route organisation
+*Priority: low — structural improvement, no behaviour change.*
+
+`apps/search-server/src/server.ts` currently wires all route concerns directly in the main server setup. As the server grows (health checks, introspection, arranger routes), route registration should be organized into a `routes/` directory:
+
+- `routes/arranger.ts` — catalogue router setup (currently `arrangerRoutes.ts`)
+- `routes/health.ts` — health/ping endpoint
+- `routes/introspection.ts` — introspection endpoints (already partially separated)
+- `server.ts` composes these: each route module exports a factory and `server.ts` mounts them
+
+The refactor is purely structural — no behaviour changes, no new features. `arrangerRoutes.ts` at the `src/` root was the natural first step; `routes/` becomes the convention once there are multiple route files.
+
+*Standalone: yes. Small PR, no upstream dependencies.*
+
+### Multicatalog catalogue lifecycle and metadata
 *Priority: medium — needed for production multicatalog deployments.*
 
 Catalogs can fail to load or be intentionally disabled. There is currently no explicit model for what "unavailable" means. Needed work:

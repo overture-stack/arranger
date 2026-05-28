@@ -10,7 +10,6 @@ export { default as mappingToColumnsState } from './mappingToColumnsState.js';
 export { default as mappingToMatchBoxState } from './mappingToMatchBoxState.js';
 export { default as mappingToNestedTypes } from './mappingToNestedTypes.js';
 export { default as mappingToScalarFields, esToGraphqlTypeMap } from './mappingToScalarFields.js';
-export { fetchMapping } from './utils/fetchMapping.js';
 export { default as loadExtendedFields } from './utils/loadExtendedFields.js';
 export { default as mapHits } from './utils/mapHits.js';
 export { default as getNestedFields } from './getNestedFields.js';

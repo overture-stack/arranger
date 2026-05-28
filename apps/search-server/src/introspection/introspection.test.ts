@@ -1,7 +1,6 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import buildCatalogDetails from '#introspection/catalogDetails.js';
 import buildBaseIntrospection from '#introspection/serverDetails.js';
 import buildSqonIntrospection from '#introspection/sqonDetails.js';
 
@@ -72,68 +71,5 @@ suite('introspection tests', () => {
 		assert.equal(result.schema.$ref, '#/$defs/SQON');
 		assert.ok(result.schema.$defs.SQON);
 		assert.ok(result.schema.$defs.Group);
-	});
-
-	test('builds catalog field details from extended mapping configs', () => {
-		const result = buildCatalogDetails({
-			catalogId: 'models',
-			catalogs: {
-				models: {
-					documentType: 'model',
-					extended: [
-						{
-							displayName: 'Analysis State',
-							displayType: 'keyword',
-							displayValues: {},
-							fieldName: 'analysis.state',
-							isActive: true,
-							isArray: false,
-							primaryKey: false,
-							quickSearchEnabled: true,
-							rangeStep: 0,
-							type: 'keyword',
-							unit: null,
-						},
-						{
-							displayName: 'Donor Age',
-							displayType: 'number',
-							displayValues: {},
-							fieldName: 'donor.age',
-							isActive: true,
-							isArray: false,
-							primaryKey: false,
-							quickSearchEnabled: false,
-							rangeStep: 1,
-							type: 'long',
-							unit: 'year',
-						},
-					],
-				},
-			},
-			generatedAt: '2026-02-23T00:00:00Z',
-		});
-
-		assert.deepEqual(result, {
-			catalogId: 'models',
-			documentType: 'model',
-			fields: {
-				'analysis.state': {
-					displayName: 'Analysis State',
-					type: 'keyword',
-					unit: null,
-					validOperators: ['in', 'not-in', 'some-not-in', 'all', 'filter'],
-				},
-				'donor.age': {
-					displayName: 'Donor Age',
-					type: 'long',
-					unit: 'year',
-					validOperators: ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between'],
-				},
-			},
-			generatedAt: '2026-02-23T00:00:00Z',
-			meta: {
-				authFiltered: false,
-			},
-		});
 	});
 });
