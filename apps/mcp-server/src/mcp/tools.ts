@@ -10,7 +10,8 @@ export const buildFoundationTools = (): McpToolDefinition[] => [
 		name: 'get_sqon_schema',
 	},
 	{
-		description: 'Return field introspection for one catalog, including field names, field types, and valid operators.',
+		description:
+			'Return field introspection for one catalogue. `operators` maps each field type to its valid SQON operators. `fields` lists each field with its `type`, `displayName`, optional `unit`, and optional `description`.',
 		inputSchema: {
 			properties: {
 				catalogId: {

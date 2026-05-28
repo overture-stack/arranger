@@ -469,8 +469,77 @@ If you are generating SQON automatically, the safest defaults are:
 
 ## Related Endpoints
 
-When Arranger introspection is enabled, the following endpoints are useful together:
+When Arranger introspection is enabled, the following endpoints are useful together.
 
-- `/introspection/sqon` for the shared SQON JSON Schema and operator metadata
-- `/introspection/:catalogId` for catalog-specific field details
-- `/introspection/fields` as a single-catalog alias for field introspection
+### `GET /introspection`
+
+Lists all catalogues served by the instance. Each entry includes the catalogue's document type, its GraphQL and introspection paths, and an optional `description` when configured.
+
+```json
+{
+  "catalogCount": 1,
+  "mode": "single",
+  "sqonSchemaPath": "/introspection/sqon",
+  "catalogs": {
+    "participants": {
+      "description": "Clinical trial participant records.",
+      "documentType": "participant",
+      "paths": {
+        "fields": "/introspection/fields",
+        "graphql": "/graphql",
+        "introspection": "/introspection/participants"
+      }
+    }
+  }
+}
+```
+
+`description` is omitted when not set in the catalogue config. `paths.fields` is only present in single-catalogue mode.
+
+---
+
+### `GET /introspection/:catalogId`
+
+Returns field-level details for one catalogue. Use this to understand what fields exist, their types, and which SQON operators apply to each type.
+
+```json
+{
+  "catalogId": "participants",
+  "description": "Clinical trial participant records.",
+  "documentType": "participant",
+  "generatedAt": "2026-05-27T00:00:00.000Z",
+  "meta": { "authFiltered": false },
+  "operators": {
+    "keyword": ["in", "not-in", "some-not-in", "all", "filter"],
+    "long":    ["in", "not-in", "gt", "gte", "lt", "lte", "between"],
+    "date":    ["in", "not-in", "gt", "gte", "lt", "lte", "between"]
+  },
+  "fields": {
+    "participant_id": {
+      "displayName": "Participant ID",
+      "type": "keyword"
+    },
+    "age_at_diagnosis": {
+      "displayName": "Age at Diagnosis",
+      "type": "long",
+      "unit": "year"
+    },
+    "diagnosis_date": {
+      "displayName": "Diagnosis Date",
+      "type": "date"
+    }
+  }
+}
+```
+
+**`operators`** groups valid SQON operators by field type. To find which operators apply to a field, look up `operators[field.type]`. Only the types actually present in the catalogue's fields appear here.
+
+**`fields`** lists each field with its `displayName`, `type`, and optional `unit`. The `description` key is omitted when not configured.
+
+In single-catalogue mode, `/introspection/fields` is an alias for this endpoint.
+
+---
+
+### `GET /introspection/sqon`
+
+Returns the SQON JSON Schema and operator metadata shared across all catalogues — combination operators (`and`, `or`, `not`), field operators with value types and applicability, and accepted aliases. Use this to validate or describe SQON structure independently of any catalogue's field set.

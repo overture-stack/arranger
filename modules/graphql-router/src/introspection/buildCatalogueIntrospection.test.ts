@@ -92,7 +92,28 @@ suite('buildCatalogueIntrospectionBody', () => {
 		assert.equal(result.meta.authFiltered, false);
 	});
 
-	test('builds fields with correct displayName, type, unit, and validOperators', () => {
+	test('includes description when provided', () => {
+		const result = buildCatalogueIntrospectionBody({
+			catalogId: 'models',
+			description: 'Clinical trial participant models.',
+			documentType: 'model',
+			resolvedFields: [],
+		});
+
+		assert.equal(result.description, 'Clinical trial participant models.');
+	});
+
+	test('omits description key when not provided', () => {
+		const result = buildCatalogueIntrospectionBody({
+			catalogId: 'models',
+			documentType: 'model',
+			resolvedFields: [],
+		});
+
+		assert.ok(!('description' in result));
+	});
+
+	test('builds fields with correct displayName, type, and unit', () => {
 		const result = buildCatalogueIntrospectionBody({
 			catalogId: 'models',
 			documentType: 'model',
@@ -103,39 +124,44 @@ suite('buildCatalogueIntrospectionBody', () => {
 			displayName: 'Analysis State',
 			type: 'keyword',
 			unit: null,
-			validOperators: ['in', 'not-in', 'some-not-in', 'all', 'filter'],
 		});
 
 		assert.deepEqual(result.fields['donor.age'], {
 			displayName: 'Donor Age',
 			type: 'long',
 			unit: 'year',
-			validOperators: ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between'],
 		});
 	});
 
-	test('assigns range operators to date fields', () => {
+	test('builds operators keyed by field type', () => {
 		const result = buildCatalogueIntrospectionBody({
 			catalogId: 'models',
 			documentType: 'model',
 			resolvedFields: RESOLVED_FIELDS,
 		});
 
-		assert.deepEqual(result.fields['collection.date']?.validOperators, [
-			'in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between',
-		]);
+		assert.deepEqual(result.operators['keyword'], ['in', 'not-in', 'some-not-in', 'all', 'filter']);
+		assert.deepEqual(result.operators['long'], ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between']);
 	});
 
-	test('assigns enum-like operators to boolean fields', () => {
+	test('assigns range operators to date fields in operators map', () => {
 		const result = buildCatalogueIntrospectionBody({
 			catalogId: 'models',
 			documentType: 'model',
 			resolvedFields: RESOLVED_FIELDS,
 		});
 
-		assert.deepEqual(result.fields['is_published']?.validOperators, [
-			'in', 'not-in', 'some-not-in', 'all', 'filter',
-		]);
+		assert.deepEqual(result.operators['date'], ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between']);
+	});
+
+	test('assigns enum-like operators to boolean fields in operators map', () => {
+		const result = buildCatalogueIntrospectionBody({
+			catalogId: 'models',
+			documentType: 'model',
+			resolvedFields: RESOLVED_FIELDS,
+		});
+
+		assert.deepEqual(result.operators['boolean'], ['in', 'not-in', 'some-not-in', 'all', 'filter']);
 	});
 
 	test('includes fields that exist only in the resolved (live) mapping', () => {
@@ -182,6 +208,7 @@ suite('buildCatalogueIntrospectionBody', () => {
 		});
 
 		assert.deepEqual(result.fields, {});
+		assert.deepEqual(result.operators, {});
 	});
 
 	test('falls back to displayType when type is absent', () => {
@@ -206,8 +233,20 @@ suite('buildCatalogueIntrospectionBody', () => {
 		});
 
 		assert.equal(result.fields['display_only']?.type, 'long');
-		assert.deepEqual(result.fields['display_only']?.validOperators, [
-			'in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between',
-		]);
+		assert.deepEqual(result.operators['long'], ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between']);
+	});
+
+	test('deduplicates operator entries when multiple fields share a type', () => {
+		const result = buildCatalogueIntrospectionBody({
+			catalogId: 'models',
+			documentType: 'model',
+			resolvedFields: [
+				{ ...RESOLVED_FIELDS[0], fieldName: 'field_a' },
+				{ ...RESOLVED_FIELDS[0], fieldName: 'field_b' },
+			],
+		});
+
+		assert.equal(Object.keys(result.operators).length, 1);
+		assert.ok('keyword' in result.operators);
 	});
 });

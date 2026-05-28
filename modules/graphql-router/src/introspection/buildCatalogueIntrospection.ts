@@ -24,38 +24,46 @@ const buildFields = (resolvedFields: ExtendedConfigs[]) =>
 	Object.fromEntries(
 		resolvedFields
 			.filter((field) => !!field.fieldName)
-			.map((field) => {
-				const fieldType = getFieldType(field);
-				return [
-					field.fieldName,
-					{
-						displayName: field.displayName || field.fieldName,
-						type: fieldType,
-						...(field.unit !== undefined ? { unit: field.unit } : {}),
-						validOperators: getValidFieldOperators(fieldType),
-					},
-				];
-			}),
+			.map((field) => [
+				field.fieldName,
+				{
+					displayName: field.displayName || field.fieldName,
+					type: getFieldType(field),
+					...(field.unit !== undefined ? { unit: field.unit } : {}),
+				},
+			]),
 	);
 
+const buildFieldOperators = (resolvedFields: ExtendedConfigs[]): Record<string, string[]> => {
+	const types = [
+		...new Set(
+			resolvedFields.filter((field) => !!field.fieldName).map((field) => getFieldType(field)),
+		),
+	];
+	return Object.fromEntries(types.map((type) => [type, getValidFieldOperators(type)]));
+};
+
 /**
- * Builds the catalogue field introspection response body from a live-resolved
- * field list. Response shape is intentionally identical to what the old
- * `buildCatalogDetails` in search-server produced — the `field-operators` branch
- * will restructure this shape when it rebases on top of this change.
+ * Builds the catalogue field introspection response body from a live-resolved field list.
+ * `operators` is keyed by field type — clients can look up valid operators for a given type
+ * without inspecting each field individually. `description` is included only when provided.
  */
 export const buildCatalogueIntrospectionBody = ({
 	catalogId,
+	description,
 	documentType,
 	resolvedFields,
 }: {
 	catalogId: string;
+	description?: string;
 	documentType: string;
 	resolvedFields: ExtendedConfigs[];
 }) => ({
 	catalogId,
+	...(description ? { description } : {}),
 	documentType,
 	fields: buildFields(resolvedFields),
+	operators: buildFieldOperators(resolvedFields),
 	generatedAt: new Date().toISOString(),
 	meta: { authFiltered: false as const },
 });
