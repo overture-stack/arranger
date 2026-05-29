@@ -471,25 +471,17 @@ The goal is a phased improvement: first get Turbo doing change detection in CI (
 
 Fix correctness issues in the repo that block Turbo from working reliably.
 
-### 1.1 Fix `turbo.json` over-invalidation [done]
+### 1.1 Add `test` script to `charts`
 
-`docker/**` and `docker-compose.yml` were in `globalDependencies`, which busted the build cache for every package on any Dockerfile edit. Removed.
+`modules/charts` has `vitest` in devDependencies but no `"test"` script. Decided to skip — the goal for `charts` is build and publish integration, not test coverage at this stage. Turbo will silently skip packages with no matching script, which is acceptable here.
 
-### 1.2 Fix phantom dependency in `components` [done]
+### 1.2 Add `lint` and `typecheck` scripts to all publishable modules
 
-`components` imported `@overture-stack/arranger-types` without declaring it. Added `"@overture-stack/arranger-types": "file:../types"` to `modules/components/package.json` dependencies.
+Would enable Turbo to cache lint and typecheck results per-package. Not needed for Phase 2 (lint/typecheck are not being added to CI yet — see Phase 4.3).
 
-### 1.3 Add `test` script to `charts` [done]
+### 1.3 Add `turbo:lint` and `turbo:typecheck` root scripts
 
-`modules/charts` had `vitest` in devDependencies but no `"test"` script. Turbo was silently skipping it.
-
-### 1.4 Add `lint` and `typecheck` scripts to all publishable modules [done]
-
-Enables Turbo to cache lint and typecheck results per-package. Added to `sqon`, `types`, `graphql-router`, `components`. (`charts` already had `lint`; `typecheck` added to all 5.)
-
-### 1.5 Add `turbo:lint` and `turbo:typecheck` root scripts [done]
-
-Enables running lint/typecheck across all affected packages from the root.
+Depends on 1.2 and on turbo.json gaining `lint`/`typecheck` task definitions.
 
 ---
 

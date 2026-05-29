@@ -6,6 +6,10 @@
 	// Optional catalog identifier. Defaults to folder name if omitted.
 	"catalogId": "file-catalog-1",
 
+	// Optional human-readable description of this catalogue. Included in the /introspection response
+	// and surfaced to MCP clients and other consumers of the introspection API.
+	"description": "Clinical files and associated metadata for the study.",
+
 	// GraphQL root query property, labels the type of records found by Arranger
 *	"documentType": "file",
 

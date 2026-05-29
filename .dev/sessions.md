@@ -6,6 +6,46 @@ Newest first.
 
 ---
 
+## 2026-05-29
+
+**Done:**
+
+- Added `description` field to `configTemplates/configs.json.schema` — missed when PR #1070 ("add catalogue descriptions") shipped; the annotated schema is the primary human-readable reference for config operators.
+- Fixed four factual errors in `/docs`: two stale GitHub links (`modules/server/configTemplates/` → `apps/search-server/configTemplates/`) in `02-arranger-components.md`; wrong key name `"index"` → `"esIndex"` in the base.json example; wrong key name `"active"` → `"isActive"` in the facets.json example.
+- Updated repository structure tree in `docs/overview.md`: removed non-existent `modules/server/`, added `apps/` directory with `mcp-server` and `search-server`, expanded `modules/` to show all current packages, added `integration-tests/`, updated descriptions throughout.
+- Added tech-debt entry for `setup.md` referencing `.env.arrangerDev` which no longer exists — left unfixed as the correct replacement process is unclear.
+- Added three tech-debt entries under `## apps/mcp-server` in `tech-debt.md`: `InMemoryEventStore` not suitable for production (persistent store needed before production deployment); MCP session map does not evict abandoned transports (timestamp-based sweep approach noted); introspection types should be Zod-first so MCP output schemas can import directly from `search-server` rather than duplicating locally
+- Updated `sessions.md` protocol in `~/.claude/CLAUDE.md`, `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, and memory: `sessions.md` records only changes to code or working documents, not conversational activity
+
+**Decisions:**
+
+- `fieldShape` outputSchema without `.parse()` is correct MCP usage — `outputSchema` is declarative for MCP clients, not runtime-enforced by the SDK
+- Session eviction approach for `apps/mcp-server/src/http/app.ts`: track `lastSeenAt` per transport entry, sweep via `setInterval`, close and evict sessions idle beyond a configurable TTL (e.g. 30 min)
+- `integration-tests/mcp-server` excluded from CI pipeline for now — needs full stack (ES + Arranger server + MCP server); design deferred
+
+**Open threads:**
+
+- `integration-tests/mcp-server` pipeline design: CI setup needs full stack — how to start and wait for Arranger + MCP server alongside ES
+- Infrastructure deploy config: `arranger-iobio` deployment references the old `arranger-server` image name — needs updating in the infra repo
+
+---
+
+## 2026-05-28
+
+**Done:**
+
+- Completed items removed from roadmap (now in sessions only); roadmap stays forward-looking
+
+**Decisions:**
+
+- Charts CI goal: build and publish integration only — no test script needed; Turbo silently skips packages with no matching script, which is fine here
+- lint/typecheck scripts across modules: deferred — not needed until Phase 4 CI gate work
+- `next` Docker/NPM tagging: deferred to a later pass after core Turbo pipeline is working
+- Charts to fold into the standard `release` publish loop; `TEMP. Publish Charts to NPM` stage to be removed
+- Workflow: completed roadmap items are removed (not marked done) — sessions.md is the historical record; sessions entries should be self-contained descriptions, not references to numbered roadmap items
+
+---
+
 ## 2026-05-27
 
 **Done:**
@@ -17,12 +57,14 @@ Newest first.
 - Updated unit tests to match new shape; added coverage for `description` present/absent and `operators` deduplication
 
 **Decisions:**
+
 - `operators` (not `typeOperators`) — cleaner, consistent with existing "operators" vocabulary in SQON introspection
 - `buildFieldOperators` (not `buildTypeOperators`) — "field operators" is the established naming family in `modules/sqon` (`SqonFieldOp`, `SqonFieldOperatorDetail`, `getSqonFieldOperatorDetails`)
 - `description` on per-catalogue response too (not just root listing) — complete data at the endpoint; LLM context optimization is the MCP layer's responsibility
 - `getValidOperators` → `modules/sqon` consolidation is out of scope: requires redesigning `applicableTo` data in `getSqonFieldOperatorDetails` (range types incorrectly include `filter`, `some-not-in`, `all` at present); separate roadmap item
 
 **Open threads:**
+
 - `getValidFieldOperators` → `modules/sqon` consolidation: follow-up when sqon consolidation roadmap item is picked up
 
 ---

@@ -52,22 +52,33 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
 
     ```
     arranger/
+    ├── apps/
+    │   ├── mcp-server/
+    │   └── search-server/
     ├── docker/
-    │   ├── elasticsearch/
-    │   ├── server/
-    │   ├── test/
-    │   └── ui/
+    ├── integration-tests/
+    │   └── server/
     ├── modules/
     │   ├── admin-ui/
+    │   ├── charts/
     │   ├── components/
-    │   └── server/
+    │   ├── graphql-router/
+    │   ├── sqon/
+    │   └── types/
     └── scripts/
     ```
 
-- **`docker/`**: Contains miscellaneous configuration files used for building Docker images of Arranger Server, and to support running a local developer environment.
+- **`apps/`**: Runnable server applications:
+    - **`search-server/`**: The Arranger search server — a GraphQL service that interfaces with Elasticsearch/OpenSearch and hosts the configuration API.
+    - **`mcp-server/`**: An MCP (Model Context Protocol) server that exposes Arranger introspection as tools and resources for AI agents.
+- **`docker/`**: Dockerfiles and supporting configuration for building and running Arranger services locally and in CI.
 - **`docs/`**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.
-- **`modules/`**: Core Arranger modules:
-    - **`admin-ui/`**: (Inactive) Administration interface for generating and managing Arranger configuration files.
+- **`integration-tests/`**: Full-stack integration test suites that run against a live Elasticsearch instance.
+- **`modules/`**: Shared library packages:
+    - **`admin-ui/`**: (Inactive) Administration interface — not under active development; a replacement is planned.
+    - **`charts/`**: Chart visualizations library for Arranger-powered data portals.
     - **`components/`**: React components to streamline integration of search portals with an Arranger server.
-    - **`server/`**: the "Arranger" server itself, a GraphQL service that facilitates usage of Lucene-based search engines (e.g. Elasticsearch).
+    - **`graphql-router/`**: Core GraphQL routing logic — schema generation, query handling, and introspection endpoints.
+    - **`sqon/`**: SQON parsing and validation utilities.
+    - **`types/`**: Shared TypeScript types and configuration constants used across modules and apps.
 - **`scripts/`**: Utility scripts for development, deployment, and system management.

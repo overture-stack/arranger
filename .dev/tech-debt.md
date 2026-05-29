@@ -5,6 +5,34 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 
 ---
 
+## apps/mcp-server
+
+### `InMemoryEventStore` is not suitable for production
+**File:** `apps/mcp-server/src/utils/inMemoryEventStore.ts`
+**Severity:** medium (data reliability — state is lost on restart; no session resumability for clients)
+**Kind:** placeholder / incomplete implementation
+**Issue:** The `InMemoryEventStore` is copied verbatim from the MCP TypeScript SDK examples and is explicitly documented as intended for examples and testing, not production. It stores SSE event history in a `Map` in process memory, so all session state is lost on any restart or crash, and there is no mechanism for clients to replay missed events across server restarts.
+**Fix:** Replace with a persistent store (e.g. Redis, a database-backed event log) before any production deployment. The `EventStore` interface from `@modelcontextprotocol/sdk/server/streamableHttp` is already the right abstraction — only the implementation needs to change.
+**Standalone:** yes — swap the implementation behind the existing `EventStore` interface; no changes to `app.ts` or the MCP server wiring
+
+### MCP session map does not evict abandoned sessions
+**File:** `apps/mcp-server/src/http/app.ts`
+**Severity:** low (memory leak under adversarial or high-traffic conditions)
+**Kind:** resource management
+**Issue:** The `transports` map in `createHttpApp` is cleaned up when a client sends `DELETE` (via `onclose`) or on graceful shutdown. If a client disconnects without sending `DELETE` (network drop, crash), the transport entry persists for the lifetime of the process. For a low-traffic introspection server this is unlikely to matter in practice, but under adversarial conditions or bursty usage the map grows without bound.
+**Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
+**Standalone:** yes — self-contained change to `app.ts`; no protocol or API surface changes
+
+### Introspection types should be Zod-first to allow reuse as MCP output schemas
+**File:** `apps/search-server/src/introspection/types.ts`; `apps/mcp-server/src/mcp/tools.ts` — `fieldShape`
+**Severity:** low (duplication / maintainability)
+**Kind:** design improvement
+**Issue:** `apps/mcp-server/src/mcp/tools.ts` declares a local `fieldShape` Zod schema that mirrors the `CatalogFieldIntrospection` type in `search-server`. The duplication exists because MCP SDK `outputSchema` parameters require Zod schemas, not TypeScript types, and the search-server types are currently defined as plain interfaces. If the introspection type evolves, the local schema must be updated manually.
+**Fix:** Redefine introspection types in `search-server` as Zod schemas and infer the TypeScript types from them (e.g. `export const CatalogFieldIntrospectionSchema = z.object({...}); export type CatalogFieldIntrospection = z.infer<typeof CatalogFieldIntrospectionSchema>`). The MCP server can then import the schema directly, eliminating the local copy.
+**Standalone:** yes — additive change to `search-server/src/introspection/types.ts`; MCP server then imports the schema; no behaviour changes
+
+---
+
 ## monorepo — cross-cutting
 
 ### Inconsistent unit test file placement
@@ -22,6 +50,14 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ---
 
 ## docs [URGENT — reminder every session]
+
+### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
+**File:** `docs/setup.md` — step 2 of "Running the Arranger-Server"
+**Severity:** high (setup guide is broken for new developers)
+**Kind:** stale documentation
+**Issue:** Step 2 instructs developers to `mv .env.arrangerDev .env`. That file does not exist in the repo. `apps/search-server/.env.schema` exists (the schema definition), and `.env.test` exists at the root, but there is no pre-filled `.env.arrangerDev` template to rename.
+**Fix:** Either add a `.env.arrangerDev` template at the repo root, or rewrite step 2 to describe the actual setup process (e.g. copy from `.env.schema` and fill in values, or document required env vars inline). The `.env` content shown in the info callout in `setup.md` is a reasonable starting point for the template.
+**Standalone:** yes — documentation or file addition only
 
 ### `/docs` out of date with recent functionality changes
 **File:** `/docs` directory
@@ -150,6 +186,14 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Issue:** The unit tests for `buildCatalogueIntrospectionBody` verify the response shape and operator logic in isolation. The integration tests verify the endpoint responds with `200 OK` and that the response has the right shape. But no test verifies that the field list in `/introspection/fields` actually reflects the live ES index mapping — i.e. that a field present in the ES mapping but absent from the config files appears in the response. Without this, the correctness fix (subroute aliasing to each `arrangerRouter`'s live-resolved fields) can silently regress.
 **Fix:** In `spinupActive.js`, after fetching `/introspection/fields`, assert that `Object.keys(data.fields).length` matches the field count from the live ES index (e.g. via a separate `GET /<index>/_mapping` call, or by asserting against a known field that is in the ES mapping but deliberately absent from the test fixture's config files). The simplest approach: add a fixture field directly to the ES test index that is not present in any config file, then assert it appears in the introspection response.
 **Standalone:** yes — additive test, no changes to application code
+
+### `arranger-iobio` deploy references old `arranger-server` image name
+**File:** infra repo — deploy config for `arranger-iobio` on `overture-dev`
+**Severity:** medium (deploy will reference a stale image name after the Docker rename lands)
+**Kind:** naming regression
+**Issue:** The `Deploy to overture-dev` stage deploys `arranger-iobio` via `stepRunDeployJob.updateAppVersionOverture`. That job's infrastructure config (in the infra repo) references the Docker image by name. Renaming `ghcr.io/overture-stack/arranger-server` → `ghcr.io/overture-stack/arranger-search-server` in the pipeline will break the deploy until the infra config is updated.
+**Fix:** Update the image reference in the `arranger-iobio` deploy config in the infra repo to `ghcr.io/overture-stack/arranger-search-server`. Coordinate with the pipeline change landing.
+**Standalone:** yes — one-line config change in the infra repo; no code changes
 
 ### `release-charts` temporary publish branch
 **File:** `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy` — "TEMP. Publish Charts to NPM" stage
