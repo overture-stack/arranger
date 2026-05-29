@@ -9,7 +9,7 @@ GraphQL/Elasticsearch search API + React component library. npm workspaces monor
 - `.dev/sessions.md` — recent session log; read the last entry or two before starting work
 
 ## Keeping `.dev/` current
-Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. These are the shared memory for this project. After any meaningful unit of work concludes — a decision made, changes done, a review completed — update both documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal.
+Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. These are the shared memory for this project. After any meaningful unit of work that changed the codebase or working documents — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update both documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal. Do not log conversational activity (reviews that produced no local changes, discussions, waiting states).
 
 ## Security triggers
 Flag these when writing or reviewing code:

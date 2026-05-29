@@ -33,7 +33,7 @@ Do this at the start of every session before touching any code:
 
 When a roadmap item's status changes, a tech-debt entry is resolved, or a meaningful design decision is made, update `.dev/roadmap.md` or `.dev/tech-debt.md` in the same session. These documents are the shared memory for this project across sessions and agents — they should reflect current reality, not just initial planning.
 
-**After any meaningful unit of work concludes** — a decision made, a set of changes done, a review completed, a feature implemented — update the relevant `.dev/` documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal: work rarely ends cleanly, and the update will be missed if it depends on one.
+**After any meaningful unit of work that changed the codebase or working documents** — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update the relevant `.dev/` documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal: work rarely ends cleanly, and the update will be missed if it depends on one. Do not log conversational activity (PR reviews that produced no local changes, discussions, waiting states) — those are not `sessions.md` material.
 
 **Remind the developer: if any work this session changed user-facing behaviour, it adds to the `/docs` debt. Mention what needs documenting.**
 
