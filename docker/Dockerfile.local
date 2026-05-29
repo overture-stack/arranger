@@ -24,7 +24,7 @@ RUN npm ci --include-workspace-root=false && \
 #######################################################
 # Arranger Server
 #######################################################
-FROM node:24-alpine AS server
+FROM node:24-alpine AS search-server
 
 ARG APP_FOLDER
 ARG APP_USER
@@ -77,3 +77,7 @@ EXPOSE 5050
 
 CMD ["/bin/sh",  "-c", "scripts/ping-elasticsearch.sh && node_modules/.bin/tsx ./apps/search-server/index.ts"]
 
+#######################################################
+# Arranger MCP Server
+#######################################################
+FROM node:24-alpine AS mcp-server

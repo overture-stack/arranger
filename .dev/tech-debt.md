@@ -187,6 +187,14 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** In `spinupActive.js`, after fetching `/introspection/fields`, assert that `Object.keys(data.fields).length` matches the field count from the live ES index (e.g. via a separate `GET /<index>/_mapping` call, or by asserting against a known field that is in the ES mapping but deliberately absent from the test fixture's config files). The simplest approach: add a fixture field directly to the ES test index that is not present in any config file, then assert it appears in the introspection response.
 **Standalone:** yes — additive test, no changes to application code
 
+### Shallow git clone breaks `GIT_PREVIOUS_COMMIT`-based change detection
+**File:** `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`
+**Severity:** medium (silently disables change detection — everything would fall back to HEAD^1 or fail)
+**Kind:** ops risk
+**Issue:** The pipeline uses `GIT_PREVIOUS_COMMIT` (set by the Jenkins Git plugin) as the base for all git diff comparisons. If the Jenkins checkout is configured with `--depth 1` (shallow clone), `GIT_PREVIOUS_COMMIT` will not be reachable in the local git history and `git diff ${turboBase} HEAD` will fail. The pipeline comment documents this requirement, but there is no runtime guard — a misconfigured checkout silently degrades or errors.
+**Fix:** Either add a guard (`git cat-file -e ${turboBase} || turboBase = 'HEAD^1'`) to detect and recover from an unreachable commit, or document the shallow-clone restriction in DEVELOPMENT.md alongside the Jenkins setup notes.
+**Standalone:** yes — purely a pipeline change; no application code involved
+
 ### `arranger-iobio` deploy references old `arranger-server` image name
 **File:** infra repo — deploy config for `arranger-iobio` on `overture-dev`
 **Severity:** medium (deploy will reference a stale image name after the Docker rename lands)

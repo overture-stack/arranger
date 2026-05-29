@@ -16,12 +16,24 @@ Newest first.
 - Added tech-debt entry for `setup.md` referencing `.env.arrangerDev` which no longer exists — left unfixed as the correct replacement process is unclear.
 - Added three tech-debt entries under `## apps/mcp-server` in `tech-debt.md`: `InMemoryEventStore` not suitable for production (persistent store needed before production deployment); MCP session map does not evict abandoned transports (timestamp-based sweep approach noted); introspection types should be Zod-first so MCP output schemas can import directly from `search-server` rather than duplicating locally
 - Updated `sessions.md` protocol in `~/.claude/CLAUDE.md`, `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, and memory: `sessions.md` records only changes to code or working documents, not conversational activity
+- Renamed Docker stage `server` → `search-server` in both Dockerfiles — removes ambiguity now that two server images exist
+- Rewrote `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy` (Phase 2 CI/CD work):
+    - `turboBase` computed once from `GIT_PREVIOUS_COMMIT` (the commit Jenkins last built on this branch) with `HEAD^1` fallback for first builds — correctly covers multi-commit pushes to any branch, including direct pushes to main, without needing branch-specific logic; used for all change detection throughout the pipeline
+    - Turbo build with `--filter=[turboBase]` replaces `npm run modules:build`; only affected packages and their dependents build
+    - Turbo test with `--filter=[turboBase]` replaces five individual `npm run test -w` calls; `integration-tests/server` and `integration-tests/mcp-server` excluded from Turbo and handled separately
+    - `integration-tests/server` runs conditionally — only when files in `sqon`, `types`, `graphql-router`, `apps/search-server`, or `integration-tests/server` changed since `turboBase`
+    - Docker builds conditional per image: `search-server` image rebuilds when its server chain or Dockerfile changes; `mcp-server` image rebuilds when `apps/mcp-server`, shared modules, or Dockerfile changes; `POST_BUILD: Publish` parameter overrides and builds both
+    - App versions (`searchServerVersion`, `mcpServerVersion`) read directly from `apps/*/package.json` in the Build stage — fixes pre-existing null bug where `versionsMap['server']` was used but `versionsMap` only covered `modules/*`
+    - `TURBO_TELEMETRY_DISABLED=1` added to environment block
+    - TEMP `release-charts` stage removed; `modules/charts` now covered by the standard release publish loop
+    - Dead commented-out Slack notification code removed
 
 **Decisions:**
 
 - `fieldShape` outputSchema without `.parse()` is correct MCP usage — `outputSchema` is declarative for MCP clients, not runtime-enforced by the SDK
 - Session eviction approach for `apps/mcp-server/src/http/app.ts`: track `lastSeenAt` per transport entry, sweep via `setInterval`, close and evict sessions idle beyond a configurable TTL (e.g. 30 min)
 - `integration-tests/mcp-server` excluded from CI pipeline for now — needs full stack (ES + Arranger server + MCP server); design deferred
+- `Deploy to overture-dev` stage left unchanged — infrastructure config for `arranger-iobio` must be updated separately to use the renamed `arranger-search-server` image
 
 **Open threads:**
 
@@ -34,6 +46,9 @@ Newest first.
 
 **Done:**
 
+- Removed `docker/**` and `docker-compose.yml` from `turbo.json` globalDependencies — those files don't affect TypeScript source so they were causing unnecessary cache busting; `tsconfig.eslint.json` remains
+- Added `@overture-stack/arranger-types` as an explicit dependency in `modules/components/package.json` (`file:../types`) — without this, Turbo's graph treated `components` as independent of `types`, meaning a breaking change to `types` could pass CI without `components` being rebuilt or tested
+- Corrected `modules/graphql-router/package.json` to use the shallower `file:../types` (was `file:../../modules/types` — unnecessarily traversing up to root and back down); `modules/types` already used the shallower `../sqon` convention; `apps/` and `integration-tests/` paths are already as shallow as their locations allow
 - Completed items removed from roadmap (now in sessions only); roadmap stays forward-looking
 
 **Decisions:**

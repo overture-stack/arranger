@@ -29,6 +29,7 @@
 		"watch": "npm run clear:dist && npm run build -- --watch"
 	},
 	"dependencies": {
+		"@overture-stack/arranger-types": "file:../types",
 		"@emotion/react": "^11.0.0",
 		"@emotion/styled": "^11.0.0",
 		"@overture-stack/sqon-builder": "^1.1.0",
