@@ -1,0 +1,9 @@
+{
+	"mappings": {
+		"properties": {
+			"analysis_id": { "type": "keyword" },
+			"age_at_diagnosis": { "type": "long" },
+			"vital_status": { "type": "keyword" }
+		}
+	}
+}

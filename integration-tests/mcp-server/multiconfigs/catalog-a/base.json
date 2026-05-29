@@ -1,0 +1,38 @@
+{
+	"catalogId": "catalog-a",
+	"documentType": "modelA",
+	"esIndex": "testing-mcp-models_a",
+	"extended": [
+		{
+			"displayName": "Analysis ID",
+			"displayType": "keyword",
+			"fieldName": "analysis_id",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": true,
+			"quickSearchEnabled": false,
+			"type": "keyword"
+		},
+		{
+			"displayName": "Age at Diagnosis",
+			"displayType": "number",
+			"fieldName": "age_at_diagnosis",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "long",
+			"unit": "years"
+		},
+		{
+			"displayName": "Vital Status",
+			"displayType": "keyword",
+			"fieldName": "vital_status",
+			"isActive": true,
+			"isArray": false,
+			"primaryKey": false,
+			"quickSearchEnabled": false,
+			"type": "keyword"
+		}
+	]
+}

@@ -15,15 +15,29 @@ Newest first.
 - Added `description` as an optional catalogue config property (`configOptionalProperties.DESCRIPTION` in `modules/types`) — surfaces in both the root `/introspection` response and the per-catalogue `/introspection/:catalogId` response via conditional spread (key absent when not configured, not `undefined`)
 - Restructured `CatalogIntrospectionResponse`: removed `validOperators` from individual fields; added top-level `operators: Record<string, string[]>` keyed by field type; `buildFieldOperators()` in `buildCatalogueIntrospection.ts`
 - Updated unit tests to match new shape; added coverage for `description` present/absent and `operators` deduplication
+- Added `mcp-server` Docker target to both `docker/Dockerfile.local` and `docker/Dockerfile.jenkins`, mirroring the existing `server` target structure
+    - Both targets `COPY --from=scaffolding` the shared `node_modules` and `apps/mcp-server` source; no internal modules are copied because the MCP server is standalone (talks to Arranger over HTTP, not ES directly)
+    - CMD runs `node_modules/.bin/tsx ./apps/mcp-server/src/index.ts` (no shell-level pre-check; `validateArrangerConnection` runs in-app at startup)
+    - EXPOSE 3100 matches the `MCP_PORT` default
+- Updated `docker/Dockerfile.jenkins` scaffolding stage to include `--workspace apps/mcp-server` in the `npm ci --omit=dev` install, so the jenkins production image installs the MCP server's runtime deps
+- Moved `tsx` from `devDependencies` to `dependencies` in `apps/mcp-server/package.json` (load-bearing for the jenkins build, which runs `npm ci --omit=dev`; mirrors what `apps/search-server` already does)
+- Updated both `.dockerignore` files (`Dockerfile.local.dockerignore`, `Dockerfile.jenkins.dockerignore`) to add `!apps/mcp-server`, allowing the folder through the build context
 
 **Decisions:**
+
 - `operators` (not `typeOperators`) — cleaner, consistent with existing "operators" vocabulary in SQON introspection
 - `buildFieldOperators` (not `buildTypeOperators`) — "field operators" is the established naming family in `modules/sqon` (`SqonFieldOp`, `SqonFieldOperatorDetail`, `getSqonFieldOperatorDetails`)
 - `description` on per-catalogue response too (not just root listing) — complete data at the endpoint; LLM context optimization is the MCP layer's responsibility
 - `getValidOperators` → `modules/sqon` consolidation is out of scope: requires redesigning `applicableTo` data in `getSqonFieldOperatorDetails` (range types incorrectly include `filter`, `some-not-in`, `all` at present); separate roadmap item
+- MCP server target does NOT use a shell wrapper or pre-flight script. The app's own `validateArrangerConnection` handles the Arranger readiness check at startup — duplicating that at the shell level would be redundant.
+- Kept tsx-from-source at runtime (not a tsc pre-build) to match `apps/search-server`'s pattern. Revisiting that for both apps together is a future concern.
+- Did not modify `docker-compose.yml` — that's a separate "is the MCP server part of the dev stack?" decision.
 
 **Open threads:**
+
 - `getValidFieldOperators` → `modules/sqon` consolidation: follow-up when sqon consolidation roadmap item is picked up
+- `package-lock.json` will need an `npm install` to reflect tsx moving sections in `apps/mcp-server/package.json`.
+- `docker-compose.yml` does not include the MCP server. If the local Compose dev stack should boot MCP alongside server/ES/UI, that needs a follow-up (port 3100, depends_on server, ARRANGER_BASE_URL pointed at the `server` service).
 
 ---
 
@@ -37,6 +51,12 @@ Newest first.
 - Added roadmap item: consolidate field-type-to-operator rules into `modules/sqon`
 - Fleshed out `sqon-builder` absorption into `modules/sqon` as a detailed roadmap item: what to keep (builder API, `reduceSQON`, filter manipulation, `from()`), what to fix (operator coverage gap — only `in`/`gt`/`lt` today), what to leave behind (the `& SQON` anti-pattern), and migration path
 - Added anchor links to all cross-references between `tech-debt.md` and `roadmap.md`
+- Added `integration-tests/mcp-server` workspace with end-to-end tests for `apps/mcp-server`
+    - Spins up Arranger search-server in-process (multicatalog mode) with two test catalogs, then starts the MCP server pointed at it, then drives it over Streamable HTTP via the official MCP SDK Client
+    - Connection assertion is implicit: `validateArrangerConnection` runs before `app.listen`, so the suite reaching the test phase proves the MCP→Arranger contract works
+    - Test coverage: spinup/active (ping, capabilities, resource/tool listings), MCP resources (`arranger://introspection/server`, `arranger://introspection/sqon`, `arranger://introspection/catalog/{id}` via template), MCP tools (`list-catalogs`, `get-sqon-schema`, `get-catalog-fields` happy + 404 paths)
+    - 13 tests in 4 suites; runs against the same local ES used by `integration-tests/server`
+- Added `integration-tests/mcp-server` to the root `package.json` workspaces list
 
 **Decisions:**
 
@@ -45,11 +65,18 @@ Newest first.
 - Boolean values should be supported in SQON (not just string `"true"`); fix is additive — add `zod.boolean()` to `SqonScalarValueSchema`; confirmed this is an oversight, not deliberate
 - The `/introspection/fields` endpoint is the canonical LLM context source — the evaluation document should reference it specifically rather than "GraphQL introspection"
 - JSDoc/TSDoc should be added to functions and types as code is written or touched — not deferred to a documentation pass; inline docs are the safety net when `/docs` lags
+- Backend: spin up search-server in-process (mirrors `integration-tests/server`), not external nor mocked — keeps the harness self-contained while exercising the real Arranger contract.
+- Coverage: multicatalog only — exercises the catalog resource template and `list-catalogs` with >1 catalog. Single-catalog is a subset and not worth doubling runtime for.
+- Catalog field introspection (`/introspection/{catalogId}`) reads from `catalogConfigs.extended`, which is empty in the existing `integration-tests/server` multiconfigs. New fixtures under `integration-tests/mcp-server/multiconfigs/` include populated `extended` arrays so the tests can assert real field metadata.
+- Test files live under `test/` and the entry point is `test/index.test.ts`. Node 24's test runner auto-discovers `.ts` files in `test/`; node 20 does not, so this suite requires node 24+ (consistent with the project's `engines.node >= 20` but practically aligned with the dev shell setup).
+- Lazy MCP client access via `getClient: () => Client` — `node:test` suite factories run at registration time, before `before()` hooks have populated state. Each test resolves the client when it actually runs.
 
 **Open threads:**
 
 - Boolean support in SQON schema: fix is clear but not yet implemented (two schema files, one in `sqon-builder`, one in `modules/sqon`)
 - `reduceSQON` extension for full operator set needs deliberate design (e.g. what does reducing two `between` ranges under `and` mean?)
+- Single-catalog coverage is not exercised; can be added if MCP server adds single-catalog-specific behavior (currently it doesn't differentiate).
+- Negative test for `validateArrangerConnection` failure on startup is covered by unit tests (`apps/mcp-server/src/arranger/validation.test.ts`); not duplicated as an integration test because the production startup path calls `process.exit(1)`, which is awkward to exercise in-process.
 
 ---
 

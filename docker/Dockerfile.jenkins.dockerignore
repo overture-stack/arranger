@@ -3,6 +3,7 @@
 **/node_modules
 apps/**/*
 !apps/search-server
+!apps/mcp-server
 docker-compose.yml
 docker
 docs
