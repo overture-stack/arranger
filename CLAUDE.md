@@ -27,6 +27,7 @@ Do this at the start of every session before touching any code:
 - **Server-level vs per-catalog config.** Server settings (`serverPort`, CORS) live in `serverConfigProperties`. Catalog settings (`disablePlayground`, ES index, query limits) live in `configOptionalProperties` in `modules/types` and flow through `ConfigsObject`.
 - **Run tests from the monorepo root:** `npm run test -w <workspace>` — never `cd` into a module. Same as Jenkins.
 - **No commits.** The user handles all git work.
+- **No self-editing instructions.** Do not modify `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md` without explicit instruction — surface suggestions, do not self-edit.
 - **JS files in this repo are unmigrated, not broken.** Don't flag missing types in `.js` files. Weak types in `.ts` files are fair game to improve when scope-adjacent.
 
 Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter, filter clause, SQON) is defined in `docs/concepts.md`. Read it when writing code, docs, comments, or UI strings.

@@ -231,6 +231,42 @@ Two related but distinct problems:
 
 _Schema versioning decision gates the hits/edges/nodes redesign._
 
+### MCP integration readiness
+
+Three targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. These arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface.
+
+#### Schema cache invalidation signal (ETag / schema hash)
+
+_Priority: high._
+
+An MCP server wrapping Arranger will cache the introspected schema to avoid re-fetching on every query. Arranger's schema is generated from ES/OS index mappings, which can change when indices are updated or reindexed. Without a cache invalidation signal, an MCP server has no way to know when its cached schema is stale -- it will generate queries against a schema that no longer matches the live index, producing errors that are hard to diagnose.
+
+Arranger should expose a schema hash or ETag on introspection responses (a response header is sufficient -- no new endpoint needed) so MCP consumers can cheaply detect schema changes and re-fetch only when necessary. Extends naturally from the "API version exposure" work above, which already adds a version field to the introspection endpoint.
+
+_Small Arranger change, high operational value for any MCP implementation. Coordinate with whoever is building the MCP server._
+
+#### SQON documentation in schema descriptions
+
+_Priority: medium._
+
+Arranger's filter arguments accept SQON, but the generated schema types them as opaque input objects with no documentation of the expected structure. An LLM generating queries against the schema has no way to know what a valid SQON looks like from schema introspection alone -- every MCP implementation has to embed SQON-specific system prompts as a workaround.
+
+Adding a description to the filter argument input types explaining the SQON structure (content/combination operators, value types, nesting rules) would let the LLM infer the filter format directly from the schema. This reduces coupling between the MCP prompt layer and Arranger internals, and benefits GraphQL Playground users at the same time.
+
+_See `docs/concepts.md` for the canonical SQON definition to base descriptions on._
+
+#### Field descriptions in the generated schema
+
+_Priority: medium._
+
+The GraphQL schema Arranger generates from ES/OS index mappings currently carries no field descriptions -- only raw field names. An LLM building queries against this schema must select fields by name alone, with no semantic context. The Arize reference implementation strips all schema descriptions to save tokens precisely because they tend to be noisy; Arranger's schema instead has none at all.
+
+Arranger should surface field descriptions from ES mapping metadata (the `meta` object on a field mapping, which can carry arbitrary key-value pairs including a `description`) as GraphQL field descriptions. Where no metadata description exists, the field name is still the fallback. This gives LLM consumers (and Playground users) meaningful context at the point where it costs nothing to add it.
+
+_Requires a mapping-to-schema pass change. Operators who want richer descriptions can add `meta.description` to their index mappings without any Arranger code change._
+
+---
+
 ### GraphQL large integer type
 
 _Priority: low — only urgent if precision bugs are reported._
