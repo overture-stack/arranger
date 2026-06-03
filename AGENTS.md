@@ -2,7 +2,7 @@
 
 ## Project
 
-Overture Arranger: a GraphQL/Elasticsearch search API and UI component library.
+Overture Arranger: a data discovery API for Elasticsearch and OpenSearch.
 npm workspaces monorepo. Gradual JS → TS migration in progress.
 
 ## Starting a session
@@ -41,6 +41,8 @@ integration-tests/     — server (needs ES), import, admin
 - Per-catalog (ES index, feature flags, query limits): `configOptionalProperties` in `modules/types/src/configs/constants.ts`, typed in `ConfigsObject`
 
 **TypeScript migration:** `.js` files are not yet migrated — don't treat missing types in them as issues. Weak types in `.ts` files are worth improving when scope-adjacent.
+
+Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter, filter clause, SQON) is defined in `docs/concepts.md`. Read it when writing code, docs, comments, or UI strings.
 
 ## Running tests
 

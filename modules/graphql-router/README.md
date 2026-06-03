@@ -1,4 +1,5 @@
 # Arranger Server
+
 #### Develop
 
 Run:
@@ -17,7 +18,8 @@ npm run prepare
 
 ## Central server setup
 
-### Configue Node servers via standard Arranger config file
+### Define Node servers via standard Arranger configuration file
+
 ```json
 {
 	"network": [
@@ -38,12 +40,13 @@ npm run prepare
 ```
 
 ### Enable ENABLE_NETWORK_AGGREGATION in central node
+
 Set ENABLE_NETWORK_AGGREGATION to TRUE in env config
 
 ### Assumptions
+
 All nodes, including central, are running same Arranger version and have overlapping schemas.
 Schema fields with same name and GQL type will be merged.
-
 
 ### Config
 

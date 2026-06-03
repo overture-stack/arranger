@@ -1,6 +1,6 @@
 # Arranger
 
-Arranger is a versatile, data-agnostic GraphQL search API that leverages Elasticsearch, designed to simplify the process of creating powerful search interfaces for complex datasets. It's accompanied by its own React component library to generate interactive and highly configurable search UIs.
+Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch, designed to simplify building search interfaces for complex datasets. A React component library is included for building interactive search UIs.
 
 </br>
 

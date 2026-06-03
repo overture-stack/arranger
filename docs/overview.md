@@ -1,6 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Overview
 
-Arranger is a versatile, data-agnostic GraphQL search API that leverages Elasticsearch, designed to simplify the process of creating powerful search interfaces for complex datasets. It's accompanied by its own React component library to generate interactive and highly configurable search UIs.
+Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch, designed to simplify building search interfaces for complex datasets. A React component library is available for generating interactive search UIs.
 
     :::info Arranger uses Elasticsearch v7
 
@@ -15,12 +19,12 @@ Arranger is a versatile, data-agnostic GraphQL search API that leverages Elastic
     - Efficient data retrieval
     - Adaptable structure
     - SQON integration for human-readable and machine-processable search queries
-- **Data Agnostic:** Works with any properly structured Elasticsearch index.
-- **Integration-Ready:** Designed to work with any React-based front-end UIs.
+- **Model-Agnostic:** Works with any properly structured Elasticsearch or OpenSearch index.
+- **Integration-Ready:** The search API integrates with any web front end; a React component library is included for building search UIs.
 
 ## System Architecture
 
-Arranger integrates with your underlying Elasticsearch cluster to automatically generate a powerful GraphQL search API based on your configured index mapping. It consists of two main modules:
+Arranger integrates with your Elasticsearch or OpenSearch cluster to generate a search API from your configured index mapping. It consists of two main modules:
 
 - **Arranger Server:** The back-end search API service that:
 
@@ -82,3 +86,7 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
     - **`sqon/`**: SQON parsing and validation utilities.
     - **`types/`**: Shared TypeScript types and configuration constants used across modules and apps.
 - **`scripts/`**: Utility scripts for development, deployment, and system management.
+
+## Next steps
+
+Read [Concepts](./concepts.md) for a walkthrough of Arranger's domain model and the vocabulary used throughout this documentation.

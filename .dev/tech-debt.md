@@ -51,6 +51,25 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 
 ## docs [URGENT — reminder every session]
 
+### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
+**Files:** `README.md:13`; `docs/usage/02-arranger-components.md:29`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
+**Severity:** low (reader confusion, no functional impact)
+**Kind:** terminology drift
+**Issue:** Three clusters of inconsistency found during a terminology audit. Canonical definitions are now in `docs/concepts.md`.
+
+1. "folder" vs "directory": "directory" is canonical. "folder" appears in README.md:13, a mixed sentence in docs/usage/02-arranger-components.md:29 ("configs folder located within the app/modules/server/ directory"), configTemplates/configs.json.schema:6, and in code identifiers (buildCatalogsFromFolder, folderName) that surface in console output. Console messages in configs/index.ts mix "directories" (line 53) and "subdirectories" (lines 49, 82) for the same concept.
+
+2. "settings" vs "configuration": "configuration" is canonical for Arranger-level concepts. "Settings" appears in configs.json.schema:28 ("Settings and limits for dataset downloads") and roadmap.md:191-205 (Arranger-level prose). Leave ES mapping file "settings" keys and ES-referencing prose untouched.
+
+3. "Arranger Configs" page title: docs/usage/02-arranger-components.md uses "Arranger Configs" as its page title while every section heading and body reference uses "Configuration". Title should be "Configuring Arranger".
+
+4. Docs sidebar ordering: docs/concepts.md was added with sidebar_position: 2, and overview.md and setup.md were given sidebar_position: 1 and 3. If the docs site is published from overture.bio (no sidebar.js found in this repo), that site's sidebar config also needs docs/concepts.md added.
+
+**Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
+**Standalone:** yes — (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
+
+
+
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
 **File:** `docs/setup.md` — step 2 of "Running the Arranger-Server"
 **Severity:** high (setup guide is broken for new developers)
