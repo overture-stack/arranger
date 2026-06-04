@@ -26,17 +26,34 @@ export const startServer = async (): Promise<void> => {
 	await validateArrangerConnection(config, client);
 
 	const deps: McpServerDeps = { config, client };
-	const { app, shutdown } = createHttpApp(config, () => createMcpServer(deps));
+	const { app, closeAllSessions } = createHttpApp(config, () => createMcpServer(deps));
 
 	const { host, port, path } = config.mcp;
 	app.listen(port, () => {
 		logger.info(`MCP server running at http://${host}:${port}${path}`);
 	});
 
-	process.on('SIGINT', async () => {
-		logger.info('Shutting down server...');
-		await shutdown();
-		logger.info('Server shutdown complete.');
-		process.exit(0);
-	});
+	const gracefulShutdown = async (signal: string) => {
+		logger.info(`Received ${signal}, initiating graceful shutdown...`);
+
+		// Force shutdown fallback after 30 seconds
+		const hardShutdownTimeout = setTimeout(() => {
+			logger.error('Graceful shutdown timed out, forcing exit');
+			process.exit(1);
+		}, 30000);
+
+		hardShutdownTimeout.unref(); // Allow process to exit if this is the only thing left
+
+		try {
+			await closeAllSessions();
+			logger.info('Graceful shutdown complete, exiting now.');
+			process.exit(0);
+		} catch (error) {
+			logger.error({ error }, 'Error during graceful shutdown, forcing exit');
+			process.exit(1);
+		}
+	};
+
+	process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+	process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 };

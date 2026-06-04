@@ -28,7 +28,7 @@ export const startMcpServerForTest = async (config: ArrangerMcpConfig): Promise<
 
 	await validateArrangerConnection(config, introspectionClient);
 
-	const { app, shutdown: shutdownTransports } = createHttpApp(config, () =>
+	const { app, closeAllSessions } = createHttpApp(config, () =>
 		createMcpServer({ config, client: introspectionClient }),
 	);
 
@@ -40,7 +40,7 @@ export const startMcpServerForTest = async (config: ArrangerMcpConfig): Promise<
 	});
 
 	const shutdown = async () => {
-		await shutdownTransports();
+		await closeAllSessions();
 		await new Promise<void>((resolve, reject) => {
 			httpServer.close((err) => (err ? reject(err) : resolve()));
 		});

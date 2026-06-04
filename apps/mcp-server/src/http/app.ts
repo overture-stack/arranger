@@ -12,7 +12,7 @@ import logger from '#utils/logger.js';
 
 export type McpHttpApp = {
 	app: Express;
-	shutdown: () => Promise<void>;
+	closeAllSessions: () => Promise<void>;
 };
 
 // This code was adapted from the official MCP Server "Streamable HTTP" example:
@@ -85,7 +85,7 @@ export const createHttpApp = (config: ArrangerMcpConfig, serverFactory: () => Mc
 	app.get(path, sessionHandler);
 	app.delete(path, sessionHandler);
 
-	const shutdown = async () => {
+	const closeAllSessions = async () => {
 		for (const sessionId of Object.keys(transports)) {
 			try {
 				logger.debug(`Closing transport for session ${sessionId}`);
@@ -98,5 +98,5 @@ export const createHttpApp = (config: ArrangerMcpConfig, serverFactory: () => Mc
 		}
 	};
 
-	return { app, shutdown };
+	return { app, closeAllSessions };
 };
