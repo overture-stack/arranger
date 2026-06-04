@@ -1,12 +1,12 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
-import { z } from 'zod';
+import { z as zod } from 'zod';
 
 import { type McpServerDeps } from '#server.js';
 
-const fieldShape = z.object({
-	displayName: z.string(),
-	type: z.string(),
-	unit: z.string().nullable().optional(),
+const fieldShape = zod.object({
+	displayName: zod.string(),
+	type: zod.string(),
+	unit: zod.string().nullable().optional(),
 });
 
 export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {
@@ -42,9 +42,9 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 			description:
 				'Return field introspection for one catalogue. `operators` maps each field type to its valid SQON operators. `fields` lists each field with its `type`, `displayName`, optional `unit`, and optional `description`.',
 			inputSchema: {
-				catalogId: z.string().min(1).describe('Catalog identifier from the Arranger /introspection payload.'),
+				catalogId: zod.string().min(1).describe('Catalog identifier from the Arranger /introspection payload.'),
 			},
-			outputSchema: { catalogId: z.string(), fields: z.record(fieldShape) },
+			outputSchema: { catalogId: zod.string(), fields: zod.record(fieldShape) },
 		},
 		async ({ catalogId }) => {
 			const data = await client.getCatalogIntrospection(catalogId);
