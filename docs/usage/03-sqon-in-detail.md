@@ -410,7 +410,7 @@ These are valid SQON values and should not be treated as missing:
 - `""`
 
 <details>
-<summary></b>Examples:</b></summary>
+<summary><b>Examples:</b></summary>
 
 ```json
 {

@@ -1,7 +1,7 @@
 # Copilot Instructions — Arranger
 
 ## Project
-GraphQL/Elasticsearch search API + React component library. npm workspaces monorepo, gradual JS → TS migration.
+Data discovery API for Elasticsearch and OpenSearch. npm workspaces monorepo, gradual JS → TS migration.
 
 ## Key files to read
 - `.dev/roadmap.md` — all planned work: new features, architectural direction (OpenSearch-first, away from Apollo, Arranger core module), CI/CD phases
@@ -9,7 +9,7 @@ GraphQL/Elasticsearch search API + React component library. npm workspaces monor
 - `.dev/sessions.md` — recent session log; read the last entry or two before starting work
 
 ## Keeping `.dev/` current
-Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. These are the shared memory for this project. After any meaningful unit of work concludes — a decision made, changes done, a review completed — update both documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal.
+Update `.dev/roadmap.md` or `.dev/tech-debt.md` whenever a roadmap item's status changes, a debt entry is resolved, or a meaningful design decision is made. These are the shared memory for this project. After any meaningful unit of work that changed the codebase or working documents — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update both documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal. Do not log conversational activity (reviews that produced no local changes, discussions, waiting states).
 
 ## Security triggers
 Flag these when writing or reviewing code:
@@ -30,6 +30,8 @@ Flag typos and language issues when spotted — in code, comments, and docs. Don
 ## Writing tests: BDD style
 
 Tests are being migrated to BDD naming using `node:test` and `assert` — no extra libraries. Use `suite()` to group related tests, `test()` to state expected behaviour in plain language. Structure bodies as setup → action → assertion. New tests: BDD from the start. Existing tests: nudge when touching in scope; large rewrites go to tech-debt.
+
+Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter, filter clause, SQON) is defined in `docs/concepts.md`. Read it when writing code, docs, comments, or UI strings.
 
 ## Conventions
 - `modules/*` never read `process.env` — config comes in as function params from `apps/search-server`

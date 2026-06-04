@@ -231,6 +231,42 @@ Two related but distinct problems:
 
 _Schema versioning decision gates the hits/edges/nodes redesign._
 
+### MCP integration readiness
+
+Three targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. These arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface.
+
+#### Schema cache invalidation signal (ETag / schema hash)
+
+_Priority: high._
+
+An MCP server wrapping Arranger will cache the introspected schema to avoid re-fetching on every query. Arranger's schema is generated from ES/OS index mappings, which can change when indices are updated or reindexed. Without a cache invalidation signal, an MCP server has no way to know when its cached schema is stale -- it will generate queries against a schema that no longer matches the live index, producing errors that are hard to diagnose.
+
+Arranger should expose a schema hash or ETag on introspection responses (a response header is sufficient -- no new endpoint needed) so MCP consumers can cheaply detect schema changes and re-fetch only when necessary. Extends naturally from the "API version exposure" work above, which already adds a version field to the introspection endpoint.
+
+_Small Arranger change, high operational value for any MCP implementation. Coordinate with whoever is building the MCP server._
+
+#### SQON documentation in schema descriptions
+
+_Priority: medium._
+
+Arranger's filter arguments accept SQON, but the generated schema types them as opaque input objects with no documentation of the expected structure. An LLM generating queries against the schema has no way to know what a valid SQON looks like from schema introspection alone -- every MCP implementation has to embed SQON-specific system prompts as a workaround.
+
+Adding a description to the filter argument input types explaining the SQON structure (content/combination operators, value types, nesting rules) would let the LLM infer the filter format directly from the schema. This reduces coupling between the MCP prompt layer and Arranger internals, and benefits GraphQL Playground users at the same time.
+
+_See `docs/concepts.md` for the canonical SQON definition to base descriptions on._
+
+#### Field descriptions in the generated schema
+
+_Priority: medium._
+
+The GraphQL schema Arranger generates from ES/OS index mappings currently carries no field descriptions -- only raw field names. An LLM building queries against this schema must select fields by name alone, with no semantic context. The Arize reference implementation strips all schema descriptions to save tokens precisely because they tend to be noisy; Arranger's schema instead has none at all.
+
+Arranger should surface field descriptions from ES mapping metadata (the `meta` object on a field mapping, which can carry arbitrary key-value pairs including a `description`) as GraphQL field descriptions. Where no metadata description exists, the field name is still the fallback. This gives LLM consumers (and Playground users) meaningful context at the point where it costs nothing to add it.
+
+_Requires a mapping-to-schema pass change. Operators who want richer descriptions can add `meta.description` to their index mappings without any Arranger code change._
+
+---
+
 ### GraphQL large integer type
 
 _Priority: low — only urgent if precision bugs are reported._
@@ -471,25 +507,17 @@ The goal is a phased improvement: first get Turbo doing change detection in CI (
 
 Fix correctness issues in the repo that block Turbo from working reliably.
 
-### 1.1 Fix `turbo.json` over-invalidation [done]
+### 1.1 Add `test` script to `charts`
 
-`docker/**` and `docker-compose.yml` were in `globalDependencies`, which busted the build cache for every package on any Dockerfile edit. Removed.
+`modules/charts` has `vitest` in devDependencies but no `"test"` script. Decided to skip — the goal for `charts` is build and publish integration, not test coverage at this stage. Turbo will silently skip packages with no matching script, which is acceptable here.
 
-### 1.2 Fix phantom dependency in `components` [done]
+### 1.2 Add `lint` and `typecheck` scripts to all publishable modules
 
-`components` imported `@overture-stack/arranger-types` without declaring it. Added `"@overture-stack/arranger-types": "file:../types"` to `modules/components/package.json` dependencies.
+Would enable Turbo to cache lint and typecheck results per-package. Not needed for Phase 2 (lint/typecheck are not being added to CI yet — see Phase 4.3).
 
-### 1.3 Add `test` script to `charts` [done]
+### 1.3 Add `turbo:lint` and `turbo:typecheck` root scripts
 
-`modules/charts` had `vitest` in devDependencies but no `"test"` script. Turbo was silently skipping it.
-
-### 1.4 Add `lint` and `typecheck` scripts to all publishable modules [done]
-
-Enables Turbo to cache lint and typecheck results per-package. Added to `sqon`, `types`, `graphql-router`, `components`. (`charts` already had `lint`; `typecheck` added to all 5.)
-
-### 1.5 Add `turbo:lint` and `turbo:typecheck` root scripts [done]
-
-Enables running lint/typecheck across all affected packages from the root.
+Depends on 1.2 and on turbo.json gaining `lint`/`typecheck` task definitions.
 
 ---
 

@@ -6,6 +6,82 @@ Newest first.
 
 ---
 
+## 2026-06-03
+
+**Done:**
+
+- Reviewed the Arize text-to-graphql-mcp reference implementation (tools: schema_management, graphql_helpers, query_construction, query_validation, query_optimization, query_execution, intent_recognition, data_visualization) against Arranger's current schema and MCP work.
+- Added "MCP integration readiness" section to roadmap.md with three items: schema ETag/cache invalidation (high priority), SQON documentation in schema descriptions (medium), and field descriptions from ES mapping metadata (medium).
+- Audited user-facing terminology across docs, config templates, and user-visible strings. Identified three inconsistency clusters: "folder" vs "directory" (directory is canonical), "settings" vs "configuration" (configuration for Arranger-level concepts, settings kept for ES-level), and the "Arranger Configs" page title (should be "Configuring Arranger").
+- Created `docs/concepts.md`: standalone onboarding page covering the Arranger domain model (catalogues, configuration, facets/buckets/aggregations, filters/filter clauses/SQONs) with a canonical vocabulary reference table. Serves as the single source of truth for domain terminology across all agents and users.
+- Added `sidebar_position` frontmatter to `docs/overview.md` (1), `docs/concepts.md` (2), and `docs/setup.md` (3) for correct Docusaurus ordering. Added "Next steps" pointer to `concepts.md` at the end of `overview.md`.
+- Added vocabulary pointer line to `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` pointing to `docs/concepts.md`.
+- Added tech-debt entry in `tech-debt.md` covering the three terminology clusters with specific file/line references and a three-pass fix plan (docs pass, identifier rename pass, cross-reference pass).
+
+**Decisions:**
+
+- "filter clause" introduced as the precise term for a single `{op, content}` leaf node in a SQON; "filter" retained for the broader/lay sense.
+- "settings" kept when mirroring Elasticsearch's own language (ES index settings); replaced with "configuration" for Arranger-level concepts.
+- Em dashes excluded from all persisted file content (docs, code, comments, config) -- use regular dashes or rewrite.
+
+---
+
+## 2026-05-29
+
+**Done:**
+
+- Added `description` field to `configTemplates/configs.json.schema` — missed when PR #1070 ("add catalogue descriptions") shipped; the annotated schema is the primary human-readable reference for config operators.
+- Fixed four factual errors in `/docs`: two stale GitHub links (`modules/server/configTemplates/` → `apps/search-server/configTemplates/`) in `02-arranger-components.md`; wrong key name `"index"` → `"esIndex"` in the base.json example; wrong key name `"active"` → `"isActive"` in the facets.json example.
+- Updated repository structure tree in `docs/overview.md`: removed non-existent `modules/server/`, added `apps/` directory with `mcp-server` and `search-server`, expanded `modules/` to show all current packages, added `integration-tests/`, updated descriptions throughout.
+- Added tech-debt entry for `setup.md` referencing `.env.arrangerDev` which no longer exists — left unfixed as the correct replacement process is unclear.
+- Added three tech-debt entries under `## apps/mcp-server` in `tech-debt.md`: `InMemoryEventStore` not suitable for production (persistent store needed before production deployment); MCP session map does not evict abandoned transports (timestamp-based sweep approach noted); introspection types should be Zod-first so MCP output schemas can import directly from `search-server` rather than duplicating locally
+- Updated `sessions.md` protocol in `~/.claude/CLAUDE.md`, `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, and memory: `sessions.md` records only changes to code or working documents, not conversational activity
+- Incorporated PR #1065 (MCP server scaffold) as merged into Dockerfile changes: added `apps/mcp-server` workspace to `Dockerfile.jenkins` scaffolding stage; added `mcp-server` Docker stage to both `Dockerfile.jenkins` and `Dockerfile.local`
+- Renamed Docker stage `server` → `search-server` in both Dockerfiles — removes ambiguity now that two server images exist
+- Rewrote `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy` (Phase 2 CI/CD work):
+    - `turboBase` computed once from `GIT_PREVIOUS_COMMIT` (the commit Jenkins last built on this branch) with `HEAD^1` fallback for first builds — correctly covers multi-commit pushes to any branch, including direct pushes to main, without needing branch-specific logic; used for all change detection throughout the pipeline
+    - Turbo build with `--filter=[turboBase]` replaces `npm run modules:build`; only affected packages and their dependents build
+    - Turbo test with `--filter=[turboBase]` replaces five individual `npm run test -w` calls; `integration-tests/server` and `integration-tests/mcp-server` excluded from Turbo and handled separately
+    - `integration-tests/server` runs conditionally — only when files in `sqon`, `types`, `graphql-router`, `apps/search-server`, or `integration-tests/server` changed since `turboBase`
+    - Docker builds conditional per image: `search-server` image rebuilds when its server chain or Dockerfile changes; `mcp-server` image rebuilds when `apps/mcp-server`, shared modules, or Dockerfile changes; `POST_BUILD: Publish` parameter overrides and builds both
+    - App versions (`searchServerVersion`, `mcpServerVersion`) read directly from `apps/*/package.json` in the Build stage — fixes pre-existing null bug where `versionsMap['server']` was used but `versionsMap` only covered `modules/*`
+    - `TURBO_TELEMETRY_DISABLED=1` added to environment block
+    - TEMP `release-charts` stage removed; `modules/charts` now covered by the standard release publish loop
+    - Dead commented-out Slack notification code removed
+
+**Decisions:**
+
+- `fieldShape` outputSchema without `.parse()` is correct MCP usage — `outputSchema` is declarative for MCP clients, not runtime-enforced by the SDK
+- Session eviction approach for `apps/mcp-server/src/http/app.ts`: track `lastSeenAt` per transport entry, sweep via `setInterval`, close and evict sessions idle beyond a configurable TTL (e.g. 30 min)
+- `integration-tests/mcp-server` excluded from CI pipeline for now — needs full stack (ES + Arranger server + MCP server); design deferred
+- `Deploy to overture-dev` stage left unchanged — infrastructure config for `arranger-iobio` must be updated separately to use the renamed `arranger-search-server` image
+
+**Open threads:**
+
+- `integration-tests/mcp-server` pipeline design: CI setup needs full stack — how to start and wait for Arranger + MCP server alongside ES
+- Infrastructure deploy config: `arranger-iobio` deployment references the old `arranger-server` image name — needs updating in the infra repo
+
+---
+
+## 2026-05-28
+
+**Done:**
+
+- Removed `docker/**` and `docker-compose.yml` from `turbo.json` globalDependencies — those files don't affect TypeScript source so they were causing unnecessary cache busting; `tsconfig.eslint.json` remains
+- Added `@overture-stack/arranger-types` as an explicit dependency in `modules/components/package.json` (`file:../types`) — without this, Turbo's graph treated `components` as independent of `types`, meaning a breaking change to `types` could pass CI without `components` being rebuilt or tested
+- Corrected `modules/graphql-router/package.json` to use the shallower `file:../types` (was `file:../../modules/types` — unnecessarily traversing up to root and back down); `modules/types` already used the shallower `../sqon` convention; `apps/` and `integration-tests/` paths are already as shallow as their locations allow
+- Completed items removed from roadmap (now in sessions only); roadmap stays forward-looking
+
+**Decisions:**
+
+- Charts CI goal: build and publish integration only — no test script needed; Turbo silently skips packages with no matching script, which is fine here
+- lint/typecheck scripts across modules: deferred — not needed until Phase 4 CI gate work
+- `next` Docker/NPM tagging: deferred to a later pass after core Turbo pipeline is working
+- Charts to fold into the standard `release` publish loop; `TEMP. Publish Charts to NPM` stage to be removed
+- Workflow: completed roadmap items are removed (not marked done) — sessions.md is the historical record; sessions entries should be self-contained descriptions, not references to numbered roadmap items
+
+---
+
 ## 2026-05-27
 
 **Done:**

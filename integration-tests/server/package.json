@@ -1,5 +1,5 @@
 {
-	"name": "integration-tests-server",
+	"name": "integration-tests-search-server",
 	"dependencies": {
 		"@elastic/elasticsearch": "^7.17.14",
 		"@overture-stack/arranger-graphql-router": "file:../../modules/graphql-router",

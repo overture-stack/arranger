@@ -24,7 +24,7 @@ RUN npm ci --include-workspace-root=false && \
 #######################################################
 # Arranger Server
 #######################################################
-FROM node:24-alpine AS server
+FROM node:24-alpine AS search-server
 
 ARG APP_FOLDER
 ARG APP_USER
@@ -49,23 +49,23 @@ WORKDIR $APP_FOLDER
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/search-server ./apps/search-server
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/graphql-router/dist \
-./modules/graphql-router/dist
+	$APP_FOLDER/modules/graphql-router/dist \
+	./modules/graphql-router/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/graphql-router/package.json \
-./modules/graphql-router/package.json
+	$APP_FOLDER/modules/graphql-router/package.json \
+	./modules/graphql-router/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/types/dist \
-./modules/types/dist
+	$APP_FOLDER/modules/types/dist \
+	./modules/types/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/types/package.json \
-./modules/types/package.json
+	$APP_FOLDER/modules/types/package.json \
+	./modules/types/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/sqon/dist \
-./modules/sqon/dist
+	$APP_FOLDER/modules/sqon/dist \
+	./modules/sqon/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/sqon/package.json \
-./modules/sqon/package.json
+	$APP_FOLDER/modules/sqon/package.json \
+	./modules/sqon/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/ping-elasticsearch.sh ./scripts/ping-elasticsearch.sh
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/retry-command.sh ./scripts/retry-command.sh
 
