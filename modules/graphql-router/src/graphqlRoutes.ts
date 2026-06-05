@@ -245,6 +245,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			const apolloServer = new ApolloServer({
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
+				introspection: !!(process.env.NODE_ENV !== 'production'),
 				schema,
 				validationRules,
 				...apolloFeatureFlags,
