@@ -67,6 +67,8 @@ When a roadmap item's status changes, a tech-debt entry is resolved, or a meanin
 
 ## Security triggers
 
+The baseline OWASP patterns, threat model, and general code review triggers live in `conventions/security-guidelines.md` in the [agentics template](https://github.com/oicr-softeng/agentics). The triggers below are Arranger-specific additions on top of that baseline.
+
 Check these as you write or review code. Flag violations rather than silently skipping them.
 
 - **No stack traces or internal details in API responses.** GraphQL error messages sent to clients must not include stack traces, ES index names, file paths, or library versions. Log them server-side only.
