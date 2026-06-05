@@ -1,13 +1,8 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { z as zod } from 'zod';
 
+import { catalogsSchema, sqonIntrospectionSchema, catalogIntrospectionSchema } from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
-
-const fieldShape = zod.object({
-	displayName: zod.string(),
-	type: zod.string(),
-	unit: zod.string().nullable().optional(),
-});
 
 export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerTool(
@@ -15,11 +10,15 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 		{
 			title: 'List Arranger Catalogs',
 			description: 'Returns the catalogs exposed by the connected Arranger server.',
+			outputSchema: zod.object({ catalogs: catalogsSchema }),
 		},
 		async () => {
 			const { catalogs } = await client.getServerIntrospection();
 			const ids = Object.keys(catalogs);
-			return { content: [{ type: 'text', text: `Available catalogs: ${ids.join(', ')}` }] };
+			return {
+				content: [{ type: 'text', text: `Available catalogs: ${ids.join(', ')}` }],
+				structuredContent: { catalogs },
+			};
 		},
 	);
 
@@ -28,10 +27,15 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 		{
 			title: 'Get SQON Schema',
 			description: 'Returns the shared SQON Schema and operator metadata for the connected Arranger server.',
+			outputSchema: sqonIntrospectionSchema,
 		},
 		async () => {
 			const data = await client.getSqonIntrospection();
-			return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+			const sqonSchema = sqonIntrospectionSchema.parse(data);
+			return {
+				content: [{ type: 'text', text: JSON.stringify(sqonSchema) }],
+				structuredContent: sqonSchema,
+			};
 		},
 	);
 
@@ -44,14 +48,14 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 			inputSchema: {
 				catalogId: zod.string().min(1).describe('Catalog identifier from the Arranger /introspection payload.'),
 			},
-			outputSchema: { catalogId: zod.string(), fields: zod.record(fieldShape) },
+			outputSchema: catalogIntrospectionSchema,
 		},
 		async ({ catalogId }) => {
 			const data = await client.getCatalogIntrospection(catalogId);
-			const structured = { catalogId: data.catalogId, fields: data.fields };
+			const catalogIntrospection = catalogIntrospectionSchema.parse(data);
 			return {
-				content: [{ type: 'text', text: JSON.stringify(structured, null, 2) }],
-				structuredContent: structured,
+				content: [{ type: 'text', text: JSON.stringify(catalogIntrospection, null, 2) }],
+				structuredContent: catalogIntrospection,
 			};
 		},
 	);
