@@ -1,7 +1,12 @@
 import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { z as zod } from 'zod';
 
-import { catalogsSchema, sqonIntrospectionSchema, catalogIntrospectionSchema } from '#arranger/types.js';
+import {
+	catalogIntrospectionSchema,
+	catalogsSchema,
+	serverIntrospectionSchema,
+	sqonIntrospectionSchema,
+} from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
 
 export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {
@@ -13,10 +18,11 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 			outputSchema: zod.object({ catalogs: catalogsSchema }),
 		},
 		async () => {
-			const { catalogs } = await client.getServerIntrospection();
-			const ids = Object.keys(catalogs);
+			const data = await client.getServerIntrospection();
+			const { catalogs } = serverIntrospectionSchema.parse(data);
+			const catalogIds = Object.keys(catalogs);
 			return {
-				content: [{ type: 'text', text: `Available catalogs: ${ids.join(', ')}` }],
+				content: [{ type: 'text', text: `Available catalogs: ${catalogIds.join(', ')}` }],
 				structuredContent: { catalogs },
 			};
 		},

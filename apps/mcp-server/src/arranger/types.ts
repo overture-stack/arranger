@@ -22,6 +22,13 @@ export const catalogsSchema = zod.record(
 	}),
 );
 
+export const serverIntrospectionSchema = zod.object({
+	catalogCount: zod.number(),
+	catalogs: catalogsSchema,
+	mode: zod.union([zod.literal('single'), zod.literal('multiple')]),
+	sqonSchemaPath: zod.string(),
+});
+
 const sqonOperatorDetailSchema = zod.object({
 	applicableTo: zod.union([zod.literal('all'), zod.array(zod.string())]),
 	op: zod.string(),
