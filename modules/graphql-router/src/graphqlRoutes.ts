@@ -247,6 +247,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 				context: ({ req, res, con }) => buildContext(req, res, con),
 				schema,
 				validationRules,
+				introspection: !!(process.env.NODE_ENV !== 'production'),
 				...apolloFeatureFlags,
 			});
 
