@@ -61,23 +61,23 @@ WORKDIR $APP_FOLDER
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/search-server ./apps/search-server
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/graphql-router/dist \
-./modules/graphql-router/dist
+	$APP_FOLDER/modules/graphql-router/dist \
+	./modules/graphql-router/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/graphql-router/package.json \
-./modules/graphql-router/package.json
+	$APP_FOLDER/modules/graphql-router/package.json \
+	./modules/graphql-router/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/types/dist \
-./modules/types/dist
+	$APP_FOLDER/modules/types/dist \
+	./modules/types/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/types/package.json \
-./modules/types/package.json
+	$APP_FOLDER/modules/types/package.json \
+	./modules/types/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/sqon/dist \
-./modules/sqon/dist
+	$APP_FOLDER/modules/sqon/dist \
+	./modules/sqon/dist
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
-$APP_FOLDER/modules/sqon/package.json \
-./modules/sqon/package.json
+	$APP_FOLDER/modules/sqon/package.json \
+	./modules/sqon/package.json
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/ping-elasticsearch.sh ./scripts/ping-elasticsearch.sh
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/retry-command.sh ./scripts/retry-command.sh
 
@@ -93,3 +93,26 @@ CMD ["/bin/sh",  "-c", "scripts/ping-elasticsearch.sh && node_modules/.bin/tsx .
 # Arranger MCP Server
 #######################################################
 FROM node:24-alpine AS mcp-server
+
+ARG APP_FOLDER
+ARG APP_USER
+ARG APP_GID
+ARG APP_UID
+
+LABEL org.opencontainers.image.source=https://github.com/overture-stack/arranger
+LABEL org.opencontainers.image.description="Arranger MCP Server"
+
+RUN apk --no-cache add shadow \
+	&& groupmod -g $APP_GID $APP_USER \
+	&& usermod -u $APP_UID -g $APP_GID $APP_USER
+
+WORKDIR $APP_FOLDER
+
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/mcp-server ./apps/mcp-server
+
+USER $APP_USER
+
+EXPOSE 3100
+
+CMD ["node_modules/.bin/tsx", "./apps/mcp-server/src/index.ts"]
