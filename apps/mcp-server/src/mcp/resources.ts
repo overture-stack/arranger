@@ -10,7 +10,7 @@ export const registerResources = (server: McpServer, { client }: McpServerDeps):
 		'arranger://introspection/server',
 		{
 			title: 'Arranger Server Introspection',
-			description: 'Arranger-wide server summary and catalog inventory (GET /introspection).',
+			description: 'Arranger-wide server summary and catalogue inventory (GET /introspection).',
 			mimeType: JSON_MIME,
 		},
 		async (uri) => {
@@ -39,28 +39,28 @@ export const registerResources = (server: McpServer, { client }: McpServerDeps):
 	);
 
 	server.registerResource(
-		'arranger-catalog-fields',
-		new ResourceTemplate('arranger://introspection/catalog/{catalogId}', {
+		'arranger-catalogue-fields',
+		new ResourceTemplate('arranger://introspection/catalog/{catalogueId}', {
 			list: async () => {
-				const { catalogs } = await client.getServerIntrospection();
+				const { catalogs: catalogues } = await client.getServerIntrospection();
 				return {
-					resources: Object.keys(catalogs).map((catalogId) => ({
-						uri: `arranger://introspection/catalog/${catalogId}`,
-						name: catalogId,
+					resources: Object.keys(catalogues).map((catalogueId) => ({
+						uri: `arranger://introspection/catalog/${catalogueId}`,
+						name: catalogueId,
 						mimeType: JSON_MIME,
 					})),
 				};
 			},
 		}),
 		{
-			title: 'Arranger Catalog Fields',
+			title: 'Arranger Catalogue Fields',
 			description:
-				'Per-catalog field metadata: displayName, type, unit, validOperators (GET /introspection/:catalogId).',
+				'Per-catalogue field metadata: displayName, type, unit, validOperators (GET /introspection/:catalogueId).',
 			mimeType: JSON_MIME,
 		},
-		async (uri, { catalogId }) => {
-			const id = Array.isArray(catalogId) ? catalogId[0] : catalogId;
-			const data = await client.getCatalogIntrospection(id);
+		async (uri, { catalogueId }) => {
+			const id = Array.isArray(catalogueId) ? catalogueId[0] : catalogueId;
+			const data = await client.getCatalogueIntrospection(id);
 			return {
 				contents: [{ uri: uri.href, mimeType: JSON_MIME, text: JSON.stringify(data, null, 2) }],
 			};

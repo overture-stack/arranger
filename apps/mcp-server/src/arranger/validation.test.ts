@@ -3,14 +3,14 @@ import { mock, suite, test } from 'node:test';
 
 import { type ArrangerIntrospectionClient } from '#arranger/client.js';
 import type {
-	ArrangerCatalogIntrospection,
+	ArrangerCatalogueIntrospection,
 	ArrangerServerIntrospection,
 	ArrangerSqonIntrospection,
 } from '#arranger/types.js';
 import { validateArrangerConnection } from '#arranger/validation.js';
 import { type ArrangerMcpConfig } from '#utils/config.js';
 
-const mockConfig = (catalogues: string[] = ['catalog-a']): ArrangerMcpConfig => ({
+const mockConfig = (catalogues: string[] = ['catalogue-a']): ArrangerMcpConfig => ({
 	arrangerBaseUrl: 'http://arranger.test',
 	catalogues,
 	requestTimeoutMs: 1000,
@@ -21,10 +21,10 @@ const mockConfig = (catalogues: string[] = ['catalog-a']): ArrangerMcpConfig => 
 	},
 });
 
-const mockServerIntrospection = (catalogIds: string[]): ArrangerServerIntrospection => ({
-	catalogCount: catalogIds.length,
+const mockServerIntrospection = (catalogueIds: string[]): ArrangerServerIntrospection => ({
+	catalogCount: catalogueIds.length,
 	catalogs: Object.fromEntries(
-		catalogIds.map((id) => [
+		catalogueIds.map((id) => [
 			id,
 			{
 				documentType: 'doc',
@@ -35,7 +35,7 @@ const mockServerIntrospection = (catalogIds: string[]): ArrangerServerIntrospect
 			},
 		]),
 	),
-	mode: catalogIds.length > 1 ? 'multiple' : 'single',
+	mode: catalogueIds.length > 1 ? 'multiple' : 'single',
 	sqonSchemaPath: '/introspection/sqon',
 });
 
@@ -49,8 +49,8 @@ const mockSqonIntrospection = (): ArrangerSqonIntrospection => ({
 	version: '0.0.0',
 });
 
-const mockCatalogIntrospection = (catalogId: string): ArrangerCatalogIntrospection => ({
-	catalogId,
+const mockCatalogueIntrospection = (catalogueId: string): ArrangerCatalogueIntrospection => ({
+	catalogId: catalogueId,
 	documentType: 'doc',
 	generatedAt: '2026-01-01T00:00:00Z',
 	meta: { authFiltered: false },
@@ -59,17 +59,17 @@ const mockCatalogIntrospection = (catalogId: string): ArrangerCatalogIntrospecti
 });
 
 const mockClient = (overrides: Partial<ArrangerIntrospectionClient> = {}): ArrangerIntrospectionClient => ({
-	getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalog-a'])),
+	getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalogue-a'])),
 	getSqonIntrospection: mock.fn(async () => mockSqonIntrospection()),
-	getCatalogIntrospection: mock.fn(async (id: string) => mockCatalogIntrospection(id)),
+	getCatalogueIntrospection: mock.fn(async (id: string) => mockCatalogueIntrospection(id)),
 	...overrides,
 });
 
 suite('validateArrangerConnection', () => {
 	test('resolves when introspection succeeds and all configured catalogues are available', async () => {
-		const config = mockConfig(['catalog-a', 'catalog-b']);
+		const config = mockConfig(['catalogue-a', 'catalogue-b']);
 		const client = mockClient({
-			getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalog-a', 'catalog-b'])),
+			getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalogue-a', 'catalogue-b'])),
 		});
 
 		await assert.doesNotReject(validateArrangerConnection(config, client));
@@ -102,13 +102,13 @@ suite('validateArrangerConnection', () => {
 	});
 
 	test('throws when a configured catalogue is not available on Arranger', async () => {
-		const config = mockConfig(['catalog-a', 'missing-catalog']);
+		const config = mockConfig(['catalogue-a', 'missing-catalogue']);
 		const client = mockClient({
-			getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalog-a'])),
+			getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalogue-a'])),
 		});
 
 		await assert.rejects(validateArrangerConnection(config, client), {
-			message: /Configured catalogues not available on Arranger: missing-catalog/,
+			message: /Configured catalogues not available on Arranger: missing-catalogue/,
 		});
 	});
 

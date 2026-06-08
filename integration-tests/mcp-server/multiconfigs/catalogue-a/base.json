@@ -1,5 +1,5 @@
 {
-	"catalogId": "catalog-a",
+	"catalogId": "catalogue-a",
 	"documentType": "modelA",
 	"esIndex": "testing-mcp-models_a",
 	"extended": [

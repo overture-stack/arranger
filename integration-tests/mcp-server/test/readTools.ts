@@ -7,7 +7,7 @@ export type ToolEnv = {
 	getClient: () => Client;
 	configuredCatalogues: string[];
 	expectedDocumentTypes: Record<string, string>;
-	expectedFieldsByCatalog: Record<string, string[]>;
+	expectedFieldsByCatalogue: Record<string, string[]>;
 };
 
 const getTextContent = (result: Awaited<ReturnType<Client['callTool']>>): string => {
@@ -21,13 +21,13 @@ const getTextContent = (result: Awaited<ReturnType<Client['callTool']>>): string
 	return first.text as string;
 };
 
-export default ({ getClient, configuredCatalogues, expectedFieldsByCatalog }: ToolEnv) => {
-	test("1.'list-catalogs' returns the configured catalogue IDs", async () => {
-		const result = await getClient().callTool({ name: 'list-catalogs' });
+export default ({ getClient, configuredCatalogues, expectedFieldsByCatalogue }: ToolEnv) => {
+	test("1.'list-catalogues' returns the configured catalogue IDs", async () => {
+		const result = await getClient().callTool({ name: 'list-catalogues' });
 		const text = getTextContent(result);
 
-		for (const catalogId of configuredCatalogues) {
-			assert.ok(text.includes(catalogId), `expected '${catalogId}' in list-catalogs output, got: ${text}`);
+		for (const catalogueId of configuredCatalogues) {
+			assert.ok(text.includes(catalogueId), `expected '${catalogueId}' in list-catalogues output, got: ${text}`);
 		}
 	});
 
@@ -44,37 +44,37 @@ export default ({ getClient, configuredCatalogues, expectedFieldsByCatalog }: To
 		assert.ok(Array.isArray(data.operators.field));
 	});
 
-	test("3.'get-catalog-fields' returns field metadata for each configured catalogue", async () => {
-		for (const catalogId of configuredCatalogues) {
+	test("3.'get-catalogue-fields' returns field metadata for each configured catalogue", async () => {
+		for (const catalogueId of configuredCatalogues) {
 			const result = await getClient().callTool({
-				name: 'get-catalog-fields',
-				arguments: { catalogId },
+				name: 'get-catalogue-fields',
+				arguments: { catalogueId },
 			});
 
 			const text = getTextContent(result);
 			const data = JSON.parse(text);
 
-			assert.equal(data.catalogId, catalogId);
-			assert.ok(data.fields, `expected fields object for '${catalogId}'`);
+			assert.equal(data.catalogId, catalogueId);
+			assert.ok(data.fields, `expected fields object for '${catalogueId}'`);
 
 			const fieldNames = Object.keys(data.fields).sort();
-			const expected = [...expectedFieldsByCatalog[catalogId]].sort();
+			const expected = [...expectedFieldsByCatalogue[catalogueId]].sort();
 			assert.deepEqual(fieldNames, expected);
 
 			// Tool also declares an outputSchema -> structured content should match the text content.
 			const structured = (
 				result as { structuredContent?: { catalogId: string; fields: Record<string, unknown> } }
 			).structuredContent;
-			assert.ok(structured, "expected 'get-catalog-fields' to return structuredContent");
-			assert.equal(structured?.catalogId, catalogId);
+			assert.ok(structured, "expected 'get-catalogue-fields' to return structuredContent");
+			assert.equal(structured?.catalogId, catalogueId);
 			assert.deepEqual(Object.keys(structured?.fields ?? {}).sort(), expected);
 		}
 	});
 
-	test("4.'get-catalog-fields' returns an error for an unknown catalogue", async () => {
+	test("4.'get-catalogue-fields' returns an error for an unknown catalogue", async () => {
 		const result = await getClient().callTool({
-			name: 'get-catalog-fields',
-			arguments: { catalogId: 'this-catalog-does-not-exist' },
+			name: 'get-catalogue-fields',
+			arguments: { catalogId: 'this-catalogue-does-not-exist' },
 		});
 
 		assert.equal(result.isError, true, 'expected tool call to surface the upstream Arranger 404 as an MCP error');

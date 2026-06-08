@@ -2,8 +2,8 @@ import { type McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { z as zod } from 'zod';
 
 import {
-	catalogIntrospectionSchema,
-	catalogsSchema,
+	catalogueIntrospectionSchema,
+	cataloguesSchema,
 	serverIntrospectionSchema,
 	sqonIntrospectionSchema,
 } from '#arranger/types.js';
@@ -11,19 +11,19 @@ import { type McpServerDeps } from '#server.js';
 
 export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {
 	server.registerTool(
-		'list-catalogs',
+		'list-catalogues',
 		{
-			title: 'List Arranger Catalogs',
-			description: 'Returns the catalogs exposed by the connected Arranger server.',
-			outputSchema: zod.object({ catalogs: catalogsSchema }),
+			title: 'List Arranger Catalogues',
+			description: 'Returns the catalogues exposed by the connected Arranger server.',
+			outputSchema: zod.object({ catalogues: cataloguesSchema }),
 		},
 		async () => {
 			const data = await client.getServerIntrospection();
-			const { catalogs } = serverIntrospectionSchema.parse(data);
-			const catalogIds = Object.keys(catalogs);
+			const { catalogs: catalogues } = serverIntrospectionSchema.parse(data);
+			const catalogueIds = Object.keys(catalogues);
 			return {
-				content: [{ type: 'text', text: `Available catalogs: ${catalogIds.join(', ')}` }],
-				structuredContent: { catalogs },
+				content: [{ type: 'text', text: `Available catalogs: ${catalogueIds.join(', ')}` }],
+				structuredContent: { catalogues },
 			};
 		},
 	);
@@ -46,22 +46,25 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 	);
 
 	server.registerTool(
-		'get-catalog-fields',
+		'get-catalogue-fields',
 		{
-			title: 'Get Catalog Fields',
+			title: 'Get Catalogue Fields',
 			description:
 				'Return field introspection for one catalogue. `operators` maps each field type to its valid SQON operators. `fields` lists each field with its `type`, `displayName`, optional `unit`, and optional `description`.',
 			inputSchema: {
-				catalogId: zod.string().min(1).describe('Catalog identifier from the Arranger /introspection payload.'),
+				catalogueId: zod
+					.string()
+					.min(1)
+					.describe('Catalogue identifier from the Arranger /introspection payload.'),
 			},
-			outputSchema: catalogIntrospectionSchema,
+			outputSchema: catalogueIntrospectionSchema,
 		},
-		async ({ catalogId }) => {
-			const data = await client.getCatalogIntrospection(catalogId);
-			const catalogIntrospection = catalogIntrospectionSchema.parse(data);
+		async ({ catalogueId }) => {
+			const data = await client.getCatalogueIntrospection(catalogueId);
+			const catalogueIntrospection = catalogueIntrospectionSchema.parse(data);
 			return {
-				content: [{ type: 'text', text: JSON.stringify(catalogIntrospection, null, 2) }],
-				structuredContent: catalogIntrospection,
+				content: [{ type: 'text', text: JSON.stringify(catalogueIntrospection, null, 2) }],
+				structuredContent: catalogueIntrospection,
 			};
 		},
 	);

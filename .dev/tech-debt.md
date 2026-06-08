@@ -8,6 +8,7 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 ## apps/mcp-server
 
 ### `InMemoryEventStore` is not suitable for production
+
 **File:** `apps/mcp-server/src/utils/inMemoryEventStore.ts`
 **Severity:** medium (data reliability — state is lost on restart; no session resumability for clients)
 **Kind:** placeholder / incomplete implementation
@@ -16,6 +17,7 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Standalone:** yes — swap the implementation behind the existing `EventStore` interface; no changes to `app.ts` or the MCP server wiring
 
 ### MCP session map does not evict abandoned sessions
+
 **File:** `apps/mcp-server/src/http/app.ts`
 **Severity:** low (memory leak under adversarial or high-traffic conditions)
 **Kind:** resource management
@@ -24,6 +26,7 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Standalone:** yes — self-contained change to `app.ts`; no protocol or API surface changes
 
 ### Introspection types should be Zod-first to allow reuse as MCP output schemas
+
 **File:** `apps/search-server/src/introspection/types.ts`; `apps/mcp-server/src/mcp/tools.ts` — `fieldShape`
 **Severity:** low (duplication / maintainability)
 **Kind:** design improvement
@@ -36,10 +39,12 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 ## monorepo — cross-cutting
 
 ### Inconsistent unit test file placement
+
 **File:** throughout the monorepo
 **Severity:** low (consistency / maintainability)
 **Kind:** convention drift
 **Issue:** Unit test files follow two competing patterns across the monorepo:
+
 - **(A)** `__tests__/validation.test.ts` in a sibling `__tests__` folder — risks accidentally centralizing all tests for a module at a parent or root level as the codebase grows
 - **(B)** `validation.test.ts` co-located in the same folder as the file under test — tighter, follows a barrel/module pattern where each unit's test travels with it
 
@@ -47,11 +52,24 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Audit the monorepo and move all `__tests__/` test files to be co-located with their source file, following pattern (B). Update any Jest/node:test config glob patterns that rely on `__tests__/` directory discovery.
 **Standalone:** yes — mechanical file moves plus config glob updates, no logic changes
 
+### Inconsistent spelling of `catalogue`
+
+**File:** throughout the monorepo
+**Severity:** low (consistency / maintainability)
+**Kind:** terminology drift
+**Issue:** Remaining instances of `catalog` must be updated to `catalogue`.
+
+As discussed in https://github.com/overture-stack/admin/issues/182 , we have chosen the Canadian spelling `catalogue` over the American `catalog`. The MCP Server app
+(`apps/mcp-server`) has been updated to reflect this change, with the exception of keys in responses returned from Arranger Server Introspection endpoints, such as `catalogs`, `catalogId`, and `catalogCount`.
+
+When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the MCP Server will need to be updated accordingly where it depends on Introspection responses.
+
 ---
 
 ## docs [URGENT — reminder every session]
 
 ### Inconsistent user-facing terminology: directory/folder, configuration/settings, docs prose
+
 **Files:** `README.md:13`; `docs/usage/02-arranger-components.md:29`; `apps/search-server/configTemplates/configs.json.schema:6,28`; `apps/search-server/src/configs/index.ts:49,53,82`; `.dev/roadmap.md:191-205` (opportunistic)
 **Severity:** low (reader confusion, no functional impact)
 **Kind:** terminology drift
@@ -68,9 +86,8 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
 **Standalone:** yes — (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
-
-
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
+
 **File:** `docs/setup.md` — step 2 of "Running the Arranger-Server"
 **Severity:** high (setup guide is broken for new developers)
 **Kind:** stale documentation
@@ -79,6 +96,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — documentation or file addition only
 
 ### `/docs` out of date with recent functionality changes
+
 **File:** `/docs` directory
 **Severity:** high (ongoing — accumulates with every feature added)
 **Kind:** documentation debt
@@ -91,6 +109,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## modules/sqon
 
 ### No combined field-type-to-operator-validity endpoint
+
 **File:** `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`; `modules/graphql-router` — `extended` config query
 **Severity:** medium (blocks clean validation in MCP / evaluation harness)
 **Kind:** missing feature / integration gap
@@ -99,6 +118,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — additive, no changes to existing query behaviour
 
 ### `getValidFieldOperators` in graphql-router and `getSqonFieldOperatorDetails` in modules/sqon are divergent implementations of the same rules
+
 **File:** `modules/graphql-router/src/introspection/buildCatalogueIntrospection.ts` — `getValidFieldOperators()`; `modules/sqon/src/operators/index.ts` — `getSqonFieldOperatorDetails()`
 **Severity:** low (currently consistent in practice, but will drift)
 **Kind:** duplication / maintenance risk
@@ -107,6 +127,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — internal refactor, no change to API output
 
 ### SQON value schema does not accept boolean values
+
 **File:** `modules/sqon/src/schema/constants.ts` — `SqonScalarValueSchema`
 **Severity:** low-medium
 **Kind:** schema gap
@@ -119,6 +140,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## graphql-router
 
 ### `GraphQLEndpointOptions` escape hatch
+
 **File:** `modules/graphql-router/src/types.ts` — `GraphQLEndpointOptions`
 **Severity:** low
 **Kind:** type-weakness
@@ -127,6 +149,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — purely additive type change, no runtime impact
 
 ### Apollo Server 3 is EOL — replace, don't upgrade
+
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` — `createEndpoint`
 **Severity:** medium
 **Kind:** design-smell
@@ -135,6 +158,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** no — part of the broader GraphQL server migration in the roadmap
 
 ### Duplicated server instantiation (main + mock)
+
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` — `createEndpoint`
 **Severity:** low
 **Kind:** design-smell
@@ -143,6 +167,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** no — better addressed as part of the GraphQL server migration
 
 ### `buildContext` connection parameter is vestigial
+
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` — `createEndpoint` > `buildContext`
 **Severity:** low
 **Kind:** design-smell
@@ -151,6 +176,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** no — tied to the Apollo migration in the roadmap
 
 ### Error responses surfacing stack traces
+
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` (error handling / Apollo error formatter)
 **Severity:** high (OWASP A09: Security Logging and Alerting Failures, A02: Security Misconfiguration)
 **Kind:** security bug
@@ -159,6 +185,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** mostly yes — the stack stripping is a one-file fix. The question of whether debug mode re-enables stack visibility is the only part that touches the Admin design.
 
 ### GraphQL introspection and field suggestions in production
+
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` — Apollo Server config
 **Severity:** medium (OWASP A02: Security Misconfiguration)
 **Kind:** security bug
@@ -171,10 +198,11 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## modules/types
 
 ### Config constants need reorganization — blocked on architecture work
+
 **File:** `modules/types/src/configs/constants.ts`
 **Severity:** medium (grows over time as configs accumulate)
 **Kind:** design-smell
-**Issue:** The constants file itself has a TODO at line 1 acknowledging the problem: the dependency tree between server-level and catalog-level configs isn't clearly expressed. Currently, "catalog-level" conflates Arranger core config and GraphQL transport config, because those two things are coupled in the current architecture. This is *intentionally* coupled — the design is accurate to how the system works today. But it means the constants structure will need to be rethought once the Arranger core module is extracted and the transport coupling dissolves.
+**Issue:** The constants file itself has a TODO at line 1 acknowledging the problem: the dependency tree between server-level and catalog-level configs isn't clearly expressed. Currently, "catalog-level" conflates Arranger core config and GraphQL transport config, because those two things are coupled in the current architecture. This is _intentionally_ coupled — the design is accurate to how the system works today. But it means the constants structure will need to be rethought once the Arranger core module is extracted and the transport coupling dissolves.
 **Fix:** Reorganize into at least three layers — server-level (global), transport-level (GraphQL-specific), and core-level (engine/search config) — once the core module boundary is defined. Attempting this before that extraction would be premature.
 **Standalone:** no — blocked on the Arranger core module extraction in the roadmap
 
@@ -183,6 +211,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## modules/components
 
 ### Quicksearch regex as potential injection / ReDoS vector
+
 **File:** TBD — Quicksearch component and its ES query builder (not yet implemented)
 **Severity:** medium (OWASP A05: Injection)
 **Kind:** security consideration
@@ -191,6 +220,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** needs-context — tied to the Quicksearch-in-facets roadmap item. Must be resolved in the design phase, not retrofitted.
 
 ### `integration-tests/server` missing OpenSearch client dependency
+
 **File:** `integration-tests/server/package.json`
 **Severity:** medium
 **Kind:** missing dependency
@@ -199,6 +229,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** mostly yes — the test harness is already wired; this is the last missing piece before OS integration tests actually run
 
 ### No integration test verifying `/introspection/fields` reflects the live ES mapping
+
 **File:** `integration-tests/server/test/spinupActive.js`
 **Severity:** medium (regression risk — the correctness fix has no integration-level guard)
 **Kind:** missing test coverage
@@ -207,6 +238,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — additive test, no changes to application code
 
 ### Shallow git clone breaks `GIT_PREVIOUS_COMMIT`-based change detection
+
 **File:** `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`
 **Severity:** medium (silently disables change detection — everything would fall back to HEAD^1 or fail)
 **Kind:** ops risk
@@ -215,6 +247,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — purely a pipeline change; no application code involved
 
 ### `arranger-iobio` deploy references old `arranger-server` image name
+
 **File:** infra repo — deploy config for `arranger-iobio` on `overture-dev`
 **Severity:** medium (deploy will reference a stale image name after the Docker rename lands)
 **Kind:** naming regression
@@ -223,6 +256,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — one-line config change in the infra repo; no code changes
 
 ### `release-charts` temporary publish branch
+
 **File:** `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy` — "TEMP. Publish Charts to NPM" stage
 **Severity:** low
 **Kind:** design-smell
@@ -231,6 +265,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — small, self-contained pipeline cleanup
 
 ### SQON viewer shows multiple values in the same bubble [urgent]
+
 **File:** `modules/components/src/` — SQON viewer component
 **Severity:** high (regression)
 **Kind:** bug
@@ -239,6 +274,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — UI-only bug, no server-side involvement
 
 ### Columns button disabled when no columns are shown by default
+
 **File:** `modules/components/src/` — column selector / table component
 **Severity:** low
 **Kind:** bug
@@ -251,6 +287,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## modules/charts
 
 ### `SupportedSearchClients` rename regression risk — PR #1066
+
 **File:** `modules/graphql-router` — exported type `SupportedSearchClients`
 **Severity:** high (will break consumers on merge)
 **Kind:** naming regression
@@ -259,6 +296,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — name fix only, no logic changes
 
 ### `esToAggTypeMap` duplicated from `modules/types` (once release-charts merges)
+
 **File:** `modules/charts/src/arranger/mapping.ts` (via commit #1064 on `release-charts`)
 **Severity:** low
 **Kind:** duplication
@@ -267,6 +305,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — mechanical import substitution, no logic changes
 
 ### TypeScript / declaration diagnostics on successful build
+
 **File:** `modules/charts` — build output
 **Severity:** medium
 **Kind:** build hygiene
@@ -279,6 +318,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## release / publishing
 
 ### `.turbo/turbo-build.log` included in published tarballs
+
 **Files:** `modules/graphql-router`, `modules/components` — published npm tarballs
 **Severity:** medium
 **Kind:** packaging hygiene
@@ -287,6 +327,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Standalone:** yes — mechanical packaging fix per module, no logic changes
 
 ### `file:` local dependencies in publishable packages
+
 **Files:** `package.json` files across publishable modules (`sqon`, `types`, `graphql-router`, `components`, `charts`)
 **Severity:** high (release blocker)
 **Kind:** packaging bug
@@ -299,6 +340,7 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 ## search-server / graphql-router boundary
 
 ### `SearchClient` vs `Client` type mismatch [done]
+
 **Files:** `apps/search-server/src/arrangerRoutes.ts`, `apps/search-server/src/server.ts`
 **Severity:** low
 **Kind:** type-weakness
