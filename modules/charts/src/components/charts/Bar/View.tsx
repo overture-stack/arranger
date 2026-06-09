@@ -6,6 +6,8 @@ import { useColorMap } from '#hooks/useColorMap';
 import { BarChartProps } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
+const SUPPRESSION_INCREMENT_VALUE = 0.2;
+
 interface BarChartViewProps {
 	data: any;
 	handlers: BarChartProps['handlers'];
@@ -13,6 +15,12 @@ interface BarChartViewProps {
 	maxBars: BarChartProps['maxBars'];
 	colorMapRef: React.RefObject<Map<string, string>>;
 }
+
+type BarData = {
+	key: string;
+	value: number;
+	label: string;
+};
 
 /**
  * Creates a chart color map for consistent colors across charts
@@ -61,16 +69,24 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 		[theme, colorMap, handlers],
 	);
 
+	// Values that are 0 will be incremented by the SUPPRESSION_INCREMENT_VALUE, in order for the Bar Chart to render a bar
+	// with a Tooltip, and will add custom text to the Tooltip.
+	// Any non-zero values will be rendered normally.
+	const dataWithSuppressedValues = data.map((d: BarData) => {
+		const suppressed = d.value === 0;
+		return { ...d, suppressed, value: suppressed ? d.value + SUPPRESSION_INCREMENT_VALUE : d.value };
+	});
+
 	// 1) custom sort order or ascending (from axis)
 	// 2) limit by maxRows
 	// 3) reverse order for display
 	const barData = theme.sortByKey
 		? theme.sortByKey
-				.map((label) => data.find((bar) => bar.key === label))
+				.map((label) => dataWithSuppressedValues.find((bar: BarData) => bar.key === label))
 				.filter(Boolean)
 				.slice(0, maxBars)
-		: data
-				.toSorted((a, b) => b.value - a.value)
+		: dataWithSuppressedValues
+				.toSorted((a: BarData, b: BarData) => b.value - a.value)
 				.slice(0, maxBars)
 				.reverse();
 
