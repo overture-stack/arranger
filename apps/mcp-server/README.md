@@ -85,15 +85,15 @@ cp .env.schema .env
 
 ### Environment Variables
 
-| Name                       | Description                                                             | Type     | Required     | Default                 |
-| -------------------------- | ----------------------------------------------------------------------- | -------- | ------------ | ----------------------- |
-| `ARRANGER_BASE_URL`        | URL for the Arranger Server                                             | `string` | **Required** | `http://localhost:5050` |
-| `ARRANGER_CATALOGUES`      | Comma-separated list of Arranger catalogues to expose to the MCP Server | `string` | **Required** | `server`                |
-| `ARRANGER_REQUEST_TIMEOUT_MS` | Timeout for requests to Arranger                                        | `number` | Optional     | `10_000`               |
-| `MCP_HOST`                 | Host URL for the MCP server                                             | `string` | Optional     | `0.0.0.0`               |
-| `MCP_PORT`                 | Port the MCP Server will listen for requests on                         | `number` | Optional     | `3100`                  |
-| `MCP_PATH`                 | Endpoint for the MCP Streamable HTTP transport                           | `string` | Optional     | `/mcp`                  |
-| `LOG_LEVEL`                | Pino [log level](https://getpino.io/#/docs/api?id=level-1)              | `string` | Optional     | `info`                  |
+| Name                          | Description                                                             | Type     | Required     | Default                 |
+| ----------------------------- | ----------------------------------------------------------------------- | -------- | ------------ | ----------------------- |
+| `ARRANGER_BASE_URL`           | URL for the Arranger Server                                             | `string` | **Required** | `http://localhost:5050` |
+| `ARRANGER_CATALOGUES`         | Comma-separated list of Arranger catalogues to expose to the MCP Server | `string` | **Required** | `server`                |
+| `ARRANGER_REQUEST_TIMEOUT_MS` | Timeout for requests to Arranger                                        | `number` | Optional     | `10_000`                |
+| `MCP_HOST`                    | Host URL for the MCP server                                             | `string` | Optional     | `0.0.0.0`               |
+| `MCP_PORT`                    | Port the MCP Server will listen for requests on                         | `number` | Optional     | `3100`                  |
+| `MCP_PATH`                    | Endpoint for the MCP Streamable HTTP transport                          | `string` | Optional     | `/mcp`                  |
+| `LOG_LEVEL`                   | Pino [log level](https://getpino.io/#/docs/api?id=level-1)              | `string` | Optional     | `info`                  |
 
 ## Testing
 

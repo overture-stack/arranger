@@ -8,11 +8,11 @@ import dotenv from 'dotenv';
 
 import ArrangerServer from '../../../apps/search-server/src/server.js';
 import { buildSearchClient } from '../../../modules/graphql-router/src/index.js';
-import catalogABase from '../multiconfigs/catalog-a/base.json' with { type: 'json' };
-import catalogBBase from '../multiconfigs/catalog-b/base.json' with { type: 'json' };
+import catalogueABase from '../multiconfigs/catalogue-a/base.json' with { type: 'json' };
+import catalogueBBase from '../multiconfigs/catalogue-b/base.json' with { type: 'json' };
 
-import catalogAMappings from './assets/catalog_a.mappings.json' with { type: 'json' };
-import catalogBMappings from './assets/catalog_b.mappings.json' with { type: 'json' };
+import catalogueAMappings from './assets/catalogue_a.mappings.json' with { type: 'json' };
+import catalogueBMappings from './assets/catalogue_b.mappings.json' with { type: 'json' };
 import readResources from './readResources.js';
 import readTools from './readTools.js';
 import spinupActive from './spinupActive.js';
@@ -31,26 +31,26 @@ const mcpPort = stringToNumber(process.env.MCP_TEST_PORT, 3199);
 
 const arrangerBaseUrl = `http://127.0.0.1:${arrangerPort}`;
 
-const catalogConfigs = [
+const catalogueConfigs = [
 	{
-		catalogId: catalogABase.catalogId,
-		documentType: catalogABase.documentType,
-		esIndex: catalogABase.esIndex,
-		mappings: catalogAMappings,
-		extendedFieldNames: catalogABase.extended.map((field) => field.fieldName),
+		catalogId: catalogueABase.catalogId,
+		documentType: catalogueABase.documentType,
+		esIndex: catalogueABase.esIndex,
+		mappings: catalogueAMappings,
+		extendedFieldNames: catalogueABase.extended.map((field) => field.fieldName),
 	},
 	{
-		catalogId: catalogBBase.catalogId,
-		documentType: catalogBBase.documentType,
-		esIndex: catalogBBase.esIndex,
-		mappings: catalogBMappings,
-		extendedFieldNames: catalogBBase.extended.map((field) => field.fieldName),
+		catalogId: catalogueBBase.catalogId,
+		documentType: catalogueBBase.documentType,
+		esIndex: catalogueBBase.esIndex,
+		mappings: catalogueBMappings,
+		extendedFieldNames: catalogueBBase.extended.map((field) => field.fieldName),
 	},
 ];
 
-const configuredCatalogues = catalogConfigs.map((c) => c.catalogId);
-const expectedDocumentTypes = Object.fromEntries(catalogConfigs.map((c) => [c.catalogId, c.documentType]));
-const expectedFieldsByCatalog = Object.fromEntries(catalogConfigs.map((c) => [c.catalogId, c.extendedFieldNames]));
+const configuredCatalogues = catalogueConfigs.map((c) => c.catalogId);
+const expectedDocumentTypes = Object.fromEntries(catalogueConfigs.map((c) => [c.catalogId, c.documentType]));
+const expectedFieldsByCatalogue = Object.fromEntries(catalogueConfigs.map((c) => [c.catalogId, c.extendedFieldNames]));
 
 const useESAuth = !!esPass && !!esUser;
 const esClient = await buildSearchClient({
@@ -63,7 +63,7 @@ const esClient = await buildSearchClient({
 });
 
 const cleanupIndices = async () => {
-	const allTestIndices = [...catalogConfigs.map((c) => c.esIndex), setsIndex];
+	const allTestIndices = [...catalogueConfigs.map((c) => c.esIndex), setsIndex];
 	const uniqueIndices = [...new Set(allTestIndices)];
 
 	const deletePromises = uniqueIndices.map(async (index) => {
@@ -110,7 +110,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			console.error('\n------------------------------------');
 			console.log('Initializing Elasticsearch testing indices\n');
 
-			for (const { catalogId, esIndex, mappings } of catalogConfigs) {
+			for (const { catalogId, esIndex, mappings } of catalogueConfigs) {
 				console.debug('  - Creating index for', catalogId);
 				await esClient.indices.create({
 					index: esIndex,
@@ -200,7 +200,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			getClient,
 			configuredCatalogues,
 			expectedDocumentTypes,
-			expectedFieldsByCatalog,
+			expectedFieldsByCatalogue,
 		});
 	});
 
@@ -209,7 +209,7 @@ suite('integration-tests/mcp-server', { concurrency: false }, () => {
 			getClient,
 			configuredCatalogues,
 			expectedDocumentTypes,
-			expectedFieldsByCatalog,
+			expectedFieldsByCatalogue,
 		});
 	});
 

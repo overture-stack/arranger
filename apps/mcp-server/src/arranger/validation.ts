@@ -14,18 +14,18 @@ export const validateArrangerConnection = async (
 	client: ArrangerIntrospectionClient,
 ): Promise<void> => {
 	try {
-		const server = await client.getServerIntrospection();
+		const { catalogs: catalogues } = await client.getServerIntrospection();
 		await client.getSqonIntrospection();
 		logger.info('Connected to Arranger /introspection and /introspection/sqon.');
 
-		const available = new Set(Object.keys(server.catalogs));
+		const available = new Set(Object.keys(catalogues));
 		const missing = config.catalogues.filter((catalogue) => !available.has(catalogue));
 		if (missing.length > 0) {
 			throw new Error(`Configured catalogues not available on Arranger: ${missing.join(', ')}`);
 		}
 
-		for (const catalogId of config.catalogues) {
-			await client.getCatalogIntrospection(catalogId);
+		for (const catalogueId of config.catalogues) {
+			await client.getCatalogueIntrospection(catalogueId);
 		}
 		logger.info({ catalogues: config.catalogues }, 'All configured catalogues validated.');
 	} catch (error) {

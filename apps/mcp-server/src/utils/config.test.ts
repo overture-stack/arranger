@@ -104,7 +104,7 @@ suite('createArrangerMcpConfig', () => {
 		test('builds config from process.env when all variables provided and valid', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com/',
-				ARRANGER_CATALOGUES: 'catalog-a, catalog-b ,catalog-c',
+				ARRANGER_CATALOGUES: 'catalogue-a, catalogue-b ,catalogue-c',
 				ARRANGER_REQUEST_TIMEOUT_MS: '5_000',
 				MCP_HOST: '127.0.0.1',
 				MCP_PORT: '4200',
@@ -116,7 +116,7 @@ suite('createArrangerMcpConfig', () => {
 
 			assert.deepStrictEqual(config, {
 				arrangerBaseUrl: 'https://arranger.example.com',
-				catalogues: ['catalog-a', 'catalog-b', 'catalog-c'],
+				catalogues: ['catalogue-a', 'catalogue-b', 'catalogue-c'],
 				requestTimeoutMs: 5000,
 				mcp: {
 					host: '127.0.0.1',
@@ -129,14 +129,14 @@ suite('createArrangerMcpConfig', () => {
 		test('builds config with defaults for optional variables when only required variables are provided', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'http://localhost:5050',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 			});
 
 			const config = createArrangerMcpConfig();
 
 			assert.deepStrictEqual(config, {
 				arrangerBaseUrl: 'http://localhost:5050',
-				catalogues: ['catalog-a'],
+				catalogues: ['catalogue-a'],
 				requestTimeoutMs: 10_000,
 				mcp: {
 					host: '0.0.0.0',
@@ -149,7 +149,7 @@ suite('createArrangerMcpConfig', () => {
 		test('trims a single trailing slash from ARRANGER_BASE_URL', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com/',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 			});
 
 			const config = createArrangerMcpConfig();
@@ -160,19 +160,19 @@ suite('createArrangerMcpConfig', () => {
 		test('filters empty entries from ARRANGER_CATALOGUES', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a,, catalog-b, ,catalog-c,',
+				ARRANGER_CATALOGUES: 'catalogue-a,, catalogue-b, ,catalogue-c,',
 			});
 
 			const config = createArrangerMcpConfig();
 
-			assert.deepStrictEqual(config.catalogues, ['catalog-a', 'catalog-b', 'catalog-c']);
+			assert.deepStrictEqual(config.catalogues, ['catalogue-a', 'catalogue-b', 'catalogue-c']);
 		});
 	});
 
 	suite('missing required environment variables', () => {
 		test('exits when ARRANGER_BASE_URL is missing', () => {
 			setEnv({
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 			});
 
 			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
@@ -208,7 +208,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when ARRANGER_BASE_URL is not a valid URL', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'not-a-url',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 			});
 
 			assert.throws(() => createArrangerMcpConfig(), /__process_exit__/);
@@ -230,7 +230,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when ARRANGER_REQUEST_TIMEOUT_MS is not a number', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 				ARRANGER_REQUEST_TIMEOUT_MS: 'not-a-number',
 			});
 
@@ -242,7 +242,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when ARRANGER_REQUEST_TIMEOUT_MS is not an integer', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 				ARRANGER_REQUEST_TIMEOUT_MS: '1.5',
 			});
 
@@ -254,7 +254,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when ARRANGER_REQUEST_TIMEOUT_MS is not positive', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 				ARRANGER_REQUEST_TIMEOUT_MS: '-100',
 			});
 
@@ -266,7 +266,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when MCP_PORT exceeds 65535', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 				MCP_PORT: '70000',
 			});
 
@@ -278,7 +278,7 @@ suite('createArrangerMcpConfig', () => {
 		test('exits when LOG_LEVEL is not one of the allowed values', () => {
 			setEnv({
 				ARRANGER_BASE_URL: 'https://arranger.example.com',
-				ARRANGER_CATALOGUES: 'catalog-a',
+				ARRANGER_CATALOGUES: 'catalogue-a',
 				LOG_LEVEL: 'verbose',
 			});
 

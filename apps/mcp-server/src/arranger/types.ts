@@ -1,8 +1,8 @@
 import { z as zod } from 'zod';
 
 export type {
-	CatalogFieldIntrospection as ArrangerCatalogFieldDetails,
-	CatalogIntrospectionResponse as ArrangerCatalogIntrospection,
+	CatalogFieldIntrospection as ArrangerCatalogueFieldDetails,
+	CatalogIntrospectionResponse as ArrangerCatalogueIntrospection,
 	IntrospectionResponse as ArrangerServerIntrospection,
 	SqonIntrospectionResponse as ArrangerSqonIntrospection,
 } from '../../../search-server/src/introspection/types.js';
@@ -10,7 +10,7 @@ export type {
 // TODO: as part of tech debt item "Introspection types should be Zod-first to allow reuse as MCP output schemas",
 // these types should be replaced with exports from the search-server's Zod schemas once that work is done.
 
-export const catalogsSchema = zod.record(
+export const cataloguesSchema = zod.record(
 	zod.object({
 		description: zod.string().optional(),
 		documentType: zod.string(),
@@ -24,7 +24,7 @@ export const catalogsSchema = zod.record(
 
 export const serverIntrospectionSchema = zod.object({
 	catalogCount: zod.number(),
-	catalogs: catalogsSchema,
+	catalogs: cataloguesSchema,
 	mode: zod.union([zod.literal('single'), zod.literal('multiple')]),
 	sqonSchemaPath: zod.string(),
 });
@@ -54,7 +54,7 @@ const fieldSchema = zod.object({
 	unit: zod.string().nullable().optional(),
 });
 
-export const catalogIntrospectionSchema = zod.object({
+export const catalogueIntrospectionSchema = zod.object({
 	catalogId: zod.string(),
 	description: zod.string().optional(),
 	documentType: zod.string(),

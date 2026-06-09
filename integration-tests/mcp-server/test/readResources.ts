@@ -7,7 +7,7 @@ export type ResourceEnv = {
 	getClient: () => Client;
 	configuredCatalogues: string[];
 	expectedDocumentTypes: Record<string, string>;
-	expectedFieldsByCatalog: Record<string, string[]>;
+	expectedFieldsByCatalogue: Record<string, string[]>;
 };
 
 const readJsonResource = async (mcpClient: Client, uri: string) => {
@@ -20,7 +20,7 @@ const readJsonResource = async (mcpClient: Client, uri: string) => {
 	return JSON.parse(first.text as string);
 };
 
-export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expectedFieldsByCatalog }: ResourceEnv) => {
+export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expectedFieldsByCatalogue }: ResourceEnv) => {
 	test('1.reads arranger://introspection/server', async () => {
 		const data = await readJsonResource(getClient(), 'arranger://introspection/server');
 
@@ -28,12 +28,12 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expect
 		assert.equal(data.catalogCount, configuredCatalogues.length);
 		assert.equal(data.sqonSchemaPath, '/introspection/sqon');
 
-		for (const catalogId of configuredCatalogues) {
-			const catalog = data.catalogs[catalogId];
-			assert.ok(catalog, `expected catalog '${catalogId}' in server introspection`);
-			assert.equal(catalog.documentType, expectedDocumentTypes[catalogId]);
-			assert.equal(catalog.paths.graphql, `/${catalogId}/graphql`);
-			assert.equal(catalog.paths.introspection, `/introspection/${catalogId}`);
+		for (const catalogueId of configuredCatalogues) {
+			const catalogue = data.catalogs[catalogueId];
+			assert.ok(catalogue, `expected catalogue '${catalogueId}' in server introspection`);
+			assert.equal(catalogue.documentType, expectedDocumentTypes[catalogueId]);
+			assert.equal(catalogue.paths.graphql, `/${catalogueId}/graphql`);
+			assert.equal(catalogue.paths.introspection, `/introspection/${catalogueId}`);
 		}
 	});
 
@@ -48,25 +48,25 @@ export default ({ getClient, configuredCatalogues, expectedDocumentTypes, expect
 		assert.ok(Array.isArray(data.operators.field));
 	});
 
-	test('3.lists catalog field resources via the resource template', async () => {
+	test('3.lists catalogue field resources via the resource template', async () => {
 		const { resourceTemplates } = await getClient().listResourceTemplates();
 		const template = resourceTemplates.find(
-			(t) => t.uriTemplate === 'arranger://introspection/catalog/{catalogId}',
+			(t) => t.uriTemplate === 'arranger://introspection/catalog/{catalogueId}',
 		);
-		assert.ok(template, 'expected catalog-fields resource template to be registered');
+		assert.ok(template, 'expected catalogue-fields resource template to be registered');
 	});
 
-	test('4.reads arranger://introspection/catalog/{id} for each configured catalogue', async () => {
-		for (const catalogId of configuredCatalogues) {
-			const data = await readJsonResource(getClient(), `arranger://introspection/catalog/${catalogId}`);
+	test('4.reads arranger://introspection/catalog/{catalogueId} for each configured catalogue', async () => {
+		for (const catalogueId of configuredCatalogues) {
+			const data = await readJsonResource(getClient(), `arranger://introspection/catalog/${catalogueId}`);
 
-			assert.equal(data.catalogId, catalogId);
-			assert.equal(data.documentType, expectedDocumentTypes[catalogId]);
+			assert.equal(data.catalogId, catalogueId);
+			assert.equal(data.documentType, expectedDocumentTypes[catalogueId]);
 			assert.equal(typeof data.generatedAt, 'string');
-			assert.ok(data.fields, 'expected fields object on catalog introspection');
+			assert.ok(data.fields, 'expected fields object on catalogue introspection');
 
 			const fieldNames = Object.keys(data.fields).sort();
-			const expectedFieldNames = [...expectedFieldsByCatalog[catalogId]].sort();
+			const expectedFieldNames = [...expectedFieldsByCatalogue[catalogueId]].sort();
 			assert.deepEqual(fieldNames, expectedFieldNames);
 
 			for (const fieldName of expectedFieldNames) {
