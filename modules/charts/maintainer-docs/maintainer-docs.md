@@ -23,7 +23,7 @@ Applications using the library must be wrapped in the required provider hierarch
 <ArrangerDataProvider>
 	<ChartsProvider
 		debugMode={false}
-		loadingDelay={300}
+		loadingDelay={50}
 	>
 		<ChartsThemeProvider colors={customColors}>
 			<BarChart
@@ -91,9 +91,12 @@ ChartsProvider (data management)
     ├── BarChart (consumer interface)
     │   ├── ChartRenderer (state routing)
     │   └── BarChartView (visualization)
-    └── SunburstChart (consumer interface)
+    ├── SunburstChart (consumer interface)
+    │   ├── ChartRenderer (state routing)
+    │   └── SunburstView (visualization)
+    └── NetworkNodesChart (consumer interface)
         ├── ChartRenderer (state routing)
-        └── SunburstView (visualization)
+        └── NetworkNodeChartView (visualization)
 ```
 
 ---
@@ -221,6 +224,7 @@ Colors are managed through `useColorMap` hook.
 
 ```tsx
 const { colorMap } = useColorMap({
+	fieldName,
 	colorMapRef,
 	chartData,
 	resolver: colorMapResolver,
@@ -232,6 +236,8 @@ The color map ensures that:
 - Colors remain consistent across re-renders
 - Same data keys always receive the same colors
 - Color assignments persist even when data order changes
+
+The `fieldName` is used as a key for `sessionStorage` caching (`arranger-charts-{fieldName}`), so color assignments also persist across component remounts within the same browser session.
 
 A custom color resolver is used to generate a color map from chart data.
 
@@ -263,6 +269,12 @@ The core provider manages global chart state and data fetching:
 - API state
 - Data transformation
 - Data provider context hooks
+
+**Props:**
+
+- `debugMode`: Enables debug logging
+- `loadingDelay`: Milliseconds to delay before clearing loading state (default: `50`). Prevents flash of loading UI for fast responses.
+- `disableIncludeMissing`: Suppresses `__missing__` buckets from aggregation queries
 
 **Key Methods:**
 
@@ -419,6 +431,58 @@ children.forEach((child) => {
 	colorMap.set(child, color.string());
 });
 ```
+
+### Event Handling
+
+Click and hover events will provide a bar object that at least contains:
+
+- `label` of data and `value` of data
+
+### `SunburstMappingFn` Type
+
+The `mapper` prop type is exported as `SunburstMappingFn` for consumers that want to type their mapping functions:
+
+```tsx
+import { SunburstMappingFn } from '@overture-stack/arranger-charts';
+
+const myMapper: SunburstMappingFn = (key) => lookupMap[key];
+```
+
+---
+
+## Component Breakdown: NetworkNodesChart
+
+Displays federated network node data as a bar chart. Unlike `BarChart`, this component does not take a `fieldName` — it queries the network nodes endpoint directly, showing one bar per remote node with hit counts.
+
+### Consumer Interface
+
+```tsx
+<NetworkNodesChart
+	maxBars={10}           // Optional: Display limit (default: unlimited)
+	theme={{               // Required: Nivo axis config and sort options
+		sortAlphabetically: true,
+		axisLeft: { legend: 'Repository' },
+		axisBottom: { legend: 'Donors' },
+	}}
+	handlers={{ onClick: fn }}         // Optional: Event handlers
+	disableTopBarsCount={false}        // Optional: Hide "Top X of Y" label
+/>
+```
+
+### Validation and Registration Flow
+
+1. **No field registration**: Does not register a GQL field. Instead, calls `requireNetworkSearch()` on mount to signal the provider to include the network nodes query.
+2. **Data source**: Reads from `getNetworkNodesData()` — the `network.nodes` portion of the GQL response, not document aggregations.
+
+### View Rendering
+
+Each network node becomes a bar with:
+
+- `key`: `nodeId`
+- `label`: `network.node.name`
+- `value`: `network.node.hits`
+
+Sorting is controlled by `theme.sortAlphabetically` (default `true`). When `false`, nodes are sorted by hit count descending.
 
 ### Event Handling
 

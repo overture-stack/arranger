@@ -3,16 +3,15 @@ import { ResponsiveBar } from '@nivo/bar';
 import { useMemo } from 'react';
 
 import { useColorMap } from '#hooks/useColorMap';
-import type { ChartBucket } from '../../Provider/chartsContextTypes';
-import { BarChartProps } from './BarChart';
+import type { ChartBucket, NetworkNodeGQLResponseData } from '../../Provider/chartsContextTypes';
+import { NetworkNodesChartProps } from './NetworkNodesChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
-interface BarChartViewProps {
-	data: ChartBucket[];
-	fieldName: string;
-	handlers: BarChartProps['handlers'];
-	theme: BarChartProps['theme'];
-	maxBars: BarChartProps['maxBars'];
+interface NetworkNodeChartViewProps {
+	data: NetworkNodeGQLResponseData[];
+	handlers: NetworkNodesChartProps['handlers'];
+	theme: NetworkNodesChartProps['theme'];
+	maxBars?: NetworkNodesChartProps['maxBars'];
 	colorMapRef: React.RefObject<Map<string, string>>;
 }
 
@@ -48,10 +47,38 @@ const colorMapResolver = ({ chartData, savedMap, colors }) => {
  * @param props.maxBars - Max number of bars to show
  * @returns JSX element with responsive bar chart
  */
-export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fieldName }: BarChartViewProps) => {
+export const NetworkNodeChartView = ({
+	data,
+	handlers,
+	theme,
+	maxBars = Infinity,
+	colorMapRef,
+}: NetworkNodeChartViewProps) => {
+	const sortAlphabetically = theme.sortAlphabetically ?? true;
+
+	// 1) custom sort order or ascending (from axis)
+	// 2) limit by maxRows
+	// 3) reverse order for display
+	const sortedNodes = sortAlphabetically
+		? data.toSorted((a, b) => (a.name > b.name ? 1 : -1)).slice(0, maxBars)
+		: data
+				.toSorted((a, b) => b.hits - a.hits)
+				.slice(0, maxBars)
+				.reverse();
+	const barData: ChartBucket[] = sortedNodes.map((node) => ({
+		key: node.nodeId,
+		label: node.name,
+		value: node.hits,
+	}));
+
 	// persistent color map
 	// ensure to create from full data available before slicing visible data
-	const { colorMap } = useColorMap({ fieldName, colorMapRef, chartData: data, resolver: colorMapResolver });
+	const { colorMap } = useColorMap({
+		fieldName: 'nodes',
+		colorMapRef,
+		chartData: barData,
+		resolver: colorMapResolver,
+	});
 
 	/**
 	 * TODO: improve "chart view" config/interface
@@ -62,19 +89,6 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 		() => arrangerToNivoBarChart({ theme, colorMap, onClick: handlers?.onClick }),
 		[theme, colorMap, handlers],
 	);
-
-	// 1) custom sort order or ascending (from axis)
-	// 2) limit by maxRows
-	// 3) reverse order for display
-	const barData = theme.sortByKey
-		? theme.sortByKey
-				.map((label) => data.find((bar) => bar.key === label))
-				.filter(Boolean)
-				.slice(0, maxBars)
-		: data
-				.toSorted((a, b) => b.value - a.value)
-				.slice(0, maxBars)
-				.reverse();
 
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
