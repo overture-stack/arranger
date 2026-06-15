@@ -2,8 +2,8 @@ import type { CustomizeRemoteRequestFn } from '@overture-stack/arranger-types/co
 import { Kind, type FieldNode, type GraphQLObjectType, type GraphQLResolveInfo } from 'graphql';
 import graphqlFields from 'graphql-fields';
 
-import { type AggregationsQueryVariables, type AllAggregationsMap } from '#mapping/resolveAggregations.js';
-import { AggregationAccumulator } from '#network/aggregations/AggregationAccumulator.js';
+import { type AggregationsQueryVariables } from '#mapping/resolveAggregations.js';
+import { AggregationAccumulator, type NetworkAggregationsMap } from '#network/aggregations/AggregationAccumulator.js';
 import { fetchData } from '#network/resolvers/fetch.js';
 import { createNetworkQuery } from '#network/resolvers/query.js';
 import { type Hits } from '#network/types/hits.js';
@@ -17,6 +17,7 @@ export const CONNECTION_STATUS = {
 } as const;
 
 export type NetworkNodeResponseData = {
+	nodeId?: string;
 	name: string;
 	hits: number;
 	status: keyof typeof CONNECTION_STATUS;
@@ -24,7 +25,7 @@ export type NetworkNodeResponseData = {
 	aggregations: { name: string; type: string }[];
 };
 
-type SuccessResponse = Record<string, { hits: Hits; aggregations: AllAggregationsMap }>;
+type SuccessResponse = Record<string, { hits: Hits; aggregations: NetworkAggregationsMap }>;
 
 /**
  * Query each network node then combine the results into total aggregations.
@@ -39,7 +40,7 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 	remoteNodes: NetworkRemoteNode[];
 	requestedAggregationFields: RequestedFieldsMap;
 }): Promise<{
-	aggregationResults: AllAggregationsMap;
+	aggregationResults: NetworkAggregationsMap;
 	nodeInfo: Omit<NetworkNodeResponseData, 'aggregations'>[];
 }> => {
 	const {
@@ -75,11 +76,11 @@ export const aggregationPipeline = async <Context extends ArrangerBaseContext>(p
 			}
 
 			// query node
-			const gqlQuery = gqlQueryResult.data;
+			const gqlResponseData = gqlQueryResult.data;
 			const response = await fetchData({
 				customRequestProps: customizeRemoteRequest?.({ context, remoteNode: config }),
 				url: config.graphqlUrl,
-				gqlQuery,
+				gqlQuery: gqlResponseData,
 				queryVariables,
 			});
 

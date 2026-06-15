@@ -1,21 +1,17 @@
-import {
-	type Aggregations,
-	type AllAggregations,
-	type AllAggregationsMap,
-	type Bucket,
-} from '#mapping/resolveAggregations.js';
+import { type Aggregations, type Bucket } from '#mapping/resolveAggregations.js';
 import { ALL_NETWORK_AGGREGATION_TYPES_MAP } from '#network/index.js';
 import { SUPPORTED_AGGREGATIONS, type SupportedAggregation } from '#network/setup/constants.js';
 import { type Hits } from '#network/types/hits.js';
 import { type RequestedFieldsMap } from '#network/utils/gql.js';
 
+export type NetworkAggregation = Aggregations & { cardinality: number };
+export type NetworkAggregationsMap = Record<string, NetworkAggregation>;
+
 type ResolveAggregationInput = {
-	data: { aggregations: AllAggregationsMap; hits: Hits };
-	accumulator: AllAggregationsMap;
+	data: { aggregations: NetworkAggregationsMap; hits: Hits };
+	accumulator: NetworkAggregationsMap;
 	requestedFields: string[];
 };
-
-type AggregationsTuple = [AllAggregations, AllAggregations];
 
 /**
  * Mutation
@@ -107,17 +103,23 @@ const updateComputedBuckets = (bucket: Bucket, computedBuckets: Bucket[]) => {
  *	}
  * ```
  */
-export const resolveAggregation = (aggregations: AggregationsTuple): Aggregations => {
-	const resolvedAggregation = aggregations.reduce((resolvedAggregation, agg) => {
-		const computedBuckets = resolvedAggregation.buckets;
-		agg.buckets.forEach((bucket) => updateComputedBuckets(bucket, computedBuckets));
-		return {
-			bucket_count: computedBuckets.length,
-			buckets: computedBuckets,
-		};
-	});
+export const resolveAggregation = (aggregations: Partial<NetworkAggregation>[]): NetworkAggregation => {
+	return aggregations.reduce<NetworkAggregation>(
+		(resolved, agg) => {
+			const computedBuckets = resolved.buckets ?? [];
+			agg.buckets?.forEach((bucket) => updateComputedBuckets(bucket, computedBuckets));
 
-	return resolvedAggregation;
+			const cardinality =
+				agg.cardinality !== undefined ? (resolved.cardinality ?? 0) + agg.cardinality : resolved.cardinality;
+
+			return {
+				bucket_count: computedBuckets.length,
+				buckets: computedBuckets,
+				cardinality,
+			};
+		},
+		{ bucket_count: 0, buckets: [], cardinality: 0 },
+	);
 };
 
 /**
@@ -126,9 +128,9 @@ export const resolveAggregation = (aggregations: AggregationsTuple): Aggregation
  * @param type
  * @param aggregations
  */
-const resolveAggregationByType = <T>(type: string, aggregations: [T, T]): Aggregations => {
+const resolveAggregationByType = <T>(type: string, aggregations: [T, T]): NetworkAggregation => {
 	if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
-		return resolveAggregation(aggregations as AggregationsTuple);
+		return resolveAggregation(aggregations as Partial<NetworkAggregation>[]);
 	} else {
 		// no types match
 		throw new Error('No matching aggregation type');
@@ -136,7 +138,7 @@ const resolveAggregationByType = <T>(type: string, aggregations: [T, T]): Aggreg
 };
 
 // mutation - update a single aggregations field in the accumulator
-const addToAccumulator = <T extends AllAggregations>({
+const addToAccumulator = <T extends NetworkAggregation>({
 	existingAggregation,
 	aggregation,
 	type,
@@ -144,14 +146,15 @@ const addToAccumulator = <T extends AllAggregations>({
 	existingAggregation: T | undefined;
 	aggregation: T;
 	type: SupportedAggregation;
-}) => {
+}): NetworkAggregation => {
 	// if first aggregation, nothing to resolve with yet
 	return !existingAggregation ? aggregation : resolveAggregationByType<T>(type, [aggregation, existingAggregation]);
 };
 
-const emptyAggregation = (hits: number): Aggregations => ({
+const emptyAggregation = (hits: number): NetworkAggregation => ({
 	bucket_count: 1,
 	buckets: [{ key: '___aggregation_not_available___', doc_count: hits }],
+	cardinality: 0,
 });
 
 /**
@@ -186,7 +189,7 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 				type,
 			});
 		} else {
-			// only need to add empty agg for Aggregations type to account for bucket counts
+			// need to add empty agg for Aggregations type to account for bucket counts and cardinality
 			// histogram => buckets is not supported for NumericAggregations
 			if (type === SUPPORTED_AGGREGATIONS.Aggregations) {
 				accumulator[requestedField] = addToAccumulator({
@@ -200,7 +203,7 @@ const resolveAggregations = ({ data, accumulator, requestedFields }: ResolveAggr
 };
 
 export class AggregationAccumulator {
-	totalAgg: AllAggregationsMap = {};
+	totalAgg: NetworkAggregationsMap = {};
 	requestedFields: string[];
 
 	constructor(requestedFieldsMap: RequestedFieldsMap) {
@@ -208,7 +211,7 @@ export class AggregationAccumulator {
 		this.requestedFields = requestedFields;
 	}
 
-	resolve(data: { aggregations: AllAggregationsMap; hits: Hits }) {
+	resolve(data: { aggregations: NetworkAggregationsMap; hits: Hits }): void {
 		resolveAggregations({
 			accumulator: this.totalAgg,
 			data: structuredClone(data),
@@ -216,7 +219,7 @@ export class AggregationAccumulator {
 		});
 	}
 
-	result() {
+	result(): NetworkAggregationsMap {
 		return this.totalAgg;
 	}
 }

@@ -12,6 +12,7 @@ import {
 } from '#network/resolvers/aggregations.js';
 import { createResponse } from '#network/resolvers/response.js';
 import { resolveInfoToMap } from '#network/utils/gql.js';
+import { filterNodesByNodeId } from '#network/utils/nodeFilter.js';
 import { convertToSqon } from '#network/utils/sqon.js';
 import type { ArrangerBaseContext, Resolver } from '#types.js';
 
@@ -22,8 +23,7 @@ type NetworkSearchRoot = {
 	aggregations: Record<string, unknown>;
 };
 
-// top level query to pass variables down
-export type NetworkQueryVariables = AggregationsQueryVariables;
+export type NetworkQueryVariables = AggregationsQueryVariables & { nodesFilter?: string[] };
 
 /**
  * Resolvers for network search.
@@ -42,6 +42,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 }) => {
 	const { localNodes, remoteNodes } = params;
 	const failedRemoteNodeInfo: NetworkNodeResponseData[] = remoteNodes.failed.map(({ config, error }) => ({
+		nodeId: config.nodeId,
 		name: config.displayName,
 		hits: 0,
 		status: CONNECTION_STATUS.ERROR,
@@ -50,6 +51,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 	}));
 
 	const missingLocalNodeInfo: NetworkNodeResponseData[] = localNodes.missing.map(({ config, error }) => ({
+		nodeId: config.nodeId,
 		name: config.displayName,
 		hits: 0,
 		status: CONNECTION_STATUS.ERROR,
@@ -69,6 +71,7 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 			Record<string, NetworkNodeResponseData>
 		>((acc, node) => {
 			acc[node.displayName] = {
+				nodeId: node.nodeId,
 				name: node.displayName,
 				hits: 0,
 				status: CONNECTION_STATUS.OK,
@@ -92,7 +95,11 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 				throw new Error(`Provided filter is not a valid sqon: ${result.data}`);
 			}
 		}
-		const queryVariables = { ...args };
+		const { nodesFilter, ...remainingArgs } = args;
+		const queryVariables = { ...remainingArgs };
+
+		const filteredRemoteNodes = filterNodesByNodeId(remoteNodes.connected, nodesFilter);
+		const filteredLocalNodes = filterNodesByNodeId(localNodes.available, nodesFilter);
 
 		/*
 		 * Aggregation pipeline entrypoint
@@ -100,9 +107,9 @@ export const createResolvers = <Context extends ArrangerBaseContext>(params: {
 		const { aggregationResults, nodeInfo } = await aggregationPipeline<Context>({
 			customizeRemoteRequest: remoteNodes.customizeRemoteRequest,
 			context,
-			localNodes: localNodes.available,
+			localNodes: filteredLocalNodes,
 			queryVariables,
-			remoteNodes: remoteNodes.connected,
+			remoteNodes: filteredRemoteNodes,
 			requestedAggregationFields: requestedFieldsMap,
 			graphqlResolveInfo: info,
 		});

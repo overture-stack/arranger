@@ -20,8 +20,8 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
+import type { NetworkLocalNode } from './types/setup.js';
 import type { LocalCatalogSchemaData } from './types.js';
-import { type NetworkLocalNode } from './types/setup.js';
 
 /**
  * Map of all available fields with associated aggregation type
@@ -106,6 +106,7 @@ export const createSchemaFromNetworkConfig = async <Context extends ArrangerBase
 		availableLocalNodes.push({
 			catalogId: localConfig.catalogId,
 			displayName: localConfig.displayName,
+			nodeId: localConfig.nodeId,
 			resolvers: { aggregations: aggregationResolver, hits: hitsResolver },
 			aggregations: catalog.configs.aggregations,
 		});
