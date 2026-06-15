@@ -6,6 +6,7 @@ import { useColorMap } from '#hooks/useColorMap';
 import { BarChartProps } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
+// TODO: abstract as a customizable value, using this as default
 const SUPPRESSION_INCREMENT_VALUE = 0.2;
 
 interface BarChartViewProps {
