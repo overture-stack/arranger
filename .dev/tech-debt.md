@@ -25,6 +25,15 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
 **Standalone:** yes — self-contained change to `app.ts`; no protocol or API surface changes
 
+### `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
+
+**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` — `NUMERIC_AGGREGATION_TYPES`
+**Severity:** low (duplication / drift risk)
+**Kind:** duplication
+**Issue:** The execute-query builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
+**Fix:** Either add `@overture-stack/arranger-types` as an mcp-server dependency and derive the set from `esToAggTypesMap`, or (preferred) expose each field's aggregation kind in the catalogue introspection response so MCP consumers need no local mapping at all. The latter aligns with the introspection-as-contract direction of the MCP integration readiness roadmap items.
+**Standalone:** yes — either fix is additive; no behaviour change for current field types
+
 ### Introspection types should be Zod-first to allow reuse as MCP output schemas
 
 **File:** `apps/search-server/src/introspection/types.ts`; `apps/mcp-server/src/mcp/tools.ts` — `fieldShape`
@@ -86,6 +95,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
 **Standalone:** yes — (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
+### `docs/concepts.md` SQON examples use `field` instead of `fieldName`
+
+**File:** `docs/concepts.md:44,56-57`
+**Severity:** medium (canonical concepts doc contradicts the runtime schema; actively trains LLMs and readers into the #1 invalid-SQON mistake)
+**Kind:** stale documentation
+**Issue:** The SQON examples in `docs/concepts.md` use `"field"` as the filter-clause key, but the runtime (`modules/sqon` `SqonLeafSchema`, and `buildQuery` in `graphql-router` which reads `content.fieldName`) requires `"fieldName"`. `field` is the legacy/GDC-era spelling and is exactly the key local LLMs keep producing when generating SQON for the MCP `execute-query` tool — the project's own docs reinforce the wrong prior. `docs/usage/00-query-processing.md` already uses `fieldName` correctly.
+**Fix:** Update the examples in `concepts.md` to `fieldName`; grep docs for any other `"field"` usages in SQON (not ES query) context.
+**Standalone:** yes — docs-only change
+
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
 
 **File:** `docs/setup.md` — step 2 of "Running the Arranger-Server"
@@ -126,6 +144,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes — internal refactor, no change to API output
 
+### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
+
+**File:** `modules/sqon/src/jsonSchema/runtime.ts` — `normalizeUnionKeywords`
+**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get-sqon-schema`)
+**Kind:** bug
+**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf` — but does not rewrite the `$ref` *path strings*, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
+**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway — see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
+**Standalone:** yes — self-contained fix in `runtime.ts` plus a resolution test
+
 ### SQON value schema does not accept boolean values
 
 **File:** `modules/sqon/src/schema/constants.ts` — `SqonScalarValueSchema`
@@ -138,6 +165,24 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 ---
 
 ## graphql-router
+
+### `initializeSets` startup race breaks one catalogue's GraphQL endpoint in multicatalog mode
+
+**File:** `modules/graphql-router/src/graphqlRoutes.ts` — `arrangerRoutes`; `modules/graphql-router/src/config/utils/index.ts` — `initializeSets`
+**Severity:** high (nondeterministic startup failure — a catalogue's GraphQL endpoint permanently returns 500 on a fresh cluster)
+**Kind:** bug / race condition
+**Issue:** In multicatalog mode, every catalogue's `arrangerRoutes` runs `initializeSets` concurrently at startup, and they all share one sets index. `initializeSets` does a check-then-create (`indices.exists` → `indices.create`): when the index does not exist yet, multiple routers pass the existence check, one create wins, and the others throw `resource_already_exists_exception`. That throw is caught by `arrangerRoutes`' catch-all, which replaces the **entire catalogue router** with a permanent 500 handler — so a healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically. Two aggravating factors: (1) `initializeSets` runs even when `disableSets: true`; (2) a sets-index failure poisons the whole router, not just the Sets feature. Discovered while writing `execute-query` integration tests (`integration-tests/mcp-server` works around it by pre-creating the sets index before Arranger boots).
+**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when sets are disabled, and consider scoping the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's whole GraphQL endpoint. Remove the pre-create workaround from `integration-tests/mcp-server/test/index.test.ts` once fixed.
+**Standalone:** yes — self-contained fix in `initializeSets`; the catch-scoping improvement is optional follow-up
+
+### `buildAggregations` crashes when the SQON root is a leaf filter clause
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`
+**Severity:** medium (valid SQON rejected with an opaque error; hits and aggregations paths behave inconsistently)
+**Kind:** bug
+**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim — an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
+**Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
+**Standalone:** yes — small fix in `buildAggregations` plus a unit test for a root-leaf SQON
 
 ### `GraphQLEndpointOptions` escape hatch
 

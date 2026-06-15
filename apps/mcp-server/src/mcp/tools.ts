@@ -7,9 +7,11 @@ import {
 	serverIntrospectionSchema,
 	sqonIntrospectionSchema,
 } from '#arranger/types.js';
+import { registerExecuteQueryTool } from '#mcp/executeQueryTool.js';
 import { type McpServerDeps } from '#server.js';
 
-export const registerTools = (server: McpServer, { client }: McpServerDeps): void => {
+export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
+	const { client } = deps;
 	server.registerTool(
 		'list-catalogues',
 		{
@@ -68,4 +70,6 @@ export const registerTools = (server: McpServer, { client }: McpServerDeps): voi
 			};
 		},
 	);
+
+	registerExecuteQueryTool(server, deps);
 };

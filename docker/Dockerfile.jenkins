@@ -110,6 +110,12 @@ WORKDIR $APP_FOLDER
 
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
 COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/mcp-server ./apps/mcp-server
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/sqon/dist \
+	./modules/sqon/dist
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/sqon/package.json \
+	./modules/sqon/package.json
 
 USER $APP_USER
 
