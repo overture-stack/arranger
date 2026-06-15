@@ -262,14 +262,16 @@ The core provider manages global chart state and data fetching:
 - Dynamic query management
 - API state
 - Data transformation
-- Data provider context ho
+- Data provider context hooks
 
 **Key Methods:**
 
 - `registerChart(queryProps)`: Adds chart to global query
-- `deregisterChart(fieldName)`: Removes chart from global query
-- `getChartData(fieldName)`: Returns API state for specific field
-    - exposed to consumer
+- `deregisterChart({fieldName, isNetworkAggregation})`: Removes chart from global query
+- `getChartData(fieldName)`: Returns `ChartsGQLResult` (Arranger GQL Response data and state) for a specific field from the main document aggregations
+- `getNetworkChartData(fieldName)`: Returns `ChartsGQLResult` (Arranger GQL Response data and state) for a specific field from network aggregations
+- `getNetworkNodesData()`: Returns `ChartsGQLResult` (Arranger GQL Response data and state) containing the list of network nodes with their hit counts, names, statuses, and errors
+- `requireNetworkSearch()`: Signals that a network query is needed. call this from any chart component that depends on network data so the provider knows to fetch it. The provider does not have a mechanism to disable this, and duplicate calls cause no change in behaviour.
 
 ### ChartsThemeProvider
 

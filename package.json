@@ -32,7 +32,9 @@
 	},
 	"scripts": {
 		"clear:nodeModules": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +",
+		"components:build": "npm run build --w modules/components",
 		"components:watch": "npm run watch --w modules/components",
+		"charts:build": "npm run build --w modules/charts",
 		"dev:components": "concurrently -n types,router,server -c magenta,blue,green \"npm run types:watch\" \"npm run components:watch\"",
 		"dev:check": "npm run test:dev",
 		"dev:server": "concurrently --raw -n sqon,types,router,server -c yellow,magenta,blue,green --hide sqon,types,router \"npm run sqon:watch\" \"npm run types:watch\" \"npm run graphql-router:watch\" \"npm run server:dev\"",

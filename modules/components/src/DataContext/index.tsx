@@ -35,6 +35,7 @@ export const DataProvider = ({
 	theme,
 }: DataProviderProps): ReactElement<DataContextInterface> => {
 	const [sqon, setSQON] = useState<SQONType>(null);
+	const [networkNodesFilter, setNetworkNodesFilter] = useState<string[]>([]);
 
 	useEffect(() => {
 		if (legacyProps?.sqon && !isEqual(legacyProps.sqon, sqon)) {
@@ -66,6 +67,8 @@ export const DataProvider = ({
 		fetchData,
 		documentType,
 		isLoadingConfigs,
+		networkNodesFilter,
+		setNetworkNodesFilter,
 		setSQON,
 		sqon,
 		tableConfigs,
