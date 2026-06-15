@@ -1,9 +1,10 @@
 import { css } from '@emotion/react';
 import { ResponsiveBar } from '@nivo/bar';
+import { maxBy, omit } from 'lodash';
 import { useMemo } from 'react';
 
 import { useColorMap } from '#hooks/useColorMap';
-import { BarChartProps } from './BarChart';
+import { BarChartProps, SupportedNivo } from './BarChart';
 import { arrangerToNivoBarChart } from './nivo/config';
 
 const SUPPRESSION_INCREMENT_VALUE = 0.2;
@@ -14,6 +15,7 @@ interface BarChartViewProps {
 	theme: BarChartProps['theme'];
 	maxBars: BarChartProps['maxBars'];
 	colorMapRef: React.RefObject<Map<string, string>>;
+	fieldName: string;
 }
 
 type BarData = {
@@ -44,6 +46,64 @@ const colorMapResolver = ({ chartData, savedMap, colors }) => {
 };
 
 /**
+ * Creates a numeric array of even multiples.
+ *
+ * @remarks The start value is expected to be higher than the stop value.
+ *
+ * @param start starting value of array
+ * @param stop final value of the array
+ * @param step value for the multiple of each element in the array
+ * @returns an array of numbers
+ */
+const range = (start: number, stop: number, step: number): number[] => {
+	if (start >= stop || stop - start < step) {
+		return [start, stop];
+	}
+	return Array.from({ length: Math.ceil((stop - start) / step) }, (_, i) => start + i * step);
+};
+
+type CustomAxisBottomTheme = {
+	axisBottom?: { tickValues?: number[] };
+	maxValue?: number;
+	legend?: string;
+};
+type AxisBottomTheme = SupportedNivo['axisBottom'] & { customTickValueSize?: number };
+
+/**
+ * Creates a custom array of tickValues for the bottom axis of a Bar Chart, if customTicks.size is provided. These values
+ * will be multiples of the provided size. Includes a maxValue to pass to the Chart props to ensure a final x-axis value is provided,
+ * if the highest value in the chart data does not match the highest value in the tickValues array.
+ * Returns a CustomAxisBottomTheme object.
+ *
+ * If customTicks.size is not provided, returns the original object provided to the axisBottomTheme argument.
+ *
+ * @param data BarData
+ * @param axisBottomTheme arguments provide to the theme.axisBottom prop of the Bar Chart
+ * @returns CustomAxisBottomTheme
+ */
+const calculateCustomTickValues = (data: BarData[], axisBottomTheme: AxisBottomTheme): CustomAxisBottomTheme => {
+	if (axisBottomTheme.customTickValueSize) {
+		const { customTickValueSize } = axisBottomTheme;
+		const maxValue = maxBy(data, 'value')?.value || customTickValueSize;
+		const maxMultipleValue = Math.ceil(maxValue / customTickValueSize) * customTickValueSize;
+
+		const tickValues: number[] = range(0, maxValue + customTickValueSize, customTickValueSize);
+
+		return {
+			maxValue: maxMultipleValue,
+			axisBottom: {
+				...omit(axisBottomTheme, 'customTickValueSize'),
+				tickValues,
+			},
+		};
+	}
+
+	return {
+		legend: axisBottomTheme.legend,
+	};
+};
+
+/**
  * Renders a responsive Nivo bar chart with Arranger theme integration.
  * Handles click interactions and applies consistent styling.
  *
@@ -58,6 +118,7 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 	// persistent color map
 	// ensure to create from full data available before slicing visible data
 	const { colorMap } = useColorMap({ fieldName, colorMapRef, chartData: data, resolver: colorMapResolver });
+	const customTickValues: CustomAxisBottomTheme | {} = calculateCustomTickValues(data, theme.axisBottom);
 
 	/**
 	 * TODO: improve "chart view" config/interface
@@ -65,7 +126,8 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 	 * handlers currently only support onClick
 	 */
 	const resolvedTheme = useMemo(
-		() => arrangerToNivoBarChart({ theme, colorMap, onClick: handlers?.onClick }),
+		() =>
+			arrangerToNivoBarChart({ theme: { ...theme, ...customTickValues }, colorMap, onClick: handlers?.onClick }),
 		[theme, colorMap, handlers],
 	);
 
@@ -80,7 +142,7 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 	// 1) custom sort order or ascending (from axis)
 	// 2) limit by maxRows
 	// 3) reverse order for display
-	const barData = theme.sortByKey
+	const barData: BarData[] = theme.sortByKey
 		? theme.sortByKey
 				.map((label) => dataWithSuppressedValues.find((bar: BarData) => bar.key === label))
 				.filter(Boolean)
@@ -93,6 +155,7 @@ export const BarChartView = ({ data, handlers, theme, maxBars, colorMapRef, fiel
 	return (
 		<div css={css({ width: '100%', height: '100%' })}>
 			<ResponsiveBar
+				ariaLabel={`${fieldName}-bar-chart`}
 				data={barData}
 				{...resolvedTheme}
 			/>
