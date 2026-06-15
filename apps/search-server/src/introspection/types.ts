@@ -3,6 +3,7 @@ export type IntrospectionResponse = {
 	catalogs: Record<
 		string,
 		{
+			description?: string;
 			documentType: string;
 			paths: {
 				fields?: string;
@@ -38,15 +39,16 @@ export type CatalogFieldIntrospection = {
 	displayName: string;
 	type: string;
 	unit?: string | null;
-	validOperators: string[];
 };
 
 export type CatalogIntrospectionResponse = {
 	catalogId: string;
+	description?: string;
 	documentType: string;
 	generatedAt: string;
 	meta: {
 		authFiltered: boolean;
 	};
+	operators: Record<string, string[]>;
 	fields: Record<string, CatalogFieldIntrospection>;
 };

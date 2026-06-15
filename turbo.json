@@ -1,7 +1,7 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
 	"dangerouslyDisablePackageManagerCheck": true,
-	"globalDependencies": ["docker/**", "docker-compose.yml", "tsconfig.eslint.json"],
+	"globalDependencies": ["tsconfig.eslint.json"],
 	"remoteCache": {
 		"enabled": false
 	},
@@ -11,7 +11,7 @@
 			"outputs": ["dist/**"]
 		},
 		"test": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["build", "^build"],
 			"outputs": []
 		}
 	}

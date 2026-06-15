@@ -35,6 +35,7 @@ export const featureFlagDefaults = Object.values(configFeatureFlagProperties).re
 
 export const configOptionalProperties = {
 	CATALOG_ID,
+	DESCRIPTION: 'description',
 	ES_HOST: 'esHost',
 	DOWNLOADS: 'downloads',
 	EXTENDED: 'extended',

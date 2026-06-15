@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Setup
 
 ## Prerequisites
@@ -13,7 +17,7 @@ This guide will walk you through setting up a complete development environment, 
 
 ### Setting up supporting services
 
-We'll use the Overture quickstart service, a flexible Docker Compose setup, to spin up Maestro's complementary services.
+We'll use the Overture quickstart service, a flexible Docker Compose setup, to spin up Arranger's complementary services.
 
 1.  Clone the quickstart repository and navigate to its directory:
 

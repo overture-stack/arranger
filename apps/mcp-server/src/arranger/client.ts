@@ -1,18 +1,12 @@
-import type { ArrangerMcpConfig } from '#config.js';
+import type { ArrangerMcpConfig } from '#utils/config.js';
 
 import type {
-	ArrangerCatalogIntrospection,
+	ArrangerCatalogueIntrospection,
 	ArrangerServerIntrospection,
 	ArrangerSqonIntrospection,
 } from './types.js';
 
-const fetchJson = async <T>({
-	url,
-	timeoutMs,
-}: {
-	url: string;
-	timeoutMs: number;
-}): Promise<T> => {
+const fetchJson = async <T>({ url, timeoutMs }: { url: string; timeoutMs: number }): Promise<T> => {
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -37,12 +31,10 @@ const fetchJson = async <T>({
 export interface ArrangerIntrospectionClient {
 	getServerIntrospection(): Promise<ArrangerServerIntrospection>;
 	getSqonIntrospection(): Promise<ArrangerSqonIntrospection>;
-	getCatalogIntrospection(catalogId: string): Promise<ArrangerCatalogIntrospection>;
+	getCatalogueIntrospection(catalogueId: string): Promise<ArrangerCatalogueIntrospection>;
 }
 
-export const createArrangerIntrospectionClient = (
-	config: ArrangerMcpConfig,
-): ArrangerIntrospectionClient => {
+export const createArrangerIntrospectionClient = (config: ArrangerMcpConfig): ArrangerIntrospectionClient => {
 	const getUrl = (path: string) => `${config.arrangerBaseUrl}${path}`;
 
 	return {
@@ -56,10 +48,10 @@ export const createArrangerIntrospectionClient = (
 				timeoutMs: config.requestTimeoutMs,
 				url: getUrl('/introspection/sqon'),
 			}),
-		getCatalogIntrospection: (catalogId: string) =>
-			fetchJson<ArrangerCatalogIntrospection>({
+		getCatalogueIntrospection: (catalogueId: string) =>
+			fetchJson<ArrangerCatalogueIntrospection>({
 				timeoutMs: config.requestTimeoutMs,
-				url: getUrl(`/introspection/${catalogId}`),
+				url: getUrl(`/introspection/${catalogueId}`),
 			}),
 	};
 };

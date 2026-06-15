@@ -20,8 +20,8 @@ import {
 	type FetchAggregationSuccess,
 } from './setup/query.js';
 import { createTypeDefs } from './typeDefs/index.js';
-import type { NetworkLocalNode } from './types/setup.js';
 import type { LocalCatalogSchemaData } from './types.js';
+import { type NetworkLocalNode } from './types/setup.js';
 
 /**
  * Map of all available fields with associated aggregation type

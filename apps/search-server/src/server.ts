@@ -60,9 +60,11 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 		);
 
 		app.get(health.pingPath, (_req, res) => res.send({ message: 'Reporting for duty...' }));
-		app.use(createIntrospectionRoutes({ catalogs }));
 
-		app.use('/', await arrangerRoutes({ catalogs, enableDebug, esClient }));
+		const { router: arrangerRouter, catalogueRouters } = await arrangerRoutes({ catalogs, enableDebug, esClient });
+
+		app.use(createIntrospectionRoutes({ catalogs, catalogueRouters }));
+		app.use('/', arrangerRouter);
 
 		const server = app.listen(serverPort, () => {
 			const message = `⚡️⚡️⚡️ Listening on port ${serverPort} ⚡️⚡️⚡️`;

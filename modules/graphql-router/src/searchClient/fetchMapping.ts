@@ -1,6 +1,6 @@
 import type { CatAliasesAliasesRecord } from '@elastic/elasticsearch/api/types';
 
-import { type SearchClient } from '#searchClient/types.js';
+import type { SearchClient } from './types.js';
 
 const REQUEST_TIMEOUT = 10000;
 
@@ -102,4 +102,39 @@ export const fetchMapping = async ({
 	}
 
 	throw new Error('fetchMapping did not receive an esClient');
+};
+
+/**
+ * Fetches the ES index mapping and strips the reserved "id" field.
+ * This is the main entry point for any code that needs an index mapping —
+ * it owns the ES I/O and the one GraphQL-specific pre-processing step.
+ *
+ * TODO: Return type definition once SearchClient response types are merged
+ */
+export const getIndexMapping = async ({
+	enableDebug,
+	searchClient,
+	esIndex,
+}: {
+	enableDebug: boolean;
+	searchClient: SearchClient;
+	esIndex: string;
+}) => {
+	if (searchClient && esIndex) {
+		const { mapping } = await fetchMapping({
+			enableDebug,
+			searchClient,
+			esIndex,
+		});
+
+		if (mapping && Object.hasOwn(mapping, 'id')) {
+			// FIXME: Figure out a solution to map this to something else rather than dropping it
+			enableDebug &&
+				console.debug('    DEBUG: Detected reserved field "id" in mapping, dropping it from GraphQL...');
+			delete mapping.id;
+		}
+		return mapping;
+	}
+
+	throw new Error(`  Could not get ES mappings for ${esIndex}`);
 };

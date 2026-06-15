@@ -132,4 +132,5 @@ const buildSearchClient = async (options: { client?: string; node?: string; pass
 
 export default buildSearchClient;
 
+export { checkESAlias, fetchMapping, getESAliases, getIndexMapping } from './fetchMapping.js';
 export type { SearchClient, SupportedClientTypes } from './types.js';

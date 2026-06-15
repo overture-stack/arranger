@@ -1,7 +1,27 @@
 import arrangerRouter, { type SearchClient } from '@overture-stack/arranger-graphql-router';
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 
 import type { CatalogsMap } from '#configs/types/index.js';
+
+const buildCatalogueRouter = async ({
+	catalogueId,
+	catalogueConfigs,
+	enableDebug,
+	esClient,
+}: {
+	catalogueId: string;
+	catalogueConfigs: CatalogsMap[string];
+	enableDebug: boolean;
+	esClient?: SearchClient;
+}): Promise<[string, ExpressRouter]> => {
+	const { getServerSideFilter, ...configs } = catalogueConfigs;
+	const catalogueRouter = await arrangerRouter({
+		configs: { enableDebug, ...configs },
+		esClient,
+		getServerSideFilter,
+	});
+	return [catalogueId, catalogueRouter];
+};
 
 export default async ({
 	catalogs,
@@ -11,50 +31,39 @@ export default async ({
 	catalogs: CatalogsMap;
 	enableDebug: boolean;
 	esClient?: SearchClient;
-}): Promise<Router> => {
-	const catalogEntries = Object.entries(catalogs);
-	const catalogLength = catalogEntries.length;
+}): Promise<{ router: Router; catalogueRouters: Record<string, ExpressRouter> }> => {
+	const catalogueEntries = Object.entries(catalogs);
+	const catalogueCount = catalogueEntries.length;
 
-	if (catalogLength === 0) {
-		throw new Error('No catalogs configured');
+	if (catalogueCount === 0) {
+		throw new Error('No catalogues configured');
 	}
-
-	const router = Router();
 
 	try {
-		// TODO: (multicatalog-status): add catalog-root metadata responses for unavailable catalogs.
+		// TODO: (multicatalogue-status): add catalogue-root metadata responses for unavailable catalogues.
 		// With enableDebug, these responses should eventually include richer diagnostics such as stack/context.
-		if (catalogLength === 1 && catalogEntries[0]) {
-			const [catalogId, { getServerSideFilter, ...catalogConfigs }] = catalogEntries[0];
+		const cataloguePairs = await Promise.all(
+			catalogueEntries.map(([catalogueId, catalogueConfigs]) =>
+				buildCatalogueRouter({ catalogueId, catalogueConfigs, enableDebug, esClient }),
+			),
+		);
 
-			const catalogRouter = await arrangerRouter({
-				configs: {
-					enableDebug,
-					...catalogConfigs,
-				},
-				esClient,
-				getServerSideFilter,
-			});
+		const catalogueRouters = Object.fromEntries(cataloguePairs);
+		const router = Router();
 
-			router.use(catalogRouter);
+		if (catalogueCount === 1 && cataloguePairs[0]) {
+			const [, catalogueRouter] = cataloguePairs[0];
+			router.use(catalogueRouter);
 		} else {
-			for (const [catalogId, { getServerSideFilter, ...catalogConfigs }] of catalogEntries) {
-				const catalogRouter = await arrangerRouter({
-					configs: {
-						enableDebug,
-						...catalogConfigs,
-					},
-					esClient,
-					getServerSideFilter,
-				});
-				router.use(`/${catalogId}`, catalogRouter);
-				console.log(`  - Catalog mounted at /${catalogId}`);
+			for (const [catalogueId, catalogueRouter] of cataloguePairs) {
+				router.use(`/${catalogueId}`, catalogueRouter);
+				console.log(`  - Catalogue mounted at /${catalogueId}`);
 			}
 		}
-	} catch (err) {
-		console.error('\n------\nError creating catalog routers:\n', err instanceof Error ? err.message : err);
-		throw new Error('Failure to generate catalog routing');
-	}
 
-	return router;
+		return { router, catalogueRouters };
+	} catch (err) {
+		console.error('\n------\nError creating catalogue routers:\n', err instanceof Error ? err.message : err);
+		throw new Error('Failure to generate catalogue routing');
+	}
 };

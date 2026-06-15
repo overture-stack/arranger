@@ -1,7 +1,6 @@
 import assert from 'node:assert';
 import { suite, test } from 'node:test';
 
-import buildCatalogDetails from '#introspection/catalogDetails.js';
 import buildBaseIntrospection from '#introspection/serverDetails.js';
 import buildSqonIntrospection from '#introspection/sqonDetails.js';
 
@@ -74,66 +73,32 @@ suite('introspection tests', () => {
 		assert.ok(result.schema.$defs.Group);
 	});
 
-	test('builds catalog field details from extended mapping configs', () => {
-		const result = buildCatalogDetails({
-			catalogId: 'models',
+	test('includes description in root introspection when configured', () => {
+		const result = buildBaseIntrospection({
 			catalogs: {
 				models: {
 					documentType: 'model',
-					extended: [
-						{
-							displayName: 'Analysis State',
-							displayType: 'keyword',
-							displayValues: {},
-							fieldName: 'analysis.state',
-							isActive: true,
-							isArray: false,
-							primaryKey: false,
-							quickSearchEnabled: true,
-							rangeStep: 0,
-							type: 'keyword',
-							unit: null,
-						},
-						{
-							displayName: 'Donor Age',
-							displayType: 'number',
-							displayValues: {},
-							fieldName: 'donor.age',
-							isActive: true,
-							isArray: false,
-							primaryKey: false,
-							quickSearchEnabled: false,
-							rangeStep: 1,
-							type: 'long',
-							unit: 'year',
-						},
-					],
+					description: 'Clinical trial participant models.',
 				},
 			},
-			generatedAt: '2026-02-23T00:00:00Z',
 		});
 
-		assert.deepEqual(result, {
-			catalogId: 'models',
-			documentType: 'model',
-			fields: {
-				'analysis.state': {
-					displayName: 'Analysis State',
-					type: 'keyword',
-					unit: null,
-					validOperators: ['in', 'not-in', 'some-not-in', 'all', 'filter'],
+		const entry = result.catalogs['models'];
+		assert.ok(entry !== undefined);
+		assert.equal(entry.description, 'Clinical trial participant models.');
+	});
+
+	test('omits description key from root introspection when not configured', () => {
+		const result = buildBaseIntrospection({
+			catalogs: {
+				models: {
+					documentType: 'model',
 				},
-				'donor.age': {
-					displayName: 'Donor Age',
-					type: 'long',
-					unit: 'year',
-					validOperators: ['in', 'not-in', 'gt', 'gte', 'lt', 'lte', 'between'],
-				},
-			},
-			generatedAt: '2026-02-23T00:00:00Z',
-			meta: {
-				authFiltered: false,
 			},
 		});
+
+		const entry = result.catalogs['models'];
+		assert.ok(entry !== undefined);
+		assert.ok(!('description' in entry));
 	});
 });

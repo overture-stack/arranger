@@ -10,7 +10,7 @@ Arranger offers its own front-end library of reusable components to facilitate q
 
 ## Configuration Files Overview
 
-As part of our latest work, in order to ensure Arranger v3.0 remains somewhat backawards-compatible and to facilitate the migration process from v2, we've established a temporary way to control the Server and Components' behaviour through files that centralize the way your indexed data is found and displayed.
+As part of our latest work, in order to ensure Arranger v3.0 remains somewhat backwards-compatible and to facilitate the migration process from v2, we've established a temporary way to control the Server and Components' behaviour through files that centralize the way your indexed data is found and displayed.
 This design will change in future versions (with corresponding documentation), to establish a better separation of concerns between front and back-end.
 
 These customizations can be divided into four files as follows:
@@ -20,13 +20,13 @@ These customizations can be divided into four files as follows:
 3. **table.json**: Configures the columns displayed in the data table.
 4. **facets.json**: Defines the aggregations (facets) for data exploration and filtering.
 
-(For further reference on these and other available options, please review the [configuration schema](https://github.com/overture-stack/arranger/blob/main/modules/server/configTemplates/configs.json.schema))
+(For further reference on these and other available options, please review the [configuration schema](https://github.com/overture-stack/arranger/blob/main/apps/search-server/configTemplates/configs.json.schema))
 
 <br/>
 
     :::info Configuration File Location
 
-    Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/main/modules/server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory (unless specified otherwise using the `CONFIG_PATH` environment variable).
+    Templates of these files can be [found in the Arranger repository located here](https://github.com/overture-stack/arranger/tree/main/apps/search-server/configTemplates). Active configuration files must be stored in a `configs` folder located within the `app/modules/server/` directory (unless specified otherwise using the `CONFIG_PATH` environment variable).
 
     :::
 
@@ -37,12 +37,12 @@ The `base.json` file contains two essential fields:
     ```json
     {
     	"documentType": "file",
-    	"index": "my-elasticsearch-index"
+    	"esIndex": "my-elasticsearch-index"
     }
     ```
 
 - `documentType`: Specifies the mapping type (e.g., "file" or "analysis").
-- `index`: Names the Elasticsearch index to be used.
+- `esIndex`: Names the Elasticsearch index to be used.
 
 ## Extended Configuration (extended.json)
 
@@ -119,12 +119,12 @@ The `facets.json` file defines aggregations for filtering:
     	"facets": {
     		"aggregations": [
     			{
-    				"active": true,
+    				"isActive": true,
     				"fieldName": "file_type",
     				"show": true
     			},
     			{
-    				"active": true,
+    				"isActive": true,
     				"fieldName": "analysis__collaborator__name",
     				"show": true
     			}
@@ -133,7 +133,7 @@ The `facets.json` file defines aggregations for filtering:
     }
     ```
 
-- `active`: Whether the aggregation is enabled.
+- `isActive`: Whether the aggregation is enabled.
 - `fieldName`: The field to aggregate on. Use double underscores for nested fields.
 - `show`: Whether to display this aggregation in the UI.
 

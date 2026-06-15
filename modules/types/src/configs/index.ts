@@ -174,6 +174,7 @@ export type ConfigsObject<Context> = {
 	AllFeatureFlagConfigs & {
 		getServerSideFilter: GetServerSideFilterFn<Context>;
 		[configOptionalProperties.CATALOG_ID]: string;
+		[configOptionalProperties.DESCRIPTION]: string;
 		[configOptionalProperties.ES_HOST]: string;
 		[configOptionalProperties.GRAPHQL_MAX_ALIASES]: number;
 		[configOptionalProperties.GRAPHQL_MAX_DEPTH]: number;

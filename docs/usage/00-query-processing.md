@@ -15,7 +15,7 @@ SQON (Serializable Query Object Notation) is Overture's filter language for comm
 
 ## The Processing Flow
 
-The following example demonstrates the query proecessing pipeline:
+The following example demonstrates the query processing pipeline:
 
 ![Simple Filter](../assets/query-processing.png)
 
