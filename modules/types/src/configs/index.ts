@@ -113,6 +113,7 @@ export type TableConfigs = {
 
 export type BaseNodeConfig = {
 	[baseNodeProperties.DISPLAY_NAME]: string;
+	[baseNodeProperties.NODE_ID]?: string;
 };
 export type RemoteNodeConfig = {
 	[remoteNodeProperties.DOCUMENT_TYPE]: string;
