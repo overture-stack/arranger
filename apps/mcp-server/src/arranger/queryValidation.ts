@@ -26,8 +26,7 @@ const CONTAINER_FIELD_TYPES = new Set(['nested', 'object']);
 
 const COMBINATION_OPS = new Set<string>(SQON_COMBINATION_OPS);
 
-const isSqonGroup = (node: SqonNode): node is SqonNode & { content: SqonNode[] } =>
-	COMBINATION_OPS.has(node.op);
+const isSqonGroup = (node: SqonNode): node is SqonNode & { content: SqonNode[] } => COMBINATION_OPS.has(node.op);
 
 /**
  * Validates a leaf filter clause's field name(s) and operator against the catalogue context.
@@ -84,7 +83,9 @@ export const validateSqon = (rawSqon: unknown, context: CatalogueQueryContext): 
 	if (!parsed.success) {
 		return {
 			valid: false,
-			errors: parsed.error.issues.map((issue) => `Invalid SQON at ${issue.path.join('.') || 'root'}: ${issue.message}`),
+			errors: parsed.error.issues.map(
+				(issue) => `Invalid SQON at ${issue.path.join('.') || 'root'}: ${issue.message}`,
+			),
 		};
 	}
 

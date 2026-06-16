@@ -24,7 +24,7 @@ export const registerTools = (server: McpServer, deps: McpServerDeps): void => {
 			const { catalogs: catalogues } = serverIntrospectionSchema.parse(data);
 			const catalogueIds = Object.keys(catalogues);
 			return {
-				content: [{ type: 'text', text: `Available catalogs: ${catalogueIds.join(', ')}` }],
+				content: [{ type: 'text', text: `Available catalogues: ${catalogueIds.join(', ')}` }],
 				structuredContent: { catalogues },
 			};
 		},
