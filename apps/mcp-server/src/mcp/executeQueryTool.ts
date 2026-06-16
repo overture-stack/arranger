@@ -12,6 +12,7 @@ import {
 } from '#arranger/queryValidation.js';
 import { catalogueIntrospectionSchema, serverIntrospectionSchema } from '#arranger/types.js';
 import { type McpServerDeps } from '#server.js';
+import { describeExecutionError, formatGraphQLError } from '#utils/errors.js';
 
 const DEFAULT_FIRST = 20;
 const MAX_FIRST = 1000;
@@ -244,91 +245,97 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 			includeMissing = true,
 			aggregationsFilterThemselves = false,
 		}) => {
-			const serverIntrospection = serverIntrospectionSchema.parse(await client.getServerIntrospection());
-			const catalogue = serverIntrospection.catalogs[catalogueId];
-			if (!catalogue) {
-				const available = Object.keys(serverIntrospection.catalogs).join(', ');
-				return errorResult(
-					`Catalogue "${catalogueId}" is not configured on this Arranger server. Available catalogues: ${available}.`,
+			try {
+				const serverIntrospection = serverIntrospectionSchema.parse(await client.getServerIntrospection());
+				const catalogue = serverIntrospection.catalogs[catalogueId];
+				if (!catalogue) {
+					const available = Object.keys(serverIntrospection.catalogs).join(', ');
+					return errorResult(
+						`Catalogue "${catalogueId}" is not configured on this Arranger server. Available catalogues: ${available}.`,
+					);
+				}
+
+				// `paths.graphql` already reflects the server's catalogue mode (derived from catalogCount):
+				// "/graphql" in single-catalogue mode, "/:catalogueId/graphql" in multi-catalogue mode.
+				const endpoint = catalogue.paths.graphql;
+
+				const catalogueIntrospection = catalogueIntrospectionSchema.parse(
+					await client.getCatalogueIntrospection(catalogueId),
 				);
-			}
+				const { documentType, fields: catalogueFields, operators } = catalogueIntrospection;
+				const context: CatalogueQueryContext = { fields: catalogueFields, operators };
+				const fieldTypes = Object.fromEntries(
+					Object.entries(catalogueFields).map(([fieldName, field]) => [fieldName, field.type]),
+				);
 
-			// `paths.graphql` already reflects the server's catalogue mode (derived from catalogCount):
-			// "/graphql" in single-catalogue mode, "/:catalogueId/graphql" in multi-catalogue mode.
-			const endpoint = catalogue.paths.graphql;
+				const validation = validateRequest({ context, sqon, queryType, fields, sort, aggregationFields });
+				if (validation.errors.length > 0 || validation.sqon === undefined) {
+					return errorResult(`Query validation failed:\n- ${validation.errors.join('\n- ')}`);
+				}
 
-			const catalogueIntrospection = catalogueIntrospectionSchema.parse(
-				await client.getCatalogueIntrospection(catalogueId),
-			);
-			const { documentType, fields: catalogueFields, operators } = catalogueIntrospection;
-			const context: CatalogueQueryContext = { fields: catalogueFields, operators };
-			const fieldTypes = Object.fromEntries(
-				Object.entries(catalogueFields).map(([fieldName, field]) => [fieldName, field.type]),
-			);
+				const request = buildArrangerGraphQLQuery({
+					documentType,
+					sqon: validation.sqon,
+					queryType,
+					fields,
+					first,
+					offset,
+					sort,
+					aggregationFields: validation.aggregationFieldNames,
+					fieldTypes,
+					includeMissing,
+					aggregationsFilterThemselves,
+					operationName: OPERATION_NAME,
+				});
 
-			const validation = validateRequest({ context, sqon, queryType, fields, sort, aggregationFields });
-			if (validation.errors.length > 0 || validation.sqon === undefined) {
-				return errorResult(`Query validation failed:\n- ${validation.errors.join('\n- ')}`);
-			}
+				const confirmed = await confirmExecution({
+					server,
+					catalogueId,
+					endpoint,
+					query: request.query,
+					variables: request.variables,
+				});
+				if (!confirmed) {
+					return successResult({
+						catalogueId,
+						documentType,
+						queryType,
+						executed: false,
+						endpoint,
+						message: 'Query execution was declined by the user. The query was not sent to Arranger.',
+					});
+				}
 
-			const request = buildArrangerGraphQLQuery({
-				documentType,
-				sqon: validation.sqon,
-				queryType,
-				fields,
-				first,
-				offset,
-				sort,
-				aggregationFields: validation.aggregationFieldNames,
-				fieldTypes,
-				includeMissing,
-				aggregationsFilterThemselves,
-				operationName: OPERATION_NAME,
-			});
+				const response = await client.executeQuery(endpoint, request);
+				if (response.errors && response.errors.length > 0) {
+					const messages = response.errors.map(formatGraphQLError).join('\n- ');
+					return errorResult(
+						`Arranger rejected the query with GraphQL errors:\n- ${messages}\n\nReview the offending field(s) with get-catalogue-fields and the SQON structure with get-sqon-schema, then retry.`,
+					);
+				}
 
-			const confirmed = await confirmExecution({
-				server,
-				catalogueId,
-				endpoint,
-				query: request.query,
-				variables: request.variables,
-			});
-			if (!confirmed) {
-				return successResult({
+				const data = (response.data?.[documentType] ?? {}) as ArrangerQueryData;
+				const structuredContent: ExecuteQueryOutput = {
 					catalogueId,
 					documentType,
 					queryType,
-					executed: false,
+					executed: true,
 					endpoint,
-					message: 'Query execution was declined by the user. The query was not sent to Arranger.',
-				});
+					...(data.hits
+						? {
+								total: data.hits.total ?? 0,
+								...(fields.length > 0
+									? { hits: compactHitNodes({ edges: data.hits.edges ?? [], fieldTypes }) }
+									: {}),
+							}
+						: {}),
+					...(data.aggregations ? { aggregations: data.aggregations } : {}),
+				};
+
+				return successResult(structuredContent);
+			} catch (error) {
+				return errorResult(describeExecutionError(error));
 			}
-
-			const response = await client.executeQuery(endpoint, request);
-			if (response.errors && response.errors.length > 0) {
-				const messages = response.errors.map((error) => error.message).join('; ');
-				return errorResult(`Arranger returned GraphQL errors: ${messages}`);
-			}
-
-			const data = (response.data?.[documentType] ?? {}) as ArrangerQueryData;
-			const structuredContent: ExecuteQueryOutput = {
-				catalogueId,
-				documentType,
-				queryType,
-				executed: true,
-				endpoint,
-				...(data.hits
-					? {
-							total: data.hits.total ?? 0,
-							...(fields.length > 0
-								? { hits: compactHitNodes({ edges: data.hits.edges ?? [], fieldTypes }) }
-								: {}),
-						}
-					: {}),
-				...(data.aggregations ? { aggregations: data.aggregations } : {}),
-			};
-
-			return successResult(structuredContent);
 		},
 	);
 };

@@ -7,6 +7,26 @@ export type {
 	SqonIntrospectionResponse as ArrangerSqonIntrospection,
 } from '../../../search-server/src/introspection/types.js';
 
+/**
+ * A single error entry in a GraphQL response. `extensions.code` and `path` carry the
+ * structured detail an LLM can use to locate and fix the offending part of the query.
+ */
+export type ArrangerGraphQLError = {
+	message: string;
+	path?: (string | number)[];
+	extensions?: { code?: string; [key: string]: unknown };
+	[key: string]: unknown;
+};
+
+/**
+ * The raw shape of a GraphQL response from Arranger: `data` on success,
+ * `errors` when the query was rejected or partially failed.
+ */
+export type ArrangerGraphQLResponse = {
+	data?: Record<string, unknown> | null;
+	errors?: ArrangerGraphQLError[];
+};
+
 // TODO: as part of tech debt item "Introspection types should be Zod-first to allow reuse as MCP output schemas",
 // these types should be replaced with exports from the search-server's Zod schemas once that work is done.
 

@@ -6,6 +6,31 @@ Newest first.
 
 ---
 
+## 2026-06-16
+
+**Done:**
+
+- Hardened `execute-query` error handling so failures are actionable and self-correctable by an LLM caller:
+    - `src/arranger/client.ts` — new `ArrangerRequestError` (carries `status`/`statusText`/`body`/`isTimeout`); `fetchJson` now reads the HTTP error body on a non-2xx response (previously discarded — a 400 with a GraphQL parse error in its body now reaches the caller) and distinguishes a timeout (`controller.signal.aborted`) from other transport failures, keeping a single `try/finally` so the timeout still guards `response.json()`
+    - Widened the GraphQL response typing: named `ArrangerGraphQLError` with explicit `path` and `extensions.code` (was `{ message; [key]: unknown }`), so those structured signals survive instead of being swallowed
+    - `src/arranger/types.ts` — moved the two GraphQL wire-data types (`ArrangerGraphQLError`, `ArrangerGraphQLResponse`) here to sit with the introspection response types; `ArrangerRequestError` (runtime class) and `ArrangerClient` (contract) deliberately stayed in `client.ts`
+    - `src/utils/errors.ts` — `formatGraphQLError` (renders each GraphQL error with `[code: …]` and `(at path)`) and `describeExecutionError` (maps timeout / HTTP+body / unreachable / `ZodError` / generic to actionable text, body truncated to 500 chars, no base-URL leak); plus private `truncate`
+    - `src/mcp/executeQueryTool.ts` — wrapped the handler body in `try/catch` so the previously-uncaught introspection `.parse()` and `client.executeQuery` failures return a proper tool `errorResult`; GraphQL-error branch now uses `formatGraphQLError` and appends a get-catalogue-fields/get-sqon-schema retry pointer
+    - 8 unit tests in `src/utils/errors.test.ts` (one per branch of both exported helpers; truncation exercised through `describeExecutionError`)
+
+**Decisions:**
+
+- Split the moved types by kind: GraphQL wire-data shapes belong in `types.ts` (cohesive with introspection shapes); a thrown `Error` subclass does not (runtime behaviour, not a declaration) and stays with the client; an interface stays co-located with its sole implementation
+- A `ZodError` from introspection parsing is reported as a probable Arranger version mismatch, *not* as a query the caller can fix — avoids the LLM looping trying to correct its query
+- Partial-success handling unchanged: any GraphQL `errors` still discards `data` (pre-existing behaviour, not revisited this session)
+
+**Open threads:**
+
+- Error-message contract changed (wording/shape of `execute-query` failures) — adds to the `/docs` debt; the MCP error contract should be documented if/where it lives
+- No integration-test coverage for the new transport/timeout/GraphQL-error paths — hard to trigger against a live Arranger; the pure helpers are unit-tested instead
+
+---
+
 ## 2026-06-11
 
 **Done:**
