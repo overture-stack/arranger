@@ -35,6 +35,7 @@ export const Tooltip = (tooltipData: Bar | SunburstSegment) => {
 							<span className="tooltip-data-source-wrapper">
 								<span className="tooltip-data-source">: Record</span>
 							</span>
+							{/* TODO: Fix custom tooltip content so we are able to use pluralize; currently does not work if a custom label is applied with CSS */}
 							<span>{value > 1 ? 's' : ''}</span>
 						</>
 					)}
