@@ -25,14 +25,23 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
 **Standalone:** yes — self-contained change to `app.ts`; no protocol or API surface changes
 
-### Introspection types should be Zod-first to allow reuse as MCP output schemas
-
-**File:** `apps/search-server/src/introspection/types.ts`; `apps/mcp-server/src/mcp/tools.ts` — `fieldShape`
-**Severity:** low (duplication / maintainability)
+### Introspection types should be Zod-first and moved to `modules/types`
+**File:** `apps/mcp-server/src/arranger/types.ts`; `apps/search-server/src/introspection/types.ts`
+**Severity:** low (fragile cross-package import; duplication risk)
 **Kind:** design improvement
-**Issue:** `apps/mcp-server/src/mcp/tools.ts` declares a local `fieldShape` Zod schema that mirrors the `CatalogFieldIntrospection` type in `search-server`. The duplication exists because MCP SDK `outputSchema` parameters require Zod schemas, not TypeScript types, and the search-server types are currently defined as plain interfaces. If the introspection type evolves, the local schema must be updated manually.
-**Fix:** Redefine introspection types in `search-server` as Zod schemas and infer the TypeScript types from them (e.g. `export const CatalogFieldIntrospectionSchema = z.object({...}); export type CatalogFieldIntrospection = z.infer<typeof CatalogFieldIntrospectionSchema>`). The MCP server can then import the schema directly, eliminating the local copy.
-**Standalone:** yes — additive change to `search-server/src/introspection/types.ts`; MCP server then imports the schema; no behaviour changes
+**Issue:** Two related problems introduced together:
+1. `apps/mcp-server/src/arranger/types.ts` imports directly from `'../../../search-server/src/introspection/types.js'` — a raw file-path reference into another app's source tree, bypassing the package boundary. If `search-server` restructures its internals, the import silently breaks with no compile-time protection at the package level.
+2. `types.ts` duplicates the introspection shape as local Zod schemas because `search-server` exposes only TS interfaces, not Zod schemas. When the introspection shape changes, both the interfaces and the local Zod schemas must be updated in sync.
+**Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types` — one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
+**Standalone:** no — depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
+
+### `mcp-server` pins Express 4 and Zod 3; `@modelcontextprotocol/sdk` uses Express 5 and Zod 4 internally
+**File:** `apps/mcp-server/package.json`
+**Severity:** low-medium (version skew; potential for subtle type or behaviour divergence as the MCP SDK evolves)
+**Kind:** dependency management
+**Issue:** `mcp-server` explicitly pins `express: ^4` and `zod: ^3` for consistency with the rest of the monorepo, but `@modelcontextprotocol/sdk` bundles Express 5 and Zod 4 internally. The two copies coexist for now without breakage, but if the SDK exposes types that depend on its internal Zod 4 schemas at the boundary with our Zod 3 code, assignments can fail at runtime in ways that TypeScript won't catch. The Express gap is lower risk (the SDK's Express is an implementation detail) but should be resolved before the monorepo-wide Express upgrade.
+**Fix:** Coordinate a monorepo-wide upgrade: Express ^4 to ^5 across all packages, then Zod 3 to Zod 4 (Zod 4 has breaking API changes — audit all `.parse()`, `.safeParse()`, and `.refine()` usages). `mcp-server` should be updated in the same pass, not ahead of the rest of the repo.
+**Standalone:** no — requires coordinated upgrade across all workspace packages; do not upgrade `mcp-server` in isolation
 
 ---
 

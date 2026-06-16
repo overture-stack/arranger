@@ -6,6 +6,19 @@ Newest first.
 
 ---
 
+## 2026-06-16
+
+**Done:**
+
+- Added `initializeSets` startup race fix to roadmap as the first Architecture item (high priority) - a confirmed multicatalog bug that nondeterministically kills catalogue routers on a fresh cluster.
+- Fixed `"field"` - `"fieldName"` in `docs/concepts.md` SQON examples (lines 44, 56, 57). The `00-query-processing.md` instance was correct ES syntax and left unchanged.
+
+**Open threads:**
+
+- Confirm OpenSearch exception name for `resource_already_exists_exception` before implementing the `initializeSets` guard.
+
+---
+
 ## 2026-06-03
 
 **Done:**
@@ -23,6 +36,15 @@ Newest first.
 - "filter clause" introduced as the precise term for a single `{op, content}` leaf node in a SQON; "filter" retained for the broader/lay sense.
 - "settings" kept when mirroring Elasticsearch's own language (ES index settings); replaced with "configuration" for Arranger-level concepts.
 - Em dashes excluded from all persisted file content (docs, code, comments, config) -- use regular dashes or rewrite.
+
+---
+
+## 2026-06-05
+
+**Done:**
+
+- Updated tech-debt entry "Introspection types should be Zod-first" to cover the broader cross-package source import problem introduced in PR #1065: `apps/mcp-server/src/arranger/types.ts` imports directly from `../../../search-server/src/introspection/types.js`, bypassing the package boundary. Fix path: move types to `modules/types`, define as Zod schemas, both apps import from `@overture-stack/arranger-types`.
+- Added tech-debt entry for Express 4 vs 5 / Zod 3 vs 4 version skew between `mcp-server` and `@modelcontextprotocol/sdk`'s internal dependencies. Fix requires a coordinated monorepo-wide upgrade, not isolated per-package.
 
 ---
 

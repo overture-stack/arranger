@@ -8,6 +8,22 @@ This document covers two categories of planned work: **product and architecture*
 
 ## Architecture
 
+### Fix `initializeSets` startup race in multicatalog mode
+
+_Priority: high — confirmed bug; affects any multicatalog deployment on a fresh cluster._
+
+In multicatalog mode, every catalogue's `arrangerRoutes` runs concurrently at startup and each calls `initializeSets` with the same sets index name. `initializeSets` does a check-then-act (`indices.exists` then `indices.create`): when the index does not exist yet, multiple routers pass the existence check simultaneously, one create wins, and the others throw `resource_already_exists_exception`. That exception is caught by `arrangerRoutes`' catch-all, which replaces the entire catalogue router with a permanent 500 handler. A healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically, with no clear indication in logs of what happened.
+
+Two aggravating factors: `initializeSets` runs even when `disableSets: true`; and a Sets initialization failure poisons the whole router, not just the Sets feature.
+
+**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when `disableSets: true`, and scope the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's entire GraphQL endpoint.
+
+**Files:** `modules/graphql-router/src/config/utils/index.ts` (`initializeSets`); `modules/graphql-router/src/graphqlRoutes.ts` (`arrangerRoutes` catch block). Standalone: yes.
+
+_Note: confirm the exact exception name in OpenSearch before implementing the guard - it may differ from Elasticsearch's `resource_already_exists_exception`._
+
+---
+
 ### OpenSearch-first migration
 
 _Priority: high — next concrete technical effort after documentation._
