@@ -60,7 +60,7 @@ const range = (start: number, stop: number, step: number): number[] => {
 	if (start >= stop || stop - start < step) {
 		return [start, stop];
 	}
-	return Array.from({ length: Math.ceil((stop - start) / step) }, (_, i) => start + i * step);
+	return Array.from({ length: Math.ceil((stop - start) / step) }, (_, index) => start + index * step);
 };
 
 type CustomAxisBottomTheme = {
