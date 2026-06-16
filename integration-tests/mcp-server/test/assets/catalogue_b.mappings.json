@@ -1,0 +1,8 @@
+{
+	"mappings": {
+		"properties": {
+			"sample_id": { "type": "keyword" },
+			"createdAt": { "type": "date" }
+		}
+	}
+}

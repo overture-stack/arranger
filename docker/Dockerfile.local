@@ -3,47 +3,102 @@ ARG APP_GID=1000
 ARG APP_UID=1000
 ARG APP_USER=node
 ARG ENABLE_LOGS=false
-ARG ES_HOST=http://localhost:9200
+ARG ES_HOST=http://host.docker.internal:9200
+ARG ES_USER=elastic
+ARG ES_PASS=unsafePassword123
 
 #######################################################
-# Builder
+# Workspace Snapshot
 #######################################################
-FROM node:22-alpine as builder
+FROM node:24-alpine AS scaffolding
 
 ARG APP_FOLDER
+
+WORKDIR $APP_FOLDER
+
+COPY . .
+
+RUN npm ci --include-workspace-root=false && \
+	TURBO_TELEMETRY_DISABLED=1 npm run turbo:build
+
+#######################################################
+# Arranger Server
+#######################################################
+FROM node:24-alpine AS search-server
+
+ARG APP_FOLDER
+ARG APP_USER
 ARG APP_GID
 ARG APP_UID
-ARG APP_USER
+ARG ENABLE_LOGS
+ARG ES_HOST
+ARG ES_USER
+ARG ES_PASS
 
-RUN apk --no-cache add curl g++ make python3 shadow \
+ENV ENABLE_LOGS=$ENABLE_LOGS
+ENV ES_HOST=$ES_HOST
+ENV ES_USER=$ES_USER
+ENV ES_PASS=$ES_PASS
+
+RUN apk --no-cache add curl shadow \
 	&& groupmod -g $APP_GID $APP_USER \
 	&& usermod -u $APP_UID -g $APP_GID $APP_USER
 
 WORKDIR $APP_FOLDER
 
-COPY . .
-RUN chown -R $APP_USER $APP_FOLDER
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/search-server ./apps/search-server
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/graphql-router/dist \
+	./modules/graphql-router/dist
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/graphql-router/package.json \
+	./modules/graphql-router/package.json
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/types/dist \
+	./modules/types/dist
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/types/package.json \
+	./modules/types/package.json
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/sqon/dist \
+	./modules/sqon/dist
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER \
+	$APP_FOLDER/modules/sqon/package.json \
+	./modules/sqon/package.json
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/ping-elasticsearch.sh ./scripts/ping-elasticsearch.sh
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/scripts/retry-command.sh ./scripts/retry-command.sh
 
-USER $APP_USER
-
-RUN npm ci \
-	&& npm config set unsafe-perm true \
-	&& npm run bootstrap
-
-#######################################################
-# Arranger Server
-#######################################################
-FROM builder as server
-
-ARG APP_FOLDER
-ARG APP_USER
-ARG ENABLE_LOGS
-ENV ENABLE_LOGS=$ENABLE_LOGS
-
-WORKDIR $APP_FOLDER
+RUN chmod +x ./scripts/ping-elasticsearch.sh ./scripts/retry-command.sh
 
 USER $APP_USER
 
 EXPOSE 5050
 
-CMD make _ping_elasticsearch_server -e && npm run server
+CMD ["/bin/sh",  "-c", "scripts/ping-elasticsearch.sh && node_modules/.bin/tsx ./apps/search-server/index.ts"]
+
+#######################################################
+# Arranger MCP Server
+#######################################################
+FROM node:24-alpine AS mcp-server
+
+ARG APP_FOLDER
+ARG APP_USER
+ARG APP_GID
+ARG APP_UID
+
+RUN apk --no-cache add shadow \
+	&& groupmod -g $APP_GID $APP_USER \
+	&& usermod -u $APP_UID -g $APP_GID $APP_USER
+
+WORKDIR $APP_FOLDER
+
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/node_modules ./node_modules
+COPY --from=scaffolding --chown=$APP_USER:$APP_USER $APP_FOLDER/apps/mcp-server ./apps/mcp-server
+
+USER $APP_USER
+
+EXPOSE 3100
+
+CMD ["node_modules/.bin/tsx", "./apps/mcp-server/src/index.ts"]
+

@@ -2,7 +2,7 @@
 
 # Required System files
 CURL_EXE := $(shell which curl)
-DOCKER_COMPOSE_EXE := $(shell which docker-compose)
+DOCKER_EXE := $(shell which docker)
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 
@@ -20,13 +20,18 @@ INFO_HEADER := "**************** "
 DONE_MESSAGE := $(YELLOW)$(INFO_HEADER) "- done\n" $(END)
 
 # Variables
+# load env vars from .env if present
+ifneq ("$(wildcard .env.testing)","")
+include .env.testing
+export
+endif
 DOCKER_DIR := $(ROOT_DIR)/docker
 ES_DATA_DIR := $(DOCKER_DIR)/elasticsearch
 ES_DOCS_DIR := $(ES_DATA_DIR)/documents
 ES_HOST := http://localhost:9200
 ES_INDEX := file_centric_1.0
 ES_LOAD_SCRIPT := $(ES_DATA_DIR)/load-es-data.sh
-ES_PASS := myelasticpassword
+ES_PASS := unsafePassword123
 ES_USER := elastic
 RETRY_CMD := $(ROOT_DIR)/scripts/retry-command.sh
 
@@ -37,7 +42,7 @@ ES_BASIC_AUTH := $(shell printf "$(ES_USER):$(ES_PASS)" | base64)
 DOCKER_COMPOSE_CMD := \
 	ES_USER=$(ES_USER) \
 	ES_PASS=$(ES_PASS) \
-	$(DOCKER_COMPOSE_EXE) -f \
+	$(DOCKER_EXE) compose -f \
 	$(ROOT_DIR)/docker-compose.yml
 
 DC_UP_CMD := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 $(DOCKER_COMPOSE_CMD) up -d --build
@@ -158,6 +163,12 @@ start:
 start-es:
 	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: Elasticsearch" $(END)
 	@COMPOSE_PROJECT_NAME=arranger_es $(DC_UP_CMD) elasticsearch
+	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
+	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
+
+start-os:
+	@echo $(YELLOW)$(INFO_HEADER) "Starting the following service: OpenSearch" $(END)
+	@COMPOSE_PROJECT_NAME=arranger_os $(DC_UP_CMD) opensearch
 	@echo $(GREEN)$(INFO_HEADER) Succesfully started this service! $(GREEN)
 	@echo $(MAGENTA) "You may have to populate it before using it with the Server. (Use 'make seed-es' for mock data)" $(END)
 

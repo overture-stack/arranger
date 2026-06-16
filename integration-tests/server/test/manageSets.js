@@ -19,10 +19,9 @@ export default ({ api, documentType }) => {
 						}
 					`),
 				},
-				// debug: true,
 			})
 			.catch((err) => {
-				console.log('manageSets error', err);
+				console.log('manageSets/create error', err.message || err);
 			});
 
 		assert.equal(data.errors, undefined);
@@ -48,10 +47,9 @@ export default ({ api, documentType }) => {
 						}
 					`),
 				},
-				// debug: true,
 			})
 			.catch((err) => {
-				console.log('manageSets error', err);
+				console.log('manageSets/retrieve error', err.message || err);
 			});
 
 		assert.equal(data.errors, undefined);

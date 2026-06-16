@@ -40,7 +40,7 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readSearchData error', err);
+				console.log('readSearchData/hits sqon error', err.message || err);
 			});
 
 		assert.deepEqual(data, {
@@ -82,7 +82,7 @@ export default ({ api, documentType, gqlPath }) => {
 				})
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
-					console.log('readSearchData error', err);
+					console.log('readSearchData/hits first error', err.message || err);
 				}),
 			{
 				data: {
@@ -125,7 +125,7 @@ export default ({ api, documentType, gqlPath }) => {
 				})
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
-					console.log('readSearchData error', err);
+					console.log('readSearchData/hist second error', err.message || err);
 				}),
 			{
 				data: {
@@ -168,7 +168,7 @@ export default ({ api, documentType, gqlPath }) => {
 				})
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
-					console.log('readSearchData error', err);
+					console.log('readSearchData/hist first two error', err.message || err);
 				}),
 			{
 				data: {
@@ -216,7 +216,7 @@ export default ({ api, documentType, gqlPath }) => {
 				})
 				.then(({ data } = { data: '' }) => data)
 				.catch((err) => {
-					console.log('readSearchData error', err);
+					console.log('readSearchData/hits second two error', err.message || err);
 				}),
 			{
 				data: {
@@ -242,6 +242,8 @@ export default ({ api, documentType, gqlPath }) => {
 		);
 	});
 
+	// depends on serverSideFilters passed at tests setup
+	// TODO: leverage for Controlled Access
 	test('3.excludes access_denied files', async () => {
 		const { data } = await api
 			.post({
@@ -263,7 +265,7 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readSearchData error', err);
+				console.log('readSearchData/exclude access denied error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -307,7 +309,7 @@ export default ({ api, documentType, gqlPath }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readSearchData error', err);
+				console.log('readSearchData/zero access denied error', err.message || err);
 			});
 
 		assert.deepEqual(data?.data?.[documentType]?.hits?.edges?.length, 0);

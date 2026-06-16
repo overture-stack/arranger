@@ -1,6 +1,10 @@
+---
+sidebar_position: 1
+---
+
 # Overview
 
-Arranger is a versatile, data-agnostic GraphQL search API that leverages Elasticsearch, designed to simplify the process of creating powerful search interfaces for complex datasets. It's accompanied by its own React component library to generate interactive and highly configurable search UIs.
+Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch, designed to simplify building search interfaces for complex datasets. A React component library is available for generating interactive search UIs.
 
     :::info Arranger uses Elasticsearch v7
 
@@ -15,12 +19,12 @@ Arranger is a versatile, data-agnostic GraphQL search API that leverages Elastic
     - Efficient data retrieval
     - Adaptable structure
     - SQON integration for human-readable and machine-processable search queries
-- **Data Agnostic:** Works with any properly structured Elasticsearch index.
-- **Integration-Ready:** Designed to work with any React-based front-end UIs.
+- **Model-Agnostic:** Works with any properly structured Elasticsearch or OpenSearch index.
+- **Integration-Ready:** The search API integrates with any web front end; a React component library is included for building search UIs.
 
 ## System Architecture
 
-Arranger integrates with your underlying Elasticsearch cluster to automatically generate a powerful GraphQL search API based on your configured index mapping. It consists of two main modules:
+Arranger integrates with your Elasticsearch or OpenSearch cluster to generate a search API from your configured index mapping. It consists of two main modules:
 
 - **Arranger Server:** The back-end search API service that:
 
@@ -52,22 +56,37 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
 
     ```
     arranger/
+    ├── apps/
+    │   ├── mcp-server/
+    │   └── search-server/
     ├── docker/
-    │   ├── elasticsearch/
-    │   ├── server/
-    │   ├── test/
-    │   └── ui/
+    ├── integration-tests/
+    │   └── server/
     ├── modules/
     │   ├── admin-ui/
+    │   ├── charts/
     │   ├── components/
-    │   └── server/
+    │   ├── graphql-router/
+    │   ├── sqon/
+    │   └── types/
     └── scripts/
     ```
 
-- **`docker/`**: Contains miscellaneous configuration files used for building Docker images of Arranger Server, and to support running a local developer environment.
+- **`apps/`**: Runnable server applications:
+    - **`search-server/`**: The Arranger search server — a GraphQL service that interfaces with Elasticsearch/OpenSearch and hosts the configuration API.
+    - **`mcp-server/`**: An MCP (Model Context Protocol) server that exposes Arranger introspection as tools and resources for AI agents.
+- **`docker/`**: Dockerfiles and supporting configuration for building and running Arranger services locally and in CI.
 - **`docs/`**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.
-- **`modules/`**: Core Arranger modules:
-    - **`admin-ui/`**: (Inactive) Administration interface for generating and managing Arranger configuration files.
+- **`integration-tests/`**: Full-stack integration test suites that run against a live Elasticsearch instance.
+- **`modules/`**: Shared library packages:
+    - **`admin-ui/`**: (Inactive) Administration interface — not under active development; a replacement is planned.
+    - **`charts/`**: Chart visualizations library for Arranger-powered data portals.
     - **`components/`**: React components to streamline integration of search portals with an Arranger server.
-    - **`server/`**: the "Arranger" server itself, a GraphQL service that facilitates usage of Lucene-based search engines (e.g. Elasticsearch).
+    - **`graphql-router/`**: Core GraphQL routing logic — schema generation, query handling, and introspection endpoints.
+    - **`sqon/`**: SQON parsing and validation utilities.
+    - **`types/`**: Shared TypeScript types and configuration constants used across modules and apps.
 - **`scripts/`**: Utility scripts for development, deployment, and system management.
+
+## Next steps
+
+Read [Concepts](./concepts.md) for a walkthrough of Arranger's domain model and the vocabulary used throughout this documentation.

@@ -1,0 +1,13 @@
+{
+	"network": {
+		"passthroughHeaders": [],
+		"remoteNodes": [
+			{
+				"graphqlUrl": "",
+				"documentType": "",
+				"displayName": ""
+			}
+		],
+		"localNode": { "displayName": "" }
+	}
+}

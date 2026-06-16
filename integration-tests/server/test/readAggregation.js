@@ -34,7 +34,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/read all error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -83,7 +83,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/read sqon error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -133,7 +133,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/read sqon prefix error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -142,7 +142,7 @@ export default async ({ api, documentType }) => {
 		);
 	});
 
-	test('4.should work with postfix filter sqon', async () => {
+	test('4.should work with suffix filter sqon', async () => {
 		const { data } = await api
 			.post({
 				body: {
@@ -183,7 +183,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/ read sqon suffix error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -192,7 +192,7 @@ export default async ({ api, documentType }) => {
 		);
 	});
 
-	test('5.should work with pre and post-fix filter sqon', async () => {
+	test('5.should work with pre and suffix filter sqon', async () => {
 		const { data } = await api
 			.post({
 				body: {
@@ -233,7 +233,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/read sqon wildcard error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -262,7 +262,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/count buckets error', err.message || err);
 			});
 
 		assert.deepEqual(
@@ -292,7 +292,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation error', err.message || err);
 			});
 
 		assert.deepEqual(data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count, 0);
@@ -318,7 +318,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/count buckets & missing error', err.message || err);
 			});
 
 		assert.deepEqual(data.data[documentType].aggregations.clinical_diagnosis__histological_type.bucket_count, 1);
@@ -347,7 +347,7 @@ export default async ({ api, documentType }) => {
 				},
 			})
 			.catch((err) => {
-				console.log('readAggregation error', err);
+				console.log('readAggregation/exclude access denied error', err.message || err);
 			});
 
 		assert.deepEqual(data.data[documentType].aggregations.access_denied.buckets, [{ key_as_string: 'false' }]);

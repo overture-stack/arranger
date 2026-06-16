@@ -1,6 +1,6 @@
 import { keys, orderBy, partition } from 'lodash-es';
 
-import strToReg from '../utils/strToReg.js';
+import strToReg from '#utils/strToReg.js';
 
 const elasticMappingToDisplayTreeData = (elasticMapping, parentPath) => {
 	const mappingKeys = Object.keys(elasticMapping);
@@ -39,7 +39,9 @@ const injectExtensionToElasticMapping = ({ elasticMapping, extendedMapping, root
 
 const gatherAllNodes = (keysWithValue) => {
 	const doesDisplayNodeHaveValue = (node) => {
-		return node.children ? node.children.filter(doesDisplayNodeHaveValue).length : keysWithValue.includes(node.path);
+		return node.children
+			? node.children.filter(doesDisplayNodeHaveValue).length
+			: keysWithValue.includes(node.path);
 	};
 
 	return doesDisplayNodeHaveValue;
@@ -100,7 +102,9 @@ const orderDisplayTreeData = (displayTreeData) => [
 const filterDisplayTreeDataBySearchTerm = ({ displayTree, searchTerm, aggregations }) => {
 	const shouldBeIncluded = ({ title, path, children }) => {
 		const inTitle = title.match(strToReg(searchTerm));
-		const inBuckets = aggregations[path]?.buckets?.some((x) => (x.key_as_string || x.key).match(strToReg(searchTerm)));
+		const inBuckets = aggregations[path]?.buckets?.some((x) =>
+			(x.key_as_string || x.key).match(strToReg(searchTerm)),
+		);
 		const inChildren = children && children.some(shouldBeIncluded);
 		return inTitle || inBuckets || inChildren;
 	};
