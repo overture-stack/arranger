@@ -2,7 +2,7 @@
 	"$schema": "https://json.schemastore.org/package.json",
 	"name": "@overture-stack/arranger-search-server",
 	"description": "Arranger Search Server (ExpressJS host for Arranger)",
-	"version": "0.0.0-dev",
+	"version": "3.1.0-rc.1",
 	"homepage": "https://github.com/overture-stack/arranger#readme",
 	"bugs": {
 		"url": "https://github.com/overture-stack/arranger/issues"
