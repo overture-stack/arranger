@@ -202,6 +202,22 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Explicitly disable introspection and field suggestions in production. Apollo Server 3 supports `introspection: false` and `stopSuggestions` via the `graphql` validation layer. Verify these are configured correctly and not accidentally left open. This may partially resolve itself when Apollo is replaced — but the config intent should be documented regardless.
 **Standalone:** mostly yes for the immediate fix; deeper fix is part of the Apollo migration
 
+### `filterNodesByNodeId` has no tests
+
+**File:** `modules/graphql-router/src/network/utils/nodeFilter.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** `filterNodesByNodeId` is a pure function added in PR #1076 with no accompanying tests. Key cases to cover: empty `nodesFilter` returns all nodes; populated filter returns only matching nodes; nodes with `nodeId: undefined` are excluded when a filter is provided; unknown `nodeId` values in the filter produce an empty result.
+**Standalone:** yes — isolated unit test, no application changes
+
+### `resolveAggregation` cardinality accumulation has no tests
+
+**File:** `modules/graphql-router/src/network/aggregations/AggregationAccumulator.ts` — `resolveAggregation`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
+**Standalone:** yes — unit tests only, no application changes
+
 ---
 
 ## modules/types
@@ -312,6 +328,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** PR #1064 on `release-charts` fixed the `aggsType` gap by computing the GQL aggregation type locally in the charts module from `mapping.type`. The fix works, but it introduces a local `esToAggTypeMap` that duplicates `esToAggTypesMap` already defined and exported from `modules/types/src/elastic/constants.ts`. If `esToAggTypesMap` ever changes (new ES types, corrected mappings), the charts copy will silently diverge.
 **Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
 **Standalone:** yes — mechanical import substitution, no logic changes
+
+### `generateChartsQuery` network path has no tests
+
+**File:** `modules/charts/src/query/generateCharts.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added the network query generation branch to `generateChartsQuery` (local query, network aggregations, and network nodes independently enabled/disabled by `queryFields`, `networkQueryFields`, and `isRequireNetworkSearch`). The existing local-only path was also untested. Key cases: no fields and no network requirement returns `null`; local fields only produces no `network` block; `isRequireNetworkSearch` without network aggregation fields produces a `network { nodes }` block without `aggregations`; both local and network fields appear together in one query.
+**Standalone:** yes — unit tests only, no application changes
 
 ### TypeScript / declaration diagnostics on successful build
 

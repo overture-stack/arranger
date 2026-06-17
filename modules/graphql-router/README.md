@@ -5,7 +5,7 @@
 Run:
 
 ```
-PORT=<...> ES_HOST=<...> npm start
+SERVER_PORT=<...> ES_HOST=<...> npm start
 ```
 
 Build (required before publish):

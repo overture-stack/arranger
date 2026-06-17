@@ -6,12 +6,37 @@ Newest first.
 
 ---
 
+## 2026-06-17
+
+**Done:**
+
+- Implemented `MAX_RESULTS_WINDOW` enforcement end-to-end.
+    - Extracted `applyResultsWindow(first, maxResultsWindow)` as a named export from `modules/graphql-router/src/mapping/resolveHits.js`. Caps `first` at `maxResultsWindow ?? 10000` before it is passed as `size` to the ES query.
+    - Wired `process.env.MAX_RESULTS_WINDOW` (already in `.env.schema`, previously unused) into `apps/search-server/src/configs/fromEnv/localEnvs.ts` under `catalogs.fromEnv.table.maxResultsWindow` with a hardcoded default of 10000. Uses `tableProperties.MAX_RESULTS_WINDOW` constant and `stringToNumber`.
+    - Wrote BDD tests in `modules/graphql-router/src/mapping/resolveHits.test.js` (co-located) covering: within-window passthrough, cap at window, per-catalogue smaller window, undefined fallback to 10000, and zero-first edge case.
+- Precedence chain confirmed: per-catalogue JSON `table.maxResultsWindow` wins (lodash merge) > `MAX_RESULTS_WINDOW` env var > hardcoded 10000 fallback in `applyResultsWindow`.
+- Consolidated the hardcoded `10000` into `tableDefaults.MAX_RESULTS_WINDOW` in `modules/types/src/configs/constants.ts`. All three consumers (`graphql-router/config/constants.ts`, `resolveHits.js`, `localEnvs.ts`) now reference it. One definition.
+- Wired `SEARCH_ENGINE` env var into `localEnvs.ts` as `configOptionalProperties.SEARCH_ENGINE`. Renamed `SEARCH_CLIENT_TYPE` to `SEARCH_ENGINE` in `.env.schema` to match the config property name and integration test convention. When unset, `buildSearchClient` auto-detects from the cluster's version API.
+- Wired `ROW_ID_FIELD_NAME` env var into `localEnvs.ts` under `fromEnv.TABLE` alongside `MAX_RESULTS_WINDOW`. Added `tableDefaults.ROW_ID_FIELD_NAME = 'id'` to `modules/types`. Removed local `const ROW_ID_FIELD_NAME = 'id'` from `graphql-router/config/constants.ts`. Default required in `fromEnv` because the shallow spread in `router.ts` means `customConfigs.table` (now always present) shadows `fallbackCatalogConfigs.table` entirely.
+- Fixed the shallow spread: extracted `mergeConfigs(fallback, custom)` using `lodash-es merge` in `router.ts`. Replaced two-line spread. BDD tests in `router.test.ts` (co-located) cover empty-custom passthrough, partial sub-object merge, override precedence, and no-mutation of either input. Tech-debt entry marked done.
+- Wired `DOCUMENT_TYPE` env var into `localEnvs.ts` under `fromEnv` alongside `esHost`/`esIndex`. Empty-string default is correct - validation rejects missing `documentType`; per-catalogue `base.json` always provides the real value in production.
+- Rewrote `.env.schema` with section headers explaining server-level vs catalogue-level vars and the trickle-down/override concept. Added three missing vars: `ALLOWED_CORS_ORIGINS`, `GRAPHQL_MAX_ALIASES`, `GRAPHQL_MAX_DEPTH`. Renamed `PORT` to `SERVER_PORT`.
+- Fixed stale `PORT=<...>` example in `modules/graphql-router/README.md` line 8; now `SERVER_PORT=<...>`.
+- Fixed `DOWNLOAD_STREAM_BUFFER_SIZE` default in `localEnvs.ts`: was `100` (copy-paste error from `DOWNLOAD_MAX_ROWS`), corrected to `2000` to match `fallbackCatalogConfigs` and `.env.schema`.
+
+**Open threads:**
+
+- Confirm OpenSearch exception name for `resource_already_exists_exception` before implementing the `initializeSets` guard.
+
+---
+
 ## 2026-06-16
 
 **Done:**
 
 - Added `initializeSets` startup race fix to roadmap as the first Architecture item (high priority) - a confirmed multicatalog bug that nondeterministically kills catalogue routers on a fresh cluster.
 - Fixed `"field"` - `"fieldName"` in `docs/concepts.md` SQON examples (lines 44, 56, 57). The `00-query-processing.md` instance was correct ES syntax and left unchanged.
+- Added three tech-debt entries for missing tests introduced by PR #1076: `filterNodesByNodeId` (pure function, trivial cases), `resolveAggregation` cardinality accumulation, and `generateChartsQuery` network path branching.
 
 **Open threads:**
 
