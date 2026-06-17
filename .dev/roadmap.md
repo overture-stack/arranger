@@ -629,6 +629,8 @@ New workflow: PR authors run `npx changeset` to declare which packages changed a
 sh "npx changeset publish"
 ```
 
+**Cleanup when this lands:** `changeset version` rewrites `file:` deps to real version ranges before publishing, making the interim fix-and-restore approach redundant. Remove `scripts/fix-workspace-deps.mjs`, remove the `node scripts/fix-workspace-deps.mjs` and `git checkout` lines from the Jenkins publish loop, and delete the interim tech-debt entry for `file:` local dependencies. `scripts/verify-pack.mjs` (`npm run release:check`) stays as a belt-and-suspenders gate.
+
 ### 3.2 Testcontainers for integration test infrastructure
 
 _Replaces hardcoded sidecar containers with test-owned, programmatically managed containers._
@@ -663,6 +665,8 @@ Catches phantom dependencies at install time, faster CI installs, removes `dange
 7. Update Jenkins: `pnpm install --frozen-lockfile`
 
 **Risk:** Verify `ts-patch install -s` prepare hooks work under pnpm's stricter hoisting. May need `ts-patch` in root devDependencies.
+
+**Cleanup when this lands:** Replace all `file:` dep specs with `workspace:*` across every `package.json` in the repo — publishable modules, `apps/`, and `integration-tests/`. pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already checks for `workspace:` refs as well as `file:` refs, so it remains valid as-is.
 
 **nx consideration:** nx is an alternative monorepo build system to Turborepo — not a complement. Turbo + pnpm is the current plan. If Turbo proves insufficient (e.g. more complex task orchestration, code generation, or module federation needs arise), nx is worth evaluating. For now, proceed with Turbo.
 

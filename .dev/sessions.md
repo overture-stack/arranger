@@ -27,6 +27,15 @@ Newest first.
 **Open threads:**
 
 - Confirm OpenSearch exception name for `resource_already_exists_exception` before implementing the `initializeSets` guard.
+- Fixed `file:` sibling dep breakage for external npm consumers. Root cause: `npm publish` encodes `file:` paths verbatim in the tarball's `package.json`; those paths don't exist on consumer machines. Affected packages: `modules/types` (`@overture-stack/sqon: file:../sqon`), `modules/graphql-router` and `modules/components` (both `@overture-stack/arranger-types: file:../types`).
+- Implemented interim fix: `scripts/fix-workspace-deps.mjs` rewrites `file:` deps to `^<sibling-version>` ranges immediately before each `npm publish` call; `git checkout <pkg>/package.json` restores the original immediately after. Local dev is unchanged.
+- Wired the script into the Jenkins publish loop in `jenkins-pipeline-library/vars/pipelineOvertureArranger.groovy`.
+- Documented full decision trail in tech-debt entry (release/publishing section): interim script, what Changesets adds (version management + dependency-ordered publish), what pnpm adds on top (automatic `workspace:` rewriting, making the script unnecessary). Both are needed for the complete long-term fix; neither alone closes the gap.
+- Alphabetical publish order (`components`, `graphql-router` before `types`) leaves a short window where published packages reference a `types` version not yet on npm. Acceptable for coordinated release runs; Changesets eliminates it by publishing in dependency order.
+- Extended `integration-tests/import` to also cover `@overture-stack/arranger-types` (added as a `file:` dep; checks `configs.configRequiredProperties`, `configs.configOptionalProperties`, and `elastic.esToAggTypesMap` are defined). Comment in test explains the two limitations: (1) `file:` deps mean this catches build regressions, not publishing regressions; (2) graphql-router and sqon are pure ESM and cannot be imported in the current Jest setup.
+- Added `scripts/verify-pack.mjs`: loops over `modules/*`, skips `private: true`, reports any `file:` refs in dependencies/devDependencies/peerDependencies. Exits non-zero so it works as a CI gate. Available as `npm run release:check`.
+- Logged tech-debt: `integration-tests/import` does not cover graphql-router or sqon (pure ESM; Jest config cannot handle them without further work). Fix options: update Jest transform config, or add a separate `tsx`/`node --input-type=module` smoke test.
+- Clarified (and documented in tech-debt) that `apps/*` are not affected by the `file:` publishing bug — they ship as Docker images, not npm packages, so the full monorepo workspace is always present during build.
 
 ---
 

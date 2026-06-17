@@ -1,7 +1,8 @@
 {
 	"name": "integration-tests-import",
 	"dependencies": {
-		"@overture-stack/arranger-components": "file:../../modules/components"
+		"@overture-stack/arranger-components": "file:../../modules/components",
+		"@overture-stack/arranger-types": "file:../../modules/types"
 	},
 	"devDependencies": {
 		"jest": "^29.7.0",
