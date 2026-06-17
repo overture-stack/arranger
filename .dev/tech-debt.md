@@ -202,6 +202,22 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Explicitly disable introspection and field suggestions in production. Apollo Server 3 supports `introspection: false` and `stopSuggestions` via the `graphql` validation layer. Verify these are configured correctly and not accidentally left open. This may partially resolve itself when Apollo is replaced — but the config intent should be documented regardless.
 **Standalone:** mostly yes for the immediate fix; deeper fix is part of the Apollo migration
 
+### `filterNodesByNodeId` has no tests
+
+**File:** `modules/graphql-router/src/network/utils/nodeFilter.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** `filterNodesByNodeId` is a pure function added in PR #1076 with no accompanying tests. Key cases to cover: empty `nodesFilter` returns all nodes; populated filter returns only matching nodes; nodes with `nodeId: undefined` are excluded when a filter is provided; unknown `nodeId` values in the filter produce an empty result.
+**Standalone:** yes — isolated unit test, no application changes
+
+### `resolveAggregation` cardinality accumulation has no tests
+
+**File:** `modules/graphql-router/src/network/aggregations/AggregationAccumulator.ts` — `resolveAggregation`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
+**Standalone:** yes — unit tests only, no application changes
+
 ---
 
 ## modules/types
@@ -313,6 +329,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
 **Standalone:** yes — mechanical import substitution, no logic changes
 
+### `generateChartsQuery` network path has no tests
+
+**File:** `modules/charts/src/query/generateCharts.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added the network query generation branch to `generateChartsQuery` (local query, network aggregations, and network nodes independently enabled/disabled by `queryFields`, `networkQueryFields`, and `isRequireNetworkSearch`). The existing local-only path was also untested. Key cases: no fields and no network requirement returns `null`; local fields only produces no `network` block; `isRequireNetworkSearch` without network aggregation fields produces a `network { nodes }` block without `aggregations`; both local and network fields appear together in one query.
+**Standalone:** yes — unit tests only, no application changes
+
 ### TypeScript / declaration diagnostics on successful build
 
 **File:** `modules/charts` — build output
@@ -335,14 +359,40 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Add `files` allowlists to `package.json` for each publishable module (explicitly listing `dist`, `README.md`, `package.json`), or add `.npmignore` rules to exclude `.turbo/`, `src/`, and any generated logs. Verify with a dry-run pack after fixing.
 **Standalone:** yes — mechanical packaging fix per module, no logic changes
 
+### `integration-tests/import` does not cover ESM-only publishable packages
+
+**Files:** `integration-tests/import/test.ts`, `integration-tests/import/package.json`
+**Severity:** low (gap in regression coverage)
+**Kind:** missing test coverage
+**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` and `@overture-stack/sqon` are pure ESM — both are missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid) and `@overture-stack/arranger-components` (CJS via Babel) are covered. An import regression in `graphql-router` or `sqon` would not be caught by this test.
+
+Additionally: `integration-tests/import` resolves all deps via npm workspaces symlinks (`file:` paths), so it tests local build output, not the published tarball. Publishing regressions (e.g. stale `file:` refs in `package.json`) are caught by `npm run release:check` (`scripts/verify-pack.mjs`), not by this test.
+
+**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and `arranger-sqon` and checks their key exports.
+**Standalone:** yes — test infrastructure change only, no application code
+
+---
+
 ### `file:` local dependencies in publishable packages
 
-**Files:** `package.json` files across publishable modules (`sqon`, `types`, `graphql-router`, `components`, `charts`)
-**Severity:** high (release blocker)
+**Files:** `modules/types/package.json`, `modules/graphql-router/package.json`, `modules/components/package.json`
+**Severity:** high (confirmed consumer-facing breakage)
 **Kind:** packaging bug
-**Issue:** Publishable packages reference internal sibling packages via `file:` paths (e.g. `"@overture-stack/arranger-types": "file:../types"`). These work in the monorepo but break for external npm consumers, who receive a `file:` reference that resolves to nothing in their environment.
-**Fix:** Before each npm publish, replace `file:` references with the actual published registry versions. This can be done at publish time as part of the release script, or managed via a tool like Changesets (which handles this automatically as part of Phase 3.1). In the interim, the release process must verify no `file:` references remain in the published tarball's `package.json`.
-**Standalone:** needs-context — the clean long-term fix is [Changesets (roadmap §3.1)](roadmap.md#31-adopt-changesets-for-versioning-and-changelog-automation); the interim fix is a release validation step
+**Issue:** Three publishable packages reference sibling packages via `file:` paths in `dependencies` (e.g. `"@overture-stack/arranger-types": "file:../types"`). npm encodes these verbatim in the published tarball's `package.json`. External consumers get errors like `Package "" refers to a non-existing file '"/Users/.../types"'` because the publishing machine's local paths do not exist in the consumer's environment. `modules/sqon` and `modules/charts` are clean — no `file:` deps.
+
+**Interim fix (implemented):** `scripts/fix-workspace-deps.mjs` rewrites `file:` deps to `^<sibling-version>` ranges before each `npm publish` call in the Jenkins pipeline, then restores `package.json` from git. Local dev is unchanged — `file:` refs continue to work via npm workspaces symlinks. The pipeline publish loop calls the script and restores after each package. Note: alphabetical publish order (`components` and `graphql-router` before `types`) means there is a short window where those packages reference a `types` version not yet on npm. Acceptable for coordinated release runs; Changesets eliminates it by publishing in dependency order.
+
+**Long-term fix — two separate tools, both needed:**
+
+- **Changesets (roadmap Phase 3.1):** Handles version management, changelog generation, and publishing in dependency order. Replaces the manual version-bump commit and the current pipeline publish loop. Does not on its own solve the `file:` encoding problem, but it handles it as part of its version-replacement step when combined with pnpm.
+
+- **pnpm workspace: protocol (roadmap Phase 3.3):** Replaces `file:../x` deps with `workspace:*`. In development, pnpm resolves `workspace:*` to the local package (same behaviour as `file:`). At `pnpm publish`, pnpm automatically rewrites `workspace:*` to the actual version range in the tarball. This eliminates the problem at the package manager level, making the fix-and-restore script unnecessary.
+
+**When Changesets lands (Phase 3.1):** Delete `scripts/fix-workspace-deps.mjs` and remove the `node scripts/fix-workspace-deps.mjs` and `git checkout` lines from the Jenkins publish loop. Changesets' `changeset version` step rewrites `file:` deps to real version ranges before publishing, making the interim script redundant. `scripts/verify-pack.mjs` stays.
+
+**When pnpm lands (Phase 3.3):** Replace all `file:../x` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already handles this — no changes needed there.
+
+**Standalone:** no - depends on Changesets (Phase 3.1) for the clean fix; pnpm (Phase 3.3) for the workspace: migration.
 
 ---
 

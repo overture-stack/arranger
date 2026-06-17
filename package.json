@@ -46,6 +46,7 @@
 		"modules:tag": "npm version --ws --force-publish --yes",
 		"modules:watch": "npm run watch -w modules",
 		"publish::ci": "npm publish --ws --if-present",
+		"release:check": "node scripts/verify-pack.mjs",
 		"sqon:build": "npm run build -w modules/sqon",
 		"sqon:watch": "npm run watch -w modules/sqon",
 		"reset": "npm run clear:nodeModules && npm run clear:dist --ws --if-present",
