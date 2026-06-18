@@ -43,6 +43,36 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Coordinate a monorepo-wide upgrade: Express ^4 to ^5 across all packages, then Zod 3 to Zod 4 (Zod 4 has breaking API changes — audit all `.parse()`, `.safeParse()`, and `.refine()` usages). `mcp-server` should be updated in the same pass, not ahead of the rest of the repo.
 **Standalone:** no — requires coordinated upgrade across all workspace packages; do not upgrade `mcp-server` in isolation
 
+### MCP endpoint has no authentication (URGENT — block demo deployment)
+
+**File:** `apps/mcp-server/src/http/app.ts` — `createHttpApp`; `apps/mcp-server/src/utils/config.ts` — `envSchema`
+**Severity:** critical (OWASP A01: Broken Access Control — any reachable agent can invoke all tools and read all catalogue data)
+**Kind:** missing security control
+**Issue:** The MCP endpoint accepts all incoming requests with no authentication check. In a demo or staging environment accessible over a network, any agent or automated client that can reach the port can call `list-catalogues`, `get-catalogue-fields`, and `search-catalog` without restriction. There is no API key, bearer token, client certificate, or IP allowlist in place.
+**Fix:** Add a configurable API key check as middleware in `createHttpApp`, applied before the `postHandler` and `sessionHandler` routes. Read the key from a `MCP_API_KEY` env var; if set, reject requests that do not include `Authorization: Bearer <key>` with a `401`. If unset, warn at startup that the endpoint is unauthenticated. For demo environments, always set `MCP_API_KEY`. For production, explore OAuth 2.0 or mTLS as a stronger option. The MCP SDK does not impose an auth mechanism — the middleware layer is the correct place to enforce it.
+**Standalone:** yes — self-contained middleware addition to `app.ts` plus one new env var in `config.ts`
+
+### MCP endpoint has no rate limiting (URGENT — block demo deployment)
+
+**File:** `apps/mcp-server/src/http/app.ts` — `createHttpApp`
+**Severity:** high (OWASP A05: Security Misconfiguration — adversarial agents can flood the endpoint and exhaust memory or downstream Arranger connections)
+**Kind:** missing security control
+**Issue:** There is no per-client or global request rate limit on the MCP endpoint. An adversarial agent can:
+- Open a large number of concurrent sessions, filling the `transports` map (memory exhaustion — see existing session-map entry).
+- Issue rapid-fire tool calls within a single session, generating a corresponding flood of HTTP requests to Arranger.
+Neither the MCP transport layer nor Express applies any backpressure.
+**Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
+**Standalone:** yes — middleware addition to `app.ts`; new env vars in `config.ts`
+
+### `get-catalogue-fields` does not validate `catalogueId` against the configured allowlist
+
+**File:** `apps/mcp-server/src/mcp/tools.ts` — `get-catalogue-fields` tool handler
+**Severity:** medium (OWASP A03: Injection — unvalidated ID forwarded into URL path; also information disclosure if Arranger hosts undeclared catalogues)
+**Kind:** missing input validation
+**Issue:** The `get-catalogue-fields` tool accepts any non-empty string as `catalogueId` and forwards it directly to `client.getCatalogueIntrospection(catalogueId)`, which calls `GET /introspection/{catalogueId}` on Arranger. The `ARRANGER_CATALOGUES` config declares the intended allowlist, but the tool never checks it. An adversarial agent can probe arbitrary strings — either to enumerate undeclared catalogues on the Arranger instance, or to attempt path traversal in the constructed URL (e.g. `../sqon`).
+**Fix:** In the tool handler, check that `catalogueId` is present in `config.catalogues` before calling the Arranger client. Return an MCP error if it is not. The config is already available via `deps` in `registerTools`.
+**Standalone:** yes — one conditional check in the tool handler; no new dependencies
+
 ---
 
 ## monorepo — cross-cutting
@@ -202,6 +232,29 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Explicitly disable introspection and field suggestions in production. Apollo Server 3 supports `introspection: false` and `stopSuggestions` via the `graphql` validation layer. Verify these are configured correctly and not accidentally left open. This may partially resolve itself when Apollo is replaced — but the config intent should be documented regardless.
 **Standalone:** mostly yes for the immediate fix; deeper fix is part of the Apollo migration
 
+### `hasValidConfig` GraphQL resolver should be deprecated
+
+**File:** `modules/graphql-router/src/schema/Root.ts` - `hasValidConfig` resolver
+**Severity:** low
+**Kind:** design-smell
+**Issue:** `hasValidConfig(documentType, index)` is a 2.x legacy query that validates a catalogue by matching an ES index name against registered aliases. The 3.x equivalent is `GET /introspection`, which identifies catalogues by `documentType` without coupling the frontend to ES index names. `hasValidConfig` is still present and still functional, but it encourages the wrong integration pattern and creates a maintenance surface as the schema evolves.
+**Fix:** Formally mark `hasValidConfig` as deprecated in the schema (add `@deprecated` directive with migration note pointing to `GET /introspection`). Schedule removal for a future major release. Migration guidance for consumers is documented in [docs/migration/v3.1.md](../docs/migration/v3.1.md#replace-hasvalidconfig-with-the-introspection-api).
+**Standalone:** yes - adding a `@deprecated` directive is a non-breaking additive change
+
+### Download route body is brittle
+
+**File:** `modules/graphql-router/src/download/index.js` — `download` router
+**Severity:** medium
+**Kind:** design-smell / reliability
+**Issue:** The download route has several fragile points in how it receives and parses its request body:
+1. `params` arrives as a JSON-stringified string inside a `urlencoded` form body (`JSON.parse(params)` on line 110). Double-encoding is easy to get wrong on the caller side and produces opaque parse errors with no indication of which layer failed.
+2. Callers must pass full column descriptor objects — `fieldName`, `accessor`, `Header`, `extendedType`, `extendedDisplayValues`, `show`, `sortable`, `query`, `jsonPath`, plus UI-only fields like `minWidth` and `canChangeShow`. The router already holds the extended mapping at request time; everything except `fieldName` is derivable from it. Callers should only need to pass `fieldNames: string[]`, with optional per-field overrides. `dataToExportFormat.js` already partially reads from `extendedFieldsDict` for display names — the full resolution just never got wired up.
+3. No validation of the parsed `params` object — missing or malformed `files`, unknown `fileType`, invalid `sqon`, and negative `maxRows` all pass through silently until they cause an error deep in `getAllData` or `dataToExportFormat`.
+4. The `400` error response on catch returns `err?.message || err?.details || 'An unknown error occurred.'` — callers cannot distinguish a parse failure from a stream error from a missing-files error.
+5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`) — filenames with spaces or special characters break the header.
+**Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers — coordinate with a minor version bump and document in the migration guide.
+**Standalone:** no — callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+
 ### `filterNodesByNodeId` has no tests
 
 **File:** `modules/graphql-router/src/network/utils/nodeFilter.ts`
@@ -217,6 +270,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Kind:** missing test coverage
 **Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
 **Standalone:** yes — unit tests only, no application changes
+
+### `hackyTemporaryEsSetResolution.js` — stale ES 6.2 workaround + convention violation
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
+**Severity:** low
+**Kind:** stale code / convention violation
+**Issue:** Two related problems in one file. (1) The file header says the code is a workaround for an Elasticsearch 6.2 bug fixed in 6.3 — "Once the issue is resolved by Elasticsearch in version 6.3, we no longer need these functions here." That condition was met years ago; we are on ES 7.x/OpenSearch. The function should be evaluated for removal. (2) `resolveSetIdsFromEs` reads `fallbackConfigs.sets.index` from a module-level import of the global `fallbackConfigs` object rather than receiving the sets index name as a parameter. This violates the module convention (modules receive config as typed params; they do not read from global or environment state).
+**Fix:** Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised in any real deployment or test. If the ES 6.2 workaround is still required for runtime correctness (sets membership resolution), rewrite to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. If Sets are fully gated behind `disableSets` and no path reaches this code in practice, remove the file and its import in `resolveAggregations.ts`. The Sets full-feature roadmap item is the natural moment to make this call.
+**Standalone:** no — evaluate alongside the Sets full feature implementation; do not remove without confirming sets query behaviour
 
 ---
 
@@ -346,6 +408,24 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Resolve the diagnostics so the build is genuinely clean, or explicitly gate `charts` out of the release path until they are fixed. Do not leave it in a state where a successful exit code masks real type errors.
 **Standalone:** yes — isolated to the charts module; does not affect other packages
 
+### Chart tooltip cannot pluralize custom labels
+
+**File:** `modules/charts/src/components/charts/Tooltip.tsx:38`
+**Severity:** low (cosmetic — visible to any operator using a custom label)
+**Kind:** incomplete implementation
+**Issue:** Added in PR #1074. The tooltip appends `'s'` for counts greater than one (e.g. "Records" vs "Record") using a simple string suffix. The TODO in the file notes that a `pluralize` library call does not work when a custom label is applied via CSS — so operators who override the label text via styling get a suffix on the wrong content. The root cause is that label customization is CSS-based rather than prop-based, leaving no programmatic hook for pluralization logic.
+**Fix:** Replace the CSS-based label customization pattern with a `label` prop accepting a singular/plural string pair (e.g. `{ singular: 'Record', plural: 'Records' }`). The pluralization then happens in the component against the prop value rather than against CSS output. The default values maintain the current "Record"/"Records" behaviour.
+**Standalone:** yes — component-level change, no server involvement
+
+### Bar chart `SUPPRESSION_INCREMENT_VALUE` is not configurable
+
+**File:** `modules/charts/src/components/charts/Bar/View.tsx:10`
+**Severity:** low (cosmetic — hardcoded visual increment for suppressed zero-value bars)
+**Kind:** missing config option
+**Issue:** Added in PR #1074. Zero-value bar suppression uses a hardcoded `SUPPRESSION_INCREMENT_VALUE = 0.2` to render a small visible bar for data values of exactly zero (so the bar is not invisible). The TODO in the file acknowledges this should be a configurable prop. Different chart contexts may need different visual increments depending on axis scale and bar density.
+**Fix:** Add a `suppressionIncrement` prop to `BarChartProps` (default `0.2`). Pass it through `BarChart.tsx` to `View.tsx` and replace the module-level constant.
+**Standalone:** yes — additive prop, no server involvement
+
 ---
 
 ## release / publishing
@@ -393,6 +473,19 @@ Additionally: `integration-tests/import` resolves all deps via npm workspaces sy
 **When pnpm lands (Phase 3.3):** Replace all `file:../x` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already handles this — no changes needed there.
 
 **Standalone:** no - depends on Changesets (Phase 3.1) for the clean fix; pnpm (Phase 3.3) for the workspace: migration.
+
+---
+
+## apps/search-server
+
+### No README
+
+**File:** `apps/search-server/` — no `README.md` present
+**Severity:** medium (discoverability and onboarding gap — especially relevant for teams building on or deploying Arranger)
+**Kind:** missing documentation
+**Issue:** `apps/search-server` has no README. It is the primary runnable application in the monorepo — the thing operators deploy — but there is no document explaining how to run it, what env vars it accepts, how the config directory is structured, or how it relates to `modules/graphql-router`. The `.env.schema` file partially serves this purpose, but only for env vars, and is not discoverable without knowing to look there.
+**Fix:** Add `apps/search-server/README.md` covering: what the app is, how to run it (`npm run server` from repo root), the env var reference (pointing at `.env.schema` for full schema, with the most important vars inline), the configuration directory structure (flat = single catalogue; subdirectories = multicatalogue), and a pointer to the `graphql-router` README for custom integrations.
+**Standalone:** yes
 
 ---
 
