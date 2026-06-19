@@ -42,6 +42,12 @@ integration-tests/     — server (needs ES), import, admin
 
 **TypeScript migration:** `.js` files are not yet migrated — don't treat missing types in them as issues. Weak types in `.ts` files are worth improving when scope-adjacent.
 
+**Config properties:** Alphabetize properties in config objects and YAML/JSON files at all nesting levels — prevents duplicate key overwrites and keeps additions consistent.
+
+**Search before writing:** Grep for existing patterns before implementing something new — keeps code consistent and surfaces reusable utilities.
+
+**Structured logging:** Emit logs as structured key-value pairs or JSON objects, not interpolated strings. Include: timestamp, severity, event type, actor identity where known, resource identifier, outcome. Never log secrets, credentials, or PII. Mandatory for auth decisions, permission changes, data access/exports, and errors at system boundaries.
+
 Domain vocabulary (configuration, catalogue, facet, bucket, aggregation, filter, filter clause, SQON) is defined in `docs/concepts.md`. Read it when writing code, docs, comments, or UI strings.
 
 ## Running tests
@@ -55,15 +61,13 @@ npm run test:dev                          # all dev-relevant workspaces
 
 Never `cd` into a module and run `npm test` directly.
 
-## Keeping `.dev/` current
+New tests use BDD style: `suite()` for grouping, `test()` for expected behaviour, `assert` from `node:assert/strict` — no additional libraries. See [conventions/testing.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/testing.md) for the full pattern.
 
-When a roadmap item's status changes, a tech-debt entry is resolved, or a meaningful design decision is made, update `.dev/roadmap.md` or `.dev/tech-debt.md` in the same session. These documents are the shared memory for this project across sessions and agents — they should reflect current reality, not just initial planning.
+## Session discipline
 
-**After any meaningful unit of work that changed the codebase or working documents** — code written, bug fixed, tech-debt entry added, roadmap item updated, docs changed — update the relevant `.dev/` documents and add or extend the dated entry in `sessions.md`. Do not wait for an explicit "session over" signal: work rarely ends cleanly, and the update will be missed if it depends on one. Do not log conversational activity (PR reviews that produced no local changes, discussions, waiting states) — those are not `sessions.md` material.
+After any meaningful unit of work, update `.dev/` and extend the dated entry in `sessions.md`. Do not wait for a session-over signal. Do not log conversational activity. Remind the developer to commit `.dev/` changes.
 
-**Remind the developer: if any work this session changed user-facing behaviour, it adds to the `/docs` debt. Mention what needs documenting.**
-
-**Remind the developer to commit `.dev/` changes.** If any of the three documents were updated this session, check whether they are staged (`git status`). If not, remind the developer to include them in their commit — these files are shared context and their history matters for avoiding double work.
+Full rules: [conventions/session-discipline.md in agentics](https://github.com/oicr-softeng/agentics/blob/main/template/conventions/session-discipline.md).
 
 ## Security triggers
 
@@ -82,39 +86,17 @@ Check these as you write or review code. Flag violations rather than silently sk
 - **Aggregate counts from sensitive catalogs may need suppression.** Before returning aggregation results from a catalog that may contain sensitive or re-identifiable data, check whether count suppression is configured (see roadmap).
 - **`passthroughHeaders` entries must be non-empty strings.** An empty string passes current type validation but attempts to forward a header with no name — validate all entries are non-empty before use.
 
-## Language and typos
+## Language
 
-Flag typos and language issues when spotted — in code, comments, and docs. Don't fix silently; call them out so the developer can decide. The developer appreciates the assist and will fix them directly.
+Canadian English throughout (catalogue, behaviour, centre, organize, analyse). Flag typos and spelling issues — don't fix silently; call them out so the developer can decide.
 
 ## Workflow
 
-- Plan before implementing. For logic with clear inputs/outputs, define behaviour as tests before implementation (BDD).
-- Stick to scope. Document adjacent issues in `.dev/tech-debt.md` rather than fixing them silently.
-- No commits — the human handles all git work.
-- When a well-established library would do better than a hand-rolled solution, surface it as an option.
-- Check in before non-trivial direction changes.
+Plan before implementing. For logic with clear inputs/outputs, define behaviour as tests before implementation (BDD). Stick to scope — document adjacent issues in `.dev/tech-debt.md`. Surface well-established library options when relevant. Check in before non-trivial direction changes.
 
-## Writing tests: BDD style
+Project-specific conventions belong here. Universal conventions (scope discipline, library awareness, checking in, convention placement and propagation) are in the [agentics template AGENTS.md](https://github.com/oicr-softeng/agentics/blob/main/template/AGENTS.md).
 
-Tests are being migrated toward a BDD naming pattern using `node:test` and `assert` — no additional libraries. Apply this for new tests; nudge existing tests toward it when touching them in scope.
+## Critical constraints
 
-- `suite()` groups related tests: `suite('getNetworkPassthroughHeaders', ...)`
-- `test()` states expected behaviour: `test('returns an empty array when no headers are configured', ...)`
-- Structure bodies as setup → action → assertion (Given / When / Then)
-
-```ts
-import { suite, test } from 'node:test';
-import assert from 'node:assert/strict';
-
-suite('getNetworkPassthroughHeaders', () => {
-  test('returns an empty array when no headers are configured', () => {
-    assert.deepEqual(getNetworkPassthroughHeaders({ passthroughHeaders: [] }), []);
-  });
-});
-```
-
-Large-scale rewrites of existing tests belong in tech-debt, not done out of scope.
-
-## Instruction file governance
-
-Do not modify `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md` without explicit instruction from the developer. These files define agent behavior and are under strict developer control. If you identify something that should change in them, surface it as a suggestion — do not edit them directly.
+- No commits — the user handles all git work.
+- Do not modify `CLAUDE.md`, `AGENTS.md`, or `.github/copilot-instructions.md` without explicit instruction. Surface suggestions; do not self-edit.
