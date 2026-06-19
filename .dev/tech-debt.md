@@ -25,14 +25,53 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
 **Standalone:** yes — self-contained change to `app.ts`; no protocol or API surface changes
 
-### Introspection types should be Zod-first to allow reuse as MCP output schemas
-
-**File:** `apps/search-server/src/introspection/types.ts`; `apps/mcp-server/src/mcp/tools.ts` — `fieldShape`
-**Severity:** low (duplication / maintainability)
+### Introspection types should be Zod-first and moved to `modules/types`
+**File:** `apps/mcp-server/src/arranger/types.ts`; `apps/search-server/src/introspection/types.ts`
+**Severity:** low (fragile cross-package import; duplication risk)
 **Kind:** design improvement
-**Issue:** `apps/mcp-server/src/mcp/tools.ts` declares a local `fieldShape` Zod schema that mirrors the `CatalogFieldIntrospection` type in `search-server`. The duplication exists because MCP SDK `outputSchema` parameters require Zod schemas, not TypeScript types, and the search-server types are currently defined as plain interfaces. If the introspection type evolves, the local schema must be updated manually.
-**Fix:** Redefine introspection types in `search-server` as Zod schemas and infer the TypeScript types from them (e.g. `export const CatalogFieldIntrospectionSchema = z.object({...}); export type CatalogFieldIntrospection = z.infer<typeof CatalogFieldIntrospectionSchema>`). The MCP server can then import the schema directly, eliminating the local copy.
-**Standalone:** yes — additive change to `search-server/src/introspection/types.ts`; MCP server then imports the schema; no behaviour changes
+**Issue:** Two related problems introduced together:
+1. `apps/mcp-server/src/arranger/types.ts` imports directly from `'../../../search-server/src/introspection/types.js'` — a raw file-path reference into another app's source tree, bypassing the package boundary. If `search-server` restructures its internals, the import silently breaks with no compile-time protection at the package level.
+2. `types.ts` duplicates the introspection shape as local Zod schemas because `search-server` exposes only TS interfaces, not Zod schemas. When the introspection shape changes, both the interfaces and the local Zod schemas must be updated in sync.
+**Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types` — one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
+**Standalone:** no — depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
+
+### `mcp-server` pins Express 4 and Zod 3; `@modelcontextprotocol/sdk` uses Express 5 and Zod 4 internally
+**File:** `apps/mcp-server/package.json`
+**Severity:** low-medium (version skew; potential for subtle type or behaviour divergence as the MCP SDK evolves)
+**Kind:** dependency management
+**Issue:** `mcp-server` explicitly pins `express: ^4` and `zod: ^3` for consistency with the rest of the monorepo, but `@modelcontextprotocol/sdk` bundles Express 5 and Zod 4 internally. The two copies coexist for now without breakage, but if the SDK exposes types that depend on its internal Zod 4 schemas at the boundary with our Zod 3 code, assignments can fail at runtime in ways that TypeScript won't catch. The Express gap is lower risk (the SDK's Express is an implementation detail) but should be resolved before the monorepo-wide Express upgrade.
+**Fix:** Coordinate a monorepo-wide upgrade: Express ^4 to ^5 across all packages, then Zod 3 to Zod 4 (Zod 4 has breaking API changes — audit all `.parse()`, `.safeParse()`, and `.refine()` usages). `mcp-server` should be updated in the same pass, not ahead of the rest of the repo.
+**Standalone:** no — requires coordinated upgrade across all workspace packages; do not upgrade `mcp-server` in isolation
+
+### MCP endpoint has no authentication (URGENT — block demo deployment)
+
+**File:** `apps/mcp-server/src/http/app.ts` — `createHttpApp`; `apps/mcp-server/src/utils/config.ts` — `envSchema`
+**Severity:** critical (OWASP A01: Broken Access Control — any reachable agent can invoke all tools and read all catalogue data)
+**Kind:** missing security control
+**Issue:** The MCP endpoint accepts all incoming requests with no authentication check. In a demo or staging environment accessible over a network, any agent or automated client that can reach the port can call `list-catalogues`, `get-catalogue-fields`, and `search-catalog` without restriction. There is no API key, bearer token, client certificate, or IP allowlist in place.
+**Fix:** Add a configurable API key check as middleware in `createHttpApp`, applied before the `postHandler` and `sessionHandler` routes. Read the key from a `MCP_API_KEY` env var; if set, reject requests that do not include `Authorization: Bearer <key>` with a `401`. If unset, warn at startup that the endpoint is unauthenticated. For demo environments, always set `MCP_API_KEY`. For production, explore OAuth 2.0 or mTLS as a stronger option. The MCP SDK does not impose an auth mechanism — the middleware layer is the correct place to enforce it.
+**Standalone:** yes — self-contained middleware addition to `app.ts` plus one new env var in `config.ts`
+
+### MCP endpoint has no rate limiting (URGENT — block demo deployment)
+
+**File:** `apps/mcp-server/src/http/app.ts` — `createHttpApp`
+**Severity:** high (OWASP A05: Security Misconfiguration — adversarial agents can flood the endpoint and exhaust memory or downstream Arranger connections)
+**Kind:** missing security control
+**Issue:** There is no per-client or global request rate limit on the MCP endpoint. An adversarial agent can:
+- Open a large number of concurrent sessions, filling the `transports` map (memory exhaustion — see existing session-map entry).
+- Issue rapid-fire tool calls within a single session, generating a corresponding flood of HTTP requests to Arranger.
+Neither the MCP transport layer nor Express applies any backpressure.
+**Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
+**Standalone:** yes — middleware addition to `app.ts`; new env vars in `config.ts`
+
+### `get-catalogue-fields` does not validate `catalogueId` against the configured allowlist
+
+**File:** `apps/mcp-server/src/mcp/tools.ts` — `get-catalogue-fields` tool handler
+**Severity:** medium (OWASP A03: Injection — unvalidated ID forwarded into URL path; also information disclosure if Arranger hosts undeclared catalogues)
+**Kind:** missing input validation
+**Issue:** The `get-catalogue-fields` tool accepts any non-empty string as `catalogueId` and forwards it directly to `client.getCatalogueIntrospection(catalogueId)`, which calls `GET /introspection/{catalogueId}` on Arranger. The `ARRANGER_CATALOGUES` config declares the intended allowlist, but the tool never checks it. An adversarial agent can probe arbitrary strings — either to enumerate undeclared catalogues on the Arranger instance, or to attempt path traversal in the constructed URL (e.g. `../sqon`).
+**Fix:** In the tool handler, check that `catalogueId` is present in `config.catalogues` before calling the Arranger client. Return an MCP error if it is not. The config is already available via `deps` in `registerTools`.
+**Standalone:** yes — one conditional check in the tool handler; no new dependencies
 
 ---
 
@@ -193,6 +232,54 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Explicitly disable introspection and field suggestions in production. Apollo Server 3 supports `introspection: false` and `stopSuggestions` via the `graphql` validation layer. Verify these are configured correctly and not accidentally left open. This may partially resolve itself when Apollo is replaced — but the config intent should be documented regardless.
 **Standalone:** mostly yes for the immediate fix; deeper fix is part of the Apollo migration
 
+### `hasValidConfig` GraphQL resolver should be deprecated
+
+**File:** `modules/graphql-router/src/schema/Root.ts` - `hasValidConfig` resolver
+**Severity:** low
+**Kind:** design-smell
+**Issue:** `hasValidConfig(documentType, index)` is a 2.x legacy query that validates a catalogue by matching an ES index name against registered aliases. The 3.x equivalent is `GET /introspection`, which identifies catalogues by `documentType` without coupling the frontend to ES index names. `hasValidConfig` is still present and still functional, but it encourages the wrong integration pattern and creates a maintenance surface as the schema evolves.
+**Fix:** Formally mark `hasValidConfig` as deprecated in the schema (add `@deprecated` directive with migration note pointing to `GET /introspection`). Schedule removal for a future major release. Migration guidance for consumers is documented in [docs/migration/v3.1.md](../docs/migration/v3.1.md#replace-hasvalidconfig-with-the-introspection-api).
+**Standalone:** yes - adding a `@deprecated` directive is a non-breaking additive change
+
+### Download route body is brittle
+
+**File:** `modules/graphql-router/src/download/index.js` — `download` router
+**Severity:** medium
+**Kind:** design-smell / reliability
+**Issue:** The download route has several fragile points in how it receives and parses its request body:
+1. `params` arrives as a JSON-stringified string inside a `urlencoded` form body (`JSON.parse(params)` on line 110). Double-encoding is easy to get wrong on the caller side and produces opaque parse errors with no indication of which layer failed.
+2. Callers must pass full column descriptor objects — `fieldName`, `accessor`, `Header`, `extendedType`, `extendedDisplayValues`, `show`, `sortable`, `query`, `jsonPath`, plus UI-only fields like `minWidth` and `canChangeShow`. The router already holds the extended mapping at request time; everything except `fieldName` is derivable from it. Callers should only need to pass `fieldNames: string[]`, with optional per-field overrides. `dataToExportFormat.js` already partially reads from `extendedFieldsDict` for display names — the full resolution just never got wired up.
+3. No validation of the parsed `params` object — missing or malformed `files`, unknown `fileType`, invalid `sqon`, and negative `maxRows` all pass through silently until they cause an error deep in `getAllData` or `dataToExportFormat`.
+4. The `400` error response on catch returns `err?.message || err?.details || 'An unknown error occurred.'` — callers cannot distinguish a parse failure from a stream error from a missing-files error.
+5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`) — filenames with spaces or special characters break the header.
+**Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers — coordinate with a minor version bump and document in the migration guide.
+**Standalone:** no — callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+
+### `filterNodesByNodeId` has no tests
+
+**File:** `modules/graphql-router/src/network/utils/nodeFilter.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** `filterNodesByNodeId` is a pure function added in PR #1076 with no accompanying tests. Key cases to cover: empty `nodesFilter` returns all nodes; populated filter returns only matching nodes; nodes with `nodeId: undefined` are excluded when a filter is provided; unknown `nodeId` values in the filter produce an empty result.
+**Standalone:** yes — isolated unit test, no application changes
+
+### `resolveAggregation` cardinality accumulation has no tests
+
+**File:** `modules/graphql-router/src/network/aggregations/AggregationAccumulator.ts` — `resolveAggregation`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
+**Standalone:** yes — unit tests only, no application changes
+
+### `hackyTemporaryEsSetResolution.js` — stale ES 6.2 workaround + convention violation
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
+**Severity:** low
+**Kind:** stale code / convention violation
+**Issue:** Two related problems in one file. (1) The file header says the code is a workaround for an Elasticsearch 6.2 bug fixed in 6.3 — "Once the issue is resolved by Elasticsearch in version 6.3, we no longer need these functions here." That condition was met years ago; we are on ES 7.x/OpenSearch. The function should be evaluated for removal. (2) `resolveSetIdsFromEs` reads `fallbackConfigs.sets.index` from a module-level import of the global `fallbackConfigs` object rather than receiving the sets index name as a parameter. This violates the module convention (modules receive config as typed params; they do not read from global or environment state).
+**Fix:** Verify whether `resolveSetsInSqon` and the `set_id:` expansion path are still exercised in any real deployment or test. If the ES 6.2 workaround is still required for runtime correctness (sets membership resolution), rewrite to accept `setsIndex` as an explicit parameter rather than reading from `fallbackConfigs`. If Sets are fully gated behind `disableSets` and no path reaches this code in practice, remove the file and its import in `resolveAggregations.ts`. The Sets full-feature roadmap item is the natural moment to make this call.
+**Standalone:** no — evaluate alongside the Sets full feature implementation; do not remove without confirming sets query behaviour
+
 ---
 
 ## modules/types
@@ -304,6 +391,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** After `release-charts` merges to `main`, replace the local copy in `mapping.ts` with an import of `esToAggTypesMap` from `@overture-stack/arranger-types/elastic/constants`. One-line change.
 **Standalone:** yes — mechanical import substitution, no logic changes
 
+### `generateChartsQuery` network path has no tests
+
+**File:** `modules/charts/src/query/generateCharts.ts`
+**Severity:** low
+**Kind:** missing test coverage
+**Issue:** PR #1076 added the network query generation branch to `generateChartsQuery` (local query, network aggregations, and network nodes independently enabled/disabled by `queryFields`, `networkQueryFields`, and `isRequireNetworkSearch`). The existing local-only path was also untested. Key cases: no fields and no network requirement returns `null`; local fields only produces no `network` block; `isRequireNetworkSearch` without network aggregation fields produces a `network { nodes }` block without `aggregations`; both local and network fields appear together in one query.
+**Standalone:** yes — unit tests only, no application changes
+
 ### TypeScript / declaration diagnostics on successful build
 
 **File:** `modules/charts` — build output
@@ -312,6 +407,24 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** The charts build exits with a success code while emitting TypeScript and declaration file diagnostics. This is a "noisy-successful" build — CI passes, but the output is not actually clean. Published type declarations may be incomplete or incorrect.
 **Fix:** Resolve the diagnostics so the build is genuinely clean, or explicitly gate `charts` out of the release path until they are fixed. Do not leave it in a state where a successful exit code masks real type errors.
 **Standalone:** yes — isolated to the charts module; does not affect other packages
+
+### Chart tooltip cannot pluralize custom labels
+
+**File:** `modules/charts/src/components/charts/Tooltip.tsx:38`
+**Severity:** low (cosmetic — visible to any operator using a custom label)
+**Kind:** incomplete implementation
+**Issue:** Added in PR #1074. The tooltip appends `'s'` for counts greater than one (e.g. "Records" vs "Record") using a simple string suffix. The TODO in the file notes that a `pluralize` library call does not work when a custom label is applied via CSS — so operators who override the label text via styling get a suffix on the wrong content. The root cause is that label customization is CSS-based rather than prop-based, leaving no programmatic hook for pluralization logic.
+**Fix:** Replace the CSS-based label customization pattern with a `label` prop accepting a singular/plural string pair (e.g. `{ singular: 'Record', plural: 'Records' }`). The pluralization then happens in the component against the prop value rather than against CSS output. The default values maintain the current "Record"/"Records" behaviour.
+**Standalone:** yes — component-level change, no server involvement
+
+### Bar chart `SUPPRESSION_INCREMENT_VALUE` is not configurable
+
+**File:** `modules/charts/src/components/charts/Bar/View.tsx:10`
+**Severity:** low (cosmetic — hardcoded visual increment for suppressed zero-value bars)
+**Kind:** missing config option
+**Issue:** Added in PR #1074. Zero-value bar suppression uses a hardcoded `SUPPRESSION_INCREMENT_VALUE = 0.2` to render a small visible bar for data values of exactly zero (so the bar is not invisible). The TODO in the file acknowledges this should be a configurable prop. Different chart contexts may need different visual increments depending on axis scale and bar density.
+**Fix:** Add a `suppressionIncrement` prop to `BarChartProps` (default `0.2`). Pass it through `BarChart.tsx` to `View.tsx` and replace the module-level constant.
+**Standalone:** yes — additive prop, no server involvement
 
 ---
 
@@ -326,14 +439,53 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Add `files` allowlists to `package.json` for each publishable module (explicitly listing `dist`, `README.md`, `package.json`), or add `.npmignore` rules to exclude `.turbo/`, `src/`, and any generated logs. Verify with a dry-run pack after fixing.
 **Standalone:** yes — mechanical packaging fix per module, no logic changes
 
+### `integration-tests/import` does not cover ESM-only publishable packages
+
+**Files:** `integration-tests/import/test.ts`, `integration-tests/import/package.json`
+**Severity:** low (gap in regression coverage)
+**Kind:** missing test coverage
+**Issue:** `integration-tests/import` runs under Jest + ts-jest, which handles CJS and TypeScript source but cannot import pure-ESM dist packages (`.js` files with `"type": "module"` and no `"require"` export) without additional configuration. `@overture-stack/arranger-graphql-router` and `@overture-stack/sqon` are pure ESM — both are missing from the import smoke test. `@overture-stack/arranger-types` (CJS + ESM hybrid) and `@overture-stack/arranger-components` (CJS via Babel) are covered. An import regression in `graphql-router` or `sqon` would not be caught by this test.
+
+Additionally: `integration-tests/import` resolves all deps via npm workspaces symlinks (`file:` paths), so it tests local build output, not the published tarball. Publishing regressions (e.g. stale `file:` refs in `package.json`) are caught by `npm run release:check` (`scripts/verify-pack.mjs`), not by this test.
+
+**Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and `arranger-sqon` and checks their key exports.
+**Standalone:** yes — test infrastructure change only, no application code
+
+---
+
 ### `file:` local dependencies in publishable packages
 
-**Files:** `package.json` files across publishable modules (`sqon`, `types`, `graphql-router`, `components`, `charts`)
-**Severity:** high (release blocker)
+**Files:** `modules/types/package.json`, `modules/graphql-router/package.json`, `modules/components/package.json`
+**Severity:** high (confirmed consumer-facing breakage)
 **Kind:** packaging bug
-**Issue:** Publishable packages reference internal sibling packages via `file:` paths (e.g. `"@overture-stack/arranger-types": "file:../types"`). These work in the monorepo but break for external npm consumers, who receive a `file:` reference that resolves to nothing in their environment.
-**Fix:** Before each npm publish, replace `file:` references with the actual published registry versions. This can be done at publish time as part of the release script, or managed via a tool like Changesets (which handles this automatically as part of Phase 3.1). In the interim, the release process must verify no `file:` references remain in the published tarball's `package.json`.
-**Standalone:** needs-context — the clean long-term fix is [Changesets (roadmap §3.1)](roadmap.md#31-adopt-changesets-for-versioning-and-changelog-automation); the interim fix is a release validation step
+**Issue:** Three publishable packages reference sibling packages via `file:` paths in `dependencies` (e.g. `"@overture-stack/arranger-types": "file:../types"`). npm encodes these verbatim in the published tarball's `package.json`. External consumers get errors like `Package "" refers to a non-existing file '"/Users/.../types"'` because the publishing machine's local paths do not exist in the consumer's environment. `modules/sqon` and `modules/charts` are clean — no `file:` deps.
+
+**Interim fix (implemented):** `scripts/fix-workspace-deps.mjs` rewrites `file:` deps to `^<sibling-version>` ranges before each `npm publish` call in the Jenkins pipeline, then restores `package.json` from git. Local dev is unchanged — `file:` refs continue to work via npm workspaces symlinks. The pipeline publish loop calls the script and restores after each package. Note: alphabetical publish order (`components` and `graphql-router` before `types`) means there is a short window where those packages reference a `types` version not yet on npm. Acceptable for coordinated release runs; Changesets eliminates it by publishing in dependency order.
+
+**Long-term fix — two separate tools, both needed:**
+
+- **Changesets (roadmap Phase 3.1):** Handles version management, changelog generation, and publishing in dependency order. Replaces the manual version-bump commit and the current pipeline publish loop. Does not on its own solve the `file:` encoding problem, but it handles it as part of its version-replacement step when combined with pnpm.
+
+- **pnpm workspace: protocol (roadmap Phase 3.3):** Replaces `file:../x` deps with `workspace:*`. In development, pnpm resolves `workspace:*` to the local package (same behaviour as `file:`). At `pnpm publish`, pnpm automatically rewrites `workspace:*` to the actual version range in the tarball. This eliminates the problem at the package manager level, making the fix-and-restore script unnecessary.
+
+**When Changesets lands (Phase 3.1):** Delete `scripts/fix-workspace-deps.mjs` and remove the `node scripts/fix-workspace-deps.mjs` and `git checkout` lines from the Jenkins publish loop. Changesets' `changeset version` step rewrites `file:` deps to real version ranges before publishing, making the interim script redundant. `scripts/verify-pack.mjs` stays.
+
+**When pnpm lands (Phase 3.3):** Replace all `file:../x` dep specs with `workspace:*` across every `package.json` in the repo (publishable modules, `apps/`, `integration-tests/`). pnpm replaces `workspace:*` with real version ranges at publish time automatically. `scripts/verify-pack.mjs` already handles this — no changes needed there.
+
+**Standalone:** no - depends on Changesets (Phase 3.1) for the clean fix; pnpm (Phase 3.3) for the workspace: migration.
+
+---
+
+## apps/search-server
+
+### No README
+
+**File:** `apps/search-server/` — no `README.md` present
+**Severity:** medium (discoverability and onboarding gap — especially relevant for teams building on or deploying Arranger)
+**Kind:** missing documentation
+**Issue:** `apps/search-server` has no README. It is the primary runnable application in the monorepo — the thing operators deploy — but there is no document explaining how to run it, what env vars it accepts, how the config directory is structured, or how it relates to `modules/graphql-router`. The `.env.schema` file partially serves this purpose, but only for env vars, and is not discoverable without knowing to look there.
+**Fix:** Add `apps/search-server/README.md` covering: what the app is, how to run it (`npm run server` from repo root), the env var reference (pointing at `.env.schema` for full schema, with the most important vars inline), the configuration directory structure (flat = single catalogue; subdirectories = multicatalogue), and a pointer to the `graphql-router` README for custom integrations.
+**Standalone:** yes
 
 ---
 

@@ -41,7 +41,7 @@ A **filter clause** is a single field-level condition:
 {
   "op": "in",
   "content": {
-    "field": "disease_type",
+    "fieldName": "disease_type",
     "value": ["Leukemia", "Lymphoma"]
   }
 }
@@ -53,8 +53,8 @@ A SQON wraps one or more filter clauses under a combinator:
 {
   "op": "and",
   "content": [
-    { "op": "in", "content": { "field": "disease_type", "value": ["Leukemia"] } },
-    { "op": ">=",  "content": { "field": "age_at_diagnosis", "value": [18] } }
+    { "op": "in", "content": { "fieldName": "disease_type", "value": ["Leukemia"] } },
+    { "op": ">=",  "content": { "fieldName": "age_at_diagnosis", "value": [18] } }
   ]
 }
 ```

@@ -3,6 +3,7 @@ import { JSONPath } from 'jsonpath-plus';
 import { chunk, isObject, flattenDeep } from 'lodash-es';
 
 // import { ENV_CONFIG } from '#config/index.js';
+import { tableDefaults } from '@overture-stack/arranger-types/configs/constants';
 import { buildQuery, isESValueSafeJSInt } from '#middleware/index.js';
 
 import compileFilter from './utils/compileFilter.js';
@@ -179,6 +180,9 @@ export const hitsToEdges = ({
 		.catch((err) => console.log('err', err));
 };
 
+export const applyResultsWindow = (first, maxResultsWindow) =>
+	Math.min(first, maxResultsWindow ?? tableDefaults.MAX_RESULTS_WINDOW);
+
 export default ({ type, Parallel, getServerSideFilter }) =>
 	async (
 		obj,
@@ -239,7 +243,7 @@ export default ({ type, Parallel, getServerSideFilter }) =>
 
 		const searchResult = await esSearch(esClient)({
 			index: type.index,
-			size: first,
+			size: applyResultsWindow(first, type.config?.table?.maxResultsWindow),
 			from: offset,
 			track_total_hits: trackTotalHits,
 			_source: [

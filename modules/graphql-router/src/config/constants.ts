@@ -4,6 +4,7 @@ import {
 	configRootProperties,
 	downloadProperties,
 	facetsProperties,
+	tableDefaults,
 	tableProperties,
 } from '@overture-stack/arranger-types/configs/constants';
 
@@ -11,8 +12,6 @@ import {
 const DOWNLOAD_MAX_ROWS = 100;
 const DOWNLOAD_STREAM_BUFFER_SIZE = 2000;
 const ES_ARRANGER_SETS = 'arranger-sets';
-const MAX_RESULTS_WINDOW = 10000;
-const ROW_ID_FIELD_NAME = 'id';
 
 // fallback configs for module start and testing
 const fallbackCatalogConfigs = {
@@ -37,8 +36,8 @@ const fallbackCatalogConfigs = {
 	[configRootProperties.MATCHBOX]: [],
 	[configRootProperties.TABLE]: {
 		[tableProperties.COLUMNS]: [],
-		[tableProperties.MAX_RESULTS_WINDOW]: MAX_RESULTS_WINDOW,
-		[tableProperties.ROW_ID_FIELD_NAME]: ROW_ID_FIELD_NAME,
+		[tableProperties.MAX_RESULTS_WINDOW]: tableDefaults.MAX_RESULTS_WINDOW,
+		[tableProperties.ROW_ID_FIELD_NAME]: tableDefaults.ROW_ID_FIELD_NAME,
 	},
 };
 

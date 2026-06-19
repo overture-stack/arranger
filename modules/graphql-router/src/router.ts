@@ -1,6 +1,7 @@
 import type { ConfigsObject, GetServerSideFilterFn } from '@overture-stack/arranger-types/configs';
 import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
 import { Router, type RequestHandler } from 'express';
+import { merge } from 'lodash-es';
 
 import enforceAccessControl, { getDefaultServerSideFilter } from '#accessControl/index.js';
 import fallbackConfigs, { validateConfigs } from '#config/index.js';
@@ -13,6 +14,11 @@ import buildSearchClient, { type SearchClient } from '#searchClient/index.js';
 import type { ArrangerBaseContext } from '#types.js';
 import { addContext } from '#utils/context.js';
 import { warnDeprecatedConfigsSource } from '#utils/noops.js';
+
+export const mergeConfigs = <Context extends ArrangerBaseContext>(
+	fallback: Partial<ConfigsObject<Context>>,
+	custom: Partial<ConfigsObject<Context>>,
+): Partial<ConfigsObject<Context>> => merge({}, fallback, custom);
 
 export const createRequestPreprocessingMiddleware = <Context extends ArrangerBaseContext>({
 	configs,
@@ -48,10 +54,7 @@ const arrangerRouter = async <Context extends ArrangerBaseContext>({
 	console.log('\n------\nInitializing an Arranger instance:');
 
 	try {
-		const aggregatedConfigs: Partial<ConfigsObject<Context>> = {
-			...fallbackConfigs,
-			...customConfigs,
-		};
+		const aggregatedConfigs = mergeConfigs(fallbackConfigs, customConfigs);
 
 		const { enableAdmin, enableDebug, esHost, esPass, esUser, searchEngine, ...configs } = validateConfigs(
 			aggregatedConfigs,
