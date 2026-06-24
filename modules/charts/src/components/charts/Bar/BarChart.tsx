@@ -15,7 +15,7 @@ export interface NumericAggregationsOptions {
 	ranges?: Ranges;
 }
 
-interface SupportedNivo {
+export interface SupportedNivo {
 	axisLeft: { legend: any };
 	axisBottom: { legend: any };
 }
@@ -24,7 +24,7 @@ export interface BarChartProps {
 	fieldName: string;
 	maxBars: number;
 	ranges?: Ranges;
-	theme: { sortByKey?: string[] } & SupportedNivo;
+	theme: { sortByKey?: string[]; axisBottom: { customTickValueSize?: number } } & SupportedNivo;
 	handlers?: { onClick: (config: any) => void };
 	disableTopBarsCount?: boolean;
 }

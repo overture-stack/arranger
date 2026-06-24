@@ -137,6 +137,11 @@ export const tableProperties = {
 	ROW_ID_FIELD_NAME: 'rowIdFieldName',
 } as const;
 
+export const tableDefaults = {
+	MAX_RESULTS_WINDOW: 10000,
+	ROW_ID_FIELD_NAME: 'id',
+} as const;
+
 // Charts Visualization Library
 export const chartsProperties = {
 	QUERY: 'query',

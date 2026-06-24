@@ -27,7 +27,6 @@ Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and
 Arranger integrates with your Elasticsearch or OpenSearch cluster to generate a search API from your configured index mapping. It consists of two main modules:
 
 - **Arranger Server:** The back-end search API service that:
-
     - Generates a GraphQL API from Elasticsearch mappings
     - Acts as middleware between the UI and Elasticsearch
     - Simplifies querying and filtering using Serializable Query Object Notation ([SQON](https://www.overture.bio/documentation/arranger/reference/sqon/))
@@ -87,6 +86,12 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
     - **`types/`**: Shared TypeScript types and configuration constants used across modules and apps.
 - **`scripts/`**: Utility scripts for development, deployment, and system management.
 
-## Next steps
+## Where to go from here
 
-Read [Concepts](./concepts.md) for a walkthrough of Arranger's domain model and the vocabulary used throughout this documentation.
+**Learning what Arranger is** — [Concepts](./concepts.md) walks through the domain model: catalogues, facets, aggregations, SQONs, and how they fit together. A good read before configuration.
+
+**Setting up for the first time** — The [Setup Guide](./setup.md) covers environment requirements, configuration files, and running the server. Start here when you're ready to deploy.
+
+**Upgrading from 3.0.x** — The [3.1 migration guide](./migration/v3.1.md) lists the breaking changes and what to verify before cutting over.
+
+**Consolidating multiple per-catalogue instances into one server** — See [Consolidating multiple instances](./migration/v3.1.md#consolidating-multiple-single-catalogue-instances) for a step-by-step guide to the multicatalogue directory layout, URL changes, and config migration.
