@@ -449,6 +449,11 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 Additionally: `integration-tests/import` resolves all deps via npm workspaces symlinks (`file:` paths), so it tests local build output, not the published tarball. Publishing regressions (e.g. stale `file:` refs in `package.json`) are caught by `npm run release:check` (`scripts/verify-pack.mjs`), not by this test.
 
 **Fix:** Either configure Jest to handle pure-ESM packages (update `transformIgnorePatterns`, enable `--experimental-vm-modules`), or add a separate lightweight smoke test using `node --input-type=module` or `tsx` that imports from `arranger-graphql-router` and `arranger-sqon` and checks their key exports.
+
+**Additional TODOs on top of the ESM gap:**
+1. **Verify `exports` subpaths, not just package root.** The smoke test should assert each named subpath in the `exports` field (`./utils`, `./download`, etc.) resolves and exposes the expected named exports. A missing barrel re-export (e.g. `getAllData` was absent from `utils/index.ts`) causes `ERR_PACKAGE_PATH_NOT_EXPORTED` for consumers importing via a subpath, which the current test would not catch.
+2. **Document what is exported and why.** There is currently no reference for which methods are available on each export path (`./utils`, `./download`, root) or what they are for. Add inline JSDoc to each export in the barrel files and a brief summary in the package README (once one exists; see search-server README debt) or a `EXPORTS.md` at the package root.
+
 **Standalone:** yes; test infrastructure change only, no application code
 
 ---
