@@ -31,17 +31,25 @@ export default ({ getClient, configuredCatalogues, expectedFieldsByCatalogue }: 
 		}
 	});
 
-	test("2.'get-sqon-schema' returns a valid SQON introspection payload", async () => {
+	test("2.'get-sqon-schema' returns a SQON cheat sheet plus the full payload in structuredContent", async () => {
 		const result = await getClient().callTool({ name: 'get-sqon-schema' });
-		const text = getTextContent(result);
-		const data = JSON.parse(text);
 
-		assert.equal(typeof data.version, 'string');
-		assert.equal(typeof data.title, 'string');
-		assert.ok(data.schema);
-		assert.ok(data.operators);
-		assert.ok(Array.isArray(data.operators.combination));
-		assert.ok(Array.isArray(data.operators.field));
+		// The text content is a human/LLM-oriented quick reference, not JSON. It must steer
+		// callers toward the correct leaf shape (the "fieldName not field" pitfall).
+		const text = getTextContent(result);
+		assert.ok(text.includes('SQON'), `expected a SQON cheat sheet, got: ${text}`);
+		assert.ok(text.includes('fieldName'), 'expected the cheat sheet to mention "fieldName"');
+
+		// The full machine-readable schema and operator metadata move to structuredContent.
+		const data = (result as { structuredContent?: Record<string, unknown> }).structuredContent;
+		assert.ok(data, "expected 'get-sqon-schema' to return structuredContent");
+		assert.equal(typeof data?.version, 'string');
+		assert.equal(typeof data?.title, 'string');
+		assert.ok(data?.schema);
+		const operators = data?.operators as { combination?: unknown; field?: unknown } | undefined;
+		assert.ok(operators);
+		assert.ok(Array.isArray(operators?.combination));
+		assert.ok(Array.isArray(operators?.field));
 	});
 
 	test("3.'get-catalogue-fields' returns field metadata for each configured catalogue", async () => {
