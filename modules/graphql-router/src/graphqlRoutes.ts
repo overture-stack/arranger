@@ -189,8 +189,9 @@ const noSchemaHandler =
 	};
 
 export const createEndpoint = async <Context extends ArrangerBaseContext>({
+	disableGraphQLIntrospection,
 	disablePlayground,
-	enableDebug = false,
+	enableDebug,
 	esClient,
 	graphqlOptions = {},
 	maxAliases,
@@ -198,6 +199,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 	mockSchema,
 	schema,
 }: {
+	disableGraphQLIntrospection?: boolean;
 	disablePlayground: boolean;
 	enableDebug?: boolean;
 	esClient: SearchClient;
@@ -249,6 +251,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 			const apolloServer = new ApolloServer({
 				cache: 'bounded',
 				context: ({ req, res, con }) => buildContext(req, res, con),
+				introspection: !disableGraphQLIntrospection,
 				schema,
 				validationRules,
 				...apolloFeatureFlags,
@@ -271,6 +274,7 @@ export const createEndpoint = async <Context extends ArrangerBaseContext>({
 		if (mockSchema) {
 			const apolloMockServer = new ApolloServer({
 				cache: 'bounded',
+				introspection: !disableGraphQLIntrospection,
 				schema: mockSchema,
 				validationRules,
 				...apolloFeatureFlags,
@@ -430,8 +434,8 @@ export const createSchemasFromConfigs = async <Context extends ArrangerBaseConte
 
 export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 	configs: ConfigsObject<Context>;
-	enableDebug?: boolean;
 	enableAdmin?: boolean;
+	enableDebug?: boolean;
 	esClient: SearchClient;
 	getServerSideFilter: GetServerSideFilterFn<Context>;
 	graphqlOptions?: GraphQLEndpointOptions<Context>;
@@ -439,8 +443,8 @@ export type ArrangerRoutesArgs<Context extends ArrangerBaseContext> = {
 };
 const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBaseContext>({
 	configs,
-	enableDebug,
 	enableAdmin,
+	enableDebug,
 	esClient,
 	getServerSideFilter,
 	graphqlOptions = {},
@@ -462,6 +466,7 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 		});
 
 		const graphQLEndpoints = await createEndpoint({
+			disableGraphQLIntrospection: configs[configOptionalProperties.DISABLE_GRAPHQL_INTROSPECTION] ?? false,
 			disablePlayground: configs[configOptionalProperties.DISABLE_GRAPHQL_PLAYGROUND] ?? false,
 			enableDebug,
 			esClient,

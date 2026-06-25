@@ -10,6 +10,7 @@ const TYPE = 'type';
 export const configArrangerFeatureFlagProperties = {
 	DISABLE_DOWNLOADS: 'disableDownloads',
 	DISABLE_FILTERS: 'disableFilters',
+	DISABLE_GRAPHQL_INTROSPECTION: 'disableGraphQLIntrospection',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
 	ENABLE_SETS: 'enableSets',
 } as const;

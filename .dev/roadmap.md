@@ -60,9 +60,15 @@ The `SearchClient` abstraction already exists as the right boundary; the migrati
 
 ### GraphQL server migration (away from Apollo)
 
-_Priority: medium. Blocked by, or done in parallel with, the core module extraction._
+_Priority: high. prerequisite for Keycloak auth implementation._
 
-Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; the goal is to move _away_ from Apollo, not deeper into it. Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of decoupling Arranger from any specific framework.
+Apollo Server 3 is end-of-life. Upgrading to Apollo Server 4 is not the right move; Apollo is opinionated about its hosting environment (it assumes Express-style middleware, has its own context and plugin APIs) in ways that conflict with the longer-term direction of making Arranger framework-agnostic.
+
+**Sequencing:** This item is the second step of a three-step chain driven by a pentest audit finding:
+
+1. **Disable introspection in Apollo v3 (done):** Apollo's `introspection` option on both `ApolloServer` constructors in `graphqlRoutes.ts` is now gated by the `disableGraphQLIntrospection` feature flag (`introspection: !disableGraphQLIntrospection`), which defaults to disabled in production via `NODE_ENV` and can also be set explicitly per catalogue or via env var. Apollo v4+ disables introspection in production automatically; this flag aligns v3 behaviour with that convention, with the added benefit of being explicitly overridable. Note: field name suggestions in GraphQL error responses are a separate gap not yet addressed; Apollo v3 requires a custom `formatError` to suppress them, Apollo v4 handles it automatically. This remaining gap closes when the migration lands.
+2. **Migrate to graphql-yoga (this item):** Clean foundation before auth is built on Apollo-specific APIs.
+3. **Keycloak bearer token auth (follows):** Implemented as Express middleware - library-agnostic, portable across the migration. Direct Keycloak JWT validation while Usher planning continues. See [Auth and field/record-level access control](#auth-and-fieldrecord-level-access-control).
 
 The leading replacement candidate is **graphql-yoga** (maintained by The Guild, who also maintain `@graphql-tools`, already used in this repo). It runs on any JS runtime, integrates with Express without requiring it, supports the same schema-first approach the codebase uses, and is actively maintained. This is a research-confirmed candidate, not a final decision.
 
@@ -934,6 +940,8 @@ _The CI pod already has dind; testcontainers would work today. Evaluate as part 
 ### 3.3 Migrate from npm to pnpm
 
 Catches phantom dependencies at install time, faster CI installs, removes `dangerouslyDisablePackageManagerCheck`.
+
+**Corepack Docker gotcha (learned from Lyric):** When adopting pnpm with corepack in a multi-stage Dockerfile, use `corepack prepare pnpm@x.y.z --activate` - not `corepack use pnpm@x.y.z`. `corepack use` only updates package.json; the binary is fetched lazily at runtime. If the pod has no egress to registry.npmjs.org (common in locked-down clusters), startup fails with a corepack download error. `corepack prepare --activate` downloads and caches the binary during image build, so the pod needs no network access to start.
 
 1. Install pnpm on Jenkins nodes (coordinate with infra)
 2. Create `pnpm-workspace.yaml` (replacing npm workspaces declaration)
