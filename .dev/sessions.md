@@ -6,6 +6,35 @@ Newest first.
 
 ---
 
+## 2026-06-25
+
+Disabled GraphQL introspection in Apollo v3 to close a pentest audit finding; elevated Apollo migration to high priority and documented the introspection fix → migration → Keycloak auth chain in the roadmap.
+
+- `modules/graphql-router/src/graphqlRoutes.ts`: added `disableGraphQLIntrospection` param to `createEndpoint` and `ArrangerRoutesArgs`/`arrangerRoutes`; named to avoid ambiguity with the server's own REST introspection routes
+- `modules/graphql-router/src/disableGraphQLIntrospection.test.ts`: unit tests for both flag states (introspection allowed and rejected); co-located at `src/` level following convention (`disablePlayground.test.ts` is in `__tests__/` which is the inconsistency flagged in tech-debt)
+- `integration-tests/server/test/spinupActive.js`: test 8 verifies introspection returns schema data in non-production mode
+- `modules/types/src/configs/constants.ts`: added `DISABLE_GRAPHQL_INTROSPECTION` to `configArrangerFeatureFlagProperties`; `featureFlagDefaults` and `ConfigsObject` pick it up automatically
+- `modules/graphql-router/src/graphqlRoutes.ts`: `createEndpoint` call reads `configs[DISABLE_GRAPHQL_INTROSPECTION] ?? false`;
+- `apps/search-server/src/configs/fromEnv/localEnvs.ts`: reads `DISABLE_GRAPHQL_INTROSPECTION` env var with `NODE_ENV === 'production'` as fallback; consistent with other feature flags in the same file
+- `apps/search-server/configTemplates/configs.json.schema`: added `disableGraphQLIntrospection` to the feature flags section
+- `apps/search-server/src/configs/fromEnv/aggregator.ts`: added `disableGraphQLIntrospection` to `externalConfigs` destructuring and `catalogs.fromEnv`; enables passing the flag programmatically to `ArrangerServer` for integration-level testing
+- `integration-tests/server/test/index.test.ts`: added `GraphQL introspection disabled` suite; starts server with `disableGraphQLIntrospection: true` via `ExternalConfigs` and asserts introspection queries return 400 with an introspection-related error message
+- `.dev/roadmap.md`: GraphQL server migration raised from medium to high priority; sequencing note added covering the three-step chain and the remaining field-suggestions gap (closes automatically on migration)
+- `.dev/tech-debt.md`: updated "GraphQL introspection" entry (now only field suggestions remains); added new entry for network aggregation `__type` dependency on remote nodes
+- `modules/graphql-router/README.md`: added `disableGraphQLIntrospection` to feature flags table; added introspection requirement caveat in the Network search section
+- `docs/usage/04-introspection.md`: added "GraphQL introspection" section distinguishing the REST API from GraphQL's introspection system; documents the flag, env var, and network aggregation caveat
+
+---
+
+## 2026-06-24
+
+Added `getAllData` to the `graphql-router` utils barrel export (was missing, causing `ERR_PACKAGE_PATH_NOT_EXPORTED` for a downstream consumer); extended the `integration-tests/import` tech-debt entry with two explicit gaps.
+
+- `modules/graphql-router/src/utils/index.ts`: re-exported `getAllData` as a named export; must evaluate whether this is a desirable pattern for future versions
+- `.dev/tech-debt.md`: `integration-tests/import` entry extended with two TODOs: verify each `exports` subpath by name (not just the root), and document what each exported method is and what it is for
+
+---
+
 ## 2026-06-19
 
 **Done:**
