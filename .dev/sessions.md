@@ -6,6 +6,39 @@ Newest first.
 
 ---
 
+## 2026-06-24
+
+**Done:**
+
+- Improved SQON-generation success for smaller LLMs calling the MCP `execute-query` tool (two enhancements targeting the documented root causes from the 2026-06-11 analysis):
+    - `apps/mcp-server/src/mcp/executeQueryTool.ts`: rewrote the `sqon` input parameter `.describe()` into an inline few-shot. Spells out the GROUP vs LEAF shapes, that a leaf nests `fieldName`/`value` inside `content` (the key is `fieldName`, never `field`, and they never sit beside `op`), a correct "donors are Female" example, the exact WRONG flat-leaf shape to avoid, and the empty-root `{"op":"and","content":[]}` for unfiltered queries. Reinforces correct shape at the point of use, where the model errs even after reading the schema.
+    - `apps/mcp-server/src/mcp/tools.ts`: replaced the `get-sqon-schema` tool's `text` content (previously the raw `zodToJsonSchema` dump) with a compact, ASCII-only SQON cheat sheet: grammar (Group/Leaf), field operators grouped by applicability, the `filter`-op `fieldNames`-array exception, pitfalls (flat leaf; booleans as strings), a symbol-alias note, and seven worked examples plus the WRONG example. The full machine-readable schema and operator metadata stay in `structuredContent`, so nothing is lost for clients that read it. Tool `description` updated to advertise the quick reference.
+- Verified all seven cheat-sheet/param examples parse against the real `SqonSchema.safeParse`, and the WRONG flat-leaf example is rejected (one-off script, not committed).
+- Updated `integration-tests/mcp-server/test/readTools.ts` test 2: the `get-sqon-schema` text is now prose, so it asserts the cheat sheet mentions SQON and `fieldName`, and reads the version/title/schema/operators payload from `structuredContent` (mirrors the test-3 pattern).
+- `npm run test -w apps/mcp-server` green (67 tests); `tsc -p apps/mcp-server` clean.
+
+**Done (follow-up, after a local-LLM retest with gemma-4-e4b still produced invalid SQON):**
+
+- Reviewed three description/cheat-sheet suggestions the model itself produced. Every SQON structure in its suggested examples was invalid (verified against `SqonSchema.safeParse`): it placed `fieldName` beside `op` with only `value` inside `content`, and wrote `op:"not"` as a leaf with a bogus `"in"` key. Incorporated the pedagogy, not the structures.
+- Reworked the `get-sqon-schema` cheat sheet (`tools.ts`): front-loaded a "THE MISTAKE TO AVOID" block showing the CORRECT leaf next to the two real malformed shapes (fieldName-beside-op, and flat `field`); added a copyable leaf template, a 3-step build recipe ("always wrap in a Group root"), a multi-value `in` note, a negation note (`not` group or `not-in`), and an OR example; reframed the worked examples as "Natural language to SQON". Re-verified every example against `SqonSchema`.
+- Strengthened the `sqon` param description (`executeQueryTool.ts`): added the exact fieldName-beside-op failure as a second WRONG example, plus "always use a group as the root, even for a single condition" (which also dodges the known root-leaf `buildAggregations` crash).
+- Strengthened the `execute-query` tool description: explicit "translate the request into a SQON filter tree; call get-sqon-schema if unsure" step (the LLM's workflow suggestion, minus its LaTeX/emoji). Cleaned three pre-existing em-dashes in this file's param/JSDoc text (convention compliance).
+
+**Decisions:**
+
+- The local LLM's own suggested example structures were invalid and were not copied; only the presentation ideas (natural-language-to-SQON framing, the leaf template, the build recipe, the explicit CORRECT-vs-WRONG failure contrast, the OR case, the workflow mandate) were incorporated, with every example verified against `SqonSchema`.
+- Recommend always wrapping in a Group root (even single conditions): it both keeps the model on one consistent pattern and sidesteps the open `buildAggregations` root-leaf bug for `aggregations`/`both`.
+- The cheat sheet is hand-maintained in `tools.ts`, not derived from the schema and not hoisted into `modules/sqon`: smaller LLMs pattern-match examples rather than execute a recursive JSON Schema, and the few-shot examples cannot be auto-generated. A code comment flags that the operator names and node shapes must track `modules/sqon/src/schema`. The operator set is stable, so drift risk is low.
+- Kept `structuredContent` as the full payload (the validation artifact) and made `text` the generation guide; this is the content/structuredContent split MCP already supports.
+
+**Open threads:**
+
+- Awaiting a retest of the revised cheat sheet / descriptions against gemma-4-e4b. Prompt-engineering alone may not be enough for a ~4B model that ignores or under-attends to the guidance; if it still fails, the higher-leverage fixes are the structural root causes below (especially #5: a mistake-aware validation error would let the model self-correct in a loop rather than depend on getting it right first try).
+- `/docs` debt: this changes the MCP `get-sqon-schema` and `execute-query` tool-surface behaviour (cheat sheet text, richer param description); the MCP tool surface remains undocumented in `/docs`.
+- Remaining root causes from the 2026-06-11 analysis are still open and are the natural next steps: the `sqon` input is still `zod.unknown()` (no protocol-level structure for schema-constrained clients); Zod union errors still collapse to `Invalid SQON at root: Invalid input` (broken self-correction loop); the published JSON Schema still has dangling `$ref`s (tech-debt, standalone).
+
+---
+
 ## 2026-06-19
 
 **Done:**

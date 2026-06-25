@@ -33,7 +33,15 @@ const inputSchema = {
 	sqon: zod
 		.unknown()
 		.describe(
-			'SQON filter for the query. Required. For an unfiltered query ("show me everything"), pass the empty root SQON {"op": "and", "content": []} — never null. Use get-sqon-schema for the SQON structure and get-catalogue-fields for valid fields and per-type operators.',
+			'SQON filter for the query (required). A SQON is a tree of two node kinds: group and leaf. ' +
+				'A GROUP combines conditions: {"op": "and" | "or" | "not", "content": [ ...child nodes... ]} (content is an ARRAY). ' +
+				'A LEAF is one field condition: {"op": "in" | "gt" | ..., "content": {"fieldName": "<field>", "value": <scalar or array>}} (content is an OBJECT). ' +
+				'Key rule: in a leaf, "fieldName" and "value" go TOGETHER inside "content", "op" stays outside, and the key is "fieldName", never "field". ' +
+				'CORRECT (donors that are Female): {"op":"and","content":[{"op":"in","content":{"fieldName":"donors.gender","value":["Female"]}}]}. ' +
+				'WRONG (rejected): {"op":"and","content":[{"fieldName":"donors.gender","op":"in","content":{"value":["Female"]}}]} (fieldName must be inside content, not beside op). ' +
+				'WRONG (rejected): {"op":"and","content":[{"field":"donors.gender","op":"in","value":["Female"]}]} ("field" should be "fieldName", and the condition is not nested). ' +
+				'Always use a group as the root, even for a single condition. For an unfiltered query ("show me everything") pass {"op":"and","content":[]}, never null. ' +
+				'Call get-sqon-schema for the cheat sheet and get-catalogue-fields for valid field names and per-type operators.',
 		),
 	queryType: zod
 		.enum(['hits', 'aggregations', 'both'])
@@ -45,7 +53,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names — use get-catalogue-fields first. Omit to return only the total hit count.',
+			'Dot-notation document fields to return for each hit (e.g. "donor.age_at_diagnosis"). Do not guess field names; use get-catalogue-fields first. Omit to return only the total hit count.',
 		),
 	first: zod
 		.number()
@@ -68,7 +76,7 @@ const inputSchema = {
 		.array(zod.string().min(1))
 		.optional()
 		.describe(
-			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names — use get-catalogue-fields first. Required when queryType is "aggregations" or "both".',
+			'Fields to aggregate. Nested properties use double underscores (e.g. "donor__age_at_diagnosis"); dot notation is also accepted. Do not guess field names; use get-catalogue-fields first. Required when queryType is "aggregations" or "both".',
 		),
 	includeMissing: zod
 		.boolean()
@@ -168,7 +176,7 @@ const validateRequest = ({
 /**
  * Asks the user to review and confirm the generated GraphQL request before it is executed,
  * using MCP elicitation. When the connected client does not advertise the elicitation
- * capability, confirmation is skipped and the query proceeds — the executed request is
+ * capability, confirmation is skipped and the query proceeds; the executed request is
  * always echoed in the tool response for transparency.
  * @returns `true` when execution may proceed, `false` when the user declined or cancelled.
  */
@@ -228,7 +236,8 @@ export const registerExecuteQueryTool = (server: McpServer, { client }: McpServe
 			title: 'Execute Arranger Query',
 			description:
 				'Execute a SQON-filtered query against one Arranger catalogue and return matching documents (hits), per-field aggregation summaries, or both. ' +
-				'Before calling this tool: use list-catalogues to find the catalogue, then get-catalogue-fields to discover valid field names and per-type SQON operators — never guess field names. ' +
+				'Translate the user request into a SQON filter tree for the "sqon" argument; if unsure of the structure, call get-sqon-schema for the SQON cheat sheet. ' +
+				'Before calling this tool: use list-catalogues to find the catalogue, then get-catalogue-fields to discover valid field names and per-type SQON operators; never guess field names. ' +
 				'The user is asked to review and confirm the generated GraphQL query before it runs (when the client supports elicitation).',
 			inputSchema,
 			outputSchema,

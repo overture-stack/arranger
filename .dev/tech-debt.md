@@ -138,15 +138,6 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
 **Standalone:** yes; (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
-### `docs/concepts.md` SQON examples use `field` instead of `fieldName`
-
-**File:** `docs/concepts.md:44,56-57`
-**Severity:** medium (canonical concepts doc contradicts the runtime schema; actively trains LLMs and readers into the #1 invalid-SQON mistake)
-**Kind:** stale documentation
-**Issue:** The SQON examples in `docs/concepts.md` use `"field"` as the filter-clause key, but the runtime (`modules/sqon` `SqonLeafSchema`, and `buildQuery` in `graphql-router` which reads `content.fieldName`) requires `"fieldName"`. `field` is the legacy/GDC-era spelling and is exactly the key local LLMs keep producing when generating SQON for the MCP `execute-query` tool — the project's own docs reinforce the wrong prior. `docs/usage/00-query-processing.md` already uses `fieldName` correctly.
-**Fix:** Update the examples in `concepts.md` to `fieldName`; grep docs for any other `"field"` usages in SQON (not ES query) context.
-**Standalone:** yes — docs-only change
-
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
 
 **File:** `docs/setup.md`; step 2 of "Running the Arranger-Server"
