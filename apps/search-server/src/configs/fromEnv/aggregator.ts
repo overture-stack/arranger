@@ -12,6 +12,7 @@ const configsAggregator = (
 		catalogConfigsPath,
 		disableDownloads,
 		disableFilters,
+		disableGraphQLIntrospection,
 		disablePlayground,
 		disableSets,
 		enableAdmin,
@@ -25,6 +26,8 @@ const configsAggregator = (
 		setsType,
 	} = externalConfigs;
 
+	// lodash merge skips missing externalConfigs values, falling back to the localEnvs default.
+	// and first empty {} prevents mutating the configsFromLocalEnv module singleton.
 	const aggregatedEnvConfigs = merge({}, configsFromLocalEnv, {
 		allowedCorsOrigins,
 		catalogConfigsPath,
@@ -32,6 +35,7 @@ const configsAggregator = (
 			fromEnv: {
 				disableDownloads,
 				disableFilters,
+				disableGraphQLIntrospection,
 				disablePlayground,
 				disableSets,
 				enableAdmin,

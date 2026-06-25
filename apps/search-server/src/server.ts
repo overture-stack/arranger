@@ -19,6 +19,7 @@ const arrangerServer = async ({ esClient, ...externalConfigs }: ExternalConfigs)
 	try {
 		const { allowedCorsOrigins, catalogs, enableDebug, enableLogs, health, serverPort } =
 			await loadAllConfigs(externalConfigs);
+
 		const catalogEntries = Object.entries(catalogs);
 		const catalogMode = catalogEntries.length > 1 ? 'multiple' : 'single';
 
