@@ -4,62 +4,97 @@ import type { SearchClient, SearchConfig, SearchConfigWithClient, SupportedClien
 
 export const supportedClientValues = ['opensearch', 'elasticsearch'] as const satisfies SupportedClientTypes[];
 
+const buildAuthHeaders = (auth: SearchConfig['auth']): Record<string, string> =>
+	auth
+		? {
+				Authorization: `Basic ${Buffer.from(`${auth.username}:${auth.password}`, 'utf8').toString('base64')}`,
+			}
+		: {};
+
+const httpErrorMessage = (status: number, node: string): string => {
+	const skipHint = `Set SEARCH_ENGINE to "opensearch" or "elasticsearch" to skip auto-detection.`;
+	const knownMessages: Partial<Record<number, string>> = {
+		401:
+			`Authentication failed (401) fetching cluster info from ${node}.\n` +
+			`  Check that the search engine credentials are correct.`,
+		403:
+			`Access denied (403) fetching cluster info from ${node}.\n` +
+			`  The search engine user likely lacks the "cluster:monitor/main" permission\n` +
+			`  required for the root endpoint used by auto-detection.\n` +
+			`  Either grant that permission, or set the SEARCH_ENGINE environment variable\n` +
+			`  to "opensearch" or "elasticsearch" to skip auto-detection.`,
+	};
+	return knownMessages[status] ?? `HTTP ${status} fetching cluster info from ${node}.\n  ${skipHint}`;
+};
+
+const resolveClientTypeFromVersion = (
+	version: { distribution?: unknown; number?: unknown },
+	node: string,
+): SupportedClientTypes | undefined => {
+	const { distribution, number } = version;
+	// Distribution field → OpenSearch; version.number without distribution → Elasticsearch
+	const clusterClientType =
+		typeof distribution === 'string' ? distribution : typeof number === 'string' ? 'elasticsearch' : undefined;
+	const supported = clusterClientType && supportedClientValues.find((key) => key === clusterClientType);
+
+	if (supported) {
+		return supported;
+	}
+
+	console.error(
+		`Unrecognised search engine type "${clusterClientType}" returned by ${node}.\n` +
+			`  Supported values: ${supportedClientValues.join(', ')}`,
+	);
+
+	return;
+};
+
 /**
  * Determine if provided Search Client Type is valid, or obtain client type if not provided.
  *
  * This will return undefined if the provided config.clientType value is not a supported client type,
  * or if no valid client type can be identified from the search service.
  */
-const getClientType = async (config: SearchConfig): Promise<SupportedClientTypes | undefined> => {
+const getClientType = async ({ auth, clientType, node }: SearchConfig): Promise<SupportedClientTypes | undefined> => {
+	if (clientType) {
+		const supported = supportedClientValues.find((key) => key === clientType);
+		if (supported) return supported;
+		console.error(
+			`Unsupported search engine type: "${clientType}".\n` +
+				`  Supported values: ${supportedClientValues.join(', ')}`,
+		);
+		return undefined;
+	}
+
+	// Auto-detect from the cluster info endpoint (GET /)
 	try {
-		const { clientType } = config;
+		const response = await fetch(node, { headers: buildAuthHeaders(auth) });
 
-		if (clientType) {
-			const supportedClientType = supportedClientValues.find((key) => key === clientType);
-			if (supportedClientType) {
-				return supportedClientType;
-			} else {
-				console.error('Invalid client type value provided:', clientType);
-				return undefined;
-			}
-		} else {
-			// Determine which search client is being used based off cluster info
-			const authString = `${config.auth?.username}:${config.auth?.password}`;
-			const base64String = Buffer.from(authString, 'utf8').toString('base64');
-			const basicAuth = `Basic ${base64String}`;
+		if (response.ok) {
+			const { version } = (await response.json()) ?? {};
 
-			const response = await fetch(config.node, { headers: { Authorization: basicAuth } });
-			const responseData = await response.json();
-
-			if (!responseData?.version) {
-				console.error(
-					'Could not retrieve necessary cluster version information',
-					'Version:',
-					responseData?.version,
-				);
-				return undefined;
+			if (version) {
+				return resolveClientTypeFromVersion(version, node);
 			}
 
-			// Distribution field indicates OpenSearch is being used
-			// Else, if number field is a valid string, default to 'elasticSearch' as client type
-			const { distribution, number } = responseData.version;
-			const clusterClientType =
-				typeof distribution === 'string'
-					? distribution
-					: typeof number === 'string'
-						? 'elasticsearch'
-						: undefined;
-			const supportedClientType =
-				clusterClientType && supportedClientValues.find((key) => key === clusterClientType);
-			if (supportedClientType) {
-				return supportedClientType;
-			} else {
-				console.error('Invalid client type data obtained from cluster:', clusterClientType);
-				return undefined;
-			}
+			console.error(
+				`Could not retrieve cluster version information from ${node}.\n` +
+					`  The response did not include a "version" field.\n` +
+					`  Set SEARCH_ENGINE to "opensearch" or "elasticsearch" to skip auto-detection.`,
+			);
+			return undefined;
 		}
+
+		console.error(httpErrorMessage(response.status, node));
+		return undefined;
 	} catch (error) {
-		console.error('Unexpected error while identifying Search Client version', error);
+		console.error(
+			error instanceof TypeError
+				? `Could not connect to search engine at ${node}.\n` +
+						`  Check that the host is reachable and the URL is correct.\n` +
+						`  Error: ${error.message}`
+				: `Unexpected error while identifying search engine type: ${error}`,
+		);
 		return undefined;
 	}
 };
@@ -80,32 +115,32 @@ const createSearchEngineConfig = async ({
 	password?: string;
 	username?: string;
 }): Promise<SearchConfigWithClient> => {
-	if (!node) {
-		throw new Error('No search engine host URL was provided');
-	}
-	if (username && !password) {
-		console.warn('Missing the password for the search engine');
+	if (node) {
+		const auth = username && password ? { username, password } : undefined;
+
+		if (username && auth === undefined) {
+			console.warn('A username was provided without a password for the search engine');
+		}
+
+		const clientType = await getClientType({ node, auth, clientType: client });
+
+		if (clientType) {
+			return { node, auth, clientType };
+		}
+
+		const hint = client
+			? `The configured value "${client}" is not a supported search engine type. Supported: ${supportedClientValues.join(', ')}.`
+			: `Auto-detection failed. Set the SEARCH_ENGINE environment variable to one of: ${supportedClientValues.join(', ')}.`;
+		throw new Error(`Search engine configuration failed. ${hint}`);
 	}
 
-	const auth = username && password ? { username, password } : undefined;
-	const clientType = await getClientType({ node, auth, clientType: client });
-
-	if (!clientType) {
-		throw new Error(`Error with Search Client configuration clientType value: ${client}`);
-	}
-
-	const searchConfig: SearchConfigWithClient = {
-		node,
-		auth,
-		clientType,
-	};
-	return searchConfig;
+	throw new Error('No search engine host URL was provided');
 };
 
 /**
  * Create searchClient instance using valid configuration options
  */
-const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient => {
+const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient | undefined => {
 	const { clientType } = clientConfig;
 
 	switch (clientType) {
@@ -114,9 +149,14 @@ const createSearchClient = (clientConfig: SearchConfigWithClient): SearchClient 
 			return createOpenSearchClient(options);
 		}
 
-		default: {
+		case 'elasticsearch': {
 			const options: ESClientOptions = { ...clientConfig, clientType };
 			return createElasticSearchClient(options);
+		}
+
+		default: {
+			console.error('No valid client search provided');
+			return;
 		}
 	}
 };

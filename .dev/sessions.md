@@ -6,9 +6,18 @@ Newest first.
 
 ---
 
+## 2026-06-28
+
+Search engine startup errors now tell operators exactly what went wrong and what to do; fixed a silent bug that sent garbled credentials when no auth was configured.
+
+- `modules/graphql-router/src/searchClient/index.ts`: 403 now names the missing `cluster:monitor/main` permission and surfaces `SEARCH_ENGINE` as a bypass; 401 identifies bad credentials; network errors report the target host; fixed: auth header no longer sent when credentials are absent (was encoding "undefined:undefined"); per-status messaging and version detection isolated as named helpers
+- `apps/search-server/index.ts`: startup failures exit with code 1 reliably; previously depended on Node's unhandled-rejection behaviour, which varies across versions
+
+---
+
 ## 2026-06-25
 
-Disabled GraphQL introspection in Apollo v3 to close a pentest audit finding; elevated Apollo migration to high priority and documented the introspection fix → migration → Keycloak auth chain in the roadmap.
+Disabled GraphQL introspection in Apollo v3 to close a pentest audit finding; elevated Apollo migration to high priority and documented the introspection fix → migration → Keycloak auth chain in the roadmap. Also added `build_sqon` tool item to the MCP integration readiness roadmap section and updated GitHub issue #1080 with a full description.
 
 - `modules/graphql-router/src/graphqlRoutes.ts`: added `disableGraphQLIntrospection` param to `createEndpoint` and `ArrangerRoutesArgs`/`arrangerRoutes`; named to avoid ambiguity with the server's own REST introspection routes
 - `modules/graphql-router/src/disableGraphQLIntrospection.test.ts`: unit tests for both flag states (introspection allowed and rejected); co-located at `src/` level following convention (`disablePlayground.test.ts` is in `__tests__/` which is the inconsistency flagged in tech-debt)
@@ -23,6 +32,8 @@ Disabled GraphQL introspection in Apollo v3 to close a pentest audit finding; el
 - `.dev/tech-debt.md`: updated "GraphQL introspection" entry (now only field suggestions remains); added new entry for network aggregation `__type` dependency on remote nodes
 - `modules/graphql-router/README.md`: added `disableGraphQLIntrospection` to feature flags table; added introspection requirement caveat in the Network search section
 - `docs/usage/04-introspection.md`: added "GraphQL introspection" section distinguishing the REST API from GraphQL's introspection system; documents the flag, env var, and network aggregation caveat
+- `.dev/roadmap.md`: added `build_sqon` MCP tool item (high/somewhat urgent) to the MCP integration readiness section; updated section intro from three to four items
+- `github issue #1080`: updated description with problem framing, corrected SQON example (`fieldName` not `field`), scope, and prerequisite pointer to sqon-builder absorption roadmap item
 
 ---
 
