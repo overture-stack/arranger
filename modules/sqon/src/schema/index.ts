@@ -14,7 +14,7 @@ export const InLikeFilterSchema = zod
 		op: InLikeOpSchema,
 		content: zod
 			.object({
-				fieldName: zod.string(),
+				fieldName: zod.string().min(1),
 				value: SqonScalarOrArrayValueSchema,
 			})
 			.passthrough(),
@@ -27,8 +27,8 @@ export const AllFilterSchema = zod
 		op: zod.literal('all'),
 		content: zod
 			.object({
-				fieldName: zod.string(),
-				value: SqonScalarOrArrayValueSchema,
+				fieldName: zod.string().min(1),
+				value: zod.array(SqonScalarValueSchema).min(1),
 			})
 			.passthrough(),
 		pivot: zod.union([zod.string(), zod.null()]).optional(),
@@ -40,7 +40,7 @@ export const RangeLikeFilterSchema = zod
 		op: RangeLikeOpSchema,
 		content: zod
 			.object({
-				fieldName: zod.string(),
+				fieldName: zod.string().min(1),
 				value: SqonScalarOrArrayValueSchema,
 			})
 			.passthrough(),
@@ -53,8 +53,8 @@ export const BetweenFilterSchema = zod
 		op: zod.literal('between'),
 		content: zod
 			.object({
-				fieldName: zod.string(),
-				value: zod.union([SqonScalarValueSchema, zod.array(SqonScalarValueSchema).min(2)]),
+				fieldName: zod.string().min(1),
+				value: zod.array(SqonScalarValueSchema).length(2),
 			})
 			.passthrough(),
 		pivot: zod.union([zod.string(), zod.null()]).optional(),
@@ -66,7 +66,7 @@ export const FuzzyFilterSchema = zod
 		op: zod.literal('filter'),
 		content: zod
 			.object({
-				fieldNames: zod.array(zod.string()).min(1),
+				fieldNames: zod.array(zod.string().min(1)).min(1),
 				value: zod.string(),
 			})
 			.passthrough(),

@@ -118,6 +118,13 @@ The direction is **not** a lateral merge: `modules/sqon` is the host. It grows t
 
 **Operator coverage gap**: the single largest issue. `sqon-builder` only implements `in`, `gt`, `lt`. It cannot build `not-in`, `some-not-in`, `all`, `gte`, `lte`, `between`, or `filter` queries. The absorbed builder must cover all operators `modules/sqon` already defines. Any SQON a consumer can _validate_ they must also be able to _build_.
 
+**MCP surface unification**: after absorption, `modules/sqon` programmatically owns all operator metadata (`getSqonFieldOperatorDetails()`, `sqonFieldOperatorProperties`). At that point, the two MCP surfaces that currently expose SQON schema data must be reconciled:
+
+- The `get-sqon-schema` tool returns a hand-maintained prose cheat sheet as its `text` content (operator list, grammar, examples).
+- The `arranger://introspection/sqon` resource returns `JSON.stringify(data, null, 2)` - the same underlying schema data as a raw JSON blob.
+
+These are the same data in two incompatible formats. Practical effect of leaving this unaddressed: any LLM or client that discovers the resource instead of calling the tool gets the raw JSON blob that the cheat sheet was introduced to replace. As the cheat sheet evolves (new operators added, WRONG-shape warnings revised), the resource becomes a stale shadow of it with no update signal. After absorption, both surfaces should derive from the same programmatic source: the resource returns machine-readable schema (unchanged), and the `text` content of `get-sqon-schema` is generated from `getSqonFieldOperatorDetails()` rather than maintained by hand - eliminating the sync risk and the format divergence simultaneously.
+
 **`reduceSQON` operator coverage gap**: the reduction logic only handles specific cases for `GT`, `LT`, and `IN`. When the builder gains the full operator set, the reduction rules for `gte`, `lte`, `between`, and `not-in` need to be defined and implemented. Some cases are clear (two `gte` on `and` keeps the greater); others need deliberate design (what does it mean to reduce two `between` ranges on `and`?).
 
 **Own Zod schema**: `sqon-builder` defines its own `ArrayFilterValue`, `ScalarFilterValue`, `SQON`, etc. which diverge from and are a strict subset of `modules/sqon`'s schema. The absorbed builder must use `modules/sqon`'s types exclusively. The builder-internal types go away.

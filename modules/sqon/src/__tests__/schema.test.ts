@@ -178,10 +178,59 @@ suite('sqon/schema', () => {
 		assert.equal(output.success, false);
 	});
 
+	test('rejects between with a scalar value', () => {
+		const input = {
+			content: { fieldName: 'donor.age', value: 18 },
+			op: 'between',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('rejects between with more than two values', () => {
+		const input = {
+			content: { fieldName: 'donor.age', value: [18, 65, 100] },
+			op: 'between',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
 	test('rejects group with non-array content', () => {
 		const input = {
 			content: { op: 'in', content: { fieldName: 'a', value: ['x'] } },
 			op: 'and',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('rejects leaf with an empty fieldName', () => {
+		const operators = ['in', 'not-in', 'some-not-in', 'all', 'gt', 'gte', 'lt', 'lte'];
+		operators.forEach((op) => {
+			const input = { op, content: { fieldName: '', value: ['x'] } };
+			const output = SqonSchema.safeParse(input);
+			assert.equal(output.success, false, `Expected empty fieldName to be rejected for op "${op}"`);
+		});
+	});
+
+	test('rejects all with a scalar value', () => {
+		const input = {
+			content: { fieldName: 'donor.status', value: 'active' },
+			op: 'all',
+		};
+
+		const output = SqonSchema.safeParse(input);
+		assert.equal(output.success, false);
+	});
+
+	test('rejects filter with an empty string in fieldNames', () => {
+		const input = {
+			content: { fieldNames: ['donor.name', ''], value: 'jo' },
+			op: 'filter',
 		};
 
 		const output = SqonSchema.safeParse(input);
