@@ -261,7 +261,29 @@ _Schema versioning decision gates the hits/edges/nodes redesign._
 
 ### MCP integration readiness
 
-Three targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. These arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface.
+Four targeted improvements to make Arranger a well-behaved upstream for an MCP server layer. The first three arose from reviewing the Arize text-to-graphql-mcp reference implementation against Arranger's current schema surface; the fourth addresses observed quality issues in MCP-driven SQON generation.
+
+#### SQON generation via `build_sqon` tool
+
+_Priority: high. Somewhat urgent: MCP SQON generation is currently hit-or-miss in practice._
+
+LLMs asked to generate SQONs by inference produce inconsistent results. The root cause is training-data staleness: operator names, value schemas, combination nesting rules, and field-type constraints in model training data are incomplete or incorrect relative to the current spec. Prompting alone cannot reliably compensate for this.
+
+The fix is to remove the LLM from the SQON synthesis loop. Add a `build_sqon` MCP tool in `apps/mcp-server` that accepts structured parameters (field, operator, value, and an optional combination operator for nesting) and calls `SqonBuilder` internally, returning a validated SQON. The LLM's responsibility becomes selecting the right field, operator, and value from the available catalogue schema - not synthesizing raw JSON. The tool is the generator; the LLM is the selector.
+
+This is also more token-efficient than the alternatives: embedding SQON documentation in a system prompt and relying on the `/introspection` endpoint as a runtime SQON guide both consume context window on every request. A tool call is cheaper and fully deterministic.
+
+**Scope:**
+
+1. **`build_sqon` tool** in `apps/mcp-server/src/mcp/tools.ts`: accepts `field`, `operator`, `value`, and optional `combination` type; calls `SqonBuilder` internally; returns a validated SQON object.
+2. **Agent-optimized tool description**: the tool schema carries descriptions that guide the LLM toward correct parameter selection - valid operators per field type (from `getSqonFieldOperatorDetails()`) and value type hints. The tool's own description is the spec; the LLM does not need SQON documentation injected into every prompt.
+3. **Versioned changelog**: as the SQON schema evolves, the tool interface is versioned and its changelog is machine-readable. Agent behaviour decouples from model training data; the tool's current description is always authoritative.
+
+**Prerequisite:** the `build_sqon` tool's operator coverage is bounded by `SqonBuilder`'s. The current `sqon-builder` package only handles `in`, `gt`, `lt`. Full operator coverage (`not-in`, `gte`, `lte`, `between`, etc.) depends on the sqon-builder absorption into `modules/sqon` item. The tool can ship with partial coverage while absorption is in progress, then expand as operators are added to the builder.
+
+_See [sqon-builder absorption into `modules/sqon`](#sqon-builder-absorption-into-modulessqon) for the prerequisite builder work._
+
+**Considered and deferred: TOON as output format.** [TOON (Token-Oriented Object Notation)](https://toonformat.dev) was evaluated as an optional compact output format, both for MCP responses (field listings, search results) and as a potential evolution of the SQON surface syntax itself. The MCP response case has genuine merit: TOON's tabular collapse applies well to uniform arrays like field listings. The SQON syntax case is weaker: SQON's recursive tree structure limits the tabular gains, and the `build_sqon` tool already removes the LLM from the synthesis loop, which was the main pain point. Revisit as an enhancement once Rakesh's MCP implementation is available and real token budgets can be measured empirically.
 
 #### Schema cache invalidation signal (ETag / schema hash)
 

@@ -4,11 +4,13 @@ sidebar_position: 1
 
 # Overview
 
-Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and OpenSearch, designed to simplify building search interfaces for complex datasets. A React component library is available for generating interactive search UIs.
+Arranger is a versatile, model-agnostic data discovery API for OpenSearch and Elasticsearch, designed to simplify building search interfaces for complex datasets. A React component library is available for generating interactive search UIs.
 
-    :::info Arranger uses Elasticsearch v7
+    :::info Supported search engines
 
-    Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
+    Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7).
+
+    OpenSearch maintains API compatibility with Elasticsearch 7.x, so query syntax and conventions documented here apply to both engines.
 
     :::
 
@@ -19,12 +21,12 @@ Arranger is a versatile, model-agnostic data discovery API for Elasticsearch and
     - Efficient data retrieval
     - Adaptable structure
     - SQON integration for human-readable and machine-processable search queries
-- **Model-Agnostic:** Works with any properly structured Elasticsearch or OpenSearch index.
+- **Model-Agnostic:** Works with any properly structured OpenSearch or Elasticsearch index.
 - **Integration-Ready:** The search API integrates with any web front end; a React component library is included for building search UIs.
 
 ## System Architecture
 
-Arranger integrates with your Elasticsearch or OpenSearch cluster to generate a search API from your configured index mapping. It consists of two main modules:
+Arranger integrates with your OpenSearch or Elasticsearch cluster to generate a search API from your configured index mapping. It consists of two main modules:
 
 - **Arranger Server:** The back-end search API service that:
     - Generates a GraphQL API from Elasticsearch mappings
@@ -72,7 +74,7 @@ The Arranger repository can be accessed from our Overture-Stack GitHub page [loc
     ```
 
 - **`apps/`**: Runnable server applications:
-    - **`search-server/`**: The Arranger search server — a GraphQL service that interfaces with Elasticsearch/OpenSearch and hosts the configuration API.
+    - **`search-server/`**: The Arranger search server — a GraphQL service that interfaces with OpenSearch/Elasticsearch and hosts the configuration API.
     - **`mcp-server/`**: An MCP (Model Context Protocol) server that exposes Arranger introspection as tools and resources for AI agents.
 - **`docker/`**: Dockerfiles and supporting configuration for building and running Arranger services locally and in CI.
 - **`docs/`**: Markdown files that contain instructions on how to use Arranger and its capabilities, contribution guidelines, etc.

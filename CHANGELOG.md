@@ -11,7 +11,7 @@ This file covers high-level release notes for the Arranger project as a whole. W
 ### Breaking changes
 
 - **Environment variable `PORT` renamed to `SERVER_PORT`** - Update `.env` files, container configs, and Helm values.
-- **Environment variable `SEARCH_CLIENT_TYPE` renamed to `SEARCH_ENGINE`** - Accepts `elasticsearch` or `opensearch`. Leave unset to auto-detect from the cluster.
+- **Environment variable `SEARCH_CLIENT_TYPE` renamed to `SEARCH_ENGINE`** - Accepts `opensearch` or `elasticsearch`. Leave unset to auto-detect from the cluster.
 - **Docker image `arranger-server` renamed to `arranger-search-server`** - Update `docker-compose.yml`, Helm values, and any deployment manifests.
 - **`MAX_RESULTS_WINDOW` is now enforced** - Previously present in the env schema but not applied; now caps query results at `10000` by default. Deployments that return more than 10,000 documents must set this explicitly (via env var or per-catalogue `table.json`).
 

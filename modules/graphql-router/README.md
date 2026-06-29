@@ -1,6 +1,6 @@
 # `@overture-stack/arranger-graphql-router`
 
-Core GraphQL routing library for a single Arranger catalogue. Converts an Elasticsearch or OpenSearch index into a working GraphQL API with faceted search, aggregations, SQON filtering, download support, and optional network search federation.
+Core GraphQL routing library for a single Arranger catalogue. Converts an OpenSearch or Elasticsearch index into a working GraphQL API with faceted search, aggregations, SQON filtering, download support, and optional network search federation.
 
 This module is the engine inside [`apps/search-server`](../../apps/search-server). It can also be used directly to embed Arranger search into a custom Express application.
 
@@ -67,10 +67,10 @@ const router = await arrangerRouter(options);
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `esHost` | `string` | `'http://localhost:9200'` | Elasticsearch or OpenSearch node URL. |
+| `esHost` | `string` | `'http://localhost:9200'` | OpenSearch or Elasticsearch node URL. |
 | `esUser` | `string` | `''` | Basic auth username. |
 | `esPass` | `string` | `''` | Basic auth password. |
-| `searchEngine` | `'elasticsearch' \| 'opensearch'` | auto-detect | Client type. Leave unset to detect from the cluster version API on startup. |
+| `searchEngine` | `'opensearch' \| 'elasticsearch'` | auto-detect | Client type. Leave unset to detect from the cluster version API on startup. |
 
 ### Catalogue identity
 
@@ -196,13 +196,13 @@ In multicatalogue mode the filter is global — it applies to all catalogues mou
 
 ### `buildSearchClient(options)`
 
-Creates an Elasticsearch or OpenSearch client:
+Creates an OpenSearch or Elasticsearch client:
 
 ```ts
 import { buildSearchClient } from '@overture-stack/arranger-graphql-router';
 
 const client = await buildSearchClient({
-  client: 'elasticsearch',  // 'opensearch', or omit to auto-detect
+  client: 'opensearch',  // 'elasticsearch', or omit to auto-detect
   node: 'http://localhost:9200',
   username: 'elastic',
   password: 'secret',

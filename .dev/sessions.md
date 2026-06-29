@@ -6,6 +6,40 @@ Newest first.
 
 ---
 
+## 2026-06-29
+
+Malformed SQON filter clauses that previously passed schema validation and then generated invalid or silent Elasticsearch errors now fail at parse time with a schema error.
+
+- `modules/sqon/src/schema/index.ts`: `fieldName` now requires min(1) on all filter types; `BetweenFilterSchema` now requires exactly 2 values (was accepting scalar or >2); `AllFilterSchema` now requires an array value (was accepting scalar); `FuzzyFilterSchema` now requires all entries in `fieldNames` to be non-empty strings
+- `modules/sqon/src/__tests__/schema.test.ts`: added tests for the new constraints (`between` scalar/length, `all` scalar, `filter` empty fieldName, empty fieldName across all leaf operators)
+- `.dev/roadmap.md`: added MCP surface unification note to the sqon-builder absorption section
+- `README.md`, `docs/overview.md`, `docs/setup.md`: documented minimum supported versions (ES 7.0+ licensed, OpenSearch 1.x+) and noted that ES 8.x and ES OSS are not supported; existing ES-only callouts updated to cover both engines
+
+---
+
+## 2026-06-28
+
+Search engine startup errors now tell operators exactly what went wrong and what to do; fixed a silent bug that sent garbled credentials when no auth was configured; detection now works even when the root endpoint is blocked by permissions.
+
+- `modules/graphql-router/src/searchClient/index.ts`: 403 now names the missing `cluster:monitor/main` permission and surfaces `SEARCH_ENGINE` as a bypass; 401 identifies bad credentials; network errors report the target host; fixed: auth header no longer sent when credentials are absent (was encoding "undefined:undefined"); per-status messaging and version detection isolated as named helpers; added two-stage fallback for 4xx: check `X-Elastic-Product` header (ES 7.14+), then probe `/_nodes/_local` for `build_flavor` on 403 (covers ES 7.0-7.13 and OpenSearch without `cluster:monitor/main`)
+- `modules/graphql-router/src/searchClient/index.test.ts`: new co-located test file; 21 tests covering all detection paths including header fallback, `_nodes/_local` fallback, 401-does-not-probe, and auth header forwarding
+- `modules/graphql-router/src/searchClient/index.ts`: `detectClientTypeFromNodesEndpoint` now returns `'denied'` on 403 (distinct from other failures); when both `GET /` and `_nodes/_local` are blocked, the error message names both missing permissions explicitly rather than repeating the root-endpoint error
+- `docs/setup.md`: added search engine permissions reference section covering core search, auto-detection (with SEARCH_ENGINE bypass tip), and Sets; operators can now diagnose 403 startup failures without reading source code
+- `DEVELOPMENT.md`: added pointer to the permissions reference for contributors testing against secured clusters
+- `apps/search-server/index.ts`: startup failures exit with code 1 reliably; previously depended on Node's unhandled-rejection behaviour, which varies across versions
+- `.dev/roadmap.md`: added `build_sqon` MCP tool item to the MCP integration readiness section; updated section intro from three to four items
+
+---
+
+## 2026-06-24
+
+Added `getAllData` to the `graphql-router` utils barrel export (was missing, causing `ERR_PACKAGE_PATH_NOT_EXPORTED` for a downstream consumer); extended the `integration-tests/import` tech-debt entry with two explicit gaps.
+
+- `modules/graphql-router/src/utils/index.ts`: re-exported `getAllData` as a named export; must evaluate whether this is a desirable pattern for future versions
+- `.dev/tech-debt.md`: `integration-tests/import` entry extended with two TODOs: verify each `exports` subpath by name (not just the root), and document what each exported method is and what it is for
+
+---
+
 ## 2026-06-19
 
 **Done:**

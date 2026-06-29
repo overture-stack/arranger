@@ -46,9 +46,9 @@ We'll use the Overture quickstart service, a flexible Docker Compose setup, to s
         | Elasticsearch | `9200` | Distributed search and analytics engine         | Provides fast and scalable search capabilities over indexed data |
         | Stage         | `3000` | Web Portal Scaffolding                          | Houses Arranger's search UI components                           |
 
-        :::note Arranger uses Elasticsearch 7
+        :::note Supported search engines
 
-        Our search platform is built on and compatible with version 7.x of Elasticsearch. All queries to ES must follow that version's syntax and conventions.
+        Arranger supports **OpenSearch 1.x or higher** and **Elasticsearch 7.x** (minimum 7.0, licensed/default distribution only; ES OSS and ES 8.x are not supported; the bundled client is `@elastic/elasticsearch` v7). OpenSearch maintains API compatibility with ES 7.x, so query syntax and conventions apply to both engines.
 
         :::
 
@@ -141,6 +141,61 @@ Once the server starts, you can access Arranger-Server at `http://localhost:5050
     We are currently working on updating our development environment for Arranger Components. Documentation for implementing them, including their development setup and Storybook integration, will be available here in the near future.
 
     :::
+
+## Search engine permissions
+
+When connecting Arranger to a secured OpenSearch or Elasticsearch cluster, the search engine user must have specific permissions. Required permissions depend on which features are enabled.
+
+### Core search (always required)
+
+Grant `read` on each data index Arranger will query. The `read` built-in index privilege covers all three required operations:
+
+| Operation | Transport action | When |
+| --------- | ---------------- | ---- |
+| Fetch index mapping | `indices:admin/mappings/get` | Startup |
+| Resolve index aliases | `indices:admin/aliases/get` | Startup |
+| Search | `indices:data/read/search` | Every query |
+
+### Auto-detection (optional)
+
+By default, Arranger probes the cluster on startup to identify whether it is OpenSearch or Elasticsearch. This requires cluster-level permissions:
+
+| Operation | Endpoint | Permission |
+| --------- | -------- | ---------- |
+| Engine type detection | `GET /` | `cluster:monitor/main` |
+| Detection fallback | `GET /_nodes/_local` | `cluster:monitor/nodes_info` |
+
+:::tip Skip auto-detection
+
+If the search engine user lacks these cluster permissions, set `SEARCH_ENGINE=opensearch` or `SEARCH_ENGINE=elasticsearch` in your environment. Auto-detection is then skipped entirely and neither cluster permission is needed.
+
+Without `SEARCH_ENGINE` set and without these permissions, Arranger will fail to start with a 403 error.
+
+:::
+
+### Sets (when configured)
+
+The Sets feature requires additional permissions on the sets index (default name: `arranger-sets`):
+
+| Operation | Transport action | When |
+| --------- | ---------------- | ---- |
+| Check if sets index exists | `indices:admin/exists` | Startup |
+| Create sets index (first run) | `indices:admin/create` | Startup |
+| Read sets (expand `set_id` filters) | `indices:data/read/search` | Per query |
+| Save a set | `indices:data/write/index` | `saveSet` mutation |
+
+Grant `read` + `write` + `create_index` on the sets index, or `manage` if you prefer a single broader grant.
+
+### Summary
+
+| Deployment | Data index | Sets index | Cluster |
+| ---------- | ---------- | ---------- | ------- |
+| Search only, no Sets | `read` | - | `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
+| With Sets | `read` | `read`, `write`, `create_index` | `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
+
+Permission names are identical for OpenSearch and Elasticsearch; both use the same security model.
+
+---
 
 ## Troubleshooting
 
