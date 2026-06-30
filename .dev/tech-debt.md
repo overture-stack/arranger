@@ -91,6 +91,15 @@ The preferred pattern is **(B)**. Mixing the two makes it harder to find tests, 
 **Fix:** Audit the monorepo and move all `__tests__/` test files to be co-located with their source file, following pattern (B). Update any Jest/node:test config glob patterns that rely on `__tests__/` directory discovery.
 **Standalone:** yes; mechanical file moves plus config glob updates, no logic changes
 
+### Elasticsearch-first naming in startup script and env vars
+
+**Files:** `scripts/ping-elasticsearch.sh`; env vars `ES_HOST`, `ES_USER`, `ES_PASS` set by the chart
+**Severity:** low (misleading branding; confusing for operators using OpenSearch)
+**Kind:** terminology / naming
+**Issue:** The startup readiness script is named `ping-elasticsearch.sh` and prints "Elasticsearch Ready" regardless of the configured engine. The env vars exposed by the chart (`ES_HOST`, `ES_USER`, `ES_PASS`) carry the "ES" prefix even when connecting to OpenSearch. The display label in the script has been updated to derive from `SEARCH_ENGINE` (outputs "OpenSearch", "Elasticsearch", or "Search Engine"), but the script filename and chart env var names remain Elasticsearch-first.
+**Fix:** Rename `ping-elasticsearch.sh` to `ping-search-engine.sh` (or `ping-cluster.sh`) and update the reference in the Dockerfile/entrypoint. Coordinate with the chart to rename `ES_HOST`, `ES_USER`, `ES_PASS` to engine-neutral names (`SEARCH_HOST`, `SEARCH_USER`, `SEARCH_PASS` or similar). Both changes require a coordinated release since the chart and image must agree on env var names.
+**Standalone:** no; script rename is trivially standalone, but env var rename requires a matching chart release
+
 ### Inconsistent spelling of `catalogue`
 
 **File:** throughout the monorepo
@@ -274,11 +283,11 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 ### `fetchMapping` uses `cat.aliases` instead of `indices.getAlias`
 
 **File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
-**Severity:** low (over-privileged; unnecessary cluster-level dependency)
+**Severity:** low (over-privileged; requires `*` index permission for alias lookup)
 **Kind:** privilege minimization
-**Issue:** `getESAliases` calls `esClient.cat.aliases({ format: 'json' })` with no index filter, retrieving ALL cluster aliases and doing client-side filtering. `GET /_cat/aliases` is a cluster-wide API that requires `indices:admin/aliases/get*` at the cluster level (provided by `cluster_composite_ops_ro`). A targeted `indices.getAlias({ index: esIndex })` call would achieve the same result with only index-level `indices:admin/aliases/get` on the specific index, removing the cluster-level dependency entirely.
-**Fix:** Replace `esClient.cat.aliases()` + `checkESAlias` with `esClient.indices.getAlias({ index: esIndex })`. If the alias exists, the response contains the backing index name; if not, handle the 404. This reduces the required cluster permissions for core search (no `cluster_composite_ops_ro` needed just for alias resolution; `cluster:monitor/main` or `SEARCH_ENGINE` bypass becomes the only cluster-level concern).
-**Standalone:** yes; confined to `fetchMapping.ts`; update the caller in `fetchMapping` and adjust the docs/setup.md permissions reference when done
+**Issue:** `getESAliases` calls `esClient.cat.aliases({ format: 'json' })` with no index filter, retrieving ALL cluster aliases and doing client-side filtering. `GET /_cat/aliases` evaluates `indices:admin/aliases/get` as an index-level permission (OpenSearch `manage_aliases` group is `type: "index"` in the static plugin config) against all indices; the permission must be granted on `*` because the request is unscoped. A targeted `indices.getAlias({ index: esIndex })` call makes a scoped request, so the permission need only be granted on the data index pattern.
+**Fix:** Replace `esClient.cat.aliases()` + `checkESAlias` with `esClient.indices.getAlias({ index: esIndex })`. If the alias exists, the response contains the backing index name; if not, handle the 404. The `indices:admin/aliases/get` permission on `*` can then be removed from the role and scoped down to the data index pattern.
+**Standalone:** yes; confined to `fetchMapping.ts`; update `docs/setup.md` and `.dev/docs/search-engine-integration.md` permission tables when done
 
 ### No unit tests for `getESAliases` alias resolution
 

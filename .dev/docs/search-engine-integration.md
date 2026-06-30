@@ -94,6 +94,8 @@ The two clients have compatible APIs for the operations Arranger uses (search, m
 
 **Entry point:** `modules/graphql-router/src/graphqlRoutes.ts::arrangerRoutes`
 
+**Note on startup script vs. application permissions:** Before `arrangerRoutes` runs, the container entrypoint (`scripts/ping-elasticsearch.sh`) probes `GET /_cluster/health` to display cluster status. This probe uses the application user's credentials and requires `cluster:monitor/health`. That permission is a startup-script concern only - no application code path calls `/_cluster/health`. See `docs/setup.md § Startup health display` and the roadmap entry "Decouple startup health check from application credential" for the planned fix.
+
 The following happens once per catalogue, in this order, when an `arrangerRoutes` instance starts:
 
 ### 1. Alias resolution
@@ -104,13 +106,13 @@ The following happens once per catalogue, in this order, when an `arrangerRoutes
 GET /_cat/aliases?format=json
 ```
 
-> **Required permission:** `indices:admin/aliases/get*` at the **cluster** level.
+> **Required permission:** `indices:admin/aliases/get` as an **index-level** permission on `*`.
 
-This is a cluster-wide listing - no index filter is applied. OpenSearch evaluates it against cluster-level permissions. The `cluster_composite_ops_ro` built-in action group includes `indices:admin/aliases/get*` and is the idiomatic way to grant this. See [OpenSearch CAT aliases API](https://docs.opensearch.org/latest/api-reference/cat/cat-aliases/).
+Although `cluster_composite_ops_ro` also contains `indices:admin/aliases/get*`, that is a cluster-type action group grant and does not cover direct alias API calls. OpenSearch's static plugin config (`static_action_groups.yml`) classifies `indices:admin/aliases/get` as an index-level permission: the `manage_aliases` built-in action group has `type: "index"` and includes `indices:admin/aliases*`. A direct `GET /_cat/aliases` request resolves to all indices and is evaluated by the index-level privilege evaluator. Granting `indices:admin/aliases/get` only on a specific index pattern (e.g. `analyses-*`) still results in 403 because the request scope is all indices. The permission must be on `*`. See [OpenSearch CAT aliases API](https://docs.opensearch.org/latest/api-reference/cat/cat-aliases/) and [default action groups](https://docs.opensearch.org/latest/security/access-control/default-action-groups/).
 
 The response lists all aliases the user can see. `checkESAlias` scans the list for the configured `esIndex` value. If found, the actual backing index name (e.g. `analyses-1`) is used for all subsequent calls; otherwise `esIndex` is used as-is.
 
-> **Known issue:** `cat.aliases` retrieves all cluster aliases and filters client-side. A targeted `indices.getAlias({ index: esIndex })` call would achieve the same with index-level `indices:admin/aliases/get` only, removing the cluster-level dependency. See tech-debt.
+> **Known issue:** `cat.aliases` retrieves all cluster aliases and filters client-side. A targeted `indices.getAlias({ index: esIndex })` call would achieve the same result with `indices:admin/aliases/get` scoped to the data index pattern only, removing the `*` wildcard requirement. See tech-debt.
 
 ### 2. Mapping fetch
 
@@ -240,9 +242,10 @@ All transport actions Arranger can initiate, grouped by phase:
 
 | Phase                       | API call                     | Transport action                                    | Minimum grant                                        |
 | --------------------------- | ---------------------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| Entrypoint script†          | `GET /_cluster/health`       | `cluster:monitor/health`                            | cluster-level explicit (startup script only - not application code) |
 | Startup: detection          | `GET /`                      | `cluster:monitor/main`                              | cluster-level explicit, or set `SEARCH_ENGINE`       |
 | Startup: detection fallback | `GET /_nodes/_local`         | `cluster:monitor/nodes/info`                        | cluster-level explicit (not needed if `GET /` works) |
-| Startup: alias resolution   | `GET /_cat/aliases`          | `indices:admin/aliases/get*`                        | `cluster_composite_ops_ro` (cluster-level)           |
+| Startup: alias resolution   | `GET /_cat/aliases`          | `indices:admin/aliases/get`                         | index-level on `*` (explicit; `cluster_composite_ops_ro` does not cover direct alias API calls) |
 | Startup: mapping fetch      | `GET /<index>/_mapping`      | `indices:admin/mappings/get`                        | explicit on data index                               |
 | Startup: sets check         | `HEAD /<setsIndex>`          | `indices:admin/exists`                              | `manage` on sets index                               |
 | Startup: sets creation      | `PUT /<setsIndex>`           | `indices:admin/create`, `indices:admin/mapping/put` | `manage` on sets index                               |
@@ -252,14 +255,14 @@ All transport actions Arranger can initiate, grouped by phase:
 | saveSet: collect IDs        | `POST /<dataIndex>/_search`  | `indices:data/read/search`                          | `read` on data index                                 |
 | saveSet: write set          | `PUT /<setsIndex>/_doc/<id>` | `indices:data/write/index`                          | `write` on sets index                                |
 
+† `cluster:monitor/health` is called by `scripts/ping-elasticsearch.sh` before the Node.js process starts. The application itself never calls `/_cluster/health`. This permission can be omitted if the startup display is not needed; startup still succeeds. See roadmap: "Decouple startup health check from application credential".
+
 **Notes:**
 
 - `read` = `indices:data/read*` + `indices:admin/mappings/fields/get*` + `indices:admin/resolve/index`. Source: [OpenSearch default action groups](https://docs.opensearch.org/latest/security/access-control/default-action-groups/).
-- `cluster_composite_ops_ro` = `mget` + `msearch` + `mtv` + `aliases/exists*` + `aliases/get*` + `scroll` + `resolve/index`. Source: same link.
+- `cluster_composite_ops_ro` = `mget` + `msearch` + `mtv` + `aliases/exists*` + `aliases/get*` + `scroll` + `resolve/index`. Source: same link. Although the group contains `indices:admin/aliases/get*`, granting it does not cover `GET /_cat/aliases`: that API is evaluated by the index-level privilege evaluator. The cluster-type grant applies only during cluster-coordination operations such as internal alias routing in mget/msearch.
 - `manage` = `indices:monitor/*` + `indices:admin/*`. Covers all admin operations including `exists` and `create`.
 - Permission names are identical for OpenSearch and Elasticsearch; both security plugins share the same transport action naming (OpenSearch forked the security plugin from the Elasticsearch codebase).
-
-The `cluster_composite_ops_ro` action group is also included in the `readall_and_monitor` built-in role, which OpenSearch uses as the reference pattern for "read everything with cluster monitoring". Arranger's permission needs are a subset of that role.
 
 ---
 

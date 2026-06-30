@@ -148,17 +148,19 @@ When connecting Arranger to a secured OpenSearch or Elasticsearch cluster, the s
 
 ### Core search (always required)
 
-Arranger requires two index-level and one cluster-level operation on each data index it queries:
+Arranger requires three index-level operations on startup plus search on every query:
 
-| Operation | Transport action | When | Level |
-| --------- | ---------------- | ---- | ----- |
-| Fetch index mapping | `indices:admin/mappings/get` | Startup | index |
-| Search | `indices:data/read/search` | Every query | index |
-| Resolve index aliases | `indices:admin/aliases/get*` | Startup | cluster |
+| Operation | Transport action | When | Index scope |
+| --------- | ---------------- | ---- | ----------- |
+| Fetch index mapping | `indices:admin/mappings/get` | Startup | data index pattern |
+| Resolve index aliases | `indices:admin/aliases/get` | Startup | `*` (all indices) |
+| Search | `indices:data/read/search` | Every query | data index pattern |
 
-**Index permissions:** grant `read` and `indices:admin/mappings/get` on each data index. The `read` built-in privilege covers search (`indices:data/read*`) but does not include `indices:admin/mappings/get`; that must be explicit.
+**Index permissions for the data index:** grant `read` and `indices:admin/mappings/get`. The `read` built-in privilege covers search (`indices:data/read*`) but does not include `indices:admin/mappings/get`; that must be explicit.
 
-**Alias resolution:** Arranger calls `GET /_cat/aliases` (a cluster-wide API with no index filter) to resolve index aliases. This requires `indices:admin/aliases/get*` at the **cluster** level. Grant `cluster_composite_ops_ro` as a cluster permission; it includes this and is the idiomatic way to cover cluster-wide alias reads. A scoped alternative is to grant `indices:admin/aliases/get` directly as a cluster-level permission.
+**Alias resolution:** Arranger calls `GET /_cat/aliases` to resolve index aliases. Despite being a cluster-wide API call (no index filter), OpenSearch evaluates `indices:admin/aliases/get` as an index-level permission: the `manage_aliases` built-in action group defines it as `type: "index"` in OpenSearch's static plugin config. A direct `GET /_cat/aliases` request is evaluated by the index-level privilege evaluator against all indices, so the permission must be granted on `*`. Granting it only on the data index pattern (e.g. `analyses-*`) still results in a 403.
+
+Note: `cluster_composite_ops_ro` also contains `indices:admin/aliases/get*`, but as a cluster-type grant it does not cover direct alias API calls. That group's alias entries apply only during internal cluster-coordination operations such as mget/msearch routing, not when `_cat/aliases` is called directly.
 
 ### Auto-detection (optional)
 
@@ -177,6 +179,18 @@ Without `SEARCH_ENGINE` set and without these permissions, Arranger will fail to
 
 :::
 
+### Startup health display (deployment infrastructure only)
+
+The default container entrypoint (`scripts/ping-elasticsearch.sh`) calls `GET /_cluster/health` using the application user's credentials to display cluster status at startup. This requires one additional cluster permission that the Arranger application code itself never uses:
+
+| Operation | Endpoint | Permission | Who needs it |
+| --------- | -------- | ---------- | ------------ |
+| Startup health display | `GET /_cluster/health` | `cluster:monitor/health` | startup script only - not the application |
+
+Without this permission, the startup script still completes and Arranger still starts, but the health display shows a warning and the HTTP status code instead of cluster name, status, node count, and shard count.
+
+This permission is a deployment infrastructure concern, not an application requirement. A future improvement will move the liveness probe to `GET /` (covered by `cluster:monitor/main`) and remove this dependency. See the roadmap entry "Decouple startup health check from application credential".
+
 ### Sets (when configured)
 
 The Sets feature requires additional permissions on the sets index (default name: `arranger-sets`):
@@ -192,10 +206,12 @@ Grant `read` + `write` + `manage` on the sets index. `manage` covers `indices:ad
 
 ### Summary
 
-| Deployment | Data index | Sets index | Cluster |
-| ---------- | ---------- | ---------- | ------- |
-| Search only, no Sets | `read`, `indices:admin/mappings/get` | - | `cluster_composite_ops_ro`, `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
-| With Sets | `read`, `indices:admin/mappings/get` | `read`, `write`, `manage` | `cluster_composite_ops_ro`, `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
+| Deployment | Data index | All indices (`*`) | Cluster |
+| ---------- | ---------- | ------------------- | ------- |
+| Search only, no Sets | `read`, `indices:admin/mappings/get` | `indices:admin/aliases/get` | `cluster:monitor/main` (or set `SEARCH_ENGINE`); `cluster:monitor/health`† |
+| With Sets | `read`, `indices:admin/mappings/get` | `indices:admin/aliases/get` | `cluster:monitor/main` (or set `SEARCH_ENGINE`); `cluster:monitor/health`† |
+
+† `cluster:monitor/health` is required only by the startup script (`ping-elasticsearch.sh`), not by the Arranger application. It can be omitted if the startup health display is not needed; startup still succeeds but shows a warning instead of cluster status.
 
 Permission names are identical for OpenSearch and Elasticsearch; both use the same security model.
 
