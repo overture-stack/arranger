@@ -7,7 +7,11 @@ import {
 	type GetServerSideFilterFn,
 	type LocalNodeConfig,
 } from '@overture-stack/arranger-types/configs';
-import { configOptionalProperties, configRootProperties } from '@overture-stack/arranger-types/configs/constants';
+import {
+	configFeatureFlagProperties,
+	configOptionalProperties,
+	configRootProperties,
+} from '@overture-stack/arranger-types/configs/constants';
 import { ApolloServerPluginLandingPageDisabled } from 'apollo-server-core';
 import { ApolloServer } from 'apollo-server-express';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
@@ -468,11 +472,17 @@ const arrangerRoutes = async <Context extends ArrangerBaseContext = ArrangerBase
 			schema,
 		});
 
-		await initializeSets({
-			enableDebug,
-			esClient,
-			setsIndex,
-		});
+		try {
+			await initializeSets({
+				enableSets: configs[configFeatureFlagProperties.ENABLE_SETS] ?? false,
+				enableDebug,
+				esClient,
+				setsIndex,
+			});
+		} catch (setsError) {
+			const message = setsError instanceof Error ? setsError.message : `${setsError}`;
+			console.error(`\n------\nSets initialization failed: ${message}\nThe catalogue endpoint will continue without Sets support.`);
+		}
 
 		return [
 			// this middleware makes the esClient and config available in all requests, in a "context" object

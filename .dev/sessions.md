@@ -17,6 +17,13 @@ Fact-checked the search engine permissions reference against the authoritative O
 - `.dev/tech-debt.md`: logged `cat.aliases` → `indices.getAlias` refactor as a standalone privilege-minimization item
 - `.dev/docs/search-engine-integration.md`: new internal reference document for maintainers covering auto-detection flow, startup sequence, query execution, downloads, Sets operations, and the permission model for each; includes links to OpenSearch and Elasticsearch 7.17 API docs; updated with permission source citations (OS permissions reference and default action groups), inline API links for per-request/downloads/saveSet sections, and a note that ES does not publish a canonical transport action list
 - `.dev/tech-debt.md`: logged missing unit tests for `getESAliases`, `getAllData` pagination, and `resolveSetsInSqon` as standalone entries
+- `modules/graphql-router/src/graphqlRoutes.ts`: `initializeSets` is now skipped when `DISABLE_SETS` is true; previously the flag was wired through the config system but never checked at the call site
+- `modules/types/src/configs/constants.ts`: removed the "not fully implemented yet" TODO comment from `DISABLE_SETS` (the flag now does what it says)
+- `modules/graphql-router/src/config/utils/index.ts`: moved `disableSets` guard into `initializeSets` (was in the caller); function accepts `disableSets?: boolean` and early-returns; makes the skip behaviour unit-testable without a real ES client
+- `modules/graphql-router/src/config/utils/index.test.ts`: new unit tests for `initializeSets` covering: skip when disabled (explicit false and omitted), creates index on first run, no-ops when index exists, throws on creation failure
+- `modules/types/src/configs/constants.ts`, `modules/graphql-router/src/config/utils/index.ts`, `modules/graphql-router/src/graphqlRoutes.ts`, `apps/search-server/src/configs/fromEnv/localEnvs.ts`, `apps/search-server/src/configs/fromEnv/aggregator.ts`, `integration-tests/server/test/index.test.ts`, `integration-tests/mcp-server/test/index.test.ts`, `apps/search-server/.env.schema`, `modules/graphql-router/README.md`, `.dev/roadmap.md`, `.dev/tech-debt.md`: renamed `DISABLE_SETS`/`disableSets` to `ENABLE_SETS`/`enableSets`; Sets now defaults to disabled and requires explicit opt-in
+- `modules/graphql-router/src/config/utils/index.ts`, `modules/graphql-router/src/graphqlRoutes.ts`: fixed multicatalog race condition: `resource_already_exists_exception` during `initializeSets` is now treated as success; Sets initialization failure no longer takes down the catalogue's GraphQL endpoint
+- `modules/graphql-router/src/config/utils/index.test.ts`: added tests for the race condition path (exception treated as success) and non-race errors (still propagate)
 
 ---
 

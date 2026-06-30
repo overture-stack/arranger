@@ -11,7 +11,7 @@ export const configArrangerFeatureFlagProperties = {
 	DISABLE_DOWNLOADS: 'disableDownloads',
 	DISABLE_FILTERS: 'disableFilters',
 	DISABLE_GRAPHQL_PLAYGROUND: 'disablePlayground',
-	DISABLE_SETS: 'disableSets', // TODO: not fully implemented yet. needs review
+	ENABLE_SETS: 'enableSets',
 } as const;
 
 export const configRuntimeFeatureFlagProperties = {

@@ -85,7 +85,7 @@ const router = await arrangerRouter(options);
 |---|---|---|---|
 | `disableDownloads` | `boolean` | `false` | Disable the TSV/file download endpoint. |
 | `disableFilters` | `boolean` | `false` | Disable SQON filter support on queries. |
-| `disableSets` | `boolean` | `false` | Disable saved Sets. |
+| `enableSets` | `boolean` | `false` | Enable saved Sets. Sets are disabled by default; set to `true` to activate. |
 | `disablePlayground` | `boolean` | `false` | Disable the GraphQL Playground UI. |
 
 ### Table
