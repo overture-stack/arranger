@@ -171,7 +171,7 @@ const getClientType = async ({ auth, clientType, node }: SearchConfig): Promise<
 				console.error(
 					`Could not auto-detect search engine type at ${node}.\n` +
 						`  GET / is denied (403): requires "cluster:monitor/main" permission.\n` +
-						`  GET /_nodes/_local is also denied (403): requires "cluster:monitor/nodes_info" permission.\n` +
+						`  GET /_nodes/_local is also denied (403): requires "cluster:monitor/nodes/info" permission.\n` +
 						`  To skip auto-detection, ${skipHint}.`,
 				);
 				return undefined;

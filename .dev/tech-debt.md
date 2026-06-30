@@ -271,6 +271,39 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Issue:** PR #1076 added cardinality accumulation to `resolveAggregation` (summing `agg.cardinality` across nodes, with `undefined` passthrough). The existing accumulation logic for `buckets` and `bucket_count` had no tests before this PR; the cardinality path now adds a third untested accumulation branch. Cases to cover: cardinality sums correctly across multiple nodes; a node with `cardinality: undefined` does not contribute to the sum; an empty aggregations list produces `cardinality: 0`.
 **Standalone:** yes; unit tests only, no application changes
 
+### `fetchMapping` uses `cat.aliases` instead of `indices.getAlias`
+
+**File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
+**Severity:** low (over-privileged; unnecessary cluster-level dependency)
+**Kind:** privilege minimization
+**Issue:** `getESAliases` calls `esClient.cat.aliases({ format: 'json' })` with no index filter, retrieving ALL cluster aliases and doing client-side filtering. `GET /_cat/aliases` is a cluster-wide API that requires `indices:admin/aliases/get*` at the cluster level (provided by `cluster_composite_ops_ro`). A targeted `indices.getAlias({ index: esIndex })` call would achieve the same result with only index-level `indices:admin/aliases/get` on the specific index, removing the cluster-level dependency entirely.
+**Fix:** Replace `esClient.cat.aliases()` + `checkESAlias` with `esClient.indices.getAlias({ index: esIndex })`. If the alias exists, the response contains the backing index name; if not, handle the 404. This reduces the required cluster permissions for core search (no `cluster_composite_ops_ro` needed just for alias resolution; `cluster:monitor/main` or `SEARCH_ENGINE` bypass becomes the only cluster-level concern).
+**Standalone:** yes; confined to `fetchMapping.ts`; update the caller in `fetchMapping` and adjust the docs/setup.md permissions reference when done
+
+### No unit tests for `getESAliases` alias resolution
+
+**File:** `modules/graphql-router/src/searchClient/fetchMapping.ts` (`getESAliases`)
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `getESAliases` has two distinct code paths - alias found (returns the backing index name) and no match (returns `esIndex` as-is) - neither of which has a unit test. Mock the `cat.aliases` response to cover both branches.
+**Standalone:** yes; unit test only, no application changes
+
+### No unit tests for `getAllData` pagination
+
+**File:** `modules/graphql-router/src/utils/getAllData.js`
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `getAllData` uses `search_after` cursor pagination across batches; neither the cursor handoff between pages nor the single-page short-circuit (all results fit in one batch) has a unit test.
+**Standalone:** yes; unit test only; mock the `esClient.search` call
+
+### No unit tests for `resolveSetsInSqon` set expansion
+
+**File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`
+**Severity:** low (missing test coverage)
+**Kind:** missing test coverage
+**Issue:** `resolveSetsInSqon` has two paths - SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
+**Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
+
 ### `hackyTemporaryEsSetResolution.js`: stale ES 6.2 workaround + convention violation
 
 **File:** `modules/graphql-router/src/mapping/hackyTemporaryEsSetResolution.js`

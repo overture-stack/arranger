@@ -6,6 +6,20 @@ Newest first.
 
 ---
 
+## 2026-06-30
+
+Fact-checked the search engine permissions reference against the authoritative OpenSearch source (`static_action_groups.yml`); corrected two mistakes introduced in the 2026-06-28 session.
+
+- `modules/graphql-router/src/searchClient/index.ts`: fixed wrong permission name in the dual-403 error message: `cluster:monitor/nodes_info` is not a real permission; the correct transport action is `cluster:monitor/nodes/info`
+- `docs/setup.md`: (1) corrected the core search section: `read` does not cover `indices:admin/mappings/get` or `indices:admin/aliases/get`; both must be granted explicitly alongside `read`; (2) fixed `cluster:monitor/nodes_info` → `cluster:monitor/nodes/info` in the auto-detection table; (3) updated the summary table data index column to list all three required permissions
+- `overture/infra/.dev/docs/opensearch/deployment.md` (cross-repo): fixed `cluster:monitor/nodes_info` → `cluster:monitor/nodes/info` in the Arranger breakdown section (two occurrences); added note that index-level `indices:admin/aliases/get` is redundant (already covered by `cluster_composite_ops_ro` at cluster level via `GET /_cat/aliases`)
+- `docs/setup.md`: core search section restructured: alias resolution moved from index-level to cluster-level (Arranger uses `cat.aliases`, a cluster-wide API; `cluster_composite_ops_ro` covers it); Sets recommendation corrected from `create_index` to `manage` (`create_index` does not include `indices:admin/exists`); summary table updated to reflect both corrections
+- `.dev/tech-debt.md`: logged `cat.aliases` → `indices.getAlias` refactor as a standalone privilege-minimization item
+- `.dev/docs/search-engine-integration.md`: new internal reference document for maintainers covering auto-detection flow, startup sequence, query execution, downloads, Sets operations, and the permission model for each; includes links to OpenSearch and Elasticsearch 7.17 API docs; updated with permission source citations (OS permissions reference and default action groups), inline API links for per-request/downloads/saveSet sections, and a note that ES does not publish a canonical transport action list
+- `.dev/tech-debt.md`: logged missing unit tests for `getESAliases`, `getAllData` pagination, and `resolveSetsInSqon` as standalone entries
+
+---
+
 ## 2026-06-29
 
 Malformed SQON filter clauses that previously passed schema validation and then generated invalid or silent Elasticsearch errors now fail at parse time with a schema error.

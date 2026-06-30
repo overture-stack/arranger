@@ -148,13 +148,17 @@ When connecting Arranger to a secured OpenSearch or Elasticsearch cluster, the s
 
 ### Core search (always required)
 
-Grant `read` on each data index Arranger will query. The `read` built-in index privilege covers all three required operations:
+Arranger requires two index-level and one cluster-level operation on each data index it queries:
 
-| Operation | Transport action | When |
-| --------- | ---------------- | ---- |
-| Fetch index mapping | `indices:admin/mappings/get` | Startup |
-| Resolve index aliases | `indices:admin/aliases/get` | Startup |
-| Search | `indices:data/read/search` | Every query |
+| Operation | Transport action | When | Level |
+| --------- | ---------------- | ---- | ----- |
+| Fetch index mapping | `indices:admin/mappings/get` | Startup | index |
+| Search | `indices:data/read/search` | Every query | index |
+| Resolve index aliases | `indices:admin/aliases/get*` | Startup | cluster |
+
+**Index permissions:** grant `read` and `indices:admin/mappings/get` on each data index. The `read` built-in privilege covers search (`indices:data/read*`) but does not include `indices:admin/mappings/get`; that must be explicit.
+
+**Alias resolution:** Arranger calls `GET /_cat/aliases` (a cluster-wide API with no index filter) to resolve index aliases. This requires `indices:admin/aliases/get*` at the **cluster** level. Grant `cluster_composite_ops_ro` as a cluster permission; it includes this and is the idiomatic way to cover cluster-wide alias reads. A scoped alternative is to grant `indices:admin/aliases/get` directly as a cluster-level permission.
 
 ### Auto-detection (optional)
 
@@ -163,7 +167,7 @@ By default, Arranger probes the cluster on startup to identify whether it is Ope
 | Operation | Endpoint | Permission |
 | --------- | -------- | ---------- |
 | Engine type detection | `GET /` | `cluster:monitor/main` |
-| Detection fallback | `GET /_nodes/_local` | `cluster:monitor/nodes_info` |
+| Detection fallback | `GET /_nodes/_local` | `cluster:monitor/nodes/info` |
 
 :::tip Skip auto-detection
 
@@ -184,14 +188,14 @@ The Sets feature requires additional permissions on the sets index (default name
 | Read sets (expand `set_id` filters) | `indices:data/read/search` | Per query |
 | Save a set | `indices:data/write/index` | `saveSet` mutation |
 
-Grant `read` + `write` + `create_index` on the sets index, or `manage` if you prefer a single broader grant.
+Grant `read` + `write` + `manage` on the sets index. `manage` covers `indices:admin/exists` (the startup existence check) and `indices:admin/create` (index creation); `create_index` alone does not cover the existence check.
 
 ### Summary
 
 | Deployment | Data index | Sets index | Cluster |
 | ---------- | ---------- | ---------- | ------- |
-| Search only, no Sets | `read` | - | `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
-| With Sets | `read` | `read`, `write`, `create_index` | `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
+| Search only, no Sets | `read`, `indices:admin/mappings/get` | - | `cluster_composite_ops_ro`, `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
+| With Sets | `read`, `indices:admin/mappings/get` | `read`, `write`, `manage` | `cluster_composite_ops_ro`, `cluster:monitor/main` (or set `SEARCH_ENGINE`) |
 
 Permission names are identical for OpenSearch and Elasticsearch; both use the same security model.
 
