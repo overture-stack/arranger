@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { mock, suite, test } from 'node:test';
 
-import { type ArrangerIntrospectionClient } from '#arranger/client.js';
+import { type ArrangerClient } from '#arranger/client.js';
 import type {
 	ArrangerCatalogueIntrospection,
 	ArrangerServerIntrospection,
@@ -58,10 +58,11 @@ const mockCatalogueIntrospection = (catalogueId: string): ArrangerCatalogueIntro
 	fields: {},
 });
 
-const mockClient = (overrides: Partial<ArrangerIntrospectionClient> = {}): ArrangerIntrospectionClient => ({
+const mockClient = (overrides: Partial<ArrangerClient> = {}): ArrangerClient => ({
 	getServerIntrospection: mock.fn(async () => mockServerIntrospection(['catalogue-a'])),
 	getSqonIntrospection: mock.fn(async () => mockSqonIntrospection()),
 	getCatalogueIntrospection: mock.fn(async (id: string) => mockCatalogueIntrospection(id)),
+	executeQuery: mock.fn(async () => ({ data: {} })),
 	...overrides,
 });
 

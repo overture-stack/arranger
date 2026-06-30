@@ -138,13 +138,99 @@ Added `getAllData` to the `graphql-router` utils barrel export (was missing, cau
 
 **Done:**
 
+- Hardened `execute-query` error handling so failures are actionable and self-correctable by an LLM caller:
+    - `src/arranger/client.ts` — new `ArrangerRequestError` (carries `status`/`statusText`/`body`/`isTimeout`); `fetchJson` now reads the HTTP error body on a non-2xx response (previously discarded — a 400 with a GraphQL parse error in its body now reaches the caller) and distinguishes a timeout (`controller.signal.aborted`) from other transport failures, keeping a single `try/finally` so the timeout still guards `response.json()`
+    - Widened the GraphQL response typing: named `ArrangerGraphQLError` with explicit `path` and `extensions.code` (was `{ message; [key]: unknown }`), so those structured signals survive instead of being swallowed
+    - `src/arranger/types.ts` — moved the two GraphQL wire-data types (`ArrangerGraphQLError`, `ArrangerGraphQLResponse`) here to sit with the introspection response types; `ArrangerRequestError` (runtime class) and `ArrangerClient` (contract) deliberately stayed in `client.ts`
+    - `src/utils/errors.ts` — `formatGraphQLError` (renders each GraphQL error with `[code: …]` and `(at path)`) and `describeExecutionError` (maps timeout / HTTP+body / unreachable / `ZodError` / generic to actionable text, body truncated to 500 chars, no base-URL leak); plus private `truncate`
+    - `src/mcp/executeQueryTool.ts` — wrapped the handler body in `try/catch` so the previously-uncaught introspection `.parse()` and `client.executeQuery` failures return a proper tool `errorResult`; GraphQL-error branch now uses `formatGraphQLError` and appends a get-catalogue-fields/get-sqon-schema retry pointer
+    - 8 unit tests in `src/utils/errors.test.ts` (one per branch of both exported helpers; truncation exercised through `describeExecutionError`)
 - Added `initializeSets` startup race fix to roadmap as the first Architecture item (high priority): a confirmed multicatalog bug that nondeterministically kills catalogue routers on a fresh cluster.
 - Fixed `"field"` / `"fieldName"` in `docs/concepts.md` SQON examples (lines 44, 56, 57). The `00-query-processing.md` instance was correct ES syntax and left unchanged.
 - Added three tech-debt entries for missing tests introduced by PR #1076: `filterNodesByNodeId` (pure function, trivial cases), `resolveAggregation` cardinality accumulation, and `generateChartsQuery` network path branching.
 
+**Decisions:**
+
+- Split the moved types by kind: GraphQL wire-data shapes belong in `types.ts` (cohesive with introspection shapes); a thrown `Error` subclass does not (runtime behaviour, not a declaration) and stays with the client; an interface stays co-located with its sole implementation
+- A `ZodError` from introspection parsing is reported as a probable Arranger version mismatch, _not_ as a query the caller can fix — avoids the LLM looping trying to correct its query
+- Partial-success handling unchanged: any GraphQL `errors` still discards `data` (pre-existing behaviour, not revisited this session)
+
 **Open threads:**
 
+- Error-message contract changed (wording/shape of `execute-query` failures) — adds to the `/docs` debt; the MCP error contract should be documented if/where it lives
+- No integration-test coverage for the new transport/timeout/GraphQL-error paths — hard to trigger against a live Arranger; the pure helpers are unit-tested instead
 - Confirm OpenSearch exception name for `resource_already_exists_exception` before implementing the `initializeSets` guard.
+
+---
+
+## 2026-06-11
+
+**Done:**
+
+- Fixed `execute-query` handling of `nested` fields (follow-up to the 2026-06-10 tool work): the query builder previously rendered `donors.age` as a plain `donors { age }` selection, which is invalid against Arranger's generated schema — every `nested` field is a connection type requiring `donors { hits { edges { node { age } } } }`
+    - `queryBuilder.ts` — `renderSelectionTree` now tracks the dot-path while rendering and consults `fieldTypes` (already passed in for aggregations): children of a `nested` path are wrapped in `hits { edges { node { ... } } }`, recursively for nested-within-nested; `object` fields remain plain selections
+    - `src/arranger/queryResults.ts` (new) — `compactHitNodes` strips the GraphQL `edges`/`node` nesting from hit results including the connection wrappers nested fields carry inside each node (flattened to plain arrays, recursively, guided by `fieldTypes`); replaces the top-level-only flattening previously inline in `executeQueryTool.ts`
+    - 10 new unit tests (4 builder nested-selection cases, 6 compaction cases); nested query document verified to parse with `graphql`'s `parse()`
+
+**Decisions:**
+
+- Nested boundaries are detected from introspection `fieldTypes` (`type === 'nested'`), not inferred from response shape — precise and avoids misreading a real field literally named `hits`
+- Nested `hits` selections omit `total` — the flattened array's length carries the same information since nested hits are not paginated
+
+**Done (later session — planning, no code changes):**
+
+- Analyzed why local LLMs (e.g. gemma-4-e4b) produce invalid SQON for `execute-query` despite reading `get-sqon-schema`: identified root causes (training prior for legacy `field`/flat-leaf shapes, JSON-Schema-as-generation-guide mismatch, `sqon: zod.unknown()` giving clients no structure to constrain against, and Zod union collapse reducing all leaf-shape errors to `Invalid SQON at root: Invalid input`)
+- Proposed a phased improvement plan: (1) few-shot examples in tool/param descriptions + a prose cheat sheet in `get-sqon-schema`, (2) mistake-aware validation errors, (3) lenient normalization of unambiguous near-misses, (4) optional structured `filters` input compiled to SQON server-side
+- Added tech-debt: dangling `$ref` pointers in the published SQON JSON Schema (`normalizeUnionKeywords` renames `anyOf`→`oneOf` but not `$ref` path strings — schema is technically unresolvable)
+- Added tech-debt: `docs/concepts.md` SQON examples use legacy `field` instead of `fieldName`, reinforcing the exact mistake LLMs make
+
+**Done (later session — `execute-query` integration tests):**
+
+- Added `execute-query` coverage to `integration-tests/mcp-server`: new `test/executeQuery.ts` suite with 15 tests
+    - Hits: empty-root SQON returns all documents compacted to flat objects (no `edges`/`node` nesting), `in` filter, combination (`and` + `gt`) filter, count-only (no `fields`), `sort`/`first`/`offset` pagination
+    - Aggregations: keyword field returns `bucket_count`/`buckets`, numeric field returns `stats`; `queryType: 'both'` returns hits and aggregations narrowed by the same SQON
+    - Multi-catalogue routing: query against `catalogue-b` resolves its own endpoint (`/catalogue-b/graphql`) and document type
+    - Errors: unknown catalogue (lists available), SQON referencing another catalogue's field, operator invalid for field type, missing SQON, `aggregations` without `aggregationFields`
+    - Elicitation: a second MCP client advertising the elicitation capability confirms the decline path (`executed: false`, query not sent) and the accept path; the shared suite client has no elicitation capability, so all other tests exercise the skip-confirmation path
+- Harness now seeds documents: new assets `catalogue_a.data.json` (5 docs) / `catalogue_b.data.json` (2 docs), indexed via `esClient.create` + `indices.refresh` in the `before` hook; `spinupActive` tool-listing test updated to expect `execute-query` (four tools)
+- Found and logged two Arranger bugs in tech-debt while writing the tests:
+    - Multicatalog `initializeSets` startup race: concurrent exists/create across catalogue routers leaves the losing catalogue's GraphQL endpoint permanently 500 on a fresh cluster (runs even with `disableSets: true`); the harness pre-creates the sets index before Arranger boots as a workaround — remove once fixed
+    - `buildAggregations` crashes (`.filter is not a function`) when the SQON root is a leaf filter clause; the hits path accepts the same SQON, so behaviour is inconsistent — test 7 wraps its filter in a combination root to document intended behaviour rather than the bug
+
+**Open threads:**
+
+- `execute-query` integration test gap (open since 2026-06-10) is closed; the `/docs` gap on the MCP tool surface (including nested-field behaviour) remains
+- LLM SQON-generation improvements analyzed but not implemented — decisions needed on lenient normalization (repair vs reject-with-suggestion) and on adding a structured `filters` input alongside raw `sqon`
+
+---
+
+## 2026-06-10
+
+**Done:**
+
+- Added `execute-query` tool to `apps/mcp-server`: end-to-end SQON-filtered Arranger queries (hits, aggregations, or both) built as parameterized GraphQL and POSTed to the catalogue's GraphQL endpoint
+    - `src/arranger/queryBuilder.ts` — pure builder producing `{ query, variables, operationName }`; nests dot-notation hits fields into GraphQL selection trees; aggregation fields emitted with `__` notation; numeric/date fields select `stats`, all others `bucket_count`/`buckets`; all runtime values passed as GraphQL variables, never interpolated; GraphQL-name regex guard on every interpolated identifier as injection defence
+    - `src/arranger/queryValidation.ts` — SQON validated structurally via `SqonSchema` from `@overture-stack/sqon`, then semantically against catalogue introspection (field existence, per-field-type operator validity, alias normalization via `normalizeSqonOp`); hits/sort/aggregation field validation including container-field rejection (`object`/`nested` for hits, `nested` for aggregations)
+    - `src/mcp/executeQueryTool.ts` — tool registration: resolves the catalogue from `/introspection` (endpoint taken from `paths.graphql`), fetches per-catalogue introspection, validates, builds, asks the user to confirm via MCP elicitation, executes, and returns a compact result (`edges`/`node` nesting stripped to a flat `hits` array; aggregations passed through)
+    - `src/arranger/client.ts` — `executeQuery(path, request)` added to `ArrangerIntrospectionClient`; `fetchJson` generalized to support POST bodies
+- Added `@overture-stack/sqon` (`file:../../modules/sqon`) to `apps/mcp-server` dependencies; lockfile updated
+- Added `modules/sqon/dist` + `package.json` COPY lines to the `mcp-server` stage in both `docker/Dockerfile.local` and `docker/Dockerfile.jenkins` (mirrors the `search-server` stage pattern)
+- 30 new unit tests (BDD, `node:test`, co-located): `queryBuilder.test.ts` and `queryValidation.test.ts`; generated documents for all three query types verified to parse with `graphql`'s `parse()`
+- Added tech-debt entry: `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
+
+**Decisions:**
+
+- Tool input uses `catalogueId` (not `catalogId` as drafted) — matches the existing `get-catalogue-fields` input convention; introspection response keys (`catalogs`, `catalogCount`, `catalogId`) keep the server's spelling per the existing tech-debt entry
+- GraphQL endpoint resolved from introspection `paths.graphql` rather than recomputing single-vs-multi-catalogue logic client-side — the server already encodes the mode in that path
+- User confirmation uses MCP elicitation only when the client advertises the capability; otherwise execution proceeds without confirmation (the SDK throws on `elicitInput` without the capability, and failing closed would make the tool unusable from clients without elicitation support). Declined/cancelled elicitation returns `executed: false` without contacting Arranger
+- Empty `fields` with `queryType: 'hits'` returns only `total` (count-only query, no `edges` selection); `first: 0` supported for the same purpose
+- `queryType: 'aggregations'`/`'both'` requires at least one `aggregationFields` entry — an empty aggregations selection is a GraphQL syntax error
+- Validation errors return `isError: true` with actionable messages pointing the LLM at `get-catalogue-fields` / `get-sqon-schema` rather than throwing
+
+**Open threads:**
+
+- `execute-query` has no integration test — `integration-tests/mcp-server` CI design (full ES + Arranger + MCP stack) is still an open thread from 2026-05-29
+- `/docs` gap grows: the MCP server's tool surface (including execute-query) is undocumented in `/docs`
 
 ---
 

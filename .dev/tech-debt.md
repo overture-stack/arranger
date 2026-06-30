@@ -25,17 +25,29 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Fix:** Track a `lastSeenAt` timestamp per transport entry and update it on every request that resolves an existing session. Run a `setInterval` sweep (e.g. every 5 minutes) to close and evict sessions idle beyond a configurable TTL (e.g. 30 minutes). The sweep should call `transport.close()` before deleting the entry to ensure clean teardown.
 **Standalone:** yes; self-contained change to `app.ts`; no protocol or API surface changes
 
+### `NUMERIC_AGGREGATION_TYPES` in queryBuilder duplicates `esToAggTypesMap` from `modules/types`
+
+**File:** `apps/mcp-server/src/arranger/queryBuilder.ts` — `NUMERIC_AGGREGATION_TYPES`
+**Severity:** low (duplication / drift risk)
+**Kind:** duplication
+**Issue:** The execute-query builder must know whether a field's generated GraphQL aggregation type is `NumericAggregations` (selected via `stats`) or `Aggregations` (selected via `buckets`). That classification lives in `esToAggTypesMap` in `modules/types/src/elastic/constants.ts`, but the MCP server does not depend on `modules/types`, so the builder carries a local `NUMERIC_AGGREGATION_TYPES` set mirroring it (plus the `number` display type used by catalogue configs). If `esToAggTypesMap` gains or corrects entries, the copy silently diverges and the builder would emit the wrong selection shape for affected field types.
+**Fix:** Either add `@overture-stack/arranger-types` as an mcp-server dependency and derive the set from `esToAggTypesMap`, or (preferred) expose each field's aggregation kind in the catalogue introspection response so MCP consumers need no local mapping at all. The latter aligns with the introspection-as-contract direction of the MCP integration readiness roadmap items.
+**Standalone:** yes — either fix is additive; no behaviour change for current field types
+
 ### Introspection types should be Zod-first and moved to `modules/types`
+
 **File:** `apps/mcp-server/src/arranger/types.ts`; `apps/search-server/src/introspection/types.ts`
 **Severity:** low (fragile cross-package import; duplication risk)
 **Kind:** design improvement
 **Issue:** Two related problems introduced together:
+
 1. `apps/mcp-server/src/arranger/types.ts` imports directly from `'../../../search-server/src/introspection/types.js'`: a raw file-path reference into another app's source tree, bypassing the package boundary. If `search-server` restructures its internals, the import silently breaks with no compile-time protection at the package level.
 2. `types.ts` duplicates the introspection shape as local Zod schemas because `search-server` exposes only TS interfaces, not Zod schemas. When the introspection shape changes, both the interfaces and the local Zod schemas must be updated in sync.
-**Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
-**Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
+   **Fix:** Move introspection types into `modules/types` (the existing shared-types package). Define them as Zod schemas there and infer the TS types: `export const CatalogIntrospectionSchema = zod.object({...}); export type CatalogIntrospection = zod.infer<typeof CatalogIntrospectionSchema>`. Both `search-server` and `mcp-server` import from `@overture-stack/arranger-types`: one schema definition, no raw cross-app file paths, and `mcp-server` can reference the schemas directly as MCP `outputSchema` values. The `TODO` comment in `apps/mcp-server/src/arranger/types.ts` tracks this.
+   **Standalone:** no; depends on `modules/types` tsup build being in place (already done); coordinate with the Zod-first types work
 
 ### `mcp-server` pins Express 4 and Zod 3; `@modelcontextprotocol/sdk` uses Express 5 and Zod 4 internally
+
 **File:** `apps/mcp-server/package.json`
 **Severity:** low-medium (version skew; potential for subtle type or behaviour divergence as the MCP SDK evolves)
 **Kind:** dependency management
@@ -58,11 +70,12 @@ Issues logged here when found scope-adjacent to other work. Not a priority backl
 **Severity:** high (OWASP A05: Security Misconfiguration; adversarial agents can flood the endpoint and exhaust memory or downstream Arranger connections)
 **Kind:** missing security control
 **Issue:** There is no per-client or global request rate limit on the MCP endpoint. An adversarial agent can:
+
 - Open a large number of concurrent sessions, filling the `transports` map (memory exhaustion; see existing session-map entry).
 - Issue rapid-fire tool calls within a single session, generating a corresponding flood of HTTP requests to Arranger.
-Neither the MCP transport layer nor Express applies any backpressure.
-**Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
-**Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
+  Neither the MCP transport layer nor Express applies any backpressure.
+  **Fix:** Add `express-rate-limit` middleware (already in the Express ecosystem, no new dependency category) in `createHttpApp` before the route handlers. Apply two limits: (1) a per-IP initialization limit (e.g. 10 new sessions per minute) on `isInitializeRequest` paths to cap session creation; (2) a per-session or per-IP request limit on all MCP requests (e.g. 60 tool calls per minute). Make limits configurable via `MCP_RATE_LIMIT_INIT_RPM` and `MCP_RATE_LIMIT_CALLS_RPM` env vars with conservative defaults.
+  **Standalone:** yes; middleware addition to `app.ts`; new env vars in `config.ts`
 
 ### `get-catalogue-fields` does not validate `catalogueId` against the configured allowlist
 
@@ -125,6 +138,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** (a) Docs/schema comments pass: update README.md:13, docs/usage/02-arranger-components.md (title + line 29), configs.json.schema:28, and console strings in configs/index.ts. (b) Identifier rename pass (separate commit): buildCatalogsFromFolder -> buildCatalogsFromDirectory, folderName -> directoryName in apps/search-server/src/configs/. (c) Cross-references: add pointer to docs/concepts.md early in docs/usage/02-arranger-components.md; introduce "filter clause" for leaf nodes in docs/sqon/03-sqon-in-detail.md.
 **Standalone:** yes; (a) is docs-only; (b) is a mechanical rename; (c) is a docs addition. All three independent.
 
+### `docs/concepts.md` SQON examples use `field` instead of `fieldName`
+
+**File:** `docs/concepts.md:44,56-57`
+**Severity:** medium (canonical concepts doc contradicts the runtime schema; actively trains LLMs and readers into the #1 invalid-SQON mistake)
+**Kind:** stale documentation
+**Issue:** The SQON examples in `docs/concepts.md` use `"field"` as the filter-clause key, but the runtime (`modules/sqon` `SqonLeafSchema`, and `buildQuery` in `graphql-router` which reads `content.fieldName`) requires `"fieldName"`. `field` is the legacy/GDC-era spelling and is exactly the key local LLMs keep producing when generating SQON for the MCP `execute-query` tool — the project's own docs reinforce the wrong prior. `docs/usage/00-query-processing.md` already uses `fieldName` correctly.
+**Fix:** Update the examples in `concepts.md` to `fieldName`; grep docs for any other `"field"` usages in SQON (not ES query) context.
+**Standalone:** yes — docs-only change
+
 ### `setup.md` references `.env.arrangerDev` which no longer exists in the repo
 
 **File:** `docs/setup.md`; step 2 of "Running the Arranger-Server"
@@ -165,6 +187,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Consolidate into `modules/sqon` as the single source of truth. Extend `getSqonFieldOperatorDetails()` to carry the same field-type classification detail that `buildCatalogueIntrospection.ts` currently encodes locally. `buildCatalogueIntrospection.ts` then becomes a thin projection over the module's data. See [roadmap: consolidate field-type-to-operator rules](roadmap.md#consolidate-field-type-to-operator-rules-into-modulessqon).
 **Standalone:** yes; internal refactor, no change to API output
 
+### Published SQON JSON Schema contains dangling `$ref` pointers after `anyOf` → `oneOf` normalization
+
+**File:** `modules/sqon/src/jsonSchema/runtime.ts` — `normalizeUnionKeywords`
+**Severity:** medium (published schema is not resolvable by strict JSON Schema tooling; confuses LLM consumers of `get-sqon-schema`)
+**Kind:** bug
+**Issue:** `zodToJsonSchema` deduplicates the shared value schema by emitting `$ref` pointers like `#/$defs/All/properties/content/properties/value/anyOf/0` (used by `Between`, `InLike`, `RangeLike`, and inside `All` itself). `normalizeUnionKeywords` then renames every `anyOf` key to `oneOf` — but does not rewrite the `$ref` _path strings_, which still point at `.../anyOf/0`. Those JSON Pointers no longer resolve: the published schema is technically invalid. Permissive consumers won't notice; strict resolvers will fail, and LLMs reading the schema see references into paths that do not exist.
+**Fix:** Either rewrite `$ref` strings during normalization (string-replace `/anyOf/` → `/oneOf/` in `$ref` values), or avoid the problem entirely by inlining the scalar/array value schema instead of cross-def `$ref` chains (better for LLM readability anyway — see the LLM SQON-generation analysis, 2026-06-11 session). Add a test that resolves every `$ref` in the emitted schema.
+**Standalone:** yes — self-contained fix in `runtime.ts` plus a resolution test
+
 ### SQON value schema does not accept boolean values
 
 **File:** `modules/sqon/src/schema/constants.ts` (`SqonScalarValueSchema`)
@@ -177,6 +208,24 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 ---
 
 ## graphql-router
+
+### `initializeSets` startup race breaks one catalogue's GraphQL endpoint in multicatalog mode
+
+**File:** `modules/graphql-router/src/graphqlRoutes.ts` — `arrangerRoutes`; `modules/graphql-router/src/config/utils/index.ts` — `initializeSets`
+**Severity:** high (nondeterministic startup failure — a catalogue's GraphQL endpoint permanently returns 500 on a fresh cluster)
+**Kind:** bug / race condition
+**Issue:** In multicatalog mode, every catalogue's `arrangerRoutes` runs `initializeSets` concurrently at startup, and they all share one sets index. `initializeSets` does a check-then-create (`indices.exists` → `indices.create`): when the index does not exist yet, multiple routers pass the existence check, one create wins, and the others throw `resource_already_exists_exception`. That throw is caught by `arrangerRoutes`' catch-all, which replaces the **entire catalogue router** with a permanent 500 handler — so a healthy catalogue's GraphQL endpoint is dead until restart, nondeterministically. Two aggravating factors: (1) `initializeSets` runs even when `disableSets: true`; (2) a sets-index failure poisons the whole router, not just the Sets feature. Discovered while writing `execute-query` integration tests (`integration-tests/mcp-server` works around it by pre-creating the sets index before Arranger boots).
+**Fix:** Treat `resource_already_exists_exception` as success in `initializeSets` (the race loser's goal state is already achieved). Additionally: skip `initializeSets` when sets are disabled, and consider scoping the `arrangerRoutes` catch so a Sets initialization failure does not take down the catalogue's whole GraphQL endpoint. Remove the pre-create workaround from `integration-tests/mcp-server/test/index.test.ts` once fixed.
+**Standalone:** yes — self-contained fix in `initializeSets`; the catch-scoping improvement is optional follow-up
+
+### `buildAggregations` crashes when the SQON root is a leaf filter clause
+
+**File:** `modules/graphql-router/src/middleware/buildAggregations/index.js:88`
+**Severity:** medium (valid SQON rejected with an opaque error; hits and aggregations paths behave inconsistently)
+**Kind:** bug
+**Issue:** `(normalizedSqon?.content || []).filter(...)` assumes the SQON root is a combination node whose `content` is an array. A root-level leaf filter clause (e.g. `{ "op": "gt", "content": { "fieldName": "age", "value": 40 } }`) is valid per `SqonSchema` and is accepted by the hits query path, but in the aggregations path `content` is an object, so the query fails with the GraphQL error `((intermediate value) || []).filter is not a function`. Discovered via the MCP `execute-query` tool, which forwards SQONs verbatim — an LLM-supplied root-leaf SQON works for `queryType: "hits"` and errors for `"aggregations"`/`"both"`.
+**Fix:** Normalize a root-level leaf by wrapping it in `{ op: 'and', content: [leaf] }` before (or inside) `buildAggregations`, matching the hits path's tolerance. The MCP query builder could defensively wrap root leaves too, but the canonical fix belongs in Arranger.
+**Standalone:** yes — small fix in `buildAggregations` plus a unit test for a root-leaf SQON
 
 ### `GraphQLEndpointOptions` escape hatch
 
@@ -247,13 +296,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Severity:** medium
 **Kind:** design-smell / reliability
 **Issue:** The download route has several fragile points in how it receives and parses its request body:
+
 1. `params` arrives as a JSON-stringified string inside a `urlencoded` form body (`JSON.parse(params)` on line 110). Double-encoding is easy to get wrong on the caller side and produces opaque parse errors with no indication of which layer failed.
 2. Callers must pass full column descriptor objects (`fieldName`, `accessor`, `Header`, `extendedType`, `extendedDisplayValues`, `show`, `sortable`, `query`, `jsonPath`, plus UI-only fields like `minWidth` and `canChangeShow`). The router already holds the extended mapping at request time; everything except `fieldName` is derivable from it. Callers should only need to pass `fieldNames: string[]`, with optional per-field overrides. `dataToExportFormat.js` already partially reads from `extendedFieldsDict` for display names; the full resolution just never got wired up.
 3. No validation of the parsed `params` object: missing or malformed `files`, unknown `fileType`, invalid `sqon`, and negative `maxRows` all pass through silently until they cause an error deep in `getAllData` or `dataToExportFormat`.
 4. The `400` error response on catch returns `err?.message || err?.details || 'An unknown error occurred.'`; callers cannot distinguish a parse failure from a stream error from a missing-files error.
 5. The `Content-disposition` header is set without quoting the filename (`attachment; filename=${responseFileName}`); filenames with spaces or special characters break the header.
-**Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
-**Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
+   **Fix:** Accept JSON directly (`application/json` body) instead of URL-encoded form data with a double-encoded `params` field. Change the `columns` param to `fieldNames: string[]` and resolve the full descriptor internally from the catalogue's extended mapping (already available in the request context), with optional per-field overrides for display name and JSON path. Validate the body with Zod before streaming. Return structured error responses. Quote the filename in `Content-Disposition`. This is a breaking change for existing callers; coordinate with a minor version bump and document in the migration guide.
+   **Standalone:** no; callers (including `arranger-components` download UI and any custom integrations) must update their request format in the same pass
 
 ### `filterNodesByNodeId` has no tests
 
