@@ -9,6 +9,9 @@ import {
 } from '@overture-stack/arranger-types/configs/constants';
 import { stringToBool, stringToNumber } from '@overture-stack/arranger-types/tools';
 
+// TODO: make a more robust isProd helper (e.g. casing + alternatives like 'prod')
+const isProd = process.env.NODE_ENV === 'production';
+
 const configsFromEnv = {
 	allowedCorsOrigins: process.env.ALLOWED_CORS_ORIGINS?.split(',')
 		.map((origin) => origin.trim())
@@ -21,6 +24,8 @@ const configsFromEnv = {
 			// feature flags
 			[configFeatureFlagProperties.DISABLE_DOWNLOADS]: stringToBool(process.env.DISABLE_DOWNLOADS),
 			[configFeatureFlagProperties.DISABLE_FILTERS]: stringToBool(process.env.DISABLE_FILTERS),
+			[configFeatureFlagProperties.DISABLE_GRAPHQL_INTROSPECTION]:
+				stringToBool(process.env.DISABLE_GRAPHQL_INTROSPECTION) ?? isProd,
 			[configFeatureFlagProperties.DISABLE_GRAPHQL_PLAYGROUND]: stringToBool(
 				process.env.DISABLE_GRAPHQL_PLAYGROUND,
 			),

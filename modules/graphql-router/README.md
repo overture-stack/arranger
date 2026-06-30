@@ -85,8 +85,9 @@ const router = await arrangerRouter(options);
 |---|---|---|---|
 | `disableDownloads` | `boolean` | `false` | Disable the TSV/file download endpoint. |
 | `disableFilters` | `boolean` | `false` | Disable SQON filter support on queries. |
-| `disableSets` | `boolean` | `false` | Disable saved Sets. |
+| `disableGraphQLIntrospection` | `boolean` | `false` (`true` when `NODE_ENV=production`) | Disable GraphQL's built-in `__schema`/`__type` introspection system. Recommended in production. **Caveat:** remote nodes used in a [network aggregation](#network-search) deployment must keep this disabled; see that section for details. |
 | `disablePlayground` | `boolean` | `false` | Disable the GraphQL Playground UI. |
+| `disableSets` | `boolean` | `false` | Disable saved Sets. |
 
 ### Table
 
@@ -160,6 +161,8 @@ When using `apps/search-server`, this config lives in `network.json` inside the 
 | `remoteNodes[].requests.headers` | Header names to forward to this specific node. Takes precedence over `remoteRequests.headers`. |
 
 All nodes must serve overlapping index field names. Fields with the same name and GraphQL type are merged across nodes; fields unique to one node are excluded from federation.
+
+**Introspection requirement:** At startup, each remote node's aggregation field types are discovered via a `__type` GraphQL introspection query. Remote nodes that have `disableGraphQLIntrospection: true` will fail schema discovery and be silently excluded from federation. Do not enable `disableGraphQLIntrospection` on any node that serves as a remote target in a network aggregation deployment. A fix that replaces this with a REST `/introspection/fields` call is tracked in tech-debt and planned for the yoga migration.
 
 ---
 

@@ -223,14 +223,14 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Fix:** Strip stack traces from client-facing error responses in the GraphQL error formatter. Optionally surface them when `enableDebug` is true (server-side only) or when `enableAdmin` is active; but that dependency on the Admin model is TBD. Safe default: never send stacks to clients.
 **Standalone:** mostly yes; the stack stripping is a one-file fix. The question of whether debug mode re-enables stack visibility is the only part that touches the Admin design.
 
-### GraphQL introspection and field suggestions in production
+### GraphQL field suggestions leak schema structure in error responses
 
 **File:** `modules/graphql-router/src/graphqlRoutes.ts` (Apollo Server config)
-**Severity:** medium (OWASP A02: Security Misconfiguration)
+**Severity:** low (OWASP A02: Security Misconfiguration)
 **Kind:** security bug
-**Issue:** Arranger exposes field name suggestions in error messages and may allow full introspection queries in production. Both leak schema structure to clients. Introspection should be disabled in production (it is already gated by `disablePlayground`, but the introspection query and field suggestion behaviour may be independent of that flag). Possibly a side-effect of using outdated Apollo Server 3 without explicit introspection controls.
-**Fix:** Explicitly disable introspection and field suggestions in production. Apollo Server 3 supports `introspection: false` and `stopSuggestions` via the `graphql` validation layer. Verify these are configured correctly and not accidentally left open. This may partially resolve itself when Apollo is replaced; but the config intent should be documented regardless.
-**Standalone:** mostly yes for the immediate fix; deeper fix is part of the Apollo migration
+**Issue:** Apollo Server 3 includes field name suggestions in error messages (e.g. "Did you mean 'fieldName'?"). This leaks schema structure to clients through error responses even when `disableGraphQLIntrospection: true` is set; suggestions are a separate code path from the introspection system. Note: GraphQL introspection itself is now gated by `disableGraphQLIntrospection`, which defaults to `true` in production via `NODE_ENV`.
+**Fix:** Override `formatError` in `createEndpoint` to strip suggestion hints from Apollo error messages before they reach clients, or add a custom validation rule that suppresses them. This will resolve itself on the yoga migration (yoga does not expose suggestions by default), but the interim fix is small and standalone.
+**Standalone:** yes; isolated change to the Apollo Server config in `createEndpoint`
 
 ### `hasValidConfig` GraphQL resolver should be deprecated
 
@@ -303,6 +303,15 @@ When Arranger Server (`apps/search-server`) is updated to use `catalogue`, the M
 **Kind:** missing test coverage
 **Issue:** `resolveSetsInSqon` has two paths - SQON contains no `set_id:` values (no-op, returns SQON unchanged) and SQON contains `set_id:` values (expands to stored IDs via an ES search). Neither path has a unit test.
 **Standalone:** yes; but note the file also carries the `hackyTemporaryEsSetResolution` tech-debt entry; evaluate for removal during Sets full-feature implementation rather than investing deeply in tests for code that may be replaced
+
+### Network aggregation schema discovery depends on GraphQL introspection being open on remote nodes
+
+**File:** `modules/graphql-router/src/network/setup/query.ts` (`fetchNodeAggregations`)
+**Severity:** medium
+**Kind:** design coupling / security constraint
+**Issue:** At startup, Arranger queries each remote node using `__type(name: $documentTypeName)` to discover its aggregation field types. `__type` is part of the GraphQL introspection system. If a remote node has `disableGraphQLIntrospection: true`, its schema discovery fails and the node is excluded from federation with a `NETWORK_ERROR` or `INVALID_DATA` result. This creates a conflict: hardening any node in a network aggregation deployment breaks the federation setup for nodes pointing at it.
+**Fix:** Replace the `__type`-based discovery with a call to the REST `/introspection/fields` (or `/introspection/:catalogueId`) endpoint already provided by `apps/search-server`. That endpoint returns equivalent field information without requiring GraphQL introspection to be open. Natural task within the GraphQL server migration; coordinate with yoga switchover so both changes land together.
+**Standalone:** no; the REST introspection endpoint must be stable and reachable from the aggregating node's network context; coordinate with the yoga migration
 
 ### `hackyTemporaryEsSetResolution.js`: stale ES 6.2 workaround + convention violation
 
